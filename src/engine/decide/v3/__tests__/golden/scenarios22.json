@@ -455,21 +455,30 @@
     "foreign": null
    },
    "expect": {
-    "code": "not_yet",
-    "variant": "not_covered",
-    "legacyState": "no",
+    "code": "emergency_use",
+    "legacyState": "adjust",
     "band": 4,
-    "readyBy": {
-     "kind": "month",
-     "month": "2027-03"
-    },
+    "facts": [
+     "emergency_used"
+    ],
+    "split": [
+     {
+      "source": "unspent_earlier",
+      "amount": 10000
+     },
+     {
+      "source": "emergency",
+      "amount": 60000
+     }
+    ],
+    "unspentAfter": 0,
     "month": {
      "e": 88000,
      "typicalLeft": 12000,
      "erest": 79484,
      "monthLeft": -19484
     },
-    "working": "Leo: E 88,000, typicalLeft = 250,000-150,000-88,000 = 12,000. October: Erest = max(round(88,000*28/31)=79,484, 88,000-40,000=48,000) = 79,484; out = 150,000+40,000+79,484 = 269,484; monthLeft = -19,484 (<0). P 70,000 > unspent 10,000, marked emergency and for_work, 70,000 <= 10,000+300,000 -> emergency_use. Fund use Z = 70,000-10,000 = 60,000; rebuild ceilDiv(60,000, 12,000) = 5 months. Band 4. RE-BASELINED (05.1-35, D-43a, D-54): the cash check now opens at the spending balance only, 389,484 total - 300,000 fund (dedicated account) = 89,484, and the fund no longer cushions it (D-09). With the 70,000 purchase on day one the 90-day path (Erest 79,484 to month end, rent 130,000 and phone 20,000 against pay 250,000 on its dates, then E 88,000 a month) is 60,000 below zero and does not recover, so the answer is not_yet / not_covered, ready month 2027-03, ahead of the emergency ladder (the ladder would otherwise give emergency_use: 70,000 > unspent 10,000, for_work, 70,000 <= 10,000 + 300,000)."
+    "working": "Leo: E 88,000, typicalLeft = 250,000-150,000-88,000 = 12,000. October: Erest = max(round(88,000*28/31)=79,484, 88,000-40,000=48,000) = 79,484; out = 150,000+40,000+79,484 = 269,484; monthLeft = -19,484 (<0). P 70,000 > unspent 10,000, marked emergency and for_work, 70,000 <= 10,000+300,000 -> emergency_use. Fund use Z = 70,000-10,000 = 60,000; rebuild ceilDiv(60,000, 12,000) = 5 months. Band 4. RESTORED (05.1-44, D-63): 05.1-35 moved this to not_yet / not_covered because the cash check stopped seeing the fund (D-43a, D-54). The purchase is marked an emergency and its purpose (for_work) may use the fund (mayUseEmergency), so the cash check opens with the fund included: spending 389,484 - 300,000 (fund, dedicated account) = 89,484, + 300,000 fund = 389,484. The 90-day path (Erest 79,484 to month end, rent 130,000 and phone 20,000 against pay 250,000 on their dates, then E 88,000 a month, less the 70,000 purchase on day one) never goes below zero, so the cash check is ok and the ladder decides: 70,000 > unspent 10,000, emergency-marked, for_work, 70,000 <= 10,000 + 300,000 -> emergency_use, as before 05.1-35. Fund use 60,000, unspentAfter 0, rebuild 5 months."
    },
    "source": "v3 §12 #11"
   },

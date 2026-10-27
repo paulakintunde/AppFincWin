@@ -152,13 +152,21 @@ describe('D-43a the fund never cushions the cash check (D-54)', () => {
     expect(ev.cash.kind).not.toBe('ok');
   });
 
-  it('D-43a even marked an emergency, a price the spending money cannot carry stays not_yet (the cash check comes first)', () => {
+  it('D-63 marked an emergency for a necessity, a price the spending money cannot carry reaches the fund: emergency_use', () => {
+    // D-63 supersedes the D-43a reading for this case: the cash check opens with the fund (407,500 + 900,000), and the
+    // ladder draws on unspent 240,000 and then the fund: 600,000 - 240,000 = 360,000 from the fund.
     const ev = evaluate(sam(), toCheckV2({ ...base(), price: 600_000, emergency: true, purpose: 'necessity' }));
-    expect(ev.result.code).toBe('not_yet');
+    expect(ev.cash.kind).toBe('ok');
+    expect(ev.result.code).toBe('emergency_use');
   });
 
   it('D-43a the fund is reached only through the ladder: 200,000 with unspent 10,000 is not covered unmarked, emergency_use when marked a necessity', () => {
-    const low: V3Inputs = { ...sam(), unspent: { amount: minorUnits(10_000), at: '2026-10-03' } };
+    // D-50: 240,000 suggested against 10,000 confirmed is money the records do not explain; the user's answer (kept aside) covers it.
+    const low: V3Inputs = {
+      ...sam(),
+      unspent: { amount: minorUnits(10_000), at: '2026-10-03' },
+      unexplainedAnswer: { amount: minorUnits(230_000), use: 'set_aside_for_bill', at: '2026-10-03' },
+    };
     const unmarked = evaluate(low, toCheckV2({ ...base(), price: 200_000 }));
     expect(unmarked.cash.kind).toBe('ok'); // 407,500 spending carries it: lowest point 240,000 - 200,000
     expect(unmarked.result.code).toBe('not_yet');

@@ -34,13 +34,12 @@ import {
 
 const mu = minorUnits;
 
-/** Codes whose emitter has not landed yet. Each owning plan removes its codes (05.1-43, -44, -46, -50); the list ends empty. */
+/** Codes whose emitter has not landed yet. Each owning plan removes its codes (05.1-43, -46, -50); the list ends empty. emergency_used left in 05.1-44 (D-63): golden #11 Leo, an emergency-marked work purchase, is in the corpus and emits it. */
 const NOT_YET_EMITTED: readonly string[] = [
   'lean_bridge',
   'unspent_held_back',
   'lean_months_judged',
   'low_month_judged',
-  'pay_capped_expected',
   'income_volatile',
   'rests_on_your_answer',
   'envelope_location_assumed',
@@ -49,9 +48,6 @@ const NOT_YET_EMITTED: readonly string[] = [
   'pay_not_seen',
   'pay_counted_missed',
   'fund_account_unknown',
-  // 05.1-35 keeps the fund out of the cash check, so no corpus case reaches emergency_use until D-63 (05.1-44 Task 3)
-  // lets an emergency-marked purchase see the fund; 05.1-44 removes this entry.
-  'emergency_used',
 ];
 
 interface Emitted {
@@ -195,6 +191,9 @@ function buildCorpus(): Emitted[] {
   collect(out, gig('seasonal'), checkOnce(10_000)); // history_window_12, income_from_expected (last_year), same_season_compared
   collect(out, gig('variable', { months: [...gigMonths.slice(2), monthOf('2026-12', [], { full: false })] }), checkOnce(10_000)); // source: low
   collect(out, gig('variable', { expectedIncome: [{ month: '2026-12', amount: mu(120_000), at: '2026-12-01' }] }), checkOnce(10_000)); // source: confirmed
+  // D-46: the pay series is set at the high-season amount; asOf is in a lean month, so January's pay is capped at the expected 70,000.
+  const highPay = v3Series({ id: 'gig', role: 'pay', cadence: { unit: 'month', every: 1 }, anchorDate: '2025-01-01', amount: 145_000 });
+  collect(out, gig('seasonal', { series: [highPay] }), checkOnce(10_000)); // pay_capped_expected
   return out;
 }
 

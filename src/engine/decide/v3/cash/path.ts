@@ -24,6 +24,8 @@ export interface CashPoint {
 export interface CashPathV3 {
   readonly asOf: string;
   readonly points: readonly CashPoint[];
+  /** Total pay withheld by the D-35 expected-income caps; absent when nothing was capped (D-46). */
+  readonly capped?: MinorUnits;
 }
 export interface DatedFlow {
   readonly date: string;
@@ -64,6 +66,8 @@ export function buildCashPathV3(input: {
   readonly erest: MinorUnits;
   readonly e: MinorUnits;
   readonly extraOut: readonly DatedFlow[];
+  /** D-35: per month (YYYY-MM), the most pay that may land. null = steady, every pay lands at its amount. */
+  readonly payCaps?: ReadonlyMap<string, MinorUnits> | null;
 }): CashPathV3 {
   const { asOf, days } = input;
   if (!Number.isInteger(days) || days < 1 || days > CASH_PATH_DAYS_V3) {
@@ -76,10 +80,29 @@ export function buildCashPathV3(input: {
     const idx = date <= asOf ? 0 : daysBetween(asOf, date);
     net[idx] = (net[idx] as bigint) + amount;
   };
+  const pays: { readonly id: string; readonly date: string; readonly amount: bigint }[] = [];
   for (const s of liveSeriesOf(input.series, asOf, 'pay')) {
     for (const d of seriesOccurrences(s, asOf, end)) {
       if (input.paidThisMonth.has(`${s.id}|${d}`)) continue; // H-01: a pay already logged is in the opening balance
-      put(d, BigInt(s.amount));
+      pays.push({ id: s.id, date: d, amount: BigInt(s.amount) });
+    }
+  }
+  // D-35: a variable or seasonal earner's pay in a month never exceeds that month's expected income, so a high-season pay
+  // figure cannot cushion a lean month. A profile with no pay series lands no income at all (cautious, unchanged; review note).
+  let capped = 0n;
+  if (input.payCaps == null) {
+    for (const p of pays) put(p.date, p.amount);
+  } else {
+    const remaining = new Map<string, bigint>();
+    for (const [ym, cap] of input.payCaps) remaining.set(ym, BigInt(cap));
+    pays.sort((a, b) => (`${a.date}|${a.id}` < `${b.date}|${b.id}` ? -1 : 1)); // date, then series id (unique pairs)
+    for (const p of pays) {
+      const ym = yearMonthOf(p.date);
+      const left = remaining.get(ym) ?? 0n;
+      const landed = p.amount < left ? p.amount : left;
+      remaining.set(ym, left - landed);
+      capped += p.amount - landed;
+      put(p.date, landed);
     }
   }
   for (const role of ['bill', 'debt_payment'] as const) {
@@ -98,7 +121,7 @@ export function buildCashPathV3(input: {
     const balance = running - spreadThrough(i, { erest: input.erest, e: input.e, asOf });
     points.push({ date: addDays(asOf, i), balance: minorFromBigInt(balance, FN) });
   }
-  return { asOf, points };
+  return capped > 0n ? { asOf, points, capped: minorFromBigInt(capped, FN) } : { asOf, points };
 }
 
 /** First confirmed live pay occurrence on or after asOf (a missed pay before asOf never counts: I3). */

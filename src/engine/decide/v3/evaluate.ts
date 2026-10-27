@@ -4,15 +4,18 @@
  * The cash path takes the purchase through purchaseCashFlows, never purchaseFlows directly: a first payment dated today
  * is already inside dayOne and would land twice.
  */
-import { minorUnits } from '../../money/types';
+import { minorUnits, type MinorUnits } from '../../money/types';
 import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { buildCashPathV3, cashCheck, nextPayDate, type CashCheck } from './cash/path';
 import { addDays, addYearMonths, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
 import { readinessOf } from './readiness';
 import { judge } from './judge/judge';
+import { mayUseEmergency } from './funds/emergency';
 import { buildPurchase, purchaseCashFlows } from './judge/purchase';
 import { buildMonthModel } from './month/model';
+import { incomeThisMonth, type IncomeInput } from './month/incomeProfile';
+import { expectedFor } from './month/incomePattern';
 import { liveSeriesOf, seriesOccurrences } from './month/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './month/settle';
 import type { PlanCard } from './plan/planCard';
@@ -67,23 +70,59 @@ function paidOccurrences(inputs: V3Inputs): ReadonlySet<string> {
   return settled;
 }
 
+/**
+ * D-35: for a variable or seasonal earner, the most pay that may land in each month of the cash path: the month's expected
+ * income (a confirmed figure as given, else the records rule). This month's cap is what is still to arrive: expected minus
+ * what has already arrived, never below 0. A month with no expected figure lands nothing (cautious; needsInput asks first).
+ * null for a steady earner: every pay lands at its amount.
+ */
+function payCapsOf(inputs: V3Inputs, month: MonthModel): ReadonlyMap<string, MinorUnits> | null {
+  const pic = month.incomePicture;
+  if (pic === undefined || pic.treated === 'steady') return null;
+  const currentYm = yearMonthOf(inputs.asOf);
+  const incomeInput: IncomeInput = {
+    asOf: inputs.asOf,
+    current: inputs.months.find((m) => m.month === currentYm) ?? null,
+    history: inputs.months.filter((m) => m.month !== currentYm),
+    series: inputs.series,
+    profile: inputs.profile,
+    rough: inputs.rough,
+    custom: inputs.custom,
+    payArrivals: inputs.payArrivals ?? [],
+  };
+  const received = BigInt(incomeThisMonth(incomeInput).received);
+  const caps = new Map<string, MinorUnits>();
+  const lastYm = yearMonthOf(addDays(inputs.asOf, CASH_PATH_DAYS_V3));
+  for (let i = 0, ym = currentYm; ym <= lastYm; i++, ym = addYearMonths(currentYm, i)) {
+    const amount = BigInt(expectedFor(pic, inputs.expectedIncome ?? [], ym)?.amount ?? 0);
+    const room = ym === currentYm ? (amount > received ? amount - received : 0n) : amount;
+    caps.set(ym, minorUnits(Number(room)));
+  }
+  return caps;
+}
+
 function evaluateOnce(inputs: V3Inputs, check: CheckV2): Evaluation {
   const month = buildMonthModel(inputs);
   const pb = buildPurchase(check, { asOf: inputs.asOf, thresholds: inputs.thresholds, custom: inputs.custom });
   const funds = buildFunds(inputs, month, check.envelopeId);
+  // D-63: only an emergency-marked purchase whose purpose may use the fund lets the cash check see the fund; everything
+  // else keeps it out of reach (D-09, D-43a). An unlinked fund (D-62) is already subtracted from spending, so it is added
+  // back here once.
+  const fundForCash = pb.purchase !== null && mayUseEmergency(pb.purchase) ? (funds.emergency ?? 0) : 0;
   const path = buildCashPathV3({
     asOf: inputs.asOf,
     days: CASH_PATH_DAYS_V3,
-    // D-54: spending money plus the purchase's own envelope; the fund and other put-aside money never cushion the check.
-    opening: minorUnits(funds.spending + funds.ownEnvelope),
+    // D-54: spending money plus the purchase's own envelope; other put-aside money never cushions the check (the fund only per D-63).
+    opening: minorUnits(funds.spending + funds.ownEnvelope + fundForCash),
     series: inputs.series,
     paidThisMonth: paidOccurrences(inputs),
     erest: month.erest,
     e: month.e ?? minorUnits(0),
     extraOut: pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3) : [],
+    payCaps: payCapsOf(inputs, month),
   });
   const cash = cashCheck(path, nextPayDate(inputs.series, inputs.asOf));
-  const result = judge({
+  const judged = judge({
     inputs,
     month,
     funds,
@@ -93,6 +132,9 @@ function evaluateOnce(inputs: V3Inputs, check: CheckV2): Evaluation {
     purchaseReasons: pb.reasons,
     cash,
   });
+  // D-46: say so when the expected-income cap lowered the pay in the 90-day path; last, after the judge's notices.
+  const result: Result =
+    path.capped === undefined ? judged : { ...judged, notices: [...judged.notices, { code: 'pay_capped_expected', values: { capped: path.capped } }] };
   return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash };
 }
 
