@@ -24,14 +24,18 @@
 import type { MinorUnits } from '../../../money/types';
 import { minorUnits } from '../../../money/types';
 import { SIMULATION_MONTH_CAP } from '../../../payoff/constants';
-import { ceilDivide } from '../../../payoff/types';
-import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE } from '../constants';
-import { addYearMonths, daysBetween } from '../dates';
+import { ceilDivide, minorFromBigInt } from '../../../payoff/types';
+import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_MONTHS } from '../constants';
+import { addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck } from '../cash/path';
 import { emergencyOf, emergencyUse, mayUseEmergency } from '../funds/emergency';
 import { capConfidence } from '../month/confidence';
+import { dependsOnMonths, expectedFor, isLeanMonth, leanRun, seasonEveryday } from '../month/incomePattern';
 import type {
   Code,
+  ExpectedMonthIncome,
+  IncomePicture,
+  LowMonth,
   Confidence,
   Fact,
   Funds,
@@ -169,21 +173,158 @@ export function oneOffPart(
   return ready !== null && until > `${ready.month}-01` ? onPayday : part;
 }
 
-export function monthlyPart(
-  month: MonthModel,
-  M: MinorUnits
-): { readonly code: 'monthly_short' | 'fits_month'; readonly lowClause: boolean } | null {
-  if (M === 0) return null;
+/** What the monthly part of a purchase needs beyond the month model (D-36, D-37). */
+export interface MonthlyCtx {
+  readonly asOf: string;
+  readonly purchase: Purchase;
+  readonly available: MinorUnits | null;
+  readonly takenByOneOff: MinorUnits;
+  readonly expected: readonly ExpectedMonthIncome[];
+}
+
+export type MonthlyCode = 'monthly_short' | 'fits_month' | 'fits_unspent' | 'not_yet' | 'needs_input';
+
+export interface MonthlyPart {
+  readonly code: MonthlyCode;
+  readonly lowClause: boolean;
+  /** lean_bridge: set when unspent money carries the monthly gap (D-37, D-46). */
+  readonly bridge: Fact | null;
+  /** lean_months_judged (seasonal) or low_month_judged (gig): which months were judged (D-46). */
+  readonly why: Fact | null;
+  readonly readyBy: ReadyBy | null;
+  readonly reasons: readonly ReasonCode[];
+}
+
+const monthly = (code: MonthlyCode, over: Partial<MonthlyPart> = {}): MonthlyPart => ({
+  code,
+  lowClause: false,
+  bridge: null,
+  why: null,
+  readyBy: null,
+  reasons: [],
+  ...over,
+});
+
+/** The steady rule, and the rule for any earner with no pattern information (I23). */
+function steadyMonthly(month: MonthModel, M: MinorUnits): MonthlyPart {
   // No typical figure is unreachable here (needsInput asks for it first); stay on the cautious side if it ever happens.
-  if (month.typicalLeft === null || month.typicalLeft - M < 0) return { code: 'monthly_short', lowClause: false };
-  return { code: 'fits_month', lowClause: month.low !== null && month.low.left - M < 0 };
+  if (month.typicalLeft === null || month.typicalLeft - M < 0) return monthly('monthly_short');
+  return monthly('fits_month', { lowClause: month.low !== null && month.low.left - M < 0 });
+}
+
+/** D-37: the months the payment touches, from the first payment's month when there is a schedule. */
+function planMonthsOf(ctx: MonthlyCtx): readonly string[] {
+  const all = dependsOnMonths(ctx.asOf, ctx.purchase.schedule, ctx.purchase.runningMonthly);
+  if (ctx.purchase.schedule === null) return all;
+  const first = yearMonthOf(ctx.purchase.schedule.firstDate);
+  const kept = all.filter((ym) => ym >= first);
+  return kept.length > 0 ? kept : all;
+}
+
+/**
+ * D-36, D-37. A seasonal earner's monthly part is judged against what is left in every lean month it touches; a gig or
+ * other variable earner's against the low month. When that falls short, the shortfall for each lean month to carry is a
+ * bridge: unspent money (after the one-off part and money held back) covers it, or the answer is not yet. The fund is
+ * never used here (D-43a, D-63).
+ * Branch point for D-48 (the volatile income question, 05.1-50): between step 1 and step 2 below.
+ */
+function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: MonthlyCtx): MonthlyPart {
+  const planMonths = planMonthsOf(ctx);
+  const seasonal = pic.treated === 'seasonal';
+  const Mb = BigInt(M);
+  const leftBy = new Map<string, bigint>();
+  if (seasonal) {
+    for (const ym of planMonths) {
+      const expected = expectedFor(pic, ctx.expected, ym);
+      const everyday = seasonEveryday(pic, ym) ?? month.e;
+      if (expected === null || everyday === null) return monthly('needs_input');
+      leftBy.set(ym, BigInt(expected.amount) - BigInt(month.recurringBills) - BigInt(everyday) - BigInt(month.setAside));
+    }
+  } else if (month.low === null) {
+    return steadyMonthly(month, M);
+  }
+  const leftOf = (ym: string): bigint => leftBy.get(ym) as bigint;
+
+  let leanLeft: bigint;
+  let carried: readonly string[];
+  let why: Fact;
+  if (seasonal) {
+    const records = pic.fullMonths >= RECONFIRM_MIN_MONTHS;
+    const picked = planMonths.filter((ym) => (records ? isLeanMonth(pic, ym) : leftOf(ym) < Mb));
+    const lean = picked.length > 0 ? picked : planMonths;
+    leanLeft = lean.map(leftOf).reduce((a, b) => (b < a ? b : a));
+    if (records) {
+      const run = leanRun(pic, planMonths);
+      const start = planMonths.findIndex((ym) => isLeanMonth(pic, ym));
+      carried = run > 0 ? planMonths.slice(start, start + run) : planMonths.filter((ym) => leftOf(ym) < Mb);
+    } else {
+      carried = lean;
+    }
+    why = {
+      code: 'lean_months_judged',
+      values: { from: lean[0] as string, to: lean[lean.length - 1] as string, leanLeft: minorFromBigInt(leanLeft, 'monthlyPart') },
+    };
+  } else {
+    const low = month.low as LowMonth;
+    leanLeft = BigInt(low.left);
+    const count = pic.months.filter((m) => BigInt(m.left) < Mb).length;
+    const toCarry = Math.max(1, Math.min(planMonths.length, count));
+    carried = Array.from({ length: toCarry }, (_, i) => addYearMonths(planMonths[0] as string, i));
+    why = { code: 'low_month_judged', values: { month: low.month, left: low.left } };
+  }
+
+  // Step 1 (D-36): what is left in the lean months covers the payment.
+  if (leanLeft - Mb >= 0n) return monthly('fits_month', { why, reasons: seasonal ? ['lean_months_used'] : [] });
+
+  // Step 2 (D-37): the shortfall in every lean month to carry is a bridge paid from unspent money.
+  const shortfall = Mb - leanLeft;
+  const toCarry = carried.length;
+  const bridge = shortfall * BigInt(toCarry);
+  if (ctx.available === null) return monthly('needs_input');
+  const used = BigInt(ctx.takenByOneOff);
+  const afterOneOff = BigInt(ctx.available) - used;
+  if (afterOneOff >= bridge) {
+    return monthly('fits_unspent', {
+      why,
+      bridge: {
+        code: 'lean_bridge',
+        values: {
+          monthly: M,
+          leanLeft: minorFromBigInt(leanLeft, 'monthlyPart'),
+          shortfall: minorFromBigInt(shortfall, 'monthlyPart'),
+          months: toCarry,
+          until: carried[toCarry - 1] as string,
+          bridge: minorFromBigInt(bridge, 'monthlyPart'),
+          after: minorFromBigInt(afterOneOff - bridge, 'monthlyPart'),
+        },
+      },
+    });
+  }
+  // Step 3: not covered. Ready when unspent plus the months ahead reach the one-off part and the bridge.
+  return monthly('not_yet', { why, readyBy: readyMonth(month, minorFromBigInt(used + bridge, 'monthlyPart'), ctx.available) });
+}
+
+/**
+ * The monthly part (I23, D-36, D-37). Without `ctx`, or for a steady earner, the typical month decides: typicalLeft - M < 0
+ * is monthly_short; lowLeft - M < 0 fits with the low-month clause.
+ */
+export function monthlyPart(month: MonthModel, M: MinorUnits, ctx?: MonthlyCtx): MonthlyPart | null {
+  if (M === 0) return null;
+  const pic = month.incomePicture;
+  if (ctx === undefined || pic === undefined || pic.treated === 'steady') return steadyMonthly(month, M);
+  return leanMonthly(month, M, pic, ctx);
 }
 
 function unique<T>(xs: readonly T[]): T[] {
   return [...new Set(xs)];
 }
 
-function judgeNotices(j: JudgeInput): Notice[] {
+/** D-59: the one place a missing list is ordered. */
+function inPriority(codes: readonly MissingCode[]): MissingCode[] {
+  return [...codes].sort((a, b) => MISSING_PRIORITY.indexOf(a) - MISSING_PRIORITY.indexOf(b));
+}
+
+function judgeNotices(j: JudgeInput, missing: readonly MissingCode[]): Notice[] {
   const out: Notice[] = [...j.month.notices];
   const em = emergencyOf(j.inputs.emergency).notice;
   if (em) out.push(em);
@@ -191,6 +332,25 @@ function judgeNotices(j: JudgeInput): Notice[] {
   if (u !== null && u.stale) out.push({ code: 'unspent_stale', values: { days: daysBetween(u.anchor.at, j.inputs.asOf) } });
   if (u !== null && u.drifted) out.push({ code: 'unspent_drifted', values: { suggested: j.funds.suggested } });
   if (j.month.reasons.includes('rough_figures_used')) out.push({ code: 'from_your_figures', values: {} });
+  const f = j.funds;
+  // D-49, D-54: an envelope linked to no account is taken to sit inside the spending money.
+  if ((f.envelopesAssumedInside ?? 0) > 0) out.push({ code: 'envelope_location_assumed', values: { count: f.envelopesAssumedInside as number } });
+  // D-50: money above what the records explain.
+  if (missing.includes('unexplained_money_question')) out.push({ code: 'unexplained_money', values: { amount: f.unexplained as number } });
+  // D-54, D-62: the account question first; the fund question only once every account has a stated use.
+  const unstated = f.unstatedAccounts ?? [];
+  if (unstated.length > 0) {
+    out.push({ code: 'account_use_unknown', values: { accountId: unstated[0] as string, count: unstated.length } });
+  } else if (unstated.length === 0 && f.fundUnlinked === true) {
+    out.push({ code: 'fund_account_unknown', values: { amount: f.emergency ?? 0 } });
+  }
+  // D-58: a past pay with no matching line. The first unanswered one is asked; each one answered "not yet" is counted missed.
+  const unseen = j.month.unseenPay ?? [];
+  const unanswered = unseen.find((p) => p.arrived === null);
+  if (unanswered !== undefined) {
+    out.push({ code: 'pay_not_seen', values: { amount: unanswered.amount, date: unanswered.date } });
+  }
+  for (const p of unseen) if (p.arrived === false) out.push({ code: 'pay_counted_missed', values: { amount: p.amount, date: p.date } });
   return out;
 }
 
@@ -200,13 +360,20 @@ function judgeConfidence(j: JudgeInput): Confidence {
   if (u !== null && u.stale) c = capConfidence(c, 'unspent_stale');
   if (u !== null && u.drifted) c = capConfidence(c, 'unspent_drifted', 'rough');
   if (j.month.reasons.includes('rough_figures_used')) c = capConfidence(c, 'rough_figures', 'rough');
+  // D-58: a pay counted as missed is a careful answer that still works, so the figure is a rough one.
+  if ((j.month.unseenPay ?? []).some((p) => p.arrived === false)) c = capConfidence(c, 'pay_missed', 'rough');
   return c;
+}
+
+/** A comparable key: a date, or the first of a month. null (never) sorts last. */
+function readyKey(r: ReadyBy | null): string {
+  if (r === null) return '9999-99-99';
+  return r.kind === 'date' ? r.date : `${r.month}-01`;
 }
 
 export function judge(j: JudgeInput): Result {
   const { month, funds } = j;
   const p = j.purchase;
-  const notices = judgeNotices(j);
   const confidence = judgeConfidence(j);
   const reasons = unique([...month.reasons, ...j.purchaseReasons]);
   const band = p?.band ?? null;
@@ -214,43 +381,57 @@ export function judge(j: JudgeInput): Result {
 
   const missing = [...needsInput({ inputs: j.inputs, month, funds, purchase: p, purchaseMissing: j.purchaseMissing })];
   if (p === null && missing.length === 0) missing.push('no_price');
+  const notices = judgeNotices(j, missing);
 
-  const unspentValue = funds.unspent?.value ?? null; // always the user's confirmed (rolled) figure (D-30)
+  // D-38: every check judges against available unspent money, the confirmed figure less money held back for earlier
+  // plans. Drift and staleness (judgeNotices, judgeConfidence) stay on the confirmed figure (D-30).
+  const unspentValue = funds.unspent === null ? null : (funds.unspent.available ?? funds.unspent.value);
   const one = missing.length > 0 || p === null ? null : oneOffPart(j, { unspent: unspentValue, envelope: funds.ownEnvelope });
 
-  if (one === null || one.code === 'needs_input') {
-    return {
-      code: 'needs_input',
-      variant: null,
-      legacyState: LEGACY_STATE_OF_CODE.needs_input,
-      split: [],
-      facts: j.purchaseFacts,
-      notices,
-      missing: missing.length > 0 ? missing : ['unspent_not_confirmed'],
-      reasons,
-      readyBy: null,
-      band,
-      layers,
-      confidence,
-      parts: { oneOff: 'needs_input', monthly: null },
-    };
-  }
+  const asking = (parts: Result['parts'], ask: readonly MissingCode[]): Result => ({
+    code: 'needs_input',
+    variant: null,
+    legacyState: LEGACY_STATE_OF_CODE.needs_input,
+    split: [],
+    facts: j.purchaseFacts,
+    notices,
+    missing: inPriority(ask.length > 0 ? ask : ['unspent_not_confirmed']), // D-59
+    reasons,
+    readyBy: null,
+    band,
+    layers,
+    confidence,
+    parts,
+  });
+
+  if (one === null || one.code === 'needs_input') return asking({ oneOff: 'needs_input', monthly: null }, missing);
 
   const purchase = p as Purchase;
-  const mon = monthlyPart(month, purchase.monthly);
-  const code = mon === null ? one.code : stricter(one.code, mon.code);
-  const variant: Variant | null =
-    one.code === 'not_yet' && code === 'not_yet'
-      ? one.variant
-      : (code === 'fits_month' || code === 'fits_unspent') && mon !== null && mon.lowClause
-        ? 'low_month'
-        : null;
-  const readyBy = code === 'not_yet' ? one.readyBy : null;
-
-  // Facts (fixed order): month, unspent, emergency, envelope, plan, low month, lines.
   const fromMonth = one.split.find((s) => s.source === 'month')?.amount ?? 0;
   const fromEarlier = one.split.find((s) => s.source === 'unspent_earlier')?.amount ?? 0;
   const fromEnvelope = one.split.find((s) => s.source === 'envelope')?.amount ?? 0;
+  const mon = monthlyPart(month, purchase.monthly, {
+    asOf: j.inputs.asOf,
+    purchase,
+    available: unspentValue === null ? null : mu(unspentValue),
+    takenByOneOff: mu(fromMonth + fromEarlier),
+    expected: j.inputs.expectedIncome ?? [],
+  });
+  if (mon !== null && mon.code === 'needs_input') return asking({ oneOff: one.code, monthly: 'needs_input' }, []);
+
+  const code = mon === null ? one.code : stricter(one.code, mon.code);
+  const lowClause = mon !== null && mon.lowClause;
+  const variant: Variant | null = code === 'not_yet' ? null : (code === 'fits_month' || code === 'fits_unspent') && lowClause ? 'low_month' : null;
+  // When both parts are not yet, the later ready-by leads; ties go to the one-off part (D-36).
+  let notYetVariant: Variant | null = null;
+  let readyBy: ReadyBy | null = null;
+  if (code === 'not_yet') {
+    const monthlyLeads = mon !== null && mon.code === 'not_yet' && (one.code !== 'not_yet' || readyKey(mon.readyBy) > readyKey(one.readyBy));
+    notYetVariant = monthlyLeads ? 'not_covered' : one.variant;
+    readyBy = monthlyLeads ? (mon as MonthlyPart).readyBy : one.readyBy;
+  }
+
+  // Facts (fixed order): month, unspent, held back, emergency, envelope, plan, low month, why months, bridge, lines.
   const facts: Fact[] = [];
   if (one.split.length > 0) {
     facts.push({ code: 'month_left_after', values: { month: month.month, left: month.monthLeft - fromMonth } });
@@ -260,6 +441,9 @@ export function judge(j: JudgeInput): Result {
   if (one.split.length > 0 && unspentValue !== null) {
     facts.push({ code: 'unspent_before_after', values: { before: unspentValue, after: mu(unspentValue - fromMonth - fromEarlier) } });
   }
+  // D-38, D-46: money held back for an earlier plan is said once, next to the unspent figure it reduced.
+  const heldBack = funds.unspent?.breakdown.heldBack ?? 0;
+  if (heldBack > 0) facts.push({ code: 'unspent_held_back', values: { amount: heldBack } });
   if (one.emergencyUsed > 0) {
     facts.push({ code: 'emergency_used', values: one.rebuildMonths === null ? { used: one.emergencyUsed } : { used: one.emergencyUsed, months: one.rebuildMonths } });
   } else if (funds.emergency !== null) {
@@ -271,6 +455,8 @@ export function judge(j: JudgeInput): Result {
     // The low-month clause as a fact (v3 §12 #7, #22): the tight month, its leftover, and the monthly cost it cannot carry.
     facts.push({ code: 'low_month', values: { month: month.low.month, left: month.low.left, monthly: purchase.monthly } });
   }
+  if (mon !== null && mon.why !== null) facts.push(mon.why); // D-46
+  if (mon !== null && mon.bridge !== null) facts.push(mon.bridge); // D-46
   facts.push(
     ...evaluateLines(j.inputs.limits, {
       month,
@@ -285,13 +471,13 @@ export function judge(j: JudgeInput): Result {
 
   return {
     code,
-    variant,
+    variant: code === 'not_yet' ? notYetVariant : variant,
     legacyState: LEGACY_STATE_OF_CODE[code],
     split: keepSplit ? one.split : [],
     facts,
     notices,
     missing: [],
-    reasons,
+    reasons: mon === null ? reasons : unique([...reasons, ...mon.reasons]),
     readyBy,
     band,
     layers,
