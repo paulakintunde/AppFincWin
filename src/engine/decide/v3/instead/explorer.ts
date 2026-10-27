@@ -25,9 +25,11 @@ export function explore(input: {
     throw new RangeError('explore: levers must be >= 0');
   }
   const savingCut = Math.min(levers.flexibleSavingCut, input.flexibleSaving);
-  const clamped = savingCut < levers.flexibleSavingCut;
+  // L-04: the everyday lever cannot give back more than the user actually spends (E)
+  const everydayCut = Math.min(levers.everydayCut, Math.max(0, input.month.e ?? 0));
+  const clamped = savingCut < levers.flexibleSavingCut || everydayCut < levers.everydayCut;
   const typicalLeft =
-    input.month.typicalLeft === null ? null : minorUnits(input.month.typicalLeft + levers.everydayCut + savingCut);
+    input.month.typicalLeft === null ? null : minorUnits(input.month.typicalLeft + everydayCut + savingCut);
   return {
     typicalLeft,
     buyLater: buyLater({ price: input.price, unspent: input.unspent, typicalLeft, month: input.month.month }),
