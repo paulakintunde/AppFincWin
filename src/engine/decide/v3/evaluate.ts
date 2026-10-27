@@ -9,6 +9,7 @@ import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from '
 import { buildCashPathV3, cashCheck, nextPayDate, type CashCheck } from './cash/path';
 import { addDays, addYearMonths, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
+import { insteadFutures, type Futures } from './instead/futures';
 import { readinessOf } from './readiness';
 import { judge } from './judge/judge';
 import { mayUseEmergency } from './funds/emergency';
@@ -30,6 +31,8 @@ export interface Evaluation {
   readonly planCard: PlanCard | null;
   readonly quoted: QuotedCheck;
   readonly cash: CashCheck;
+  /** D-48: "What could I do instead?" attached straight away when the user said they cannot cover a volatile monthly payment; otherwise null. */
+  readonly futures: Futures | null;
 }
 
 /**
@@ -135,7 +138,13 @@ function evaluateOnce(inputs: V3Inputs, check: CheckV2): Evaluation {
   // D-46: say so when the expected-income cap lowered the pay in the 90-day path; last, after the judge's notices.
   const result: Result =
     path.capped === undefined ? judged : { ...judged, notices: [...judged.notices, { code: 'pay_capped_expected', values: { capped: path.capped } }] };
-  return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash };
+  // D-48: a declined cover is not_yet with the Instead futures attached at once. The user's own deposit rate is a UI choice
+  // (05.3); the payment-stream comparison does not need it.
+  const futures =
+    pb.purchase !== null && result.reasons.includes('volatile_cover_declined')
+      ? insteadFutures({ result, month, funds, purchase: pb.purchase, userRate: null, years: 1 })
+      : null;
+  return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash, futures };
 }
 
 const LEVEL_RANK: Readonly<Record<ConfidenceLevel, number>> = { rough: 0, fair: 1, firm: 2 };
