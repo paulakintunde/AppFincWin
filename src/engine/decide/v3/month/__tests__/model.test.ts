@@ -95,7 +95,10 @@ describe('buildMonthModel', () => {
   it('month_heading_short carries nulls when nothing is categorised', () => {
     const m = buildMonthModel(sam({ everydayOverride: mu(900000) }));
     const n = m.notices.find((x) => x.code === 'month_heading_short');
-    expect(n?.values).toMatchObject({ categoryId: null });
+    expect(n?.values).toMatchObject({ month: '2026-10' });
+    expect(n?.values).not.toHaveProperty('categoryId');
+    expect(n?.values).not.toHaveProperty('largest');
+    expect(Number(n?.values.short)).toBeGreaterThan(0);
   });
 
   it('month_heading_short with no everyday line at all has no largest line', () => {
@@ -108,7 +111,8 @@ describe('buildMonthModel', () => {
     });
     expect(m.largestLine).toBeNull();
     const n = m.notices.find((x) => x.code === 'month_heading_short');
-    expect(n?.values).toMatchObject({ categoryId: null, largest: null });
+    expect(n?.values).not.toHaveProperty('categoryId');
+    expect(n?.values).not.toHaveProperty('largest');
   });
 
   it('a yearly bill with no choice yet asks once and passes through', () => {

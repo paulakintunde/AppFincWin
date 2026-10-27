@@ -173,6 +173,19 @@ describe('judge: one-off ladder (v3 §12)', () => {
     expect(r.legacyState).toBe('adjust');
   });
 
+  it('M-03 emergency_used omits months when the rebuild time is unknown', () => {
+    const r = judge(
+      input({
+        month: month({ monthLeft: mu(-2_000), typicalLeft: null }),
+        funds: funds(10_000),
+        purchase: purchase({ dayOne: mu(70_000), whole: mu(70_000), emergency: true, purpose: work, canUseEmergency: true }),
+      })
+    );
+    const f = r.facts.find((x) => x.code === 'emergency_used');
+    expect(f?.values).toEqual({ used: 60_000 });
+    expect(f?.values).not.toHaveProperty('months');
+  });
+
   it('an emergency need with no fund figure at all is not met from the fund', () => {
     const r = judge(
       input({
@@ -280,8 +293,10 @@ describe('judge: one-off ladder (v3 §12)', () => {
       { source: 'envelope', amount: 50_000 },
       { source: 'unspent_earlier', amount: 10_000 },
     ]);
-    expect(r.facts).toContainEqual({ code: 'envelope_used', values: { amount: 50_000 } });
+    expect(r.facts).toContainEqual({ code: 'envelope_used', values: { used: 50_000, envelopeId: 'e1' } });
     expect(r.facts).toContainEqual({ code: 'unspent_before_after', values: { before: 20_000, after: 10_000 } });
+    // M-03: the month the copy names
+    expect(r.facts.find((f) => f.code === 'month_left_after')?.values.month).toBe('2026-10');
   });
 });
 

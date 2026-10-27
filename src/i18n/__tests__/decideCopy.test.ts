@@ -280,6 +280,12 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       'decide.v3.notice.income_from_expected_last_year',
       'decide.v3.notice.income_from_expected_low',
       'decide.v3.missing.account_use_question_fund',
+      // Variants chosen by the UI (05.1-40)
+      'decide.v3.fact.emergency_used_rebuild',
+      'decide.v3.fact.line_crossed_percent',
+      'decide.v3.fact.line_crossed_money',
+      'decide.v3.fact.line_crossed_tenths',
+      'decide.v3.notice.month_heading_short_category',
       FOOTER_KEY,
     ];
     expect(keys.filter((k) => resolve(k) === undefined)).toEqual([]);

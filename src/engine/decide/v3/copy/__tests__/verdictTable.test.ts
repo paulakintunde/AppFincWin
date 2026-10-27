@@ -1,5 +1,15 @@
 import en from '../../../../../i18n/locales/en';
-import { FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NOTICE_KEYS, READINESS_KEYS, VERDICT_TABLE, verdictRowFor } from '../verdictTable';
+import {
+  FACT_KEYS,
+  FACT_VALUE_KEYS,
+  FOOTER_KEY,
+  MISSING_KEYS,
+  NOTICE_KEYS,
+  NOTICE_VALUE_KEYS,
+  READINESS_KEYS,
+  VERDICT_TABLE,
+  verdictRowFor,
+} from '../verdictTable';
 
 describe('verdict table (I22 one code one text)', () => {
   it('I22 one code one text: nine rows, no shared title key', () => {
@@ -59,6 +69,11 @@ describe('verdict table (I22 one code one text)', () => {
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');
+  });
+
+  it('M-03 FACT_VALUE_KEYS and NOTICE_VALUE_KEYS have one entry per code', () => {
+    expect(Object.keys(FACT_VALUE_KEYS).sort()).toEqual(Object.keys(FACT_KEYS).sort());
+    expect(Object.keys(NOTICE_VALUE_KEYS).sort()).toEqual(Object.keys(NOTICE_KEYS).sort());
   });
 
   it('every key resolves to a string in en.ts', () => {

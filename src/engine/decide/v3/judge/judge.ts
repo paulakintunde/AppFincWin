@@ -242,7 +242,7 @@ export function judge(j: JudgeInput): Result {
   const fromEnvelope = one.split.find((s) => s.source === 'envelope')?.amount ?? 0;
   const facts: Fact[] = [];
   if (one.split.length > 0) {
-    facts.push({ code: 'month_left_after', values: { left: month.monthLeft - fromMonth } });
+    facts.push({ code: 'month_left_after', values: { month: month.month, left: month.monthLeft - fromMonth } });
   }
   // What would leave unspent if it were bought: this month and earlier money, never the envelope or the fund.
   const unspentAfter = unspentValue === null ? null : mu(unspentValue - (purchase.dayOne - fromEnvelope - one.emergencyUsed));
@@ -250,11 +250,11 @@ export function judge(j: JudgeInput): Result {
     facts.push({ code: 'unspent_before_after', values: { before: unspentValue, after: mu(unspentValue - fromMonth - fromEarlier) } });
   }
   if (one.emergencyUsed > 0) {
-    facts.push({ code: 'emergency_used', values: { used: one.emergencyUsed, months: one.rebuildMonths } });
+    facts.push({ code: 'emergency_used', values: one.rebuildMonths === null ? { used: one.emergencyUsed } : { used: one.emergencyUsed, months: one.rebuildMonths } });
   } else if (funds.emergency !== null) {
     facts.push({ code: 'emergency_untouched', values: { amount: funds.emergency } });
   }
-  if (fromEnvelope > 0) facts.push({ code: 'envelope_used', values: { amount: fromEnvelope } });
+  if (fromEnvelope > 0) facts.push({ code: 'envelope_used', values: { used: fromEnvelope, envelopeId: purchase.envelopeId } });
   facts.push(...j.purchaseFacts);
   if (variant === 'low_month' && month.low !== null) {
     // The low-month clause as a fact (v3 §12 #7, #22): the tight month, its leftover, and the monthly cost it cannot carry.

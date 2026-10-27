@@ -66,6 +66,7 @@ describe('buildPurchase', () => {
       expect(b.purchase.monthly).toBe(8700);
       expect(b.purchase.schedule?.source).toBe('quoted');
       expect(b.facts.some((f) => f.code === 'quoted_differs')).toBe(true);
+      expect(b.facts.find((f) => f.code === 'quoted_differs')?.values).toEqual({ quoted: 8700, computed: 8500 });
       expect(b.quoted.kind).toBe('differs');
     });
     it('quote with no rate uses the quote and reports the implied rate', () => {
@@ -74,6 +75,10 @@ describe('buildPurchase', () => {
       expect(b.purchase.schedule?.source).toBe('from_quote');
       expect(b.reasons).toContain('quote_used_no_rate');
       expect(b.facts.some((f) => f.code === 'implied_rate')).toBe(true);
+      // M-03: a readable percentage, never a scaled bigint
+      const rate = b.facts.find((f) => f.code === 'implied_rate')?.values.rate;
+      expect(rate).toMatch(/^\d+(\.\d+)?$/);
+      expect(Number(rate)).toBeLessThan(1000);
     });
   });
 
@@ -240,7 +245,7 @@ describe('buildPurchase', () => {
 
   it('a quote implying a rate above the maximum is reported as above_max', () => {
     const b = must(checkPlan(204000, { count: 24, apr: null, firstPayment: { kind: 'one_period' }, quotedPayment: mu(1_000_000) }));
-    expect(b.facts.find((f) => f.code === 'implied_rate')?.values).toEqual({ apr: 'above_max' });
+    expect(b.facts.find((f) => f.code === 'implied_rate')?.values).toEqual({ rate: '9999' });
   });
 
   it('a quote within tolerance of the worked-out payment matches and adds no fact', () => {

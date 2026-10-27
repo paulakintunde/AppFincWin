@@ -123,5 +123,67 @@ export const READINESS_KEYS = Object.freeze({
   envelopes_unconfirmed: 'decide.v3.readiness.envelopes_unconfirmed',
 } as const satisfies Record<ReadinessCode, string>);
 
+/**
+ * M-03 (05.1-40): the value keys each fact and notice emits, one settled set per code. The en.ts copy reads exactly
+ * these (directly, through a `_variant` string the UI picks, or through a COPY_RESOLVERS id the UI turns into a name),
+ * and copyContract.test.ts keeps the two in step in both directions. Runtime source of truth; 05.3 builds on it.
+ */
+export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Object.freeze({
+  month_left_after: ['month', 'left'],
+  unspent_before_after: ['before', 'after'],
+  emergency_untouched: ['amount'],
+  emergency_used: ['used', 'months'], // months is omitted when the rebuild time is unknown
+  envelope_used: ['used', 'envelopeId'],
+  line_crossed: ['lineId', 'kind', 'unit', 'value', 'limit'], // unit: 'percent' | 'money' | 'tenths'
+  quoted_differs: ['quoted', 'computed'],
+  implied_rate: ['rate'], // readable decimal string, e.g. "22.9"
+  deferred_interest_term: [],
+  at_todays_rate: ['currency'],
+  low_month: ['month', 'left', 'monthly'],
+  lean_bridge: ['monthly', 'leanLeft', 'shortfall', 'months', 'until', 'bridge', 'after'],
+  unspent_held_back: ['amount'],
+  lean_months_judged: ['from', 'to', 'leanLeft'],
+  low_month_judged: ['month', 'left'],
+  rests_on_your_answer: ['monthly', 'months'],
+});
+
+export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({
+  typical_short: ['short'], // positive
+  month_heading_short: ['month', 'short', 'categoryId', 'largest'], // categoryId and largest are omitted with no largest line
+  unspent_stale: ['days'],
+  unspent_drifted: ['suggested'],
+  emergency_not_set: [],
+  unsaved_changes: ['count'],
+  yearly_bill_choice_needed: ['seriesId'],
+  month_looks_under_logged: ['month'],
+  income_kind_unmarked: [],
+  from_your_figures: [],
+  income_from_expected: ['month', 'amount', 'source', 'sameMonth'], // source: 'confirmed' | 'last_year' | 'low'; sameMonth only for 'last_year'
+  pay_capped_expected: ['capped'],
+  same_season_compared: ['lastYear', 'everyday'],
+  history_window_12: ['months'],
+  income_volatile: ['payment', 'periods', 'monthly', 'months', 'leanFrom', 'leanTo', 'leanLeft'],
+  envelope_location_assumed: ['count'],
+  unexplained_money: ['amount'],
+  account_use_unknown: ['accountId', 'count'],
+  pay_not_seen: ['amount', 'date'],
+  pay_counted_missed: ['amount', 'date'],
+  fund_account_unknown: ['amount'],
+});
+
+/** An id the engine emits that the UI resolves to a name; the copy placeholder is the value. */
+export const COPY_RESOLVERS = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account' } as const;
+
+/** Keys that pick a copy variant or identify a line; they need no placeholder of their own. */
+export const DISCRIMINATOR_KEYS = ['lineId', 'kind', 'unit', 'source'] as const;
+
+/** D-48, D-49, D-54, D-58: a missing code's copy reads its placeholder values from this notice. */
+export const MISSING_VALUE_SOURCE = {
+  volatile_cover_question: 'income_volatile',
+  unexplained_money_question: 'unexplained_money',
+  account_use_question: 'account_use_unknown',
+  pay_arrival_question: 'pay_not_seen',
+} as const satisfies Partial<Record<MissingCode, NoticeCode>>;
+
 /** The footer sits outside en.decide on purpose (owner wording, 2026-10-26). */
 export const FOOTER_KEY = 'legal.decideFooter';

@@ -82,7 +82,7 @@ describe('lines', () => {
 
   it('D-10 example', () => {
     expect(evaluateLines({ lines: [debtLine(true)] }, ctx())).toEqual([
-      { code: 'line_crossed', values: { lineId: 'a', kind: 'debt_share', value: 41, line: '36' } },
+      { code: 'line_crossed', values: { lineId: 'a', kind: 'debt_share', unit: 'percent', value: 41, limit: '36' } },
     ]);
   });
 
@@ -108,9 +108,9 @@ describe('lines', () => {
     ];
     const facts = evaluateLines({ lines }, c);
     expect(facts.map((f) => f.values.lineId)).toEqual(['b', 'c', 'd', 'e']);
-    expect(facts[0]!.values).toMatchObject({ value: 60_000, line: 50_000 });
-    expect(facts[2]!.values).toMatchObject({ value: 12, line: '10' });
-    expect(facts[3]!.values).toMatchObject({ value: 5_000, line: 10_000 });
+    expect(facts[0]!.values).toMatchObject({ unit: 'money', value: 60_000, limit: 50_000 });
+    expect(facts[2]!.values).toMatchObject({ unit: 'percent', value: 12, limit: '10' });
+    expect(facts[3]!.values).toMatchObject({ unit: 'money', value: 5_000, limit: 10_000 });
     const none = [
       own('b', { kind: 'category_monthly_cap', categoryId: 'food', cap: mu(60_000) }),
       own('c', { kind: 'single_purchase_cap', cap: mu(90_000) }),
@@ -127,7 +127,7 @@ describe('lines', () => {
     expect(evaluateLines({ lines: [own('d', { kind: 'category_income_share', categoryId: 'other', pct: percent('1') })] }, c)).toEqual([]);
     // food is not in categoryMonthly: its typical spend counts as zero
     const facts = evaluateLines({ lines: [own('d', { kind: 'category_income_share', categoryId: 'food', pct: percent('1') })] }, c);
-    expect(facts[0]!.values).toMatchObject({ value: 6, line: '1' });
+    expect(facts[0]!.values).toMatchObject({ value: 6, limit: '1' });
     const same = evaluateLines({ lines: [own('x', { kind: 'single_purchase_cap', cap: mu(1) }), own('x', { kind: 'single_purchase_cap', cap: mu(2) })] }, c);
     expect(same).toHaveLength(2);
   });
@@ -136,7 +136,7 @@ describe('lines', () => {
     const line: LimitLine = { id: 'h', on: true, source: 'builtin', spec: { kind: 'housing_share', pct: percent('28') } };
     const m = month({ housingMonthly: mu(120_000) });
     expect(evaluateLines({ lines: [line] }, ctx({ month: m, isHousing: false }))).toEqual([]);
-    expect(evaluateLines({ lines: [line] }, ctx({ month: m, isHousing: true }))[0]!.values).toMatchObject({ value: 30, line: '28' });
+    expect(evaluateLines({ lines: [line] }, ctx({ month: m, isHousing: true }))[0]!.values).toMatchObject({ value: 30, limit: '28' });
   });
 
   it('unsecured_multiple counts the financed amount only when unsecured', () => {
@@ -144,8 +144,37 @@ describe('lines', () => {
     const schedule = { financed: mu(6_100_000) } as unknown as Purchase['schedule'];
     const debts = [debt({ balance: mu(100_000), minimum: mu(0) })];
     const hit = evaluateLines({ lines: [line] }, ctx({ debts, purchase: purchase({ schedule }) }));
-    expect(hit[0]!.values).toMatchObject({ value: 12.4, line: 12 });
+    expect(hit[0]!.values).toMatchObject({ unit: 'tenths', value: 124, limit: 120 });
     expect(evaluateLines({ lines: [line] }, ctx({ debts, purchase: purchase({ schedule, secured: true }) }))).toEqual([]);
+  });
+
+  it('a cash purchase adds nothing to the debt share and facts sort by line id', () => {
+    expect(evaluateLines({ lines: [debtLine(true)] }, ctx({ purchase: purchase({ financed: false }) }))).toEqual([]);
+    const c = ctx();
+    const facts = evaluateLines(
+      { lines: [own('z', { kind: 'single_purchase_cap', cap: mu(1) }), own('m', { kind: 'single_purchase_cap', cap: mu(1) })] },
+      c,
+    );
+    expect(facts.map((f) => f.values.lineId)).toEqual(['m', 'z']);
+  });
+
+  it('L-07 the multiple is integer tenths, never a float', () => {
+    const line: LimitLine = { id: 'u', on: true, source: 'builtin', spec: { kind: 'unsecured_multiple', times: 12 } };
+    const schedule = { financed: mu(6_100_000) } as unknown as Purchase['schedule'];
+    const hit = evaluateLines({ lines: [line] }, ctx({ debts: [debt({ balance: mu(100_000), minimum: mu(0) })], purchase: purchase({ schedule }) }));
+    expect(Number.isInteger(hit[0]!.values.value)).toBe(true);
+  });
+
+  it('M-05 a fractional or negative multiple is reported and yields no fact, without throwing', () => {
+    const schedule = { financed: mu(6_100_000) } as unknown as Purchase['schedule'];
+    const c = ctx({ debts: [debt({ balance: mu(100_000), minimum: mu(0) })], purchase: purchase({ schedule }) });
+    for (const times of [2.5, -1, Number.NaN, Number.MAX_VALUE]) {
+      const limits = { lines: [own('u', { kind: 'unsecured_multiple', times })] };
+      expect(validateLimits(limits)).toContain('invalid_times');
+      expect(() => evaluateLines(limits, c)).not.toThrow();
+      expect(evaluateLines(limits, c)).toEqual([]);
+    }
+    expect(validateLimits({ lines: [own('u', { kind: 'unsecured_multiple', times: 0 })] })).not.toContain('invalid_times');
   });
 
   it('zero income gives no percentage fact', () => {

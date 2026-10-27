@@ -158,7 +158,7 @@ export function parseCheckV2(json: unknown): CheckV2 | null {
 }
 
 /** Exact decimal text of a scaled Percent, trailing zeros trimmed ("22.9", "0"). */
-function percentText(p: Percent): string {
+export function percentText(p: Percent): string {
   const whole = p / PERCENT_SCALE;
   const frac = (p % PERCENT_SCALE).toString().padStart(RATE_SCALE, '0').replace(/0+$/, '');
   return frac === '' ? whole.toString() : `${whole}.${frac}`;

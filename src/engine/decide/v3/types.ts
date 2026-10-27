@@ -80,6 +80,12 @@ export type MissingCode = 'no_income_figures' | 'unspent_not_confirmed' | 'recor
 export type ReasonCode = 'band_currency_fallback' | 'band_rate_missing' | 'typical_choice_defaulted' | 'custom_option_missing' | 'income_kind_unmarked' | 'missed_pay_excluded' | 'month_excluded_marked' | 'month_excluded_under_logged' | 'rough_figures_used' | 'everyday_override_used' | 'quote_used_no_rate' | 'exceeds_range' | 'legacy_upgraded' | 'legacy_method_mapped' | 'long_history_window' | 'same_season_spending' | 'expected_income_used' | 'lean_months_used' | 'thin_history_stricter' | 'volatile_cover_declined';
 export type NoticeCode = 'typical_short' | 'month_heading_short' | 'unspent_stale' | 'unspent_drifted' | 'emergency_not_set' | 'unsaved_changes' | 'yearly_bill_choice_needed' | 'month_looks_under_logged' | 'income_kind_unmarked' | 'from_your_figures' | 'income_from_expected' | 'pay_capped_expected' | 'same_season_compared' | 'history_window_12' | 'income_volatile' | 'envelope_location_assumed' | 'unexplained_money' | 'account_use_unknown' | 'pay_not_seen' | 'pay_counted_missed' | 'fund_account_unknown'; // from_your_figures: D-32
 export type FactCode = 'month_left_after' | 'unspent_before_after' | 'emergency_untouched' | 'emergency_used' | 'envelope_used' | 'line_crossed' | 'quoted_differs' | 'implied_rate' | 'deferred_interest_term' | 'at_todays_rate' | 'low_month' | 'lean_bridge' | 'unspent_held_back' | 'lean_months_judged' | 'low_month_judged' | 'rests_on_your_answer';
+// Value keys per code (M-03, 05.1-40). The runtime source is FACT_VALUE_KEYS and NOTICE_VALUE_KEYS in copy/verdictTable.ts;
+// copyContract.test.ts keeps them in step with the en.ts copy. In short:
+//   facts:   month_left_after {month, left}; unspent_before_after {before, after}; emergency_untouched {amount};
+//            emergency_used {used, months?}; envelope_used {used, envelopeId}; line_crossed {lineId, kind, unit, value, limit};
+//            quoted_differs {quoted, computed}; implied_rate {rate}; at_todays_rate {currency}; low_month {month, left, monthly}.
+//   notices: typical_short {short}; month_heading_short {month, short, categoryId?, largest?}; yearly_bill_choice_needed {seriesId}.
 export type CodeValues = Readonly<Record<string, number | string | null>>; // JSON-safe: no bigint
 export interface Notice { readonly code: NoticeCode; readonly values: CodeValues }
 export interface Fact { readonly code: FactCode; readonly values: CodeValues }

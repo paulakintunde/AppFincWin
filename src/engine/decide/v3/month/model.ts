@@ -87,16 +87,16 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
 
   const raw: Notice[] = [...typical.notices];
   if (typical.typicalLeft !== null && typical.typicalLeft < 0) {
-    raw.push({ code: 'typical_short', values: { amount: typical.typicalLeft } });
+    raw.push({ code: 'typical_short', values: { short: -typical.typicalLeft } });
   }
   if (tm.monthLeft < 0) {
     raw.push({
       code: 'month_heading_short',
-      values: {
-        amount: tm.monthLeft,
-        categoryId: tm.largestLine?.categoryId ?? null,
-        largest: tm.largestLine?.amount ?? null,
-      },
+      values:
+        // The category variant needs a name to say, so an uncategorised largest line is left out too.
+        tm.largestLine === null || tm.largestLine.categoryId === null
+          ? { month: tm.month, short: -tm.monthLeft }
+          : { month: tm.month, short: -tm.monthLeft, categoryId: tm.largestLine.categoryId, largest: tm.largestLine.amount },
     });
   }
   if (reasonSet.has('income_kind_unmarked')) raw.push({ code: 'income_kind_unmarked', values: {} });
