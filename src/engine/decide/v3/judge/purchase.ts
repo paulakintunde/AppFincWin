@@ -17,6 +17,7 @@ import { minorFromBigInt, ZERO_PERCENT } from '../../../payoff/types';
 import { myPart, resolveShare, type ResolvedShare } from '../../share';
 import { purchaseFlows } from '../cash/path';
 import type { DatedFlow } from '../cash/path';
+import { percentText } from '../adapters/inputsV2';
 import { addDays } from '../dates';
 import { countFromTerm, monthlyEquivalentOf } from '../plan/cadence';
 import { planCard, salesTaxOf, type PlanCard } from '../plan/planCard';
@@ -39,6 +40,9 @@ import { canUseEmergency, resolveItemType } from './options';
 import { questionSpec } from './presetQuestions';
 
 const FN = 'buildPurchase';
+
+/** A quote whose implied rate is beyond the largest rate the engine solves for reads as this plain figure. */
+const ABOVE_MAX_RATE_TEXT = '9999';
 
 export interface PurchaseBuild {
   readonly purchase: Purchase | null;
@@ -211,7 +215,7 @@ function buildResolved(
       reasons.push('quote_used_no_rate');
       // A quote whose payments cannot cover the financed amount has no rate: terms are inconsistent, not scoreable.
       if (quoted.impliedApr === null) return nothing(['plan_rate_missing'], reasons, facts);
-      facts.push({ code: 'implied_rate', values: { apr: quoted.impliedApr === 'above_max' ? 'above_max' : String(quoted.impliedApr) } });
+      facts.push({ code: 'implied_rate', values: { rate: quoted.impliedApr === 'above_max' ? ABOVE_MAX_RATE_TEXT : percentText(quoted.impliedApr) } });
       sched = withPayment(sched, BigInt(quoted.quoted), 'from_quote');
     } else if (quoted.kind === 'matches' || quoted.kind === 'differs') {
       const scored = scoredPayment(sched.payment, quoted.quoted);
@@ -219,7 +223,7 @@ function buildResolved(
       if (quoted.kind === 'differs') {
         facts.push({
           code: 'quoted_differs',
-          values: { computed: quoted.computed, quoted: quoted.quoted, gap: quoted.gap, direction: quoted.direction },
+          values: { quoted: quoted.quoted, computed: quoted.computed },
         });
       }
     }
