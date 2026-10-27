@@ -7,6 +7,8 @@
  */
 import { percent } from '../../../../payoff/types';
 import { evaluate } from '../../evaluate';
+import type { ReadyBy } from '../../types';
+import { loadPersons, toV3Inputs } from '../golden/adapter';
 import { checkOf, inputsOfPerson, type CheckShape } from './arbitraries';
 
 const inputs = inputsOfPerson('priya', { everydayPct: 50, balancePct: 91, unspentMode: 'keep', unspentPct: 0, emergency: null, extras: [] });
@@ -32,5 +34,45 @@ describe('I13 regression: payday never hides a ladder that still fails', () => {
     expect(lo.result.variant).toBe('not_covered');
     expect(lo.result.readyBy).toEqual({ kind: 'month', month: '2026-12' });
     expect(hi.result.readyBy).toEqual({ kind: 'month', month: '2026-12' });
+  });
+});
+
+/**
+ * I13 residual (debug note, "Residual"): a not_covered cash check used to report the ladder month alone, so a dearer
+ * price could read "2026-11" while a cheaper one waiting for payday read "2026-11-28". Tia, pay on the 28th, asOf after
+ * October's payday, so the next pay is 2026-11-28. The cash check opens on a stated everyday account (D-54).
+ */
+describe('I13 late-month pay date (debug note residual)', () => {
+  const base = loadPersons().find((p) => p.id === 'tia');
+  if (!base) throw new RangeError('no fixture person tia');
+  const person = {
+    ...base,
+    asOf: '2026-10-29',
+    series: base.series.map((s) => (s.id === 'tia-pay' ? { ...s, amount: 700_000 } : s)),
+    accounts: [{ id: 'tia-everyday', balance: 420_000, use: { kind: 'everyday' as const } }],
+    unspent: { amount: 250_000, at: '2026-10-29' },
+    months: base.months.map((m) => {
+      const lines = m.lines.map((l) => (l.seriesId === 'tia-pay' ? { ...l, amount: 700_000 } : l));
+      return m.month === '2026-10'
+        ? { ...m, lines: [...lines, { id: 'tia-pay-10', date: '2026-10-28', amount: 700_000, role: 'income' as const, seriesId: 'tia-pay' }] }
+        : { ...m, lines };
+    }),
+  };
+  const lateInputs = toV3Inputs(person, { custom: { itemTypes: [], purposes: [], cadences: [], incomeKinds: [] } });
+  const once = (price: number) => evaluate(lateInputs, checkOf(price, { plan: null, purpose: null, emergency: false }));
+  const key = (r: ReadyBy | null): string => (r === null ? '9999-99-99' : r.kind === 'date' ? r.date : `${r.month}-01`);
+
+  const lo = once(640_000);
+  const hi = once(660_000);
+
+  it('the case reaches both branches (cheaper waits for payday, dearer is not covered)', () => {
+    expect(lo.cash.kind).toBe('payday');
+    expect(hi.cash.kind).toBe('not_covered');
+  });
+
+  it('the dearer not_covered answer is dated at the pay date, never before the cheaper payday', () => {
+    expect(lo.result.readyBy).toEqual({ kind: 'date', date: '2026-11-28' });
+    expect(hi.result.readyBy).toEqual({ kind: 'date', date: '2026-11-28' });
+    expect(key(hi.result.readyBy) >= key(lo.result.readyBy)).toBe(true);
   });
 });

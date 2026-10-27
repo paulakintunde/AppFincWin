@@ -191,6 +191,11 @@ describe('cashCheck', () => {
     expect(cashCheck(tia(35000), '2030-01-01').kind).toBe('not_covered');
   });
 
+  it('not covered carries the next pay date (I13 residual), null when there is none', () => {
+    expect(cashCheck(tia(5_000_000), '2026-10-28')).toMatchObject({ kind: 'not_covered', payDate: '2026-10-28' });
+    expect(cashCheck(tia(35000), null)).toMatchObject({ kind: 'not_covered', payDate: null });
+  });
+
   it('I12 less cash never helps: a lower opening never turns a shortfall into ok', () => {
     fc.assert(
       fc.property(
