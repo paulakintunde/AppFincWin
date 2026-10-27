@@ -10,6 +10,7 @@ import {
   compareDates,
   dayOfMonth,
   firstOfMonth,
+  isValidLocalDate,
   daysBetween,
   daysInYearMonth,
   yearMonthOf,
@@ -97,5 +98,13 @@ describe('v3 dates', () => {
     expect(() =>
       cadenceDatesBetween('2000-01-01', { unit: 'week', every: 1 }, '2900-01-01', '2901-01-01', null)
     ).toThrow('window too far');
+  });
+
+  it('L-01 isValidLocalDate accepts real dates only', () => {
+    expect(isValidLocalDate('2026-02-28')).toBe(true);
+    expect(isValidLocalDate('2024-02-29')).toBe(true);
+    expect(isValidLocalDate('2026-02-31')).toBe(false);
+    expect(isValidLocalDate('2026-13-01')).toBe(false);
+    expect(isValidLocalDate('26-01-01')).toBe(false);
   });
 });

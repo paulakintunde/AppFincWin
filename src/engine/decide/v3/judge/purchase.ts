@@ -128,6 +128,10 @@ function buildResolved(
     }
   }
   if (missing.length > 0 || check.price === null) return nothing(missing);
+  // L-01: a deferred first payment dated before today asks for a new date; it is not an out-of-range schedule.
+  if (pay.mode === 'plan' && pay.firstPayment?.kind === 'deferred' && pay.firstPayment.firstDate < ctx.asOf) {
+    return nothing(['first_payment_passed']);
+  }
 
   // Whole value, full (before my share): price + tax + one-off fees.
   const tax = salesTaxOf(check.price, check.taxPercent);

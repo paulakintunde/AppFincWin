@@ -2,12 +2,17 @@
 // RecurringFreq (every N weeks or months, D-19) live here so recurring/schedule.ts, which is SQL-mirrored,
 // never changes.
 import { daysInMonth, MAX_OCCURRENCES_PER_CALL } from '../../recurring/schedule';
-import { isValidLocalDate } from '../../time/localDate';
+import { isValidLocalDate as isValidCalendarDate } from '../../time/localDate';
 
 /** Structurally identical to Cadence in the v3 types; kept local so this leaf has no types import. */
 export interface CadenceLike {
   readonly unit: 'week' | 'month';
   readonly every: number;
+}
+
+/** L-01: true only for a real calendar date written YYYY-MM-DD ('2026-02-31' is false). */
+export function isValidLocalDate(s: string): boolean {
+  return isValidCalendarDate(s);
 }
 
 const MS_PER_DAY = 86_400_000;

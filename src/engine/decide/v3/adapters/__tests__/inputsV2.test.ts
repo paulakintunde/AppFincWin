@@ -50,7 +50,8 @@ const checkArb: fc.Arbitrary<CheckV2> = fc.record({
   value: fc.record({ earnsMonthly: fc.option(money, { nil: null }), savesMonthly: fc.option(money, { nil: null }), useYears: fc.option(fc.integer({ min: 0, max: 50 }), { nil: null }), cheaperPrice: fc.option(money, { nil: null }) }),
   share,
   foreign: fc.option(fc.constant({ currency: 'EUR' as CurrencyCode, atTodaysRate: true as const }), { nil: null }),
-  layerAnswers: fc.constant({ L2: 'yes', n: 3 } as Record<string, unknown>),
+  layerAnswers: fc.constant({ L2: 'yes', 'L3.n': 3 } as Record<string, unknown>),
+  volatileCover: fc.constantFrom(true, false, null),
 });
 
 describe('parseCheckV2', () => {
@@ -100,6 +101,26 @@ describe('parseCheckV2', () => {
     expect(c.share).toEqual({ kind: 'personal' });
     expect(c.foreign).toBeNull();
     expect(c.extras).toEqual({ a: 0 });
+  });
+
+  it('L-01 an impossible stored date drops the first payment', () => {
+    const c = parseCheckV2({ v: 2, pay: { mode: 'plan', firstPayment: { kind: 'deferred', firstDate: '2026-02-31', interestDuringPause: true } } })!;
+    expect(c.pay).toMatchObject({ mode: 'plan', firstPayment: null });
+  });
+
+  it('L-02 layerAnswers keys without a layer prefix are dropped, never thrown', () => {
+    const c = parseCheckV2({ v: 2, layerAnswers: { 'L2.x': 1, stray: 2 } })!;
+    expect(c.layerAnswers).toEqual({ 'L2.x': 1 });
+    expect(parseCheckV2({ v: 2, layerAnswers: 5 })!.layerAnswers).toEqual({});
+  });
+
+  it('D-48 volatileCover is true, false or null and round trips', () => {
+    expect(parseCheckV2({ v: 2, volatileCover: true })!.volatileCover).toBe(true);
+    expect(parseCheckV2({ v: 2, volatileCover: false })!.volatileCover).toBe(false);
+    expect(parseCheckV2({ v: 2 })!.volatileCover).toBeNull();
+    expect(parseCheckV2({ v: 2, volatileCover: 'yes' })!.volatileCover).toBeNull();
+    const c = parseCheckV2({ v: 2, volatileCover: false })!;
+    expect(parseCheckV2(JSON.parse(JSON.stringify(toStoredV2(c))))!.volatileCover).toBe(false);
   });
 
   it('an unknown split rule resets the share to personal', () => {
