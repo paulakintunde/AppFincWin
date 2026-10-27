@@ -19,7 +19,7 @@ import {
   personById,
   type FixtureScenario,
 } from '../../__tests__/golden/adapter';
-import { checkOnce, checkPlan, inputsOf, v3Line, v3Series } from '../../__tests__/helpers/fixtures';
+import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series } from '../../__tests__/helpers/fixtures';
 import {
   COPY_RESOLVERS,
   DISCRIMINATOR_KEYS,
@@ -40,10 +40,7 @@ const NOT_YET_EMITTED: readonly string[] = [
   'unspent_held_back',
   'lean_months_judged',
   'low_month_judged',
-  'income_from_expected',
   'pay_capped_expected',
-  'same_season_compared',
-  'history_window_12',
   'income_volatile',
   'rests_on_your_answer',
   'envelope_location_assumed',
@@ -175,6 +172,29 @@ function buildCorpus(): Emitted[] {
     },
     checkOnce(10_000)
   );
+  // D-46: variable and seasonal earners. 14 full months of records, asOf in December (a seasonal earner with 12+ months
+  // is judged against last December), plus a confirmed figure and a variable earner.
+  const gigPay = v3Series({ id: 'gig', role: 'pay', cadence: { unit: 'month', every: 1 }, anchorDate: '2025-01-01', amount: 70_000 });
+  const gigMonths = Array.from({ length: 14 }, (_, i) => {
+    const t = 9 + i; // 2025-10 ...
+    const m = `${2025 + Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`;
+    const pay = ['05', '06', '07', '08', '09'].includes(m.slice(5)) ? 145_000 : 70_000;
+    return monthOf(m, [
+      v3Line({ id: `gp-${m}`, date: `${m}-01`, amount: pay, role: 'income', seriesId: 'gig' }),
+      v3Line({ id: `ge-${m}`, date: `${m}-15`, amount: m.endsWith('-12') ? 50_000 : 30_000 }),
+    ]);
+  });
+  const gig = (pattern: 'seasonal' | 'variable', over: Partial<V3Inputs> = {}): V3Inputs =>
+    inputsOf({
+      asOf: '2026-12-10',
+      series: [gigPay],
+      months: [...gigMonths, monthOf('2026-12', [], { full: false })],
+      profile: { types: ['salary'], variable: null, steady: null, billsHorizonMonths: null, pattern },
+      ...over,
+    });
+  collect(out, gig('seasonal'), checkOnce(10_000)); // history_window_12, income_from_expected (last_year), same_season_compared
+  collect(out, gig('variable', { months: [...gigMonths.slice(2), monthOf('2026-12', [], { full: false })] }), checkOnce(10_000)); // source: low
+  collect(out, gig('variable', { expectedIncome: [{ month: '2026-12', amount: mu(120_000), at: '2026-12-01' }] }), checkOnce(10_000)); // source: confirmed
   return out;
 }
 

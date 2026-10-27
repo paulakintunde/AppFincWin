@@ -61,6 +61,9 @@ export interface TypicalInput {
   readonly setAside: MinorUnits;
   readonly everydayOverride: MinorUnits | null;
   readonly rough: RoughFigures | null; // D-32: used only when no eligible history month remains
+  readonly windowMonths?: number; // D-33: months of history used; default V3_HISTORY_MONTHS (6)
+  /** D-36: recorded income per month. When given (variable or seasonal), the typical income and every low-month candidate come from the months' own income. */
+  readonly incomeByMonth?: ReadonlyMap<string, bigint> | null;
 }
 
 export interface TypicalResult {
@@ -69,6 +72,8 @@ export interface TypicalResult {
   readonly recurringBills: MinorUnits;
   readonly low: LowMonth | null;
   readonly monthsUsed: readonly string[];
+  readonly used: readonly EverydayMonth[]; // the window months, newest first
+  readonly typicalIncome: MinorUnits; // input.typicalIncome, or the median recorded income of the window (D-36)
   readonly categoryMonthly: readonly { readonly categoryId: string; readonly amount: MinorUnits }[];
   readonly housingMonthly: MinorUnits;
   readonly notices: readonly Notice[];
@@ -134,8 +139,15 @@ export function typicalOf(input: TypicalInput): TypicalResult {
   const used = kept
     .slice()
     .sort((a, b) => cmp(b.month, a.month))
-    .slice(0, V3_HISTORY_MONTHS);
+    .slice(0, input.windowMonths ?? V3_HISTORY_MONTHS); // D-33
   const monthsUsed = used.map((m) => m.month).sort(cmp);
+
+  // D-36: a variable or seasonal earner's typical income is the median of the window's recorded income, and each
+  // low-month candidate uses its own month's income (a month with no recorded income is 0).
+  const byMonth = input.incomeByMonth ?? null;
+  const incomeOf = (month: string): bigint => (byMonth as ReadonlyMap<string, bigint>).get(month) ?? 0n;
+  const typicalIncomeBig =
+    byMonth !== null && used.length > 0 ? medianHalfUp(used.map((m) => incomeOf(m.month))) : BigInt(input.typicalIncome);
 
   // E: override first, then the median of real months, then rough figures (D-32).
   let eBig: bigint | null = null;
@@ -157,7 +169,7 @@ export function typicalOf(input: TypicalInput): TypicalResult {
     const r = input.rough;
     typicalLeftBig = BigInt(r.income) - BigInt(r.expenses) - BigInt(r.debt) - BigInt(r.saving) - BigInt(r.invest);
   } else if (eBig !== null) {
-    typicalLeftBig = BigInt(input.typicalIncome) - bills - eBig - BigInt(input.setAside);
+    typicalLeftBig = typicalIncomeBig - bills - eBig - BigInt(input.setAside);
   }
 
   // Low month (UP 4.3): second-lowest real month, clamped so it never sits above the typical month (I15).
@@ -166,7 +178,7 @@ export function typicalOf(input: TypicalInput): TypicalResult {
     const left = used
       .map((m) => ({
         month: m.month,
-        left: BigInt(input.typicalIncome) - bills - BigInt(m.everyday) - BigInt(input.setAside),
+        left: (byMonth !== null ? incomeOf(m.month) : typicalIncomeBig) - bills - BigInt(m.everyday) - BigInt(input.setAside),
       }))
       .sort((a, b) => (a.left < b.left ? -1 : a.left > b.left ? 1 : cmp(a.month, b.month)));
     const pick = left[left.length >= 3 ? LOW_MONTH_RANK - 1 : 0] as { month: string; left: bigint };
@@ -192,6 +204,8 @@ export function typicalOf(input: TypicalInput): TypicalResult {
     recurringBills,
     low,
     monthsUsed,
+    used,
+    typicalIncome: minorFromBigInt(typicalIncomeBig, 'typicalOf'),
     categoryMonthly,
     housingMonthly,
     notices,

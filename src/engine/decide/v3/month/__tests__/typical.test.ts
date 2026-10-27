@@ -287,3 +287,46 @@ describe('typicalOf', () => {
     expect(typicalOf(input({ series })).recurringBills).toBe(0);
   });
 });
+
+describe('typicalOf: window and recorded income (05.1-43)', () => {
+  const MONTHS12 = ['2025-10', '2025-11', '2025-12', '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09'];
+  const everydays = [20000, 20000, 40000, 20000, 20000, 20000, 20000, 20000, 20000, 20000, 20000, 20000];
+  const history12 = MONTHS12.map((m, i) => everydayMonth(m, everydays[i] as number));
+  const incomes = new Map<string, bigint>(MONTHS12.map((m, i) => [m, i < 7 ? 70000n : 145000n]));
+
+  it('D-33 windowMonths widens the history used; the default stays 6', () => {
+    expect(typicalOf(input({ history: history12 })).monthsUsed).toHaveLength(6);
+    const wide = typicalOf(input({ history: history12, windowMonths: 12 }));
+    expect(wide.monthsUsed).toEqual(MONTHS12);
+    expect(wide.used).toHaveLength(12);
+    expect(wide.used[0]?.month).toBe('2026-09'); // newest first
+  });
+
+  it('D-36 with recorded income the typical income is the window median and each low candidate uses its own income', () => {
+    const r = typicalOf(input({ history: history12, windowMonths: 12, incomeByMonth: incomes, setAside: mu(0) }));
+    // sorted incomes: 7 x 70000 then 5 x 145000; median of the 6th and 7th = 70000
+    expect(r.typicalIncome).toBe(70000);
+    expect(r.e).toBe(20000);
+    expect(r.typicalLeft).toBe(50000);
+    // lefts: Dec 70000-40000 = 30000 (lowest), then 70000-20000 = 50000 x6, then 125000 x5: second-lowest 50000, clamped to typicalLeft
+    expect(r.low).toEqual({ left: 50000, month: '2025-10', reason: 'second_lowest' });
+  });
+
+  it('D-36 a window month with no recorded income counts as income 0', () => {
+    const r = typicalOf(input({ history: history12.slice(9), windowMonths: 12, incomeByMonth: new Map(), setAside: mu(0) }));
+    expect(r.typicalIncome).toBe(0);
+    expect(r.typicalLeft).toBe(-20000);
+    expect(r.low?.left).toBe(-20000);
+  });
+
+  it('D-36 a steady earner (no income map) keeps the supplied typical income', () => {
+    const r = typicalOf(input({ history: history12 }));
+    expect(r.typicalIncome).toBe(400000);
+  });
+
+  it('D-36 an income map with no usable month keeps the supplied typical income', () => {
+    const r = typicalOf(input({ incomeByMonth: new Map(), windowMonths: 12 }));
+    expect(r.typicalIncome).toBe(400000);
+    expect(r.low).toBeNull();
+  });
+});
