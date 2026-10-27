@@ -92,18 +92,39 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
     driftThreshold: inputs.thresholds.unspentDrift,
     heldBridges: inputs.heldBridges ?? [],
   });
+  // D-50: money in the D-54 spending balance that neither the records nor the user's answers explain. `suggested` already
+  // holds back bills still due, the Erest still to come (v3 4.4) and put-aside money (D-55), so those are explained.
+  // Only the part above the confirmed figure counts; the other direction stays the drift notice (D-30). The threshold and
+  // the question are 05.1-44's (needsInput reads funds.unexplained against thresholds.unspentDrift).
+  const answer = inputs.unexplainedAnswer;
+  const validAnswer = answer != null && Number.isSafeInteger(answer.amount) && answer.amount >= 0 ? answer : null;
+  let unexplained: MinorUnits | undefined;
+  let ringFenced = sp.ringFenced;
+  let shown = unspent;
+  if (unspent !== null) {
+    const raw = Math.max(0, suggested - unspent.value);
+    const covered = validAnswer === null ? 0 : Math.min(validAnswer.amount, raw);
+    unexplained = minorUnits(raw - covered);
+    if (validAnswer !== null && validAnswer.use === 'spare') {
+      // only spare money counts toward a purchase (unspentState always sets available)
+      shown = { ...unspent, available: minorUnits((unspent.available as MinorUnits) + covered) };
+    } else {
+      ringFenced = minorUnits(ringFenced + covered);
+    }
+  }
   return {
     balance: inputs.balance,
     suggested,
-    unspent,
+    unspent: shown,
     emergency,
     envelopesSaved: env.saved,
     envelopesMonthly: env.monthly,
     ownEnvelope: ownEnvelope(inputs.envelopes, envelopeId),
     spending: sp.spending,
-    ringFenced: sp.ringFenced,
+    ringFenced,
     envelopesAssumedInside: sp.envelopesAssumedInside,
     unstatedAccounts: sp.unstatedAccounts,
     fundUnlinked: sp.fundUnlinked,
+    ...(unexplained === undefined ? {} : { unexplained }),
   };
 }

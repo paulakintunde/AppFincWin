@@ -213,4 +213,66 @@ describe('buildFunds', () => {
     expect(moved.suggested).toBe(anchor - 100_000);
     expect(moved.unspent?.drifted).toBe(false);
   });
+
+  it('D-38 held-back bridges reach the unspent figure: available = value - held back, drift unchanged', () => {
+    const accounts = [acct('e', 500_000, { kind: 'everyday' })];
+    const s = fundsOf({ accounts }).suggested;
+    const f = fundsOf({ accounts, unspent: { amount: s, at: '2026-10-01' }, heldBridges: [{ id: 'b', amount: mu(30_000) }] });
+    expect(f.unspent?.available).toBe(s - 30_000);
+    expect(f.unspent?.breakdown.heldBack).toBe(30_000);
+    expect(f.unspent?.drifted).toBe(false);
+  });
+
+  describe('D-50 unexplained money and the stored answer', () => {
+    const accounts = [acct('e', 500_000, { kind: 'everyday' })];
+    const suggestedNow = fundsOf({ accounts }).suggested;
+    const at = (over: Partial<V3Inputs>) => fundsOf({ accounts, unspent: { amount: mu(suggestedNow - 200_000), at: '2026-10-01' }, ...over });
+
+    it('D-50 no answer: the gap is unexplained and available is unchanged', () => {
+      const f = at({});
+      expect(f.unexplained).toBe(200_000);
+      expect(f.unspent?.available).toBe(f.unspent?.value);
+    });
+
+    it('D-50 a spare answer covers the gap and adds to available', () => {
+      const f = at({ unexplainedAnswer: { amount: mu(200_000), use: 'spare', at: '2026-10-01' } });
+      expect(f.unexplained).toBe(0);
+      expect(f.unspent?.available).toBe((f.unspent?.value ?? 0) + 200_000);
+    });
+
+    it('D-50 spare plus held-back bridges: available = value - held back + covered', () => {
+      const f = at({ heldBridges: [{ id: 'a', amount: mu(10_000) }], unexplainedAnswer: { amount: mu(50_000), use: 'spare', at: '2026-10-01' } });
+      expect(f.unexplained).toBe(150_000);
+      expect(f.unspent?.available).toBe((f.unspent?.value ?? 0) - 10_000 + 50_000);
+    });
+
+    it('D-50 a ring-fenced answer lowers the gap, grows ringFenced and never counts', () => {
+      const base = at({});
+      const f = at({ unexplainedAnswer: { amount: mu(150_000), use: 'someone_elses', at: '2026-10-01' } });
+      expect(f.unexplained).toBe(50_000);
+      expect(f.ringFenced).toBe((base.ringFenced ?? 0) + 150_000);
+      expect(f.unspent?.available).toBe(f.unspent?.value);
+    });
+
+    it('D-50 an answer larger than the gap only covers the gap', () => {
+      const f = at({ unexplainedAnswer: { amount: mu(900_000), use: 'envelope_or_goal', at: '2026-10-01' } });
+      expect(f.unexplained).toBe(0);
+    });
+
+    it('D-50 suggested below the confirmed figure gives no unexplained money', () => {
+      const f = fundsOf({ accounts, unspent: { amount: mu(suggestedNow + 50_000), at: '2026-10-01' } });
+      expect(f.unexplained).toBe(0);
+    });
+
+    it('D-50 unspent not confirmed: unexplained is undefined', () => {
+      expect(fundsOf({ accounts }).unexplained).toBeUndefined();
+    });
+
+    it('D-50 an invalid answer is ignored', () => {
+      for (const amount of [-1, 1.5]) {
+        const f = at({ unexplainedAnswer: { amount: amount as never, use: 'spare', at: '2026-10-01' } });
+        expect(f.unexplained).toBe(200_000);
+      }
+    });
+  });
 });
