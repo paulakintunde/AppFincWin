@@ -41,6 +41,13 @@ describe('buildPurchase', () => {
     expect(must(checkOnce(100000, { share: even2 })).purchase.whole).toBe(50000);
   });
 
+  it('D-48 the volatile cover answer is copied from the check (true, false, null; absent is null)', () => {
+    expect(must(checkOnce(100000, { volatileCover: true })).purchase.volatileCover).toBe(true);
+    expect(must(checkOnce(100000, { volatileCover: false })).purchase.volatileCover).toBe(false);
+    expect(must(checkOnce(100000, { volatileCover: null })).purchase.volatileCover).toBeNull();
+    expect(must(checkOnce(100000)).purchase.volatileCover).toBeNull();
+  });
+
   it('whole value adds tax and one-off fees', () => {
     const p = must(checkOnce(100000, { taxPercent: percent('10'), oneOffFees: mu(5000) })).purchase;
     expect(p.whole).toBe(115000);

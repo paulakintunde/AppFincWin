@@ -1046,3 +1046,85 @@ describe('D-59 missing in priority order', () => {
     expect(r.missing).toEqual(['account_use_question', 'no_price', 'plan_rate_missing']);
   });
 });
+
+// ---------------------------------------------------------------------------------------------------------------------
+// 05.1-50: D-48, the volatile income question.
+// ---------------------------------------------------------------------------------------------------------------------
+
+describe('D-48 volatile income', () => {
+  const volatileMonth = (pic: Partial<IncomePicture> = {}, over: Partial<MonthModel> = {}) => leanMonth(over, { volatile: true, ...pic });
+  const ask = (cover: boolean | null | undefined, m = volatileMonth(), avail: number | null = 120_000, p = monthlyOnly(25_000)) =>
+    judge(input({ month: m, purchase: cover === undefined ? p : { ...p, volatileCover: cover }, funds: funds(avail) }));
+  const noticeOf = (r: { notices: readonly { code: string; values: unknown }[] }) => r.notices.find((n) => n.code === 'income_volatile')?.values;
+  const VALUES = { payment: 25_000, periods: 12, monthly: 25_000, months: 12, leanFrom: '2026-10', leanTo: '2027-04', leanLeft: 10_000 };
+
+  it('D-48 the ask: volatile, step 1 fails, no answer: needs_input, volatile_cover_question, notice with values', () => {
+    for (const cover of [undefined, null]) {
+      const r = ask(cover);
+      expect(r.code).toBe('needs_input');
+      expect(r.missing).toEqual(['volatile_cover_question']);
+      expect(r.parts).toEqual({ oneOff: 'fits_month', monthly: 'needs_input' });
+      expect(noticeOf(r)).toEqual(VALUES);
+    }
+  });
+
+  it('D-48 the ask is the same with no unspent figure (the question comes first)', () => {
+    expect(ask(null, volatileMonth(), null).missing).toEqual(['volatile_cover_question']);
+  });
+
+  it('D-48 yes: the monthly part fits on the user word, rests_on_your_answer, rough confidence, user_said_cover', () => {
+    const r = ask(true);
+    expect(r.code).toBe('fits_month');
+    expect(r.parts).toEqual({ oneOff: 'fits_month', monthly: 'fits_month' });
+    expect(factOf(r, 'rests_on_your_answer')).toEqual({ monthly: 25_000, months: 12 });
+    expect(r.confidence.level).toBe('rough');
+    expect(r.confidence.reasons).toContain('user_said_cover');
+    expect(noticeOf(r)).toEqual(VALUES);
+    expect(r.facts.map((f) => f.code)).not.toContain('lean_bridge');
+  });
+
+  it('D-48 no: not_yet, not_covered, volatile_cover_declined, ready by the step 3 date, notice kept', () => {
+    const r = ask(false, volatileMonth(), 100_000);
+    expect(r.code).toBe('not_yet');
+    expect(r.variant).toBe('not_covered');
+    expect(r.reasons).toContain('volatile_cover_declined');
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2026-11' }); // bridge 105,000 against 100,000, as D-37 step 3
+    expect(noticeOf(r)).toEqual(VALUES);
+  });
+
+  it('D-48 no: declined even when unspent would have covered the bridge, and the fund plays no part', () => {
+    const r = judge(input({ month: volatileMonth(), purchase: { ...monthlyOnly(25_000), volatileCover: false }, funds: { ...funds(500_000), emergency: mu(900_000) } }));
+    expect(r.code).toBe('not_yet');
+    expect(r.reasons).toContain('volatile_cover_declined');
+    expect(r.facts.map((f) => f.code)).not.toContain('emergency_used');
+  });
+
+  it('D-48 payment and periods come from the plan schedule (my part), months from the plan months', () => {
+    const p = monthlyOnly(25_000, { schedule: sched('2026-10-15') });
+    const r = ask(null, volatileMonth(), 120_000, p);
+    expect(noticeOf(r)).toMatchObject({ payment: 25_000, periods: 6, monthly: 25_000 });
+  });
+
+  it('D-48 gig earner: the low month is both ends of the span', () => {
+    const low = { left: mu(20_000), month: '2026-02', reason: 'second_lowest' } as const;
+    const m = leanMonth({ low }, { stated: 'variable', treated: 'variable', volatile: true, months: windowMonths((_, i) => ({ left: mu(i < 4 ? 20_000 : 60_000) })) });
+    const r = ask(null, m);
+    expect(noticeOf(r)).toMatchObject({ leanFrom: '2026-02', leanTo: '2026-02', leanLeft: 20_000 });
+  });
+
+  it('D-48 step 1 passes: no question, no notice, the 05.1-46 result', () => {
+    const m = volatileMonth({ months: windowMonths((_, i) => ({ income: mu(60_000), left: mu(30_000), lean: i < 7 })) });
+    const r = ask(null, m);
+    expect(r.code).toBe('fits_month');
+    expect(r.notices.map((n) => n.code)).not.toContain('income_volatile');
+    expect(r.confidence.reasons).not.toContain('user_said_cover');
+  });
+
+  it('D-48 not volatile: the answer is ignored and 05.1-46 runs', () => {
+    for (const cover of [true, false, null]) {
+      const r = judge(input({ month: leanMonth(), purchase: { ...monthlyOnly(25_000), volatileCover: cover }, funds: funds(120_000) }));
+      expect(r.code).toBe('fits_unspent');
+      expect(r.notices.map((n) => n.code)).not.toContain('income_volatile');
+    }
+  });
+});

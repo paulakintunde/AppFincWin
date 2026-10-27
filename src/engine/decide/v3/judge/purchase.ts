@@ -256,6 +256,7 @@ function buildResolved(
     secured: base === 'vehicle' || base === 'property',
     categoryId: check.categoryId,
     envelopeId: check.envelopeId,
+    volatileCover: check.volatileCover ?? null, // D-48: the user's answer rides with the plan
   };
   return { purchase, planCard: card, quoted, missing: [], reasons, facts };
 }
