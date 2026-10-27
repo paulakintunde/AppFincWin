@@ -7,7 +7,7 @@
  * up = the stream's future value - the payments made, plus the loan interest avoided by not financing.
  * Approximation: a weekly or multi-week stream is converted to its monthly equivalent before futureValueExact (monthly
  * compounding); no decision needs the exact per-period future value.
- * I13: ready-by is the month unspent money covers the price at the typical pace. The wait logic is ported from
+ * I13: ready-by is the month unspent money covers the price at the typical pace (D-60: for a seasonal earner, month by month from last year). The wait logic is ported from
  * decide/wait.ts, not imported (D-16).
  *
  * Share convention: the schedule is on the full lender amount; my part is applied once to its monthly equivalent and
@@ -19,7 +19,8 @@ import { ceilDivide, minorFromBigInt, ZERO_PERCENT, type Percent } from '../../.
 import { minorUnits, type MinorUnits } from '../../../money/types';
 import { myPart } from '../../share';
 import { addYearMonths } from '../dates';
-import type { Funds, MonthModel, Purchase, Result, Schedule } from '../types';
+import { seasonalReadyMonth } from '../month/seasonWalk';
+import type { Funds, IncomePicture, MonthModel, Purchase, Result, Schedule } from '../types';
 
 export const FUTURE_ORDER = ['buy_now', 'keep', 'deposit', 'buy_later'] as const;
 export type FutureKind = (typeof FUTURE_ORDER)[number];
@@ -74,11 +75,19 @@ export function buyLater(input: {
   readonly unspent: MinorUnits | null;
   readonly typicalLeft: MinorUnits | null;
   readonly month: string;
+  /** D-60: a seasonal earner's date is walked from last year's pattern instead of divided by the typical month. */
+  readonly picture?: Pick<IncomePicture, 'treated' | 'months'>;
 }): { readonly months: number | null; readonly readyBy: string | null; readonly monthlyAmount: MinorUnits | null } {
   const none = { months: null, readyBy: null, monthlyAmount: null } as const;
   if (input.unspent === null) return none;
   const target = Math.max(0, input.price - input.unspent);
   if (target === 0) return { months: 0, readyBy: input.month, monthlyAmount: input.typicalLeft };
+  if (input.picture !== undefined && input.picture.treated === 'seasonal') {
+    const walked = seasonalReadyMonth(input.picture, input.month, BigInt(target));
+    return walked === null
+      ? { ...none, monthlyAmount: input.typicalLeft }
+      : { months: walked.months, readyBy: walked.month, monthlyAmount: input.typicalLeft };
+  }
   if (input.typicalLeft === null || input.typicalLeft <= 0) return none;
   const months = Math.max(1, Number(ceilDivide(BigInt(target), BigInt(input.typicalLeft))));
   if (months > SIMULATION_MONTH_CAP) return { ...none, monthlyAmount: input.typicalLeft };
@@ -138,6 +147,12 @@ export function insteadFutures(input: {
     },
     keep: { unspentKept: unspent === null ? null : minorUnits(unspent) },
     deposit: { months, views },
-    buyLater: buyLater({ price: purchase.whole, unspent, typicalLeft: month.typicalLeft, month: month.month }),
+    buyLater: buyLater({
+      price: purchase.whole,
+      unspent,
+      typicalLeft: month.typicalLeft,
+      month: month.month,
+      ...(month.incomePicture === undefined ? {} : { picture: month.incomePicture }),
+    }),
   };
 }

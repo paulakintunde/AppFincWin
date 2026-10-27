@@ -865,7 +865,7 @@ describe('D-36 / D-37 / D-46 monthly rules, together with the one-off part', () 
     const r = judge(input({ month: leanMonth(), funds: funds(0), purchase: purchase({ dayOne: mu(60_000), whole: mu(60_000), monthly: mu(25_000), runningMonthly: mu(25_000) }) }));
     expect(r.parts).toEqual({ oneOff: 'not_yet', monthly: 'not_yet' });
     expect(r.variant).toBe('not_covered');
-    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-01' }); // one-off 2 months, bridge 105,000 = 3 months
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-05' }); // D-60: one-off 60,000 by April, bridge 105,000 only in May
   });
 
   it('D-36 the lean leftover is the lowest of the lean months', () => {
@@ -881,19 +881,27 @@ describe('D-36 / D-37 / D-46 monthly rules, together with the one-off part', () 
     const far = judge(input({ cash: payday, month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(100_000) }));
     expect(far.variant).toBe('payday');
     expect(far.readyBy).toEqual({ kind: 'date', date: '2099-01-01' });
-    // The monthly part is never (nothing left in a typical month): it leads, with no date.
-    const never = judge(input({ cash: payday, month: leanMonth({ typicalLeft: mu(0) }), purchase: monthlyOnly(25_000), funds: funds(100_000) }));
+    // The monthly part is never (a year that saves nothing): it leads, with no date.
+    const never = judge(input({ cash: payday, month: leanMonth({}, { months: windowMonths(() => ({ income: mu(30_000), left: mu(0), lean: true })) }), purchase: monthlyOnly(25_000), funds: funds(100_000) }));
     expect(never.variant).toBe('not_covered');
     expect(never.readyBy).toBeNull();
     // Both never: the one-off part leads, still no date.
-    const both = judge(input({ month: leanMonth({ typicalLeft: mu(0), monthLeft: mu(0) }), funds: funds(0), purchase: purchase({ dayOne: mu(60_000), whole: mu(60_000), monthly: mu(25_000), runningMonthly: mu(25_000) }) }));
+    const both = judge(input({ month: leanMonth({ monthLeft: mu(0) }, { months: windowMonths(() => ({ income: mu(30_000), left: mu(0), lean: true })) }), funds: funds(0), purchase: purchase({ dayOne: mu(60_000), whole: mu(60_000), monthly: mu(25_000), runningMonthly: mu(25_000) }) }));
     expect(both.parts).toEqual({ oneOff: 'not_yet', monthly: 'not_yet' });
     expect(both.readyBy).toBeNull();
   });
 
+  it('D-60 a seasonal earner is ready in the month the season brings it, not after typical months', () => {
+    // Bridge 105,000 against no unspent: lean months leave 10,000 each, busy months 170,000. From October the walk adds
+    // Nov..Apr at 10,000 (60,000), then May at 170,000. The typical month (42,500) would say January.
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(0) }));
+    expect(r.code).toBe('not_yet');
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-05' });
+  });
+
   it('a monthly not_yet with the one-off part covered carries its own ready-by', () => {
     const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(0) }));
-    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-01' }); // 105,000 over a typical 42,500 -> 3 months
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-05' }); // D-60: Nov to Apr save 10,000 each (60,000), May saves 170,000
   });
 
   it('I9/I13 a cheaper payment is never worse and a dearer one is never ready sooner (seasonal)', () => {

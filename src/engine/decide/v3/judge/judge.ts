@@ -31,6 +31,7 @@ import type { CashCheck } from '../cash/path';
 import { emergencyOf, emergencyUse, mayUseEmergency } from '../funds/emergency';
 import { capConfidence } from '../month/confidence';
 import { dependsOnMonths, expectedFor, isLeanMonth, leanRun, seasonEveryday } from '../month/incomePattern';
+import { seasonalReadyMonth } from '../month/seasonWalk';
 import type {
   Code,
   ExpectedMonthIncome,
@@ -88,13 +89,19 @@ function notYet(variant: Variant, readyBy: ReadyBy | null): OneOffPart {
 }
 
 /**
- * Months until the typical month could cover what unspent does not. null when the typical month leaves nothing.
- * M-04: beyond the simulation horizon is 'never', like buyLater.
+ * Months until the month could cover what unspent does not. null when it never could. M-04: beyond the simulation horizon
+ * is 'never', like buyLater. A seasonal earner's date is walked from last year's pattern, month by month (D-60); anyone
+ * else's is the gap over the typical month.
  */
 function readyMonth(month: MonthModel, price: number, unspent: number | null): Extract<ReadyBy, { kind: 'month' }> | null {
+  const gap = Math.max(0, price - Math.max(0, unspent ?? 0));
+  const pic = month.incomePicture;
+  if (pic !== undefined && pic.treated === 'seasonal') {
+    const walked = seasonalReadyMonth(pic, month.month, BigInt(gap));
+    return walked === null ? null : { kind: 'month', month: walked.month };
+  }
   const tl = month.typicalLeft;
   if (tl === null || tl <= 0) return null;
-  const gap = Math.max(0, price - Math.max(0, unspent ?? 0));
   const n = Math.max(1, Number(ceilDivide(BigInt(gap), BigInt(tl))));
   if (n > SIMULATION_MONTH_CAP) return null;
   return { kind: 'month', month: addYearMonths(month.month, n) };
