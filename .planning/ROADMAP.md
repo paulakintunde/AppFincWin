@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
 - [x] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3) (completed 2026-10-16)
 - [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged with Decide hidden behind "Coming soon" until 05.1-05.3)
-- [x] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine (50/50 plans executed: 32 on 2026-10-26, gap closure 05.1-33..50 on 2026-10-27; owner sign-off 2026-10-27; phase verification pending)
+- [x] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine (50/50 plans: 32 on 2026-10-26, gap closure 05.1-33..50 on 2026-10-27; owner shadow sign-off and re-verification 6/6 passed 2026-10-27) (completed 2026-10-27)
 - [ ] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations
 - [ ] **Phase 05.3: Decide screens v3** (INSERTED) - The Calm Ledger screens in the current theme; old Decide screens removed at cutover
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
