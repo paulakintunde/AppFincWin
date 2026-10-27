@@ -61,6 +61,7 @@ interface ExtraSpec {
   readonly id: string;
   readonly cadence: 'monthly' | 'yearly' | 'one_off' | 'none';
   readonly cash: boolean;
+  readonly role: 'cost' | 'credit' | 'modelled_elsewhere';
 }
 
 /** The scored schedule: when the quote is the larger figure it replaces the level payment (I41). */
@@ -139,15 +140,22 @@ function buildResolved(
   const specs: ExtraSpec[] = [];
   for (const id of resolved.questionIds) {
     const s = questionSpec(id);
-    if (s !== null) specs.push({ id, cadence: s.cadence, cash: s.cash });
+    if (s !== null) specs.push({ id, cadence: s.cadence, cash: s.cash, role: s.role });
   }
-  for (const o of resolved.ownQuestions) specs.push({ id: o.id, cadence: o.cadence, cash: o.cash });
+  for (const o of resolved.ownQuestions) specs.push({ id: o.id, cadence: o.cadence, cash: o.cash, role: 'cost' });
   let runningFull = 0n;
   let oneOffExtras = 0n;
+  let credits = 0n;
+  const planTradeIn = pay.mode === 'plan' && pay.tradeIn > 0;
   for (const s of specs) {
     const amount = check.extras[s.id];
     if (amount === undefined || !Number.isSafeInteger(amount) || amount <= 0) continue;
-    if (!s.cash || s.cadence === 'none') continue;
+    if (!s.cash || s.cadence === 'none' || s.role === 'modelled_elsewhere') continue;
+    // M-08: a typed trade-in lowers day one, and is ignored when the plan already carries pay.tradeIn (one route per fact).
+    if (s.role === 'credit') {
+      if (!planTradeIn) credits += BigInt(amount);
+      continue;
+    }
     if (s.cadence === 'monthly') runningFull += BigInt(amount);
     else if (s.cadence === 'yearly') runningFull += divideHalfUp(BigInt(amount), 12n);
     else oneOffExtras += BigInt(amount);
@@ -167,7 +175,8 @@ function buildResolved(
   let monthly: bigint;
 
   if (pay.mode === 'once') {
-    dayOne = BigInt(myPart(mb(fullWhole + oneOffExtras), share));
+    const onceTotal = fullWhole + oneOffExtras - credits;
+    dayOne = BigInt(myPart(mb(onceTotal < 0n ? 0n : onceTotal), share));
     monthly = BigInt(myPart(mb(runningFull), share));
   } else {
     const financedBig = fullWhole - BigInt(pay.deposit) - BigInt(pay.tradeIn);
@@ -215,8 +224,8 @@ function buildResolved(
 
     // A first payment dated today is part of day one (P); purchaseCashFlows removes it from the dated schedule flows.
     const firstNow = paymentsInRange(sched, ctx.asOf, addDays(ctx.asOf, 1)).reduce((a, p) => a + BigInt(p.amount), 0n);
-    const upfront = BigInt(pay.deposit) + BigInt(pay.fees.setup) + firstNow + oneOffExtras;
-    dayOne = BigInt(myPart(mb(upfront), share));
+    const upfrontRaw = BigInt(pay.deposit) + BigInt(pay.fees.setup) + firstNow + oneOffExtras - credits;
+    dayOne = BigInt(myPart(mb(upfrontRaw < 0n ? 0n : upfrontRaw), share));
     monthly = BigInt(myPart(mb(BigInt(sched.monthlyEquivalent) + runningFull), share));
     card = planCard({ price: check.price, tax, oneOffFees: check.oneOffFees, schedule: sched, runningMonthly: mb(runningFull) });
   }
