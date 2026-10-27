@@ -2,6 +2,7 @@ import { minorUnits as mu } from '../../../../money/types';
 import type { LineRole, V3Line, V3Month, V3Series } from '../../types';
 import {
   classifyLine,
+  effectiveEnd,
   isCounting,
   liveSeriesOf,
   paymentsPerYear,
@@ -218,5 +219,39 @@ describe('seriesDrift', () => {
     ];
     expect(seriesDrift([rent, other], both).map((d) => d.seriesId)).toEqual(['a-gym', 'rent']);
     expect(seriesDrift([other, rent], both).map((d) => d.seriesId)).toEqual(['a-gym', 'rent']);
+  });
+});
+
+describe('D-41 ended with no end date', () => {
+  const endedNull = ser({ id: 'e', role: 'pay', status: 'ended', endDate: null });
+  it('effectiveEnd: the day before today, an explicit end wins, live is open', () => {
+    expect(effectiveEnd(endedNull, '2026-10-03')).toBe('2026-10-02');
+    expect(effectiveEnd(ser({ id: 'x', status: 'ended', endDate: '2026-12-31' }), '2026-10-03')).toBe('2026-12-31');
+    expect(effectiveEnd(ser({ id: 'x' }), '2026-10-03')).toBeNull();
+  });
+  it('D-41 liveSeriesOf drops it on asOf and keeps it for an earlier date', () => {
+    expect(liveSeriesOf([endedNull], '2026-10-03', 'pay')).toEqual([]);
+    expect(liveSeriesOf([endedNull], '2026-10-02', 'pay', '2026-10-03')).toEqual([endedNull]);
+  });
+  it('D-41 seriesOccurrences stops the day before today; without today it is unchanged', () => {
+    const s = ser({ id: 'e', status: 'ended', endDate: null });
+    expect(seriesOccurrences(s, '2026-09-01', '2026-12-01', '2026-10-06')).toEqual(['2026-09-05', '2026-10-05']);
+    expect(seriesOccurrences(s, '2026-09-01', '2026-12-01', '2026-10-05')).toEqual(['2026-09-05']);
+    expect(seriesOccurrences(s, '2026-09-01', '2026-12-01')).toEqual(['2026-09-05', '2026-10-05', '2026-11-05']);
+  });
+  it('D-41 a paid line before the end still classifies by the series role', () => {
+    const s = ser({ id: 'e', status: 'ended', endDate: null });
+    expect(cls(line({ id: 'l', seriesId: 'e', date: '2026-10-02' }), [s])).toBe('recurring_bill');
+  });
+});
+
+describe('L-06 seriesDrift ties', () => {
+  it('L-06 picks the same latest amount whatever the input order', () => {
+    const rent = ser({ id: 'rent', amount: mu(180000) });
+    const a = line({ id: 'a', seriesId: 'rent', date: '2026-04-05', amount: mu(200000) });
+    const b = line({ id: 'b', seriesId: 'rent', date: '2026-04-05', amount: mu(210000) });
+    const m = (lines: V3Line[]): V3Month => ({ month: '2026-04', full: true, mark: null, lines });
+    expect(seriesDrift([rent], [m([a, b])])[0]?.suggested).toBe(210000);
+    expect(seriesDrift([rent], [m([b, a])])[0]?.suggested).toBe(210000);
   });
 });

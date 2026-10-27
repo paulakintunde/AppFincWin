@@ -75,17 +75,19 @@ describe('evaluate', () => {
     expect(JSON.parse(JSON.stringify(ev.result))).toEqual(ev.result);
   });
 
-  it('an ended series with endDate null keeps counting (05.1-06 isCounting); an end date stops it', () => {
+  it('D-41: an ended series with endDate null counts as ended as of today', () => {
     const base = sam();
     const baseline = evaluate(base, checkOnce(15000));
     const ended = (endDate: string | null): ReturnType<typeof toV3Inputs> => ({
       ...base,
       series: base.series.map((s) => (s.id === 'sam-utils' ? v3Series({ ...s, amount: s.amount, status: 'ended', endDate }) : s)),
     });
-    // status 'ended' alone does not stop a series: only endDate does. Nothing changes.
-    const stillCounting = evaluate(ended(null), checkOnce(15000));
-    expect(stillCounting.month).toEqual(baseline.month);
-    expect(stillCounting.result).toEqual(baseline.result);
+    // ended with no end date behaves exactly like an end date the day before asOf (2026-10-03).
+    const openEnded = evaluate(ended(null), checkOnce(15000));
+    const dated = evaluate(ended('2026-10-02'), checkOnce(15000));
+    expect(openEnded.month).toEqual(dated.month);
+    expect(openEnded.result).toEqual(dated.result);
+    expect(openEnded.month.monthLeft).not.toBe(baseline.month.monthLeft);
     // With the end date set before today the 30,000 bill stops being due: October has 30,000 more room.
     const stopped = evaluate(ended('2026-09-30'), checkOnce(15000));
     expect(stopped.month.monthLeft).toBe(42500 + 30000);

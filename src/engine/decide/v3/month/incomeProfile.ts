@@ -30,6 +30,7 @@ import type {
 } from "../types";
 import {
   classifyLine,
+  liveSeriesOf,
   paymentsPerYear,
   seriesIndex,
   seriesOccurrences,
@@ -213,7 +214,7 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
       .slice()
       .sort((a, b) => a.date.localeCompare(b.date));
     const used = new Set<string>();
-    for (const occ of seriesOccurrences(s, start, next)) {
+    for (const occ of seriesOccurrences(s, start, next, asOf)) {
       const match = lines.find(
         (l) =>
           !used.has(l.id) && l.date >= addDays(occ, -TWO_DATE_TOLERANCE_DAYS),
@@ -255,13 +256,7 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
   if (plan.rule === "balance") varTotal = varReceived;
   let total = salaryReceived + salaryDue + varTotal;
 
-  const hasPay = series.some(
-    (s) =>
-      s.role === "pay" &&
-      s.confirmed &&
-      s.status !== "dismissed" &&
-      (s.endDate === null || asOf <= s.endDate),
-  );
+  const hasPay = liveSeriesOf(series, asOf, "pay").length > 0;
   if (
     total === 0n &&
     received === 0n &&
@@ -289,11 +284,7 @@ export function typicalIncome(input: IncomeInput): {
   const { asOf, series, profile, rough, custom } = input;
   const plan = planOf(profile);
   const reasons = new Set<ReasonCode>();
-  const live = (s: V3Series): boolean =>
-    s.confirmed &&
-    s.status !== "dismissed" &&
-    (s.endDate === null || asOf <= s.endDate);
-  const pay = series.filter((s) => s.role === "pay" && live(s));
+  const pay = liveSeriesOf(series, asOf, "pay");
   const hasConfirmedIncome = pay.length > 0;
 
   let sum = 0n;
@@ -315,8 +306,7 @@ export function typicalIncome(input: IncomeInput): {
       sum += sumMonthly(s);
       any = true;
     }
-    for (const s of series) {
-      if (s.role !== "other_income" || !live(s)) continue;
+    for (const s of liveSeriesOf(series, asOf, "other_income")) {
       const r = resolveIncomeKind(s.incomeKind, s.countsAs, custom);
       if (r.countsAs === "available") {
         sum += sumMonthly(s);

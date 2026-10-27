@@ -58,6 +58,30 @@ describe('needsInput', () => {
     expect(run(inputsOf({ series: [{ ...pay, endDate: '2026-09-01' }] }))).toContain('no_income_figures');
   });
 
+  it('L-09 a bill payment is not the newest spending entry; an everyday line is', () => {
+    const bill = v3Series({ id: 'rent', role: 'bill', cadence: { unit: 'month', every: 1 }, anchorDate: '2026-09-05', amount: 100_000 });
+    const behindMonth = month({ everydayLogged: mu(10_000) });
+    const billOnly = inputsOf({
+      series: [pay, bill],
+      months: [monthOf('2026-10', [v3Line({ id: 'b', date: ASOF, amount: 100_000, seriesId: 'rent' })])],
+    });
+    expect(run(billOnly, { month: behindMonth, purchase: purchase({ band: 5 }) })).toEqual(['records_look_behind']);
+    const everyday = inputsOf({
+      series: [pay, bill],
+      months: [monthOf('2026-10', [v3Line({ id: 'e', date: ASOF, amount: 100 })])],
+    });
+    expect(run(everyday, { month: behindMonth, purchase: purchase({ band: 5 }) })).toEqual([]);
+  });
+
+  it('L-09 / T-05.1-75 the own envelope covers day one with the room: no unspent question', () => {
+    const i = inputsOf({ series: [pay] });
+    const withEnv = { ...funds(null), ownEnvelope: mu(10_000) };
+    expect(run(i, { funds: withEnv, purchase: purchase({ dayOne: mu(60_000) }) })).toEqual([]);
+    expect(run(i, { funds: withEnv, purchase: purchase({ dayOne: mu(60_001) }) })).toEqual(['unspent_not_confirmed']);
+    const neg = { ...funds(null), ownEnvelope: mu(-5) };
+    expect(run(i, { funds: neg, purchase: purchase({ dayOne: mu(50_001) }) })).toEqual(['unspent_not_confirmed']);
+  });
+
   it('5.4.2 unspent not confirmed', () => {
     const i = inputsOf({ series: [pay] });
     expect(run(i, { funds: funds(null), purchase: purchase({ dayOne: mu(50_001) }) })).toEqual(['unspent_not_confirmed']);
