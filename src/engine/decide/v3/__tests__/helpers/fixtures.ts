@@ -141,3 +141,39 @@ export function checkPlan(price: number, pay: Partial<Extract<PayV2, { mode: 'pl
     ...over,
   });
 }
+
+/**
+ * D-48: a seasonal earner whose income swings far past the volatile limit. 14 full months to 2026-09, pay of 200,000 in
+ * May to September and 40,000 otherwise (window income CV well above 38%), 30,000 a month of everyday spending, so each
+ * lean month leaves 10,000. Unspent money is confirmed at 120,000 so only the monthly question is open.
+ */
+export function volatileInputs(over: Partial<V3Inputs> = {}): V3Inputs {
+  const pay = v3Series({ id: 'gig', role: 'pay', cadence: { unit: 'month', every: 1 }, anchorDate: '2025-01-01', amount: 40_000 });
+  const months = Array.from({ length: 14 }, (_, i) => {
+    const t = 7 + i; // 2025-08 ...
+    const m = `${2025 + Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`;
+    const high = ['05', '06', '07', '08', '09'].includes(m.slice(5));
+    return monthOf(m, [
+      v3Line({ id: `vp-${m}`, date: `${m}-01`, amount: high ? 200_000 : 40_000, role: 'income', seriesId: 'gig' }),
+      v3Line({ id: `ve-${m}`, date: `${m}-15`, amount: 30_000 }),
+    ]);
+  });
+  return inputsOf({
+    asOf: '2026-10-10',
+    series: [pay],
+    months: [
+      ...months,
+      monthOf(
+        '2026-10',
+        [
+          v3Line({ id: 'vp-2026-10', date: '2026-10-01', amount: 40_000, role: 'income', seriesId: 'gig' }),
+          v3Line({ id: 've-2026-10', date: '2026-10-05', amount: 20_000 }),
+        ],
+        { full: false }
+      ),
+    ],
+    profile: { types: ['salary'], variable: null, steady: null, billsHorizonMonths: null, pattern: 'seasonal' },
+    unspent: { amount: mu(120_000), at: '2026-10-10' },
+    ...over,
+  });
+}

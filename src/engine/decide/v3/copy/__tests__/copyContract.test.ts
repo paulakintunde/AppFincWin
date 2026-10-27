@@ -19,7 +19,7 @@ import {
   personById,
   type FixtureScenario,
 } from '../../__tests__/golden/adapter';
-import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series } from '../../__tests__/helpers/fixtures';
+import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series, volatileInputs } from '../../__tests__/helpers/fixtures';
 import {
   COPY_RESOLVERS,
   DISCRIMINATOR_KEYS,
@@ -34,8 +34,8 @@ import {
 
 const mu = minorUnits;
 
-/** Codes whose emitter has not landed yet. Only the two D-48 codes remain; 05.1-50 removes them and the list ends empty. emergency_used left in 05.1-44 (D-63): golden #11 Leo, an emergency-marked work purchase, is in the corpus and emits it. */
-const NOT_YET_EMITTED: readonly string[] = ['income_volatile', 'rests_on_your_answer'];
+/** Codes whose emitter has not landed yet. 05.1-50 emitted the two D-48 codes (income_volatile, rests_on_your_answer), so the list is empty. emergency_used left in 05.1-44 (D-63): golden #11 Leo, an emergency-marked work purchase, is in the corpus and emits it. */
+const NOT_YET_EMITTED: readonly string[] = [];
 
 interface Emitted {
   readonly group: 'fact' | 'notice';
@@ -130,6 +130,12 @@ function buildCorpus(): Emitted[] {
     { ...sam, series: [...sam.series, v3Series({ id: 'ins', role: 'bill', cadence: { unit: 'month', every: 12 }, anchorDate: '2026-03-01', amount: 120_000 })] },
     checkOnce(10_000)
   );
+  // D-48: income_volatile (the ask), rests_on_your_answer (yes) and the declined case, from a hand-built volatile earner
+  const vol = volatileInputs();
+  const volPlan = { count: 6, apr: percent('0'), firstPayment: { kind: 'one_period' } } as const;
+  collect(out, vol, checkPlan(150_000, volPlan));
+  collect(out, vol, checkPlan(150_000, volPlan, { volatileCover: true }));
+  collect(out, vol, checkPlan(150_000, volPlan, { volatileCover: false }));
   // unsaved_changes
   collect(out, { ...sam, unsavedWrites: 2 }, checkOnce(10_000));
   // unspent_stale and unspent_drifted

@@ -4,7 +4,7 @@ import { purchaseCashFlows } from '../judge/purchase';
 import { evaluate, stricterOf, type Evaluation } from '../evaluate';
 import type { Code, ConfidenceLevel, ReadyBy } from '../types';
 import { personById, toV3Inputs } from './golden/adapter';
-import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series } from './helpers/fixtures';
+import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series, volatileInputs } from './helpers/fixtures';
 
 const mu = minorUnits;
 const sam = (): ReturnType<typeof toV3Inputs> => toV3Inputs(personById('sam'));
@@ -311,5 +311,29 @@ describe('D-63 an emergency purchase may count the emergency fund in the cash ch
     expect(ev.cash).toEqual(evaluate(leo(), laptop()).cash);
     expect(ev.result.missing).toContain('account_use_question'); // D-62 asks which account holds the fund
     expect(evaluate(unlinked, laptop({ emergency: false })).cash.kind).toBe('not_covered');
+  });
+});
+
+describe('D-48 futures on a declined volatile cover', () => {
+  const plan = (cover?: boolean | null) =>
+    checkPlan(150_000, { count: 6, apr: percent('0'), firstPayment: { kind: 'one_period' } }, cover === undefined ? {} : { volatileCover: cover });
+
+  it('D-48 futures: a declined cover carries the Instead futures in the fixed order', () => {
+    const ev = evaluate(volatileInputs(), plan(false));
+    expect(ev.result.code).toBe('not_yet');
+    expect(ev.result.reasons).toContain('volatile_cover_declined');
+    expect(ev.futures).not.toBeNull();
+    expect(ev.futures?.order).toEqual(['buy_now', 'keep', 'deposit', 'buy_later']);
+  });
+
+  it('D-48 futures: the ask, a yes and an ordinary answer carry none', () => {
+    const ask = evaluate(volatileInputs(), plan());
+    expect(ask.result.missing).toEqual(['volatile_cover_question']);
+    expect(ask.futures).toBeNull();
+    const yes = evaluate(volatileInputs(), plan(true));
+    expect(yes.result.facts.map((f) => f.code)).toContain('rests_on_your_answer');
+    expect(yes.result.confidence.level).toBe('rough');
+    expect(yes.futures).toBeNull();
+    expect(evaluate(sam(), checkOnce(15000)).futures).toBeNull();
   });
 });

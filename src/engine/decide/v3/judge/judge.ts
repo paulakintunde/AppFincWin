@@ -23,6 +23,7 @@
  */
 import type { MinorUnits } from '../../../money/types';
 import { minorUnits } from '../../../money/types';
+import { myPart } from '../../share';
 import { SIMULATION_MONTH_CAP } from '../../../payoff/constants';
 import { ceilDivide, minorFromBigInt } from '../../../payoff/types';
 import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_MONTHS } from '../constants';
@@ -200,6 +201,14 @@ export interface MonthlyPart {
   readonly why: Fact | null;
   readonly readyBy: ReadyBy | null;
   readonly reasons: readonly ReasonCode[];
+  /** D-48: the income_volatile notice, shown whatever the answer. */
+  readonly notices: readonly Notice[];
+  /** D-48: rests_on_your_answer, set when the user said they can cover it. */
+  readonly rests: Fact | null;
+  /** D-48: confidence is capped at rough (user_said_cover). */
+  readonly capRough: boolean;
+  /** D-48, D-59: what a needs_input monthly part asks for. */
+  readonly missing: readonly MissingCode[];
 }
 
 const monthly = (code: MonthlyCode, over: Partial<MonthlyPart> = {}): MonthlyPart => ({
@@ -209,6 +218,10 @@ const monthly = (code: MonthlyCode, over: Partial<MonthlyPart> = {}): MonthlyPar
   why: null,
   readyBy: null,
   reasons: [],
+  notices: [],
+  rests: null,
+  capRough: false,
+  missing: [],
   ...over,
 });
 
@@ -233,7 +246,7 @@ function planMonthsOf(ctx: MonthlyCtx): readonly string[] {
  * other variable earner's against the low month. When that falls short, the shortfall for each lean month to carry is a
  * bridge: unspent money (after the one-off part and money held back) covers it, or the answer is not yet. The fund is
  * never used here (D-43a, D-63).
- * Branch point for D-48 (the volatile income question, 05.1-50): between step 1 and step 2 below.
+ * D-48 (the volatile income question, 05.1-50) sits between step 1 and step 2: see the block below.
  */
 function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: MonthlyCtx): MonthlyPart {
   const planMonths = planMonthsOf(ctx);
@@ -255,6 +268,8 @@ function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: 
   let leanLeft: bigint;
   let carried: readonly string[];
   let why: Fact;
+  let leanFrom: string;
+  let leanTo: string;
   if (seasonal) {
     const records = pic.fullMonths >= RECONFIRM_MIN_MONTHS;
     const picked = planMonths.filter((ym) => (records ? isLeanMonth(pic, ym) : leftOf(ym) < Mb));
@@ -267,6 +282,8 @@ function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: 
     } else {
       carried = lean;
     }
+    leanFrom = lean[0] as string;
+    leanTo = lean[lean.length - 1] as string;
     why = {
       code: 'lean_months_judged',
       values: { from: lean[0] as string, to: lean[lean.length - 1] as string, leanLeft: minorFromBigInt(leanLeft, 'monthlyPart') },
@@ -277,6 +294,8 @@ function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: 
     const count = pic.months.filter((m) => BigInt(m.left) < Mb).length;
     const toCarry = Math.max(1, Math.min(planMonths.length, count));
     carried = Array.from({ length: toCarry }, (_, i) => addYearMonths(planMonths[0] as string, i));
+    leanFrom = low.month;
+    leanTo = low.month;
     why = { code: 'low_month_judged', values: { month: low.month, left: low.left } };
   }
 
@@ -287,8 +306,40 @@ function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: 
   const shortfall = Mb - leanLeft;
   const toCarry = carried.length;
   const bridge = shortfall * BigInt(toCarry);
-  if (ctx.available === null) return monthly('needs_input');
   const used = BigInt(ctx.takenByOneOff);
+
+  // D-48: income too volatile to judge the monthly payment from the records alone. The leanest months do not cover it, so
+  // the user is asked; what they say decides the monthly part, and a yes is labelled and capped at rough confidence.
+  // The emergency fund plays no part (D-43a): the fund is not read here.
+  if (pic.volatile) {
+    const sched = ctx.purchase.schedule;
+    const notice: Notice = {
+      code: 'income_volatile',
+      values: {
+        payment: sched === null ? M : myPart(sched.payment, ctx.purchase.share),
+        periods: sched === null ? planMonths.length : sched.count,
+        monthly: M,
+        months: planMonths.length,
+        leanFrom,
+        leanTo,
+        leanLeft: minorFromBigInt(leanLeft, 'monthlyPart'),
+      },
+    };
+    const answer = ctx.purchase.volatileCover ?? null;
+    if (answer === null) return monthly('needs_input', { why, notices: [notice], missing: ['volatile_cover_question'] });
+    if (answer) {
+      const rests: Fact = { code: 'rests_on_your_answer', values: { monthly: M, months: planMonths.length } };
+      return monthly('fits_month', { why, notices: [notice], rests, capRough: true });
+    }
+    return monthly('not_yet', {
+      why,
+      notices: [notice],
+      reasons: ['volatile_cover_declined'],
+      readyBy: readyMonth(month, minorFromBigInt(used + bridge, 'monthlyPart'), ctx.available),
+    });
+  }
+
+  if (ctx.available === null) return monthly('needs_input');
   const afterOneOff = BigInt(ctx.available) - used;
   if (afterOneOff >= bridge) {
     return monthly('fits_unspent', {
@@ -395,13 +446,13 @@ export function judge(j: JudgeInput): Result {
   const unspentValue = funds.unspent === null ? null : (funds.unspent.available ?? funds.unspent.value);
   const one = missing.length > 0 || p === null ? null : oneOffPart(j, { unspent: unspentValue, envelope: funds.ownEnvelope });
 
-  const asking = (parts: Result['parts'], ask: readonly MissingCode[]): Result => ({
+  const asking = (parts: Result['parts'], ask: readonly MissingCode[], extra: readonly Notice[] = []): Result => ({
     code: 'needs_input',
     variant: null,
     legacyState: LEGACY_STATE_OF_CODE.needs_input,
     split: [],
     facts: j.purchaseFacts,
-    notices,
+    notices: [...notices, ...extra],
     missing: inPriority(ask.length > 0 ? ask : ['unspent_not_confirmed']), // D-59
     reasons,
     readyBy: null,
@@ -424,7 +475,7 @@ export function judge(j: JudgeInput): Result {
     takenByOneOff: mu(fromMonth + fromEarlier),
     expected: j.inputs.expectedIncome ?? [],
   });
-  if (mon !== null && mon.code === 'needs_input') return asking({ oneOff: one.code, monthly: 'needs_input' }, []);
+  if (mon !== null && mon.code === 'needs_input') return asking({ oneOff: one.code, monthly: 'needs_input' }, mon.missing, mon.notices);
 
   const code = mon === null ? one.code : stricter(one.code, mon.code);
   const lowClause = mon !== null && mon.lowClause;
@@ -464,6 +515,7 @@ export function judge(j: JudgeInput): Result {
   }
   if (mon !== null && mon.why !== null) facts.push(mon.why); // D-46
   if (mon !== null && mon.bridge !== null) facts.push(mon.bridge); // D-46
+  if (mon !== null && mon.rests !== null) facts.push(mon.rests); // D-48
   facts.push(
     ...evaluateLines(j.inputs.limits, {
       month,
@@ -482,13 +534,13 @@ export function judge(j: JudgeInput): Result {
     legacyState: LEGACY_STATE_OF_CODE[code],
     split: keepSplit ? one.split : [],
     facts,
-    notices,
+    notices: mon === null ? notices : [...notices, ...mon.notices],
     missing: [],
     reasons: mon === null ? reasons : unique([...reasons, ...mon.reasons]),
     readyBy,
     band,
     layers,
-    confidence,
+    confidence: mon !== null && mon.capRough ? capConfidence(confidence, 'user_said_cover', 'rough') : confidence,
     parts: { oneOff: one.code, monthly: mon === null ? null : mon.code },
   };
 }

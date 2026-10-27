@@ -30,6 +30,7 @@ const REASON_ORDER: readonly ConfidenceReason[] = [
   'unspent_stale',
   'unspent_drifted',
   'pay_missed',
+  'user_said_cover',
   'no_setup',
 ];
 
