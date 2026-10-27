@@ -201,11 +201,11 @@ describe("incomeThisMonth", () => {
       role: "other_income",
       anchorDate: "2026-04-01",
       amount: mu(50000),
-      incomeKind: "rent",
+      incomeKind: { kind: "preset", value: "rent" },
       countsAs: "available",
     });
     const oct = month("2026-10", [
-      line({ id: "early", date: "2026-10-30", amount: mu(50000), seriesId: "side", incomeKind: "rent", countsAs: "available" }),
+      line({ id: "early", date: "2026-10-30", amount: mu(50000), seriesId: "side", incomeKind: { kind: "preset", value: "rent" }, countsAs: "available" }),
     ]);
     const r = incomeThisMonth(
       inp({ asOf: "2026-11-02", current: month("2026-11", []), history: [oct], series: [side] }),
