@@ -5,13 +5,17 @@
  * The cheaper plan passed the cash check, failed the ladder, and got the later ladder month. See
  * .planning/debug/05.1-i13-readyby-inversion.md.
  */
+import { minorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import { evaluate } from '../../evaluate';
-import type { ReadyBy } from '../../types';
+import type { ReadyBy, V3Inputs } from '../../types';
 import { loadPersons, toV3Inputs } from '../golden/adapter';
 import { checkOf, inputsOfPerson, type CheckShape } from './arbitraries';
 
-const inputs = inputsOfPerson('priya', { everydayPct: 50, balancePct: 91, unspentMode: 'keep', unspentPct: 0, emergency: null, extras: [] });
+// D-50 (05.1-44): the generated unspent sits 150,050 below what the records suggest; the engine asks about that money.
+// This regression is about the ladder and the cash check, so the fixture carries the user's answer (set aside for a bill).
+const priya = inputsOfPerson('priya', { everydayPct: 50, balancePct: 91, unspentMode: 'keep', unspentPct: 0, emergency: null, extras: [] });
+const inputs = { ...priya, unexplainedAnswer: { amount: minorUnits(10_000_000), use: 'set_aside_for_bill' as const, at: priya.asOf } };
 const shape: CheckShape = {
   plan: { cadence: { unit: 'month', every: 12 }, count: 18, apr: percent('3'), firstPayment: { kind: 'today' } },
   purpose: null,
@@ -58,7 +62,11 @@ describe('I13 late-month pay date (debug note residual)', () => {
         : { ...m, lines };
     }),
   };
-  const lateInputs = toV3Inputs(person, { custom: { itemTypes: [], purposes: [], cadences: [], incomeKinds: [] } });
+  // D-50: the stated 250,000 unspent is 150,000 below the suggested figure; the fixture carries the user's answer.
+  const lateInputs: V3Inputs = {
+    ...toV3Inputs(person, { custom: { itemTypes: [], purposes: [], cadences: [], incomeKinds: [] } }),
+    unexplainedAnswer: { amount: minorUnits(10_000_000), use: 'set_aside_for_bill', at: '2026-10-29' },
+  };
   const once = (price: number) => evaluate(lateInputs, checkOf(price, { plan: null, purpose: null, emergency: false }));
   const key = (r: ReadyBy | null): string => (r === null ? '9999-99-99' : r.kind === 'date' ? r.date : `${r.month}-01`);
 

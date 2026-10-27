@@ -11,6 +11,7 @@ import { addDays, addYearMonths, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
 import { readinessOf } from './readiness';
 import { judge } from './judge/judge';
+import { mayUseEmergency } from './funds/emergency';
 import { buildPurchase, purchaseCashFlows } from './judge/purchase';
 import { buildMonthModel } from './month/model';
 import { incomeThisMonth, type IncomeInput } from './month/incomeProfile';
@@ -104,11 +105,15 @@ function evaluateOnce(inputs: V3Inputs, check: CheckV2): Evaluation {
   const month = buildMonthModel(inputs);
   const pb = buildPurchase(check, { asOf: inputs.asOf, thresholds: inputs.thresholds, custom: inputs.custom });
   const funds = buildFunds(inputs, month, check.envelopeId);
+  // D-63: only an emergency-marked purchase whose purpose may use the fund lets the cash check see the fund; everything
+  // else keeps it out of reach (D-09, D-43a). An unlinked fund (D-62) is already subtracted from spending, so it is added
+  // back here once.
+  const fundForCash = pb.purchase !== null && mayUseEmergency(pb.purchase) ? (funds.emergency ?? 0) : 0;
   const path = buildCashPathV3({
     asOf: inputs.asOf,
     days: CASH_PATH_DAYS_V3,
-    // D-54: spending money plus the purchase's own envelope; the fund and other put-aside money never cushion the check.
-    opening: minorUnits(funds.spending + funds.ownEnvelope),
+    // D-54: spending money plus the purchase's own envelope; other put-aside money never cushions the check (the fund only per D-63).
+    opening: minorUnits(funds.spending + funds.ownEnvelope + fundForCash),
     series: inputs.series,
     paidThisMonth: paidOccurrences(inputs),
     erest: month.erest,

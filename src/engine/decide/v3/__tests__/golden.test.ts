@@ -152,9 +152,12 @@ describe('D-43a the fund never cushions the cash check (D-54)', () => {
     expect(ev.cash.kind).not.toBe('ok');
   });
 
-  it('D-43a even marked an emergency, a price the spending money cannot carry stays not_yet (the cash check comes first)', () => {
+  it('D-63 marked an emergency for a necessity, a price the spending money cannot carry reaches the fund: emergency_use', () => {
+    // D-63 supersedes the D-43a reading for this case: the cash check opens with the fund (407,500 + 900,000), and the
+    // ladder draws on unspent 240,000 and then the fund: 600,000 - 240,000 = 360,000 from the fund.
     const ev = evaluate(sam(), toCheckV2({ ...base(), price: 600_000, emergency: true, purpose: 'necessity' }));
-    expect(ev.result.code).toBe('not_yet');
+    expect(ev.cash.kind).toBe('ok');
+    expect(ev.result.code).toBe('emergency_use');
   });
 
   it('D-43a the fund is reached only through the ladder: 200,000 with unspent 10,000 is not covered unmarked, emergency_use when marked a necessity', () => {

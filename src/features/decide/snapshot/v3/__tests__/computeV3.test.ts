@@ -40,8 +40,8 @@ describe('computeV3 (S9: one Result)', () => {
   it('D-54: with nothing set up the demo sofa needs input and every account use is null (D-54, D-59)', () => {
     const r = computeV3(source(), null, sofaInputs).result;
     expect(r.code).toBe('needs_input');
-    // The engine emits account_use_question from 05.1-44 (it is not in evaluate yet). Until then the snapshot's side of D-54 is
-    // checked: every account reaches the engine with use null, so none is counted.
+    // D-54, D-59 (05.1-44): the engine asks account_use_question first, and every account reaches it with use null.
+    expect(r.missing[0]).toBe('account_use_question');
     expect(buildV3Inputs(source(), null).accounts!.every((a) => a.use === null)).toBe(true);
   });
 

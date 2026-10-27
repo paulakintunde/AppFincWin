@@ -34,7 +34,7 @@ import {
 
 const mu = minorUnits;
 
-/** Codes whose emitter has not landed yet. Each owning plan removes its codes (05.1-43, -44, -46, -50); the list ends empty. */
+/** Codes whose emitter has not landed yet. Each owning plan removes its codes (05.1-43, -46, -50); the list ends empty. emergency_used left in 05.1-44 (D-63): golden #11 Leo, an emergency-marked work purchase, is in the corpus and emits it. */
 const NOT_YET_EMITTED: readonly string[] = [
   'lean_bridge',
   'unspent_held_back',
@@ -48,9 +48,6 @@ const NOT_YET_EMITTED: readonly string[] = [
   'pay_not_seen',
   'pay_counted_missed',
   'fund_account_unknown',
-  // 05.1-35 keeps the fund out of the cash check, so no corpus case reaches emergency_use until D-63 (05.1-44 Task 3)
-  // lets an emergency-marked purchase see the fund; 05.1-44 removes this entry.
-  'emergency_used',
 ];
 
 interface Emitted {
