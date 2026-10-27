@@ -137,3 +137,31 @@ export function checkOf(price: number, s: CheckShape): CheckV2 {
 
 /** A check: once or plan, price 100..1e7, purpose, emergency flag. */
 export const checkArb: fc.Arbitrary<CheckV2> = fc.tuple(priceArb, shapeArb).map(([p, s]) => checkOf(p, s));
+
+/**
+ * A recorded person with every pay series moved to a late-month pay day (20..28), its paid lines re-dated to that day in
+ * each history month, and asOf on either side of the pay day (05.1-41, I13 residual). The current month keeps its pay
+ * line only when the pay day has already passed; lines dated after the new asOf are dropped so the month stays honest.
+ * Pure: every draw comes from fast-check.
+ */
+export const latePayInputsArb: fc.Arbitrary<V3Inputs> = fc
+  .tuple(fc.constantFrom(...RECORDED_IDS), tweakArb, fc.integer({ min: 20, max: 28 }), fc.integer({ min: 1, max: 27 }))
+  .map(([id, t, payDay, rawDay]) => {
+    const base = loadPersons().find((p) => p.id === id);
+    if (!base) throw new RangeError(`no fixture person ${id}`);
+    const person = perturbPerson(base, t);
+    const asOfDay = rawDay >= payDay ? rawDay + 1 : rawDay; // 1..28 excluding payDay: both sides of payday
+    const ym = person.asOf.slice(0, 7);
+    const asOf = `${ym}-${String(asOfDay).padStart(2, '0')}`;
+    const pad = (d: number): string => String(d).padStart(2, '0');
+    const paySeries = new Set(person.series.filter((s) => s.role === 'pay').map((s) => s.id));
+    const series = person.series.map((s) => (s.role === 'pay' ? { ...s, anchorDate: `${s.anchorDate.slice(0, 8)}${pad(payDay)}` } : s));
+    const months = person.months.map((m) => ({
+      ...m,
+      lines: m.lines
+        .map((l) => (l.seriesId && paySeries.has(l.seriesId) ? { ...l, date: `${l.date.slice(0, 8)}${pad(payDay)}` } : l))
+        .filter((l) => (m.month === ym ? l.date <= asOf : true)),
+    }));
+    const unspent = person.unspent === null ? null : { ...person.unspent, at: asOf };
+    return toV3Inputs({ ...person, asOf, series, months, unspent }, { custom: { itemTypes: [], purposes: [{ id: CUSTOM_PURPOSE_ID }], cadences: [], incomeKinds: [] } });
+  });

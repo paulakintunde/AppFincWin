@@ -4,7 +4,8 @@
  *
  * Ladder (one-off part, cash check first):
  *   cash payday / not covered                       -> not_yet (payday only when the ladder below would pass by then;
- *                                                      otherwise the later of payday and the ladder month)
+ *                                                      otherwise the later of payday and the ladder month; a cash
+ *                                                      not_covered is also the later of the ladder month and the pay date)
  *   P <= max(0, monthLeft)                          -> fits_month
  *   P <= unspent (this month's room counted once)   -> fits_unspent
  *   unspent unknown and P above this month's room   -> needs_input
@@ -22,6 +23,7 @@
  */
 import type { MinorUnits } from '../../../money/types';
 import { minorUnits } from '../../../money/types';
+import { SIMULATION_MONTH_CAP } from '../../../payoff/constants';
 import { ceilDivide } from '../../../payoff/types';
 import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE } from '../constants';
 import { addYearMonths, daysBetween } from '../dates';
@@ -81,12 +83,16 @@ function notYet(variant: Variant, readyBy: ReadyBy | null): OneOffPart {
   return { code: 'not_yet', variant, split: [], readyBy, emergencyUsed: mu(0), rebuildMonths: null };
 }
 
-/** Months until the typical month could cover what unspent does not. null when the typical month leaves nothing. */
+/**
+ * Months until the typical month could cover what unspent does not. null when the typical month leaves nothing.
+ * M-04: beyond the simulation horizon is 'never', like buyLater.
+ */
 function readyMonth(month: MonthModel, price: number, unspent: number | null): Extract<ReadyBy, { kind: 'month' }> | null {
   const tl = month.typicalLeft;
   if (tl === null || tl <= 0) return null;
   const gap = Math.max(0, price - Math.max(0, unspent ?? 0));
   const n = Math.max(1, Number(ceilDivide(BigInt(gap), BigInt(tl))));
+  if (n > SIMULATION_MONTH_CAP) return null;
   return { kind: 'month', month: addYearMonths(month.month, n) };
 }
 
@@ -148,7 +154,12 @@ export function oneOffPart(
   if (p === null) {
     return { code: 'needs_input', variant: null, split: [], readyBy: null, emergencyUsed: mu(0), rebuildMonths: null };
   }
-  if (j.cash.kind === 'not_covered') return notYet('not_covered', readyMonth(j.month, p.dayOne, available.unspent));
+  if (j.cash.kind === 'not_covered') {
+    // The later of the ladder month and the next payday (I13 residual): never dated before the pay that would help.
+    const ready = readyMonth(j.month, p.dayOne, available.unspent);
+    const pay = j.cash.payDate ?? null;
+    return notYet('not_covered', ready !== null && pay !== null && pay > `${ready.month}-01` ? { kind: 'date', date: pay } : ready);
+  }
   const part = ladder(j, p, available);
   if (j.cash.kind === 'ok') return part;
   const until = j.cash.until;

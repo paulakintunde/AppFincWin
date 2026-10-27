@@ -14,6 +14,7 @@ import type {
   MonthModel,
   Purchase,
   Purpose,
+  ReadyBy,
   UnspentState,
   V3Inputs,
 } from '../../types';
@@ -265,6 +266,53 @@ describe('judge: one-off ladder (v3 §12)', () => {
       expect(r.variant).toBe('payday');
       expect(r.readyBy).toEqual({ kind: 'date', date: '2026-10-28' });
     });
+  });
+
+  describe('I13 residual: not_covered against a payday late in the ladder month', () => {
+    const readyKey = (r: { readyBy: ReadyBy | null }): string =>
+      r.readyBy === null ? '9999-99-99' : r.readyBy.kind === 'date' ? r.readyBy.date : `${r.readyBy.month}-01`;
+    const roomy = month({ typicalLeft: mu(100_000) });
+
+    it('I13 a not_covered answer is the later of the ladder month and the pay date', () => {
+      // gap 120000 - 10000 = 110000 over 100000 = 2 months: 2026-12. Use unspent 20000 -> gap 100000 = 1 month: 2026-11.
+      const hi = judge(input({ month: roomy, funds: funds(20_000), cash: { kind: 'not_covered', shortBy: mu(1), payDate: '2026-11-28' } }));
+      const lo = judge(
+        input({
+          month: roomy,
+          funds: funds(20_000),
+          purchase: purchase({ dayOne: mu(90_000), whole: mu(90_000) }),
+          cash: { kind: 'payday', until: '2026-11-28', shortBy: mu(1) },
+        })
+      );
+      expect(hi.readyBy).toEqual({ kind: 'date', date: '2026-11-28' });
+      expect(readyKey(hi) >= readyKey(lo)).toBe(true);
+    });
+
+    it('a pay date on or before the first of the ladder month leaves the ladder month', () => {
+      const r = judge(input({ month: roomy, funds: funds(20_000), cash: { kind: 'not_covered', shortBy: mu(1), payDate: '2026-11-01' } }));
+      expect(r.readyBy).toEqual({ kind: 'month', month: '2026-11' });
+    });
+
+    it('no pay date leaves the ladder month', () => {
+      const none = judge(input({ month: roomy, funds: funds(20_000), cash: { kind: 'not_covered', shortBy: mu(1), payDate: null } }));
+      const absent = judge(input({ month: roomy, funds: funds(20_000), cash: { kind: 'not_covered', shortBy: mu(1) } }));
+      expect(none.readyBy).toEqual({ kind: 'month', month: '2026-11' });
+      expect(absent.readyBy).toEqual({ kind: 'month', month: '2026-11' });
+    });
+
+    it('no ladder month (nothing left in a typical month) stays null', () => {
+      const r = judge(input({ month: month({ typicalLeft: mu(0) }), funds: funds(20_000), cash: { kind: 'not_covered', shortBy: mu(1), payDate: '2026-11-28' } }));
+      expect(r.readyBy).toBeNull();
+    });
+  });
+
+  it('M-04 a ready month beyond the simulation horizon is null, not a malformed year', () => {
+    const big = purchase({ dayOne: mu(1_000_000_000), whole: mu(1_000_000_000) });
+    const r = judge(input({ month: month({ typicalLeft: mu(1) }), purchase: big, funds: funds(0), cash: { kind: 'not_covered', shortBy: mu(1) } }));
+    expect(r.variant).toBe('not_covered');
+    expect(r.readyBy).toBeNull();
+    const ladderOnly = judge(input({ month: month({ typicalLeft: mu(1) }), purchase: big, funds: funds(0) }));
+    expect(ladderOnly.readyBy).toBeNull();
   });
 
   it('cash not covered is not_yet not_covered with a month', () => {

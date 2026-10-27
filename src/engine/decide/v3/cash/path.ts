@@ -115,7 +115,7 @@ export function nextPayDate(series: readonly V3Series[], asOf: string): string |
 export type CashCheck =
   | { readonly kind: 'ok'; readonly lowest: CashPoint }
   | { readonly kind: 'payday'; readonly until: string; readonly shortBy: MinorUnits }
-  | { readonly kind: 'not_covered'; readonly shortBy: MinorUnits };
+  | { readonly kind: 'not_covered'; readonly shortBy: MinorUnits; readonly payDate?: string | null };
 
 export function cashCheck(withPurchase: CashPathV3, payDate: string | null): CashCheck {
   let lowest = withPurchase.points[0] as CashPoint;
@@ -126,7 +126,7 @@ export function cashCheck(withPurchase: CashPathV3, payDate: string | null): Cas
     const after = withPurchase.points.filter((p) => p.date >= payDate);
     if (after.length > 0 && after.every((p) => p.balance >= 0)) return { kind: 'payday', until: payDate, shortBy };
   }
-  return { kind: 'not_covered', shortBy };
+  return { kind: 'not_covered', shortBy, payDate };
 }
 
 /** Dated flows of the purchase: dayOne (already my share) on asOf; each schedule payment as myPart, applied once. */
