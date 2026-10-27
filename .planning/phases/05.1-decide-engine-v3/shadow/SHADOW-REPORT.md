@@ -170,6 +170,17 @@ Questions: volatile_cover_question, unexplained_money_question ("What is the $50
 4. Reply "ok <code>" or "reword <code>: <why>" for each D-46 sentence.
 5. Answer the six items in section 2.
 
+### 11. Owner sign-off record (2026-10-27, relayed from the main session popups)
+
+- All 14 new fits: approved.
+- All cause groups in section 4: accepted.
+- All fixture corrections (section 5) and the 37 new goldens (section 8): confirmed.
+- All D-46 sentences: ok as drafts (polish in 05.3; the "1 envelopes" plural slip is noted for 05.3).
+- Item 1 (I28 and ask rates) and item 6 (D-50 frequency): accepted; re-check the ask rates against real data in 05.2 once answers are stored.
+- Item 3 (money in = higher of received and expected): accepted.
+- Items 4 (explorer on the typical month) and 5 ("9999" implied rate): deferred to 05.3 (recorded in 05.1-CONTEXT.md).
+- Item 2 (settling): fixed now as D-64. A line that settles a bill counts the bill at the larger of the amount due and the amount paid, so logging a payment never raises money left this month. I21 runs with bill series again; a $500 bill paid with $460 stays 50,000 (unit test). No golden, new-fit key, new-fit figure or I28 family moved; one non-fit detail figure moved (generated:gen-298:0 monthLeft, a needs_input answer).
+
 ---
 
 # Shadow report: today's engine against v3 (05.1-28)
@@ -185,13 +196,13 @@ Synthetic data only (D-17): 300 seeded histories, the 9 personas, the 22 scenari
 | Unsupported by the old engine (not counted as agreement or change) | 138 |
 | Not ready (D-52), not counted as agreement or change | 93 |
 | Not-ready rate | 11.9% |
-| Owner review | not yet reviewed |
+| Owner review | reviewed by owner on 2026-10-27 |
 
 ## Changes by cause
 
 ### needs_input_rules (288)
 
-v3 asks for a figure (unspent money or up-to-date records) where the old engine answered without it (UP 5.4). Count changed in gap closure (69 -> 288); previously accepted 2026-10-26 (05.1-32), needs the owner again (05.1-49). Accepted: no.
+v3 asks for a figure (unspent money or up-to-date records) where the old engine answered without it (UP 5.4). Count 288 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
@@ -206,7 +217,7 @@ Examples:
 
 ### unspent_confirmed (4)
 
-v3 counts unspent money the person confirmed; the old engine had no such figure (D-22). Count changed in gap closure (13 -> 4); previously accepted 2026-10-26 (05.1-32), needs the owner again (05.1-49). Accepted: no.
+v3 counts unspent money the person confirmed; the old engine had no such figure (D-22). Count 4 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
@@ -219,7 +230,7 @@ Examples:
 
 ### emergency_locked (10)
 
-v3 keeps the emergency fund out of reach (D-09); the old engine counted it toward the cushion. Count changed in gap closure (11 -> 10); previously accepted 2026-10-26 (05.1-32), needs the owner again (05.1-49). Accepted: no.
+v3 keeps the emergency fund out of reach (D-09); the old engine counted it toward the cushion. Count 10 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
@@ -233,7 +244,7 @@ Examples:
 
 ### erest_not_zero_spend (2)
 
-v3 carries the rest of the month's everyday spending (Erest) instead of treating it as zero. Count changed in gap closure (6 -> 2); previously accepted 2026-10-26 (05.1-32), needs the owner again (05.1-49). Accepted: no.
+v3 carries the rest of the month's everyday spending (Erest) instead of treating it as zero. Count 2 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
@@ -245,7 +256,7 @@ Examples:
 
 ### cash_path_spread (46)
 
-v3 judges the cash path with the real pay and bill dates; the old engine raised its own cash warnings. Count changed in gap closure (100 -> 46); previously accepted 2026-10-26 (05.1-32), needs the owner again (05.1-49). Accepted: no.
+v3 judges the cash path with the real pay and bill dates; the old engine raised its own cash warnings. Count 46 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
@@ -262,7 +273,7 @@ Examples:
 
 ### median_ignores_outlier (1)
 
-v3 uses the median everyday spend, so a one-off heavy month no longer sets the typical figure. Count changed in gap closure (5 -> 1); previously accepted 2026-10-26 (05.1-32), needs the owner again (05.1-49). Accepted: no.
+v3 uses the median everyday spend, so a one-off heavy month no longer sets the typical figure. Count 1 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
@@ -273,7 +284,7 @@ Examples:
 
 ### other (2)
 
-No named rule matched; each entry needs a direct look. Count changed in gap closure (4 -> 2); previously accepted 2026-10-26 (05.1-32), needs the owner again (05.1-49). Accepted: no.
+No named rule matched; each entry needs a direct look. Count 2 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|

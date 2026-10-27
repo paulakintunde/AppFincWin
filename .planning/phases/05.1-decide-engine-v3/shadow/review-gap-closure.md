@@ -169,3 +169,14 @@ Questions: volatile_cover_question, unexplained_money_question ("What is the $50
 3. Confirm or reject each fixture correction in section 5 and the new goldens in section 8.
 4. Reply "ok <code>" or "reword <code>: <why>" for each D-46 sentence.
 5. Answer the six items in section 2.
+
+### 11. Owner sign-off record (2026-10-27, relayed from the main session popups)
+
+- All 14 new fits: approved.
+- All cause groups in section 4: accepted.
+- All fixture corrections (section 5) and the 37 new goldens (section 8): confirmed.
+- All D-46 sentences: ok as drafts (polish in 05.3; the "1 envelopes" plural slip is noted for 05.3).
+- Item 1 (I28 and ask rates) and item 6 (D-50 frequency): accepted; re-check the ask rates against real data in 05.2 once answers are stored.
+- Item 3 (money in = higher of received and expected): accepted.
+- Items 4 (explorer on the typical month) and 5 ("9999" implied rate): deferred to 05.3 (recorded in 05.1-CONTEXT.md).
+- Item 2 (settling): fixed now as D-64. A line that settles a bill counts the bill at the larger of the amount due and the amount paid, so logging a payment never raises money left this month. I21 runs with bill series again; a $500 bill paid with $460 stays 50,000 (unit test). No golden, new-fit key, new-fit figure or I28 family moved; one non-fit detail figure moved (generated:gen-298:0 monthLeft, a needs_input answer).
