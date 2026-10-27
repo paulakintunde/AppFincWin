@@ -367,6 +367,20 @@ describe("incomeThisMonth", () => {
     expect(r.received).toBe(100000);
   });
 
+  it("D-41 an ended pay series with no end date has nothing due from asOf on, and its paid line still counts", () => {
+    const p = ser({ id: "pay", anchorDate: "2026-04-28", status: "ended" });
+    const r = incomeThisMonth(
+      inp({ asOf: "2026-10-20", current: month("2026-10", []), series: [p] }),
+    );
+    expect(r.dueConfirmed).toBe(0);
+    expect(r.total).toBe(0);
+    const paid = ser({ id: "pay", status: "ended" });
+    const cur = month("2026-10", [line({ id: "l1", seriesId: "pay" })]);
+    const r2 = incomeThisMonth(inp({ current: cur, series: [paid] }));
+    expect(r2.received).toBe(400000);
+    expect(r2.dueConfirmed).toBe(0);
+  });
+
   it("unconfirmed pay series never counts (I34)", () => {
     const p = ser({ id: "pay", confirmed: false });
     expect(incomeThisMonth(inp({ series: [p] })).total).toBe(0);
@@ -750,6 +764,13 @@ describe("typicalIncome", () => {
     const r = typicalIncome(inp({ series: [PAY, weekly] }));
     expect(r.amount).toBe(400000 + 216667); // 100000 * 52 / (12 * 2) = 216666.67
     expect(r.hasConfirmedIncome).toBe(true);
+  });
+
+  it("D-41 an ended pay series with no end date is not in the typical income", () => {
+    const ended = ser({ id: "e", status: "ended" });
+    const r = typicalIncome(inp({ series: [ended] }));
+    expect(r.amount).toBe(0);
+    expect(r.hasConfirmedIncome).toBe(false);
   });
 
   it("adds available other income, flags unmarked, skips ended series", () => {

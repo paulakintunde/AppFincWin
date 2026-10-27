@@ -1,6 +1,7 @@
 /**
  * UP §5.4, D-30, D-32 (05.1). The fixed needs-input rules; nothing else can ask the user for more.
- *  5.4.1 no confirmed pay series, no income profile and no rough figures        -> no_income_figures
+ *  5.4.1 no confirmed pay series (D-41: ended with no end date is ended as of today),
+ *        no income profile and no rough figures                                  -> no_income_figures
  *  5.4.2 unspent not confirmed and day one above this month's room               -> unspent_not_confirmed
  *  5.4.3 band >= 5, newest spending entry over 10 days old and the month below
  *        50% of the usual pace                                                   -> records_look_behind
@@ -10,6 +11,7 @@
  */
 import { daysBetween } from '../dates';
 import { NEEDS_INPUT_ENTRY_AGE_DAYS, NEEDS_INPUT_MIN_BAND, UNDER_LOGGED_PACE_PERCENT } from '../constants';
+import { classifyLine, liveSeriesOf, seriesIndex } from '../month/series';
 import type { Funds, MissingCode, MonthModel, Purchase, V3Inputs } from '../types';
 
 export interface NeedsInputContext {
@@ -21,18 +23,16 @@ export interface NeedsInputContext {
 }
 
 function hasConfirmedIncome(inputs: V3Inputs): boolean {
-  return inputs.series.some((s) => {
-    if (s.role !== 'pay' || !s.confirmed || s.status === 'dismissed') return false;
-    if (s.status === 'ended') return s.endDate !== null && s.endDate >= inputs.asOf;
-    return s.endDate === null || s.endDate >= inputs.asOf;
-  });
+  return liveSeriesOf(inputs.series, inputs.asOf, 'pay').length > 0;
 }
 
 function newestSpending(inputs: V3Inputs): string | null {
+  const index = seriesIndex(inputs.series);
   let newest: string | null = null;
   for (const m of inputs.months) {
     for (const l of m.lines) {
-      if (l.role === 'spending' && l.status === 'paid' && (newest === null || l.date > newest)) newest = l.date;
+      // L-09: a bill payment is not everyday spending, so it does not show the records are fresh.
+      if (l.role === 'spending' && l.status === 'paid' && classifyLine(l, index) === 'everyday' && (newest === null || l.date > newest)) newest = l.date;
     }
   }
   return newest;
@@ -46,7 +46,7 @@ export function needsInput(ctx: NeedsInputContext): readonly MissingCode[] {
   if (month.e === null && inputs.rough === null) out.add('everyday_unknown');
 
   if (purchase !== null) {
-    if (funds.unspent === null && purchase.dayOne > Math.max(0, month.monthLeft)) out.add('unspent_not_confirmed');
+    if (funds.unspent === null && purchase.dayOne > Math.max(0, month.monthLeft) + Math.max(0, funds.ownEnvelope)) out.add('unspent_not_confirmed');
 
     if (purchase.band >= NEEDS_INPUT_MIN_BAND && month.e !== null) {
       const newest = newestSpending(inputs);
