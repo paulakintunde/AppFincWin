@@ -130,6 +130,106 @@ describe("incomeThisMonth", () => {
     expect(r.dueConfirmed).toBe(30000); // 10-15, 10-22, 10-29
   });
 
+  it("H-02 early: monthly pay due 10-31 received 10-26 counts once, nothing due", () => {
+    const p = ser({ id: "pay", anchorDate: "2026-01-31" });
+    const cur = month("2026-10", [
+      line({ id: "e", date: "2026-10-26", seriesId: "pay" }),
+    ]);
+    const r = incomeThisMonth(inp({ asOf: "2026-10-28", current: cur, series: [p] }));
+    expect(r.received).toBe(400000);
+    expect(r.dueConfirmed).toBe(0);
+    expect(r.total).toBe(400000);
+  });
+
+  it("H-02 missed: biweekly 10-01 and 10-15 with only the 10-15 line is one pay, 10-01 missed", () => {
+    const p = ser({
+      id: "pay",
+      cadence: { unit: "week", every: 2 },
+      anchorDate: "2026-10-01",
+      amount: mu(100000),
+    });
+    const cur = month("2026-10", [
+      line({ id: "b", date: "2026-10-15", amount: mu(100000), seriesId: "pay" }),
+    ]);
+    const r = incomeThisMonth(inp({ asOf: "2026-10-16", current: cur, series: [p] }));
+    expect(r.received).toBe(100000);
+    expect(r.reasons).toContain("missed_pay_excluded");
+    // 10-29, the third occurrence, is still to come: the total is two pays (10-15 and 10-29), not three
+    expect(r.dueConfirmed).toBe(100000);
+    expect(r.total).toBe(200000);
+  });
+
+  it("H-02 a late line within 7 days settles its own due date", () => {
+    const p = ser({ id: "pay", anchorDate: "2026-04-05" });
+    const cur = month("2026-10", [
+      line({ id: "l", date: "2026-10-10", seriesId: "pay" }),
+    ]);
+    const r = incomeThisMonth(inp({ asOf: "2026-10-12", current: cur, series: [p] }));
+    expect(r.dueConfirmed).toBe(0);
+    expect(r.received).toBe(400000);
+  });
+
+  it("nothing is matched across series", () => {
+    const other = ser({ id: "pay2", anchorDate: "2026-04-05", amount: mu(1000) });
+    const cur = month("2026-10", [
+      line({ id: "l", date: "2026-10-05", seriesId: "pay" }),
+    ]);
+    const r = incomeThisMonth(inp({ asOf: "2026-10-06", current: cur, series: [PAY, other] }));
+    expect(r.dueConfirmed).toBe(1000);
+  });
+
+  it("W4 boundary: pay due Sun 11-01 received Fri 10-30 belongs to November", () => {
+    const oct = month("2026-10", [
+      line({ id: "own", date: "2026-10-01", seriesId: "pay" }),
+      line({ id: "early", date: "2026-10-30", seriesId: "pay" }),
+    ]);
+    const a = incomeThisMonth(inp({ asOf: "2026-10-31", current: oct, series: [PAY] }));
+    expect(a.received).toBe(400000); // October's own pay once, not the 10-30 line
+    expect(a.dueConfirmed).toBe(0);
+    expect(a.total).toBe(400000);
+    const nov = incomeThisMonth(
+      inp({ asOf: "2026-11-02", current: month("2026-11", []), history: [oct], series: [PAY] }),
+    );
+    expect(nov.received).toBe(400000); // counted once, as received, nothing due
+    expect(nov.dueConfirmed).toBe(0);
+    expect(nov.total).toBe(400000);
+  });
+
+  it("W4 a variable-income series settled by last month's line counts in the variable bucket", () => {
+    const side = ser({
+      id: "side",
+      role: "other_income",
+      anchorDate: "2026-04-01",
+      amount: mu(50000),
+      incomeKind: "rent",
+      countsAs: "available",
+    });
+    const oct = month("2026-10", [
+      line({ id: "early", date: "2026-10-30", amount: mu(50000), seriesId: "side", incomeKind: "rent", countsAs: "available" }),
+    ]);
+    const r = incomeThisMonth(
+      inp({ asOf: "2026-11-02", current: month("2026-11", []), history: [oct], series: [side] }),
+    );
+    expect(r.received).toBe(50000);
+    expect(r.dueConfirmed).toBe(0);
+  });
+
+  it("D-56 typed pay line: a typed or statement income line of the right amount settles a pay occurrence", () => {
+    for (const source of [undefined, "statement"] as const) {
+      const cur = month("2026-10", [
+        line({ id: "t", date: "2026-10-02", amount: mu(405000), seriesId: null, source }),
+      ]);
+      const r = incomeThisMonth(inp({ asOf: "2026-10-12", current: cur, series: [PAY] }));
+      expect(r.received).toBe(405000);
+      expect(r.dueConfirmed).toBe(0);
+      expect(r.reasons).not.toContain("missed_pay_excluded");
+    }
+    // 15% off: not the pay, so the 10-01 occurrence goes missed after the grace
+    const off = month("2026-10", [line({ id: "t", date: "2026-10-02", amount: mu(340000), seriesId: null })]);
+    const r = incomeThisMonth(inp({ asOf: "2026-10-12", current: off, series: [PAY] }));
+    expect(r.reasons).toContain("missed_pay_excluded");
+  });
+
   it("works with no current month at all", () => {
     const r = incomeThisMonth(inp({ series: [PAY], profile: null }));
     expect(r.total).toBe(400000); // due 10-01 is 2 days overdue: inside the grace, so still counted
