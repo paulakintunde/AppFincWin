@@ -1197,6 +1197,13 @@
    "person": "sam",
    "personOverrides": {
     "asOf": "2026-10-13",
+    "payArrivals": [
+     {
+      "seriesId": "sam-pay",
+      "date": "2026-10-01",
+      "arrived": false
+     }
+    ],
     "unspent": {
      "amount": 240000,
      "at": "2026-10-13"
@@ -1586,7 +1593,7 @@
     "month": {
      "moneyIn": 0
     },
-    "working": "asOf 2026-10-13, the 2026-10-01 pay line is missing. D-58: a confirmed pay dated before asOf with no matching line is asked about, never guessed; with no answer yet it is neither received nor due: moneyIn 0. The reason missed_pay_excluded now appears only once the user answers not yet, so the expectation no longer lists it. Unspent re-confirmed 2026-10-13 at 240,000. moneyOut 357,500 (rent 150,000, utilities 30,000 due on the 15th, logged 10,000, Erest max(round(147,500*18/31)=85,645, 147,500-10,000=137,500)=137,500, setAside 30,000), monthLeft -357,500 < 5,000 <= 240,000 -> fits_unspent. Band 2."
+    "working": "asOf 2026-10-13, the 2026-10-01 pay line is missing. D-58: a confirmed pay dated before asOf with no matching line is asked about, never guessed; with no answer yet it is neither received nor due: moneyIn 0. The user answers not yet (payArrivals: arrived false), so the pay is counted as missed: moneyIn 0 and reasons include missed_pay_excluded, and the answer is a careful one, never needs_input (the pay_arrival_question is gone). Unspent re-confirmed 2026-10-13 at 240,000. moneyOut 357,500 (rent 150,000, utilities 30,000 due on the 15th, logged 10,000, Erest max(round(147,500*18/31)=85,645, 147,500-10,000=137,500)=137,500, setAside 30,000), monthLeft -357,500 < 5,000 <= 240,000 -> fits_unspent. Band 2."
    },
    "source": "D-18"
   }

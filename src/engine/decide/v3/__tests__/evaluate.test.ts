@@ -195,3 +195,53 @@ describe('D-42 the stricter of the as-given and the all-full reading', () => {
     expect(tie.result.reasons).toEqual(['exceeds_range']);
   });
 });
+
+/** A seasonal earner: 14 full months, pay of 145,000 in May-Sep and 70,000 otherwise (the 05.1-44 corpus fixture, built here). */
+function gigInputs(payAmount: number, anchorDate: string, over: Partial<ReturnType<typeof inputsOf>> = {}): ReturnType<typeof inputsOf> {
+  const gigPay = v3Series({ id: 'gig', role: 'pay', cadence: { unit: 'month', every: 1 }, anchorDate, amount: payAmount });
+  const months = Array.from({ length: 14 }, (_, i) => {
+    const t = 9 + i; // 2025-10 ...
+    const m = `${2025 + Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`;
+    const pay = ['05', '06', '07', '08', '09'].includes(m.slice(5)) ? 145_000 : 70_000;
+    return monthOf(m, [
+      v3Line({ id: `gp-${m}`, date: `${m}-01`, amount: pay, role: 'income', seriesId: 'gig' }),
+      v3Line({ id: `ge-${m}`, date: `${m}-15`, amount: m.endsWith('-12') ? 50_000 : 30_000 }),
+    ]);
+  });
+  return inputsOf({
+    asOf: '2026-12-10',
+    series: [gigPay],
+    months: [...months, monthOf('2026-12', [], { full: false })],
+    profile: { types: ['salary'], variable: null, steady: null, billsHorizonMonths: null, pattern: 'seasonal' },
+    ...over,
+  });
+}
+
+describe('D-46 the pay cap is named', () => {
+  it('D-46 a seasonal earner paid the high-season amount gets pay_capped_expected with the amount withheld', () => {
+    const ev = evaluate(gigInputs(145_000, '2025-01-01'), checkOnce(10_000));
+    const notice = ev.result.notices.find((n) => n.code === 'pay_capped_expected');
+    // 2027-01-01, 02-01 and 03-01 each land 70,000 (the same month last year) of the 145,000 on record: 3 x 75,000 withheld.
+    expect(notice?.values).toEqual({ capped: 225_000 });
+    expect(ev.result.notices[ev.result.notices.length - 1]).toBe(notice);
+  });
+
+  it('D-46 pay at or under the expected income is not capped, and a steady earner never sees the notice', () => {
+    expect(evaluate(gigInputs(70_000, '2025-01-01'), checkOnce(10_000)).result.notices.map((n) => n.code)).not.toContain('pay_capped_expected');
+    expect(evaluate(sam(), checkOnce(15000)).result.notices.map((n) => n.code)).not.toContain('pay_capped_expected');
+  });
+
+  it('D-35 this month the cap is expected minus what has arrived, never below 0', () => {
+    // A pay due 2026-12-20; December expected 70,000 (December last year).
+    const open = evaluate(gigInputs(145_000, '2025-01-20'), checkOnce(10_000));
+    expect(open.result.notices.find((n) => n.code === 'pay_capped_expected')?.values).toEqual({ capped: 225_000 }); // 3 x 75,000
+    // 100,000 has already arrived this month, above the 70,000 expected: December may add nothing, so all 145,000 is withheld.
+    const base = gigInputs(145_000, '2025-01-20');
+    const arrived = {
+      ...base,
+      months: base.months.map((m) => (m.month === '2026-12' ? { ...m, lines: [v3Line({ id: 'got', date: '2026-12-02', amount: 100_000, role: 'income', seriesId: 'gig' })] } : m)),
+    };
+    const ev = evaluate(arrived, checkOnce(10_000));
+    expect(ev.result.notices.find((n) => n.code === 'pay_capped_expected')?.values).toEqual({ capped: 295_000 }); // 145,000 + 2 x 75,000
+  });
+});

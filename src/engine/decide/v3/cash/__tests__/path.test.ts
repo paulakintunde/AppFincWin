@@ -136,6 +136,63 @@ describe('buildCashPathV3', () => {
   });
 });
 
+describe('buildCashPathV3 payCaps (D-35 cap, D-46)', () => {
+  const big = v3Series({ id: 'pay', role: 'pay', cadence: MONTH, anchorDate: '2026-10-15', amount: 520_000 });
+  const at = (p: { readonly points: readonly { readonly date: string; readonly balance: number }[] }, date: string) =>
+    (p.points.find((x) => x.date === date) as { readonly balance: number }).balance;
+
+  it('D-35 cap: null caps leave the path as it is, with no capped total', () => {
+    const plain = path({ asOf: '2026-11-03', series: [big] });
+    const nullCaps = path({ asOf: '2026-11-03', series: [big], payCaps: null });
+    expect(nullCaps).toEqual(plain);
+    expect(plain.capped).toBeUndefined();
+  });
+
+  it('D-35 cap: pay lands at the month expected figure, later months likewise, and the capped total is reported', () => {
+    const caps = new Map([['2026-11', mu(210_000)], ['2026-12', mu(100_000)], ['2027-01', mu(1_000_000)]]);
+    const p = path({ asOf: '2026-11-03', series: [big], payCaps: caps });
+    expect(at(p, '2026-11-14')).toBe(0);
+    expect(at(p, '2026-11-15')).toBe(210_000);
+    expect(at(p, '2026-12-14')).toBe(210_000);
+    expect(at(p, '2026-12-15')).toBe(310_000);
+    expect(at(p, '2027-01-14')).toBe(310_000);
+    expect(at(p, '2027-01-15')).toBe(830_000);
+    expect(p.capped).toBe(730_000);
+  });
+
+  it('D-35 cap: two pay occurrences in one month share the cap in date order, then series id', () => {
+    const a = v3Series({ id: 'b', role: 'pay', cadence: MONTH, anchorDate: '2026-11-10', amount: 200_000 });
+    const b = v3Series({ id: 'a', role: 'pay', cadence: MONTH, anchorDate: '2026-11-10', amount: 200_000 });
+    const c = v3Series({ id: 'c', role: 'pay', cadence: MONTH, anchorDate: '2026-11-05', amount: 200_000 });
+    const p = path({ asOf: '2026-11-03', days: 20, series: [a, b, c], payCaps: new Map([['2026-11', mu(300_000)]]) });
+    expect(at(p, '2026-11-05')).toBe(200_000);
+    expect(at(p, '2026-11-10')).toBe(300_000);
+    expect(p.capped).toBe(300_000);
+  });
+
+  it('D-35 cap: a month with no cap lands nothing; an exactly-met cap withholds nothing', () => {
+    const none = path({ asOf: '2026-11-03', days: 30, series: [big], payCaps: new Map() });
+    expect(at(none, '2026-11-30')).toBe(0);
+    expect(none.capped).toBe(520_000);
+    const exact = path({ asOf: '2026-11-03', days: 30, series: [big], payCaps: new Map([['2026-11', mu(520_000)]]) });
+    expect(at(exact, '2026-11-30')).toBe(520_000);
+    expect(exact.capped).toBeUndefined();
+  });
+
+  it('D-35 cap: a paid occurrence is still skipped, and the cap never raises any point of the path', () => {
+    const settled = path({ asOf: '2026-10-20', days: 20, series: [big], paidThisMonth: new Set(['pay|2026-10-15']), payCaps: new Map([['2026-10', mu(1)]]) });
+    expect(settled.capped).toBeUndefined();
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 900_000 }), fc.integer({ min: 0, max: 900_000 }), (c1, c2) => {
+        const free = path({ asOf: '2026-11-03', series: [big] });
+        const capped = path({ asOf: '2026-11-03', series: [big], payCaps: new Map([['2026-11', mu(c1)], ['2026-12', mu(c2)]]) });
+        capped.points.forEach((pt, i) => expect(pt.balance <= (free.points[i] as { balance: number }).balance).toBe(true));
+      }),
+      { numRuns: 50 }
+    );
+  });
+});
+
 describe('nextPayDate', () => {
   it('first confirmed live pay on or after asOf', () => {
     expect(nextPayDate(tiaSeries, '2026-10-20')).toBe('2026-10-28');

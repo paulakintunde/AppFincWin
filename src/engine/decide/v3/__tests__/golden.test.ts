@@ -158,7 +158,12 @@ describe('D-43a the fund never cushions the cash check (D-54)', () => {
   });
 
   it('D-43a the fund is reached only through the ladder: 200,000 with unspent 10,000 is not covered unmarked, emergency_use when marked a necessity', () => {
-    const low: V3Inputs = { ...sam(), unspent: { amount: minorUnits(10_000), at: '2026-10-03' } };
+    // D-50: 240,000 suggested against 10,000 confirmed is money the records do not explain; the user's answer (kept aside) covers it.
+    const low: V3Inputs = {
+      ...sam(),
+      unspent: { amount: minorUnits(10_000), at: '2026-10-03' },
+      unexplainedAnswer: { amount: minorUnits(230_000), use: 'set_aside_for_bill', at: '2026-10-03' },
+    };
     const unmarked = evaluate(low, toCheckV2({ ...base(), price: 200_000 }));
     expect(unmarked.cash.kind).toBe('ok'); // 407,500 spending carries it: lowest point 240,000 - 200,000
     expect(unmarked.result.code).toBe('not_yet');
