@@ -8,6 +8,8 @@
  * at the anchor, do not move it. Until Grow, envelope and savings-goal moves count as saved/invested (D-22 stand-in).
  * I35: a confirmed figure is used as given. D-30: a drifted figure stays the user's figure.
  * The engine exposes stale and drifted; screens decide when to re-ask (D-22).
+ * D-38: a bridge holds money back; the breakdown shows it as its own line (heldBack) and `available` is the confirmed
+ * figure less that amount. Drift and staleness always read the user's confirmed figure, never `available`.
  */
 import { minorUnits, type MinorUnits } from '../../../money/types';
 import { minorFromBigInt } from '../../../payoff/types';
@@ -16,7 +18,7 @@ import { addDays, addMonthsClamped, addYearMonths, dayOfMonth, daysBetween, days
 import { classifyLine, liveSeriesOf, seriesIndex, seriesOccurrences } from '../month/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from '../month/settle';
 import { erestOf } from '../month/thisMonth';
-import type { IncomeProfile, UnspentAnchor, UnspentBreakdown, UnspentState, V3Line, V3Month, V3Series } from '../types';
+import type { HeldBridge, IncomeProfile, UnspentAnchor, UnspentBreakdown, UnspentState, V3Line, V3Month, V3Series } from '../types';
 
 const FN = 'unspent';
 
@@ -179,12 +181,21 @@ export function unspentState(input: {
   readonly roll: { readonly value: MinorUnits; readonly breakdown: UnspentBreakdown; readonly rolled: boolean } | null;
   readonly suggested: MinorUnits;
   readonly driftThreshold: MinorUnits;
+  readonly heldBridges: readonly HeldBridge[];
 }): UnspentState | null {
   if (input.anchor === null) return null;
   const roll = input.roll ?? { value: input.anchor.amount, breakdown: ZERO, rolled: false };
   const diff = BigInt(roll.value) - BigInt(input.suggested);
   const abs = diff < 0n ? -diff : diff;
   const suggestedAbs = BigInt(Math.abs(input.suggested));
+  // D-38: valid bridges only (safe integer >= 0), the first of each id; summed in bigint.
+  const seen = new Set<string>();
+  let heldBack = 0n;
+  for (const b of input.heldBridges) {
+    if (seen.has(b.id) || !Number.isSafeInteger(b.amount) || b.amount < 0) continue;
+    seen.add(b.id);
+    heldBack += BigInt(b.amount);
+  }
   const drifted = abs * BigInt(UNSPENT_DRIFT_PERCENT_DIVISOR) > suggestedAbs || abs > BigInt(input.driftThreshold);
   return {
     value: roll.value,
@@ -192,6 +203,7 @@ export function unspentState(input: {
     rolled: roll.rolled,
     stale: daysBetween(input.anchor.at, input.asOf) > UNSPENT_STALE_DAYS,
     drifted,
-    breakdown: roll.breakdown,
+    breakdown: { ...roll.breakdown, heldBack: minorFromBigInt(heldBack, FN) },
+    available: minorFromBigInt(BigInt(roll.value) - heldBack, FN),
   };
 }
