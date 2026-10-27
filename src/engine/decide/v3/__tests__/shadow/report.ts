@@ -12,6 +12,7 @@ export interface ApprovedNewFit {
   cause: Cause;
   reason: string;
   approved: boolean;
+  changedInGapClosure?: boolean;
 }
 export interface ApprovedGroup {
   cause: Cause;
@@ -59,6 +60,8 @@ export function renderReport(run: ShadowRun, approved: ApprovedChanges): string 
   L.push(`| Changed answer | ${run.changes.length} |`);
   L.push(`| New fits (v3 fits_month or fits_unspent, old did not fit) | ${newFits.length} |`);
   L.push(`| Unsupported by the old engine (not counted as agreement or change) | ${run.unsupported.length} |`);
+  L.push(`| Not ready (D-52), not counted as agreement or change | ${run.notReady.length} |`);
+  L.push(`| Not-ready rate | ${run.total === 0 ? '0.0' : ((run.notReady.length / run.total) * 100).toFixed(1)}% |`);
   L.push(`| Owner review | ${approved.reviewed ? `reviewed by ${fmt(approved.reviewedBy)} on ${fmt(approved.reviewedAt)}` : 'not yet reviewed'} |`);
   L.push('');
   L.push('## Changes by cause');
@@ -90,6 +93,19 @@ export function renderReport(run: ShadowRun, approved: ApprovedChanges): string 
     L.push(`| \`${c.key}\` | ${c.cause} | ${c.old} -> ${c.v3} | ${entry?.approved ? 'yes' : 'no'} | ${entry ? entry.reason : 'MISSING'} |`);
   }
   L.push('');
+  L.push('## Not ready (D-52)');
+  L.push('');
+  L.push(`${run.notReady.length} of ${run.total} comparisons. v3 asks for more records instead of answering.`);
+  L.push('');
+  const codes = new Map<string, number>();
+  for (const n of run.notReady) for (const m of n.missing) codes.set(m, (codes.get(m) ?? 0) + 1);
+  L.push('| Missing code | Count |');
+  L.push('|---|---|');
+  for (const [k, n] of codes) L.push(`| ${k} | ${n} |`);
+  L.push('');
+  L.push('Keys and codes:');
+  L.push(run.notReady.map((n) => `\`${n.key}\` (${n.missing.join(', ')})`).join(', '));
+  L.push('');
   L.push('## Unsupported by the old engine');
   L.push('');
   const reasons = new Map<string, number>();
@@ -106,6 +122,9 @@ export function renderReport(run: ShadowRun, approved: ApprovedChanges): string 
 
 export function writeReport(run: ShadowRun, approved: ApprovedChanges): void {
   fs.mkdirSync(REPORT_DIR, { recursive: true });
-  fs.writeFileSync(path.join(REPORT_DIR, 'SHADOW-REPORT.md'), renderReport(run, approved));
+  // 05.1-49: the hand-written owner review section sits above the generated tables and survives regeneration.
+  const reviewFile = path.join(REPORT_DIR, 'review-gap-closure.md');
+  const review = fs.existsSync(reviewFile) ? fs.readFileSync(reviewFile, 'utf8').trimEnd() + '\n\n---\n\n' : '';
+  fs.writeFileSync(path.join(REPORT_DIR, 'SHADOW-REPORT.md'), review + renderReport(run, approved));
   fs.writeFileSync(path.join(REPORT_DIR, 'shadow-report.json'), JSON.stringify(run, null, 2) + '\n');
 }

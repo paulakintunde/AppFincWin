@@ -45,6 +45,8 @@ export interface ChangedAnswer {
 export interface ShadowRun {
   changes: ChangedAnswer[];
   unsupported: { key: string; reason: string }[];
+  /** D-52: comparisons whose v3 result is not ready. Never agreed, never a change. */
+  notReady: { key: string; missing: string[] }[];
   total: number;
   agreed: number;
 }
@@ -120,6 +122,7 @@ function warningsOf(c: Case): string[] {
 export function runShadow(): ShadowRun {
   const changes: ChangedAnswer[] = [];
   const unsupported: { key: string; reason: string }[] = [];
+  const notReady: { key: string; missing: string[] }[] = [];
   let agreed = 0;
   const all = cases();
   for (const c of all) {
@@ -130,6 +133,10 @@ export function runShadow(): ShadowRun {
     }
     const check = toCheckV2(c.purchase);
     const ev = evaluate(toV3Inputs(c.v3Person ?? c.person, c.over), c.own ? { ...check, itemType: { kind: 'custom', id: 'pet' } } : check);
+    if (ev.result.readiness?.ready === false) {
+      notReady.push({ key: c.key, missing: [...ev.result.readiness.missing] });
+      continue;
+    }
     const code = ev.result.code;
     const v3Legacy = legacyStateOf(code);
     if (v3Legacy === old.state) {
@@ -161,5 +168,5 @@ export function runShadow(): ShadowRun {
       },
     });
   }
-  return { changes, unsupported, total: all.length, agreed };
+  return { changes, unsupported, notReady, total: all.length, agreed };
 }

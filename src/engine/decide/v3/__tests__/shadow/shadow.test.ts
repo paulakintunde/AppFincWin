@@ -42,9 +42,14 @@ describe('generator', () => {
 });
 
 describe('comparison', () => {
-  it('counts every comparison exactly once: agreed + changed + unsupported = total', () => {
-    expect(run.agreed + run.changes.length + run.unsupported.length).toBe(run.total);
+  it('counts every comparison exactly once: agreed + changed + unsupported + notReady = total', () => {
+    expect(run.agreed + run.changes.length + run.unsupported.length + run.notReady.length).toBe(run.total);
     expect(run.total).toBeGreaterThan(300);
+  });
+
+  it('D-52: a not-ready comparison is never listed as a change', () => {
+    const notReady = new Set(run.notReady.map((n) => n.key));
+    for (const c of run.changes) expect(notReady.has(c.key)).toBe(false);
   });
 
   it('never lists an unsupported comparison as a change', () => {
