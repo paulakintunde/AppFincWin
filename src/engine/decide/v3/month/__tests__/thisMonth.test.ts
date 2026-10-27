@@ -155,6 +155,44 @@ describe('thisMonth', () => {
     expect(off.everydayLogged).toBe(100000);
   });
 
+  it('D-64 a payment smaller than the bill settles it but the bill still counts in full', () => {
+    const bill = ser({ id: 'b500', amount: mu(50000), anchorDate: '2026-01-01' });
+    for (const source of [undefined, 'statement'] as const) {
+      const r = thisMonth(
+        input({ asOf: '2026-10-20', series: [bill], current: month([line({ id: 'p', date: '2026-10-02', amount: mu(46000), source })]) })
+      );
+      expect(r.billsDue).toBe(0);
+      expect(r.billsPaid).toBe(50000);
+      expect(r.everydayLogged).toBe(0);
+    }
+    const linked = thisMonth(
+      input({ asOf: '2026-10-20', series: [bill], current: month([line({ id: 'p', date: '2026-10-02', amount: mu(46000), seriesId: 'b500' })]) })
+    );
+    expect(linked.billsPaid).toBe(50000);
+    const over = thisMonth(
+      input({ asOf: '2026-10-20', series: [bill], current: month([line({ id: 'p', date: '2026-10-02', amount: mu(52000) })]) })
+    );
+    expect(over.billsPaid).toBe(52000);
+  });
+
+  it('D-64 logging a payment near the bill never raises monthLeft', () => {
+    fcAssert(
+      property(
+        integer({ min: 1, max: 31 }),
+        integer({ min: 0, max: 400_000 }),
+        integer({ min: 120_000, max: 180_000 }),
+        integer({ min: 1, max: 28 }),
+        (d, e, paid, day) => {
+          const asOf = `2026-10-${String(d).padStart(2, '0')}`;
+          const mk = (lines: V3Line[]) => thisMonth(input({ asOf, e: mu(e), series: [rent], current: month(lines) })).monthLeft;
+          const pay = line({ id: 'pay', date: `2026-10-${String(day).padStart(2, '0')}`, amount: mu(paid) });
+          expect(mk([pay])).toBeLessThanOrEqual(mk([]));
+        }
+      ),
+      { numRuns: 200 }
+    );
+  });
+
   it('M-02 two occurrences of one series 5 days apart: line order does not change billsDue', () => {
     const w = ser({ id: 'w', amount: mu(500), cadence: { unit: 'week', every: 1 }, anchorDate: '2026-10-01' });
     const a = line({ id: 'a', date: '2026-10-06', amount: mu(500), seriesId: 'w' });
@@ -269,7 +307,7 @@ describe('thisMonth', () => {
         integer({ min: 0, max: 400_000 }),
         (d, e, base, extra) => {
           const asOf = `2026-10-${String(d).padStart(2, '0')}`;
-          const mk = (lines: V3Line[]) => thisMonth(input({ asOf, e: mu(e), series: [], current: month(lines) })).monthLeft; // no bills: a line near a bill's amount would settle it (D-56)
+          const mk = (lines: V3Line[]) => thisMonth(input({ asOf, e: mu(e), series: [rent], current: month(lines) })).monthLeft; // D-64: with a bill series, settling never raises money left
           const l1 = line({ id: 'a', date: '2026-10-01', amount: mu(base) });
           const l2 = line({ id: 'b', date: '2026-10-01', amount: mu(extra) });
           expect(mk([l1, l2])).toBeLessThanOrEqual(mk([l1]));

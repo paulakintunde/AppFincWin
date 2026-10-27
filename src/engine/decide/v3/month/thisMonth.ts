@@ -81,9 +81,17 @@ export function thisMonth(input: ThisMonthInput): ThisMonthResult {
     const c = classifyLine(l, index);
     if (c === 'recurring_bill' || (c === 'everyday' && l.seriesId === null)) candidates.push(toPaidLine(l));
   }
-  const { settled, usedLines } = settle(due, candidates, (id) =>
+  const { settled, usedLines, lineFor } = settle(due, candidates, (id) =>
     matchWindowDays((cadenceOf.get(id) as V3Series).cadence, MATCH_DAYS),
   );
+
+  // D-64: a line that settles a bill counts at the larger of the amount due and the amount paid, so logging a
+  // payment never raises money left this month.
+  const dueOfLine = new Map<string, bigint>();
+  for (const d of due) {
+    const lineId = lineFor.get(`${d.seriesId}|${d.date}`);
+    if (lineId !== undefined) dueOfLine.set(lineId, BigInt(Math.abs(d.amount)));
+  }
 
   let billsPaid = 0n;
   let everyday = 0n;
@@ -94,7 +102,8 @@ export function thisMonth(input: ThisMonthInput): ThisMonthResult {
     const amount = BigInt(Math.abs(l.amount));
     // A typed or statement line that settles a bill is that bill, counted once (D-51).
     if (usedLines.has(l.id)) {
-      billsPaid += amount;
+      const owed = dueOfLine.get(l.id) as bigint;
+      billsPaid += amount > owed ? amount : owed;
       continue;
     }
     switch (classifyLine(l, index)) {
