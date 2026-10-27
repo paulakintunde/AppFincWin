@@ -52,6 +52,9 @@ const NOT_YET_EMITTED: readonly string[] = [
   'pay_not_seen',
   'pay_counted_missed',
   'fund_account_unknown',
+  // 05.1-35 keeps the fund out of the cash check, so no corpus case reaches emergency_use until D-63 (05.1-44 Task 3)
+  // lets an emergency-marked purchase see the fund; 05.1-44 removes this entry.
+  'emergency_used',
 ];
 
 interface Emitted {
