@@ -337,7 +337,7 @@ export function buildV3Inputs(
       if (out && fromSpending && !toSpending) {
         if (tagged) return 'envelope_deposit'; // D-22 stand-in: money into a pot or goal
         if (DEBT_KINDS.includes(toKind)) return 'debt_payment';
-        if (anyUse || SAVED_KINDS.includes(toKind)) return 'saved_invested';
+        if ((anyUse && partner !== undefined) || SAVED_KINDS.includes(toKind)) return 'saved_invested';
         return 'other_out';
       }
       if (!out && toSpending && !fromSpending) return tagged ? 'envelope_withdrawal' : 'other_in';

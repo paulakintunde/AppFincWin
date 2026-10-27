@@ -439,6 +439,7 @@ describe('buildV3Inputs: new inputs, accounts and sources (D-54, D-51, M-06)', (
         ...pair('d1', EVERYDAY, SAVINGS, 100, { in: { goal_id: 'g1', local_date: '2026-09-02' } }),
         ...pair('d2', EVERYDAY, CASH, 100, { in: { goal_id: 'g1', local_date: '2026-10-02' } }),
         ...pair('d3', SAVINGS, CASH, 100, { out: { goal_id: 'g1' } }),
+        ...pair('d4', EVERYDAY, EVERYDAY, 100, { in: { goal_id: 'g1', local_date: '2026-08-01' } }),
       ],
       { ...demoSource(TODAY), goals: [goal('g1'), goal('g2')] }
     );
@@ -462,6 +463,8 @@ describe('buildV3Inputs: new inputs, accounts and sources (D-54, D-51, M-06)', (
     expect(role({ [EVERYDAY]: { kind: 'everyday' }, [SAVINGS]: { kind: 'everyday' } }, 'u2-out')).toBe('own_transfer');
     expect(role({ [EVERYDAY]: { kind: 'everyday' } }, 'u2-out')).toBe('saved_invested');
     expect(role({ [EVERYDAY]: { kind: 'everyday' }, [SAVINGS]: { kind: 'dedicated', purpose: { kind: 'emergency' } } }, 'u3-in')).toBe('other_in');
+    const lone = withRows([mk('lone', EVERYDAY, -50, { transfer_id: 'lone-t' })]);
+    expect(buildV3Inputs(lone, null, undefined, { [EVERYDAY]: { kind: 'everyday' } }).months.flatMap((m) => m.lines).find((l) => l.id === 'lone')!.role).toBe('other_out');
   });
 
   it('D-51: a line is a statement line when its row has an import batch, else manual', () => {
