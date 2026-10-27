@@ -30,12 +30,20 @@ export function builtinLines(): readonly LimitLine[] {
 }
 
 /** D-12: at most 3 built-in and 5 own lines, ids unique. Never throws. */
-export function validateLimits(l: Limits): readonly ('too_many_builtin' | 'too_many_own' | 'duplicate_id')[] {
-  const problems: ('too_many_builtin' | 'too_many_own' | 'duplicate_id')[] = [];
+export function validateLimits(
+  l: Limits,
+): readonly ('too_many_builtin' | 'too_many_own' | 'duplicate_id' | 'invalid_times')[] {
+  const problems: ('too_many_builtin' | 'too_many_own' | 'duplicate_id' | 'invalid_times')[] = [];
   if (l.lines.filter((x) => x.source === 'builtin').length > MAX_BUILTIN_LINES) problems.push('too_many_builtin');
   if (l.lines.filter((x) => x.source === 'own').length > MAX_OWN_LINES) problems.push('too_many_own');
   if (new Set(l.lines.map((x) => x.id)).size !== l.lines.length) problems.push('duplicate_id');
+  if (l.lines.some((x) => x.spec.kind === 'unsecured_multiple' && !validTimes(x.spec.times))) problems.push('invalid_times');
   return problems;
+}
+
+/** M-05: a multiple is a non-negative safe integer; anything else would throw out of BigInt(). */
+function validTimes(times: number): boolean {
+  return Number.isSafeInteger(times) && times >= 0;
 }
 
 export interface LineContext {
@@ -50,15 +58,17 @@ function big(n: number): bigint {
   return BigInt(n);
 }
 
-function fact(line: LimitLine, value: number | string | null, lineValue: number | string): Fact {
-  return { code: 'line_crossed', values: { lineId: line.id, kind: line.spec.kind, value, line: lineValue } };
+type LineUnit = 'percent' | 'money' | 'tenths';
+
+function fact(line: LimitLine, unit: LineUnit, value: number, limit: number | string): Fact {
+  return { code: 'line_crossed', values: { lineId: line.id, kind: line.spec.kind, unit, value, limit } };
 }
 
 /** part / income against pct by cross-multiplication. No fact when income is not positive or the purchase adds nothing. */
 function share(line: LimitLine, part: bigint, added: bigint, income: bigint, pct: bigint): Fact | null {
   if (income <= 0n || added <= 0n) return null;
   if (part * ONE_HUNDRED_PERCENT <= pct * income) return null;
-  return fact(line, Number(divideHalfUp(part * 100n, income)), divideHalfUp(pct, PERCENT_SCALE).toString());
+  return fact(line, 'percent', Number(divideHalfUp(part * 100n, income)), divideHalfUp(pct, PERCENT_SCALE).toString());
 }
 
 function categoryTypical(month: MonthModel, categoryId: string): number {
@@ -81,25 +91,26 @@ function evaluateOne(line: LimitLine, ctx: LineContext): Fact | null {
       return share(line, mins + added, added, income, spec.pct);
     }
     case 'unsecured_multiple': {
+      if (!validTimes(spec.times)) return null;
       const added = !purchase.secured && purchase.financed && purchase.schedule ? big(purchase.schedule.financed) : 0n;
       const owed = ctx.debts.filter((d) => !d.secured).reduce((s, d) => s + big(d.balance), 0n);
       const part = owed + added;
       if (income <= 0n || added <= 0n || part <= BigInt(spec.times) * income) return null;
-      return fact(line, Number(divideHalfUp(part * 10n, income)) / 10, spec.times);
+      return fact(line, 'tenths', Number(divideHalfUp(part * 10n, income)), spec.times * 10);
     }
     case 'category_monthly_cap': {
       if (purchase.categoryId !== spec.categoryId) return null;
       const total = big(categoryTypical(month, spec.categoryId)) + m;
-      return total > big(spec.cap) ? fact(line, Number(total), spec.cap) : null;
+      return total > big(spec.cap) ? fact(line, 'money', Number(total), spec.cap) : null;
     }
     case 'single_purchase_cap':
-      return purchase.whole > spec.cap ? fact(line, purchase.whole, spec.cap) : null;
+      return purchase.whole > spec.cap ? fact(line, 'money', purchase.whole, spec.cap) : null;
     case 'category_income_share': {
       if (purchase.categoryId !== spec.categoryId) return null;
       return share(line, big(categoryTypical(month, spec.categoryId)) + m, m, income, spec.pct);
     }
     case 'unspent_floor':
-      return ctx.unspentAfter !== null && ctx.unspentAfter < spec.floor ? fact(line, ctx.unspentAfter, spec.floor) : null;
+      return ctx.unspentAfter !== null && ctx.unspentAfter < spec.floor ? fact(line, 'money', ctx.unspentAfter, spec.floor) : null;
   }
 }
 
