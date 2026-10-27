@@ -21,14 +21,12 @@ const FN = 'unspent';
 /** A paid line this close to a due date settles that occurrence (same window as thisMonth). */
 const MATCH_DAYS = 3;
 
-/** v3 4.4: balance - bills still due - Erest - envelopes - emergency fund. Profile (d): the bills over the horizon, no Erest (I39). May be negative. */
+/** D-43, D-54: spending balance - bills still due - Erest; the fund and envelopes are already out of the spending balance. Profile (d): the bills over the horizon, no Erest (I39). May be negative. */
 export function suggestedUnspent(input: {
   readonly asOf: string;
-  readonly balance: MinorUnits;
+  readonly spending: MinorUnits;
   readonly billsDue: MinorUnits;
   readonly erest: MinorUnits;
-  readonly envelopesSaved: MinorUnits;
-  readonly emergency: MinorUnits | null;
   readonly profile: IncomeProfile | null;
   readonly series: readonly V3Series[];
 }): MinorUnits {
@@ -43,8 +41,7 @@ export function suggestedUnspent(input: {
     }
     erest = 0n;
   }
-  const emergency = input.emergency === null ? 0n : BigInt(input.emergency);
-  return minorFromBigInt(BigInt(input.balance) - bills - erest - BigInt(input.envelopesSaved) - emergency, FN);
+  return minorFromBigInt(BigInt(input.spending) - bills - erest, FN);
 }
 
 export function rollForward(input: {

@@ -22,7 +22,7 @@ const unspent = (drifted = false): UnspentState => ({
 });
 
 function funds(u: UnspentState | null = unspent()): Funds {
-  return { balance: mu(0), suggested: mu(0), unspent: u, emergency: null, envelopesSaved: mu(0), envelopesMonthly: mu(0), ownEnvelope: mu(0) };
+  return { balance: mu(0), suggested: mu(0), unspent: u, emergency: null, envelopesSaved: mu(0), envelopesMonthly: mu(0), ownEnvelope: mu(0), spending: mu(0) };
 }
 
 function purchase(over: Partial<Purchase> = {}): Purchase {

@@ -62,17 +62,14 @@ function roll(over: Partial<Parameters<typeof rollForward>[0]> & { lines?: V3Lin
 }
 
 describe('suggestedUnspent', () => {
-  const base = { asOf: '2026-10-03', balance: mu(500000), billsDue: mu(30000), erest: mu(137500), envelopesSaved: mu(50000), profile: null, series: [] as V3Series[] };
-  test('v3 4.4 suggested', () => {
-    expect(suggestedUnspent({ ...base, emergency: mu(90000) })).toBe(192500);
-  });
-  test('emergency null counts as 0', () => {
-    expect(suggestedUnspent({ ...base, emergency: null })).toBe(282500);
+  const base = { asOf: '2026-10-03', spending: mu(450000), billsDue: mu(30000), erest: mu(137500), profile: null, series: [] as V3Series[] };
+  test('D-43 D-54 suggested = spending balance - bills - Erest (the fund is already out of spending)', () => {
+    expect(suggestedUnspent(base)).toBe(282500);
   });
   test('I39 profile (d): horizon bills, no Erest', () => {
     const profile = { types: ['mix' as const], variable: 'balance' as const, steady: null, billsHorizonMonths: 2 as const };
     // rent 10th, util 20th: window [Oct 3, Dec 3) holds Oct 10/20, Nov 10/20 = 2 x 180000
-    expect(suggestedUnspent({ ...base, emergency: null, profile, series: [rent, util] })).toBe(500000 - 360000 - 50000);
+    expect(suggestedUnspent({ ...base, profile, series: [rent, util] })).toBe(450000 - 360000);
   });
 });
 
