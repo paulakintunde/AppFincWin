@@ -39,7 +39,7 @@ export interface Futures {
     readonly planTotal: MinorUnits | null;
   };
   readonly keep: { readonly unspentKept: MinorUnits | null };
-  readonly deposit: { readonly years: number; readonly views: readonly DepositView[] };
+  readonly deposit: { readonly months: number; readonly views: readonly DepositView[] };
   readonly buyLater: {
     readonly months: number | null;
     readonly readyBy: string | null;
@@ -100,7 +100,9 @@ export function insteadFutures(input: {
   readonly years: number;
 }): Futures {
   const { result, month, funds, purchase, userRate } = input;
-  const unspent = funds.unspent === null ? null : funds.unspent.value;
+  const unspent = funds.unspent === null ? null : (funds.unspent.available ?? funds.unspent.value);
+  // one figure per screen: the judge's own unspent after (H-03)
+  const afterFact = result.facts.find((x) => x.code === 'unspent_before_after');
   const sched = purchase.schedule;
   const mySched: Schedule | null =
     sched === null
@@ -125,12 +127,17 @@ export function insteadFutures(input: {
   return {
     order: FUTURE_ORDER,
     buyNow: {
-      unspentAfter: unspent === null ? null : minorUnits(unspent - purchase.dayOne),
-      emergencyUntouched: result.code !== 'emergency_use',
+      unspentAfter:
+        afterFact !== undefined && typeof afterFact.values.after === 'number'
+          ? minorUnits(afterFact.values.after)
+          : unspent === null
+            ? null
+            : minorUnits(unspent - purchase.dayOne),
+      emergencyUntouched: !result.facts.some((f) => f.code === 'emergency_used'),
       planTotal: sched === null ? null : myPart(sched.totalPaid, purchase.share),
     },
     keep: { unspentKept: unspent === null ? null : minorUnits(unspent) },
-    deposit: { years: months / 12, views },
+    deposit: { months, views },
     buyLater: buyLater({ price: purchase.whole, unspent, typicalLeft: month.typicalLeft, month: month.month }),
   };
 }

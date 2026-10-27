@@ -29,7 +29,7 @@ function schedule(over: Partial<Schedule> = {}): Schedule {
 
 const month = { month: '2026-10', typicalLeft: mu(42500) } as unknown as MonthModel;
 const funds = { unspent: { value: mu(240000) } } as unknown as Funds;
-const result = { code: 'fits_month' } as unknown as Result;
+const result = { code: 'fits_month', facts: [] } as unknown as Result;
 
 function purchase(over: Partial<Purchase> = {}): Purchase {
   return {
@@ -59,7 +59,7 @@ describe('insteadFutures', () => {
     const rate = percent('4.5');
     const f = insteadFutures({ result, month, funds, purchase: purchase(), userRate: rate, years: 5 });
     expect(f.deposit.views.map((v) => v.rate)).toEqual([ZERO_PERCENT, rate]);
-    expect(f.deposit.years).toBe(5);
+    expect(f.deposit.months).toBe(60);
     expect(f.deposit.views[1]!.value).toBe(Number(futureValueExact(mu(0), rate, 60, mu(300000))));
   });
 
@@ -84,7 +84,7 @@ describe('insteadFutures', () => {
       userRate: null,
       years: 5,
     });
-    expect(f.deposit.years).toBe(2);
+    expect(f.deposit.months).toBe(24);
     expect(f.deposit.views[0]!.value).toBe(204000);
     expect(f.buyNow.planTotal).toBe(204000);
   });
@@ -101,7 +101,7 @@ describe('insteadFutures', () => {
       userRate: null,
       years: 5,
     });
-    expect(f.deposit.years).toBe(1);
+    expect(f.deposit.months).toBe(12);
     expect(f.deposit.views[0]!.value).toBe(24000);
   });
 
@@ -111,7 +111,7 @@ describe('insteadFutures', () => {
     expect(f.buyNow.emergencyUntouched).toBe(true);
     expect(f.keep.unspentKept).toBe(240000);
     const e = insteadFutures({
-      result: { code: 'emergency_use' } as unknown as Result,
+      result: { code: 'emergency_use', facts: [{ code: 'emergency_used', values: { used: 1, months: 1 } }] } as unknown as Result,
       month,
       funds,
       purchase: purchase(),
@@ -196,5 +196,38 @@ describe('buyLater', () => {
         }
       )
     );
+  });
+});
+
+describe('H-03 one figure per screen', () => {
+  test('H-03 monthly_short with an emergency segment: the fund is not untouched', () => {
+    const r = { code: 'monthly_short', facts: [{ code: 'emergency_used', values: { used: 5000, months: 1 } }] } as unknown as Result;
+    const f = insteadFutures({ result: r, month, funds, purchase: purchase(), userRate: null, years: 1 });
+    expect(f.buyNow.emergencyUntouched).toBe(false);
+  });
+
+  test('H-03 unspent after is the judge fact when emitted', () => {
+    const r = { code: 'fits_unspent', facts: [{ code: 'unspent_before_after', values: { before: 240000, after: 123456 } }] } as unknown as Result;
+    const f = insteadFutures({ result: r, month, funds, purchase: purchase({ dayOne: mu(100000) }), userRate: null, years: 1 });
+    expect(f.buyNow.unspentAfter).toBe(123456);
+  });
+
+  test('H-03 a non-numeric fact value falls back to unspent minus day one', () => {
+    const r = { code: 'not_yet', facts: [{ code: 'unspent_before_after', values: { before: 1 } }] } as unknown as Result;
+    const f = insteadFutures({ result: r, month, funds, purchase: purchase({ dayOne: mu(100000) }), userRate: null, years: 1 });
+    expect(f.buyNow.unspentAfter).toBe(140000);
+  });
+
+  test('D-38 available unspent is read when present', () => {
+    const fa = { unspent: { value: mu(240000), available: mu(200000) } } as unknown as Funds;
+    const f = insteadFutures({ result, month, funds: fa, purchase: purchase({ dayOne: mu(100000) }), userRate: null, years: 1 });
+    expect(f.buyNow.unspentAfter).toBe(100000);
+    expect(f.keep.unspentKept).toBe(200000);
+  });
+
+  test('L-07 deposit horizon is integer months with no years field', () => {
+    const f = insteadFutures({ result, month, funds, purchase: purchase(), userRate: null, years: 3 });
+    expect(Number.isInteger(f.deposit.months)).toBe(true);
+    expect('years' in f.deposit).toBe(false);
   });
 });
