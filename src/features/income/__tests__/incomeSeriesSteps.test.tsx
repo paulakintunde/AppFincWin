@@ -6,6 +6,8 @@ import type { SetupStepHandle, SetupStepReady } from '@/features/decide/setup/st
 import { PayStep } from '../steps/PayStep';
 import { OtherStep } from '../steps/OtherStep';
 
+let mockDecideV3 = true;
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
 jest.setTimeout(30000);
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
 jest.mock('@react-native-community/datetimepicker', () => ({ __esModule: true, default: () => null }));
@@ -21,6 +23,9 @@ jest.mock('@/data/mutations/seriesAttributes', () => ({
 jest.mock('@/data/mutations/recurringSeries', () => ({
   useEditSeriesFrom: () => ({ editFrom: (i: Record<string, unknown>) => mockEdit(i) }),
 }));
+
+const mockOpenStatus = jest.fn();
+jest.mock('@/features/record/entry/seriesStatusHost', () => ({ openSeriesStatus: (s: unknown) => mockOpenStatus(s) }));
 
 const ACCOUNT = { id: 'a1', kind: 'checking', currency: 'USD', deleted_at: null, archived_at: null };
 let mockSeries: Record<string, unknown>[] = [];
@@ -68,6 +73,8 @@ beforeEach(() => {
   mockEdit.mockClear();
   mockSeries = [];
   mockFound = null;
+  mockDecideV3 = true;
+  mockOpenStatus.mockClear();
 });
 
 describe('PayStep', () => {
@@ -130,6 +137,70 @@ describe('PayStep', () => {
     expect(last().dirty).toBe(true);
     expect(await save(ref)).toEqual({ stepId: 'step-edit', stepIds: ['step-edit'] });
     expect(mockEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 's1', expectedVersion: 4, patch: { amount: 310000 }, effectiveFrom: '2026-10-15' }));
+  });
+});
+
+const salary = (over: Record<string, unknown> = {}) => ({ id: 's1', name: 'Acme', amount: 300000, currency: 'USD', freq: 'monthly', anchor_date: '2026-09-25', version: 4, income_kind: 'salary', counts_as: 'available', deleted_at: null, end_date: null, end_reason: null, ...over });
+const PAUSED = { end_date: '2026-09-30', end_reason: 'paused' };
+
+describe('D-24 status link and paused listing', () => {
+  it('Pay: a saved card shows the link; pressing opens the sheet and writes nothing', async () => {
+    mockSeries = [salary()];
+    await mount(PayStep);
+    await fireEvent.press(screen.getByLabelText('Acme, Stopped or paused'));
+    expect(mockOpenStatus).toHaveBeenCalledWith(expect.objectContaining({ id: 's1' }));
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockEdit).not.toHaveBeenCalled();
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it('Pay: a new unsaved card has no link; a stopped series is not listed', async () => {
+    mockSeries = [salary({ id: 's9', end_date: '2026-08-31', end_reason: 'stopped' })];
+    await mount(PayStep);
+    expect(screen.queryByText('Stopped or paused')).toBeNull();
+    expect(screen.queryByText('Paused')).toBeNull();
+  });
+
+  it('Pay: a paused pay is listed read-only with Paused since, opens in resume mode, and is not saved as new', async () => {
+    mockSeries = [salary({ id: 'p1', name: 'Old job', ...PAUSED })];
+    const { ref, last } = await mount(PayStep);
+    expect(screen.getByRole('header', { name: 'Paused' })).toBeTruthy();
+    expect(screen.getByText(/^Paused since Oct.1,.2026$/)).toBeTruthy();
+    // the only card is the blank new one; the paused pay is not counted
+    expect(screen.getAllByLabelText('Take-home amount, after tax')).toHaveLength(1);
+    expect(last().canContinue).toBe(false);
+    await fireEvent.press(screen.getByLabelText('Old job, Stopped or paused'));
+    expect(mockOpenStatus).toHaveBeenCalledWith(expect.objectContaining({ id: 'p1' }));
+    expect(await save(ref)).toEqual({ stepId: null });
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockEdit).not.toHaveBeenCalled();
+  });
+
+  it('Pay and Other: no link and no paused listing without v3', async () => {
+    mockDecideV3 = false;
+    mockSeries = [salary(), salary({ id: 'p1', name: 'Old job', ...PAUSED }), salary({ id: 'o1', name: 'Div', income_kind: 'dividends' }), salary({ id: 'o2', name: 'Rent in', income_kind: 'rent', ...PAUSED })];
+    await mount(PayStep);
+    expect(screen.queryByText('Stopped or paused')).toBeNull();
+    expect(screen.queryByText('Old job')).toBeNull();
+    await screen.unmount();
+    await mount(OtherStep);
+    expect(screen.queryByText('Stopped or paused')).toBeNull();
+    expect(screen.queryByText('Rent in')).toBeNull();
+  });
+
+  it('Other: a saved line shows the link; a paused one is listed with Paused since and its link opens the sheet', async () => {
+    mockSeries = [salary({ id: 'o1', name: 'Div', income_kind: 'dividends' }), salary({ id: 'o2', name: 'Rent in', income_kind: 'rent', ...PAUSED }), salary({ id: 'o3', name: 'Stopped one', income_kind: 'family', end_date: '2026-08-31', end_reason: 'stopped' })];
+    const { ref } = await mount(OtherStep);
+    expect(screen.getByRole('header', { name: 'Paused' })).toBeTruthy();
+    expect(screen.getByText(/^Paused since Oct.1,.2026$/)).toBeTruthy();
+    expect(screen.queryByText('Stopped one')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Div, Stopped or paused'));
+    expect(mockOpenStatus).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'o1' }));
+    await fireEvent.press(screen.getByLabelText('Rent in, Stopped or paused'));
+    expect(mockOpenStatus).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'o2' }));
+    expect(await save(ref)).toEqual({ stepId: null });
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockPatch).not.toHaveBeenCalled();
   });
 });
 

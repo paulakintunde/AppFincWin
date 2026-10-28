@@ -21,8 +21,8 @@ import { textRole } from '@/theme/typography';
 import { hapticSelection } from '@/ui/haptics';
 import type { SetupStepBodyProps, SetupStepHandle } from '@/features/decide/setup/steps/types';
 import { useIncomeContext } from '../useIncomeContext';
-import { payableAccounts, seriesOfKind } from '../seriesHelpers';
-import { Caption, ChipRow, Intro, Stack, Why, useReportReady, useCopy } from './shared';
+import { liveSeriesOfKind, payableAccounts, pausedIncomeSeries } from '../seriesHelpers';
+import { Caption, ChipRow, Intro, PausedSeriesList, SeriesStatusLink, Stack, Why, useReportReady, useCopy } from './shared';
 
 export const OTHER_NAME_MAX = 40;
 
@@ -78,13 +78,14 @@ export const OtherStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functio
     const kinds: Kind[] = [];
     const lines: Partial<Record<Kind, Line>> = {};
     for (const { kind } of OTHER_KINDS) {
-      const s = seriesOfKind(ctx.series, kind)[0];
+      const s = liveSeriesOfKind(ctx.series, kind)[0];
       if (s === undefined) continue;
       kinds.push(kind);
       lines[kind] = { amount: s.amount, freq: isFreq(s.freq) ? s.freq : null, counts: s.counts_as ?? null, name: kind === 'other' ? s.name : '' };
     }
     return { kinds, none: false, lines };
   }, [ctx.series]);
+  const paused = useMemo(() => pausedIncomeSeries(ctx.series).filter((s) => OTHER_KINDS.some((o) => o.kind === s.income_kind)), [ctx.series]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const cur = draft ?? initial;
   const account = payableAccounts(ctx.accounts)[0];
@@ -101,7 +102,7 @@ export const OtherStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functio
     setDraft({ ...cur, none: !cur.none, kinds: [] });
   };
 
-  const existingOf = (kind: Kind) => seriesOfKind(ctx.series, kind)[0];
+  const existingOf = (kind: Kind) => liveSeriesOfKind(ctx.series, kind)[0];
   const changedOf = (kind: Kind): boolean => {
     const l = lineOf(kind);
     if (!complete(kind, l)) return false;
@@ -221,9 +222,11 @@ export const OtherStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functio
               onChange={(key) => setLine(kind, { counts: key === 'kept' ? 'kept' : 'available' })}
               accessibilityLabel={`${t(o.chipKey)}, ${t('income.other.happens')}`}
             />
+            {existingOf(kind) !== undefined ? <SeriesStatusLink series={existingOf(kind)!} /> : null}
           </View>
         );
       })}
+      <PausedSeriesList series={paused} />
       <Why textKey="income.other.why" />
     </View>
   );

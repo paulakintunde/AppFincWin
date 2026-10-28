@@ -18,9 +18,9 @@ import { space } from '@/theme/layout';
 import { hapticSelection } from '@/ui/haptics';
 import type { SetupStepBodyProps, SetupStepHandle } from '@/features/decide/setup/steps/types';
 import { useIncomeContext } from '../useIncomeContext';
-import { payableAccounts, seriesOfKind } from '../seriesHelpers';
+import { liveSeriesOfKind, payableAccounts, pausedIncomeSeries } from '../seriesHelpers';
 import { PrefillNote } from '@/features/decide/setup/PrefillNote';
-import { Caption, ChipRow, Meta, NEEDED_REASON_KEY, Stack, TextButton, Why, useNoWrapMoney, useReportReady, useCopy } from './shared';
+import { Caption, ChipRow, Meta, NEEDED_REASON_KEY, PausedSeriesList, SeriesStatusLink, Stack, TextButton, Why, useNoWrapMoney, useReportReady, useCopy } from './shared';
 
 type Freq = 'weekly' | 'fortnightly' | 'monthly';
 
@@ -48,7 +48,8 @@ export const PayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function 
   const confirmer = useConfirmRegularCandidate(ctx.householdId ?? '', ctx.userId ?? '');
   const editor = useEditSeriesFrom();
 
-  const existing = useMemo(() => seriesOfKind(ctx.series, 'salary'), [ctx.series]);
+  const existing = useMemo(() => liveSeriesOfKind(ctx.series, 'salary'), [ctx.series]);
+  const paused = useMemo(() => pausedIncomeSeries(ctx.series, 'salary'), [ctx.series]);
   const initial = useMemo<PayCard[]>(() => {
     if (existing.length === 0) return [{ key: 'new-0', seriesId: null, amount: null, freq: null, date: ctx.today }];
     return existing.map((s) => ({ key: s.id, seriesId: s.id, amount: s.amount, freq: isPayFreq(s.freq) ? s.freq : null, date: s.anchor_date }));
@@ -142,9 +143,13 @@ export const PayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function 
           </ChipRow>
           <Meta text={t('income.pay.frequencyHint')} />
           <DateField label={t('income.pay.nextDate')} value={c.date} display={money.formatDate(c.date)} onChange={(date) => update(c.key, { date })} />
+          {existing.filter((e) => e.id === c.seriesId).map((e) => (
+            <SeriesStatusLink key={e.id} series={e} />
+          ))}
           {i > 0 && c.seriesId === null ? <TextButton danger label={t('income.pay.remove')} onPress={() => setDraft(cards.filter((x) => x.key !== c.key))} /> : null}
         </Stack>
       ))}
+      <PausedSeriesList series={paused} />
       <TextButton
         label={t('income.pay.addAnother')}
         onPress={() => {

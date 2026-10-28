@@ -6,6 +6,8 @@ import { PaidStep } from '../steps/PaidStep';
 import { SeasonStep } from '../steps/SeasonStep';
 import { MethodStep } from '../steps/MethodStep';
 
+let mockDecideV3 = true;
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
 jest.setTimeout(30000);
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
 

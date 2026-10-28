@@ -15,6 +15,8 @@ import { IncomeProfileSteps, INCOME_STEPS, type IncomeStepKey } from '../IncomeP
 import { ZERO_WIDTH_SPACE } from '@/features/decide/home/heroAmountText';
 import type { SetupStepHandle } from '@/features/decide/setup/steps/types';
 
+let mockDecideV3 = true;
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
 jest.setTimeout(60000);
 let mockScale = 1;
 let mockWidth = 402;
@@ -46,6 +48,7 @@ jest.mock('@/data/queries/decideV3', () => ({
     },
   }),
 }));
+let mockSeries: Record<string, unknown>[] = [];
 jest.mock('../useIncomeContext', () => ({
   useIncomeContext: () => ({
     userId: 'u1',
@@ -55,7 +58,7 @@ jest.mock('../useIncomeContext', () => ({
     today: '2026-10-15',
     settings: null,
     accounts: [{ id: 'a1', kind: 'checking', currency: 'USD', deleted_at: null, archived_at: null }],
-    series: [],
+    series: mockSeries,
     found: { payer: 'Acme Ltd', amount: 123_456_789_00, day: 25, currency: 'USD' },
   }),
 }));
@@ -125,6 +128,33 @@ describe('income steps fit the R6 checks', () => {
       await fireEvent.press(screen.getByText('Other'));
       expectFits();
       await cleanup();
+    });
+  }
+
+  for (const m of MATRIX) {
+    it(`saved and paused income cards with the status link at ${matrixName(m)}`, async () => {
+      mockWidth = m.width;
+      mockScale = m.scale;
+      const base = { currency: 'USD', freq: 'monthly', anchor_date: '2026-06-25', version: 1, deleted_at: null, counts_as: 'available' };
+      mockSeries = [
+        { ...base, id: 's1', name: 'Acme Ltd', amount: 123_456_789_00, income_kind: 'salary', end_date: null, end_reason: null },
+        { ...base, id: 's2', name: 'Consulting for a very long named client', amount: 50000, income_kind: 'salary', end_date: '2026-09-30', end_reason: 'paused' },
+        { ...base, id: 's3', name: 'Dividends', amount: 50000, income_kind: 'dividends', end_date: null, end_reason: null },
+        { ...base, id: 's4', name: 'Rent received', amount: 90000, income_kind: 'rent', end_date: '2026-09-30', end_reason: 'paused' },
+      ];
+      try {
+        await mount('pay', m.scale);
+        expect(screen.getAllByText('Stopped or paused')).toHaveLength(2);
+        expect(screen.getByText(/^Paused since/)).toBeTruthy();
+        expectFits();
+        await cleanup();
+        await mount('other', m.scale);
+        expect(screen.getAllByText('Stopped or paused')).toHaveLength(2);
+        expectFits();
+        await cleanup();
+      } finally {
+        mockSeries = [];
+      }
     });
   }
 
