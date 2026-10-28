@@ -34,11 +34,75 @@ export interface SetDebtHousingVars {
   stepId: string;
 }
 
+export type PaysInFull = 'yes' | 'sometimes' | 'no' | null;
+
+export interface SetDebtPaysInFullVars {
+  id: string;
+  ownerId: string;
+  householdId: string;
+  expectedVersion: number;
+  value: PaysInFull;
+  before: PaysInFull;
+  /** The Undo wording for setupStepSaved ({{name}}), supplied by the caller from i18n. */
+  stepTitle: string | null;
+  stepId: string;
+}
+
 function invalidateDebts(qc: QueryClient, householdId: string): void {
   void qc.invalidateQueries({ queryKey: queryKeys.debts(householdId) });
 }
 
 export function registerDebtMutations(qc: QueryClient): void {
+  // 05.2-15 (DSU-06): how a card is paid off each month. Same shape as the housing write; label setupStepSaved.
+  qc.setMutationDefaults(mutationKeys.setDebtPaysInFull, {
+    mutationFn: (vars: SetDebtPaysInFullVars) =>
+      guardSession(vars, async () => {
+        const expected = resolveExpectedVersion('debts', vars.id, vars.expectedVersion);
+        const client = await writeClient();
+        const patch = { pays_in_full: vars.value };
+        const row = await updateDebt(client, vars.id, expected, patch).catch((err: unknown) =>
+          acceptIfAlreadyApplied<DebtRow>(err, patch)
+        );
+        recordWrittenVersion('debts', vars.id, [vars.expectedVersion, expected], row.version);
+        const step = buildStep(
+          vars.stepId,
+          'setupStepSaved',
+          vars.stepTitle ? { name: vars.stepTitle } : {},
+          inverseOfPatches('debts', [{ id: row.id, before: { pays_in_full: vars.before }, versionAfter: row.version }])
+        );
+        await recordUndoStepSafely(qc, client, step, vars.ownerId);
+        return row;
+      }),
+    scope: WRITE_SCOPE,
+    retry: shouldRetryWrite,
+    retryDelay: writeRetryDelay,
+    onMutate: async (vars: SetDebtPaysInFullVars) => {
+      markSession(vars);
+      await qc.cancelQueries({ queryKey: queryKeys.debts(vars.householdId) });
+      qc.setQueryData<DebtList>(queryKeys.debts(vars.householdId), (old) =>
+        (old ?? []).map((r) => (r.id === vars.id ? { ...r, pays_in_full: vars.value, pending: true } : r))
+      );
+    },
+    onSuccess: (row: DebtRow, vars: SetDebtPaysInFullVars) => {
+      qc.setQueryData<DebtList>(queryKeys.debts(vars.householdId), (old) =>
+        (old ?? []).map((r) => (r.id === row.id ? row : r))
+      );
+      invalidateDebts(qc, vars.householdId);
+    },
+    onError: async (err: unknown, vars: SetDebtPaysInFullVars) => {
+      const cls = classifySettledWriteError(err);
+      if (cls !== 'conflict' && cls !== 'rejected' && cls !== 'not-found') return;
+      invalidateDebts(qc, vars.householdId);
+      await recordFailedWrite({
+        entity: 'debts',
+        entityId: vars.id,
+        kind: cls,
+        code: cls === 'conflict' ? 'version-conflict' : settledWriteErrorCode(err),
+        attempted: { labelKey: 'setupStepSaved', fields: 1 },
+      });
+    },
+  });
+
   qc.setMutationDefaults(mutationKeys.setDebtHousing, {
     mutationFn: (vars: SetDebtHousingVars) =>
       guardSession(vars, async () => {
@@ -130,6 +194,30 @@ export function useSetDebtHousing(): { setHousing(debt: DebtRow, isHousing: bool
         expectedVersion: debt.version,
         isHousing,
         before: debt.is_housing,
+        stepId,
+      });
+      return stepId;
+    },
+  };
+}
+
+/** Save how a card is paid each month (yes, sometimes, no). Returns the undo step id. */
+export function useSetDebtPaysInFull(): { setPaysInFull(debt: DebtRow, value: PaysInFull, ownerId: string, stepTitle?: string): string } {
+  const mutation = useMutation<DebtRow, unknown, SetDebtPaysInFullVars>({
+    mutationKey: mutationKeys.setDebtPaysInFull,
+    scope: WRITE_SCOPE,
+  });
+  return {
+    setPaysInFull(debt, value, ownerId, stepTitle) {
+      const stepId = newStepId();
+      mutation.mutate({
+        id: debt.id,
+        ownerId,
+        householdId: debt.household_id,
+        expectedVersion: debt.version,
+        value,
+        before: debt.pays_in_full ?? null,
+        stepTitle: stepTitle ?? null,
         stepId,
       });
       return stepId;
