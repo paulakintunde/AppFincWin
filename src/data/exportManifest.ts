@@ -38,6 +38,7 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'created_at', 'updated_at',
     // 05.2
     'counts_as', 'income_kind', 'saving_mode', 'pay_group',
+    'end_reason',
   ],
   custom_currencies: ['id', 'owner_id', 'code', 'symbol', 'decimals', 'reference_currency', 'unit_value', 'as_of', 'created_at', 'updated_at'],
   import_profiles: ['id', 'owner_id', 'account_id', 'layout_signature', 'profile', 'created_at'],
@@ -65,7 +66,7 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'secured', 'term_months', 'start_date', 'min_percent', 'min_interest_added', 'min_floor', 'paid_in_full', 'is_housing',
     'deleted_at', 'created_at', 'updated_at',
     // 05.2
-    'pays_in_full',
+    'pays_in_full', 'paid_off_on',
   ],
   savings_goals: [
     'id', 'household_id', 'created_by', 'check_id', 'name', 'currency', 'target', 'monthly_amount', 'ready_by', 'opening_saved',

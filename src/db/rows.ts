@@ -309,12 +309,13 @@ export interface RecurringSeriesRow {
   income_kind?: string | null;
   saving_mode?: 'fixed' | 'flexible' | null;
   pay_group?: string | null;
+  end_reason?: 'stopped' | 'paused' | null; // 05.2 D-24: read only while end_date is set; written through apply_patches
   version: number;
   created_at: string;
   updated_at: string;
 }
 export const RECURRING_SERIES_COLUMNS =
-  'id, household_id, created_by, updated_by, account_id, name, amount, currency, category_id, payment_type, freq, anchor_date, time_zone, end_date, occurrence_count, materialised_through, deleted_at, is_automatic, is_sample, counts_as, income_kind, saving_mode, pay_group, version, created_at, updated_at';
+  'id, household_id, created_by, updated_by, account_id, name, amount, currency, category_id, payment_type, freq, anchor_date, time_zone, end_date, occurrence_count, materialised_through, deleted_at, is_automatic, is_sample, counts_as, income_kind, saving_mode, pay_group, end_reason, version, created_at, updated_at';
 
 export interface UndoLogRow {
   id: string;

@@ -109,6 +109,15 @@ describe('debts', () => {
     }
   });
 
+  it('paid_off_on is patchable but not insertable (column update grant only)', async () => {
+    expect(DEBT_PATCH_KEYS).toContain('paid_off_on');
+    expect(DEBT_INSERT_KEYS).not.toContain('paid_off_on');
+    const client = createFakeSupabase();
+    client.respondWith({ data: [debtRow({ version: 2 })], error: null, status: 200 });
+    await updateDebt(client, 'd1', 1, { paid_off_on: '2026-10-01' });
+    expect(client.calls.find((c) => c.method === 'update')?.args).toEqual([{ paid_off_on: '2026-10-01' }]);
+  });
+
   it('fetchDebts selects live debts', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: [debtRow()], error: null, status: 200 });

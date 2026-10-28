@@ -37,8 +37,8 @@ describe('export manifest (05.2 owner OQ3, C13)', () => {
     }
     const expected: Record<string, string[]> = {
       transactions: ['income_kind', 'counts_as', 'refund_of'],
-      recurring_series: ['counts_as', 'income_kind', 'saving_mode', 'pay_group'],
-      debts: ['pays_in_full'],
+      recurring_series: ['counts_as', 'income_kind', 'saving_mode', 'pay_group', 'end_reason'],
+      debts: ['pays_in_full', 'paid_off_on'],
       accounts: ['use', 'use_purpose', 'use_envelope_id', 'use_extra_set_aside'],
       savings_goals: ['bucket', 'account_id', 'color_key'],
       decide_settings: split(DECIDE_SETTINGS_COLUMNS),
