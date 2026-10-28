@@ -9,6 +9,8 @@ export * from './constants';
 
 export { buildMonthModel } from './month/model';
 export { detectCandidates } from './month/recurring';
+export { everydayByMonth } from './month/typical';
+export type { EverydayMonth } from './month/typical';
 export type { DetectContext, DetectRow } from './month/recurring';
 export { seriesDrift } from './month/series';
 export type { SeriesDrift } from './month/series';

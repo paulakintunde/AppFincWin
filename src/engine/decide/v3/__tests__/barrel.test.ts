@@ -92,6 +92,7 @@ export const V3_RUNTIME_EXPORTS = [
   'checkQuoted',
   'detectCandidates',
   'evaluate',
+  'everydayByMonth',
   'explore',
   'homeThresholds',
   'insteadFutures',
