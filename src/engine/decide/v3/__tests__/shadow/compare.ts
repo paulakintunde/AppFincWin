@@ -28,6 +28,7 @@ import { assess } from '../../../assess';
 import { oldAnswer, toOldCheck, toOldSnapshot } from '../golden/toOld';
 import { classify, type Cause } from './classify';
 import { generateHistories } from './generate';
+import { generateRefundHistories } from './generateRefunds';
 
 export type Source = 'generated' | 'persona' | 'scenario' | 'd18';
 
@@ -94,6 +95,9 @@ function cases(): Case[] {
   const out: Case[] = [];
   for (const g of generateHistories()) {
     g.purchases.forEach((purchase, i) => out.push({ key: `generated:${g.person.id}:${i}`, source: 'generated', person: g.person, purchase, over: {}, own: false }));
+  }
+  for (const g of generateRefundHistories()) {
+    g.purchases.forEach((purchase, i) => out.push({ key: `generatedRefund:${g.person.id}:${i}`, source: 'generated', person: g.person, purchase, over: {}, own: false }));
   }
   for (const person of loadPersons()) {
     out.push({ key: `persona:${person.id}:0`, source: 'persona', person, purchase: ZERO_IMPACT, over: {}, own: false });

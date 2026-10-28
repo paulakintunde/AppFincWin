@@ -189,26 +189,26 @@ Synthetic data only (D-17): 300 seeded histories, the 9 personas, the 22 scenari
 
 | Figure | Count |
 |---|---|
-| Comparisons | 780 |
-| Same answer | 196 |
-| Changed answer | 353 |
+| Comparisons | 875 |
+| Same answer | 218 |
+| Changed answer | 392 |
 | New fits (v3 fits_month or fits_unspent, old did not fit) | 14 |
-| Unsupported by the old engine (not counted as agreement or change) | 138 |
-| Not ready (D-52), not counted as agreement or change | 93 |
-| Not-ready rate | 11.9% |
+| Unsupported by the old engine (not counted as agreement or change) | 153 |
+| Not ready (D-52), not counted as agreement or change | 112 |
+| Not-ready rate | 12.8% |
 | Owner review | reviewed by owner on 2026-10-27 |
 
 ## Changes by cause
 
-### needs_input_rules (288)
+### needs_input_rules (320)
 
 v3 asks for a figure (unspent money or up-to-date records) where the old engine answered without it (UP 5.4). Count 288 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
-| no -> needs_input | 272 |
-| adjust -> needs_input | 12 |
-| fits -> needs_input | 4 |
+| no -> needs_input | 300 |
+| adjust -> needs_input | 14 |
+| fits -> needs_input | 6 |
 
 Examples:
 - `generated:gen-005:0` no -> needs_input: price 1378884, dayOne 1489195, monthLeft -618371, erest 433599, e 449927, unspent -, emergency 2
@@ -228,13 +228,13 @@ Examples:
 - `scenario:02:0` adjust -> fits_unspent: price 120000, dayOne 120000, monthLeft 42500, erest 137500, e 147500, unspent 240000, emergency 900000
 - `scenario:04:0` adjust -> fits_unspent: price 500, dayOne 500, monthLeft -53226, erest 133226, e 147500, unspent 240000, emergency 900000
 
-### emergency_locked (10)
+### emergency_locked (12)
 
 v3 keeps the emergency fund out of reach (D-09); the old engine counted it toward the cushion. Count 10 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
-| adjust -> not_yet | 9 |
+| adjust -> not_yet | 11 |
 | fits -> not_yet | 1 |
 
 Examples:
@@ -254,14 +254,14 @@ Examples:
 - `generated:gen-125:2` adjust -> not_yet: price 1746390, dayOne 0, monthLeft -24619, erest 369082, e 390914, unspent 18488, emergency -
 - `generated:gen-223:2` adjust -> not_yet: price 1729315, dayOne 159151, monthLeft 109640, erest 381751, e 406510, unspent 19435, emergency -
 
-### cash_path_spread (46)
+### cash_path_spread (51)
 
 v3 judges the cash path with the real pay and bill dates; the old engine raised its own cash warnings. Count 46 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
-| adjust -> not_yet | 9 |
-| missing -> not_yet | 27 |
+| adjust -> not_yet | 10 |
+| missing -> not_yet | 31 |
 | fits -> not_yet | 2 |
 | adjust -> fits_month | 6 |
 | no -> fits_month | 2 |
@@ -317,24 +317,24 @@ Every case where v3 says fits and the old engine did not. Each needs the owner's
 
 ## Not ready (D-52)
 
-93 of 780 comparisons. v3 asks for more records instead of answering.
+112 of 875 comparisons. v3 asks for more records instead of answering.
 
 | Missing code | Count |
 |---|---|
-| activity_not_current | 91 |
+| activity_not_current | 110 |
 | past_month_missing | 2 |
 
 Keys and codes:
-`generated:gen-001:1` (activity_not_current), `generated:gen-001:3` (activity_not_current), `generated:gen-002:0` (activity_not_current), `generated:gen-004:0` (activity_not_current), `generated:gen-004:1` (activity_not_current), `generated:gen-004:2` (activity_not_current), `generated:gen-004:3` (activity_not_current), `generated:gen-014:0` (activity_not_current), `generated:gen-014:1` (activity_not_current), `generated:gen-018:0` (activity_not_current), `generated:gen-018:1` (activity_not_current), `generated:gen-018:2` (activity_not_current), `generated:gen-018:3` (activity_not_current), `generated:gen-023:0` (activity_not_current), `generated:gen-023:1` (activity_not_current), `generated:gen-043:0` (activity_not_current), `generated:gen-043:1` (activity_not_current), `generated:gen-043:2` (activity_not_current), `generated:gen-043:3` (activity_not_current), `generated:gen-050:1` (activity_not_current), `generated:gen-057:0` (activity_not_current), `generated:gen-057:1` (activity_not_current), `generated:gen-064:0` (activity_not_current), `generated:gen-064:1` (activity_not_current), `generated:gen-076:0` (activity_not_current), `generated:gen-076:1` (activity_not_current), `generated:gen-076:2` (activity_not_current), `generated:gen-076:3` (activity_not_current), `generated:gen-085:0` (activity_not_current), `generated:gen-095:0` (activity_not_current), `generated:gen-095:1` (activity_not_current), `generated:gen-110:0` (activity_not_current), `generated:gen-110:1` (activity_not_current), `generated:gen-116:0` (activity_not_current), `generated:gen-116:1` (activity_not_current), `generated:gen-116:2` (activity_not_current), `generated:gen-136:0` (activity_not_current), `generated:gen-143:0` (activity_not_current), `generated:gen-143:1` (activity_not_current), `generated:gen-157:0` (activity_not_current), `generated:gen-160:0` (activity_not_current), `generated:gen-160:1` (activity_not_current), `generated:gen-160:2` (activity_not_current), `generated:gen-161:0` (activity_not_current), `generated:gen-161:1` (activity_not_current), `generated:gen-161:2` (activity_not_current), `generated:gen-163:0` (activity_not_current), `generated:gen-170:1` (activity_not_current), `generated:gen-170:3` (activity_not_current), `generated:gen-178:1` (activity_not_current), `generated:gen-178:2` (activity_not_current), `generated:gen-180:0` (activity_not_current), `generated:gen-180:1` (activity_not_current), `generated:gen-180:2` (activity_not_current), `generated:gen-182:0` (activity_not_current), `generated:gen-182:2` (activity_not_current), `generated:gen-192:0` (activity_not_current), `generated:gen-192:1` (activity_not_current), `generated:gen-192:2` (activity_not_current), `generated:gen-192:3` (activity_not_current), `generated:gen-201:0` (activity_not_current), `generated:gen-201:1` (activity_not_current), `generated:gen-204:0` (activity_not_current), `generated:gen-204:1` (activity_not_current), `generated:gen-212:0` (activity_not_current), `generated:gen-212:1` (activity_not_current), `generated:gen-212:3` (activity_not_current), `generated:gen-217:0` (activity_not_current), `generated:gen-217:1` (activity_not_current), `generated:gen-217:2` (activity_not_current), `generated:gen-230:0` (activity_not_current), `generated:gen-230:2` (activity_not_current), `generated:gen-230:3` (activity_not_current), `generated:gen-237:0` (activity_not_current), `generated:gen-237:2` (activity_not_current), `generated:gen-237:3` (activity_not_current), `generated:gen-254:0` (activity_not_current), `generated:gen-254:1` (activity_not_current), `generated:gen-254:2` (activity_not_current), `generated:gen-254:3` (activity_not_current), `generated:gen-274:0` (activity_not_current), `generated:gen-274:2` (activity_not_current), `generated:gen-279:0` (activity_not_current), `generated:gen-285:0` (activity_not_current), `generated:gen-293:0` (activity_not_current), `generated:gen-293:2` (activity_not_current), `generated:gen-293:3` (activity_not_current), `generated:gen-294:0` (activity_not_current), `generated:gen-294:1` (activity_not_current), `generated:gen-294:2` (activity_not_current), `persona:jordan:0` (past_month_missing), `scenario:13:0` (past_month_missing), `d18:d18-missed-paycheque:0` (activity_not_current)
+`generated:gen-001:1` (activity_not_current), `generated:gen-001:3` (activity_not_current), `generated:gen-002:0` (activity_not_current), `generated:gen-004:0` (activity_not_current), `generated:gen-004:1` (activity_not_current), `generated:gen-004:2` (activity_not_current), `generated:gen-004:3` (activity_not_current), `generated:gen-014:0` (activity_not_current), `generated:gen-014:1` (activity_not_current), `generated:gen-018:0` (activity_not_current), `generated:gen-018:1` (activity_not_current), `generated:gen-018:2` (activity_not_current), `generated:gen-018:3` (activity_not_current), `generated:gen-023:0` (activity_not_current), `generated:gen-023:1` (activity_not_current), `generated:gen-043:0` (activity_not_current), `generated:gen-043:1` (activity_not_current), `generated:gen-043:2` (activity_not_current), `generated:gen-043:3` (activity_not_current), `generated:gen-050:1` (activity_not_current), `generated:gen-057:0` (activity_not_current), `generated:gen-057:1` (activity_not_current), `generated:gen-064:0` (activity_not_current), `generated:gen-064:1` (activity_not_current), `generated:gen-076:0` (activity_not_current), `generated:gen-076:1` (activity_not_current), `generated:gen-076:2` (activity_not_current), `generated:gen-076:3` (activity_not_current), `generated:gen-085:0` (activity_not_current), `generated:gen-095:0` (activity_not_current), `generated:gen-095:1` (activity_not_current), `generated:gen-110:0` (activity_not_current), `generated:gen-110:1` (activity_not_current), `generated:gen-116:0` (activity_not_current), `generated:gen-116:1` (activity_not_current), `generated:gen-116:2` (activity_not_current), `generated:gen-136:0` (activity_not_current), `generated:gen-143:0` (activity_not_current), `generated:gen-143:1` (activity_not_current), `generated:gen-157:0` (activity_not_current), `generated:gen-160:0` (activity_not_current), `generated:gen-160:1` (activity_not_current), `generated:gen-160:2` (activity_not_current), `generated:gen-161:0` (activity_not_current), `generated:gen-161:1` (activity_not_current), `generated:gen-161:2` (activity_not_current), `generated:gen-163:0` (activity_not_current), `generated:gen-170:1` (activity_not_current), `generated:gen-170:3` (activity_not_current), `generated:gen-178:1` (activity_not_current), `generated:gen-178:2` (activity_not_current), `generated:gen-180:0` (activity_not_current), `generated:gen-180:1` (activity_not_current), `generated:gen-180:2` (activity_not_current), `generated:gen-182:0` (activity_not_current), `generated:gen-182:2` (activity_not_current), `generated:gen-192:0` (activity_not_current), `generated:gen-192:1` (activity_not_current), `generated:gen-192:2` (activity_not_current), `generated:gen-192:3` (activity_not_current), `generated:gen-201:0` (activity_not_current), `generated:gen-201:1` (activity_not_current), `generated:gen-204:0` (activity_not_current), `generated:gen-204:1` (activity_not_current), `generated:gen-212:0` (activity_not_current), `generated:gen-212:1` (activity_not_current), `generated:gen-212:3` (activity_not_current), `generated:gen-217:0` (activity_not_current), `generated:gen-217:1` (activity_not_current), `generated:gen-217:2` (activity_not_current), `generated:gen-230:0` (activity_not_current), `generated:gen-230:2` (activity_not_current), `generated:gen-230:3` (activity_not_current), `generated:gen-237:0` (activity_not_current), `generated:gen-237:2` (activity_not_current), `generated:gen-237:3` (activity_not_current), `generated:gen-254:0` (activity_not_current), `generated:gen-254:1` (activity_not_current), `generated:gen-254:2` (activity_not_current), `generated:gen-254:3` (activity_not_current), `generated:gen-274:0` (activity_not_current), `generated:gen-274:2` (activity_not_current), `generated:gen-279:0` (activity_not_current), `generated:gen-285:0` (activity_not_current), `generated:gen-293:0` (activity_not_current), `generated:gen-293:2` (activity_not_current), `generated:gen-293:3` (activity_not_current), `generated:gen-294:0` (activity_not_current), `generated:gen-294:1` (activity_not_current), `generated:gen-294:2` (activity_not_current), `generatedRefund:genref-002:0` (activity_not_current), `generatedRefund:genref-002:1` (activity_not_current), `generatedRefund:genref-002:2` (activity_not_current), `generatedRefund:genref-002:3` (activity_not_current), `generatedRefund:genref-010:0` (activity_not_current), `generatedRefund:genref-010:1` (activity_not_current), `generatedRefund:genref-010:2` (activity_not_current), `generatedRefund:genref-012:0` (activity_not_current), `generatedRefund:genref-012:1` (activity_not_current), `generatedRefund:genref-020:0` (activity_not_current), `generatedRefund:genref-020:1` (activity_not_current), `generatedRefund:genref-020:2` (activity_not_current), `generatedRefund:genref-023:0` (activity_not_current), `generatedRefund:genref-023:1` (activity_not_current), `generatedRefund:genref-023:2` (activity_not_current), `generatedRefund:genref-023:3` (activity_not_current), `generatedRefund:genref-029:0` (activity_not_current), `generatedRefund:genref-029:2` (activity_not_current), `generatedRefund:genref-029:3` (activity_not_current), `persona:jordan:0` (past_month_missing), `scenario:13:0` (past_month_missing), `d18:d18-missed-paycheque:0` (activity_not_current)
 
 ## Unsupported by the old engine
 
 | Reason | Count |
 |---|---|
-| deposit_with_instalment_not_in_v1 | 134 |
+| deposit_with_instalment_not_in_v1 | 149 |
 | extras_not_in_v1 | 1 |
 | cadence_or_start_not_in_v1 | 2 |
 | foreign_currency_not_in_v1 | 1 |
 
 Keys:
-`generated:gen-001:0`, `generated:gen-001:2`, `generated:gen-003:0`, `generated:gen-011:0`, `generated:gen-011:3`, `generated:gen-019:0`, `generated:gen-019:1`, `generated:gen-023:2`, `generated:gen-024:1`, `generated:gen-030:0`, `generated:gen-031:0`, `generated:gen-034:1`, `generated:gen-035:0`, `generated:gen-037:1`, `generated:gen-038:2`, `generated:gen-039:0`, `generated:gen-047:2`, `generated:gen-048:0`, `generated:gen-048:1`, `generated:gen-050:0`, `generated:gen-051:0`, `generated:gen-053:1`, `generated:gen-055:1`, `generated:gen-065:0`, `generated:gen-069:0`, `generated:gen-070:0`, `generated:gen-071:0`, `generated:gen-081:0`, `generated:gen-081:2`, `generated:gen-087:1`, `generated:gen-090:2`, `generated:gen-093:1`, `generated:gen-095:2`, `generated:gen-096:0`, `generated:gen-105:1`, `generated:gen-106:1`, `generated:gen-107:0`, `generated:gen-112:0`, `generated:gen-113:3`, `generated:gen-115:2`, `generated:gen-117:3`, `generated:gen-120:0`, `generated:gen-120:2`, `generated:gen-123:2`, `generated:gen-124:1`, `generated:gen-128:1`, `generated:gen-134:1`, `generated:gen-137:1`, `generated:gen-144:2`, `generated:gen-145:0`, `generated:gen-148:0`, `generated:gen-150:1`, `generated:gen-150:2`, `generated:gen-152:1`, `generated:gen-152:2`, `generated:gen-153:0`, `generated:gen-156:0`, `generated:gen-158:1`, `generated:gen-164:2`, `generated:gen-164:3`, `generated:gen-165:0`, `generated:gen-166:1`, `generated:gen-169:0`, `generated:gen-170:0`, `generated:gen-170:2`, `generated:gen-171:0`, `generated:gen-171:2`, `generated:gen-172:1`, `generated:gen-172:2`, `generated:gen-174:3`, `generated:gen-175:2`, `generated:gen-175:3`, `generated:gen-177:1`, `generated:gen-178:0`, `generated:gen-182:1`, `generated:gen-183:0`, `generated:gen-185:0`, `generated:gen-188:0`, `generated:gen-189:0`, `generated:gen-191:2`, `generated:gen-191:3`, `generated:gen-194:0`, `generated:gen-197:0`, `generated:gen-197:2`, `generated:gen-198:0`, `generated:gen-199:1`, `generated:gen-203:0`, `generated:gen-205:0`, `generated:gen-207:0`, `generated:gen-211:0`, `generated:gen-211:3`, `generated:gen-212:2`, `generated:gen-215:3`, `generated:gen-219:0`, `generated:gen-222:0`, `generated:gen-222:2`, `generated:gen-222:3`, `generated:gen-223:0`, `generated:gen-226:1`, `generated:gen-230:1`, `generated:gen-231:2`, `generated:gen-233:1`, `generated:gen-233:3`, `generated:gen-235:0`, `generated:gen-236:0`, `generated:gen-236:1`, `generated:gen-237:1`, `generated:gen-238:1`, `generated:gen-238:2`, `generated:gen-241:0`, `generated:gen-242:1`, `generated:gen-243:1`, `generated:gen-244:0`, `generated:gen-249:2`, `generated:gen-251:3`, `generated:gen-258:0`, `generated:gen-258:1`, `generated:gen-259:3`, `generated:gen-266:0`, `generated:gen-267:1`, `generated:gen-272:1`, `generated:gen-272:2`, `generated:gen-273:0`, `generated:gen-273:3`, `generated:gen-274:1`, `generated:gen-274:3`, `generated:gen-277:0`, `generated:gen-277:1`, `generated:gen-277:2`, `generated:gen-280:2`, `generated:gen-281:2`, `generated:gen-293:1`, `generated:gen-295:3`, `generated:gen-299:1`, `scenario:22:0`, `d18:d18-deferred-6-then-24:0`, `d18:d18-deferred-unanswered:0`, `d18:d18-foreign:0`
+`generated:gen-001:0`, `generated:gen-001:2`, `generated:gen-003:0`, `generated:gen-011:0`, `generated:gen-011:3`, `generated:gen-019:0`, `generated:gen-019:1`, `generated:gen-023:2`, `generated:gen-024:1`, `generated:gen-030:0`, `generated:gen-031:0`, `generated:gen-034:1`, `generated:gen-035:0`, `generated:gen-037:1`, `generated:gen-038:2`, `generated:gen-039:0`, `generated:gen-047:2`, `generated:gen-048:0`, `generated:gen-048:1`, `generated:gen-050:0`, `generated:gen-051:0`, `generated:gen-053:1`, `generated:gen-055:1`, `generated:gen-065:0`, `generated:gen-069:0`, `generated:gen-070:0`, `generated:gen-071:0`, `generated:gen-081:0`, `generated:gen-081:2`, `generated:gen-087:1`, `generated:gen-090:2`, `generated:gen-093:1`, `generated:gen-095:2`, `generated:gen-096:0`, `generated:gen-105:1`, `generated:gen-106:1`, `generated:gen-107:0`, `generated:gen-112:0`, `generated:gen-113:3`, `generated:gen-115:2`, `generated:gen-117:3`, `generated:gen-120:0`, `generated:gen-120:2`, `generated:gen-123:2`, `generated:gen-124:1`, `generated:gen-128:1`, `generated:gen-134:1`, `generated:gen-137:1`, `generated:gen-144:2`, `generated:gen-145:0`, `generated:gen-148:0`, `generated:gen-150:1`, `generated:gen-150:2`, `generated:gen-152:1`, `generated:gen-152:2`, `generated:gen-153:0`, `generated:gen-156:0`, `generated:gen-158:1`, `generated:gen-164:2`, `generated:gen-164:3`, `generated:gen-165:0`, `generated:gen-166:1`, `generated:gen-169:0`, `generated:gen-170:0`, `generated:gen-170:2`, `generated:gen-171:0`, `generated:gen-171:2`, `generated:gen-172:1`, `generated:gen-172:2`, `generated:gen-174:3`, `generated:gen-175:2`, `generated:gen-175:3`, `generated:gen-177:1`, `generated:gen-178:0`, `generated:gen-182:1`, `generated:gen-183:0`, `generated:gen-185:0`, `generated:gen-188:0`, `generated:gen-189:0`, `generated:gen-191:2`, `generated:gen-191:3`, `generated:gen-194:0`, `generated:gen-197:0`, `generated:gen-197:2`, `generated:gen-198:0`, `generated:gen-199:1`, `generated:gen-203:0`, `generated:gen-205:0`, `generated:gen-207:0`, `generated:gen-211:0`, `generated:gen-211:3`, `generated:gen-212:2`, `generated:gen-215:3`, `generated:gen-219:0`, `generated:gen-222:0`, `generated:gen-222:2`, `generated:gen-222:3`, `generated:gen-223:0`, `generated:gen-226:1`, `generated:gen-230:1`, `generated:gen-231:2`, `generated:gen-233:1`, `generated:gen-233:3`, `generated:gen-235:0`, `generated:gen-236:0`, `generated:gen-236:1`, `generated:gen-237:1`, `generated:gen-238:1`, `generated:gen-238:2`, `generated:gen-241:0`, `generated:gen-242:1`, `generated:gen-243:1`, `generated:gen-244:0`, `generated:gen-249:2`, `generated:gen-251:3`, `generated:gen-258:0`, `generated:gen-258:1`, `generated:gen-259:3`, `generated:gen-266:0`, `generated:gen-267:1`, `generated:gen-272:1`, `generated:gen-272:2`, `generated:gen-273:0`, `generated:gen-273:3`, `generated:gen-274:1`, `generated:gen-274:3`, `generated:gen-277:0`, `generated:gen-277:1`, `generated:gen-277:2`, `generated:gen-280:2`, `generated:gen-281:2`, `generated:gen-293:1`, `generated:gen-295:3`, `generated:gen-299:1`, `generatedRefund:genref-005:0`, `generatedRefund:genref-009:0`, `generatedRefund:genref-009:1`, `generatedRefund:genref-012:2`, `generatedRefund:genref-014:0`, `generatedRefund:genref-016:2`, `generatedRefund:genref-025:2`, `generatedRefund:genref-026:0`, `generatedRefund:genref-027:1`, `generatedRefund:genref-027:2`, `generatedRefund:genref-028:0`, `generatedRefund:genref-029:1`, `generatedRefund:genref-031:0`, `generatedRefund:genref-033:0`, `generatedRefund:genref-039:2`, `scenario:22:0`, `d18:d18-deferred-6-then-24:0`, `d18:d18-deferred-unanswered:0`, `d18:d18-foreign:0`
