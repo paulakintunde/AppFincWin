@@ -112,7 +112,7 @@ function CandidateCard({ row, t, canWrite, onRegular, onNotRegular, onEdit }: Ca
             {t('decide.setup.regular.rowMeta', { frequency, day })}
           </Text>
         </View>
-        <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 0 }}>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 0 }}>
           {amount}
         </Text>
       </View>

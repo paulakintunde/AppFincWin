@@ -69,7 +69,7 @@ function EnvelopeRow({ pot, index, today, onPress, t }: { pot: SavingsGoalRow; i
         {tag ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{tag}</Text> : null}
       </View>
       <View style={styles.amounts}>
-        <Text numberOfLines={1} style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
           {amount}
         </Text>
         <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted, textAlign: 'right' }}>{sub}</Text>

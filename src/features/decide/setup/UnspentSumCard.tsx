@@ -56,7 +56,7 @@ export function UnspentSumCard({ lines, currency, onSetThem }: UnspentSumCardPro
             style={[rowStyle, styles.line, { borderBottomColor: colors.line1 }]}
           >
             <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flex: stacked ? undefined : 1, flexShrink: 1 }}>{t(LINE_KEY[line.key])}</Text>
-            <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 0 }}>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 0 }}>
               {money(line.amount)}
             </Text>
           </View>
@@ -66,7 +66,7 @@ export function UnspentSumCard({ lines, currency, onSetThem }: UnspentSumCardPro
           <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink, flex: stacked ? undefined : 1, flexShrink: 1 }}>
             {t('decide.unspentSheet.total')}
           </Text>
-          <Text numberOfLines={1} style={{ ...textRole(pairing, 'heading'), color: negative ? colors.danger : colors.accent, flexShrink: 0 }}>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'heading'), color: negative ? colors.danger : colors.accent, flexShrink: 0 }}>
             {totalText}
           </Text>
         </View>

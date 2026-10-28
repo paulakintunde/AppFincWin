@@ -96,6 +96,14 @@ const NUMBER_ALLOW: { path: string; kind: NumberKind; count: number; reason: str
   { path: 'quick/QuickResult.tsx', kind: 'figure', count: 1, reason: 'rule N quick-check monthly figure' },
   { path: 'home/HomeSummaryCard.tsx', kind: 'figure', count: 1, reason: 'R17.7 the hero amount: the declared hero-only minimumFontScale 0.75 exception to rule N' },
   { path: 'ui/FigureStrip.tsx', kind: 'figure', count: 1, reason: 'rule N strip figures' },
+  { path: 'setup/AccountUseList.tsx', kind: 'figure', count: 1, reason: 'rule N setup account balance, shrinks to its line' },
+  { path: 'setup/EmergencyFundFields.tsx', kind: 'figure', count: 1, reason: 'rule N setup account balance, shrinks to its line' },
+  { path: 'setup/UnspentSumCard.tsx', kind: 'figure', count: 2, reason: 'rule N setup line amount and total, shrinks to its line' },
+  { path: 'setup/steps/EnvelopesStep.tsx', kind: 'figure', count: 1, reason: 'rule N setup envelope amount, shrinks to its line' },
+  { path: 'setup/steps/RegularStep.tsx', kind: 'figure', count: 1, reason: 'rule N setup regular amount, shrinks to its line' },
+  { path: 'setup/steps/SavingStep.tsx', kind: 'figure', count: 1, reason: 'rule N setup saving monthly amount, shrinks to its line' },
+  { path: 'setup/steps/UnusualStep.tsx', kind: 'figure', count: 1, reason: 'rule N setup spent amount, shrinks to its line' },
+  { path: 'setup/steps/EverydayStep.tsx', kind: 'figure', count: 1, reason: 'rule N setup everyday monthly figure, shrinks to its line' },
 ];
 
 
@@ -110,6 +118,11 @@ const GEOMETRY_HEIGHT: { path: string; count: number; reason: string }[] = [
   { path: 'check/steps/step2/MethodPanels.tsx', count: 1, reason: 'stepper button target (glyph only)' },
   { path: 'pots/PotsScreen.tsx', count: 1, reason: 'R18.2 loading skeleton bars (no text)' },
   { path: 'quick/QuickCheckForm.tsx', count: 2, reason: 'loading skeleton bar and the 1px result rule (no text)' },
+  { path: 'setup/EmergencyFundFields.tsx', count: 1, reason: 'chevron glyph (no text)' },
+  { path: 'setup/SetupRail.tsx', count: 1, reason: 'progress segment bar (no text)' },
+  { path: 'setup/UnspentSumCard.tsx', count: 1, reason: '1px divider rule (no text)' },
+  { path: 'setup/steps/EnvelopesStep.tsx', count: 1, reason: '12px colour dot (no text)' },
+  { path: 'setup/steps/SavingStep.tsx', count: 1, reason: '12px colour dot (no text)' },
   { path: 'ui/CheckRow.tsx', count: 4, reason: 'checkbox and remove glyphs (no text)' },
   { path: 'ui/CollapsibleSection.tsx', count: 1, reason: 'chevron glyph' },
   { path: 'ui/CombineToggle.tsx', count: 1, reason: 'dot glyph' },

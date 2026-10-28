@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import type { SetupStepHandle, SetupStepReady } from '../steps/types';
 import { SavingStep } from '../steps/SavingStep';
+import { EditSeriesFromContext } from '@/features/income/steps/editSeriesFromContext';
 
 jest.setTimeout(30000);
 let mockWidth = 402;
@@ -52,8 +53,6 @@ jest.mock('@/data/queries/decide', () => ({ usePots: () => ({ data: { plain: moc
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ householdId: 'h1', userId: 'u1', homeCurrency: 'USD', timeZone: 'UTC', today: '2026-10-15' }),
 }));
-
-import { EditSeriesFromContext } from '@/features/income/steps/editSeriesFromContext';
 
 const METRICS = { frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top: 62, bottom: 34, left: 0, right: 0 } };
 

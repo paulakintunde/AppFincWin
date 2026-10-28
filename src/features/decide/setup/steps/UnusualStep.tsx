@@ -165,7 +165,7 @@ export const UnusualStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(funct
               ]}
             >
               <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{name}</Text>
-              <Text numberOfLines={1} style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{noWrap(spent)}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{noWrap(spent)}</Text>
               <View style={[styles.chip, { backgroundColor: flagged ? warnTint : colors.accentTint1 }]}>
                 <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.tabLabel, color: flagged ? colors.warn1 : colors.ink }}>{status}</Text>
               </View>

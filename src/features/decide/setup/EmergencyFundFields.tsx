@@ -238,7 +238,7 @@ function AccountPicker({ form, onClose }: { form: EmergencyFundForm; onClose: ()
                 <RadioDot selected={selected} />
                 <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flex: 1, flexShrink: 1 }}>{account.name}</Text>
                 {money ? (
-                  <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.inkMuted, flexShrink: 0 }}>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'body'), color: colors.inkMuted, flexShrink: 0 }}>
                     {money}
                   </Text>
                 ) : null}

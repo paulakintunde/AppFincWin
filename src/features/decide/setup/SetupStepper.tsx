@@ -237,7 +237,6 @@ function StepperBody({ mode, startAt, renderStep, stepTitleKey, onClose, facts }
         <BackButton variant="detail" onPress={goBack} />
         <Text
           accessibilityLabel={headerLabel === '' ? undefined : headerLabel}
-          numberOfLines={undefined}
           style={[styles.sectionName, { ...textRole(pairing, 'label'), color: colors.inkDim }]}
         >
           {sectionName}

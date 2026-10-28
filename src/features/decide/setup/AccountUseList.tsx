@@ -71,7 +71,7 @@ function AccountCard({ account, balance, answer, suggestion, onPress }: CardProp
     >
       <View style={styles.head}>
         <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink, flexShrink: 1 }}>{account.name}</Text>
-        <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 0 }}>{balanceText}</Text>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 0 }}>{balanceText}</Text>
       </View>
       <View style={styles.head}>
         <Text style={{ ...textRole(pairing, 'label'), color: answer !== null ? colors.inkDim : suggestion !== null ? colors.inkDim : colors.warn1, flexShrink: 1 }}>{line}</Text>

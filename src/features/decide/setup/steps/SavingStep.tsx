@@ -72,7 +72,7 @@ function SeriesCard({ series, accountName, mode, onMode, t }: { series: Recurrin
             {t('decide.setup.saving.aroundDay', { day: Number(series.anchor_date.slice(8, 10)) })}
           </Text>
         </View>
-        <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 0 }}>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 0 }}>
           {noWrap(monthly)}
         </Text>
       </View>
