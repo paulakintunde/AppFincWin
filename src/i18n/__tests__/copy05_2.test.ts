@@ -116,3 +116,32 @@ describe('05.2 namespace completeness', () => {
     ]);
   });
 });
+
+describe('05.2-38 gap-plan copy, undo labels and reverse picker', () => {
+  const BANNED = [/\badvice\b/i, /\badvis/i, /recommend/i, /you should/i, /we suggest/i, /\bsafe\b/i, /\bapprove/i, /\breject/i, /\bdecline/i];
+  const scoped = leaves(en).filter((l) =>
+    /^(decide\.setup\.debtSheet|record\.seriesStatus|decide\.settings\.changed)\./.test(l.path) ||
+    /^activity\.refund\.(pickerTitleReverse|pickerSublineReverse|searchPayments|emptyTitleReverse|rowSub|rowSubNoCategory|refundRowValue|refundRowA11y)$/.test(l.path) ||
+    l.path === 'activity.incomeTag.detailNotSet' ||
+    /^undo\.label(Unnamed)?\.(debtAdded|debtEdited|debtPaidOff|seriesStopped|seriesPaused|seriesResumed)$/.test(l.path),
+  );
+
+  it('covers every new key', () => {
+    expect(scoped.length).toBe(22 + 19 + 11 + 9 + 12);
+  });
+
+  it.each(scoped)('passes the banned-word check: $path', ({ value }) => {
+    for (const re of BANNED) expect(value).not.toMatch(re);
+  });
+
+  it('the six new undo labels have named and unnamed wording and DB-safe keys', () => {
+    const label = en.undo.label as Record<string, string>;
+    const unnamed = en.undo.labelUnnamed as Record<string, string>;
+    for (const key of ['debtAdded', 'debtEdited', 'debtPaidOff', 'seriesStopped', 'seriesPaused', 'seriesResumed']) {
+      expect(key).toMatch(/^[a-zA-Z]{1,40}$/);
+      expect(label[key]).toContain('{{name}}');
+      expect(unnamed[key]).toBeTruthy();
+      expect(unnamed[key]).not.toContain('{{name}}');
+    }
+  });
+});

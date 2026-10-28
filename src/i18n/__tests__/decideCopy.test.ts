@@ -43,6 +43,8 @@ const ACTION_LABELS = new Set([
   'decide.quick.error.retry', // button
   'decide.flow.retry', // button
   'decide.rough.save', // button
+  'decide.setup.debtSheet.save', // button (05.2-38)
+  'decide.setup.debtSheet.paidOffSave', // button (05.2-38)
   'decide.lines.save', // button
   'decide.flow.saveClose', // button
   'decide.flow.commit.wait', // button: "Save the plan" commits the Wait decision the user chose
@@ -79,6 +81,7 @@ const ACTION_LABELS = new Set([
 const INSTRUCTION_LEAD = /^(Add|Type|Choose|Pick|Enter|Switch|Move|Tap|Change (it|any|the))\b/;
 const CONTROL_LABELS = new Set([
   'decide.home.noFigures.addRough', // button
+  'decide.setup.debtSheet.titleAdd', // sheet title (05.2-38), same wording as loans.addCaption
   'decide.lineEditor.titleAdjust', // sheet title
   'decide.lineEditor.titleRunning', // sheet title
   'decide.lineEditor.titleReplaces', // sheet title

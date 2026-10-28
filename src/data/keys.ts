@@ -144,6 +144,10 @@ export const mutationKeys = {
   editPot: ['savings-goals', 'edit'] as const,
   setDebtHousing: ['debts', 'set-housing'] as const,
   setDebtPaysInFull: ['debts', 'set-pays-in-full'] as const, // 05.2-15
+  addDebt: ['debts', 'add'] as const, // 05.2-43
+  editDebt: ['debts', 'edit'] as const, // 05.2-43
+  setDebtPaidOff: ['debts', 'set-paid-off'] as const, // 05.2-43
+  setSeriesStatus: ['recurring-series', 'status'] as const, // 05.2-44
   // 05.2 (Decide data and setup)
   updateDecideSetup: ['decide-setup', 'update'] as const, // settings forward write + undo (05.2-13)
   resetDecideSetup: ['decide-setup', 'reset'] as const, // 05.2-13
