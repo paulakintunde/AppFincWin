@@ -947,13 +947,13 @@ Gap closure (planned 2026-10-26 against 05.1-CONTEXT D-33..D-45, 05.1-VERIFICATI
 **Plans:** 36 plans in 7 waves (planned 2026-10-27; checkpoints: 05.2-06 noise rule, 05.2-31 new fits, 05.2-36 production push)
 
 Plans:
-- [ ] 05.2-01-PLAN.md — decide_settings v3 columns (incl. id for Undo, refine dates, unexplained answer) and profiles.decide_v3 flag, pgTAP 63-64 (wave 1)
-- [ ] 05.2-02-PLAN.md — recurring_series, transactions (income tags, refund_of), debts.pays_in_full and accounts use columns, pgTAP 65-66 (wave 1)
-- [ ] 05.2-03-PLAN.md — savings_goals buckets/account/colour and the dismissals, payer prompts and decide_answers tables, pgTAP 67-68 (wave 1)
-- [ ] 05.2-04-PLAN.md — Engine refund re-dating pre-pass (V3Line.refundOf, Envelope.bucket) at 100% branch (wave 1)
-- [ ] 05.2-05-PLAN.md — Per-account switch: decideEngine(flags), profile read, useDecideAccess (wave 1)
-- [ ] 05.2-06-PLAN.md — Pure month/refine.ts behind the owner noise-rule decision (checkpoint) (wave 1)
-- [ ] 05.2-07-PLAN.md — 05.2 write-queue keys and mutation module registry (wave 1)
+- [x] 05.2-01-PLAN.md — decide_settings v3 columns (incl. id for Undo, refine dates, unexplained answer) and profiles.decide_v3 flag, pgTAP 63-64 (wave 1)
+- [x] 05.2-02-PLAN.md — recurring_series, transactions (income tags, refund_of), debts.pays_in_full and accounts use columns, pgTAP 65-66 (wave 1)
+- [x] 05.2-03-PLAN.md — savings_goals buckets/account/colour and the dismissals, payer prompts and decide_answers tables, pgTAP 67-68 (wave 1)
+- [x] 05.2-04-PLAN.md — Engine refund re-dating pre-pass (V3Line.refundOf, Envelope.bucket) at 100% branch (wave 1)
+- [x] 05.2-05-PLAN.md — Per-account switch: decideEngine(flags), profile read, useDecideAccess (wave 1)
+- [x] 05.2-06-PLAN.md — Pure month/refine.ts behind the owner noise-rule decision (checkpoint) (wave 1)
+- [x] 05.2-07-PLAN.md — 05.2 write-queue keys and mutation module registry (wave 1)
 - [ ] 05.2-08-PLAN.md — apply_patches v3 (new entities and columns), undo replay and erasure pgTAP 69-70 (wave 2)
 - [ ] 05.2-09-PLAN.md — D-23 set-aside max(buckets, saving) and five refund goldens (wave 2)
 - [ ] 05.2-10-PLAN.md — Widen existing db modules for the 05.2 columns + grant-mirror test (wave 2)
@@ -1139,7 +1139,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
-| 05.2 Decide data and setup | 0/36 | Planned | - |
+| 05.2 Decide data and setup | 7/36 | In progress | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
