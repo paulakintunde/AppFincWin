@@ -20,6 +20,7 @@ export { homeThresholds } from './bandEdges';
 export type { UsdRate } from './bandEdges';
 export { bandOf, layersFor } from './judge/bands';
 export { canUseEmergency, validateCustomOptions } from './judge/options';
+export { liveEmergencyOf, withLiveEmergency } from './funds/emergency';
 export type { OptionsProblem, ResolvedItemType } from './judge/options';
 export { PRESET_QUESTIONS, QUESTION_LIBRARY, V3_ITEM_TYPES } from './judge/presetQuestions';
 export type { QuestionSpec } from './judge/presetQuestions';

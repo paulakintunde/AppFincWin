@@ -99,6 +99,7 @@ export const V3_RUNTIME_EXPORTS = [
   'layersFor',
   'legacyLimits',
   'legacyStateOf',
+  'liveEmergencyOf',
   'monthlyEquivalentOf',
   'parseCheckV2',
   'planCard',
@@ -112,6 +113,7 @@ export const V3_RUNTIME_EXPORTS = [
   'upgradeInputs',
   'validateCustomOptions',
   'verdictRowFor',
+  'withLiveEmergency',
 ] as const;
 
 // Compile-only: tsc fails if any of these types leaves the barrel.

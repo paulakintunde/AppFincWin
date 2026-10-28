@@ -35,6 +35,11 @@ describe('unspentSum (05.2-28)', () => {
     expect(sum.total).toBe(funds.suggested);
   });
 
+  it('uses the live fund amount on raw inputs (05.2-37)', () => {
+    const { sum } = sumOf({ emergency: { amount: mu(900_000), accountId: 'm' }, accounts: [acct('m', 600_000, { kind: 'mixed', extraSetAside: null })] });
+    expect(sum.emergency).toBe(600_000); // stated 900000 capped at the live balance
+  });
+
   it('a mixed account names its envelopes, its fund and its extra set-aside separately', () => {
     const { sum, funds } = sumOf({
       accounts: [acct('m', 600_000, { kind: 'mixed', extraSetAside: mu(20_000) }), acct('e', 100_000, { kind: 'everyday' })],

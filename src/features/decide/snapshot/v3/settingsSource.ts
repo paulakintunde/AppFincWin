@@ -65,6 +65,13 @@ export function settingsSourceOf(input: SettingsSourceInput): V3SettingsSource |
     custom_options: null,
     income_pattern: s.income_pattern,
     income_pattern_confirmed: s.income_pattern_confirmed,
+    // 05.2-37: three stored fields are passed through but not mapped into V3Inputs, on purpose.
+    // - spread_months: the engine spreads a payment by its own `coversMonths`, and "a large payment" has no rule that
+    //   picks which lines it applies to. Mapping it to every line would spread small payments too. It stays stored for
+    //   05.3, where the in-check question sets coversMonths per payment.
+    // - everyday_override_at: this is RefineInput.overrideAt for refine(), which 05.3 calls. It is not a V3Inputs field.
+    // - reserve_goal: the fund is a lock, never a target (I31, I38). The goal is only the setup and sheet hint, so the
+    //   engine has no use for it.
     spread_months: s.spread_months,
     everyday_override_at: s.everyday_override_at,
     reserve_goal: s.reserve_goal,

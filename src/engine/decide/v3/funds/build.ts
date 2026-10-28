@@ -3,13 +3,11 @@
  * figure, the user's rolled-forward unspent figure, the emergency fund and the envelopes.
  * I17: suggested + bills still due + Erest = the spending balance (profile (d) 'balance' uses its own horizon bills and
  * no Erest, I39, so the partition is stated for the other profiles). The fund is never a term (D-43, D-54).
- * Bound on a later-month refund (Phase 05.1 risk 3): rollForward adds a refund logged after its purchase back in full,
- * so unspent can exceed its pre-purchase figure only when the purchase sat inside planned everyday spending. The user's
- * confirmed figure is never replaced (D-30); the gap is surfaced through `drifted` against `suggested`.
+ * Two-date refunds (05.2): the month view dates a linked refund on its purchase, but rolled unspent counts it on the day it arrived.
  */
 import { minorUnits, type MinorUnits } from '../../../money/types';
 import type { Funds, MonthModel, UnspentSum, V3Inputs } from '../types';
-import { emergencyOf } from './emergency';
+import { emergencyOf, withLiveEmergency } from './emergency';
 import { envelopesOf, ownEnvelope } from './envelopes';
 import { billsAndErest, heldBackOf, rollForward, suggestedUnspent, unspentState } from './unspent';
 
@@ -124,7 +122,7 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
   const roll =
     inputs.unspent === null
       ? null
-      : rollForward({ anchor: inputs.unspent, asOf: inputs.asOf, months: inputs.months, series: inputs.series, e: month.e });
+      : rollForward({ anchor: inputs.unspent, asOf: inputs.asOf, months: inputs.months, logged: inputs.loggedMonths, series: inputs.series, e: month.e });
   const unspent = unspentState({
     anchor: inputs.unspent,
     asOf: inputs.asOf,
@@ -175,7 +173,8 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
  * buildFunds, named line by line: gross - mixedSetAside - envelopes - emergency - bills - everyday = suggested, and
  * suggested - heldBack = total (D-38: bridges hold money back from the confirmed figure). Not a second calculation.
  */
-export function unspentSum(inputs: V3Inputs, month: MonthModel): UnspentSum {
+export function unspentSum(raw: V3Inputs, month: MonthModel): UnspentSum {
+  const inputs = withLiveEmergency(raw); // the UI calls this on inputs that never went through evaluate
   const sp = spendingOf(inputs);
   const input = { asOf: inputs.asOf, billsDue: month.billsDue, erest: month.erest, profile: inputs.profile, series: inputs.series };
   const be = billsAndErest(input);

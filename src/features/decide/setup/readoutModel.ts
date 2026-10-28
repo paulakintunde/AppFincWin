@@ -6,6 +6,7 @@
  * Values arrive formatted through the passed formatter, so this file owns no money or date formatting. Labels are copy
  * keys; the screen draws them.
  */
+import { liveEmergencyOf } from '@/engine/decide/v3';
 import type { Evaluation, IncomePattern, IncomeType, MissingCode, V3Inputs } from '@/engine/decide/v3';
 
 const K = 'decide.setupPage.';
@@ -138,8 +139,9 @@ export function readoutRows(inputs: V3Inputs, evaluation: Evaluation, answers: R
   }
 
   // Emergency fund.
-  if (inputs.emergency !== null) {
-    const amount = fmt.money(num(inputs.emergency.amount));
+  const fund = liveEmergencyOf(inputs.emergency, inputs.accounts); // owner decision 2026-10-28: follows the linked account's balance
+  if (fund !== null && inputs.emergency !== null) {
+    const amount = fmt.money(num(fund.amount));
     const id = inputs.emergency.accountId;
     const name = id === null || id === undefined ? undefined : answers.accountNames[id];
     add('emergency', `${K}labelEmergency`, name === undefined ? amount : join(fmt, amount, name));

@@ -12,7 +12,7 @@ import { buildFunds } from './funds/build';
 import { insteadFutures, type Futures } from './instead/futures';
 import { readinessOf } from './readiness';
 import { judge } from './judge/judge';
-import { mayUseEmergency } from './funds/emergency';
+import { mayUseEmergency, withLiveEmergency } from './funds/emergency';
 import { buildPurchase, purchaseCashFlows } from './judge/purchase';
 import { withRedatedRefunds } from './month/refunds';
 import { buildMonthModel } from './month/model';
@@ -184,8 +184,8 @@ export function stricterOf(a: Evaluation, b: Evaluation): Evaluation {
  * given (never from the all-full reading) and never changes the code, the split or any figure.
  */
 export function evaluate(raw: V3Inputs, check: CheckV2): Evaluation {
-  // 05.2 D-11: one pre-pass so typical, thisMonth, incomePattern and unspent read the same months
-  const inputs = withRedatedRefunds(raw);
+  // 05.2 D-11: one pre-pass so typical, thisMonth, incomePattern and unspent read the same months, and the fund is at its live balance
+  const inputs = withLiveEmergency(withRedatedRefunds(raw));
   const ym = yearMonthOf(inputs.asOf);
   const thin = inputs.months.some((m) => m.month < ym && !m.full);
   const a = evaluateOnce(inputs, check);

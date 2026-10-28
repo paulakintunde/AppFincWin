@@ -96,6 +96,12 @@ describe('readoutRows', () => {
     expect(bare.emergency).toBe('$9,000');
   });
 
+  it('the emergency fund shows the linked account live balance, not the saved figure', () => {
+    // 05.2-37 live emergency fund: follows the linked account's balance
+    const live = inputsOf({ emergency: { amount: 500000, accountId: 'a1' }, accounts: [{ id: 'a1', balance: 900000, use: { kind: 'untouched' } }] });
+    expect(byId(readoutRows(live, evalOf(), answers, fmt)).emergency).toBe('$9,000 · High-interest savings');
+  });
+
   it('envelopes: count, saved and how many are placed in an account', () => {
     const envelopes = [
       { id: 'e1', saved: 100000, accountId: 'a1' },
