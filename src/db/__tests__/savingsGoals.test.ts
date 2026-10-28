@@ -84,6 +84,17 @@ describe('updateSavingsGoal', () => {
     expect(client.calls).toHaveLength(0);
   });
 
+  it('accepts a null target in a patch (a bucket goal cleared) and still refuses 0, negatives and over 10^13', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [goalRow({ version: 2, target: null })], error: null, status: 200 });
+    await updateSavingsGoal(client, ID_A, 1, { target: null });
+    expect(client.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ target: null });
+    const bad = createFakeSupabase();
+    await expect(updateSavingsGoal(bad, ID_A, 1, { target: -5 })).rejects.toBeInstanceOf(RangeError);
+    await expect(updateSavingsGoal(bad, ID_A, 1, { target: 10 ** 13 + 1 })).rejects.toBeInstanceOf(RangeError);
+    expect(bad.calls).toHaveLength(0);
+  });
+
   it('soft deletes with a version check', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: [goalRow({ version: 2, deleted_at: 'now' })], error: null, status: 200 });

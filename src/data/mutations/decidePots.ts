@@ -275,6 +275,9 @@ export function useEditPot(): { edit(row: SavingsGoalRow, patch: SavingsGoalPatc
       if (keys.includes('monthly_amount') && !row.bucket) {
         throw new RangeError('edit pot: monthly amount belongs to a saving bucket');
       }
+      if (patch.target === null && !row.bucket) {
+        throw new RangeError('edit pot: only a saving bucket can have no goal');
+      }
       const stepId = newStepId();
       mutation.mutate({
         id: row.id,

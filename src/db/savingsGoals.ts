@@ -56,9 +56,9 @@ export type NewPot =
       monthly_amount?: number | null;
     });
 
-/** target and ready_by are never null in a patch: a pot's shape check needs both (a Wait goal's are frozen anyway). */
+/** ready_by is never null in a patch. target may be null only for a saving bucket (05.2 D-22: a bucket's goal is optional); the mutation refuses it for an ordinary pot and the pot shape check enforces it in the database. */
 export type SavingsGoalPatch = Partial<
-  Pick<SavingsGoalRow, 'name' | 'opening_saved' | 'done_at' | 'deleted_at' | 'account_id' | 'monthly_amount' | 'color_key'> & { target: number; ready_by: string }
+  Pick<SavingsGoalRow, 'name' | 'opening_saved' | 'done_at' | 'deleted_at' | 'account_id' | 'monthly_amount' | 'color_key'> & { target: number | null; ready_by: string }
 >;
 
 export const SAVINGS_GOAL_INSERT_KEYS = [

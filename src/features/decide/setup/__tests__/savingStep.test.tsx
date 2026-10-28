@@ -188,6 +188,15 @@ describe('SavingStep', () => {
     expect(mockAdd).not.toHaveBeenCalled();
   });
 
+  it('clearing an existing bucket goal saves target null', async () => {
+    mockPots = [{ id: 'p1', bucket: 'trip', monthly_amount: 10000, target: 500000, opening_saved: 0, color_key: 'slate', kind: 'pot' }];
+    const { ref, last } = await mount();
+    await fireEvent.changeText(screen.getByLabelText('A trip or holiday, goal (optional)'), '');
+    expect(last().dirty).toBe(true);
+    await save(ref);
+    expect(mockEditPot).toHaveBeenCalledWith(expect.objectContaining({ id: 'p1' }), { monthly_amount: 10000, target: null });
+  });
+
   it('stacks the two amount fields at 320 dp', async () => {
     mockWidth = 320;
     await mount();

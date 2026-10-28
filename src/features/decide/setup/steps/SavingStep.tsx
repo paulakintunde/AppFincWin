@@ -158,7 +158,7 @@ export const SavingStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functi
     const row = existing.get(k);
     const e = entryOf(k);
     if (!row) return true;
-    return (e.monthly ?? 0) !== (row.monthly_amount ?? 0) || (e.goal !== null && e.goal !== row.target);
+    return (e.monthly ?? 0) !== (row.monthly_amount ?? 0) || e.goal !== (row.target ?? null);
   });
   const dirty = modeChanges.length > 0 || bucketChanges.length > 0;
   useReportReady(onReadyChange, true, null, dirty);
@@ -181,7 +181,7 @@ export const SavingStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functi
         const e = entryOf(k);
         if (row) {
           const patch: SavingsGoalPatch = { monthly_amount: e.monthly ?? 0 };
-          if (e.goal !== null) patch.target = e.goal;
+          if (e.goal !== (row.target ?? null)) patch.target = e.goal;
           steps.push(edit(row, patch));
         } else {
           const label = BUCKETS.find((b) => b.key === k)!.labelKey;

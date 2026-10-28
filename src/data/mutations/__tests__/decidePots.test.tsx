@@ -233,6 +233,22 @@ describe('buckets, Held in and colour (05.2 D-22, D-05)', () => {
     expect(() => result.current.edit(pot('p2'), { monthly_amount: 5 })).toThrow(RangeError);
     expect(fake.calls).toHaveLength(calls);
   });
+  it('clears a bucket goal with an undo that holds the old target, and refuses it on an ordinary pot', async () => {
+    const { fake, qc } = setup();
+    const bucket = pot('b1', { bucket: 'college', target: 500_000, ready_by: null, monthly_amount: 20_000 });
+    qc.setQueryData(KEY, [bucket]);
+    fake.respondWith(ok([{ ...bucket, target: null, version: 2 }]));
+    const { result } = await renderHook(() => useEditPot(), { wrapper: wrapper(qc) });
+
+    result.current.edit(bucket, { target: null });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ target: null });
+    expect(lastStep().ops[0]).toMatchObject({ patch: { target: 500_000 } });
+
+    const calls = fake.calls.length;
+    expect(() => result.current.edit(pot('p2'), { target: null })).toThrow('edit pot: only a saving bucket can have no goal');
+    expect(fake.calls).toHaveLength(calls);
+  });
 });
 
 describe('useEditPot', () => {
