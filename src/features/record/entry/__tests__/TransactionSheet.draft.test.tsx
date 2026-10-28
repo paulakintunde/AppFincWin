@@ -8,6 +8,7 @@ import { resetToastForTests } from '@/state/undoToast';
 import { entryDraftKey } from '../useEntryDraft';
 import { TransactionSheet } from '../TransactionSheet';
 
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) })); // 05.2-44: OccurrenceActions gates on v3
 jest.mock('@/features/record/accounts/AccountSheet', () => ({ AccountSheet: () => null }));
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),

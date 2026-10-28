@@ -8,11 +8,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { DbClient, RecurringSeriesRow } from '@/db/rows';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
-import { addDays } from '@/engine/decide/v3/dates';
 import { localDateIn } from '@/engine/time';
 import { clearVersionChains } from '@/data/sync/versionChain';
 import { registerSeriesMutations, useEndSeries, useSetSeriesStatus } from '../recurringSeries';
-import { seriesStatusOf } from '@/features/record/entry/seriesStatus';
+import { addDays, seriesStatusOf } from '@/features/record/entry/seriesStatus';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
 let mockActiveClient: unknown;

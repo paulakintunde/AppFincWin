@@ -15,6 +15,7 @@ jest.mock('expo-router', () => ({
   useSegments: () => [],
   router: { push: jest.fn() },
 }));
+jest.mock('../SeriesStatusSheet', () => ({ SeriesStatusHost: () => null })); // 05.2-44: covered by seriesStatusSheet.test
 const mockSheet = jest.fn();
 jest.mock('../TransactionSheet', () => ({
   TransactionSheet: (props: unknown) => {

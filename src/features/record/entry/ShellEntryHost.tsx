@@ -9,6 +9,7 @@ import { useBackHistory } from '@/shell/backHistory/BackHistoryProvider';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { useHideFab, useProvideDefaultFabAction, useProvideQuickAction } from '@/shell/fab/FabProvider';
 import { closeEntry, openEntry, useEntryHostMode } from './entryHost';
+import { SeriesStatusHost } from './SeriesStatusSheet';
 import { TransactionSheet } from './TransactionSheet';
 import type { EntryMode } from './transactionForm';
 
@@ -28,5 +29,10 @@ export function ShellEntryHost(): React.JSX.Element {
     useCallback(() => pushOnce({ pathname: '/import', params: { entry: 'you', from } } as Href), [from]),
   );
   useHideFab('entryFlow', mode !== null);
-  return <TransactionSheet visible={mode !== null} mode={mode ?? NEW_OUT} onClose={closeEntry} />;
+  return (
+    <>
+      <TransactionSheet visible={mode !== null} mode={mode ?? NEW_OUT} onClose={closeEntry} />
+      <SeriesStatusHost />
+    </>
+  );
 }
