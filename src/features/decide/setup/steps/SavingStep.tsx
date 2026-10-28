@@ -3,7 +3,7 @@
  * become envelopes (savings_goals, kind 'pot', with a `bucket`). The total line compares the buckets with the regular
  * saving (D-22): when they add up to more, a tile says so and offers two choices; neither is required and Next never waits.
  */
-import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import React, { forwardRef, useContext, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { Chip } from '@/ui/Chip';
@@ -23,7 +23,6 @@ import { usePots } from '@/data/queries/decide';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { usePatchSeriesAttributes } from '@/data/mutations/seriesAttributes';
 import { useAddPot, useEditPot } from '@/data/mutations/decidePots';
-import { useEditSeriesFrom } from '@/data/mutations/recurringSeries';
 import type { RecurringSeriesRow } from '@/db/rows';
 import type { SavingsGoalPatch, SavingsGoalRow } from '@/db/savingsGoals';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -32,6 +31,7 @@ import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { useShouldStack } from '@/features/decide/ui/textFit';
 import { useScrollIntoView } from '@/features/decide/ui/scrollIntoView';
+import { EditSeriesFromContext } from '@/features/income/steps/editSeriesFromContext';
 import { ChipRow, Meta, Why, useCopy, useNoWrapMoney, useReportReady, type Copy } from '@/features/income/steps/shared';
 import type { SetupStepBodyProps, SetupStepHandle } from './types';
 import { amountForMonthly, bucketReadiness, bucketTotalLine, splitMonths } from './savingModel';
@@ -111,7 +111,7 @@ export const SavingStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functi
   const patcher = usePatchSeriesAttributes(householdId ?? '', userId ?? '');
   const { add } = useAddPot();
   const { edit } = useEditPot();
-  const { editFrom } = useEditSeriesFrom();
+  const editFrom = useContext(EditSeriesFromContext);
 
   const savingCategoryIds = useMemo(
     () => new Set((categoriesQuery.data ?? []).filter((c) => c.builtin_key === 'Savings').map((c) => c.id)),
@@ -209,7 +209,7 @@ export const SavingStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functi
   };
 
   const raiseSaving = (): void => {
-    if (total.kind !== 'more' || savingSeries.length !== 1 || householdId === undefined || userId === undefined) return;
+    if (editFrom === null || total.kind !== 'more' || savingSeries.length !== 1 || householdId === undefined || userId === undefined) return;
     const s = savingSeries[0]!;
     const stepId = editFrom({
       id: s.id,
@@ -231,6 +231,7 @@ export const SavingStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functi
   const swatchOf = (k: BucketKey): CategorySwatchKey => (existing.get(k)?.color_key ?? SWATCH_ORDER[chosen.indexOf(k) % SWATCH_ORDER.length]) as CategorySwatchKey;
 
   const canRaise =
+    editFrom !== null &&
     total.kind === 'more' &&
     total.canRaise &&
     savingSeries.length === 1 &&

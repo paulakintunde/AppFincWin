@@ -26,7 +26,6 @@ jest.mock('@/data/mutations/decidePots', () => ({
   useAddPot: () => ({ add: (i: Record<string, unknown>) => mockAdd(i) }),
   useEditPot: () => ({ edit: (r: unknown, p: unknown) => mockEditPot(r, p) }),
 }));
-jest.mock('@/data/mutations/recurringSeries', () => ({ useEditSeriesFrom: () => ({ editFrom: (i: Record<string, unknown>) => mockEditFrom(i) }) }));
 jest.mock('@/state/undoToast', () => ({ showToast: (t: unknown) => mockToast(t) }));
 
 const series = (id: string, amount: number, over: Record<string, unknown> = {}) => ({
@@ -54,6 +53,8 @@ jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ householdId: 'h1', userId: 'u1', homeCurrency: 'USD', timeZone: 'UTC', today: '2026-10-15' }),
 }));
 
+import { EditSeriesFromContext } from '@/features/income/steps/editSeriesFromContext';
+
 const METRICS = { frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top: 62, bottom: 34, left: 0, right: 0 } };
 
 async function mount() {
@@ -63,7 +64,9 @@ async function mount() {
     <SafeAreaProvider initialMetrics={METRICS}>
       <ThemeProvider>
         <FontScaleProvider>
-          <SavingStep ref={ref} mode="stepper" onReadyChange={(r) => ready.push(r)} />
+          <EditSeriesFromContext.Provider value={(i) => mockEditFrom(i as unknown as Record<string, unknown>)}>
+            <SavingStep ref={ref} mode="stepper" onReadyChange={(r) => ready.push(r)} />
+          </EditSeriesFromContext.Provider>
         </FontScaleProvider>
       </ThemeProvider>
     </SafeAreaProvider>
