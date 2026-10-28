@@ -27,7 +27,7 @@ export const INCOME_KINDS = [
 
 export type IncomeKind = (typeof INCOME_KINDS)[number]['kind'];
 
-export function kindNameKey(kind: string): string {
+export function kindNameKey(kind: string): (typeof INCOME_KINDS)[number]['key'] {
   return (INCOME_KINDS.find((k) => k.kind === kind) ?? INCOME_KINDS[INCOME_KINDS.length - 1]!).key;
 }
 
