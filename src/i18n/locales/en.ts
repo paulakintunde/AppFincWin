@@ -1832,6 +1832,7 @@ const en = {
         alsoNo: 'No',
         previewKept: '{{account}} will be set to: kept for the emergency fund.',
         previewMix: '{{account}} will be set to: a mix.',
+        noAccount: 'No account, just an amount',
         goalCaption: 'A goal, if you’d like one (optional)',
         goalHint: 'Three months of your regular payments and everyday spending is about {{amount}}.',
         infoTile: 'Your emergency fund is kept out of purchase checks. It’s only used when you mark a purchase as an emergency.',
