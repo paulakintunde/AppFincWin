@@ -53,6 +53,7 @@ export const RECURRING_SERIES_PATCH_KEYS = [
   'end_date',
   'occurrence_count',
   'is_automatic',
+  'end_reason',
 ] as const satisfies readonly (keyof RecurringSeriesRow)[];
 
 export type RecurringSeriesPatch = Partial<Pick<RecurringSeriesRow, (typeof RECURRING_SERIES_PATCH_KEYS)[number]>>;

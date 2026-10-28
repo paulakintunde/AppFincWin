@@ -17,6 +17,8 @@ import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import type { RecurringFreq, RecurringSuggestion } from '@/engine/recurring';
 import { localDateIn } from '@/engine/time';
+import { addDays } from '@/engine/decide/v3/dates';
+import { stopDateProblem, resumeAllowed } from '@/features/record/entry/seriesStatus';
 import { fetchRatePendingRows } from '@/db/fxResolve';
 import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import { VersionConflictError } from '@/db/errors';
@@ -176,6 +178,23 @@ export interface EndSeriesVars {
   undo: SeriesUndoLabel;
 }
 
+/** 05.2 D-24: Stopped / Paused / Resume, each one edit_recurring_series_from call (end_date and end_reason together). */
+export interface SetSeriesStatusVars {
+  action: 'stop' | 'pause' | 'resume';
+  id: string;
+  householdId: string;
+  expectedVersion: number;
+  /** The first day it no longer counts (stop, pause) or the day it starts again (resume). */
+  date: string;
+  ownerId: string;
+  undo: SeriesUndoLabel;
+}
+
+export function seriesStatusPatch(action: SetSeriesStatusVars['action'], date: string): RecurringSeriesPatch {
+  if (action === 'resume') return { anchor_date: date, end_date: null, end_reason: null };
+  return { end_date: addDays(date, -1), end_reason: action === 'stop' ? 'stopped' : 'paused' };
+}
+
 function patchSeriesCache(qc: QueryClient, householdId: string, updater: (rows: SeriesList) => SeriesList): void {
   qc.setQueryData<SeriesList>(queryKeys.recurringSeries(householdId), (old) => updater(old ?? []));
 }
@@ -332,6 +351,37 @@ export function registerSeriesMutations(qc: QueryClient): void {
     onError: (err: unknown, vars: EditSeriesFromVars) => handleSeriesWriteError(qc, err, vars, { ...vars.patch }),
   });
 
+  qc.setMutationDefaults(mutationKeys.setSeriesStatus, {
+    mutationFn: (vars: SetSeriesStatusVars) =>
+      guardSession(vars, async () => {
+        const expected = resolveExpectedVersion('recurring_series', vars.id, vars.expectedVersion);
+        const client = await writeClient();
+        // One server call: the patch and its undo step are built together, so end_reason cannot go stale.
+        const result = await editRecurringSeriesFrom(
+          client,
+          vars.id,
+          expected,
+          seriesStatusPatch(vars.action, vars.date),
+          vars.date,
+          vars.undo
+        );
+        recordVersion(vars.id, [vars.expectedVersion, expected], result);
+        return result;
+      }),
+    scope: WRITE_SCOPE,
+    retry: shouldRetryWrite,
+    retryDelay: writeRetryDelay,
+    onMutate: async (vars: SetSeriesStatusVars) => {
+      markSession(vars);
+      await qc.cancelQueries({ queryKey: queryKeys.recurringSeries(vars.householdId) });
+    },
+    onSuccess: async (_result: SeriesWriteResult, vars: SetSeriesStatusVars) => {
+      await invalidateSeriesAndTransactions(qc, vars.householdId, vars.ownerId);
+    },
+    // Ids and counts only: the action and date, never an amount.
+    onError: (err: unknown, vars: SetSeriesStatusVars) => handleSeriesWriteError(qc, err, vars, { action: vars.action, date: vars.date }),
+  });
+
   qc.setMutationDefaults(mutationKeys.endSeries, {
     mutationFn: (vars: EndSeriesVars) =>
       guardSession(vars, async () => {
@@ -417,6 +467,60 @@ export function useEndSeries(): {
     end({ name, ...vars }): string {
       const stepId = Crypto.randomUUID();
       mutation.mutate({ ...vars, undo: { id: stepId, labelKey: 'seriesEnded', labelParams: { name } } });
+      return stepId;
+    },
+  };
+}
+
+type StatusSeries = Pick<
+  RecurringSeriesRow,
+  'id' | 'household_id' | 'name' | 'version' | 'anchor_date' | 'end_date' | 'end_reason'
+>;
+
+export function useSetSeriesStatus(): {
+  /** Each returns the undo step id, minted once here so a paused-mutation replay reuses it. */
+  stop(series: StatusSeries, from: string, ownerId: string): string;
+  pause(series: StatusSeries, from: string, ownerId: string): string;
+  resume(series: StatusSeries, on: string, ownerId: string): string;
+} {
+  const mutation = useMutation<SeriesWriteResult, unknown, SetSeriesStatusVars>({
+    mutationKey: mutationKeys.setSeriesStatus,
+    scope: WRITE_SCOPE,
+  });
+
+  const todayLocal = (): string => localDateIn(new Date(), getDeviceTimeZone());
+
+  const endAt = (action: 'stop' | 'pause', series: StatusSeries, from: string, ownerId: string): string => {
+    const problem = stopDateProblem(series, from, todayLocal());
+    if (problem !== null) throw new RangeError(`setSeriesStatus: ${problem}`);
+    const stepId = Crypto.randomUUID();
+    mutation.mutate({
+      action,
+      id: series.id,
+      householdId: series.household_id,
+      expectedVersion: series.version,
+      date: from,
+      ownerId,
+      undo: { id: stepId, labelKey: action === 'stop' ? 'seriesStopped' : 'seriesPaused', labelParams: { name: series.name } },
+    });
+    return stepId;
+  };
+
+  return {
+    stop: (series, from, ownerId) => endAt('stop', series, from, ownerId),
+    pause: (series, from, ownerId) => endAt('pause', series, from, ownerId),
+    resume(series, on, ownerId): string {
+      if (!resumeAllowed(series, on, todayLocal())) throw new RangeError('setSeriesStatus: resume date refused');
+      const stepId = Crypto.randomUUID();
+      mutation.mutate({
+        action: 'resume',
+        id: series.id,
+        householdId: series.household_id,
+        expectedVersion: series.version,
+        date: on,
+        ownerId,
+        undo: { id: stepId, labelKey: 'seriesResumed', labelParams: { name: series.name } },
+      });
       return stepId;
     },
   };

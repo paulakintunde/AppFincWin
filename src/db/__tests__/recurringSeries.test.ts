@@ -246,6 +246,7 @@ describe('editRecurringSeriesFrom', () => {
       'end_date',
       'occurrence_count',
       'is_automatic',
+      'end_reason',
     ]);
   });
 
