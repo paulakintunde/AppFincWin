@@ -100,7 +100,7 @@ describe('settingsRows', () => {
   it('builds the values from the stored answers and figures', () => {
     const by = Object.fromEntries(rowsOf(FACTS, DATA).map((r) => [r.id, r.value]));
     expect(by.incomeCounted).toEqual({ key: 'decide.settings.valueIncomeSalary' });
-    expect(by.regularPay).toEqual({ key: 'decide.settings.valueRegularPay', params: { amount: '$4000', frequency: 'income.frequency.monthly', date: '2026-11-01' } });
+    expect(by.regularPay).toEqual({ key: 'decide.settings.valueRegularPay', params: { amount: '$4000', frequency: 'record.recurring.frequency.monthly', date: '2026-11-01' } });
     expect(by.pattern).toEqual({ key: 'decide.settings.valuePatternSeasonal' });
     expect(by.unusual).toEqual({ key: 'decide.settings.valueUnusual', params: { count: 1 } });
     expect(by.accountUse).toEqual({ key: 'decide.settings.valueAccountUse', params: { set: 3, total: 3 } });

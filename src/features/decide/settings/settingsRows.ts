@@ -69,11 +69,11 @@ export interface SettingsFormat {
 }
 
 const FREQ_WORD: Readonly<Record<'weekly' | 'fortnightly' | 'monthly' | 'quarterly' | 'yearly', string>> = {
-  weekly: 'income.frequency.weekly',
-  fortnightly: 'income.frequency.fortnightly',
-  monthly: 'income.frequency.monthly',
-  quarterly: 'income.frequency.quarterly',
-  yearly: 'income.frequency.yearly',
+  weekly: 'record.recurring.frequency.weekly',
+  fortnightly: 'record.recurring.frequency.fortnightly',
+  monthly: 'record.recurring.frequency.monthly',
+  quarterly: 'record.recurring.frequency.quarterly',
+  yearly: 'record.recurring.frequency.yearly',
 };
 
 const INCOME_WORD: Readonly<Record<string, string>> = {

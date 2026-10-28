@@ -9,7 +9,6 @@ import { useDecideSettings } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { monthlyEquivalent } from '@/engine/decide';
-import { addDays } from '@/engine/decide/series';
 import { everydayByMonth } from '@/engine/decide/v3';
 import { minorUnits } from '@/engine/money';
 import { occurrencesBetween } from '@/engine/recurring/schedule';
@@ -20,7 +19,8 @@ import type { SetupFacts } from '../setup/setupFlow';
 import { useSetupFacts } from '../setup/useSetupFacts';
 import type { SettingsData } from './settingsRows';
 
-const NEXT_PAY_LOOKAHEAD_DAYS = 400;
+/** The next pay is searched for up to the end of the year after next (covers a yearly pay). */
+const lookaheadEnd = (today: string): string => `${Number(today.slice(0, 4)) + 2}-12-31`;
 
 export interface SettingsScreenData {
   readonly facts: SetupFacts;
@@ -47,7 +47,7 @@ export function useSettingsData(): SettingsScreenData | null {
         : (occurrencesBetween(
             { anchorDate: pay.anchor_date, freq: pay.freq, endDate: pay.end_date, occurrenceCount: pay.occurrence_count },
             today,
-            addDays(today, NEXT_PAY_LOOKAHEAD_DAYS),
+            lookaheadEnd(today),
           )[0]?.date ?? null);
 
     const v3Series = inputs?.series ?? [];

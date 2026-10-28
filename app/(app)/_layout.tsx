@@ -75,6 +75,7 @@ export default function AppLayout() {
                 <Stack.Screen name="setup/history" />
                 {/* 05.2-32: per-account gate (decide_v3) is inside the route, so it is not behind DECIDE_OPEN. */}
                 <Stack.Screen name="decide/setup" />
+                <Stack.Screen name="decide/settings" />
                 {/* quick-261025-f46: today's Decide screens stay unreachable, deep links included, while DECIDE_OPEN is false. */}
                 <Stack.Protected guard={DECIDE_OPEN}>
                   <Stack.Screen name="setup/rough" />
