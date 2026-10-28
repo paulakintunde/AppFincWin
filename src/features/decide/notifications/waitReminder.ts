@@ -95,6 +95,21 @@ async function ensureChannel(): Promise<void> {
   });
 }
 
+/**
+ * Asks for notification permission through the same channel + permission path scheduling uses (05.2-25: the setup
+ * Reminders step). Resolves true only when granted; a refusal or any failure resolves false.
+ */
+export async function requestReminderPermission(): Promise<boolean> {
+  try {
+    await ensureChannel();
+    let perm = await Notifications.getPermissionsAsync();
+    if (!perm.granted) perm = await Notifications.requestPermissionsAsync();
+    return perm.granted;
+  } catch {
+    return false;
+  }
+}
+
 async function scheduleAt(
   kind: ReminderKind,
   checkId: string,
