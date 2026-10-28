@@ -108,6 +108,7 @@ export const V3_RUNTIME_EXPORTS = [
   'seenOf',
   'seriesDrift',
   'toStoredV2',
+  'unspentSum',
   'upgradeInputs',
   'validateCustomOptions',
   'verdictRowFor',

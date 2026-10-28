@@ -31,6 +31,7 @@ export type { PlanCard, PlanCardInput } from './plan/planCard';
 export { checkQuoted } from './plan/quoted';
 export type { QuotedCheck, QuotedInput } from './plan/quoted';
 export { evaluate } from './evaluate';
+export { unspentSum } from './funds/build';
 export type { Evaluation } from './evaluate';
 export { readStoredCheck, parseCheckV2, toStoredV2 } from './adapters/inputsV2';
 export { upgradeInputs, legacyLimits, legacyStateOf } from './adapters/legacy';
