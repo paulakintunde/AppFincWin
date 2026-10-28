@@ -75,6 +75,7 @@ jest.mock('@/data/mutations/decideLinks', () => ({
   useAttachLine: () => ({ attach: jest.fn() }),
 }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
 jest.mock('../notifications/waitReminder', () => ({ reconcileWaitReminders: () => Promise.resolve(), cancelCheckReminders: () => Promise.resolve() }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('../judgeOn/useResolveJudgeOnDefault', () => ({ useResolveJudgeOnDefault: jest.fn() }));
