@@ -51,7 +51,8 @@ export interface SetupStepperProps {
   renderStep: (step: SetupStepKey, ref: React.Ref<SetupStepHandle>, props: SetupStepBodyProps) => React.ReactNode;
   /** i18n key of the step title, for the shell title, the toast and focus. */
   stepTitleKey: (step: SetupStepKey) => string;
-  onClose: (reason: SetupCloseReason) => void;
+  /** `savedStepIds`: every undo step this session saved, in order (05.2-40). */
+  onClose: (reason: SetupCloseReason, savedStepIds?: readonly string[]) => void;
 }
 
 type Pos = { key: SetupStepKey; after: boolean };
@@ -101,6 +102,7 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
   const handle = useRef<SetupStepHandle>(null);
   const titleRef = useRef<React.ComponentRef<typeof Text>>(null);
   const startedFired = useRef(false);
+  const savedIds = useRef<string[]>([]);
   const [pos, setPos] = useState<Pos>({ key: only ?? startAt ?? (mode === 'full' ? 'welcome' : 'paid'), after: false });
   const [discardOpen, setDiscardOpen] = useState(false);
   const [readyState, setReadyState] = useState<{ key: SetupStepKey; ready: SetupStepReady } | null>(null);
@@ -161,7 +163,14 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
     const result = handle.current?.save() ?? { stepId: null };
     if (result.stepId === null) return false;
     const title = t(stepTitleKey(step));
-    showToast({ kind: 'ordinary', text: { key: 'decide.setup.shell.toastSaved', params: { title, name: title } }, stepId: result.stepId });
+    const ids = result.stepIds && result.stepIds.length > 0 ? result.stepIds : [result.stepId];
+    savedIds.current.push(...ids);
+    showToast({
+      kind: 'ordinary',
+      text: { key: 'decide.setup.shell.toastSaved', params: { title, name: title } },
+      stepId: result.stepId,
+      stepIds: ids,
+    });
     getAnalytics().track('decide_setup_step_saved', { step });
     return true;
   }, [step, stepTitleKey, t]);
@@ -197,7 +206,7 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
 
   const finish = () => {
     markDone();
-    onClose('done');
+    onClose('done', savedIds.current);
   };
 
   const advance = () => {
@@ -219,7 +228,7 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
   const onSaveAnswer = () => {
     if (step === null || !canContinue) return;
     saveCurrent();
-    onClose('done');
+    onClose('done', savedIds.current);
   };
 
   const onSkip = () => {

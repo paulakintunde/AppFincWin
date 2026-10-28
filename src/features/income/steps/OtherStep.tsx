@@ -156,7 +156,7 @@ export const OtherStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functio
           if (r) stepIds.push(r.stepId);
         }
       }
-      return { stepId: stepIds[0] ?? null };
+      return { stepId: stepIds[0] ?? null, ...(stepIds.length > 0 ? { stepIds } : {}) };
     },
   }));
 

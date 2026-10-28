@@ -23,7 +23,9 @@ export interface SetupStepBodyProps {
 export interface SetupStepHandle {
   /**
    * Writes the step's answers through its mutations. Returns the undo step
-   * id, or null when nothing changed (no write, no toast).
+   * id, or null when nothing changed (no write, no toast). A step that writes
+   * several lines in one save also returns every id in `stepIds`, in the order
+   * written, so the toast's one Undo reverses them all (05.2-40).
    */
-  save(): { stepId: string | null };
+  save(): { stepId: string | null; stepIds?: readonly string[] };
 }

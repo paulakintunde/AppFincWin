@@ -21,7 +21,7 @@ const METRICS = { frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top:
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
 let mockCanGoBack = true;
-let mockStepId: string | null = null;
+let mockStepIds: Record<string, string> = {};
 
 jest.mock('expo-router', () => ({
   router: { canGoBack: () => mockCanGoBack, back: () => mockBack(), replace: (h: unknown) => mockReplace(h) },
@@ -42,7 +42,7 @@ jest.mock('../setupRegistry', () => {
     R.useEffect(() => {
       onReadyChange({ canContinue: true, reasonKey: null, dirty: false });
     }, [onReadyChange]);
-    R.useImperativeHandle(ref, () => ({ save: () => ({ stepId: mockStepId }) }));
+    R.useImperativeHandle(ref, () => ({ save: () => ({ stepId: mockStepIds[name] ?? null }) }));
     return <T>{`body:${name}`}</T>;
   });
   return {
@@ -87,7 +87,7 @@ beforeEach(() => {
   mockBack.mockClear();
   mockReplace.mockClear();
   mockCanGoBack = true;
-  mockStepId = null;
+  mockStepIds = {};
   resetToastForTests();
 });
 
@@ -152,8 +152,8 @@ describe('setup flow, full mode', () => {
 });
 
 describe('setup flow, standalone mode', () => {
-  it('runs only the income steps and ends with Done and "Income setup saved", carrying the last undo step', async () => {
-    mockStepId = 'step-last';
+  it('runs only the income steps and ends with Done and "Income setup saved", carrying every undo step saved in the session', async () => {
+    mockStepIds = { paid: 'step-paid', pay: 'step-pay', other: 'step-other' };
     await mount({ mode: 'standalone' });
     const seen: string[] = [];
     for (let i = 0; i < 10 && screen.queryByLabelText('Done') === null; i += 1) {
@@ -166,7 +166,8 @@ describe('setup flow, standalone mode', () => {
     expect(mockBack).toHaveBeenCalledTimes(1);
     const toast = getToast();
     expect(toast?.text?.key).toBe('decide.setup.shell.toastIncome');
-    expect(toast?.stepId).toBe('step-last');
+    expect(toast?.stepIds).toEqual(['step-paid', 'step-pay', 'step-other']);
+    expect(toast?.stepId).toBe('step-other');
   });
 
   it('shows no Undo step when the last step saved nothing', async () => {
@@ -174,6 +175,7 @@ describe('setup flow, standalone mode', () => {
     await fireEvent.press(screen.getByLabelText('Done'));
     expect(getToast()?.text?.key).toBe('decide.setup.shell.toastIncome');
     expect(getToast()?.stepId).toBeNull();
+    expect(getToast()?.stepIds).toBeNull();
   });
 });
 

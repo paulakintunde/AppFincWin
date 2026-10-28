@@ -228,7 +228,7 @@ describe('SetupStepper shell', () => {
     await press('Done');
     expect(mockSave).not.toHaveBeenCalled();
     expect(mockTrack).toHaveBeenCalledWith('decide_setup_finished', {});
-    expect(onClose).toHaveBeenCalledWith('done');
+    expect(onClose).toHaveBeenCalledWith('done', expect.any(Array));
   });
 
   it('full mode: the step before Summary reads "Finish setup"; Done on Summary writes setup_done_at and finishes', async () => {
@@ -239,7 +239,7 @@ describe('SetupStepper shell', () => {
     await press('Done');
     expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({ patch: { setup_done_at: expect.any(String) } }));
     expect(mockTrack).toHaveBeenCalledWith('decide_setup_finished', {});
-    expect(onClose).toHaveBeenCalledWith('done');
+    expect(onClose).toHaveBeenCalledWith('done', expect.any(Array));
   });
 
   it('analytics carry step keys only', async () => {
@@ -292,7 +292,7 @@ describe('SetupStepper edit-one-step mode (05.2-34)', () => {
     expect(control.saves).toBe(1);
     expect(getToast()?.text?.key).toBe('decide.setup.shell.toastSaved');
     expect(getToast()?.stepId).toBe('step-1');
-    expect(onClose).toHaveBeenCalledWith('done');
+    expect(onClose).toHaveBeenCalledWith('done', expect.any(Array));
     expect(mockSave).not.toHaveBeenCalled();
   });
 

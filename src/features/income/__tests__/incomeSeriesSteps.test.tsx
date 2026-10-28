@@ -55,7 +55,7 @@ async function mount(Step: typeof PayStep) {
 }
 
 const save = async (ref: React.RefObject<SetupStepHandle | null>) => {
-  let out: { stepId: string | null } | undefined;
+  let out: { stepId: string | null; stepIds?: readonly string[] } | undefined;
   await act(async () => {
     out = ref.current!.save();
   });
@@ -91,11 +91,23 @@ describe('PayStep', () => {
     await fireEvent.press(screen.getByText('Monthly'));
     expect(last().canContinue).toBe(true);
     const out = await save(ref);
-    expect(out).toEqual({ stepId: 'step-confirm' });
+    expect(out).toEqual({ stepId: 'step-confirm', stepIds: ['step-confirm'] });
     expect(mockConfirm).toHaveBeenCalledTimes(1);
     const call = mockConfirm.mock.calls[0]![0];
     expect(call.attributes).toEqual({ income_kind: 'salary', counts_as: 'available' });
     expect(call.series).toMatchObject({ id: 'new-series-id', household_id: 'h1', account_id: 'a1', amount: 300000, freq: 'monthly', currency: 'USD', anchor_date: '2026-10-15' });
+  });
+
+  it('two new pays return every series step id for one Undo (05.2-40)', async () => {
+    mockConfirm.mockReturnValueOnce({ seriesId: 's-a', stepId: 'step-a' }).mockReturnValueOnce({ seriesId: 's-b', stepId: 'step-b' });
+    const { ref } = await mount(PayStep);
+    await fireEvent.press(screen.getByRole('button', { name: '+ Add another regular pay' }));
+    const amounts = screen.getAllByLabelText('Take-home amount, after tax');
+    await fireEvent.changeText(amounts[0]!, '3000');
+    await fireEvent.changeText(amounts[1]!, '500');
+    for (const m of screen.getAllByText('Monthly')) await fireEvent.press(m);
+    const out = await save(ref);
+    expect(out).toEqual({ stepId: 'step-a', stepIds: ['step-a', 'step-b'] });
   });
 
   it('adds and removes an extra card', async () => {
@@ -116,7 +128,7 @@ describe('PayStep', () => {
     expect(mockEdit).not.toHaveBeenCalled();
     await fireEvent.changeText(screen.getByLabelText('Take-home amount, after tax'), '3100');
     expect(last().dirty).toBe(true);
-    expect(await save(ref)).toEqual({ stepId: 'step-edit' });
+    expect(await save(ref)).toEqual({ stepId: 'step-edit', stepIds: ['step-edit'] });
     expect(mockEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 's1', expectedVersion: 4, patch: { amount: 310000 }, effectiveFrom: '2026-10-15' }));
   });
 });
@@ -147,10 +159,24 @@ describe('OtherStep', () => {
     await fireEvent.changeText(screen.getByLabelText(/Dividends or investment income, About how much/), '150');
     await fireEvent.press(screen.getByText('Every 3 months'));
     await fireEvent.press(screen.getByRole('radio', { name: 'It’s reinvested or kept' }));
-    expect(await save(ref)).toEqual({ stepId: 'step-confirm' });
+    expect(await save(ref)).toEqual({ stepId: 'step-confirm', stepIds: ['step-confirm'] });
     const call = mockConfirm.mock.calls[0]![0];
     expect(call.attributes).toEqual({ income_kind: 'dividends', counts_as: 'kept' });
     expect(call.series).toMatchObject({ name: 'Dividends or investment income', amount: 15000, freq: 'quarterly' });
+  });
+
+  it('two finished lines return both step ids for one Undo (05.2-40)', async () => {
+    mockConfirm.mockReturnValueOnce({ seriesId: 's-a', stepId: 'step-a' }).mockReturnValueOnce({ seriesId: 's-b', stepId: 'step-b' });
+    const { ref } = await mount(OtherStep);
+    await fireEvent.press(screen.getByText('Interest'));
+    await fireEvent.press(screen.getByText('Dividends or investment income'));
+    await fireEvent.changeText(screen.getByLabelText(/Interest, About how much/), '20');
+    await fireEvent.changeText(screen.getByLabelText(/Dividends or investment income, About how much/), '150');
+    for (const m of screen.getAllByText('Monthly')) await fireEvent.press(m);
+    for (const r of screen.getAllByRole('radio', { name: 'I spend it or it’s available' })) await fireEvent.press(r);
+    const out = await save(ref);
+    expect(out.stepIds).toHaveLength(2);
+    expect(out.stepId).toBe(out.stepIds![0]);
   });
 
   it('Other uses the typed name (max 40) as the series name and needs it', async () => {
@@ -161,7 +187,7 @@ describe('OtherStep', () => {
     await fireEvent.press(screen.getByRole('radio', { name: 'I spend it or it’s available' }));
     expect(await save(ref)).toEqual({ stepId: null });
     await fireEvent.changeText(screen.getByLabelText('What is it?'), 'x'.repeat(60));
-    expect(await save(ref)).toEqual({ stepId: 'step-confirm' });
+    expect(await save(ref)).toEqual({ stepId: 'step-confirm', stepIds: ['step-confirm'] });
     const call = mockConfirm.mock.calls[0]![0];
     expect(call.series.name).toBe('x'.repeat(40));
     expect(call.attributes).toEqual({ income_kind: 'other', counts_as: 'available' });
@@ -181,7 +207,7 @@ describe('OtherStep', () => {
     mockSeries = [{ id: 's9', name: 'Interest', amount: 2000, freq: 'monthly', anchor_date: '2026-09-01', version: 2, income_kind: 'interest', counts_as: 'available', deleted_at: null }];
     const { ref } = await mount(OtherStep);
     await fireEvent.press(screen.getByRole('radio', { name: 'It’s reinvested or kept' }));
-    expect(await save(ref)).toEqual({ stepId: 'step-patch' });
+    expect(await save(ref)).toEqual({ stepId: 'step-patch', stepIds: ['step-patch'] });
     expect(mockEdit).not.toHaveBeenCalled();
     expect(mockPatch).toHaveBeenCalledTimes(1);
   });

@@ -106,8 +106,8 @@ export const PayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function 
           stepIds.push(editor.editFrom({ id: s.id, householdId: ctx.householdId, expectedVersion: s.version, patch, effectiveFrom: ctx.today, ownerId: ctx.userId, name: s.name }));
         }
       }
-      // One Undo per series write; the toast carries the first, which is the whole step for the usual single pay.
-      return { stepId: stepIds[0] ?? null };
+      // One user action, one Undo: the toast carries every series write of this save (05.2-40).
+      return { stepId: stepIds[0] ?? null, ...(stepIds.length > 0 ? { stepIds } : {}) };
     },
   }));
 

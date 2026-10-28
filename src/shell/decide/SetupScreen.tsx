@@ -4,13 +4,13 @@
  * with "Done" and the "Income setup saved" toast; `only` is edit-one-step (a single step, then back).
  *
  * Standalone undo: every step that changed already showed its own "{Step title} saved" toast with Undo during the flow.
- * The closing toast carries the step id of the most recent one, so its Undo reverses the last step that changed.
- * (Documented choice: earlier steps keep the Undo they were given when they saved.)
+ * The closing toast carries every step id the session saved (05.2-40), so its one Undo reverses them all, last first.
+ * Earlier steps also keep the Undo they were given when they saved.
  */
 import React, { useCallback } from 'react';
 import { router, type Href } from 'expo-router';
 import { useT } from '@/i18n';
-import { getToast, showToast } from '@/state/undoToast';
+import { showToast } from '@/state/undoToast';
 import { SetupStepper, type SetupCloseReason } from '@/features/decide/setup/SetupStepper';
 import type { SetupStepKey } from '@/features/decide/setup/setupFlow';
 import { renderSetupStep, stepTitleKey } from './setupRegistry';
@@ -34,13 +34,13 @@ export function SetupScreen({ mode, startAt, only, fallbackHref }: SetupScreenPr
   }, [fallbackHref]);
 
   const onClose = useCallback(
-    (reason: SetupCloseReason) => {
+    (reason: SetupCloseReason, savedStepIds: readonly string[] = []) => {
       if (reason === 'done' && mode === 'standalone') {
-        const last = getToast()?.stepId ?? null;
         showToast({
           kind: 'ordinary',
           text: { key: 'decide.setup.shell.toastIncome', params: { undoLabel: 'setupStepSaved', name: t('decide.setup.shell.standaloneSection') } },
-          stepId: last,
+          stepId: savedStepIds.at(-1) ?? null,
+          stepIds: savedStepIds,
         });
       }
       leave();
