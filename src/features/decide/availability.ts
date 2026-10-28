@@ -9,12 +9,12 @@ export const DECIDE_OPEN: boolean = false;
 
 /**
  * D-15 (05.1): the Decide engine switch. Off until the owner signs off the shadow run (D-14).
- * Read ONLY through decideEngine(); 05.2 replaces its body with the per-account flag
- * (named test accounts first, then everyone by over-the-air update). Not access control.
+ * 05.2 D-02: the per-account flag (profiles.decide_v3, server-written) is passed in by
+ * useDecideAccess(); this constant stays false for everyone else. Not access control.
  */
 export const DECIDE_V3: boolean = false;
 
 /** The one place the engine choice is read (UP §8: two engines must never mix). */
-export function decideEngine(): 'v2' | 'v3' {
-  return DECIDE_V3 ? 'v3' : 'v2';
+export function decideEngine(flags?: { readonly decideV3?: boolean }): 'v2' | 'v3' {
+  return DECIDE_V3 || flags?.decideV3 === true ? 'v3' : 'v2';
 }
