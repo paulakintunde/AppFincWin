@@ -937,17 +937,52 @@ Gap closure (planned 2026-10-26 against 05.1-CONTEXT D-33..D-45, 05.1-VERIFICATI
 - income tagging and prompts in Activity;
 - the unspent-money and emergency-fund sheets;
 - the additive migrations, plus purge and export coverage.
-**Requirements**: TBD (from `00-UPGRADE-PLAN.md` section 4 and `00-DECIDE-SETUP.md`)
+**Requirements**: DSU-01..DSU-24 (from `00-UPGRADE-PLAN.md` section 4, `00-DECIDE-SETUP.md` and 05.2-CONTEXT D-01..D-23)
 **Depends on:** Phase 05.1 (engine types fixed after slice S2; can overlap with later 05.1 slices)
 **Success Criteria** (what must be TRUE):
   1. A first-time user completes Decide setup (6 needed steps, about 3–4 minutes; 05.2-CONTEXT D-03), and every answer can be edited alone from Decide settings.
   2. The income questions are one shared component. Activity shows a "How are you paid?" card when the profile is missing, lets any income be tagged (type, and spent or kept), and asks once when a new kind of income appears.
   3. Every new piece of data has add, edit, delete and undo through the write queue, works offline, and is covered by account deletion and data export.
   4. Migrations are additive. Each one is applied to production only after preflight and the owner's approval.
-**Plans:** 0 plans
+**Plans:** 36 plans in 7 waves (planned 2026-10-27; checkpoints: 05.2-06 noise rule, 05.2-31 new fits, 05.2-36 production push)
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 05.2 to break down)
+- [ ] 05.2-01-PLAN.md — decide_settings v3 columns (incl. id for Undo, refine dates, unexplained answer) and profiles.decide_v3 flag, pgTAP 63-64 (wave 1)
+- [ ] 05.2-02-PLAN.md — recurring_series, transactions (income tags, refund_of), debts.pays_in_full and accounts use columns, pgTAP 65-66 (wave 1)
+- [ ] 05.2-03-PLAN.md — savings_goals buckets/account/colour and the dismissals, payer prompts and decide_answers tables, pgTAP 67-68 (wave 1)
+- [ ] 05.2-04-PLAN.md — Engine refund re-dating pre-pass (V3Line.refundOf, Envelope.bucket) at 100% branch (wave 1)
+- [ ] 05.2-05-PLAN.md — Per-account switch: decideEngine(flags), profile read, useDecideAccess (wave 1)
+- [ ] 05.2-06-PLAN.md — Pure month/refine.ts behind the owner noise-rule decision (checkpoint) (wave 1)
+- [ ] 05.2-07-PLAN.md — 05.2 write-queue keys and mutation module registry (wave 1)
+- [ ] 05.2-08-PLAN.md — apply_patches v3 (new entities and columns), undo replay and erasure pgTAP 69-70 (wave 2)
+- [ ] 05.2-09-PLAN.md — D-23 set-aside max(buckets, saving) and five refund goldens (wave 2)
+- [ ] 05.2-10-PLAN.md — Widen existing db modules for the 05.2 columns + grant-mirror test (wave 2)
+- [ ] 05.2-11-PLAN.md — db modules and read hooks for the three new tables (wave 2)
+- [ ] 05.2-12-PLAN.md — Undo entities and labels, export manifest and its guard (wave 2)
+- [ ] 05.2-13-PLAN.md — Settings writes with Undo: setup steps, Reset, refine stamps, unexplained answer (wave 3)
+- [ ] 05.2-14-PLAN.md — Account use, mixed placement and emergency fund batch writes (D-04) (wave 3)
+- [ ] 05.2-15-PLAN.md — Confirm candidate, dismissals, series attributes, pays-in-full (wave 3)
+- [ ] 05.2-16-PLAN.md — Income tagging with payer rule, refund link/unlink, pure preview models (wave 3)
+- [ ] 05.2-17-PLAN.md — In-check answers mutations (pay arrival, expected income, bridge, cover) (wave 3)
+- [ ] 05.2-18-PLAN.md — Bucket-aware pot add/edit and validation (wave 3)
+- [ ] 05.2-19-PLAN.md — buildV3Inputs real mapping, settings source, useDecideV3 read hook (wave 3)
+- [ ] 05.2-20-PLAN.md — All 05.2 copy and the four decide_setup_* analytics events (wave 3)
+- [ ] 05.2-21-PLAN.md — Pure setup flow model and the step-body contract (wave 3)
+- [ ] 05.2-22-PLAN.md — IncomeProfileSteps (shared): paid, pay, season, method, other (wave 4)
+- [ ] 05.2-23-PLAN.md — SetupStepper shell, rail, PrefillNote, facts hook (wave 4)
+- [ ] 05.2-24-PLAN.md — Steps: regular payments, loans, saving with buckets and the D-22 tile (wave 4)
+- [ ] 05.2-25-PLAN.md — Steps: everyday, unusual months, share, detail, reminders (wave 4)
+- [ ] 05.2-26-PLAN.md — Account use list, sheet, step and the account edit row (wave 4)
+- [ ] 05.2-27-PLAN.md — Emergency fund step and sheet (wave 4)
+- [ ] 05.2-28-PLAN.md — Unspent money worked sum, sheet and step (wave 4)
+- [ ] 05.2-29-PLAN.md — Envelopes step and PotSheet Held in row (wave 4)
+- [ ] 05.2-30-PLAN.md — Activity: How are you paid? card, income tag chip and sheet, refund tags (wave 4)
+- [ ] 05.2-31-PLAN.md — Shadow and I28 re-run with owner approval of new fits (checkpoint, D-11) (wave 4)
+- [ ] 05.2-32-PLAN.md — Stepper assembly: registry, Welcome, Summary, setup route, standalone mode (wave 5)
+- [ ] 05.2-33-PLAN.md — Refund picker and detail rows (wave 5)
+- [ ] 05.2-34-PLAN.md — Decide settings: rows, edit one step, Reset (wave 6)
+- [ ] 05.2-35-PLAN.md — Test-account setup page and engine readout on the Decide tab (wave 6)
+- [ ] 05.2-36-PLAN.md — [BLOCKING] Full gate, owner-approved production push, owner flag, Pixel walkthrough (wave 7)
 
 ### Phase 05.3: Decide screens v3 (INSERTED)
 
@@ -1104,7 +1139,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
-| 05.2 Decide data and setup | 0/TBD | Not started | - |
+| 05.2 Decide data and setup | 0/36 | Planned | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
