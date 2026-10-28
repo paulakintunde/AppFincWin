@@ -73,6 +73,8 @@ export function rollForward(input: {
   readonly anchor: UnspentAnchor;
   readonly asOf: string;
   readonly months: readonly V3Month[];
+  /** The months as logged, before refund re-dating (05.2 two-date refunds). Absent = `months`. */
+  readonly logged?: readonly V3Month[];
   readonly series: readonly V3Series[];
   readonly e: MinorUnits | null;
 }): { readonly value: MinorUnits; readonly breakdown: UnspentBreakdown; readonly rolled: boolean } {
@@ -83,7 +85,13 @@ export function rollForward(input: {
 
   const all: V3Line[] = [];
   for (const m of input.months) for (const l of m.lines) if (l.status === 'paid') all.push(l);
-  all.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const byDateThenId = (a: V3Line, b: V3Line): number => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  all.sort(byDateThenId);
+  // Two-date refunds: cash after the anchor is read from the months as logged, so a linked refund counts on the day it
+  // arrived. Over-refunds and plan refunds net to the same value as the month view; only the everyday breakdown line can differ.
+  const cash: V3Line[] = [];
+  for (const m of input.logged ?? input.months) for (const l of m.lines) if (l.status === 'paid') cash.push(l);
+  cash.sort(byDateThenId);
 
   // Everyday logged in the anchor month up to and including the anchor day: the base Erest was held back from.
   let loggedAtAnchor = 0n;
@@ -110,7 +118,7 @@ export function rollForward(input: {
     }
   }
   const candidates: PaidLine[] = [];
-  for (const l of all) {
+  for (const l of cash) {
     if (l.date <= anchor.at || l.date > asOf || yearMonthOf(l.date) !== anchorMonth) continue;
     const c = classifyLine(l, index);
     if (c === 'recurring_bill' || (c === 'everyday' && l.seriesId === null)) candidates.push(toPaidLine(l));
@@ -127,7 +135,7 @@ export function rollForward(input: {
   let anchorMonthEveryday = 0n; // net of refunds, after the anchor, in the anchor month
   let laterEveryday = 0n; // net of refunds, later months
 
-  for (const l of all) {
+  for (const l of cash) {
     if (l.date <= anchor.at || l.date > asOf) continue;
     const amt = BigInt(Math.abs(l.amount));
     const inAnchorMonth = yearMonthOf(l.date) === anchorMonth;

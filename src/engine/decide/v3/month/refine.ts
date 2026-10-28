@@ -212,6 +212,7 @@ export function refine(input: RefineInput): RefineResult {
       anchor: inputs.unspent,
       asOf,
       months: inputs.months,
+      logged: inputs.loggedMonths,
       series: inputs.series,
       e: typical === null ? null : minorFromBigInt(typical, FN),
     }).value;

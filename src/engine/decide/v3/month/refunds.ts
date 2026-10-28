@@ -17,8 +17,9 @@
  *
  * Line amounts are positive magnitudes for both 'spending' and 'refund' lines (buildV3Inputs); the maths is bigint.
  *
- * Unspent anchor note: a refund whose purchase sits before the unspent anchor is now dated before the anchor, so
- * rollForward ignores it and confirmed unspent does not rise when the refund arrives (intended; fixes the 05.1-18 drift).
+ * Unspent anchor note (two-date refunds, 05.2 owner decision 2026-10-28): the month view uses the purchase date, but
+ * unspent's roll-forward counts the refund on the day it arrived (it reads `loggedMonths`, the months as logged). So a
+ * confirmed figure taken between the purchase and the refund rises when the refund lands.
  *
  * Run once at the top of evaluate() (D-11) so typical month, this month, income pattern and unspent read the same months.
  * Idempotent: a moved credit carries refundOf null.
@@ -105,5 +106,5 @@ export function redateRefunds(months: readonly V3Month[], series: readonly V3Ser
 /** The inputs with linked refunds re-dated; the same object when no line carries a refund link. */
 export function withRedatedRefunds(inputs: V3Inputs): V3Inputs {
   const months = redateRefunds(inputs.months, inputs.series);
-  return months === inputs.months ? inputs : { ...inputs, months };
+  return months === inputs.months ? inputs : { ...inputs, months, loggedMonths: inputs.months };
 }
