@@ -1,7 +1,7 @@
 {
   "reviewed": true,
   "reviewedBy": "owner",
-  "reviewedAt": "2026-10-27",
+  "reviewedAt": "2026-10-28",
   "newFits": [
     {
       "key": "generated:gen-220:0",
@@ -86,37 +86,43 @@
       "cause": "other",
       "reason": "Old engine said adjust; v3 says fits_month. v3 finds month left 120,000 covering the 50,000 due on day one of a 100,000 purchase, typical month left 120,000, and raises nothing else. The change was not tied to one named rule; the old engine's answer for this history was adjust, which the owner should look at directly.",
       "approved": true
+    },
+    {
+      "key": "generatedNearLine:gennear-024:0",
+      "cause": "unspent_confirmed",
+      "reason": "Eligible now only because the linked refund cancels a fully returned purchase in its month (05.2 D-06/D-07), so typical and left-this-month rise and confirmed unspent covers the price. A refund linked after a check never changes that check's answer; a new check is required (05.3 D-13).",
+      "approved": true
     }
   ],
   "groups": [
     {
       "cause": "needs_input_rules",
-      "count": 288,
-      "note": "v3 asks for a figure (unspent money or up-to-date records) where the old engine answered without it (UP 5.4). Count 288 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
+      "count": 320,
+      "note": "v3 asks for a figure (unspent money or up-to-date records) where the old engine answered without it (UP 5.4). Count 320 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
       "accepted": true
     },
     {
       "cause": "unspent_confirmed",
-      "count": 4,
-      "note": "v3 counts unspent money the person confirmed; the old engine had no such figure (D-22). Count 4 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
+      "count": 5,
+      "note": "v3 counts unspent money the person confirmed; the old engine had no such figure (D-22). Count 5 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
       "accepted": true
     },
     {
       "cause": "emergency_locked",
-      "count": 10,
-      "note": "v3 keeps the emergency fund out of reach (D-09); the old engine counted it toward the cushion. Count 10 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
+      "count": 20,
+      "note": "v3 keeps the emergency fund out of reach (D-09); the old engine counted it toward the cushion. Count 20 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
       "accepted": true
     },
     {
       "cause": "erest_not_zero_spend",
-      "count": 2,
-      "note": "v3 carries the rest of the month's everyday spending (Erest) instead of treating it as zero. Count 2 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
+      "count": 4,
+      "note": "v3 carries the rest of the month's everyday spending (Erest) instead of treating it as zero. Count 4 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
       "accepted": true
     },
     {
       "cause": "cash_path_spread",
-      "count": 46,
-      "note": "v3 judges the cash path with the real pay and bill dates; the old engine raised its own cash warnings. Count 46 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
+      "count": 69,
+      "note": "v3 judges the cash path with the real pay and bill dates; the old engine raised its own cash warnings. Count 69 on the final engine. Owner accepted 2026-10-27 (05.1-49).",
       "accepted": true
     },
     {

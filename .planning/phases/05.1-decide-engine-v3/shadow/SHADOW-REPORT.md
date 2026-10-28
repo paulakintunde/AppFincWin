@@ -189,20 +189,20 @@ Synthetic data only (D-17): 300 seeded histories, the 9 personas, the 22 scenari
 
 | Figure | Count |
 |---|---|
-| Comparisons | 875 |
-| Same answer | 218 |
-| Changed answer | 392 |
-| New fits (v3 fits_month or fits_unspent, old did not fit) | 14 |
+| Comparisons | 905 |
+| Same answer | 219 |
+| Changed answer | 421 |
+| New fits (v3 fits_month or fits_unspent, old did not fit) | 15 |
 | Unsupported by the old engine (not counted as agreement or change) | 153 |
 | Not ready (D-52), not counted as agreement or change | 112 |
-| Not-ready rate | 12.8% |
-| Owner review | reviewed by owner on 2026-10-27 |
+| Not-ready rate | 12.4% |
+| Owner review | reviewed by owner on 2026-10-28 |
 
 ## Changes by cause
 
 ### needs_input_rules (320)
 
-v3 asks for a figure (unspent money or up-to-date records) where the old engine answered without it (UP 5.4). Count 288 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
+v3 asks for a figure (unspent money or up-to-date records) where the old engine answered without it (UP 5.4). Count 320 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
@@ -215,54 +215,55 @@ Examples:
 - `generated:gen-005:2` no -> needs_input: price 2951878, dayOne 2951878, monthLeft -618371, erest 433599, e 449927, unspent -, emergency 2
 - `generated:gen-005:3` no -> needs_input: price 3448341, dayOne 3448341, monthLeft -618371, erest 433599, e 449927, unspent -, emergency 2
 
-### unspent_confirmed (4)
+### unspent_confirmed (5)
 
-v3 counts unspent money the person confirmed; the old engine had no such figure (D-22). Count 4 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
+v3 counts unspent money the person confirmed; the old engine had no such figure (D-22). Count 5 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
-| adjust -> fits_unspent | 4 |
+| adjust -> fits_unspent | 5 |
 
 Examples:
+- `generatedNearLine:gennear-024:0` adjust -> fits_unspent: price 2256380, dayOne 2256380, monthLeft 398159, erest 275089, e 304563, unspent 3378741, emergency -
 - `persona:leo:0` adjust -> fits_unspent: price 100, dayOne 100, monthLeft -19484, erest 79484, e 88000, unspent 10000, emergency 300000
 - `scenario:02:0` adjust -> fits_unspent: price 120000, dayOne 120000, monthLeft 42500, erest 137500, e 147500, unspent 240000, emergency 900000
-- `scenario:04:0` adjust -> fits_unspent: price 500, dayOne 500, monthLeft -53226, erest 133226, e 147500, unspent 240000, emergency 900000
 
-### emergency_locked (12)
+### emergency_locked (20)
 
-v3 keeps the emergency fund out of reach (D-09); the old engine counted it toward the cushion. Count 10 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
+v3 keeps the emergency fund out of reach (D-09); the old engine counted it toward the cushion. Count 20 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
-| adjust -> not_yet | 11 |
-| fits -> not_yet | 1 |
+| adjust -> not_yet | 14 |
+| fits -> not_yet | 6 |
 
 Examples:
 - `generated:gen-068:0` adjust -> not_yet: price 565481, dayOne 565481, monthLeft 266649, erest 310025, e 333052, unspent 472680, emergency 980061
 - `generated:gen-123:0` adjust -> not_yet: price 354852, dayOne 383240, monthLeft 283915, erest 323586, e 347652, unspent 724072, emergency 1331017
 - `generated:gen-126:0` fits -> not_yet: price 2418208, dayOne 0, monthLeft -113465, erest 316324, e 340004, unspent 281470, emergency 1767693
 
-### erest_not_zero_spend (2)
+### erest_not_zero_spend (4)
 
-v3 carries the rest of the month's everyday spending (Erest) instead of treating it as zero. Count 2 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
+v3 carries the rest of the month's everyday spending (Erest) instead of treating it as zero. Count 4 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
-| adjust -> not_yet | 2 |
+| adjust -> not_yet | 4 |
 
 Examples:
 - `generated:gen-125:2` adjust -> not_yet: price 1746390, dayOne 0, monthLeft -24619, erest 369082, e 390914, unspent 18488, emergency -
 - `generated:gen-223:2` adjust -> not_yet: price 1729315, dayOne 159151, monthLeft 109640, erest 381751, e 406510, unspent 19435, emergency -
+- `generatedNearLine:gennear-005:0` adjust -> not_yet: price 402645, dayOne 402645, monthLeft 314255, erest 197664, e 218842, unspent 1069892, emergency -
 
-### cash_path_spread (51)
+### cash_path_spread (69)
 
-v3 judges the cash path with the real pay and bill dates; the old engine raised its own cash warnings. Count 46 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
+v3 judges the cash path with the real pay and bill dates; the old engine raised its own cash warnings. Count 69 on the final engine. Owner accepted 2026-10-27 (05.1-49). Accepted: yes.
 
 | Old -> v3 | Count |
 |---|---|
-| adjust -> not_yet | 10 |
+| adjust -> not_yet | 21 |
 | missing -> not_yet | 31 |
-| fits -> not_yet | 2 |
+| fits -> not_yet | 9 |
 | adjust -> fits_month | 6 |
 | no -> fits_month | 2 |
 
@@ -301,6 +302,7 @@ Every case where v3 says fits and the old engine did not. Each needs the owner's
 | Key | Cause | Old -> v3 | Approved | Reason |
 |---|---|---|---|---|
 | `generated:gen-220:0` | cash_path_spread | adjust -> fits_month | yes | Old engine said adjust; v3 says fits_month. Today's engine raised its own cash warning (cash,cash_dip); v3's cash path raises none and no payday or low-balance variant applies. v3's month left is 466,278 against 0 due on day one of a 227,653 purchase. |
+| `generatedNearLine:gennear-024:0` | unspent_confirmed | adjust -> fits_unspent | yes | Eligible now only because the linked refund cancels a fully returned purchase in its month (05.2 D-06/D-07), so typical and left-this-month rise and confirmed unspent covers the price. A refund linked after a check never changes that check's answer; a new check is required (05.3 D-13). |
 | `persona:leo:0` | unspent_confirmed | adjust -> fits_unspent | yes | Old engine said adjust; v3 says fits_unspent. v3 counts the 10,000 unspent money the person confirmed, which covers the 100 due on day one of a 100 purchase. Today's engine judged only the month's free figure (-19,484) and has no confirmed unspent figure. |
 | `persona:tia:0` | cash_path_spread | no -> fits_month | yes | Old engine said no; v3 says fits_month. Today's engine raised its own cash warning (cash,cash_dip); v3's cash path raises none and no payday or low-balance variant applies. v3's month left is 23,613 against 100 due on day one of a 100 purchase. |
 | `persona:dana:0` | cash_path_spread | adjust -> fits_month | yes | Old engine said adjust; v3 says fits_month. Today's engine raised its own cash warning (cash); v3's cash path raises none and no payday or low-balance variant applies. v3's month left is 83,710 against 100 due on day one of a 100 purchase. |
@@ -317,7 +319,7 @@ Every case where v3 says fits and the old engine did not. Each needs the owner's
 
 ## Not ready (D-52)
 
-112 of 875 comparisons. v3 asks for more records instead of answering.
+112 of 905 comparisons. v3 asks for more records instead of answering.
 
 | Missing code | Count |
 |---|---|
