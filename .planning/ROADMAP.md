@@ -982,10 +982,10 @@ Plans:
 - [x] 05.2-33-PLAN.md — Refund picker and detail rows (wave 5)
 - [x] 05.2-34-PLAN.md — Decide settings: rows, edit one step, Reset (wave 6)
 - [x] 05.2-35-PLAN.md — Test-account setup page and engine readout on the Decide tab (wave 6)
-- [ ] 05.2-37-PLAN.md — Gap: two-date refunds in the unspent roll-forward, emergency fund follows its live account balance, store-only fields documented; [BLOCKING] owner approves changed answers (wave 7)
-- [ ] 05.2-38-PLAN.md — Gap: copy, undo labels and mutation keys for the gap plans; reverse-picker copy review (wave 7)
-- [ ] 05.2-39-PLAN.md — Gap: migration 20261028001200 recurring_series end_reason (stopped / paused) and debts paid_off_on; edit_recurring_series_from and apply_patches re-created; pgTAP 71, export (wave 7)
-- [ ] 05.2-40-PLAN.md — Gap: one Undo for several income lines and the standalone income session; season answer counts as confirmed (wave 7)
+- [x] 05.2-37-PLAN.md — Gap: two-date refunds in the unspent roll-forward, emergency fund follows its live account balance, store-only fields documented; [BLOCKING] owner approves changed answers (wave 7)
+- [x] 05.2-38-PLAN.md — Gap: copy, undo labels and mutation keys for the gap plans; reverse-picker copy review (wave 7)
+- [x] 05.2-39-PLAN.md — Gap: migration 20261028001200 recurring_series end_reason (stopped / paused) and debts paid_off_on; edit_recurring_series_from and apply_patches re-created; pgTAP 71, export (wave 7)
+- [x] 05.2-40-PLAN.md — Gap: one Undo for several income lines and the standalone income session; season answer counts as confirmed (wave 7)
 - [ ] 05.2-41-PLAN.md — Gap: PotSheet edits saving buckets, bucket goal can be cleared, mixed-account fund amount (owner rule from 05.2-37), info glyph (wave 8)
 - [ ] 05.2-42-PLAN.md — Gap: refundDetailRows test isolation, dismissals scope, role-checked refund plan line (wave 8)
 - [ ] 05.2-43-PLAN.md — Gap: loan and card sheet for Loans Edit and Add a loan or card, plus Paid off from a date, with Undo (wave 8)
@@ -1151,7 +1151,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
-| 05.2 Decide data and setup | 35/48 | In progress | - |
+| 05.2 Decide data and setup | 39/48 | In progress | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
