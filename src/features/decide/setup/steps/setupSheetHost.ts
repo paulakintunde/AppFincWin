@@ -19,6 +19,8 @@ export interface SetupSheetActions {
   addRegular(preset: RegularPreset): void;
   editDebt(debt: DebtRow): void;
   addDebt(kind: DebtKindChoice): void;
+  /** 05.2-28: open the account-use step in edit mode (the Unspent money notes: "Set them"). */
+  editAccountUse(): void;
 }
 
 const NONE: SetupSheetActions = {
@@ -26,6 +28,7 @@ const NONE: SetupSheetActions = {
   addRegular: () => undefined,
   editDebt: () => undefined,
   addDebt: () => undefined,
+  editAccountUse: () => undefined,
 };
 
 let current: SetupSheetActions = NONE;
