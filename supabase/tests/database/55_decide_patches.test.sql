@@ -57,8 +57,8 @@ select extensions.lives_ok(
   'undo_log_fill accepts decide_checks, debts and decide_links ops');
 select extensions.throws_ok(
   $$insert into public.undo_log (id, label_key, ops) values ('e5000000-0000-0000-0000-000000000002', 'x',
-    '[{"entity":"decide_settings","id":"c4000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"reserve":1}}]'::jsonb)$$,
-  '22023', null, 'undo_log_fill refuses decide_settings');
+    '[{"entity":"profiles","id":"c4000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"reserve":1}}]'::jsonb)$$,
+  '22023', null, 'undo_log_fill refuses an entity outside the list (profiles); decide_settings joined it in 05.2');
 
 -- 3-4. Soft delete and restore a check (abandon / undo).
 select extensions.is(
