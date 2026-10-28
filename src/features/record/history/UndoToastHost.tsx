@@ -155,10 +155,12 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
 
   const label = undoableLabel(toast);
   const localUndo = toast.onUndo;
+  const group = toast.stepIds !== null && toast.stepIds.length >= 2 ? toast.stepIds : null;
+  const hasStep = toast.stepId !== null || toast.stepIds !== null;
   const canUndo =
     localUndo !== null ||
     ((toast.kind === 'ordinary' || toast.kind === 'destructive') &&
-    toast.stepId !== null &&
+    hasStep &&
     label !== null &&
     ctx.userId !== null &&
     ctx.householdId !== null);
@@ -169,9 +171,24 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
       localUndo();
       return;
     }
-    if (!label || toast.stepId === null || ctx.userId === null || ctx.householdId === null) return;
+    const single = toast.stepId ?? toast.stepIds?.[0] ?? null;
+    if (!label || single === null || ctx.userId === null || ctx.householdId === null) return;
+    if (group !== null) {
+      // One user action, one Undo: replay the whole group, last saved first, through the serial write queue.
+      for (const id of [...group].reverse()) {
+        undo({
+          stepId: id,
+          ownerId: ctx.userId,
+          householdId: ctx.householdId,
+          labelKey: label.labelKey,
+          labelParams: label.labelParams,
+        });
+      }
+      dismissToast(toast.id);
+      return;
+    }
     undo({
-      stepId: toast.stepId,
+      stepId: single,
       ownerId: ctx.userId,
       householdId: ctx.householdId,
       labelKey: label.labelKey,

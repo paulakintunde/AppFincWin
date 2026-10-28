@@ -25,6 +25,11 @@ export interface ToastState {
   text: ToastText | null;
   stepId: string | null;
   /**
+   * An undo group: every step one user action wrote, in the order written; Undo replays them last first. In memory only.
+   * Null when the toast has no group (the single `stepId` path applies).
+   */
+  stepIds: readonly string[] | null;
+  /**
    * A local Undo (nothing on the server), e.g. putting a removed entry-list item back. In memory
    * only: never persisted or serialised, and dropped with the toast on dismiss.
    */
@@ -73,6 +78,7 @@ export function showToast(t: {
   tone?: ToastTone;
   text?: ToastText | null;
   stepId?: string | null;
+  stepIds?: readonly string[] | null;
   onUndo?: (() => void) | null;
   refusal?: UndoConflict | null;
 }): void {
@@ -82,6 +88,7 @@ export function showToast(t: {
     tone: t.tone ?? 'default',
     text: t.text ?? null,
     stepId: t.stepId ?? null,
+    stepIds: t.stepIds && t.stepIds.length > 0 ? Array.from(new Set(t.stepIds)) : null,
     onUndo: t.onUndo ?? null,
     refusal: t.refusal ?? null,
     shownAt: Date.now(),
