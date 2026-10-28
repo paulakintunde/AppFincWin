@@ -63,3 +63,17 @@ track('check_step_viewed', { step: 3 });
 // Invalid: no amounts on Decide events.
 // @ts-expect-error
 track('quick_check_run', { state: 'fits', amount: 100 });
+
+// 05.2 (DSU-24): setup events carry a literal step key only.
+track('decide_setup_started', {});
+track('decide_setup_step_saved', { step: 'accountUse' });
+track('decide_setup_finished', {});
+track('decide_setup_left', { step: 'welcome' });
+
+// Invalid: a free string is not a step key.
+// @ts-expect-error
+track('decide_setup_step_saved', { step: 'Your regular pay' });
+
+// Invalid: no amounts or names on setup events.
+// @ts-expect-error
+track('decide_setup_left', { step: 'pay', amount: 4000 });
