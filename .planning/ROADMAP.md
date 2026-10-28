@@ -986,12 +986,12 @@ Plans:
 - [x] 05.2-38-PLAN.md — Gap: copy, undo labels and mutation keys for the gap plans; reverse-picker copy review (wave 7)
 - [x] 05.2-39-PLAN.md — Gap: migration 20261028001200 recurring_series end_reason (stopped / paused) and debts paid_off_on; edit_recurring_series_from and apply_patches re-created; pgTAP 71, export (wave 7)
 - [x] 05.2-40-PLAN.md — Gap: one Undo for several income lines and the standalone income session; season answer counts as confirmed (wave 7)
-- [ ] 05.2-41-PLAN.md — Gap: PotSheet edits saving buckets, bucket goal can be cleared, mixed-account fund amount (owner rule from 05.2-37), info glyph (wave 8)
-- [ ] 05.2-42-PLAN.md — Gap: refundDetailRows test isolation, dismissals scope, role-checked refund plan line (wave 8)
-- [ ] 05.2-43-PLAN.md — Gap: loan and card sheet for Loans Edit and Add a loan or card, plus Paid off from a date, with Undo (wave 8)
-- [ ] 05.2-44-PLAN.md — Gap: D-24 Stopped / Paused / Resume for regular payments and income: write, sheet, occurrence entry (wave 8)
-- [ ] 05.2-45-PLAN.md — Gap: D-24 "Something changed?" at the top of Decide settings with 7 choices (wave 8)
-- [ ] 05.2-48-PLAN.md — Gap: a paid-off loan or card stops counting its minimum from its date; Loans step shows it (wave 8)
+- [x] 05.2-41-PLAN.md — Gap: PotSheet edits saving buckets, bucket goal can be cleared, mixed-account fund amount (owner rule from 05.2-37), info glyph (wave 8)
+- [x] 05.2-42-PLAN.md — Gap: refundDetailRows test isolation, dismissals scope, role-checked refund plan line (wave 8)
+- [x] 05.2-43-PLAN.md — Gap: loan and card sheet for Loans Edit and Add a loan or card, plus Paid off from a date, with Undo (wave 8)
+- [x] 05.2-44-PLAN.md — Gap: D-24 Stopped / Paused / Resume for regular payments and income: write, sheet, occurrence entry (wave 8)
+- [x] 05.2-45-PLAN.md — Gap: D-24 "Something changed?" at the top of Decide settings with 7 choices (wave 8)
+- [x] 05.2-48-PLAN.md — Gap: a paid-off loan or card stops counting its minimum from its date; Loans step shows it (wave 8)
 - [ ] 05.2-46-PLAN.md — Gap: series-sheet Income type and Counts toward my month rows; quick-pick name prefill (wave 9)
 - [ ] 05.2-47-PLAN.md — Gap: Stopped or paused links on Regular, Pay and Other steps; paused bills and paused income listed with Resume (wave 10)
 - [ ] 05.2-36-PLAN.md — [BLOCKING] Full gate, owner-approved production push (12 migrations), owner flag, Pixel walkthrough (wave 11)
@@ -1151,7 +1151,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
-| 05.2 Decide data and setup | 39/48 | In progress | - |
+| 05.2 Decide data and setup | 45/48 | In progress | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
