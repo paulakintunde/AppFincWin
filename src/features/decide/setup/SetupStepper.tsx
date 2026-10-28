@@ -28,6 +28,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { SetupRail } from './SetupRail';
+import { SuccessCircle } from './SuccessCircle';
 import { SETUP_STEP_KEYS, isNeeded, sectionOf, visibleSteps, type SetupFacts, type SetupSection, type SetupStepKey } from './setupFlow';
 import type { SetupStepBodyProps, SetupStepHandle, SetupStepReady } from './steps/types';
 import { useSetupFacts } from './useSetupFacts';
@@ -38,6 +39,10 @@ export interface SetupStepperProps {
   mode: 'full' | 'standalone';
   /** 'Finish setup' resumes at firstUnansweredNeeded. */
   startAt?: SetupStepKey;
+  /** Edit-one-step mode: only this step is shown, and Done closes. It never writes setup_done_at. */
+  only?: SetupStepKey;
+  /** The Summary's "Change an answer" link; the host opens Decide settings. */
+  onChangeAnswer?: () => void;
   renderStep: (step: SetupStepKey, ref: React.Ref<SetupStepHandle>, props: SetupStepBodyProps) => React.ReactNode;
   /** i18n key of the step title, for the shell title, the toast and focus. */
   stepTitleKey: (step: SetupStepKey) => string;
@@ -81,7 +86,7 @@ export function SetupStepper(props: SetupStepperProps): React.JSX.Element {
   return <StepperBody {...props} facts={facts} />;
 }
 
-function StepperBody({ mode, startAt, renderStep, stepTitleKey, onClose, facts }: SetupStepperProps & { facts: SetupFacts | null }) {
+function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitleKey, onClose, facts }: SetupStepperProps & { facts: SetupFacts | null }) {
   const t = useT() as unknown as Translate;
   const { colors, pairing } = useTheme();
   const insets = useScreenInsets();
@@ -91,10 +96,10 @@ function StepperBody({ mode, startAt, renderStep, stepTitleKey, onClose, facts }
   const handle = useRef<SetupStepHandle>(null);
   const titleRef = useRef<React.ComponentRef<typeof Text>>(null);
   const startedFired = useRef(false);
-  const [pos, setPos] = useState<Pos>({ key: startAt ?? (mode === 'full' ? 'welcome' : 'paid'), after: false });
+  const [pos, setPos] = useState<Pos>({ key: only ?? startAt ?? (mode === 'full' ? 'welcome' : 'paid'), after: false });
   const [readyState, setReadyState] = useState<{ key: SetupStepKey; ready: SetupStepReady } | null>(null);
 
-  const order = useMemo(() => (facts ? visibleSteps(facts, mode) : []), [facts, mode]);
+  const order = useMemo(() => (facts ? (only !== undefined ? [only] : visibleSteps(facts, mode)) : []), [facts, mode, only]);
   const step = facts ? resolve(pos, order) : null;
   const position = step === null ? -1 : order.indexOf(step);
   const isLast = position >= 0 && position === order.length - 1;
@@ -172,11 +177,15 @@ function StepperBody({ mode, startAt, renderStep, stepTitleKey, onClose, facts }
     return () => sub.remove();
   }, [goBack]);
 
-  const finish = () => {
-    if (mode === 'full' && facts !== null && facts.setupDoneAt === null && rc.userId !== null) {
+  const markDone = () => {
+    if (mode === 'full' && only === undefined && facts !== null && facts.setupDoneAt === null && rc.userId !== null) {
       saver.save({ patch: { setup_done_at: new Date().toISOString() } });
     }
     getAnalytics().track('decide_setup_finished', {});
+  };
+
+  const finish = () => {
+    markDone();
     onClose('done');
   };
 
@@ -199,6 +208,12 @@ function StepperBody({ mode, startAt, renderStep, stepTitleKey, onClose, facts }
     if (step === null) return;
     if (ready !== null && ready.dirty && ready.canContinue) saveCurrent();
     advance();
+  };
+
+  const onChange = () => {
+    if (onChangeAnswer === undefined) return;
+    markDone();
+    onChangeAnswer();
   };
 
   const onFinishLater = () => {
@@ -227,6 +242,12 @@ function StepperBody({ mode, startAt, renderStep, stepTitleKey, onClose, facts }
       : mode === 'full' && nextStep === 'summary'
         ? t('decide.setup.shell.finishSetup')
         : t('decide.setup.shell.next');
+
+  const linkLabel = isSummary
+    ? t('decide.setup.summary.change')
+    : isWelcome
+      ? t('decide.setup.shell.notNow')
+      : t('decide.setup.shell.finishLater');
 
   const bodyProps: SetupStepBodyProps = { mode: mode === 'standalone' ? 'standalone' : 'stepper', onReadyChange };
   const title = step === null ? '' : isWelcome ? t('decide.setup.welcome.title') : t(stepTitleKey(step));
@@ -266,10 +287,11 @@ function StepperBody({ mode, startAt, renderStep, stepTitleKey, onClose, facts }
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps="handled">
         {step === null ? null : (
           <RiseIn key={step} duration={motion.duration(DURATION.entrance)}>
+            {isSummary ? <SuccessCircle /> : null}
             <Text
               ref={titleRef}
               accessibilityRole="header"
-              style={{ ...textRole(pairing, isWelcome ? 'display' : 'heading'), color: colors.ink }}
+              style={{ ...textRole(pairing, isWelcome || isSummary ? 'display' : 'heading'), color: colors.ink }}
             >
               {title}
             </Text>
@@ -300,16 +322,16 @@ function StepperBody({ mode, startAt, renderStep, stepTitleKey, onClose, facts }
           onPress={onNext}
           accessibilityHint={reason ?? undefined}
         />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={isWelcome ? t('decide.setup.shell.notNow') : t('decide.setup.shell.finishLater')}
-          onPress={onFinishLater}
-          style={({ pressed }) => [styles.later, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
-        >
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
-            {isWelcome ? t('decide.setup.shell.notNow') : t('decide.setup.shell.finishLater')}
-          </Text>
-        </Pressable>
+        {isSummary && onChangeAnswer === undefined ? null : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={linkLabel}
+            onPress={isSummary ? onChange : onFinishLater}
+            style={({ pressed }) => [styles.later, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+          >
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{linkLabel}</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
