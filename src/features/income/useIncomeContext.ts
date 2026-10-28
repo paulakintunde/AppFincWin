@@ -20,16 +20,6 @@ const NO_SERIES: readonly RecurringSeriesRow[] = [];
 const NO_ROWS: readonly TransactionRow[] = [];
 const LOOKBACK_MONTHS = 6;
 
-/** Accounts that can receive pay: live, not archived, and not a card or loan. */
-export function payableAccounts(accounts: readonly AccountRow[]): AccountRow[] {
-  return accounts.filter((a) => a.deleted_at === null && a.archived_at === null && a.kind !== 'credit' && a.kind !== 'loan');
-}
-
-/** A live income series carrying this income kind. */
-export function seriesOfKind(series: readonly RecurringSeriesRow[], kind: string): RecurringSeriesRow[] {
-  return series.filter((s) => s.deleted_at === null && s.income_kind === kind && s.amount > 0);
-}
-
 function monthMinus(month: string, back: number): string {
   const [y, m] = month.split('-').map(Number) as [number, number];
   const index = y * 12 + (m - 1) - back;
