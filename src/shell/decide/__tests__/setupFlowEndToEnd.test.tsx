@@ -135,10 +135,11 @@ describe('setup flow, full mode', () => {
     expect(mockBack).not.toHaveBeenCalled();
   });
 
-  it('edit-one-step shows a single step and Done closes', async () => {
+  it('edit-one-step shows a single step and Keep as is closes', async () => {
     await mount({ mode: 'full', only: 'accountUse' });
     expect(current()).toBe('accountUse');
-    await fireEvent.press(screen.getByLabelText('Done'));
+    expect(screen.queryByLabelText('Done')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Keep as is'));
     expect(mockBack).toHaveBeenCalledTimes(1);
   });
 

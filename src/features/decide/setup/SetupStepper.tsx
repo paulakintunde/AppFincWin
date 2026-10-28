@@ -25,6 +25,7 @@ import { DURATION, useMotion } from '@/theme/motion';
 import { PRESSED_OPACITY, space, useScreenInsets } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { SetupRail } from './SetupRail';
@@ -39,7 +40,11 @@ export interface SetupStepperProps {
   mode: 'full' | 'standalone';
   /** 'Finish setup' resumes at firstUnansweredNeeded. */
   startAt?: SetupStepKey;
-  /** Edit-one-step mode: only this step is shown, and Done closes. It never writes setup_done_at. */
+  /**
+   * Edit-one-step mode (05.2-34, Decide settings): only this step, body in 'edit' mode, no rail and no Skip, footer
+   * "Save answer" (enabled once changed and valid) and "Keep as is", Back with edits asks "Discard changes?".
+   * It never writes setup_done_at.
+   */
   only?: SetupStepKey;
   /** The Summary's "Change an answer" link; the host opens Decide settings. */
   onChangeAnswer?: () => void;
@@ -97,6 +102,7 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
   const titleRef = useRef<React.ComponentRef<typeof Text>>(null);
   const startedFired = useRef(false);
   const [pos, setPos] = useState<Pos>({ key: only ?? startAt ?? (mode === 'full' ? 'welcome' : 'paid'), after: false });
+  const [discardOpen, setDiscardOpen] = useState(false);
   const [readyState, setReadyState] = useState<{ key: SetupStepKey; ready: SetupStepReady } | null>(null);
 
   const order = useMemo(() => (facts ? (only !== undefined ? [only] : visibleSteps(facts, mode)) : []), [facts, mode, only]);
@@ -160,14 +166,19 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
     return true;
   }, [step, stepTitleKey, t]);
 
+  const editing = only !== undefined;
   const goBack = useCallback(() => {
+    if (editing && ready !== null && ready.dirty) {
+      setDiscardOpen(true);
+      return;
+    }
     if (step === null || position <= 0) {
       onClose('notNow');
       return;
     }
     const prev = order[position - 1];
     if (prev !== undefined) setPos({ key: prev, after: false });
-  }, [step, position, order, onClose]);
+  }, [editing, ready, step, position, order, onClose]);
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -204,6 +215,13 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
     advance();
   };
 
+  /** Edit-one-step: Save answer writes only this step (toast and Undo from saveCurrent) and leaves. */
+  const onSaveAnswer = () => {
+    if (step === null || !canContinue) return;
+    saveCurrent();
+    onClose('done');
+  };
+
   const onSkip = () => {
     if (step === null) return;
     if (ready !== null && ready.dirty && ready.canContinue) saveCurrent();
@@ -233,7 +251,7 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
   const section = step === null ? null : sectionOf(step);
   const sectionNumber = section === null ? 0 : SECTION_ORDER.indexOf(section) + 1;
   const sectionName = mode === 'standalone' ? t('decide.setup.shell.standaloneSection') : section === null ? '' : t(SECTION_KEY[section]);
-  const headerLabel = mode === 'standalone' ? sectionName : section === null ? '' : t('decide.setup.shell.railA11y', { n: sectionNumber, name: sectionName });
+  const headerLabel = editing ? '' : mode === 'standalone' ? sectionName : section === null ? '' : t('decide.setup.shell.railA11y', { n: sectionNumber, name: sectionName });
 
   const nextLabel = isWelcome
     ? t('decide.setup.shell.start')
@@ -249,21 +267,27 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
       ? t('decide.setup.shell.notNow')
       : t('decide.setup.shell.finishLater');
 
-  const bodyProps: SetupStepBodyProps = { mode: mode === 'standalone' ? 'standalone' : 'stepper', onReadyChange };
+  const bodyProps: SetupStepBodyProps = { mode: editing ? 'edit' : mode === 'standalone' ? 'standalone' : 'stepper', onReadyChange };
   const title = step === null ? '' : isWelcome ? t('decide.setup.welcome.title') : t(stepTitleKey(step));
 
   return (
     <View style={[styles.root, { backgroundColor: colors.canvas, paddingTop: insets.top }]}>
       <View style={styles.header}>
         <BackButton variant="detail" onPress={goBack} />
-        <Text
-          accessibilityLabel={headerLabel === '' ? undefined : headerLabel}
-          style={[styles.sectionName, { ...textRole(pairing, 'label'), color: colors.inkDim }]}
-        >
-          {sectionName}
-        </Text>
+        {editing ? (
+          <Text ref={titleRef} accessibilityRole="header" style={[styles.sectionName, { ...textRole(pairing, 'sheetTitle'), color: colors.ink }]}>
+            {title}
+          </Text>
+        ) : (
+          <Text
+            accessibilityLabel={headerLabel === '' ? undefined : headerLabel}
+            style={[styles.sectionName, { ...textRole(pairing, 'label'), color: colors.inkDim }]}
+          >
+            {sectionName}
+          </Text>
+        )}
         <View style={styles.rightSlot}>
-          {isWelcome || isSummary || step === null ? null : needed ? (
+          {isWelcome || isSummary || step === null || editing ? null : needed ? (
             <Text accessibilityLabel={t('decide.setup.shell.neededA11y')} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
               {t('decide.setup.shell.needed')}
             </Text>
@@ -281,13 +305,14 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
         </View>
       </View>
       <View style={styles.railWrap}>
-        <SetupRail current={section} hidden={mode === 'standalone'} />
+        <SetupRail current={section} hidden={mode === 'standalone' || editing} />
       </View>
       <SyncProblemLine />
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps="handled">
         {step === null ? null : (
           <RiseIn key={step} duration={motion.duration(DURATION.entrance)}>
             {isSummary ? <SuccessCircle /> : null}
+            {editing ? null : (
             <Text
               ref={titleRef}
               accessibilityRole="header"
@@ -295,6 +320,7 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
             >
               {title}
             </Text>
+            )}
             {isWelcome ? (
               <View style={{ gap: space.gapMd }}>
                 <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.setup.welcome.body')}</Text>
@@ -316,23 +342,36 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
           </Text>
         ) : null}
         <Pill
-          label={nextLabel}
+          label={editing ? t('decide.settings.save') : nextLabel}
           variant="primary"
-          disabled={!canContinue}
-          onPress={onNext}
+          disabled={editing ? !canContinue || ready === null || !ready.dirty : !canContinue}
+          onPress={editing ? onSaveAnswer : onNext}
           accessibilityHint={reason ?? undefined}
         />
         {isSummary && onChangeAnswer === undefined ? null : (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={linkLabel}
-            onPress={isSummary ? onChange : onFinishLater}
+            accessibilityLabel={editing ? t('decide.settings.keep') : linkLabel}
+            onPress={editing ? () => onClose('notNow') : isSummary ? onChange : onFinishLater}
             style={({ pressed }) => [styles.later, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
           >
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{linkLabel}</Text>
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{editing ? t('decide.settings.keep') : linkLabel}</Text>
           </Pressable>
         )}
       </View>
+      <ConfirmSheet
+        visible={discardOpen}
+        title={t('sheet.discard.title')}
+        body={t('sheet.discard.body')}
+        cancelLabel={t('sheet.discard.keep')}
+        confirmLabel={t('sheet.discard.confirm')}
+        destructive
+        onCancel={() => setDiscardOpen(false)}
+        onConfirm={() => {
+          setDiscardOpen(false);
+          onClose('notNow');
+        }}
+      />
     </View>
   );
 }

@@ -261,3 +261,68 @@ describe('SetupStepper shell', () => {
     expect(insideScroll).toBe(false);
   });
 });
+
+describe('SetupStepper edit-one-step mode (05.2-34)', () => {
+  it('shows the step name in the header, no rail, no Skip, and "Save answer" / "Keep as is"', async () => {
+    await mount({ only: 'season' });
+    expect(screen.getByText('Does your income change by season?')).toBeTruthy();
+    expect(screen.queryByTestId('setup-rail')).toBeNull();
+    expect(screen.queryByLabelText('Skip')).toBeNull();
+    expect(screen.queryByLabelText('Next')).toBeNull();
+    expect(screen.getByLabelText('Save answer')).toBeTruthy();
+    expect(screen.getByLabelText('Keep as is')).toBeTruthy();
+  });
+
+  it('keeps Save answer disabled until the step changes and is valid', async () => {
+    control.ready = { canContinue: true, reasonKey: null, dirty: false };
+    await mount({ only: 'season' });
+    expect(screen.getByLabelText('Save answer').props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('keeps Save answer disabled when a needed step is cleared (canContinue false)', async () => {
+    control.ready = { canContinue: false, reasonKey: 'decide.setup.shell.neededReason', dirty: true };
+    await mount({ only: 'paid' });
+    expect(screen.getByLabelText('Save answer').props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('Save answer saves the one step, shows "{title} saved" with Undo, and closes', async () => {
+    control.ready = { canContinue: true, reasonKey: null, dirty: true };
+    const { onClose } = await mount({ only: 'season' });
+    await press('Save answer');
+    expect(control.saves).toBe(1);
+    expect(getToast()?.text?.key).toBe('decide.setup.shell.toastSaved');
+    expect(getToast()?.stepId).toBe('step-1');
+    expect(onClose).toHaveBeenCalledWith('done');
+    expect(mockSave).not.toHaveBeenCalled();
+  });
+
+  it('Keep as is leaves without saving', async () => {
+    control.ready = { canContinue: true, reasonKey: null, dirty: true };
+    const { onClose } = await mount({ only: 'season' });
+    await press('Keep as is');
+    expect(control.saves).toBe(0);
+    expect(getToast()).toBeNull();
+    expect(onClose).toHaveBeenCalledWith('notNow');
+  });
+
+  it('Back with edits asks "Discard changes?"; Discard leaves, Keep editing stays', async () => {
+    control.ready = { canContinue: true, reasonKey: null, dirty: true };
+    const { onClose } = await mount({ only: 'season' });
+    await press('Back');
+    expect(screen.getByText('Discard changes?')).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
+    await press('Keep editing');
+    expect(onClose).not.toHaveBeenCalled();
+    await press('Back');
+    await press('Discard');
+    expect(onClose).toHaveBeenCalledWith('notNow');
+    expect(control.saves).toBe(0);
+  });
+
+  it('Back without edits leaves at once', async () => {
+    control.ready = { canContinue: true, reasonKey: null, dirty: false };
+    const { onClose } = await mount({ only: 'season' });
+    await press('Back');
+    expect(onClose).toHaveBeenCalledWith('notNow');
+  });
+});
