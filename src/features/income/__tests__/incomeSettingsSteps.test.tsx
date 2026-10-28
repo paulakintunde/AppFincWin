@@ -112,7 +112,7 @@ describe('SeasonStep', () => {
     await act(async () => {
       ref.current!.save();
     });
-    expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({ patch: { income_pattern: 'seasonal' } }));
+    expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({ patch: { income_pattern: 'seasonal', income_pattern_confirmed: true } }));
   });
 });
 

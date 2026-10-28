@@ -1,4 +1,6 @@
-/** Plan 05.2-22 (D-15, D-16): "Does your income change by season?" Optional, asked of everyone, nothing chosen for the user. */
+/** Plan 05.2-22 (D-15, D-16): "Does your income change by season?" Optional, asked of everyone, nothing chosen for the user.
+ * Owner decision 2026-10-28: answering here counts as confirmed (income_pattern_confirmed = true, one save, one Undo), so the in-check
+ * swing question (D-34) is not asked again; only the refine check-in re-asks when the records clearly disagree (D-15, D-16, D-20). */
 import React, { forwardRef, useImperativeHandle, useState } from 'react';
 import { View } from 'react-native';
 import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
@@ -34,7 +36,7 @@ export const SeasonStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functi
   useImperativeHandle(ref, () => ({
     save() {
       if (chosen === null || ctx.userId === undefined) return { stepId: null };
-      const result = saver.save({ stepTitle: t('income.season.title'), patch: { income_pattern: chosen } });
+      const result = saver.save({ stepTitle: t('income.season.title'), patch: { income_pattern: chosen, income_pattern_confirmed: true } });
       return { stepId: result?.stepId ?? null };
     },
   }));
