@@ -70,6 +70,7 @@ export interface DebtSource {
   min_floor: number | null;
   paid_in_full: boolean;
   is_housing: boolean; // D-103: a loan (never a card) whose minimum counts toward housingMonthly
+  paid_off_on?: string | null; // local date the debt was paid off (05.2-48); absent or null = still owed
   version: number;
   deleted_at: string | null;
 }
@@ -227,7 +228,12 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
 
   // ── debts rows ──
   const liveDebts = source.debts.filter((d) => d.deleted_at === null);
+  // Owner addition 2026-10-28: a debt marked paid off adds no minimum from that date. Its series stays covered (below) so it is not
+  // re-counted as a bill, and past months stay as recorded.
+  const paidOff = (d: DebtSource): boolean => d.paid_off_on != null && d.paid_off_on <= today;
+  const countedDebts = liveDebts.filter((d) => !paidOff(d));
   const loanDebts = liveDebts.filter((d) => d.kind !== 'card');
+  const countedLoans = countedDebts.filter((d) => d.kind !== 'card');
   const cardRowOf = (accountId: string) => liveDebts.find((d) => d.kind === 'card' && d.account_id === accountId) ?? null;
   const namedByLoan = new Set<string>();
   const loanChecks = new Set<string>();
@@ -246,7 +252,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
 
   const debts: DebtRecord[] = [];
   let housingDebtMonthly = 0; // D-103: the minimums of the loans marked as housing (a card is never in loanDebts)
-  for (const d of loanDebts) {
+  for (const d of countedLoans) {
     const balance = need(d.balance, d.currency);
     const minimum = need(d.minimum_payment, d.currency);
     if (balance === null || minimum === null) continue;
@@ -526,14 +532,14 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       const floor = peek(listed.floor, a.currency);
       if (floor !== null) marketTerms = { ...listed, floor: minorUnits(floor) };
     }
-    const paidInFull = row !== null && row.paid_in_full;
+    const paidInFull = row !== null && (row.paid_in_full || paidOff(row)); // a paid-off card row adds a minimum of 0
     const apr = row !== null && row.apr ? percent(row.apr) : null;
     const terms = stored !== null ? storedTerms : marketTerms;
     cardTerms.set(a.id, { terms, paidInFull, apr });
     const view: CardTermsView = {
       debtId: row === null ? null : row.id,
       source: stored !== null ? 'stored' : marketTerms !== null ? 'market' : 'none',
-      paidInFull,
+      paidInFull: row !== null && row.paid_in_full,
       percentText: stored !== null ? stored.percent : marketTerms !== null ? decimalOf(marketTerms.minimumPercent) : null,
       interestAdded: stored !== null ? stored.interestAdded : marketTerms !== null ? marketTerms.interestAdded : null,
       floor: stored !== null ? stored.floor : marketTerms !== null && marketRow !== null ? marketRow.floor : null,
@@ -592,7 +598,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   // A derived debt is keyed by its account; a recorded loan names its account.
   const minimumAccounts = new Set<string>();
   for (const d of debts) if (d.minimumPayment > 0) minimumAccounts.add(d.id);
-  for (const d of loanDebts) {
+  for (const d of countedLoans) {
     if (d.account_id !== null && debts.some((x) => x.id === d.id && x.minimumPayment > 0)) minimumAccounts.add(d.account_id);
   }
   for (const { outflow, into } of pendingDebtTransfers) {
