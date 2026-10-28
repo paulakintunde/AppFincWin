@@ -52,6 +52,9 @@ export const TRANSACTION_INSERT_KEYS = [
   'is_refund',
   'is_automatic',
   'one_off', 'goal_id', // 05-34: D-29 one-off flag, D-34 savings-goal tag (05-32 grants)
+  'income_kind',
+  'counts_as',
+  'refund_of', // 05.2 (20261028000400)
   // D-34 (IMP-05): statement figures and fee link are insert-only, like D-45's provenance.
   'stmt_orig_amount',
   'stmt_orig_currency',
@@ -79,13 +82,16 @@ export const TRANSACTION_PATCH_KEYS = [
   'is_refund',
   'is_automatic',
   'one_off', 'goal_id', // 05-34: D-29 one-off flag, D-34 savings-goal tag (05-32 grants)
+  'income_kind',
+  'counts_as',
+  'refund_of', // 05.2 (20261028000400)
 ] as const satisfies readonly (keyof TransactionPatch)[];
 
 // Casting rate/orig_per_eur/home_per_eur/the four custom-leg stamp columns to text keeps
 // them out of JS float arithmetic on the way in from Postgres's `numeric` type (MON-01) --
 // callers parse the string themselves via engine/money, never `parseFloat`.
 export const TRANSACTION_COLUMNS =
-  'id, household_id, account_id, created_by, original_amount, original_currency, home_currency, home_amount, rate:rate::text, orig_per_eur:orig_per_eur::text, home_per_eur:home_per_eur::text, orig_custom_unit_value:orig_custom_unit_value::text, orig_custom_ref_per_eur:orig_custom_ref_per_eur::text, home_custom_unit_value:home_custom_unit_value::text, home_custom_ref_per_eur:home_custom_ref_per_eur::text, rate_date, rate_source, rate_pending, local_date, time_zone, note, name, category_id, payment_type, status, deleted_at, import_batch_id, recurring_series_id, occurrence_date, updated_by, raw_amount, raw_balance, external_id, import_format, transfer_id, is_refund, is_automatic, one_off, goal_id, stmt_orig_amount, stmt_orig_currency, conversion_source, fx_fee_of, is_sample, version, created_at, updated_at';
+  'id, household_id, account_id, created_by, original_amount, original_currency, home_currency, home_amount, rate:rate::text, orig_per_eur:orig_per_eur::text, home_per_eur:home_per_eur::text, orig_custom_unit_value:orig_custom_unit_value::text, orig_custom_ref_per_eur:orig_custom_ref_per_eur::text, home_custom_unit_value:home_custom_unit_value::text, home_custom_ref_per_eur:home_custom_ref_per_eur::text, rate_date, rate_source, rate_pending, local_date, time_zone, note, name, category_id, payment_type, status, deleted_at, import_batch_id, recurring_series_id, occurrence_date, updated_by, raw_amount, raw_balance, external_id, import_format, transfer_id, is_refund, is_automatic, one_off, goal_id, income_kind, counts_as, refund_of, stmt_orig_amount, stmt_orig_currency, conversion_source, fx_fee_of, is_sample, version, created_at, updated_at';
 
 const ENTITY = 'transactions' as const;
 
