@@ -16,7 +16,7 @@ export interface SetupSheetActions {
   /** Edit a confirmed series, or a found payment that is not yet a series. */
   editRegular(target: { series: RecurringSeriesRow } | { candidate: RecurringCandidate }): void;
   /** Open the series sheet for a new regular payment with the kind prefilled. */
-  addRegular(preset: RegularPreset): void;
+  addRegular(preset: RegularPreset, name: string | null): void;
   editDebt(debt: DebtRow): void;
   addDebt(kind: DebtKindChoice): void;
   /** 05.2-28: open the account-use step in edit mode (the Unspent money notes: "Set them"). */
@@ -25,7 +25,7 @@ export interface SetupSheetActions {
 
 const NONE: SetupSheetActions = {
   editRegular: () => undefined,
-  addRegular: () => undefined,
+  addRegular: (_preset, _name) => undefined,
   editDebt: () => undefined,
   addDebt: () => undefined,
   editAccountUse: () => undefined,

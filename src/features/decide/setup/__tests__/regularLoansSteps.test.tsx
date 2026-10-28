@@ -160,7 +160,7 @@ describe('RegularStep', () => {
     expect(last().canContinue).toBe(true);
     await fireEvent.press(screen.getByRole('button', { name: '+ Add a regular payment' }));
     await fireEvent.press(screen.getByLabelText('Regular payment, Phone and internet'));
-    expect(addRegular).toHaveBeenCalledWith('phone');
+    expect(addRegular).toHaveBeenCalledWith('phone', expect.any(String));
     unregister();
   });
 

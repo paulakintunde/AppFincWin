@@ -46,8 +46,8 @@ describe('pickEditRow', () => {
 describe('useSetupSheetHost', () => {
   it('Add a regular payment opens a new expense in the entry sheet', async () => {
     await renderHook(() => useSetupSheetHost());
-    setupSheetActions().addRegular('rent');
-    expect(mockOpenEntry).toHaveBeenCalledWith({ kind: 'new', direction: 'out' });
+    setupSheetActions().addRegular('rent', 'Rent or mortgage');
+    expect(mockOpenEntry).toHaveBeenCalledWith({ kind: 'new', direction: 'out', name: 'Rent or mortgage' });
   });
 
   it('Edit on a confirmed series opens the entry sheet on the series row', async () => {
@@ -93,7 +93,7 @@ describe('useSetupSheetHost', () => {
   it('removes its actions on unmount', async () => {
     const { unmount } = await renderHook(() => useSetupSheetHost());
     await unmount();
-    setupSheetActions().addRegular('rent');
+    setupSheetActions().addRegular('rent', 'Rent or mortgage');
     expect(mockOpenEntry).not.toHaveBeenCalled();
   });
 });

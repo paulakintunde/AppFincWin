@@ -150,7 +150,7 @@ export function initialFormState(mode: EntryMode, ctx: FormContext): FormState {
   return {
     direction: mode.direction,
     amountText: '',
-    name: '',
+    name: mode.name ?? '',
     categoryId: null,
     accountId,
     currency,

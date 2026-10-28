@@ -234,7 +234,7 @@ export const RegularStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(funct
               accessibilityLabel={t('decide.setup.regular.pickA11y', { name: t(p.labelKey) })}
               onPress={() => {
                 setPickerOpen(false);
-                setupSheetActions().addRegular(p.preset);
+                setupSheetActions().addRegular(p.preset, p.preset === 'other' ? null : t(p.labelKey));
               }}
               style={({ pressed }) => [styles.pick, { backgroundColor: colors.fill1, opacity: pressed ? PRESSED_OPACITY : 1 }]}
             >

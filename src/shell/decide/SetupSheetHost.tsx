@@ -4,8 +4,8 @@
 //  - Regular "Edit": opens the app's own entry sheet (TransactionSheet, the same editor Activity uses) on the payment's
 //    row. A confirmed series opens on its next or latest occurrence, which offers "this one / this and future"; a found
 //    payment that is not yet a series opens on its latest row, where Repeats makes it one.
-//  - "+ Add a regular payment": opens a new expense in the entry sheet (Repeats is on the sheet). The quick-pick name is
-//    not prefilled: the entry prefill needs an account and an amount the step does not have.
+//  - "+ Add a regular payment": opens a new expense in the entry sheet (Repeats is on the sheet). The quick-pick label
+//    is passed as a name-only prefill (05.2-46); "Other" leaves the name empty.
 //  - Account use "Set them": opens the account-use step on its own (edit-one-step) over the unspent step.
 //  - Loans "Edit" and "Add a loan or card" (05.2-43): open the loan and card sheet (DebtSheet, mounted by SetupRoute) in edit
 //    or add mode. The "editor unavailable" toast stays only for the regular-payment fallbacks.
@@ -71,7 +71,7 @@ export function useSetupSheetHost(): void {
       editRegular: (target) => {
         void openRow('series' in target ? { seriesId: target.series.id } : { rowIds: target.candidate.rowIds });
       },
-      addRegular: () => openEntry({ kind: 'new', direction: 'out' }),
+      addRegular: (_preset, name) => openEntry({ kind: 'new', direction: 'out', name }),
       editDebt: (debt) => openDebtSheet({ mode: 'edit', debt }),
       addDebt: (kind) => openDebtSheet({ mode: 'add', kind }),
       editAccountUse: () => pushOnce('/decide/setup?only=accountUse' as Href),
