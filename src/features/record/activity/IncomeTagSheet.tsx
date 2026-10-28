@@ -73,7 +73,7 @@ function IncomeTagForm({ tx, newPayer, formatter, onClose, onRefundLink }: Incom
 
   const canSave = kind !== null && counts !== null;
   const amount = formatter.formatMoney(money(tx.original_amount, tx.original_currency));
-  const subline = t('activity.incomeTag.subline', { payer, amount, date: formatter.formatDate(tx.local_date, 'short') });
+  const subline = t('activity.incomeTag.subline', { payer, amount, date: formatter.formatDate(tx.local_date, 'medium') });
 
   const save = () => {
     if (kind === null || counts === null) return;

@@ -52,7 +52,7 @@ export function RefundTag({ model, row, formatter, onPress }: RefundTagProps) {
   let a11y: string;
   if (model.kind === 'refundOf') {
     const payee = model.purchase.name ?? '';
-    const date = formatter.formatDate(row.local_date, 'short');
+    const date = formatter.formatDate(row.local_date, 'medium');
     label = t('activity.refund.tagRefundOf', { payee, date });
     a11y = t('activity.refund.a11yRefundOf', { payee, date });
   } else {

@@ -113,7 +113,7 @@ function RefundPickerForm({ direction, anchor, formatter, onClose }: RefundPicke
   const subline = t(forward ? 'activity.refund.pickerSubline' : 'activity.refund.pickerSublineReverse', {
     payer: anchor.name ?? '',
     amount: formatter.formatMoney(money(Math.abs(anchor.original_amount), anchor.original_currency)),
-    date: formatter.formatDate(anchor.local_date, 'short'),
+    date: formatter.formatDate(anchor.local_date, 'medium'),
   });
   const searchLabel = t(forward ? 'activity.refund.search' : 'activity.refund.searchPayments');
 
@@ -205,8 +205,8 @@ function RefundPickerForm({ direction, anchor, formatter, onClose }: RefundPicke
               const isSel = r.id === selectedId;
               const cat = r.category_id !== null ? categories.byId.get(r.category_id) : undefined;
               const sub = cat
-                ? t('activity.refund.rowSub', { date: formatter.formatDate(r.local_date, 'short'), category: categoryName(cat, t) })
-                : t('activity.refund.rowSubNoCategory', { date: formatter.formatDate(r.local_date, 'short') });
+                ? t('activity.refund.rowSub', { date: formatter.formatDate(r.local_date, 'medium'), category: categoryName(cat, t) })
+                : t('activity.refund.rowSubNoCategory', { date: formatter.formatDate(r.local_date, 'medium') });
               const refundedSoFar = forward
                 ? Math.max(0, (totals.get(r.id) ?? 0) - (anchor.refund_of === r.id ? anchor.original_amount : 0))
                 : 0;

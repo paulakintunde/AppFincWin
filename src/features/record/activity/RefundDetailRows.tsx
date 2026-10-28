@@ -70,7 +70,7 @@ export function RefundOfRow({
     row.refund_of === null || row.refund_of === undefined
       ? t('activity.refund.notLinked')
       : purchase !== undefined
-        ? t('activity.refund.linkedValue', { payee: purchase.name ?? '', date: formatter.formatDate(purchase.local_date, 'short') })
+        ? t('activity.refund.linkedValue', { payee: purchase.name ?? '', date: formatter.formatDate(purchase.local_date, 'medium') })
         : '';
   return (
     <LinkRow
@@ -101,7 +101,7 @@ export function RefundsGroup({
     <View accessibilityRole="summary" accessibilityLabel={group}>
       <Text style={[styles.groupTitle, { ...textRole(pairing, 'label'), color: colors.inkMuted }]}>{group}</Text>
       {mine.map((r) => {
-        const date = formatter.formatDate(r.local_date, 'short');
+        const date = formatter.formatDate(r.local_date, 'medium');
         const amount = `+${formatter.formatMoney(money(r.original_amount, r.original_currency))}`;
         return (
           <LinkRow
