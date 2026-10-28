@@ -7,6 +7,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useAddPot, useEditPot } from '@/data/mutations/decidePots';
+import { useAccounts } from '@/data/queries/accounts';
 import { newStepId } from '@/data/mutations/undoCapture';
 import { useGoalLines } from '@/data/queries/decide';
 import { homeAmountFor } from '@/data/queries/homeAmount';
@@ -15,12 +16,14 @@ import type { TransactionRow } from '@/db/rows';
 import { currencyCode, minorUnits } from '@/engine/money';
 import { monthOf } from '@/engine/time';
 import { useT } from '@/i18n';
+import { useDecideAccess } from '../useDecideAccess';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radii, space } from '@/theme/layout';
+import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { CloseGlyph } from '@/ui/CloseGlyph';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Pill } from '@/ui/Pill';
+import { RadioDot } from '@/ui/RadioDot';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
@@ -47,6 +50,8 @@ export interface PotSheetProps {
   /** null: add mode. */
   pot: SavingsGoalRow | null;
   onClose: () => void;
+  /** Add mode only: a name (and swatch) to start from, used by the setup envelopes step. */
+  prefill?: { name: string; colorKey?: SavingsGoalRow['color_key'] };
 }
 
 interface Fields {
@@ -55,16 +60,18 @@ interface Fields {
   /** 'YYYY-MM-DD' (first of the chosen month) or null before one is picked. */
   by: string | null;
   saved: number | null;
+  /** 05.2 D-05: the account holding the pot's money ("Held in"); null is Not set. */
+  accountId: string | null;
 }
 
 export function PotSheet(props: PotSheetProps) {
-  return props.visible ? <PotForm pot={props.pot} onClose={props.onClose} /> : null;
+  return props.visible ? <PotForm pot={props.pot} onClose={props.onClose} prefill={props.prefill} /> : null;
 }
 
 const firstOfMonth = (month: string): string => `${month}-01`;
 const validMinor = (n: number | null): n is number => n !== null && Number.isSafeInteger(n) && n > 0 && n <= MAX_INPUT_MINOR;
 
-function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => void }) {
+function PotForm({ pot, onClose, prefill }: { pot: SavingsGoalRow | null; onClose: () => void; prefill?: PotSheetProps['prefill'] }) {
   const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const fmt = useMoneyFormatter(false);
@@ -74,15 +81,19 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
   const tagEdit = useGoalTagEdit();
   const [asking, setAsking] = useState(false);
   const [tagging, setTagging] = useState(false);
+  const [pickingAccount, setPickingAccount] = useState(false);
+  const { v3 } = useDecideAccess();
+  const accountsQuery = useAccounts(householdId ?? undefined);
 
   const [initial] = useState<Fields>(() =>
     pot === null
-      ? { name: '', target: null, by: null, saved: null }
+      ? { name: prefill?.name ?? '', target: null, by: null, saved: null, accountId: null }
       : {
           name: pot.name,
           target: pot.target,
           by: pot.ready_by === null ? null : firstOfMonth(toMonthKey(pot.ready_by)),
           saved: pot.opening_saved === 0 ? null : pot.opening_saved,
+          accountId: pot.account_id ?? null,
         }
   );
   const [value, setValue] = useState<Fields>(initial);
@@ -90,6 +101,11 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
   const set = (patch: Partial<Fields>) => setValue((v) => ({ ...v, ...patch }));
 
   const currency = pot?.currency ?? ctx.home;
+  const liveAccounts = useMemo(() => (accountsQuery.data ?? []).filter((a) => a.deleted_at === null && a.archived_at === null), [accountsQuery.data]);
+  const mixedAccounts = useMemo(() => liveAccounts.filter((a) => a.use === 'mixed'), [liveAccounts]);
+  // D-01 / D-05: the row exists only for a user with the new Decide and at least one account set to "A mix".
+  const showHeldIn = v3 && mixedAccounts.length > 0;
+  const heldInName = value.accountId === null ? null : (liveAccounts.find((a) => a.id === value.accountId)?.name ?? null);
   const trimmed = value.name.trim();
   const nameOk = trimmed.length >= 1 && trimmed.length <= NAME_MAX;
   const targetOk = validMinor(value.target);
@@ -142,7 +158,16 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
     const opening = value.saved ?? 0;
     if (pot === null) {
       if (userId === null || householdId === null) return;
-      const { stepId } = add({ householdId, ownerId: userId, pot: { name: trimmed, currency, target: value.target, ready_by: readyBy, opening_saved: opening } });
+      const { stepId } = add({ householdId, ownerId: userId, pot: {
+          name: trimmed,
+          currency,
+          target: value.target,
+          ready_by: readyBy,
+          opening_saved: opening,
+          ...(value.accountId !== null ? { account_id: value.accountId } : {}),
+          ...(prefill?.colorKey ? { color_key: prefill.colorKey } : {}),
+        },
+      });
       showToast({ kind: 'destructive', text: { key: 'decide.pots.toast.saved', params: { undoLabel: 'potAdded', name: trimmed } }, stepId });
     } else {
       const patch: SavingsGoalPatch = {};
@@ -150,6 +175,7 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
       if (value.target !== pot.target) patch.target = value.target;
       if (readyBy !== pot.ready_by) patch.ready_by = readyBy;
       if (opening !== pot.opening_saved) patch.opening_saved = opening;
+      if (value.accountId !== (pot.account_id ?? null)) patch.account_id = value.accountId;
       if (Object.keys(patch).length > 0) {
         const stepId = edit(pot, patch);
         showToast({ kind: 'destructive', text: { key: 'decide.pots.toast.saved', params: { undoLabel: 'potEdited', name: trimmed } }, stepId });
@@ -223,6 +249,21 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
             label={t('decide.pots.sheet.alreadySaved')}
             accessibilityLabel={t('decide.pots.sheet.alreadySaved')}
           />
+          {showHeldIn ? (
+            <>
+              <Label>{t('decide.setup.envelopes.heldIn')}</Label>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${t('decide.setup.envelopes.heldIn')}, ${heldInName ?? t('decide.setup.envelopes.heldInNone')}`}
+                onPress={() => setPickingAccount(true)}
+                style={({ pressed }) => [styles.heldRow, { borderColor: colors.line2, backgroundColor: colors.surface, opacity: pressed ? PRESSED_OPACITY : 1 }]}
+              >
+                <Text style={{ ...textRole(pairing, 'body'), color: heldInName === null ? colors.inkMuted : colors.ink, flex: 1, flexShrink: 1 }}>
+                  {heldInName ?? t('decide.setup.envelopes.heldInNone')}
+                </Text>
+              </Pressable>
+            </>
+          ) : null}
           {preview === null ? null : (
             <View accessible accessibilityLiveRegion="polite" accessibilityLabel={settled}>
               <Text testID="pot-preview" style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
@@ -260,6 +301,35 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
           <Pill label={t('decide.pots.sheet.save')} variant="primary" disabled={!canSave} onPress={save} />
         </SheetScroll>
       </Sheet>
+      {pickingAccount ? (
+        <Sheet visible onDismiss={() => setPickingAccount(false)} accessibilityLabel={t('decide.setup.envelopes.heldIn')}>
+          <SheetHeader title={t('decide.setup.envelopes.heldIn')} cancelLabel={t('decide.pots.sheet.cancel')} onCancel={() => setPickingAccount(false)} />
+          <SheetScroll contentContainerStyle={styles.column}>
+            <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.setup.envelopes.heldIn')} style={{ gap: space.gapSm }}>
+              {[null, ...mixedAccounts].map((a) => {
+                const selected = (a?.id ?? null) === value.accountId;
+                const name = a === null ? t('decide.setup.envelopes.heldInNone') : a.name;
+                return (
+                  <Pressable
+                    key={a?.id ?? 'none'}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={name}
+                    onPress={() => {
+                      set({ accountId: a?.id ?? null });
+                      setPickingAccount(false);
+                    }}
+                    style={({ pressed }) => [styles.heldRow, { borderColor: colors.line2, backgroundColor: colors.surface, opacity: pressed ? PRESSED_OPACITY : 1 }]}
+                  >
+                    <RadioDot selected={selected} />
+                    <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flex: 1, flexShrink: 1 }}>{name}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </SheetScroll>
+        </Sheet>
+      ) : null}
       {pot !== null && householdId !== null ? (
         <AttachLineSheet
           mode="transfer"
@@ -291,5 +361,6 @@ const styles = StyleSheet.create({
   column: { gap: space.gapSm, paddingBottom: space.gapMd },
   lineRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, minHeight: space.touchMin },
   lineText: { flex: 1 },
+  heldRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, minHeight: space.touchMin, borderRadius: 16, borderWidth: 1, paddingHorizontal: space.cardPad },
   untag: { width: space.touchMin, minHeight: space.touchMin, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' },
 });

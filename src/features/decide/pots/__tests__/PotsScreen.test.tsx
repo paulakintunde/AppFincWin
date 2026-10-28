@@ -25,6 +25,8 @@ const mockSwipe: { props: Record<string, any> } = { props: {} };
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', today: '2026-10-15', timeZone: 'UTC', ready: true }),
 }));
+jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
 jest.mock('@/data/queries/decide', () => {
   // the real selector lives beside the Supabase client, which a unit test must not load; this mirrors selectPots
   const select = (rows: SavingsGoalRow[]) => {
