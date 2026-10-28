@@ -9,6 +9,7 @@ import { Chip } from '@/ui/Chip';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
+import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { hapticSelection } from '@/ui/haptics';
 import { useDebts } from '@/data/queries/decide';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
@@ -38,20 +39,26 @@ const KINDS: readonly { kind: DebtKindChoice; labelKey: string }[] = [
 
 const NO_DEBTS: readonly DebtRow[] = [];
 
+/** The paid-off date when the debt is paid off on or before today (local dates, as the snapshot reads it), else null. */
+const paidOffDate = (d: DebtRow, today: string): string | null => (d.paid_off_on != null && d.paid_off_on <= today ? d.paid_off_on : null);
+
 function DebtCard({
   debt,
   answer,
   dueDay,
+  paidOffOn,
   onAnswer,
 }: {
   debt: DebtRow;
   answer: PaysInFull;
   dueDay: number | null;
+  paidOffOn: string | null;
   onAnswer: (value: Exclude<PaysInFull, null>) => void;
 }) {
   const t = useCopy();
   const { colors, pairing } = useTheme();
   const noWrap = useNoWrapMoney(debt.currency);
+  const fmt = useMoneyFormatter(false);
   const items = [
     { caption: t('decide.setup.loans.balance'), value: noWrap(debt.balance) },
     { caption: t('decide.setup.loans.minimum'), value: noWrap(debt.minimum_payment) },
@@ -68,8 +75,17 @@ function DebtCard({
         </View>
         <TextButton label={t('decide.setup.loans.edit')} onPress={() => setupSheetActions().editDebt(debt)} />
       </View>
+      {paidOffOn !== null ? (
+        <Text
+          accessible
+          accessibilityLabel={t('decide.setup.debtSheet.a11yPaidOff', { name: debt.name, date: fmt.formatDate(paidOffOn) })}
+          style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}
+        >
+          {t('decide.setup.debtSheet.statusPaidOff', { date: fmt.formatDate(paidOffOn).replace(/ /g, ' ') })}
+        </Text>
+      ) : null}
       <FigureStrip items={items} />
-      {debt.kind === 'card' ? (
+      {debt.kind === 'card' && paidOffOn === null ? (
         <View style={{ gap: space.gapSm }}>
           <Caption text={t('decide.setup.loans.paysFull')} />
           <ChipRow label={t('decide.setup.loans.paysFullA11y', { name: debt.name })}>
@@ -107,7 +123,7 @@ export const LoansStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functio
   );
   const [draft, setDraft] = useState<Record<string, Exclude<PaysInFull, null>>>({});
   const answerOf = (d: DebtRow): PaysInFull => draft[d.id] ?? d.pays_in_full ?? null;
-  const changed = debts.filter((d) => d.kind === 'card' && draft[d.id] !== undefined && draft[d.id] !== (d.pays_in_full ?? null));
+  const changed = debts.filter((d) => d.kind === 'card' && paidOffDate(d, rc.today) === null && draft[d.id] !== undefined && draft[d.id] !== (d.pays_in_full ?? null));
 
   useReportReady(onReadyChange, true, null, changed.length > 0);
 
@@ -134,7 +150,7 @@ export const LoansStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functio
       ) : (
         <View style={{ gap: space.gapMd }}>
           {debts.map((d) => (
-            <DebtCard key={d.id} debt={d} answer={answerOf(d)} dueDay={dueDayOf(d)} onAnswer={(value) => setDraft({ ...draft, [d.id]: value })} />
+            <DebtCard key={d.id} debt={d} answer={answerOf(d)} dueDay={dueDayOf(d)} paidOffOn={paidOffDate(d, rc.today)} onAnswer={(value) => setDraft({ ...draft, [d.id]: value })} />
           ))}
         </View>
       )}
