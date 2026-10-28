@@ -102,6 +102,8 @@ export const V3_RUNTIME_EXPORTS = [
   'parseCheckV2',
   'planCard',
   'readStoredCheck',
+  'refine',
+  'refineNoise',
   'seenOf',
   'seriesDrift',
   'toStoredV2',

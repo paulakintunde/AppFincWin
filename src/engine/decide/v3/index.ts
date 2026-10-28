@@ -12,6 +12,8 @@ export { detectCandidates } from './month/recurring';
 export type { DetectContext, DetectRow } from './month/recurring';
 export { seriesDrift } from './month/series';
 export type { SeriesDrift } from './month/series';
+export { refine, refineNoise } from './month/refine';
+export type { RefineCard, RefineCardKind, RefineInput, RefineResult, RefineTrigger } from './month/refine';
 export { homeThresholds } from './bandEdges';
 export type { UsdRate } from './bandEdges';
 export { bandOf, layersFor } from './judge/bands';
