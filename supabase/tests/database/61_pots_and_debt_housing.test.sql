@@ -188,7 +188,7 @@ select extensions.is((select created_by from public.savings_goals where id = 'b6
 select extensions.throws_ok(
   $$insert into public.savings_goals (id, household_id, name, currency, target, ready_by, monthly_amount)
     values ('b6100000-0000-0000-0000-000000000005', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'M', 'USD', 1000, current_date + 30, 100)$$,
-  '42501', null, 'monthly_amount has no client insert grant');
+  '23514', null, 'a client pot with a monthly_amount and no bucket breaks the pot shape (05.2: monthly_amount is now granted)');
 select extensions.throws_ok(
   $$insert into public.savings_goals (id, household_id, name, currency, target, ready_by, check_id)
     values ('b6100000-0000-0000-0000-000000000005', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'M', 'USD', 1000, current_date + 30, 'c6100000-0000-0000-0000-000000000002')$$,
@@ -224,9 +224,9 @@ select extensions.throws_ok(
 select extensions.throws_ok(
   $$update public.savings_goals set currency = 'EUR' where id = 'b6100000-0000-0000-0000-000000000002'$$,
   '42501', null, 'a pot''s currency has no client update grant');
-select extensions.throws_ok(
+select extensions.lives_ok(
   $$update public.savings_goals set monthly_amount = 5 where id = 'b6100000-0000-0000-0000-000000000002'$$,
-  '42501', null, 'a pot''s monthly_amount has no client update grant');
+  'a non-bucket pot''s monthly_amount update is accepted and held by the guard (05.2: granted for buckets)');
 
 -- pot row: name, target, ready_by, opening_saved, done_at, deleted_at change
 select extensions.lives_ok(
