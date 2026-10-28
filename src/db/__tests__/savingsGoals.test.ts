@@ -181,4 +181,15 @@ describe('D-101 pot columns and keys', () => {
     await expect(insertSavingsGoal(client, { ...pot, ready_by: '2027-03' })).rejects.toBeInstanceOf(RangeError);
     expect(client.calls).toHaveLength(0);
   });
+
+  it('05.2 D-22 allows a bucket with no target or date; an ordinary pot without them is refused', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: goalRow(), error: null, status: 201 });
+    const bucket: NewPot = { ...pot, bucket: 'trip', target: null, ready_by: null, monthly_amount: 0 };
+    await expect(insertSavingsGoal(client, bucket)).resolves.toMatchObject({ id: ID_A });
+    await expect(insertSavingsGoal(client, { ...pot, target: null } as unknown as NewPot)).rejects.toBeInstanceOf(RangeError);
+    await expect(insertSavingsGoal(client, { ...pot, monthly_amount: 5 } as unknown as NewPot)).rejects.toBeInstanceOf(RangeError);
+    await expect(insertSavingsGoal(client, { ...bucket, monthly_amount: -1 })).rejects.toBeInstanceOf(RangeError);
+    expect(client.calls).toHaveLength(3);
+  });
 });

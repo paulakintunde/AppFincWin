@@ -155,6 +155,86 @@ describe('useAddPot', () => {
   });
 });
 
+describe('buckets, Held in and colour (05.2 D-22, D-05)', () => {
+  const BUCKET = {
+    name: 'College',
+    currency: 'GBP',
+    bucket: 'college' as const,
+    target: null,
+    ready_by: null,
+    monthly_amount: 20_000,
+    account_id: null,
+    color_key: 'slate' as const,
+    opening_saved: 0,
+  };
+
+  it('adds a bucket at a monthly amount with no goal and no date, one undo step', async () => {
+    const { fake, qc } = setup();
+    fake.respondWith(ok(pot('id-1', { ...BUCKET, kind: 'pot' })));
+    const { result } = await renderHook(() => useAddPot(), { wrapper: wrapper(qc) });
+
+    result.current.add({ householdId: 'hh-1', ownerId: 'user-1', pot: BUCKET });
+    await waitFor(() => expect(qc.getQueryData<SavingsGoalRow[]>(KEY)?.[0]?.monthly_amount).toBe(20_000));
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(fake.calls.find((c) => c.method === 'insert')?.args[0]).toEqual({
+      id: 'id-1',
+      household_id: 'hh-1',
+      kind: 'pot',
+      ...BUCKET,
+    });
+    expect(lastStep()).toMatchObject({ labelKey: 'potAdded', ops: [{ id: 'id-1', patch: { deleted_at: '$now' } }] });
+  });
+
+  it('adds a bucket at $0 a month', async () => {
+    const { fake, qc } = setup();
+    fake.respondWith(ok(pot('id-1', { bucket: 'trip', target: null, ready_by: null, monthly_amount: 0 })));
+    const { result } = await renderHook(() => useAddPot(), { wrapper: wrapper(qc) });
+    result.current.add({ householdId: 'hh-1', ownerId: 'user-1', pot: { ...BUCKET, monthly_amount: 0 } });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+  });
+
+  it('edits Held in with an undo step restoring the previous account', async () => {
+    const { fake, qc } = setup();
+    const row = pot('p1', { account_id: null });
+    qc.setQueryData(KEY, [row]);
+    fake.respondWith(ok([pot('p1', { account_id: 'a1', version: 2 })]));
+    const { result } = await renderHook(() => useEditPot(), { wrapper: wrapper(qc) });
+
+    result.current.edit(row, { account_id: 'a1' });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ account_id: 'a1' });
+    expect(lastStep()).toMatchObject({ labelKey: 'potEdited', ops: [{ id: 'p1', patch: { account_id: null } }] });
+  });
+
+  it('edits the colour', async () => {
+    const { fake, qc } = setup();
+    const row = pot('p1', { color_key: 'teal' });
+    qc.setQueryData(KEY, [row]);
+    fake.respondWith(ok([pot('p1', { color_key: 'plum', version: 2 })]));
+    const { result } = await renderHook(() => useEditPot(), { wrapper: wrapper(qc) });
+    result.current.edit(row, { color_key: 'plum' });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(lastStep().ops[0]).toMatchObject({ patch: { color_key: 'teal' } });
+  });
+
+  it('edits the monthly amount on a bucket and refuses it on an ordinary pot', async () => {
+    const { fake, qc } = setup();
+    const bucket = pot('b1', { bucket: 'college', target: null, ready_by: null, monthly_amount: 20_000 });
+    qc.setQueryData(KEY, [bucket]);
+    fake.respondWith(ok([{ ...bucket, monthly_amount: 30_000, version: 2 }]));
+    const { result } = await renderHook(() => useEditPot(), { wrapper: wrapper(qc) });
+
+    result.current.edit(bucket, { monthly_amount: 30_000 });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(lastStep().ops[0]).toMatchObject({ patch: { monthly_amount: 20_000 } });
+
+    const calls = fake.calls.length;
+    expect(() => result.current.edit(pot('p2'), { monthly_amount: 5 })).toThrow(RangeError);
+    expect(fake.calls).toHaveLength(calls);
+  });
+});
+
 describe('useEditPot', () => {
   it('D-101 every pot action is one undo step with its label (edit)', async () => {
     const { fake, qc } = setup();

@@ -101,7 +101,7 @@ export function registerDecidePotMutations(qc: QueryClient): void {
         ...vars.row,
         created_by: vars.ownerId,
         check_id: null,
-        monthly_amount: null,
+        monthly_amount: vars.row.monthly_amount ?? null,
         done_at: null,
         is_sample: false,
         deleted_at: null,
@@ -204,13 +204,22 @@ export function registerDecidePotMutations(qc: QueryClient): void {
   });
 }
 
-export interface NewPotInput {
+interface NewPotInputBase {
   name: string;
   currency: string;
-  target: number;
-  ready_by: string;
   opening_saved: number;
+  account_id?: string | null;
+  color_key?: SavingsGoalRow['color_key'];
 }
+/** 05.2 D-22: a bucket needs no date and may have no goal; an ordinary pot keeps its target and ready-by date. */
+export type NewPotInput =
+  | (NewPotInputBase & { target: number; ready_by: string; bucket?: undefined; monthly_amount?: undefined })
+  | (NewPotInputBase & {
+      bucket: NonNullable<SavingsGoalRow['bucket']>;
+      target: number | null;
+      ready_by: null;
+      monthly_amount: number;
+    });
 
 /** Add a pot. Returns the client-generated id and the undo step id; the caller toasts "Pot added" with Undo. */
 export function useAddPot(): {
@@ -252,7 +261,7 @@ function beforeOf(row: SavingsGoalRow, keys: readonly (keyof SavingsGoalPatch)[]
   return before;
 }
 
-/** Edit name, target, date or opening amount. Returns the undo step id. */
+/** Edit name, target, date, opening amount, Held in account, colour or (buckets only) monthly amount. Returns the undo step id. */
 export function useEditPot(): { edit(row: SavingsGoalRow, patch: SavingsGoalPatch): string } {
   const mutation = useEditPotMutation();
   return {
@@ -263,6 +272,9 @@ export function useEditPot(): { edit(row: SavingsGoalRow, patch: SavingsGoalPatc
         throw new RangeError('edit pot: use delete, done or reopen for those');
       }
       if (row.kind === 'wait') throw new RangeError('edit pot: a Wait goal is edited through its check');
+      if (keys.includes('monthly_amount') && !row.bucket) {
+        throw new RangeError('edit pot: monthly amount belongs to a saving bucket');
+      }
       const stepId = newStepId();
       mutation.mutate({
         id: row.id,
