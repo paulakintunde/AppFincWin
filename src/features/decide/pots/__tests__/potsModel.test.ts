@@ -1,5 +1,5 @@
 import type { SavingsGoalRow } from '@/db/savingsGoals';
-import { buildPotRow, buildPotsModel, checkPotMonth, lastDayOfMonth, lineThreeKey, maxPotMonth } from '../potsModel';
+import { buildPotRow, buildPotsModel, checkPotMonth, lastDayOfMonth, lineThreeKey, maxPotMonth, validatePot } from '../potsModel';
 import { goal } from '../../past/__tests__/helpers/pastFixtures';
 
 const TODAY = '2026-10-15';
@@ -98,5 +98,29 @@ describe('buildPotsModel', () => {
     expect(buildPotsModel(plain, [], (r) => amounts(r), TODAY).addDisabled).toBe(true);
     expect(buildPotsModel(plain.slice(0, 49), [], (r) => amounts(r), TODAY).addDisabled).toBe(false);
     expect(buildPotsModel([...plain.slice(0, 49), goal('c')], [], (r) => amounts(r), TODAY).addDisabled).toBe(false);
+  });
+});
+
+describe('validatePot', () => {
+  it('D-22 accepts a bucket with no target and no date, at 0 a month', () => {
+    expect(validatePot({ bucket: 'trip', target: null, ready_by: null, monthly_amount: 0 })).toBe('ok');
+    expect(validatePot({ bucket: 'trip', monthly_amount: 20_000, target: 500_000 })).toBe('ok');
+  });
+  it('D-22 refuses a bucket target of 0 or below, and a bad monthly amount', () => {
+    expect(validatePot({ bucket: 'trip', target: 0 })).toBe('target_out_of_range');
+    expect(validatePot({ bucket: 'trip', target: -5 })).toBe('target_out_of_range');
+    expect(validatePot({ bucket: 'trip', target: 1_000_000_000_001 })).toBe('target_out_of_range');
+    expect(validatePot({ bucket: 'trip', monthly_amount: -1 })).toBe('monthly_out_of_range');
+    expect(validatePot({ bucket: 'trip', monthly_amount: 1_000_000_000_001 })).toBe('monthly_out_of_range');
+    expect(validatePot({ bucket: 'trip', monthly_amount: 1.5 })).toBe('monthly_out_of_range');
+  });
+  it('D-22 keeps ordinary pots needing a target above 0 and a ready-by date', () => {
+    expect(validatePot({ target: 60_000, ready_by: '2027-03-31' })).toBe('ok');
+    expect(validatePot({ bucket: null, target: null, ready_by: '2027-03-31' })).toBe('target_required');
+    expect(validatePot({ ready_by: '2027-03-31' })).toBe('target_required');
+    expect(validatePot({ target: 0, ready_by: '2027-03-31' })).toBe('target_out_of_range');
+    expect(validatePot({ target: 60_000 })).toBe('ready_by_required');
+    expect(validatePot({ target: 60_000, ready_by: null })).toBe('ready_by_required');
+    expect(validatePot({ target: 60_000, ready_by: '' })).toBe('ready_by_required');
   });
 });
