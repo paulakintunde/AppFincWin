@@ -43,6 +43,7 @@ import { GroupHeader } from './GroupHeader';
 import { monthRefreshKeys } from './refreshKeys';
 import { formatMonthLabel } from './MonthSwitcher';
 import { RecurringReviewSheet } from './RecurringReviewSheet';
+import { HowArePaidCard } from './HowArePaidCard';
 import { SeriesOfferCard } from './SeriesOfferCard';
 import { TransactionDetailSheet } from './TransactionDetailSheet';
 import { CalendarView } from './views/CalendarView';
@@ -361,9 +362,12 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
           unpaidOnly={filter.unpaidOnly}
           onClearUnpaid={() => vm.setFilter({ ...filter, unpaidOnly: false })}
           offerCard={
-            vm.offers.length > 0 ? (
-              <SeriesOfferCard offers={vm.offers} rowsById={vm.rowsById} onReview={() => vm.setReviewOpen(true)} />
-            ) : null
+            <>
+              <HowArePaidCard />
+              {vm.offers.length > 0 ? (
+                <SeriesOfferCard offers={vm.offers} rowsById={vm.rowsById} onReview={() => vm.setReviewOpen(true)} />
+              ) : null}
+            </>
           }
         />
       </View>
