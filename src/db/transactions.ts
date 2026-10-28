@@ -266,6 +266,45 @@ export async function fetchTransactionsSearch(
   return (data as TransactionRow[] | null) ?? [];
 }
 
+/** Ids per `in` filter: keeps the request URL well under the gateway limit. */
+export const IDS_CHUNK = 100;
+
+/**
+ * 05.2-33 (D-10): every live refund that names a purchase, in any month. User-linked rows only, so the set is small;
+ * paged like a month read. Soft-deleted rows are excluded by the active view.
+ */
+export async function fetchLinkedRefunds(client: DbClient, householdId: string): Promise<TransactionRow[]> {
+  return fetchAllPages<TransactionRow>((from, withCount) =>
+    client
+      .from(ACTIVE_VIEW)
+      .select(TRANSACTION_COLUMNS, withCount ? { count: 'exact' } : undefined)
+      .eq('household_id', householdId)
+      .not('refund_of', 'is', null)
+      .order('local_date', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, from + MONTH_PAGE_SIZE - 1)
+  );
+}
+
+/** 05.2-33 (D-10): live rows of one household by id (the purchases that refunds in view point at), chunked. */
+export async function fetchTransactionsByIds(
+  client: DbClient,
+  householdId: string,
+  ids: readonly string[]
+): Promise<TransactionRow[]> {
+  const out: TransactionRow[] = [];
+  for (let i = 0; i < ids.length; i += IDS_CHUNK) {
+    const { data, error, status } = await client
+      .from(ACTIVE_VIEW)
+      .select(TRANSACTION_COLUMNS)
+      .eq('household_id', householdId)
+      .in('id', ids.slice(i, i + IDS_CHUNK) as string[]);
+    if (error) throw toDbError(error, status);
+    out.push(...((data as TransactionRow[] | null) ?? []));
+  }
+  return out;
+}
+
 /**
  * Reads a date range on the household (optionally narrowed to one account), oldest first --
  * the shape the import pipeline needs for duplicate detection (with external_id/import_format)

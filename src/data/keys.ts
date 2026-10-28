@@ -79,6 +79,11 @@ export const queryKeys = {
   decideAnswers: (userId: string, householdId: string) => ['decide-answers', userId, householdId] as const,
   recurringDismissals: (householdId: string) => ['recurring-dismissals', householdId] as const,
   incomePayerPrompts: (householdId: string) => ['income-payer-prompts', householdId] as const,
+  // 05.2-33 (D-10): refund links across every month. Under transactionsRoot so any transaction write refreshes them.
+  refundLinks: (householdId: string) => ['transactions', householdId, 'refund-links'] as const,
+  refundPurchases: (householdId: string, ids: string) => ['transactions', householdId, 'refund-purchases', ids] as const,
+  refundCandidates: (householdId: string, from: string, to: string) =>
+    ['transactions', householdId, 'refund-candidates', from, to] as const,
 };
 
 export const mutationKeys = {
