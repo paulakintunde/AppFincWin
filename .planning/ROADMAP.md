@@ -980,8 +980,8 @@ Plans:
 - [x] 05.2-31-PLAN.md — Shadow and I28 re-run with owner approval of new fits (checkpoint, D-11) (wave 4)
 - [x] 05.2-32-PLAN.md — Stepper assembly: registry, Welcome, Summary, setup route, standalone mode (wave 5)
 - [x] 05.2-33-PLAN.md — Refund picker and detail rows (wave 5)
-- [ ] 05.2-34-PLAN.md — Decide settings: rows, edit one step, Reset (wave 6)
-- [ ] 05.2-35-PLAN.md — Test-account setup page and engine readout on the Decide tab (wave 6)
+- [x] 05.2-34-PLAN.md — Decide settings: rows, edit one step, Reset (wave 6)
+- [x] 05.2-35-PLAN.md — Test-account setup page and engine readout on the Decide tab (wave 6)
 - [ ] 05.2-36-PLAN.md — [BLOCKING] Full gate, owner-approved production push, owner flag, Pixel walkthrough (wave 7)
 
 ### Phase 05.3: Decide screens v3 (INSERTED)
@@ -1139,7 +1139,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
-| 05.2 Decide data and setup | 33/36 | In progress | - |
+| 05.2 Decide data and setup | 35/36 | In progress | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
