@@ -954,11 +954,11 @@ Plans:
 - [x] 05.2-05-PLAN.md — Per-account switch: decideEngine(flags), profile read, useDecideAccess (wave 1)
 - [x] 05.2-06-PLAN.md — Pure month/refine.ts behind the owner noise-rule decision (checkpoint) (wave 1)
 - [x] 05.2-07-PLAN.md — 05.2 write-queue keys and mutation module registry (wave 1)
-- [ ] 05.2-08-PLAN.md — apply_patches v3 (new entities and columns), undo replay and erasure pgTAP 69-70 (wave 2)
-- [ ] 05.2-09-PLAN.md — D-23 set-aside max(buckets, saving) and five refund goldens (wave 2)
-- [ ] 05.2-10-PLAN.md — Widen existing db modules for the 05.2 columns + grant-mirror test (wave 2)
-- [ ] 05.2-11-PLAN.md — db modules and read hooks for the three new tables (wave 2)
-- [ ] 05.2-12-PLAN.md — Undo entities and labels, export manifest and its guard (wave 2)
+- [x] 05.2-08-PLAN.md — apply_patches v3 (new entities and columns), undo replay and erasure pgTAP 69-70 (wave 2)
+- [x] 05.2-09-PLAN.md — D-23 set-aside max(buckets, saving) and five refund goldens (wave 2)
+- [x] 05.2-10-PLAN.md — Widen existing db modules for the 05.2 columns + grant-mirror test (wave 2)
+- [x] 05.2-11-PLAN.md — db modules and read hooks for the three new tables (wave 2)
+- [x] 05.2-12-PLAN.md — Undo entities and labels, export manifest and its guard (wave 2)
 - [ ] 05.2-13-PLAN.md — Settings writes with Undo: setup steps, Reset, refine stamps, unexplained answer (wave 3)
 - [ ] 05.2-14-PLAN.md — Account use, mixed placement and emergency fund batch writes (D-04) (wave 3)
 - [ ] 05.2-15-PLAN.md — Confirm candidate, dismissals, series attributes, pays-in-full (wave 3)
@@ -1139,7 +1139,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
-| 05.2 Decide data and setup | 7/36 | In progress | - |
+| 05.2 Decide data and setup | 12/36 | In progress | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
