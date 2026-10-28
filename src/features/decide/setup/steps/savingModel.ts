@@ -52,3 +52,13 @@ export function bucketReadiness(saved: number, monthly: number, target: number |
 export function splitMonths(months: number): { years: number; months: number } {
   return { years: Math.floor(months / 12), months: months % 12 };
 }
+
+const PER_YEAR = { weekly: 52, fortnightly: 26, monthly: 12, quarterly: 4, yearly: 1 } as const;
+
+/**
+ * The series amount whose monthly equivalent is `monthly`: the inverse of the engine's monthlyEquivalent
+ * (weekly x 52 / 12 and so on), rounded half up. The caller checks the round trip before offering Raise.
+ */
+export function amountForMonthly(freq: keyof typeof PER_YEAR, monthly: number): number {
+  return Math.round((monthly * 12) / PER_YEAR[freq]);
+}
