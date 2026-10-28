@@ -61,6 +61,31 @@ describe('buildMonthModel', () => {
     expect(setAsideOf({ ...base, series: [...base.series, inv] })).toBe(40000);
   });
 
+  describe('D-23 buckets are carved out of regular saving', () => {
+    const base = sam();
+    const noSet = { ...base, series: base.series.filter((s) => s.role !== 'saving' && s.role !== 'investing'), envelopes: [] };
+    const sv = (amount: number, savingMode: 'fixed' | 'flexible' = 'fixed') =>
+      v3Series({ id: `sv${amount}`, role: 'saving', cadence: MONTHLY, anchorDate: '2026-04-09', amount, savingMode });
+    const env = (id: string, monthlyAmount: number, bucket: boolean) => ({
+      id, kind: 'pot' as const, target: null, monthlyAmount: mu(monthlyAmount), readyBy: null, saved: mu(0), purposeId: null, bucket,
+    });
+    const of = (series: ReturnType<typeof sv>[], envelopes: ReturnType<typeof env>[]) =>
+      setAsideOf({ ...noSet, series: [...noSet.series, ...series], envelopes });
+
+    it('saving 30000 + buckets 30000 counts 30000', () => expect(of([sv(30000)], [env('b', 30000, true)])).toBe(30000));
+    it('saving 30000 + buckets 50000 counts 50000', () => expect(of([sv(30000)], [env('b', 50000, true)])).toBe(50000));
+    it('saving 30000 + buckets 10000 counts 30000', () => expect(of([sv(30000)], [env('b', 10000, true)])).toBe(30000));
+    it('no buckets: saving plus all envelopes as before', () => expect(of([sv(30000)], [env('e', 15000, false)])).toBe(45000));
+    it('buckets only counts the bucket total', () => expect(of([], [env('b', 20000, true)])).toBe(20000));
+    it('flexible saving never counts beside buckets', () => expect(of([sv(30000, 'flexible')], [env('b', 20000, true)])).toBe(20000));
+    it('non-bucket envelope adds in full beside saving and buckets', () =>
+      expect(of([sv(30000)], [env('e', 15000, false), env('b', 30000, true)])).toBe(45000));
+    it('investing and saving share one fixed total', () => {
+      const inv = v3Series({ id: 'iv2', role: 'investing', cadence: MONTHLY, anchorDate: '2026-04-09', amount: 10000, savingMode: 'fixed' });
+      expect(setAsideOf({ ...noSet, series: [sv(20000), inv], envelopes: [env('b', 25000, true)] })).toBe(30000);
+    });
+  });
+
   it('I34 unconfirmed candidates never reach the month', () => {
     const base = sam();
     const plain = buildMonthModel(base);
