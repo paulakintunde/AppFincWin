@@ -2125,7 +2125,7 @@ const en = {
       statusA11y: '{{heading}}. {{body}}',
       readoutA11y: 'What Decide receives, for test accounts only',
       loadingA11y: 'Loading your figures',
-      unspentFigure: '{{amount}} · {{state}}',
+      roughBodyFigures: 'Some answers rest on rough figures typed with fewer than 3 months of records.',
     },
     // 05-140 (D-107): the FAB is back on Decide home
     fab: { label: 'New check', a11y: 'Starts a new affordability check' },
