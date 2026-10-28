@@ -9,7 +9,6 @@
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import { Text } from '@/ui/Text';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
@@ -29,6 +28,7 @@ import { useSaveEmergencyFund } from '@/data/mutations/accountUse';
 import { accountUseOfRow, emergencyLinkUse } from '@/data/mutations/accountUseModel';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
+import { InfoGlyph } from '@/features/decide/ui/InfoButton';
 import { MoneyInput } from '@/features/decide/ui/MoneyInput';
 import { SegmentedToggle } from '@/features/decide/ui/SegmentedToggle';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
@@ -77,6 +77,11 @@ export interface EmergencyFundForm {
   asks: boolean;
   /** What the account's use becomes on save (D-04), or null when unchanged. */
   linkUse: AccountUse | null;
+  /** 05.2-37 (e): the chosen account ends up as a mix, so the fund is a stated amount (capped at the live balance by the engine). */
+  mixed: boolean;
+  /** The stated amount for a mixed account, prefilled with the balance until the user types. */
+  mixedAmount: number | null;
+  setMixedAmount(minor: number | null): void;
   /** The step found an account already kept for the emergency fund and pre-filled it. */
   prefilled: AccountRow | null;
   /** About three months of regular payments and everyday spending, or null when unknown. */
@@ -136,9 +141,14 @@ export function useEmergencyFundForm(variant: 'step' | 'sheet'): EmergencyFundFo
   }, [variant, hasStored, accounts]);
 
   const [draft, setDraft] = useState<FundValue | null>(null);
+  const [mixedTyped, setMixedTyped] = useState(false);
   const base: FundValue = prefilled !== null ? { ...EMPTY, mode: 'account', accountId: prefilled.id, goal: storedGoal } : stored;
   const value = draft ?? base;
-  const set = (patch: Partial<FundValue>): void => setDraft({ ...value, ...patch });
+  const set = (patch: Partial<FundValue>): void => {
+    // Another account starts the mixed amount over from that account's balance.
+    if (patch.accountId !== undefined) setMixedTyped(false);
+    setDraft({ ...value, ...patch });
+  };
 
   const chosenEntry = value.mode === 'account' ? (accounts.find((a) => a.account.id === value.accountId) ?? null) : null;
   const chosen = chosenEntry?.account ?? null;
@@ -146,17 +156,27 @@ export function useEmergencyFundForm(variant: 'step' | 'sheet'): EmergencyFundFo
   const asks = chosen !== null && !alreadySettled(chosen);
   const linkUse = chosen !== null && asks ? emergencyLinkUse(currentUseOf(chosen), value.holdsSpending) : null;
 
+  // 05.2-37 (e): in a mixed account the fund is a stated amount; any other linked account follows its whole balance.
+  const resultUse = chosen === null ? null : (linkUse ?? currentUseOf(chosen));
+  const mixed = value.mode === 'account' && resultUse?.kind === 'mixed';
+  const mixedSeed = chosenBalance === null ? null : Math.min(Math.max(0, chosenBalance), MAX_INPUT_MINOR);
+  const mixedAmount = mixedTyped ? value.amount : (value.amount ?? mixedSeed);
+  const setMixedAmount = (minor: number | null): void => {
+    setMixedTyped(true);
+    setDraft({ ...value, amount: clamp(minor) });
+  };
+
   const currency = chosen?.currency ?? settings?.currency ?? rc.homeCurrency;
 
   // The amount written: a typed amount, or the chosen account's balance (kept as it was when the balance is unknown).
-  const amountOut = value.mode === 'amount' ? value.amount : value.mode === 'account' ? (chosenBalance ?? storedAmount) : null;
+  const amountOut = value.mode === 'amount' ? value.amount : value.mode === 'account' ? (mixed ? mixedAmount : (chosenBalance ?? storedAmount)) : null;
   const accountOut = value.mode === 'account' && chosen !== null ? chosen.id : null;
   const goalOut = value.mode === 'notSet' ? value.goal : storedGoal;
 
   const valid =
     value.mode === 'notSet' ||
     (value.mode === 'amount' && value.amount !== null) ||
-    (value.mode === 'account' && chosen !== null);
+    (value.mode === 'account' && chosen !== null && (!mixed || mixedAmount !== null));
 
   const changed = amountOut !== storedAmount || accountOut !== storedAccountId || goalOut !== storedGoal || linkUse !== null;
   const dirty = draft !== null && value.mode !== null && valid && changed;
@@ -173,6 +193,9 @@ export function useEmergencyFundForm(variant: 'step' | 'sheet'): EmergencyFundFo
     chosenBalance,
     asks,
     linkUse,
+    mixed,
+    mixedAmount,
+    setMixedAmount,
     prefilled: prefilled !== null && draft === null ? prefilled : null,
     threeMonths,
     currency,
@@ -197,14 +220,6 @@ export function useEmergencyFundForm(variant: 'step' | 'sheet'): EmergencyFundFo
       return result;
     },
   };
-}
-
-function ShieldGlyph({ color }: { color: string }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 20 20" accessibilityElementsHidden importantForAccessibility="no">
-      <Path d="M10 2.5l6 2.2v4.6c0 3.6-2.5 6.3-6 8.2-3.5-1.9-6-4.6-6-8.2V4.7z" stroke={color} strokeWidth={1.6} fill="none" strokeLinejoin="round" />
-    </Svg>
-  );
 }
 
 function AccountPicker({ form, onClose }: { form: EmergencyFundForm; onClose: () => void }) {
@@ -285,7 +300,15 @@ export function EmergencyFundFields({ form, usedLine = null }: EmergencyFundFiel
 
   const amountBlock = (
     <View style={{ gap: space.gapSm }}>
-      {accountMode && form.chosen !== null ? (
+      {accountMode && form.mixed ? (
+        <MoneyInput
+          value={form.mixedAmount}
+          currency={form.currency}
+          onChange={form.setMixedAmount}
+          label={t('decide.setup.emergency.amountCaption')}
+          accessibilityLabel={t('decide.setup.emergency.amountCaption')}
+        />
+      ) : accountMode && form.chosen !== null ? (
         <View accessible accessibilityLabel={`${t('decide.setup.emergency.amountCaption')}, ${t('decide.setup.emergency.follows', { balance: form.chosenBalance === null ? '' : noWrap(form.chosenBalance) })}`} style={{ gap: 2 }}>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('decide.setup.emergency.amountCaption')}</Text>
           {form.chosenBalance !== null ? (
@@ -383,7 +406,7 @@ export function EmergencyFundFields({ form, usedLine = null }: EmergencyFundFiel
       {!isStep && usedLine ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{usedLine}</Text> : null}
       {(
         <View style={[styles.tile, { backgroundColor: colors.fill2 }]}>
-          <ShieldGlyph color={colors.inkDim} />
+          <InfoGlyph size={16} color={colors.inkDim} />
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.inkDim, flex: 1, flexShrink: 1 }}>
             {t('decide.setup.emergency.infoTile')}
           </Text>

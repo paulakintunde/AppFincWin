@@ -84,14 +84,43 @@ describe('EmergencyStep (D-04)', () => {
     expect(screen.getByText('High-interest savings will be set to: kept for the emergency fund.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Yes'));
     expect(screen.getByText('High-interest savings will be set to: a mix.')).toBeTruthy();
+    // 05.2-37 (e): a mix takes a stated amount, prefilled with the balance, not "follows this account".
+    expect(screen.queryByText('The amount follows this account’s balance.')).toBeNull();
+    expect(screen.getByLabelText('Amount kept for emergencies')).toBeTruthy();
+  });
+
+  it('asks the fund amount for a dedicated account no more than it follows the balance', async () => {
+    await mountStep();
+    await choose('High-interest savings');
     expect(screen.getByText('The amount follows this account’s balance.')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount kept for emergencies')).toBeNull();
   });
 
   it('asks nothing for a mixed account', async () => {
     await mountStep();
     await choose('Rainy day');
     expect(screen.queryByText('Does this account also hold money you spend?')).toBeNull();
-    expect(screen.getByText('The amount follows this account’s balance.')).toBeTruthy();
+    expect(screen.queryByText('The amount follows this account’s balance.')).toBeNull();
+    expect((screen.getByLabelText('Amount kept for emergencies').props as { value: string }).value).toMatch(/9,?000/);
+  });
+
+  it('saves the prefilled balance for a mixed account when the amount is untouched', async () => {
+    const first = await mountStep();
+    await choose('Rainy day');
+    await act(async () => {
+      first.ref.current!.save();
+    });
+    expect((mockSave.mock.calls[0]![0] as { amount: number }).amount).toBe(900000);
+  });
+
+  it('saves a typed amount for a mixed account', async () => {
+    const { ref } = await mountStep();
+    await choose('Rainy day');
+    await fireEvent.changeText(screen.getByLabelText('Amount kept for emergencies'), '2500');
+    await act(async () => {
+      ref.current!.save();
+    });
+    expect(mockSave.mock.calls[0]![0]).toMatchObject({ amount: 250000, accountId: 'a2', linkUse: null });
   });
 
   it('saves once with the account and the use it becomes', async () => {
