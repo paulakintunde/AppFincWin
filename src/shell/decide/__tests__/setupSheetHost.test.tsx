@@ -10,17 +10,19 @@ import { pickEditRow, useSetupSheetHost } from '../SetupSheetHost';
 const mockOpenEntry = jest.fn();
 const mockPush = jest.fn();
 const mockFetch = jest.fn();
+const mockOpenDebtSheet = jest.fn();
 
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ householdId: 'h1', today: '2026-10-15' }) }));
 jest.mock('@/features/record/entry/entryHost', () => ({ openEntry: (m: unknown) => mockOpenEntry(m) }));
+jest.mock('@/features/decide/setup/debtSheetHost', () => ({ openDebtSheet: (r: unknown) => mockOpenDebtSheet(r) }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPush(h) }));
 jest.mock('@/db/transactions', () => ({ fetchTransactionsInRange: (...a: unknown[]) => mockFetch(...a) }));
 
 const row = (over: Partial<TransactionRow>): TransactionRow => ({ id: 'r', recurring_series_id: null, local_date: '2026-09-01', status: 'paid', ...over }) as TransactionRow;
 
 beforeEach(() => {
-  [mockOpenEntry, mockPush, mockFetch].forEach((m) => m.mockReset());
+  [mockOpenEntry, mockPush, mockFetch, mockOpenDebtSheet].forEach((m) => m.mockReset());
   resetToastForTests();
 });
 
@@ -78,13 +80,14 @@ describe('useSetupSheetHost', () => {
     expect(mockPush).toHaveBeenCalledWith('/decide/setup?only=accountUse');
   });
 
-  it('loan Edit and Add say the editor is not available here (the app has no debt editor)', async () => {
+  it('loan Edit and Add open the loan and card sheet, not the editor-unavailable toast', async () => {
     await renderHook(() => useSetupSheetHost());
-    setupSheetActions().editDebt({} as never);
-    expect(getToast()?.text?.key).toBe('decide.setup.shell.editorUnavailable');
-    resetToastForTests();
+    const debt = { id: 'd1', name: 'Visa' } as never;
+    setupSheetActions().editDebt(debt);
+    expect(mockOpenDebtSheet).toHaveBeenLastCalledWith({ mode: 'edit', debt });
     setupSheetActions().addDebt('card');
-    expect(getToast()?.text?.key).toBe('decide.setup.shell.editorUnavailable');
+    expect(mockOpenDebtSheet).toHaveBeenLastCalledWith({ mode: 'add', kind: 'card' });
+    expect(getToast()).toBeNull();
   });
 
   it('removes its actions on unmount', async () => {

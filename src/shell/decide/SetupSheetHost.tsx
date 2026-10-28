@@ -7,8 +7,8 @@
 //  - "+ Add a regular payment": opens a new expense in the entry sheet (Repeats is on the sheet). The quick-pick name is
 //    not prefilled: the entry prefill needs an account and an amount the step does not have.
 //  - Account use "Set them": opens the account-use step on its own (edit-one-step) over the unspent step.
-//  - Loans "Edit" and "Add a loan or card": the app has no stand-alone debt editor (debts are only edited inside the
-//    check flow), so these say so plainly in a toast instead of doing nothing.
+//  - Loans "Edit" and "Add a loan or card" (05.2-43): open the loan and card sheet (DebtSheet, mounted by SetupRoute) in edit
+//    or add mode. The "editor unavailable" toast stays only for the regular-payment fallbacks.
 import { useEffect } from 'react';
 import type { Href } from 'expo-router';
 import { monthRange } from '@/engine/time';
@@ -16,6 +16,7 @@ import type { TransactionRow } from '@/db/rows';
 import { fetchTransactionsInRange } from '@/db/transactions';
 import { openEntry } from '@/features/record/entry/entryHost';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import { openDebtSheet } from '@/features/decide/setup/debtSheetHost';
 import { registerSetupSheetActions, type SetupSheetActions } from '@/features/decide/setup/steps/setupSheetHost';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { supabase } from '@/services/supabase';
@@ -71,8 +72,8 @@ export function useSetupSheetHost(): void {
         void openRow('series' in target ? { seriesId: target.series.id } : { rowIds: target.candidate.rowIds });
       },
       addRegular: () => openEntry({ kind: 'new', direction: 'out' }),
-      editDebt: unavailable,
-      addDebt: unavailable,
+      editDebt: (debt) => openDebtSheet({ mode: 'edit', debt }),
+      addDebt: (kind) => openDebtSheet({ mode: 'add', kind }),
       editAccountUse: () => pushOnce('/decide/setup?only=accountUse' as Href),
     };
     return registerSetupSheetActions(actions);

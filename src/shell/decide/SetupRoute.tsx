@@ -11,6 +11,7 @@ import { SETUP_STEP_KEYS, type SetupStepKey } from '@/features/decide/setup/setu
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { EditSeriesFromProvider } from '@/features/income/steps/EditSeriesFromProvider';
 import { oneParam } from '@/features/navigation/routeParams';
+import { DebtSheetHost } from '@/features/decide/setup/DebtSheet';
 import { useSetupSheetHost } from './SetupSheetHost';
 
 const DECIDE_TAB = '/decide' as Href;
@@ -35,6 +36,7 @@ function SetupRouteBody(): React.JSX.Element {
   const startAt = stepParam(p.startAt, notWelcome);
   return (
     <EditSeriesFromProvider>
+      <DebtSheetHost />
       <SetupScreen mode={mode} {...(startAt !== undefined ? { startAt } : {})} {...(only !== undefined ? { only } : {})} />
     </EditSeriesFromProvider>
   );
