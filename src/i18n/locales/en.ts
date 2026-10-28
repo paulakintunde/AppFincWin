@@ -283,6 +283,9 @@ const en = {
         savings_goals: 'Savings goal',
         decide_settings: 'Decide settings',
         statement_periods: 'Statement period',
+        decide_answers: 'Decide answer',
+        recurring_dismissals: 'Dismissed recurring',
+        income_payer_prompts: 'Income source',
         unknown: 'Change',
       },
       reason: {
