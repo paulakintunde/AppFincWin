@@ -9,6 +9,9 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 47, bottom: 12, left: 0, right: 0 }),
 }));
 jest.setTimeout(20000);
+// 05.2-33: the sheet reads the Decide switch; these tests cover the switch-off sheet.
+jest.mock('@/services/supabase', () => ({ supabase: {} }));
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({ data: [{ id: 'a1', name: 'Everyday' }, { id: 'a2', name: 'Savings' }] }),
 }));

@@ -12,9 +12,10 @@ import Animated from 'react-native-reanimated';
 import { Text } from '@/ui/Text';
 import { FlashList } from '@shopify/flash-list';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
+import type { TransactionRow } from '@/db/rows';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useIncomePayerPrompts } from '@/data/queries/incomePayerPrompts';
-import { refundTotals } from '@/data/mutations/refundLinkModel';
+import { useRefundLinks } from '@/data/queries/refundLinks';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { useBulkDelete, useBulkMarkPaid, useBulkMarkUnpaid } from '@/data/mutations/patches';
 import { EditScopePrompt } from '@/features/record/entry/EditScopePrompt';
@@ -49,7 +50,9 @@ import { RecurringReviewSheet } from './RecurringReviewSheet';
 import { HowArePaidCard } from './HowArePaidCard';
 import { incomeChipState, isIncomeRow, rulesByPayer } from './IncomeTagChip';
 import { IncomeTagSheet } from './IncomeTagSheet';
+import { RefundPickerSheet } from './RefundPickerSheet';
 import { refundTagFor } from './RefundTag';
+import { asActivityRow, type PickerDirection } from './refundPickerModel';
 import { SeriesOfferCard } from './SeriesOfferCard';
 import { TransactionDetailSheet } from './TransactionDetailSheet';
 import { CalendarView } from './views/CalendarView';
@@ -104,8 +107,9 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
   const { v3 } = useDecideAccess();
   const payerRules = useIncomePayerPrompts(v3 ? (rc.householdId ?? undefined) : undefined);
   const rulesByKey = useMemo(() => rulesByPayer(payerRules.data ?? []), [payerRules.data]);
-  const rowsByIdOnScreen = useMemo(() => new Map(itemRows.map((r) => [r.id, r] as const)), [itemRows]);
-  const refundSums = useMemo(() => (v3 ? refundTotals(itemRows) : new Map<string, number>()), [v3, itemRows]);
+  // 05.2-33 (D-10): refund links in every month, not only the rows loaded for this one.
+  const refundLinks = useRefundLinks(rc.householdId, itemRows, v3);
+  const [refundPicker, setRefundPicker] = useState<{ row: TransactionRow; direction: PickerDirection } | null>(null);
   const [incomeSheet, setIncomeSheet] = useState<{ row: ActivityRowView; newPayer: boolean } | null>(null);
   // D-10: the FAB steps aside while rows are being selected.
   useHideFab('bulkSelect', selection.active);
@@ -262,10 +266,10 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
       balanceNote={vm.balanceNotes.get(row.id)}
       incomeChip={v3 && isIncomeRow(row) ? incomeChipState(row, rulesByKey) : null}
       onIncomeChipPress={(r) => setIncomeSheet({ row: r, newPayer: incomeChipState(r, rulesByKey).state === 'new' })}
-      refundTag={v3 ? refundTagFor(row, rowsByIdOnScreen, refundSums) : null}
+      refundTag={v3 ? refundTagFor<TransactionRow>(row, refundLinks.rowsById, refundLinks.totals) : null}
       onRefundTagPress={(purchaseId) => {
-        const purchase = rowsByIdOnScreen.get(purchaseId);
-        if (purchase !== undefined) flow.openDetail(purchase);
+        const purchase = refundLinks.rowsById.get(purchaseId);
+        if (purchase !== undefined) flow.openDetail(asActivityRow(purchase));
       }}
     />
   );
@@ -546,13 +550,42 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
         prevMonthName={vm.monthTools.prevMonthName}
         onSelect={onMoreSelect}
       />
-      <TransactionDetailSheet {...flow.detail} today={rc.today} />
+      <TransactionDetailSheet
+        {...flow.detail}
+        today={rc.today}
+        refundCallbacks={
+          v3
+            ? {
+                onRefundPicker: (r, direction) => {
+                  flow.detail.onDismiss();
+                  setRefundPicker({ row: r, direction });
+                },
+                onIncomeType: (r) => {
+                  flow.detail.onDismiss();
+                  setIncomeSheet({ row: asActivityRow(r), newPayer: incomeChipState(r, rulesByKey).state === 'new' });
+                },
+                onOpenRow: (r) => flow.openDetail(asActivityRow(r)),
+              }
+            : undefined
+        }
+      />
       <IncomeTagSheet
         visible={v3 && incomeSheet !== null}
         tx={incomeSheet?.row ?? null}
         newPayer={incomeSheet?.newPayer ?? false}
         formatter={formatter}
         onClose={() => setIncomeSheet(null)}
+        onRefundLink={(r) => {
+          setIncomeSheet(null);
+          setRefundPicker({ row: r, direction: 'refund->purchase' });
+        }}
+      />
+      <RefundPickerSheet
+        visible={v3 && refundPicker !== null}
+        direction={refundPicker?.direction ?? 'refund->purchase'}
+        anchor={refundPicker?.row ?? null}
+        formatter={formatter}
+        onClose={() => setRefundPicker(null)}
       />
       <ProjectionDetailSheet
         projection={projection}

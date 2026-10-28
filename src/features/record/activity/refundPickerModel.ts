@@ -1,7 +1,15 @@
 // 05.2-33 (DSU-16, D-06..D-08): pure candidate lists for the refund picker. Both directions are capped at 50 and put
 // the same payee first, then the newest. No React, no I/O; amounts are integer minor units.
 import type { TransactionRow } from '@/db/rows';
+import type { ActivityRowView } from '@/data/queries/activity';
 import { payerKeyOf } from '@/data/mutations/incomeTagModel';
+
+/** A row from a by-id read (no counterpart, no overdue flag) as the view the detail sheet takes. */
+export function asActivityRow(row: TransactionRow): ActivityRowView {
+  return 'amountHome' in row
+    ? (row as ActivityRowView)
+    : { ...row, amountHome: null, overdue: false, counterpartAccountId: null };
+}
 
 export const PICKER_CAP = 50;
 export const PICKER_WINDOW_MONTHS = 12;

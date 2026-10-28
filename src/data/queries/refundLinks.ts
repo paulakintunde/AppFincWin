@@ -17,6 +17,8 @@ export interface RefundLinkView {
   rowsById: ReadonlyMap<string, TransactionRow>;
   /** purchase id -> sum of every live refund linked to it, in any month. */
   totals: ReadonlyMap<string, number>;
+  /** Every live linked refund (any month), newest first. */
+  refunds: readonly TransactionRow[];
 }
 
 const EMPTY_ROWS: readonly TransactionRow[] = [];
@@ -64,10 +66,16 @@ export function useRefundLinks(
 
   const fetchedRefunds = linked.data ?? EMPTY_ROWS;
   const fetchedPurchases = purchases.data ?? EMPTY_ROWS;
-  const totals = useMemo(
-    () => (on ? refundTotals(mergeRefunds(fetchedRefunds, rows)) : new Map<string, number>()),
+  const refunds = useMemo(
+    () =>
+      on
+        ? mergeRefunds(fetchedRefunds, rows)
+            .filter((r) => (r.refund_of ?? null) !== null)
+            .sort((a, b) => (a.local_date < b.local_date ? 1 : a.local_date > b.local_date ? -1 : a.id < b.id ? -1 : 1))
+        : EMPTY_ROWS,
     [on, fetchedRefunds, rows]
   );
+  const totals = useMemo(() => refundTotals(refunds), [refunds]);
   const rowsById = useMemo(() => {
     const map = new Map<string, TransactionRow>();
     for (const r of fetchedPurchases) if (r.deleted_at === null) map.set(r.id, r);
@@ -75,5 +83,5 @@ export function useRefundLinks(
     return map;
   }, [fetchedPurchases, rows]);
 
-  return { rowsById, totals };
+  return { rowsById, totals, refunds };
 }
