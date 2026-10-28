@@ -122,4 +122,10 @@ describe('settingsRows', () => {
     expect(rows.find((r) => r.id === 'unspent')?.action).toBe('unspent');
     expect(rows.find((r) => r.id === 'accountUse')).toMatchObject({ action: 'step', step: 'accountUse' });
   });
+
+  it('passes a zero count for empty Other income and Envelopes so the copy reads None / None yet', () => {
+    const rows = rowsOf(FACTS, { ...DATA, otherIncomeCount: 0, envelopes: { amount: 0, count: 0 } });
+    expect(rows.find((r) => r.id === 'otherIncome')?.value).toEqual({ key: 'decide.settings.valueOtherIncome', params: { count: 0 } });
+    expect(rows.find((r) => r.id === 'envelopes')?.value).toEqual({ key: 'decide.settings.valueEnvelopes', params: { amount: '$0', count: 0 } });
+  });
 });

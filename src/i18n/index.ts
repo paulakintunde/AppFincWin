@@ -2,6 +2,7 @@ import i18next from 'i18next';
 import { initReactI18next, useTranslation } from 'react-i18next';
 import { getLocales } from 'expo-localization';
 import en from './locales/en';
+import { formatOrdinal } from './ordinal';
 
 // DSG-04: the whole typed catalogue. Add a new locale here (and to SUPPORTED_LOCALES)
 // once a second language ships — Phase 0 only ships English.
@@ -30,6 +31,11 @@ void i18next.use(initReactI18next).init({
   returnNull: false,
   initAsync: false,
 });
+
+// F-14: `{{day, ordinal}}` renders 24th / 1st / 2nd. Registered after the synchronous init.
+i18next.services.formatter?.add('ordinal', (value, lng) =>
+  formatOrdinal(Number(value), lng ?? 'en', (k, o) => String(i18next.t(k as never, (o ?? {}) as never))),
+);
 
 export { i18next as i18n };
 

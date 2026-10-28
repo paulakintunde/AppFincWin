@@ -88,7 +88,7 @@ describe('PayStep', () => {
   it('shows the prefill note without selecting anything', async () => {
     mockFound = { payer: 'Acme Ltd', amount: 320000, day: 25, currency: 'USD' };
     const { last } = await mount(PayStep);
-    expect(screen.getByText(/We found Acme Ltd paying about .*3,200.* around the 25 of each month\./)).toBeTruthy();
+    expect(screen.getByText(/We found Acme Ltd paying about .*3,200.* around the 25th of each month\./)).toBeTruthy();
     expect(last().canContinue).toBe(false);
   });
 

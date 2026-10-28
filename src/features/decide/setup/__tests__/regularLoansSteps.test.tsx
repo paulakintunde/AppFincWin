@@ -255,7 +255,7 @@ describe('LoansStep', () => {
     expect(screen.getByText('Visa')).toBeTruthy();
     expect(screen.getByText('Auto finance')).toBeTruthy();
     expect(screen.queryByText('Old')).toBeNull();
-    expect(screen.getAllByText('due the 14')).toHaveLength(2);
+    expect(screen.getAllByText('due the 14th')).toHaveLength(2);
     expect(screen.getAllByText('Do you usually pay the full balance each month?')).toHaveLength(1);
     expect(screen.getAllByText('19.9%')).toHaveLength(2);
   });

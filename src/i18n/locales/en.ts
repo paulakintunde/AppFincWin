@@ -51,6 +51,7 @@
 import { EXCHANGE_RATE_API_ATTRIBUTION } from '../mandatedCopy';
 
 const en = {
+  ordinal: { one: '{{n}}st', two: '{{n}}nd', few: '{{n}}rd', other: '{{n}}th' },
   auth: {
     welcome: {
       wordmark: 'FincWin',
@@ -545,7 +546,8 @@ const en = {
     },
     pay: {
       title: 'Your regular pay',
-      prefill: 'We found {{payer}} paying about {{amount}} around the {{day}} of each month.',
+      defaultName: 'Pay',
+      prefill: 'We found {{payer}} paying about {{amount}} around the {{day, ordinal}} of each month.',
       amountCaption: 'Take-home amount, after tax',
       frequencyCaption: 'How often',
       freqWeekly: 'Weekly',
@@ -1725,8 +1727,11 @@ const en = {
         title: 'Your regular payments',
         intro: 'We found these in your records. Only the ones you confirm count as regular.',
         counter: '{{n}} of {{m}} marked',
-        rowMeta: '{{frequency}} · around the {{day}}',
+        rowMeta: '{{frequency}} · around the {{day, ordinal}}',
         notMarked: 'Not marked',
+        clearNotRegular: 'Clear “Not regular”',
+        clearNotRegularA11y: 'Clear “Not regular” for {{name}}',
+        toastCleared: '“Not regular” cleared for {{name}}',
         chipRegular: 'Regular',
         chipNotRegular: 'Not regular',
         buttonRegular: 'Regular',
@@ -1780,7 +1785,7 @@ const en = {
       },
       loans: {
         title: 'Loans and credit',
-        dueLine: 'due the {{day}}',
+        dueLine: 'due the {{day, ordinal}}',
         balance: 'Balance',
         minimum: 'Minimum',
         apr: 'APR',
@@ -1807,7 +1812,7 @@ const en = {
       saving: {
         title: 'Regular saving',
         toAccount: 'To {{account}}',
-        aroundDay: 'Around the {{day}}, every month',
+        aroundDay: 'Around the {{day, ordinal}}, every month',
         optionFixed: 'Fixed',
         optionFixedDesc: 'Keep it going, like a bill. Never used to make a purchase fit.',
         optionFlexible: 'Flexible',
@@ -1960,12 +1965,12 @@ const en = {
       },
       summary: {
         title: 'Decide is set up',
-        rowMonth: '{{month}}',
+        rowMonth: '{{month}}, as Decide counts it',
         valueMonth: '{{income}} in · {{spent}} out so far',
         rowLeave: 'On track to leave',
         valueLeave: 'about {{amount}}',
-        rowTypical: 'Typical month',
-        valueTypical: 'about {{amount}}',
+        rowTypical: 'Typical everyday spending',
+        valueTypical: 'about {{amount}} a month',
         rowUnspent: 'Unspent money',
         valueUnspent: '{{amount}} · checked today',
         valueUnspentOn: '{{amount}} · checked {{date}}',
@@ -2104,6 +2109,7 @@ const en = {
       valueRegularPay: '{{amount}} {{frequency}}, next {{date}}',
       valuePatternSeasonal: 'Follows the seasons',
       valueSteadyAmount: '{{amount}} a month',
+      valueOtherIncome_zero: 'None',
       valueOtherIncome_one: '{{count}} line',
       valueOtherIncome_other: '{{count}} lines',
       valueRegularPayments: '{{count}} confirmed',
@@ -2119,7 +2125,9 @@ const en = {
       valueUnusual: '{{count}} left out',
       valueAccountUse: '{{set}} of {{total}} set',
       valueEmergency: '{{amount}} · {{account}}',
-      valueEnvelopes: '{{amount}} in {{count}}',
+      valueEnvelopes_zero: 'None yet',
+      valueEnvelopes_one: '{{amount}} in {{count}} envelope',
+      valueEnvelopes_other: '{{amount}} in {{count}} envelopes',
       valueUnspent: '{{amount}} · confirmed {{date}}',
       valueSharedShare: 'My share {{percent}}%',
       valueSharedJustMe: 'Just me',

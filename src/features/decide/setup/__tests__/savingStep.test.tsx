@@ -97,7 +97,7 @@ describe('SavingStep', () => {
   it('shows each saving series with Fixed and Flexible, none selected, and Next works', async () => {
     const { last, ref } = await mount();
     expect(screen.getByText('To Rainy day')).toBeTruthy();
-    expect(screen.getByText('Around the 5, every month')).toBeTruthy();
+    expect(screen.getByText('Around the 5th, every month')).toBeTruthy();
     expect(screen.getByLabelText('Fixed').props.accessibilityState).toMatchObject({ checked: false });
     expect(screen.getByLabelText('Flexible').props.accessibilityState).toMatchObject({ checked: false });
     expect(last()).toEqual({ canContinue: true, reasonKey: null, dirty: false });
