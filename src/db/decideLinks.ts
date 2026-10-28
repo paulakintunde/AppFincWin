@@ -143,6 +143,7 @@ export async function fetchLinkedLines(
 }
 
 type LinkTarget = Pick<DecideLinkRow, 'check_id' | 'target_id'>;
+export type WrittenRowLink = Pick<DecideLinkRow, 'check_id' | 'target_id' | 'role'>;
 
 /**
  * D-48: live written payment links (series paying a Go-ahead purchase), for the snapshot's
@@ -166,15 +167,15 @@ export async function fetchPaymentLinks(client: DbClient, householdId: string): 
  * D-40: live written transaction links, so the snapshot can leave a Go-ahead card purchase
  * paid by its payoff series out of the card's minimum. One household only (WR-A05).
  */
-export async function fetchWrittenRowLinks(client: DbClient, householdId: string): Promise<LinkTarget[]> {
+export async function fetchWrittenRowLinks(client: DbClient, householdId: string): Promise<WrittenRowLink[]> {
   const { data, error, status } = await client
     .from('decide_links')
-    .select('check_id, target_id')
+    .select('check_id, target_id, role')
     .eq('household_id', householdId)
     .eq('entity', 'transactions')
     .eq('source', 'written')
     .is('deleted_at', null);
 
   if (error) throw toDbError(error, status);
-  return (data as LinkTarget[] | null) ?? [];
+  return (data as WrittenRowLink[] | null) ?? [];
 }

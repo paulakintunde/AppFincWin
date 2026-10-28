@@ -244,8 +244,9 @@ describe('decide links', () => {
 
   it('fetchWrittenRowLinks reads live written transaction links', async () => {
     const client = createFakeSupabase();
-    client.respondWith({ data: [{ check_id: 'k1', target_id: 't1' }], error: null, status: 200 });
-    await expect(fetchWrittenRowLinks(client, 'h1')).resolves.toEqual([{ check_id: 'k1', target_id: 't1' }]);
+    client.respondWith({ data: [{ check_id: 'k1', target_id: 't1', role: 'day_one' }], error: null, status: 200 });
+    await expect(fetchWrittenRowLinks(client, 'h1')).resolves.toEqual([{ check_id: 'k1', target_id: 't1', role: 'day_one' }]);
+    expect(client.calls.find((c) => c.method === 'select')?.args).toEqual(['check_id, target_id, role']);
     const eqs = client.calls.filter((c) => c.method === 'eq').map((c) => c.args);
     expect(eqs).toEqual([
       ['household_id', 'h1'],

@@ -107,7 +107,7 @@ function RefundPickerForm({ direction, anchor, formatter, onClose }: RefundPicke
   });
   const onPlan =
     purchase !== null &&
-    (purchase.recurring_series_id !== null || (written.data ?? []).some((l) => l.target_id === purchase.id));
+    (purchase.recurring_series_id !== null || (written.data ?? []).some((l) => l.target_id === purchase.id && l.role === 'day_one'));
 
   const title = t(forward ? 'activity.refund.pickerTitle' : 'activity.refund.pickerTitleReverse');
   const subline = t(forward ? 'activity.refund.pickerSubline' : 'activity.refund.pickerSublineReverse', {

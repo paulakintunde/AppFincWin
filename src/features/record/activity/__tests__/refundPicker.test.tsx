@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { TransactionRow } from '@/db/rows';
@@ -157,6 +157,31 @@ describe('RefundPickerSheet', () => {
     expect(await findByText('Refunded £10.00 so far')).toBeTruthy();
     fireEvent.press(getByLabelText(/^Shop, /));
     expect(await findByText('Refunded so far: £50.00 of £100.00.')).toBeTruthy();
+    expect(await findByText(/payment plan/)).toBeTruthy();
+  });
+
+  it('shows the plan line only for a day_one written link, not a running_cost one', async () => {
+    mockRange.mockResolvedValue([tx({ id: 'p1' })]);
+    mockLinkedRefunds.mockResolvedValue([]);
+    mockWritten.mockResolvedValue([{ check_id: 'k1', target_id: 'p1', role: 'running_cost' }]);
+    const a = await open(refund());
+    await a.findByText('Shop');
+    fireEvent.press(a.getByLabelText(/^Shop, /));
+    await a.findByText(/Refunded so far|Link refund/);
+    await waitFor(() => expect(mockWritten).toHaveBeenCalled());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(a.queryByText(/payment plan/)).toBeNull();
+  });
+
+  it('shows the plan line for a day_one written link', async () => {
+    mockRange.mockResolvedValue([tx({ id: 'p1' })]);
+    mockLinkedRefunds.mockResolvedValue([]);
+    mockWritten.mockResolvedValue([{ check_id: 'k1', target_id: 'p1', role: 'day_one' }]);
+    const { findByText, getByLabelText } = await open(refund());
+    await findByText('Shop');
+    fireEvent.press(getByLabelText(/^Shop, /));
     expect(await findByText(/payment plan/)).toBeTruthy();
   });
 

@@ -30,9 +30,6 @@ import { newStepId, recordUndoStepSafely } from './undoCapture';
 
 type DismissalList = RecurringDismissalRow[];
 
-// The hooks below name the same scope the defaults carry.
-const HOOK_SCOPE = WRITE_SCOPE;
-
 export interface AddDismissalVars {
   ownerId: string;
   householdId: string;
@@ -155,7 +152,7 @@ export function useAddDismissal(
 ): { dismiss(input: { payeeKey: string; direction: 'in' | 'out' }): { id: string; stepId: string } } {
   const mutation = useMutation<RecurringDismissalRow, unknown, AddDismissalVars>({
     mutationKey: mutationKeys.addDismissal,
-    scope: HOOK_SCOPE,
+    scope: WRITE_SCOPE,
   });
   return {
     dismiss({ payeeKey, direction }) {
@@ -176,7 +173,7 @@ export function useAddDismissal(
 export function useRemoveDismissal(householdId: string, ownerId: string): { restore(row: RecurringDismissalRow): { stepId: string } } {
   const mutation = useMutation<RecurringDismissalRow, unknown, RemoveDismissalVars>({
     mutationKey: mutationKeys.removeDismissal,
-    scope: HOOK_SCOPE,
+    scope: WRITE_SCOPE,
   });
   return {
     restore(row) {
