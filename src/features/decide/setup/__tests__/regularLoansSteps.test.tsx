@@ -159,7 +159,7 @@ describe('RegularStep', () => {
     expect(screen.getByText('No regular payments found yet')).toBeTruthy();
     expect(last().canContinue).toBe(true);
     await fireEvent.press(screen.getByRole('button', { name: '+ Add a regular payment' }));
-    await fireEvent.press(screen.getByLabelText('Add a regular payment: Phone and internet'));
+    await fireEvent.press(screen.getByLabelText('Regular payment, Phone and internet'));
     expect(addRegular).toHaveBeenCalledWith('phone');
     unregister();
   });
@@ -212,7 +212,7 @@ describe('LoansStep', () => {
     const unregister = registerSetupSheetActions({ addDebt });
     await mount(LoansStep);
     expect(screen.getByText('No loans or cards yet')).toBeTruthy();
-    await fireEvent.press(screen.getByLabelText('Add a loan or card: Student loan'));
+    await fireEvent.press(screen.getByLabelText('Loan or card, Student loan'));
     expect(addDebt).toHaveBeenCalledWith('student');
     unregister();
   });
