@@ -122,6 +122,28 @@ export function useToast(): ToastState | null {
   return useSyncExternalStore(subscribe, getToast);
 }
 
+// 05.2-23: a full-screen flow with its own footer (the setup stepper) lifts the app-layer toast above that footer so it
+// never covers the primary button. The floor is a bottom offset in dp; null means no floor.
+let toastFloor: number | null = null;
+const floorListeners = new Set<() => void>();
+
+export function setToastFloor(value: number | null): void {
+  if (toastFloor === value) return;
+  toastFloor = value;
+  for (const listener of floorListeners) listener();
+}
+
+function subscribeFloor(listener: () => void): () => void {
+  floorListeners.add(listener);
+  return () => {
+    floorListeners.delete(listener);
+  };
+}
+
+export function useToastFloor(): number | null {
+  return useSyncExternalStore(subscribeFloor, () => toastFloor);
+}
+
 /** Test helper: resets in-memory toast state between tests. */
 export function resetToastForTests(): void {
   toast = null;

@@ -9,7 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
-import { dismissToast, toastDurationMs, useToast, type ToastState } from '@/state/undoToast';
+import { dismissToast, toastDurationMs, useToast, useToastFloor, type ToastState } from '@/state/undoToast';
 import { useUndo } from '@/data/mutations/undo';
 import { useHouseholdMemberNames } from '@/data/queries/activity';
 import { UNDO_LABEL_KEYS, type UndoLabelKey, type UndoLabelParams } from '@/engine/undo';
@@ -49,6 +49,8 @@ const DECIDE_TOAST_LABEL: Readonly<Record<string, UndoLabelKey>> = {
   'decide.pots.toast.reopened': 'potReopened',
   'decide.depth.goal.tagged': 'transferTagged',
   'decide.depth.goal.untagged': 'transferUntagged',
+  // 05.2-23: the setup stepper's "{title} saved" toast replays the step's settings write.
+  'decide.setup.shell.toastSaved': 'setupStepSaved',
 };
 
 /** Derives the engine label key and params from a toast's `undo.label[Unnamed].<key>` text (or a Decide toast's own key). */
@@ -84,6 +86,7 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
   const sheetCount = useSheetCount();
   const active = placement === 'sheet' || sheetCount === 0;
   const slot = useToastSlot();
+  const floor = useToastFloor();
   const { reportHeight } = slot;
   const [screenReader, setScreenReader] = useState(false);
 
@@ -146,7 +149,7 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
       parts.push(l(key, params));
     }
   }
-  const bottom = placement === 'sheet' ? insets.bottom + space.sheetPadBottom : slot.bottom;
+  const bottom = placement === 'sheet' ? insets.bottom + space.sheetPadBottom : Math.max(slot.bottom, floor ?? 0);
   const message = parts.join(' ');
   if (message === '') return null;
 
