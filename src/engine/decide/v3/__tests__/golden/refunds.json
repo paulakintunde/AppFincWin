@@ -261,7 +261,7 @@
   },
   {
    "id": "refund-plan",
-   "title": "Refund of the day-one payment of a payment-plan purchase (linked to the day_one row, OQ9)",
+   "title": "Refund of the day-one payment of a payment-plan purchase (linked to the day_one row, OQ9); credited against that row, not everyday",
    "person": "sam",
    "addSeries": [
     {
@@ -321,11 +321,81 @@
     "legacyState": "fits",
     "unspentAfter": 235000,
     "month": {
-     "monthLeft": 57500,
-     "e": 132500,
-     "typicalLeft": 57500
+     "monthLeft": 42500,
+     "e": 147500,
+     "typicalLeft": 42500
     },
-    "working": "Sam, asOf 2026-10-03. Everyday months Apr-Sep before any purchase: 110000, 160000, 360000, 130000, 135000, 185000; typical everyday E is their median (mean of the 3rd and 4th when sorted). Bills 180000 + set-aside 30000 come off 400000 income, so typicalLeft = 190000 - E. The October spending so far (10000) is below E, so monthLeft = typicalLeft; and the unspent anchor is 2026-10-03, after every May/June/July line, so unspent stays 240000 and a 5000 check leaves 235000. The purchase is on a plan; the refund links to the day_one payment row (40000, the transaction the user sees in Activity). 30000 is credited to the purchase month and the plan series is untouched (D-09). The day-one row belongs to a debt_payment series so it is not everyday; the credit lowers May everyday 160000-30000 = 130000. Sorted 110000,130000,130000,135000,185000,360000 -> E = (130000+135000)/2 = 132500. typicalLeft = monthLeft = 190000-132500 = 57500."
+    "working": "Sam, asOf 2026-10-03. Everyday months Apr-Sep before any purchase: 110000, 160000, 360000, 130000, 135000, 185000; typical everyday E is their median (mean of the 3rd and 4th when sorted). Bills 180000 + set-aside 30000 come off 400000 income, so typicalLeft = 190000 - E. The purchase is on a plan; the refund links to the day_one payment row (40000, the transaction the user sees in Activity). The row belongs to a debt_payment series so it is not everyday, and its refund is taken off that row (40000 - 30000 = 10000 in May), never off everyday (owner decision 2026-10-28; the old golden credited May everyday and expected E 132500 / left 57500, which encoded the bug). May everyday stays 160000. Sorted 110000,130000,135000,160000,185000,360000 -> E = (135000+160000)/2 = 147500. typicalLeft = monthLeft = 190000-147500 = 42500. Unspent stays 240000 (anchor is after the May-July lines), so a 5000 check leaves 235000."
+   },
+   "source": "D-11"
+  },
+  {
+   "id": "refund-plan-large",
+   "title": "Refund of a large plan day-one payment (genref-026 shape): the whole 300000 comes off the day-one row, May everyday is not floored",
+   "person": "sam",
+   "addSeries": [
+    {
+     "id": "fridge-plan",
+     "name": "Fridge plan",
+     "role": "debt_payment",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-05-10",
+     "amount": 50000
+    }
+   ],
+   "addLines": [
+    {
+     "month": "2026-05",
+     "line": {
+      "id": "sam-fridge-05",
+      "date": "2026-05-10",
+      "amount": 300000,
+      "role": "spending",
+      "name": "Fridge",
+      "seriesId": "fridge-plan"
+     }
+    },
+    {
+     "month": "2026-07",
+     "line": {
+      "id": "sam-fridge-ref-07",
+      "date": "2026-07-05",
+      "amount": 300000,
+      "role": "refund",
+      "refundOf": "sam-fridge-05",
+      "name": "Fridge refund"
+     }
+    }
+   ],
+   "purchase": {
+    "price": 5000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "unspentAfter": 235000,
+    "month": {
+     "monthLeft": 42500,
+     "e": 147500,
+     "typicalLeft": 42500
+    },
+    "working": "Same months as refund-plan, but the day-one row is 300000 (more than May's everyday 160000) and the whole 300000 comes back in July. It is taken off the day-one row (row removed), so May everyday stays 160000 and is not floored at 0 or read as under-logged (the genref-026 failure). E = (135000+160000)/2 = 147500, left 42500."
    },
    "source": "D-11"
   }

@@ -1,5 +1,6 @@
 import { minorUnits } from '../../../../money/types';
 import type { LineRole, V3Inputs, V3Line, V3Month } from '../../types';
+import type { V3Series } from '../../types';
 import { redateRefunds, withRedatedRefunds } from '../refunds';
 
 const mu = minorUnits;
@@ -126,6 +127,51 @@ describe('redateRefunds', () => {
   it('no linked line returns the same array', () => {
     const months = [month('2026-05', [purchase, line('r', '2026-05-12', 5, 'refund')])];
     expect(redateRefunds(months)).toBe(months);
+  });
+});
+
+describe('refund of a payment-plan day-one row (owner decision 2026-10-28)', () => {
+  const planSeries = { id: 's1', role: 'debt_payment', confirmed: true, status: 'active', endDate: null } as unknown as V3Series;
+  const dayOne = line('p1', '2026-05-10', 40000, 'spending', { seriesId: 's1', categoryId: 'C' });
+  const plan = (refunds: V3Line[], series: V3Series[] = [planSeries]): readonly V3Month[] =>
+    redateRefunds([month('2026-05', [dayOne]), month('2026-07', refunds)], series);
+
+  it('the credit comes off the day-one row, not everyday spending', () => {
+    const out = plan([refundLine('r1', '2026-07-05', 30000)]);
+    expect(out[0]?.lines.map((l) => [l.id, l.role, l.amount])).toEqual([['p1', 'spending', 10000]]);
+    expect(out[1]?.lines).toEqual([]);
+  });
+
+  it('a full refund removes the day-one row', () => {
+    const out = plan([refundLine('r1', '2026-07-05', 40000)]);
+    expect(out[0]?.lines).toEqual([]);
+  });
+
+  it('the part over the day-one amount counts as money in when it arrives (D-06)', () => {
+    const out = plan([refundLine('r1', '2026-07-05', 55000)]);
+    expect(out[0]?.lines).toEqual([]);
+    expect(out[1]?.lines).toEqual([expect.objectContaining({ id: 'r1:surplus', role: 'other_in', amount: 15000 })]);
+  });
+
+  it('several refunds net the row in date order and the overflow is money in', () => {
+    const out = plan([refundLine('r1', '2026-07-05', 30000), refundLine('r2', '2026-07-09', 30000)]);
+    expect(out[0]?.lines).toEqual([]);
+    expect(out[1]?.lines.map((l) => [l.id, l.amount])).toEqual([['r2:surplus', 20000]]);
+  });
+
+  it('a series that is not counting leaves the old everyday credit', () => {
+    const out = plan([refundLine('r1', '2026-07-05', 30000)], [{ ...planSeries, confirmed: false } as V3Series]);
+    expect(out[0]?.lines.map((l) => [l.id, l.role, l.amount])).toEqual([['p1', 'spending', 40000], ['r1', 'refund', 30000]]);
+  });
+
+  it('is idempotent', () => {
+    const once = plan([refundLine('r1', '2026-07-05', 30000)]);
+    expect(redateRefunds(once, [planSeries])).toBe(once);
+  });
+
+  it('withRedatedRefunds passes the inputs series through', () => {
+    const inputs = { months: [month('2026-05', [dayOne]), month('2026-07', [refundLine('r1', '2026-07-05', 30000)])], series: [planSeries] } as unknown as V3Inputs;
+    expect(withRedatedRefunds(inputs).months[0]?.lines[0]?.amount).toBe(10000);
   });
 });
 

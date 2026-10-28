@@ -5,6 +5,11 @@
  * purchase's date and category. Any amount above the price stays in the refund's own month as money in ('other_in',
  * id suffixed ':surplus'). Several refunds on one purchase are applied in date order (tie broken by id).
  *
+ * A payment-plan purchase is different (owner decision 2026-10-28): its day-one row is a debt payment, not everyday
+ * spending, so the credit is taken off that same row in the purchase month (the row's amount falls, or the row goes
+ * when fully refunded) and never off everyday spending. It is capped at the row's amount; any excess follows D-06 and
+ * counts as money in when it arrives. The plan's series is still untouched (D-09).
+ *
  * Nothing is stored (D-07): the move is recomputed from the lines on every evaluation, so removing the link reverses it.
  * A refund whose purchase is not in the months (outside the read window, or deleted), or whose purchase is not a
  * 'spending' line, is left where it is. A refund of a payment-plan purchase is a credit to the purchase month; the
@@ -19,7 +24,8 @@
  * Idempotent: a moved credit carries refundOf null.
  */
 import { minorFromBigInt } from '../../../payoff/types';
-import type { V3Inputs, V3Line, V3Month } from '../types';
+import type { V3Inputs, V3Line, V3Month, V3Series } from '../types';
+import { classifyLine, seriesIndex } from './series';
 
 interface Located {
   readonly line: V3Line;
@@ -36,7 +42,8 @@ function isLinked(line: V3Line): boolean {
 }
 
 /** Moves linked refunds into their purchase's month. Returns the same array when nothing is linked. */
-export function redateRefunds(months: readonly V3Month[]): readonly V3Month[] {
+export function redateRefunds(months: readonly V3Month[], series: readonly V3Series[] = []): readonly V3Month[] {
+  const index = seriesIndex(series);
   const byId = new Map<string, Located>();
   const groups = new Map<string, Located[]>();
   months.forEach((m, monthIndex) => {
@@ -63,18 +70,23 @@ export function redateRefunds(months: readonly V3Month[]): readonly V3Month[] {
   for (const [purchaseId, group] of groups) {
     const { line: purchase, monthIndex: purchaseMonth } = byId.get(purchaseId) as Located;
     group.sort((a, b) => (a.line.date < b.line.date ? -1 : a.line.date > b.line.date ? 1 : a.line.id < b.line.id ? -1 : 1));
+    const onPlan = classifyLine(purchase, index) === 'debt_payment';
     let room = BigInt(purchase.amount);
     for (const { line: r, monthIndex } of group) {
       const amount = BigInt(r.amount);
       const credit = amount < room ? amount : room;
       room -= credit;
       editOf(monthIndex).removed.add(r.id);
-      if (credit > 0n) {
+      if (credit > 0n && !onPlan) {
         editOf(purchaseMonth).added.push({ ...r, date: purchase.date, categoryId: purchase.categoryId, amount: minorFromBigInt(credit, 'redateRefunds'), refundOf: null });
       }
       if (amount > credit) {
         editOf(monthIndex).added.push({ ...r, id: `${r.id}:surplus`, role: 'other_in', amount: minorFromBigInt(amount - credit, 'redateRefunds'), refundOf: null });
       }
+    }
+    if (onPlan && room < BigInt(purchase.amount)) {
+      editOf(purchaseMonth).removed.add(purchase.id);
+      if (room > 0n) editOf(purchaseMonth).added.push({ ...purchase, amount: minorFromBigInt(room, 'redateRefunds') });
     }
   }
 
@@ -92,6 +104,6 @@ export function redateRefunds(months: readonly V3Month[]): readonly V3Month[] {
 
 /** The inputs with linked refunds re-dated; the same object when no line carries a refund link. */
 export function withRedatedRefunds(inputs: V3Inputs): V3Inputs {
-  const months = redateRefunds(inputs.months);
+  const months = redateRefunds(inputs.months, inputs.series);
   return months === inputs.months ? inputs : { ...inputs, months };
 }
