@@ -1,4 +1,4 @@
-import type { DecideSettingsRow } from '@/db/decideSettings';
+import { EMPTY_DECIDE_SETTINGS, type DecideSettingsRow } from '@/db/decideSettings';
 import type { SnapshotResult } from '../../snapshot/types';
 import { array, assert as fcAssert, integer, property } from 'fast-check';
 import { prepareContext, totalSetAside, type PotInput } from '@/engine/decide';
@@ -10,6 +10,8 @@ const READY: HomeCardFlags = { status: 'ready', homeBasisSeen: true, today: TODA
 
 function settings(over: Partial<DecideSettingsRow> = {}): DecideSettingsRow {
   return {
+    ...EMPTY_DECIDE_SETTINGS,
+    id: 'ds1',
     user_id: 'u1',
     currency: 'USD',
     rough_income: null,

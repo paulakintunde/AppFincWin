@@ -248,7 +248,7 @@ function cacheOf(row: SavingsGoalRow): PotCacheKey {
 
 function beforeOf(row: SavingsGoalRow, keys: readonly (keyof SavingsGoalPatch)[]): Record<string, PatchValue> {
   const before: Record<string, PatchValue> = {};
-  for (const key of keys) before[key] = row[key];
+  for (const key of keys) before[key] = row[key] ?? null;
   return before;
 }
 

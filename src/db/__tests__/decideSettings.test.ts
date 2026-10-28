@@ -80,3 +80,42 @@ describe('upsertDecideSettings', () => {
     expect(Object.keys(payload).sort()).toEqual(['reserve', 'user_id']);
   });
 });
+
+describe('05.2 columns', () => {
+  it('EMPTY_DECIDE_SETTINGS has every new field null and an empty id', () => {
+    expect(EMPTY_DECIDE_SETTINGS.id).toBe('');
+    for (const key of ['income_pattern', 'month_marks', 'reserve_account_id', 'unexplained_use', 'refine_snooze_until'] as const) {
+      expect(EMPTY_DECIDE_SETTINGS[key]).toBeNull();
+    }
+  });
+
+  it('never sends id or seeded, even when the caller object holds them', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: ROW, error: null, status: 200 });
+    const patch = { refine_snooze_until: '2026-11-01', id: 'x', seeded: true } as unknown as DecideSettingsPatch;
+    // assertAllowedKeys rejects the stray keys before any request
+    await expect(upsertDecideSettings(client, 'u1', patch)).rejects.toBeInstanceOf(Error);
+    expect(client.calls.find((c) => c.method === 'upsert')).toBeUndefined();
+    await upsertDecideSettings(client, 'u1', { refine_snooze_until: '2026-11-01' });
+    expect(client.calls.find((c) => c.method === 'upsert')?.args[0]).toEqual({
+      user_id: 'u1',
+      refine_snooze_until: '2026-11-01',
+    });
+  });
+
+  it('reads a row cached before the push with the new fields as null', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { user_id: 'u1', reserve: 5, version: 2, updated_at: 't' }, error: null, status: 200 });
+    const row = await fetchDecideSettings(client, 'u1');
+    expect(row?.income_pattern).toBeNull();
+    expect(row?.month_marks).toBeNull();
+    expect(row?.reserve).toBe(5);
+  });
+
+  it('selects and patches the new columns', () => {
+    for (const c of ['id', 'refine_snooze_until', 'unexplained_use', 'reserve_account_id', 'income_pattern']) {
+      expect(DECIDE_SETTINGS_COLUMNS).toContain(c);
+    }
+    expect(DECIDE_SETTINGS_PATCH_KEYS).toContain('refine_snooze_until');
+  });
+});

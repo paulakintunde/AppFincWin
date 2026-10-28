@@ -19,6 +19,9 @@ export interface SavingsGoalRow {
   ready_by: string | null;
   opening_saved: number;
   kind: 'wait' | 'pot';
+  bucket?: 'college' | 'house' | 'car' | 'trip' | 'business' | 'wedding' | 'other' | null;
+  account_id?: string | null;
+  color_key?: 'green' | 'slate' | 'teal' | 'blue' | 'plum' | 'rust' | 'ochre' | null;
   done_at: string | null;
   is_sample: boolean;
   deleted_at: string | null;
@@ -28,7 +31,7 @@ export interface SavingsGoalRow {
 }
 
 export const SAVINGS_GOAL_COLUMNS =
-  'id, household_id, created_by, check_id, name, currency, target, monthly_amount, ready_by, opening_saved, kind, done_at, is_sample, deleted_at, version, created_at, updated_at';
+  'id, household_id, created_by, check_id, name, currency, target, monthly_amount, ready_by, opening_saved, kind, bucket, account_id, color_key, done_at, is_sample, deleted_at, version, created_at, updated_at';
 
 /** A pot as a client inserts it: home currency, a target and a month end are required by the shape check. */
 export interface NewPot {
@@ -40,11 +43,15 @@ export interface NewPot {
   target: number;
   ready_by: string;
   opening_saved: number;
+  bucket?: SavingsGoalRow['bucket'];
+  account_id?: string | null;
+  monthly_amount?: number | null;
+  color_key?: SavingsGoalRow['color_key'];
 }
 
 /** target and ready_by are never null in a patch: a pot's shape check needs both (a Wait goal's are frozen anyway). */
 export type SavingsGoalPatch = Partial<
-  Pick<SavingsGoalRow, 'name' | 'opening_saved' | 'done_at' | 'deleted_at'> & { target: number; ready_by: string }
+  Pick<SavingsGoalRow, 'name' | 'opening_saved' | 'done_at' | 'deleted_at' | 'account_id' | 'monthly_amount' | 'color_key'> & { target: number; ready_by: string }
 >;
 
 export const SAVINGS_GOAL_INSERT_KEYS = [
@@ -56,6 +63,10 @@ export const SAVINGS_GOAL_INSERT_KEYS = [
   'target',
   'ready_by',
   'opening_saved',
+  'bucket',
+  'account_id',
+  'monthly_amount',
+  'color_key',
 ] as const satisfies readonly (keyof NewPot)[];
 
 export const SAVINGS_GOAL_PATCH_KEYS = [
@@ -65,6 +76,9 @@ export const SAVINGS_GOAL_PATCH_KEYS = [
   'opening_saved',
   'done_at',
   'deleted_at',
+  'account_id',
+  'monthly_amount',
+  'color_key',
 ] as const satisfies readonly (keyof SavingsGoalPatch)[];
 
 const ENTITY = 'savings_goals' as const;

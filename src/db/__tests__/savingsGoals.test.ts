@@ -58,7 +58,7 @@ describe('fetchSavingsGoals', () => {
 describe('updateSavingsGoal', () => {
   it('refuses a key outside the grant before a request', async () => {
     const client = createFakeSupabase();
-    for (const bad of [{ kind: 'wait' }, { check_id: ID_B }, { currency: 'USD' }, { monthly_amount: 5 }]) {
+    for (const bad of [{ kind: 'wait' }, { check_id: ID_B }, { currency: 'USD' }, { bucket: 'car' }]) {
       await expect(updateSavingsGoal(client, ID_A, 1, bad as unknown as { deleted_at: string })).rejects.toBeInstanceOf(TypeError);
     }
     expect(client.calls).toHaveLength(0);
@@ -130,11 +130,24 @@ describe('D-101 pot columns and keys', () => {
     expect(SAVINGS_GOAL_COLUMNS.split(', ')).toEqual(expect.arrayContaining(['kind', 'done_at', 'opening_saved', 'ready_by']));
     // grant insert (id, household_id, kind, name, currency, target, ready_by, opening_saved)
     expect([...SAVINGS_GOAL_INSERT_KEYS].sort()).toEqual(
-      ['household_id', 'id', 'currency', 'kind', 'name', 'opening_saved', 'ready_by', 'target'].sort()
+      [
+        'household_id',
+        'id',
+        'currency',
+        'kind',
+        'name',
+        'opening_saved',
+        'ready_by',
+        'target',
+        'bucket',
+        'account_id',
+        'monthly_amount',
+        'color_key',
+      ].sort()
     );
     // grant update (name, target, ready_by, opening_saved, done_at, deleted_at)
     expect([...SAVINGS_GOAL_PATCH_KEYS].sort()).toEqual(
-      ['deleted_at', 'done_at', 'name', 'opening_saved', 'ready_by', 'target'].sort()
+      ['deleted_at', 'done_at', 'name', 'opening_saved', 'ready_by', 'target', 'account_id', 'monthly_amount', 'color_key'].sort()
     );
     expect(SAVINGS_GOAL_PATCH_KEYS).not.toContain('kind');
     expect(SAVINGS_GOAL_PATCH_KEYS).not.toContain('check_id');
