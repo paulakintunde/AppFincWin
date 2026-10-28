@@ -25,9 +25,11 @@ import { fontSize, textRole } from '@/theme/typography';
 import { StateChip } from '../ui/StateChip';
 import { EmergencyFundSheet } from '../setup/EmergencyFundSheet';
 import { SettingsRow } from '../setup/SettingsRow';
-import { firstUnansweredNeeded, setupStatus, type SetupSection, type SetupStepKey } from '../setup/setupFlow';
+import { firstUnansweredNeeded, isNeeded, setupStatus, type SetupSection, type SetupStepKey } from '../setup/setupFlow';
 import { UnspentSheet } from '../setup/UnspentSheet';
 import { settingsRows, type SettingsRowModel, type SettingsValue } from './settingsRows';
+import { SomethingChangedSheet } from './SomethingChangedSheet';
+import { targetOf, type ChangeId } from './somethingChanged';
 import { useSettingsData } from './useSettingsData';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
@@ -53,6 +55,7 @@ export function DecideSettingsScreen(): React.JSX.Element {
   const [emergencyOpen, setEmergencyOpen] = useState(false);
   const [unspentOpen, setUnspentOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [changedOpen, setChangedOpen] = useState(false);
 
   const currency = loaded?.currency ?? rc.homeCurrency;
   const format = {
@@ -73,6 +76,15 @@ export function DecideSettingsScreen(): React.JSX.Element {
     else pushOnce(stepHref(row.step));
   };
 
+  const pickChange = (id: ChangeId): void => {
+    const target = targetOf(id, {
+      hasRegularPay: loaded !== null && isNeeded('pay', loaded.facts),
+      fullMonths: loaded?.facts.fullMonthsOfRecords,
+    });
+    if (target.kind === 'sheet') setEmergencyOpen(true);
+    else pushOnce(target.href as Href);
+  };
+
   const doReset = (): void => {
     setResetOpen(false);
     const result = reset.reset();
@@ -81,6 +93,20 @@ export function DecideSettingsScreen(): React.JSX.Element {
 
   return (
     <DetailScreen title={t('decide.settings.title')}>
+      <View style={[styles.card, styles.entry, { backgroundColor: colors.surface, borderColor: colors.line2 }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('decide.settings.changed.a11yEntry')}
+          onPress={() => setChangedOpen(true)}
+          style={({ pressed }) => [styles.entryRow, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+        >
+          <View style={styles.entryText}>
+            <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{t('decide.settings.changed.entry')}</Text>
+            <Text style={{ ...textRole(pairing, 'body'), fontSize: fontSize.s13_5, color: colors.inkMuted }}>{t('decide.settings.changed.entrySub')}</Text>
+          </View>
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.chevron, { borderColor: colors.inkFaint }]} />
+        </Pressable>
+      </View>
       {rough ? (
         <View style={styles.roughLine}>
           <StateChip tone="adjust" label={t('decide.settings.rough')} />
@@ -140,6 +166,7 @@ export function DecideSettingsScreen(): React.JSX.Element {
         onCancel={() => setResetOpen(false)}
         onConfirm={doReset}
       />
+      <SomethingChangedSheet visible={changedOpen} onClose={() => setChangedOpen(false)} onPick={pickChange} />
       <EmergencyFundSheet visible={emergencyOpen} onClose={() => setEmergencyOpen(false)} />
       <UnspentSheet
         visible={unspentOpen}
@@ -159,5 +186,9 @@ const styles = StyleSheet.create({
   group: { marginTop: space.groupGap, gap: space.gapSm },
   card: { borderRadius: radii.card, borderWidth: 1, paddingHorizontal: space.cardPad },
   divider: { borderTopWidth: 1 },
+  entry: { marginTop: space.gapMd },
+  entryRow: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: space.gapMd, paddingVertical: space.rowPad },
+  entryText: { flex: 1, gap: 2 },
+  chevron: { width: 8, height: 8, borderTopWidth: 2, borderRightWidth: 2, transform: [{ rotate: '45deg' }] },
   reset: { minHeight: 64, justifyContent: 'center', paddingVertical: space.rowPad },
 });

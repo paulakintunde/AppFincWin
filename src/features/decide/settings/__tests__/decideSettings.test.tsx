@@ -117,6 +117,42 @@ beforeEach(() => {
   mockShowToast.mockClear();
 });
 
+describe('Something changed?', () => {
+  it('is the first row, above every section heading', async () => {
+    await mount();
+    const entry = screen.getByLabelText('Something changed? Opens a list of changes.');
+    expect(screen.getByText('Income, pay, bills, accounts and more')).toBeTruthy();
+    const all = JSON.stringify(screen.toJSON());
+    expect(all.indexOf('Something changed?')).toBeLessThan(all.indexOf('Regular payments'));
+    expect(entry).toBeTruthy();
+  });
+
+  const cases: [string, string | null][] = [
+    ['My pay changed', '/decide/setup?only=pay'],
+    ['New income, or an income stopped', '/decide/setup?mode=standalone'],
+    ['A regular bill started or stopped', '/decide/setup?only=regular'],
+    ['I opened or closed an account', '/decide/setup?only=accountUse'],
+    ['I share costs differently now', '/decide/setup?only=share'],
+    ['I used my emergency fund', null],
+    ['This month is unusual', '/decide/setup?only=unusual'],
+  ];
+  for (const [label, href] of cases) {
+    it(`"${label}" reaches its edit without writing`, async () => {
+      await mount();
+      await fireEvent.press(screen.getByLabelText('Something changed? Opens a list of changes.'));
+      await fireEvent.press(screen.getByRole('button', { name: label }));
+      if (href === null) {
+        expect(screen.getByTestId('sheet-emergency')).toBeTruthy();
+        expect(mockPush).not.toHaveBeenCalled();
+      } else {
+        expect(mockPush).toHaveBeenCalledWith(href);
+      }
+      expect(mockReset).not.toHaveBeenCalled();
+      expect(mockShowToast).not.toHaveBeenCalled();
+    });
+  }
+});
+
 describe('Decide settings', () => {
   it('lists the five sections with a value and an effect line per row', async () => {
     await mount();
