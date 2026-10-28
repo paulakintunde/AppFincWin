@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView } from '@/data/queries/activity';
 import type { TransactionRow } from '@/db/rows';
@@ -81,8 +81,11 @@ function callbacks() {
 
 // The Sheet keeps a module-level stack; unmounting each render in order keeps the next test's sheet on top.
 const mounted: { unmount: () => void }[] = [];
-afterEach(() => {
-  while (mounted.length > 0) mounted.pop()?.unmount();
+afterEach(async () => {
+  await act(async () => {
+    while (mounted.length > 0) mounted.pop()?.unmount();
+  });
+  jest.clearAllMocks();
 });
 
 async function renderSheet(row: ActivityRowView, cb = callbacks()) {
@@ -145,7 +148,7 @@ describe('TransactionDetailSheet refund rows', () => {
     const a = await renderSheet(tx({ original_amount: 4000, is_refund: true, name: 'Shop' }));
     expect(a.screen.getByText('Refund of...')).toBeTruthy();
     expect(a.screen.getByText('Not linked')).toBeTruthy();
-    fireEvent.press(a.screen.getByLabelText('Refund of..., Not linked'));
+    await fireEvent.press(a.screen.getByLabelText('Refund of..., Not linked'));
     expect(a.cb.onRefundPicker).toHaveBeenCalledWith(expect.objectContaining({ id: 'r1' }), 'refund->purchase');
   });
 
@@ -162,7 +165,7 @@ describe('TransactionDetailSheet refund rows', () => {
     const { screen, cb } = await renderSheet(tx({ original_amount: 5000, income_kind: 'salary' }));
     expect(await screen.findByText('Income type')).toBeTruthy();
     expect(screen.getByText('Salary or wages')).toBeTruthy();
-    fireEvent.press(screen.getByLabelText('Income type, Salary or wages'));
+    await fireEvent.press(screen.getByLabelText('Income type, Salary or wages'));
     expect(cb.onIncomeType).toHaveBeenCalledWith(expect.objectContaining({ id: 'r1' }));
   });
 
@@ -193,9 +196,9 @@ describe('TransactionDetailSheet refund rows', () => {
     const { screen, cb } = await renderSheet(tx());
     expect(await screen.findByText('Refunds')).toBeTruthy();
     expect(screen.getAllByText(/\+£/)).toHaveLength(2);
-    fireEvent.press(screen.getByLabelText(/Refund from Shop, .*\+£40\.00\. Opens the refund\./));
+    await fireEvent.press(screen.getByLabelText(/Refund from Shop, .*\+£40\.00\. Opens the refund\./));
     expect(cb.onOpenRow).toHaveBeenCalledWith(expect.objectContaining({ id: 'j' }));
-    fireEvent.press(screen.getByLabelText('+ Link a refund'));
+    await fireEvent.press(screen.getByLabelText('+ Link a refund'));
     expect(cb.onRefundPicker).toHaveBeenCalledWith(expect.objectContaining({ id: 'r1' }), 'purchase->refund');
   });
 });
