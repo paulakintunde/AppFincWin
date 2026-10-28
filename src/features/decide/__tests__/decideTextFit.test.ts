@@ -118,6 +118,7 @@ const GEOMETRY_HEIGHT: { path: string; count: number; reason: string }[] = [
   { path: 'check/steps/step2/MethodPanels.tsx', count: 1, reason: 'stepper button target (glyph only)' },
   { path: 'pots/PotsScreen.tsx', count: 1, reason: 'R18.2 loading skeleton bars (no text)' },
   { path: 'quick/QuickCheckForm.tsx', count: 2, reason: 'loading skeleton bar and the 1px result rule (no text)' },
+  { path: 'setup/DecideSetupPage.tsx', count: 2, reason: 'loading skeleton bars and the row chevron glyph (no text)' },
   { path: 'setup/EmergencyFundFields.tsx', count: 1, reason: 'chevron glyph (no text)' },
   { path: 'setup/SettingsRow.tsx', count: 1, reason: 'chevron glyph (no text)' },
   { path: 'setup/SetupRail.tsx', count: 1, reason: 'progress segment bar (no text)' },
