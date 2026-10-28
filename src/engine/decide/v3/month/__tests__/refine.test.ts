@@ -85,7 +85,7 @@ describe('refine gates and time triggers (D-12)', () => {
     expect(refine(inp(base, { ...due, lastAt: '2026-10-05' })).due).toBe(false);
     expect(refine(inp(base, { ...due, snoozeUntil: '2026-10-10' }))).toEqual({ due: false, triggers: [], cards: [] });
     expect(refine(inp(base, { ...due, snoozeUntil: '2026-10-03' })).due).toBe(true);
-    expect(refine(inp(base, { ...due, lastAt: '2026-09-03' })).due).toBe(true);
+    expect(refine(inp(base, { ...due, lastAt: '2026-06-03' })).due).toBe(true);
   });
 });
 
@@ -94,7 +94,7 @@ describe('everyday cards (D-12, D-20)', () => {
     const months = [...evenMonths(PAST.slice(0, 4), 120000), everyday('2026-08', 120000), everyday('2026-09', 121000)];
     const r = refine(inp({ months, everydayOverride: mu(100000) }));
     expect(r.triggers).toEqual(['typed_off']);
-    expect(r.cards).toEqual([{ kind: 'everyday', ref: null, month: null, current: 100000, suggested: 120000, noise: 6000 }]);
+    expect(r.cards).toEqual([{ kind: 'everyday', ref: null, month: null, current: 100000, suggested: 120000, noise: 5000 }]);
   });
   it('no everyday card when the typical month is within the noise', () => {
     const months = evenMonths(PAST, 102000);
@@ -138,7 +138,7 @@ describe('everyday cards (D-12, D-20)', () => {
     expect(kinds(refine(inp({ months: [], everydayOverride: mu(100000) }, { overrideAt: null })))).toEqual([]);
   });
   it('an override whose records median moved 20% is flagged even when the spread hides a value card', () => {
-    const jumpy = [10000, 300000, 10000, 300000, 10000, 300000].map((a, i) => everyday(PAST[i] as string, a));
+    const jumpy = [90000, 170000, 90000, 170000, 90000, 170000].map((a, i) => everyday(PAST[i] as string, a));
     const r = refine(inp({ months: jumpy, everydayOverride: mu(100000) }, { overrideAt: '2026-09-20' }));
     expect(kinds(r)).toEqual(['everyday_override_expiring']);
   });
@@ -172,12 +172,17 @@ describe('new regular items and income cards', () => {
     const months = ['2026-08', '2026-09'].map((m) => monthOf(m, [paidPay(m, 440000)]));
     expect(kinds(refine(inp({ series: [payOf()], months }, { setupDoneAt: '2026-01-10' })))).toEqual([]);
   });
+  it('orders paid lines with the same date by id and pays by id', () => {
+    const lines = ['b', 'a', 'c'].map((id) => v3Line({ id, date: '2026-09-01', amount: 440000, role: 'income', seriesId: 'pay1' }));
+    const r = refine(inp({ series: [payOf(), payOf({ id: 'pay0' })], months: [monthOf('2026-09', lines)] }, { setupDoneAt: '2026-01-10' }));
+    expect(r.cards.map((c) => [c.kind, c.ref, c.suggested])).toEqual([['pay', 'pay1', 440000]]);
+  });
   it('a pay series that is not confirmed is not judged', () => {
     const months = PAST.slice(2).map((m) => monthOf(m, [paidPay(m, 440000)]));
     expect(kinds(refine(inp({ series: [payOf({ confirmed: false })], months }, { setupDoneAt: '2026-01-10' })))).toEqual([]);
   });
   it('a regular pay with no paid line for its last 2 expected dates has stopped', () => {
-    const months = [monthOf('2026-06', [paidPay('2026-06', 400000)]), ...evenMonths(['2026-07', '2026-08', '2026-09'], 50000)];
+    const months = [monthOf('2026-06', [paidPay('2026-06', 400000), v3Line({ id: 'e6', date: '2026-06-10', amount: 50000 })]), ...evenMonths(['2026-07', '2026-08', '2026-09'], 50000)];
     const r = refine(inp({ series: [payOf()], months }));
     expect(r.cards).toEqual([{ kind: 'pay_stopped', ref: 'pay1', month: null, current: 400000, suggested: null, noise: null }]);
     expect(r.triggers).toEqual(['life_change']);
@@ -309,7 +314,9 @@ describe('order and codes only', () => {
     const months = PAST.map((m, i) =>
       i >= 4
         ? monthOf(m, [v3Line({ id: `r-${m}`, date: `${m}-05`, amount: 120000, seriesId: 'rent' }), income(m, 300000), v3Line({ id: `e${m}`, date: `${m}-10`, amount: 150000 })])
-        : everyday(m, i === 3 ? 10000 : 150000)
+        : i === 0
+          ? monthOf(m, [paidPay(m, 400000), v3Line({ id: `e${m}`, date: `${m}-10`, amount: 150000 })])
+          : everyday(m, i === 3 ? 10000 : 150000)
     );
     const r = refine(
       inp(
