@@ -680,7 +680,6 @@ const en = {
       rowSubNoCategory: '{{date}}',
       refundRowValue: '{{date}} · {{amount}}',
       refundRowA11y: 'Refund from {{payer}}, {{date}}, {{amount}}. Opens the refund.',
-      purchaseRowA11y: 'Refund of {{payee}}, {{date}}. Opens the purchase.',
     },
     unpaidBanner: {
       text: 'Showing unpaid bills',
