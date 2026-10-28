@@ -17,6 +17,7 @@ import { supabase } from '@/services/supabase';
 import { queryKeys } from '@/data/keys';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useRecurringDismissals } from '@/data/queries/recurringDismissals';
+import { seriesStatusOf } from '@/features/record/entry/seriesStatus';
 import { useRecordContext } from '@/features/record/useRecordContext';
 
 const LOOKBACK_MONTHS = 6;
@@ -55,7 +56,7 @@ export function freqOfCadence(c: RecurringCandidate['cadence']): RecurringFreq {
 const dayOf = (date: string): number => Number(date.slice(8, 10));
 const nameKey = (name: string, currency: string): string => offerKey(name, currency, 1).split('|').slice(0, 2).join('|');
 
-export function useRegularCandidates(): { rows: readonly CandidateRow[]; isLoading: boolean; householdId: string | undefined; userId: string | undefined; today: string; homeCurrency: string; timeZone: string } {
+export function useRegularCandidates(): { rows: readonly CandidateRow[]; paused: readonly RecurringSeriesRow[]; isLoading: boolean; householdId: string | undefined; userId: string | undefined; today: string; homeCurrency: string; timeZone: string } {
   const rc = useRecordContext();
   const householdId = rc.householdId ?? undefined;
   const userId = rc.userId ?? undefined;
@@ -82,7 +83,8 @@ export function useRegularCandidates(): { rows: readonly CandidateRow[]; isLoadi
       detect.push({ id: r.id, name: r.name, amount: r.original_amount, currency: r.original_currency, date: r.local_date, isTransfer: false, accountId: r.account_id });
     }
     const found = detectCandidates(detect, { dismissedKeys: new Set(), linkedRowIds: new Set() });
-    return found.map((candidate): CandidateRow => {
+    const out: CandidateRow[] = [];
+    for (const candidate of found) {
       const last = byId.get(candidate.rowIds[candidate.rowIds.length - 1] as string);
       const currency = last?.original_currency ?? rc.homeCurrency;
       const wanted = nameKey(candidate.name, currency);
@@ -90,12 +92,20 @@ export function useRegularCandidates(): { rows: readonly CandidateRow[]; isLoadi
         liveSeries.find(
           (s) =>
             s.deleted_at === null &&
+            seriesStatusOf(s).kind === 'live' &&
             nameKey(s.name, s.currency) === wanted &&
             (candidate.payGroupKey === null || dayOf(s.anchor_date) === dayOf(candidate.anchorDate))
         ) ?? null;
+      // A payee whose only series is paused is listed under Paused, not offered again as a candidate (no duplicate series).
+      if (
+        confirmed === null &&
+        liveSeries.some((s) => s.deleted_at === null && seriesStatusOf(s).kind === 'paused' && nameKey(s.name, s.currency) === wanted)
+      ) {
+        continue;
+      }
       const dismissal = live.find((d) => d.payee_key === candidate.key && d.direction === candidate.direction) ?? null;
       const state: CandidateState = confirmed !== null ? 'regular' : dismissal !== null ? 'notRegular' : 'unmarked';
-      return {
+      out.push({
         id: `${candidate.key}|${candidate.anchorDate}`,
         candidate,
         state,
@@ -105,12 +115,17 @@ export function useRegularCandidates(): { rows: readonly CandidateRow[]; isLoadi
         series: confirmed,
         dismissal,
         freq: freqOfCadence(candidate.cadence),
-      };
-    });
+      });
+    }
+    return out;
   }, [txns, liveSeries, live, rc.homeCurrency]);
+
+  // 05.2 D-24: paused regular payments (expense series) stay reachable so Resume works for bills.
+  const paused = useMemo(() => liveSeries.filter((s) => s.deleted_at === null && s.amount < 0 && seriesStatusOf(s).kind === 'paused'), [liveSeries]);
 
   return {
     rows,
+    paused,
     isLoading: history.isLoading,
     householdId,
     userId,

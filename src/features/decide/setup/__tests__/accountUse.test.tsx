@@ -7,6 +7,8 @@ import { AccountUseList } from '../AccountUseList';
 import { AccountUseStep } from '../steps/AccountUseStep';
 import type { SetupStepReady } from '../steps/types';
 
+let mockDecideV3 = true;
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
 jest.setTimeout(30000);
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),

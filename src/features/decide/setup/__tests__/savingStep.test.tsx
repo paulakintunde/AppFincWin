@@ -7,6 +7,8 @@ import type { SetupStepHandle, SetupStepReady } from '../steps/types';
 import { SavingStep } from '../steps/SavingStep';
 import { EditSeriesFromContext } from '@/features/income/steps/editSeriesFromContext';
 
+let mockDecideV3 = true;
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
 jest.setTimeout(30000);
 let mockWidth = 402;
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({

@@ -10,13 +10,17 @@ import type { ParseKeys } from 'i18next';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useFontScale } from '@/theme/FontScaleProvider';
-import { PRESSED_OPACITY, space } from '@/theme/layout';
+import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { currencyCode, minorUnits } from '@/engine/money';
 import { heroAmountText, heroOneLineMax } from '@/features/decide/home/heroAmountText';
 import type { SetupStepReady } from '@/features/decide/setup/steps/types';
+import { useDecideAccess } from '@/features/decide/useDecideAccess';
+import { openSeriesStatus } from '@/features/record/entry/seriesStatusHost';
+import { seriesStatusOf } from '@/features/record/entry/seriesStatus';
+import type { RecurringSeriesRow } from '@/db/rows';
 
 /**
  * The catalogue's translate function with plain string keys: step tables hold keys as data, and the typed `t` accepts
@@ -109,6 +113,58 @@ export function TextButton({ label, onPress, danger = false }: { label: string; 
   );
 }
 
+/** 05.2 D-24: "Stopped or paused" for a saved series. Opens the status sheet only; nothing is written here. v3 only (D-01). */
+export function SeriesStatusLink({ series }: { series: RecurringSeriesRow }) {
+  const t = useCopy();
+  const { colors, pairing } = useTheme();
+  const readOnly = useReadOnlyScope();
+  const { v3 } = useDecideAccess();
+  if (!v3) return null;
+  const label = t('record.seriesStatus.action');
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${series.name}, ${label}`}
+      accessibilityState={{ disabled: readOnly }}
+      disabled={readOnly}
+      onPress={() => openSeriesStatus(series)}
+      style={({ pressed }) => [styles.textButton, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+    >
+      <Text style={{ ...textRole(pairing, 'label'), color: colors.ink, textDecorationLine: 'underline' }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+/** 05.2 D-24: paused series, listed read-only under "Paused" so Resume stays reachable. v3 only; nothing when none. */
+export function PausedSeriesList({ series }: { series: readonly RecurringSeriesRow[] }) {
+  const t = useCopy();
+  const { colors, pairing } = useTheme();
+  const { v3 } = useDecideAccess();
+  const money = useMoneyFormatter(false, series[0]?.currency ?? 'USD');
+  if (!v3 || series.length === 0) return null;
+  return (
+    <View style={{ gap: space.gapMd }}>
+      <Text accessibilityRole="header" style={{ ...textRole(pairing, 'label'), color: colors.ink }}>
+        {t('record.seriesStatus.pausedHeading')}
+      </Text>
+      {series.map((s) => {
+        const status = seriesStatusOf(s);
+        const date = money.formatDate(status.kind === 'live' ? s.anchor_date : status.from).replace(/\s/g, ' ');
+        const line = t('record.seriesStatus.statusPaused', { date });
+        return (
+          <View key={s.id} style={[styles.pausedCard, { borderColor: colors.line2, backgroundColor: colors.surface }]}>
+            <View accessible accessibilityLabel={t('record.seriesStatus.a11yStatus', { name: s.name, status: line })} style={{ gap: 2 }}>
+              <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{s.name}</Text>
+              <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{line}</Text>
+            </View>
+            <SeriesStatusLink series={s} />
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 export function Stack({ children, gap = space.gapMd }: { children: React.ReactNode; gap?: number }) {
   return <View style={{ gap }}>{children}</View>;
 }
@@ -124,5 +180,6 @@ export function ChipRow({ children, label, role = 'radiogroup' }: { children: Re
 
 const styles = StyleSheet.create({
   textButton: { minHeight: space.touchMin, justifyContent: 'center', alignSelf: 'flex-start' },
+  pausedCard: { borderWidth: 1, borderRadius: radii.card, padding: space.cardPad, gap: space.gapSm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
 });

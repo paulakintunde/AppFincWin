@@ -13,6 +13,8 @@ import { UnspentStep } from '../steps/UnspentStep';
 import { registerSetupSheetActions } from '../steps/setupSheetHost';
 import type { SetupStepHandle, SetupStepReady } from '../steps/types';
 
+let mockDecideV3 = true;
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
 jest.setTimeout(30000);
 let mockWidth = 402;
 let mockScale = 1;

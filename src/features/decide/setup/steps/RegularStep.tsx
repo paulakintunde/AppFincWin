@@ -20,7 +20,7 @@ import { useConfirmRegularCandidate } from '@/data/mutations/seriesAttributes';
 import { useAddDismissal } from '@/data/mutations/dismissals';
 import type { NewRecurringSeries } from '@/db/recurringSeries';
 import { useShouldStack } from '@/features/decide/ui/textFit';
-import { Intro, Meta, TextButton, Why, useCopy, useNoWrapMoney, useReportReady, type Copy } from '@/features/income/steps/shared';
+import { Intro, Meta, PausedSeriesList, SeriesStatusLink, TextButton, Why, useCopy, useNoWrapMoney, useReportReady, type Copy } from '@/features/income/steps/shared';
 import type { SetupStepBodyProps, SetupStepHandle } from './types';
 import { setupSheetActions, type RegularPreset } from './setupSheetHost';
 import { useRegularCandidates, type CandidateRow } from './useRegularCandidates';
@@ -143,6 +143,7 @@ function CandidateCard({ row, t, canWrite, onRegular, onNotRegular, onEdit }: Ca
         />
         <MarkButton label={t('decide.setup.regular.edit')} a11y={t('decide.setup.regular.editA11y', { name: candidate.name })} selected={false} fill={!stacked} onPress={() => onEdit(row)} />
       </View>
+      {row.state === 'regular' && row.series !== null ? <SeriesStatusLink series={row.series} /> : null}
     </View>
   );
 }
@@ -150,7 +151,7 @@ function CandidateCard({ row, t, canWrite, onRegular, onNotRegular, onEdit }: Ca
 export const RegularStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function RegularStep({ onReadyChange }, ref) {
   const t = useCopy();
   const { colors, pairing } = useTheme();
-  const { rows, householdId, userId, timeZone } = useRegularCandidates();
+  const { rows, paused, householdId, userId, timeZone } = useRegularCandidates();
   const confirmer = useConfirmRegularCandidate(householdId ?? '', userId ?? '');
   const dismisser = useAddDismissal(householdId ?? '', userId ?? '');
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -222,6 +223,7 @@ export const RegularStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(funct
           <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.setup.regular.emptyBody')}</Text>
         </View>
       )}
+      <PausedSeriesList series={paused} />
       <TextButton label={t('decide.setup.regular.add')} onPress={() => setPickerOpen(true)} />
       <Why textKey="decide.setup.regular.why" />
       <Sheet visible={pickerOpen} onDismiss={() => setPickerOpen(false)} accessibilityLabel={t('decide.setup.regular.addTitle')}>

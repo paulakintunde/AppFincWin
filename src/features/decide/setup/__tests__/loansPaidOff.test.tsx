@@ -8,6 +8,8 @@ import type { SetupStepHandle, SetupStepReady } from '../steps/types';
 import { LoansStep } from '../steps/LoansStep';
 import { registerSetupSheetActions } from '../steps/setupSheetHost';
 
+let mockDecideV3 = true;
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
 jest.setTimeout(30000);
 let mockWidth = 402;
 let mockScale = 1;

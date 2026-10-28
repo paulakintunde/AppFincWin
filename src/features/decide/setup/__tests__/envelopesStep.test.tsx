@@ -6,6 +6,8 @@ import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import type { SetupStepHandle, SetupStepReady } from '../steps/types';
 import { EnvelopesStep } from '../steps/EnvelopesStep';
 
+let mockDecideV3 = true;
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
 jest.setTimeout(30000);
 let mockWidth = 402;
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({

@@ -8,6 +8,8 @@ import { ShareStep } from '../steps/ShareStep';
 import { DetailStep } from '../steps/DetailStep';
 import { RemindersStep } from '../steps/RemindersStep';
 
+let mockDecideV3 = true;
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
 jest.setTimeout(30000);
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
 

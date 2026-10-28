@@ -8,6 +8,8 @@ import { RegularStep } from '../steps/RegularStep';
 import { LoansStep } from '../steps/LoansStep';
 import { registerSetupSheetActions } from '../steps/setupSheetHost';
 
+let mockDecideV3 = true;
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
 jest.setTimeout(30000);
 let mockWidth = 402;
 let mockScale = 1;
@@ -49,10 +51,14 @@ const candidate = (name: string, amount: number, state: Row['state'], key = name
   candidate: { key, name, direction: 'out', cadence: { unit: 'month', every: 1 }, anchorDate: '2026-10-01', amount, rowIds: ['r1'], payGroupKey: null },
 });
 let mockRows: ReturnType<typeof candidate>[] = [];
+let mockPaused: Record<string, unknown>[] = [];
+const mockOpenStatus = jest.fn();
+jest.mock('@/features/record/entry/seriesStatusHost', () => ({ openSeriesStatus: (s: unknown) => mockOpenStatus(s) }));
 jest.mock('../steps/useRegularCandidates', () => ({
-  useRegularCandidates: () => ({ rows: mockRows, isLoading: false, householdId: 'h1', userId: 'u1', today: '2026-10-15', homeCurrency: 'USD', timeZone: 'UTC' }),
+  useRegularCandidates: () => ({ rows: mockRows, paused: mockPaused, isLoading: false, householdId: 'h1', userId: 'u1', today: '2026-10-15', homeCurrency: 'USD', timeZone: 'UTC' }),
 }));
 
+const pausedSeries = (name: string) => ({ id: `p-${name}`, name, amount: -4000, currency: 'USD', freq: 'monthly', anchor_date: '2026-06-01', end_date: '2026-09-30', end_reason: 'paused', deleted_at: null });
 let mockDebts: Record<string, unknown>[] = [];
 jest.mock('@/data/queries/decide', () => ({ useDebts: () => ({ data: mockDebts }) }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: [{ id: 'ser1', anchor_date: '2026-10-14' }] }) }));
@@ -99,7 +105,10 @@ beforeEach(() => {
   mockScale = 1;
   [mockConfirm, mockDismiss, mockPays, mockToast].forEach((m) => m.mockClear());
   mockRows = [];
+  mockPaused = [];
   mockDebts = [];
+  mockDecideV3 = true;
+  mockOpenStatus.mockClear();
 });
 
 describe('RegularStep', () => {
@@ -175,6 +184,67 @@ describe('RegularStep', () => {
     const narrow = screen.getByLabelText('Mark Rent as regular');
     expect(JSON.stringify(narrow.props.style)).not.toContain('"flex":1');
     expect(JSON.stringify(narrow.props.style)).toContain('"alignSelf":"stretch"');
+  });
+
+  it('shows the Stopped or paused link on Regular rows only; pressing it opens the sheet and writes nothing', async () => {
+    mockRows = [candidate('Phone', 5000, 'regular'), candidate('Rent', 150000, 'unmarked'), candidate('Gym', 4000, 'notRegular')];
+    await mount(RegularStep);
+    expect(screen.getAllByText('Stopped or paused')).toHaveLength(1);
+    await fireEvent.press(screen.getByLabelText('Phone, Stopped or paused'));
+    expect(mockOpenStatus).toHaveBeenCalledWith(expect.objectContaining({ id: 's1', name: 'Phone' }));
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockDismiss).not.toHaveBeenCalled();
+  });
+
+  it('hides the link and the Paused section without v3', async () => {
+    mockDecideV3 = false;
+    mockRows = [candidate('Phone', 5000, 'regular')];
+    mockPaused = [pausedSeries('Gym')];
+    await mount(RegularStep);
+    expect(screen.queryByText('Stopped or paused')).toBeNull();
+    expect(screen.queryByText('Paused')).toBeNull();
+    expect(screen.queryByText('Gym')).toBeNull();
+  });
+
+  it('lists a paused regular payment read-only under Paused, and its link opens the sheet', async () => {
+    mockRows = [candidate('Phone', 5000, 'unmarked')];
+    mockPaused = [pausedSeries('Gym')];
+    const { ref } = await mount(RegularStep);
+    expect(screen.getByRole('header', { name: 'Paused' })).toBeTruthy();
+    expect(screen.getByText('Gym')).toBeTruthy();
+    expect(screen.getByText(/^Paused since Oct.1,.2026$/)).toBeTruthy();
+    expect(screen.queryByLabelText('Mark Gym as regular')).toBeNull();
+    expect(screen.queryByLabelText('Edit Gym')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Gym, Stopped or paused'));
+    expect(mockOpenStatus).toHaveBeenCalledWith(expect.objectContaining({ id: 'p-Gym' }));
+    expect(mockConfirm).not.toHaveBeenCalled();
+    let out: { stepId: string | null } | undefined;
+    await act(async () => {
+      out = ref.current!.save();
+    });
+    expect(out).toEqual({ stepId: null });
+  });
+
+  it('has no Paused heading when nothing is paused', async () => {
+    mockRows = [candidate('Phone', 5000, 'regular')];
+    await mount(RegularStep);
+    expect(screen.queryByText('Paused')).toBeNull();
+  });
+
+  it.each([
+    [320, 1],
+    [320, 2],
+    [402, 1],
+    [402, 2],
+  ])('paused rows render at %i dp x %f without the date breaking', async (width, scale) => {
+    mockWidth = width;
+    mockScale = scale;
+    mockRows = [candidate('Phone', 5000, 'regular')];
+    mockPaused = [pausedSeries('Gym membership and classes')];
+    await mount(RegularStep);
+    const line = screen.getByText(/^Paused since/);
+    expect(String(line.props.children)).not.toMatch(/Oct [0-9]/);
+    expect(screen.getByLabelText('Gym membership and classes, Stopped or paused')).toBeTruthy();
   });
 });
 
