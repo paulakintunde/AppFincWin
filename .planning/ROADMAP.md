@@ -968,16 +968,16 @@ Plans:
 - [x] 05.2-19-PLAN.md — buildV3Inputs real mapping, settings source, useDecideV3 read hook (wave 3)
 - [x] 05.2-20-PLAN.md — All 05.2 copy and the four decide_setup_* analytics events (wave 3)
 - [x] 05.2-21-PLAN.md — Pure setup flow model and the step-body contract (wave 3)
-- [ ] 05.2-22-PLAN.md — IncomeProfileSteps (shared): paid, pay, season, method, other (wave 4)
-- [ ] 05.2-23-PLAN.md — SetupStepper shell, rail, PrefillNote, facts hook (wave 4)
-- [ ] 05.2-24-PLAN.md — Steps: regular payments, loans, saving with buckets and the D-22 tile (wave 4)
-- [ ] 05.2-25-PLAN.md — Steps: everyday, unusual months, share, detail, reminders (wave 4)
-- [ ] 05.2-26-PLAN.md — Account use list, sheet, step and the account edit row (wave 4)
-- [ ] 05.2-27-PLAN.md — Emergency fund step and sheet (wave 4)
-- [ ] 05.2-28-PLAN.md — Unspent money worked sum, sheet and step (wave 4)
-- [ ] 05.2-29-PLAN.md — Envelopes step and PotSheet Held in row (wave 4)
-- [ ] 05.2-30-PLAN.md — Activity: How are you paid? card, income tag chip and sheet, refund tags (wave 4)
-- [ ] 05.2-31-PLAN.md — Shadow and I28 re-run with owner approval of new fits (checkpoint, D-11) (wave 4)
+- [x] 05.2-22-PLAN.md — IncomeProfileSteps (shared): paid, pay, season, method, other (wave 4)
+- [x] 05.2-23-PLAN.md — SetupStepper shell, rail, PrefillNote, facts hook (wave 4)
+- [x] 05.2-24-PLAN.md — Steps: regular payments, loans, saving with buckets and the D-22 tile (wave 4)
+- [x] 05.2-25-PLAN.md — Steps: everyday, unusual months, share, detail, reminders (wave 4)
+- [x] 05.2-26-PLAN.md — Account use list, sheet, step and the account edit row (wave 4)
+- [x] 05.2-27-PLAN.md — Emergency fund step and sheet (wave 4)
+- [x] 05.2-28-PLAN.md — Unspent money worked sum, sheet and step (wave 4)
+- [x] 05.2-29-PLAN.md — Envelopes step and PotSheet Held in row (wave 4)
+- [x] 05.2-30-PLAN.md — Activity: How are you paid? card, income tag chip and sheet, refund tags (wave 4)
+- [x] 05.2-31-PLAN.md — Shadow and I28 re-run with owner approval of new fits (checkpoint, D-11) (wave 4)
 - [ ] 05.2-32-PLAN.md — Stepper assembly: registry, Welcome, Summary, setup route, standalone mode (wave 5)
 - [ ] 05.2-33-PLAN.md — Refund picker and detail rows (wave 5)
 - [ ] 05.2-34-PLAN.md — Decide settings: rows, edit one step, Reset (wave 6)
@@ -1139,7 +1139,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
-| 05.2 Decide data and setup | 21/36 | In progress | - |
+| 05.2 Decide data and setup | 31/36 | In progress | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
