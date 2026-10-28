@@ -262,6 +262,14 @@ describe('RoughFiguresSheet', () => {
       saving_floor: null,
       rough_income: 420_000,
       rough_spending: 200_000,
+      rough_saving: null,
+      rough_debt: null,
+      rough_invest: null,
+      steady_amount: null,
+      everyday_override: null,
+      unspent_anchor: null,
+      reserve_goal: null,
+      unexplained_amount: null,
       currency: 'USD',
     });
   });
@@ -359,6 +367,14 @@ describe('LinesCard', () => {
       saving_floor: 10_000,
       rough_income: null,
       rough_spending: null,
+      rough_saving: null,
+      rough_debt: null,
+      rough_invest: null,
+      steady_amount: null,
+      everyday_override: null,
+      unspent_anchor: null,
+      reserve_goal: null,
+      unexplained_amount: null,
       currency: 'USD',
     });
   });
