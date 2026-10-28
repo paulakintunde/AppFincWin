@@ -6,13 +6,16 @@
 // filters and bulk select layer on top (ACT-03, ACT-04, ACT-05); the list keeps visual priority.
 // 03.1 D-43: the header is four bands (title row, month row with Search/Filter/More, summary card,
 // Display row) rendered by ActivityHeaderBands; Display and More live in their own sheets.
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Text } from '@/ui/Text';
 import { FlashList } from '@shopify/flash-list';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 import { useCategoryLookup } from '@/data/queries/categories';
+import { useIncomePayerPrompts } from '@/data/queries/incomePayerPrompts';
+import { refundTotals } from '@/data/mutations/refundLinkModel';
+import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { useBulkDelete, useBulkMarkPaid, useBulkMarkUnpaid } from '@/data/mutations/patches';
 import { EditScopePrompt } from '@/features/record/entry/EditScopePrompt';
 import { PasteSheet } from '@/features/record/import/PasteSheet';
@@ -44,6 +47,9 @@ import { monthRefreshKeys } from './refreshKeys';
 import { formatMonthLabel } from './MonthSwitcher';
 import { RecurringReviewSheet } from './RecurringReviewSheet';
 import { HowArePaidCard } from './HowArePaidCard';
+import { incomeChipState, isIncomeRow, rulesByPayer } from './IncomeTagChip';
+import { IncomeTagSheet } from './IncomeTagSheet';
+import { refundTagFor } from './RefundTag';
 import { SeriesOfferCard } from './SeriesOfferCard';
 import { TransactionDetailSheet } from './TransactionDetailSheet';
 import { CalendarView } from './views/CalendarView';
@@ -94,6 +100,13 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
     accountName,
   });
   const flow = useRowFlow(rowActions, month);
+  // 05.2-30 (D-01): income chips, the income sheet and the refund tags exist only with the Decide switch on.
+  const { v3 } = useDecideAccess();
+  const payerRules = useIncomePayerPrompts(v3 ? (rc.householdId ?? undefined) : undefined);
+  const rulesByKey = useMemo(() => rulesByPayer(payerRules.data ?? []), [payerRules.data]);
+  const rowsByIdOnScreen = useMemo(() => new Map(itemRows.map((r) => [r.id, r] as const)), [itemRows]);
+  const refundSums = useMemo(() => (v3 ? refundTotals(itemRows) : new Map<string, number>()), [v3, itemRows]);
+  const [incomeSheet, setIncomeSheet] = useState<{ row: ActivityRowView; newPayer: boolean } | null>(null);
   // D-10: the FAB steps aside while rows are being selected.
   useHideFab('bulkSelect', selection.active);
 
@@ -247,6 +260,13 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
       onSwipeDelete={() => flow.requestDelete(row)}
       cardPosition={cardPosition}
       balanceNote={vm.balanceNotes.get(row.id)}
+      incomeChip={v3 && isIncomeRow(row) ? incomeChipState(row, rulesByKey) : null}
+      onIncomeChipPress={(r) => setIncomeSheet({ row: r, newPayer: incomeChipState(r, rulesByKey).state === 'new' })}
+      refundTag={v3 ? refundTagFor(row, rowsByIdOnScreen, refundSums) : null}
+      onRefundTagPress={(purchaseId) => {
+        const purchase = rowsByIdOnScreen.get(purchaseId);
+        if (purchase !== undefined) flow.openDetail(purchase);
+      }}
     />
   );
 
@@ -527,6 +547,13 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
         onSelect={onMoreSelect}
       />
       <TransactionDetailSheet {...flow.detail} today={rc.today} />
+      <IncomeTagSheet
+        visible={v3 && incomeSheet !== null}
+        tx={incomeSheet?.row ?? null}
+        newPayer={incomeSheet?.newPayer ?? false}
+        formatter={formatter}
+        onClose={() => setIncomeSheet(null)}
+      />
       <ProjectionDetailSheet
         projection={projection}
         visible={projection !== null}

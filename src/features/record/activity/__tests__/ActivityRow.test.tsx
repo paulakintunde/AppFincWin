@@ -10,6 +10,7 @@ import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { ACCENTS } from '@/theme/accents';
 import { ActivityRow, ProjectionRow, type CardPosition } from '../ActivityRow';
 
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
 jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
 const mockSwipe: { props: Record<string, any> } = { props: {} };
 jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {

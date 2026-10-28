@@ -19,12 +19,18 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { shadows, type CategorySwatchKey, type colors as ThemeColours } from '@/theme/tokens';
+import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
 import { SwipeRow, type SwipeAction } from '@/ui/SwipeRow';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
+import { IncomeTagChip, type IncomeChipState } from './IncomeTagChip';
+import { RefundTag, type RefundTagModel } from './RefundTag';
 
 /** Where a row sits in its run of rows: a section is one grouped card (UI-SPEC list-row cards). */
 export type CardPosition = CardPositionOf;
+
+/** CategoryGlyph tile width (its own constant is private); tags indent past it. */
+const GLYPH_TILE = 32;
 
 /** Prototype row padding: 13px 18px (space.rowPadDense = 13). */
 const ROW_PAD_H = 18;
@@ -78,6 +84,12 @@ export interface ActivityRowProps {
   onSwipeDelete?: () => void;
   /** Running-balance note (D-25): replaces the sub-label. */
   balanceNote?: { kind: 'after'; text: string } | { kind: 'notCounted' };
+  /** 05.2-30: the income tag chip state for a money-in row, and what a press does. Drawn only with the Decide switch on (D-01). */
+  incomeChip?: IncomeChipState | null;
+  onIncomeChipPress?: (row: ActivityRowView) => void;
+  /** 05.2-30 (D-10): the refund tag for a refund row or a refunded purchase, and what a press does (open the purchase). */
+  refundTag?: RefundTagModel | null;
+  onRefundTagPress?: (purchaseId: string) => void;
 }
 
 function letterOf(name: string): string {
@@ -117,8 +129,13 @@ export function ActivityRow({
   onSwipeUnpay,
   onSwipeDelete,
   balanceNote,
+  incomeChip = null,
+  onIncomeChipPress,
+  refundTag = null,
+  onRefundTagPress,
 }: ActivityRowProps) {
   const t = useT();
+  const { v3 } = useDecideAccess();
   const { colors, pairing } = useTheme();
   const isTransfer = row.transfer_id !== null;
 
@@ -206,44 +223,69 @@ export function ActivityRow({
     ? { word: t('activity.swipe.delete'), a11yLabel: t('activity.swipe.a11yDelete'), tone: 'danger', onCommit: onSwipeDelete }
     : undefined;
 
+  // 05.2-30: the income chip and the refund tag sit under the row's text, outside the row's own Pressable so their
+  // buttons stay reachable by assistive tech (the row's label replaces its children). Nothing for unflagged accounts.
+  const showChip = v3 && !selectable && incomeChip !== null && onIncomeChipPress !== undefined;
+  const showRefund = v3 && !selectable && refundTag !== null && onRefundTagPress !== undefined;
+  const extras =
+    showChip || showRefund ? (
+      <View style={styles.extras}>
+        {showChip ? <IncomeTagChip state={incomeChip} onPress={() => onIncomeChipPress(row)} /> : null}
+        {showRefund ? (
+          <RefundTag model={refundTag} row={row} formatter={formatter} onPress={() => onRefundTagPress(refundTag.purchase.id)} />
+        ) : null}
+      </View>
+    ) : null;
+
+  const mainPress = (
+    <Pressable
+      testID={`activity-row-${row.id}`}
+      accessibilityRole={selectable ? 'checkbox' : 'button'}
+      accessibilityLabel={selectable ? t('a11y.selectRow', { name }) : spoken}
+      accessibilityState={selectable ? { checked: selected } : undefined}
+      onPress={onRowPress}
+      onLongPress={onRowLongPress}
+      style={extras === null ? styles.main : [styles.main, styles.mainInColumn]}
+    >
+      {selectable ? (
+        <View
+          style={[
+            styles.checkbox,
+            { borderColor: selected ? colors.accent : colors.inkFaint, backgroundColor: selected ? colors.accent : 'transparent' },
+          ]}
+        >
+          {selected ? <View style={[styles.checkDot, { backgroundColor: colors.surface }]} /> : null}
+        </View>
+      ) : null}
+      <CategoryGlyph colorKey={swatchKey} letter={letter} />
+      <View style={styles.text}>
+        <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: nameColor }}>
+          {name}
+        </Text>
+        <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+          {balanceNote?.kind === 'after' ? balanceNote.text : notCounted ? t('activity.balance.notCounted') : meta}
+          {isRefund ? (
+            <Text style={{ color: colors.accent }}>{` · ${t('activity.tag.refund')}`}</Text>
+          ) : null}
+        </Text>
+        <View style={styles.tags}>
+          {row.pending ? <Tag label={t('sync.pendingRow')} /> : null}
+          <Tag tone={tag.tone} faint={tag.kind === 'moved'} label={tagWord} />
+        </View>
+      </View>
+    </Pressable>
+  );
+
   const card = (
     <View testID={`activity-card-${row.id}`} style={[styles.card, cardStyle(cardPosition, colors)]}>
-      <Pressable
-        testID={`activity-row-${row.id}`}
-        accessibilityRole={selectable ? 'checkbox' : 'button'}
-        accessibilityLabel={selectable ? t('a11y.selectRow', { name }) : spoken}
-        accessibilityState={selectable ? { checked: selected } : undefined}
-        onPress={onRowPress}
-        onLongPress={onRowLongPress}
-        style={styles.main}
-      >
-        {selectable ? (
-          <View
-            style={[
-              styles.checkbox,
-              { borderColor: selected ? colors.accent : colors.inkFaint, backgroundColor: selected ? colors.accent : 'transparent' },
-            ]}
-          >
-            {selected ? <View style={[styles.checkDot, { backgroundColor: colors.surface }]} /> : null}
-          </View>
-        ) : null}
-        <CategoryGlyph colorKey={swatchKey} letter={letter} />
-        <View style={styles.text}>
-          <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: nameColor }}>
-            {name}
-          </Text>
-          <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
-            {balanceNote?.kind === 'after' ? balanceNote.text : notCounted ? t('activity.balance.notCounted') : meta}
-            {isRefund ? (
-              <Text style={{ color: colors.accent }}>{` · ${t('activity.tag.refund')}`}</Text>
-            ) : null}
-          </Text>
-          <View style={styles.tags}>
-            {row.pending ? <Tag label={t('sync.pendingRow')} /> : null}
-            <Tag tone={tag.tone} faint={tag.kind === 'moved'} label={tagWord} />
-          </View>
+      {extras === null ? (
+        mainPress
+      ) : (
+        <View style={styles.mainColumn}>
+          {mainPress}
+          {extras}
         </View>
-      </Pressable>
+      )}
       {/* The figures and the compact Mark paid sit beside the row, so a pending line is no taller
           than a paid one. The amount repeats the row's press but is hidden from assistive tech: the
           row's own label already speaks the amount (S-WR-14). */}
@@ -384,6 +426,17 @@ const styles = StyleSheet.create({
     gap: space.gapMd,
     minHeight: space.touchMin,
     minWidth: 0,
+  },
+  // 05.2-30: the row stacks the main press above the tags when tags exist. The tags line up with the text column:
+  // the glyph tile (32) plus the row gap.
+  mainColumn: { flex: 1, minWidth: 0 },
+  mainInColumn: { flex: 0 },
+  extras: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: space.gapSm,
+    paddingLeft: GLYPH_TILE + space.gapMd,
+    paddingBottom: 2,
   },
   text: {
     flex: 1,
