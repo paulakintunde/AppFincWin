@@ -23,5 +23,5 @@ export function SuccessCircle(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  circle: { width: SIZE, height: SIZE, borderRadius: SIZE / 2, alignItems: 'center', justifyContent: 'center' },
+  circle: { width: SIZE, aspectRatio: 1, borderRadius: SIZE / 2, alignItems: 'center', justifyContent: 'center' },
 });
