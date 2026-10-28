@@ -326,6 +326,34 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
   });
 });
 
+describe('05.2 undo labels (DSU-21, DCU-09)', () => {
+  const expected: Record<string, string> = {
+    setupStepSaved: '{{name}}', setupReset: 'reset of Decide setup', incomeSetupSaved: 'income setup',
+    unspentConfirmed: 'unspent money', unspentCleared: 'unspent money', emergencySaved: 'emergency fund',
+    emergencyRemoved: 'emergency fund', accountUseSaved: 'account use', paymentMarkedRegular: 'regular payment',
+    paymentDismissed: 'regular payment', savingRaised: 'regular saving', incomeTypeSaved: 'income type',
+    incomeTagged: 'income type', refundLinked: 'refund link', refundUnlinked: 'refund link',
+    answerSaved: 'answer', answerRemoved: 'answer', refineSnoozed: 'check-in',
+  };
+
+  it('every 05.2 step has a key and its English text', () => {
+    for (const [key, text] of Object.entries(expected)) {
+      expect((UNDO_LABEL_KEYS as readonly string[]).includes(key)).toBe(true);
+      expect((en.undo.label as Record<string, string>)[key]).toBe(text);
+    }
+  });
+
+  it('the unnamed setup step has a fallback', () => {
+    expect(undoLabelText('setupStepSaved', {})).toEqual({ key: 'undo.labelUnnamed.setupStepSaved', params: {} });
+  });
+
+  it('the strings pass the banned-word guard', () => {
+    for (const text of Object.values(expected)) {
+      expect(text).not.toMatch(/advice|recommend|you should/i);
+    }
+  });
+});
+
 describe('R18 money concepts copy (05-131, DCU-09)', () => {
   const r18 = leaves.filter(
     (l) =>

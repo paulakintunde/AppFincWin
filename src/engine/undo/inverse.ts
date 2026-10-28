@@ -43,10 +43,17 @@ function insertInversePatch(entity: UndoEntity): Readonly<Record<string, PatchVa
     case 'decide_links':
     case 'decide_changes':
     case 'savings_goals':
+    // 05.2: the three new row tables soft-delete too (apply_patches allows deleted_at on each).
+    case 'recurring_dismissals':
+    case 'income_payer_prompts':
+    case 'decide_answers':
       return { deleted_at: NOW_SENTINEL };
     case 'categories':
     case 'accounts':
       return { archived_at: NOW_SENTINEL };
+    // 05.2: decide_settings is one row per user, created by upsert and never inserted as an undoable step; no soft-delete column exists.
+    case 'decide_settings':
+      throw new RangeError('insertInversePatch: decide_settings rows are not insert-undoable');
     default:
       return assertNever(entity, 'UndoEntity');
   }

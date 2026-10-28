@@ -11,7 +11,7 @@
  */
 
 /** The entities an undo step can touch (transfers are two `transactions` rows; 05: Decide checks, debts and decision links). */
-export type UndoEntity = 'transactions' | 'categories' | 'recurring_series' | 'accounts' | 'category_rules' | 'decide_checks' | 'debts' | 'decide_links' | 'decide_changes' | 'savings_goals';
+export type UndoEntity = 'transactions' | 'categories' | 'recurring_series' | 'accounts' | 'category_rules' | 'decide_checks' | 'debts' | 'decide_links' | 'decide_changes' | 'savings_goals' | 'decide_settings' | 'recurring_dismissals' | 'income_payer_prompts' | 'decide_answers'; // 05.2
 
 /** A patch value as it travels over the wire to `apply_patches`. */
 export type PatchValue = string | number | boolean | null;
@@ -31,8 +31,9 @@ export interface PatchOp {
 // covering both legs.
 // 05: Decide (DCU-04 abandon, D-09 Go ahead, D-11 remove, D-12 unlink; D-27 changes, D-34 goal tags)
 // 05-131 (D-101, D-103): pot add/edit/delete/done/reopen and the housing marker on a debt each name one undo step.
+// 05.2: Decide setup, unspent money, emergency fund, regular payments, income types, refund links, answers and check-ins each name one undo step.
 // 05-54: the refresh names its steps checkCleared, checkDeleted, decisionDeleted, changeDeleted; the old checkAbandoned, decisionRemoved and changeRemoved stay because saved undo rows still carry them.
-export const UNDO_LABEL_KEYS = ['added','edited','deleted','deletedMany','markedPaid','markedPaidMany','markedUnpaidMany','skipped','imported','seriesCreated','seriesEdited','seriesEnded','categoryAdded','categoryEdited','categoryArchived','categoryMerged','accountAdded','accountEdited','accountArchived','transferAdded','transferEdited','transferDeleted','cloned','pasted','markedMonthly','monthAdded','accountDeleted','addedMany','ruleAdded','ruleEdited','ruleRemoved','checkAbandoned','decisionWritten','decisionRemoved','lineUnlinked','changeAdded','changeEdited','changeRemoved','transferTagged','transferUntagged','checkCleared','checkDeleted','decisionDeleted','changeDeleted','potAdded','potEdited','potDeleted','potDone','potReopened','debtHousingChanged'] as const;
+export const UNDO_LABEL_KEYS = ['added','edited','deleted','deletedMany','markedPaid','markedPaidMany','markedUnpaidMany','skipped','imported','seriesCreated','seriesEdited','seriesEnded','categoryAdded','categoryEdited','categoryArchived','categoryMerged','accountAdded','accountEdited','accountArchived','transferAdded','transferEdited','transferDeleted','cloned','pasted','markedMonthly','monthAdded','accountDeleted','addedMany','ruleAdded','ruleEdited','ruleRemoved','checkAbandoned','decisionWritten','decisionRemoved','lineUnlinked','changeAdded','changeEdited','changeRemoved','transferTagged','transferUntagged','checkCleared','checkDeleted','decisionDeleted','changeDeleted','potAdded','potEdited','potDeleted','potDone','potReopened','debtHousingChanged','setupStepSaved','setupReset','incomeSetupSaved','unspentConfirmed','unspentCleared','emergencySaved','emergencyRemoved','accountUseSaved','paymentMarkedRegular','paymentDismissed','savingRaised','incomeTypeSaved','incomeTagged','refundLinked','refundUnlinked','answerSaved','answerRemoved','refineSnoozed'] as const;
 
 export type UndoLabelKey = (typeof UNDO_LABEL_KEYS)[number];
 
