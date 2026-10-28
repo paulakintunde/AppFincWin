@@ -16,7 +16,7 @@ export const REFUND_HISTORY_COUNT = 40;
 export const REFUND_KINDS = ['full', 'partial', 'over', 'several', 'plan'] as const;
 type RefundKind = (typeof REFUND_KINDS)[number];
 
-interface RawExtra {
+export interface RawExtra {
   kind: number;
   purchaseMonth: number;
   refundGap: number;
@@ -27,7 +27,7 @@ interface RawExtra {
   savingFixed: boolean;
 }
 
-const extraArb: fc.Arbitrary<RawExtra> = fc.record({
+export const extraArb: fc.Arbitrary<RawExtra> = fc.record({
   kind: fc.integer({ min: 0, max: REFUND_KINDS.length - 1 }),
   purchaseMonth: fc.integer({ min: 0, max: 3 }),
   refundGap: fc.integer({ min: 1, max: 3 }),
@@ -47,7 +47,7 @@ const extraArb: fc.Arbitrary<RawExtra> = fc.record({
 
 const pad = (n: number): string => String(n).padStart(2, '0');
 
-function refundHistory(base: GeneratedHistory, x: RawExtra): GeneratedHistory {
+export function refundHistory(base: GeneratedHistory, x: RawExtra): GeneratedHistory {
   const p = base.person;
   const id = p.id.replace('gen-', 'genref-');
   const kind: RefundKind = REFUND_KINDS[x.kind] ?? 'full';
@@ -77,7 +77,8 @@ function refundHistory(base: GeneratedHistory, x: RawExtra): GeneratedHistory {
 
   const months = p.months.map((m, mi) => {
     const lines: FixtureLine[] = [...m.lines];
-    if (mi === pIdx) lines.push({ id: purchaseId, date: purchaseDate, amount: x.purchase, role: 'spending', name: 'Refundable purchase' });
+    // a payment-plan purchase's day-one row belongs to the plan's debt_payment series, as it does in the app (05.2-31 fix)
+    if (mi === pIdx) lines.push({ id: purchaseId, date: purchaseDate, amount: x.purchase, role: 'spending', name: 'Refundable purchase', ...(kind === 'plan' ? { seriesId: `${id}-plan` } : {}) });
     if (kind === 'plan' && mi === pIdx) {
       // a payment-plan purchase: the day-one payment is the purchase line; later instalments are a debt payment series
       lines.push({ id: `${id}-inst-${mi}`, date: `${m.month}-20`, amount: Math.round(x.purchase / 6), role: 'debt_payment', seriesId: `${id}-plan` });
