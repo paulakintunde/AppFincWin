@@ -1,7 +1,7 @@
 /**
  * Plan 05.2-22: "Your regular pay". One card per pay. A new card creates a salary series (income_kind 'salary',
  * counts_as 'available') through useConfirmRegularCandidate; a changed existing salary series goes through the
- * existing edit-from mutation. The records' finding shows as a PrefillTile only, never as a selection.
+ * existing edit-from mutation. The records' finding shows as a PrefillNote only, never as a selection.
  */
 import React, { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
 import { View } from 'react-native';
@@ -19,7 +19,7 @@ import { hapticSelection } from '@/ui/haptics';
 import type { SetupStepBodyProps, SetupStepHandle } from '@/features/decide/setup/steps/types';
 import { useIncomeContext } from '../useIncomeContext';
 import { payableAccounts, seriesOfKind } from '../seriesHelpers';
-import { PrefillTile } from './PrefillTile';
+import { PrefillNote } from '@/features/decide/setup/PrefillNote';
 import { Caption, ChipRow, Meta, NEEDED_REASON_KEY, Stack, TextButton, Why, useNoWrapMoney, useReportReady, useCopy } from './shared';
 
 type Freq = 'weekly' | 'fortnightly' | 'monthly';
@@ -114,7 +114,7 @@ export const PayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function 
   const found = ctx.found;
   return (
     <View style={{ gap: space.groupGap }}>
-      {found ? <PrefillTile text={t('income.pay.prefill', { payer: found.payer, amount: noWrap(found.amount), day: found.day })} /> : null}
+      {found ? <PrefillNote text={t('income.pay.prefill', { payer: found.payer, amount: noWrap(found.amount), day: found.day })} /> : null}
       {cards.map((c, i) => (
         <Stack key={c.key}>
           <MoneyInput

@@ -1,7 +1,6 @@
 /**
- * Plan 05.2-22: the "We found ..." tile under the pay title. Plan 05.2-23 owns the shell-level PrefillNote with the
- * same look; this local tile keeps the income steps self-contained until the registry (05.2-32) can swap it. It only
- * informs: it never selects anything.
+ * Plan 05.2-23: the "We found ..." tile that sits under a step title when the records offer a prefill. It only
+ * informs: it never selects anything. Same look as the local tile plan 05.2-22 shipped (accentTint1, check glyph, s13_5).
  */
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -13,7 +12,7 @@ import { fontSize, textRole } from '@/theme/typography';
 
 const GLYPH = 16;
 
-export function PrefillTile({ text }: { text: string }) {
+export function PrefillNote({ text }: { text: string }) {
   const { colors, pairing } = useTheme();
   return (
     <View accessible accessibilityLabel={text} style={[styles.tile, { backgroundColor: colors.accentTint1 }]}>
