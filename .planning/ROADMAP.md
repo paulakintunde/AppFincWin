@@ -959,15 +959,15 @@ Plans:
 - [x] 05.2-10-PLAN.md — Widen existing db modules for the 05.2 columns + grant-mirror test (wave 2)
 - [x] 05.2-11-PLAN.md — db modules and read hooks for the three new tables (wave 2)
 - [x] 05.2-12-PLAN.md — Undo entities and labels, export manifest and its guard (wave 2)
-- [ ] 05.2-13-PLAN.md — Settings writes with Undo: setup steps, Reset, refine stamps, unexplained answer (wave 3)
-- [ ] 05.2-14-PLAN.md — Account use, mixed placement and emergency fund batch writes (D-04) (wave 3)
-- [ ] 05.2-15-PLAN.md — Confirm candidate, dismissals, series attributes, pays-in-full (wave 3)
-- [ ] 05.2-16-PLAN.md — Income tagging with payer rule, refund link/unlink, pure preview models (wave 3)
-- [ ] 05.2-17-PLAN.md — In-check answers mutations (pay arrival, expected income, bridge, cover) (wave 3)
-- [ ] 05.2-18-PLAN.md — Bucket-aware pot add/edit and validation (wave 3)
-- [ ] 05.2-19-PLAN.md — buildV3Inputs real mapping, settings source, useDecideV3 read hook (wave 3)
-- [ ] 05.2-20-PLAN.md — All 05.2 copy and the four decide_setup_* analytics events (wave 3)
-- [ ] 05.2-21-PLAN.md — Pure setup flow model and the step-body contract (wave 3)
+- [x] 05.2-13-PLAN.md — Settings writes with Undo: setup steps, Reset, refine stamps, unexplained answer (wave 3)
+- [x] 05.2-14-PLAN.md — Account use, mixed placement and emergency fund batch writes (D-04) (wave 3)
+- [x] 05.2-15-PLAN.md — Confirm candidate, dismissals, series attributes, pays-in-full (wave 3)
+- [x] 05.2-16-PLAN.md — Income tagging with payer rule, refund link/unlink, pure preview models (wave 3)
+- [x] 05.2-17-PLAN.md — In-check answers mutations (pay arrival, expected income, bridge, cover) (wave 3)
+- [x] 05.2-18-PLAN.md — Bucket-aware pot add/edit and validation (wave 3)
+- [x] 05.2-19-PLAN.md — buildV3Inputs real mapping, settings source, useDecideV3 read hook (wave 3)
+- [x] 05.2-20-PLAN.md — All 05.2 copy and the four decide_setup_* analytics events (wave 3)
+- [x] 05.2-21-PLAN.md — Pure setup flow model and the step-body contract (wave 3)
 - [ ] 05.2-22-PLAN.md — IncomeProfileSteps (shared): paid, pay, season, method, other (wave 4)
 - [ ] 05.2-23-PLAN.md — SetupStepper shell, rail, PrefillNote, facts hook (wave 4)
 - [ ] 05.2-24-PLAN.md — Steps: regular payments, loans, saving with buckets and the D-22 tile (wave 4)
@@ -1139,7 +1139,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
-| 05.2 Decide data and setup | 12/36 | In progress | - |
+| 05.2 Decide data and setup | 21/36 | In progress | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
