@@ -5,7 +5,7 @@ import { join } from 'path';
 
 const DIR = join(__dirname, '..');
 const FORBIDDEN = [/supabase/i, /\.from\(/, /AsyncStorage/, /SecureStore/, /\bfetch\(/];
-const ALLOWED_IMPORT = /^(@\/engine\/decide\/v3|@\/engine\/money|@\/engine\/payoff|@\/engine\/recurring|\.\.\/(buildSnapshot|conversion|types|checkInputs|checkCurrency)|\.\/[\w-]+)$/;
+const ALLOWED_IMPORT = /^(@\/engine\/decide\/v3|@\/engine\/money|@\/engine\/payoff|@\/engine\/recurring|\.\.\/(buildSnapshot|conversion|types|checkInputs|checkCurrency)|@\/db\/(decideSettings|decideAnswers|recurringDismissals)|\.\/[\w-]+)$/; // the three db row types settingsSource reads (import type only)
 const COPY_FIELD = /^(accounts|transactions|rows|series|envelopes|goals|pots|debts|balance|balances)$/i;
 
 /** Problems found in one source text; [] = clean. */
