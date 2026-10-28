@@ -5,7 +5,7 @@ import type { TransactionRow } from '@/db/rows';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { TransactionSheet } from '../TransactionSheet';
 
-jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) })); // 05.2-44: OccurrenceActions gates on v3
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockV3 }) })); // 05.2-44: OccurrenceActions gates on v3
 jest.mock('@/features/record/accounts/AccountSheet', () => ({ AccountSheet: () => null }));
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -30,6 +30,8 @@ let mockRegion = 'GB';
 let mockTransferCat: string | null = 'tc';
 let mockNoAccounts = false;
 let mockHome = 'GBP';
+let mockV3 = false;
+let mockSeries: unknown[] = [];
 
 jest.mock('@/data/mutations/transactions', () => ({
   useAddTransaction: () => ({ add: mockAdd }),
@@ -56,7 +58,8 @@ jest.mock('@/data/mutations/recurringSeries', () => ({
   useEditSeriesFrom: () => ({ editFrom: jest.fn(() => 'sedit-step') }),
   useEndSeries: () => ({ end: jest.fn(() => 'send-step') }),
 }));
-jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: [] }) }));
+jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: mockSeries }) }));
+jest.mock('@/data/mutations/seriesAttributes', () => ({ usePatchSeriesAttributes: () => ({ patch: jest.fn(() => null) }) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'series-1' }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: mockTrack }) }));
 jest.mock('@/data/queries/accounts', () => ({
@@ -173,6 +176,8 @@ beforeEach(() => {
   mockRates = [];
   mockLegsRead = { isPending: false, fetchStatus: 'idle', isError: false, isSuccess: true };
   mockRegion = 'GB';
+  mockV3 = false;
+  mockSeries = [];
   mockTransferCat = 'tc';
   mockNoAccounts = false;
   mockHome = 'GBP';
@@ -750,6 +755,38 @@ describe('TransactionSheet: keypad, toggles, notes and wording (REC-20)', () => 
       await fireEvent.press(getByText('Every week'));
       await fireEvent.press(getByText('Done'));
       expect(queryByText(TOGGLE)).toBeNull();
+    });
+  });
+
+  describe('series income rows (05.2-46)', () => {
+    const incomeRow = () => row({ original_amount: 250000, recurring_series_id: 's1', name: 'Pay' } as Partial<TransactionRow>);
+    beforeEach(() => {
+      mockV3 = true;
+      mockSeries = [{ id: 's1', name: 'Pay', version: 1, counts_as: null, income_kind: null }];
+    });
+
+    it('shows both rows on a regular income when v3 is on', async () => {
+      const { queryByText } = await open({ kind: 'edit', row: incomeRow() });
+      expect(queryByText('Income type')).not.toBeNull();
+      expect(queryByText('Counts toward my month')).not.toBeNull();
+    });
+
+    it('hides them when v3 is off, on money out, and on a row with no series', async () => {
+      mockV3 = false;
+      let r = await open({ kind: 'edit', row: incomeRow() });
+      expect(r.queryByText('Income type')).toBeNull();
+      r.unmount();
+      mockV3 = true;
+      r = await open({ kind: 'edit', row: row({ recurring_series_id: 's1' } as Partial<TransactionRow>) });
+      expect(r.queryByText('Income type')).toBeNull();
+      r.unmount();
+      r = await open({ kind: 'edit', row: row({ original_amount: 100 }) });
+      expect(r.queryByText('Income type')).toBeNull();
+    });
+
+    it('add mode does not show them', async () => {
+      const { queryByText } = await open({ kind: 'new', direction: 'in' });
+      expect(queryByText('Income type')).toBeNull();
     });
   });
 });

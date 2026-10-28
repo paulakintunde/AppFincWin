@@ -81,6 +81,7 @@ import { CurrencyPicker } from './pickers/CurrencyPicker';
 import { EditScopePrompt } from './EditScopePrompt';
 import { OccurrenceActions } from './OccurrenceActions';
 import { RepeatsField } from './RepeatsField';
+import { SeriesIncomeRows } from './SeriesIncomeRows';
 import { needsScopePrompt, repeatsProblem, repeatsToSchedule, thisAndFuturePlan, type RepeatsValue } from './recurringForm';
 import {
   initialFormState,
@@ -965,6 +966,9 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
                 onAdjust={() => setState((s) => withStatus(s, 'paid'))}
                 onDone={onClose}
               />
+            ) : null}
+            {editRow && series && editRow.original_amount > 0 && editRow.transfer_id === null && rc.householdId && rc.userId ? (
+              <SeriesIncomeRows series={series} householdId={rc.householdId} ownerId={rc.userId} />
             ) : null}
             {editRow?.recurring_series_id ? null : (
               <RepeatsField
