@@ -75,6 +75,10 @@ export const queryKeys = {
   decideWrittenRowLinks: (userId: string, householdId: string) =>
     ['decide-links', userId, householdId, 'written-rows'] as const, // D-40 (same prefix, refreshed by link writes)
   goalLines: (householdId: string, goalIds: string) => ['transactions', householdId, 'goal-lines', goalIds] as const, // D-34: row-derived
+  // 05.2 (Decide data and setup)
+  decideAnswers: (userId: string, householdId: string) => ['decide-answers', userId, householdId] as const,
+  recurringDismissals: (householdId: string) => ['recurring-dismissals', householdId] as const,
+  incomePayerPrompts: (householdId: string) => ['income-payer-prompts', householdId] as const,
 };
 
 export const mutationKeys = {
@@ -134,6 +138,21 @@ export const mutationKeys = {
   addPot: ['savings-goals', 'add'] as const,
   editPot: ['savings-goals', 'edit'] as const,
   setDebtHousing: ['debts', 'set-housing'] as const,
+  // 05.2 (Decide data and setup)
+  updateDecideSetup: ['decide-setup', 'update'] as const, // settings forward write + undo (05.2-13)
+  resetDecideSetup: ['decide-setup', 'reset'] as const, // 05.2-13
+  saveAccountUses: ['account-use', 'save-many'] as const, // 05.2-14 "These look right" / account-use step
+  saveAccountUse: ['account-use', 'save'] as const, // 05.2-14 one account (sheet + mixed placement)
+  saveEmergencyFund: ['emergency-fund', 'save'] as const, // 05.2-14 D-04 batch
+  confirmRegularCandidate: ['recurring-series', 'confirm-candidate'] as const, // 05.2-15
+  patchSeriesAttributes: ['recurring-series', 'attributes'] as const, // 05.2-15
+  addDismissal: ['recurring-dismissals', 'add'] as const, // 05.2-15
+  removeDismissal: ['recurring-dismissals', 'remove'] as const, // 05.2-15
+  tagIncome: ['income-tags', 'tag'] as const, // 05.2-16 (one batch incl. payer rule)
+  linkRefund: ['refund-links', 'link'] as const, // 05.2-16
+  unlinkRefund: ['refund-links', 'unlink'] as const, // 05.2-16
+  saveDecideAnswer: ['decide-answers', 'save'] as const, // 05.2-17
+  removeDecideAnswer: ['decide-answers', 'remove'] as const, // 05.2-17
 };
 
 // D-20: one scope means every paused write replays serially in the order it was queued --
