@@ -86,6 +86,8 @@ export interface GoalSource {
   opening_saved: number;
   done_at: string | null;
   deleted_at: string | null;
+  account_id?: string | null; // 05.2 D-22: where the envelope's money is held (a stored answer beats the transfer-leg guess)
+  bucket?: string | null; // 05.2 D-23: set = a saving bucket carved out of regular saving
 }
 
 // structurally identical to src/db/decideChanges.ts (05-38)
@@ -115,7 +117,7 @@ type SnapshotRow = Pick<
   | 'recurring_series_id'
   | 'category_id'
   | 'deleted_at'
-> & { one_off?: boolean | null; goal_id?: string | null; import_batch_id?: string | null }; // goal_id: D-34/D-101, a transfer leg tagged to a savings goal or pot
+> & { one_off?: boolean | null; goal_id?: string | null; import_batch_id?: string | null; income_kind?: string | null; counts_as?: 'available' | 'kept' | null; refund_of?: string | null }; // goal_id: D-34/D-101, a transfer leg tagged to a savings goal or pot
 
 export interface SnapshotSource {
   today: string;
@@ -123,11 +125,13 @@ export interface SnapshotSource {
   region: string | null; // 05-12 passes getDeviceRegion(rc.region) ?? null (RD-02: override > device region > time zone, never IP)
   rows: readonly SnapshotRow[];
   upcomingRows: readonly SnapshotRow[]; // live rows dated after the history window (05-12); only their pending one-offs are used
-  series: readonly Pick<
+  series: readonly (Pick<
     RecurringSeriesRow,
     'id' | 'account_id' | 'amount' | 'currency' | 'freq' | 'anchor_date' | 'end_date' | 'occurrence_count' | 'category_id' | 'deleted_at'
-  >[];
-  accounts: readonly Pick<AccountRow, 'id' | 'name' | 'kind' | 'currency' | 'archived_at' | 'deleted_at'>[];
+  > &
+    Partial<Pick<RecurringSeriesRow, 'counts_as' | 'income_kind' | 'saving_mode' | 'pay_group'>>)[];
+  accounts: readonly (Pick<AccountRow, 'id' | 'name' | 'kind' | 'currency' | 'archived_at' | 'deleted_at'> &
+    Partial<Pick<AccountRow, 'use' | 'use_purpose' | 'use_envelope_id' | 'use_extra_set_aside'>>)[];
   balances: Readonly<Record<string, number>>; // account id → paid-only balance in the account's currency
   rates: readonly FxLatestRow[];
   categories: Readonly<Record<string, string | null>>; // category id → builtin_key (null for custom)

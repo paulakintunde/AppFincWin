@@ -39,9 +39,24 @@ function checkOf(storedInputs: unknown, source: SnapshotSource, built: SnapshotR
   return { ...check, price: null, foreign: { currency: currencyCode(view.unconverted.currencies[0] as string), atTodaysRate: true } };
 }
 
-export function computeV3(source: SnapshotSource, v3: V3SettingsSource | null, storedInputs: unknown, uses?: Readonly<Record<string, AccountUse>>): Evaluation {
+/** D-48: the user's saved answer to "can you cover it in your low months" for this check, when there is one. */
+function volatileCoverOf(v3: V3SettingsSource | null, checkId: string | null | undefined): boolean | null {
+  if (checkId === null || checkId === undefined) return null;
+  const hit = (v3?.answers ?? []).find((a) => a.kind === 'volatile_cover' && a.check_id === checkId && a.bool_value !== null);
+  return hit === undefined ? null : hit.bool_value;
+}
+
+export function computeV3(
+  source: SnapshotSource,
+  v3: V3SettingsSource | null,
+  storedInputs: unknown,
+  uses?: Readonly<Record<string, AccountUse>>,
+  checkId?: string | null
+): Evaluation {
   const built = buildDecideSnapshot(source);
-  return evaluate(buildV3Inputs(source, v3, built, uses), checkOf(storedInputs, source, built));
+  const check = checkOf(storedInputs, source, built);
+  const cover = volatileCoverOf(v3, checkId);
+  return evaluate(buildV3Inputs(source, v3, built, uses), cover === null ? check : { ...check, volatileCover: cover });
 }
 
 // S9: three thin names for 05.3 to call; each is the same function, so the same check gives the same Result everywhere.

@@ -19,17 +19,22 @@ import {
   type CountsAs,
   type CustomOptions,
   type Envelope,
+  type ExpectedMonthIncome,
+  type HeldBridge,
   type HomeThresholds,
   type IncomeKind,
+  type IncomePattern,
   type IncomeProfile,
-  type IncomeType,
   type LimitLine,
   type LineRole,
   type LineSpec,
   type Limits,
   type MonthMark,
+  type PayArrival,
   type RoughFigures,
   type SeriesRole,
+  type UnexplainedAnswer,
+  type UnexplainedUse,
   type UsdRate,
   type V3Account,
   type V3Debt,
@@ -46,6 +51,7 @@ import { occurrenceDate, type RecurringFreq } from '@/engine/recurring';
 import { buildDecideSnapshot, type SnapshotSource } from '../buildSnapshot';
 import { convertFloored, makeConverter } from '../conversion';
 import type { SnapshotResult } from '../types';
+import { engineIncomeTypes } from './settingsSource';
 import type { V3SeriesExtra, V3SettingsSource } from './types';
 
 type Obj = Record<string, unknown>;
@@ -53,7 +59,9 @@ type Obj = Record<string, unknown>;
 const NO_EXTRA: V3SeriesExtra = { pay_group: null, counts_as: null, income_kind: null, saving_mode: null, typical_choice: null, status: null };
 const EMPTY_LISTS = { itemTypes: [], purposes: [], cadences: [], incomeKinds: [] } as const satisfies CustomOptions;
 const EMPTY_CUSTOM: CustomOptions = { itemTypes: [], purposes: [], cadences: [], incomeKinds: [] };
-const INCOME_TYPES: readonly string[] = ['salary', 'commission', 'freelance', 'none', 'mix'];
+const PATTERNS: readonly string[] = ['steady', 'variable', 'seasonal'];
+const UNEXPLAINED_USES: readonly string[] = ['spare', 'envelope_or_goal', 'set_aside_for_bill', 'someone_elses'];
+const MONTH_PATTERN = /^\d{4}-\d{2}$/;
 const VARIABLE_METHODS: readonly string[] = ['match', 'spread', 'steady', 'balance'];
 const PRESET_INCOME_KINDS: readonly string[] = ['salary', 'commission', 'side_business', 'dividends', 'interest', 'rent', 'family', 'other'];
 const MARKS: readonly string[] = ['normal', 'out', 'half'];
@@ -179,12 +187,12 @@ function profileOf(v3: V3SettingsSource | null): IncomeProfile | null {
   const steady = moneyOf(v3.steady_amount);
   const hold = v3.hold_months;
   return {
-    types: v3.income_types.filter((t) => INCOME_TYPES.includes(t)) as IncomeType[],
+    types: engineIncomeTypes(v3.income_types), // D-17: the six setup answers onto the engine's types
     variable: inList(VARIABLE_METHODS, v3.variable_method) ? (v3.variable_method as VariableMethod) : null,
     steady: steady === null ? null : minorUnits(steady),
     billsHorizonMonths: hold === 1 || hold === 2 || hold === 3 ? hold : null,
-    pattern: null, // 05.2 stores this (05.2-OWNER-NOTES, D-34)
-    patternConfirmed: false, // 05.2 stores this (D-34)
+    pattern: inList(PATTERNS, v3.income_pattern) ? (v3.income_pattern as IncomePattern) : null, // D-34
+    patternConfirmed: v3.income_pattern_confirmed === true, // D-34
   };
 }
 
@@ -209,6 +217,65 @@ function usdRateOf(source: SnapshotSource, home: string): UsdRate | null {
   return r === null ? null : { num: BigInt(r.amount), den: 10n ** BigInt(currencyExponent(home) + USD_PROBE_EXPONENT) };
 }
 
+type UseColumns = { use?: string | null; use_purpose?: string | null; use_envelope_id?: string | null; use_extra_set_aside?: number | null };
+
+/** D-03, D-54: the stored account columns as an AccountUse. Same shapes as accountUseOfRow (kept local: this folder stays free of src/data). */
+function accountUseFromColumns(a: UseColumns): AccountUse | null {
+  switch (a.use) {
+    case 'everyday':
+      return { kind: 'everyday' };
+    case 'untouched':
+      return { kind: 'untouched' };
+    case 'mixed': {
+      const extra = moneyOf(a.use_extra_set_aside);
+      return { kind: 'mixed', extraSetAside: extra === null ? null : minorUnits(extra) };
+    }
+    case 'dedicated':
+      if (a.use_purpose === 'emergency') return { kind: 'dedicated', purpose: { kind: 'emergency' } };
+      if (a.use_purpose === 'envelope' && typeof a.use_envelope_id === 'string') return { kind: 'dedicated', purpose: { kind: 'envelope', envelopeId: a.use_envelope_id } };
+      return null;
+    default:
+      return null;
+  }
+}
+
+type AnswerLite = NonNullable<V3SettingsSource['answers']>[number];
+
+/** D-58: pay_arrival answers; the key is `<series id>:<YYYY-MM-DD>`. */
+function payArrivalsOf(answers: readonly AnswerLite[]): PayArrival[] {
+  return answers.flatMap((a): PayArrival[] => {
+    if (a.kind !== 'pay_arrival' || a.bool_value === null) return [];
+    const cut = a.key.lastIndexOf(':');
+    const date = dateOf(a.key.slice(cut + 1));
+    return cut <= 0 || date === null ? [] : [{ seriesId: a.key.slice(0, cut), date, arrived: a.bool_value }];
+  });
+}
+
+/** D-35: expected_income answers; the key is the month, the amount and the answer date are required. */
+function expectedIncomeOf(answers: readonly AnswerLite[]): ExpectedMonthIncome[] {
+  return answers.flatMap((a): ExpectedMonthIncome[] => {
+    const amount = moneyOf(a.amount);
+    const at = dateOf(a.on_date);
+    return a.kind === 'expected_income' && MONTH_PATTERN.test(a.key) && amount !== null && at !== null ? [{ month: a.key, amount: minorUnits(amount), at }] : [];
+  });
+}
+
+/** D-38, Pitfall 9: a held-back bridge counts only while its check is in the live set. */
+function heldBridgesOf(answers: readonly AnswerLite[], live: ReadonlySet<string>): HeldBridge[] {
+  return answers.flatMap((a): HeldBridge[] => {
+    const amount = moneyOf(a.amount);
+    return a.kind === 'held_bridge' && a.check_id !== null && live.has(a.check_id) && amount !== null ? [{ id: a.check_id, amount: minorUnits(amount) }] : [];
+  });
+}
+
+/** D-50: all three parts, or no answer. */
+function unexplainedOf(v3: V3SettingsSource | null): UnexplainedAnswer | null {
+  const amount = moneyOf(v3?.unexplained_amount);
+  const at = dateOf(v3?.unexplained_at);
+  const use = v3?.unexplained_use;
+  return amount === null || at === null || !inList(UNEXPLAINED_USES, use) ? null : { amount: minorUnits(amount), use: use as UnexplainedUse, at };
+}
+
 /**
  * Builds the v3 engine inputs from today's snapshot source. `v3` null = nothing set up yet (the v3 defaults and the
  * needs-input rules apply, S9). `built` lets computeV3 pass a snapshot it already built (one parse, one conversion).
@@ -217,7 +284,7 @@ export function buildV3Inputs(
   source: SnapshotSource,
   v3: V3SettingsSource | null,
   built: SnapshotResult = buildDecideSnapshot(source),
-  uses: Readonly<Record<string, AccountUse>> = {} // D-54: no stored account use exists yet (05.2 stores it); until then every use is null
+  uses: Readonly<Record<string, AccountUse>> = {} // tests only: overrides the stored account columns
 ): V3Inputs {
   const { today, homeCurrency: home } = source;
   const thresholds: HomeThresholds = homeThresholds(home, usdRateOf(source, home));
@@ -235,7 +302,32 @@ export function buildV3Inputs(
     legsOf.set(r.transfer_id, [...(legsOf.get(r.transfer_id) ?? []), r]);
   }
 
-  const extraOf = (seriesId: string): V3SeriesExtra => v3?.series_extra[seriesId] ?? NO_EXTRA;
+  // D-03: the series attributes come from the series row; a v3 series_extra entry (shadow exports) overrides field by field.
+  const seriesRow = new Map(source.series.map((r) => [r.id, r]));
+  const extraOf = (seriesId: string): V3SeriesExtra => {
+    const r = seriesRow.get(seriesId);
+    const base: V3SeriesExtra =
+      r === undefined
+        ? NO_EXTRA
+        : { ...NO_EXTRA, pay_group: r.pay_group ?? null, counts_as: r.counts_as ?? null, income_kind: r.income_kind ?? null, saving_mode: r.saving_mode ?? null };
+    const over = v3?.series_extra[seriesId];
+    if (over === undefined) return base;
+    return {
+      pay_group: over.pay_group ?? base.pay_group,
+      counts_as: over.counts_as ?? base.counts_as,
+      income_kind: over.income_kind ?? base.income_kind,
+      saving_mode: over.saving_mode ?? base.saving_mode,
+      typical_choice: over.typical_choice,
+      status: over.status,
+    };
+  };
+  const goalRow = new Map(source.goals.map((g) => [g.id, g]));
+  // D-03, 05.1 D-53: account use is read from the account columns (one source); `uses` only overrides in tests.
+  const effectiveUses: Record<string, AccountUse> = {};
+  for (const a of source.accounts) {
+    const u = uses[a.id] ?? accountUseFromColumns(a);
+    if (u !== null) effectiveUses[a.id] = u;
+  }
 
   // ── series ──
   const series: V3Series[] = [];
@@ -280,12 +372,16 @@ export function buildV3Inputs(
     const prev = landing.get(r.goal_id);
     if (prev === undefined || r.local_date >= prev.local_date) landing.set(r.goal_id, r);
   }
-  const envelopes: Envelope[] = (built.pots ?? []).map((p) => ({ ...p, purposeId: null, accountId: landing.get(p.id)?.account_id ?? null }));
+  // OQ6: a stored envelope account wins over the transfer-leg guess, which stays as the fallback. D-23: bucket = a saving bucket.
+  const envelopes: Envelope[] = (built.pots ?? []).map((p) => {
+    const g = goalRow.get(p.id);
+    return { ...p, purposeId: null, accountId: g?.account_id ?? landing.get(p.id)?.account_id ?? null, bucket: (g?.bucket ?? null) !== null };
+  });
   const toHome = makeConverter({ home, rates: source.rates, customs: source.customCurrencies, today }).toHome;
   const accounts: V3Account[] = source.accounts.flatMap((a) => {
     if (a.deleted_at !== null || a.archived_at !== null) return [];
     const balance = toHome(source.balances[a.id] ?? 0, a.currency);
-    return balance === null ? [] : [{ id: a.id, balance: minorUnits(balance), use: uses[a.id] ?? null }];
+    return balance === null ? [] : [{ id: a.id, balance: minorUnits(balance), use: effectiveUses[a.id] ?? null }];
   });
   let rough: RoughFigures | null = null;
   let provisionalRates = (built.provisional ?? null) !== null;
@@ -313,9 +409,9 @@ export function buildV3Inputs(
     }
 
     // ── lines ──
-    const anyUse = Object.keys(uses).length > 0;
+    const anyUse = Object.keys(effectiveUses).length > 0;
     const counts = (id: string | undefined): boolean => {
-      const u = id === undefined ? undefined : uses[id];
+      const u = id === undefined ? undefined : effectiveUses[id];
       return u !== undefined && (u.kind === 'everyday' || u.kind === 'mixed');
     };
     const roleOf = (line: (typeof snap.months)[number]['lines'][number]): LineRole => {
@@ -355,6 +451,7 @@ export function buildV3Inputs(
           if (l.status === 'skipped') return [];
           const role = roleOf(l);
           const s = l.seriesId === null ? undefined : seriesById.get(l.seriesId);
+          const row = rowById.get(l.id);
           return [
             {
               id: l.id,
@@ -367,8 +464,9 @@ export function buildV3Inputs(
               coversMonths: null,
               source: rowById.get(l.id)?.import_batch_id ? 'statement' : 'manual', // D-51
               expected: false,
-              incomeKind: null,
-              countsAs: role === 'income' && s !== undefined ? s.countsAs : null,
+              incomeKind: role === 'income' ? incomeKindOf(str(row?.income_kind)) : null,
+              countsAs: role === 'income' ? (row?.counts_as ?? (s !== undefined ? s.countsAs : null)) : null,
+              refundOf: str(row?.refund_of),
             },
           ];
         }),
@@ -402,6 +500,8 @@ export function buildV3Inputs(
     };
   }
 
+  const answers = v3?.answers ?? [];
+
   // ── funds ──
   const st = source.settings;
   const reserve = st === null || (st.currency !== null && st.currency !== home) ? null : moneyOf(st.reserve);
@@ -428,10 +528,10 @@ export function buildV3Inputs(
     custom: customOf(v3?.custom_options),
     thresholds,
     accounts,
-    unexplainedAnswer: null, // 05.2 stores the D-50 answer
-    payArrivals: [], // 05.2 stores this (D-58)
-    expectedIncome: [], // 05.2 stores this (05.2-OWNER-NOTES, D-35)
-    heldBridges: [], // 05.2 stores this (05.2-OWNER-NOTES, D-38)
+    unexplainedAnswer: unexplainedOf(v3),
+    payArrivals: payArrivalsOf(answers),
+    expectedIncome: expectedIncomeOf(answers),
+    heldBridges: heldBridgesOf(answers, new Set(v3?.live_bridge_check_ids ?? [])),
     unsavedWrites: 0,
     provisionalRates,
   };
