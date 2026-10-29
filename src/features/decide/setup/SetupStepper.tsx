@@ -18,10 +18,9 @@ import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { getAnalytics } from '@/services/analytics';
 import { BackButton } from '@/shell/header/BackButton';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { RiseIn } from '@/features/decide/ui/RiseIn';
 import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { queueToast, setToastFloor, showToast } from '@/state/undoToast';
-import { DURATION, useMotion } from '@/theme/motion';
 import { PRESSED_OPACITY, space, useScreenInsets } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
@@ -66,7 +65,6 @@ const SECTION_KEY: Record<SetupSection, string> = {
   answers: 'decide.setup.shell.sectionAnswers',
 };
 const SECTION_ORDER: readonly SetupSection[] = ['income', 'regular', 'spending', 'money', 'answers'];
-const RISE_PX = 8;
 
 const indexOfStep = (k: SetupStepKey): number => SETUP_STEP_KEYS.indexOf(k);
 
@@ -75,16 +73,6 @@ function resolve(pos: Pos, order: readonly SetupStepKey[]): SetupStepKey | null 
   if (order.length === 0) return null;
   const threshold = pos.after ? indexOfStep(pos.key) + 1 : indexOfStep(pos.key);
   return order.find((k) => indexOfStep(k) >= threshold) ?? order[order.length - 1] ?? null;
-}
-
-/** fw-rise: a short rise and fade on mount (keyed per step); reduced motion passes duration 0. */
-function RiseIn({ duration, children }: { duration: number; children: React.ReactNode }) {
-  const rise = useSharedValue(0);
-  useEffect(() => {
-    rise.value = withTiming(1, { duration, easing: Easing.bezier(0.2, 0.8, 0.3, 1) });
-  }, [rise, duration]);
-  const style = useAnimatedStyle(() => ({ opacity: rise.value, transform: [{ translateY: (1 - rise.value) * RISE_PX }] }));
-  return <Animated.View style={[{ gap: space.gapMd }, style]}>{children}</Animated.View>;
 }
 
 export function SetupStepper(props: SetupStepperProps): React.JSX.Element {
@@ -96,7 +84,6 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
   const t = useT() as unknown as Translate;
   const { colors, pairing } = useTheme();
   const insets = useScreenInsets();
-  const motion = useMotion();
   const rc = useRecordContext();
   const saver = useSaveSetupStep(rc.userId ?? '');
   const handle = useRef<SetupStepHandle>(null);
@@ -314,12 +301,12 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
         </View>
       </View>
       <View style={styles.railWrap}>
-        <SetupRail current={section} hidden={mode === 'standalone' || editing} />
+        <SetupRail current={section} complete={isSummary} hidden={mode === 'standalone' || editing} />
       </View>
       <SyncProblemLine />
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps="handled">
         {step === null ? null : (
-          <RiseIn key={step} duration={motion.duration(DURATION.entrance)}>
+          <RiseIn key={step} style={{ gap: space.gapMd }}>
             {isSummary ? <SuccessCircle /> : null}
             {editing ? null : (
             <Text
