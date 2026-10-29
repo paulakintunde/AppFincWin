@@ -1030,7 +1030,7 @@ Plans:
 - the whole plan, "What could I do instead?", how it was worked out, "Help me check this", and the record sheets.
 
 The old Decide screens are removed after cutover.
-**Requirements**: TBD (from `00-UPGRADE-PLAN.md` section 6)
+**Requirements**: DSV-01..DSV-19
 **Depends on:** Phase 05.1, Phase 05.2
 **Success Criteria** (what must be TRUE):
   1. Quick, full and home surfaces show the same answer code, and no screen holds contradictory claims.
