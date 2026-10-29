@@ -50,7 +50,7 @@ jest.mock('@/data/queries/decideV3', () => ({
       months: [],
     },
     evaluation: {
-      month: { month: '2026-10', moneyIn: 123_456_789_00, moneyOut: 98_765_432_10, monthLeft: 24_691_356_90, typicalLeft: 24_691_356_90 },
+      month: { month: '2026-10', moneyIn: 123_456_789_00, moneyOut: 98_765_432_10, monthLeft: 24_691_356_90, typicalLeft: 24_691_356_90, e: 98_765_432_10 },
       funds: {
         unspent: { value: 240_000_00, anchor: { amount: 240_000_00, at: '2026-10-15' }, rolled: false, stale: false, drifted: false, breakdown: {} },
         suggested: 238_000_00,

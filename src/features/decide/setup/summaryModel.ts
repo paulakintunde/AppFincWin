@@ -57,7 +57,7 @@ export function summaryModel(evaluation: SummaryEvaluation, settings: SummarySet
     { key: 'month', month: month.month, moneyIn: Number(month.moneyIn), moneyOut: Number(month.moneyOut) },
     { key: 'leave', amount: Number(month.monthLeft) },
   ];
-  const typical = everydayOverride ?? (month.e === null ? null : Number(month.e));
+  const typical = everydayOverride ?? (month.e == null ? null : Number(month.e));
   if (typical !== null) rows.push({ key: 'typical', amount: typical });
   if (funds.unspent !== null) {
     const amount = Number(funds.unspent.available ?? funds.unspent.value);
