@@ -109,6 +109,15 @@ describe('debts', () => {
     }
   });
 
+  it('paid_off_on is patchable but not insertable (column update grant only)', async () => {
+    expect(DEBT_PATCH_KEYS).toContain('paid_off_on');
+    expect(DEBT_INSERT_KEYS).not.toContain('paid_off_on');
+    const client = createFakeSupabase();
+    client.respondWith({ data: [debtRow({ version: 2 })], error: null, status: 200 });
+    await updateDebt(client, 'd1', 1, { paid_off_on: '2026-10-01' });
+    expect(client.calls.find((c) => c.method === 'update')?.args).toEqual([{ paid_off_on: '2026-10-01' }]);
+  });
+
   it('fetchDebts selects live debts', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: [debtRow()], error: null, status: 200 });
@@ -235,8 +244,9 @@ describe('decide links', () => {
 
   it('fetchWrittenRowLinks reads live written transaction links', async () => {
     const client = createFakeSupabase();
-    client.respondWith({ data: [{ check_id: 'k1', target_id: 't1' }], error: null, status: 200 });
-    await expect(fetchWrittenRowLinks(client, 'h1')).resolves.toEqual([{ check_id: 'k1', target_id: 't1' }]);
+    client.respondWith({ data: [{ check_id: 'k1', target_id: 't1', role: 'day_one' }], error: null, status: 200 });
+    await expect(fetchWrittenRowLinks(client, 'h1')).resolves.toEqual([{ check_id: 'k1', target_id: 't1', role: 'day_one' }]);
+    expect(client.calls.find((c) => c.method === 'select')?.args).toEqual(['check_id, target_id, role']);
     const eqs = client.calls.filter((c) => c.method === 'eq').map((c) => c.args);
     expect(eqs).toEqual([
       ['household_id', 'h1'],

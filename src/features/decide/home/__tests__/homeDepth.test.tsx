@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
-import type { DecideSettingsRow, DecideSettingsPatch } from '@/db/decideSettings';
+import { EMPTY_DECIDE_SETTINGS, type DecideSettingsRow, type DecideSettingsPatch } from '@/db/decideSettings';
 import { loggedSource, month } from '../../snapshot/__tests__/helpers/snapshotFixtures';
 import { wrap } from '../../check/steps/__tests__/helpers/stepProps';
 import { LinesCard } from '../LinesCard';
@@ -30,6 +30,8 @@ const whole = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(Math.round(n / 100)
 
 function settingsRow(over: Partial<DecideSettingsRow> = {}): DecideSettingsRow {
   return {
+    ...EMPTY_DECIDE_SETTINGS,
+    id: 'ds1',
     user_id: 'u1',
     currency: 'USD',
     rough_income: null,

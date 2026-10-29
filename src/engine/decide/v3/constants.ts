@@ -156,3 +156,51 @@ export const MISSING_PRIORITY = [
   'pause_interest_not_answered',
   'plan_rate_missing',
 ] as const satisfies readonly MissingCode[]; // D-59
+
+// Cite: UP §4.12 noise floor, $25 in a 2-decimal currency (minor units). FincWin choice (05.2 OQ2, owner approved 2026-10-28).
+export const REFINE_NOISE_MIN_MINOR = 2_500; // 05.2
+
+// Cite: UP §4.12: a suggestion must also beat 5% of the figure. FincWin choice (05.2 OQ2, owner approved 2026-10-28).
+export const REFINE_NOISE_PCT = 5; // 05.2
+
+// Cite: UP §4.12: the spread (median absolute deviation) reads the last 6 full months. FincWin choice (05.2 OQ2, owner approved 2026-10-28).
+export const REFINE_WINDOW_MONTHS = 6; // 05.2
+
+// Cite: 05.2 D-12, UP §4.12: check in after 3 full months of records since setup.
+export const REFINE_SETUP_MONTHS = 3; // 05.2
+
+// Cite: 05.2 D-12, UP §4.12: check in after 1 full month when setup used rough figures.
+export const REFINE_ROUGH_MONTHS = 1; // 05.2
+
+// Cite: 05.2 D-12, UP §4.12: a typed figure 15% off the records.
+export const REFINE_TYPED_OFF_PCT = 15; // 05.2
+
+// Cite: 05.2 D-12, UP §4.12: a typed figure off the records 2 months running.
+export const REFINE_TYPED_OFF_MONTHS = 2; // 05.2
+
+// Cite: 05.2 D-12, UP §4.12: a new regular payment or income that repeats 3 times.
+export const REFINE_REPEAT_COUNT = 3; // 05.2
+
+// Cite: 05.2 D-12: at most once a month; "a month" is 30 days. FincWin choice (05.2 OQ2, owner approved 2026-10-28).
+export const REFINE_MIN_GAP_DAYS = 30; // 05.2
+
+// Cite: 05.2 D-12: "Later" hides the check-in for 14 days.
+export const REFINE_SNOOZE_DAYS = 14; // 05.2
+
+// Cite: 05.2 D-20: a typed everyday figure expires after 90 days.
+export const REFINE_OVERRIDE_MAX_DAYS = 90; // 05.2
+
+// Cite: 05.2 D-20: a typed everyday figure expires when the records median moves 20% from it.
+export const REFINE_OVERRIDE_MEDIAN_PCT = 20; // 05.2
+
+// Cite: 05.2 D-20: a steady income figure above recorded income 2 months running.
+export const REFINE_STEADY_ABOVE_MONTHS = 2; // 05.2
+
+// Cite: 05.2 D-20: a card said to be paid in full that was not paid in full 2 statements running.
+export const REFINE_CARD_UNPAID_STATEMENTS = 2; // 05.2
+
+// Cite: 05.2 D-20: a full month under 50% of the typical month is suggested once as under-logged. FincWin choice (05.2 OQ2, owner approved 2026-10-28).
+export const REFINE_UNDERLOGGED_PCT = 50; // 05.2
+
+// Cite: 05.2 D-20: a regular pay with no paid line for its last 2 expected dates has stopped. FincWin choice (05.2 OQ2, owner approved 2026-10-28).
+export const REFINE_PAY_STOPPED_MISSES = 2; // 05.2

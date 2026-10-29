@@ -33,6 +33,13 @@ import { registerDecideOutcomeMutations } from './decideOutcome';
 import { registerDecideChangeMutations } from './decideChanges';
 import { registerDecidePotMutations } from './decidePots';
 import { registerDebtMutations } from './debts';
+import { registerDecideSetupMutations } from './decideSetup';
+import { registerAccountUseMutations } from './accountUse';
+import { registerSeriesAttributeMutations } from './seriesAttributes';
+import { registerDismissalMutations } from './dismissals';
+import { registerIncomeTagMutations } from './incomeTags';
+import { registerRefundLinkMutations } from './refundLinks';
+import { registerDecideAnswerMutations } from './decideAnswers';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
@@ -77,4 +84,12 @@ export function registerMutationDefaults(qc: QueryClient): void {
   // 05-122: pots (D-101) and the housing marker on a loan (D-103).
   registerDecidePotMutations(qc);
   registerDebtMutations(qc);
+  // 05.2: Decide data and setup (bodies land in 05.2-13..05.2-17).
+  registerDecideSetupMutations(qc);
+  registerAccountUseMutations(qc);
+  registerSeriesAttributeMutations(qc);
+  registerDismissalMutations(qc);
+  registerIncomeTagMutations(qc);
+  registerRefundLinkMutations(qc);
+  registerDecideAnswerMutations(qc);
 }

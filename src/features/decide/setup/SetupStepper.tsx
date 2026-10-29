@@ -1,0 +1,386 @@
+/**
+ * Plan 05.2-23 (DSU-04): the setup stepper shell. One place for Back / section name / Skip-or-Needed / rail / scroll
+ * body / Next + Finish later. Step bodies are injected through `renderStep` (registry assembled in 05.2-32) and are
+ * saved through their handle: Next saves, shows "{Step title} saved" with Undo only if something changed, and an
+ * unchanged step writes nothing. Back never prompts and never loses an answer (answers are saved, or still typed in
+ * the step being left, which only Next, Skip and Finish later write). Analytics carry step keys only, never amounts or
+ * names.
+ *
+ * The shell draws each step's title from `stepTitleKey`; step bodies draw their intro, controls and "Why we ask".
+ * Welcome has no body component: the shell draws it. Which step comes next is resolved against the live facts at
+ * render time ("the first visible step after this one"), so an answer that adds or removes a later step (for example
+ * "How are you paid?" revealing "Your regular pay") is picked up once the write lands.
+ */
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AccessibilityInfo, BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSaveSetupStep } from '@/data/mutations/decideSetup';
+import { useRecordContext } from '@/features/record/useRecordContext';
+import { useT } from '@/i18n';
+import { getAnalytics } from '@/services/analytics';
+import { BackButton } from '@/shell/header/BackButton';
+import { RiseIn } from '@/features/decide/ui/RiseIn';
+import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
+import { queueToast, setToastFloor, showToast } from '@/state/undoToast';
+import { PRESSED_OPACITY, space, useScreenInsets } from '@/theme/layout';
+import { useTheme } from '@/theme/ThemeProvider';
+import { fontSize, textRole } from '@/theme/typography';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
+import { Pill } from '@/ui/Pill';
+import { Text } from '@/ui/Text';
+import { SetupRail } from './SetupRail';
+import { SuccessCircle } from './SuccessCircle';
+import { SETUP_STEP_KEYS, isNeeded, sectionOf, visibleSteps, type SetupFacts, type SetupSection, type SetupStepKey } from './setupFlow';
+import type { SetupStepBodyProps, SetupStepHandle, SetupStepReady } from './steps/types';
+import { useSetupFacts } from './useSetupFacts';
+
+export type SetupCloseReason = 'done' | 'later' | 'notNow';
+
+export interface SetupStepperProps {
+  mode: 'full' | 'standalone';
+  /** 'Finish setup' resumes at firstUnansweredNeeded. */
+  startAt?: SetupStepKey;
+  /**
+   * Edit-one-step mode (05.2-34, Decide settings): only this step, body in 'edit' mode, no rail and no Skip, footer
+   * "Save answer" (enabled once changed and valid) and "Keep as is", Back with edits asks "Discard changes?".
+   * It never writes setup_done_at.
+   */
+  only?: SetupStepKey;
+  /** The Summary's "Change an answer" link; the host opens Decide settings. */
+  onChangeAnswer?: () => void;
+  renderStep: (step: SetupStepKey, ref: React.Ref<SetupStepHandle>, props: SetupStepBodyProps) => React.ReactNode;
+  /** i18n key of the step title, for the shell title, the toast and focus. */
+  stepTitleKey: (step: SetupStepKey) => string;
+  /** `savedStepIds`: every undo step this session saved, in order (05.2-40). */
+  onClose: (reason: SetupCloseReason, savedStepIds?: readonly string[]) => void;
+}
+
+type Pos = { key: SetupStepKey; after: boolean };
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+const SECTION_KEY: Record<SetupSection, string> = {
+  income: 'decide.setup.shell.sectionIncome',
+  regular: 'decide.setup.shell.sectionRegular',
+  spending: 'decide.setup.shell.sectionSpending',
+  money: 'decide.setup.shell.sectionMoney',
+  answers: 'decide.setup.shell.sectionAnswers',
+};
+const SECTION_ORDER: readonly SetupSection[] = ['income', 'regular', 'spending', 'money', 'answers'];
+
+const indexOfStep = (k: SetupStepKey): number => SETUP_STEP_KEYS.indexOf(k);
+
+/** The step the position points at: itself when visible, else the first visible step at or after it. */
+function resolve(pos: Pos, order: readonly SetupStepKey[]): SetupStepKey | null {
+  if (order.length === 0) return null;
+  const threshold = pos.after ? indexOfStep(pos.key) + 1 : indexOfStep(pos.key);
+  return order.find((k) => indexOfStep(k) >= threshold) ?? order[order.length - 1] ?? null;
+}
+
+export function SetupStepper(props: SetupStepperProps): React.JSX.Element {
+  const facts = useSetupFacts();
+  return <StepperBody {...props} facts={facts} />;
+}
+
+function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitleKey, onClose, facts }: SetupStepperProps & { facts: SetupFacts | null }) {
+  const t = useT() as unknown as Translate;
+  const { colors, pairing } = useTheme();
+  const insets = useScreenInsets();
+  const rc = useRecordContext();
+  const saver = useSaveSetupStep(rc.userId ?? '');
+  const handle = useRef<SetupStepHandle>(null);
+  const titleRef = useRef<React.ComponentRef<typeof Text>>(null);
+  const startedFired = useRef(false);
+  const savedIds = useRef<string[]>([]);
+  const [pos, setPos] = useState<Pos>({ key: only ?? startAt ?? (mode === 'full' ? 'welcome' : 'paid'), after: false });
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [readyState, setReadyState] = useState<{ key: SetupStepKey; ready: SetupStepReady } | null>(null);
+
+  const order = useMemo(() => (facts ? (only !== undefined ? [only] : visibleSteps(facts, mode)) : []), [facts, mode, only]);
+  const step = facts ? resolve(pos, order) : null;
+  const position = step === null ? -1 : order.indexOf(step);
+  const isLast = position >= 0 && position === order.length - 1;
+  const nextStep = position >= 0 ? (order[position + 1] ?? null) : null;
+  const needed = facts !== null && step !== null && step !== 'welcome' && isNeeded(step, facts);
+  const isWelcome = step === 'welcome';
+  const isSummary = step === 'summary';
+
+  // decide_setup_started: once per mount session.
+  useEffect(() => {
+    if (startedFired.current) return;
+    startedFired.current = true;
+    getAnalytics().track('decide_setup_started', {});
+  }, []);
+
+  // The toast floats above the footer, never over Next.
+  const [footerHeight, setFooterHeight] = useState(0);
+  useEffect(() => {
+    setToastFloor(footerHeight > 0 ? footerHeight + space.gapMd : null);
+    return () => setToastFloor(null);
+  }, [footerHeight]);
+
+  // Focus the step title and rise the content on each step change.
+  useEffect(() => {
+    if (step === null) return undefined;
+    let live = true;
+    const timer = setTimeout(() => {
+      void AccessibilityInfo.isScreenReaderEnabled().then((on) => {
+        if (live && on && titleRef.current) AccessibilityInfo.sendAccessibilityEvent(titleRef.current, 'focus');
+      });
+    }, 0);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [step]);
+
+  const ready: SetupStepReady | null = readyState !== null && readyState.key === step ? readyState.ready : null;
+  const canContinue = isWelcome || isSummary || (ready !== null ? ready.canContinue : !needed);
+  const reasonKey = needed && ready !== null && !ready.canContinue ? ready.reasonKey : null;
+  const reason = reasonKey !== null ? t(reasonKey) : null;
+
+  const onReadyChange = useCallback(
+    (r: SetupStepReady) => {
+      if (step !== null) setReadyState({ key: step, ready: r });
+    },
+    [step],
+  );
+
+  /** Saves the current step through its handle; toast and analytics only when it wrote something. */
+  const saveCurrent = useCallback((): boolean => {
+    if (step === null || step === 'welcome') return false;
+    const result = handle.current?.save() ?? { stepId: null };
+    if (result.stepId === null) return false;
+    const title = t(stepTitleKey(step));
+    const ids = result.stepIds && result.stepIds.length > 0 ? result.stepIds : [result.stepId];
+    savedIds.current.push(...ids);
+    showToast({
+      kind: 'ordinary',
+      text: { key: 'decide.setup.shell.toastSaved', params: { title, name: title } },
+      stepId: result.stepId,
+      stepIds: ids,
+    });
+    getAnalytics().track('decide_setup_step_saved', { step });
+    return true;
+  }, [step, stepTitleKey, t]);
+
+  const editing = only !== undefined;
+  const goBack = useCallback(() => {
+    if (editing && ready !== null && ready.dirty) {
+      setDiscardOpen(true);
+      return;
+    }
+    if (step === null || position <= 0) {
+      onClose('notNow');
+      return;
+    }
+    const prev = order[position - 1];
+    if (prev !== undefined) setPos({ key: prev, after: false });
+  }, [editing, ready, step, position, order, onClose]);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      goBack();
+      return true;
+    });
+    return () => sub.remove();
+  }, [goBack]);
+
+  const markDone = () => {
+    if (mode === 'full' && only === undefined && facts !== null && facts.setupDoneAt === null && rc.userId !== null) {
+      saver.save({ patch: { setup_done_at: new Date().toISOString() } });
+    }
+    getAnalytics().track('decide_setup_finished', {});
+  };
+
+  const finish = () => {
+    markDone();
+    onClose('done', savedIds.current);
+  };
+
+  const advance = () => {
+    if (step === null) return;
+    if (isLast) {
+      finish();
+      return;
+    }
+    setPos({ key: step, after: true });
+  };
+
+  const onNext = () => {
+    if (step === null || !canContinue) return;
+    saveCurrent();
+    advance();
+  };
+
+  /** Edit-one-step: Save answer writes only this step (toast and Undo from saveCurrent) and leaves. */
+  const onSaveAnswer = () => {
+    if (step === null || !canContinue) return;
+    saveCurrent();
+    onClose('done', savedIds.current);
+  };
+
+  const onSkip = () => {
+    if (step === null) return;
+    if (ready !== null && ready.dirty && ready.canContinue) saveCurrent();
+    advance();
+  };
+
+  const onChange = () => {
+    if (onChangeAnswer === undefined) return;
+    markDone();
+    onChangeAnswer();
+  };
+
+  const onFinishLater = () => {
+    if (step === null) return;
+    if (isWelcome) {
+      onClose('notNow');
+      return;
+    }
+    const saved = canContinue ? saveCurrent() : false;
+    getAnalytics().track('decide_setup_left', { step });
+    const later = { kind: 'ordinary' as const, text: { key: 'decide.setup.shell.toastLater' } };
+    if (saved) queueToast(later);
+    else showToast(later);
+    onClose('later');
+  };
+
+  const section = step === null ? null : sectionOf(step);
+  const sectionNumber = section === null ? 0 : SECTION_ORDER.indexOf(section) + 1;
+  const sectionName = mode === 'standalone' ? t('decide.setup.shell.standaloneSection') : section === null ? '' : t(SECTION_KEY[section]);
+  const headerLabel = editing ? '' : mode === 'standalone' ? sectionName : section === null ? '' : t('decide.setup.shell.railA11y', { n: sectionNumber, name: sectionName });
+
+  const nextLabel = isWelcome
+    ? t('decide.setup.shell.start')
+    : isLast
+      ? t('decide.setup.shell.done')
+      : mode === 'full' && nextStep === 'summary'
+        ? t('decide.setup.shell.finishSetup')
+        : t('decide.setup.shell.next');
+
+  const linkLabel = isSummary
+    ? t('decide.setup.summary.change')
+    : isWelcome
+      ? t('decide.setup.shell.notNow')
+      : t('decide.setup.shell.finishLater');
+
+  const bodyProps: SetupStepBodyProps = { mode: editing ? 'edit' : mode === 'standalone' ? 'standalone' : 'stepper', onReadyChange };
+  const title = step === null ? '' : isWelcome ? t('decide.setup.welcome.title') : t(stepTitleKey(step));
+
+  return (
+    <View style={[styles.root, { backgroundColor: colors.canvas, paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <BackButton variant="detail" onPress={goBack} />
+        {editing ? (
+          <Text ref={titleRef} accessibilityRole="header" style={[styles.sectionName, { ...textRole(pairing, 'sheetTitle'), color: colors.ink }]}>
+            {title}
+          </Text>
+        ) : (
+          <Text
+            accessibilityLabel={headerLabel === '' ? undefined : headerLabel}
+            style={[styles.sectionName, { ...textRole(pairing, 'label'), color: colors.inkDim }]}
+          >
+            {sectionName}
+          </Text>
+        )}
+        <View style={styles.rightSlot}>
+          {isWelcome || isSummary || step === null || editing ? null : needed ? (
+            <Text accessibilityLabel={t('decide.setup.shell.neededA11y')} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+              {t('decide.setup.shell.needed')}
+            </Text>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('decide.setup.shell.skip')}
+              onPress={onSkip}
+              hitSlop={space.gapSm}
+              style={({ pressed }) => [styles.skip, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+            >
+              <Text style={{ ...textRole(pairing, 'label'), color: colors.ink, textDecorationLine: 'underline' }}>{t('decide.setup.shell.skip')}</Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
+      <View style={styles.railWrap}>
+        <SetupRail current={section} complete={isSummary} hidden={mode === 'standalone' || editing} />
+      </View>
+      <SyncProblemLine />
+      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps="handled">
+        {step === null ? null : (
+          <RiseIn key={step} style={{ gap: space.gapMd }}>
+            {isSummary ? <SuccessCircle /> : null}
+            {editing ? null : (
+            <Text
+              ref={titleRef}
+              accessibilityRole="header"
+              style={{ ...textRole(pairing, isWelcome || isSummary ? 'display' : 'heading'), color: colors.ink }}
+            >
+              {title}
+            </Text>
+            )}
+            {isWelcome ? (
+              <View style={{ gap: space.gapMd }}>
+                <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.setup.welcome.body')}</Text>
+                <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.inkMuted }}>{t('decide.setup.welcome.meta')}</Text>
+              </View>
+            ) : (
+              <React.Fragment key={step}>{renderStep(step, handle, bodyProps)}</React.Fragment>
+            )}
+          </RiseIn>
+        )}
+      </ScrollView>
+      <View
+        onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
+        style={[styles.footer, { borderTopColor: colors.line1, backgroundColor: colors.canvas, paddingBottom: insets.bottom }]}
+      >
+        {reason !== null ? (
+          <Text accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+            {reason}
+          </Text>
+        ) : null}
+        <Pill
+          label={editing ? t('decide.settings.save') : nextLabel}
+          variant="primary"
+          disabled={editing ? !canContinue || ready === null || !ready.dirty : !canContinue}
+          onPress={editing ? onSaveAnswer : onNext}
+          accessibilityHint={reason ?? undefined}
+        />
+        {isSummary && onChangeAnswer === undefined ? null : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={editing ? t('decide.settings.keep') : linkLabel}
+            onPress={editing ? () => onClose('notNow') : isSummary ? onChange : onFinishLater}
+            style={({ pressed }) => [styles.later, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+          >
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{editing ? t('decide.settings.keep') : linkLabel}</Text>
+          </Pressable>
+        )}
+      </View>
+      <ConfirmSheet
+        visible={discardOpen}
+        title={t('sheet.discard.title')}
+        body={t('sheet.discard.body')}
+        cancelLabel={t('sheet.discard.keep')}
+        confirmLabel={t('sheet.discard.confirm')}
+        destructive
+        onCancel={() => setDiscardOpen(false)}
+        onConfirm={() => {
+          setDiscardOpen(false);
+          onClose('notNow');
+        }}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, paddingHorizontal: space.screenH, paddingVertical: space.gapSm },
+  sectionName: { flex: 1, textAlign: 'center' },
+  rightSlot: { minWidth: space.touchMin, alignItems: 'flex-end', justifyContent: 'center' },
+  skip: { minHeight: space.touchMin, justifyContent: 'center' },
+  railWrap: { paddingHorizontal: space.screenH, paddingBottom: space.gapMd },
+  body: { flex: 1 },
+  bodyContent: { paddingHorizontal: space.screenH, paddingTop: space.groupGap, paddingBottom: space.groupGap },
+  footer: { paddingHorizontal: space.screenH, paddingTop: space.gapMd, gap: space.gapSm, borderTopWidth: 1 },
+  later: { minHeight: space.touchMin, alignItems: 'center', justifyContent: 'center' },
+});

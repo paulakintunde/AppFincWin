@@ -93,6 +93,10 @@ export interface TransactionRow {
   // 05-34 (D-29, D-34): every select returns both (TRANSACTION_COLUMNS); optional in the type only so the many pre-existing literal fixtures stay valid. Readers use `row.one_off === true` / `row.goal_id ?? null`.
   one_off?: boolean;
   goal_id?: string | null;
+  // 05.2: income tags and refund link (client-writable, 20261028000400)
+  income_kind?: string | null;
+  counts_as?: 'available' | 'kept' | null;
+  refund_of?: string | null;
 }
 
 export interface AccountRow {
@@ -108,6 +112,11 @@ export interface AccountRow {
   // D-48: optional non-negative limits, in the account's own currency's minor units.
   overdraft_limit: number | null;
   credit_limit: number | null;
+  // 05.2: how the account is used (20261028000600)
+  use?: 'everyday' | 'mixed' | 'dedicated' | 'untouched' | null;
+  use_purpose?: 'emergency' | 'envelope' | null;
+  use_envelope_id?: string | null;
+  use_extra_set_aside?: number | null;
   // Record polish: soft delete (D-24, client-patchable) and server-written is_sample (read-only).
   deleted_at: string | null;
   is_sample: boolean;
@@ -175,6 +184,9 @@ export interface NewTransaction {
   // 05-34: D-29 one-off flag, D-34 savings-goal tag
   one_off?: boolean;
   goal_id?: string | null;
+  income_kind?: string | null;
+  counts_as?: 'available' | 'kept' | null;
+  refund_of?: string | null;
 }
 
 // D-45: raw_amount/raw_balance/external_id/import_format are insert-only provenance and are
@@ -193,6 +205,9 @@ export type TransactionPatch = Partial<
     is_automatic: boolean;
     one_off: boolean;
     goal_id: string | null;
+    income_kind: string | null;
+    counts_as: 'available' | 'kept' | null;
+    refund_of: string | null;
   }>;
 
 export interface NewAccount {
@@ -204,10 +219,27 @@ export interface NewAccount {
   opening_balance: number;
   overdraft_limit?: number | null;
   credit_limit?: number | null;
+  use?: AccountRow['use'];
+  use_purpose?: AccountRow['use_purpose'];
+  use_envelope_id?: string | null;
+  use_extra_set_aside?: number | null;
 }
 
 export type AccountPatch = Partial<
-  Pick<AccountRow, 'name' | 'kind' | 'opening_balance' | 'archived_at' | 'overdraft_limit' | 'credit_limit' | 'deleted_at'>
+  Pick<
+    AccountRow,
+    | 'name'
+    | 'kind'
+    | 'opening_balance'
+    | 'archived_at'
+    | 'overdraft_limit'
+    | 'credit_limit'
+    | 'deleted_at'
+    | 'use'
+    | 'use_purpose'
+    | 'use_envelope_id'
+    | 'use_extra_set_aside'
+  >
 >;
 
 export interface ImportProfileRow {
@@ -272,12 +304,18 @@ export interface RecurringSeriesRow {
   deleted_at: string | null;
   is_automatic: boolean;
   is_sample: boolean;
+  // 05.2: read-only here (written only through apply_patches, 05.2-15)
+  counts_as?: 'available' | 'kept' | null;
+  income_kind?: string | null;
+  saving_mode?: 'fixed' | 'flexible' | null;
+  pay_group?: string | null;
+  end_reason?: 'stopped' | 'paused' | null; // 05.2 D-24: read only while end_date is set; written through apply_patches
   version: number;
   created_at: string;
   updated_at: string;
 }
 export const RECURRING_SERIES_COLUMNS =
-  'id, household_id, created_by, updated_by, account_id, name, amount, currency, category_id, payment_type, freq, anchor_date, time_zone, end_date, occurrence_count, materialised_through, deleted_at, is_automatic, is_sample, version, created_at, updated_at';
+  'id, household_id, created_by, updated_by, account_id, name, amount, currency, category_id, payment_type, freq, anchor_date, time_zone, end_date, occurrence_count, materialised_through, deleted_at, is_automatic, is_sample, counts_as, income_kind, saving_mode, pay_group, end_reason, version, created_at, updated_at';
 
 export interface UndoLogRow {
   id: string;

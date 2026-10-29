@@ -109,6 +109,26 @@ describe('useUndo', () => {
     expect(qc.getQueryState(potsKey)?.isInvalidated).toBe(true);
   });
 
+  it('N-04: undoing a 05.2 Decide step marks the dismissals, settings, answers and payer-rule caches stale', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: { status: 'undone' }, error: null, status: 200 });
+    const qc = newClient();
+    const keys = [
+      queryKeys.recurringDismissals('h1'),
+      queryKeys.decideSettings('user-1'),
+      queryKeys.decideAnswers('user-1', 'h1'),
+      queryKeys.incomePayerPrompts('h1'),
+    ];
+    for (const key of keys) qc.setQueryData(key, []);
+    const { result } = await renderHook(() => useUndo(), { wrapper: wrapper(qc) });
+
+    result.current.undo({ ...vars, labelKey: 'paymentDismissed', labelParams: { name: 'Bookshop' } });
+
+    await waitFor(() => expect(getToast()?.text?.key).toBe('undo.reverted'));
+    for (const key of keys) expect(qc.getQueryState(key)?.isInvalidated).toBe(true);
+  });
+
   it('treats already-undone like undone', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;

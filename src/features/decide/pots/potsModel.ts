@@ -5,6 +5,7 @@ import { MAX_POTS, potSetAside, type PotLine, type PotState } from '@/engine/dec
 import { minorUnits } from '@/engine/money';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { wholePercent } from '../ui/GoalProgress';
+import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
 
 /** What a row needs converted to the home currency; null means no usable stored rate. */
 export interface PotAmounts {
@@ -70,6 +71,35 @@ export function checkPotMonth(month: string, today: string, allowed?: string): M
   if (month === allowed) return 'ok';
   if (month < today.slice(0, 7)) return 'past';
   if (month > maxPotMonth(today)) return 'far';
+  return 'ok';
+}
+
+export type PotValidation = 'ok' | 'target_required' | 'target_out_of_range' | 'ready_by_required' | 'monthly_out_of_range';
+
+export interface PotValidationInput {
+  bucket?: string | null;
+  target?: number | null;
+  ready_by?: string | null;
+  monthly_amount?: number | null;
+}
+
+const isMinor = (n: number): boolean => Number.isInteger(n) && n >= 0 && n <= MAX_INPUT_MINOR;
+
+/**
+ * D-22: a saving bucket needs no target and no date; a target, when given, must be above 0, and the monthly amount
+ * may be 0 up to the input cap. An ordinary pot keeps requiring a target above 0 and a ready-by date. Codes only.
+ */
+export function validatePot(p: PotValidationInput): PotValidation {
+  const isBucket = p.bucket !== undefined && p.bucket !== null;
+  if (p.target !== undefined && p.target !== null && (!isMinor(p.target) || p.target < 1)) return 'target_out_of_range';
+  if (isBucket) {
+    if (p.monthly_amount !== undefined && p.monthly_amount !== null && !isMinor(p.monthly_amount)) {
+      return 'monthly_out_of_range';
+    }
+    return 'ok';
+  }
+  if (p.target === undefined || p.target === null) return 'target_required';
+  if (p.ready_by === undefined || p.ready_by === null || p.ready_by === '') return 'ready_by_required';
   return 'ok';
 }
 

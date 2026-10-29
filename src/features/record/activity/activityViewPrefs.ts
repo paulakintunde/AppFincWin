@@ -41,3 +41,33 @@ export async function saveViewPrefs(prefs: ActivityViewPrefs): Promise<void> {
     // A preference that cannot be saved is not worth interrupting the screen for.
   }
 }
+
+// 05.2-30 (DSU-15): "Not now" on the How-are-you-paid card hides it for 14 days. A device-local timestamp, one per
+// person, under the `fincwin:` prefix so wipeDeviceData() clears it on sign-out (T-05.2-30-01). Not a data write.
+export const INCOME_CARD_DISMISS_DAYS = 14;
+
+export const incomeCardDismissedKey = (userId: string): string => `fincwin:activity:incomeCardDismissedAt:${userId}`;
+
+/** The ISO time "Not now" was last tapped, or null when never (or unreadable). */
+export async function getIncomeCardDismissedAt(userId: string): Promise<string | null> {
+  try {
+    const raw = await AsyncStorage.getItem(incomeCardDismissedKey(userId));
+    return raw !== null && Number.isFinite(Date.parse(raw)) ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setIncomeCardDismissedAt(userId: string, iso: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(incomeCardDismissedKey(userId), iso);
+  } catch {
+    // A preference that cannot be saved is not worth interrupting the screen for.
+  }
+}
+
+/** True while the card is inside its 14-day quiet period. */
+export function incomeCardIsDismissed(dismissedAt: string | null, now: Date): boolean {
+  if (dismissedAt === null) return false;
+  return now.getTime() - Date.parse(dismissedAt) < INCOME_CARD_DISMISS_DAYS * 24 * 60 * 60 * 1000;
+}

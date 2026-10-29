@@ -39,6 +39,12 @@ describe('Decide availability switches', () => {
     expect(own.match(/\bDECIDE_V3\b/g)).toHaveLength(2);
   });
 
+  it('05.2 D-02 the per-account flag selects v3', () => {
+    expect(decideEngine({})).toBe('v2');
+    expect(decideEngine({ decideV3: false })).toBe('v2');
+    expect(decideEngine({ decideV3: true })).toBe('v3');
+  });
+
   it('DECIDE_OPEN unchanged', () => {
     expect(DECIDE_OPEN).toBe(false);
   });

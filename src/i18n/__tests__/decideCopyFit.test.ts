@@ -204,6 +204,15 @@ describe('decide copy fit (R6)', () => {
     expect(Object.keys(syncNode).filter((k) => /^(waiting|offlineWaiting)_/.test(k) && plain.test(syncGet(k)))).toEqual([]);
   });
 
+  it('05.2-64 the loan sheet paid-off buttons are short enough to fit one line at 320 dp and font scale 2.0', () => {
+    // 320 dp / 2.0 scale leaves roughly 12 characters of button text across; the two labels stay within a short cap
+    expect(get('decide.setup.debtSheet.paidOffSave')).toBe('Mark paid off');
+    expect(get('decide.setup.debtSheet.paidOffCancel')).toBe('Cancel');
+    for (const key of ['paidOffSave', 'paidOffCancel']) {
+      expect(get(`decide.setup.debtSheet.${key}`).length).toBeLessThanOrEqual(16);
+    }
+  });
+
   it('R16 the fold previews fit the 44-character cap', () => {
     expect(get('decide.fold.updating').length).toBeLessThanOrEqual(44);
     expect(get('decide.section.setbacksSummaryOver50').length).toBeLessThanOrEqual(44);

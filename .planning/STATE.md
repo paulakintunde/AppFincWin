@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase-complete
-stopped_at: Phase 05.1 complete (50/50 plans, re-verification passed 6/6, owner shadow sign-off 2026-10-27); next /gsd-discuss-phase 05.2
-last_updated: "2026-10-27T20:00:00.000Z"
-last_activity: 2026-10-27 -- Phase 05.1 complete, verification passed
+status: executing
+stopped_at: 05.2 complete (75/75): verified, code review fixed, migrations pushed; PR into main next
+last_updated: "2026-10-29T08:30:00.000Z"
+last_activity: 2026-10-29 -- 05.2 review fixes 69-75 done; 20261029000100 and 000200 pushed
 progress:
   total_phases: 24
   completed_phases: 10
-  total_plans: 413
-  completed_plans: 411
+  total_plans: 488
+  completed_plans: 488
   percent: 99
 ---
 
@@ -21,10 +21,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 05.2 — decide-data-and-setup (next)
+**Current focus:** Phase 05.2 — decide-data-and-setup (verification)
 
 ## Current Position
 
+Phase: 05.2 (decide-data-and-setup) — COMPLETE 2026-10-29, 75/75 plans. VERIFICATION passed; code review CR/WR fixed in 69-75. Owner signed off after the round-3 Pixel re-check and TalkBack pass (05.2-WALKTHROUGH-FINDINGS.md). Migrations through 20261028001400 in production. N-05 moved to 05.3 D-15. DECIDE_V3 and DECIDE_OPEN stay false. Next: PR into main. Branch phase/05.2-decide-data-and-setup in C:/dev/fincwin-p5.
 Phase: 05.1 (decide-engine-v3) — COMPLETE 2026-10-27
 Plan: 50 of 50 (32 original + gap closure 05.1-33..50). 05.1-VERIFICATION.md re-verification passed 6/6 success criteria, all 6 earlier gaps and H-01..H-03, M-01..M-09 closed; owner signed off the shadow review (reviewed: true, 2026-10-27; D-64 added). DECIDE_V3 and DECIDE_OPEN stay false. Deferrals: 05.2-OWNER-NOTES.md and 05.1-CONTEXT.md <deferred> (05.3). Branch phase/05.1-decide-engine-v3 in C:/dev/fincwin-p5, not pushed.
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
@@ -199,6 +200,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-25T22:31:55.556Z
-Stopped at: Phase 05.1 complete
-Resume file: .planning/phases/05.1-decide-engine-v3/05.1-CONTEXT.md
+Last session: 2026-10-27T22:05:00.000Z
+Stopped at: Phase 05.2 planned (36 plans, 7 waves)
+Resume file: .planning/phases/05.2-decide-data-and-setup/05.2-01-PLAN.md

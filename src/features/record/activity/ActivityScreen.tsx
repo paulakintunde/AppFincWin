@@ -6,13 +6,17 @@
 // filters and bulk select layer on top (ACT-03, ACT-04, ACT-05); the list keeps visual priority.
 // 03.1 D-43: the header is four bands (title row, month row with Search/Filter/More, summary card,
 // Display row) rendered by ActivityHeaderBands; Display and More live in their own sheets.
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Text } from '@/ui/Text';
 import { FlashList } from '@shopify/flash-list';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
+import type { TransactionRow } from '@/db/rows';
 import { useCategoryLookup } from '@/data/queries/categories';
+import { useIncomePayerPrompts } from '@/data/queries/incomePayerPrompts';
+import { useRefundLinks } from '@/data/queries/refundLinks';
+import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { useBulkDelete, useBulkMarkPaid, useBulkMarkUnpaid } from '@/data/mutations/patches';
 import { EditScopePrompt } from '@/features/record/entry/EditScopePrompt';
 import { PasteSheet } from '@/features/record/import/PasteSheet';
@@ -43,6 +47,13 @@ import { GroupHeader } from './GroupHeader';
 import { monthRefreshKeys } from './refreshKeys';
 import { formatMonthLabel } from './MonthSwitcher';
 import { RecurringReviewSheet } from './RecurringReviewSheet';
+import { HowArePaidCard } from './HowArePaidCard';
+import { useRecurringSeries } from '@/data/queries/recurringSeries';
+import { incomeChipState, isIncomeRow, rulesByPayer } from './IncomeTagChip';
+import { IncomeTagSheet } from './IncomeTagSheet';
+import { RefundPickerSheet } from './RefundPickerSheet';
+import { refundTagFor } from './RefundTag';
+import { asActivityRow, type PickerDirection } from './refundPickerModel';
 import { SeriesOfferCard } from './SeriesOfferCard';
 import { TransactionDetailSheet } from './TransactionDetailSheet';
 import { CalendarView } from './views/CalendarView';
@@ -93,6 +104,17 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
     accountName,
   });
   const flow = useRowFlow(rowActions, month);
+  // 05.2-30 (D-01): income chips, the income sheet and the refund tags exist only with the Decide switch on.
+  const { v3 } = useDecideAccess();
+  const payerRules = useIncomePayerPrompts(v3 ? (rc.householdId ?? undefined) : undefined);
+  const rulesByKey = useMemo(() => rulesByPayer(payerRules.data ?? []), [payerRules.data]);
+  // 05.2 F-10: a payment from an income series reads the series' tag when it has none of its own.
+  const recurring = useRecurringSeries(v3 ? (rc.householdId ?? undefined) : undefined);
+  const seriesById = useMemo(() => new Map((recurring.data ?? []).map((x) => [x.id, x])), [recurring.data]);
+  // 05.2-33 (D-10): refund links in every month, not only the rows loaded for this one.
+  const refundLinks = useRefundLinks(rc.householdId, itemRows, v3);
+  const [refundPicker, setRefundPicker] = useState<{ row: TransactionRow; direction: PickerDirection } | null>(null);
+  const [incomeSheet, setIncomeSheet] = useState<{ row: ActivityRowView; newPayer: boolean } | null>(null);
   // D-10: the FAB steps aside while rows are being selected.
   useHideFab('bulkSelect', selection.active);
 
@@ -246,6 +268,13 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
       onSwipeDelete={() => flow.requestDelete(row)}
       cardPosition={cardPosition}
       balanceNote={vm.balanceNotes.get(row.id)}
+      incomeChip={v3 && isIncomeRow(row) ? incomeChipState(row, rulesByKey, seriesById) : null}
+      onIncomeChipPress={(r) => setIncomeSheet({ row: r, newPayer: incomeChipState(r, rulesByKey, seriesById).state === 'new' })}
+      refundTag={v3 ? refundTagFor<TransactionRow>(row, refundLinks.rowsById, refundLinks.totals) : null}
+      onRefundTagPress={(purchaseId) => {
+        const purchase = refundLinks.rowsById.get(purchaseId);
+        if (purchase !== undefined) flow.openDetail(asActivityRow(purchase));
+      }}
     />
   );
 
@@ -361,9 +390,12 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
           unpaidOnly={filter.unpaidOnly}
           onClearUnpaid={() => vm.setFilter({ ...filter, unpaidOnly: false })}
           offerCard={
-            vm.offers.length > 0 ? (
-              <SeriesOfferCard offers={vm.offers} rowsById={vm.rowsById} onReview={() => vm.setReviewOpen(true)} />
-            ) : null
+            <>
+              <HowArePaidCard />
+              {vm.offers.length > 0 ? (
+                <SeriesOfferCard offers={vm.offers} rowsById={vm.rowsById} onReview={() => vm.setReviewOpen(true)} />
+              ) : null}
+            </>
           }
         />
       </View>
@@ -522,7 +554,43 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
         prevMonthName={vm.monthTools.prevMonthName}
         onSelect={onMoreSelect}
       />
-      <TransactionDetailSheet {...flow.detail} today={rc.today} />
+      <TransactionDetailSheet
+        {...flow.detail}
+        today={rc.today}
+        refundCallbacks={
+          v3
+            ? {
+                onRefundPicker: (r, direction) => {
+                  flow.detail.onDismiss();
+                  setRefundPicker({ row: r, direction });
+                },
+                onIncomeType: (r) => {
+                  flow.detail.onDismiss();
+                  setIncomeSheet({ row: asActivityRow(r), newPayer: incomeChipState(r, rulesByKey, seriesById).state === 'new' });
+                },
+                onOpenRow: (r) => flow.openDetail(asActivityRow(r)),
+              }
+            : undefined
+        }
+      />
+      <IncomeTagSheet
+        visible={v3 && incomeSheet !== null}
+        tx={incomeSheet?.row ?? null}
+        newPayer={incomeSheet?.newPayer ?? false}
+        formatter={formatter}
+        onClose={() => setIncomeSheet(null)}
+        onRefundLink={(r) => {
+          setIncomeSheet(null);
+          setRefundPicker({ row: r, direction: 'refund->purchase' });
+        }}
+      />
+      <RefundPickerSheet
+        visible={v3 && refundPicker !== null}
+        direction={refundPicker?.direction ?? 'refund->purchase'}
+        anchor={refundPicker?.row ?? null}
+        formatter={formatter}
+        onClose={() => setRefundPicker(null)}
+      />
       <ProjectionDetailSheet
         projection={projection}
         visible={projection !== null}

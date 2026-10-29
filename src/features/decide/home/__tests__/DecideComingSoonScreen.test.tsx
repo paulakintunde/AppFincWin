@@ -12,6 +12,10 @@ jest.mock('@/features/decide/home/DecideHomeScreen', () => {
   const { Text: RNText } = jest.requireActual('react-native');
   return { DecideHomeScreen: () => R.createElement(RNText, null, 'old-decide') };
 });
+// 05.2-35: the route also imports the test-account setup page (and its data hooks, which need Supabase env). It is not drawn
+// here: the switch is off for this account, so the Decide tab shows Coming soon.
+jest.mock('@/features/decide/setup/DecideSetupPage', () => ({ DecideSetupPage: () => null }));
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
 // D-27: the dev-only shadow export reads Supabase data; this test is about the visible screen only.
 jest.mock('@/features/decide/dev/ShadowExportDevMenu', () => ({ ShadowExportDevMenu: () => null }));
 // The real scaffold pulls in the avatar's Supabase client; the title and children are what matter here.

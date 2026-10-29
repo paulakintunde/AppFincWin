@@ -6,6 +6,7 @@ import { colors as tokenColors } from '@/theme/tokens';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { CalendarView } from '../views/CalendarView';
 
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),

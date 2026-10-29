@@ -117,4 +117,22 @@ describe('LargeSecureStore', () => {
     expect(result).toBeNull();
     expect(await AsyncStorage.getItem('session')).toBeNull();
   });
+
+  it('F-11: a row the OS cannot read resolves null and the row is removed', async () => {
+    const store = new LargeSecureStore();
+    await store.setItem('fincwin:query-cache', 'payload');
+    const spy = jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('Row too big to fit into CursorWindow'));
+    const removeSpy = jest.spyOn(AsyncStorage, 'removeItem');
+
+    await expect(store.getItem('fincwin:query-cache')).resolves.toBeNull();
+    expect(removeSpy).toHaveBeenCalledWith('fincwin:query-cache');
+    spy.mockRestore();
+  });
+
+  it('F-11: a session key read error also resolves null instead of throwing', async () => {
+    const store = new LargeSecureStore();
+    const spy = jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('Row too big to fit into CursorWindow'));
+    await expect(store.getItem('sb-session')).resolves.toBeNull();
+    spy.mockRestore();
+  });
 });

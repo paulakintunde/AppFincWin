@@ -7327,6 +7327,1502 @@
       }
     },
     {
+      "key": "generatedRefund:genref-000:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 3095962,
+        "dayOne": 3095962,
+        "monthLeft": -721029,
+        "erest": 459198,
+        "e": 489922,
+        "typicalLeft": -721029,
+        "unspent": 799983,
+        "emergency": 1276893,
+        "variant": null,
+        "oldWarnings": "cash,owe,month,dsr",
+        "missing": "income_pattern_unconfirmed,expected_income_needed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-003:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4342333,
+        "dayOne": 4342333,
+        "monthLeft": -712222,
+        "erest": 393896,
+        "e": 419637,
+        "typicalLeft": -712222,
+        "unspent": 22553,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month",
+        "missing": "unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-004:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3802947,
+        "dayOne": 0,
+        "monthLeft": 212065,
+        "erest": 326132,
+        "e": 352583,
+        "typicalLeft": 212065,
+        "unspent": 60345,
+        "emergency": 1808849,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedRefund:genref-004:2",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 2586363,
+        "dayOne": 484896,
+        "monthLeft": 212065,
+        "erest": 326132,
+        "e": 352583,
+        "typicalLeft": 212065,
+        "unspent": 60345,
+        "emergency": 1808849,
+        "variant": "not_covered",
+        "oldWarnings": "cash,dsr",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedRefund:genref-006:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 3658019,
+        "dayOne": 0,
+        "monthLeft": -179393,
+        "erest": 420904,
+        "e": 449992,
+        "typicalLeft": -179393,
+        "unspent": 412930,
+        "emergency": 894719,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedRefund:genref-006:1",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1928617,
+        "dayOne": 107949,
+        "monthLeft": -179393,
+        "erest": 420904,
+        "e": 449992,
+        "typicalLeft": -179393,
+        "unspent": 412930,
+        "emergency": 894719,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedRefund:genref-007:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4851355,
+        "dayOne": 4851355,
+        "monthLeft": -220562,
+        "erest": 214106,
+        "e": 221617,
+        "typicalLeft": -220562,
+        "unspent": 503002,
+        "emergency": 621129,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month",
+        "missing": "unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-008:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4590096,
+        "dayOne": 4590096,
+        "monthLeft": -1064412,
+        "erest": 439735,
+        "e": 460717,
+        "typicalLeft": -1071912,
+        "unspent": 1,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "income_pattern_unconfirmed,expected_income_needed,unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-011:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4239843,
+        "dayOne": 4579030,
+        "monthLeft": -662998,
+        "erest": 431088,
+        "e": 449984,
+        "typicalLeft": -662998,
+        "unspent": null,
+        "emergency": 1842156,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month,inv",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-011:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4729227,
+        "dayOne": 4729227,
+        "monthLeft": -662998,
+        "erest": 431088,
+        "e": 449984,
+        "typicalLeft": -662998,
+        "unspent": null,
+        "emergency": 1842156,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip,month,inv",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-013:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1064881,
+        "dayOne": 0,
+        "monthLeft": -568551,
+        "erest": 413750,
+        "e": 441688,
+        "typicalLeft": -514557,
+        "unspent": 529082,
+        "emergency": 223153,
+        "variant": null,
+        "oldWarnings": "month,dsr,cash,inv",
+        "missing": "income_pattern_unconfirmed,expected_income_needed,unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-013:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4697784,
+        "dayOne": 831588,
+        "monthLeft": -568551,
+        "erest": 413750,
+        "e": 441688,
+        "typicalLeft": -514557,
+        "unspent": 529082,
+        "emergency": 223153,
+        "variant": null,
+        "oldWarnings": "owe,cash,month,dsr,inv",
+        "missing": "income_pattern_unconfirmed,expected_income_needed,unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-013:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1649636,
+        "dayOne": 1649636,
+        "monthLeft": -568551,
+        "erest": 413750,
+        "e": 441688,
+        "typicalLeft": -514557,
+        "unspent": 529082,
+        "emergency": 223153,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr,inv",
+        "missing": "income_pattern_unconfirmed,expected_income_needed,unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-015:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1001,
+        "dayOne": 1081,
+        "monthLeft": 684531,
+        "erest": 165295,
+        "e": 181945,
+        "typicalLeft": 684531,
+        "unspent": 311113,
+        "emergency": 8,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": "unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-016:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1841652,
+        "dayOne": 1988984,
+        "monthLeft": -1007819,
+        "erest": 278970,
+        "e": 300561,
+        "typicalLeft": -1007819,
+        "unspent": null,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month,cash_dip,dsr,inv",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-016:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 327193,
+        "dayOne": 353368,
+        "monthLeft": -1007819,
+        "erest": 278970,
+        "e": 300561,
+        "typicalLeft": -1007819,
+        "unspent": null,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month,cash_dip,dsr,inv",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-016:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2937061,
+        "dayOne": 2937061,
+        "monthLeft": -1007819,
+        "erest": 278970,
+        "e": 300561,
+        "typicalLeft": -1007819,
+        "unspent": null,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month,cash_dip,dsr,inv",
+        "missing": "unspent_not_confirmed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-017:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 3879892,
+        "dayOne": 4190283,
+        "monthLeft": -576202,
+        "erest": 423597,
+        "e": 449995,
+        "typicalLeft": -558253,
+        "unspent": 144519,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "income_pattern_unconfirmed,expected_income_needed,unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-017:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 3665647,
+        "dayOne": 3958899,
+        "monthLeft": -576202,
+        "erest": 423597,
+        "e": 449995,
+        "typicalLeft": -558253,
+        "unspent": 144519,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "income_pattern_unconfirmed,expected_income_needed,unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-018:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1747043,
+        "dayOne": 97722,
+        "monthLeft": -207581,
+        "erest": 436843,
+        "e": 449999,
+        "typicalLeft": -207581,
+        "unspent": 453061,
+        "emergency": 7,
+        "variant": null,
+        "oldWarnings": "cash",
+        "missing": "unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-018:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2681927,
+        "dayOne": 2681927,
+        "monthLeft": -207581,
+        "erest": 436843,
+        "e": 449999,
+        "typicalLeft": -207581,
+        "unspent": 453061,
+        "emergency": 7,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": "unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-021:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 845084,
+        "dayOne": 912691,
+        "monthLeft": -164165,
+        "erest": 393313,
+        "e": 416220,
+        "typicalLeft": 85309,
+        "unspent": 799999,
+        "emergency": 1999990,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "income_pattern_unconfirmed,expected_income_needed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-024:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 3895551,
+        "dayOne": 4207195,
+        "monthLeft": -24962,
+        "erest": 389885,
+        "e": 415402,
+        "typicalLeft": -24962,
+        "unspent": 0,
+        "emergency": 73182,
+        "variant": null,
+        "oldWarnings": "cash,month,inv",
+        "missing": "unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-025:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4468544,
+        "dayOne": 4468544,
+        "monthLeft": -356492,
+        "erest": 142686,
+        "e": 157974,
+        "typicalLeft": -146453,
+        "unspent": 622466,
+        "emergency": 1616619,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "income_pattern_unconfirmed,expected_income_needed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-025:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 901196,
+        "dayOne": 901196,
+        "monthLeft": -356492,
+        "erest": 142686,
+        "e": 157974,
+        "typicalLeft": -146453,
+        "unspent": 622466,
+        "emergency": 1616619,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "income_pattern_unconfirmed,expected_income_needed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-025:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1004,
+        "dayOne": 80,
+        "monthLeft": -356492,
+        "erest": 142686,
+        "e": 157974,
+        "typicalLeft": -146453,
+        "unspent": 622466,
+        "emergency": 1616619,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr",
+        "missing": "income_pattern_unconfirmed,expected_income_needed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-030:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1022,
+        "dayOne": 1022,
+        "monthLeft": -589116,
+        "erest": 238108,
+        "e": 250935,
+        "typicalLeft": -589116,
+        "unspent": 114641,
+        "emergency": 17,
+        "variant": null,
+        "oldWarnings": "month,cash_dip",
+        "missing": "unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-032:0",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1002,
+        "dayOne": 0,
+        "monthLeft": -260279,
+        "erest": 333009,
+        "e": 347372,
+        "typicalLeft": -260279,
+        "unspent": 799988,
+        "emergency": null,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedRefund:genref-033:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2630005,
+        "dayOne": 0,
+        "monthLeft": -776943,
+        "erest": 244321,
+        "e": 259650,
+        "typicalLeft": -776943,
+        "unspent": 489469,
+        "emergency": 7,
+        "variant": null,
+        "oldWarnings": "owe,month,dsr,inv",
+        "missing": "unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-034:1",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4661982,
+        "dayOne": 0,
+        "monthLeft": 368335,
+        "erest": 359764,
+        "e": 378207,
+        "typicalLeft": 368335,
+        "unspent": 12,
+        "emergency": 18,
+        "variant": "not_covered",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedRefund:genref-035:3",
+      "source": "generated",
+      "old": "missing",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4279553,
+        "dayOne": 0,
+        "monthLeft": -313677,
+        "erest": 266055,
+        "e": 277911,
+        "typicalLeft": -313677,
+        "unspent": 467039,
+        "emergency": 499877,
+        "variant": "not_covered",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedRefund:genref-036:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4999997,
+        "dayOne": 4999997,
+        "monthLeft": 28217,
+        "erest": 331124,
+        "e": 353160,
+        "typicalLeft": -51681,
+        "unspent": 432222,
+        "emergency": 463953,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr,inv",
+        "missing": "income_pattern_unconfirmed,expected_income_needed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-036:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1684032,
+        "dayOne": 1818755,
+        "monthLeft": 28217,
+        "erest": 331124,
+        "e": 353160,
+        "typicalLeft": -51681,
+        "unspent": 432222,
+        "emergency": 463953,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr,inv",
+        "missing": "income_pattern_unconfirmed,expected_income_needed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-036:2",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1009,
+        "dayOne": 1009,
+        "monthLeft": 28217,
+        "erest": 331124,
+        "e": 353160,
+        "typicalLeft": -51681,
+        "unspent": 432222,
+        "emergency": 463953,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr,inv",
+        "missing": "income_pattern_unconfirmed,expected_income_needed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-036:3",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1400037,
+        "dayOne": 0,
+        "monthLeft": 28217,
+        "erest": 331124,
+        "e": 353160,
+        "typicalLeft": -51681,
+        "unspent": 432222,
+        "emergency": 463953,
+        "variant": null,
+        "oldWarnings": "cash,month,dsr,inv",
+        "missing": "income_pattern_unconfirmed,expected_income_needed"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-037:0",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 4999980,
+        "dayOne": 5399978,
+        "monthLeft": -375541,
+        "erest": 402348,
+        "e": 424119,
+        "typicalLeft": -375541,
+        "unspent": 9,
+        "emergency": 12,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": "unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-037:1",
+      "source": "generated",
+      "old": "no",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 2957565,
+        "dayOne": 2957565,
+        "monthLeft": -375541,
+        "erest": 402348,
+        "e": 424119,
+        "typicalLeft": -375541,
+        "unspent": 9,
+        "emergency": 12,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": "unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-037:2",
+      "source": "generated",
+      "old": "fits",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1004,
+        "dayOne": 1084,
+        "monthLeft": -375541,
+        "erest": 402348,
+        "e": 424119,
+        "typicalLeft": -375541,
+        "unspent": 9,
+        "emergency": 12,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": "unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedRefund:genref-037:3",
+      "source": "generated",
+      "old": "fits",
+      "v3": "needs_input",
+      "v3Legacy": "missing",
+      "newFits": false,
+      "cause": "needs_input_rules",
+      "detail": {
+        "price": 1012,
+        "dayOne": 1012,
+        "monthLeft": -375541,
+        "erest": 402348,
+        "e": 424119,
+        "typicalLeft": -375541,
+        "unspent": 9,
+        "emergency": 12,
+        "variant": null,
+        "oldWarnings": null,
+        "missing": "unexplained_money_question"
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-001:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 265528,
+        "dayOne": 265528,
+        "monthLeft": 170495,
+        "erest": 93889,
+        "e": 103507,
+        "typicalLeft": 170495,
+        "unspent": 1239078,
+        "emergency": 600038,
+        "variant": "payday",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-002:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 938576,
+        "dayOne": 938576,
+        "monthLeft": 598544,
+        "erest": 303481,
+        "e": 335997,
+        "typicalLeft": 599995,
+        "unspent": 1811985,
+        "emergency": null,
+        "variant": "payday",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-004:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2087804,
+        "dayOne": 2087804,
+        "monthLeft": 95925,
+        "erest": 92132,
+        "e": 102003,
+        "typicalLeft": 96458,
+        "unspent": 2391056,
+        "emergency": null,
+        "variant": "payday",
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-005:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "erest_not_zero_spend",
+      "detail": {
+        "price": 402645,
+        "dayOne": 402645,
+        "monthLeft": 314255,
+        "erest": 197664,
+        "e": 218842,
+        "typicalLeft": 316104,
+        "unspent": 1069892,
+        "emergency": null,
+        "variant": "payday",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-006:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "erest_not_zero_spend",
+      "detail": {
+        "price": 138406,
+        "dayOne": 138406,
+        "monthLeft": 59445,
+        "erest": 83479,
+        "e": 92423,
+        "typicalLeft": 60160,
+        "unspent": 488742,
+        "emergency": null,
+        "variant": "payday",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-008:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4081031,
+        "dayOne": 4081031,
+        "monthLeft": 157195,
+        "erest": 180787,
+        "e": 197230,
+        "typicalLeft": 157195,
+        "unspent": 4232449,
+        "emergency": null,
+        "variant": "payday",
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-009:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 434057,
+        "dayOne": 434057,
+        "monthLeft": 165000,
+        "erest": 101046,
+        "e": 111000,
+        "typicalLeft": 165000,
+        "unspent": 1422000,
+        "emergency": 600000,
+        "variant": "payday",
+        "oldWarnings": "cash_dip,cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-013:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 3058638,
+        "dayOne": 3058638,
+        "monthLeft": 331238,
+        "erest": 335781,
+        "e": 369194,
+        "typicalLeft": 331238,
+        "unspent": 8122253,
+        "emergency": 4102148,
+        "variant": "payday",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-014:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 187803,
+        "dayOne": 187803,
+        "monthLeft": 51097,
+        "erest": 98011,
+        "e": 108007,
+        "typicalLeft": 51097,
+        "unspent": 630036,
+        "emergency": null,
+        "variant": "payday",
+        "oldWarnings": "cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-015:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1042559,
+        "dayOne": 1042559,
+        "monthLeft": 149719,
+        "erest": 86715,
+        "e": 96006,
+        "typicalLeft": 150009,
+        "unspent": 1923115,
+        "emergency": 600036,
+        "variant": "payday",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-016:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 3401676,
+        "dayOne": 3401676,
+        "monthLeft": 312283,
+        "erest": 175540,
+        "e": 194348,
+        "typicalLeft": 312646,
+        "unspent": 4236219,
+        "emergency": 563327,
+        "variant": "payday",
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-017:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 1348466,
+        "dayOne": 1348466,
+        "monthLeft": 509730,
+        "erest": 246017,
+        "e": 272376,
+        "typicalLeft": 512608,
+        "unspent": 2798238,
+        "emergency": 923511,
+        "variant": "payday",
+        "oldWarnings": "cash_dip,cash",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-019:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2397577,
+        "dayOne": 2397577,
+        "monthLeft": 606560,
+        "erest": 270154,
+        "e": 299099,
+        "typicalLeft": 608168,
+        "unspent": 4197357,
+        "emergency": 996997,
+        "variant": "payday",
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-020:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2939605,
+        "dayOne": 2939605,
+        "monthLeft": 447991,
+        "erest": 394743,
+        "e": 431424,
+        "typicalLeft": 447991,
+        "unspent": 3580819,
+        "emergency": null,
+        "variant": "payday",
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-023:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2547837,
+        "dayOne": 2547837,
+        "monthLeft": 178696,
+        "erest": 163142,
+        "e": 180621,
+        "typicalLeft": 180620,
+        "unspent": 4737592,
+        "emergency": 1776597,
+        "variant": "payday",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-024:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "fits_unspent",
+      "v3Legacy": "fits",
+      "newFits": true,
+      "cause": "unspent_confirmed",
+      "detail": {
+        "price": 2256380,
+        "dayOne": 2256380,
+        "monthLeft": 398159,
+        "erest": 275089,
+        "e": 304563,
+        "typicalLeft": 399738,
+        "unspent": 3378741,
+        "emergency": null,
+        "variant": null,
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-025:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 2670478,
+        "dayOne": 2670478,
+        "monthLeft": 281075,
+        "erest": 171314,
+        "e": 189669,
+        "typicalLeft": 281445,
+        "unspent": 4539823,
+        "emergency": 1223672,
+        "variant": "payday",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-029:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 4244141,
+        "dayOne": 4244141,
+        "monthLeft": 420767,
+        "erest": 298060,
+        "e": 329995,
+        "typicalLeft": 425993,
+        "unspent": 5207918,
+        "emergency": null,
+        "variant": "payday",
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-030:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 198881,
+        "dayOne": 198881,
+        "monthLeft": 698373,
+        "erest": 324590,
+        "e": 359367,
+        "typicalLeft": 701061,
+        "unspent": 1849857,
+        "emergency": 1178253,
+        "variant": "payday",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-031:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 978223,
+        "dayOne": 978223,
+        "monthLeft": 195021,
+        "erest": 101477,
+        "e": 111680,
+        "typicalLeft": 195021,
+        "unspent": 2333597,
+        "emergency": 1000113,
+        "variant": "payday",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-032:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 725345,
+        "dayOne": 725345,
+        "monthLeft": 175407,
+        "erest": 93487,
+        "e": 103503,
+        "typicalLeft": 175504,
+        "unspent": 1479039,
+        "emergency": null,
+        "variant": "payday",
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-033:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 667030,
+        "dayOne": 667030,
+        "monthLeft": 182001,
+        "erest": 99103,
+        "e": 109721,
+        "typicalLeft": 183063,
+        "unspent": 1111834,
+        "emergency": null,
+        "variant": "payday",
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-034:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1922698,
+        "dayOne": 1922698,
+        "monthLeft": 279317,
+        "erest": 182676,
+        "e": 202248,
+        "typicalLeft": 279317,
+        "unspent": 3593572,
+        "emergency": 1172454,
+        "variant": "payday",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-036:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 3580155,
+        "dayOne": 3580155,
+        "monthLeft": 490533,
+        "erest": 347481,
+        "e": 383895,
+        "typicalLeft": 490533,
+        "unspent": 8477689,
+        "emergency": 4265504,
+        "variant": "payday",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-038:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 2727424,
+        "dayOne": 2727424,
+        "monthLeft": 236125,
+        "erest": 297160,
+        "e": 328999,
+        "typicalLeft": 239856,
+        "unspent": 8019344,
+        "emergency": 4112484,
+        "variant": "payday",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-039:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1145102,
+        "dayOne": 1145102,
+        "monthLeft": 27919,
+        "erest": 111363,
+        "e": 123295,
+        "typicalLeft": 28374,
+        "unspent": 2595463,
+        "emergency": 835898,
+        "variant": "payday",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-041:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "emergency_locked",
+      "detail": {
+        "price": 380236,
+        "dayOne": 380236,
+        "monthLeft": 152499,
+        "erest": 107522,
+        "e": 118506,
+        "typicalLeft": 152499,
+        "unspent": 909042,
+        "emergency": 300014,
+        "variant": "payday",
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-044:0",
+      "source": "generated",
+      "old": "fits",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 144934,
+        "dayOne": 144934,
+        "monthLeft": 146323,
+        "erest": 86710,
+        "e": 96000,
+        "typicalLeft": 147001,
+        "unspent": 1872006,
+        "emergency": 1200004,
+        "variant": "payday",
+        "oldWarnings": null,
+        "missing": null
+      }
+    },
+    {
+      "key": "generatedNearLine:gennear-045:0",
+      "source": "generated",
+      "old": "adjust",
+      "v3": "not_yet",
+      "v3Legacy": "no",
+      "newFits": false,
+      "cause": "cash_path_spread",
+      "detail": {
+        "price": 1773221,
+        "dayOne": 1773221,
+        "monthLeft": 178895,
+        "erest": 82649,
+        "e": 91504,
+        "typicalLeft": 179497,
+        "unspent": 1857068,
+        "emergency": null,
+        "variant": "payday",
+        "oldWarnings": "cash,cash_dip",
+        "missing": null
+      }
+    },
+    {
       "key": "persona:maya:0",
       "source": "persona",
       "old": "adjust",
@@ -8305,6 +9801,66 @@
       "reason": "deposit_with_instalment_not_in_v1"
     },
     {
+      "key": "generatedRefund:genref-005:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-009:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-009:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-012:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-014:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-016:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-025:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-026:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-027:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-027:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-028:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-029:1",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-031:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-033:0",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
+      "key": "generatedRefund:genref-039:2",
+      "reason": "deposit_with_instalment_not_in_v1"
+    },
+    {
       "key": "scenario:22:0",
       "reason": "extras_not_in_v1"
     },
@@ -8863,6 +10419,120 @@
       ]
     },
     {
+      "key": "generatedRefund:genref-002:0",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-002:1",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-002:2",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-002:3",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-010:0",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-010:1",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-010:2",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-012:0",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-012:1",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-020:0",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-020:1",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-020:2",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-023:0",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-023:1",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-023:2",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-023:3",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-029:0",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-029:2",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
+      "key": "generatedRefund:genref-029:3",
+      "missing": [
+        "activity_not_current"
+      ]
+    },
+    {
       "key": "persona:jordan:0",
       "missing": [
         "past_month_missing"
@@ -8881,6 +10551,6 @@
       ]
     }
   ],
-  "total": 780,
-  "agreed": 196
+  "total": 905,
+  "agreed": 219
 }

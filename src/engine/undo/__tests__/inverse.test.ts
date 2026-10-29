@@ -12,6 +12,16 @@ import {
 } from '../inverse';
 
 describe('inverseOfInserts', () => {
+  it.each(['recurring_dismissals', 'income_payer_prompts', 'decide_answers'] as const)('soft-deletes an inserted %s row (05.2)', (entity) => {
+    expect(inverseOfInserts(entity, [{ id: 'r', version: 1 }])).toEqual([
+      { entity, id: 'r', expectedVersion: 1, patch: { deleted_at: NOW_SENTINEL } },
+    ]);
+  });
+
+  it('refuses to invert an insert of decide_settings (05.2: no soft-delete column)', () => {
+    expect(() => inverseOfInserts('decide_settings', [{ id: 's', version: 1 }])).toThrow(RangeError);
+  });
+
   it('soft-deletes an inserted transaction', () => {
     expect(inverseOfInserts('transactions', [{ id: 'a', version: 1 }])).toEqual([
       { entity: 'transactions', id: 'a', expectedVersion: 1, patch: { deleted_at: NOW_SENTINEL } },

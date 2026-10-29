@@ -3,15 +3,13 @@
  * figure, the user's rolled-forward unspent figure, the emergency fund and the envelopes.
  * I17: suggested + bills still due + Erest = the spending balance (profile (d) 'balance' uses its own horizon bills and
  * no Erest, I39, so the partition is stated for the other profiles). The fund is never a term (D-43, D-54).
- * Bound on a later-month refund (Phase 05.1 risk 3): rollForward adds a refund logged after its purchase back in full,
- * so unspent can exceed its pre-purchase figure only when the purchase sat inside planned everyday spending. The user's
- * confirmed figure is never replaced (D-30); the gap is surfaced through `drifted` against `suggested`.
+ * Two-date refunds (05.2): the month view dates a linked refund on its purchase, but rolled unspent counts it on the day it arrived.
  */
 import { minorUnits, type MinorUnits } from '../../../money/types';
-import type { Funds, MonthModel, V3Inputs } from '../types';
-import { emergencyOf } from './emergency';
+import type { Funds, MonthModel, UnspentSum, V3Inputs } from '../types';
+import { emergencyOf, withLiveEmergency } from './emergency';
 import { envelopesOf, ownEnvelope } from './envelopes';
-import { rollForward, suggestedUnspent, unspentState } from './unspent';
+import { billsAndErest, heldBackOf, rollForward, suggestedUnspent, unspentState } from './unspent';
 
 interface Spending {
   readonly spending: MinorUnits;
@@ -19,6 +17,15 @@ interface Spending {
   readonly envelopesAssumedInside: number;
   readonly unstatedAccounts: readonly string[];
   readonly fundUnlinked: boolean;
+  readonly parts: SpendingParts;
+}
+
+/** The spending balance as a worked sum: gross - mixedSetAside - envelopes - emergency = spending (deductions never exceed what is there). */
+interface SpendingParts {
+  readonly gross: MinorUnits;
+  readonly mixedSetAside: MinorUnits;
+  readonly envelopes: MinorUnits;
+  readonly emergency: MinorUnits;
 }
 
 /**
@@ -35,6 +42,10 @@ function spendingOf(inputs: V3Inputs): Spending {
   const linkedTo = (id: string): number => envs.filter((e) => e.accountId === id).reduce((t, e) => t + e.saved, 0);
   let total: number = accounts === undefined ? inputs.balance : 0;
   let fenced = 0;
+  let gross: number = accounts === undefined ? inputs.balance : 0;
+  let pEnv = 0;
+  let pEmg = 0;
+  let pMixed = 0;
   const unstated: string[] = [];
   for (const a of accounts ?? []) {
     const use = a.use;
@@ -42,22 +53,34 @@ function spendingOf(inputs: V3Inputs): Spending {
     else if (use.kind === 'everyday') {
       total += a.balance - linkedTo(a.id);
       fenced += linkedTo(a.id);
+      gross += a.balance;
+      pEnv += linkedTo(a.id);
     } else if (use.kind === 'mixed') {
       const aside = linkedTo(a.id) + (inputs.emergency?.accountId === a.id ? inputs.emergency.amount : 0) + (use.extraSetAside ?? 0);
       const kept = Math.max(0, a.balance - aside);
       total += kept;
       fenced += a.balance - kept;
+      gross += a.balance;
+      // the fenced money is named in turn: envelopes, then the fund, then the extra the user set aside
+      const fe = a.balance - kept;
+      const toEnv = Math.min(fe, linkedTo(a.id));
+      const toEmg = Math.min(fe - toEnv, inputs.emergency?.accountId === a.id ? inputs.emergency.amount : 0);
+      pEnv += toEnv;
+      pEmg += toEmg;
+      pMixed += fe - toEnv - toEmg;
     }
   }
   const unlinked = envs.filter((e) => e.accountId == null || !ids.has(e.accountId));
   const inside = unlinked.reduce((t, e) => t + e.saved, 0);
   total -= inside;
   fenced += inside;
+  pEnv += inside;
   const fundUnlinked =
     accounts !== undefined && inputs.emergency != null && (inputs.emergency.accountId == null || !ids.has(inputs.emergency.accountId));
   if (fundUnlinked && inputs.emergency != null) {
     total -= inputs.emergency.amount;
     fenced += inputs.emergency.amount;
+    pEmg += inputs.emergency.amount;
   }
   return {
     spending: minorUnits(Math.max(0, total)),
@@ -65,7 +88,23 @@ function spendingOf(inputs: V3Inputs): Spending {
     envelopesAssumedInside: unlinked.filter((e) => e.saved > 0).length,
     unstatedAccounts: unstated,
     fundUnlinked,
+    parts: partsOf(gross, pMixed, pEnv, pEmg),
   };
+}
+
+/** Names the deductions so they net to the spending balance: when they overshoot, envelopes give way first, then the fund, then the set-aside. */
+function partsOf(gross: number, mixed: number, env: number, emg: number): SpendingParts {
+  const g = Math.max(0, gross);
+  let over = Math.max(0, mixed + env + emg - g);
+  const cut = (v: number): number => {
+    const c = Math.min(v, over);
+    over -= c;
+    return v - c;
+  };
+  const e = cut(env);
+  const f = cut(emg);
+  const m = cut(mixed);
+  return { gross: minorUnits(g), mixedSetAside: minorUnits(m), envelopes: minorUnits(e), emergency: minorUnits(f) };
 }
 
 export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: string | null): Funds {
@@ -83,7 +122,7 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
   const roll =
     inputs.unspent === null
       ? null
-      : rollForward({ anchor: inputs.unspent, asOf: inputs.asOf, months: inputs.months, series: inputs.series, e: month.e });
+      : rollForward({ anchor: inputs.unspent, asOf: inputs.asOf, months: inputs.months, logged: inputs.loggedMonths, series: inputs.series, e: month.e });
   const unspent = unspentState({
     anchor: inputs.unspent,
     asOf: inputs.asOf,
@@ -126,5 +165,33 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
     unstatedAccounts: sp.unstatedAccounts,
     fundUnlinked: sp.fundUnlinked,
     ...(unexplained === undefined ? {} : { unexplained }),
+  };
+}
+
+/**
+ * 05.2-28: the worked sum behind the suggested unspent figure, for the Unspent money card. The same arithmetic as
+ * buildFunds, named line by line: gross - mixedSetAside - envelopes - emergency - bills - everyday = suggested, and
+ * suggested - heldBack = total (D-38: bridges hold money back from the confirmed figure). Not a second calculation.
+ */
+export function unspentSum(raw: V3Inputs, month: MonthModel): UnspentSum {
+  const inputs = withLiveEmergency(raw); // the UI calls this on inputs that never went through evaluate
+  const sp = spendingOf(inputs);
+  const input = { asOf: inputs.asOf, billsDue: month.billsDue, erest: month.erest, profile: inputs.profile, series: inputs.series };
+  const be = billsAndErest(input);
+  const suggested = suggestedUnspent({ ...input, spending: sp.spending });
+  const heldBack = heldBackOf(inputs.heldBridges ?? []);
+  return {
+    gross: sp.parts.gross,
+    mixedSetAside: sp.parts.mixedSetAside,
+    envelopes: sp.parts.envelopes,
+    emergency: sp.parts.emergency,
+    bills: be.bills,
+    everyday: be.erest,
+    suggested,
+    heldBack,
+    total: minorUnits(suggested - heldBack),
+    unstatedAccounts: sp.unstatedAccounts.length,
+    unplacedEnvelopes: sp.envelopesAssumedInside,
+    hasMixed: (inputs.accounts ?? []).some((a) => a.use !== null && a.use.kind === 'mixed'),
   };
 }

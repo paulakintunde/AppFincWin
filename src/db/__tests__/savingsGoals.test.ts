@@ -58,7 +58,7 @@ describe('fetchSavingsGoals', () => {
 describe('updateSavingsGoal', () => {
   it('refuses a key outside the grant before a request', async () => {
     const client = createFakeSupabase();
-    for (const bad of [{ kind: 'wait' }, { check_id: ID_B }, { currency: 'USD' }, { monthly_amount: 5 }]) {
+    for (const bad of [{ kind: 'wait' }, { check_id: ID_B }, { currency: 'USD' }, { bucket: 'car' }]) {
       await expect(updateSavingsGoal(client, ID_A, 1, bad as unknown as { deleted_at: string })).rejects.toBeInstanceOf(TypeError);
     }
     expect(client.calls).toHaveLength(0);
@@ -82,6 +82,17 @@ describe('updateSavingsGoal', () => {
     await expect(updateSavingsGoal(client, ID_A, 1, { target: 0 })).rejects.toBeInstanceOf(RangeError);
     await expect(updateSavingsGoal(client, ID_A, 1, { name: '' })).rejects.toBeInstanceOf(RangeError);
     expect(client.calls).toHaveLength(0);
+  });
+
+  it('accepts a null target in a patch (a bucket goal cleared) and still refuses 0, negatives and over 10^13', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: [goalRow({ version: 2, target: null })], error: null, status: 200 });
+    await updateSavingsGoal(client, ID_A, 1, { target: null });
+    expect(client.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ target: null });
+    const bad = createFakeSupabase();
+    await expect(updateSavingsGoal(bad, ID_A, 1, { target: -5 })).rejects.toBeInstanceOf(RangeError);
+    await expect(updateSavingsGoal(bad, ID_A, 1, { target: 10 ** 13 + 1 })).rejects.toBeInstanceOf(RangeError);
+    expect(bad.calls).toHaveLength(0);
   });
 
   it('soft deletes with a version check', async () => {
@@ -130,11 +141,24 @@ describe('D-101 pot columns and keys', () => {
     expect(SAVINGS_GOAL_COLUMNS.split(', ')).toEqual(expect.arrayContaining(['kind', 'done_at', 'opening_saved', 'ready_by']));
     // grant insert (id, household_id, kind, name, currency, target, ready_by, opening_saved)
     expect([...SAVINGS_GOAL_INSERT_KEYS].sort()).toEqual(
-      ['household_id', 'id', 'currency', 'kind', 'name', 'opening_saved', 'ready_by', 'target'].sort()
+      [
+        'household_id',
+        'id',
+        'currency',
+        'kind',
+        'name',
+        'opening_saved',
+        'ready_by',
+        'target',
+        'bucket',
+        'account_id',
+        'monthly_amount',
+        'color_key',
+      ].sort()
     );
     // grant update (name, target, ready_by, opening_saved, done_at, deleted_at)
     expect([...SAVINGS_GOAL_PATCH_KEYS].sort()).toEqual(
-      ['deleted_at', 'done_at', 'name', 'opening_saved', 'ready_by', 'target'].sort()
+      ['deleted_at', 'done_at', 'name', 'opening_saved', 'ready_by', 'target', 'account_id', 'monthly_amount', 'color_key'].sort()
     );
     expect(SAVINGS_GOAL_PATCH_KEYS).not.toContain('kind');
     expect(SAVINGS_GOAL_PATCH_KEYS).not.toContain('check_id');
@@ -167,5 +191,16 @@ describe('D-101 pot columns and keys', () => {
     await expect(insertSavingsGoal(client, { ...pot, target: 1.5 })).rejects.toBeInstanceOf(RangeError);
     await expect(insertSavingsGoal(client, { ...pot, ready_by: '2027-03' })).rejects.toBeInstanceOf(RangeError);
     expect(client.calls).toHaveLength(0);
+  });
+
+  it('05.2 D-22 allows a bucket with no target or date; an ordinary pot without them is refused', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: goalRow(), error: null, status: 201 });
+    const bucket: NewPot = { ...pot, bucket: 'trip', target: null, ready_by: null, monthly_amount: 0 };
+    await expect(insertSavingsGoal(client, bucket)).resolves.toMatchObject({ id: ID_A });
+    await expect(insertSavingsGoal(client, { ...pot, target: null } as unknown as NewPot)).rejects.toBeInstanceOf(RangeError);
+    await expect(insertSavingsGoal(client, { ...pot, monthly_amount: 5 } as unknown as NewPot)).rejects.toBeInstanceOf(RangeError);
+    await expect(insertSavingsGoal(client, { ...bucket, monthly_amount: -1 })).rejects.toBeInstanceOf(RangeError);
+    expect(client.calls).toHaveLength(3);
   });
 });

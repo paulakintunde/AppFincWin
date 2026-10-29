@@ -70,6 +70,7 @@ export interface DebtSource {
   min_floor: number | null;
   paid_in_full: boolean;
   is_housing: boolean; // D-103: a loan (never a card) whose minimum counts toward housingMonthly
+  paid_off_on?: string | null; // local date the debt was paid off (05.2-48); absent or null = still owed
   version: number;
   deleted_at: string | null;
 }
@@ -86,6 +87,8 @@ export interface GoalSource {
   opening_saved: number;
   done_at: string | null;
   deleted_at: string | null;
+  account_id?: string | null; // 05.2 D-22: where the envelope's money is held (a stored answer beats the transfer-leg guess)
+  bucket?: string | null; // 05.2 D-23: set = a saving bucket carved out of regular saving
 }
 
 // structurally identical to src/db/decideChanges.ts (05-38)
@@ -115,7 +118,7 @@ type SnapshotRow = Pick<
   | 'recurring_series_id'
   | 'category_id'
   | 'deleted_at'
-> & { one_off?: boolean | null; goal_id?: string | null; import_batch_id?: string | null }; // goal_id: D-34/D-101, a transfer leg tagged to a savings goal or pot
+> & { one_off?: boolean | null; goal_id?: string | null; import_batch_id?: string | null; income_kind?: string | null; counts_as?: 'available' | 'kept' | null; refund_of?: string | null }; // goal_id: D-34/D-101, a transfer leg tagged to a savings goal or pot
 
 export interface SnapshotSource {
   today: string;
@@ -123,11 +126,13 @@ export interface SnapshotSource {
   region: string | null; // 05-12 passes getDeviceRegion(rc.region) ?? null (RD-02: override > device region > time zone, never IP)
   rows: readonly SnapshotRow[];
   upcomingRows: readonly SnapshotRow[]; // live rows dated after the history window (05-12); only their pending one-offs are used
-  series: readonly Pick<
+  series: readonly (Pick<
     RecurringSeriesRow,
     'id' | 'account_id' | 'amount' | 'currency' | 'freq' | 'anchor_date' | 'end_date' | 'occurrence_count' | 'category_id' | 'deleted_at'
-  >[];
-  accounts: readonly Pick<AccountRow, 'id' | 'name' | 'kind' | 'currency' | 'archived_at' | 'deleted_at'>[];
+  > &
+    Partial<Pick<RecurringSeriesRow, 'counts_as' | 'income_kind' | 'saving_mode' | 'pay_group'>>)[];
+  accounts: readonly (Pick<AccountRow, 'id' | 'name' | 'kind' | 'currency' | 'archived_at' | 'deleted_at'> &
+    Partial<Pick<AccountRow, 'use' | 'use_purpose' | 'use_envelope_id' | 'use_extra_set_aside'>>)[];
   balances: Readonly<Record<string, number>>; // account id → paid-only balance in the account's currency
   rates: readonly FxLatestRow[];
   categories: Readonly<Record<string, string | null>>; // category id → builtin_key (null for custom)
@@ -223,7 +228,12 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
 
   // ── debts rows ──
   const liveDebts = source.debts.filter((d) => d.deleted_at === null);
+  // Owner addition 2026-10-28: a debt marked paid off adds no minimum from that date. Its series stays covered (below) so it is not
+  // re-counted as a bill, and past months stay as recorded.
+  const paidOff = (d: DebtSource): boolean => d.paid_off_on != null && d.paid_off_on <= today;
+  const countedDebts = liveDebts.filter((d) => !paidOff(d));
   const loanDebts = liveDebts.filter((d) => d.kind !== 'card');
+  const countedLoans = countedDebts.filter((d) => d.kind !== 'card');
   const cardRowOf = (accountId: string) => liveDebts.find((d) => d.kind === 'card' && d.account_id === accountId) ?? null;
   const namedByLoan = new Set<string>();
   const loanChecks = new Set<string>();
@@ -242,7 +252,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
 
   const debts: DebtRecord[] = [];
   let housingDebtMonthly = 0; // D-103: the minimums of the loans marked as housing (a card is never in loanDebts)
-  for (const d of loanDebts) {
+  for (const d of countedLoans) {
     const balance = need(d.balance, d.currency);
     const minimum = need(d.minimum_payment, d.currency);
     if (balance === null || minimum === null) continue;
@@ -522,14 +532,14 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
       const floor = peek(listed.floor, a.currency);
       if (floor !== null) marketTerms = { ...listed, floor: minorUnits(floor) };
     }
-    const paidInFull = row !== null && row.paid_in_full;
+    const paidInFull = row !== null && (row.paid_in_full || paidOff(row)); // a paid-off card row adds a minimum of 0
     const apr = row !== null && row.apr ? percent(row.apr) : null;
     const terms = stored !== null ? storedTerms : marketTerms;
     cardTerms.set(a.id, { terms, paidInFull, apr });
     const view: CardTermsView = {
       debtId: row === null ? null : row.id,
       source: stored !== null ? 'stored' : marketTerms !== null ? 'market' : 'none',
-      paidInFull,
+      paidInFull: row !== null && row.paid_in_full,
       percentText: stored !== null ? stored.percent : marketTerms !== null ? decimalOf(marketTerms.minimumPercent) : null,
       interestAdded: stored !== null ? stored.interestAdded : marketTerms !== null ? marketTerms.interestAdded : null,
       floor: stored !== null ? stored.floor : marketTerms !== null && marketRow !== null ? marketRow.floor : null,
@@ -588,7 +598,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
   // A derived debt is keyed by its account; a recorded loan names its account.
   const minimumAccounts = new Set<string>();
   for (const d of debts) if (d.minimumPayment > 0) minimumAccounts.add(d.id);
-  for (const d of loanDebts) {
+  for (const d of countedLoans) {
     if (d.account_id !== null && debts.some((x) => x.id === d.id && x.minimumPayment > 0)) minimumAccounts.add(d.account_id);
   }
   for (const { outflow, into } of pendingDebtTransfers) {

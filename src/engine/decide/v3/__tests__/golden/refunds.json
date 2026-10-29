@@ -1,0 +1,403 @@
+{
+ "scenarios": [
+  {
+   "id": "refund-full",
+   "title": "Full refund of a May purchase, paid back in July",
+   "person": "sam",
+   "addLines": [
+    {
+     "month": "2026-05",
+     "line": {
+      "id": "sam-fridge-05",
+      "date": "2026-05-10",
+      "amount": 1000000,
+      "role": "spending",
+      "name": "Fridge"
+     }
+    },
+    {
+     "month": "2026-07",
+     "line": {
+      "id": "sam-fridge-ref-07",
+      "date": "2026-07-05",
+      "amount": 1000000,
+      "role": "refund",
+      "refundOf": "sam-fridge-05",
+      "name": "Fridge refund"
+     }
+    }
+   ],
+   "purchase": {
+    "price": 5000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "split": [
+     {
+      "source": "month",
+      "amount": 5000
+     }
+    ],
+    "unspentAfter": 235000,
+    "month": {
+     "monthLeft": 42500,
+     "e": 147500,
+     "typicalLeft": 42500
+    },
+    "working": "Sam, asOf 2026-10-03. Everyday months Apr-Sep before any purchase: 110000, 160000, 360000, 130000, 135000, 185000; typical everyday E is their median (mean of the 3rd and 4th when sorted). Bills 180000 + set-aside 30000 come off 400000 income, so typicalLeft = 190000 - E. The October spending so far (10000) is below E, so monthLeft = typicalLeft; and the unspent anchor is 2026-10-03, after every May/June/July line, so unspent stays 240000 and a 5000 check leaves 235000. A 1,000,000 fridge in May is refunded in full in July. The refund is re-dated to May and nets the purchase to 0: May everyday 160000, July unchanged 130000. Sorted 110000,130000,135000,160000,185000,360000 -> E = (135000+160000)/2 half-up = 147500 (same as no purchase). typicalLeft 190000-147500 = 42500."
+   },
+   "source": "D-11"
+  },
+  {
+   "id": "refund-partial",
+   "title": "Partial refund with a 2,000 shortfall",
+   "person": "sam",
+   "addLines": [
+    {
+     "month": "2026-05",
+     "line": {
+      "id": "sam-fridge-05",
+      "date": "2026-05-10",
+      "amount": 1000000,
+      "role": "spending",
+      "name": "Fridge"
+     }
+    },
+    {
+     "month": "2026-07",
+     "line": {
+      "id": "sam-fridge-ref-07",
+      "date": "2026-07-05",
+      "amount": 998000,
+      "role": "refund",
+      "refundOf": "sam-fridge-05",
+      "name": "Fridge refund"
+     }
+    }
+   ],
+   "purchase": {
+    "price": 5000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "split": [
+     {
+      "source": "month",
+      "amount": 5000
+     }
+    ],
+    "unspentAfter": 235000,
+    "month": {
+     "monthLeft": 41500,
+     "e": 148500,
+     "typicalLeft": 41500
+    },
+    "working": "Sam, asOf 2026-10-03. Everyday months Apr-Sep before any purchase: 110000, 160000, 360000, 130000, 135000, 185000; typical everyday E is their median (mean of the 3rd and 4th when sorted). Bills 180000 + set-aside 30000 come off 400000 income, so typicalLeft = 190000 - E. The October spending so far (10000) is below E, so monthLeft = typicalLeft; and the unspent anchor is 2026-10-03, after every May/June/July line, so unspent stays 240000 and a 5000 check leaves 235000. 998000 of a 1,000,000 purchase is refunded. May keeps 2000 of spending: May everyday 162000; July stays 130000. Sorted 110000,130000,135000,162000,185000,360000 -> E = (135000+162000)/2 = 148500. typicalLeft 190000-148500 = 41500."
+   },
+   "source": "D-11"
+  },
+  {
+   "id": "refund-over",
+   "title": "Refund 3,000 above the price",
+   "person": "sam",
+   "addLines": [
+    {
+     "month": "2026-05",
+     "line": {
+      "id": "sam-fridge-05",
+      "date": "2026-05-10",
+      "amount": 1000000,
+      "role": "spending",
+      "name": "Fridge"
+     }
+    },
+    {
+     "month": "2026-07",
+     "line": {
+      "id": "sam-fridge-ref-07",
+      "date": "2026-07-05",
+      "amount": 1003000,
+      "role": "refund",
+      "refundOf": "sam-fridge-05",
+      "name": "Fridge refund"
+     }
+    }
+   ],
+   "purchase": {
+    "price": 5000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "split": [
+     {
+      "source": "month",
+      "amount": 5000
+     }
+    ],
+    "unspentAfter": 235000,
+    "month": {
+     "monthLeft": 42500,
+     "e": 147500,
+     "typicalLeft": 42500
+    },
+    "working": "Sam, asOf 2026-10-03. Everyday months Apr-Sep before any purchase: 110000, 160000, 360000, 130000, 135000, 185000; typical everyday E is their median (mean of the 3rd and 4th when sorted). Bills 180000 + set-aside 30000 come off 400000 income, so typicalLeft = 190000 - E. The October spending so far (10000) is below E, so monthLeft = typicalLeft; and the unspent anchor is 2026-10-03, after every May/June/July line, so unspent stays 240000 and a 5000 check leaves 235000. The refund is 1,003,000 against a 1,000,000 purchase. 1,000,000 is credited to May (net 0, May everyday 160000); the 3000 above the price stays in July as money in (other_in, id sam-fridge-ref-07:surplus), not everyday, so July everyday stays 130000. E = 147500, typicalLeft 42500 (the surplus does not raise the typical income)."
+   },
+   "source": "D-11"
+  },
+  {
+   "id": "refund-several",
+   "title": "Two refunds on one purchase, the second overflows",
+   "person": "sam",
+   "addLines": [
+    {
+     "month": "2026-05",
+     "line": {
+      "id": "sam-fridge-05",
+      "date": "2026-05-10",
+      "amount": 1000000,
+      "role": "spending",
+      "name": "Fridge"
+     }
+    },
+    {
+     "month": "2026-06",
+     "line": {
+      "id": "sam-fridge-ref-06",
+      "date": "2026-06-05",
+      "amount": 400000,
+      "role": "refund",
+      "refundOf": "sam-fridge-05",
+      "name": "Fridge refund"
+     }
+    },
+    {
+     "month": "2026-07",
+     "line": {
+      "id": "sam-fridge-ref-07",
+      "date": "2026-07-05",
+      "amount": 700000,
+      "role": "refund",
+      "refundOf": "sam-fridge-05",
+      "name": "Fridge refund"
+     }
+    }
+   ],
+   "purchase": {
+    "price": 5000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "split": [
+     {
+      "source": "month",
+      "amount": 5000
+     }
+    ],
+    "unspentAfter": 235000,
+    "month": {
+     "monthLeft": 42500,
+     "e": 147500,
+     "typicalLeft": 42500
+    },
+    "working": "Sam, asOf 2026-10-03. Everyday months Apr-Sep before any purchase: 110000, 160000, 360000, 130000, 135000, 185000; typical everyday E is their median (mean of the 3rd and 4th when sorted). Bills 180000 + set-aside 30000 come off 400000 income, so typicalLeft = 190000 - E. The October spending so far (10000) is below E, so monthLeft = typicalLeft; and the unspent anchor is 2026-10-03, after every May/June/July line, so unspent stays 240000 and a 5000 check leaves 235000. 400000 refunded in June then 700000 in July against a 1,000,000 purchase. In date order: June 400000 and July 600000 both credit May (net 0, May everyday 160000); the last 100000 stays in July as money in. Without re-dating June would be 360000-400000 and July 130000-700000 and E would differ; with it June stays 360000, July 130000. E = 147500, typicalLeft 42500."
+   },
+   "source": "D-11"
+  },
+  {
+   "id": "refund-plan",
+   "title": "Refund of the day-one payment of a payment-plan purchase (linked to the day_one row, OQ9); credited against that row, not everyday",
+   "person": "sam",
+   "addSeries": [
+    {
+     "id": "fridge-plan",
+     "name": "Fridge plan",
+     "role": "debt_payment",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-05-10",
+     "amount": 40000
+    }
+   ],
+   "addLines": [
+    {
+     "month": "2026-05",
+     "line": {
+      "id": "sam-fridge-05",
+      "date": "2026-05-10",
+      "amount": 40000,
+      "role": "spending",
+      "name": "Fridge",
+      "seriesId": "fridge-plan"
+     }
+    },
+    {
+     "month": "2026-07",
+     "line": {
+      "id": "sam-fridge-ref-07",
+      "date": "2026-07-05",
+      "amount": 30000,
+      "role": "refund",
+      "refundOf": "sam-fridge-05",
+      "name": "Fridge refund"
+     }
+    }
+   ],
+   "purchase": {
+    "price": 5000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "unspentAfter": 235000,
+    "month": {
+     "monthLeft": 42500,
+     "e": 147500,
+     "typicalLeft": 42500
+    },
+    "working": "Sam, asOf 2026-10-03. Everyday months Apr-Sep before any purchase: 110000, 160000, 360000, 130000, 135000, 185000; typical everyday E is their median (mean of the 3rd and 4th when sorted). Bills 180000 + set-aside 30000 come off 400000 income, so typicalLeft = 190000 - E. The purchase is on a plan; the refund links to the day_one payment row (40000, the transaction the user sees in Activity). The row belongs to a debt_payment series so it is not everyday, and its refund is taken off that row (40000 - 30000 = 10000 in May), never off everyday (owner decision 2026-10-28; the old golden credited May everyday and expected E 132500 / left 57500, which encoded the bug). May everyday stays 160000. Sorted 110000,130000,135000,160000,185000,360000 -> E = (135000+160000)/2 = 147500. typicalLeft = monthLeft = 190000-147500 = 42500. Unspent stays 240000 (anchor is after the May-July lines), so a 5000 check leaves 235000."
+   },
+   "source": "D-11"
+  },
+  {
+   "id": "refund-plan-large",
+   "title": "Refund of a large plan day-one payment (genref-026 shape): the whole 300000 comes off the day-one row, May everyday is not floored",
+   "person": "sam",
+   "addSeries": [
+    {
+     "id": "fridge-plan",
+     "name": "Fridge plan",
+     "role": "debt_payment",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-05-10",
+     "amount": 50000
+    }
+   ],
+   "addLines": [
+    {
+     "month": "2026-05",
+     "line": {
+      "id": "sam-fridge-05",
+      "date": "2026-05-10",
+      "amount": 300000,
+      "role": "spending",
+      "name": "Fridge",
+      "seriesId": "fridge-plan"
+     }
+    },
+    {
+     "month": "2026-07",
+     "line": {
+      "id": "sam-fridge-ref-07",
+      "date": "2026-07-05",
+      "amount": 300000,
+      "role": "refund",
+      "refundOf": "sam-fridge-05",
+      "name": "Fridge refund"
+     }
+    }
+   ],
+   "purchase": {
+    "price": 5000,
+    "taxPercent": null,
+    "oneOffFees": 0,
+    "itemType": "general",
+    "purpose": null,
+    "emergency": false,
+    "envelopeId": null,
+    "categoryId": null,
+    "pay": {
+     "mode": "once"
+    },
+    "extras": {},
+    "share": "personal",
+    "foreign": null
+   },
+   "expect": {
+    "code": "fits_month",
+    "legacyState": "fits",
+    "unspentAfter": 235000,
+    "month": {
+     "monthLeft": 42500,
+     "e": 147500,
+     "typicalLeft": 42500
+    },
+    "working": "Same months as refund-plan, but the day-one row is 300000 (more than May's everyday 160000) and the whole 300000 comes back in July. It is taken off the day-one row (row removed), so May everyday stays 160000 and is not floored at 0 or read as under-logged (the genref-026 failure). E = (135000+160000)/2 = 147500, left 42500."
+   },
+   "source": "D-11"
+  }
+ ]
+}

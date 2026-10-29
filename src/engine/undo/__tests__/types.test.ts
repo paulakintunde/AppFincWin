@@ -28,7 +28,7 @@ describe('undo vocabulary (05: Decide entities and labels)', () => {
   });
 
   it('accepts the Decide entities as UndoEntity', () => {
-    const entities: UndoEntity[] = ['decide_checks', 'debts', 'decide_links', 'decide_changes', 'savings_goals'];
-    expect(entities).toHaveLength(5);
+    const entities: UndoEntity[] = ['decide_checks', 'debts', 'decide_links', 'decide_changes', 'savings_goals', 'decide_settings', 'recurring_dismissals', 'income_payer_prompts', 'decide_answers'];
+    expect(entities).toHaveLength(9);
   });
 });

@@ -28,6 +28,14 @@ let mockReady = true;
 let mockBalances = new Map<string, AccountBalanceView>();
 let mockSync = { isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null as number | null };
 
+// 05.2-26: AccountSheet now imports the Decide account-use row; the flag is off here, so none of it renders.
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
+jest.mock('@/data/mutations/accountUse', () => ({ useSaveAccountUse: () => ({ save: jest.fn() }), useSaveAccountUses: () => ({ save: jest.fn() }) }));
+jest.mock('@/data/queries/decide', () => ({
+  usePots: () => ({ data: undefined }),
+  useDecideSettings: () => ({ data: null }),
+}));
+
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => mockSync }));
 
 jest.mock('@/data/mutations/accounts', () => ({

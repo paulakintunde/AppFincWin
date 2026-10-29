@@ -26,4 +26,24 @@ export interface V3SettingsSource {
   dismissals: string[];
   own_lines: unknown[];
   custom_options: unknown;
+  // 05.2 (names equal the migration columns). Optional so an old cached row or fixture reads as null / empty.
+  income_pattern?: 'steady' | 'variable' | 'seasonal' | null;
+  income_pattern_confirmed?: boolean | null;
+  spread_months?: number | null;
+  everyday_override_at?: string | null;
+  reserve_goal?: number | null;
+  unexplained_amount?: number | null;
+  unexplained_use?: 'spare' | 'envelope_or_goal' | 'set_aside_for_bill' | 'someone_elses' | null;
+  unexplained_at?: string | null;
+  answers?: readonly V3AnswerLite[];
+  live_bridge_check_ids?: readonly string[]; // computed by settingsSourceOf from the checks
+}
+
+export interface V3AnswerLite {
+  kind: 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover';
+  key: string;
+  amount: number | null;
+  bool_value: boolean | null;
+  on_date: string | null;
+  check_id: string | null;
 }

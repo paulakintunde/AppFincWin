@@ -7,6 +7,8 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import type { RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import { useEndSeries } from '@/data/mutations/recurringSeries';
+import { useDecideAccess } from '@/features/decide/useDecideAccess';
+import { openSeriesStatus } from './seriesStatusHost';
 import { useMarkPaid, useSkipOccurrence } from '@/data/mutations/transactions';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
@@ -21,8 +23,8 @@ import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 
 export interface OccurrenceActionsProps {
   row: TransactionRow;
-  /** The row's series, when loaded (needed to end it). */
-  series: Pick<RecurringSeriesRow, 'id' | 'name' | 'version'> | undefined;
+  /** The row's series, when loaded (needed to end it, stop it or pause it). */
+  series: RecurringSeriesRow | undefined;
   /** "Adjust, then mark paid": the sheet sets the form to Paid and stays open. */
   onAdjust: () => void;
   /** An action finished its write; the sheet closes. */
@@ -38,6 +40,7 @@ export function OccurrenceActions({ row, series, onAdjust, onDone }: OccurrenceA
   const { skip } = useSkipOccurrence();
   const { end } = useEndSeries();
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const { v3 } = useDecideAccess();
 
   if (row.status !== 'pending' || !rc.userId || !rc.householdId) return null;
   const ownerId = rc.userId;
@@ -80,7 +83,17 @@ export function OccurrenceActions({ row, series, onAdjust, onDone }: OccurrenceA
       <Pill label={t('record.recurring.markPaid')} variant="primary" onPress={doMarkPaid} />
       <Pill label={t('record.recurring.adjustThenMarkPaid')} variant="secondary" onPress={onAdjust} />
       {row.recurring_series_id ? <Pill label={t('record.recurring.skip')} variant="secondary" onPress={doSkip} /> : null}
-      {row.recurring_series_id && series ? (
+      {row.recurring_series_id && series && v3 ? (
+        <Pill
+          label={t('record.seriesStatus.action')}
+          variant="secondary"
+          onPress={() => {
+            openSeriesStatus(series);
+            onDone();
+          }}
+        />
+      ) : null}
+      {row.recurring_series_id && series && !v3 ? (
         <Pill label={t('record.recurring.end')} variant="danger" onPress={() => setConfirmEnd(true)} />
       ) : null}
       <ConfirmSheet

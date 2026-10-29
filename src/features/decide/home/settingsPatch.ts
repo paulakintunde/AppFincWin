@@ -7,7 +7,23 @@
  */
 import type { DecideSettingsPatch, DecideSettingsRow } from '@/db/decideSettings';
 
-export const SETTINGS_MONEY_COLUMNS = ['reserve', 'investing_floor', 'saving_floor', 'rough_income', 'rough_spending'] as const;
+// 05.2-13: the setup money columns join the same group. They share the one settings currency, so the CR-B01 caveat
+// applies to them too: a figure typed in another currency clears the rest in the same patch.
+export const SETTINGS_MONEY_COLUMNS = [
+  'reserve',
+  'investing_floor',
+  'saving_floor',
+  'rough_income',
+  'rough_spending',
+  'rough_saving',
+  'rough_debt',
+  'rough_invest',
+  'steady_amount',
+  'everyday_override',
+  'unspent_anchor',
+  'reserve_goal',
+  'unexplained_amount',
+] as const;
 
 export function stampSettingsPatch(
   patch: DecideSettingsPatch,

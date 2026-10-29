@@ -45,7 +45,15 @@ export class LargeSecureStore {
   }
 
   async getItem(key: string): Promise<string | null> {
-    const stored = await AsyncStorage.getItem(key);
+    let stored: string | null;
+    try {
+      stored = await AsyncStorage.getItem(key);
+    } catch {
+      // F-11: Android throws "Row too big to fit into CursorWindow" for an oversized row. Clear it
+      // so the restore starts with an empty value instead of failing start-up.
+      await this.removeItem(key).catch(() => undefined);
+      return null;
+    }
     if (!stored) return null;
 
     if (!BLOB_FORMAT.test(stored)) {

@@ -13,6 +13,7 @@ import { flowOf, rowTag } from '@/engine/activity';
 import { currencyExponent, knownCurrencyExponent, money } from '@/engine/money';
 import { impliedRate } from '@/engine/statement';
 import { categoryName } from '@/features/record/categoryName';
+import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -25,6 +26,8 @@ import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Pill } from '@/ui/Pill';
 import { RateAttribution } from '@/ui/RateAttribution';
 import { detailRowsFor, statusActionFor } from './detailRows';
+import { kindNameKey } from './IncomeTagChip';
+import { LinkRow, RefundOfRow, RefundsGroup, type RefundDetailCallbacks } from './RefundDetailRows';
 import { formatStatementMoney } from './statementMoney';
 
 export interface TransactionDetailSheetProps {
@@ -36,9 +39,11 @@ export interface TransactionDetailSheetProps {
   onEdit: () => void;
   onClone: () => void;
   onDelete: () => void;
+  /** 05.2-33: opens the refund picker / income tag sheet / another row. Without it (or with the Decide switch off) the rows do not exist. */
+  refundCallbacks?: RefundDetailCallbacks;
 }
 
-export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatus, onEdit, onClone, onDelete }: TransactionDetailSheetProps) {
+export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatus, onEdit, onClone, onDelete, refundCallbacks }: TransactionDetailSheetProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const ctx = useRecordContext();
@@ -47,6 +52,7 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
   const categories = useCategoryLookup(ctx.userId ?? undefined);
   const series = useRecurringSeries(ctx.householdId ?? undefined);
   const linkedFees = useLinkedFees(ctx.householdId, row);
+  const { v3 } = useDecideAccess();
 
   if (row === null) return null;
 
@@ -71,6 +77,8 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
     categoryName: categoryLabel,
     paymentTypeLabel,
     repeatsLabel,
+    decideV3: v3 && refundCallbacks !== undefined,
+    incomeTypeLabel: (row.income_kind ?? seriesRow?.income_kind) ? t(kindNameKey((row.income_kind ?? seriesRow?.income_kind)!)) : null,
     t: (key, params) => String(t(key as never, params as never)),
   });
 
@@ -161,9 +169,27 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
         </>
       }
     >
-      {specs.map((spec) => (
-        <DetailRow key={spec.key} label={t(spec.labelKey as never)} value={spec.value} tone={spec.tone} emptyText={t('activity.detail.empty')} />
-      ))}
+      {specs.map((spec) => {
+        const label = t(spec.labelKey as never);
+        if (spec.action !== undefined && refundCallbacks !== undefined) {
+          if (spec.action === 'refundOf') {
+            return <RefundOfRow key={spec.key} row={row} formatter={formatter} callbacks={refundCallbacks} label={label} />;
+          }
+          if (spec.action === 'refundsGroup') {
+            return <RefundsGroup key={spec.key} row={row} formatter={formatter} callbacks={refundCallbacks} />;
+          }
+          return (
+            <LinkRow
+              key={spec.key}
+              label={label}
+              value={spec.value}
+              a11y={`${label}, ${spec.value ?? ''}`}
+              onPress={() => refundCallbacks.onIncomeType(row)}
+            />
+          );
+        }
+        return <DetailRow key={spec.key} label={label} value={spec.value} tone={spec.tone} emptyText={t('activity.detail.empty')} />;
+      })}
     </DetailSheet>
   );
 }

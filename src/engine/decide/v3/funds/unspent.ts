@@ -22,7 +22,19 @@ import type { HeldBridge, IncomeProfile, UnspentAnchor, UnspentBreakdown, Unspen
 
 const FN = 'unspent';
 
-/** D-43, D-54: spending balance - bills still due - Erest; the fund and envelopes are already out of the spending balance. Profile (d): the bills over the horizon, no Erest (I39). May be negative. */
+/** D-38: the money held back by valid bridges (safe integer >= 0, the first of each id), summed in bigint. */
+export function heldBackOf(bridges: readonly HeldBridge[]): MinorUnits {
+  const seen = new Set<string>();
+  let held = 0n;
+  for (const b of bridges) {
+    if (seen.has(b.id) || !Number.isSafeInteger(b.amount) || b.amount < 0) continue;
+    seen.add(b.id);
+    held += BigInt(b.amount);
+  }
+  return minorFromBigInt(held, FN);
+}
+
+/** D-43, D-54: spending balance - bills still due - Erest; the fund and envelopes are already out of the spending balance. May be negative. */
 export function suggestedUnspent(input: {
   readonly asOf: string;
   readonly spending: MinorUnits;
@@ -31,6 +43,18 @@ export function suggestedUnspent(input: {
   readonly profile: IncomeProfile | null;
   readonly series: readonly V3Series[];
 }): MinorUnits {
+  const b = billsAndErest(input);
+  return minorFromBigInt(BigInt(input.spending) - BigInt(b.bills) - BigInt(b.erest), FN);
+}
+
+/** The bills still due and the Erest taken off the spending balance. Profile (d): the bills over the horizon, no Erest (I39). */
+export function billsAndErest(input: {
+  readonly asOf: string;
+  readonly billsDue: MinorUnits;
+  readonly erest: MinorUnits;
+  readonly profile: IncomeProfile | null;
+  readonly series: readonly V3Series[];
+}): { readonly bills: MinorUnits; readonly erest: MinorUnits } {
   let bills = BigInt(input.billsDue);
   let erest = BigInt(input.erest);
   const p = input.profile;
@@ -42,13 +66,15 @@ export function suggestedUnspent(input: {
     }
     erest = 0n;
   }
-  return minorFromBigInt(BigInt(input.spending) - bills - erest, FN);
+  return { bills: minorFromBigInt(bills, FN), erest: minorFromBigInt(erest, FN) };
 }
 
 export function rollForward(input: {
   readonly anchor: UnspentAnchor;
   readonly asOf: string;
   readonly months: readonly V3Month[];
+  /** The months as logged, before refund re-dating (05.2 two-date refunds). Absent = `months`. */
+  readonly logged?: readonly V3Month[];
   readonly series: readonly V3Series[];
   readonly e: MinorUnits | null;
 }): { readonly value: MinorUnits; readonly breakdown: UnspentBreakdown; readonly rolled: boolean } {
@@ -59,7 +85,13 @@ export function rollForward(input: {
 
   const all: V3Line[] = [];
   for (const m of input.months) for (const l of m.lines) if (l.status === 'paid') all.push(l);
-  all.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const byDateThenId = (a: V3Line, b: V3Line): number => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  all.sort(byDateThenId);
+  // Two-date refunds: cash after the anchor is read from the months as logged, so a linked refund counts on the day it
+  // arrived. Over-refunds and plan refunds net to the same value as the month view; only the everyday breakdown line can differ.
+  const cash: V3Line[] = [];
+  for (const m of input.logged ?? input.months) for (const l of m.lines) if (l.status === 'paid') cash.push(l);
+  cash.sort(byDateThenId);
 
   // Everyday logged in the anchor month up to and including the anchor day: the base Erest was held back from.
   let loggedAtAnchor = 0n;
@@ -86,7 +118,7 @@ export function rollForward(input: {
     }
   }
   const candidates: PaidLine[] = [];
-  for (const l of all) {
+  for (const l of cash) {
     if (l.date <= anchor.at || l.date > asOf || yearMonthOf(l.date) !== anchorMonth) continue;
     const c = classifyLine(l, index);
     if (c === 'recurring_bill' || (c === 'everyday' && l.seriesId === null)) candidates.push(toPaidLine(l));
@@ -103,7 +135,7 @@ export function rollForward(input: {
   let anchorMonthEveryday = 0n; // net of refunds, after the anchor, in the anchor month
   let laterEveryday = 0n; // net of refunds, later months
 
-  for (const l of all) {
+  for (const l of cash) {
     if (l.date <= anchor.at || l.date > asOf) continue;
     const amt = BigInt(Math.abs(l.amount));
     const inAnchorMonth = yearMonthOf(l.date) === anchorMonth;
@@ -188,14 +220,7 @@ export function unspentState(input: {
   const diff = BigInt(roll.value) - BigInt(input.suggested);
   const abs = diff < 0n ? -diff : diff;
   const suggestedAbs = BigInt(Math.abs(input.suggested));
-  // D-38: valid bridges only (safe integer >= 0), the first of each id; summed in bigint.
-  const seen = new Set<string>();
-  let heldBack = 0n;
-  for (const b of input.heldBridges) {
-    if (seen.has(b.id) || !Number.isSafeInteger(b.amount) || b.amount < 0) continue;
-    seen.add(b.id);
-    heldBack += BigInt(b.amount);
-  }
+  const heldBack = BigInt(heldBackOf(input.heldBridges)); // D-38
   const drifted = abs * BigInt(UNSPENT_DRIFT_PERCENT_DIVISOR) > suggestedAbs || abs > BigInt(input.driftThreshold);
   return {
     value: roll.value,

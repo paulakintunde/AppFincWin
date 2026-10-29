@@ -14,6 +14,8 @@ export type EntryMode =
       localDate?: string | null;
       /** CONTEXT D-15: a clone of an existing line, opened as a new pending line; nothing is written until Save. */
       prefill?: EntryPrefill;
+      /** A name-only prefill (05.2 quick picks); nothing is written until Save. */
+      name?: string | null;
     }
   | { kind: 'edit'; row: TransactionRow }
   | { kind: 'edit-transfer'; out: TransactionRow; in: TransactionRow };

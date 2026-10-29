@@ -7,6 +7,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useAddPot, useEditPot } from '@/data/mutations/decidePots';
+import { useAccounts } from '@/data/queries/accounts';
 import { newStepId } from '@/data/mutations/undoCapture';
 import { useGoalLines } from '@/data/queries/decide';
 import { homeAmountFor } from '@/data/queries/homeAmount';
@@ -15,12 +16,14 @@ import type { TransactionRow } from '@/db/rows';
 import { currencyCode, minorUnits } from '@/engine/money';
 import { monthOf } from '@/engine/time';
 import { useT } from '@/i18n';
+import { useDecideAccess } from '../useDecideAccess';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radii, space } from '@/theme/layout';
+import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { CloseGlyph } from '@/ui/CloseGlyph';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Pill } from '@/ui/Pill';
+import { RadioDot } from '@/ui/RadioDot';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
@@ -36,7 +39,7 @@ import { usePastContext } from '../past/usePastDecisions';
 import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
 import { MoneyInput } from '../ui/MoneyInput';
 import { MonthField } from './MonthField';
-import { checkPotMonth, lastDayOfMonth, maxPotMonth, potLineFor } from './potsModel';
+import { checkPotMonth, lastDayOfMonth, maxPotMonth, potLineFor, validatePot } from './potsModel';
 
 const NAME_MAX = 80;
 const SETTLE_MS = 150;
@@ -47,6 +50,8 @@ export interface PotSheetProps {
   /** null: add mode. */
   pot: SavingsGoalRow | null;
   onClose: () => void;
+  /** Add mode only: a name (and swatch) to start from, used by the setup envelopes step. */
+  prefill?: { name: string; colorKey?: SavingsGoalRow['color_key'] };
 }
 
 interface Fields {
@@ -55,16 +60,20 @@ interface Fields {
   /** 'YYYY-MM-DD' (first of the chosen month) or null before one is picked. */
   by: string | null;
   saved: number | null;
+  /** 05.2 D-05: the account holding the pot's money ("Held in"); null is Not set. */
+  accountId: string | null;
+  /** 05.2 D-22: a saving bucket's monthly amount (0 allowed). Unused for an ordinary pot. */
+  monthly: number | null;
 }
 
 export function PotSheet(props: PotSheetProps) {
-  return props.visible ? <PotForm pot={props.pot} onClose={props.onClose} /> : null;
+  return props.visible ? <PotForm pot={props.pot} onClose={props.onClose} prefill={props.prefill} /> : null;
 }
 
 const firstOfMonth = (month: string): string => `${month}-01`;
 const validMinor = (n: number | null): n is number => n !== null && Number.isSafeInteger(n) && n > 0 && n <= MAX_INPUT_MINOR;
 
-function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => void }) {
+function PotForm({ pot, onClose, prefill }: { pot: SavingsGoalRow | null; onClose: () => void; prefill?: PotSheetProps['prefill'] }) {
   const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const fmt = useMoneyFormatter(false);
@@ -74,22 +83,35 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
   const tagEdit = useGoalTagEdit();
   const [asking, setAsking] = useState(false);
   const [tagging, setTagging] = useState(false);
+  const [pickingAccount, setPickingAccount] = useState(false);
+  const { v3 } = useDecideAccess();
+  const accountsQuery = useAccounts(householdId ?? undefined);
 
   const [initial] = useState<Fields>(() =>
     pot === null
-      ? { name: '', target: null, by: null, saved: null }
+      ? { name: prefill?.name ?? '', target: null, by: null, saved: null, accountId: null, monthly: null }
       : {
           name: pot.name,
           target: pot.target,
           by: pot.ready_by === null ? null : firstOfMonth(toMonthKey(pot.ready_by)),
           saved: pot.opening_saved === 0 ? null : pot.opening_saved,
+          accountId: pot.account_id ?? null,
+          monthly: pot.monthly_amount,
         }
   );
+  // A bucket is an existing saving row: a monthly amount, an optional goal and no date (validatePot's bucket rules).
+  const bucket = pot?.bucket ?? null;
+  const isBucket = bucket !== null;
   const [value, setValue] = useState<Fields>(initial);
   const dirty = useIsDirty(initial, value);
   const set = (patch: Partial<Fields>) => setValue((v) => ({ ...v, ...patch }));
 
   const currency = pot?.currency ?? ctx.home;
+  const liveAccounts = useMemo(() => (accountsQuery.data ?? []).filter((a) => a.deleted_at === null && a.archived_at === null), [accountsQuery.data]);
+  const mixedAccounts = useMemo(() => liveAccounts.filter((a) => a.use === 'mixed'), [liveAccounts]);
+  // D-01 / D-05: the row exists only for a user with the new Decide and at least one account set to "A mix".
+  const showHeldIn = v3 && mixedAccounts.length > 0;
+  const heldInName = value.accountId === null ? null : (liveAccounts.find((a) => a.id === value.accountId)?.name ?? null);
   const trimmed = value.name.trim();
   const nameOk = trimmed.length >= 1 && trimmed.length <= NAME_MAX;
   const targetOk = validMinor(value.target);
@@ -98,7 +120,12 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
   const monthState = monthKey === null ? null : checkPotMonth(monthKey, today, ownMonth);
   const monthOk = monthState === 'ok';
   const openingOk = value.saved === null || (Number.isSafeInteger(value.saved) && value.saved >= 0 && value.saved <= MAX_INPUT_MINOR);
-  const canSave = nameOk && targetOk && monthOk && openingOk && (pot !== null || (userId !== null && householdId !== null));
+  const monthlyOk = value.monthly === null || (Number.isSafeInteger(value.monthly) && value.monthly >= 0 && value.monthly <= MAX_INPUT_MINOR);
+  const bucketOk =
+    isBucket && monthlyOk && validatePot({ bucket, target: value.target, monthly_amount: value.monthly ?? 0 }) === 'ok';
+  const canSave = isBucket
+    ? nameOk && bucketOk && openingOk
+    : nameOk && targetOk && monthOk && openingOk && (pot !== null || (userId !== null && householdId !== null));
 
   // Edit mode: transfers tagged to this pot count toward saved-so-far (home-currency pots only, as savedSoFar does).
   const goalLines = useGoalLines(householdId, pot === null ? [] : [pot.id]).data;
@@ -119,7 +146,7 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
   // The preview comes from potSetAside, the engine's single answer.
   const { target: targetValue, saved: savedValue } = value;
   const preview =
-    targetOk && monthOk && monthKey !== null && targetValue !== null
+    !isBucket && targetOk && monthOk && monthKey !== null && targetValue !== null
       ? potLineFor(
           { id: 'preview', kind: 'pot', target: targetValue, monthly_amount: null, ready_by: lastDayOfMonth(monthKey) },
           { saved: (openingOk ? (savedValue ?? 0) : 0) + taggedSum, target: targetValue },
@@ -136,13 +163,41 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
   }
   const settled = useSettledLabel(previewText, preview?.state ?? 'none', SETTLE_MS);
 
+  const saveBucket = (row: SavingsGoalRow) => {
+    const opening = value.saved ?? 0;
+    const patch: SavingsGoalPatch = {};
+    if (trimmed !== row.name) patch.name = trimmed;
+    if (value.target !== row.target) patch.target = value.target;
+    if ((value.monthly ?? 0) !== (row.monthly_amount ?? 0)) patch.monthly_amount = value.monthly ?? 0;
+    if (opening !== row.opening_saved) patch.opening_saved = opening;
+    if (value.accountId !== (row.account_id ?? null)) patch.account_id = value.accountId;
+    if (Object.keys(patch).length > 0) {
+      const stepId = edit(row, patch);
+      showToast({ kind: 'destructive', text: { key: 'decide.pots.toast.saved', params: { undoLabel: 'potEdited', name: trimmed } }, stepId });
+    }
+    onClose();
+  };
+
   const save = () => {
+    if (canSave && pot !== null && isBucket) {
+      saveBucket(pot);
+      return;
+    }
     if (!canSave || value.target === null || monthKey === null) return;
     const readyBy = lastDayOfMonth(monthKey);
     const opening = value.saved ?? 0;
     if (pot === null) {
       if (userId === null || householdId === null) return;
-      const { stepId } = add({ householdId, ownerId: userId, pot: { name: trimmed, currency, target: value.target, ready_by: readyBy, opening_saved: opening } });
+      const { stepId } = add({ householdId, ownerId: userId, pot: {
+          name: trimmed,
+          currency,
+          target: value.target,
+          ready_by: readyBy,
+          opening_saved: opening,
+          ...(value.accountId !== null ? { account_id: value.accountId } : {}),
+          ...(prefill?.colorKey ? { color_key: prefill.colorKey } : {}),
+        },
+      });
       showToast({ kind: 'destructive', text: { key: 'decide.pots.toast.saved', params: { undoLabel: 'potAdded', name: trimmed } }, stepId });
     } else {
       const patch: SavingsGoalPatch = {};
@@ -150,6 +205,7 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
       if (value.target !== pot.target) patch.target = value.target;
       if (readyBy !== pot.ready_by) patch.ready_by = readyBy;
       if (opening !== pot.opening_saved) patch.opening_saved = opening;
+      if (value.accountId !== (pot.account_id ?? null)) patch.account_id = value.accountId;
       if (Object.keys(patch).length > 0) {
         const stepId = edit(pot, patch);
         showToast({ kind: 'destructive', text: { key: 'decide.pots.toast.saved', params: { undoLabel: 'potEdited', name: trimmed } }, stepId });
@@ -197,24 +253,47 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
             placeholder={t('decide.pots.sheet.namePlaceholder')}
             maxLength={NAME_MAX}
           />
-          <MoneyInput
-            boxed
-            value={value.target}
-            currency={currency}
-            onChange={(target) => set({ target })}
-            label={t('decide.pots.sheet.target')}
-            accessibilityLabel={t('decide.pots.sheet.target')}
-          />
-          <MonthField
-            label={t('decide.pots.sheet.by')}
-            value={monthKey}
-            empty={DASH}
-            minMonth={minMonth}
-            maxMonth={maxPotMonth(today)}
-            format={(m) => monthLabel(fmt.locale, m)}
-            onChange={(m) => set({ by: firstOfMonth(m) })}
-          />
-          {monthState !== null && monthState !== 'ok' ? <Meta tone="danger">{t('decide.pots.sheet.byRange')}</Meta> : null}
+          {isBucket ? (
+            <>
+              <MoneyInput
+                boxed
+                value={value.monthly}
+                currency={currency}
+                onChange={(monthly) => set({ monthly })}
+                label={t('decide.setup.saving.eachMonth')}
+                accessibilityLabel={t('decide.setup.saving.eachMonth')}
+              />
+              <MoneyInput
+                boxed
+                value={value.target}
+                currency={currency}
+                onChange={(target) => set({ target })}
+                label={t('decide.setup.saving.goalOptional')}
+                accessibilityLabel={t('decide.setup.saving.goalOptional')}
+              />
+            </>
+          ) : (
+            <>
+              <MoneyInput
+                boxed
+                value={value.target}
+                currency={currency}
+                onChange={(target) => set({ target })}
+                label={t('decide.pots.sheet.target')}
+                accessibilityLabel={t('decide.pots.sheet.target')}
+              />
+              <MonthField
+                label={t('decide.pots.sheet.by')}
+                value={monthKey}
+                empty={DASH}
+                minMonth={minMonth}
+                maxMonth={maxPotMonth(today)}
+                format={(m) => monthLabel(fmt.locale, m)}
+                onChange={(m) => set({ by: firstOfMonth(m) })}
+              />
+              {monthState !== null && monthState !== 'ok' ? <Meta tone="danger">{t('decide.pots.sheet.byRange')}</Meta> : null}
+            </>
+          )}
           <MoneyInput
             boxed
             value={value.saved}
@@ -223,6 +302,21 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
             label={t('decide.pots.sheet.alreadySaved')}
             accessibilityLabel={t('decide.pots.sheet.alreadySaved')}
           />
+          {showHeldIn ? (
+            <>
+              <Label>{t('decide.setup.envelopes.heldIn')}</Label>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${t('decide.setup.envelopes.heldIn')}, ${heldInName ?? t('decide.setup.envelopes.heldInNone')}`}
+                onPress={() => setPickingAccount(true)}
+                style={({ pressed }) => [styles.heldRow, { borderColor: colors.line2, backgroundColor: colors.surface, opacity: pressed ? PRESSED_OPACITY : 1 }]}
+              >
+                <Text style={{ ...textRole(pairing, 'body'), color: heldInName === null ? colors.inkMuted : colors.ink, flex: 1, flexShrink: 1 }}>
+                  {heldInName ?? t('decide.setup.envelopes.heldInNone')}
+                </Text>
+              </Pressable>
+            </>
+          ) : null}
           {preview === null ? null : (
             <View accessible accessibilityLiveRegion="polite" accessibilityLabel={settled}>
               <Text testID="pot-preview" style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
@@ -260,6 +354,35 @@ function PotForm({ pot, onClose }: { pot: SavingsGoalRow | null; onClose: () => 
           <Pill label={t('decide.pots.sheet.save')} variant="primary" disabled={!canSave} onPress={save} />
         </SheetScroll>
       </Sheet>
+      {pickingAccount ? (
+        <Sheet visible onDismiss={() => setPickingAccount(false)} accessibilityLabel={t('decide.setup.envelopes.heldIn')}>
+          <SheetHeader title={t('decide.setup.envelopes.heldIn')} cancelLabel={t('decide.pots.sheet.cancel')} onCancel={() => setPickingAccount(false)} />
+          <SheetScroll contentContainerStyle={styles.column}>
+            <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.setup.envelopes.heldIn')} style={{ gap: space.gapSm }}>
+              {[null, ...mixedAccounts].map((a) => {
+                const selected = (a?.id ?? null) === value.accountId;
+                const name = a === null ? t('decide.setup.envelopes.heldInNone') : a.name;
+                return (
+                  <Pressable
+                    key={a?.id ?? 'none'}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={name}
+                    onPress={() => {
+                      set({ accountId: a?.id ?? null });
+                      setPickingAccount(false);
+                    }}
+                    style={({ pressed }) => [styles.heldRow, { borderColor: colors.line2, backgroundColor: colors.surface, opacity: pressed ? PRESSED_OPACITY : 1 }]}
+                  >
+                    <RadioDot selected={selected} />
+                    <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flex: 1, flexShrink: 1 }}>{name}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </SheetScroll>
+        </Sheet>
+      ) : null}
       {pot !== null && householdId !== null ? (
         <AttachLineSheet
           mode="transfer"
@@ -291,5 +414,6 @@ const styles = StyleSheet.create({
   column: { gap: space.gapSm, paddingBottom: space.gapMd },
   lineRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, minHeight: space.touchMin },
   lineText: { flex: 1 },
+  heldRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, minHeight: space.touchMin, borderRadius: 16, borderWidth: 1, paddingHorizontal: space.cardPad },
   untag: { width: space.touchMin, minHeight: space.touchMin, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' },
 });

@@ -1,7 +1,9 @@
 import { evaluate } from '../evaluate';
+import { redateRefunds } from '../month/refunds';
 import { minorUnits } from '../../../money/types';
 import type { CustomOptions, ReasonCode, V3Inputs } from '../types';
 import extraFile from './golden/extra-d18.json';
+import refundsFile from './golden/refunds.json';
 import scenariosFile from './golden/scenarios22.json';
 import {
   loadPersons,
@@ -18,6 +20,7 @@ type Scenario = Omit<FixtureScenario, 'expect'> & { expect: FixtureExpect & { re
 
 const SCENARIOS = (scenariosFile as unknown as { scenarios: Scenario[] }).scenarios;
 const EXTRAS = (extraFile as unknown as { scenarios: Scenario[] }).scenarios;
+const REFUNDS = (refundsFile as unknown as { scenarios: Scenario[] }).scenarios;
 
 /**
  * Situation 22 asks for the dog's food as a monthly running cost. 'food' is not a library question, so the situation
@@ -105,6 +108,39 @@ describe.each(SCENARIOS)('D-28 v3 §12 #$id $title', (s) => {
 describe.each(EXTRAS)('D-18 $id $title', (s) => {
   it('matches the expectation', () => {
     expectMatches(s);
+  });
+});
+
+describe.each(REFUNDS)('D-11 $id $title', (s) => {
+  it('matches the expectation', () => {
+    expectMatches(s);
+  });
+});
+
+describe('refund goldens: the re-dated months (Pitfall 7)', () => {
+  const byId = (id: string): Scenario => REFUNDS.find((s) => s.id === id) as Scenario;
+  const inputsFor = (id: string) => toV3Inputs(resolveScenarioPerson(byId(id) as FixtureScenario));
+  const linesIn = (id: string, ym: string) => redateRefunds(inputsFor(id).months, inputsFor(id).series).find((m) => m.month === ym)?.lines ?? [];
+
+  it('refund-over: 3000 stays in July as money in, May nets to the price', () => {
+    expect(linesIn('refund-over', '2026-07').find((l) => l.id === 'sam-fridge-ref-07:surplus')).toMatchObject({ role: 'other_in', amount: 3000 });
+    expect(linesIn('refund-over', '2026-05').find((l) => l.id === 'sam-fridge-ref-07')).toMatchObject({ role: 'refund', amount: 1000000 });
+  });
+
+  it('refund-several: June and July both credit May; 100000 stays in July', () => {
+    expect(linesIn('refund-several', '2026-05').filter((l) => l.role === 'refund').map((l) => l.amount)).toEqual([400000, 600000]);
+    expect(linesIn('refund-several', '2026-07').find((l) => l.role === 'other_in')).toMatchObject({ amount: 100000 });
+  });
+
+  it('refund-plan: the credit comes off the day-one row in May, never everyday; the plan series is left as it was', () => {
+    expect(inputsFor('refund-plan').series.find((x) => x.id === 'fridge-plan')).toMatchObject({ role: 'debt_payment', amount: 40000 });
+    expect(linesIn('refund-plan', '2026-05').find((l) => l.role === 'refund')).toBeUndefined();
+    expect(linesIn('refund-plan', '2026-05').find((l) => l.id === 'sam-fridge-05')).toMatchObject({ amount: 10000 });
+  });
+
+  it('refund-plan-large: a refund bigger than May everyday removes the day-one row and leaves everyday alone', () => {
+    expect(linesIn('refund-plan-large', '2026-05').find((l) => l.id === 'sam-fridge-05')).toBeUndefined();
+    expect(linesIn('refund-plan-large', '2026-05').find((l) => l.role === 'refund')).toBeUndefined();
   });
 });
 

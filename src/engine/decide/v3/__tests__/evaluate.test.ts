@@ -337,3 +337,29 @@ describe('D-48 futures on a declined volatile cover', () => {
     expect(evaluate(sam(), checkOnce(15000)).futures).toBeNull();
   });
 });
+
+describe('evaluate: linked refunds (05.2 D-06, D-07, D-11)', () => {
+  const base = sam();
+  const ym = base.asOf.slice(0, 7);
+  const prev = (n: number): string => {
+    const [y, m] = ym.split('-').map(Number) as [number, number];
+    const t = y * 12 + (m - 1) - n;
+    return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`;
+  };
+  const withRefund = (linked: boolean): ReturnType<typeof toV3Inputs> => {
+    const old = prev(2);
+    const buy = v3Line({ id: 'rf-buy', date: `${old}-10`, amount: 90000, categoryId: 'rf-cat' });
+    const back = v3Line({ id: 'rf-back', date: `${prev(1)}-05`, amount: 90000, role: 'refund', categoryId: 'rf-cat', ...(linked ? { refundOf: 'rf-buy' } : {}) });
+    const months = [...base.months.filter((m) => m.month !== old && m.month !== prev(1)), monthOf(old, [buy]), monthOf(prev(1), [back])];
+    return { ...base, months };
+  };
+
+  it('a linked refund moves the money back to the purchase month; unlinking reverses it', () => {
+    const linked = evaluate(withRefund(true), checkOnce(15000));
+    const unlinked = evaluate(withRefund(false), checkOnce(15000));
+    expect(linked.month.e).not.toBe(unlinked.month.e);
+    const stripped = withRefund(true);
+    const again = { ...stripped, months: stripped.months.map((m) => ({ ...m, lines: m.lines.map((l) => ({ ...l, refundOf: null })) })) };
+    expect(evaluate(again, checkOnce(15000))).toEqual(unlinked);
+  });
+});

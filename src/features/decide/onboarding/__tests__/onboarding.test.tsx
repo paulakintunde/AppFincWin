@@ -106,6 +106,14 @@ describe('RoughFiguresScreen', () => {
       saving_floor: null,
       rough_income: 400000,
       rough_spending: 250000,
+      rough_saving: null,
+      rough_debt: null,
+      rough_invest: null,
+      steady_amount: null,
+      everyday_override: null,
+      unspent_anchor: null,
+      reserve_goal: null,
+      unexplained_amount: null,
       currency: 'USD',
     });
   });

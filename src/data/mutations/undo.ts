@@ -48,6 +48,12 @@ function invalidateAfterUndo(qc: QueryClient, vars: { householdId: string; owner
   void qc.invalidateQueries({ queryKey: queryKeys.decideLinks(vars.ownerId, vars.householdId) });
   void qc.invalidateQueries({ queryKey: queryKeys.decideChanges(vars.ownerId, vars.householdId) });
   void qc.invalidateQueries({ queryKey: queryKeys.debts(vars.householdId) });
+  // 05.2 Decide setup rows (N-04): Not regular / Not my pay, setup answers, Reset, payer rules. Without these the server
+  // reverted and the step kept showing the old state until it was re-opened.
+  void qc.invalidateQueries({ queryKey: queryKeys.recurringDismissals(vars.householdId) });
+  void qc.invalidateQueries({ queryKey: queryKeys.decideSettings(vars.ownerId) });
+  void qc.invalidateQueries({ queryKey: queryKeys.decideAnswers(vars.ownerId, vars.householdId) });
+  void qc.invalidateQueries({ queryKey: queryKeys.incomePayerPrompts(vars.householdId) });
 }
 
 async function recordRefusal(entityId: string, conflict: UndoConflict | null, stepId: string): Promise<void> {

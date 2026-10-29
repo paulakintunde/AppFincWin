@@ -21,6 +21,14 @@ function collectLeaves(node: unknown, prefix = ''): Leaf[] {
 }
 
 const leaves = collectLeaves(en.decide, 'decide');
+// 05.2 (plan 20): the shared income steps and the three Activity subtrees carry the same Decide wording rules.
+const extraLeaves = [
+  ...collectLeaves(en.income, 'income'),
+  ...collectLeaves(en.activity.incomeCard, 'activity.incomeCard'),
+  ...collectLeaves(en.activity.incomeTag, 'activity.incomeTag'),
+  ...collectLeaves(en.activity.refund, 'activity.refund'),
+];
+const copyLeaves = [...leaves, ...extraLeaves];
 
 // WR-D04 / WR-B09: reassurance about the future ("safe to plan on") is advice in another form; the record states what
 // the figures are and what the check does with them.
@@ -31,10 +39,12 @@ const IMPERATIVE_LEAD = /^(Spend|Save|Try|Keep|Buy|Borrow|Skip|Put|Cut|Pay|Inves
 // Controls and field labels name an action the user takes in the app (a button, a dialog choice, a field caption); they
 // are not a prescription about money. Each one is listed by key so a new descriptive string cannot slip through.
 const ACTION_LABELS = new Set([
+  'income.pay.defaultName', // the noun "Pay": the name a new pay series gets (05.2-49), not an instruction
   'decide.quick.payWith', // field caption: "Pay with" Cash / Credit
   'decide.quick.error.retry', // button
   'decide.flow.retry', // button
   'decide.rough.save', // button
+  'decide.setup.debtSheet.save', // button (05.2-38)
   'decide.lines.save', // button
   'decide.flow.saveClose', // button
   'decide.flow.commit.wait', // button: "Save the plan" commits the Wait decision the user chose
@@ -47,6 +57,23 @@ const ACTION_LABELS = new Set([
   'decide.delete.keep', // dialog choice: keep the record instead of deleting it
   'decide.verdict.key.putInCaption', // field caption: the key figure "Put in a month" (investing amount)
   'decide.pots.sheet.save', // button: "Save pot" (05-131, R18.7); "Try again" reuses decide.flow.retry
+  // 05.2 (plan 20): setup controls and UI-SPEC titles that open with a verb. Each names an action in the app, not advice about money.
+  'decide.setup.shell.skip', // button: skip this step
+  'decide.accountUse.save', // button: "Save account use"
+  'decide.accountUse.keep', // button: "Keep as is"
+  'decide.emergencySheet.save', // button: "Save emergency fund"
+  'decide.settings.save', // button: "Save answer"
+  'decide.settings.keep', // button: "Keep as is"
+  'decide.settings.resetKeep', // dialog choice: "Keep it" (cancels the reset)
+  'decide.unspentSheet.keepAsIs', // button
+  'decide.unspentSheet.keepRolled', // button: "Keep {{amount}}" (keeps the rolled-forward figure)
+  'decide.unspentSheet.saveFigure', // button
+  'decide.setup.loans.kindBnpl', // loan kind name: "Buy now, pay later"
+  'decide.setup.saving.optionFixedDesc', // UI-SPEC wording describing what a Fixed saving is: "Keep it going, like a bill."
+  'decide.setupPage.labelArrivals', // readout label: "Pay arrivals saved" (a noun phrase)
+  'income.method.optionSteady', // choice-card title: "Pay myself a steady amount."
+  'activity.incomeTag.save', // button: "Save income type"
+  'activity.refund.emptyBody', // empty-search hint, UI-SPEC wording: "Try a payee name or an amount."
 ]);
 // 2026-10-23 walkthrough: sentences, hints and placeholders are declarative ("A price comes first"), never an order to the
 // user ("Add a price to continue", "Type the rate"). Buttons, dialog titles and field captions that name an action in the
@@ -54,6 +81,7 @@ const ACTION_LABELS = new Set([
 const INSTRUCTION_LEAD = /^(Add|Type|Choose|Pick|Enter|Switch|Move|Tap|Change (it|any|the))\b/;
 const CONTROL_LABELS = new Set([
   'decide.home.noFigures.addRough', // button
+  'decide.setup.debtSheet.titleAdd', // sheet title (05.2-38), same wording as loans.addCaption
   'decide.lineEditor.titleAdjust', // sheet title
   'decide.lineEditor.titleRunning', // sheet title
   'decide.lineEditor.titleReplaces', // sheet title
@@ -79,6 +107,20 @@ const CONTROL_LABELS = new Set([
   // 05-131 (R18.7): the Pots screen controls
   'decide.pots.emptyAction', // button: "Add a pot"
   'decide.pots.addA11y', // accessibility label of the "+ Pot" link: "Add a pot"
+  // 05.2 (plan 20): setup controls, captions and UI-SPEC sentences. Every one is a button, link, caption or step intro named in
+  // 05.2-UI-SPEC.md; none tells the user what to do with money.
+  'decide.setup.regular.addTitle', // sheet title
+  'decide.setup.regular.emptyBody', // empty-state body, UI-SPEC wording
+  'decide.setup.loans.addCaption', // field caption: "Add a loan or card"
+  'decide.setup.saving.readinessNoGoal', // readiness line, UI-SPEC wording
+  'decide.setup.saving.readinessNoMonthly', // readiness line, UI-SPEC wording
+  'decide.setup.everyday.changeIt', // button: "Change it"
+  'decide.setup.unusual.intro', // step intro, UI-SPEC wording
+  'decide.setup.accountUse.choose', // answer line on an unanswered row, UI-SPEC wording
+  'decide.setup.emergency.chooseAccount', // row value: "Choose an account"
+  'income.paid.intro', // step intro: "Choose all that apply."
+  'income.method.intro', // step intro: "Pick the one that fits you. Nothing is chosen for you."
+  'income.other.intro', // step intro: "Choose all that apply, or None."
 ]);
 const BANNED = [/\badvice\b/i, /\badvis/i, /recommend/i, /you should/i, /we suggest/i, /best option/i, /guaranteed/i, /\bapproved\b/i, /pre-approved/i, /\boffer/i, /apply for/i, /\blender\b/i, /loan offer/i, /interest-free/i];
 
@@ -98,7 +140,7 @@ function interpolate(value: string, overrides: Record<string, string> = {}): str
 }
 
 function get(path: string): string {
-  const found = leaves.find((l) => l.path === path);
+  const found = copyLeaves.find((l) => l.path === path);
   if (!found) throw new Error(`no decide leaf ${path}`);
   return found.value;
 }
@@ -108,20 +150,20 @@ describe('decide copy (DCU-09)', () => {
     expect(leaves.length).toBeGreaterThan(300);
   });
 
-  it.each(leaves)('uses no banned word: $path', ({ value }) => {
+  it.each(copyLeaves)('uses no banned word: $path', ({ value }) => {
     for (const re of BANNED) expect(value).not.toMatch(re);
   });
 
-  it.each(leaves)('does not reassure about the future: $path', ({ value }) => {
+  it.each(copyLeaves)('does not reassure about the future: $path', ({ value }) => {
     for (const re of REASSURING) expect(value).not.toMatch(re);
   });
 
-  it.each(leaves.filter((l) => !ACTION_LABELS.has(l.path)))('does not open with an order about money: $path', ({ value }) => {
+  it.each(copyLeaves.filter((l) => !ACTION_LABELS.has(l.path)))('does not open with an order about money: $path', ({ value }) => {
     expect(value).not.toMatch(IMPERATIVE_LEAD);
   });
 
   it('2026-10-23: no sentence, hint or placeholder opens with an instruction verb', () => {
-    const offenders = leaves.filter((l) => !CONTROL_LABELS.has(l.path) && INSTRUCTION_LEAD.test(l.value)).map((l) => l.path);
+    const offenders = copyLeaves.filter((l) => !CONTROL_LABELS.has(l.path) && INSTRUCTION_LEAD.test(l.value)).map((l) => l.path);
     expect(offenders).toEqual([]);
     for (const old of ['Add a price to continue.', 'Type the rate you were quoted', 'Choose the card this goes on first.', 'Switch one on to see it hit your cash.']) {
       expect(old).toMatch(INSTRUCTION_LEAD);
@@ -157,17 +199,18 @@ describe('decide copy (DCU-09)', () => {
     }
   });
 
-  it('uses the word lend only in the not-a-lender footer', () => {
-    expect(leaves.filter((l) => /lend/i.test(l.value)).map((l) => l.path)).toEqual(['decide.flow.notLender']);
+  it('uses the word lend only in the not-a-lender footers', () => {
+    // decide.setup.summary.footer is the Summary footer worded by the owner (05.2-UI-SPEC decision 2); it denies lending.
+    expect(copyLeaves.filter((l) => /lend/i.test(l.value)).map((l) => l.path).sort()).toEqual(['decide.flow.notLender', 'decide.setup.summary.footer']);
   });
 
-  it.each(leaves)('uses no straight apostrophe: $path', ({ value }) => {
+  it.each(copyLeaves)('uses no straight apostrophe: $path', ({ value }) => {
     expect(value).not.toContain("'");
   });
 
   it('marks every decide leaf as draft copy', () => {
     const drafts = new Set<string>(DRAFT_COPY_KEYS);
-    expect(leaves.filter((l) => !drafts.has(l.path)).map((l) => l.path)).toEqual([]);
+    expect(copyLeaves.filter((l) => !drafts.has(l.path)).map((l) => l.path)).toEqual([]);
   });
 
   it('keeps notification copy free of placeholders (lock-screen privacy, D-10)', () => {
@@ -323,6 +366,34 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
   it('D-30 and D-32 notices exist', () => {
     expect(get('decide.v3.notice.unspent_drifted')).toContain('{{suggested}}');
     expect(get('decide.v3.notice.from_your_figures')).toBe('Worked out from the figures you gave.');
+  });
+});
+
+describe('05.2 undo labels (DSU-21, DCU-09)', () => {
+  const expected: Record<string, string> = {
+    setupStepSaved: 'Saved · {{name}}', setupReset: 'Decide setup reset', incomeSetupSaved: 'Income setup saved',
+    unspentConfirmed: 'Unspent money confirmed', unspentCleared: 'Unspent money cleared', emergencySaved: 'Emergency fund saved',
+    emergencyRemoved: 'Emergency fund removed', accountUseSaved: 'Account use saved', paymentMarkedRegular: 'Marked regular · {{name}}',
+    paymentDismissed: 'Marked not regular · {{name}}', paymentRestored: 'Not regular cleared · {{name}}', savingRaised: 'Regular saving raised',
+    incomeTypeSaved: 'Income type saved', incomeTagged: 'Income tagged', refundLinked: 'Refund linked', refundUnlinked: 'Refund unlinked',
+    answerSaved: 'Answer saved', answerRemoved: 'Answer removed', refineSnoozed: 'Check-in snoozed',
+  };
+
+  it('every 05.2 step has a key and its English text', () => {
+    for (const [key, text] of Object.entries(expected)) {
+      expect((UNDO_LABEL_KEYS as readonly string[]).includes(key)).toBe(true);
+      expect((en.undo.label as Record<string, string>)[key]).toBe(text);
+    }
+  });
+
+  it('the unnamed setup step has a fallback', () => {
+    expect(undoLabelText('setupStepSaved', {})).toEqual({ key: 'undo.labelUnnamed.setupStepSaved', params: {} });
+  });
+
+  it('the strings pass the banned-word guard', () => {
+    for (const text of Object.values(expected)) {
+      expect(text).not.toMatch(/advice|recommend|you should/i);
+    }
   });
 });
 

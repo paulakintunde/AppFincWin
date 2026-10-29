@@ -7,6 +7,11 @@
 // or numeric field may ever be added as a property here: the AssertAll guard below (via
 // CATALOGUE_IS_FINITE) makes such a property type fail to compile, so a future edit smuggling
 // financial detail in is caught at review time, not by discipline alone.
+/** The setup stepper's step keys (05.2-UI-SPEC flow table). Shared by the stepper and the analytics events. */
+export type DecideSetupStepKey =
+  | 'welcome' | 'paid' | 'pay' | 'season' | 'method' | 'other' | 'regular' | 'loans' | 'saving' | 'everyday'
+  | 'unusual' | 'accountUse' | 'emergency' | 'envelopes' | 'unspent' | 'share' | 'detail' | 'reminders' | 'summary';
+
 export type EventCatalogue = {
   app_opened: Record<string, never>;
   sign_in_completed: { provider: 'apple' | 'google' };
@@ -65,6 +70,11 @@ export type EventCatalogue = {
   check_abandoned: Record<string, never>;
   decision_recorded: { decision: 'go' | 'wait' | 'pass' };
   first_read_shown: { state: 'fits' | 'adjust' | 'no' | 'missing' };
+  // 05.2 (DSU-24): Decide setup lifecycle. The step is a literal key; no amounts, names or free strings.
+  decide_setup_started: Record<string, never>;
+  decide_setup_step_saved: { step: DecideSetupStepKey };
+  decide_setup_finished: Record<string, never>;
+  decide_setup_left: { step: DecideSetupStepKey };
 };
 
 export type EventName = keyof EventCatalogue;

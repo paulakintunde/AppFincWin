@@ -18,6 +18,8 @@ jest.mock('@/data/mutations/decidePots', () => ({
 }));
 jest.mock('../../notifications/waitReminder', () => ({ cancelCheckReminders: () => Promise.resolve() }));
 jest.mock('@/data/mutations/decideLinks', () => ({ useAttachLine: () => ({ attach: jest.fn() }) }));
+jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
 jest.mock('@/data/queries/decide', () => ({
   useGoalLines: () => ({ data: [] }),
   useAttachCandidates: () => ({ data: [] }),

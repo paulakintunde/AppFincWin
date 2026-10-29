@@ -28,6 +28,12 @@ import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useAmountParser, type AmountParseFailure } from '@/ui/money/useAmountParser';
+import { useDecideAccess } from '@/features/decide/useDecideAccess';
+import { AccountUseSheet } from '@/features/decide/setup/AccountUseSheet';
+import { accountUseText, holdsMoney } from '@/features/decide/setup/accountUseSuggest';
+import { accountUseOfRow } from '@/data/mutations/accountUseModel';
+import { useAccountBalances } from '@/data/queries/activity';
+import { usePots } from '@/data/queries/decide';
 
 export type AccountKind = AccountRow['kind'];
 export type AccountSheetMode =
@@ -63,6 +69,49 @@ function limitKind(kind: AccountKind): 'overdraft' | 'credit' | null {
   if (kind === 'checking' || kind === 'savings') return 'overdraft';
   if (kind === 'credit') return 'credit';
   return null;
+}
+
+/**
+ * 05.2-26 (D-01, D-03): "What this account is for". Rendered only for an existing money account and only when the
+ * per-account Decide switch is on, so nobody without the switch sees any trace of it. Credit cards and loans never get
+ * the row (they are on the Loans step). The write goes through the shared AccountUseSheet, not this sheet's save.
+ */
+function AccountUseRow({ account }: { account: AccountRow }) {
+  const access = useDecideAccess();
+  if (!access.v3 || !holdsMoney(account.kind)) return null;
+  return <AccountUseRowBody account={account} />;
+}
+
+function AccountUseRowBody({ account }: { account: AccountRow }) {
+  const t = useT();
+  const { colors, pairing } = useTheme();
+  const rc = useRecordContext();
+  const [open, setOpen] = useState(false);
+  const balances = useAccountBalances(rc.householdId, [account]).balances;
+  const pots = usePots(rc.userId ?? undefined, rc.householdId ?? undefined).data;
+  const use = accountUseOfRow({
+    use: account.use ?? null,
+    use_purpose: account.use_purpose ?? null,
+    use_envelope_id: account.use_envelope_id ?? null,
+    use_extra_set_aside: account.use_extra_set_aside ?? null,
+  });
+  const text = use === null ? null : accountUseText(use, (k, o) => String((t as (k: string, o?: unknown) => unknown)(k, o)), (id) => pots?.live.find((g) => g.id === id)?.name);
+  const bal = balances.get(account.id);
+  return (
+    <>
+      <Row
+        label={t('decide.accountUse.editRowLabel')}
+        // The answer sits under the label so a long answer wraps at 320 dp and at large text.
+        sublabel={text ?? t('decide.accountUse.notSet')}
+        sublabelTone={text === null ? 'warn1' : 'inkMuted'}
+        chevron
+        dense
+        onPress={() => setOpen(true)}
+      />
+      <Text style={[textRole(pairing, 'label'), { color: colors.inkMuted }]}>{t('decide.accountUse.editRowEffect')}</Text>
+      <AccountUseSheet visible={open} account={account} balance={bal && !bal.overflow ? bal.balance : null} onClose={() => setOpen(false)} />
+    </>
+  );
 }
 
 export function AccountSheet({ visible, mode, onClose, onSaved }: AccountSheetProps) {
@@ -272,6 +321,8 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
             </Text>
           </>
         ) : null}
+
+        {account ? <AccountUseRow account={account} /> : null}
 
         {canSubmit ? null : <Text style={helpStyle}>{t('accounts.sheet.notReady')}</Text>}
         <Pill

@@ -72,6 +72,8 @@ export interface FixtureLine {
   status?: 'paid' | 'pending';
   coversMonths?: number | null;
   expected?: boolean;
+  /** 05.2 D-06: the purchase line a refund line is linked to. */
+  refundOf?: string | null;
   name?: string;
 }
 export interface FixtureMonth {
@@ -314,6 +316,7 @@ export function toV3Inputs(person: FixturePerson, overrides: Partial<V3Inputs> =
             status: l.status ?? 'paid',
             coversMonths: l.coversMonths ?? null,
             expected: l.expected ?? false,
+            refundOf: l.refundOf ?? null,
           })
         ),
         { full: m.full ?? true, mark: m.mark ?? null }

@@ -38,6 +38,13 @@ const ALLOWED: Record<string, string> = {
   'decide.depth.oneOff.basis_one': 'a one-off left out of a count',
   'decide.depth.oneOff.basis_other': 'a one-off left out of a count',
   'decide.depth.credit.leftWhenEnds': 'cash left when a credit ends: cash',
+  'decide.setup.accountUse.why': '"left alone" describes savings the user does not touch, not a month figure',
+  'decide.setup.detail.optionShort': '"Short answers" is the answer length, not a month figure',
+  'decide.unspentSheet.rollNote': '"left out" of the roll-forward: a rule about which moves are ignored',
+  'decide.settings.valueUnusual': '"left out" is a count of unusual months',
+  'decide.settings.valueDetailShort': '"Short answers" is the answer length, not a month figure',
+  'decide.setupPage.roughBody_one': '"step left" is a count of setup steps',
+  'decide.setupPage.roughBody_other': '"steps left" is a count of setup steps',
 };
 
 describe('D-106 wording', () => {

@@ -31,14 +31,20 @@ import { typicalOf } from './typical';
 /** Debt minimums + fixed saving/investing + envelope set-asides. Flexible saving is explorer-only (excluded). */
 export function setAsideOf(inputs: V3Inputs): MinorUnits {
   let total = 0n;
+  let fixedSaving = 0n;
   for (const d of inputs.debts) total += BigInt(d.minimum);
   for (const role of ['saving', 'investing'] as const) {
     for (const s of liveSeriesOf(inputs.series, inputs.asOf, role)) {
       if (s.savingMode === 'flexible') continue;
-      total += BigInt(monthlyEquivalentOf(s.amount, s.cadence));
+      fixedSaving += BigInt(monthlyEquivalentOf(s.amount, s.cadence));
     }
   }
-  total += BigInt(totalSetAside(inputs.envelopes, inputs.asOf).total);
+  const buckets = inputs.envelopes.filter((e) => e.bucket === true);
+  const others = inputs.envelopes.filter((e) => e.bucket !== true);
+  total += BigInt(totalSetAside(others, inputs.asOf).total);
+  const bucketTotal = BigInt(totalSetAside(buckets, inputs.asOf).total);
+  // 05.2 D-23: buckets are carved out of regular saving; count the larger, never both
+  total += bucketTotal > fixedSaving ? bucketTotal : fixedSaving;
   return minorFromBigInt(total, 'setAsideOf');
 }
 

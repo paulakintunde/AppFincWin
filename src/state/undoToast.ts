@@ -25,6 +25,11 @@ export interface ToastState {
   text: ToastText | null;
   stepId: string | null;
   /**
+   * An undo group: every step one user action wrote, in the order written; Undo replays them last first. In memory only.
+   * Null when the toast has no group (the single `stepId` path applies).
+   */
+  stepIds: readonly string[] | null;
+  /**
    * A local Undo (nothing on the server), e.g. putting a removed entry-list item back. In memory
    * only: never persisted or serialised, and dropped with the toast on dismiss.
    */
@@ -36,16 +41,19 @@ export interface ToastState {
 
 export const TOAST_MS_ORDINARY = 3200; // D-31 (prototype say())
 export const TOAST_MS_DESTRUCTIVE = 6000; // D-31 deletes, bulk deletes, imports
+export const TOAST_MS_UNDO = 6000; // F-12 (05.2 walkthrough): long enough to reach Undo on a phone
 
 /**
  * D-31 / C-CR-02: how long the host keeps a toast up before auto-dismissing it. `null` means
  * never auto-dismiss: with a screen reader running the user dismisses it themselves (the
  * History screen stays the fallback either way). A refusal carries a longer sentence ("Sam
- * edited Groceries after this...") so it gets the longer timing too.
+ * edited Groceries after this...") so it gets the longer timing too. F-12: a toast that offers Undo
+ * (`hasUndo`) also gets the longer timing; one with no action keeps the D-31 3.2 s.
  */
-export function toastDurationMs(kind: ToastKind, screenReaderEnabled: boolean): number | null {
+export function toastDurationMs(kind: ToastKind, screenReaderEnabled: boolean, hasUndo = false): number | null {
   if (screenReaderEnabled) return null;
-  return kind === 'destructive' || kind === 'refusal' ? TOAST_MS_DESTRUCTIVE : TOAST_MS_ORDINARY;
+  if (kind === 'destructive' || kind === 'refusal') return TOAST_MS_DESTRUCTIVE;
+  return hasUndo ? TOAST_MS_UNDO : TOAST_MS_ORDINARY;
 }
 
 type ToastInput = Parameters<typeof showToast>[0];
@@ -73,6 +81,7 @@ export function showToast(t: {
   tone?: ToastTone;
   text?: ToastText | null;
   stepId?: string | null;
+  stepIds?: readonly string[] | null;
   onUndo?: (() => void) | null;
   refusal?: UndoConflict | null;
 }): void {
@@ -82,6 +91,7 @@ export function showToast(t: {
     tone: t.tone ?? 'default',
     text: t.text ?? null,
     stepId: t.stepId ?? null,
+    stepIds: t.stepIds && t.stepIds.length > 0 ? Array.from(new Set(t.stepIds)) : null,
     onUndo: t.onUndo ?? null,
     refusal: t.refusal ?? null,
     shownAt: Date.now(),
@@ -120,6 +130,28 @@ export function getToast(): ToastState | null {
 
 export function useToast(): ToastState | null {
   return useSyncExternalStore(subscribe, getToast);
+}
+
+// 05.2-23: a full-screen flow with its own footer (the setup stepper) lifts the app-layer toast above that footer so it
+// never covers the primary button. The floor is a bottom offset in dp; null means no floor.
+let toastFloor: number | null = null;
+const floorListeners = new Set<() => void>();
+
+export function setToastFloor(value: number | null): void {
+  if (toastFloor === value) return;
+  toastFloor = value;
+  for (const listener of floorListeners) listener();
+}
+
+function subscribeFloor(listener: () => void): () => void {
+  floorListeners.add(listener);
+  return () => {
+    floorListeners.delete(listener);
+  };
+}
+
+export function useToastFloor(): number | null {
+  return useSyncExternalStore(subscribeFloor, () => toastFloor);
 }
 
 /** Test helper: resets in-memory toast state between tests. */

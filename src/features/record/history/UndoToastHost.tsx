@@ -9,7 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
-import { dismissToast, toastDurationMs, useToast, type ToastState } from '@/state/undoToast';
+import { dismissToast, toastDurationMs, useToast, useToastFloor, type ToastState } from '@/state/undoToast';
 import { useUndo } from '@/data/mutations/undo';
 import { useHouseholdMemberNames } from '@/data/queries/activity';
 import { UNDO_LABEL_KEYS, type UndoLabelKey, type UndoLabelParams } from '@/engine/undo';
@@ -49,6 +49,20 @@ const DECIDE_TOAST_LABEL: Readonly<Record<string, UndoLabelKey>> = {
   'decide.pots.toast.reopened': 'potReopened',
   'decide.depth.goal.tagged': 'transferTagged',
   'decide.depth.goal.untagged': 'transferUntagged',
+  // 05.2-23: the setup stepper's "{title} saved" toast replays the step's settings write.
+  'decide.setup.shell.toastSaved': 'setupStepSaved',
+  // 05.2-53 (F-08): these toasts carry a real step id but no `undo.label.` text, so each needs its label here.
+  'decide.settings.toastReset': 'setupReset',
+  'decide.setup.regular.toastCleared': 'paymentRestored',
+  'decide.accountUse.toastSaved': 'accountUseSaved',
+  'decide.emergencySheet.toastSaved': 'emergencySaved',
+  'decide.emergencySheet.toastSavedAccount': 'emergencySaved',
+  'decide.emergencySheet.toastRemoved': 'emergencyRemoved',
+  'activity.refund.toastLinked': 'refundLinked',
+  'activity.refund.toastUnlinked': 'refundUnlinked',
+  'activity.incomeTag.toastSaved': 'incomeTypeSaved',
+  'activity.incomeTag.toastTagged': 'incomeTagged',
+  'activity.incomeTag.toastFuture': 'incomeTagged',
 };
 
 /** Derives the engine label key and params from a toast's `undo.label[Unnamed].<key>` text (or a Decide toast's own key). */
@@ -84,6 +98,7 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
   const sheetCount = useSheetCount();
   const active = placement === 'sheet' || sheetCount === 0;
   const slot = useToastSlot();
+  const floor = useToastFloor();
   const { reportHeight } = slot;
   const [screenReader, setScreenReader] = useState(false);
 
@@ -102,13 +117,24 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
   const toastId = toast?.id ?? null;
   const kind = toast?.kind ?? null;
   const shownAt = toast?.shownAt ?? 0;
+  // F-12: whether the toast offers Undo decides its duration, so it is worked out before the timer.
+  const label = toast ? undoableLabel(toast) : null;
+  const hasStep = toast !== null && (toast.stepId !== null || toast.stepIds !== null);
+  const canUndo =
+    toast !== null &&
+    (toast.onUndo !== null ||
+      ((toast.kind === 'ordinary' || toast.kind === 'destructive') &&
+        hasStep &&
+        label !== null &&
+        ctx.userId !== null &&
+        ctx.householdId !== null));
   useEffect(() => {
     if (!active || toastId === null || kind === null) return undefined;
-    const ms = toastDurationMs(kind, screenReader);
+    const ms = toastDurationMs(kind, screenReader, canUndo);
     if (ms === null) return undefined;
     const timer = setTimeout(() => dismissToast(toastId), Math.max(0, ms - (Date.now() - shownAt)));
     return () => clearTimeout(timer);
-  }, [toastId, kind, screenReader, active, shownAt]);
+  }, [toastId, kind, screenReader, active, shownAt, canUndo]);
 
   // The app-layer toast feeds the FAB lift; clear it when the toast goes or this host stops being the visible one.
   const reporting = placement === 'app' && active && toastId !== null;
@@ -146,19 +172,12 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
       parts.push(l(key, params));
     }
   }
-  const bottom = placement === 'sheet' ? insets.bottom + space.sheetPadBottom : slot.bottom;
+  const bottom = placement === 'sheet' ? insets.bottom + space.sheetPadBottom : Math.max(slot.bottom, floor ?? 0);
   const message = parts.join(' ');
   if (message === '') return null;
 
-  const label = undoableLabel(toast);
   const localUndo = toast.onUndo;
-  const canUndo =
-    localUndo !== null ||
-    ((toast.kind === 'ordinary' || toast.kind === 'destructive') &&
-    toast.stepId !== null &&
-    label !== null &&
-    ctx.userId !== null &&
-    ctx.householdId !== null);
+  const group = toast.stepIds !== null && toast.stepIds.length >= 2 ? toast.stepIds : null;
 
   const onUndo = () => {
     if (localUndo !== null) {
@@ -166,9 +185,24 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
       localUndo();
       return;
     }
-    if (!label || toast.stepId === null || ctx.userId === null || ctx.householdId === null) return;
+    const single = toast.stepId ?? toast.stepIds?.[0] ?? null;
+    if (!label || single === null || ctx.userId === null || ctx.householdId === null) return;
+    if (group !== null) {
+      // One user action, one Undo: replay the whole group, last saved first, through the serial write queue.
+      for (const id of [...group].reverse()) {
+        undo({
+          stepId: id,
+          ownerId: ctx.userId,
+          householdId: ctx.householdId,
+          labelKey: label.labelKey,
+          labelParams: label.labelParams,
+        });
+      }
+      dismissToast(toast.id);
+      return;
+    }
     undo({
-      stepId: toast.stepId,
+      stepId: single,
       ownerId: ctx.userId,
       householdId: ctx.householdId,
       labelKey: label.labelKey,

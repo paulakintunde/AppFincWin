@@ -62,6 +62,20 @@ describe('useChangeHomeCurrency', () => {
     expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.categories('u1') });
     expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.fxLatest() });
     expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.transactionsRoot('h1') });
+    // CR-03: the server-side stamp and answer clear (05.2-74) show at once
+    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.decideSettings('u1') });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['decide-answers', 'u1'] });
+  });
+
+  it('does not refresh the decide caches when nothing changed or the change fails', async () => {
+    mockFetchRates.mockResolvedValue('done');
+    mockChange.mockResolvedValueOnce({ status: 'unchanged', capsConverted: 0 });
+    const spy = jest.spyOn(qc, 'invalidateQueries');
+    await run();
+    mockChange.mockRejectedValueOnce(new Error('Network request failed'));
+    await run();
+    expect(spy).not.toHaveBeenCalledWith({ queryKey: queryKeys.decideSettings('u1') });
+    expect(spy).not.toHaveBeenCalledWith({ queryKey: ['decide-answers', 'u1'] });
   });
 
   it('never calls the RPC when rates fail', async () => {
