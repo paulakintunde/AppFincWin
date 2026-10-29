@@ -105,6 +105,15 @@ describe('PayStep', () => {
     expect(call.series).toMatchObject({ id: 'new-series-id', household_id: 'h1', account_id: 'a1', amount: 300000, freq: 'monthly', currency: 'USD', anchor_date: '2026-10-15' });
   });
 
+  it('names a new pay "Pay" even when a payer was found (F-03, D-21)', async () => {
+    mockFound = { payer: 'Refund - Online Store', amount: 1999, day: 3, currency: 'USD' };
+    const { ref } = await mount(PayStep);
+    await fireEvent.changeText(screen.getByLabelText('Take-home amount, after tax'), '3000');
+    await fireEvent.press(screen.getByText('Monthly'));
+    await save(ref);
+    expect(mockConfirm.mock.calls[0]![0].series.name).toBe('Pay');
+  });
+
   it('two new pays return every series step id for one Undo (05.2-40)', async () => {
     mockConfirm.mockReturnValueOnce({ seriesId: 's-a', stepId: 'step-a' }).mockReturnValueOnce({ seriesId: 's-b', stepId: 'step-b' });
     const { ref } = await mount(PayStep);

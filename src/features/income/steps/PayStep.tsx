@@ -82,7 +82,7 @@ export const PayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function 
               id: Crypto.randomUUID(),
               household_id: ctx.householdId,
               account_id: account.id,
-              name: ctx.found?.payer ?? t('activity.incomeTag.kindSalary'),
+              name: t('income.pay.defaultName'),
               amount: c.amount,
               currency: account.currency,
               category_id: null,

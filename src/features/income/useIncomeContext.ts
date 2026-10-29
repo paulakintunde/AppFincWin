@@ -65,6 +65,8 @@ export function useIncomeContext(): IncomeContext {
   const found = useMemo((): FoundPayer | null => {
     const detect: DetectRow[] = [];
     for (const r of rows) {
+      // Plain money in only: mirrors isIncomeRow (D-03) -- a refund or refund-linked row is never pay (F-02).
+      if (r.is_refund === true || (r.refund_of ?? null) !== null || r.original_amount <= 0) continue;
       if (r.is_sample || r.transfer_id !== null || r.status === 'skipped' || r.recurring_series_id !== null || !r.name) continue;
       detect.push({ id: r.id, name: r.name, amount: r.original_amount, currency: r.original_currency, date: r.local_date, isTransfer: false, accountId: r.account_id });
     }
