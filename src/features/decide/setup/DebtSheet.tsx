@@ -243,7 +243,7 @@ function DebtForm({ request, onClose }: { request: DebtSheetRequest; onClose: ()
             </ChipRow>
           </View>
         ) : null}
-        <Pill label={t('decide.setup.debtSheet.save')} variant="primary" disabled={!canSave} onPress={save} />
+        {!paidOpen ? <Pill label={t('decide.setup.debtSheet.save')} variant="primary" disabled={!canSave} onPress={save} /> : null}
 
         {debt !== null && paidOffOn !== null ? (
           <Text
@@ -266,7 +266,8 @@ function DebtForm({ request, onClose }: { request: DebtSheetRequest; onClose: ()
               />
               <Meta tone="muted">{t('decide.setup.debtSheet.paidOffBody')}</Meta>
               {paidFuture ? <Meta tone="danger">{t('decide.setup.debtSheet.paidOffFuture')}</Meta> : null}
-              <Pill label={t('decide.setup.debtSheet.paidOffSave')} variant="primary" disabled={paidFuture} onPress={savePaidOff} accessibilityLabel={t('decide.setup.debtSheet.paidOff')} />
+              <Pill label={t('decide.setup.debtSheet.paidOffSave')} variant="primary" disabled={paidFuture} onPress={savePaidOff} accessibilityLabel={t('decide.setup.debtSheet.paidOffSave')} />
+              <Pill label={t('decide.setup.debtSheet.paidOffCancel')} variant="secondary" onPress={() => setPaidOpen(false)} />
             </View>
           ) : (
             <Pill label={t('decide.setup.debtSheet.paidOff')} variant="secondary" onPress={() => setPaidOpen(true)} />

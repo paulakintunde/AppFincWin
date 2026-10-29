@@ -216,7 +216,7 @@ describe('DebtSheet Paid off', () => {
     expect(screen.getByText('Paid off on')).toBeTruthy();
     expect(screen.getByText('Oct 28, 2026')).toBeTruthy();
     expect(screen.getByText('Decide stops counting its minimum payment from this date. Past months stay as recorded.')).toBeTruthy();
-    await fireEvent.press(screen.getByLabelText('Paid off'));
+    await fireEvent.press(screen.getByLabelText('Mark paid off'));
     expect(mockPaidOff).toHaveBeenCalledWith(d, '2026-10-28', 'u1');
     expect(mockEdit).not.toHaveBeenCalled();
     expect(mockToast).toHaveBeenCalledWith({
@@ -227,6 +227,19 @@ describe('DebtSheet Paid off', () => {
     expect(screen.queryByLabelText('Name')).toBeNull();
   });
 
+  it('shows one primary action while the block is open, and Cancel brings Save back with edits kept', async () => {
+    await open({ mode: 'edit', debt: debt() });
+    expect(screen.getAllByRole('button', { name: 'Save' })).toHaveLength(1);
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'Visa Gold');
+    await fireEvent.press(screen.getByText('Paid off'));
+    expect(screen.queryAllByRole('button', { name: 'Save' })).toHaveLength(0);
+    expect(screen.getAllByRole('button', { name: 'Mark paid off' })).toHaveLength(1);
+    await fireEvent.press(screen.getAllByText('Cancel').slice(-1)[0]!);
+    expect(screen.getAllByRole('button', { name: 'Save' })).toHaveLength(1);
+    expect(screen.getByLabelText('Name').props.value).toBe('Visa Gold');
+    expect(mockPaidOff).not.toHaveBeenCalled();
+  });
+
   it('refuses a date after today', async () => {
     await open({ mode: 'edit', debt: debt() });
     await fireEvent.press(screen.getByText('Paid off'));
@@ -234,8 +247,8 @@ describe('DebtSheet Paid off', () => {
     await fireEvent.press(picker);
     await fireEvent(screen.getByTestId('date-picker'), 'onChange', { nativeEvent: { timestamp: new Date(2026, 10, 3, 12).getTime() } });
     expect(screen.getByText('This date is after today.')).toBeTruthy();
-    expect(screen.getByLabelText('Paid off').props.accessibilityState?.disabled).toBe(true);
-    await fireEvent.press(screen.getByLabelText('Paid off'));
+    expect(screen.getByLabelText('Mark paid off').props.accessibilityState?.disabled).toBe(true);
+    await fireEvent.press(screen.getByLabelText('Mark paid off'));
     expect(mockPaidOff).not.toHaveBeenCalled();
   });
 
@@ -270,5 +283,7 @@ describe('DebtSheet gating and fit', () => {
       expect(screen.getByLabelText(label)).toBeTruthy();
     }
     expect(screen.getByText('Paid off on')).toBeTruthy();
+    expect(screen.getByText('Mark paid off')).toBeTruthy();
+    expect(screen.getAllByText('Cancel').length).toBeGreaterThan(0);
   });
 });

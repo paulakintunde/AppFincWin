@@ -127,7 +127,7 @@ describe('05.2-38 gap-plan copy, undo labels and reverse picker', () => {
   );
 
   it('covers every new key', () => {
-    expect(scoped.length).toBe(22 + 19 + 11 + 9 + 12);
+    expect(scoped.length).toBe(22 + 19 + 11 + 9 + 12 + 1);
   });
 
   it.each(scoped)('passes the banned-word check: $path', ({ value }) => {

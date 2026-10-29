@@ -45,7 +45,6 @@ const ACTION_LABELS = new Set([
   'decide.flow.retry', // button
   'decide.rough.save', // button
   'decide.setup.debtSheet.save', // button (05.2-38)
-  'decide.setup.debtSheet.paidOffSave', // button (05.2-38)
   'decide.lines.save', // button
   'decide.flow.saveClose', // button
   'decide.flow.commit.wait', // button: "Save the plan" commits the Wait decision the user chose
