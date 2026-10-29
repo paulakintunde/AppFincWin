@@ -371,12 +371,12 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
 
 describe('05.2 undo labels (DSU-21, DCU-09)', () => {
   const expected: Record<string, string> = {
-    setupStepSaved: '{{name}}', setupReset: 'reset of Decide setup', incomeSetupSaved: 'income setup',
-    unspentConfirmed: 'unspent money', unspentCleared: 'unspent money', emergencySaved: 'emergency fund',
-    emergencyRemoved: 'emergency fund', accountUseSaved: 'account use', paymentMarkedRegular: 'regular payment',
-    paymentDismissed: 'regular payment', savingRaised: 'regular saving', incomeTypeSaved: 'income type',
-    incomeTagged: 'income type', refundLinked: 'refund link', refundUnlinked: 'refund link',
-    answerSaved: 'answer', answerRemoved: 'answer', refineSnoozed: 'check-in',
+    setupStepSaved: 'Saved · {{name}}', setupReset: 'Decide setup reset', incomeSetupSaved: 'Income setup saved',
+    unspentConfirmed: 'Unspent money confirmed', unspentCleared: 'Unspent money cleared', emergencySaved: 'Emergency fund saved',
+    emergencyRemoved: 'Emergency fund removed', accountUseSaved: 'Account use saved', paymentMarkedRegular: 'Marked regular · {{name}}',
+    paymentDismissed: 'Marked not regular · {{name}}', paymentRestored: 'Not regular cleared · {{name}}', savingRaised: 'Regular saving raised',
+    incomeTypeSaved: 'Income type saved', incomeTagged: 'Income tagged', refundLinked: 'Refund linked', refundUnlinked: 'Refund unlinked',
+    answerSaved: 'Answer saved', answerRemoved: 'Answer removed', refineSnoozed: 'Check-in snoozed',
   };
 
   it('every 05.2 step has a key and its English text', () => {

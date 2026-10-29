@@ -40,3 +40,27 @@ describe('undoLabelText (C-WR-06)', () => {
     }
   });
 });
+
+describe('05.2 undo labels (N-01)', () => {
+  const keys = ['setupStepSaved','setupReset','incomeSetupSaved','unspentConfirmed','unspentCleared','emergencySaved','emergencyRemoved','accountUseSaved','paymentMarkedRegular','paymentDismissed','paymentRestored','savingRaised','incomeTypeSaved','incomeTagged','refundLinked','refundUnlinked','answerSaved','answerRemoved','refineSnoozed'];
+
+  it('reads as a sentence-case label on its own', () => {
+    expect(render('paymentDismissed', { name: 'Bookshop' })).toBe('Marked not regular · Bookshop');
+    expect(render('paymentMarkedRegular', { name: 'Bookshop' })).toBe('Marked regular · Bookshop');
+    expect(render('paymentRestored', { name: 'Bookshop' })).toBe('Not regular cleared · Bookshop');
+    expect(render('paymentDismissed', {})).toBe('Marked not regular');
+    expect(render('setupStepSaved', {})).toBe('Setup answer saved');
+  });
+
+  it('composes after "Undone · " with and without a name, with no raw placeholder', () => {
+    for (const key of keys) {
+      for (const params of [{ name: 'Bookshop' }, {}]) {
+        const label = render(key, params);
+        expect(label).toMatch(/^[A-Z]/);
+        const text = i18n.t('undo.reverted', { label }) as string;
+        expect(text).toBe('Undone · ' + label);
+        expect(text).not.toMatch(/\{\{|\}\}/);
+      }
+    }
+  });
+});
