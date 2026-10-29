@@ -4,6 +4,7 @@ import type { IncomeType } from '@/engine/decide/v3';
 import type { DecideAnswerRow } from '@/db/decideAnswers';
 import type { DecideSettingsRow } from '@/db/decideSettings';
 import type { RecurringDismissalRow } from '@/db/recurringDismissals';
+import { isNotPayKey } from '@/features/income/notPay';
 import type { V3SettingsSource } from './types';
 
 const ENGINE_TYPE: Readonly<Record<string, IncomeType>> = {
@@ -60,7 +61,7 @@ export function settingsSourceOf(input: SettingsSourceInput): V3SettingsSource |
     rough_invest: s.rough_invest,
     rough_as_of: s.rough_as_of,
     series_extra: {},
-    dismissals: input.dismissals.filter((d) => d.deleted_at === null).map((d) => d.payee_key),
+    dismissals: input.dismissals.filter((d) => d.deleted_at === null && !isNotPayKey(d.payee_key)).map((d) => d.payee_key),
     own_lines: [],
     custom_options: null,
     income_pattern: s.income_pattern,

@@ -76,4 +76,9 @@ describe('settingsSourceOf', () => {
     const v3 = run({ checks, planLive: (id) => id !== 'bought-ended' })!;
     expect(v3.live_bridge_check_ids).toEqual(['bought-live']);
   });
+
+  it('leaves not-pay rows out of the dismissed keys (they are not Not regular answers)', () => {
+    const v3 = run({ dismissals: [dismissal(), dismissal({ id: 'd2', payee_key: 'not-pay:refund|USD|1', direction: 'in' })] })!;
+    expect(v3.dismissals).toEqual(['netflix|USD|-1']);
+  });
 });

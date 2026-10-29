@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { detectCandidates, type DetectRow, type RecurringCandidate } from '@/engine/decide/v3';
 import { monthRange } from '@/engine/time';
 import { offerKey } from '@/engine/recurring/offer';
+import { isNotPayKey } from '@/features/income/notPay';
 import type { RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import type { RecurringDismissalRow } from '@/db/recurringDismissals';
 import type { RecurringFreq } from '@/engine/recurring';
@@ -113,7 +114,7 @@ export function useRegularCandidates(): { rows: readonly CandidateRow[]; paused:
       ) {
         continue;
       }
-      const dismissal = live.find((d) => d.payee_key === candidate.key && d.direction === candidate.direction) ?? null;
+      const dismissal = live.find((d) => !isNotPayKey(d.payee_key) && d.payee_key === candidate.key && d.direction === candidate.direction) ?? null;
       const state: CandidateState = confirmed !== null ? 'regular' : dismissal !== null ? 'notRegular' : 'unmarked';
       out.push({
         id: `${candidate.key}|${accountId ?? ''}|${candidate.anchorDate}`,

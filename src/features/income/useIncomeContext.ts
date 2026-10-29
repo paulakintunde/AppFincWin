@@ -8,16 +8,21 @@ import type { AccountRow, RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import { fetchTransactionsInRange } from '@/db/transactions';
 import { detectCandidates, type DetectRow } from '@/engine/decide/v3';
 import { monthRange } from '@/engine/time';
+import { offerKey } from '@/engine/recurring/offer';
+import type { RecurringDismissalRow } from '@/db/recurringDismissals';
 import { supabase } from '@/services/supabase';
 import { queryKeys } from '@/data/keys';
 import { useAccounts } from '@/data/queries/accounts';
 import { useDecideSettings } from '@/data/queries/decide';
+import { useRecurringDismissals } from '@/data/queries/recurringDismissals';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import { isNotPayKey, NOT_PAY_PREFIX, notPayKey, notPayMatcher } from './notPay';
 
 const NO_ACCOUNTS: readonly AccountRow[] = [];
 const NO_SERIES: readonly RecurringSeriesRow[] = [];
 const NO_ROWS: readonly TransactionRow[] = [];
+const NO_DISMISSALS: readonly RecurringDismissalRow[] = [];
 const LOOKBACK_MONTHS = 6;
 
 function monthMinus(month: string, back: number): string {
@@ -31,6 +36,13 @@ export interface FoundPayer {
   readonly amount: number;
   readonly day: number;
   readonly currency: string;
+  /** The candidate key, for the "Not my pay" action. */
+  readonly key: string;
+}
+
+export interface NotPayAnswer {
+  readonly row: RecurringDismissalRow;
+  readonly payer: string;
 }
 
 export interface IncomeContext {
@@ -43,6 +55,8 @@ export interface IncomeContext {
   readonly accounts: readonly AccountRow[];
   readonly series: readonly RecurringSeriesRow[];
   readonly found: FoundPayer | null;
+  /** Payers marked "Not my pay", for the clear row. */
+  readonly notPay: readonly NotPayAnswer[];
 }
 
 export function useIncomeContext(): IncomeContext {
@@ -52,6 +66,7 @@ export function useIncomeContext(): IncomeContext {
   const settings = useDecideSettings(userId);
   const accounts = useAccounts(householdId);
   const series = useRecurringSeries(householdId);
+  const dismissals = useRecurringDismissals(householdId);
 
   const month = rc.today.slice(0, 7);
   const from = monthRange(monthMinus(month, LOOKBACK_MONTHS - 1)).start;
@@ -61,6 +76,7 @@ export function useIncomeContext(): IncomeContext {
     enabled: Boolean(householdId),
   });
   const rows = history.data ?? NO_ROWS;
+  const dismissalRows = dismissals.data ?? NO_DISMISSALS;
 
   const found = useMemo((): FoundPayer | null => {
     const detect: DetectRow[] = [];
@@ -70,12 +86,26 @@ export function useIncomeContext(): IncomeContext {
       if (r.is_sample || r.transfer_id !== null || r.status === 'skipped' || r.recurring_series_id !== null || !r.name) continue;
       detect.push({ id: r.id, name: r.name, amount: r.original_amount, currency: r.original_currency, date: r.local_date, isTransfer: false, accountId: r.account_id });
     }
-    const incoming = detectCandidates(detect, { dismissedKeys: new Set(), linkedRowIds: new Set() }).filter((c) => c.direction === 'in');
+    const isNotPay = notPayMatcher(dismissalRows);
+    const incoming = detectCandidates(detect, { dismissedKeys: new Set(), linkedRowIds: new Set() }).filter((c) => c.direction === 'in' && !isNotPay(c.key));
     const best = incoming[0];
     if (best === undefined) return null;
     const currency = detect.find((d) => best.rowIds.includes(d.id))?.currency ?? rc.homeCurrency;
-    return { payer: best.name, amount: Number(best.amount), day: Number(best.anchorDate.slice(8, 10)), currency };
-  }, [rows, rc.homeCurrency]);
+    return { payer: best.name, amount: Number(best.amount), day: Number(best.anchorDate.slice(8, 10)), currency, key: best.key };
+  }, [rows, dismissalRows, rc.homeCurrency]);
+
+  const notPay = useMemo((): readonly NotPayAnswer[] => {
+    const out: NotPayAnswer[] = [];
+    for (const row of dismissalRows) {
+      if (row.deleted_at !== null || row.direction !== 'in' || !isNotPayKey(row.payee_key)) continue;
+      let payer = '';
+      for (const r of rows) {
+        if (r.name && notPayKey(offerKey(r.name, r.original_currency, r.original_amount)) === row.payee_key) payer = r.name;
+      }
+      out.push({ row, payer: payer === '' ? row.payee_key.slice(NOT_PAY_PREFIX.length).split('|')[0] ?? '' : payer });
+    }
+    return out;
+  }, [dismissalRows, rows]);
 
   return {
     userId,
@@ -87,5 +117,6 @@ export function useIncomeContext(): IncomeContext {
     accounts: accounts.data ?? NO_ACCOUNTS,
     series: series.data ?? NO_SERIES,
     found,
+    notPay,
   };
 }
