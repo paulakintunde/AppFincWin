@@ -35,6 +35,10 @@ describe('earlierUntagged', () => {
     const rows = [tx('a'), tx('b', { name: 'ACME  ltd' })];
     expect(earlierUntagged(rows, key, 'none').map((r) => r.id)).toEqual(['a', 'b']);
   });
+  it('leaves out refunds and refund-linked rows (D-03)', () => {
+    const rows = [tx('p1'), tx('p2'), tx('p3'), tx('r1', { is_refund: true }), tx('r2', { is_refund: true }), tx('l1', { refund_of: 'p1' }), tx('n', { is_refund: false, refund_of: null })];
+    expect(earlierUntagged(rows, key, 'none').map((r) => r.id)).toEqual(['p1', 'p2', 'p3', 'n']);
+  });
   it('excludes the row itself, tagged rows, outflows, transfers, deleted rows and other payers', () => {
     const rows = [
       tx('self'),

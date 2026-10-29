@@ -10,7 +10,7 @@ export function payerKeyOf(description: string | null): string | null {
 }
 
 /**
- * Earlier payments "Apply to future payments" also tags: money in, live, not a transfer leg, same payer, and not yet
+ * Earlier payments "Apply to future payments" also tags: money in, live, not a transfer leg, not a refund or refund-linked row (D-03), same payer, and not yet
  * tagged by anyone (a payment the user tagged themselves keeps its tag, owner decision 4).
  */
 export function earlierUntagged(rows: readonly TransactionRow[], payerKey: string, excludeId: string): TransactionRow[] {
@@ -20,6 +20,8 @@ export function earlierUntagged(rows: readonly TransactionRow[], payerKey: strin
       r.original_amount > 0 &&
       r.deleted_at === null &&
       r.transfer_id === null &&
+      !r.is_refund &&
+      (r.refund_of ?? null) === null &&
       (r.income_kind ?? null) === null &&
       payerKeyOf(r.name) === payerKey
   );
