@@ -287,6 +287,13 @@ describe('buyLater: a seasonal earner (D-60)', () => {
     expect(fast.monthlyAmount).toBe(42_500);
   });
 
+  test('D-12 a covered price under a not-yet answer waits a month, as the judge dates it', () => {
+    const covered = { price: mu(100), unspent: mu(240_000), typicalLeft: mu(42_500), month: '2026-11', waitsAtLeastAMonth: true } as const;
+    expect(buyLater(covered)).toEqual({ months: 1, readyBy: '2026-12', monthlyAmount: 42_500 });
+    expect(buyLater({ ...covered, picture }).readyBy).toBe('2026-12');
+    expect(buyLater({ ...covered, typicalLeft: null })).toEqual({ months: null, readyBy: null, monthlyAmount: null });
+  });
+
   test('D-12 without a picture the lift is already in typicalLeft and is not added twice', () => {
     const a = buyLater({ price: mu(300_000), unspent: mu(240_000), typicalLeft: mu(42_500), month: '2026-10' });
     const b = buyLater({ price: mu(300_000), unspent: mu(240_000), typicalLeft: mu(42_500), month: '2026-10', lift: mu(25_000) });

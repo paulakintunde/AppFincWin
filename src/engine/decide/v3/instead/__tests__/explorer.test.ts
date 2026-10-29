@@ -97,6 +97,34 @@ describe('explore', () => {
   });
 });
 
+describe('explore: a seasonal earner (D-12)', () => {
+  // Last year, November to October: Nov..Apr 20,000 left each (December short), May..Sep 150,000.
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const mm = String(((10 + i) % 12) + 1).padStart(2, '0');
+    const year = i < 2 ? '2025' : '2026';
+    const busy = ['05', '06', '07', '08', '09'].includes(mm);
+    return { month: `${year}-${mm}`, income: mu(0), everyday: mu(0), left: mu(busy ? 150_000 : mm === '12' ? -5_000 : 20_000), lean: !busy };
+  });
+  const seasonalMonth = {
+    ...month,
+    month: '2026-11',
+    incomePicture: { treated: 'seasonal', months },
+  } as unknown as MonthModel;
+  const base = { month: seasonalMonth, flexibleSaving: mu(0), price: mu(300_000), unspent: mu(0) };
+
+  test('D-12 at lever 0 it equals the futures buy later', () => {
+    const r = explore({ ...base, levers: { everydayCut: mu(0), flexibleSavingCut: mu(0) } });
+    const f = buyLater({ price: mu(300_000), unspent: mu(0), typicalLeft: mu(42_500), month: '2026-11', picture: { treated: 'seasonal', months } });
+    expect(r.buyLater.readyBy).toBe(f.readyBy);
+  });
+
+  test('D-12 an everyday cut moves the seasonal date earlier', () => {
+    const zero = explore({ ...base, levers: { everydayCut: mu(0), flexibleSavingCut: mu(0) } });
+    const cut = explore({ ...base, levers: { everydayCut: mu(30_000), flexibleSavingCut: mu(0) } });
+    expect(cut.buyLater.readyBy! < zero.buyLater.readyBy!).toBe(true);
+  });
+});
+
 describe('largestPriceThatFits', () => {
   test('returns the bisect result unchanged', () => {
     expect(largestPriceThatFits(mu(1000), (p) => p <= 640)).toEqual({ kind: 'found', price: 640 });
