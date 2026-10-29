@@ -80,14 +80,38 @@ beforeEach(() => {
 });
 
 describe('suggestUse', () => {
-  it('guesses from the account type and says nothing for the rest', () => {
-    expect(suggestUse('checking')).toEqual({ kind: 'everyday' });
-    expect(suggestUse('cash')).toEqual({ kind: 'everyday' });
-    expect(suggestUse('savings')).toEqual({ kind: 'untouched' });
-    expect(suggestUse('investment')).toEqual({ kind: 'untouched' });
-    expect(suggestUse('other')).toBeNull();
-    expect(suggestUse('credit')).toBeNull();
-    expect(suggestUse('loan')).toBeNull();
+  const g = (kind: string, name: string) => suggestUse({ kind, name } as Parameters<typeof suggestUse>[0]);
+  it('guesses everyday for checking and cash', () => {
+    expect(g('checking', 'Main')).toEqual({ kind: 'everyday' });
+    expect(g('cash', 'Wallet')).toEqual({ kind: 'everyday' });
+  });
+  it('guesses savings for savings and investment kinds', () => {
+    expect(g('savings', 'Pot')).toEqual({ kind: 'untouched' });
+    expect(g('investment', 'Broker')).toEqual({ kind: 'untouched' });
+  });
+  it('reads the name: saving words win over the kind', () => {
+    expect(g('checking', 'Saving 2')).toEqual({ kind: 'untouched' });
+    expect(g('other', 'Rainy day fund')).toEqual({ kind: 'untouched' });
+    expect(g('other', 'My ISA')).toEqual({ kind: 'untouched' });
+    expect(g('other', 'Épargne reserve')).toEqual({ kind: 'untouched' });
+  });
+  it('never returns null for a money account, and never matches inside a word', () => {
+    expect(g('other', 'Travel card')).toEqual({ kind: 'everyday' });
+    expect(g('other', 'Visa debit')).toEqual({ kind: 'everyday' });
+  });
+  it('returns null for credit and loan', () => {
+    expect(g('credit', 'Visa')).toBeNull();
+    expect(g('loan', 'Car loan')).toBeNull();
+  });
+});
+
+describe('AccountUseList all accounts', () => {
+  it('saves a use for all 13 accounts, including kind other', async () => {
+    mockAccounts = Array.from({ length: 13 }, (_, i) => acct(`a${i}`, `Account ${i}`, i < 4 ? 'other' : 'checking'));
+    await render(wrap(<AccountUseList />));
+    await fireEvent.press(screen.getByText('These look right'));
+    expect(mockSaveMany).toHaveBeenCalledTimes(1);
+    expect((mockSaveMany.mock.calls[0]![0] as unknown[]).length).toBe(13);
   });
 });
 
@@ -114,8 +138,9 @@ describe('AccountUseList', () => {
     mockAccounts = [acct('a1', 'Main', 'checking', { use: 'everyday' }), acct('a2', 'Odd', 'other')];
     await render(wrap(<AccountUseList onAllConfirmedChange={(v) => seen.push(v)} />));
     expect(seen[seen.length - 1]).toBe(false);
-    expect(screen.getByText('Choose what it’s for')).toBeTruthy();
-    expect(screen.queryByText('These look right')).toBeNull();
+    // Odd is kind 'other' and now carries a guess, so it stays unanswered with the one-tap confirm offered.
+    expect(screen.getByText('Everyday?')).toBeTruthy();
+    expect(screen.getByText('These look right')).toBeTruthy();
   });
 
   it('opens the sheet from a row and saves one account with the toast and its step id', async () => {

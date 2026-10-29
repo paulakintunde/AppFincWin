@@ -1,6 +1,6 @@
 /**
  * Plan 05.2-26 (D-03, D-05): the pure helpers behind the account-use screen. No React, no I/O.
- * A suggestion is only a guess shown on screen; it is never stored until the user confirms it
+ * The guess comes from kind and name. A suggestion is only a guess shown on screen; it is never stored until the user confirms it
  * ("These look right") or changes that row (UI-SPEC owner decision 6).
  */
 import type { AccountUse } from '@/engine/decide/v3';
@@ -11,18 +11,30 @@ export function holdsMoney(kind: AccountRow['kind']): boolean {
   return kind !== 'credit' && kind !== 'loan';
 }
 
-/** The guess from the account type; null when the type says nothing useful. */
-export function suggestUse(kind: AccountRow['kind']): AccountUse | null {
-  switch (kind) {
-    case 'checking':
-    case 'cash':
-      return { kind: 'everyday' };
-    case 'savings':
-    case 'investment':
-      return { kind: 'untouched' };
-    default:
-      return null;
-  }
+/** Words in an account name that say it is savings (F-16). Matched as whole words, so "Visa" never matches "isa". */
+const SAVING_WORDS: readonly string[] = [
+  'save', 'saver', 'saving', 'savings', 'isa', 'reserve', 'rainy', 'emergency', 'nest', 'invest', 'investment', 'investments', 'pension',
+];
+
+function nameWords(name: string): string[] {
+  return name
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .split(/[^a-z]+/)
+    .filter((w) => w.length > 0);
+}
+
+/**
+ * The guess from the account kind and name. Never null for a money account (F-05); null only for credit
+ * and loan, which are on the Loans step. Savings and investment kinds, or a saving word in the name, are
+ * guessed as savings left alone; everything else as everyday money.
+ */
+export function suggestUse(account: Pick<AccountRow, 'kind' | 'name'>): AccountUse | null {
+  if (!holdsMoney(account.kind)) return null;
+  if (account.kind === 'savings' || account.kind === 'investment') return { kind: 'untouched' };
+  if (nameWords(account.name).some((w) => SAVING_WORDS.includes(w))) return { kind: 'untouched' };
+  return { kind: 'everyday' };
 }
 
 /** The copy key naming a use, for the answer lines. 'dedicated' is built separately (it names its target). */

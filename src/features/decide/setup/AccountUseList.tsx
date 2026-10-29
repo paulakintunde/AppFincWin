@@ -105,7 +105,7 @@ export function AccountUseList({ onAllConfirmedChange }: AccountUseListProps) {
     const u = storedUse(a);
     return u === null ? null : describeUse(u);
   };
-  const suggestionOf = (a: AccountRow): AccountUse | null => (storedUse(a) === null ? suggestUse(a.kind) : null);
+  const suggestionOf = (a: AccountRow): AccountUse | null => (storedUse(a) === null ? suggestUse(a) : null);
 
   const allConfirmed = listed.every((a) => storedUse(a) !== null);
   const reported = useRef(onAllConfirmedChange);
