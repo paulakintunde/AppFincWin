@@ -94,15 +94,15 @@ export function Meta({ text }: { text: string }) {
 }
 
 /** A 44-high text button: ink underlined, or danger for Remove. */
-export function TextButton({ label, onPress, danger = false }: { label: string; onPress: () => void; danger?: boolean }) {
+export function TextButton({ label, onPress, danger = false, a11y, disabled = false }: { label: string; onPress: () => void; danger?: boolean; a11y?: string; disabled?: boolean }) {
   const { colors, pairing } = useTheme();
   const readOnly = useReadOnlyScope();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: readOnly }}
-      disabled={readOnly}
+      accessibilityLabel={a11y ?? label}
+      accessibilityState={{ disabled: readOnly || disabled }}
+      disabled={readOnly || disabled}
       onPress={onPress}
       style={({ pressed }) => [styles.textButton, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
     >

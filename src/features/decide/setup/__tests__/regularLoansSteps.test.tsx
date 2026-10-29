@@ -6,6 +6,7 @@ import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import type { SetupStepHandle, SetupStepReady } from '../steps/types';
 import { RegularStep } from '../steps/RegularStep';
 import { LoansStep } from '../steps/LoansStep';
+import { ReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { registerSetupSheetActions } from '../steps/setupSheetHost';
 
 let mockDecideV3 = true;
@@ -27,7 +28,12 @@ const mockToast = jest.fn();
 jest.mock('@/data/mutations/seriesAttributes', () => ({
   useConfirmRegularCandidate: () => ({ confirm: (i: Record<string, unknown>) => mockConfirm(i) }),
 }));
-jest.mock('@/data/mutations/dismissals', () => ({ useAddDismissal: () => ({ dismiss: (i: Record<string, unknown>) => mockDismiss(i) }) }));
+const mockRestore = jest.fn((_r: Record<string, unknown>) => ({ stepId: 'step-clear' }));
+jest.mock('@/data/mutations/dismissals', () => ({
+  useAddDismissal: () => ({ dismiss: (i: Record<string, unknown>) => mockDismiss(i) }),
+  useRemoveDismissal: () => ({ restore: (r: Record<string, unknown>) => mockRestore(r) }),
+}));
+jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [{ id: 'a1', name: 'Everyday' }, { id: 'a2', name: 'Savings' }] }) }));
 jest.mock('@/data/mutations/debts', () => ({
   useSetDebtPaysInFull: () => ({ setPaysInFull: (d: unknown, v: unknown, o: unknown, t: unknown) => mockPays(d, v, o, t) }),
 }));
@@ -103,7 +109,7 @@ const debt = (over: Record<string, unknown>) => ({
 beforeEach(() => {
   mockWidth = 402;
   mockScale = 1;
-  [mockConfirm, mockDismiss, mockPays, mockToast].forEach((m) => m.mockClear());
+  [mockConfirm, mockDismiss, mockPays, mockToast, mockRestore].forEach((m) => m.mockClear());
   mockRows = [];
   mockPaused = [];
   mockDebts = [];
@@ -149,6 +155,45 @@ describe('RegularStep', () => {
     expect(mockDismiss).toHaveBeenCalledWith({ payeeKey: 'rent', direction: 'out' });
     expect(mockConfirm).not.toHaveBeenCalled();
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'step-dismiss' }));
+  });
+
+  it('Clear “Not regular” restores the dismissal and toasts with the step id; only notRegular cards show it', async () => {
+    mockRows = [candidate('Gym', 4000, 'notRegular'), candidate('Rent', 150000, 'unmarked'), candidate('Phone', 5000, 'regular')];
+    await mount(RegularStep);
+    expect(screen.getAllByText('Clear “Not regular”')).toHaveLength(1);
+    await fireEvent.press(screen.getByLabelText('Clear “Not regular” for Gym'));
+    expect(mockRestore).toHaveBeenCalledWith({ id: 'd0', version: 1 });
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({ stepId: 'step-clear', text: { key: 'decide.setup.regular.toastCleared', params: { name: 'Gym', undoLabel: 'paymentDismissed' } } })
+    );
+  });
+
+  it('disables Clear in read-only scope', async () => {
+    mockRows = [candidate('Gym', 4000, 'notRegular')];
+    await render(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <ThemeProvider>
+          <FontScaleProvider>
+            <ReadOnlyScope.Provider value>
+              <RegularStep mode="stepper" onReadyChange={() => undefined} />
+            </ReadOnlyScope.Provider>
+          </FontScaleProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+    const clear = screen.getByLabelText('Clear “Not regular” for Gym');
+    expect(clear.props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(clear);
+    expect(mockRestore).not.toHaveBeenCalled();
+  });
+
+  it('names the account on each meta line when two cards share a payee name', async () => {
+    const second = { ...candidate('Bookshop', 1599, 'unmarked'), id: 'bookshop|a2|2026-10-01', accountId: 'a2' };
+    mockRows = [candidate('Bookshop', 1599, 'unmarked'), second, candidate('Rent', 150000, 'unmarked')];
+    await mount(RegularStep);
+    expect(screen.getByText(/· Everyday$/)).toBeTruthy();
+    expect(screen.getByText(/· Savings$/)).toBeTruthy();
+    expect(screen.getAllByText(/around the 1st/)).toHaveLength(3);
   });
 
   it('Edit opens the series sheet through the host', async () => {

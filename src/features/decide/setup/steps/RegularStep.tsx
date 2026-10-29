@@ -17,8 +17,9 @@ import { hapticSelection } from '@/ui/haptics';
 import { showToast } from '@/state/undoToast';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { useConfirmRegularCandidate } from '@/data/mutations/seriesAttributes';
-import { useAddDismissal } from '@/data/mutations/dismissals';
+import { useAddDismissal, useRemoveDismissal } from '@/data/mutations/dismissals';
 import type { NewRecurringSeries } from '@/db/recurringSeries';
+import { useAccounts } from '@/data/queries/accounts';
 import { useShouldStack } from '@/features/decide/ui/textFit';
 import { Intro, Meta, PausedSeriesList, SeriesStatusLink, TextButton, Why, useCopy, useNoWrapMoney, useReportReady, type Copy } from '@/features/income/steps/shared';
 import type { SetupStepBodyProps, SetupStepHandle } from './types';
@@ -82,9 +83,11 @@ interface CardProps {
   onRegular: (row: CandidateRow) => void;
   onNotRegular: (row: CandidateRow) => void;
   onEdit: (row: CandidateRow) => void;
+  onClear: (row: CandidateRow) => void;
+  accountName: string | null;
 }
 
-function CandidateCard({ row, t, canWrite, onRegular, onNotRegular, onEdit }: CardProps) {
+function CandidateCard({ row, t, canWrite, onRegular, onNotRegular, onEdit, onClear, accountName }: CardProps) {
   const { colors, pairing } = useTheme();
   const stacked = useShouldStack();
   const noWrap = useNoWrapMoney(row.currency);
@@ -110,6 +113,7 @@ function CandidateCard({ row, t, canWrite, onRegular, onNotRegular, onEdit }: Ca
           <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{candidate.name}</Text>
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
             {t('decide.setup.regular.rowMeta', { frequency, day })}
+            {accountName !== null ? ` · ${accountName}` : ''}
           </Text>
         </View>
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 0 }}>
@@ -123,6 +127,9 @@ function CandidateCard({ row, t, canWrite, onRegular, onNotRegular, onEdit }: Ca
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: row.state === 'regular' ? colors.accent : colors.inkDim }}>{stateWord}</Text>
         </View>
       )}
+      {row.state === 'notRegular' && row.dismissal !== null ? (
+        <TextButton label={t('decide.setup.regular.clearNotRegular')} a11y={t('decide.setup.regular.clearNotRegularA11y', { name: candidate.name })} disabled={!canWrite} onPress={() => onClear(row)} />
+      ) : null}
       <View style={stacked ? styles.buttonsStacked : styles.buttonsRow}>
         <MarkButton
           label={t('decide.setup.regular.buttonRegular')}
@@ -154,6 +161,8 @@ export const RegularStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(funct
   const { rows, paused, householdId, userId, timeZone } = useRegularCandidates();
   const confirmer = useConfirmRegularCandidate(householdId ?? '', userId ?? '');
   const dismisser = useAddDismissal(householdId ?? '', userId ?? '');
+  const restorer = useRemoveDismissal(householdId ?? '', userId ?? '');
+  const accounts = useAccounts(householdId);
   const [pickerOpen, setPickerOpen] = useState(false);
   const canWrite = householdId !== undefined && userId !== undefined;
 
@@ -200,6 +209,19 @@ export const RegularStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(funct
     showToast({ kind: 'ordinary', text: undoLabelText('paymentDismissed', { name: row.candidate.name }), stepId });
   };
 
+  const clearNotRegular = (row: CandidateRow): void => {
+    if (!canWrite || row.dismissal === null) return;
+    const { stepId } = restorer.restore(row.dismissal);
+    showToast({ kind: 'ordinary', text: { key: 'decide.setup.regular.toastCleared', params: { name: row.candidate.name, undoLabel: 'paymentDismissed' } }, stepId });
+  };
+
+  const nameCounts = new Map<string, number>();
+  for (const r of rows) nameCounts.set(r.candidate.name, (nameCounts.get(r.candidate.name) ?? 0) + 1);
+  const accountNameOf = (row: CandidateRow): string | null => {
+    if ((nameCounts.get(row.candidate.name) ?? 0) < 2 || row.accountId === null) return null;
+    return (accounts.data ?? []).find((a) => a.id === row.accountId)?.name ?? null;
+  };
+
   const edit = (row: CandidateRow): void => {
     setupSheetActions().editRegular(row.series !== null ? { series: row.series } : { candidate: row.candidate });
   };
@@ -212,7 +234,7 @@ export const RegularStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(funct
           <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{t('decide.setup.regular.counter', { n: marked, m: rows.length })}</Text>
           <View style={{ gap: space.gapMd }}>
             {rows.map((row) => (
-              <CandidateCard key={row.id} row={row} t={t} canWrite={canWrite} onRegular={markRegular} onNotRegular={markNotRegular} onEdit={edit} />
+              <CandidateCard key={row.id} row={row} t={t} canWrite={canWrite} onRegular={markRegular} onNotRegular={markNotRegular} onEdit={edit} onClear={clearNotRegular} accountName={accountNameOf(row)} />
             ))}
           </View>
           {anyUnmarked ? <Meta text={t('decide.setup.regular.unmarkedLine')} /> : null}
