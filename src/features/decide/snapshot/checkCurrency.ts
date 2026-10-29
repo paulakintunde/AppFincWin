@@ -84,7 +84,7 @@ function mapMoney(values: Partial<CheckInputs>, originals: Partial<CheckInputs>,
   return out;
 }
 
-function converter(source: SnapshotResult, from: string, to: string): ((amount: number) => number | null) | null {
+export function converter(source: SnapshotResult, from: string, to: string): ((amount: number) => number | null) | null {
   const fx = source.fx;
   if (fx === undefined) return null;
   return (amount) => convertLatest(amount, from, to, fx.rates, fx.customs, fx.today)?.amount ?? null;

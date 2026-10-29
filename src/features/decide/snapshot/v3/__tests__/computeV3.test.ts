@@ -2,9 +2,10 @@ import type { FxLatestRow } from '@/db/rows';
 import { readStoredCheck, seenOf, toStoredV2, type AccountUse } from '@/engine/decide/v3';
 import { carInputs, demoSource, sofaInputs } from '../../../__tests__/helpers/demoScenario';
 import { emptyCheckInputs } from '../../checkInputs';
+import * as snapshotModule from '../../buildSnapshot';
 import type { SnapshotSource } from '../../buildSnapshot';
 import { buildV3Inputs } from '../buildV3Inputs';
-import { computeV3, reanswerSaved, resultForCheck, resultForHome, resultForSavedPlan } from '../computeV3';
+import { computeV3, computeV3WithoutRefunds, reanswerSaved, resultForCheck, resultForHome, resultForSavedPlan } from '../computeV3';
 import { v3s } from './v3Fixtures';
 
 const TODAY = '2026-10-03';
@@ -119,5 +120,96 @@ describe('reanswerSaved (D-20, I42)', () => {
     reanswerSaved(null, source(), null, stored);
     expect(stored).toEqual(copy);
     expect(stored.verdict_at_decision).toBe('fits');
+  });
+});
+
+describe('computeV3: pending writes (L-09)', () => {
+  it('a pending-write count above 0 adds the unsaved_changes notice and confidence reason; 0 does not', () => {
+    const none = computeV3(source(), null, sofaInputs).result;
+    expect(none.notices.map((n) => n.code)).not.toContain('unsaved_changes');
+    const some = computeV3(source(), null, sofaInputs, undefined, null, 2).result;
+    expect(some.notices.find((n) => n.code === 'unsaved_changes')!.values).toMatchObject({ count: 2 });
+    expect(some.confidence.reasons).toContain('unsaved_changes');
+  });
+});
+
+describe('computeV3: L-09 foreign v2 check', () => {
+  const RATES: FxLatestRow[] = [{ quote: 'USD', rate: '1.1', rate_date: '2026-10-02', source: 'frankfurter-v2' }];
+  const base = readStoredCheck(sofaInputs).check;
+  const planPay = { mode: 'plan' as const, cadence: { unit: 'month', every: 1 }, count: 12, termMonths: null, apr: null, fees: { setup: 1000, perPeriod: 200, end: 300 }, deposit: 5000, tradeIn: 2000, quotedPayment: 9000, firstPayment: { kind: 'today' }, deferredInterestTerm: false };
+  const foreign = { currency: 'EUR', atTodaysRate: true };
+  const stored = (over: object) => toStoredV2({ ...base, ...over } as never);
+
+  it('converts the price at the stored rate (same as a v1 check) and keeps the foreign mark', () => {
+    const v2 = computeV3({ ...source(), rates: RATES }, null, stored({ price: 100_000, foreign }));
+    expect(v2.purchase!.whole).toBe(110_000);
+    expect(v2.purchase!.whole).toBe(computeV3({ ...source(), rates: RATES }, null, { ...sofaInputs, currency: 'EUR', advertised: 100_000 }).purchase!.whole);
+    expect(v2.result.facts.find((f) => f.code === 'at_todays_rate')?.values).toMatchObject({ currency: 'EUR' });
+  });
+
+  it('with no stored rate the price is null: needs input, never 1:1', () => {
+    const e = computeV3(source(), null, stored({ price: 100_000, foreign }));
+    expect(e.purchase).toBeNull();
+    expect(e.result.missing).toContain('no_price');
+  });
+
+  it('a snapshot with no stored rates at all reads as needing a price too', () => {
+    const real = snapshotModule.buildDecideSnapshot(source());
+    const spy = jest.spyOn(snapshotModule, 'buildDecideSnapshot').mockReturnValue({ ...real, fx: undefined });
+    const e = computeV3(source(), null, stored({ price: 100_000, foreign }));
+    spy.mockRestore();
+    expect(e.purchase).toBeNull();
+  });
+
+  it('converts every amount of a plan check, its extras and its value', () => {
+    const e = computeV3({ ...source(), rates: RATES }, null, stored({ price: 100_000, pay: planPay, extras: { sales_tax: 1000 }, oneOffFees: 500, value: { earnsMonthly: 100, savesMonthly: null, useYears: null, cheaperPrice: 90_000 }, foreign }));
+    const home = computeV3({ ...source(), rates: RATES }, null, stored({ price: 110_000, pay: { ...planPay, fees: { setup: 1100, perPeriod: 220, end: 330 }, deposit: 5500, tradeIn: 2200, quotedPayment: 9900 }, extras: { sales_tax: 1100 }, oneOffFees: 550, value: { earnsMonthly: 110, savesMonthly: null, useYears: null, cheaperPrice: 99_000 }, foreign: null }));
+    expect(e.purchase!.whole).toBe(home.purchase!.whole);
+    expect(e.purchase!.schedule!.financed).toBe(home.purchase!.schedule!.financed);
+  });
+
+  it('a foreign check with no price yet stays priceless when a rate exists', () => {
+    const e = computeV3({ ...source(), rates: RATES }, null, stored({ price: null, foreign }));
+    expect(e.purchase).toBeNull();
+    expect(e.result.missing).toContain('no_price');
+  });
+
+  it('a v2 check already in the home currency is unchanged', () => {
+    const same = computeV3({ ...source(), rates: RATES }, null, stored({ price: 100_000, foreign: { currency: 'USD', atTodaysRate: true } }));
+    expect(same.purchase!.whole).toBe(100_000);
+  });
+});
+
+describe('computeV3WithoutRefunds (D-13) and reanswerSaved check id', () => {
+  const refundSource = (linked: boolean): SnapshotSource => {
+    const s = source();
+    return {
+      ...s,
+      rows: [
+        ...s.rows,
+        row('buy', 'demo-acct-everyday', -90_000, { local_date: '2026-06-12' }),
+        row('ref', 'demo-acct-everyday', 90_000, { local_date: '2026-09-20', is_refund: true, ...(linked ? { refund_of: 'buy' } : {}) }),
+      ],
+    };
+  };
+  const coverAnswer = (bool: boolean) => v3s({ answers: [{ kind: 'volatile_cover', key: 'c1', amount: null, bool_value: bool, on_date: null, check_id: 'c1' }] });
+
+  it('equals computeV3 on the same records with the refund link removed', () => {
+    expect(computeV3WithoutRefunds(refundSource(true), null, sofaInputs, null)).toEqual(computeV3(refundSource(false), null, sofaInputs));
+  });
+
+  it('with no refund link it equals computeV3; the check id and pending count are honoured', () => {
+    expect(computeV3WithoutRefunds(source(), null, sofaInputs, null)).toEqual(computeV3(source(), null, sofaInputs));
+    const e = computeV3WithoutRefunds(source(), coverAnswer(true), sofaInputs, 'c1', 1);
+    expect(e).toEqual(computeV3(source(), coverAnswer(true), sofaInputs, undefined, 'c1', 1));
+    expect(e.result.notices.map((n) => n.code)).toContain('unsaved_changes');
+  });
+
+  it('reanswerSaved reads the saved volatile-cover answer for the check id', () => {
+    const v3 = coverAnswer(false);
+    const withId = reanswerSaved(null, source(), v3, sofaInputs, 'c1', 1);
+    expect(withId.result).toEqual(computeV3(source(), v3, sofaInputs, undefined, 'c1', 1).result);
+    expect(withId.result.notices.map((n) => n.code)).toContain('unsaved_changes');
+    expect(reanswerSaved(null, source(), v3, sofaInputs).result).toEqual(computeV3(source(), v3, sofaInputs).result);
   });
 });

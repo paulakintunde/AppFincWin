@@ -33,6 +33,17 @@ function pair(tid: string, from: string, to: string, amount: number, over: { out
 const withRows = (rows: Row[], base: SnapshotSource = demoSource(TODAY)): SnapshotSource => ({ ...base, rows: [...base.rows, ...rows] });
 const lineOf = (src: SnapshotSource, id: string, v3: V3SettingsSource | null = null) => buildV3Inputs(src, v3).months.flatMap((m) => m.lines).find((l) => l.id === id);
 
+describe('buildV3Inputs: pending writes (L-09)', () => {
+  const src = demoSource(TODAY);
+  it('sets unsavedWrites from the count; omitted is 0', () => {
+    expect(buildV3Inputs(src, null, undefined, {}, 3).unsavedWrites).toBe(3);
+    expect(buildV3Inputs(src, null).unsavedWrites).toBe(0);
+  });
+  it.each([-1, 1.5, Number.NaN])('refuses %p', (n) => {
+    expect(() => buildV3Inputs(src, null, undefined, {}, n)).toThrow(RangeError);
+  });
+});
+
 describe('buildV3Inputs: the demo (S9)', () => {
   const inputs = buildV3Inputs(demoSource(TODAY), null);
   const snap = buildDecideSnapshot(demoSource(TODAY));
