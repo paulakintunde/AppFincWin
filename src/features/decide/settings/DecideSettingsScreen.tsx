@@ -59,7 +59,7 @@ export function DecideSettingsScreen(): React.JSX.Element {
 
   const currency = loaded?.currency ?? rc.homeCurrency;
   const format = {
-    money: (minor: number) => fmt.formatMoney({ amount: minorUnits(minor), currency: currencyCode(currency) }),
+    money: (minor: number, cur?: string) => fmt.formatMoney({ amount: minorUnits(minor), currency: currencyCode(cur ?? currency) }),
     date: (iso: string) => fmt.formatDate(iso),
     word: (key: string, params?: Record<string, string | number>) => t(key, params),
   };

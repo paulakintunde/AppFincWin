@@ -45,7 +45,7 @@ const DATA: SettingsData = {
 };
 
 const fmt: SettingsFormat = {
-  money: (m) => `$${m / 100}`,
+  money: (m, c) => `${c === 'GBP' ? '£' : '$'}${m / 100}`,
   date: (d) => d,
   word: (k, p) => (p === undefined ? k : `${k}:${JSON.stringify(p)}`),
 };
@@ -54,6 +54,23 @@ const rowsOf = (facts: SetupFacts, data: SettingsData) => settingsRows(facts, da
 const ids = (facts: SetupFacts, data: SettingsData) => rowsOf(facts, data).map((r) => r.id);
 
 describe('settingsRows', () => {
+  it('formats the regular pay in its own currency, never the settings one (F-06)', () => {
+    const gbp = rowsOf(FACTS, { ...DATA, regularPay: { amount: 300000, currency: 'GBP', frequency: 'monthly', nextDate: '2026-11-01' } }).find((r) => r.id === 'regularPay');
+    const text = JSON.stringify(gbp?.value);
+    expect(text).toContain('£3000');
+    expect(text).not.toContain('$3000');
+    const usd = rowsOf(FACTS, { ...DATA, regularPay: { amount: 300000, currency: 'USD', frequency: 'monthly', nextDate: null } }).find((r) => r.id === 'regularPay');
+    expect(usd?.value).toEqual({ text: '$3000 record.recurring.frequency.monthly' });
+  });
+
+  it('keeps stored-in-settings amounts in the settings currency', () => {
+    const by = Object.fromEntries(rowsOf(FACTS, DATA).map((r) => [r.id, JSON.stringify(r.value)]));
+    expect(by.emergency).toContain('$9000');
+    expect(by.envelopes).toContain('$2500');
+    expect(by.unspent).toContain('$2400');
+    expect(by.everyday).toContain('$1200');
+  });
+
   it('groups the rows under the five sections in the UI-SPEC order', () => {
     const groups = settingsRows(FACTS, DATA, fmt);
     expect(groups.map((g) => g.section)).toEqual(['income', 'regular', 'spending', 'money', 'answers']);

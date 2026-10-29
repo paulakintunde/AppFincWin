@@ -54,6 +54,8 @@ export function useSettingsData(): SettingsScreenData | null {
     const live = (s: { status: string; endDate: string | null }) => s.status === 'live' && (s.endDate === null || s.endDate >= today);
     const savingIds = new Set(v3Series.filter((s) => (s.role === 'saving' || s.role === 'investing') && live(s)).map((s) => s.id));
     const savingRows = rows.filter((r) => savingIds.has(r.id) && r.deleted_at === null);
+    // F-06: the v3 series amounts are already converted to the home currency, so a sum across currencies is in one currency.
+    const savingAmount = new Map(v3Series.map((s) => [s.id, s.amount]));
     const modes = new Set(savingRows.map((r) => r.saving_mode ?? 'fixed'));
     const buckets = (inputs?.envelopes ?? []).filter((e) => e.bucket === true).length;
 
@@ -70,7 +72,7 @@ export function useSettingsData(): SettingsScreenData | null {
 
     const data: SettingsData = {
       settings,
-      regularPay: pay === undefined ? null : { amount: Math.abs(pay.amount), frequency: pay.freq, nextDate },
+      regularPay: pay === undefined ? null : { amount: Math.abs(pay.amount), currency: pay.currency, frequency: pay.freq, nextDate },
       otherIncomeCount: v3Series.filter((s) => s.role === 'other_income' && live(s)).length,
       regularConfirmed: v3Series.filter((s) => s.role === 'bill' && s.confirmed && live(s)).length,
       loansCount: (inputs?.debts ?? []).length,
@@ -78,7 +80,7 @@ export function useSettingsData(): SettingsScreenData | null {
         savingRows.length === 0
           ? null
           : {
-              monthly: savingRows.reduce((sum, r) => sum + Number(monthlyEquivalent(minorUnits(Math.abs(r.amount)), r.freq)), 0),
+              monthly: savingRows.reduce((sum, r) => sum + Number(monthlyEquivalent(minorUnits(Math.abs(Number(savingAmount.get(r.id) ?? r.amount))), r.freq)), 0),
               mode: modes.size === 1 ? ((savingRows[0]?.saving_mode ?? 'fixed') as 'fixed' | 'flexible') : null,
               buckets,
             },

@@ -47,7 +47,7 @@ export interface SettingsAnswers {
 export interface SettingsData {
   readonly settings: SettingsAnswers | null;
   /** The live regular pay series: monthly-or-other amount, frequency key, next pay date. */
-  readonly regularPay: { readonly amount: number; readonly frequency: 'weekly' | 'fortnightly' | 'monthly' | 'quarterly' | 'yearly'; readonly nextDate: string | null } | null;
+  readonly regularPay: { readonly amount: number; readonly currency?: string; readonly frequency: 'weekly' | 'fortnightly' | 'monthly' | 'quarterly' | 'yearly'; readonly nextDate: string | null } | null;
   readonly otherIncomeCount: number;
   readonly regularConfirmed: number;
   readonly loansCount: number;
@@ -62,7 +62,8 @@ export interface SettingsData {
 }
 
 export interface SettingsFormat {
-  money(minor: number): string;
+  /** Formats in `currency` when given, otherwise in the settings currency (where the value is stored). */
+  money(minor: number, currency?: string): string;
   date(iso: string): string;
   /** Looks a copy key up (used for words inside a value, such as a frequency). */
   word(key: string, params?: Record<string, string | number>): string;
@@ -144,8 +145,8 @@ function valueOf(row: RowDef, d: SettingsData, fmt: SettingsFormat): SettingsVal
       const p = d.regularPay;
       if (p === null) return null;
       const frequency = fmt.word(FREQ_WORD[p.frequency]);
-      if (p.nextDate === null) return { text: `${fmt.money(p.amount)} ${frequency}` };
-      return { key: `${K}valueRegularPay`, params: { amount: fmt.money(p.amount), frequency, date: fmt.date(p.nextDate) } };
+      if (p.nextDate === null) return { text: `${fmt.money(p.amount, p.currency)} ${frequency}` };
+      return { key: `${K}valueRegularPay`, params: { amount: fmt.money(p.amount, p.currency), frequency, date: fmt.date(p.nextDate) } };
     }
     case 'pattern':
       return s === null || s.income_pattern === null ? null : { key: PATTERN_WORD[s.income_pattern] };
