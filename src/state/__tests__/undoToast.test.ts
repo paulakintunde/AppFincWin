@@ -8,6 +8,7 @@ import {
   useToast,
   resetToastForTests,
   toastDurationMs,
+  TOAST_MS_UNDO,
   TOAST_MS_DESTRUCTIVE,
   TOAST_MS_ORDINARY,
 } from '../undoToast';
@@ -30,7 +31,17 @@ describe('undoToast', () => {
     expect(toastDurationMs('refusal', false)).toBe(TOAST_MS_DESTRUCTIVE);
     for (const kind of ['ordinary', 'destructive', 'refusal', 'info'] as const) {
       expect(toastDurationMs(kind, true)).toBeNull();
+      expect(toastDurationMs(kind, true, true)).toBeNull();
     }
+  });
+
+  // 05.2 F-12: Undo toasts 6 s
+  it('toastDurationMs gives a toast with Undo 6 s and keeps 3.2 s without', () => {
+    expect(TOAST_MS_UNDO).toBe(6000);
+    expect(toastDurationMs('ordinary', false, true)).toBe(6000);
+    expect(toastDurationMs('ordinary', false, false)).toBe(3200);
+    expect(toastDurationMs('destructive', false, false)).toBe(6000);
+    expect(toastDurationMs('refusal', false, false)).toBe(6000);
   });
 
   it('showToast replaces any current toast with a new id', () => {

@@ -130,7 +130,7 @@ describe('UndoToastHost layers (D-16)', () => {
       host.props.onLayout({ nativeEvent: { layout: { height: 56 } } });
     });
     expect(screen.getByTestId('toast-height').children.join('')).toBe('56');
-    await advance(3200);
+    await advance(6000); // 05.2 F-12: Undo toasts 6 s
     expect(getToast()).toBeNull();
     expect(screen.getByTestId('toast-height').children.join('')).toBe('0');
 
@@ -139,12 +139,13 @@ describe('UndoToastHost layers (D-16)', () => {
     expect(screen.getByTestId('toast-height').children.join('')).toBe('0');
   });
 
-  it('does not restart the timer when the sheet closes (3200ms total)', async () => {
+  it('does not restart the timer when the sheet closes (6000ms total for an Undo toast)', async () => {
+    // 05.2 F-12: Undo toasts 6 s
     const m = await mount(true);
     await show(ORDINARY);
     await advance(2000);
     await m.set(false);
-    await advance(1100);
+    await advance(3900);
     expect(getToast()).not.toBeNull();
     await advance(200);
     expect(getToast()).toBeNull();

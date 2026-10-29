@@ -117,13 +117,24 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
   const toastId = toast?.id ?? null;
   const kind = toast?.kind ?? null;
   const shownAt = toast?.shownAt ?? 0;
+  // F-12: whether the toast offers Undo decides its duration, so it is worked out before the timer.
+  const label = toast ? undoableLabel(toast) : null;
+  const hasStep = toast !== null && (toast.stepId !== null || toast.stepIds !== null);
+  const canUndo =
+    toast !== null &&
+    (toast.onUndo !== null ||
+      ((toast.kind === 'ordinary' || toast.kind === 'destructive') &&
+        hasStep &&
+        label !== null &&
+        ctx.userId !== null &&
+        ctx.householdId !== null));
   useEffect(() => {
     if (!active || toastId === null || kind === null) return undefined;
-    const ms = toastDurationMs(kind, screenReader);
+    const ms = toastDurationMs(kind, screenReader, canUndo);
     if (ms === null) return undefined;
     const timer = setTimeout(() => dismissToast(toastId), Math.max(0, ms - (Date.now() - shownAt)));
     return () => clearTimeout(timer);
-  }, [toastId, kind, screenReader, active, shownAt]);
+  }, [toastId, kind, screenReader, active, shownAt, canUndo]);
 
   // The app-layer toast feeds the FAB lift; clear it when the toast goes or this host stops being the visible one.
   const reporting = placement === 'app' && active && toastId !== null;
@@ -165,17 +176,8 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
   const message = parts.join(' ');
   if (message === '') return null;
 
-  const label = undoableLabel(toast);
   const localUndo = toast.onUndo;
   const group = toast.stepIds !== null && toast.stepIds.length >= 2 ? toast.stepIds : null;
-  const hasStep = toast.stepId !== null || toast.stepIds !== null;
-  const canUndo =
-    localUndo !== null ||
-    ((toast.kind === 'ordinary' || toast.kind === 'destructive') &&
-    hasStep &&
-    label !== null &&
-    ctx.userId !== null &&
-    ctx.householdId !== null);
 
   const onUndo = () => {
     if (localUndo !== null) {
