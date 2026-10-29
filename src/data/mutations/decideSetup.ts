@@ -14,6 +14,7 @@ import {
   type DecideSettingsPatch,
   type DecideSettingsRow,
 } from '@/db/decideSettings';
+import type { MoneyPrefsRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import {
   classifySettledWriteError,
@@ -89,12 +90,25 @@ export function toPatchValue(column: string, value: unknown): PatchValue {
   return value as PatchValue;
 }
 
+/** Key-sorted JSON so the same object in another key order (jsonb does not keep it) reads as equal; arrays keep their order. */
+function stableJson(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(stableJson).join(',')}]`;
+  if (typeof v === 'object' && v !== null) {
+    const o = v as Record<string, unknown>;
+    return `{${Object.keys(o)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${stableJson(o[k])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(v) ?? 'null';
+}
+
 function sameValue(a: unknown, b: unknown): boolean {
   const x = a === undefined ? null : a;
   const y = b === undefined ? null : b;
   if (x === y) return true;
   if (typeof x === 'object' && typeof y === 'object' && x !== null && y !== null) {
-    return JSON.stringify(x) === JSON.stringify(y);
+    return stableJson(x) === stableJson(y);
   }
   return false;
 }
@@ -230,7 +244,10 @@ function useStamped(userId: string): (patch: SettingsPatch) => SettingsPatch {
   const qc = useQueryClient();
   return (patch) => {
     const current = qc.getQueryData<DecideSettingsRow | null>(queryKeys.decideSettings(userId)) ?? null;
-    const currency = (patch.currency as string | null | undefined) ?? current?.currency ?? null;
+    // CR-03: settings money means home-currency money, so a money save stamps the confirmed home currency. Without the
+    // money-prefs row in the cache (never a placeholder) the old rule stands: the stored currency, else none.
+    const home = qc.getQueryData<MoneyPrefsRow>(queryKeys.moneyPrefs(userId))?.home_currency;
+    const currency = (patch.currency as string | null | undefined) ?? home ?? current?.currency ?? null;
     // Stamped before the diff so a currency switch (which clears the other money columns) is part of Undo.
     return currency ? (stampSettingsPatch(patch as DecideSettingsPatch, current, currency) as SettingsPatch) : patch;
   };

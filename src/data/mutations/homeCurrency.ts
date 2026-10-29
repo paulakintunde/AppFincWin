@@ -41,6 +41,9 @@ export function useChangeHomeCurrency(ctx: { userId: string; householdId: string
             ...(old ?? DEFAULT_MONEY_PREFS),
             home_currency: next,
           }));
+          // CR-03: the server stamps the settings and clears two answers in the same transaction (05.2-74); show it at once.
+          void qc.invalidateQueries({ queryKey: queryKeys.decideSettings(userId) });
+          void qc.invalidateQueries({ queryKey: ['decide-answers', userId] });
         }
         void qc.invalidateQueries({ queryKey: queryKeys.categories(userId) });
         void qc.invalidateQueries({ queryKey: queryKeys.fxLatest() });
