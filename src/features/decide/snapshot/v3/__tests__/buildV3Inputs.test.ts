@@ -548,6 +548,24 @@ describe('buildV3Inputs: stored 05.2 answers (DSU-20)', () => {
     });
   });
 
+  describe('05.2 F-10: a line takes its series income type', () => {
+    const ser = (over: Record<string, unknown>): SnapshotSource['series'][number] =>
+      ({ id: 'sx', account_id: EVERYDAY, amount: 50000, currency: 'USD', freq: 'monthly', anchor_date: '2026-04-02', end_date: null, occurrence_count: null, category_id: 'cat-income', deleted_at: null, ...over }) as SnapshotSource['series'][number];
+    const src = (rows: Row[]): SnapshotSource => withRows(rows, { ...base, series: [...base.series, ser({ income_kind: 'rent', counts_as: 'available' })] });
+    it('an untagged occurrence takes the series income type', () => {
+      expect(lineOf(src([mk('o1', EVERYDAY, 50000, { recurring_series_id: 'sx' })]), 'o1')).toMatchObject({ role: 'income', incomeKind: { kind: 'preset', value: 'rent' }, countsAs: 'available' });
+    });
+    it('the row own income type wins over the series', () => {
+      expect(lineOf(src([mk('o2', EVERYDAY, 50000, { recurring_series_id: 'sx', income_kind: 'family', counts_as: 'kept' })]), 'o2')).toMatchObject({ incomeKind: { kind: 'preset', value: 'family' }, countsAs: 'kept' });
+    });
+    it('a line with no series reads the row only', () => {
+      expect(lineOf(src([mk('o3', EVERYDAY, 50000)]), 'o3')).toMatchObject({ incomeKind: null });
+    });
+    it('a non-income line has no income type', () => {
+      expect(lineOf(src([mk('o4', EVERYDAY, -5000, { recurring_series_id: 'sx' })]), 'o4')).toMatchObject({ incomeKind: null });
+    });
+  });
+
   describe('series attributes', () => {
     const row = (id: string, over: Record<string, unknown>): SnapshotSource['series'][number] =>
       ({ id, account_id: EVERYDAY, amount: 50000, currency: 'USD', freq: 'monthly', anchor_date: '2026-04-02', end_date: null, occurrence_count: null, category_id: 'cat-income', deleted_at: null, ...over }) as SnapshotSource['series'][number];

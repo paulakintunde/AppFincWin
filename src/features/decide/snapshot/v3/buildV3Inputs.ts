@@ -464,7 +464,8 @@ export function buildV3Inputs(
               coversMonths: null,
               source: rowById.get(l.id)?.import_batch_id ? 'statement' : 'manual', // D-51
               expected: false,
-              incomeKind: role === 'income' ? incomeKindOf(str(row?.income_kind)) : null,
+              // 05.2 F-10: an occurrence without its own tag takes its series' income type, as countsAs does
+              incomeKind: role === 'income' ? (incomeKindOf(str(row?.income_kind)) ?? (s !== undefined ? s.incomeKind : null)) : null,
               countsAs: role === 'income' ? (row?.counts_as ?? (s !== undefined ? s.countsAs : null)) : null,
               refundOf: str(row?.refund_of),
             },
