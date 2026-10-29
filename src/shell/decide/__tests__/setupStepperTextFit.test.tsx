@@ -32,6 +32,10 @@ jest.mock('@/data/mutations/seriesAttributes', () => ({
   useConfirmRegularCandidate: () => ({ confirm: jest.fn() }),
   usePatchSeriesAttributes: () => ({ patch: jest.fn() }),
 }));
+jest.mock('@/data/mutations/dismissals', () => ({
+  useAddDismissal: () => ({ dismiss: jest.fn(() => ({ id: 'd', stepId: 's' })) }),
+  useRemoveDismissal: () => ({ restore: jest.fn(() => ({ stepId: 's' })) }),
+}));
 jest.mock('@/data/mutations/recurringSeries', () => ({ useEditSeriesFrom: () => ({ editFrom: jest.fn() }) }));
 jest.mock('@/data/queries/decide', () => ({
   useDecideSettings: () => ({ data: { income_types: ['salary_or_wages'], variable_method: 'steady' } }),
@@ -80,6 +84,7 @@ jest.mock('@/features/income/useIncomeContext', () => ({
     accounts: [{ id: 'a1', kind: 'checking', currency: 'USD', deleted_at: null, archived_at: null }],
     series: [],
     found: null,
+    notPay: [],
   }),
 }));
 

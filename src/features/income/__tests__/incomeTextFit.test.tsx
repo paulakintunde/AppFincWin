@@ -10,7 +10,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react-nativ
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
-import { MATRIX, expectFits, matrixName } from '@/features/decide/__tests__/helpers/r18Fit';
+import en from '@/i18n/locales/en';
+import { MATRIX, expectFits, expectTargets, matrixName } from '@/features/decide/__tests__/helpers/r18Fit';
 import { IncomeProfileSteps, INCOME_STEPS, type IncomeStepKey } from '../IncomeProfileSteps';
 import { ZERO_WIDTH_SPACE } from '@/features/decide/home/heroAmountText';
 import type { SetupStepHandle } from '@/features/decide/setup/steps/types';
@@ -32,6 +33,10 @@ jest.mock('@/data/mutations/seriesAttributes', () => ({
   useConfirmRegularCandidate: () => ({ confirm: jest.fn() }),
   usePatchSeriesAttributes: () => ({ patch: jest.fn() }),
 }));
+jest.mock('@/data/mutations/dismissals', () => ({
+  useAddDismissal: () => ({ dismiss: jest.fn(() => ({ id: 'd', stepId: 's' })) }),
+  useRemoveDismissal: () => ({ restore: jest.fn(() => ({ stepId: 's' })) }),
+}));
 jest.mock('@/data/mutations/recurringSeries', () => ({ useEditSeriesFrom: () => ({ editFrom: jest.fn() }) }));
 jest.mock('@/data/queries/decideV3', () => ({
   useDecideV3: () => ({
@@ -49,6 +54,7 @@ jest.mock('@/data/queries/decideV3', () => ({
   }),
 }));
 let mockSeries: Record<string, unknown>[] = [];
+let mockNotPay: { row: Record<string, unknown>; payer: string }[] = [];
 jest.mock('../useIncomeContext', () => ({
   useIncomeContext: () => ({
     userId: 'u1',
@@ -59,7 +65,8 @@ jest.mock('../useIncomeContext', () => ({
     settings: null,
     accounts: [{ id: 'a1', kind: 'checking', currency: 'USD', deleted_at: null, archived_at: null }],
     series: mockSeries,
-    found: { payer: 'Acme Ltd', amount: 123_456_789_00, day: 25, currency: 'USD' },
+    found: { payer: 'Acme Ltd', amount: 123_456_789_00, day: 25, currency: 'USD', key: 'acme' },
+    notPay: mockNotPay,
   }),
 }));
 
@@ -157,6 +164,31 @@ describe('income steps fit the R6 checks', () => {
       }
     });
   }
+
+  for (const m of MATRIX) {
+    it(`Not my pay and a long not-pay line with Show again at ${matrixName(m)}`, async () => {
+      mockWidth = m.width;
+      mockScale = m.scale;
+      const long = 'Refund - Online Store with a very long payer name that runs on'.slice(0, 60);
+      mockNotPay = [{ row: { id: 'r1' }, payer: long }];
+      try {
+        await mount('pay', m.scale);
+        expect(screen.getByRole('button', { name: 'Not my pay, Acme Ltd' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: `Show ${long} as pay again` })).toBeTruthy();
+        expect(screen.getByText(`${long} isn’t counted as your pay.`)).toBeTruthy();
+        expectFits();
+        expectTargets('Not my pay, Acme Ltd', `Show ${long} as pay again`);
+        await cleanup();
+      } finally {
+        mockNotPay = [];
+      }
+    });
+  }
+
+  it('the new pay-step copy has no advice wording', () => {
+    const keys = [en.income.pay.notMine, en.income.pay.notMineA11y, en.income.pay.notMineLine, en.income.pay.showAgain, en.income.pay.showAgainA11y];
+    for (const k of keys) expect(k).not.toMatch(/advice|recommend|you should/i);
+  });
 
   it('the found-payer note keeps its amount on one run (no break inside a digit group)', async () => {
     mockWidth = 320;
