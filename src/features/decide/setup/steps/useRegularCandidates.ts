@@ -76,6 +76,12 @@ export function useRegularCandidates(): { rows: readonly CandidateRow[]; paused:
   const rows = useMemo((): readonly CandidateRow[] => {
     const detect: DetectRow[] = [];
     const byId = new Map<string, TransactionRow>();
+    const seriesById = new Map<string, RecurringSeriesRow>();
+    for (const s of liveSeries) {
+      const kind = seriesStatusOf(s).kind;
+      if (s.deleted_at === null && (kind === 'live' || kind === 'paused')) seriesById.set(s.id, s);
+    }
+    const linkedSeries = new Map<string, RecurringSeriesRow>();
     for (const r of txns) {
       if (r.is_sample || r.transfer_id !== null || r.status === 'skipped' || !r.name) continue;
       // Refunds and refund-linked rows are never regular payments.
@@ -83,8 +89,13 @@ export function useRegularCandidates(): { rows: readonly CandidateRow[]; paused:
       // The same transaction arriving twice (an overlapping page) is counted once.
       if (byId.has(r.id)) continue;
       byId.set(r.id, r);
-      // Rows that belong to a series already are left out, so a confirmed series stops being offered once it has history.
-      if (r.recurring_series_id !== null) continue;
+      // Logged rows linked to a live or paused series stay in detection as evidence, so a confirmed payment keeps its
+      // Regular card once Regular links its rows (05.2-69). Pending occurrences, and rows of stopped or deleted series, stay out.
+      if (r.recurring_series_id !== null) {
+        const owner = seriesById.get(r.recurring_series_id);
+        if (owner === undefined || r.status === 'pending') continue;
+        linkedSeries.set(r.id, owner);
+      }
       detect.push({ id: r.id, name: r.name, amount: r.original_amount, currency: r.original_currency, date: r.local_date, isTransfer: false, accountId: r.account_id });
     }
     const found = detectCandidates(detect, { dismissedKeys: new Set(), linkedRowIds: new Set() });
@@ -99,7 +110,11 @@ export function useRegularCandidates(): { rows: readonly CandidateRow[]; paused:
       const accountId = last?.account_id ?? null;
       const currency = last?.original_currency ?? rc.homeCurrency;
       const wanted = nameKey(candidate.name, currency);
+      // Rows linked to a series map to that series first; the name match covers series confirmed before linking.
+      const owner = candidate.rowIds.map((id) => linkedSeries.get(id)).find((s) => s !== undefined) ?? null;
+      if (owner !== null && seriesStatusOf(owner).kind === 'paused') continue;
       const confirmed =
+        owner ??
         liveSeries.find(
           (s) =>
             s.deleted_at === null &&
