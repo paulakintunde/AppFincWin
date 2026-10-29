@@ -380,6 +380,9 @@ export function buildV3Inputs(
   const toHome = makeConverter({ home, rates: source.rates, customs: source.customCurrencies, today }).toHome;
   const accounts: V3Account[] = source.accounts.flatMap((a) => {
     if (a.deleted_at !== null || a.archived_at !== null) return [];
+    // 05.2 F-05: only money accounts are V3 accounts. This mirrors holdsMoney in setup/accountUseSuggest.ts, so the account-use
+    // step and the unspent step count the same accounts. Cards and loans are debts, handled on the Loans step.
+    if (a.kind === 'credit' || a.kind === 'loan') return [];
     const balance = toHome(source.balances[a.id] ?? 0, a.currency);
     return balance === null ? [] : [{ id: a.id, balance: minorUnits(balance), use: effectiveUses[a.id] ?? null }];
   });

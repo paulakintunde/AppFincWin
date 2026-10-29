@@ -225,6 +225,16 @@ describe('UnspentSumCard (worked sum)', () => {
     unregister();
   });
 
+  it('F-05: with every money account set, the cards add no "use isn’t set" note', async () => {
+    const cardCount = source().accounts.filter((a) => a.kind === 'credit').length;
+    expect(cardCount).toBeGreaterThan(0);
+    setUp(); // everyday() sets a use on every account, cards included; the cards are not V3 accounts either way
+    const ids = (mockV3 as { inputs: V3Inputs }).inputs.accounts!.map((a) => a.id);
+    expect(ids.some((id) => source().accounts.find((a) => a.id === id)!.kind === 'credit')).toBe(false);
+    await render(wrap(<UnspentStep onReadyChange={() => undefined} mode="stepper" />));
+    expect(screen.queryByText(/because their use isn’t set|because its use isn’t set/)).toBeNull();
+  });
+
   it('notes envelopes not placed in an account only when a mixed account exists', async () => {
     const env: Envelope = { id: 'e1', kind: 'pot', target: null, monthlyAmount: null, readyBy: null, saved: 20_000 as never, purposeId: null };
     const uses = everyday();

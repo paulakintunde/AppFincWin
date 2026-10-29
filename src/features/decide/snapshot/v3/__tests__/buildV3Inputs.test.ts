@@ -1,10 +1,13 @@
-import type { FxLatestRow } from '@/db/rows';
+import * as fc from 'fast-check';
+import type { AccountRow, FxLatestRow } from '@/db/rows';
+import { holdsMoney } from '../../../setup/accountUseSuggest';
 import { MAX_OWN_LINES, buildMonthModel, type AccountUse } from '@/engine/decide/v3';
 import { MAX_ABS_AMOUNT_MINOR } from '@/engine/money';
-import { demoSource } from '../../../__tests__/helpers/demoScenario';
+import { demoSource, sofaInputs } from '../../../__tests__/helpers/demoScenario';
 import type { SnapshotSource } from '../../buildSnapshot';
 import { buildDecideSnapshot } from '../../buildSnapshot';
 import { buildV3Inputs } from '../buildV3Inputs';
+import { computeV3 } from '../computeV3';
 import type { V3SeriesExtra, V3SettingsSource } from '../types';
 import { v3s } from './v3Fixtures';
 
@@ -420,13 +423,13 @@ describe('buildV3Inputs: new inputs, accounts and sources (D-54, D-51, M-06)', (
     expect(buildV3Inputs(src, v3s({ income_types: ['salary'] })).profile).toMatchObject({ pattern: null, patternConfirmed: false });
   });
 
-  it('D-54: every live account is listed with its home balance and use null; archived and deleted ones are not', () => {
+  it('D-54: every live money account is listed with its home balance and use null; archived and deleted ones are not', () => {
     const base = demoSource(TODAY);
     const archived = { ...base.accounts[0]!, id: 'zz-arch', archived_at: '2026-01-01T00:00:00Z' };
     const deleted = { ...base.accounts[0]!, id: 'zz-del', deleted_at: '2026-01-01T00:00:00Z' };
     const foreign = { ...base.accounts[0]!, id: 'zz-xyz', currency: 'XYZ' };
     const inputs = buildV3Inputs({ ...base, accounts: [...base.accounts, archived, deleted, foreign], balances: { ...base.balances, 'zz-xyz': 5 } }, null);
-    expect(inputs.accounts!.map((a) => a.id)).toEqual(base.accounts.map((a) => a.id));
+    expect(inputs.accounts!.map((a) => a.id)).toEqual(base.accounts.filter((a) => a.kind !== 'credit' && a.kind !== 'loan').map((a) => a.id));
     expect(inputs.accounts!.every((a) => a.use === null)).toBe(true);
     expect(inputs.accounts!.find((a) => a.id === SAVINGS)!.balance).toBe(base.balances[SAVINGS]);
     expect(buildV3Inputs({ ...base, balances: {} }, null).accounts!.every((a) => a.balance === 0)).toBe(true);
@@ -651,5 +654,64 @@ describe('buildV3Inputs: stored 05.2 answers (DSU-20)', () => {
       const out = buildV3Inputs(base, old);
       expect([out.payArrivals, out.expectedIncome, out.heldBridges, out.unexplainedAnswer]).toEqual([[], [], [], null]);
     });
+  });
+});
+
+
+describe('buildV3Inputs: 05.2-63 cards and loans are not V3 accounts (F-05)', () => {
+  const base = demoSource(TODAY);
+  const template = base.accounts[0]!;
+  const money = (n: number): SnapshotSource['accounts'] =>
+    Array.from({ length: n }, (_, i) => ({ ...template, id: `m${i}`, kind: 'checking' as const }));
+  const cards = (n: number): SnapshotSource['accounts'] =>
+    Array.from({ length: n }, (_, i) => ({ ...template, id: `c${i}`, kind: 'credit' as const }));
+  const everydayUses = (ids: string[]): Record<string, AccountUse> => Object.fromEntries(ids.map((id) => [id, { kind: 'everyday' } as AccountUse]));
+  const srcOf = (accounts: SnapshotSource['accounts'], balances: Record<string, number>): SnapshotSource => ({ ...base, accounts, balances, rows: [] });
+
+  it('5 money accounts with a use and 4 cards with none: 5 accounts, nothing unstated, no unknown-use notice', () => {
+    const ms = money(5);
+    const balances = { ...Object.fromEntries(ms.map((a, i) => [a.id, 10000 * (i + 1)])), ...Object.fromEntries(cards(4).map((a) => [a.id, -5000])) };
+    const inputs = buildV3Inputs(srcOf([...ms, ...cards(4)], balances), null, undefined, everydayUses(ms.map((a) => a.id)));
+    expect(inputs.accounts!.map((a) => a.id)).toEqual(ms.map((a) => a.id));
+    const ev = computeV3(srcOf([...ms, ...cards(4)], balances), null, sofaInputs, everydayUses(ms.map((a) => a.id)));
+    expect(ev.funds.unstatedAccounts).toEqual([]);
+    expect(JSON.stringify(ev.result)).not.toContain('account_use_unknown');
+  });
+
+  it('a loan with no use is not listed; a checking account with no use is, and is counted as unstated', () => {
+    const loan = { ...template, id: 'l1', kind: 'loan' as const };
+    const check = money(1);
+    const s = srcOf([loan, ...check], { l1: -90000, m0: 5000 });
+    expect(buildV3Inputs(s, null).accounts!.map((a) => a.id)).toEqual(['m0']);
+    expect(computeV3(s, null, sofaInputs).funds.unstatedAccounts).toEqual(['m0']);
+  });
+
+  it('spending, ring-fenced and every unspent line are the same with and without the cards (any balances, both signs)', () => {
+    fc.assert(
+      fc.property(fc.array(fc.integer({ min: -5_000_000, max: 5_000_000 }), { minLength: 1, maxLength: 4 }), (cardBalances) => {
+        const ms = money(3);
+        const uses = everydayUses(ms.map((a) => a.id));
+        const mb = Object.fromEntries(ms.map((a, i) => [a.id, 25000 * (i + 1)]));
+        const cs = cards(cardBalances.length);
+        const cb = Object.fromEntries(cs.map((a, i) => [a.id, cardBalances[i]!]));
+        const without = buildV3Inputs(srcOf(ms, mb), null, undefined, uses);
+        const withCards = buildV3Inputs(srcOf([...ms, ...cs], { ...mb, ...cb }), null, undefined, uses);
+        const a = computeV3(srcOf(ms, mb), null, sofaInputs, uses);
+        const b = computeV3(srcOf([...ms, ...cs], { ...mb, ...cb }), null, sofaInputs, uses);
+        expect(withCards.accounts).toEqual(without.accounts);
+        expect(b.funds.spending).toBe(a.funds.spending);
+        expect(b.funds.ringFenced).toBe(a.funds.ringFenced);
+        expect(b.funds.unspent).toEqual(a.funds.unspent);
+        expect(b.funds.unstatedAccounts).toEqual(a.funds.unstatedAccounts);
+      })
+    );
+  });
+
+  it('the local rule matches holdsMoney for every account kind', () => {
+    const kinds: AccountRow['kind'][] = ['cash', 'checking', 'savings', 'credit', 'investment', 'loan', 'other'];
+    for (const kind of kinds) {
+      const s = srcOf([{ ...template, id: 'k', kind }], { k: 100 });
+      expect(buildV3Inputs(s, null).accounts!.length === 1).toBe(holdsMoney(kind));
+    }
   });
 });
