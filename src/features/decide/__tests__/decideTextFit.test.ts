@@ -6,6 +6,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative } from 'path';
+import type { FitAllow } from '../v3/shared/fitAllowTypes';
 
 const ROOT = join(__dirname, '..');
 
@@ -142,6 +143,63 @@ const OVERLAY_ABSOLUTE: { path: string; count: number; reason: string }[] = [
   { path: 'charts/NetWorthChart.tsx', count: 1, reason: 'chart axis labels, clamped to plot' },
   { path: 'ui/StepSlider.tsx', count: 1, reason: 'slider thumb' },
 ];
+
+// 05.3: per-area allowlists. src/features/decide/v3/<area>/__tests__/fitAllow.ts exports FIT_ALLOW; they are merged into
+// the inline lists above so parallel v3 plans never edit this file. Paths are relative to src/features/decide.
+function findFitAllowFiles(dir: string): string[] {
+  const out: string[] = [];
+  for (const name of readdirSync(dir)) {
+    if (name === 'node_modules') continue;
+    const full = join(dir, name);
+    if (statSync(full).isDirectory()) out.push(...findFitAllowFiles(full));
+    else if (name === 'fitAllow.ts' && full.split('\\').join('/').endsWith('/__tests__/fitAllow.ts')) out.push(full);
+  }
+  return out;
+}
+
+function loadAreaAllow(): FitAllow[] {
+  const v3 = join(ROOT, 'v3');
+  try {
+    statSync(v3);
+  } catch {
+    return [];
+  }
+  return findFitAllowFiles(v3).map((f) => (require(f) as { FIT_ALLOW: FitAllow }).FIT_ALLOW);
+}
+
+const AREA_ALLOW = loadAreaAllow();
+const INLINE_PATHS = {
+  geometry: GEOMETRY_HEIGHT.map((a) => a.path),
+  overlay: OVERLAY_ABSOLUTE.map((a) => a.path),
+};
+for (const a of AREA_ALLOW) {
+  NUMBER_ALLOW.push(...(a.number as typeof NUMBER_ALLOW));
+  GEOMETRY_HEIGHT.push(...a.geometry);
+  OVERLAY_ABSOLUTE.push(...a.overlay);
+}
+
+describe('05.3 area allowlists', () => {
+  it('05.3 area allowlists name each path once', () => {
+    const dupes: string[] = [];
+    const seen = { geometry: new Set<string>(INLINE_PATHS.geometry), overlay: new Set<string>(INLINE_PATHS.overlay) };
+    const seenNumber = new Set<string>(NUMBER_ALLOW.slice(0, NUMBER_ALLOW.length - AREA_ALLOW.reduce((n, a) => n + a.number.length, 0)).map((e) => e.path + '|' + e.kind));
+    for (const a of AREA_ALLOW) {
+      // a file may carry two number kinds (user-name and figure); only a repeat of the same path and kind is a duplicate
+      for (const e of a.number) {
+        const id = e.path + '|' + e.kind;
+        if (seenNumber.has(id)) dupes.push('number:' + id);
+        seenNumber.add(id);
+      }
+      for (const k of ['geometry', 'overlay'] as const) {
+        for (const e of a[k]) {
+          if (seen[k].has(e.path)) dupes.push(k + ':' + e.path);
+          seen[k].add(e.path);
+        }
+      }
+    }
+    expect(dupes).toEqual([]);
+  });
+});
 
 describe('D-76 static text-fit', () => {
   const lineHits = find(/\bnumberOfLines\b/);
