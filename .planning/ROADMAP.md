@@ -944,7 +944,7 @@ Gap closure (planned 2026-10-26 against 05.1-CONTEXT D-33..D-45, 05.1-VERIFICATI
   2. The income questions are one shared component. Activity shows a "How are you paid?" card when the profile is missing, lets any income be tagged (type, and spent or kept), and asks once when a new kind of income appears.
   3. Every new piece of data has add, edit, delete and undo through the write queue, works offline, and is covered by account deletion and data export.
   4. Migrations are additive. Each one is applied to production only after preflight and the owner's approval.
-**Plans:** 60 plans in 14 waves (planned 2026-10-27; gap plans 37-48 added 2026-10-28; round-2 gap plans 49-60 added 2026-10-28 from the Pixel walkthrough; checkpoints: 05.2-06 noise rule, 05.2-31 new fits, 05.2-37 gap new fits, 05.2-36 production push, 05.2-52 D-11 if the F-04 diagnosis finds a wrong engine input, 05.2-56 D-11 if answers change, 05.2-59 push of 20261028001400 and Pixel re-walk)
+**Plans:** 68 plans in 19 waves (planned 2026-10-27; gap plans 37-48 added 2026-10-28; round-2 gap plans 49-60 added 2026-10-28 from the Pixel walkthrough; checkpoints: 05.2-06 noise rule, 05.2-31 new fits, 05.2-37 gap new fits, 05.2-36 production push, 05.2-52 D-11 if the F-04 diagnosis finds a wrong engine input, 05.2-56 D-11 if answers change, 05.2-59 push of 20261028001400 and Pixel re-walk; round-3 gap plans 61-68 added 2026-10-29, 05.2-68 re-check and TalkBack)
 
 Plans:
 - [x] 05.2-01-PLAN.md — decide_settings v3 columns (incl. id for Undo, refine dates, unexplained answer) and profiles.decide_v3 flag, pgTAP 63-64 (wave 1)
@@ -994,7 +994,7 @@ Plans:
 - [x] 05.2-48-PLAN.md — Gap: a paid-off loan or card stops counting its minimum from its date; Loans step shows it (wave 8)
 - [x] 05.2-46-PLAN.md — Gap: series-sheet Income type and Counts toward my month rows; quick-pick name prefill (wave 9)
 - [x] 05.2-47-PLAN.md — Gap: Stopped or paused links on Regular, Pay and Other steps; paused bills and paused income listed with Resume (wave 10)
-- [ ] 05.2-36-PLAN.md — [BLOCKING] Full gate, owner-approved production push (12 migrations), owner flag, Pixel walkthrough (wave 11)
+- [x] 05.2-36-PLAN.md — [BLOCKING] Full gate, owner-approved production push (12 migrations), owner flag, Pixel walkthrough (wave 11)
 - [x] 05.2-49-PLAN.md — Gap round 2: ordinal formatter, non-ISO dates on income and refund sheets, zero counts, copy keys for round 2 (F-14) (wave 12)
 - [x] 05.2-50-PLAN.md — Gap round 2: step content can never stay invisible (layout RiseIn), rail complete on Summary (F-01, F-15) (wave 12)
 - [x] 05.2-51-PLAN.md — Gap round 2: refunds never offered as pay, new pay named "Pay", earlier-payments batch excludes refunds (F-02, F-03) (wave 13)
@@ -1006,7 +1006,15 @@ Plans:
 - [x] 05.2-57-PLAN.md — Gap round 2: persisted cache byte budget and key filter, safe read of an oversized row (F-11) (wave 12)
 - [x] 05.2-58-PLAN.md — Gap round 2: migration 20261028001400 + pgTAP 73, stop or pause from a series' first day (F-13) (wave 12)
 - [x] 05.2-60-PLAN.md — Gap round 2: Decide settings amounts in their own currency (F-06) (wave 13)
-- [ ] 05.2-59-PLAN.md — [BLOCKING] Round-2 full gate, owner-approved push of 20261028001400, Pixel re-walk of F-01..F-16 and untested items (wave 14)
+- [x] 05.2-59-PLAN.md — [BLOCKING] Round-2 full gate, owner-approved push of 20261028001400, Pixel re-walk of F-01..F-16 and untested items (wave 14)
+- [x] 05.2-61-PLAN.md — Gap round 3: toast Undo diagnosis per 05.2 caller family (N-04; root cause fixed in 68) (wave 15)
+- [x] 05.2-62-PLAN.md — Gap round 3: Decide settings shows the current pay, labels a stopped or paused one (N-03) (wave 15)
+- [x] 05.2-63-PLAN.md — Gap round 3: only money accounts are V3 accounts, cards not counted as unset (F-05) (wave 15)
+- [x] 05.2-64-PLAN.md — Gap round 3: one primary action in the loan sheet after Paid off (N-02) (wave 15)
+- [x] 05.2-65-PLAN.md — Gap round 3: sentence-case 05.2 undo labels, held-Next reasons for single choices (N-01) (wave 16)
+- [x] 05.2-66-PLAN.md — Gap round 3: Not my pay keys and detection, undoable writes (F-02) (wave 17)
+- [x] 05.2-67-PLAN.md — Gap round 3: Not my pay and Show again on the pay step (F-02) (wave 18)
+- [x] 05.2-68-PLAN.md — [BLOCKING] Round-3 gate, Pixel re-check of 7 items, TalkBack pass; N-04 cache fix (wave 19)
 
 ### Phase 05.3: Decide screens v3 (INSERTED)
 
@@ -1163,7 +1171,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
-| 05.2 Decide data and setup | 58/60 | In progress | - |
+| 05.2 Decide data and setup | 68/68 | Executed, verification pending | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
