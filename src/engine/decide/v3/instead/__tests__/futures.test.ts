@@ -279,6 +279,20 @@ describe('buyLater: a seasonal earner (D-60)', () => {
     );
   });
 
+  test('D-12 a lift moves the seasonal date: a lean 20,000 month plus 25,000 saves 45,000', () => {
+    const slow = buyLater({ price: mu(1_000_000), unspent: mu(0), typicalLeft: mu(42_500), month: '2026-11', picture });
+    const fast = buyLater({ price: mu(1_000_000), unspent: mu(0), typicalLeft: mu(42_500), month: '2026-11', picture, lift: mu(25_000) });
+    expect(fast.months).not.toBeNull();
+    expect(fast.months!).toBeLessThan(slow.months!);
+    expect(fast.monthlyAmount).toBe(42_500);
+  });
+
+  test('D-12 without a picture the lift is already in typicalLeft and is not added twice', () => {
+    const a = buyLater({ price: mu(300_000), unspent: mu(240_000), typicalLeft: mu(42_500), month: '2026-10' });
+    const b = buyLater({ price: mu(300_000), unspent: mu(240_000), typicalLeft: mu(42_500), month: '2026-10', lift: mu(25_000) });
+    expect(b).toEqual(a);
+  });
+
   test('insteadFutures passes the month\'s income picture to buy later', () => {
     const seasonalMonth = { month: '2026-11', typicalLeft: mu(42_500), incomePicture: picture } as unknown as MonthModel;
     const f = insteadFutures({

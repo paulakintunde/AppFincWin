@@ -1,3 +1,4 @@
+import fc from 'fast-check';
 import { minorUnits } from '../../../../money/types';
 import { addYearMonths } from '../../dates';
 import type { IncomeMonth } from '../../types';
@@ -59,5 +60,37 @@ describe('seasonalReadyMonth (D-60)', () => {
       expect((r as { month: string }).month >= last).toBe(true);
       last = (r as { month: string }).month;
     }
+  });
+
+  it('D-12 a lift turns a short month into a saving month, and a deep dip still saves nothing', () => {
+    const lean = lastYear((mm) => (mm === '12' ? -20_000 : mm === '01' ? -80_000 : 0));
+    // Dec saves 30,000 with a 50,000 lift; Jan -80,000 + 50,000 is still below zero so saves 0.
+    expect(seasonalReadyMonth(lean, '2026-11', 30_000n, 50_000n)).toEqual({ months: 1, month: '2026-12' });
+    expect(seasonalReadyMonth(lean, '2026-11', 30_001n, 50_000n)).toEqual({ months: 3, month: '2027-02' });
+  });
+
+  it('D-12 a lift of zero is the walk as before, and a negative lift is refused', () => {
+    expect(seasonalReadyMonth(seasonal, '2026-11', 300_000n, 0n)).toEqual({ months: 7, month: '2027-06' });
+    expect(() => seasonalReadyMonth(seasonal, '2026-11', 1n, -1n)).toThrow(RangeError);
+  });
+
+  it('D-12 a lift never makes the date later', () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.integer({ min: -200_000, max: 300_000 }), { minLength: 12, maxLength: 12 }),
+        fc.bigInt({ min: 0n, max: 2_000_000n }),
+        fc.bigInt({ min: 0n, max: 100_000n }),
+        (lefts, gap, lift) => {
+          const pic = lastYear((mm) => lefts[Number(mm) - 1] ?? 0);
+          const a = seasonalReadyMonth(pic, '2026-11', gap, 0n);
+          const b = seasonalReadyMonth(pic, '2026-11', gap, lift);
+          if (a !== null) {
+            expect(b).not.toBeNull();
+            expect(b!.months).toBeLessThanOrEqual(a.months);
+          }
+        }
+      ),
+      { numRuns: 200 }
+    );
   });
 });
