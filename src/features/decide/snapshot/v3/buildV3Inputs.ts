@@ -182,6 +182,29 @@ function customOf(x: unknown): CustomOptions {
   };
 }
 
+/**
+ * CR-03: the decide_settings money columns hold home-currency minor units. A row stamped in another currency (or one that
+ * no longer matches after a home change) is not read as home money. Null currency = a row written before the stamp, read as home.
+ */
+function settingsMoneyUsable(st: SnapshotSource['settings'], home: string): boolean {
+  return st === null || st.currency === null || st.currency === home;
+}
+
+/** The v3 settings with every money figure removed; non-money answers are kept. */
+function withoutMoney(v3: V3SettingsSource | null): V3SettingsSource | null {
+  if (v3 === null) return null;
+  return {
+    ...v3,
+    steady_amount: null,
+    everyday_override: null,
+    unspent_anchor: null,
+    rough_saving: null,
+    rough_debt: null,
+    rough_invest: null,
+    unexplained_amount: null,
+  };
+}
+
 function profileOf(v3: V3SettingsSource | null): IncomeProfile | null {
   if (v3 === null || v3.income_types === null) return null;
   const steady = moneyOf(v3.steady_amount);
@@ -282,11 +305,14 @@ function unexplainedOf(v3: V3SettingsSource | null): UnexplainedAnswer | null {
  */
 export function buildV3Inputs(
   source: SnapshotSource,
-  v3: V3SettingsSource | null,
+  v3Stored: V3SettingsSource | null,
   built: SnapshotResult = buildDecideSnapshot(source),
   uses: Readonly<Record<string, AccountUse>> = {} // tests only: overrides the stored account columns
 ): V3Inputs {
   const { today, homeCurrency: home } = source;
+  const st = source.settings;
+  const moneyUsable = settingsMoneyUsable(st, home);
+  const v3 = moneyUsable ? v3Stored : withoutMoney(v3Stored); // CR-03: settings money in another currency never reaches the engine
   const thresholds: HomeThresholds = homeThresholds(home, usdRateOf(source, home));
   const accountKind = new Map(source.accounts.map((a) => [a.id, a.kind as string]));
   const kindOf = (accountId: string): string => accountKind.get(accountId) ?? '';
@@ -491,7 +517,7 @@ export function buildV3Inputs(
         isHousing: row !== undefined && row.is_housing,
       };
     });
-  } else if (built.kind === 'rough') {
+  } else if (built.kind === 'rough' && moneyUsable) {
     const f = built.figures;
     const part = (x: unknown): ReturnType<typeof minorUnits> => minorUnits(moneyOf(x) ?? 0);
     rough = {
@@ -507,8 +533,7 @@ export function buildV3Inputs(
   const answers = v3?.answers ?? [];
 
   // ── funds ──
-  const st = source.settings;
-  const reserve = st === null || (st.currency !== null && st.currency !== home) ? null : moneyOf(st.reserve);
+  const reserve = st === null || !moneyUsable ? null : moneyOf(st.reserve);
   const anchorAmount = signedMoneyOf(v3?.unspent_anchor);
   const anchorAt = dateOf(v3?.unspent_anchor_at);
   const everyday = moneyOf(v3?.everyday_override);
