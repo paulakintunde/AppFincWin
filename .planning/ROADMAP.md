@@ -1037,10 +1037,15 @@ The old Decide screens are removed after cutover.
   2. Every screen passes 320 and 402 px at 1.0 and 2.0 font scale and TalkBack, with no numbers breaking across lines.
   3. `decideV3` is on for everyone (after the owner signs off a Pixel walkthrough on the test accounts); switching back shows "Coming soon" (05.3-CONTEXT D-02, D-04). The reading test was skipped by the owner (D-05).
   4. The old engine paths and screens stay unused for 2 weeks, then a follow-up change deletes them with coverage kept at 100% (D-01, D-03).
-**Plans:** 0 plans
+**Plans:** 47 plans in 9 waves (01–46 plus 09b); checker passed after 1 revision
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 05.3 to break down)
+- [ ] Wave 1: 05.3-01..08 (requirements, gates, copy mount, snapshot, D-12 engine, fixes, D-15/D-16 migration, answer_v3 client)
+- [ ] Wave 2: 05.3-09, 09b, 10 (owner D-12 gate), 11 (owner migration push), 12..22 (copy, reads, record write, routes, view-models)
+- [ ] Wave 3: 05.3-23..37 (screens and Activity refund chip)
+- [ ] Waves 4-7: 05.3-38..44 (assembly, layer cards, entry wiring, phase-wide checks)
+- [ ] Wave 8: 05.3-45 (owner device checks)
+- [ ] Wave 9: 05.3-46 (walkthrough, switch-on, removal list)
 
 ### Phase 6: Grow
 **Goal**: A user can track savings goals, investments and debt payoff against their real numbers.
