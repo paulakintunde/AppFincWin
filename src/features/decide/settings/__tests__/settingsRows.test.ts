@@ -32,7 +32,7 @@ const ANSWERS: SettingsAnswers = {
 
 const DATA: SettingsData = {
   settings: ANSWERS,
-  regularPay: { amount: 400000, frequency: 'monthly', nextDate: '2026-11-01' },
+  regularPay: { amount: 400000, frequency: 'monthly', nextDate: '2026-11-01', status: 'live', from: null },
   otherIncomeCount: 2,
   regularConfirmed: 6,
   loansCount: 2,
@@ -55,11 +55,11 @@ const ids = (facts: SetupFacts, data: SettingsData) => rowsOf(facts, data).map((
 
 describe('settingsRows', () => {
   it('formats the regular pay in its own currency, never the settings one (F-06)', () => {
-    const gbp = rowsOf(FACTS, { ...DATA, regularPay: { amount: 300000, currency: 'GBP', frequency: 'monthly', nextDate: '2026-11-01' } }).find((r) => r.id === 'regularPay');
+    const gbp = rowsOf(FACTS, { ...DATA, regularPay: { amount: 300000, currency: 'GBP', frequency: 'monthly', nextDate: '2026-11-01', status: 'live', from: null } }).find((r) => r.id === 'regularPay');
     const text = JSON.stringify(gbp?.value);
     expect(text).toContain('£3000');
     expect(text).not.toContain('$3000');
-    const usd = rowsOf(FACTS, { ...DATA, regularPay: { amount: 300000, currency: 'USD', frequency: 'monthly', nextDate: null } }).find((r) => r.id === 'regularPay');
+    const usd = rowsOf(FACTS, { ...DATA, regularPay: { amount: 300000, currency: 'USD', frequency: 'monthly', nextDate: null, status: 'live', from: null } }).find((r) => r.id === 'regularPay');
     expect(usd?.value).toEqual({ text: '$3000 record.recurring.frequency.monthly' });
   });
 
@@ -144,5 +144,18 @@ describe('settingsRows', () => {
     const rows = rowsOf(FACTS, { ...DATA, otherIncomeCount: 0, envelopes: { amount: 0, count: 0 } });
     expect(rows.find((r) => r.id === 'otherIncome')?.value).toEqual({ key: 'decide.settings.valueOtherIncome', params: { count: 0 } });
     expect(rows.find((r) => r.id === 'envelopes')?.value).toEqual({ key: 'decide.settings.valueEnvelopes', params: { amount: '$0', count: 0 } });
+  });
+});
+
+describe('settingsRows regularPay status (N-03)', () => {
+  const pay = (status: 'live' | 'stopped' | 'paused', from: string | null) => ({ amount: 300000, frequency: 'monthly' as const, nextDate: null, status, from });
+  it('says Stopped / Paused for an ended pay, never the amount', () => {
+    const stopped = rowsOf(FACTS, { ...DATA, regularPay: pay('stopped', '2026-10-02') }).find((r) => r.id === 'regularPay');
+    expect(stopped?.value).toEqual({ key: 'record.seriesStatus.statusStopped', params: { date: '2026-10-02' } });
+    const paused = rowsOf(FACTS, { ...DATA, regularPay: pay('paused', '2026-10-02') }).find((r) => r.id === 'regularPay');
+    expect(paused?.value).toEqual({ key: 'record.seriesStatus.statusPaused', params: { date: '2026-10-02' } });
+  });
+  it('reads Not set (null value) with no pay', () => {
+    expect(rowsOf(FACTS, { ...DATA, regularPay: null }).find((r) => r.id === 'regularPay')?.value).toBeNull();
   });
 });

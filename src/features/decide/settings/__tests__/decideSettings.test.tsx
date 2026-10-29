@@ -44,7 +44,7 @@ const DATA: SettingsData = {
     remind_plan: null,
     remind_unspent: null,
   },
-  regularPay: { amount: 400000, frequency: 'monthly', nextDate: '2026-11-01' },
+  regularPay: { amount: 400000, frequency: 'monthly', nextDate: '2026-11-01', status: 'live', from: null },
   otherIncomeCount: 0,
   regularConfirmed: 3,
   loansCount: 0,

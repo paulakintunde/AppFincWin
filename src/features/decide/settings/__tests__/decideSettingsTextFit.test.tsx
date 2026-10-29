@@ -15,6 +15,7 @@ import type { SettingsData } from '../settingsRows';
 jest.setTimeout(60000);
 let mockScale = 1;
 let mockWidth = 402;
+let mockStopped = false;
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
   default: () => ({ width: mockWidth, height: 874, scale: 2, fontScale: mockScale }),
@@ -49,7 +50,7 @@ const DATA: SettingsData = {
     remind_plan: true,
     remind_unspent: true,
   },
-  regularPay: { amount: 123456789, frequency: 'fortnightly', nextDate: '2026-11-01' },
+  regularPay: { amount: 123456789, frequency: 'fortnightly', nextDate: '2026-11-01', status: 'live', from: null },
   otherIncomeCount: 12,
   regularConfirmed: 12,
   loansCount: 3,
@@ -61,7 +62,7 @@ const DATA: SettingsData = {
   unspent: null,
 };
 
-jest.mock('../useSettingsData', () => ({ useSettingsData: () => ({ facts: FACTS, data: DATA, currency: 'USD' }) }));
+jest.mock('../useSettingsData', () => ({ useSettingsData: () => ({ facts: FACTS, data: mockStopped ? { ...DATA, regularPay: { amount: 123456789, frequency: 'fortnightly', nextDate: null, status: 'stopped', from: '2026-10-02' } } : DATA, currency: 'USD' }) }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', today: '2026-10-15' }),
 }));
@@ -87,6 +88,7 @@ const METRICS = { frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top:
 describe('Decide settings fits the R6 checks', () => {
   for (const m of MATRIX) {
     it(`at ${matrixName(m)}`, async () => {
+      mockStopped = false;
       mockWidth = m.width;
       mockScale = m.scale;
       await render(
@@ -100,6 +102,28 @@ describe('Decide settings fits the R6 checks', () => {
       );
       expect(screen.getAllByText('Needed').length).toBeGreaterThan(0);
       expect(screen.getByLabelText('Reset Decide setup')).toBeTruthy();
+      expectFits();
+      await cleanup();
+    });
+  }
+});
+
+describe('Decide settings with a stopped pay fits the R6 checks', () => {
+  for (const m of MATRIX) {
+    it(`Stopped value at ${matrixName(m)}`, async () => {
+      mockStopped = true;
+      mockWidth = m.width;
+      mockScale = m.scale;
+      await render(
+        <SafeAreaProvider initialMetrics={METRICS}>
+          <ThemeProvider>
+            <FontScaleProvider value={mockScale}>
+              <DecideSettingsScreen />
+            </FontScaleProvider>
+          </ThemeProvider>
+        </SafeAreaProvider>
+      );
+      expect(screen.getByText('Stopped Oct 2, 2026')).toBeTruthy();
       expectFits();
       await cleanup();
     });

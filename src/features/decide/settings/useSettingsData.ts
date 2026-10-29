@@ -13,6 +13,7 @@ import { everydayByMonth } from '@/engine/decide/v3';
 import { minorUnits } from '@/engine/money';
 import { occurrencesBetween } from '@/engine/recurring/schedule';
 import { seriesOfKind } from '@/features/income/seriesHelpers';
+import { seriesStatusOf } from '@/features/record/entry/seriesStatus';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { recordsTypical } from '../setup/steps/EverydayStep';
 import type { SetupFacts } from '../setup/setupFlow';
@@ -21,6 +22,23 @@ import type { SettingsData } from './settingsRows';
 
 /** The next pay is searched for up to the end of the year after next (covers a yearly pay). */
 const lookaheadEnd = (today: string): string => `${Number(today.slice(0, 4)) + 2}-12-31`;
+
+type SalaryRow = ReturnType<typeof seriesOfKind>[number];
+type PickedPay = SalaryRow & { readonly status: 'live' | 'stopped' | 'paused'; readonly from: string | null };
+
+/**
+ * N-03: the current pay, never an ended one. A series stopped or paused from a future date still pays until then, so it is
+ * current. With no current pay, the stopped or paused one with the latest "from" is returned so the row can say so.
+ */
+export function pickRegularPay(salary: readonly SalaryRow[], today: string): PickedPay | undefined {
+  let fallback: PickedPay | undefined;
+  for (const s of salary) {
+    const st = seriesStatusOf(s);
+    if (st.kind === 'live' || st.from > today) return { ...s, status: 'live', from: null };
+    if (fallback === undefined || st.from > (fallback.from ?? '')) fallback = { ...s, status: st.kind, from: st.from };
+  }
+  return fallback;
+}
 
 export interface SettingsScreenData {
   readonly facts: SetupFacts;
@@ -40,11 +58,13 @@ export function useSettingsData(): SettingsScreenData | null {
   return useMemo((): SettingsScreenData | null => {
     if (facts === null || accounts === undefined || rows === undefined) return null;
 
-    const pay = seriesOfKind(rows, 'salary')[0];
+    const pay = pickRegularPay(seriesOfKind(rows, 'salary'), today);
     const nextDate =
       pay === undefined
         ? null
-        : (occurrencesBetween(
+        : pay.status !== 'live'
+          ? null
+          : (occurrencesBetween(
             { anchorDate: pay.anchor_date, freq: pay.freq, endDate: pay.end_date, occurrenceCount: pay.occurrence_count },
             today,
             lookaheadEnd(today),
@@ -72,7 +92,10 @@ export function useSettingsData(): SettingsScreenData | null {
 
     const data: SettingsData = {
       settings,
-      regularPay: pay === undefined ? null : { amount: Math.abs(pay.amount), currency: pay.currency, frequency: pay.freq, nextDate },
+      regularPay:
+        pay === undefined
+          ? null
+          : { amount: Math.abs(pay.amount), currency: pay.currency, frequency: pay.freq, nextDate, status: pay.status, from: pay.from },
       otherIncomeCount: v3Series.filter((s) => s.role === 'other_income' && live(s)).length,
       regularConfirmed: v3Series.filter((s) => s.role === 'bill' && s.confirmed && live(s)).length,
       loansCount: (inputs?.debts ?? []).length,

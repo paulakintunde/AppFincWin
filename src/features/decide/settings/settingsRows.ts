@@ -47,7 +47,7 @@ export interface SettingsAnswers {
 export interface SettingsData {
   readonly settings: SettingsAnswers | null;
   /** The live regular pay series: monthly-or-other amount, frequency key, next pay date. */
-  readonly regularPay: { readonly amount: number; readonly currency?: string; readonly frequency: 'weekly' | 'fortnightly' | 'monthly' | 'quarterly' | 'yearly'; readonly nextDate: string | null } | null;
+  readonly regularPay: { readonly amount: number; readonly currency?: string; readonly frequency: 'weekly' | 'fortnightly' | 'monthly' | 'quarterly' | 'yearly'; readonly nextDate: string | null; readonly status: 'live' | 'stopped' | 'paused'; readonly from: string | null } | null;
   readonly otherIncomeCount: number;
   readonly regularConfirmed: number;
   readonly loansCount: number;
@@ -144,6 +144,9 @@ function valueOf(row: RowDef, d: SettingsData, fmt: SettingsFormat): SettingsVal
     case 'regularPay': {
       const p = d.regularPay;
       if (p === null) return null;
+      if (p.status !== 'live' && p.from !== null) {
+        return { key: p.status === 'stopped' ? 'record.seriesStatus.statusStopped' : 'record.seriesStatus.statusPaused', params: { date: fmt.date(p.from) } };
+      }
       const frequency = fmt.word(FREQ_WORD[p.frequency]);
       if (p.nextDate === null) return { text: `${fmt.money(p.amount, p.currency)} ${frequency}` };
       return { key: `${K}valueRegularPay`, params: { amount: fmt.money(p.amount, p.currency), frequency, date: fmt.date(p.nextDate) } };
