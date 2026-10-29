@@ -79,11 +79,17 @@ export function buyLater(input: {
   readonly picture?: Pick<IncomePicture, 'treated' | 'months'>;
   /** D-12: what the what-if levers add to every month of a seasonal walk (the caller already adds it to typicalLeft). */
   readonly lift?: MinorUnits;
+  /**
+   * D-12, finding 6: the answer above says "not yet" even when unspent money covers the price (a dip in the cash path),
+   * and the judge then dates the wait from next month at the earliest (its readyMonth never returns 0). With this set,
+   * a covered price is walked like a gap of zero instead of being ready now, so the two never disagree.
+   */
+  readonly waitsAtLeastAMonth?: boolean;
 }): { readonly months: number | null; readonly readyBy: string | null; readonly monthlyAmount: MinorUnits | null } {
   const none = { months: null, readyBy: null, monthlyAmount: null } as const;
   if (input.unspent === null) return none;
   const target = Math.max(0, input.price - input.unspent);
-  if (target === 0) return { months: 0, readyBy: input.month, monthlyAmount: input.typicalLeft };
+  if (target === 0 && input.waitsAtLeastAMonth !== true) return { months: 0, readyBy: input.month, monthlyAmount: input.typicalLeft };
   if (input.picture !== undefined && input.picture.treated === 'seasonal') {
     const walked = seasonalReadyMonth(input.picture, input.month, BigInt(target), BigInt(input.lift ?? 0));
     return walked === null
