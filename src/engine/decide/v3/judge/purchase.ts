@@ -13,13 +13,13 @@
  */
 import { divideHalfUp } from '../../../money/rounding';
 import type { MinorUnits } from '../../../money/types';
-import { minorFromBigInt, ZERO_PERCENT } from '../../../payoff/types';
+import { minorFromBigInt, rateDenominator, ZERO_PERCENT, type PeriodsPerYear } from '../../../payoff/types';
 import { myPart, resolveShare, type ResolvedShare } from '../../share';
 import { purchaseFlows } from '../cash/path';
 import type { DatedFlow } from '../cash/path';
 import { percentText } from '../adapters/inputsV2';
 import { addDays } from '../dates';
-import { countFromTerm, monthlyEquivalentOf } from '../plan/cadence';
+import { amortBase, countFromTerm, monthlyEquivalentOf, scaledApr } from '../plan/cadence';
 import { planCard, salesTaxOf, type PlanCard } from '../plan/planCard';
 import { checkQuoted, scoredPayment, type QuotedCheck } from '../plan/quoted';
 import { buildSchedule, paymentsInRange } from '../plan/schedule';
@@ -68,16 +68,60 @@ interface ExtraSpec {
   readonly role: 'cost' | 'credit' | 'modelled_elsewhere';
 }
 
-/** The scored schedule: when the quote is the larger figure it replaces the level payment (I41). */
-function withPayment(s: Schedule, payment: bigint, source: Schedule['source']): Schedule {
-  const feeTotal = BigInt(s.fees.perPeriod) * BigInt(s.lastPaying) + BigInt(s.fees.end);
-  const totalPaid = payment * BigInt(s.lastPaying) + feeTotal;
-  const interest = totalPaid - feeTotal - BigInt(s.financed);
+/** How the level payments run, so a larger payment can be walked to its own last paying period (L-09). */
+interface PayoffWalk {
+  /** Rate per period, already scaled for the cadence (scaledApr). */
+  readonly rate: bigint;
+  readonly base: PeriodsPerYear;
+  /** true: the first payment falls on the day, before any interest (annuity-due). */
+  readonly due: boolean;
+}
+
+/**
+ * Pays `financed + pauseInterest` off with a level `payment`, the last payment taking whatever is left, the same walk
+ * amortise uses. Returns the paying periods, the last payment and the total paid (before per-period and end fees).
+ */
+function walkPayoff(s: Schedule, payment: bigint, w: PayoffWalk): { last: number; final: bigint; paid: bigint } {
+  const D = rateDenominator(w.base);
+  let bal = BigInt(s.financed) + BigInt(s.pauseInterest);
+  let paid = 0n;
+  let final = 0n;
+  let last = 0;
+  for (let k = 0; k < s.count && bal > 0n; k += 1) {
+    const owed = bal + (w.due && k === 0 ? 0n : divideHalfUp(bal * w.rate, D));
+    const p = k === s.count - 1 || payment >= owed ? owed : payment;
+    bal = owed - p;
+    paid += p;
+    final = p;
+    last = k + 1;
+  }
+  return { last, final, paid };
+}
+
+/**
+ * The scored schedule: when the quote is the larger figure it replaces the level payment (I41). With a `walk` the
+ * larger payment clears the loan sooner, so the paying periods, the last payment and the total are worked out again for
+ * it (L-09); without one (a quote with no rate, whose implied rate already fits the count) the periods are kept.
+ */
+function withPayment(s: Schedule, payment: bigint, source: Schedule['source'], walk: PayoffWalk | null): Schedule {
   const pay = mb(payment);
+  let lastPaying = s.lastPaying;
+  let finalPayment = pay;
+  let principalPaid = payment * BigInt(s.lastPaying);
+  if (walk !== null) {
+    const w = walkPayoff(s, payment, walk);
+    lastPaying = w.last;
+    finalPayment = mb(w.final);
+    principalPaid = w.paid;
+  }
+  const feeTotal = BigInt(s.fees.perPeriod) * BigInt(lastPaying) + BigInt(s.fees.end);
+  const totalPaid = principalPaid + feeTotal;
+  const interest = totalPaid - feeTotal - BigInt(s.financed);
   return {
     ...s,
     payment: pay,
-    finalPayment: pay,
+    finalPayment,
+    lastPaying,
     totalPaid: mb(totalPaid),
     totalInterest: mb(interest < 0n ? 0n : interest),
     monthlyEquivalent: monthlyEquivalentOf(mb(payment + BigInt(s.fees.perPeriod)), s.cadence),
@@ -190,10 +234,11 @@ function buildResolved(
     const financedBig = fullWhole - BigInt(pay.deposit) - BigInt(pay.tradeIn);
     const financed = mb(financedBig < 0n ? 0n : financedBig);
     const quoteOnly = pay.apr === null;
+    const aprUsed = pay.apr ?? ZERO_PERCENT;
     const out = buildSchedule({
       asOf: ctx.asOf,
       financed,
-      apr: pay.apr ?? ZERO_PERCENT,
+      apr: aprUsed,
       cadence: pay.cadence,
       count,
       firstPayment: pay.firstPayment,
@@ -216,10 +261,13 @@ function buildResolved(
       // A quote whose payments cannot cover the financed amount has no rate: terms are inconsistent, not scoreable.
       if (quoted.impliedApr === null) return nothing(['plan_rate_missing'], reasons, facts);
       facts.push({ code: 'implied_rate', values: { rate: quoted.impliedApr === 'above_max' ? ABOVE_MAX_RATE_TEXT : percentText(quoted.impliedApr) } });
-      sched = withPayment(sched, BigInt(quoted.quoted), 'from_quote');
+      sched = withPayment(sched, BigInt(quoted.quoted), 'from_quote', null);
     } else if (quoted.kind === 'matches' || quoted.kind === 'differs') {
       const scored = scoredPayment(sched.payment, quoted.quoted);
-      if (scored !== null && scored > sched.payment) sched = withPayment(sched, BigInt(scored), 'quoted');
+      if (scored !== null && scored > sched.payment) {
+        const walk: PayoffWalk = { rate: scaledApr(aprUsed, pay.cadence), base: amortBase(pay.cadence), due: pay.firstPayment?.kind !== 'one_period' };
+        sched = withPayment(sched, BigInt(scored), 'quoted', walk);
+      }
       if (quoted.kind === 'differs') {
         facts.push({
           code: 'quoted_differs',
@@ -272,10 +320,12 @@ export function purchaseCashFlows(
   days: number
 ): DatedFlow[] {
   const s = purchase.schedule;
+  // L-03: the first payment due today is taken out of the day-one flow and put back by purchaseFlows, both as the same
+  // myPart, so the two cancel and the total on asOf is exactly dayOne. There is no clamp: a clamp would hide a negative
+  // remainder and make the cash path disagree with the ladder (buildPurchase already floors dayOne itself at 0).
   let dayOne = BigInt(purchase.dayOne);
   if (s !== null) {
     for (const p of paymentsInRange(s, asOf, addDays(asOf, 1))) dayOne -= BigInt(myPart(p.amount, purchase.share));
   }
-  if (dayOne < 0n) dayOne = 0n;
   return purchaseFlows({ dayOne: mb(dayOne), schedule: s, share: purchase.share }, asOf, days);
 }
