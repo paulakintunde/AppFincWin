@@ -53,7 +53,7 @@ const DECIDE_TOAST_LABEL: Readonly<Record<string, UndoLabelKey>> = {
   'decide.setup.shell.toastSaved': 'setupStepSaved',
   // 05.2-53 (F-08): these toasts carry a real step id but no `undo.label.` text, so each needs its label here.
   'decide.settings.toastReset': 'setupReset',
-  'decide.setup.regular.toastCleared': 'paymentDismissed',
+  'decide.setup.regular.toastCleared': 'paymentRestored',
   'decide.accountUse.toastSaved': 'accountUseSaved',
   'decide.emergencySheet.toastSaved': 'emergencySaved',
   'decide.emergencySheet.toastSavedAccount': 'emergencySaved',

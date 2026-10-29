@@ -35,6 +35,8 @@ export interface AddDismissalVars {
   householdId: string;
   row: NewDismissal;
   stepId: string;
+  /** Payment name for the undo label; omitted when the caller has none. */
+  labelName?: string | null;
 }
 
 export interface RemoveDismissalVars {
@@ -45,6 +47,7 @@ export interface RemoveDismissalVars {
   /** Fixed when the user acts, so a replay of a landed write compares equal (acceptIfAlreadyApplied). */
   deletedAt: string;
   stepId: string;
+  labelName?: string | null;
 }
 
 function patchCache(qc: QueryClient, householdId: string, updater: (rows: DismissalList) => DismissalList): void {
@@ -62,7 +65,7 @@ export function registerDismissalMutations(qc: QueryClient): void {
         const client = await writeClient();
         // A duplicate client id (23505) is read back by insertDismissal: this exact write already landed.
         const row = await insertDismissal(client, vars.row);
-        const step = buildStep(vars.stepId, 'paymentDismissed', {}, inverseOfInserts('recurring_dismissals', [{ id: row.id, version: row.version }]));
+        const step = buildStep(vars.stepId, 'paymentDismissed', vars.labelName ? { name: vars.labelName } : {}, inverseOfInserts('recurring_dismissals', [{ id: row.id, version: row.version }]));
         await recordUndoStepSafely(qc, client, step, vars.ownerId);
         return row;
       }),
@@ -111,8 +114,8 @@ export function registerDismissalMutations(qc: QueryClient): void {
         recordWrittenVersion('recurring_dismissals', vars.id, [vars.expectedVersion, expected], row.version);
         const step = buildStep(
           vars.stepId,
-          'paymentDismissed',
-          {},
+          'paymentRestored',
+          vars.labelName ? { name: vars.labelName } : {},
           inverseOfPatches('recurring_dismissals', [{ id: row.id, before: { deleted_at: null }, versionAfter: row.version }])
         );
         await recordUndoStepSafely(qc, client, step, vars.ownerId);
@@ -149,13 +152,13 @@ export function registerDismissalMutations(qc: QueryClient): void {
 export function useAddDismissal(
   householdId: string,
   ownerId: string
-): { dismiss(input: { payeeKey: string; direction: 'in' | 'out' }): { id: string; stepId: string } } {
+): { dismiss(input: { payeeKey: string; direction: 'in' | 'out'; name?: string | null }): { id: string; stepId: string } } {
   const mutation = useMutation<RecurringDismissalRow, unknown, AddDismissalVars>({
     mutationKey: mutationKeys.addDismissal,
     scope: WRITE_SCOPE,
   });
   return {
-    dismiss({ payeeKey, direction }) {
+    dismiss({ payeeKey, direction, name }) {
       const id = Crypto.randomUUID();
       const stepId = newStepId();
       mutation.mutate({
@@ -163,6 +166,7 @@ export function useAddDismissal(
         householdId,
         row: { id, household_id: householdId, payee_key: payeeKey, direction },
         stepId,
+        labelName: name ?? null,
       });
       return { id, stepId };
     },
@@ -170,15 +174,15 @@ export function useAddDismissal(
 }
 
 /** Change a "Not regular" answer back: soft-deletes the row. Returns the undo step id. */
-export function useRemoveDismissal(householdId: string, ownerId: string): { restore(row: RecurringDismissalRow): { stepId: string } } {
+export function useRemoveDismissal(householdId: string, ownerId: string): { restore(row: RecurringDismissalRow, name?: string | null): { stepId: string } } {
   const mutation = useMutation<RecurringDismissalRow, unknown, RemoveDismissalVars>({
     mutationKey: mutationKeys.removeDismissal,
     scope: WRITE_SCOPE,
   });
   return {
-    restore(row) {
+    restore(row, name) {
       const stepId = newStepId();
-      mutation.mutate({ id: row.id, ownerId, householdId, expectedVersion: row.version, deletedAt: new Date().toISOString(), stepId });
+      mutation.mutate({ id: row.id, ownerId, householdId, expectedVersion: row.version, deletedAt: new Date().toISOString(), stepId, labelName: name ?? null });
       return { stepId };
     },
   };

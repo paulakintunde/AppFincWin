@@ -35,7 +35,7 @@ async function mount() {
 
 const CASES: [string, Record<string, string | number>, string][] = [
   ['decide.settings.toastReset', {}, 'setupReset'],
-  ['decide.setup.regular.toastCleared', { name: 'Gym' }, 'paymentDismissed'],
+  ['decide.setup.regular.toastCleared', { name: 'Gym' }, 'paymentRestored'],
   ['decide.accountUse.toastSaved', {}, 'accountUseSaved'],
   ['decide.emergencySheet.toastSaved', {}, 'emergencySaved'],
   ['decide.emergencySheet.toastSavedAccount', { account: 'Savings' }, 'emergencySaved'],

@@ -92,7 +92,7 @@ describe('useAddDismissal', () => {
     const { fake, qc } = setup();
     fake.respondWith(ok(row({ id: 'id-2', version: 1 })));
     const { result } = await renderHook(() => useAddDismissal(HH, 'user-1'), { wrapper: wrapper(qc) });
-    const out = result.current.dismiss({ payeeKey: 'gym', direction: 'out' });
+    const out = result.current.dismiss({ payeeKey: 'gym', direction: 'out', name: 'Gym' });
     expect(out).toEqual({ id: 'id-1', stepId: 'id-2' });
     await waitFor(() => expect(qc.getQueryData<RecurringDismissalRow[]>(KEY)?.[0]?.payee_key).toBe('gym'));
     await waitFor(() => expect(insertUndoStep).toHaveBeenCalledTimes(1));
@@ -105,6 +105,7 @@ describe('useAddDismissal', () => {
     expect(insertUndoStep.mock.calls[0]![1]).toMatchObject({
       id: 'id-2',
       labelKey: 'paymentDismissed',
+      labelParams: { name: 'Gym' },
       ops: [{ entity: 'recurring_dismissals', id: 'id-2', expectedVersion: 1, patch: { deleted_at: '$now' } }],
     });
   });
@@ -152,7 +153,7 @@ describe('useRemoveDismissal', () => {
     qc.setQueryData(KEY, [row({ version: 2 }), row({ id: 'dis-2', payee_key: 'rent' })]);
     fake.respondWith(ok([row({ version: 3, deleted_at: '2026-10-28T00:00:00Z' })]));
     const { result } = await renderHook(() => useRemoveDismissal(HH, 'user-1'), { wrapper: wrapper(qc) });
-    const out = result.current.restore(row({ version: 2 }));
+    const out = result.current.restore(row({ version: 2 }), 'Gym');
     expect(out).toEqual({ stepId: 'id-1' });
     await waitFor(() => expect(qc.getQueryData<RecurringDismissalRow[]>(KEY)?.map((r) => r.id)).toEqual(['dis-2']));
     await waitFor(() => expect(insertUndoStep).toHaveBeenCalledTimes(1));
@@ -162,7 +163,8 @@ describe('useRemoveDismissal', () => {
     expect(fake.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toContainEqual(['version', 2]);
     expect(insertUndoStep.mock.calls[0]![1]).toMatchObject({
       id: 'id-1',
-      labelKey: 'paymentDismissed',
+      labelKey: 'paymentRestored',
+      labelParams: { name: 'Gym' },
       ops: [{ entity: 'recurring_dismissals', id: 'dis-1', expectedVersion: 3, patch: { deleted_at: null } }],
     });
   });

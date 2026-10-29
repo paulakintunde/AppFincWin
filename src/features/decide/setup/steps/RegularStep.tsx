@@ -205,14 +205,14 @@ export const RegularStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(funct
 
   const markNotRegular = (row: CandidateRow): void => {
     if (!canWrite) return;
-    const { stepId } = dismisser.dismiss({ payeeKey: row.candidate.key, direction: row.candidate.direction });
+    const { stepId } = dismisser.dismiss({ payeeKey: row.candidate.key, direction: row.candidate.direction, name: row.candidate.name });
     showToast({ kind: 'ordinary', text: undoLabelText('paymentDismissed', { name: row.candidate.name }), stepId });
   };
 
   const clearNotRegular = (row: CandidateRow): void => {
     if (!canWrite || row.dismissal === null) return;
-    const { stepId } = restorer.restore(row.dismissal);
-    showToast({ kind: 'ordinary', text: { key: 'decide.setup.regular.toastCleared', params: { name: row.candidate.name, undoLabel: 'paymentDismissed' } }, stepId });
+    const { stepId } = restorer.restore(row.dismissal, row.candidate.name);
+    showToast({ kind: 'ordinary', text: { key: 'decide.setup.regular.toastCleared', params: { name: row.candidate.name, undoLabel: 'paymentRestored' } }, stepId });
   };
 
   const nameCounts = new Map<string, number>();

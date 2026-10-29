@@ -152,7 +152,7 @@ describe('RegularStep', () => {
     mockRows = [candidate('Rent', 150000, 'unmarked')];
     await mount(RegularStep);
     await fireEvent.press(screen.getByLabelText('Mark Rent as not regular'));
-    expect(mockDismiss).toHaveBeenCalledWith({ payeeKey: 'rent', direction: 'out' });
+    expect(mockDismiss).toHaveBeenCalledWith({ payeeKey: 'rent', direction: 'out', name: 'Rent' });
     expect(mockConfirm).not.toHaveBeenCalled();
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'step-dismiss' }));
   });
@@ -164,7 +164,7 @@ describe('RegularStep', () => {
     await fireEvent.press(screen.getByLabelText('Clear “Not regular” for Gym'));
     expect(mockRestore).toHaveBeenCalledWith({ id: 'd0', version: 1 });
     expect(mockToast).toHaveBeenCalledWith(
-      expect.objectContaining({ stepId: 'step-clear', text: { key: 'decide.setup.regular.toastCleared', params: { name: 'Gym', undoLabel: 'paymentDismissed' } } })
+      expect.objectContaining({ stepId: 'step-clear', text: { key: 'decide.setup.regular.toastCleared', params: { name: 'Gym', undoLabel: 'paymentRestored' } } })
     );
   });
 
