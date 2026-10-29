@@ -944,7 +944,7 @@ Gap closure (planned 2026-10-26 against 05.1-CONTEXT D-33..D-45, 05.1-VERIFICATI
   2. The income questions are one shared component. Activity shows a "How are you paid?" card when the profile is missing, lets any income be tagged (type, and spent or kept), and asks once when a new kind of income appears.
   3. Every new piece of data has add, edit, delete and undo through the write queue, works offline, and is covered by account deletion and data export.
   4. Migrations are additive. Each one is applied to production only after preflight and the owner's approval.
-**Plans:** 68 plans in 19 waves (planned 2026-10-27; gap plans 37-48 added 2026-10-28; round-2 gap plans 49-60 added 2026-10-28 from the Pixel walkthrough; checkpoints: 05.2-06 noise rule, 05.2-31 new fits, 05.2-37 gap new fits, 05.2-36 production push, 05.2-52 D-11 if the F-04 diagnosis finds a wrong engine input, 05.2-56 D-11 if answers change, 05.2-59 push of 20261028001400 and Pixel re-walk; round-3 gap plans 61-68 added 2026-10-29, 05.2-68 re-check and TalkBack)
+**Plans:** 75 plans in 21 waves (planned 2026-10-27; gap plans 37-48 added 2026-10-28; round-2 gap plans 49-60 added 2026-10-28 from the Pixel walkthrough; checkpoints: 05.2-06 noise rule, 05.2-31 new fits, 05.2-37 gap new fits, 05.2-36 production push, 05.2-52 D-11 if the F-04 diagnosis finds a wrong engine input, 05.2-56 D-11 if answers change, 05.2-59 push of 20261028001400 and Pixel re-walk; round-3 gap plans 61-68 added 2026-10-29, 05.2-68 re-check and TalkBack; review-fix plans 69-75 added 2026-10-29)
 
 Plans:
 - [x] 05.2-01-PLAN.md — decide_settings v3 columns (incl. id for Undo, refine dates, unexplained answer) and profiles.decide_v3 flag, pgTAP 63-64 (wave 1)
@@ -1015,6 +1015,13 @@ Plans:
 - [x] 05.2-66-PLAN.md — Gap round 3: Not my pay keys and detection, undoable writes (F-02) (wave 17)
 - [x] 05.2-67-PLAN.md — Gap round 3: Not my pay and Show again on the pay step (F-02) (wave 18)
 - [x] 05.2-68-PLAN.md — [BLOCKING] Round-3 gate, Pixel re-check of 7 items, TalkBack pass; N-04 cache fix (wave 19)
+- [x] 05.2-69-PLAN.md — Review fix: Regular signs a found bill as money out, links its logged rows, replay reads lines back (CR-01, CR-02, WR-01) (wave 20)
+- [x] 05.2-70-PLAN.md — Review fix: linked rows keep a confirmed payment listed as Regular (wave 20)
+- [x] 05.2-71-PLAN.md — Review fix: settings money stamped and checked against the home currency (CR-03 client, IN-02) (wave 20)
+- [x] 05.2-72-PLAN.md — Review fix: Not my pay per person, code-point key cut (WR-02, IN-01) (wave 20)
+- [x] 05.2-73-PLAN.md — Review fix: live-key dismissal collision read as landed (WR-03) (wave 20)
+- [x] 05.2-74-PLAN.md — Review fix: migrations 20261029000100 (WR-04) and 20261029000200 (CR-03 server) + pgTAP 74, 75 (wave 20)
+- [x] 05.2-75-PLAN.md — [BLOCKING] Review-fix gate, owner-approved push, Pixel Regular spot-check (wave 21)
 
 ### Phase 05.3: Decide screens v3 (INSERTED)
 
@@ -1171,7 +1178,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
-| 05.2 Decide data and setup | 68/68 | Executed, verification pending | - |
+| 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |

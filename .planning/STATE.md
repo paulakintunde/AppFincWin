@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: 05.2 all 68 plans executed, owner signed off 2026-10-29; phase verification + code review next
+stopped_at: 05.2 complete (75/75): verified, code review fixed, migrations pushed; PR into main next
 last_updated: "2026-10-29T08:30:00.000Z"
-last_activity: 2026-10-29 -- 05.2 round-3 fixes, Pixel re-check and TalkBack pass done; 20261028001400 pushed
+last_activity: 2026-10-29 -- 05.2 review fixes 69-75 done; 20261029000100 and 000200 pushed
 progress:
   total_phases: 24
   completed_phases: 10
-  total_plans: 481
-  completed_plans: 481
+  total_plans: 488
+  completed_plans: 488
   percent: 99
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 
 ## Current Position
 
-Phase: 05.2 (decide-data-and-setup) — 68/68 plans executed 2026-10-29. Owner signed off after the round-3 Pixel re-check and TalkBack pass (05.2-WALKTHROUGH-FINDINGS.md). Migrations through 20261028001400 in production. N-05 moved to 05.3 D-15. DECIDE_V3 and DECIDE_OPEN stay false. Next: gsd-verifier, code review, PR into main. Branch phase/05.2-decide-data-and-setup in C:/dev/fincwin-p5.
+Phase: 05.2 (decide-data-and-setup) — COMPLETE 2026-10-29, 75/75 plans. VERIFICATION passed; code review CR/WR fixed in 69-75. Owner signed off after the round-3 Pixel re-check and TalkBack pass (05.2-WALKTHROUGH-FINDINGS.md). Migrations through 20261028001400 in production. N-05 moved to 05.3 D-15. DECIDE_V3 and DECIDE_OPEN stay false. Next: PR into main. Branch phase/05.2-decide-data-and-setup in C:/dev/fincwin-p5.
 Phase: 05.1 (decide-engine-v3) — COMPLETE 2026-10-27
 Plan: 50 of 50 (32 original + gap closure 05.1-33..50). 05.1-VERIFICATION.md re-verification passed 6/6 success criteria, all 6 earlier gaps and H-01..H-03, M-01..M-09 closed; owner signed off the shadow review (reviewed: true, 2026-10-27; D-64 added). DECIDE_V3 and DECIDE_OPEN stay false. Deferrals: 05.2-OWNER-NOTES.md and 05.1-CONTEXT.md <deferred> (05.3). Branch phase/05.1-decide-engine-v3 in C:/dev/fincwin-p5, not pushed.
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
