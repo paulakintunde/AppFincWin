@@ -9,6 +9,16 @@ export type DecideCheckStatus = 'open' | 'bought' | 'waiting' | 'passed';
 export type SeenState = 'fits' | 'adjust' | 'no' | 'missing';
 export type SeenBasis = 'logged_months' | 'first_read_rough_figures';
 
+/** 05.3 D-16: the SeenV3 the user last saw, stored as JSON. Never derived from verdict_at_decision. */
+export interface StoredSeenV3 {
+  v: 3;
+  code: 'needs_input' | 'not_yet' | 'monthly_short' | 'emergency_use' | 'fits_unspent' | 'fits_month';
+  variant: 'payday' | 'not_covered' | 'low_month' | null;
+  readyBy: { kind: 'date'; date: string } | { kind: 'month'; month: string } | null;
+  unspentAfter: number | null;
+  lineFacts: string[];
+}
+
 export interface DecideCheckRow {
   id: string;
   household_id: string;
@@ -20,6 +30,7 @@ export interface DecideCheckRow {
   furthest_step: number;
   last_seen_state: SeenState | null;
   last_seen_basis: SeenBasis | null;
+  answer_v3: StoredSeenV3 | null;
   reopened_from: string | null;
   decided_at: string | null;
   verdict_at_decision: SeenState | null;
@@ -41,7 +52,7 @@ export interface DecideCheckRow {
 }
 
 export const DECIDE_CHECK_COLUMNS =
-  'id, household_id, created_by, kind, name, inputs, status, furthest_step, last_seen_state, last_seen_basis, reopened_from, decided_at, verdict_at_decision, estimate_day_one, estimate_monthly, wait_monthly, ready_by, broke_line, cooling_off_at, estimate_monthly_payment, estimate_running, is_sample, deleted_at, version, updated_by, created_at, updated_at';
+  'id, household_id, created_by, kind, name, inputs, status, furthest_step, last_seen_state, last_seen_basis, answer_v3, reopened_from, decided_at, verdict_at_decision, estimate_day_one, estimate_monthly, wait_monthly, ready_by, broke_line, cooling_off_at, estimate_monthly_payment, estimate_running, is_sample, deleted_at, version, updated_by, created_at, updated_at';
 
 export interface NewDecideCheck {
   id: string;
@@ -52,6 +63,7 @@ export interface NewDecideCheck {
   furthest_step: number;
   last_seen_state?: SeenState | null;
   last_seen_basis?: SeenBasis | null;
+  answer_v3?: StoredSeenV3 | null;
   reopened_from?: string | null;
 }
 
@@ -63,6 +75,7 @@ export type DecideCheckPatch = Partial<{
   furthest_step: number;
   last_seen_state: SeenState | null;
   last_seen_basis: SeenBasis | null;
+  answer_v3: StoredSeenV3 | null;
   deleted_at: string | null;
 }>;
 
@@ -75,6 +88,7 @@ export const DECIDE_CHECK_INSERT_KEYS = [
   'furthest_step',
   'last_seen_state',
   'last_seen_basis',
+  'answer_v3',
   'reopened_from',
 ] as const satisfies readonly (keyof NewDecideCheck)[];
 
@@ -85,6 +99,7 @@ export const DECIDE_CHECK_PATCH_KEYS = [
   'furthest_step',
   'last_seen_state',
   'last_seen_basis',
+  'answer_v3',
   'deleted_at',
 ] as const satisfies readonly (keyof DecideCheckPatch)[];
 

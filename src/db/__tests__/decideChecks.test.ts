@@ -2,6 +2,7 @@ import { DbError, NotFoundError, VersionConflictError } from '../errors';
 import {
   DECIDE_CHECK_INSERT_KEYS,
   DECIDE_CHECK_PATCH_KEYS,
+  DECIDE_CHECK_COLUMNS,
   fetchDecideChecks,
   insertDecideCheck,
   kindFollowingInputs,
@@ -25,6 +26,7 @@ function checkRow(overrides: Partial<DecideCheckRow> = {}): DecideCheckRow {
     furthest_step: 1,
     last_seen_state: null,
     last_seen_basis: null,
+    answer_v3: null,
     reopened_from: null,
     decided_at: null,
     verdict_at_decision: null,
@@ -194,6 +196,20 @@ describe('saveDecideCheckDraft', () => {
 });
 
 describe('updateDecideCheck', () => {
+  it('05.3 D-16: answer_v3 is patchable, verdict_at_decision still is not', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({
+      data: [checkRow({ version: 2 })],
+      error: null,
+      status: 200,
+    });
+    await expect(updateDecideCheck(client, 'k1', 1, { answer_v3: null })).resolves.toBeTruthy();
+    expect(DECIDE_CHECK_COLUMNS).toContain('answer_v3');
+    await expect(
+      updateDecideCheck(client, 'k1', 1, { verdict_at_decision: 'fits' } as unknown as DecideCheckPatch)
+    ).rejects.toBeInstanceOf(TypeError);
+  });
+
   it('rejects non-patchable columns before any request', async () => {
     const client = createFakeSupabase();
     await expect(updateDecideCheck(client, 'k1', 1, { status: 'bought' } as unknown as DecideCheckPatch)).rejects.toBeInstanceOf(

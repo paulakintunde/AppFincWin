@@ -59,6 +59,10 @@ describe('export manifest (05.2 owner OQ3, C13)', () => {
     }
   });
 
+  it('05.3 D-16: decide_checks exports answer_v3', () => {
+    expect(EXPORT_MANIFEST.decide_checks).toContain('answer_v3');
+  });
+
   it('excludes profiles.decide_v3 (an access switch, not user data)', () => {
     expect(EXPORT_MANIFEST.profiles).not.toContain('decide_v3');
   });

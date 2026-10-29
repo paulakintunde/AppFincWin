@@ -28,6 +28,7 @@ import {
   updateDecideCheck,
   type DecideCheckPatch,
   type DecideCheckRow,
+  type StoredSeenV3,
   type SeenBasis,
   type SeenState,
 } from '@/db/decideChecks';
@@ -170,6 +171,7 @@ export function optimisticCheckRow(vars: CreateCheckVars): WithPending<DecideChe
     furthest_step: vars.furthestStep,
     last_seen_state: null,
     last_seen_basis: null,
+    answer_v3: null,
     reopened_from: vars.reopenedFrom ?? null,
     decided_at: null,
     verdict_at_decision: null,
@@ -422,6 +424,10 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
       }
     },
   });
+
+  // 05.3 D-16: the stored-answer write runs the same pipeline as editCheck (version check, serial scope, conflict and
+  // failed-write handling), under its own key so a paused write resumes by key after a restart.
+  qc.setMutationDefaults(mutationKeys.saveCheckAnswer, qc.getMutationDefaults(mutationKeys.editCheck) ?? {});
 }
 
 export function useCreateCheck(): {
@@ -571,6 +577,39 @@ export function useMarkCheckSeen(): { markSeen(row: DecideCheckRow, state: SeenS
       return true;
     },
   };
+}
+
+// 05.3 D-16: the only writer of answer_v3. Called on "Check it" and by the record flow; never from a recompute or a refund link (D-13).
+export function useSaveCheckAnswer(): { save(row: DecideCheckRow, seen: StoredSeenV3): boolean } {
+  const mutation = useMutation<EditCheckResult, unknown, EditCheckVars>({
+    mutationKey: mutationKeys.saveCheckAnswer,
+    scope: WRITE_SCOPE,
+  });
+  return {
+    save(row, seen) {
+      if (row.answer_v3 !== null && sameStoredAnswer(row.answer_v3, seen)) return false;
+      mutation.mutate({
+        id: row.id,
+        ownerId: row.created_by,
+        cache: cacheOf(row),
+        expectedVersion: row.version,
+        patch: { answer_v3: seen },
+      });
+      return true;
+    },
+  };
+}
+
+function sameStoredAnswer(a: StoredSeenV3, b: StoredSeenV3): boolean {
+  return (
+    a.v === b.v &&
+    a.code === b.code &&
+    a.variant === b.variant &&
+    a.unspentAfter === b.unspentAfter &&
+    JSON.stringify(a.readyBy) === JSON.stringify(b.readyBy) &&
+    a.lineFacts.length === b.lineFacts.length &&
+    a.lineFacts.every((f, i) => f === b.lineFacts[i])
+  );
 }
 
 /**

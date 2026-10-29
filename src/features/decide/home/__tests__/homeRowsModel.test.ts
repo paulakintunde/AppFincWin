@@ -25,6 +25,7 @@ function row(id: string, over: Partial<DecideCheckRow> = {}, inp: CheckInputs = 
     furthest_step: 1,
     last_seen_state: null,
     last_seen_basis: null,
+    answer_v3: null,
     reopened_from: null,
     decided_at: null,
     verdict_at_decision: null,
