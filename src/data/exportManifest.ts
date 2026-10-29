@@ -52,7 +52,7 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     // profiles.decide_v3 is an access switch, not user data: excluded on purpose (05.2).
   ],
   decide_checks: [
-    'id', 'household_id', 'created_by', 'kind', 'name', 'inputs', 'status', 'furthest_step', 'last_seen_state', 'last_seen_basis',
+    'id', 'household_id', 'created_by', 'kind', 'name', 'inputs', 'status', 'furthest_step', 'last_seen_state', 'last_seen_basis', 'answer_v3',
     'reopened_from', 'decided_at', 'verdict_at_decision', 'estimate_day_one', 'estimate_monthly', 'wait_monthly', 'ready_by',
     'broke_line', 'cooling_off_at', 'estimate_monthly_payment', 'estimate_running', 'deleted_at', 'created_at', 'updated_at',
   ],
