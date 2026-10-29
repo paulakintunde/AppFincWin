@@ -7,6 +7,13 @@
 // or numeric field may ever be added as a property here: the AssertAll guard below (via
 // CATALOGUE_IS_FINITE) makes such a property type fail to compile, so a future edit smuggling
 // financial detail in is caught at review time, not by discipline alone.
+// 05.3: literal unions spelled out here (mirroring engine/decide/v3 types.ts and month/refine.ts) so the services layer takes no engine import.
+export type DecideCode = 'needs_input' | 'not_yet' | 'monthly_short' | 'emergency_use' | 'fits_unspent' | 'fits_month';
+export type DecideVariant = 'payday' | 'not_covered' | 'low_month';
+export type DecideBand = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13' | '14' | '15';
+export type DecideRefineCardKind =
+  | 'pay' | 'pay_stopped' | 'everyday' | 'everyday_override_expiring' | 'new_regular' | 'saving_bucket' | 'unspent'
+  | 'changing_income' | 'steady_above_income' | 'series_drift' | 'card_not_paid_in_full' | 'under_logged_month';
 /** The setup stepper's step keys (05.2-UI-SPEC flow table). Shared by the stepper and the analytics events. */
 export type DecideSetupStepKey =
   | 'welcome' | 'paid' | 'pay' | 'season' | 'method' | 'other' | 'regular' | 'loans' | 'saving' | 'everyday'
@@ -75,6 +82,15 @@ export type EventCatalogue = {
   decide_setup_step_saved: { step: DecideSetupStepKey };
   decide_setup_finished: Record<string, never>;
   decide_setup_left: { step: DecideSetupStepKey };
+  // 05.3 (DSV-17): v3 Decide screens. Finite literals only; no amounts, names or free strings.
+  decide_check_started: Record<string, never>;
+  decide_answer_shown: { code: DecideCode; variant: DecideVariant | 'none'; band: DecideBand };
+  decide_question_answered: { missing: 'account_use_question' | 'pay_arrival_question' | 'unspent_not_confirmed' | 'unexplained_money_question' | 'income_pattern_unconfirmed' | 'expected_income_needed' | 'volatile_cover_question' };
+  decide_recorded: { outcome: 'bought' | 'planned' | 'passed' };
+  decide_instead_opened: Record<string, never>;
+  decide_help_used: Record<string, never>;
+  decide_refine_choice: { kind: DecideRefineCardKind; choice: 'kept' | 'updated' };
+  decide_not_ready_shown: { first: 'past_month_missing' | 'activity_not_current' | 'envelopes_unconfirmed'; count: '1' | '2' | '3' };
 };
 
 export type EventName = keyof EventCatalogue;
