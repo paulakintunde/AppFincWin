@@ -1163,7 +1163,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
-| 05.2 Decide data and setup | 47/48 | In progress | - |
+| 05.2 Decide data and setup | 58/60 | In progress | - |
 | 05.3 Decide screens v3 | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
