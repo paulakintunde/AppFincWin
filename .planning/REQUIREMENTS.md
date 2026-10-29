@@ -1,3 +1,22 @@
+| DSV-01 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-02 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-03 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-04 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-05 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-06 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-07 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-08 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-09 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-10 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-11 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-12 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-13 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-14 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-15 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-16 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-17 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-18 | Phase 05.3 - Decide screens v3 | Pending |
+| DSV-19 | Phase 05.3 - Decide screens v3 | Pending |
 # Requirements: FincWin United
 
 **Defined:** 2026-09-21
@@ -290,6 +309,28 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DSU-22**: Every new table and column is covered by account deletion (cascade, pgTAP) and by an export manifest with a coverage test
 - [ ] **DSU-23**: One human-gated production step: owner approval, `npm run supabase:preflight`, `npm run supabase:db:push`, then the owner’s flag (05.2 D-14)
 - [ ] **DSU-24**: Copy, analytics, accessibility and fit gates for every new surface: declarative copy guard, four `decide_setup_*` events, 320/402 dp at font scale 1.0/2.0, TalkBack
+
+### Decide — Screens v3 (Phase 05.3)
+
+- [ ] **DSV-01**: After the owner signs off a Pixel walkthrough on the test accounts, `decideEngine()` returns 'v3' for everyone; when it returns 'v2' every Decide entry point (tab, FAB, You > Add, deep links, notification taps) shows "Coming soon" and no old Decide route is reachable (05.3 D-01, D-02, D-04)
+- [ ] **DSV-02**: The Decide tab resolves in order Coming soon / loading / Set up / Not ready / Home; the FAB "New check", the notification observer and the new routes gate on the v3 access, never on DECIDE_OPEN
+- [ ] **DSV-03**: Decide home shows the month card (three-part bar, three tap figures), the check card, the refine card slot, envelopes, saved plans, unfinished checks, past decisions, a quiet 'Something changed?' row that opens the life-change sheet (D-20) and the footer, and home, the check, the answer and saved plans show one answer code for the same check (success criterion 1)
+- [ ] **DSV-04**: While Decide is not ready, home shows the checklist card "Before Decide can check a purchase:" with one row per missing item in the order last month, this month, envelopes, each with a button to Activity or Envelopes, refreshing on return (05.3 D-06)
+- [ ] **DSV-05**: Check a purchase: item and price, the band chip, item types, the how-pay toggle, a draft that saves as you type, inline validation and "Check it"
+- [ ] **DSV-06**: The layer cards follow Purchase.layers: purpose with the emergency follow-up and the list ending "A luxury" (D-10), value, payment plan (down payment to pay.deposit), item costs (sales tax to taxPercent), major asset and very large purchase, the last three stored only (D-18)
+- [ ] **DSV-07**: The answer screen shows the nine states with catalogue copy, notices, the confidence chip and sheet, the funding strip with a text equivalent, facts, assumptions, the action bar, "changed since you opened it", the stored answer from answer_v3 (D-16), and "The payments mean a rate of over 999% a year." instead of "9999%" (D-11)
+- [ ] **DSV-08**: Every in-check question (account use, pay arrival, unspent money, income pattern, expected income, what extra money is for, low-month cover) takes the place of the answer card, one at a time with "and N more", each answer saved straight away through the 05.2 mutations with Undo (D-07, D-08)
+- [ ] **DSV-09**: The whole plan screen shows the plan summary, the cost rows, the mix bar and the notes from Purchase.schedule and PlanCard, including rate 0%, a differing quote and very long terms
+- [ ] **DSV-10**: "What could I do instead?" shows the four futures; the what-if explorer passes the income picture so its ready-by month follows the season and equals the answer's month at slider 0, with branch coverage, the shadow gate and the I28 back-test kept and any new fit approved by the owner (D-12)
+- [ ] **DSV-11**: "How this was worked out" shows the month line by line, the last six months, the regular payments counted and the assumptions, from MonthModel
+- [ ] **DSV-12**: "Help me check this" (five rough figures saved to the rough_* settings, answer marked "Rough, from your figures") is offered only when no month is fully recorded (D-17, D-57)
+- [ ] **DSV-13**: Record sheets: Record as bought (two steps, written by a v3 write builder), Plan it and Not buying, each with Undo, the failed-writes path, and "Check another price" starting a new check with the item kept and the price focused (D-19)
+- [ ] **DSV-14**: The refine card on home and the refine review screen show the refine() changes, each choice saved with Undo, nothing changed until the user chooses, "Later" hiding the card for 14 days
+- [ ] **DSV-15**: A refund linked after a check never changes its stored answer; the saved check shows "With the refund, this could fit now. Check again." only when the re-run with the refund gives a better code (D-13); Activity shows "Refund of your {payee} purchase?" on unlinked money in from a payee bought from in the last 12 months, opening the refund picker preselected (D-14)
+- [ ] **DSV-16**: History "Undo to here" no longer treats an already-undone later step as a change elsewhere, and decide_checks gains answer_v3 (jsonb SeenV3, code in the six codes), both in one additive migration proven by pgTAP and pushed with the owner's approval (D-15, D-16)
+- [ ] **DSV-17**: Every new string is in the catalogue and passes the DCU-09 and v3 banned-word guards; new undo labels and analytics events (codes only); the 05.1 deferred items (singular forms, lean-month wording, taxPercent and deposit mapping, L-03, L-08, L-09 remainders) are closed
+- [ ] **DSV-18**: Every new screen and sheet passes 320 and 402 dp at font scale 1.0 and 2.0 and TalkBack with no number broken across lines, every answer tone pair passes contrast, the hero is a debounced polite live region, and no Decide screen blocks screenshots (D-09)
+- [ ] **DSV-19**: Cutover: the owner's Pixel walkthrough is signed off, DECIDE_V3 is switched on and published over the air, the 2-week hold is recorded and the follow-up deletion list is written (D-01, D-02, D-03)
 
 ### Grow
 
@@ -780,6 +821,8 @@ Populated during roadmap creation.
 *2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
 
 *2026-10-10 — Phase 2.2 closed: ACT-06..ACT-18 and REC-19..REC-25 ticked on 02.2-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough pending Apple enrolment, 02.2-HUMAN-UAT.md); coverage 234/234 (95 ticked).*
+*2026-10-29 — Phase 05.3 planned: DSV-01..DSV-19 added (05.3-CONTEXT D-01..D-20, 05.3-RESEARCH; plans 05.3-01..05.3-46 and 05.3-09b); v1 total now 335.*
+
 *2026-10-27 — Phase 05.2 planned: DSU-01..DSU-24 added (05.2-CONTEXT D-01..D-23, 05.2-RESEARCH; plans 05.2-01..05.2-36); v1 total now 316.*
 *2026-10-24 — One Judge-on choice: DCU-40 added (D-107, plans 05-142..05-145; the plans 05-135..05-141 deliver D-106); it also touches DCU-34 (the FAB returns on Decide home), DCU-35, DCU-39 and DCU-09; v1 total now 292.*
 
