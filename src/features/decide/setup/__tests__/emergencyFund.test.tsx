@@ -106,6 +106,19 @@ describe('EmergencyStep (D-04)', () => {
     expect((screen.getByLabelText('Amount kept for emergencies').props as { value: string }).value).toMatch(/9,?000/);
   });
 
+  it('leads the mixed amount field with the currency symbol', async () => {
+    await mountStep();
+    await choose('Rainy day');
+    expect(screen.getByText('$')).toBeTruthy();
+  });
+
+  it('leads the plain amount field with the currency symbol', async () => {
+    await mountStep();
+    await choose('High-interest savings');
+    await fireEvent.press(screen.getByLabelText('Yes'));
+    expect(screen.getByText('$')).toBeTruthy();
+  });
+
   it('saves the prefilled balance for a mixed account when the amount is untouched', async () => {
     const first = await mountStep();
     await choose('Rainy day');

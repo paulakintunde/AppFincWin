@@ -302,6 +302,7 @@ export function EmergencyFundFields({ form, usedLine = null }: EmergencyFundFiel
     <View style={{ gap: space.gapSm }}>
       {accountMode && form.mixed ? (
         <MoneyInput
+          boxed
           value={form.mixedAmount}
           currency={form.currency}
           onChange={form.setMixedAmount}
@@ -318,6 +319,7 @@ export function EmergencyFundFields({ form, usedLine = null }: EmergencyFundFiel
         </View>
       ) : (
         <MoneyInput
+          boxed
           value={value.amount}
           currency={form.currency}
           onChange={(m) => set({ mode: 'amount', amount: clamp(m) })}
