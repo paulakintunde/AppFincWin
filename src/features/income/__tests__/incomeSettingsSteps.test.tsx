@@ -32,6 +32,7 @@ jest.mock('../useIncomeContext', () => ({
     accounts: [],
     series: [],
     found: null,
+    notPay: [],
   }),
 }));
 

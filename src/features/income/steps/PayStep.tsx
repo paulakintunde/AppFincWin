@@ -12,6 +12,10 @@ import { MoneyInput } from '@/features/decide/ui/MoneyInput';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { useConfirmRegularCandidate } from '@/data/mutations/seriesAttributes';
 import { useEditSeriesFrom } from '@/data/mutations/recurringSeries';
+import { useAddDismissal, useRemoveDismissal } from '@/data/mutations/dismissals';
+import { showToast } from '@/state/undoToast';
+import { undoLabelText } from '@/i18n/undoLabel';
+import { notPayKey } from '../notPay';
 import type { RecurringSeriesPatch } from '@/db/recurringSeries';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { space } from '@/theme/layout';
@@ -47,6 +51,9 @@ export const PayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function 
   const noWrap = useNoWrapMoney(ctx.found?.currency ?? ctx.homeCurrency);
   const confirmer = useConfirmRegularCandidate(ctx.householdId ?? '', ctx.userId ?? '');
   const editor = useEditSeriesFrom();
+  const dismisser = useAddDismissal(ctx.householdId ?? '', ctx.userId ?? '');
+  const restorer = useRemoveDismissal(ctx.householdId ?? '', ctx.userId ?? '');
+  const canWrite = ctx.householdId !== undefined && ctx.userId !== undefined;
 
   const existing = useMemo(() => liveSeriesOfKind(ctx.series, 'salary'), [ctx.series]);
   const paused = useMemo(() => pausedIncomeSeries(ctx.series, 'salary'), [ctx.series]);
@@ -113,9 +120,21 @@ export const PayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function 
   }));
 
   const found = ctx.found;
+  // F-02: the answer hides the guess only; the cards below are never touched. Undo and Show again both reverse it.
+  const markNotMine = (key: string, payer: string): void => {
+    if (!canWrite) return;
+    const { stepId } = dismisser.dismiss({ payeeKey: notPayKey(key), direction: 'in', name: payer, labelKey: 'payNotMine' });
+    showToast({ kind: 'ordinary', text: undoLabelText('payNotMine', { name: payer }), stepId });
+  };
+  const showAgain = (row: (typeof ctx.notPay)[number]): void => {
+    if (!canWrite) return;
+    const { stepId } = restorer.restore(row.row, row.payer, 'payNotMineCleared');
+    showToast({ kind: 'ordinary', text: undoLabelText('payNotMineCleared', { name: row.payer }), stepId });
+  };
   return (
     <View style={{ gap: space.groupGap }}>
       {found ? <PrefillNote text={t('income.pay.prefill', { payer: found.payer, amount: noWrap(found.amount), day: found.day })} /> : null}
+      {found && canWrite ? <TextButton label={t('income.pay.notMine')} a11y={t('income.pay.notMineA11y', { payer: found.payer })} onPress={() => markNotMine(found.key, found.payer)} /> : null}
       {cards.map((c, i) => (
         <Stack key={c.key}>
           <MoneyInput
@@ -149,6 +168,14 @@ export const PayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function 
           {i > 0 && c.seriesId === null ? <TextButton danger label={t('income.pay.remove')} onPress={() => setDraft(cards.filter((x) => x.key !== c.key))} /> : null}
         </Stack>
       ))}
+      {canWrite
+        ? ctx.notPay.map((n) => (
+            <View key={n.row.id} style={{ gap: space.gapSm }}>
+              <Meta text={t('income.pay.notMineLine', { payer: n.payer })} />
+              <TextButton label={t('income.pay.showAgain')} a11y={t('income.pay.showAgainA11y', { payer: n.payer })} onPress={() => showAgain(n)} />
+            </View>
+          ))
+        : null}
       <PausedSeriesList series={paused} />
       <TextButton
         label={t('income.pay.addAnother')}

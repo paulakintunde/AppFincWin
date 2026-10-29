@@ -24,6 +24,11 @@ jest.mock('@/data/mutations/recurringSeries', () => ({
   useEditSeriesFrom: () => ({ editFrom: (i: Record<string, unknown>) => mockEdit(i) }),
 }));
 
+jest.mock('@/data/mutations/dismissals', () => ({
+  useAddDismissal: () => ({ dismiss: jest.fn(() => ({ id: 'd', stepId: 's' })) }),
+  useRemoveDismissal: () => ({ restore: jest.fn(() => ({ stepId: 's' })) }),
+}));
+
 const mockOpenStatus = jest.fn();
 jest.mock('@/features/record/entry/seriesStatusHost', () => ({ openSeriesStatus: (s: unknown) => mockOpenStatus(s) }));
 
@@ -41,6 +46,7 @@ jest.mock('../useIncomeContext', () => ({
     accounts: [ACCOUNT],
     series: mockSeries,
     found: mockFound,
+    notPay: [],
   }),
 }));
 
