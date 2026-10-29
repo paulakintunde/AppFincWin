@@ -1,5 +1,5 @@
 import React from 'react';
-import { BackHandler, Text } from 'react-native';
+import { BackHandler, StyleSheet, Text } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -324,5 +324,32 @@ describe('SetupStepper edit-one-step mode (05.2-34)', () => {
     const { onClose } = await mount({ only: 'season' });
     await press('Back');
     expect(onClose).toHaveBeenCalledWith('notNow');
+  });
+
+  const fillCount = () => [1, 2, 3, 4, 5].filter((n) => screen.queryByTestId(`rail-fill-${n}`, { includeHiddenElements: true }) !== null).length;
+
+  it('the rail fills to the current section, is empty on Welcome and complete on the Summary (F-15)', async () => {
+    await mount();
+    expect(fillCount()).toBe(0);
+    await press('Start');
+    expect(fillCount()).toBe(1);
+  });
+
+  it('the Summary shows a complete rail', async () => {
+    await mount({ startAt: 'reminders' });
+    await press('Finish setup');
+    expect(screen.getByText('body:summary')).toBeTruthy();
+    expect(fillCount()).toBe(5);
+  });
+
+  it('the step body stays rendered and unfaded after a re-render with the same step (F-01)', async () => {
+    await mount({ startAt: 'paid' });
+    mockFacts = { ...baseFacts, incomeTypes: ['salary_or_wages', 'other'] as never };
+    await act(async () => {});
+    const body = screen.getByText('body:paid');
+    for (let node: typeof body.parent = body; node; node = node.parent) {
+      const style = StyleSheet.flatten(node.props?.style) as { opacity?: number } | undefined;
+      expect(style?.opacity === 0).toBe(false);
+    }
   });
 });

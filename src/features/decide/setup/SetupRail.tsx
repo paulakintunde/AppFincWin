@@ -1,11 +1,13 @@
 /**
- * Plan 05.2-23: the five-segment section rail. Decoration only: hidden from assistive tech (the header text carries
- * "Section {n} of 5, {name}"). Passed sections and the current one are accent, later ones line3. The fill animates once
- * over DURATION.progress; reduced motion collapses it.
+ * Plan 05.2-23 / 05.2-50: the five-segment section rail. Decoration only: hidden from assistive tech (the header text
+ * carries "Section {n} of 5, {name}"). Passed sections and the current one are accent, later ones line3; on the Summary
+ * (`complete`) all five are accent. A fill is a static accent View, never an animated opacity value (F-01); when it
+ * first mounts it may fade in once through a layout `entering` animation. Reduced motion draws it at once.
  */
-import React, { useEffect } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { Easing, Extrapolation, interpolate, type SharedValue, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { RISE_IN_ANIMATED } from '@/features/decide/ui/RiseIn';
 import { useTheme } from '@/theme/ThemeProvider';
 import { DURATION, useMotion } from '@/theme/motion';
 import type { SetupSection } from './setupFlow';
@@ -14,29 +16,37 @@ export const SETUP_SECTIONS: readonly SetupSection[] = ['income', 'regular', 'sp
 const SEGMENT_HEIGHT = 4;
 const SEGMENT_GAP = 8;
 
-function SegmentFill({ index, progress, color }: { index: number; progress: SharedValue<number>; color: string }) {
-  const style = useAnimatedStyle(() => ({ opacity: interpolate(progress.value, [index - 1, index], [0, 1], Extrapolation.CLAMP) }));
-  return <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: color }, style]} />;
-}
-
-export function SetupRail({ current, hidden = false }: { current: SetupSection | null; hidden?: boolean }) {
+export function SetupRail({
+  current,
+  complete = false,
+  hidden = false,
+  animated = RISE_IN_ANIMATED,
+}: {
+  current: SetupSection | null;
+  /** The Summary: every section is done. */
+  complete?: boolean;
+  hidden?: boolean;
+  /** Defaults to RISE_IN_ANIMATED; a prop so both branches are testable. */
+  animated?: boolean;
+}) {
   const { colors } = useTheme();
-  const motion = useMotion();
+  const { reduced } = useMotion();
   const index = current === null ? -1 : SETUP_SECTIONS.indexOf(current);
-  const progress = useSharedValue(index);
-  useEffect(() => {
-    progress.value = withTiming(index, { duration: motion.duration(DURATION.progress), easing: Easing.bezier(0.2, 0.8, 0.3, 1) });
-    // the animated value is stable; only the target matters.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index]);
+  const filled = complete ? SETUP_SECTIONS.length - 1 : index;
+  const animate = animated && !reduced;
 
   if (hidden) return null;
   return (
     <View testID="setup-rail" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.row}>
       {SETUP_SECTIONS.map((section, i) => {
+        const fillStyle = [StyleSheet.absoluteFill, { backgroundColor: colors.accent }];
         return (
           <View key={section} testID={`rail-segment-${i + 1}`} style={[styles.segment, { backgroundColor: colors.line3 }]}>
-            <SegmentFill index={i} progress={progress} color={colors.accent} />
+            {i > filled ? null : animate ? (
+              <Animated.View testID={`rail-fill-${i + 1}`} style={fillStyle} entering={FadeIn.duration(DURATION.progress)} />
+            ) : (
+              <View testID={`rail-fill-${i + 1}`} style={fillStyle} />
+            )}
           </View>
         );
       })}
