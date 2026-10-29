@@ -286,7 +286,7 @@ describe('UnspentStep (needed, last step of Your money now)', () => {
     setUp();
     const { last } = await mount();
     expect(last().canContinue).toBe(false);
-    expect(last().reasonKey).toBe('decide.setup.shell.neededReason');
+    expect(last().reasonKey).toBe('decide.setup.shell.chooseOneReason');
     expect(screen.getByText('The money free for anything. It’s often less than your bank balance.')).toBeTruthy();
     expect(screen.getByText('Decide asks you to check this again after 30 days.')).toBeTruthy();
     expect(screen.queryAllByLabelText('Your unspent money').filter((n) => typeof n.props.onChangeText === 'function')).toHaveLength(0);

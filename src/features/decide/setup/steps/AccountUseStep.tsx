@@ -5,13 +5,13 @@
 import React, { forwardRef, useImperativeHandle, useState } from 'react';
 import { View } from 'react-native';
 import { space } from '@/theme/layout';
-import { Intro, NEEDED_REASON_KEY, Why, useReportReady } from '@/features/income/steps/shared';
+import { Intro, EACH_ACCOUNT_REASON_KEY, Why, useReportReady } from '@/features/income/steps/shared';
 import { AccountUseList } from '../AccountUseList';
 import type { SetupStepBodyProps, SetupStepHandle } from './types';
 
 export const AccountUseStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function AccountUseStep({ onReadyChange }, ref) {
   const [allConfirmed, setAllConfirmed] = useState(false);
-  useReportReady(onReadyChange, allConfirmed, allConfirmed ? null : NEEDED_REASON_KEY, false);
+  useReportReady(onReadyChange, allConfirmed, allConfirmed ? null : EACH_ACCOUNT_REASON_KEY, false);
   useImperativeHandle(ref, () => ({
     // The writes already happened in the list and the sheet.
     save: () => ({ stepId: null }),

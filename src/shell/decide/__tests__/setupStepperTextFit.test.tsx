@@ -33,7 +33,16 @@ jest.mock('@/data/mutations/seriesAttributes', () => ({
   usePatchSeriesAttributes: () => ({ patch: jest.fn() }),
 }));
 jest.mock('@/data/mutations/recurringSeries', () => ({ useEditSeriesFrom: () => ({ editFrom: jest.fn() }) }));
-jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: { income_types: ['salary_or_wages'], variable_method: 'steady' } }) }));
+jest.mock('@/data/queries/decide', () => ({
+  useDecideSettings: () => ({ data: { income_types: ['salary_or_wages'], variable_method: 'steady' } }),
+  usePots: () => ({ data: { plain: [], live: [], wait: [], done: [] } }),
+}));
+// accountUse step (reads the account list, balances and the save hook)
+jest.mock('@/data/queries/accounts', () => ({
+  useAccounts: () => ({ data: [{ id: 'a1', name: 'Everyday', kind: 'checking', currency: 'USD', deleted_at: null, archived_at: null, opening_balance: 0 }] }),
+}));
+jest.mock('@/data/queries/activity', () => ({ useAccountBalances: () => ({ balances: new Map([['a1', { balance: 120000, overflow: false }]]), isLoading: false }) }));
+jest.mock('@/data/mutations/accountUse', () => ({ useSaveAccountUses: () => ({ save: jest.fn(() => null) }) }));
 jest.mock('@/features/decide/setup/useSetupFacts', () => ({ useSetupFacts: () => mockFacts }));
 jest.mock('@/shell/header/SyncProblemLine', () => ({ SyncProblemLine: () => null }));
 jest.mock('@/shell/header/BackButton', () => {
@@ -113,7 +122,7 @@ async function mount(startAt: SetupStepKey | undefined) {
 
 describe('assembled stepper fits the R6 checks', () => {
   for (const m of MATRIX) {
-    for (const [name, startAt] of [['Welcome', undefined], ['paid (a needed step)', 'paid'], ['Summary', 'summary']] as const) {
+    for (const [name, startAt] of [['Welcome', undefined], ['paid (a needed step)', 'paid'], ['everyday (single choice)', 'everyday'], ['account use', 'accountUse'], ['Summary', 'summary']] as const) {
       it(`${name} at ${matrixName(m)}`, async () => {
         mockWidth = m.width;
         mockScale = m.scale;
@@ -123,6 +132,8 @@ describe('assembled stepper fits the R6 checks', () => {
           expect(screen.getByText('On track to leave')).toBeTruthy();
           expect(screen.getByText('Change an answer')).toBeTruthy();
         }
+        const reason = startAt === 'everyday' ? 'One choice is needed to continue.' : startAt === 'accountUse' ? 'A use for each account is needed to continue.' : null;
+        if (reason !== null) expect(screen.getByText(reason)).toBeTruthy();
         expectFits();
         await cleanup();
       });

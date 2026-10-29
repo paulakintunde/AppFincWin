@@ -74,7 +74,7 @@ export const EverydayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(func
   const writesOverride = (showHero ? effectiveChoice === 'change' : true) && typedOk && amount !== stored;
   const clearsOverride = showHero && effectiveChoice === 'right' && stored !== null;
 
-  useReportReady(onReadyChange, ready, ready ? null : 'decide.setup.shell.neededReason', writesOverride || clearsOverride);
+  useReportReady(onReadyChange, ready, ready ? null : 'decide.setup.shell.chooseOneReason', writesOverride || clearsOverride);
 
   useImperativeHandle(ref, () => ({
     save() {

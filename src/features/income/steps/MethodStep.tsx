@@ -17,7 +17,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { hapticSelection } from '@/ui/haptics';
 import type { SetupStepBodyProps, SetupStepHandle } from '@/features/decide/setup/steps/types';
 import { useIncomeContext } from '../useIncomeContext';
-import { Caption, ChipRow, Intro, Meta, NEEDED_REASON_KEY, Why, useNoWrapMoney, useReportReady, useCopy } from './shared';
+import { Caption, ChipRow, Intro, Meta, CHOOSE_ONE_REASON_KEY, Why, useNoWrapMoney, useReportReady, useCopy } from './shared';
 
 type Method = 'match' | 'spread' | 'steady' | 'balance';
 type Hold = 1 | 2 | 3;
@@ -74,7 +74,7 @@ export const MethodStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functi
     }
   })();
   const dirty = cur.method !== stored.method || (cur.method === 'spread' && cur.spread !== stored.spread) || (cur.method === 'steady' && cur.steady !== stored.steady) || (cur.method === 'balance' && cur.hold !== stored.hold);
-  useReportReady(onReadyChange, followUp, followUp ? null : NEEDED_REASON_KEY, dirty);
+  useReportReady(onReadyChange, followUp, followUp ? null : CHOOSE_ONE_REASON_KEY, dirty);
 
   useImperativeHandle(ref, () => ({
     save() {

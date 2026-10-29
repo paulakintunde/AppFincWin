@@ -103,7 +103,7 @@ describe('EverydayStep', () => {
     expect(screen.getByText('The middle of your last 6 months')).toBeTruthy();
     expect(screen.getByLabelText('Looks right').props.accessibilityState).toMatchObject({ checked: false });
     expect(screen.getByLabelText('Change it').props.accessibilityState).toMatchObject({ checked: false });
-    expect(last()).toEqual({ canContinue: false, reasonKey: 'decide.setup.shell.neededReason', dirty: false });
+    expect(last()).toEqual({ canContinue: false, reasonKey: 'decide.setup.shell.chooseOneReason', dirty: false });
   });
 
   it('Looks right writes nothing when there is no override', async () => {

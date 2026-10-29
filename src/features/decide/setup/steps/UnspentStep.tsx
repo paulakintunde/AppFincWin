@@ -10,7 +10,7 @@ import { space } from '@/theme/layout';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { MoneyInput } from '@/features/decide/ui/MoneyInput';
 import { SegmentedToggle } from '@/features/decide/ui/SegmentedToggle';
-import { Intro, Meta, NEEDED_REASON_KEY, useCopy, useReportReady } from '@/features/income/steps/shared';
+import { Intro, Meta, CHOOSE_ONE_REASON_KEY, useCopy, useReportReady } from '@/features/income/steps/shared';
 import { UnspentSumCard } from '../UnspentSumCard';
 import { useUnspent } from '../useUnspent';
 import { setupSheetActions } from './setupSheetHost';
@@ -28,7 +28,7 @@ export const UnspentStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(funct
 
   const figure = !model.ready ? null : choice === 'right' ? (model.sum?.total ?? null) : choice === 'own' ? own : null;
   const canContinue = figure !== null;
-  useReportReady(onReadyChange, canContinue, canContinue ? null : NEEDED_REASON_KEY, canContinue);
+  useReportReady(onReadyChange, canContinue, canContinue ? null : CHOOSE_ONE_REASON_KEY, canContinue);
 
   useImperativeHandle(ref, () => ({
     save() {

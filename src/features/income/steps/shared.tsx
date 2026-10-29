@@ -35,6 +35,12 @@ export function useCopy(): Copy {
 /** The copy key that explains why Continue is off on a needed step (UI-SPEC: "At least one is needed to continue."). */
 export const NEEDED_REASON_KEY = 'decide.setup.shell.neededReason' as const;
 
+/** Held-Next reason on single-choice steps (one answer, not a multi-select). */
+export const CHOOSE_ONE_REASON_KEY = 'decide.setup.shell.chooseOneReason' as const;
+
+/** Held-Next reason on the account-use step (one use per account). */
+export const EACH_ACCOUNT_REASON_KEY = 'decide.setup.shell.eachAccountReason' as const;
+
 /** Reports readiness to the host. Only the three fields drive it, so a host that passes a fresh callback each render cannot loop. */
 export function useReportReady(
   onReadyChange: (ready: SetupStepReady) => void,
