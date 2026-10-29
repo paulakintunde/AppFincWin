@@ -58,11 +58,12 @@ describe('recurring dismissals', () => {
     const row = { id: ID, household_id: 'h1', payee_key: 'netflix', direction: 'out' as const };
     const c = createFakeSupabase();
     c.respondWith({ data: { id: ID }, error: null, status: 201 });
-    await expect(insertDismissal(c, row)).resolves.toEqual({ id: ID });
+    await expect(insertDismissal(c, row)).resolves.toEqual({ row: { id: ID }, own: true });
     c.respondWith({ data: null, error: dup, status: 409 });
     c.respondWith({ data: { id: ID, version: 1 }, error: null, status: 200 });
-    await expect(insertDismissal(c, row)).resolves.toEqual({ id: ID, version: 1 });
+    await expect(insertDismissal(c, row)).resolves.toEqual({ row: { id: ID, version: 1 }, own: true });
     c.respondWith({ data: null, error: dup, status: 409 });
+    c.respondWith({ data: null, error: null, status: 200 });
     c.respondWith({ data: null, error: null, status: 200 });
     await expect(insertDismissal(c, row)).rejects.toBeDefined();
     c.respondWith({ data: null, error: { message: 'x', code: '42501' }, status: 403 });

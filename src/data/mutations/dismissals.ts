@@ -2,7 +2,8 @@
 // recurring_dismissals row (one live row per household + payee_key + direction) with a paymentDismissed undo step
 // (inverseOfInserts = soft delete). Remove soft-deletes the row, version-conditional, with an undo step that puts it
 // back. Unmarked candidates write nothing. Same shape as decidePots.ts: replay key is the step id, a duplicate
-// client id (23505) is read back as landed, failed-write records hold ids only.
+// client id (23505) is read back as landed, failed-write records hold ids only. An answer already live elsewhere
+// (same household + payee_key + direction) is read as landed and records no undo step.
 import * as Crypto from 'expo-crypto';
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
@@ -68,9 +69,12 @@ export function registerDismissalMutations(qc: QueryClient): void {
       guardSession(vars, async () => {
         const client = await writeClient();
         // A duplicate client id (23505) is read back by insertDismissal: this exact write already landed.
-        const row = await insertDismissal(client, vars.row);
-        const step = buildStep(vars.stepId, vars.labelKey ?? 'paymentDismissed', vars.labelName ? { name: vars.labelName } : {}, inverseOfInserts('recurring_dismissals', [{ id: row.id, version: row.version }]));
-        await recordUndoStepSafely(qc, client, step, vars.ownerId);
+        // An answer already live elsewhere comes back own: false and records no undo step (WR-03).
+        const { row, own } = await insertDismissal(client, vars.row);
+        if (own) {
+          const step = buildStep(vars.stepId, vars.labelKey ?? 'paymentDismissed', vars.labelName ? { name: vars.labelName } : {}, inverseOfInserts('recurring_dismissals', [{ id: row.id, version: row.version }]));
+          await recordUndoStepSafely(qc, client, step, vars.ownerId);
+        }
         return row;
       }),
     scope: WRITE_SCOPE,
@@ -89,7 +93,9 @@ export function registerDismissalMutations(qc: QueryClient): void {
       patchCache(qc, vars.householdId, (rows) => upsertRow(rows, optimistic, 'end'));
     },
     onSuccess: (row: RecurringDismissalRow, vars: AddDismissalVars) => {
-      patchCache(qc, vars.householdId, (rows) => upsertRow(rows, row, 'end'));
+      patchCache(qc, vars.householdId, (rows) =>
+        upsertRow(row.id === vars.row.id ? rows : rows.filter((r) => r.id !== vars.row.id), row, 'end')
+      );
       invalidate(qc, vars.householdId);
     },
     onError: async (err: unknown, vars: AddDismissalVars) => {

@@ -42,14 +42,41 @@ async function fetchDismissal(client: DbClient, id: string): Promise<RecurringDi
   return (data as RecurringDismissalRow | null) ?? null;
 }
 
-/** A duplicate client id is read back as landed (MON-08). */
-export async function insertDismissal(client: DbClient, row: NewDismissal): Promise<RecurringDismissalRow> {
+async function fetchLiveDismissal(
+  client: DbClient,
+  householdId: string,
+  payeeKey: string,
+  direction: 'in' | 'out'
+): Promise<RecurringDismissalRow | null> {
+  const { data, error, status } = await client
+    .from('recurring_dismissals')
+    .select(DISMISSAL_COLUMNS)
+    .eq('household_id', householdId)
+    .eq('payee_key', payeeKey)
+    .eq('direction', direction)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) throw toDbError(error, status);
+  return (data as RecurringDismissalRow | null) ?? null;
+}
+
+/**
+ * A duplicate client id is read back as landed (MON-08, own: true). A collision on the live key (household +
+ * payee_key + direction) means the answer is already in place, so the live row is returned with own: false and the
+ * caller records no undo step for it (WR-03).
+ */
+export async function insertDismissal(
+  client: DbClient,
+  row: NewDismissal
+): Promise<{ row: RecurringDismissalRow; own: boolean }> {
   assertAllowedKeys(row as unknown as Record<string, unknown>, DISMISSAL_INSERT_KEYS, 'insertDismissal');
   const { data, error, status } = await client.from('recurring_dismissals').insert(row).select(DISMISSAL_COLUMNS).single();
-  if (!error) return data as RecurringDismissalRow;
+  if (!error) return { row: data as RecurringDismissalRow, own: true };
   if (error.code === UNIQUE_VIOLATION) {
     const existing = await fetchDismissal(client, row.id);
-    if (existing) return existing;
+    if (existing) return { row: existing, own: true };
+    const live = await fetchLiveDismissal(client, row.household_id, row.payee_key, row.direction);
+    if (live) return { row: live, own: false };
   }
   throw toDbError(error, status);
 }
