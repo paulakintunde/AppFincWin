@@ -77,6 +77,10 @@ export function useRegularCandidates(): { rows: readonly CandidateRow[]; paused:
     const byId = new Map<string, TransactionRow>();
     for (const r of txns) {
       if (r.is_sample || r.transfer_id !== null || r.status === 'skipped' || !r.name) continue;
+      // Refunds and refund-linked rows are never regular payments.
+      if (r.is_refund === true || (r.refund_of ?? null) !== null) continue;
+      // The same transaction arriving twice (an overlapping page) is counted once.
+      if (byId.has(r.id)) continue;
       byId.set(r.id, r);
       // Rows that belong to a series already are left out, so a confirmed series stops being offered once it has history.
       if (r.recurring_series_id !== null) continue;
@@ -84,8 +88,14 @@ export function useRegularCandidates(): { rows: readonly CandidateRow[]; paused:
     }
     const found = detectCandidates(detect, { dismissedKeys: new Set(), linkedRowIds: new Set() });
     const out: CandidateRow[] = [];
+    // Only true duplicates collapse: identical row-id sets. Two accounts with their own rows stay separate.
+    const seenRowSets = new Set<string>();
     for (const candidate of found) {
+      const rowSet = [...candidate.rowIds].sort().join(',');
+      if (seenRowSets.has(rowSet)) continue;
+      seenRowSets.add(rowSet);
       const last = byId.get(candidate.rowIds[candidate.rowIds.length - 1] as string);
+      const accountId = last?.account_id ?? null;
       const currency = last?.original_currency ?? rc.homeCurrency;
       const wanted = nameKey(candidate.name, currency);
       const confirmed =
@@ -106,11 +116,11 @@ export function useRegularCandidates(): { rows: readonly CandidateRow[]; paused:
       const dismissal = live.find((d) => d.payee_key === candidate.key && d.direction === candidate.direction) ?? null;
       const state: CandidateState = confirmed !== null ? 'regular' : dismissal !== null ? 'notRegular' : 'unmarked';
       out.push({
-        id: `${candidate.key}|${candidate.anchorDate}`,
+        id: `${candidate.key}|${accountId ?? ''}|${candidate.anchorDate}`,
         candidate,
         state,
         currency,
-        accountId: last?.account_id ?? null,
+        accountId,
         categoryId: last?.category_id ?? null,
         series: confirmed,
         dismissal,
