@@ -311,10 +311,14 @@ describe('buildPurchase', () => {
       const flows = purchaseCashFlows(b.purchase, ASOF, 400);
       expect(flows.reduce((a, f) => a + f.amount, 0)).toBe(120000);
     });
-    it('a day one smaller than the payment due today is held at zero, not negative', () => {
+    it('a pay-once purchase is one flow of dayOne on asOf', () => {
+      const b = must(checkOnce(10_000));
+      expect(purchaseCashFlows(b.purchase, ASOF, 400)).toEqual([{ date: ASOF, amount: b.purchase.dayOne }]);
+    });
+    it('L-03 a day one smaller than the payment due today is not clamped: today still nets to dayOne', () => {
       const b = must(checkPlan(250000, { count: 10, apr: percent('0'), firstPayment: today }));
       const flows = purchaseCashFlows({ dayOne: mu(0), schedule: b.purchase.schedule, share: b.purchase.share }, ASOF, 400);
-      expect(flows.filter((f) => f.date === ASOF).reduce((a, f) => a + f.amount, 0)).toBe(25000);
+      expect(flows.filter((f) => f.date === ASOF).reduce((a, f) => a + f.amount, 0)).toBe(0);
     });
     it('a plan starting a period on has dayOne only from fees and deposit', () => {
       const b = must(checkPlan(120000, { count: 12, apr: percent('0'), firstPayment: { kind: 'one_period' } }));
