@@ -6,10 +6,10 @@ import React from 'react';
 import { QueryClient, QueryClientProvider, useQuery, dehydrate, hydrate, onlineManager } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { DbClient } from '@/db/rows';
-import type { DecideCheckRow } from '@/db/decideChecks';
+import type { DecideCheckRow, StoredSeenV3 } from '@/db/decideChecks';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
-import { queryKeys } from '@/data/keys';
+import { mutationKeys, queryKeys } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import { clearVersionChains } from '@/data/sync/versionChain';
 import * as undoToast from '@/state/undoToast';
@@ -19,6 +19,7 @@ import {
   useAbandonCheck,
   useCreateCheck,
   useMarkCheckSeen,
+  useSaveCheckAnswer,
   recoverableCheckCreate,
   useReopenCheck,
   useReopenRedirect,
@@ -78,6 +79,7 @@ const check = (id: string, overrides: Partial<DecideCheckRow> = {}): DecideCheck
   furthest_step: 1,
   last_seen_state: null,
   last_seen_basis: null,
+  answer_v3: null,
   reopened_from: null,
   decided_at: null,
   verdict_at_decision: null,
@@ -510,6 +512,39 @@ describe('useMarkCheckSeen', () => {
       result.current.markSeen(check('k1', { last_seen_state: 'fits', last_seen_basis: 'logged_months' }), 'fits', 'logged_months')
     ).toBe(false);
     expect(insertUndoStep).not.toHaveBeenCalled();
+  });
+});
+
+describe('useSaveCheckAnswer', () => {
+  const seen: StoredSeenV3 = {
+    v: 3,
+    code: 'fits_month',
+    variant: null,
+    readyBy: null,
+    unspentAfter: 1200,
+    lineFacts: ['a', 'b'],
+  };
+
+  it('writes answer_v3 once, optimistically, and skips an equal stored value', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [check('k1')]);
+    fake.respondWith(ok([check('k1', { answer_v3: seen, version: 2 })]));
+    const { result } = await renderHook(() => useSaveCheckAnswer(), { wrapper: wrapper(qc) });
+
+    expect(result.current.save(check('k1'), seen)).toBe(true);
+    await waitFor(() => expect(qc.getQueryData<DecideCheckRow[]>(KEY)?.[0]).toMatchObject({ answer_v3: seen }));
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'update')).toBe(true));
+    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ answer_v3: seen });
+    expect(insertUndoStep).not.toHaveBeenCalled();
+
+    expect(result.current.save(check('k1', { answer_v3: { ...seen, lineFacts: ['a', 'b'] } }), seen)).toBe(false);
+    expect(fake.calls.filter((c) => c.method === 'update')).toHaveLength(1);
+  });
+
+  it('registers a default under its own key so a paused write resumes', () => {
+    const qc = new QueryClient();
+    registerDecideCheckMutations(qc);
+    expect(qc.getMutationDefaults(mutationKeys.saveCheckAnswer)?.mutationFn).toBeDefined();
   });
 });
 

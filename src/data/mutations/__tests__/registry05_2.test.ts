@@ -3,6 +3,7 @@ jest.mock('@/services/supabase', () => ({ supabase: {} }));
 
 import { QueryClient } from '@tanstack/react-query';
 import { registerMutationDefaults } from '../index';
+import { mutationKeys } from '@/data/keys';
 import { registerDecideSetupMutations } from '../decideSetup';
 import { registerAccountUseMutations } from '../accountUse';
 import { registerSeriesAttributeMutations } from '../seriesAttributes';
@@ -29,5 +30,11 @@ describe('05.2 mutation registry', () => {
 
   it('registerMutationDefaults runs without throwing', () => {
     expect(() => registerMutationDefaults(new QueryClient())).not.toThrow();
+  });
+
+  it('05.3 D-16: registers a default for saveCheckAnswer', () => {
+    const qc = new QueryClient();
+    registerMutationDefaults(qc);
+    expect(qc.getMutationDefaults(mutationKeys.saveCheckAnswer)?.mutationFn).toBeDefined();
   });
 });

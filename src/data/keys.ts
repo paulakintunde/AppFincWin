@@ -128,6 +128,7 @@ export const mutationKeys = {
   createCheck: ['decide-checks', 'create'] as const,
   saveCheckDraft: ['decide-checks', 'save-draft'] as const,
   editCheck: ['decide-checks', 'edit'] as const,
+  saveCheckAnswer: ['decide-checks', 'save-answer'] as const,
   decideGoAhead: ['decide-checks', 'go-ahead'] as const,
   decideOutcome: ['decide-checks', 'outcome'] as const,
   updateDecideSettings: ['decide-settings', 'update'] as const,
