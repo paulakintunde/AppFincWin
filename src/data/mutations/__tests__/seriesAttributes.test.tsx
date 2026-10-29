@@ -139,7 +139,7 @@ describe('useConfirmRegularCandidate', () => {
     fake.respondWith(patchedOk(['recurring_series', 'ser-1', 2]));
     fake.respondWith(insertOk);
     const { result } = await renderHook(() => useConfirmRegularCandidate(HH, USER), { wrapper: wrapper(qc) });
-    const out = result.current.confirm({ series: NEW_SERIES, attributes: { counts_as: 'available', income_kind: 'salary' } });
+    const out = result.current.confirm({ series: NEW_SERIES, direction: 'in', linkTransactionIds: [], attributes: { counts_as: 'available', income_kind: 'salary' } });
     expect(out).toEqual({ seriesId: 'ser-1', stepId: 'step-1' });
     await waitFor(() => expect(undoInserts(fake)).toHaveLength(1));
 
@@ -173,7 +173,7 @@ describe('useConfirmRegularCandidate', () => {
     fake.respondWith(insertOk);
     qc.setQueryData(queryKeys.recurringDismissals(HH), [dismissal()]);
     const { result } = await renderHook(() => useConfirmRegularCandidate(HH, USER), { wrapper: wrapper(qc) });
-    result.current.confirm({ series: NEW_SERIES, attributes: { counts_as: 'kept' }, dismissalToClear: dismissal() });
+    result.current.confirm({ series: NEW_SERIES, direction: 'in', linkTransactionIds: [], attributes: { counts_as: 'kept' }, dismissalToClear: dismissal() });
     await waitFor(() => expect(qc.getQueryData(queryKeys.recurringDismissals(HH))).toEqual([]));
     await waitFor(() => expect(undoInserts(fake)).toHaveLength(1));
     const ops = (rpcs(fake)[1]!.args[1] as { p_ops: Op[] }).p_ops;
@@ -191,7 +191,7 @@ describe('useConfirmRegularCandidate', () => {
     fake.respondWith(createdOk());
     fake.respondWith(insertOk);
     const { result } = await renderHook(() => useConfirmRegularCandidate(HH, USER), { wrapper: wrapper(qc) });
-    result.current.confirm({ series: NEW_SERIES, attributes: {} });
+    result.current.confirm({ series: NEW_SERIES, direction: 'in', linkTransactionIds: [], attributes: {} });
     await waitFor(() => expect(undoInserts(fake)).toHaveLength(1));
     expect(rpcs(fake)).toHaveLength(1);
     const step = undoInserts(fake)[0]!.args[0] as { ops: Op[] };
@@ -205,7 +205,7 @@ describe('useConfirmRegularCandidate', () => {
     fake.respondWith(patchedOk(['recurring_series', 'ser-1', 3]));
     fake.respondWith(insertOk);
     const { result } = await renderHook(() => useConfirmRegularCandidate(HH, USER), { wrapper: wrapper(qc) });
-    result.current.confirm({ series: NEW_SERIES, attributes: { pay_group: 'g1' } });
+    result.current.confirm({ series: NEW_SERIES, direction: 'in', linkTransactionIds: [], attributes: { pay_group: 'g1' } });
     await waitFor(() => expect(undoInserts(fake)).toHaveLength(1));
     expect((rpcs(fake)[1]!.args[1] as { p_ops: Op[] }).p_ops[0]!.expectedVersion).toBe(2);
     expect((undoInserts(fake)[0]!.args[0] as { ops: Op[] }).ops[0]).toMatchObject({ expectedVersion: 3 });
@@ -215,7 +215,7 @@ describe('useConfirmRegularCandidate', () => {
     const { fake, qc } = setup();
     fake.respondWith({ data: null, error: { message: 'no', code: '42501' }, status: 403 });
     const { result } = await renderHook(() => useConfirmRegularCandidate(HH, USER), { wrapper: wrapper(qc) });
-    result.current.confirm({ series: NEW_SERIES, attributes: { counts_as: 'available' } });
+    result.current.confirm({ series: NEW_SERIES, direction: 'in', linkTransactionIds: [], attributes: { counts_as: 'available' } });
     await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
     expect(qc.getQueryData<RecurringSeriesRow[]>(queryKeys.recurringSeries(HH))).toEqual([]);
     const rec = recordFailedWrite.mock.calls[0]![0] as { entityId: string; attempted: Record<string, unknown> };
@@ -228,7 +228,7 @@ describe('useConfirmRegularCandidate', () => {
     const { fake, qc } = setup();
     onlineManager.setOnline(false);
     const { result } = await renderHook(() => useConfirmRegularCandidate(HH, USER), { wrapper: wrapper(qc) });
-    result.current.confirm({ series: NEW_SERIES, attributes: { counts_as: 'available' } });
+    result.current.confirm({ series: NEW_SERIES, direction: 'in', linkTransactionIds: [], attributes: { counts_as: 'available' } });
     await waitFor(() => {
       const rows = qc.getQueryData<RecurringSeriesRow[]>(queryKeys.recurringSeries(HH));
       expect(rows).toHaveLength(1);
@@ -240,6 +240,83 @@ describe('useConfirmRegularCandidate', () => {
     onlineManager.setOnline(true);
     await qc.resumePausedMutations();
     await waitFor(() => expect(undoInserts(fake)).toHaveLength(1));
+  });
+});
+
+describe('useConfirmRegularCandidate: sign and links (CR-01, CR-02)', () => {
+  it('writes a found bill as money out and a found pay as money in', async () => {
+    const { fake, qc } = setup();
+    fake.respondWith(createdOk());
+    fake.respondWith(insertOk);
+    fake.respondWith(createdOk());
+    fake.respondWith(insertOk);
+    const { result } = await renderHook(() => useConfirmRegularCandidate(HH, USER), { wrapper: wrapper(qc) });
+    result.current.confirm({ series: { ...NEW_SERIES, amount: 150000 }, direction: 'out', linkTransactionIds: [], attributes: {} });
+    await waitFor(() => expect(undoInserts(fake)).toHaveLength(1));
+    result.current.confirm({ series: { ...NEW_SERIES, amount: -300000 }, direction: 'in', linkTransactionIds: [], attributes: {} });
+    await waitFor(() => expect(undoInserts(fake)).toHaveLength(2));
+    const amounts = rpcs(fake).map((c) => (c.args[1] as { p_series: { amount: number } }).p_series.amount);
+    expect(amounts).toEqual([-150000, 300000]);
+  });
+
+  it('rejects a series whose sign does not match its direction, with no write', async () => {
+    const { fake, qc } = setup();
+    const vars = {
+      ownerId: USER,
+      householdId: HH,
+      stepId: 'step-x',
+      series: { ...NEW_SERIES, amount: 150000 },
+      attributes: {},
+      dismissal: null,
+      direction: 'out' as const,
+    };
+    await expect(qc.getMutationDefaults(mutationKeys.confirmRegularCandidate).mutationFn!(vars)).rejects.toMatchObject({ code: '23514' });
+    expect(rpcs(fake)).toHaveLength(0);
+  });
+
+  it('replays older persisted variables with no direction and no link list', async () => {
+    const { fake, qc } = setup();
+    fake.respondWith(createdOk());
+    fake.respondWith(insertOk);
+    const vars = { ownerId: USER, householdId: HH, stepId: 'step-old', series: { ...NEW_SERIES, amount: 150000 }, attributes: {}, dismissal: null };
+    await qc.getMutationDefaults(mutationKeys.confirmRegularCandidate).mutationFn!(vars);
+    const args = rpcs(fake)[0]!.args[1] as { p_link_transaction_ids: string[] };
+    expect(args.p_link_transaction_ids).toEqual([]);
+  });
+
+  it('links every found row, with no anchor row, and carries the linked rows into the one Undo', async () => {
+    const { fake, qc } = setup();
+    fake.respondWith({
+      data: {
+        status: 'applied',
+        series: { id: 'ser-1', version: 1, before: null },
+        inserted: [{ id: 'o1', version: 1 }],
+        soft_deleted: [],
+        linked: [
+          { id: 't1', version: 2 },
+          { id: 't2', version: 2 },
+          { id: 't3', version: 2 },
+        ],
+      },
+      error: null,
+      status: 200,
+    });
+    fake.respondWith(insertOk);
+    const { result } = await renderHook(() => useConfirmRegularCandidate(HH, USER), { wrapper: wrapper(qc) });
+    result.current.confirm({ series: NEW_SERIES, direction: 'in', linkTransactionIds: ['t1', 't2', 't3'], attributes: {} });
+    await waitFor(() => expect(undoInserts(fake)).toHaveLength(1));
+    const args = rpcs(fake)[0]!.args[1] as { p_anchor_transaction_id: string | null; p_link_transaction_ids: string[] };
+    expect(args.p_anchor_transaction_id).toBeNull();
+    expect(args.p_link_transaction_ids).toEqual(['t1', 't2', 't3']);
+    const step = undoInserts(fake)[0]!.args[0] as { ops: Op[] };
+    const unlink = { recurring_series_id: null, occurrence_date: null };
+    expect(step.ops).toEqual([
+      { entity: 'transactions', id: 'o1', expectedVersion: 1, patch: { deleted_at: '$now' } },
+      { entity: 'transactions', id: 't1', expectedVersion: 2, patch: unlink },
+      { entity: 'transactions', id: 't2', expectedVersion: 2, patch: unlink },
+      { entity: 'transactions', id: 't3', expectedVersion: 2, patch: unlink },
+      { entity: 'recurring_series', id: 'ser-1', expectedVersion: 1, patch: { deleted_at: '$now' } },
+    ]);
   });
 });
 

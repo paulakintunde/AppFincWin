@@ -143,9 +143,23 @@ describe('RegularStep', () => {
     await mount(RegularStep);
     await fireEvent.press(screen.getByLabelText('Mark Rent as regular'));
     expect(mockConfirm).toHaveBeenCalledTimes(1);
-    const arg = mockConfirm.mock.calls[0]![0] as { series: Record<string, unknown>; attributes: unknown };
+    const arg = mockConfirm.mock.calls[0]![0] as { series: Record<string, unknown>; attributes: unknown; direction: string; linkTransactionIds: string[] };
+    // The step passes the found size; the hook (tested in seriesAttributes.test) signs it from the direction.
     expect(arg.series).toMatchObject({ name: 'Rent', amount: 150000, freq: 'monthly', account_id: 'a1', anchor_date: '2026-10-01' });
+    expect(arg.direction).toBe('out');
+    expect(arg.linkTransactionIds).toEqual(['r1']);
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'step-confirm' }));
+  });
+
+  it('Regular on a found pay states direction in and links all its rows', async () => {
+    const pay = candidate('Salary', 300000, 'unmarked');
+    mockRows = [{ ...pay, candidate: { ...pay.candidate, direction: 'in', rowIds: ['p1', 'p2'] } }];
+    await mount(RegularStep);
+    await fireEvent.press(screen.getByLabelText('Mark Salary as regular'));
+    const arg = mockConfirm.mock.calls[0]![0] as { series: { amount: number }; direction: string; linkTransactionIds: string[] };
+    expect(arg.direction).toBe('in');
+    expect(arg.series.amount).toBe(300000);
+    expect(arg.linkTransactionIds).toEqual(['p1', 'p2']);
   });
 
   it('Not regular writes a dismissal and never creates a series', async () => {
