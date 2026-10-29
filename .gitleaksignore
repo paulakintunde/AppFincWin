@@ -1,0 +1,3 @@
+# False positives, one per line as commit:file:rule:line. Review each before adding.
+# 05.2-66 SUMMARY frontmatter lists function names (notPayKey/isNotPayKey...), not a key.
+0b50f9a72bd6106a933c306c7625ac58d719b487:.planning/phases/05.2-decide-data-and-setup/05.2-66-SUMMARY.md:generic-api-key:7
