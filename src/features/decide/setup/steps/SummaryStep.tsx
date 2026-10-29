@@ -46,7 +46,11 @@ export const SummaryStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(funct
     hapticSuccess();
   }, []);
 
-  const rows = useMemo(() => (evaluation === null ? [] : summaryModel(evaluation, settings, inputs?.asOf ?? rc.today)), [evaluation, settings, inputs?.asOf, rc.today]);
+  const everydayOverride = inputs?.everydayOverride == null ? null : Number(inputs.everydayOverride);
+  const rows = useMemo(
+    () => (evaluation === null ? [] : summaryModel(evaluation, settings, everydayOverride, inputs?.asOf ?? rc.today)),
+    [evaluation, settings, everydayOverride, inputs?.asOf, rc.today]
+  );
 
   const money = (minor: number): string => fmt.formatMoney({ amount: minorUnits(minor), currency: currencyCode(currency) });
   const about = (minor: number): string => t('decide.setup.summary.valueLeave', { amount: money(minor) });

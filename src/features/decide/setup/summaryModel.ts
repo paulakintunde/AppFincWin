@@ -7,7 +7,7 @@
 import type { Evaluation } from '@/engine/decide/v3';
 
 export type SummaryEvaluation = {
-  readonly month: Pick<Evaluation['month'], 'month' | 'moneyIn' | 'moneyOut' | 'monthLeft' | 'typicalLeft'>;
+  readonly month: Pick<Evaluation['month'], 'month' | 'moneyIn' | 'moneyOut' | 'monthLeft' | 'e'>;
   readonly funds: Pick<Evaluation['funds'], 'unspent' | 'suggested' | 'emergency' | 'envelopesSaved'>;
 };
 
@@ -50,13 +50,15 @@ export function incomeWordKeys(settings: SummarySettings | null): string[] {
   return words;
 }
 
-export function summaryModel(evaluation: SummaryEvaluation, settings: SummarySettings | null, today: string): SummaryRow[] {
+/** The typical row is the everyday figure the readout and the everyday step show: the user's own figure, else the engine's typical (F-04). */
+export function summaryModel(evaluation: SummaryEvaluation, settings: SummarySettings | null, everydayOverride: number | null, today: string): SummaryRow[] {
   const { month, funds } = evaluation;
   const rows: SummaryRow[] = [
     { key: 'month', month: month.month, moneyIn: Number(month.moneyIn), moneyOut: Number(month.moneyOut) },
     { key: 'leave', amount: Number(month.monthLeft) },
   ];
-  if (month.typicalLeft !== null) rows.push({ key: 'typical', amount: Number(month.typicalLeft) });
+  const typical = everydayOverride ?? (month.e === null ? null : Number(month.e));
+  if (typical !== null) rows.push({ key: 'typical', amount: typical });
   if (funds.unspent !== null) {
     const amount = Number(funds.unspent.available ?? funds.unspent.value);
     rows.push({ key: 'unspent', amount, checked: funds.unspent.anchor.at === today ? 'today' : funds.unspent.anchor.at });
