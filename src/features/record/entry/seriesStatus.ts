@@ -33,7 +33,8 @@ function oldestAllowed(today: string): string {
 export type StopDateProblem = 'tooEarly' | 'tooOld';
 
 export function stopDateProblem(row: Pick<StatusRow, 'anchor_date'>, from: string, today: string): StopDateProblem | null {
-  if (addDays(from, -1) < row.anchor_date) return 'tooEarly';
+  // 05.2 F-13: the earliest From is the start day itself; that writes end_date = start - 1 (the widened check, 20261028001400).
+  if (from < row.anchor_date) return 'tooEarly';
   if (from < oldestAllowed(today)) return 'tooOld';
   return null;
 }

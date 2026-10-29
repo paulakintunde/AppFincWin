@@ -1,3 +1,4 @@
+import { occurrencesBetween } from '@/engine/recurring';
 import { endDateForStop, resumeAllowed, seriesStatusOf, stopDateProblem } from '../seriesStatus';
 
 const live = { end_date: null, anchor_date: '2026-03-10', end_reason: null } as const;
@@ -26,11 +27,35 @@ describe('date rules', () => {
     expect(endDateForStop(live, '2026-10-01', today)).toBe('2026-09-30');
   });
 
-  it('refuses a date at or before the start (tooEarly)', () => {
-    expect(stopDateProblem(live, '2026-03-10', today)).toBe('tooEarly');
+  it('refuses a date before the start (tooEarly) but allows the start day', () => {
+    // 05.2 F-13: stop from the first day
+    expect(stopDateProblem(live, '2026-03-10', today)).toBeNull();
+    expect(endDateForStop(live, '2026-03-10', today)).toBe('2026-03-09');
+    expect(stopDateProblem(live, '2026-03-09', today)).toBe('tooEarly');
     expect(stopDateProblem(live, '2026-03-01', today)).toBe('tooEarly');
-    expect(endDateForStop(live, '2026-03-10', today)).toBeNull();
+    expect(endDateForStop(live, '2026-03-09', today)).toBeNull();
     expect(stopDateProblem(live, '2026-03-11', today)).toBeNull();
+  });
+
+  it('a series that started today can be stopped from today', () => {
+    const startedToday = { ...live, anchor_date: today };
+    expect(stopDateProblem(startedToday, today, today)).toBeNull();
+    expect(endDateForStop(startedToday, today, today)).toBe('2026-10-27');
+    expect(stopDateProblem(startedToday, '2026-10-27', today)).toBe('tooEarly');
+  });
+
+  it('a series stopped from its first day reads stopped from the start day and has no occurrence', () => {
+    const row = { anchor_date: '2026-10-28', end_date: '2026-10-27', end_reason: 'stopped' as const };
+    expect(seriesStatusOf(row)).toEqual({ kind: 'stopped', from: '2026-10-28' });
+    const schedule = { anchorDate: row.anchor_date, freq: 'monthly' as const, endDate: row.end_date, occurrenceCount: null };
+    expect(occurrencesBetween(schedule, '2026-01-01', '2028-12-31')).toEqual([]);
+  });
+
+  it('a series paused from its first day can be resumed from the start day', () => {
+    const row = { anchor_date: '2026-10-28', end_date: '2026-10-27', end_reason: 'paused' as const };
+    expect(seriesStatusOf(row)).toEqual({ kind: 'paused', from: '2026-10-28' });
+    expect(resumeAllowed(row, '2026-10-28', today)).toBe(true);
+    expect(resumeAllowed(row, '2026-10-27', today)).toBe(false);
   });
 
   it('refuses a date more than 12 months before the current month start (tooOld)', () => {

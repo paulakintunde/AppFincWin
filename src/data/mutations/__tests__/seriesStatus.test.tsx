@@ -145,7 +145,7 @@ describe('useSetSeriesStatus', () => {
 
   it('refuses dates the pure rules reject', async () => {
     const { fake, result } = await setup();
-    expect(() => result.current.stop(series({ anchor_date: addDays(today, 3) }), addDays(today, 3), 'u1')).toThrow(RangeError);
+    expect(() => result.current.stop(series({ anchor_date: addDays(today, 3) }), addDays(today, 2), 'u1')).toThrow(RangeError); // 05.2 F-13: the start day itself is allowed, the day before is not
     expect(() => result.current.pause(series(), '2019-01-01', 'u1')).toThrow(RangeError);
     expect(() => result.current.resume(series(), addDays(today, 3), 'u1')).toThrow(RangeError);
     expect(rpcCalls(fake)).toHaveLength(0);

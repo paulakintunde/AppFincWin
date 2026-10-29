@@ -110,14 +110,22 @@ describe('live series', () => {
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'step-pause', text: { key: 'undo.label.seriesPaused', params: { name: 'Rent' } } }));
   });
 
-  it('refuses a date at or before the start', async () => {
+  it('refuses a date before the start', async () => {
     await open(series());
-    mockPicked = '2026-01-05';
+    mockPicked = '2026-01-04';
     await fireEvent.press(screen.getByLabelText('From'));
     await fireEvent.press(screen.getByLabelText('Stopped'));
     expect(screen.getByText('This date is before it started.')).toBeTruthy();
     await fireEvent.press(screen.getByText('Save'));
     expect(mockStop).not.toHaveBeenCalled();
+  });
+
+  it('allows the start day itself (05.2 F-13): no error line, Save writes', async () => {
+    await open(series({ anchor_date: '2026-10-28' }));
+    await fireEvent.press(screen.getByLabelText('Stopped'));
+    expect(screen.queryByText('This date is before it started.')).toBeNull();
+    await fireEvent.press(screen.getByText('Save'));
+    expect(mockStop).toHaveBeenCalledWith(expect.objectContaining({ id: 's1' }), '2026-10-28', 'u1');
   });
 
   it('refuses a date more than 12 months back', async () => {
