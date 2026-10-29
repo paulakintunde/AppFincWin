@@ -3,7 +3,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { IncomePayerPromptRow } from '@/db/incomePayerPrompts';
-import type { TransactionRow } from '@/db/rows';
+import type { RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import { payerKeyOf } from '@/data/mutations/incomeTagModel';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -41,16 +41,22 @@ export function isIncomeRow(row: Pick<TransactionRow, 'original_amount' | 'trans
 }
 
 /**
- * What the chip says. A tag on the row wins; otherwise a payer rule covering the row's payer; otherwise the row is
+ * What the chip says. A tag on the row wins; then the series' tag; otherwise a payer rule covering the row's payer; otherwise the row is
  * a new kind of income the person has not answered for.
  */
 export function incomeChipState(
   row: Pick<TransactionRow, 'income_kind' | 'counts_as' | 'name' | 'recurring_series_id'>,
-  rules: ReadonlyMap<string, IncomePayerPromptRow>
+  rules: ReadonlyMap<string, IncomePayerPromptRow>,
+  seriesById?: ReadonlyMap<string, Pick<RecurringSeriesRow, 'income_kind' | 'counts_as'>>
 ): IncomeChipState {
   const regular = row.recurring_series_id != null;
   if (row.income_kind != null && row.counts_as != null) {
     return { state: 'tagged', kind: row.income_kind, countsAs: row.counts_as, regular };
+  }
+  // 05.2 F-10: an occurrence without its own tag takes its series' tag.
+  const series = row.recurring_series_id != null ? seriesById?.get(row.recurring_series_id) : undefined;
+  if (series?.income_kind != null && series.counts_as != null) {
+    return { state: 'tagged', kind: series.income_kind, countsAs: series.counts_as, regular };
   }
   const key = payerKeyOf(row.name);
   const rule = key === null ? undefined : rules.get(key);

@@ -48,6 +48,7 @@ import { monthRefreshKeys } from './refreshKeys';
 import { formatMonthLabel } from './MonthSwitcher';
 import { RecurringReviewSheet } from './RecurringReviewSheet';
 import { HowArePaidCard } from './HowArePaidCard';
+import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { incomeChipState, isIncomeRow, rulesByPayer } from './IncomeTagChip';
 import { IncomeTagSheet } from './IncomeTagSheet';
 import { RefundPickerSheet } from './RefundPickerSheet';
@@ -107,6 +108,9 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
   const { v3 } = useDecideAccess();
   const payerRules = useIncomePayerPrompts(v3 ? (rc.householdId ?? undefined) : undefined);
   const rulesByKey = useMemo(() => rulesByPayer(payerRules.data ?? []), [payerRules.data]);
+  // 05.2 F-10: a payment from an income series reads the series' tag when it has none of its own.
+  const recurring = useRecurringSeries(v3 ? (rc.householdId ?? undefined) : undefined);
+  const seriesById = useMemo(() => new Map((recurring.data ?? []).map((x) => [x.id, x])), [recurring.data]);
   // 05.2-33 (D-10): refund links in every month, not only the rows loaded for this one.
   const refundLinks = useRefundLinks(rc.householdId, itemRows, v3);
   const [refundPicker, setRefundPicker] = useState<{ row: TransactionRow; direction: PickerDirection } | null>(null);
@@ -264,8 +268,8 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
       onSwipeDelete={() => flow.requestDelete(row)}
       cardPosition={cardPosition}
       balanceNote={vm.balanceNotes.get(row.id)}
-      incomeChip={v3 && isIncomeRow(row) ? incomeChipState(row, rulesByKey) : null}
-      onIncomeChipPress={(r) => setIncomeSheet({ row: r, newPayer: incomeChipState(r, rulesByKey).state === 'new' })}
+      incomeChip={v3 && isIncomeRow(row) ? incomeChipState(row, rulesByKey, seriesById) : null}
+      onIncomeChipPress={(r) => setIncomeSheet({ row: r, newPayer: incomeChipState(r, rulesByKey, seriesById).state === 'new' })}
       refundTag={v3 ? refundTagFor<TransactionRow>(row, refundLinks.rowsById, refundLinks.totals) : null}
       onRefundTagPress={(purchaseId) => {
         const purchase = refundLinks.rowsById.get(purchaseId);
@@ -562,7 +566,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
                 },
                 onIncomeType: (r) => {
                   flow.detail.onDismiss();
-                  setIncomeSheet({ row: asActivityRow(r), newPayer: incomeChipState(r, rulesByKey).state === 'new' });
+                  setIncomeSheet({ row: asActivityRow(r), newPayer: incomeChipState(r, rulesByKey, seriesById).state === 'new' });
                 },
                 onOpenRow: (r) => flow.openDetail(asActivityRow(r)),
               }

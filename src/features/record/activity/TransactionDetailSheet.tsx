@@ -78,7 +78,7 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
     paymentTypeLabel,
     repeatsLabel,
     decideV3: v3 && refundCallbacks !== undefined,
-    incomeTypeLabel: row.income_kind ? t(kindNameKey(row.income_kind)) : null,
+    incomeTypeLabel: (row.income_kind ?? seriesRow?.income_kind) ? t(kindNameKey((row.income_kind ?? seriesRow?.income_kind)!)) : null,
     t: (key, params) => String(t(key as never, params as never)),
   });
 
