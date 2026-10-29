@@ -77,13 +77,15 @@ export function buyLater(input: {
   readonly month: string;
   /** D-60: a seasonal earner's date is walked from last year's pattern instead of divided by the typical month. */
   readonly picture?: Pick<IncomePicture, 'treated' | 'months'>;
+  /** D-12: what the what-if levers add to every month of a seasonal walk (the caller already adds it to typicalLeft). */
+  readonly lift?: MinorUnits;
 }): { readonly months: number | null; readonly readyBy: string | null; readonly monthlyAmount: MinorUnits | null } {
   const none = { months: null, readyBy: null, monthlyAmount: null } as const;
   if (input.unspent === null) return none;
   const target = Math.max(0, input.price - input.unspent);
   if (target === 0) return { months: 0, readyBy: input.month, monthlyAmount: input.typicalLeft };
   if (input.picture !== undefined && input.picture.treated === 'seasonal') {
-    const walked = seasonalReadyMonth(input.picture, input.month, BigInt(target));
+    const walked = seasonalReadyMonth(input.picture, input.month, BigInt(target), BigInt(input.lift ?? 0));
     return walked === null
       ? { ...none, monthlyAmount: input.typicalLeft }
       : { months: walked.months, readyBy: walked.month, monthlyAmount: input.typicalLeft };
