@@ -25,10 +25,11 @@ jest.mock('@/state/undoToast', () => ({ showToast: (a: unknown) => mockShowToast
 let mockCtx: Record<string, unknown> = {};
 jest.mock('../useIncomeContext', () => ({ useIncomeContext: () => mockCtx }));
 
+const UID = '11111111-2222-3333-4444-555555555555';
 const FOUND = { payer: 'Refund - Online Store', amount: 1999, day: 24, currency: 'GBP', key: 'refund-key' };
 const ROW = { id: 'row1' };
 const base = () => ({
-  userId: 'u1',
+  userId: UID,
   householdId: 'h1',
   homeCurrency: 'GBP',
   timeZone: 'UTC',
@@ -61,7 +62,7 @@ describe('PayStep Not my pay', () => {
     await mount();
     expect(screen.getByText(/We found Refund - Online Store paying about/)).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Not my pay, Refund - Online Store' }));
-    expect(mockDismiss).toHaveBeenCalledWith({ payeeKey: notPayKey('refund-key'), direction: 'in', name: 'Refund - Online Store', labelKey: 'payNotMine' });
+    expect(mockDismiss).toHaveBeenCalledWith({ payeeKey: notPayKey('refund-key', UID), direction: 'in', name: 'Refund - Online Store', labelKey: 'payNotMine' });
     expect(mockShowToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'undo.label.payNotMine', params: { name: 'Refund - Online Store' } }, stepId: 'step-dismiss' });
   });
 
@@ -95,6 +96,13 @@ describe('PayStep Not my pay', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Not my pay, Refund - Online Store' }));
     expect(JSON.stringify(screen.toJSON())).toContain('2500');
     expect(before).not.toBeNull();
+  });
+
+  it('writes nothing without a user', async () => {
+    mockCtx = { ...base(), userId: undefined };
+    await mount();
+    expect(screen.queryByText('Not my pay')).toBeNull();
+    expect(mockDismiss).not.toHaveBeenCalled();
   });
 
   it('renders no control without a household or user', async () => {

@@ -11,8 +11,11 @@ jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: nu
 let mockDismissals: Record<string, unknown>[] = [];
 jest.mock('@/data/queries/recurringDismissals', () => ({ useRecurringDismissals: () => ({ data: mockDismissals }) }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: [] }) }));
+const UA = '11111111-2222-3333-4444-555555555555';
+const UB = '99999999-8888-7777-6666-555555555555';
+let mockUser = UA;
 jest.mock('@/features/record/useRecordContext', () => ({
-  useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', timeZone: 'UTC', today: '2026-10-15' }),
+  useRecordContext: () => ({ userId: mockUser, householdId: 'h1', homeCurrency: 'USD', timeZone: 'UTC', today: '2026-10-15' }),
 }));
 
 const months = ['2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10'];
@@ -53,8 +56,9 @@ describe('useIncomeContext found payer (F-02)', () => {
   describe('Not my pay answers', () => {
     const refundKey = 'refund - online store|USD|1';
     const acmeKey = 'acme payroll|USD|1';
-    const dismissal = (payeeKey: string, over: Record<string, unknown> = {}) => ({ id: `d-${payeeKey}`, household_id: 'h1', payee_key: payeeKey, direction: 'in', deleted_at: null, version: 1, ...over });
+    const dismissal = (payeeKey: string, over: Record<string, unknown> = {}) => ({ id: `d-${payeeKey}`, household_id: 'h1', payee_key: payeeKey, direction: 'in', deleted_at: null, version: 1, created_by: UA, ...over });
     beforeEach(() => {
+      mockUser = UA;
       mockDismissals = [];
       mockRows = [...rowsFor('Refund - Online Store', 1999), ...rowsFor('Acme Payroll', 320000).slice(0, 4)];
     });
@@ -70,7 +74,7 @@ describe('useIncomeContext found payer (F-02)', () => {
     });
 
     it('moves on to the next payer when one is marked', async () => {
-      mockDismissals = [dismissal(notPayKey(refundKey))];
+      mockDismissals = [dismissal(notPayKey(refundKey, UA))];
       const ctx = (await renderHook(() => useIncomeContext())).result.current;
       expect(ctx.found?.payer).toContain('Acme Payroll');
       expect(ctx.notPay).toHaveLength(1);
@@ -78,7 +82,7 @@ describe('useIncomeContext found payer (F-02)', () => {
     });
 
     it('finds nothing when both payers are marked', async () => {
-      mockDismissals = [dismissal(notPayKey(refundKey)), dismissal(notPayKey(acmeKey))];
+      mockDismissals = [dismissal(notPayKey(refundKey, UA)), dismissal(notPayKey(acmeKey, UA))];
       expect((await renderHook(() => useIncomeContext())).result.current.found).toBeNull();
     });
 
@@ -90,7 +94,7 @@ describe('useIncomeContext found payer (F-02)', () => {
     });
 
     it('ignores deleted and outgoing not-pay rows', async () => {
-      mockDismissals = [dismissal(notPayKey(refundKey), { deleted_at: 'x' }), dismissal(notPayKey(acmeKey), { direction: 'out' })];
+      mockDismissals = [dismissal(notPayKey(refundKey, UA), { deleted_at: 'x' }), dismissal(notPayKey(acmeKey, UA), { direction: 'out' })];
       const ctx = (await renderHook(() => useIncomeContext())).result.current;
       expect(ctx.found?.payer).toContain('Refund');
       expect(ctx.notPay).toEqual([]);
@@ -98,8 +102,34 @@ describe('useIncomeContext found payer (F-02)', () => {
 
     it('falls back to the key name when the history no longer holds the payer', async () => {
       mockRows = [];
-      mockDismissals = [dismissal(notPayKey('gone payer|USD|1'))];
+      mockDismissals = [dismissal(notPayKey('gone payer|USD|1', UA))];
       expect((await renderHook(() => useIncomeContext())).result.current.notPay[0]?.payer).toBe('gone payer');
+    });
+
+    it('another member answer never hides the payer from me, and is not listed for me', async () => {
+      mockRows = rowsFor('Acme Payroll', 320000).slice(0, 4);
+      mockDismissals = [dismissal(notPayKey(acmeKey, UA), { created_by: UA })];
+      mockUser = UB;
+      const b = (await renderHook(() => useIncomeContext())).result.current;
+      expect(b.found?.payer).toContain('Acme Payroll');
+      expect(b.notPay).toEqual([]);
+      mockUser = UA;
+      const a = (await renderHook(() => useIncomeContext())).result.current;
+      expect(a.found).toBeNull();
+      expect(a.notPay).toHaveLength(1);
+      expect(a.notPay[0]?.payer).toBe('Acme Payroll');
+    });
+
+    it('an old-format row hides the payer for its author, with the right payer name', async () => {
+      mockRows = rowsFor('Acme Payroll', 320000).slice(0, 4);
+      mockDismissals = [dismissal(`not-pay:${acmeKey}`, { created_by: UA })];
+      const ctx = (await renderHook(() => useIncomeContext())).result.current;
+      expect(ctx.found).toBeNull();
+      expect(ctx.notPay[0]?.payer).toBe('Acme Payroll');
+      mockUser = UB;
+      const other = (await renderHook(() => useIncomeContext())).result.current;
+      expect(other.found?.payer).toContain('Acme Payroll');
+      expect(other.notPay).toEqual([]);
     });
   });
 });

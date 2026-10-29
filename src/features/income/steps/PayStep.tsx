@@ -124,8 +124,8 @@ export const PayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function 
   const found = ctx.found;
   // F-02: the answer hides the guess only; the cards below are never touched. Undo and Show again both reverse it.
   const markNotMine = (key: string, payer: string): void => {
-    if (!canWrite) return;
-    const { stepId } = dismisser.dismiss({ payeeKey: notPayKey(key), direction: 'in', name: payer, labelKey: 'payNotMine' });
+    if (!canWrite || ctx.userId === undefined) return;
+    const { stepId } = dismisser.dismiss({ payeeKey: notPayKey(key, ctx.userId), direction: 'in', name: payer, labelKey: 'payNotMine' });
     showToast({ kind: 'ordinary', text: undoLabelText('payNotMine', { name: payer }), stepId });
   };
   const showAgain = (row: (typeof ctx.notPay)[number]): void => {

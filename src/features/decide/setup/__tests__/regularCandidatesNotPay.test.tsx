@@ -34,6 +34,6 @@ describe('useRegularCandidates and Not my pay answers (T-05.2-66-01)', () => {
     expect(await stateFor([d(KEY)])).toBe('notRegular');
   });
   it('a not-pay row for the same key does not mark the candidate Not regular', async () => {
-    expect(await stateFor([d(notPayKey(KEY))])).toBe('unmarked');
+    expect(await stateFor([d(notPayKey(KEY, '11111111-2222-3333-4444-555555555555'))])).toBe('unmarked');
   });
 });

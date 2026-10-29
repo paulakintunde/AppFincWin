@@ -17,7 +17,7 @@ import { useDecideSettings } from '@/data/queries/decide';
 import { useRecurringDismissals } from '@/data/queries/recurringDismissals';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useRecordContext } from '@/features/record/useRecordContext';
-import { isNotPayKey, NOT_PAY_PREFIX, notPayKey, notPayMatcher } from './notPay';
+import { notPayCandidateKey, notPayKey, notPayMatcher } from './notPay';
 
 const NO_ACCOUNTS: readonly AccountRow[] = [];
 const NO_SERIES: readonly RecurringSeriesRow[] = [];
@@ -86,26 +86,29 @@ export function useIncomeContext(): IncomeContext {
       if (r.is_sample || r.transfer_id !== null || r.status === 'skipped' || r.recurring_series_id !== null || !r.name) continue;
       detect.push({ id: r.id, name: r.name, amount: r.original_amount, currency: r.original_currency, date: r.local_date, isTransfer: false, accountId: r.account_id });
     }
-    const isNotPay = notPayMatcher(dismissalRows);
+    const isNotPay = notPayMatcher(dismissalRows, userId);
     const incoming = detectCandidates(detect, { dismissedKeys: new Set(), linkedRowIds: new Set() }).filter((c) => c.direction === 'in' && !isNotPay(c.key));
     const best = incoming[0];
     if (best === undefined) return null;
     const currency = detect.find((d) => best.rowIds.includes(d.id))?.currency ?? rc.homeCurrency;
     return { payer: best.name, amount: Number(best.amount), day: Number(best.anchorDate.slice(8, 10)), currency, key: best.key };
-  }, [rows, dismissalRows, rc.homeCurrency]);
+  }, [rows, dismissalRows, rc.homeCurrency, userId]);
 
   const notPay = useMemo((): readonly NotPayAnswer[] => {
     const out: NotPayAnswer[] = [];
     for (const row of dismissalRows) {
-      if (row.deleted_at !== null || row.direction !== 'in' || !isNotPayKey(row.payee_key)) continue;
+      // Only the current user's own answers (WR-02); created_by is set server-side.
+      if (userId === undefined || row.created_by !== userId || row.deleted_at !== null || row.direction !== 'in') continue;
+      const candidate = notPayCandidateKey(row.payee_key);
+      if (candidate === null) continue;
       let payer = '';
       for (const r of rows) {
-        if (r.name && notPayKey(offerKey(r.name, r.original_currency, r.original_amount)) === row.payee_key) payer = r.name;
+        if (r.name && notPayCandidateKey(notPayKey(offerKey(r.name, r.original_currency, r.original_amount), userId)) === candidate) payer = r.name;
       }
-      out.push({ row, payer: payer === '' ? row.payee_key.slice(NOT_PAY_PREFIX.length).split('|')[0] ?? '' : payer });
+      out.push({ row, payer: payer === '' ? candidate.split('|')[0] ?? '' : payer });
     }
     return out;
-  }, [dismissalRows, rows]);
+  }, [dismissalRows, rows, userId]);
 
   return {
     userId,

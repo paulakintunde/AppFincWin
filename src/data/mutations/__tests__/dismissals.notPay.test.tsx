@@ -80,7 +80,7 @@ beforeEach(() => {
   insertUndoStep.mockClear();
 });
 
-const NP_KEY = notPayKey('refund - online store|GBP|1');
+const NP_KEY = notPayKey('refund - online store|GBP|1', '11111111-2222-3333-4444-555555555555');
 
 describe('Not my pay writes', () => {
   it('inserts the not-pay row, shows it at once, records payNotMine whose inverse soft deletes it', async () => {
