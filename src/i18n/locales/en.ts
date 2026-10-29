@@ -49,6 +49,7 @@
  *   home.accounts.seeAll are Claude-drafted, awaiting review.
  */
 import { EXCHANGE_RATE_API_ATTRIBUTION } from '../mandatedCopy';
+import { decideV3Ui } from './decideV3Ui';
 
 const en = {
   ordinal: { one: '{{n}}st', two: '{{n}}nd', few: '{{n}}rd', other: '{{n}}th' },
@@ -3488,6 +3489,7 @@ const en = {
         unspent_drifted: 'Your unspent money may be out of date. The app’s sum is {{suggested}}.',
         emergency_not_set: 'An emergency fund goal isn’t set yet.',
         unsaved_changes: '{{count}} changes not saved yet.',
+        unsaved_changes_one: '1 change not saved yet.',
         yearly_bill_choice_needed: 'A yearly bill, {{bill}}, is waiting on a choice about how it’s counted.',
         month_looks_under_logged: '{{month}} looks lightly logged, so its figures could be low.',
         income_kind_unmarked: 'Some income isn’t marked as regular or one-off yet.',
@@ -3500,9 +3502,14 @@ const en = {
         same_season_compared: 'Everyday spending still to come this month is compared with {{lastYear}}, when it came to {{everyday}}.',
         history_window_12: 'Your figures use the last {{months}} months, so a whole year of seasons is seen.',
         income_volatile: 'This answer is less certain because your income varies a lot from month to month. The plan is {{periods}} payments of {{payment}}; your leanest months, {{leanFrom}} to {{leanTo}}, leave about {{leanLeft}}.',
+        income_volatile_one: 'This answer is less certain because your income varies a lot from month to month. The plan is {{periods}} payments of {{payment}}; your leanest month, {{leanFrom}}, leaves about {{leanLeft}}.',
+        income_volatile_over: 'This answer is less certain because your income varies a lot from month to month. The plan is {{periods}} payments of {{payment}}; your leanest months, {{leanFrom}} to {{leanTo}}, are about {{leanLeft}} overspent.',
+        income_volatile_one_over: 'This answer is less certain because your income varies a lot from month to month. The plan is {{periods}} payments of {{payment}}; your leanest month, {{leanFrom}}, is about {{leanLeft}} overspent.',
         envelope_location_assumed: '{{count}} envelopes aren’t linked to an account yet, so their money is kept out of spare money.',
+        envelope_location_assumed_one: '1 envelope isn’t linked to an account yet, so its money is kept out of spare money.',
         unexplained_money: 'Your everyday accounts hold about {{amount}} more than your records explain.',
         account_use_unknown: '{{count}} accounts don’t say what they’re for yet, so they aren’t counted.',
+        account_use_unknown_one: '1 account doesn’t say what it’s for yet, so it isn’t counted.',
         pay_not_seen: 'Your pay of {{amount}} was due on {{date}}, and no payment is recorded.',
         pay_counted_missed: 'Your pay of {{amount}} due on {{date}} hasn’t arrived, so it isn’t counted.',
         fund_account_unknown: 'Your emergency fund of {{amount}} isn’t linked to an account yet, so it is kept out of spare money.',
@@ -3520,11 +3527,16 @@ const en = {
         line_crossed_tenths: 'This brings what you owe to {{value}} times your monthly income; your line is {{limit}} times.',
         quoted_differs: 'The quoted payment of {{quoted}} differs from the {{computed}} worked out here.',
         implied_rate: 'The figures given imply about {{rate}}%\u00A0a year.',
+        implied_rate_over: 'The payments mean a rate of over {{rate}}%\u00A0a year.',
         deferred_interest_term: 'If the balance isn’t cleared by the end of the pause, interest back to the start could apply.',
         at_todays_rate: 'Converted from {{currency}} at today’s rate.',
         low_month: 'In {{month}}, a low month, about {{left}} remains against {{monthly}} a month.',
         lean_bridge: 'In lean months about {{leanLeft}} remains, {{shortfall}} under the {{monthly}} payment. Over the {{months}} lean months to {{until}} that comes to {{bridge}}, which your unspent money carries, leaving {{after}}.',
+        lean_bridge_over: 'In lean months the month is about {{leanLeft}} overspent before the {{monthly}} payment, {{shortfall}} short each month. Over the {{months}} lean months to {{until}} that comes to {{bridge}}, which your unspent money carries, leaving {{after}}.',
         lean_months_judged: 'Judged against your leanest months, {{from}} to {{to}}, which leave about {{leanLeft}} each.',
+        lean_months_judged_one: 'Judged against your leanest month, {{from}}, which leaves about {{leanLeft}}.',
+        lean_months_judged_over: 'Judged against your leanest months, {{from}} to {{to}}, which are about {{leanLeft}} overspent each.',
+        lean_months_judged_one_over: 'Judged against your leanest month, {{from}}, which is about {{leanLeft}} overspent.',
         low_month_judged: 'Judged against a low month like {{month}}, which leaves about {{left}}.',
         rests_on_your_answer: 'This rests on what you said, that {{monthly}} a month for {{months}} months is covered, not on your records.',
         unspent_held_back: '{{amount}} of your unspent money is held back for an earlier plan.',
@@ -3555,6 +3567,7 @@ const en = {
         activity_not_current: 'This month’s spending and bills aren’t recorded up to the last few days.',
         envelopes_unconfirmed: 'Some envelopes or goals aren’t linked to an account yet.',
       },
+      ui: decideV3Ui,
     },
   },
   // Owner wording, 2026-10-26. Top-level so it sits outside en.decide; it contains none of the banned voice words.

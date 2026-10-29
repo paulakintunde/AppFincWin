@@ -3,6 +3,8 @@ import en from '../locales/en';
 import { DRAFT_COPY_KEYS } from '../copyStatus';
 import { UNDO_LABEL_KEYS } from '../../engine/undo/types';
 import { undoLabelText } from '../undoLabel';
+import { UI_ACTION_KEYS, UI_CONTROL_KEYS } from '../locales/decideV3Ui/labels';
+import { MAX_APR, percent } from '../../engine/payoff';
 import { FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NOTICE_KEYS, READINESS_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
 
 interface Leaf {
@@ -74,6 +76,7 @@ const ACTION_LABELS = new Set([
   'income.method.optionSteady', // choice-card title: "Pay myself a steady amount."
   'activity.incomeTag.save', // button: "Save income type"
   'activity.refund.emptyBody', // empty-search hint, UI-SPEC wording: "Try a payee name or an amount."
+  ...UI_ACTION_KEYS, // 05.3: decide.v3.ui button labels, listed by key in decideV3Ui/labels.ts
 ]);
 // 2026-10-23 walkthrough: sentences, hints and placeholders are declarative ("A price comes first"), never an order to the
 // user ("Add a price to continue", "Type the rate"). Buttons, dialog titles and field captions that name an action in the
@@ -121,6 +124,7 @@ const CONTROL_LABELS = new Set([
   'income.paid.intro', // step intro: "Choose all that apply."
   'income.method.intro', // step intro: "Pick the one that fits you. Nothing is chosen for you."
   'income.other.intro', // step intro: "Choose all that apply, or None."
+  ...UI_CONTROL_KEYS, // 05.3: decide.v3.ui field and control labels, listed by key in decideV3Ui/labels.ts
 ]);
 const BANNED = [/\badvice\b/i, /\badvis/i, /recommend/i, /you should/i, /we suggest/i, /best option/i, /guaranteed/i, /\bapproved\b/i, /pre-approved/i, /\boffer/i, /apply for/i, /\blender\b/i, /loan offer/i, /interest-free/i];
 
@@ -329,12 +333,36 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       'decide.v3.fact.line_crossed_money',
       'decide.v3.fact.line_crossed_tenths',
       'decide.v3.notice.month_heading_short_category',
+      // 05.3 variants chosen by the UI (D-11, D-46, D-48)
+      'decide.v3.fact.implied_rate_over',
+      'decide.v3.notice.envelope_location_assumed_one',
+      'decide.v3.notice.account_use_unknown_one',
+      'decide.v3.notice.unsaved_changes_one',
+      'decide.v3.notice.income_volatile_one',
+      'decide.v3.notice.income_volatile_over',
+      'decide.v3.notice.income_volatile_one_over',
+      'decide.v3.fact.lean_months_judged_one',
+      'decide.v3.fact.lean_months_judged_over',
+      'decide.v3.fact.lean_months_judged_one_over',
+      'decide.v3.fact.lean_bridge_over',
       FOOTER_KEY,
     ];
     expect(keys.filter((k) => resolve(k) === undefined)).toEqual([]);
     // and the other way: every v3 leaf is reachable from a table
     const reachable = new Set<string>(keys);
-    expect(v3.filter((l) => !reachable.has(l.path)).map((l) => l.path)).toEqual([]);
+    // decide.v3.ui is typed through t(), so the screen copy subtree is not table-reachable
+    expect(v3.filter((l) => !l.path.startsWith('decide.v3.ui.') && !reachable.has(l.path)).map((l) => l.path)).toEqual([]);
+  });
+
+  it('05.3 D-48 no minus sign in lean or over wording', () => {
+    const over = v3.filter((l) => /_(one_)?over$/.test(l.path));
+    expect(over.length).toBeGreaterThanOrEqual(6);
+    expect(over.filter((l) => /[-\u2212]\s?\{\{|[-\u2212]\$/.test(l.value)).map((l) => l.path)).toEqual([]);
+  });
+
+  it('05.3 D-11 the solver cap is at least 999%', () => {
+    expect(MAX_APR >= percent('999')).toBe(true);
+    expect(get('decide.v3.fact.implied_rate_over')).toBe('The payments mean a rate of over {{rate}}%\u00A0a year.');
   });
 
   it('I26 v3 banned words', () => {
