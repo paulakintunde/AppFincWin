@@ -141,6 +141,8 @@ export const OtherStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functio
               occurrence_count: null,
               is_automatic: false,
             },
+            direction: 'in',
+            linkTransactionIds: [],
             attributes: { income_kind: kind, counts_as: l.counts },
           });
           stepIds.push(stepId);

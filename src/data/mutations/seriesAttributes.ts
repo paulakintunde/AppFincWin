@@ -1,10 +1,11 @@
 // 05.2-15 (DSU-05, DSU-06, DSU-21; owner OQ5, research Pitfall 8): the write paths for regular payments.
-//   confirmRegularCandidate: create the series through its RPC, then set its attributes (counts_as, income_kind,
-//     pay_group, saving_mode) with apply_patches, as ONE user action. The create RPC is called WITHOUT a server-side
+//   confirmRegularCandidate: create the series through its RPC (linking the logged rows it was found from), then set its
+//     attributes (counts_as, income_kind, pay_group, saving_mode) with apply_patches, as ONE user action. The create RPC is called WITHOUT a server-side
 //     undo step; one client step labelled paymentMarkedRegular is recorded after both writes land, so a single Undo
 //     removes the series (and its materialised lines) and puts back a cleared "not regular" answer.
 //   patchSeriesAttributes: attribute changes on existing series, one apply_patches batch carrying its own undo step.
-// Replay: the create is idempotent (an 'already-applied' answer reads the live version back) and the patch is made
+// Replay: the create is idempotent (an 'already-applied' answer reads the live version and the series' live lines back,
+// so the Undo step still removes the lines and unlinks the logged rows) and the patch is made
 // at the version read back, so a crash between the two writes is repaired by the replay. Variables are plain JSON;
 // the step id is minted once before mutate() and is the replay key. Failed-write records hold ids, counts and field
 // names only, never a name or an amount.
@@ -23,7 +24,7 @@ import {
   type UndoConflict,
   type UndoLabelKey,
 } from '@/engine/undo';
-import { NotFoundError, VersionConflictError, toDbError, type WriteEntity } from '@/db/errors';
+import { DbError, NotFoundError, VersionConflictError, toDbError, type WriteEntity } from '@/db/errors';
 import { applyPatches } from '@/db/patches';
 import { createRecurringSeries, type NewRecurringSeries } from '@/db/recurringSeries';
 import type { RecurringDismissalRow } from '@/db/recurringDismissals';
@@ -64,6 +65,10 @@ export interface ConfirmRegularVars {
   attributes: Record<string, PatchValue>;
   /** The live "not regular" answer this confirm replaces, if any. */
   dismissal: { id: string; version: number } | null;
+  /** Absent on variables persisted by an older build: no sign check. */
+  direction?: 'in' | 'out';
+  /** Logged rows the series is found from. Absent on older persisted variables: none. */
+  linkTransactionIds?: string[];
 }
 
 export interface PatchSeriesVars {
@@ -92,12 +97,29 @@ async function liveVersion(client: DbClient, id: string): Promise<number> {
   return (data as { version: number }).version;
 }
 
+/** The live (not deleted) transaction rows attached to a series, at their live versions. */
+async function liveSeriesRows(client: DbClient, seriesId: string): Promise<{ id: string; version: number }[]> {
+  const { data, error, status } = await client
+    .from('transactions')
+    .select('id, version')
+    .eq('recurring_series_id', seriesId)
+    .is('deleted_at', null);
+  if (error) throw toDbError(error, status);
+  return ((data ?? []) as { id: string; version: number }[]).map((r) => ({ id: r.id, version: r.version }));
+}
+
 async function runConfirm(qc: QueryClient, vars: ConfirmRegularVars): Promise<{ seriesId: string }> {
   const client = await writeClient();
-  const created = await createRecurringSeries(client, vars.series, { anchorTransactionId: null });
+  if (vars.direction) {
+    const sign = Math.sign(vars.series.amount);
+    if (sign !== (vars.direction === 'out' ? -1 : 1)) throw new DbError('series sign does not match direction', '23514', null);
+  }
+  const linkTransactionIds = vars.linkTransactionIds ?? [];
+  const created = await createRecurringSeries(client, vars.series, { anchorTransactionId: null, linkTransactionIds });
   const createdSet: SeriesChangeSet | null = created.status === 'applied' ? created.changeSet : null;
-  // A replay ('already-applied') carries no change set: read the live version back.
+  // A replay ('already-applied') carries no change set: read the live version back, and the lines below.
   const base = createdSet ? createdSet.series.versionAfter : await liveVersion(client, vars.series.id);
+  const replayRows = createdSet ? [] : await liveSeriesRows(client, vars.series.id);
 
   const ops: PatchOp[] = [];
   if (Object.keys(vars.attributes).length > 0) {
@@ -130,7 +152,12 @@ async function runConfirm(qc: QueryClient, vars: ConfirmRegularVars): Promise<{ 
 
   const change: SeriesChangeSet = createdSet
     ? { ...createdSet, series: { ...createdSet.series, versionAfter: seriesVersion } }
-    : { series: { id: vars.series.id, versionAfter: seriesVersion, before: null }, inserted: [], softDeleted: [], linked: [] };
+    : {
+        series: { id: vars.series.id, versionAfter: seriesVersion, before: null },
+        inserted: replayRows.filter((r) => !linkTransactionIds.includes(r.id)),
+        softDeleted: [],
+        linked: replayRows.filter((r) => linkTransactionIds.includes(r.id)).map((r) => ({ id: r.id, versionAfter: r.version })),
+      };
   const inverse: PatchOp[] = [...inverseOfSeriesChange(change)];
   if (vars.dismissal) {
     inverse.push(
@@ -283,6 +310,10 @@ export function useConfirmRegularCandidate(
 ): {
   confirm(input: {
     series: NewRecurringSeries;
+    /** The found payment's direction: it decides the stored sign (out = negative). */
+    direction: 'in' | 'out';
+    /** Every logged row the payment was found from. */
+    linkTransactionIds: readonly string[];
     attributes: SeriesAttributes;
     dismissalToClear?: RecurringDismissalRow | null;
   }): { seriesId: string; stepId: string };
@@ -292,15 +323,17 @@ export function useConfirmRegularCandidate(
     scope: WRITE_SCOPE,
   });
   return {
-    confirm({ series, attributes, dismissalToClear }) {
+    confirm({ series, direction, linkTransactionIds, attributes, dismissalToClear }) {
       const stepId = newStepId();
       mutation.mutate({
         ownerId,
         householdId,
         stepId,
-        series,
+        series: { ...series, amount: direction === 'out' ? -Math.abs(series.amount) : Math.abs(series.amount) },
         attributes: attributePatch(attributes),
         dismissal: dismissalToClear ? { id: dismissalToClear.id, version: dismissalToClear.version } : null,
+        direction,
+        linkTransactionIds: [...linkTransactionIds],
       });
       return { seriesId: series.id, stepId };
     },

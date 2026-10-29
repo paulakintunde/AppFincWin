@@ -202,6 +202,7 @@ describe('useConfirmRegularCandidate', () => {
     const { fake, qc } = setup();
     fake.respondWith({ data: { status: 'already-applied' }, error: null, status: 200 });
     fake.respondWith({ data: { id: 'ser-1', version: 2 }, error: null, status: 200 }); // maybeSingle read back
+    fake.respondWith({ data: [], error: null, status: 200 }); // live lines of the series
     fake.respondWith(patchedOk(['recurring_series', 'ser-1', 3]));
     fake.respondWith(insertOk);
     const { result } = await renderHook(() => useConfirmRegularCandidate(HH, USER), { wrapper: wrapper(qc) });
@@ -270,7 +271,7 @@ describe('useConfirmRegularCandidate: sign and links (CR-01, CR-02)', () => {
       dismissal: null,
       direction: 'out' as const,
     };
-    await expect(qc.getMutationDefaults(mutationKeys.confirmRegularCandidate).mutationFn!(vars)).rejects.toMatchObject({ code: '23514' });
+    await expect(qc.getMutationDefaults(mutationKeys.confirmRegularCandidate).mutationFn!(vars, undefined as never)).rejects.toMatchObject({ code: '23514' });
     expect(rpcs(fake)).toHaveLength(0);
   });
 
@@ -279,7 +280,7 @@ describe('useConfirmRegularCandidate: sign and links (CR-01, CR-02)', () => {
     fake.respondWith(createdOk());
     fake.respondWith(insertOk);
     const vars = { ownerId: USER, householdId: HH, stepId: 'step-old', series: { ...NEW_SERIES, amount: 150000 }, attributes: {}, dismissal: null };
-    await qc.getMutationDefaults(mutationKeys.confirmRegularCandidate).mutationFn!(vars);
+    await qc.getMutationDefaults(mutationKeys.confirmRegularCandidate).mutationFn!(vars, undefined as never);
     const args = rpcs(fake)[0]!.args[1] as { p_link_transaction_ids: string[] };
     expect(args.p_link_transaction_ids).toEqual([]);
   });

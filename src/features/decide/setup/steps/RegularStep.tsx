@@ -197,6 +197,8 @@ export const RegularStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(funct
     };
     const { stepId } = confirmer.confirm({
       series,
+      direction: candidate.direction,
+      linkTransactionIds: candidate.rowIds,
       attributes: candidate.direction === 'in' ? { counts_as: 'available' } : {},
       dismissalToClear: row.dismissal,
     });

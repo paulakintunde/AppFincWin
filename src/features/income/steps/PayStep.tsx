@@ -101,6 +101,8 @@ export const PayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function 
               occurrence_count: null,
               is_automatic: false,
             },
+            direction: 'in',
+            linkTransactionIds: [],
             attributes: { income_kind: 'salary', counts_as: 'available' },
           });
           stepIds.push(stepId);
