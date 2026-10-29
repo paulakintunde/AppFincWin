@@ -37,6 +37,8 @@ export interface AddDismissalVars {
   stepId: string;
   /** Payment name for the undo label; omitted when the caller has none. */
   labelName?: string | null;
+  /** Defaults to 'paymentDismissed'. */
+  labelKey?: 'paymentDismissed' | 'payNotMine';
 }
 
 export interface RemoveDismissalVars {
@@ -48,6 +50,8 @@ export interface RemoveDismissalVars {
   deletedAt: string;
   stepId: string;
   labelName?: string | null;
+  /** Defaults to 'paymentRestored'. */
+  labelKey?: 'paymentRestored' | 'payNotMineCleared';
 }
 
 function patchCache(qc: QueryClient, householdId: string, updater: (rows: DismissalList) => DismissalList): void {
@@ -65,7 +69,7 @@ export function registerDismissalMutations(qc: QueryClient): void {
         const client = await writeClient();
         // A duplicate client id (23505) is read back by insertDismissal: this exact write already landed.
         const row = await insertDismissal(client, vars.row);
-        const step = buildStep(vars.stepId, 'paymentDismissed', vars.labelName ? { name: vars.labelName } : {}, inverseOfInserts('recurring_dismissals', [{ id: row.id, version: row.version }]));
+        const step = buildStep(vars.stepId, vars.labelKey ?? 'paymentDismissed', vars.labelName ? { name: vars.labelName } : {}, inverseOfInserts('recurring_dismissals', [{ id: row.id, version: row.version }]));
         await recordUndoStepSafely(qc, client, step, vars.ownerId);
         return row;
       }),
@@ -97,7 +101,7 @@ export function registerDismissalMutations(qc: QueryClient): void {
         entityId: vars.row.id,
         kind: cls,
         code: settledWriteErrorCode(err),
-        attempted: { labelKey: 'paymentDismissed' },
+        attempted: { labelKey: vars.labelKey ?? 'paymentDismissed' },
       });
     },
   });
@@ -114,7 +118,7 @@ export function registerDismissalMutations(qc: QueryClient): void {
         recordWrittenVersion('recurring_dismissals', vars.id, [vars.expectedVersion, expected], row.version);
         const step = buildStep(
           vars.stepId,
-          'paymentRestored',
+          vars.labelKey ?? 'paymentRestored',
           vars.labelName ? { name: vars.labelName } : {},
           inverseOfPatches('recurring_dismissals', [{ id: row.id, before: { deleted_at: null }, versionAfter: row.version }])
         );
@@ -142,7 +146,7 @@ export function registerDismissalMutations(qc: QueryClient): void {
         entityId: vars.id,
         kind: cls,
         code: err instanceof VersionConflictError ? 'version-conflict' : settledWriteErrorCode(err),
-        attempted: { labelKey: 'paymentDismissed' },
+        attempted: { labelKey: vars.labelKey ?? 'paymentRestored' },
       });
     },
   });
@@ -152,13 +156,13 @@ export function registerDismissalMutations(qc: QueryClient): void {
 export function useAddDismissal(
   householdId: string,
   ownerId: string
-): { dismiss(input: { payeeKey: string; direction: 'in' | 'out'; name?: string | null }): { id: string; stepId: string } } {
+): { dismiss(input: { payeeKey: string; direction: 'in' | 'out'; name?: string | null; labelKey?: 'paymentDismissed' | 'payNotMine' }): { id: string; stepId: string } } {
   const mutation = useMutation<RecurringDismissalRow, unknown, AddDismissalVars>({
     mutationKey: mutationKeys.addDismissal,
     scope: WRITE_SCOPE,
   });
   return {
-    dismiss({ payeeKey, direction, name }) {
+    dismiss({ payeeKey, direction, name, labelKey }) {
       const id = Crypto.randomUUID();
       const stepId = newStepId();
       mutation.mutate({
@@ -167,6 +171,7 @@ export function useAddDismissal(
         row: { id, household_id: householdId, payee_key: payeeKey, direction },
         stepId,
         labelName: name ?? null,
+        ...(labelKey ? { labelKey } : {}),
       });
       return { id, stepId };
     },
@@ -174,15 +179,15 @@ export function useAddDismissal(
 }
 
 /** Change a "Not regular" answer back: soft-deletes the row. Returns the undo step id. */
-export function useRemoveDismissal(householdId: string, ownerId: string): { restore(row: RecurringDismissalRow, name?: string | null): { stepId: string } } {
+export function useRemoveDismissal(householdId: string, ownerId: string): { restore(row: RecurringDismissalRow, name?: string | null, labelKey?: 'paymentRestored' | 'payNotMineCleared'): { stepId: string } } {
   const mutation = useMutation<RecurringDismissalRow, unknown, RemoveDismissalVars>({
     mutationKey: mutationKeys.removeDismissal,
     scope: WRITE_SCOPE,
   });
   return {
-    restore(row, name) {
+    restore(row, name, labelKey) {
       const stepId = newStepId();
-      mutation.mutate({ id: row.id, ownerId, householdId, expectedVersion: row.version, deletedAt: new Date().toISOString(), stepId, labelName: name ?? null });
+      mutation.mutate({ id: row.id, ownerId, householdId, expectedVersion: row.version, deletedAt: new Date().toISOString(), stepId, labelName: name ?? null, ...(labelKey ? { labelKey } : {}) });
       return { stepId };
     },
   };
