@@ -51,6 +51,18 @@ const DECIDE_TOAST_LABEL: Readonly<Record<string, UndoLabelKey>> = {
   'decide.depth.goal.untagged': 'transferUntagged',
   // 05.2-23: the setup stepper's "{title} saved" toast replays the step's settings write.
   'decide.setup.shell.toastSaved': 'setupStepSaved',
+  // 05.2-53 (F-08): these toasts carry a real step id but no `undo.label.` text, so each needs its label here.
+  'decide.settings.toastReset': 'setupReset',
+  'decide.setup.regular.toastCleared': 'paymentDismissed',
+  'decide.accountUse.toastSaved': 'accountUseSaved',
+  'decide.emergencySheet.toastSaved': 'emergencySaved',
+  'decide.emergencySheet.toastSavedAccount': 'emergencySaved',
+  'decide.emergencySheet.toastRemoved': 'emergencyRemoved',
+  'activity.refund.toastLinked': 'refundLinked',
+  'activity.refund.toastUnlinked': 'refundUnlinked',
+  'activity.incomeTag.toastSaved': 'incomeTypeSaved',
+  'activity.incomeTag.toastTagged': 'incomeTagged',
+  'activity.incomeTag.toastFuture': 'incomeTagged',
 };
 
 /** Derives the engine label key and params from a toast's `undo.label[Unnamed].<key>` text (or a Decide toast's own key). */
