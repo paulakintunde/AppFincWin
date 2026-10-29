@@ -19,6 +19,11 @@ export function explore(input: {
   readonly levers: ExplorerLevers;
   readonly price: MinorUnits;
   readonly unspent: MinorUnits | null;
+  /**
+   * D-12, finding 6: the judge's own basis for the wait. price is its day-one price and unspent is its available
+   * unspent money; set this when the answer is "not yet" so a covered price still waits a month, as the answer does.
+   */
+  readonly answerWaits?: boolean;
 }): { readonly typicalLeft: MinorUnits | null; readonly buyLater: ReturnType<typeof buyLater>; readonly clamped: boolean } {
   const { levers } = input;
   if (levers.everydayCut < 0 || levers.flexibleSavingCut < 0 || input.flexibleSaving < 0) {
@@ -32,7 +37,16 @@ export function explore(input: {
     input.month.typicalLeft === null ? null : minorUnits(input.month.typicalLeft + everydayCut + savingCut);
   return {
     typicalLeft,
-    buyLater: buyLater({ price: input.price, unspent: input.unspent, typicalLeft, month: input.month.month }),
+    buyLater: buyLater({
+      price: input.price,
+      unspent: input.unspent,
+      typicalLeft,
+      month: input.month.month,
+      // D-12: the season follows the slider; the lever lifts every month of the seasonal walk (saved = max(0, left + lift))
+      ...(input.month.incomePicture === undefined ? {} : { picture: input.month.incomePicture }),
+      lift: minorUnits(everydayCut + savingCut),
+      ...(input.answerWaits === true ? { waitsAtLeastAMonth: true } : {}),
+    }),
     clamped,
   };
 }
