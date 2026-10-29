@@ -6,6 +6,7 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import { persistQueryClientSave } from '@tanstack/react-query-persist-client';
 import type { PersistedClient, Persister, PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
 import type { Mutation, Query, QueryClient } from '@tanstack/react-query';
+import { addBreadcrumb } from '@sentry/react-native';
 import { LargeSecureStore } from '@/services/supabase/largeSecureStore';
 
 // Kept under the fincwin: prefix so wipeDeviceData's AsyncStorage sweep (src/services/storage/wipe.ts)
@@ -61,8 +62,79 @@ export function clearServerFetchTimes(): void {
 
 const SERVER_FETCHED_FIELD = 'fincwinServerFetchedAt';
 
+// F-11: Android reads an AsyncStorage row through a 2 MB CursorWindow. LargeSecureStore writes the
+// ciphertext as hex (about 2x the UTF-8 bytes) plus a 33-character iv prefix, so the plaintext
+// JSON must stay well under 1 MB. 900 KB leaves room for the prefix and the fetch-times field.
+export const MAX_PERSIST_BYTES = 900 * 1024;
+
+// Room kept for the fetch-times field and the persisted-client envelope when deciding whether the
+// queued writes fit in the main row.
+const MAIN_ROW_RESERVE_BYTES = 16 * 1024;
+
+// F-11: queued writes that alone exceed the budget live in separate rows under this prefix.
+export const WRITES_OVERFLOW_PREFIX = `${QUERY_CACHE_KEY}:writes:`;
+
+// Large reads that refetch on the next open: not worth the bytes (F-11).
+const NEVER_PERSIST = new Set(['offer-history', 'search', 'refund-links', 'refund-purchases']);
+
+export function isNeverPersisted(queryKey: readonly unknown[]): boolean {
+  return queryKey[0] === 'transactions' && NEVER_PERSIST.has(String(queryKey[2]));
+}
+
+function utf8Length(s: string): number {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(s).length;
+  let n = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c < 0x80) n += 1;
+    else if (c < 0x800) n += 2;
+    else if (c >= 0xd800 && c <= 0xdbff) {
+      n += 4;
+      i++;
+    } else n += 3;
+  }
+  return n;
+}
+
+/**
+ * F-11: keeps the serialised client under `maxBytes` by dropping whole queries, largest first.
+ * Mutations (queued offline writes) are never touched (SYN-02). Returns the same object when it
+ * already fits.
+ */
+export function fitToBudget(
+  client: PersistedClient,
+  maxBytes: number,
+  size: (s: string) => number = utf8Length
+): PersistedClient {
+  let total = size(JSON.stringify(client));
+  if (total <= maxBytes) return client;
+  const queries = client.clientState.queries.map((q) => ({ q, bytes: size(JSON.stringify(q)) }));
+  queries.sort((a, b) => b.bytes - a.bytes);
+  let dropped = 0;
+  while (dropped < queries.length && total > maxBytes) {
+    total -= (queries[dropped]?.bytes ?? 0) + 1;
+    dropped++;
+  }
+  const keep = new Set(queries.slice(dropped).map((e) => e.q));
+  return {
+    ...client,
+    clientState: { ...client.clientState, queries: client.clientState.queries.filter((q) => keep.has(q)) },
+  };
+}
+
 export function serializeWithFetchTimes(client: PersistedClient): string {
-  return JSON.stringify({ ...client, [SERVER_FETCHED_FIELD]: Object.fromEntries(serverFetchedAt) });
+  // Only persisted queries need their fetch times on disk (the map also holds never-persisted reads).
+  const times: Record<string, number> = {};
+  for (const q of client.clientState.queries) {
+    const at = serverFetchedAt.get(q.queryHash);
+    if (at !== undefined) times[q.queryHash] = at;
+  }
+  const kept = fitToBudget(client, MAX_PERSIST_BYTES - utf8Length(JSON.stringify(times)) - 64);
+  if (kept !== client) {
+    const hashes = new Set(kept.clientState.queries.map((q) => q.queryHash));
+    for (const h of Object.keys(times)) if (!hashes.has(h)) delete times[h];
+  }
+  return JSON.stringify({ ...kept, [SERVER_FETCHED_FIELD]: times });
 }
 
 export function deserializeWithFetchTimes(raw: string): PersistedClient {
@@ -111,12 +183,90 @@ function createBasePersister(storage: LargeSecureStore, throttleTime: number) {
   });
 }
 
-export function createEncryptedPersister(storage: LargeSecureStore = new LargeSecureStore()): Persister {
-  const base = createBasePersister(storage, 1000);
+type Mutations = PersistedClient['clientState']['mutations'];
+type WithChunks = PersistedClient & { writesChunks?: number };
+
+/** Splits the queued writes, in order, into groups whose JSON each fits `maxBytes`. */
+function chunkMutations(mutations: Mutations, maxBytes: number) {
+  const chunks: Mutations[] = [];
+  let current: Mutations = [];
+  let currentBytes = 2;
+  let oversizedSingle = 0;
+  for (const m of mutations) {
+    const bytes = utf8Length(JSON.stringify(m)) + 1;
+    if (bytes + 2 > maxBytes) oversizedSingle = 1;
+    if (current.length > 0 && currentBytes + bytes > maxBytes) {
+      chunks.push(current);
+      current = [];
+      currentBytes = 2;
+    }
+    current.push(m);
+    currentBytes += bytes;
+  }
+  if (current.length > 0) chunks.push(current);
+  return { chunks, oversizedSingle };
+}
+
+export function createEncryptedPersister(
+  storage: LargeSecureStore = new LargeSecureStore(),
+  throttleTime = 1000
+): Persister {
+  const base = createBasePersister(storage, throttleTime);
+
+  // Removes overflow rows from index `start` upward (stops at the first gap).
+  async function removeOverflowFrom(start: number): Promise<void> {
+    for (let i = start; ; i++) {
+      const key = WRITES_OVERFLOW_PREFIX + i;
+      if ((await storage.getItem(key)) === null) return;
+      await storage.removeItem(key);
+    }
+  }
+
   return {
-    persistClient: base.persistClient,
-    removeClient: base.removeClient,
-    restoreClient: async () => carryQueuedWrites(await base.restoreClient(), CACHE_SCHEMA_VERSION, CACHE_MAX_AGE_MS),
+    persistClient: async (client: PersistedClient) => {
+      const mutations = client.clientState.mutations;
+      const mutationBytes = mutations.length > 0 ? utf8Length(JSON.stringify(mutations)) : 0;
+      let toSave: WithChunks = client;
+      if (mutationBytes > MAX_PERSIST_BYTES - MAIN_ROW_RESERVE_BYTES) {
+        const { chunks, oversizedSingle } = chunkMutations(mutations, MAX_PERSIST_BYTES);
+        for (let i = 0; i < chunks.length; i++) {
+          await storage.setItem(WRITES_OVERFLOW_PREFIX + i, JSON.stringify(chunks[i]));
+        }
+        await removeOverflowFrom(chunks.length);
+        addBreadcrumb({
+          category: 'persist',
+          message: 'queued writes over budget',
+          data: { mutations: mutations.length, chunks: chunks.length, bytes: mutationBytes, oversizedSingle },
+        });
+        toSave = { ...client, clientState: { queries: [], mutations: [] }, writesChunks: chunks.length };
+      } else {
+        await removeOverflowFrom(0);
+      }
+      if (__DEV__) {
+        const bytes = utf8Length(serializeWithFetchTimes(toSave));
+        console.log(
+          `[persist] bytes=${bytes} queries=${toSave.clientState.queries.length} mutations=${mutations.length}`
+        );
+      }
+      await base.persistClient(toSave);
+    },
+    removeClient: async () => {
+      await base.removeClient();
+      await removeOverflowFrom(0);
+    },
+    restoreClient: async () => {
+      const restored = (await base.restoreClient()) as WithChunks | undefined;
+      if (restored && typeof restored.writesChunks === 'number' && restored.writesChunks > 0) {
+        const mutations: Mutations = [];
+        for (let i = 0; i < restored.writesChunks; i++) {
+          const raw = await storage.getItem(WRITES_OVERFLOW_PREFIX + i);
+          if (raw) mutations.push(...(JSON.parse(raw) as Mutations));
+        }
+        restored.clientState = { ...restored.clientState, mutations };
+        delete restored.writesChunks;
+      }
+      return carryQueuedWrites(restored, CACHE_SCHEMA_VERSION, CACHE_MAX_AGE_MS);
+    },
   };
 }
 
@@ -130,7 +280,9 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
     // D-15: browsable for 30 days WITHOUT a successful refetch. IN-A05: measured from the last
     // server fetch, not dataUpdatedAt (which optimistic writes also move), so a query older
     // than that is simply not persisted and is gone on the next boot.
-    shouldDehydrateQuery: (q: Query) => q.state.status === 'success' && Date.now() - lastServerFetchAt(q) < CACHE_MAX_AGE_MS,
+    shouldDehydrateQuery: (q: Query) => q.state.status === 'success' &&
+      !isNeverPersisted(q.queryKey) &&
+      Date.now() - lastServerFetchAt(q) < CACHE_MAX_AGE_MS,
     // WR-A13: every unfinished write survives a restart, not only paused ones. A write that
     // was mid-attempt or waiting out a retry backoff when the app was killed has
     // `isPaused: false`; persisting only paused writes left its optimistic row on disk with
@@ -164,7 +316,7 @@ let immediate: Persister | null = null;
  */
 export async function flushPersistedClient(qc: QueryClient): Promise<void> {
   try {
-    immediate ??= createBasePersister(new LargeSecureStore(), 0);
+    immediate ??= createEncryptedPersister(new LargeSecureStore(), 0);
     await persistQueryClientSave({
       queryClient: qc,
       persister: immediate,
