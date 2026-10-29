@@ -307,8 +307,10 @@ export function buildV3Inputs(
   source: SnapshotSource,
   v3Stored: V3SettingsSource | null,
   built: SnapshotResult = buildDecideSnapshot(source),
-  uses: Readonly<Record<string, AccountUse>> = {} // tests only: overrides the stored account columns
+  uses: Readonly<Record<string, AccountUse>> = {}, // tests only: overrides the stored account columns
+  pendingWrites = 0 // L-09 (05.3): how many writes are queued and not yet saved; above 0 the answer says so
 ): V3Inputs {
+  if (!Number.isSafeInteger(pendingWrites) || pendingWrites < 0) throw new RangeError('buildV3Inputs: pendingWrites must be a whole number >= 0');
   const { today, homeCurrency: home } = source;
   const st = source.settings;
   const moneyUsable = settingsMoneyUsable(st, home);
@@ -561,7 +563,7 @@ export function buildV3Inputs(
     payArrivals: payArrivalsOf(answers),
     expectedIncome: expectedIncomeOf(answers),
     heldBridges: heldBridgesOf(answers, new Set(v3?.live_bridge_check_ids ?? [])),
-    unsavedWrites: 0,
+    unsavedWrites: pendingWrites,
     provisionalRates,
   };
 }
