@@ -3,22 +3,27 @@
  * Prices come from the live evaluation; nothing here reads the old snapshot or writes a stored answer.
  */
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { useDecideLinks } from '@/data/queries/decide';
 import { useChecksV3 } from '@/data/queries/decideCheckV3';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { Evaluation } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
+import { useRecordContext } from '@/features/record/useRecordContext';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
-import { PRESSED_OPACITY, space } from '@/theme/layout';
+import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
+import { writtenCount } from '../../past/useDeleteDecision';
+import { DeletableRow } from '../../ui/DeletableRow';
 import { refundHint } from '../model/refundHint';
 import { answerHref } from '../nav/hrefs';
 import { V3NotFound } from '../nav/V3NotFound';
 import { V3Skeleton } from '../nav/V3Skeleton';
 import { useV3Format } from '../shared/useV3Format';
+import { useCheckAgain, useDeleteRow } from './useRowActions';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
@@ -55,6 +60,11 @@ function DecisionsBody({ rows, byId, withoutRefunds, title }: BodyProps): React.
     [rows],
   );
 
+  const rc = useRecordContext();
+  const ids = useMemo(() => decided.map((r) => r.id), [decided]);
+  const links = useDecideLinks(rc.userId ?? undefined, rc.householdId ?? undefined, ids).data;
+  const written = (id: string) => writtenCount((links ?? []).filter((l) => l.check_id === id));
+
   return (
     <DetailScreen title={title}>
       {decided.length === 0 ? (
@@ -62,7 +72,7 @@ function DecisionsBody({ rows, byId, withoutRefunds, title }: BodyProps): React.
       ) : (
         <View style={styles.list}>
           {decided.map((r) => (
-            <DecisionRow key={r.id} row={r} live={byId.get(r.id)} without={withoutRefunds.get(r.id)} />
+            <DecisionRow key={r.id} row={r} live={byId.get(r.id)} without={withoutRefunds.get(r.id)} written={written(r.id)} />
           ))}
         </View>
       )}
@@ -70,10 +80,22 @@ function DecisionsBody({ rows, byId, withoutRefunds, title }: BodyProps): React.
   );
 }
 
-function DecisionRow({ row, live, without }: { row: DecideCheckRow; live: Evaluation | undefined; without: Evaluation | undefined }): React.JSX.Element {
+function DecisionRow({
+  row,
+  live,
+  without,
+  written,
+}: {
+  row: DecideCheckRow;
+  live: Evaluation | undefined;
+  without: Evaluation | undefined;
+  written: number;
+}): React.JSX.Element {
   const t = useT() as unknown as Translate;
   const f = useV3Format();
   const { colors, pairing } = useTheme();
+  const del = useDeleteRow();
+  const checkAgain = useCheckAgain();
 
   const item = row.name === '' ? t('decide.quick.unnamed') : row.name;
   const whole = live?.purchase?.whole;
@@ -87,56 +109,57 @@ function DecisionRow({ row, live, without }: { row: DecideCheckRow; live: Evalua
   const refund = refundHint({ stored: row.answer_v3, live: live?.result, without: without?.result });
   const a11y = t(`${K}rowA11y`, { item, price: priceA11y, status: lines.join('. ') }).replace(/, \./g, '.');
 
+  const onOpen = () => pushOnce(answerHref(row.id));
   return (
-    <Pressable
-      accessible
-      accessibilityRole="button"
-      accessibilityLabel={a11y}
-      onPress={() => pushOnce(answerHref(row.id))}
-      style={({ pressed }) => [styles.row, { backgroundColor: colors.surface, borderColor: colors.line2, opacity: pressed ? PRESSED_OPACITY : 1 }]}
-    >
-      <View style={styles.text}>
-        <View style={styles.titleRow}>
-          <Text style={[{ ...textRole(pairing, 'body'), color: colors.ink }, styles.item]}>{item}</Text>
-          {price !== null && bought ? (
-            <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={PRICE_FIT}
-              style={[{ ...textRole(pairing, 'body'), color: colors.ink }, styles.price]}
-            >
-              {`· ${price}`}
-            </Text>
-          ) : null}
-        </View>
-        {lines.map((line) => (
-          <Text key={line} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>
-            {line}
+    <View style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.line2 }]}>
+      <DeletableRow
+        name={item}
+        accessibilityLabel={a11y}
+        onOpen={onOpen}
+        menu={[
+          { key: 'open', label: t('decide.delete.menuOpen'), onSelect: onOpen },
+          { key: 'again', label: t(`${K}checkAgain`), onSelect: () => checkAgain(row) },
+        ]}
+        confirm={del.confirmCopy(row, written)}
+        onDelete={() => del.remove(row)}
+      >
+        <View style={styles.pad}>
+          <View style={styles.text}>
+            <View style={styles.titleRow}>
+              <Text style={[{ ...textRole(pairing, 'body'), color: colors.ink }, styles.item]}>{item}</Text>
+              {price !== null && bought ? (
+                <Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={PRICE_FIT}
+                  style={[{ ...textRole(pairing, 'body'), color: colors.ink }, styles.price]}
+                >
+                  {`· ${price}`}
+                </Text>
+              ) : null}
+            </View>
+            {lines.map((line) => (
+              <Text key={line} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>
+                {line}
+              </Text>
+            ))}
+            {refund ? (
+              <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>{t('decide.v3.ui.home.refundLine')}</Text>
+            ) : null}
+          </View>
+          <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ color: colors.inkFaint }}>
+            {'›'}
           </Text>
-        ))}
-        {refund ? (
-          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>{t('decide.v3.ui.home.refundLine')}</Text>
-        ) : null}
-      </View>
-      <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ color: colors.inkFaint }}>
-        {'›'}
-      </Text>
-    </Pressable>
+        </View>
+      </DeletableRow>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   list: { gap: space.gapSm },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.gapSm,
-    borderRadius: ROW_RADIUS,
-    borderWidth: StyleSheet.hairlineWidth,
-    minHeight: ROW_MIN,
-    paddingHorizontal: space.cardPad,
-    paddingVertical: PAD_V,
-  },
+  row: { borderRadius: ROW_RADIUS, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden', minHeight: ROW_MIN },
+  pad: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm, paddingHorizontal: space.cardPad, paddingVertical: PAD_V, minHeight: ROW_MIN },
   text: { flex: 1, gap: 4, justifyContent: 'center' },
   titleRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: space.gapSm },
   item: { flexShrink: 1 },

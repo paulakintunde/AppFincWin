@@ -1,10 +1,10 @@
 /**
  * 05.3-36 (UI-SPEC "Saved plans and unfinished checks", D-13, D-16): one row for a saved plan or an unfinished check.
  * The chip is the stored answer_v3 (read, never written); a live answer that differs adds "Changed since you saved".
- * A saved row is one pressable element that opens the answer; an unfinished row opens the check and can be deleted (Undo toast).
+ * A saved row opens the answer and can be deleted (Undo toast, D-23); an unfinished row opens the check and can be deleted (Undo toast).
  */
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useAbandonCheck } from '@/data/mutations/decideChecks';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { Evaluation } from '@/engine/decide/v3';
@@ -12,7 +12,7 @@ import { useT } from '@/i18n';
 import { getAnalytics } from '@/services/analytics';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
-import { PRESSED_OPACITY, space } from '@/theme/layout';
+import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { warnTint } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
@@ -22,6 +22,7 @@ import { refundHint } from '../model/refundHint';
 import { savedPlanRow } from '../model/savedPlanRow';
 import { answerHref, purchaseHref } from '../nav/hrefs';
 import { useV3Format } from '../shared/useV3Format';
+import { useDeleteRow } from './useRowActions';
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
@@ -43,6 +44,7 @@ export function SavedPlanRow({ row, live, without }: SavedPlanRowProps): React.J
   const f = useV3Format();
   const { colors, pairing } = useTheme();
   const { abandon } = useAbandonCheck();
+  const del = useDeleteRow();
 
   const model = useMemo(() => {
     const refundBetter = refundHint({ stored: row.answer_v3, live: live?.result, without: without?.result });
@@ -122,19 +124,26 @@ export function SavedPlanRow({ row, live, without }: SavedPlanRowProps): React.J
     );
   }
 
+  const onOpenAnswer = () => pushOnce(answerHref(row.id));
+  const onDeletePlan = () => del.remove(row);
   return (
-    <Pressable
-      accessible
-      accessibilityRole="button"
-      accessibilityLabel={a11y}
-      onPress={() => pushOnce(answerHref(row.id))}
-      style={({ pressed }) => [styles.row, surface, styles.pad, styles.pressRow, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
-    >
-      {body}
-      <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ color: colors.inkFaint }}>
-        {'›'}
-      </Text>
-    </Pressable>
+    <View style={[styles.row, surface]}>
+      <DeletableRow
+        name={item}
+        accessibilityLabel={a11y}
+        onOpen={onOpenAnswer}
+        menu={[{ key: 'open', label: t('decide.delete.menuOpen'), onSelect: onOpenAnswer }]}
+        confirm={del.confirmCopy(row, 0)}
+        onDelete={onDeletePlan}
+      >
+        <View style={[styles.pad, styles.pressRow]}>
+          {body}
+          <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ color: colors.inkFaint }}>
+            {'›'}
+          </Text>
+        </View>
+      </DeletableRow>
+    </View>
   );
 }
 

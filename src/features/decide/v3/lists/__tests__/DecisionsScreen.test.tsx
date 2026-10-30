@@ -13,6 +13,46 @@ let mockState: { status: string; rows: unknown[]; byId: Map<string, unknown>; wi
 jest.mock('@/data/queries/decideCheckV3', () => ({ useChecksV3: () => mockState }));
 jest.mock('../../shared/useV3Format', () => ({ useV3Format: () => jest.requireActual('./listsTestKit').fakeFormat }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
+const mockRemove = jest.fn();
+const mockAgain = jest.fn();
+jest.mock('../useRowActions', () => ({
+  useDeleteRow: () => ({ remove: mockRemove, confirmCopy: () => ({ title: 'Delete this decision?', body: 'It leaves Past decisions.' }) }),
+  useCheckAgain: () => mockAgain,
+}));
+jest.mock('@/data/queries/decide', () => ({ useDecideLinks: () => ({ data: [] }) }));
+jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u', householdId: 'h' }) }));
+jest.mock('../../../ui/DeletableRow', () => ({
+  DeletableRow: ({
+    children,
+    onOpen,
+    onDelete,
+    accessibilityLabel,
+    menu,
+  }: {
+    children: React.ReactNode;
+    onOpen: () => void;
+    onDelete: () => void;
+    accessibilityLabel: string;
+    menu: { key: string; label: string; onSelect: () => void }[];
+  }) => {
+    const { Pressable, Text } = jest.requireActual('react-native');
+    return (
+      <>
+        <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onOpen}>
+          {children}
+        </Pressable>
+        <Pressable accessibilityLabel={`delete ${accessibilityLabel}`} onPress={onDelete}>
+          <Text>{'del'}</Text>
+        </Pressable>
+        {menu.map((m) => (
+          <Pressable key={m.key} accessibilityLabel={`${m.label} ${accessibilityLabel}`} onPress={m.onSelect}>
+            <Text>{m.label}</Text>
+          </Pressable>
+        ))}
+      </>
+    );
+  },
+}));
 jest.mock('@/shell/screen/DetailScreen', () => ({
   DetailScreen: ({ title, children }: { title: string; children: React.ReactNode }) => {
     const { Text } = jest.requireActual('react-native');
@@ -30,6 +70,8 @@ const passed = checkRow({ id: 'p1', name: 'Boat', status: 'passed', decided_at: 
 
 beforeEach(() => {
   (pushOnce as jest.Mock).mockClear();
+  mockRemove.mockClear();
+  mockAgain.mockClear();
   mockState = {
     status: 'ready',
     rows: [bought, passed, checkRow({ id: 'w1', name: 'Plan', status: 'waiting' })],
@@ -71,5 +113,15 @@ describe('DecisionsScreen', () => {
     mockState.rows = [];
     await wrap(<DecisionsScreen />);
     expect(screen.getByText('Nothing decided yet')).toBeTruthy();
+  });
+
+  it('each row offers Delete (one removal of that row) and Check again (D-23)', async () => {
+    await wrap(<DecisionsScreen />);
+    await fireEvent.press(screen.getByLabelText(/^delete Boat/));
+    expect(mockRemove).toHaveBeenCalledTimes(1);
+    expect(mockRemove).toHaveBeenCalledWith(passed);
+    await fireEvent.press(screen.getByLabelText(/^Check again Laptop/));
+    expect(mockAgain).toHaveBeenCalledWith(bought);
+    expect(screen.getAllByText('Check again')).toHaveLength(2);
   });
 });
