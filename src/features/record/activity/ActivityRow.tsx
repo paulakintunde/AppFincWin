@@ -24,6 +24,7 @@ import { CategoryGlyph } from '@/ui/CategoryGlyph';
 import { SwipeRow, type SwipeAction } from '@/ui/SwipeRow';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { IncomeTagChip, type IncomeChipState } from './IncomeTagChip';
+import { RefundHintChip } from './RefundHintChip';
 import { RefundTag, type RefundTagModel } from './RefundTag';
 
 /** Where a row sits in its run of rows: a section is one grouped card (UI-SPEC list-row cards). */
@@ -90,6 +91,9 @@ export interface ActivityRowProps {
   /** 05.2-30 (D-10): the refund tag for a refund row or a refunded purchase, and what a press does (open the purchase). */
   refundTag?: RefundTagModel | null;
   onRefundTagPress?: (purchaseId: string) => void;
+  /** 05.3-35 (D-14): a likely refund of an earlier purchase, and what a press does (open the picker preselected). */
+  refundHint?: { purchaseId: string; payee: string } | null;
+  onRefundHintPress?: (row: ActivityRowView, purchaseId: string) => void;
 }
 
 function letterOf(name: string): string {
@@ -133,6 +137,8 @@ export function ActivityRow({
   onIncomeChipPress,
   refundTag = null,
   onRefundTagPress,
+  refundHint = null,
+  onRefundHintPress,
 }: ActivityRowProps) {
   const t = useT();
   const { v3 } = useDecideAccess();
@@ -227,10 +233,12 @@ export function ActivityRow({
   // buttons stay reachable by assistive tech (the row's label replaces its children). Nothing for unflagged accounts.
   const showChip = v3 && !selectable && incomeChip !== null && onIncomeChipPress !== undefined;
   const showRefund = v3 && !selectable && refundTag !== null && onRefundTagPress !== undefined;
+  const showHint = v3 && !selectable && refundTag === null && refundHint !== null && onRefundHintPress !== undefined;
   const extras =
-    showChip || showRefund ? (
+    showChip || showRefund || showHint ? (
       <View style={styles.extras}>
         {showChip ? <IncomeTagChip state={incomeChip} onPress={() => onIncomeChipPress(row)} /> : null}
+        {showHint ? <RefundHintChip payee={refundHint.payee} onPress={() => onRefundHintPress(row, refundHint.purchaseId)} /> : null}
         {showRefund ? (
           <RefundTag model={refundTag} row={row} formatter={formatter} onPress={() => onRefundTagPress(refundTag.purchase.id)} />
         ) : null}
