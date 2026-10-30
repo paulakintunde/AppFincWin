@@ -46,3 +46,5 @@ export { VERDICT_TABLE, verdictRowFor, NOTICE_KEYS, FACT_KEYS, MISSING_KEYS, REA
 export type { VerdictRow } from './copy/verdictTable';
 export { builtinLines } from './judge/lines';
 export { cadenceOfFreq } from './plan/cadence';
+// 05.3-13 (DSV-13): the same share rounding the ladder uses, so a recorded amount equals Purchase.dayOne exactly.
+export { myPart as myShareOf } from '../share';
