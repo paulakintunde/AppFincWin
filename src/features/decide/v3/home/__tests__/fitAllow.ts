@@ -3,7 +3,7 @@ import type { FitAllow } from '../../shared/fitAllowTypes';
 
 export const FIT_ALLOW: FitAllow = {
   number: [
-    { path: 'v3/home/MonthBarCard.tsx', kind: 'figure', count: 2, reason: 'the month figure and the shared tap figure scale to fit on one line' },
+    { path: 'v3/home/MonthBarCard.tsx', kind: 'figure', count: 1, reason: 'the month figure scales to fit on one line (05.3-60: the figure rows never clamp or shrink)' },
     { path: 'v3/home/EnvelopeGrid.tsx', kind: 'figure', count: 1, reason: 'the envelope amount scales to fit on one line' },
   ],
   geometry: [
