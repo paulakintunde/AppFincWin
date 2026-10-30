@@ -8,8 +8,9 @@ import { totalSetAside } from '../../pots';
 import { V3_VARIABLE_HISTORY_MONTHS } from '../constants';
 import { yearMonthOf } from '../dates';
 import { monthlyEquivalentOf } from '../plan/cadence';
-import type { IncomePicture, MonthModel, Notice, NoticeCode, ReasonCode, V3Inputs } from '../types';
+import type { AlwaysOtherSeries, IncomePicture, MonthModel, Notice, NoticeCode, ReasonCode, V3Inputs } from '../types';
 import { confidenceOf } from './confidence';
+import { dueDrops } from './dueDrops';
 import { incomeThisMonth, typicalIncome, type IncomeInput } from './incomeProfile';
 import {
   buildIncomeMonths,
@@ -79,6 +80,13 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
   const income = incomeThisMonth(incomeInput);
   const ti = typicalIncome(incomeInput);
   const setAside = setAsideOf(inputs);
+  // 05.3-63: one rule for dues that no longer count (D-27, D-31, skips). 05.3-64 reuses it for the typical month.
+  const drops = dueDrops(inputs);
+  // D-31: every live bill series someone else always pays, whether or not it falls due or was paid this month.
+  const alwaysOther: AlwaysOtherSeries[] = liveSeriesOf(inputs.series, inputs.asOf, 'bill')
+    .filter((s) => drops.alwaysOther.has(s.id))
+    .map((s) => ({ seriesId: s.id, name: s.name ?? null }))
+    .sort((a, b) => (a.seriesId < b.seriesId ? -1 : 1));
 
   // D-33 to D-36: the income pattern decides the window and whether the typical month comes from recorded income.
   const incomeByMonth = recordedIncomeByMonth({
@@ -134,6 +142,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     e: seasonE ?? typical.e,
     roughExpenses: inputs.rough?.expenses ?? null,
     setAside,
+    drops,
   });
 
   const reasonSet = new Set<ReasonCode>([...income.reasons, ...ti.reasons, ...typical.reasons]);
@@ -207,5 +216,8 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     reasons: [...reasonSet].sort(),
     incomePicture,
     ...(income.unseenPay === undefined ? {} : { unseenPay: income.unseenPay }), // D-58
+    // 05.3-63: set only when non-empty, so a model with no waivers and no skips is byte-identical to before.
+    ...(tm.paidByOther.length === 0 ? {} : { paidByOther: tm.paidByOther }),
+    ...(alwaysOther.length === 0 ? {} : { alwaysOther }),
   };
 }

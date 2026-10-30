@@ -72,6 +72,34 @@ describe('this month without dropped dues (D-27, D-31)', () => {
     expect(m.alwaysOther).toEqual([{ seriesId: 'gym', name: null }]);
   });
 
+  it('two dropped dues on one date are listed by series id, and alwaysOther is sorted by series id', () => {
+    const water = v3Series({ id: 'water', name: 'Water', role: 'bill', cadence: MONTHLY, anchorDate: '2026-01-20', amount: 3000 });
+    const aqua = v3Series({ id: 'aqua', name: 'Aqua', role: 'bill', cadence: MONTHLY, anchorDate: '2026-01-20', amount: 2000 });
+    const m = buildMonthModel({
+      ...inputs({
+        waivers: [
+          { kind: 'always_other', seriesId: 'water' },
+          { kind: 'always_other', seriesId: 'gym' },
+          { kind: 'always_other', seriesId: 'aqua' },
+          { kind: 'always_other', seriesId: 'rent' },
+          { kind: 'always_other', seriesId: 'lunch' },
+        ],
+      }),
+      // Mixed input order, so the sort meets both answers of each comparison.
+      series: [water, aqua, rent, gym, lunch, pay],
+    });
+    expect((m.paidByOther ?? []).map((p) => `${p.date} ${p.seriesId}`)).toEqual([
+      '2026-10-01 rent',
+      '2026-10-05 lunch',
+      '2026-10-19 lunch',
+      '2026-10-20 aqua',
+      '2026-10-20 gym',
+      '2026-10-20 water',
+    ]);
+    expect((m.alwaysOther ?? []).map((p) => p.seriesId)).toEqual(['aqua', 'gym', 'lunch', 'rent', 'water']);
+    expect(m.billsDue).toBe(0);
+  });
+
   it('a skipped Netflix leaves still to come and is not listed (W2)', () => {
     const m = buildMonthModel(inputs({ skipped: [{ seriesId: 'netflix', date: '2026-10-03' }] }));
     expect(m.billsDue).toBe(base.billsDue - 1199);
