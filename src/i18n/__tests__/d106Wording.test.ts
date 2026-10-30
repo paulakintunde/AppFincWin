@@ -45,6 +45,10 @@ const ALLOWED: Record<string, string> = {
   'decide.settings.valueDetailShort': '"Short answers" is the answer length, not a month figure',
   'decide.setupPage.roughBody_one': '"step left" is a count of setup steps',
   'decide.setupPage.roughBody_other': '"steps left" is a count of setup steps',
+  'decide.v3.ui.worked.halfLogged': '"left out" says a month is excluded from the typical month: a rule, not a figure (UI-SPEC)',
+  'decide.v3.ui.worked.state.out': '"left out" is the bar state of an excluded month (UI-SPEC)',
+  'decide.v3.ui.worked.assumeLeftOut': '"left out" lists excluded months: a rule, not a figure (UI-SPEC)',
+  'decide.v3.ui.refine.kind.under_logged_month.body': '"left out" of the typical month: a rule, not a figure (UI-SPEC)',
 };
 
 describe('D-106 wording', () => {
