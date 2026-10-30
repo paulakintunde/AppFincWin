@@ -363,7 +363,7 @@ describe('DecideHomeScreen', () => {
     const [id, run] = mockQuickAction.mock.calls[0] as [string, () => void];
     expect(id).toBe('newCheck');
     run();
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'buy' } });
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/purchase/[id]', params: { id: 'new-id' } });
   });
 
   it('D-95 the budget probe marks the card and rows bottoms only with EXPO_PUBLIC_PERF=1', async () => {

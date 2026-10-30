@@ -50,11 +50,11 @@ describe('checkIdFromResponse', () => {
 });
 
 describe('useNotificationObserver', () => {
-  it('routes a cold-start tap to step 3', async () => {
+  it('routes a cold-start tap to the v3 answer screen', async () => {
     N.getLastNotificationResponseAsync.mockResolvedValue(resp({ checkId: ID, kind: 'wait' }));
     await renderHook(() => useNotificationObserver(true));
     await waitFor(() =>
-      expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: ID, step: '3' } }),
+      expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/answer/[id]', params: { id: ID } }),
     );
   });
 
@@ -77,7 +77,7 @@ describe('useNotificationObserver', () => {
     N.getLastNotificationResponseAsync.mockResolvedValue(resp({ checkId: ID, kind: 'cooling_off' }));
     await renderHook(() => useNotificationObserver(true));
     await waitFor(() => expect(mockPush).toHaveBeenCalledTimes(1));
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: ID, step: '3' } });
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/answer/[id]', params: { id: ID } });
   });
 
   it('routes a listener tap once and removes the subscription on unmount', async () => {
