@@ -18,6 +18,13 @@ describe('undo vocabulary (05: Decide entities and labels)', () => {
     }
   });
 
+  it('05.3-56 the readiness answer labels exist once each', () => {
+    for (const key of ['paidByOther', 'alwaysPaidByOther', 'didNotHappen', 'noPayThisMonth', 'incomeElsewhere', 'nothingToAdd', 'monthComplete', 'decideStartMonth', 'readinessAnswerCleared']) {
+      expect(UNDO_LABEL_KEYS.filter((k) => k === key)).toHaveLength(1);
+      expect(key).toMatch(/^[a-zA-Z]{1,40}$/); // undo_log.label_key check
+    }
+  });
+
   it('has no duplicate label keys', () => {
     expect(new Set(UNDO_LABEL_KEYS).size).toBe(UNDO_LABEL_KEYS.length);
   });
