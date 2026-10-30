@@ -32,6 +32,9 @@ jest.mock('@/shell/header/AvatarButton', () => ({ AvatarButton: () => null }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('../../shared/useV3Format', () => ({ useV3Format: () => jest.requireActual('./homeScreenKit').fakeFormat }));
 jest.mock('../../nav/hrefs', () => ({ DECISIONS_HREF: '/decide/decisions', openV3NewCheck: jest.fn() }));
+// 05.3-58: the real NotReadyCard renders here; its answer hook reads queries that need the Supabase env.
+jest.mock('../../ready/useReadinessAnswer', () => ({ useReadinessAnswer: () => ({ answer: jest.fn(), clearWaiver: jest.fn() }) }));
+jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ today: '2026-10-20', userId: 'u1', householdId: 'h1' }) }));
 jest.mock('../MonthBarCard', () => ({
   MonthBarCard: ({ unspentStaleDays }: { unspentStaleDays?: number }) => {
     const { Text } = jest.requireActual('react-native');
