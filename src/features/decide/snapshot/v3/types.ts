@@ -1,4 +1,6 @@
 // PURE. Mirrors the 05.2 columns structurally; 05.2 fills it. null = not set up.
+import type { ReadinessWaiver } from '@/engine/decide/v3';
+
 export interface V3SeriesExtra {
   pay_group: string | null;
   counts_as: 'available' | 'kept' | null;
@@ -37,10 +39,11 @@ export interface V3SettingsSource {
   unexplained_at?: string | null;
   answers?: readonly V3AnswerLite[];
   live_bridge_check_ids?: readonly string[]; // computed by settingsSourceOf from the checks
+  waivers?: ReadinessWaiver[]; // 05.3-55 (D-28): computed by settingsSourceOf from the owner's readiness_waiver answers
 }
 
 export interface V3AnswerLite {
-  kind: 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover' | 'readiness_waiver'; // 05.3-54: readiness_waiver rows pass through; buildV3Inputs reads them in 05.3-55
+  kind: 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover' | 'readiness_waiver'; // 05.3-54: readiness_waiver rows pass through; 05.3-55 reads them into `waivers`
   key: string;
   amount: number | null;
   bool_value: boolean | null;
