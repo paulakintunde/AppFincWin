@@ -131,6 +131,7 @@ export const mutationKeys = {
   saveCheckAnswer: ['decide-checks', 'save-answer'] as const,
   decideGoAhead: ['decide-checks', 'go-ahead'] as const,
   decideOutcome: ['decide-checks', 'outcome'] as const,
+  recordBought: ['decide-checks', 'record-bought'] as const,
   updateDecideSettings: ['decide-settings', 'update'] as const,
   saveCardRate: ['debts', 'save-card-rate'] as const,
   saveCardTerms: ['debts', 'save-card-terms'] as const, // D-40 (05-19 useSaveCardTerms)

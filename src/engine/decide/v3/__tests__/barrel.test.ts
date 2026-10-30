@@ -108,6 +108,7 @@ export const V3_RUNTIME_EXPORTS = [
   'legacyStateOf',
   'liveEmergencyOf',
   'monthlyEquivalentOf',
+  'myShareOf',
   'parseCheckV2',
   'planCard',
   'questionSpec',

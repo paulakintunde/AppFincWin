@@ -48,6 +48,7 @@ import { showToast } from '@/state/undoToast';
 import { writeClient } from './writeClient';
 import { optimisticTransactionRow } from './batchInsert';
 import { newStepId } from './undoCapture';
+import { coolingOffAt } from './coolingOff';
 import { invalidateDerivedReads, patchMonthCacheIfLoaded, placeRowInMonth } from './transactionCache';
 
 export interface GoAheadContext {
@@ -345,10 +346,7 @@ export function buildGoAheadWrite(args: {
   return { rows, series, endSeries, debt, decision };
 }
 
-/** The cooling-off reminder fires 48 hours after the decision. */
-export function coolingOffAt(now: Date): string {
-  return new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
-}
+export { coolingOffAt };
 
 /** The persisted variables of a Go ahead (JSON only). */
 export interface GoAheadVars {

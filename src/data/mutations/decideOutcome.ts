@@ -21,7 +21,7 @@ import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { showToast } from '@/state/undoToast';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { writeClient } from './writeClient';
-import { coolingOffAt } from './decideGoAhead';
+import { coolingOffAt } from './coolingOff';
 
 type CheckList = WithPending<DecideCheckRow>[];
 
