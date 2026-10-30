@@ -53,7 +53,7 @@ import { incomeChipState, isIncomeRow, rulesByPayer } from './IncomeTagChip';
 import { IncomeTagSheet } from './IncomeTagSheet';
 import { RefundPickerSheet } from './RefundPickerSheet';
 import { refundTagFor } from './RefundTag';
-import { asActivityRow, type PickerDirection } from './refundPickerModel';
+import { asActivityRow, refundHintFor, type PickerDirection } from './refundPickerModel';
 import { SeriesOfferCard } from './SeriesOfferCard';
 import { TransactionDetailSheet } from './TransactionDetailSheet';
 import { CalendarView } from './views/CalendarView';
@@ -113,7 +113,19 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
   const seriesById = useMemo(() => new Map((recurring.data ?? []).map((x) => [x.id, x])), [recurring.data]);
   // 05.2-33 (D-10): refund links in every month, not only the rows loaded for this one.
   const refundLinks = useRefundLinks(rc.householdId, itemRows, v3);
-  const [refundPicker, setRefundPicker] = useState<{ row: TransactionRow; direction: PickerDirection } | null>(null);
+  const [refundPicker, setRefundPicker] = useState<{ row: TransactionRow; direction: PickerDirection; preselectId?: string } | null>(null);
+  // 05.3-35 (D-14): likely refunds among the loaded rows, only with the Decide switch on. Nothing links by itself.
+  const refundHints = useMemo(() => {
+    const hints = new Map<string, { purchaseId: string; payee: string }>();
+    if (!v3) return hints;
+    const purchases = itemRows.filter((r) => r.original_amount < 0) as TransactionRow[];
+    for (const r of itemRows) {
+      if (r.original_amount <= 0) continue;
+      const hint = refundHintFor<TransactionRow>(r, purchases, rc.today);
+      if (hint !== null) hints.set(r.id, hint);
+    }
+    return hints;
+  }, [v3, itemRows, rc.today]);
   const [incomeSheet, setIncomeSheet] = useState<{ row: ActivityRowView; newPayer: boolean } | null>(null);
   // D-10: the FAB steps aside while rows are being selected.
   useHideFab('bulkSelect', selection.active);
@@ -271,6 +283,8 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
       incomeChip={v3 && isIncomeRow(row) ? incomeChipState(row, rulesByKey, seriesById) : null}
       onIncomeChipPress={(r) => setIncomeSheet({ row: r, newPayer: incomeChipState(r, rulesByKey, seriesById).state === 'new' })}
       refundTag={v3 ? refundTagFor<TransactionRow>(row, refundLinks.rowsById, refundLinks.totals) : null}
+      refundHint={v3 ? (refundHints.get(row.id) ?? null) : null}
+      onRefundHintPress={(r, purchaseId) => setRefundPicker({ row: r, direction: 'refund->purchase', preselectId: purchaseId })}
       onRefundTagPress={(purchaseId) => {
         const purchase = refundLinks.rowsById.get(purchaseId);
         if (purchase !== undefined) flow.openDetail(asActivityRow(purchase));
@@ -588,6 +602,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
         visible={v3 && refundPicker !== null}
         direction={refundPicker?.direction ?? 'refund->purchase'}
         anchor={refundPicker?.row ?? null}
+        preselectId={refundPicker?.preselectId}
         formatter={formatter}
         onClose={() => setRefundPicker(null)}
       />
