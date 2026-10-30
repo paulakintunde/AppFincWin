@@ -11,6 +11,11 @@ export const factRow = {
   heldBack: 'Held back for plans',
   lowMonth: '{{month}}, a low month',
   against: 'against {{monthly}} a month',
+  emergencyUntouched: 'Emergency fund',
+  emergencyUsed: 'From your emergency fund',
+  envelopeUsed: 'From {{envelope}}',
+  unspentHeldBack: 'Held back for plans',
+  lowMonthMonthly: 'against {{monthly}} a month',
   rowA11y: '{{label}}, {{figure}}. {{sub}}',
   rowA11yNoSub: '{{label}}, {{figure}}.',
 } as const;
