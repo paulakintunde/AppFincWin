@@ -142,6 +142,64 @@ describe('formatMoneyA11y (D-94)', () => {
     expect(read('USD', 'en-US', 'USD', -150050)).toBe('−1,500.50 dollars');
   });
 
+  const readCents = (code: string, locale: string, home: string, amount: number) =>
+    formatMoneyA11y(
+      { amount: minorUnits(amount), currency: currencyCode(code) },
+      { locale, showCents: true, homeCurrency: home }
+    );
+
+  it('05.3-51 pins the spoken phrase for USD, CAD, GBP and EUR', () => {
+    expect(readCents('USD', 'en-US', 'USD', 486509)).toBe('4,865.09 dollars');
+    expect(readCents('USD', 'en-US', 'USD', -486509)).toBe('−4,865.09 dollars');
+    expect(readCents('USD', 'en-CA', 'CAD', 486509)).toBe('4,865.09 US dollars');
+    expect(readCents('USD', 'en-US', 'USD', 15022828609)).toBe('150,228,286.09 dollars');
+    expect(readCents('CAD', 'en-CA', 'CAD', 486509)).toBe('4,865.09 Canadian dollars');
+    expect(readCents('CAD', 'en-CA', 'CAD', -486509)).toBe('−4,865.09 Canadian dollars');
+    expect(readCents('GBP', 'en-GB', 'GBP', 486509)).toBe('4,865.09 British pounds');
+    expect(readCents('EUR', 'en-IE', 'EUR', 486509)).toBe('4,865.09 euros');
+    expect(readCents('EUR', 'en-IE', 'EUR', -486509)).toBe('−4,865.09 euros');
+  });
+
+  it('05.3-51 singular only when the number reads "1"', () => {
+    expect(read('USD', 'en-US', 'USD', 100)).toBe('1 dollar');
+    expect(read('USD', 'en-CA', 'CAD', 100)).toBe('1 US dollar');
+    expect(read('CAD', 'en-CA', 'CAD', -100)).toBe('−1 Canadian dollar');
+    expect(read('GBP', 'en-GB', 'GBP', 100)).toBe('1 British pound');
+    expect(read('EUR', 'en-IE', 'EUR', 100)).toBe('1 euro');
+    expect(readCents('USD', 'en-US', 'USD', 100)).toBe('1.00 dollars');
+    expect(readCents('EUR', 'en-IE', 'EUR', 100)).toBe('1.00 euros');
+  });
+
+  it('05.3-51 a currency outside the table reads its ISO name, then its code', () => {
+    expect(read('AED', 'en-US', 'USD', 150000)).toBe('1,500 United Arab Emirates Dirham');
+    expect(read('JPY', 'en-US', 'USD', 1500)).toBe('1,500 Japanese yen');
+    expect(read('QQQ', 'en-US', 'USD', 150000)).toBe('1,500 QQQ');
+  });
+
+  it('05.3-51 ignores the host ICU part order for currency names (Hermes on Android)', () => {
+    const real = Intl.NumberFormat.prototype.formatToParts;
+    const spy = jest
+      .spyOn(Intl.NumberFormat.prototype, 'formatToParts')
+      .mockImplementation(function (this: Intl.NumberFormat, value?: number | bigint) {
+        if (this.resolvedOptions().currencyDisplay !== 'name') return real.call(this, value);
+        return [
+          { type: 'currency', value: 'Dollar' },
+          { type: 'literal', value: ' ' },
+          { type: 'integer', value: '4' },
+          { type: 'group', value: ',' },
+          { type: 'integer', value: '865' },
+          { type: 'decimal', value: '.' },
+          { type: 'fraction', value: '09' },
+        ];
+      });
+    try {
+      expect(readCents('USD', 'en-US', 'USD', 486509)).toBe('4,865.09 dollars');
+      expect(readCents('USD', 'en-US', 'USD', -486509)).toBe('−4,865.09 dollars');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it('D-94 a custom $ currency keeps its symbol', () => {
     const money = { amount: minorUnits(2500), currency: currencyCode('GLD') };
     const base = { locale: 'en-US', showCents: false, exponent: 0, customSymbol: '$' };
