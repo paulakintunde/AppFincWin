@@ -32,6 +32,8 @@ export interface AnswerHeroProps {
   evaluation: Evaluation;
   busy?: boolean;
   extraChip?: React.ReactNode;
+  /** 05.3-41: lets the screen move screen-reader focus to the answer when it rises in after the last question. */
+  focusRef?: React.Ref<View>;
 }
 
 interface Shown {
@@ -43,7 +45,7 @@ interface Shown {
   readonly spoken: string;
 }
 
-export function AnswerHero({ evaluation, busy = false, extraChip }: AnswerHeroProps): React.JSX.Element {
+export function AnswerHero({ evaluation, busy = false, extraChip, focusRef }: AnswerHeroProps): React.JSX.Element {
   const t = useT() as (key: string, params?: Record<string, string>) => string;
   const fmt = useV3Format();
   const { colors, pairing } = useTheme();
@@ -105,6 +107,7 @@ export function AnswerHero({ evaluation, busy = false, extraChip }: AnswerHeroPr
         {extraChip}
       </View>
       <View
+        ref={focusRef}
         accessible
         accessibilityLabel={label}
         accessibilityLiveRegion="polite"

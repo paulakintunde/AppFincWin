@@ -1,13 +1,12 @@
 /**
  * 05.3-33 (D-50, D-07): what extra money is for. Four rows; choosing one saves at once through the 05.2
- * useSaveUnexplainedAnswer ({ amount, use, at }), one undo step, toast "Saved". An identical answer writes nothing (null).
+ * useSaveUnexplainedAnswer ({ amount, use, at }), one undo step, the question card shows the "Saved" toast. An identical answer writes nothing (null).
  */
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
 import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
-import { showToast } from '@/state/undoToast';
 import { useSaveUnexplainedAnswer } from '@/data/mutations/decideSetup';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import type { AskBodyProps } from '@/features/decide/v3/model/ask';
@@ -30,7 +29,6 @@ export function UnexplainedBody({ question, userId, onSaved }: AskBodyProps): Re
 
   const choose = (use: Use): void => {
     const result = saver.save({ amount, use, at: rc.today });
-    if (result !== null) showToast({ kind: 'ordinary', text: { key: 'decide.v3.ui.check.saved' }, stepId: result.stepId });
     onSaved(result?.stepId ?? null);
   };
 

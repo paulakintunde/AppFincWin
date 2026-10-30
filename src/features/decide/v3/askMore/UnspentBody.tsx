@@ -1,17 +1,15 @@
 /**
  * 05.3-33 (D-07, UI-SPEC "Question in place"): the unspent-money answer body. The 05.2 worked sum, "That's right" and
  * "Use my own figure" (a MoneyInput then "Save figure"). Both save through the 05.2 unspent anchor write in useUnspent
- * (unspent_anchor + unspent_anchor_at today), one undo step, toast "Unspent money confirmed". The question text and the
+ * (unspent_anchor + unspent_anchor_at today), one undo step (the question card shows the "Unspent money confirmed" toast). The question text and the
  * "and N more" line belong to the card, not here.
  */
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Pill } from '@/ui/Pill';
 import { useT } from '@/i18n';
-import { undoLabelText } from '@/i18n/undoLabel';
 import { space } from '@/theme/layout';
 import { hapticSelection } from '@/ui/haptics';
-import { showToast } from '@/state/undoToast';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { MoneyInput } from '@/features/decide/ui/MoneyInput';
 import { UnspentSumCard } from '@/features/decide/setup/UnspentSumCard';
@@ -31,7 +29,6 @@ export function UnspentBody({ onSaved }: AskBodyProps): React.JSX.Element {
   const confirm = (figure: number): void => {
     hapticSelection();
     const result = model.confirm(figure);
-    if (result !== null) showToast({ kind: 'ordinary', text: undoLabelText('unspentConfirmed', {}), stepId: result.stepId });
     onSaved(result?.stepId ?? null);
   };
 

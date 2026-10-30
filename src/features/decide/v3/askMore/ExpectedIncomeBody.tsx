@@ -8,11 +8,9 @@ import { StyleSheet, View } from 'react-native';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
-import { undoLabelText } from '@/i18n/undoLabel';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
-import { showToast } from '@/state/undoToast';
 import { useSaveDecideAnswer } from '@/data/mutations/decideAnswers';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { MoneyInput } from '@/features/decide/ui/MoneyInput';
@@ -38,7 +36,6 @@ export function ExpectedIncomeBody({ question, userId, householdId, onSaved }: A
   const save = (): void => {
     if (value === null || month === null) return;
     const result = saver.save({ kind: 'expected_income', month, amount: value, at: rc.today });
-    if (result !== null) showToast({ kind: 'ordinary', text: undoLabelText('expectedIncomeSaved', {}), stepId: result.stepId });
     onSaved(result?.stepId ?? null);
   };
 

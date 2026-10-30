@@ -90,7 +90,10 @@ export function fundingStrip(ev: StripInput): FundingStrip | null {
   if (result.code === 'fits_month') {
     const leftFact = result.facts.find((f) => f.code === 'month_left_after');
     const left = typeof leftFact?.values.left === 'number' ? big(leftFact.values.left) : 0n;
-    if (left > 0n) parts.push({ amount: mu(left), labelKey: `${A}leftAfter`, style: 'soft' });
+    // 05.3-41: the label reads "{{month}} remaining after", so the part carries the month the fact is about.
+    const factMonth = leftFact?.values.month;
+    const leftMonth = typeof factMonth === 'string' ? factMonth : month.month;
+    if (left > 0n) parts.push({ amount: mu(left), labelKey: `${A}leftAfter`, params: { month: leftMonth }, style: 'soft' });
   }
   if (uncovered > 0n) parts.push({ amount: mu(uncovered), labelKey: `${A}notCovered`, style: 'dashed' });
   return {

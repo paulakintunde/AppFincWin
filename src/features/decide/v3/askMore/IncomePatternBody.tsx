@@ -1,14 +1,12 @@
 /**
  * 05.3-33 (D-34, D-07): the income-pattern swing question. Three rows in the 05.2 season-card look; choosing one saves
- * { income_pattern, income_pattern_confirmed: true } through useSaveSetupStep, one undo step, toast "Income pattern saved".
+ * { income_pattern, income_pattern_confirmed: true } through useSaveSetupStep, one undo step, the question card shows the "Income pattern saved" toast.
  */
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
 import { useT } from '@/i18n';
-import { undoLabelText } from '@/i18n/undoLabel';
 import { space } from '@/theme/layout';
-import { showToast } from '@/state/undoToast';
 import { useSaveSetupStep } from '@/data/mutations/decideSetup';
 import type { AskBodyProps } from '@/features/decide/v3/model/ask';
 
@@ -27,7 +25,6 @@ export function IncomePatternBody({ userId, onSaved }: AskBodyProps): React.JSX.
 
   const choose = (value: Pattern): void => {
     const result = saver.save({ labelKey: 'incomePatternSaved', patch: { income_pattern: value, income_pattern_confirmed: true } });
-    if (result !== null) showToast({ kind: 'ordinary', text: undoLabelText('incomePatternSaved', {}), stepId: result.stepId });
     onSaved(result?.stepId ?? null);
   };
 

@@ -36,7 +36,7 @@ describe('IncomePatternBody', () => {
     await wrap(<IncomePatternBody {...props} onSaved={onSaved} />);
     await fireEvent.press(screen.getByLabelText(label));
     expect(mockSave).toHaveBeenCalledWith({ labelKey: 'incomePatternSaved', patch: { income_pattern: value, income_pattern_confirmed: true } });
-    expect(mockToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'undo.label.incomePatternSaved', params: {} }, stepId: 'step-2' });
+    expect(mockToast).not.toHaveBeenCalled(); // the question card shows the toast (askToastKey)
     expect(onSaved).toHaveBeenCalledWith('step-2');
   });
 
