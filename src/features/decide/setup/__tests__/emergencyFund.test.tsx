@@ -1,10 +1,12 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import { EmergencyStep } from '../steps/EmergencyStep';
 import { EmergencyFundSheet } from '../EmergencyFundSheet';
 import type { SetupStepHandle, SetupStepReady } from '../steps/types';
+import { MATRIX, expectTargets, matrixName } from '../../__tests__/helpers/r18Fit';
 
 let mockDecideV3 = true;
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
@@ -284,5 +286,32 @@ describe('Emergency fund empty money hints', () => {
     const fields = screen.getAllByPlaceholderText('0.00');
     expect(fields.length).toBeGreaterThan(0);
     for (const f of fields) expect(f.props.value).toBe('');
+  });
+});
+
+// 05.3-50 F5: Save is pinned below the sheet's scroll, so it is on screen at every size (it was cut off at 320 x 1.0).
+describe.each(MATRIX)('EmergencyFundSheet actions at $width wide x $scale', (m) => {
+  it(`keeps Save outside the scroll, under it (${matrixName(m)})`, async () => {
+    mockSettings = { reserve: 500000, reserve_account_id: null, reserve_goal: null, currency: 'USD' };
+    await render(
+      <ThemeProvider>
+        <FontScaleProvider value={m.scale}>
+          <EmergencyFundSheet visible onClose={jest.fn()} />
+        </FontScaleProvider>
+      </ThemeProvider>,
+    );
+    const actions = screen.getByTestId('emergency-fund-actions');
+    const scroll = screen.getByTestId('sheet-scroll');
+    const save = screen.getByLabelText('Save emergency fund');
+    const inside = (el: { parent: unknown }, root: unknown) => {
+      for (let p = el.parent as { parent: unknown } | null; p; p = p.parent as { parent: unknown } | null) if (p === root) return true;
+      return false;
+    };
+    expect(inside(save, actions)).toBe(true);
+    expect(inside(save, scroll)).toBe(false);
+    expect(inside(screen.getByLabelText('Remove emergency fund'), actions)).toBe(true);
+    // the actions never shrink away; the scroll gives way instead
+    expect(StyleSheet.flatten(actions.props.style).flexShrink).toBe(0);
+    expectTargets('Save emergency fund');
   });
 });

@@ -20,6 +20,8 @@ import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { shadows, type CategorySwatchKey, type colors as ThemeColours } from '@/theme/tokens';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
+import { STACK_FONT_SCALE } from '@/features/decide/ui/textFit';
+import { useFontScale } from '@/theme/FontScaleProvider';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
 import { SwipeRow, type SwipeAction } from '@/ui/SwipeRow';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -102,12 +104,18 @@ function letterOf(name: string): string {
 }
 
 /** A tag word. The word carries the meaning; colour never does alone (UI-SPEC Accessibility). */
-function Tag({ label, tone = 'neutral', faint = false }: { label: string; tone?: RowTagTone; faint?: boolean }) {
+function Tag({ label, tone = 'neutral', faint = false }: { label: string; tone?: RowTagTone | 'refund'; faint?: boolean }) {
   const { colors, pairing } = useTheme();
   // Moved is inkFaint, so it sits on no fill (inkFaint on fill1 fails contrast); every other
-  // tone is on fill1.
+  // tone is on fill1. A refund keeps its accent word (UI-SPEC accent item 3).
   const color =
-    tone === 'paid' ? colors.accent : tone === 'unpaid' ? colors.danger : faint ? colors.inkFaint : colors.inkMuted;
+    tone === 'paid' || tone === 'refund'
+      ? colors.accent
+      : tone === 'unpaid'
+        ? colors.danger
+        : faint
+          ? colors.inkFaint
+          : colors.inkMuted;
   return (
     <View style={[styles.tag, { backgroundColor: faint ? 'transparent' : colors.fill1 }]}>
       <Text style={{ ...textRole(pairing, 'label'), color }}>{label}</Text>
@@ -143,6 +151,9 @@ export function ActivityRow({
   const t = useT();
   const { v3 } = useDecideAccess();
   const { colors, pairing } = useTheme();
+  // 05.3-50 F6: past the D-76 stacking scale the figures drop under the text, so the text, tags and chips get the
+  // row's whole width and wrap by word, never letter by letter.
+  const stacked = useFontScale() > STACK_FONT_SCALE;
   const isTransfer = row.transfer_id !== null;
 
   const category = isTransfer
@@ -253,7 +264,7 @@ export function ActivityRow({
       accessibilityState={selectable ? { checked: selected } : undefined}
       onPress={onRowPress}
       onLongPress={onRowLongPress}
-      style={extras === null ? styles.main : [styles.main, styles.mainInColumn]}
+      style={extras === null && !stacked ? styles.main : [styles.main, styles.mainInColumn]}
     >
       {selectable ? (
         <View
@@ -272,32 +283,22 @@ export function ActivityRow({
         </Text>
         <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
           {balanceNote?.kind === 'after' ? balanceNote.text : notCounted ? t('activity.balance.notCounted') : meta}
-          {isRefund ? (
-            <Text style={{ color: colors.accent }}>{` · ${t('activity.tag.refund')}`}</Text>
-          ) : null}
         </Text>
+        {/* 05.3-50 F6: Refund is a tag of its own, not the end of the one-line sub line, so it is never truncated away. */}
         <View style={styles.tags}>
           {row.pending ? <Tag label={t('sync.pendingRow')} /> : null}
           <Tag tone={tag.tone} faint={tag.kind === 'moved'} label={tagWord} />
+          {isRefund ? <Tag tone="refund" label={t('activity.tag.refund')} /> : null}
         </View>
       </View>
     </Pressable>
   );
 
-  const card = (
-    <View testID={`activity-card-${row.id}`} style={[styles.card, cardStyle(cardPosition, colors)]}>
-      {extras === null ? (
-        mainPress
-      ) : (
-        <View style={styles.mainColumn}>
-          {mainPress}
-          {extras}
-        </View>
-      )}
-      {/* The figures and the compact Mark paid sit beside the row, so a pending line is no taller
-          than a paid one. The amount repeats the row's press but is hidden from assistive tech: the
-          row's own label already speaks the amount (S-WR-14). */}
-      <View style={styles.amounts}>
+  // The figures and the compact Mark paid sit beside the row, so a pending line is no taller
+  // than a paid one. The amount repeats the row's press but is hidden from assistive tech: the
+  // row's own label already speaks the amount (S-WR-14). Stacked (05.3-50 F6) they sit under the text instead.
+  const amounts = (
+      <View testID={`activity-amounts-${row.id}`} style={stacked ? [styles.amounts, styles.amountsStacked] : styles.amounts}>
         <Pressable
           accessible={false}
           importantForAccessibility="no-hide-descendants"
@@ -326,6 +327,25 @@ export function ActivityRow({
           </Pressable>
         ) : null}
       </View>
+  );
+
+  const card = stacked ? (
+    <View testID={`activity-card-${row.id}`} style={[styles.card, cardStyle(cardPosition, colors), styles.cardStacked]}>
+      {mainPress}
+      {amounts}
+      {extras}
+    </View>
+  ) : (
+    <View testID={`activity-card-${row.id}`} style={[styles.card, cardStyle(cardPosition, colors)]}>
+      {extras === null ? (
+        mainPress
+      ) : (
+        <View style={styles.mainColumn}>
+          {mainPress}
+          {extras}
+        </View>
+      )}
+      {amounts}
     </View>
   );
   if (!swipeable) return card;
@@ -459,6 +479,9 @@ const styles = StyleSheet.create({
   amountPress: {
     alignItems: 'flex-end',
   },
+  // 05.3-50 F6: the stacked row is a column; the figures line up with the text column, under it.
+  cardStacked: { flexDirection: 'column', alignItems: 'stretch', gap: space.gapSm },
+  amountsStacked: { alignItems: 'flex-start', paddingLeft: GLYPH_TILE + space.gapMd },
   checkbox: {
     width: 24,
     height: 24,
@@ -474,6 +497,7 @@ const styles = StyleSheet.create({
   },
   tags: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: space.gapSm,
   },
   tag: {

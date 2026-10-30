@@ -133,9 +133,11 @@ export function IncomeTagChip({ state, onPress }: IncomeTagChipProps) {
 const HIT_SLOP = { top: 10, bottom: 10, left: 4, right: 4 };
 
 const styles = StyleSheet.create({
+  // 05.3-50 F6: never wider than the tags row, no fixed width, so a long label wraps between words.
   chip: {
     alignSelf: 'flex-start',
     flexShrink: 1,
+    maxWidth: '100%',
     borderRadius: radii.pill,
     paddingHorizontal: space.gapSm,
     paddingVertical: 3,

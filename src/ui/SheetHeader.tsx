@@ -31,7 +31,7 @@ export function SheetHeader({ title, cancelLabel, onCancel, titleAccessory }: Sh
           {titleAccessory}
         </View>
       ) : (
-        <Text style={titleStyle}>{title}</Text>
+        <Text style={[titleStyle, styles.titleText]}>{title}</Text>
       )}
       <Pressable
         accessibilityRole="button"
@@ -53,11 +53,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: space.gapMd,
     minHeight: space.touchMin,
   },
   titleGroup: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm, flexShrink: 1 },
+  // 05.3-50 F4: the title gives way and wraps; Cancel never shrinks, so it is always whole at 2x.
   titleText: { flexShrink: 1 },
   cancel: {
+    flexShrink: 0,
     minHeight: space.touchMin,
     justifyContent: 'center',
   },

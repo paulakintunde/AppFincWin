@@ -74,11 +74,13 @@ export function CompactHeader({
         }}
       >
         {showBack ?? canGoBack ?<BackButton variant="compact" onPress={goBack} /> : null}
+        {/* 05.3-50 F1/F2: the title wraps rather than ending in an ellipsis. The pinned header repeats the large title
+            (which scales to 2x), so it follows the D-19 capped tier to stay a header, not a third of the screen. */}
         <Text
           ref={titleRef}
           accessibilityRole="header"
-          numberOfLines={1}
-          style={{ ...textRole(pairing, titleRole ?? 'heading'), color: colors.ink, flex: 1 }}
+          scale="capped"
+          style={{ ...textRole(pairing, titleRole ?? 'heading'), color: colors.ink, flex: 1, minWidth: 0 }}
         >
           {title}
         </Text>
