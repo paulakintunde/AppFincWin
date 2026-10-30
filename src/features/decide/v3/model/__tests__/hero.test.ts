@@ -159,6 +159,12 @@ describe('heroModel mapping table', () => {
     expect(h.tone).toBe('short');
   });
 
+  it('a missing purchase costs 0 a month', () => {
+    const e = ev({ code: 'monthly_short' });
+    const noPurchase = { ...e, purchase: null } as unknown as Evaluation;
+    expect(heroModel(noPurchase).params.monthly).toEqual({ kind: 'money', minor: 0 });
+  });
+
   it('monthly_short with no typical left reads 0', () => {
     expect(heroModel(ev({ code: 'monthly_short', typicalLeft: null })).params.left).toEqual({ kind: 'money', minor: 0 });
   });

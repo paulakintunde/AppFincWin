@@ -38,6 +38,11 @@ function monthsBetween(from: string, to: string): number {
   return idx(to) - idx(from);
 }
 
+/** What the purchase costs each month: the plan payment plus its running costs; 0 when there is no purchase. */
+function monthlyOf(ev: Evaluation): number {
+  return ev.purchase === null ? 0 : ev.purchase.monthly + ev.purchase.runningMonthly;
+}
+
 /** The tight month of a fits row: from the low_month fact, else from the month model; null when neither exists. */
 function lowMonthOf(ev: Evaluation): { ym: string; short: number } | null {
   const fact = factOf(ev, 'low_month');
@@ -46,7 +51,7 @@ function lowMonthOf(ev: Evaluation): { ym: string; short: number } | null {
   }
   const low = ev.month.low;
   if (low === null) return null;
-  const monthly = ev.purchase.monthly + ev.purchase.runningMonthly;
+  const monthly = monthlyOf(ev);
   return { ym: low.month, short: Math.max(0, monthly - low.left) };
 }
 
@@ -104,7 +109,7 @@ export function heroModel(ev: Evaluation): HeroModel {
     case 'monthly_short':
       part = {
         bodyKey: null,
-        params: { left: money(ev.month.typicalLeft ?? 0), monthly: money(ev.purchase.monthly + ev.purchase.runningMonthly) },
+        params: { left: money(ev.month.typicalLeft ?? 0), monthly: money(monthlyOf(ev)) },
       };
       break;
     case 'emergency_use':

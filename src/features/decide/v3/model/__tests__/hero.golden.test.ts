@@ -64,7 +64,7 @@ let t: (key: string, params?: Record<string, string>) => string;
 beforeAll(async () => {
   const instance = i18next.createInstance();
   await instance.init({ lng: 'en', resources: { en: { translation: en } }, interpolation: { escapeValue: false }, returnNull: false });
-  t = (key, params) => instance.t(key, params) as string;
+  t = (key, params) => (instance.t as (k: string, o?: Record<string, string>) => string)(key, params);
 });
 
 function render(key: string, params: Readonly<Record<string, HeroParam>>): string {
