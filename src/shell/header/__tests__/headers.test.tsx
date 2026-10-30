@@ -139,7 +139,7 @@ describe('CompactHeader', () => {
   it('hides itself from touch and screen readers when invisible', async () => {
     await renderWithShellProviders(<CompactHeader title="Overview" visible={false} />);
     const title = screen.getByText('Overview', { includeHiddenElements: true });
-    expect(title.props.numberOfLines).toBe(1);
+    expect(title.props.numberOfLines).toBeUndefined();
     const root = screen.getByTestId('compact-header', { includeHiddenElements: true });
     expect(root.props.pointerEvents).toBe('none');
     expect(root.props.accessibilityElementsHidden).toBe(true);
@@ -161,11 +161,11 @@ describe('CompactHeader', () => {
     expect(screen.getByRole('button', { name: 'Profile' })).toBeTruthy();
   });
 
-  it('uses the 16px sheetTitle role on one line when asked', async () => {
+  it('uses the 16px sheetTitle role, wrapping rather than clipping, when asked', async () => {
     await renderWithShellProviders(<CompactHeader title="Activity" visible titleRole="sheetTitle" />);
     const title = screen.getByText('Activity');
     expect(StyleSheet.flatten(title.props.style).fontSize).toBe(16);
-    expect(title.props.numberOfLines).toBe(1);
+    expect(title.props.numberOfLines).toBeUndefined();
   });
 
   it('renders a trailing slot without the avatar when showAvatar is false', async () => {
@@ -188,7 +188,7 @@ describe('CompactHeader', () => {
 });
 
 describe('DetailHeader', () => {
-  it('renders a 38px back, a one-line 16px title and the right slot', async () => {
+  it('renders a 38px back, a wrapping 16px title and the right slot', async () => {
     const goBack = jest.fn(() => true);
     await renderWithShellProviders(<DetailHeader title="Barclays" right={<Probe />} />, { backHistory: { goBack } });
     const back = screen.getByRole('button', { name: 'Back' });
@@ -196,7 +196,7 @@ describe('DetailHeader', () => {
     await fireEvent.press(back);
     expect(goBack).toHaveBeenCalledTimes(1);
     const title = screen.getByText('Barclays');
-    expect(title.props.numberOfLines).toBe(1);
+    expect(title.props.numberOfLines).toBeUndefined();
     expect(StyleSheet.flatten(title.props.style).fontSize).toBe(16);
     expect(screen.getByText('probe')).toBeTruthy();
   });
