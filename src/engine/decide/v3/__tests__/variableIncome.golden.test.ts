@@ -35,7 +35,8 @@ function expectMatches(c: LoadedCase): void {
   if (e.futures !== undefined) expect(ev.futures !== null).toBe(e.futures);
   if (e.readyBy !== undefined) expect(r.readyBy).toEqual(e.readyBy);
   if (e.split !== undefined) expect(r.split.map((s) => ({ source: s.source, amount: s.amount }))).toEqual(e.split);
-  if (e.readiness !== undefined) expect(r.readiness).toEqual(e.readiness);
+  // 05.3-54: the goldens pin the D-52 codes; named items are pinned in readinessItems.test.ts.
+  if (e.readiness !== undefined) expect({ ready: r.readiness?.ready, missing: r.readiness?.missing }).toEqual(e.readiness);
   const f = e.funds;
   if (f) {
     if (f.suggested !== undefined) expect(ev.funds.suggested).toBe(f.suggested);
@@ -152,9 +153,9 @@ describe('D-50: unexplained money asks, and only spare counts', () => {
 
 describe('D-52: past-month fail, current-month fail and pass each appear', () => {
   it('one case fails for each reason, one passes, and readiness never changes the code', () => {
-    expect(run(byId('dee-past-month-missing')).result.readiness).toEqual({ ready: false, missing: ['past_month_missing'] });
-    expect(run(byId('dee-current-not-current')).result.readiness).toEqual({ ready: false, missing: ['activity_not_current'] });
-    expect(run(byId('dee-mixed')).result.readiness).toEqual({ ready: true, missing: [] });
+    expect(run(byId('dee-past-month-missing')).result.readiness).toMatchObject({ ready: false, missing: ['past_month_missing'], waived: [] });
+    expect(run(byId('dee-current-not-current')).result.readiness).toMatchObject({ ready: false, missing: ['activity_not_current'], waived: [] });
+    expect(run(byId('dee-mixed')).result.readiness).toEqual({ ready: true, missing: [], items: [], waived: [] });
     expect(run(byId('dee-past-month-missing')).result.code).toBe('fits_month');
   });
 });
@@ -181,7 +182,7 @@ describe('D-54: one case per account use and an unstated account', () => {
 describe('D-57: rough-only answers', () => {
   it('a person with only rough figures is ready and the answer is marked rough', () => {
     const r = run(byId('rae-rough')).result;
-    expect(r.readiness).toEqual({ ready: true, missing: [] });
+    expect(r.readiness).toEqual({ ready: true, missing: [], items: [], waived: [] });
     expect(r.confidence.level).toBe('rough');
     expect(r.notices.map((n) => n.code)).toContain('from_your_figures');
     expect(JSON.stringify(CASES.map((c) => c.expect))).not.toContain('income_not_recorded');
