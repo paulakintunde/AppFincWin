@@ -2,14 +2,25 @@ import { render } from '@testing-library/react-native';
 import { DevSettings } from 'react-native';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { SnapshotSource } from '../../snapshot/buildSnapshot';
+import { settingsSourceOf } from '../../snapshot/v3/settingsSource';
 import { ShadowExportDevMenu, resetDevMenuRegistration } from '../ShadowExportDevMenu';
 import { parseShadowSource, serializeShadowSource } from '../shadowExport';
 
-jest.mock('expo-file-system', () => ({ File: jest.fn(), Paths: { document: 'doc' } }));
+jest.setTimeout(60000); // cold transforms on a loaded machine
+const mockWrite = jest.fn();
+jest.mock('expo-file-system', () => ({
+  File: jest.fn().mockImplementation(() => ({ exists: true, create: jest.fn(), write: (t: string) => mockWrite(t), uri: 'file://x' })),
+  Paths: { document: 'doc' },
+}));
+const mockSnap: { source: unknown } = { source: null };
 jest.mock('@/data/queries/decide', () => ({
   useDecideChecks: () => ({ data: [] }),
-  useDecideSnapshot: () => ({ source: null }),
+  useDecideSnapshot: () => mockSnap,
+  useDecideSettings: () => ({ data: { user_id: 'u', income_types: ['salary_or_wages'], income_pattern: 'steady', income_pattern_confirmed: true } }),
+  useDecideLinks: () => ({ data: [] }),
 }));
+jest.mock('@/data/queries/decideAnswers', () => ({ useDecideAnswers: () => ({ data: [] }) }));
+jest.mock('@/data/queries/recurringDismissals', () => ({ useRecurringDismissals: () => ({ data: [] }) }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u', householdId: 'h', today: '2026-10-01' }),
 }));
@@ -91,5 +102,26 @@ describe('ShadowExportDevMenu', () => {
     const handler = add.mock.calls[0]![1] as () => void;
     handler();
     expect(log).toHaveBeenCalledWith('Decide shadow export: the snapshot is not ready yet');
+  });
+
+  it('L-08: the export carries the owner v3 settings, not null', async () => {
+    g.__DEV__ = true;
+    mockSnap.source = { today: '2026-10-01', homeCurrency: 'USD', series: [], debts: [] };
+    mockWrite.mockClear();
+    const add = jest.spyOn(DevSettings, 'addMenuItem').mockImplementation(() => undefined);
+    jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    await render(<ShadowExportDevMenu />);
+    (add.mock.calls[0]![1] as () => void)();
+    const parsed = parseShadowSource(mockWrite.mock.calls[0]![0] as string)!;
+    const expected = settingsSourceOf({
+      settings: { user_id: 'u', income_types: ['salary_or_wages'], income_pattern: 'steady', income_pattern_confirmed: true } as never,
+      answers: [],
+      dismissals: [],
+      checks: [],
+      planLive: () => true,
+    });
+    expect(parsed.v3Settings).not.toBeNull();
+    expect(parsed.v3Settings).toEqual(JSON.parse(JSON.stringify(expected)));
+    mockSnap.source = null;
   });
 });

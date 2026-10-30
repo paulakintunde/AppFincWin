@@ -1,9 +1,13 @@
 // D-27: development-only. Never reachable in release: mounted behind __DEV__ in the Decide tab route, and it renders null and
 // registers nothing when __DEV__ is false. It has no screen, route or visible text; the menu label is a developer string.
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { DevSettings } from 'react-native';
 import { File, Paths } from 'expo-file-system';
-import { useDecideChecks, useDecideSnapshot } from '@/data/queries/decide';
+import { useDecideChecks, useDecideLinks, useDecideSettings, useDecideSnapshot } from '@/data/queries/decide';
+import { useDecideAnswers } from '@/data/queries/decideAnswers';
+import { planLiveOf } from '@/data/queries/decideV3';
+import { useRecurringDismissals } from '@/data/queries/recurringDismissals';
+import { settingsSourceOf } from '@/features/decide/snapshot/v3/settingsSource';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { serializeShadowSource, type ShadowExportArgs } from './shadowExport';
 
@@ -36,14 +40,25 @@ function exportNow(): void {
 
 function ShadowExportRegistrar() {
   const rc = useRecordContext();
+  const userId = rc.userId ?? undefined;
+  const hid = rc.householdId ?? undefined;
   const { source } = useDecideSnapshot();
-  const checks = useDecideChecks(rc.userId ?? undefined, rc.householdId ?? undefined).data;
+  const checks = useDecideChecks(userId, hid).data;
+  const settings = useDecideSettings(userId).data;
+  const answers = useDecideAnswers(userId, hid).data;
+  const dismissals = useRecurringDismissals(hid).data;
+  const checkIds = useMemo(() => (checks ?? []).map((c) => c.id).sort(), [checks]);
+  const links = useDecideLinks(userId, hid, checkIds).data;
   const householdId = rc.householdId;
   const today = rc.today;
   useEffect(() => {
-    // v3Settings stays null: 05.2 has no v3 settings storage yet (L-08 remainder, 05.3 list)
-    latest.current = source !== null && checks !== undefined && householdId !== null ? { source, v3Settings: null, checks, householdId, today } : null;
-  }, [source, checks, householdId, today]);
+    // L-08: the owner's v3 settings, composed exactly as useDecideV3 composes them; null only while a read is still missing
+    const v3Settings =
+      source !== null && settings !== undefined && answers !== undefined && dismissals !== undefined && checks !== undefined && links !== undefined
+        ? settingsSourceOf({ settings, answers, dismissals, checks, planLive: planLiveOf(links, source) })
+        : null;
+    latest.current = source !== null && checks !== undefined && householdId !== null ? { source, v3Settings, checks, householdId, today } : null;
+  }, [source, checks, settings, answers, dismissals, links, householdId, today]);
 
   useEffect(() => {
     if (registered) return;
