@@ -29,6 +29,20 @@ export function barHeights(values: readonly number[], area: number = BAR_AREA): 
   return values.map((v) => (v === 0 ? 0 : Math.max(2, Math.round((Math.abs(v) * area) / max))));
 }
 
+const WORD_JOINER = '⁠';
+const NO_BREAK_SPACE = ' ';
+const BREAK_HINTS = /[​‌]/g;
+
+/**
+ * 05.3-51 (F3): an amount for a sentence that can never wrap inside itself. The shipped money text loses its
+ * zero-width break hints, any plain space becomes a no-break space, and a minus is held to the figure by a word joiner
+ * (U+2212 and "$" may otherwise break apart on Android). The visible characters are unchanged.
+ */
+export function unbreakableAmount(minor: number, money: (m: number) => string): string {
+  const figure = money(Math.abs(minor)).replace(BREAK_HINTS, '').replace(/ /g, NO_BREAK_SPACE);
+  return minor < 0 ? `−${WORD_JOINER}${figure}` : figure;
+}
+
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 type Six = WorkedModel['six'][number];
 
@@ -47,7 +61,7 @@ export function SixMonthBars({ six, typical, largest }: SixMonthBarsProps): Reac
   const K = 'decide.v3.ui.worked.';
   if (six.length === 0) return null;
 
-  const signed = (m: number): string => (m < 0 ? '−' : '') + f.money(Math.abs(m));
+  const signed = (m: number): string => unbreakableAmount(m, f.money);
   const signedA11y = (m: number): string => (m < 0 ? '−' : '') + f.moneyA11y(Math.abs(m));
   const lineOf = (s: Six, money: (m: number) => string): string =>
     t(`${K}barA11y`, { month: f.month(s.month), amount: money(Number(s.left)), state: t(`${K}state.${s.state}`) });
@@ -118,7 +132,7 @@ export function SixMonthBars({ six, typical, largest }: SixMonthBarsProps): Reac
       <View style={styles.notes}>
         {typical === null ? null : (
           <Text style={{ ...textRole(pairing, 'body'), fontSize: fontSize.body, color: colors.ink }}>
-            {t(`${K}middle`, { amount: f.money(Number(typical)) })}
+            {t(`${K}middle`, { amount: signed(Number(typical)) })}
           </Text>
         )}
         {halfMonths.map((m) => (
@@ -128,7 +142,7 @@ export function SixMonthBars({ six, typical, largest }: SixMonthBarsProps): Reac
         ))}
         {largest === null ? null : (
           <Text style={{ ...textRole(pairing, 'body'), fontSize: fontSize.body, color: colors.inkMuted }}>
-            {t(`${K}largest`, { month: f.month(largest.month), amount: f.money(Number(largest.amount)) })}
+            {t(`${K}largest`, { month: f.month(largest.month), amount: signed(Number(largest.amount)) })}
           </Text>
         )}
         {six.length < 6 ? (

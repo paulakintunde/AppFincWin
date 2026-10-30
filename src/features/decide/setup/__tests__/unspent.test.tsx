@@ -43,6 +43,18 @@ jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ householdId: 'h1', userId: 'u1', homeCurrency: 'USD', timeZone: 'UTC', today: '2026-10-03' }),
 }));
 
+let mockLocale: string | null = null;
+jest.mock('@/services/locale/deviceLocale', () => {
+  const actual = jest.requireActual('@/services/locale/deviceLocale');
+  return {
+    ...actual,
+    useDeviceLocale: (override?: string | null) => {
+      const real = actual.useDeviceLocale(override);
+      return mockLocale === null ? real : { ...real, locale: mockLocale };
+    },
+  };
+});
+
 let mockSettings: Record<string, unknown> | null = null;
 let mockV3: unknown = null;
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: mockSettings }) }));
@@ -129,6 +141,21 @@ describe('UnspentSheet states (DSU-10)', () => {
     await fireEvent.press(screen.getByLabelText('Clear'));
     expect(lastPatch()).toEqual({ labelKey: 'unspentCleared', patch: { unspent_anchor: null, unspent_anchor_at: null } });
     expect(mockToast).toHaveBeenLastCalledWith(expect.objectContaining({ text: expect.objectContaining({ key: 'decide.unspentSheet.toastCleared' }) }));
+  });
+
+  it('05.3-51 (F7b): en-CA shows the medium date, never a raw YYYY-MM-DD', async () => {
+    mockLocale = 'en-CA';
+    try {
+      const { sum } = setUp();
+      setUp({ anchor: { amount: sum.suggested, at: TODAY } });
+      await sheet();
+      const line = screen.getByText(/^Unspent money .* · confirmed .* on .*, rolled forward$/);
+      expect(String(line.props.children)).toContain('Oct 3, 2026');
+      const texts = screen.getAllByText(/./).map((n) => String(n.props.children));
+      for (const text of texts) expect(text).not.toMatch(/\d{4}-\d{2}-\d{2}/);
+    } finally {
+      mockLocale = null;
+    }
   });
 
   it('Drifted: the chip, the two figures, Use sum and Keep rolled each make a new anchor, and an own-figure link', async () => {
