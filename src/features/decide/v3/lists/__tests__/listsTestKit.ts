@@ -15,6 +15,8 @@ export const fakeFormat = {
   flat: () => ({ screen: {}, a11y: {} }),
 };
 
+export const LONG = 'A very long item name for the new kitchen renovation that must wrap onto several lines';
+
 export const NOT_YET = { v: 3, code: 'not_yet', variant: 'not_covered', readyBy: { kind: 'month', month: '2027-02' }, unspentAfter: null, lineFacts: [] };
 export const FITS = { v: 3, code: 'fits_month', variant: null, readyBy: null, unspentAfter: null, lineFacts: [] };
 

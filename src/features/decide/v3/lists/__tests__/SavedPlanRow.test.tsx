@@ -26,7 +26,7 @@ jest.mock('../../../ui/DeletableRow', () => ({
     return (
       <>
         <Pressable accessibilityLabel={accessibilityLabel} onPress={onOpen}>{children}</Pressable>
-        <Pressable accessibilityLabel="del" onPress={onDelete}><Text>del</Text></Pressable>
+        <Pressable accessibilityLabel="del" onPress={onDelete}><Text>{'del'}</Text></Pressable>
       </>
     );
   },

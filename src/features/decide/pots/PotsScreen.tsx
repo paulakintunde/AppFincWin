@@ -30,7 +30,12 @@ type T = (key: string, params?: Record<string, string | number>) => string;
 
 const SKELETON_BARS = 3;
 
-export function PotsScreen() {
+export interface PotsScreenProps {
+  /** 05.3-36: the header title key; /decide/envelopes passes the v3 "Envelopes" title. Defaults to Pots. */
+  titleKey?: string;
+}
+
+export function PotsScreen({ titleKey = 'decide.pots.title' }: PotsScreenProps = {}) {
   const t = useT() as T;
   const { colors, pairing } = useTheme();
   const fmt = useMoneyFormatter(false);
@@ -90,7 +95,7 @@ export function PotsScreen() {
 
   return (
     <DetailScreen
-      title={t('decide.pots.title')}
+      title={t(titleKey)}
       right={
         <View testID="pots-header-right" style={styles.headerRight}>
           {loaded && !empty ? (
