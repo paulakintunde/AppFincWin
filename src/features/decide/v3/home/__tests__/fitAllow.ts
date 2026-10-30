@@ -1,0 +1,13 @@
+// 05.3-23: text-fit allowlist for the Decide home cards. Paths are relative to src/features/decide.
+import type { FitAllow } from '../../shared/fitAllowTypes';
+
+export const FIT_ALLOW: FitAllow = {
+  number: [
+    { path: 'v3/home/MonthBarCard.tsx', kind: 'figure', count: 2, reason: 'the month figure and the shared tap figure scale to fit on one line' },
+    { path: 'v3/home/EnvelopeGrid.tsx', kind: 'figure', count: 1, reason: 'the envelope amount scales to fit on one line' },
+  ],
+  geometry: [
+    { path: 'v3/home/MonthBarCard.tsx', count: 2, reason: 'bar track (16 high) and legend dot (10 x 10); no text inside' },
+  ],
+  overlay: [],
+};
