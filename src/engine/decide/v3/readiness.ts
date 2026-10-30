@@ -12,6 +12,9 @@
  * (B1), a name, an amount and a date, so the asking card can say "Netflix, $11.99, due Sep 3". `missing` keeps the
  * D-52 codes. Readiness never changes the code, the split or any figure; the only figure exception is D-27
  * ("someone else paid it"), and it lives in month/ (05.3-63), not here.
+ *
+ * The user's answers (V3Inputs.waivers, D-28) settle the items they name; those move to `waived` with the answer, so
+ * the verdict can say what it rests on. A skipped occurrence (V3Inputs.skipped) settles its due silently, as a record.
  */
 import { MATCH_DAYS, NEEDS_INPUT_ENTRY_AGE_DAYS, PAY_MATCH_DAYS, UNDER_LOGGED_PACE_PERCENT } from './constants';
 import { addDays, addYearMonths, daysBetween, yearMonthOf } from './dates';
@@ -24,9 +27,12 @@ import type {
   ReadinessCode,
   ReadinessItem,
   ReadinessItemKind,
+  ReadinessWaiver,
+  ReadinessWaiverKind,
   V3Inputs,
   V3Line,
   V3Series,
+  WaivedItem,
   YearMonth,
 } from './types';
 
@@ -42,17 +48,24 @@ interface Ctx {
   readonly inputs: V3Inputs;
   readonly index: ReadonlyMap<string, V3Series>;
   readonly paid: readonly PaidLine[];
+  /** Skipped occurrences as linked lines: they settle their own due exactly like a paid line, silently (a record, not an answer). */
+  readonly skips: readonly PaidLine[];
   readonly window: (seriesId: string) => number;
 }
 
 function contextOf(inputs: V3Inputs): Ctx {
   const index = seriesIndex(inputs.series);
   const paid = inputs.months.flatMap((m) => m.lines.filter((l) => l.status === 'paid')).map(toPaidLine);
+  const skips: PaidLine[] = [];
+  for (const k of inputs.skipped ?? []) {
+    const s = index.get(k.seriesId);
+    if (s !== undefined) skips.push({ id: `skip|${k.seriesId}|${k.date}`, seriesId: k.seriesId, date: k.date, amount: s.amount, source: 'manual' });
+  }
   const windows = new Map<string, number>();
   for (const s of inputs.series) {
     windows.set(s.id, matchWindowDays(s.cadence, s.role === 'pay' || s.role === 'other_income' ? PAY_MATCH_DAYS : MATCH_DAYS));
   }
-  return { inputs, index, paid, window: (id) => windows.get(id) as number };
+  return { inputs, index, paid, skips, window: (id) => windows.get(id) as number };
 }
 
 /** Occurrences with seriesId, date and amount in [from, to) of the series with one of `roles`. */
@@ -92,9 +105,9 @@ function pastMonthItems(ctx: Ctx, ym: YearMonth): { readonly items: readonly Rea
   const from = `${prev}-01`;
   const to = `${ym}-01`;
   if (!paidHere.some((l) => l.role === 'income')) {
-    for (const due of duesOf(inputs, ['pay', 'other_income'], from, to)) gaps.push({ kind: 'pay', code, month: prev, due });
+    for (const due of unsettled(ctx, duesOf(inputs, ['pay', 'other_income'], from, to), ctx.skips)) gaps.push({ kind: 'pay', code, month: prev, due });
   }
-  for (const due of unsettled(ctx, duesOf(inputs, ['bill'], from, to), ctx.paid)) gaps.push({ kind: 'bill', code, month: prev, due });
+  for (const due of unsettled(ctx, duesOf(inputs, ['bill'], from, to), [...ctx.paid, ...ctx.skips])) gaps.push({ kind: 'bill', code, month: prev, due });
   return { items, gaps };
 }
 
@@ -117,7 +130,7 @@ function currentMonthItems(ctx: Ctx, month: MonthModel, ym: YearMonth): { readon
     BigInt(month.everydayLogged) * BigInt(month.daysInMonth) * 100n < BigInt(UNDER_LOGGED_PACE_PERCENT) * BigInt(month.e) * BigInt(month.day);
   if (old && behind) items.push(plainItem('spending', code, ym, newest));
   const dues = duesOf(inputs, ['bill'], `${ym}-01`, addDays(inputs.asOf, 1));
-  const gaps = unsettled(ctx, dues, ctx.paid)
+  const gaps = unsettled(ctx, dues, [...ctx.paid, ...ctx.skips])
     .filter((d) => daysBetween(d.date, inputs.asOf) > NEEDS_INPUT_ENTRY_AGE_DAYS)
     .map((due): DueGap => ({ kind: 'bill', code, month: ym, due }));
   return { items, gaps };
@@ -176,6 +189,43 @@ function sortItems<T>(list: readonly T[], itemOf: (t: T) => ReadinessItem): T[] 
     .map((x) => x.t);
 }
 
+/** When several waivers settle one item, the first kind here names it (for several of one kind, the latest `at`). */
+const PRECEDENCE: readonly ReadinessWaiverKind[] = ['start_from', 'month_complete', 'income_elsewhere', 'always_other', 'paid_by_other', 'didnt_happen', 'no_pay', 'nothing_to_add'];
+
+/** Rank, then `at` newest first (digits inverted so plain string order is descending), then a fixed canonical order. */
+function waiverKey(w: ReadinessWaiver): string {
+  const sep = String.fromCharCode(1);
+  const at = 'at' in w ? w.at.replace(/\d/g, (d) => String(9 - Number(d))) : '';
+  return [String(PRECEDENCE.indexOf(w.kind)), at, JSON.stringify(w)].join(sep);
+}
+
+/**
+ * Does `w` settle `item`? `fresh` is the D-52 staleness clock: an answer within NEEDS_INPUT_ENTRY_AGE_DAYS stands in
+ * for a recent everyday line in the current month.
+ */
+function settles(w: ReadinessWaiver, item: ReadinessItem, ym: YearMonth, fresh: (at: LocalDate) => boolean): boolean {
+  switch (w.kind) {
+    case 'start_from':
+      return item.month < w.month;
+    case 'month_complete':
+      if (item.month !== w.month) return false;
+      if (item.month < ym) return true;
+      // The current month's items are bills and the spending clock only.
+      return item.kind === 'bill' ? (item.date as LocalDate) <= w.at : fresh(w.at);
+    case 'income_elsewhere':
+      return item.kind === 'pay';
+    case 'always_other':
+      return item.kind === 'bill' && item.seriesId === w.seriesId;
+    case 'paid_by_other':
+    case 'didnt_happen':
+      return item.kind === 'bill' && item.seriesId === w.seriesId && item.date === w.date;
+    case 'no_pay':
+      return item.kind === 'pay' && item.seriesId === w.seriesId && item.date === w.date;
+    case 'nothing_to_add':
+      return item.kind === 'spending' && item.month === w.month && (item.month < ym || fresh(w.at));
+  }
+}
+
 export function readinessOf(inputs: V3Inputs, month: MonthModel): Readiness {
   const ym = yearMonthOf(inputs.asOf);
   // D-57: no history and rough figures given: the answer is the rough one.
@@ -183,8 +233,21 @@ export function readinessOf(inputs: V3Inputs, month: MonthModel): Readiness {
   const ctx = contextOf(inputs);
   const past = pastMonthItems(ctx, ym);
   const current = currentMonthItems(ctx, month, ym);
-  const all = [...past.items, ...current.items, ...namedGaps(ctx, [...past.gaps, ...current.gaps]), ...envelopeItems(inputs, ym)];
-  const items = sortItems(all, (i) => i);
+  const gapItems = [...past.items, ...current.items, ...namedGaps(ctx, [...past.gaps, ...current.gaps])];
+  // A waiver answered after asOf does not exist yet.
+  const live = (inputs.waivers ?? []).filter((w) => !('at' in w) || w.at <= inputs.asOf);
+  const fresh = (at: LocalDate): boolean => daysBetween(at, inputs.asOf) <= NEEDS_INPUT_ENTRY_AGE_DAYS;
+  const open: ReadinessItem[] = [...envelopeItems(inputs, ym)]; // D-54: envelopes are never waived
+  const waived: WaivedItem[] = [];
+  for (const item of gapItems) {
+    const best = live
+      .filter((w) => settles(w, item, ym, fresh))
+      .map((w) => ({ w, k: waiverKey(w) }))
+      .reduce<{ w: ReadinessWaiver; k: string } | null>((b, x) => (b === null || x.k < b.k ? x : b), null);
+    if (best === null) open.push(item);
+    else waived.push({ item, by: best.w.kind, waiver: best.w });
+  }
+  const items = sortItems(open, (i) => i);
   const missing = [...new Set(items.map((i) => i.code))].sort();
-  return { ready: items.length === 0, missing, items, waived: [] };
+  return { ready: items.length === 0, missing, items, waived: sortItems(waived, (w) => w.item) };
 }
