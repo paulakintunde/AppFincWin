@@ -109,6 +109,23 @@ export function refundHintFor<R extends TransactionRow>(
   return best === null ? null : { purchaseId: best.id, payee: best.name ?? '' };
 }
 
+/** 05.3-48 (D-22): the purchase read for the chip: 12 months before the shown month's first day, up to today. */
+export function hintWindow(month: string, today: string): { from: string; to: string } {
+  return { from: monthsBefore(`${month}-01`, PICKER_WINDOW_MONTHS), to: today };
+}
+
+/** 05.3-48: the loaded rows plus the 12-month purchases, one entry per id (the loaded row wins). */
+export function hintPurchasePool<R extends TransactionRow>(loaded: readonly R[], window: readonly R[]): R[] {
+  const seen = new Set<string>();
+  const out: R[] = [];
+  for (const r of [...loaded, ...window]) {
+    if (seen.has(r.id)) continue;
+    seen.add(r.id);
+    if (r.original_amount < 0) out.push(r);
+  }
+  return out;
+}
+
 /** Unlinked money-in rows in the purchase's currency dated on or after the purchase. */
 export function refundCandidates(input: PickerInput): TransactionRow[] {
   const { anchor, rows, today, query, amountText } = input;
