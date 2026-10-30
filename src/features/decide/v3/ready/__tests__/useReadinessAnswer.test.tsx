@@ -6,6 +6,7 @@ import { act, renderHook } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import type { ReadinessItem, ReadinessWaiver } from '@/engine/decide/v3';
 import type { DecideAnswerRow } from '@/db/decideAnswers';
+import { minorUnits } from '@/engine/money';
 import { ENVELOPES_HREF } from '@/features/decide/v3/nav/hrefs';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
@@ -54,7 +55,7 @@ const item = (over: Partial<ReadinessItem> = {}): ReadinessItem => ({
   envelopeId: null,
   lineId: 'line-1',
   name: 'Lunch',
-  amount: 1000,
+  amount: minorUnits(1000),
   date: '2026-09-21',
   ...over,
 });
