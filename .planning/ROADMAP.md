@@ -1037,7 +1037,7 @@ The old Decide screens are removed after cutover.
   2. Every screen passes 320 and 402 px at 1.0 and 2.0 font scale and TalkBack, with no numbers breaking across lines.
   3. `decideV3` is on for everyone (after the owner signs off a Pixel walkthrough on the test accounts); switching back shows "Coming soon" (05.3-CONTEXT D-02, D-04). The reading test was skipped by the owner (D-05).
   4. The old engine paths and screens stay unused for 2 weeks, then a follow-up change deletes them with coverage kept at 100% (D-01, D-03).
-**Plans:** 44/50 plans executed
+**Plans:** 46/50 plans executed
 
 Plans:
 - [ ] Wave 1: 05.3-01..08 (requirements, gates, copy mount, snapshot, D-12 engine, fixes, D-15/D-16 migration, answer_v3 client)
@@ -1184,7 +1184,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
-| 05.3 Decide screens v3 | 44/50 | In Progress|  |
+| 05.3 Decide screens v3 | 46/50 | In Progress|  |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |
