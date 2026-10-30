@@ -27,6 +27,7 @@ export const record = {
   notBody: 'Nothing is spent. {{price}} stays where it is.',
   notLine: 'Check saved as ‘Not buying’ · {{item}}',
   announced: 'Recorded as bought.',
+  noAccount: 'An everyday account is needed to record this.',
   failedBought: 'Recorded purchase',
   failedPlan: 'Saved plan',
   failedRefine: 'Refine answer',
