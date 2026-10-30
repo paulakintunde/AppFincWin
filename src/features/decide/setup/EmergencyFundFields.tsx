@@ -302,6 +302,7 @@ export function EmergencyFundFields({ form, usedLine = null }: EmergencyFundFiel
     <View style={{ gap: space.gapSm }}>
       {accountMode && form.mixed ? (
         <MoneyInput
+          zeroHint
           boxed
           value={form.mixedAmount}
           currency={form.currency}
@@ -319,6 +320,7 @@ export function EmergencyFundFields({ form, usedLine = null }: EmergencyFundFiel
         </View>
       ) : (
         <MoneyInput
+          zeroHint
           boxed
           value={value.amount}
           currency={form.currency}
@@ -360,6 +362,7 @@ export function EmergencyFundFields({ form, usedLine = null }: EmergencyFundFiel
   const goalBlock = (
     <View style={{ gap: space.gapSm }}>
       <MoneyInput
+        zeroHint
         value={value.goal}
         currency={form.currency}
         onChange={(m) => set({ mode: 'notSet', goal: clamp(m) })}
@@ -395,6 +398,7 @@ export function EmergencyFundFields({ form, usedLine = null }: EmergencyFundFiel
       {isStep && yes ? amountBlock : null}
       {!isStep && value.mode === 'amount' ? (
         <MoneyInput
+          zeroHint
           value={value.amount}
           currency={form.currency}
           onChange={(m) => set({ amount: clamp(m) })}

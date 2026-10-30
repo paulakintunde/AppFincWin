@@ -266,3 +266,23 @@ describe('EmergencyFundSheet', () => {
     expect(screen.getByText('Used $600 on Oct 12 · rebuilding')).toBeTruthy();
   });
 });
+
+// 05.3-52 (F8): the empty Goal and amount fields show a muted zero hint; the label stays the field name.
+describe('Emergency fund empty money hints', () => {
+  it('the goal field hints 0.00 when Not set is chosen', async () => {
+    await render(wrap(<EmergencyFundSheet visible onClose={jest.fn()} />));
+    await fireEvent.press(screen.getByLabelText('Not set'));
+    const field = screen.getByLabelText('A goal, if you’d like one (optional)');
+    expect(field.props.value).toBe('');
+    expect(field.props.placeholder).toBe('0.00');
+    expect(field.props.placeholderTextColor).toBe('#6E6A5E');
+  });
+
+  it('the set amount field hints 0.00', async () => {
+    await render(wrap(<EmergencyFundSheet visible onClose={jest.fn()} />));
+    await fireEvent.press(screen.getByLabelText('A set amount'));
+    const fields = screen.getAllByPlaceholderText('0.00');
+    expect(fields.length).toBeGreaterThan(0);
+    for (const f of fields) expect(f.props.value).toBe('');
+  });
+});

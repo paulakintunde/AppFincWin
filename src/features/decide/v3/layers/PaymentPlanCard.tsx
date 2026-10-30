@@ -174,6 +174,7 @@ export function PaymentPlanCard({ check, evaluation, edit, checkId, currency, re
             currency={currency}
             onChange={(m) => edit(withDeposit(check, minorUnits(m ?? 0)))}
             label={t('decide.v3.ui.layers.deposit')}
+            zeroHint
             accessibilityLabel={t('decide.v3.ui.layers.deposit')}
             readOnly={readOnly}
           />
@@ -184,6 +185,7 @@ export function PaymentPlanCard({ check, evaluation, edit, checkId, currency, re
             currency={currency}
             onChange={(m) => set({ fees: { ...pay.fees, setup: minorUnits(m ?? 0) } })}
             label={t('decide.v3.ui.layers.fees')}
+            zeroHint
             accessibilityLabel={t('decide.v3.ui.layers.fees')}
             readOnly={readOnly}
           />
@@ -199,6 +201,7 @@ export function PaymentPlanCard({ check, evaluation, edit, checkId, currency, re
               currency={currency}
               onChange={(m) => set({ fees: { ...pay.fees, perPeriod: minorUnits(m ?? 0) } })}
               label={t('decide.v3.ui.layers.perPeriodFee')}
+              zeroHint
               accessibilityLabel={t('decide.v3.ui.layers.perPeriodFee')}
               readOnly={readOnly}
             />
@@ -209,6 +212,7 @@ export function PaymentPlanCard({ check, evaluation, edit, checkId, currency, re
               currency={currency}
               onChange={(m) => set({ fees: { ...pay.fees, end: minorUnits(m ?? 0) } })}
               label={t('decide.v3.ui.layers.endFee')}
+              zeroHint
               accessibilityLabel={t('decide.v3.ui.layers.endFee')}
               readOnly={readOnly}
             />

@@ -256,6 +256,7 @@ function PotForm({ pot, onClose, prefill }: { pot: SavingsGoalRow | null; onClos
           {isBucket ? (
             <>
               <MoneyInput
+                zeroHint
                 boxed
                 value={value.monthly}
                 currency={currency}
@@ -264,6 +265,7 @@ function PotForm({ pot, onClose, prefill }: { pot: SavingsGoalRow | null; onClos
                 accessibilityLabel={t('decide.setup.saving.eachMonth')}
               />
               <MoneyInput
+                zeroHint
                 boxed
                 value={value.target}
                 currency={currency}
@@ -275,6 +277,7 @@ function PotForm({ pot, onClose, prefill }: { pot: SavingsGoalRow | null; onClos
           ) : (
             <>
               <MoneyInput
+                zeroHint
                 boxed
                 value={value.target}
                 currency={currency}
@@ -295,6 +298,7 @@ function PotForm({ pot, onClose, prefill }: { pot: SavingsGoalRow | null; onClos
             </>
           )}
           <MoneyInput
+            zeroHint
             boxed
             value={value.saved}
             currency={currency}
