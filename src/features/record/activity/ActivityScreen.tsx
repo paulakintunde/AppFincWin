@@ -16,6 +16,10 @@ import type { TransactionRow } from '@/db/rows';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useIncomePayerPrompts } from '@/data/queries/incomePayerPrompts';
 import { useRefundLinks } from '@/data/queries/refundLinks';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTransactionsInRange } from '@/db/transactions';
+import { queryKeys } from '@/data/keys';
+import { supabase } from '@/services/supabase';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { useBulkDelete, useBulkMarkPaid, useBulkMarkUnpaid } from '@/data/mutations/patches';
 import { EditScopePrompt } from '@/features/record/entry/EditScopePrompt';
@@ -53,7 +57,7 @@ import { incomeChipState, isIncomeRow, rulesByPayer } from './IncomeTagChip';
 import { IncomeTagSheet } from './IncomeTagSheet';
 import { RefundPickerSheet } from './RefundPickerSheet';
 import { refundTagFor } from './RefundTag';
-import { asActivityRow, refundHintFor, type PickerDirection } from './refundPickerModel';
+import { asActivityRow, hintPurchasePool, hintWindow, refundHintFor, type PickerDirection } from './refundPickerModel';
 import { SeriesOfferCard } from './SeriesOfferCard';
 import { TransactionDetailSheet } from './TransactionDetailSheet';
 import { CalendarView } from './views/CalendarView';
@@ -114,18 +118,25 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
   // 05.2-33 (D-10): refund links in every month, not only the rows loaded for this one.
   const refundLinks = useRefundLinks(rc.householdId, itemRows, v3);
   const [refundPicker, setRefundPicker] = useState<{ row: TransactionRow; direction: PickerDirection; preselectId?: string } | null>(null);
+  // 05.3-48 (D-22): the 12-month purchase read behind the chip; cached, v3 only, never blocks the list.
+  const hintRange = hintWindow(month, rc.today);
+  const hintWindowRows = useQuery({
+    queryKey: queryKeys.refundCandidates(rc.householdId ?? '', hintRange.from, hintRange.to),
+    queryFn: () => fetchTransactionsInRange(supabase, rc.householdId ?? '', { from: hintRange.from, toInclusive: hintRange.to }),
+    enabled: v3 && !!rc.householdId,
+  });
   // 05.3-35 (D-14): likely refunds among the loaded rows, only with the Decide switch on. Nothing links by itself.
   const refundHints = useMemo(() => {
     const hints = new Map<string, { purchaseId: string; payee: string }>();
     if (!v3) return hints;
-    const purchases = itemRows.filter((r) => r.original_amount < 0) as TransactionRow[];
+    const purchases = hintPurchasePool(itemRows as TransactionRow[], hintWindowRows.data ?? []);
     for (const r of itemRows) {
       if (r.original_amount <= 0) continue;
       const hint = refundHintFor<TransactionRow>(r, purchases, rc.today);
       if (hint !== null) hints.set(r.id, hint);
     }
     return hints;
-  }, [v3, itemRows, rc.today]);
+  }, [v3, itemRows, rc.today, hintWindowRows.data]);
   const [incomeSheet, setIncomeSheet] = useState<{ row: ActivityRowView; newPayer: boolean } | null>(null);
   // D-10: the FAB steps aside while rows are being selected.
   useHideFab('bulkSelect', selection.active);
