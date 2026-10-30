@@ -23,7 +23,9 @@ import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { StateChip } from '../ui/StateChip';
+import { useDecideAccess } from '../useDecideAccess';
 import { EmergencyFundSheet } from '../setup/EmergencyFundSheet';
+import { EngineReadoutSection } from '../setup/EngineReadoutSection';
 import { SettingsRow } from '../setup/SettingsRow';
 import { firstUnansweredNeeded, isNeeded, setupStatus, type SetupSection, type SetupStepKey } from '../setup/setupFlow';
 import { UnspentSheet } from '../setup/UnspentSheet';
@@ -50,6 +52,7 @@ export function DecideSettingsScreen(): React.JSX.Element {
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const loaded = useSettingsData();
+  const { testAccount } = useDecideAccess();
   const fmt = useMoneyFormatter(false, loaded?.currency ?? rc.homeCurrency);
   const reset = useResetDecideSetup(rc.userId ?? '');
   const [emergencyOpen, setEmergencyOpen] = useState(false);
@@ -156,6 +159,11 @@ export function DecideSettingsScreen(): React.JSX.Element {
           </Pressable>
         </View>
       )}
+      {testAccount ? (
+        <View style={styles.group}>
+          <EngineReadoutSection />
+        </View>
+      ) : null}
       <ConfirmSheet
         visible={resetOpen}
         title={t('decide.settings.resetTitle')}

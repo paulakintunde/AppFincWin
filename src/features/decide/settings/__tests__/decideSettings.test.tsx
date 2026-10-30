@@ -56,6 +56,13 @@ const DATA: SettingsData = {
   unspent: { amount: 240000, at: '2026-10-03' },
 };
 
+let mockTestAccount = false;
+jest.mock('../../useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false, testAccount: mockTestAccount }) }));
+jest.mock('../../setup/EngineReadoutSection', () => {
+  const { Text } = require('react-native');
+  return { EngineReadoutSection: () => <Text testID="engine-readout" /> };
+});
+
 let mockLoaded: { facts: SetupFacts; data: SettingsData; currency: string } | null;
 const mockPush = jest.fn();
 const mockReset = jest.fn();
@@ -112,6 +119,7 @@ const rowByLabel = (label: string) => screen.getByLabelText(new RegExp(`^${label
 
 beforeEach(() => {
   mockLoaded = { facts: FACTS, data: DATA, currency: 'USD' };
+  mockTestAccount = false;
   mockPush.mockClear();
   mockReset.mockReset();
   mockShowToast.mockClear();
@@ -234,5 +242,19 @@ describe('Decide settings', () => {
     await fireEvent.press(screen.getByLabelText('Reset Decide setup'));
     await fireEvent.press(screen.getByLabelText('Reset'));
     expect(mockShowToast).not.toHaveBeenCalled();
+  });
+});
+
+describe('Engine readout (05.3-37)', () => {
+  it('shows as the last block for a test account', async () => {
+    mockTestAccount = true;
+    await mount();
+    expect(screen.getByTestId('engine-readout')).toBeTruthy();
+    const all = JSON.stringify(screen.toJSON());
+    expect(all.indexOf('engine-readout')).toBeGreaterThan(all.indexOf('Reset'));
+  });
+  it('is not rendered for everyone else', async () => {
+    await mount();
+    expect(screen.queryByTestId('engine-readout')).toBeNull();
   });
 });

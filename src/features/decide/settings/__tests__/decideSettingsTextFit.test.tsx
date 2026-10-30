@@ -62,6 +62,8 @@ const DATA: SettingsData = {
   unspent: null,
 };
 
+jest.mock('../../setup/EngineReadoutSection', () => ({ EngineReadoutSection: () => null }));
+jest.mock('../../useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false, testAccount: false }) }));
 jest.mock('../useSettingsData', () => ({ useSettingsData: () => ({ facts: FACTS, data: mockStopped ? { ...DATA, regularPay: { amount: 123456789, frequency: 'fortnightly', nextDate: null, status: 'stopped', from: '2026-10-02' } } : DATA, currency: 'USD' }) }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', today: '2026-10-15' }),
