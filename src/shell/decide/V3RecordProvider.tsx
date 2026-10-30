@@ -51,7 +51,7 @@ export function V3RecordProvider({ children }: { children: ReactNode }) {
       },
       notBuying: ({ check, evaluation, seen }) => {
         latest.current.answer.save(check, seen);
-        latest.current.pass.pass({ check, verdict: evaluation.result.legacyState, coolingOff: false });
+        return latest.current.pass.pass({ check, verdict: evaluation.result.legacyState, coolingOff: false });
       },
     }),
     []

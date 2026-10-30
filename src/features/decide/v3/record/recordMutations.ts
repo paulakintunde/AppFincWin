@@ -32,17 +32,19 @@ export interface RecordMutations {
   canRecordBought(args: RecordArgs): boolean;
   /** Saves answer_v3, then writes the purchase. Null when nothing was sent (refused, or one is already queued). */
   recordBought(args: RecordArgs): { stepId: string } | null;
-  /** Saves answer_v3, then Wait and save. */
-  planIt(args: RecordArgs & { goalTarget: number | null; reminderOn: boolean }): Promise<{ reminder: 'set' | 'off' | 'none' }>;
-  /** Saves answer_v3, then Pass. */
-  notBuying(args: RecordArgs): void;
+  /** Saves answer_v3, then Wait and save. The step id is the one undo step for the save (D-21). */
+  planIt(
+    args: RecordArgs & { goalTarget: number | null; reminderOn: boolean }
+  ): Promise<{ reminder: 'set' | 'off' | 'none'; stepId: string | null }>;
+  /** Saves answer_v3, then Pass. Returns the one undo step for the save (D-21), or null when none was recorded. */
+  notBuying(args: RecordArgs): string | null;
 }
 
 const INERT: RecordMutations = {
   canRecordBought: () => false,
   recordBought: () => null,
-  planIt: () => Promise.resolve({ reminder: 'none' }),
-  notBuying: () => undefined,
+  planIt: () => Promise.resolve({ reminder: 'none', stepId: null }),
+  notBuying: () => null,
 };
 
 export const RecordMutationsContext = createContext<RecordMutations>(INERT);

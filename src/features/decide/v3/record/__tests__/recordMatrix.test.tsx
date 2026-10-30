@@ -21,6 +21,7 @@ jest.mock('@/shell/a11yFocus', () => ({ focusAccessibility: jest.fn() }));
 jest.mock('@/theme/layout', () => ({ ...jest.requireActual('@/theme/layout'), useScreenInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
 jest.mock('@/ui/haptics', () => ({ hapticSuccess: jest.fn() }));
 jest.mock('@/data/mutations/undo', () => ({ useUndo: () => ({ undo: jest.fn() }) }));
+jest.mock('@/features/decide/notifications/waitReminder', () => ({ cancelCheckReminders: () => Promise.resolve() }));
 jest.mock('@/features/decide/ui/textFit', () => ({
   useShouldStack: () => (jest.requireActual('@/features/decide/ui/textFit') as typeof import('@/features/decide/ui/textFit')).shouldStack({ width: mockWidth, fontScale: mockScale }),
 }));
@@ -46,8 +47,8 @@ const row = { id: 'c1', name: 'Sofa', created_by: 'u1', household_id: 'h1' } as 
 const actions: RecordMutations = {
   canRecordBought: () => true,
   recordBought: () => ({ stepId: 's' }),
-  planIt: () => Promise.resolve({ reminder: 'set' }),
-  notBuying: () => undefined,
+  planIt: () => Promise.resolve({ reminder: 'set', stepId: 's-plan' }),
+  notBuying: () => 's-pass',
 };
 
 const stretched = (): number =>
