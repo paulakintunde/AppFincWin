@@ -62,7 +62,7 @@ export function SomethingChangedRow(): React.JSX.Element {
         ]}
       >
         <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flex: 1 }}>{t(`${K}somethingChanged`)}</Text>
-        <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.chevron, { borderColor: colors.inkFaint }]} />
+        <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.chevron, { borderColor: colors.inkMuted }]} />
       </Pressable>
       <SomethingChangedSheet visible={open} onClose={close} onPick={pick} />
       <EmergencyFundSheet visible={emergencyOpen} onClose={() => setEmergencyOpen(false)} />

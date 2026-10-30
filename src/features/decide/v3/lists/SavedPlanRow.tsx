@@ -138,7 +138,7 @@ export function SavedPlanRow({ row, live, without }: SavedPlanRowProps): React.J
       >
         <View style={[styles.pad, styles.pressRow]}>
           {body}
-          <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ color: colors.inkFaint }}>
+          <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ color: colors.inkMuted }}>
             {'›'}
           </Text>
         </View>

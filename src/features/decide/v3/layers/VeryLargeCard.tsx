@@ -50,7 +50,7 @@ function StageDate({ caption, stored, onValid, readOnly, testID }: { caption: st
           editable={!readOnly}
           inputMode="numeric"
           placeholder="2026-12-31"
-          placeholderTextColor={colors.inkFaint}
+          placeholderTextColor={colors.inkMuted}
           accessibilityLabel={caption}
           testID={testID}
           style={{ ...textRole(pairing, 'label'), color: colors.ink, minHeight: space.touchMin, padding: 0 }}

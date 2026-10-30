@@ -62,7 +62,7 @@ function DateField({ id, caption, stored, onValid, readOnly }: { id: string; cap
           editable={!readOnly}
           inputMode="numeric"
           placeholder="2026-12-31"
-          placeholderTextColor={colors.inkFaint}
+          placeholderTextColor={colors.inkMuted}
           accessibilityLabel={caption}
           testID={`field-${id}`}
           style={{ ...textRole(pairing, 'label'), color: colors.ink, minHeight: space.touchMin, padding: 0 }}

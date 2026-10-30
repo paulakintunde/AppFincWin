@@ -206,7 +206,7 @@ export function HomeScreen(): React.JSX.Element {
               {pastCount === 0 ? t(`${K}pastNone`) : t(`${K}pastCount`, { count: pastCount })}
             </Text>
           </View>
-          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.chevron, { borderColor: colors.inkFaint }]} />
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.chevron, { borderColor: colors.inkMuted }]} />
         </Pressable>
         <Text style={{ ...textRole(pairing, 'body'), fontSize: fontSize.meta, color: colors.inkMuted }}>{t('legal.decideFooter')}</Text>
       </View>

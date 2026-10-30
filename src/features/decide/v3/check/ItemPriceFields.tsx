@@ -52,7 +52,7 @@ export function ItemPriceFields({ name, onName, price, onPrice, currency, focusP
             maxLength={ITEM_MAX}
             editable={!readOnly}
             returnKeyType="next"
-            placeholderTextColor={colors.inkFaint}
+            placeholderTextColor={colors.inkMuted}
             style={[styles.input, { ...textRole(pairing, 'label'), color: colors.ink }]}
           />
         </View>
