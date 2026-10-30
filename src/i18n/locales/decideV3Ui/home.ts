@@ -13,9 +13,20 @@ export const home = {
   figureUnspent: 'Unspent money',
   figureEmergency: 'Emergency fund',
   notSet: 'Not set',
-  figureTypicalA11y: 'Typical month, {{amount}}. Opens how it was worked out.',
-  figureUnspentA11y: 'Unspent money, {{amount}}. Opens unspent money.',
-  figureEmergencyA11y: 'Emergency fund, {{amount}}. Opens the emergency fund.',
+  // 05.3-60 (D-26): each figure row carries a detail line from the same Evaluation
+  // D-76 rule U: count and unit joined by a no-break space. The none and unlinked lines are declarative (the
+  // 2026-10-23 guard bans sentences that open with Add or Pick), so they read as facts about the row, not orders.
+  typicalDetail_one: 'From 1 month of records',
+  typicalDetail_other: 'From {{count}} months of records',
+  typicalDetailNone: 'Shows once a month is fully recorded',
+  unspentDetail: 'Confirmed {{date}}',
+  unspentDetailNone: 'Starts from the money you have now',
+  emergencyDetail: 'Kept apart from what you spend',
+  emergencyDetailUnlinked: 'No account picked to hold it yet',
+  emergencyDetailNone: 'Money kept apart for emergencies',
+  figureTypicalA11y: 'Typical month, {{amount}}. {{detail}}. Opens how it was worked out.',
+  figureUnspentA11y: 'Unspent money, {{amount}}. {{detail}}. Opens unspent money.',
+  figureEmergencyA11y: 'Emergency fund, {{amount}}. {{detail}}. Opens the emergency fund.',
   checkHeading: 'Thinking of buying something?',
   checkBody: 'See what it does to your month before you spend.',
   checkCta: 'Check a purchase',

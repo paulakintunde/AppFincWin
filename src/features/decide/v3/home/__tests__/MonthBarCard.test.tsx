@@ -6,7 +6,7 @@ import { pushOnce } from '@/shell/navigation/pushOnce';
 import { WORKED_HREF } from '../../nav/hrefs';
 import { colors } from '@/theme/tokens';
 import { MonthBarCard } from '../MonthBarCard';
-import { fakeFormat, samEvaluation } from './homeCardsTestKit';
+import { fakeFormat, SAM_UNSPENT_AT, samEvaluation, samUnspent } from './homeCardsTestKit';
 
 jest.setTimeout(60000);
 const HIDDEN = { includeHiddenElements: true };
@@ -60,28 +60,55 @@ describe('MonthBarCard', () => {
 
   it('opens how it was worked out, the unspent sheet and the emergency sheet', async () => {
     await wrap(<MonthBarCard evaluation={samEvaluation()} />);
-    await fireEvent.press(screen.getByLabelText('Typical month, $360. Opens how it was worked out.'));
+    await fireEvent.press(screen.getByLabelText('Typical month, $360. From 6 months of records. Opens how it was worked out.'));
     expect(pushOnce).toHaveBeenCalledWith(WORKED_HREF);
-    await fireEvent.press(screen.getByLabelText('Unspent money, $1,200. Opens unspent money.'));
+    await fireEvent.press(screen.getByLabelText(`Unspent money, $1,200. Confirmed ${SAM_UNSPENT_AT}. Opens unspent money.`));
     expect(screen.getByTestId('unspent-sheet-open')).toBeTruthy();
-    await fireEvent.press(screen.getByLabelText('Emergency fund, $5,000. Opens the emergency fund.'));
+    await fireEvent.press(screen.getByLabelText('Emergency fund, $5,000. Kept apart from what you spend. Opens the emergency fund.'));
     expect(screen.getByTestId('emergency-sheet-open')).toBeTruthy();
+  });
+
+  it('D-26: three full-width rows in order, each with its detail line and a chevron', async () => {
+    await wrap(<MonthBarCard evaluation={samEvaluation()} />);
+    const rows = screen.getAllByTestId(/^figure-row-(typical|unspent|emergency)$/);
+    expect(rows.map((r) => r.props.testID)).toEqual(['figure-row-typical', 'figure-row-unspent', 'figure-row-emergency']);
+    expect(screen.getByText('From 6 months of records', HIDDEN)).toBeTruthy();
+    expect(screen.getByText(`Confirmed ${SAM_UNSPENT_AT}`, HIDDEN)).toBeTruthy();
+    expect(screen.getByText('Kept apart from what you spend', HIDDEN)).toBeTruthy();
+    expect(screen.getAllByTestId('figure-row-chevron', HIDDEN)).toHaveLength(3);
+  });
+
+  it('one month of records reads in the singular', async () => {
+    await wrap(<MonthBarCard evaluation={samEvaluation({ monthsUsed: ['2026-09'] })} />);
+    expect(screen.getByText('From 1 month of records', HIDDEN)).toBeTruthy();
+  });
+
+  it('unset figures read Not set in inkMuted with their none detail', async () => {
+    await wrap(<MonthBarCard evaluation={samEvaluation({ typicalLeft: null, unspent: null, emergency: null })} />);
+    expect(screen.getByLabelText('Typical month, Not set. Shows once a month is fully recorded. Opens how it was worked out.')).toBeTruthy();
+    expect(screen.getByLabelText('Unspent money, Not set. Starts from the money you have now. Opens unspent money.')).toBeTruthy();
+    expect(screen.getByLabelText('Emergency fund, Not set. Money kept apart for emergencies. Opens the emergency fund.')).toBeTruthy();
+    const notSet = screen.getAllByText('Not set', HIDDEN);
+    expect(notSet).toHaveLength(3);
+    for (const n of notSet) expect(JSON.stringify(n.props.style)).toContain(colors.inkMuted);
+  });
+
+  it('an unlinked emergency fund asks for its account', async () => {
+    await wrap(<MonthBarCard evaluation={samEvaluation({ fundUnlinked: true })} />);
+    expect(screen.getByText('No account picked to hold it yet', HIDDEN)).toBeTruthy();
   });
 
   it('stale unspent shows the chip; an unset fund shows Not set', async () => {
     await wrap(
-      <MonthBarCard
-        evaluation={samEvaluation({ unspent: { value: 120000, stale: true, drifted: false }, emergency: null })}
-        unspentStaleDays={41}
-      />,
+      <MonthBarCard evaluation={samEvaluation({ unspent: samUnspent({ stale: true }), emergency: null })} unspentStaleDays={41} />,
     );
-    expect(screen.getByText('Last confirmed 41 days ago')).toBeTruthy();
-    expect(screen.getByText('Not set')).toBeTruthy();
+    expect(screen.getByText('Last confirmed 41 days ago', HIDDEN)).toBeTruthy();
+    expect(screen.getByText('Not set', HIDDEN)).toBeTruthy();
   });
 
   it('drifted unspent shows the drift chip', async () => {
-    await wrap(<MonthBarCard evaluation={samEvaluation({ unspent: { value: 120000, stale: false, drifted: true } })} />);
-    expect(screen.getByText('Differs from your accounts')).toBeTruthy();
+    await wrap(<MonthBarCard evaluation={samEvaluation({ unspent: samUnspent({ drifted: true }) })} />);
+    expect(screen.getByText('Differs from your accounts', HIDDEN)).toBeTruthy();
   });
 
   it('reduced motion renders the bar filled', async () => {
