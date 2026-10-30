@@ -6,7 +6,7 @@
 import type { Cadence, PlanCard, Purchase, QuotedCheck } from '@/engine/decide/v3';
 import type { MinorUnits } from '@/engine/money';
 import { minorUnits } from '@/engine/money';
-import { PERCENT_SCALE, RATE_SCALE, type Percent } from '@/engine/payoff';
+import { PERCENT_SCALE, type Percent } from '@/engine/payoff';
 
 export type CadenceWord = 'week' | 'twoWeeks' | 'month' | 'other';
 
@@ -50,7 +50,7 @@ const OVER_RATE_TEXT = '999';
 /** Exact decimal text of a scaled Percent ("6.9", "0"). */
 function rateText(p: Percent): string {
   const whole = p / PERCENT_SCALE;
-  const frac = (p % PERCENT_SCALE).toString().padStart(RATE_SCALE, '0').replace(/0+$/, '');
+  const frac = (p % PERCENT_SCALE).toString().padStart(PERCENT_SCALE.toString().length - 1, '0').replace(/0+$/, '');
   return frac === '' ? whole.toString() : `${whole}.${frac}`;
 }
 
