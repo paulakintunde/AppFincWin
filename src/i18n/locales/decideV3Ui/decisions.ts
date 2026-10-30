@@ -6,5 +6,6 @@ export const decisions = {
   bought: 'Bought · {{date}}',
   planned: 'Planned · {{date}}',
   passed: 'Not buying · {{date}}',
+  checkAgain: 'Check again',
   rowA11y: '{{item}}, {{price}}. {{status}}. Opens the check.',
 } as const;

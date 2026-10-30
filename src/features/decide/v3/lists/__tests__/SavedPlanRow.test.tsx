@@ -20,13 +20,19 @@ jest.mock('@/data/mutations/decideChecks', () => ({
   useAbandonCheck: () => ({ abandon: mockAbandon }),
   useSaveCheckAnswer: () => ({ save: mockSave }),
 }));
+const mockRemove = jest.fn();
+jest.mock('../useRowActions', () => ({
+  useDeleteRow: () => ({ remove: mockRemove, confirmCopy: () => ({ title: 'Delete this plan?', body: 'It leaves Decide.' }) }),
+}));
 jest.mock('../../../ui/DeletableRow', () => ({
-  DeletableRow: ({ children, onOpen, onDelete, accessibilityLabel }: { children: React.ReactNode; onOpen: () => void; onDelete: () => void; accessibilityLabel: string }) => {
+  DeletableRow: ({ children, onOpen, onDelete, accessibilityLabel, menu, confirm }: { children: React.ReactNode; onOpen: () => void; onDelete: () => void; accessibilityLabel: string; menu: { key: string }[]; confirm: { title: string } }) => {
     const { Pressable, Text } = jest.requireActual('react-native');
     return (
       <>
         <Pressable accessibilityLabel={accessibilityLabel} onPress={onOpen}>{children}</Pressable>
         <Pressable accessibilityLabel="del" onPress={onDelete}><Text>{'del'}</Text></Pressable>
+        <Text>{`menu:${menu.map((m) => m.key).join(',')}`}</Text>
+        <Text>{confirm.title}</Text>
       </>
     );
   },
@@ -37,6 +43,7 @@ beforeEach(() => {
   (showToast as jest.Mock).mockClear();
   mockAbandon.mockClear();
   mockSave.mockClear();
+  mockRemove.mockClear();
 });
 
 describe('SavedPlanRow', () => {
@@ -46,7 +53,7 @@ describe('SavedPlanRow', () => {
     expect(screen.getByText('· $1,200')).toBeTruthy();
     expect(screen.getByText(/could be covered by February/)).toBeTruthy();
     expect(screen.queryByText('Changed since you saved')).toBeNull();
-    await fireEvent.press(screen.getByRole('button'));
+    await fireEvent.press(screen.getByLabelText(/Opens the saved plan/));
     expect(pushOnce).toHaveBeenCalledWith(answerHref(checkRow().id));
   });
 
@@ -60,7 +67,7 @@ describe('SavedPlanRow', () => {
   it('refund hint adds the D-13 line and the refund a11y label', async () => {
     await wrap(<SavedPlanRow row={checkRow()} live={liveEval('fits_month', null)} without={liveEval('not_yet', 'not_covered')} />);
     expect(screen.getByText('With the refund, this could fit now.')).toBeTruthy();
-    expect(screen.getByRole('button').props.accessibilityLabel).toMatch(/With the refund, this could fit now/);
+    expect(screen.getByLabelText(/With the refund, this could fit now/).props.accessibilityLabel).toMatch(/With the refund, this could fit now/);
   });
 
   it('no refund line without a better refund answer', async () => {
@@ -81,6 +88,18 @@ describe('SavedPlanRow', () => {
 
   it('never writes the stored answer', async () => {
     await wrap(<SavedPlanRow row={checkRow()} live={liveEval('fits_unspent', null)} without={undefined} />);
+    expect(mockSave).not.toHaveBeenCalled();
+  });
+
+  it('a saved row offers Delete: one removal of that row, with the confirm copy, and no stored-answer write (D-23)', async () => {
+    const row = checkRow();
+    await wrap(<SavedPlanRow row={row} live={liveEval('not_yet', 'not_covered')} without={undefined} />);
+    expect(screen.getByText('menu:open')).toBeTruthy();
+    expect(screen.getByText('Delete this plan?')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('del'));
+    expect(mockRemove).toHaveBeenCalledTimes(1);
+    expect(mockRemove).toHaveBeenCalledWith(row);
+    expect(mockAbandon).not.toHaveBeenCalled();
     expect(mockSave).not.toHaveBeenCalled();
   });
 });

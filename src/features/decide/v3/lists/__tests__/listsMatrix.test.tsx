@@ -33,6 +33,12 @@ jest.mock('../../shared/useV3Format', () => ({ useV3Format: () => jest.requireAc
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: jest.fn() }) }));
 jest.mock('@/data/mutations/decideChecks', () => ({ useAbandonCheck: () => ({ abandon: jest.fn() }) }));
+jest.mock('../useRowActions', () => ({
+  useDeleteRow: () => ({ remove: jest.fn(), confirmCopy: () => ({ title: 't', body: 'b' }) }),
+  useCheckAgain: () => jest.fn(),
+}));
+jest.mock('@/data/queries/decide', () => ({ useDecideLinks: () => ({ data: [] }) }));
+jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u', householdId: 'h' }) }));
 jest.mock('@/shell/screen/DetailScreen', () => ({ DetailScreen: ({ children }: { children: React.ReactNode }) => <>{children}</> }));
 
 afterEach(cleanup);
@@ -49,14 +55,16 @@ describe.each(MATRIX)('lists at $width wide x $scale', (m) => {
       <SavedPlanRow row={checkRow({ name: LONG })} live={liveEval('not_yet', 'not_covered', null, 123456789012)} without={liveEval('fits_month', null)} />,
       m.scale,
     );
-    expectFits({ clampCount: 1 });
-    expectTargets(/^A very long item name/);
+    // the shared swipe row adds one clamped label of its own (D-23: rows are now deletable)
+    expectFits({ clampCount: 2, clamped: [/^Delete$/] });
+    // the labelled swipe body takes its height from the row; the row's own named control is the ⋯ trigger
+    expectTargets(/^More for A very long item name/);
   });
 
   it(`DecisionsScreen rows fit (${matrixName(m)})`, async () => {
     cell();
     await wrap(<DecisionsScreen />, m.scale);
-    expectFits({ clampCount: 2 });
-    expectTargets(/lines, \$/, /again, \$/);
+    expectFits({ clampCount: 3, clamped: [/^Delete$/] });
+    expectTargets(/^More for .*lines$/, /^More for .*again$/);
   });
 });
