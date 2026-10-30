@@ -3542,7 +3542,7 @@ const en = {
         at_todays_rate: 'Converted from {{currency}} at today’s rate.',
         low_month: 'In {{month}}, a low month, about {{left}} remains against {{monthly}} a month.',
         lean_bridge: 'In lean months about {{leanLeft}} remains, {{shortfall}} under the {{monthly}} payment. Over the {{months}} lean months to {{until}} that comes to {{bridge}}, which your unspent money carries, leaving {{after}}.',
-        lean_bridge_over: 'In lean months the month is about {{leanLeft}} overspent before the {{monthly}} payment, {{shortfall}} short each month. Over the {{months}} lean months to {{until}} that comes to {{bridge}}, which your unspent money carries, leaving {{after}}.',
+        lean_bridge_over: 'In lean months the month is about {{leanLeft}} overspent before the {{monthly}} payment, {{shortfall}} overspent once it is paid. Over the {{months}} lean months to {{until}} that comes to {{bridge}}, which your unspent money carries, leaving {{after}}.',
         lean_months_judged: 'Judged against your leanest months, {{from}} to {{to}}, which leave about {{leanLeft}} each.',
         lean_months_judged_one: 'Judged against your leanest month, {{from}}, which leaves about {{leanLeft}}.',
         lean_months_judged_over: 'Judged against your leanest months, {{from}} to {{to}}, which are about {{leanLeft}} overspent each.',
