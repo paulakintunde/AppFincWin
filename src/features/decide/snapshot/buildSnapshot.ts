@@ -89,6 +89,7 @@ export interface GoalSource {
   deleted_at: string | null;
   account_id?: string | null; // 05.2 D-22: where the envelope's money is held (a stored answer beats the transfer-leg guess)
   bucket?: string | null; // 05.2 D-23: set = a saving bucket carved out of regular saving
+  name?: string | null; // 05.3-55 (D-24): the savings_goals name, for readiness items only
 }
 
 // structurally identical to src/db/decideChanges.ts (05-38)
@@ -118,7 +119,8 @@ type SnapshotRow = Pick<
   | 'recurring_series_id'
   | 'category_id'
   | 'deleted_at'
-> & { one_off?: boolean | null; goal_id?: string | null; import_batch_id?: string | null; income_kind?: string | null; counts_as?: 'available' | 'kept' | null; refund_of?: string | null }; // goal_id: D-34/D-101, a transfer leg tagged to a savings goal or pot
+> &
+  Partial<Pick<TransactionRow, 'name'>> & { one_off?: boolean | null; goal_id?: string | null; import_batch_id?: string | null; income_kind?: string | null; counts_as?: 'available' | 'kept' | null; refund_of?: string | null }; // goal_id: D-34/D-101, a transfer leg tagged to a savings goal or pot
 
 export interface SnapshotSource {
   today: string;
@@ -130,7 +132,7 @@ export interface SnapshotSource {
     RecurringSeriesRow,
     'id' | 'account_id' | 'amount' | 'currency' | 'freq' | 'anchor_date' | 'end_date' | 'occurrence_count' | 'category_id' | 'deleted_at'
   > &
-    Partial<Pick<RecurringSeriesRow, 'counts_as' | 'income_kind' | 'saving_mode' | 'pay_group'>>)[];
+    Partial<Pick<RecurringSeriesRow, 'counts_as' | 'income_kind' | 'saving_mode' | 'pay_group' | 'name'>>)[]; // 05.3-55: name feeds readiness items (D-24)
   accounts: readonly (Pick<AccountRow, 'id' | 'name' | 'kind' | 'currency' | 'archived_at' | 'deleted_at'> &
     Partial<Pick<AccountRow, 'use' | 'use_purpose' | 'use_envelope_id' | 'use_extra_set_aside'>>)[];
   balances: Readonly<Record<string, number>>; // account id → paid-only balance in the account's currency

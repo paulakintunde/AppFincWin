@@ -163,7 +163,7 @@ describe('buildV3Inputs: waivers (D-28)', () => {
 
 describe('computeV3: the owner evidence names all four gaps', () => {
   it('pay, Netflix and Lunch in September with their pending lines, and October spending dated Oct 14', () => {
-    const readiness = computeV3(evidenceSource(), null, sofaInputs).result.readiness;
+    const readiness = computeV3(evidenceSource(), null, sofaInputs).result.readiness!;
     expect(readiness.missing).toEqual(['activity_not_current', 'past_month_missing']);
     expect(readiness.items).toEqual([
       item({ kind: 'pay', code: 'past_month_missing', month: '2026-09', seriesId: PAY, lineId: 'pay-sep', name: 'Pay', amount: mu(1619942), date: '2026-09-03' }),
@@ -176,7 +176,7 @@ describe('computeV3: the owner evidence names all four gaps', () => {
   it("the owner's waiver and a skipped row settle the September bills", () => {
     const base = evidenceSource();
     const source = { ...base, rows: base.rows.map((r) => (r.id === 'lunch-sep' ? { ...r, status: 'skipped' as const } : r)) };
-    const readiness = computeV3(source, v3s({ waivers: [{ kind: 'paid_by_other', seriesId: NETFLIX, date: '2026-09-03' }] }), sofaInputs).result.readiness;
+    const readiness = computeV3(source, v3s({ waivers: [{ kind: 'paid_by_other', seriesId: NETFLIX, date: '2026-09-03' }] }), sofaInputs).result.readiness!;
     expect(readiness.items?.map((i) => i.seriesId ?? i.kind)).toEqual([PAY, 'spending']);
   });
 });
