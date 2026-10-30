@@ -8,18 +8,18 @@ jest.mock('@/features/you/useProfile', () => ({ useProfile: () => mockUseProfile
 describe('useDecideAccess', () => {
   it('fails closed while loading', async () => {
     mockUseProfile.mockReturnValue({ profile: null });
-    expect((await renderHook(() => useDecideAccess())).result.current).toEqual({ v3: false });
+    expect((await renderHook(() => useDecideAccess())).result.current).toEqual({ v3: false, testAccount: false });
   });
   it('fails closed when the field is missing', async () => {
     mockUseProfile.mockReturnValue({ profile: { id: 'u' } });
-    expect((await renderHook(() => useDecideAccess())).result.current).toEqual({ v3: false });
+    expect((await renderHook(() => useDecideAccess())).result.current).toEqual({ v3: false, testAccount: false });
   });
   it('false flag -> false', async () => {
     mockUseProfile.mockReturnValue({ profile: { id: 'u', decide_v3: false } });
-    expect((await renderHook(() => useDecideAccess())).result.current).toEqual({ v3: false });
+    expect((await renderHook(() => useDecideAccess())).result.current).toEqual({ v3: false, testAccount: false });
   });
   it('true flag -> true', async () => {
     mockUseProfile.mockReturnValue({ profile: { id: 'u', decide_v3: true } });
-    expect((await renderHook(() => useDecideAccess())).result.current).toEqual({ v3: true });
+    expect((await renderHook(() => useDecideAccess())).result.current).toEqual({ v3: true, testAccount: true });
   });
 });
