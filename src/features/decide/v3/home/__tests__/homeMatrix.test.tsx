@@ -39,6 +39,8 @@ jest.mock('../../../setup/UnspentSheet', () => ({ UnspentSheet: () => null }));
 jest.mock('../../../setup/EmergencyFundSheet', () => ({ EmergencyFundSheet: () => null }));
 jest.mock('../../../pots/PotSheet', () => ({ PotSheet: () => null }));
 jest.mock('../../refine/RefineCard', () => ({ RefineCard: () => null }));
+// 05.3-49: the saved-row delete actions pull in the env config; the matrix only measures layout.
+jest.mock('../../lists/useRowActions', () => ({ useDeleteRow: () => ({ remove: jest.fn(), confirmCopy: () => ({ title: 'Delete?', body: '' }) }), useCheckAgain: () => jest.fn() }));
 
 afterEach(cleanup);
 
@@ -51,7 +53,8 @@ describe.each(MATRIX)('home at $width wide x $scale', (m) => {
     homeState.byId = new Map([['sofa', liveEval('not_yet', 'not_covered', { kind: 'month', month: '2027-02' }, 123456789012)]]);
     homeState.pots = [{ id: 'e1', name: LONG, saved: 123456789 }];
     await wrap(<HomeScreen />, m.scale);
-    expectFits({ clampCount: 6 });
+    // 05.3-49: the saved row's swipe body adds one clamped "Delete" label.
+    expectFits({ clampCount: 7, clamped: [/^Delete$/] });
     expectTargets(/^Typical month/, /^Unspent money/, /^Emergency fund/, /^Check a purchase/, /^Something changed\?/, /^Past decisions/, /^Decide settings/);
   });
 });
