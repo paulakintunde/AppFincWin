@@ -23,7 +23,7 @@ jest.mock('../../../setup/setupFlow', () => ({
 jest.mock('../../../setup/SetupStatusCard', () => ({
   SetupStatusCard: ({ status }: { status: string }) => {
     const { Text } = jest.requireActual('react-native');
-    return <Text>{`setup-card:${status}`}</Text>;
+    return <Text testID="setup-card">{`setup-card:${status}`}</Text>;
   },
 }));
 jest.mock('@/shell/screen/TabRootScreen', () => ({ TabRootScreen: (p: object) => jest.requireActual('./homeScreenKit').TabRootDouble(p) }));
@@ -35,19 +35,38 @@ jest.mock('../../nav/hrefs', () => ({ DECISIONS_HREF: '/decide/decisions', openV
 jest.mock('../MonthBarCard', () => ({
   MonthBarCard: ({ unspentStaleDays }: { unspentStaleDays?: number }) => {
     const { Text } = jest.requireActual('react-native');
-    return <Text>{`month-card:${unspentStaleDays ?? 'none'}`}</Text>;
+    return <Text testID="month-card">{`month-card:${unspentStaleDays ?? 'none'}`}</Text>;
   },
 }));
 jest.mock('../EnvelopeGrid', () => ({
   EnvelopeGrid: ({ envelopes }: { envelopes: { name: string }[] }) => {
     const { Text } = jest.requireActual('react-native');
-    return <Text>{`envelopes:${envelopes.map((e) => e.name).join(',')}`}</Text>;
+    return <Text testID="envelopes">{`envelopes:${envelopes.map((e) => e.name).join(',')}`}</Text>;
   },
 }));
 jest.mock('../../refine/RefineCard', () => ({
   RefineCard: () => {
     const { Text } = jest.requireActual('react-native');
-    return <Text>{'refine-card'}</Text>;
+    return <Text testID="refine-card">{'refine-card'}</Text>;
+  },
+}));
+// 05.3-53 (F9): the real check card and not-ready card, wrapped in a testID so the order test can find them.
+jest.mock('../CheckCard', () => ({
+  CheckCard: (p: object) => {
+    const { View } = jest.requireActual('react-native');
+    const Actual = jest.requireActual('../CheckCard').CheckCard;
+    return (
+      <View testID="check-card">
+        <Actual {...p} />
+      </View>
+    );
+  },
+}));
+jest.mock('../../ready/NotReadyCard', () => ({
+  NotReadyCard: (p: object) => {
+    const { View } = jest.requireActual('react-native');
+    const card = jest.requireActual('../../ready/NotReadyCard').NotReadyCard(p);
+    return card === null ? null : <View testID="not-ready-card">{card}</View>;
   },
 }));
 jest.mock('../SomethingChangedRow', () => ({
@@ -66,6 +85,21 @@ jest.mock('../../lists/SavedPlanRow', () => ({
 const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
 
 const ALL_MISSING = ['activity_not_current', 'envelopes_unconfirmed', 'past_month_missing'];
+
+type Node = { props?: { testID?: string }; children?: (Node | string)[] | null };
+function testIdOrder(): string[] {
+  const out: string[] = [];
+  const walk = (n: Node | Node[] | string | null): void => {
+    if (n === null || typeof n === 'string') return;
+    if (Array.isArray(n)) return n.forEach(walk);
+    if (n.props?.testID !== undefined) out.push(n.props.testID);
+    (n.children ?? []).forEach(walk);
+  };
+  walk(screen.toJSON() as unknown as Node | Node[] | null);
+  return out;
+}
+const MAIN = ['setup-card', 'month-card', 'check-card', 'not-ready-card', 'refine-card', 'envelopes'];
+const mainOrder = (): string[] => testIdOrder().filter((id) => MAIN.includes(id));
 
 beforeEach(() => {
   resetHome();
@@ -96,11 +130,22 @@ describe('HomeScreen', () => {
     expect(screen.getByText(/FincWin is a record-keeping and planning tool/)).toBeTruthy();
     expect(screen.queryByText(/setup-card/)).toBeNull();
 
-    const order = ['month-card', 'refine-card', 'Check a purchase', 'envelopes:', 'Saved plans', 'something-row', 'Past decisions'];
+    const order = ['month-card', 'Check a purchase', 'refine-card', 'envelopes:', 'Saved plans', 'something-row', 'Past decisions'];
     const tree = JSON.stringify(screen.toJSON());
     const at = order.map((s) => tree.indexOf(s));
     expect(at.every((n) => n >= 0)).toBe(true);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
+  });
+
+  it('F9 ready: the check card comes straight after the month card and the nudge follows it', async () => {
+    await wrap(<HomeScreen />);
+    expect(mainOrder()).toEqual(['month-card', 'check-card', 'refine-card', 'envelopes']);
+  });
+
+  it('F9 not ready: the not-ready card comes straight after the month card and the nudge follows it', async () => {
+    homeState.missing = ALL_MISSING;
+    await wrap(<HomeScreen />);
+    expect(mainOrder()).toEqual(['month-card', 'not-ready-card', 'refine-card', 'envelopes']);
   });
 
   it('unfinished checks with a name show under their heading, an empty draft does not', async () => {
