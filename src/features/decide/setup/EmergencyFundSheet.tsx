@@ -55,16 +55,18 @@ function EmergencyFundForm({ onClose, usedLine = null }: EmergencyFundSheetProps
       <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
       <SheetScroll contentContainerStyle={styles.column}>
         <EmergencyFundFields form={form} usedLine={usedLine} />
-        <View style={styles.actions}>
-          <Pill label={t('decide.emergencySheet.save')} variant="primary" disabled={!form.valid || form.value.mode === null} onPress={save} />
-          {form.hasStored ? <TextButton label={t('decide.emergencySheet.remove')} onPress={remove} danger /> : null}
-        </View>
       </SheetScroll>
+      {/* 05.3-50 F5: the actions sit below the scroll, so Save is always on screen however tall the fields grow (the
+          SheetScroll shrinks to the space the capped sheet leaves; the header above and these actions stay put). */}
+      <View testID="emergency-fund-actions" style={styles.actions}>
+        <Pill label={t('decide.emergencySheet.save')} variant="primary" disabled={!form.valid || form.value.mode === null} onPress={save} />
+        {form.hasStored ? <TextButton label={t('decide.emergencySheet.remove')} onPress={remove} danger /> : null}
+      </View>
     </Sheet>
   );
 }
 
 const styles = StyleSheet.create({
   column: { gap: space.gapMd },
-  actions: { gap: space.gapSm, marginTop: space.gapSm },
+  actions: { gap: space.gapSm, paddingTop: space.gapMd, flexShrink: 0 },
 });

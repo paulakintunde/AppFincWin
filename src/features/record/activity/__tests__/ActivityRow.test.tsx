@@ -274,11 +274,13 @@ describe('ActivityRow tags, refunds, swipe and balance note (02.2-21)', () => {
     expect(flat(word.parent as never).backgroundColor).toBe(colors.fill1);
   });
 
-  it('shows a paid refund with + in accent, Paid, a Refund sub-label and no income wording', async () => {
+  it('shows a paid refund with + in accent, Paid, a Refund tag and no income wording', async () => {
     const { screen } = await renderRow(row({ original_amount: 2999, amountHome: 2999, is_refund: true, name: 'Return' } as Partial<ActivityRowView>), 'only');
     expect(colourOf(screen.getByText('+£29.99', { includeHiddenElements: true }))).toBe(ACCENTS.green);
     expect(screen.getByText('Paid')).toBeTruthy();
-    expect(colourOf(screen.getByText(/· Refund/))).toBe(ACCENTS.green);
+    // 05.3-50 F6: Refund is its own tag (accent word), not the tail of the one-line sub line
+    expect(colourOf(screen.getByText('Refund'))).toBe(ACCENTS.green);
+    expect(screen.queryByText(/· Refund/)).toBeNull();
     const label = screen.getByTestId('activity-row-r1').props.accessibilityLabel as string;
     expect(label).toBe('Return, £29.99, Paid, Refund');
     expect(label).not.toMatch(/Received|income/);
