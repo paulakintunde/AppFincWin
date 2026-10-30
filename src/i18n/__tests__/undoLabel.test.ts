@@ -68,3 +68,31 @@ describe('05.2 undo labels (N-01)', () => {
     }
   });
 });
+
+describe('05.3-56 readiness answer labels', () => {
+  const cases: [string, string, string][] = [
+    ['paidByOther', 'Someone else paid · Lunch', 'Marked as paid by someone else'],
+    ['alwaysPaidByOther', 'Someone else always pays · Lunch', 'Marked as always paid by someone else'],
+    ['didNotHappen', 'Didn’t happen · Lunch', 'Marked as didn’t happen'],
+    ['noPayThisMonth', 'No pay this month · Lunch', 'Marked as no pay this month'],
+    ['incomeElsewhere', 'Money from elsewhere · Lunch', 'Marked as money from elsewhere'],
+    ['nothingToAdd', 'Nothing else to add · Lunch', 'Marked as nothing else to add'],
+    ['monthComplete', 'Marked complete · Lunch', 'Marked as complete'],
+    ['decideStartMonth', 'Decide starts from · Lunch', 'Decide start month saved'],
+    ['readinessAnswerCleared', 'Asked again · Lunch', 'Asked again'],
+  ];
+
+  it.each(cases)('%s renders named and unnamed', (key, named, unnamed) => {
+    expect(render(key, { name: 'Lunch' })).toBe(named);
+    expect(render(key, {})).toBe(unnamed);
+    expect(i18n.t('undo.reverted', { label: render(key, {}) })).toBe('Undone · ' + unnamed);
+  });
+
+  it('holds the declarative voice', () => {
+    for (const [key] of cases) {
+      for (const text of [render(key, { name: 'X' }), render(key, {})]) {
+        expect(text).not.toMatch(/\b(left|short|free|you can|offer|should|advice)\b/i);
+      }
+    }
+  });
+});

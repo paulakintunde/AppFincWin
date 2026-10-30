@@ -6,7 +6,9 @@
 import * as Crypto from 'expo-crypto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
-import { buildStep, inverseOfInserts, inverseOfPatches, type PatchValue } from '@/engine/undo';
+import { buildStep, inverseOfInserts, inverseOfPatches, type PatchValue, type UndoLabelKey } from '@/engine/undo';
+import type { LocalDate, ReadinessWaiver } from '@/engine/decide/v3';
+import { waiverAnswerShape } from '@/features/decide/snapshot/v3/waiverKeys';
 import { VersionConflictError } from '@/db/errors';
 import {
   insertDecideAnswer,
@@ -42,7 +44,17 @@ export type AnswerInput =
   | { kind: 'pay_arrival'; seriesId: string; payDate: string; arrived: boolean }
   | { kind: 'expected_income'; month: string; amount: number; at: string }
   | { kind: 'held_bridge'; checkId: string; amount: number }
-  | { kind: 'volatile_cover'; checkId: string; covers: boolean };
+  | { kind: 'volatile_cover'; checkId: string; covers: boolean }
+  | { kind: 'readiness_waiver'; waiver: ReadinessWaiver; at: LocalDate }; // 05.3-56 (D-28)
+
+/** 05.3-56: the undo label a caller names for one answer write. Plain JSON, so it survives a paused-mutation replay. */
+export interface AnswerLabel {
+  key: UndoLabelKey;
+  name?: string | null;
+}
+
+/** Called once the write lands (true) or is refused or fails (false). Not called for a write that is never made. */
+export type AnswerSettled = (ok: boolean) => void;
 
 export interface InsertAnswerVars {
   mode: 'insert';
@@ -50,6 +62,7 @@ export interface InsertAnswerVars {
   cache: AnswerCacheKey;
   row: NewDecideAnswer;
   stepId: string;
+  label?: AnswerLabel;
 }
 
 export interface UpdateAnswerVars {
@@ -60,6 +73,7 @@ export interface UpdateAnswerVars {
   expectedVersion: number;
   patch: DecideAnswerPatch;
   undo: { stepId: string; before: Readonly<Record<string, PatchValue>> };
+  label?: AnswerLabel;
 }
 
 export type SaveAnswerVars = InsertAnswerVars | UpdateAnswerVars;
@@ -71,10 +85,21 @@ export interface RemoveAnswerVars {
   expectedVersion: number;
   patch: DecideAnswerPatch;
   undo: { stepId: string; before: Readonly<Record<string, PatchValue>> };
+  label?: AnswerLabel;
 }
 
 type EditVars = UpdateAnswerVars | RemoveAnswerVars;
 type EditLabel = 'answerSaved' | 'answerRemoved';
+
+/** The step label: the caller's (05.3-56) or the default for the path. */
+function labelKeyOf(vars: { label?: AnswerLabel }, fallback: EditLabel): UndoLabelKey {
+  return vars.label?.key ?? fallback;
+}
+
+function labelParamsOf(vars: { label?: AnswerLabel }): { name?: string } {
+  const name = vars.label?.name;
+  return name ? { name } : {};
+}
 
 function patchAnswers(qc: QueryClient, cache: AnswerCacheKey, updater: (rows: AnswerList) => AnswerList): void {
   qc.setQueryData<AnswerList>(queryKeys.decideAnswers(cache.userId, cache.householdId), (old) => updater(old ?? []));
@@ -85,7 +110,7 @@ function invalidateAnswers(qc: QueryClient, cache: AnswerCacheKey): void {
 }
 
 /** Shared by update and remove: the version-conditional patch and its undo step. */
-async function runEdit(qc: QueryClient, vars: EditVars, labelKey: EditLabel): Promise<DecideAnswerRow> {
+async function runEdit(qc: QueryClient, vars: EditVars, fallback: EditLabel): Promise<DecideAnswerRow> {
   const expected = resolveExpectedVersion('decide_answers', vars.id, vars.expectedVersion);
   const client = await writeClient();
   const row = await updateDecideAnswer(client, vars.id, expected, vars.patch).catch((err: unknown) =>
@@ -94,8 +119,8 @@ async function runEdit(qc: QueryClient, vars: EditVars, labelKey: EditLabel): Pr
   recordWrittenVersion('decide_answers', vars.id, [vars.expectedVersion, expected], row.version);
   const step = buildStep(
     vars.undo.stepId,
-    labelKey,
-    {},
+    labelKeyOf(vars, fallback),
+    labelParamsOf(vars),
     inverseOfPatches('decide_answers', [{ id: row.id, before: vars.undo.before, versionAfter: row.version }])
   );
   await recordUndoStepSafely(qc, client, step, vars.ownerId);
@@ -117,9 +142,9 @@ function applyEditSuccess(qc: QueryClient, row: DecideAnswerRow, vars: EditVars)
   invalidateAnswers(qc, vars.cache);
 }
 
-async function handleEditError(qc: QueryClient, err: unknown, vars: EditVars, labelKey: EditLabel): Promise<void> {
+async function handleEditError(qc: QueryClient, err: unknown, vars: EditVars, fallback: EditLabel): Promise<void> {
   const cls = classifySettledWriteError(err);
-  const attempted = { labelKey, fields: Object.keys(vars.patch).length };
+  const attempted = { labelKey: labelKeyOf(vars, fallback), fields: Object.keys(vars.patch).length };
   if (cls === 'conflict' && err instanceof VersionConflictError) {
     const serverRow = err.serverRow as DecideAnswerRow;
     if (serverRow && typeof serverRow === 'object' && 'id' in serverRow) {
@@ -160,8 +185,8 @@ export function registerDecideAnswerMutations(qc: QueryClient): void {
         const row = await insertDecideAnswer(client, vars.row);
         const step = buildStep(
           vars.stepId,
-          'answerSaved',
-          {},
+          labelKeyOf(vars, 'answerSaved'),
+          labelParamsOf(vars),
           inverseOfInserts('decide_answers', [{ id: row.id, version: row.version }])
         );
         await recordUndoStepSafely(qc, client, step, vars.ownerId);
@@ -210,7 +235,7 @@ export function registerDecideAnswerMutations(qc: QueryClient): void {
         entityId: vars.row.id,
         kind: cls,
         code: settledWriteErrorCode(err),
-        attempted: { answerId: vars.row.id },
+        attempted: { answerId: vars.row.id, labelKey: labelKeyOf(vars, 'answerSaved') },
       });
     },
   });
@@ -256,6 +281,8 @@ function shapeOf(a: AnswerInput): Shape {
       return { kind: a.kind, key: checkAnswerKey(a.checkId), amount: requireAmount(a.amount), bool_value: null, on_date: null, check_id: a.checkId };
     case 'volatile_cover':
       return { kind: a.kind, key: checkAnswerKey(a.checkId), amount: null, bool_value: a.covers, on_date: null, check_id: a.checkId };
+    case 'readiness_waiver':
+      return { ...waiverAnswerShape(a.waiver, a.at) };
   }
 }
 
@@ -263,28 +290,36 @@ const VALUE_FIELDS = ['amount', 'bool_value', 'on_date'] as const;
 
 /**
  * Save one in-check answer. Returns the row id and undo step id, or null when the live row already holds this
- * answer (nothing is written). The caller toasts "Answer saved" with Undo.
+ * answer (nothing is written, and onSettled is not called). The caller toasts the label ("Answer saved" by default)
+ * with Undo. 05.3-56: `label` names the undo step; `onSettled` learns whether the write landed.
  */
 export function useSaveDecideAnswer(
   userId: string,
   householdId: string
-): { save(a: AnswerInput): { id: string; stepId: string } | null } {
+): { save(a: AnswerInput, label?: AnswerLabel, onSettled?: AnswerSettled): { id: string; stepId: string } | null } {
   const qc = useQueryClient();
   const mutation = useMutation<DecideAnswerRow, unknown, SaveAnswerVars>({
     mutationKey: mutationKeys.saveDecideAnswer,
     scope: WRITE_SCOPE,
   });
   return {
-    save(a) {
+    save(a, label, onSettled) {
       const shape = shapeOf(a);
       const cache = { userId, householdId };
+      const extra = label ? { label } : {};
+      const callbacks = onSettled
+        ? { onSuccess: () => onSettled(true), onError: () => onSettled(false) }
+        : undefined;
       const live = qc
         .getQueryData<AnswerList>(queryKeys.decideAnswers(userId, householdId))
         ?.find((r) => r.kind === shape.kind && r.key === shape.key && r.deleted_at === null);
       if (!live) {
         const id = Crypto.randomUUID();
         const stepId = newStepId();
-        mutation.mutate({ mode: 'insert', ownerId: userId, cache, row: { id, household_id: householdId, ...shape }, stepId });
+        mutation.mutate(
+          { mode: 'insert', ownerId: userId, cache, row: { id, household_id: householdId, ...shape }, stepId, ...extra },
+          callbacks
+        );
         return { id, stepId };
       }
       const patch: DecideAnswerPatch = {};
@@ -297,40 +332,48 @@ export function useSaveDecideAnswer(
       }
       if (Object.keys(patch).length === 0) return null;
       const stepId = newStepId();
-      mutation.mutate({
-        mode: 'update',
-        id: live.id,
-        ownerId: userId,
-        cache,
-        expectedVersion: live.version,
-        patch,
-        undo: { stepId, before },
-      });
+      mutation.mutate(
+        {
+          mode: 'update',
+          id: live.id,
+          ownerId: userId,
+          cache,
+          expectedVersion: live.version,
+          patch,
+          undo: { stepId, before },
+          ...extra,
+        },
+        callbacks
+      );
       return { id: live.id, stepId };
     },
   };
 }
 
-/** Soft delete an answer. Returns the step id; the caller toasts "Answer removed" with Undo. */
+/** Soft delete an answer. Returns the step id; the caller toasts the label ("Answer removed" by default) with Undo. */
 export function useRemoveDecideAnswer(
   userId: string,
   householdId: string
-): { remove(row: DecideAnswerRow): { stepId: string } } {
+): { remove(row: DecideAnswerRow, label?: AnswerLabel, onSettled?: AnswerSettled): { stepId: string } } {
   const mutation = useMutation<DecideAnswerRow, unknown, RemoveAnswerVars>({
     mutationKey: mutationKeys.removeDecideAnswer,
     scope: WRITE_SCOPE,
   });
   return {
-    remove(row) {
+    remove(row, label, onSettled) {
       const stepId = newStepId();
-      mutation.mutate({
-        id: row.id,
-        ownerId: userId,
-        cache: { userId, householdId },
-        expectedVersion: row.version,
-        patch: { deleted_at: new Date().toISOString() },
-        undo: { stepId, before: { deleted_at: null } },
-      });
+      mutation.mutate(
+        {
+          id: row.id,
+          ownerId: userId,
+          cache: { userId, householdId },
+          expectedVersion: row.version,
+          patch: { deleted_at: new Date().toISOString() },
+          undo: { stepId, before: { deleted_at: null } },
+          ...(label ? { label } : {}),
+        },
+        onSettled ? { onSuccess: () => onSettled(true), onError: () => onSettled(false) } : undefined
+      );
       return { stepId };
     },
   };

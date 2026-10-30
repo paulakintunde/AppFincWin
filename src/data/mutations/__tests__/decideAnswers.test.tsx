@@ -318,6 +318,99 @@ describe('useRemoveDecideAnswer', () => {
   });
 });
 
+describe('readiness_waiver answers (05.3-56, D-28)', () => {
+  const S = '3f0c2a9e-1b4d-4c5e-8f60-1234567890ab';
+  const waiver = { kind: 'paid_by_other', seriesId: S, date: '2026-09-21' } as const;
+  const waiverRow = (id: string, overrides: Partial<DecideAnswerRow> = {}): DecideAnswerRow =>
+    answer(id, { kind: 'readiness_waiver', key: `paid-by-other:${S}:2026-09-21`, amount: null, on_date: '2026-10-30', ...overrides });
+
+  it('inserts the waiver with its key and answer date, and names the undo step', async () => {
+    const { fake, qc } = setup();
+    fake.respondWith(ok(waiverRow('id-1')));
+    const { result } = await renderHook(() => useSaveDecideAnswer('user-1', 'hh-1'), { wrapper: wrapper(qc) });
+
+    const out = result.current.save({ kind: 'readiness_waiver', waiver, at: '2026-10-30' }, { key: 'paidByOther', name: 'Lunch' });
+    expect(out).toEqual({ id: 'id-1', stepId: 'id-2' });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(fake.calls.find((c) => c.method === 'insert')?.args[0]).toEqual({
+      id: 'id-1',
+      household_id: 'hh-1',
+      kind: 'readiness_waiver',
+      key: `paid-by-other:${S}:2026-09-21`,
+      amount: null,
+      bool_value: null,
+      on_date: '2026-10-30',
+      check_id: null,
+    });
+    expect(lastStep()).toMatchObject({
+      id: 'id-2',
+      labelKey: 'paidByOther',
+      labelParams: { name: 'Lunch' },
+      ops: [{ entity: 'decide_answers', id: 'id-1', patch: { deleted_at: '$now' } }],
+    });
+  });
+
+  it('the same waiver on the same date writes nothing', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [waiverRow('w1')]);
+    const { result } = await renderHook(() => useSaveDecideAnswer('user-1', 'hh-1'), { wrapper: wrapper(qc) });
+    expect(result.current.save({ kind: 'readiness_waiver', waiver, at: '2026-10-30' }, { key: 'paidByOther', name: 'Lunch' })).toBeNull();
+    expect(fake.calls).toHaveLength(0);
+  });
+
+  it('a later answer date updates on_date under the given label', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [waiverRow('w1')]);
+    fake.respondWith(ok([waiverRow('w1', { on_date: '2026-10-31', version: 2 })]));
+    const { result } = await renderHook(() => useSaveDecideAnswer('user-1', 'hh-1'), { wrapper: wrapper(qc) });
+    result.current.save({ kind: 'readiness_waiver', waiver, at: '2026-10-31' }, { key: 'paidByOther' });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ on_date: '2026-10-31' });
+    expect(lastStep()).toMatchObject({ labelKey: 'paidByOther', labelParams: {} });
+  });
+
+  it('remove takes a label and soft-deletes under it', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [waiverRow('w1')]);
+    fake.respondWith(ok([waiverRow('w1', { deleted_at: '2026-10-30T00:00:00Z', version: 2 })]));
+    const { result } = await renderHook(() => useRemoveDecideAnswer('user-1', 'hh-1'), { wrapper: wrapper(qc) });
+    result.current.remove(waiverRow('w1'), { key: 'readinessAnswerCleared', name: 'Lunch' });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(qc.getQueryData<DecideAnswerRow[]>(KEY)).toEqual([]);
+    expect(lastStep()).toMatchObject({
+      labelKey: 'readinessAnswerCleared',
+      labelParams: { name: 'Lunch' },
+      ops: [{ entity: 'decide_answers', id: 'w1', patch: { deleted_at: null } }],
+    });
+  });
+
+  it('reports success and failure to the caller', async () => {
+    const { fake, qc } = setup();
+    fake.respondWith(ok(waiverRow('id-1')));
+    fake.respondWith({ data: null, error: { message: 'no', code: '42501' }, status: 403 });
+    const settled = jest.fn();
+    const { result } = await renderHook(() => useSaveDecideAnswer('user-1', 'hh-1'), { wrapper: wrapper(qc) });
+    result.current.save({ kind: 'readiness_waiver', waiver, at: '2026-10-30' }, { key: 'paidByOther' }, settled);
+    await waitFor(() => expect(settled).toHaveBeenCalledWith(true));
+    result.current.save({ kind: 'readiness_waiver', waiver: { kind: 'income_elsewhere' }, at: '2026-10-30' }, { key: 'incomeElsewhere' }, settled);
+    await waitFor(() => expect(settled).toHaveBeenCalledWith(false));
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
+    expect(recordFailedWrite.mock.calls[0]![0]).toMatchObject({ attempted: { answerId: 'id-3', labelKey: 'incomeElsewhere' } });
+  });
+
+  it('a refused labelled remove names the label in the failed-write record and reports false', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [waiverRow('w1')]);
+    fake.respondWith({ data: null, error: { message: 'no', code: '42501' }, status: 403 });
+    const settled = jest.fn();
+    const { result } = await renderHook(() => useRemoveDecideAnswer('user-1', 'hh-1'), { wrapper: wrapper(qc) });
+    result.current.remove(waiverRow('w1'), { key: 'readinessAnswerCleared' }, settled);
+    await waitFor(() => expect(settled).toHaveBeenCalledWith(false));
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
+    expect(recordFailedWrite.mock.calls[0]![0]).toMatchObject({ attempted: { labelKey: 'readinessAnswerCleared' } });
+  });
+});
+
 describe('offline', () => {
   it('paused answer writes replay in order after reconnect', async () => {
     const first = setup();
