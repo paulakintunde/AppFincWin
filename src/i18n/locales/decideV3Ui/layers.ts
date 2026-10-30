@@ -57,6 +57,7 @@ export const layers = {
   salesTax: 'Sales tax or levy (%)',
   taxHint: 'about {{amount}}',
   prefill: 'You pay {{amount}} a month for {{name}} now. Use it?',
+  prefillYear: 'You pay {{amount}} a year for {{name}} now. Use it?',
   useIt: 'Use it',
   valueEyebrow: 'What it’s worth to you',
   earns: 'It earns or saves me (a month), optional',

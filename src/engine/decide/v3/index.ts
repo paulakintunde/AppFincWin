@@ -27,7 +27,7 @@ export type { QuestionSpec } from './judge/presetQuestions';
 export { buildSchedule } from './plan/schedule';
 export type { ScheduleInput, ScheduleOutcome } from './plan/schedule';
 export { monthlyEquivalentOf } from './plan/cadence';
-export { planCard } from './plan/planCard';
+export { planCard, salesTaxOf } from './plan/planCard';
 export type { PlanCard, PlanCardInput } from './plan/planCard';
 export { checkQuoted } from './plan/quoted';
 export type { QuotedCheck, QuotedInput } from './plan/quoted';
