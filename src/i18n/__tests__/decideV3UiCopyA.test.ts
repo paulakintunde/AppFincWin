@@ -60,14 +60,14 @@ describe('decide.v3.ui part A copy', () => {
 
   it('D-26: each month card row carries a detail line', () => {
     const h = ui.home as Record<string, string>;
-    expect(h.typicalDetail_one).toBe('From 1 month of records');
-    expect(h.typicalDetail_other).toBe('From {{count}} months of records');
+    expect(h.typicalDetail_one).toBe('From 1 month of records');
+    expect(h.typicalDetail_other).toBe('From {{count}} months of records');
     expect(h.typicalDetailNone).toBe('Shows once a month is fully recorded');
     expect(h.unspentDetail).toBe('Confirmed {{date}}');
-    expect(h.unspentDetailNone).toBe('Add the money you have now');
+    expect(h.unspentDetailNone).toBe('Starts from the money you have now');
     expect(h.emergencyDetail).toBe('Kept apart from what you spend');
-    expect(h.emergencyDetailUnlinked).toBe('Pick the account that holds it');
-    expect(h.emergencyDetailNone).toBe('Add a fund to keep apart');
+    expect(h.emergencyDetailUnlinked).toBe('No account picked to hold it yet');
+    expect(h.emergencyDetailNone).toBe('Money kept apart for emergencies');
     expect(h.figureTypicalA11y).toBe('Typical month, {{amount}}. {{detail}}. Opens how it was worked out.');
     expect(h.figureUnspentA11y).toBe('Unspent money, {{amount}}. {{detail}}. Opens unspent money.');
     expect(h.figureEmergencyA11y).toBe('Emergency fund, {{amount}}. {{detail}}. Opens the emergency fund.');

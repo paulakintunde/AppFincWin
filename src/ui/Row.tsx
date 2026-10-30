@@ -80,7 +80,7 @@ export function Row({ label, value, leading, chevron = false, dense = false, onP
   );
 }
 
-function ChevronGlyph({ color }: { color: string }) {
+export function ChevronGlyph({ color }: { color: string }) {
   return <View style={[styles.chevron, { borderColor: color }]} />;
 }
 
