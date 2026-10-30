@@ -75,6 +75,35 @@ function GoalRow({ goal, ticked, onToggle, otherName }: { goal: SavingsGoalRow; 
 
 function AccountUseForm({ account, balance, onClose }: AccountUseSheetProps) {
   const t = useT();
+  const [dirty, setDirty] = useState(false);
+  const title = t('decide.accountUse.sheetTitle', { account: account.name });
+  return (
+    <Sheet visible onDismiss={onClose} accessibilityLabel={title} dirty={dirty}>
+      <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
+      <SheetScroll contentContainerStyle={styles.column}>
+        <AccountUseFields account={account} balance={balance} onSaved={() => onClose()} onCancel={onClose} onDirtyChange={setDirty} />
+      </SheetScroll>
+    </Sheet>
+  );
+}
+
+export interface AccountUseFieldsProps {
+  account: AccountRow;
+  balance: number | null;
+  /** Called after a save; stepId is null when nothing changed. */
+  onSaved: (stepId: string | null) => void;
+  onCancel: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
+  /**
+   * 05.3-32 (D-07): inside the in-place question card. Everyday and Savings save at once, the first view has no
+   * Keep/Save row, the second views read Back / Save account use, and the caller shows the Undo toast.
+   */
+  inline?: boolean;
+}
+
+/** The body of the account-use sheet: four choices and the two second views. Shared by the sheet and the in-place question. */
+export function AccountUseFields({ account, balance, onSaved, onCancel, onDirtyChange, inline = false }: AccountUseFieldsProps) {
+  const t = useT();
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const userId = rc.userId ?? undefined;
@@ -114,6 +143,9 @@ function AccountUseForm({ account, balance, onClose }: AccountUseSheetProps) {
     { kind, target: targetKey(target), extra, ticked: [...ticked].sort() }
   );
 
+  React.useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
   const title = t('decide.accountUse.sheetTitle', { account: account.name });
   const nameOf = (id: string | null): string | null => (id === null ? null : (accounts?.find((a) => a.id === id)?.name ?? null));
 
@@ -125,22 +157,24 @@ function AccountUseForm({ account, balance, onClose }: AccountUseSheetProps) {
 
   const canSave = kind !== null && (kind !== 'dedicated' || target !== null) && (kind !== 'mixed' || extra === null || extra <= MAX_INPUT_MINOR);
 
-  const save = (): void => {
-    if (kind === null || !canSave) return;
+  /** `pick` saves that kind at once (the in-place question's Everyday and Savings rows); otherwise the form's choice. */
+  const save = (pick?: Kind): void => {
+    const chosenKind = pick ?? kind;
+    if (chosenKind === null || (pick === undefined && !canSave)) return;
     let use: AccountUse;
-    if (kind === 'everyday') use = { kind: 'everyday' };
-    else if (kind === 'untouched') use = { kind: 'untouched' };
-    else if (kind === 'mixed') use = { kind: 'mixed', extraSetAside: extra === null || extra === 0 ? null : minorUnits(extra) };
+    if (chosenKind === 'everyday') use = { kind: 'everyday' };
+    else if (chosenKind === 'untouched') use = { kind: 'untouched' };
+    else if (chosenKind === 'mixed') use = { kind: 'mixed', extraSetAside: extra === null || extra === 0 ? null : minorUnits(extra) };
     else use = { kind: 'dedicated', purpose: target === 'emergency' || target === null ? { kind: 'emergency' } : { kind: 'envelope', envelopeId: target.envelope } };
     const placements =
-      kind === 'mixed'
+      chosenKind === 'mixed'
         ? envelopes
             .filter((g) => ticked.includes(g.id) !== placedHere(g, account))
             .map((g) => ({ goal: g, accountId: ticked.includes(g.id) ? account.id : null }))
         : undefined;
     const result = saver.save({ account, use, placements });
-    if (result !== null) showToast({ kind: 'ordinary', text: { key: 'decide.accountUse.toastSaved' }, stepId: result.stepId });
-    onClose();
+    if (!inline && result !== null) showToast({ kind: 'ordinary', text: { key: 'decide.accountUse.toastSaved' }, stepId: result.stepId });
+    onSaved(result === null ? null : result.stepId);
   };
 
   const toggle = (id: string): void => setTicked((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
@@ -155,9 +189,7 @@ function AccountUseForm({ account, balance, onClose }: AccountUseSheetProps) {
   ];
 
   return (
-    <Sheet visible onDismiss={onClose} accessibilityLabel={title} dirty={dirty}>
-      <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
-      <SheetScroll contentContainerStyle={styles.column}>
+    <>
         {balance !== null ? <Text style={sub}>{noWrap(balance)}</Text> : null}
 
         {view === 'choose' ? (
@@ -173,6 +205,7 @@ function AccountUseForm({ account, balance, onClose }: AccountUseSheetProps) {
                     setKind(o.kind);
                     if (o.kind === 'mixed') setView('mix');
                     else if (o.kind === 'dedicated') setView('kept');
+                    else if (inline) save(o.kind);
                   }}
                 >
                   <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: kind === o.kind ? colors.inkSoft1 : colors.inkMuted }}>{o.desc}</Text>
@@ -180,10 +213,12 @@ function AccountUseForm({ account, balance, onClose }: AccountUseSheetProps) {
               ))}
             </View>
             {warnFollows ? <WarningCard tone="soft" title={t('decide.accountUse.warnFollows')} value="" body={[]} /> : null}
-            <View style={styles.actions}>
-              <Pill label={t('decide.accountUse.save')} variant="primary" disabled={!canSave} onPress={save} />
-              <Pill label={t('decide.accountUse.keep')} variant="secondary" onPress={onClose} />
-            </View>
+            {inline ? null : (
+              <View style={styles.actions}>
+                <Pill label={t('decide.accountUse.save')} variant="primary" disabled={!canSave} onPress={() => save()} />
+                <Pill label={t('decide.accountUse.keep')} variant="secondary" onPress={onCancel} />
+              </View>
+            )}
           </>
         ) : null}
 
@@ -205,8 +240,8 @@ function AccountUseForm({ account, balance, onClose }: AccountUseSheetProps) {
             <Text style={sub}>{t('decide.accountUse.extraHint')}</Text>
             {warnFollows ? <WarningCard tone="soft" title={t('decide.accountUse.warnFollows')} value="" body={[]} /> : null}
             <View style={styles.actions}>
-              <Pill label={t('decide.accountUse.save')} variant="primary" disabled={!canSave} onPress={save} />
-              <Pill label={t('decide.accountUse.back')} variant="secondary" onPress={() => setView('choose')} />
+              <Pill label={inline ? t('decide.v3.ui.ask.saveAccountUse') : t('decide.accountUse.save')} variant="primary" disabled={!canSave} onPress={() => save()} />
+              <Pill label={inline ? t('decide.v3.ui.ask.back') : t('decide.accountUse.back')} variant="secondary" onPress={() => setView('choose')} />
             </View>
           </>
         ) : null}
@@ -232,13 +267,12 @@ function AccountUseForm({ account, balance, onClose }: AccountUseSheetProps) {
               ))}
             </View>
             <View style={styles.actions}>
-              <Pill label={t('decide.accountUse.save')} variant="primary" disabled={!canSave} onPress={save} />
-              <Pill label={t('decide.accountUse.back')} variant="secondary" onPress={() => setView('choose')} />
+              <Pill label={inline ? t('decide.v3.ui.ask.saveAccountUse') : t('decide.accountUse.save')} variant="primary" disabled={!canSave} onPress={() => save()} />
+              <Pill label={inline ? t('decide.v3.ui.ask.back') : t('decide.accountUse.back')} variant="secondary" onPress={() => setView('choose')} />
             </View>
           </>
         ) : null}
-      </SheetScroll>
-    </Sheet>
+    </>
   );
 }
 
