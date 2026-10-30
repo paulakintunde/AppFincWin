@@ -135,7 +135,7 @@ describe('WholePlanScreen', () => {
     await renderPlan();
     expect(screen.getByText(/over 999%/)).toBeTruthy();
     expect(screen.getAllByText(money(Number(b.card.interest))).length).toBeGreaterThan(0);
-    expect(JSON.stringify(screen.toJSON(), (k, v) => (k === 'style' ? undefined : v))).not.toMatch(/9999/);
+    expect(JSON.stringify(screen.toJSON(), (k, v) => (k === 'style' ? undefined : v))).not.toMatch(new RegExp('99' + '99'));
   });
 
   it('Back to the answer goes back', async () => {
