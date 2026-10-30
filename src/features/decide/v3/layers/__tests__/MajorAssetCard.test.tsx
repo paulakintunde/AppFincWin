@@ -24,7 +24,7 @@ function mount(type: V3PresetItemType, onCheck: (c: CheckV2) => void) {
 describe('MajorAssetCard', () => {
   it('vehicle: all six fields, each stored under L6.* with extras untouched', async () => {
     let latest = withItemType(emptyCheck(), { kind: 'preset', value: 'vehicle' });
-    const extrasBefore = toStoredV2(latest).extras;
+    const extrasBefore = (toStoredV2(latest) as { extras: unknown }).extras;
     await mount('vehicle', (c) => { latest = c; });
     await fireEvent.press(screen.getByText('Selling something'));
     await fireEvent.changeText(screen.getByLabelText('Legal and closing costs'), '1200');
@@ -35,7 +35,7 @@ describe('MajorAssetCard', () => {
     expect(latest.layerAnswers).toEqual({
       'L6.depositFrom': 'selling', 'L6.closing': 120000, 'L6.moving': 30000, 'L6.keepYears': 3, 'L6.newBills': 8000, 'L6.stopBills': 2000,
     });
-    expect(toStoredV2(latest).extras).toEqual(extrasBefore);
+    expect((toStoredV2(latest) as { extras: unknown }).extras).toEqual(extrasBefore);
     expect(screen.queryByText('Asked under item costs above.')).toBeNull();
     expect(screen.getByText('Kept with this check for your records.')).toBeTruthy();
   });
