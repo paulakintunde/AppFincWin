@@ -11,7 +11,7 @@ import { evaluate } from '../evaluate';
 import { classifyLine, seriesIndex, seriesOccurrences } from '../month/series';
 import { dueKey, matchWindowDays, settle, toPaidLine, type Due } from '../month/settle';
 import { readinessOf } from '../readiness';
-import type { Envelope, MonthModel, Readiness, ReadinessCode, ReadinessItem, V3Inputs, V3Line } from '../types';
+import type { Envelope, MonthModel, Readiness, ReadinessCode, ReadinessItem, ReadinessWaiver, V3Inputs, V3Line } from '../types';
 import { loadPersons, toV3Inputs } from './golden/adapter';
 import { loadAllVariableCases } from './golden/variableIncomeLoader';
 import { checkOnce, inputsOf, monthOf, v3Line, v3Series } from './helpers/fixtures';
@@ -266,5 +266,196 @@ describe('05.3-54 D-24 named readiness items', () => {
   it('D-57: the rough shortcut has no items and nothing waived', () => {
     const rough = { income: mu(300000), expenses: mu(200000), saving: mu(0), debt: mu(0), invest: mu(0), asOf: '2026-10-03' };
     expect(readinessFor(inputsOf({ rough }))).toEqual({ ready: true, missing: [], items: [], waived: [] });
+  });
+});
+
+// ---- Task 2: waivers, skips and the same-series lineId (B1) ----
+type Months = V3Inputs['months'];
+const editLines = (inputs: V3Inputs, month: string, edit: (lines: Months[number]['lines']) => Months[number]['lines']): V3Inputs => ({
+  ...inputs,
+  months: inputs.months.map((m) => (m.month === month ? { ...m, lines: edit(m.lines) } : m)),
+});
+const EV = EVIDENCE_ITEMS as readonly [ReadinessItem, ReadinessItem, ReadinessItem, ReadinessItem];
+const [, NETFLIX_SEP, LUNCH_SEP, SPEND_OCT] = EV;
+const waivedBy = (r: Readiness): readonly (readonly [string | null, string, string])[] =>
+  (r.waived ?? []).map((w) => [w.item.seriesId, w.item.kind, w.by] as const);
+
+describe('05.3-54 D-24 waivers, skips and B1', () => {
+  it('B1: a pending one-off with the same amount never gives a lineId; the same-series line does', () => {
+    const dentist = v3Line({ id: 'dentist', date: '2026-09-03', amount: 1199, status: 'pending', name: 'Dentist' });
+    const withBoth = editLines(evidence(), '2026-09', (lines) => [dentist, ...lines]);
+    expect(readinessFor(withBoth).items?.[1]).toEqual(NETFLIX_SEP);
+    const onlyDentist = editLines(withBoth, '2026-09', (lines) => lines.filter((l) => l.id !== 'netflix-sep'));
+    expect(readinessFor(onlyDentist).items?.[1]).toEqual({ ...NETFLIX_SEP, lineId: null, name: 'Netflix' });
+  });
+
+  it('pay marked paid, Netflix skipped, Lunch paid by someone else and nothing to add in October: ready, with Lunch and October spending waived', () => {
+    const paidPay = editLines(evidence(), '2026-09', (lines) => lines.map((l) => (l.id === 'pay-sep' ? { ...l, status: 'paid' as const } : l)));
+    const r = readinessFor({
+      ...paidPay,
+      skipped: [{ seriesId: 'netflix', date: '2026-09-03' }],
+      waivers: [
+        { kind: 'paid_by_other', seriesId: 'lunch', date: '2026-09-21' },
+        { kind: 'nothing_to_add', month: '2026-10', at: '2026-10-30' },
+      ],
+    });
+    expect(r).toEqual({
+      ready: true,
+      missing: [],
+      items: [],
+      waived: [
+        { item: LUNCH_SEP, by: 'paid_by_other', waiver: { kind: 'paid_by_other', seriesId: 'lunch', date: '2026-09-21' } },
+        { item: SPEND_OCT, by: 'nothing_to_add', waiver: { kind: 'nothing_to_add', month: '2026-10', at: '2026-10-30' } },
+      ],
+    });
+  });
+
+  it('a skip settles its due silently; a skip of an unknown series is ignored; a skipped pay settles the pay item', () => {
+    const r = readinessFor(evidence({ skipped: [{ seriesId: 'netflix', date: '2026-09-03' }, { seriesId: 'ghost', date: '2026-09-03' }, { seriesId: 'pay', date: '2026-09-03' }] }));
+    expect(r.items).toEqual([LUNCH_SEP, SPEND_OCT]);
+    expect(r.waived).toEqual([]);
+  });
+
+  it('month_complete for September settles all three September items; income_elsewhere only the pay; no_pay on the wrong date nothing', () => {
+    expect(waivedBy(readinessFor(evidence({ waivers: [{ kind: 'month_complete', month: '2026-09', at: '2026-10-01' }] })))).toEqual([
+      ['pay', 'pay', 'month_complete'],
+      ['netflix', 'bill', 'month_complete'],
+      ['lunch', 'bill', 'month_complete'],
+    ]);
+    const elsewhere = readinessFor(evidence({ waivers: [{ kind: 'income_elsewhere' }] }));
+    expect(waivedBy(elsewhere)).toEqual([['pay', 'pay', 'income_elsewhere']]);
+    expect(elsewhere.items).toEqual([NETFLIX_SEP, LUNCH_SEP, SPEND_OCT]);
+    const wrong = readinessFor(evidence({ waivers: [{ kind: 'no_pay', seriesId: 'pay', date: '2026-09-04' }] }));
+    expect(wrong.items).toEqual(EVIDENCE_ITEMS);
+    expect(wrong.waived).toEqual([]);
+    const right = readinessFor(evidence({ waivers: [{ kind: 'no_pay', seriesId: 'pay', date: '2026-09-03' }, { kind: 'didnt_happen', seriesId: 'netflix', date: '2026-09-03' }] }));
+    expect(waivedBy(right)).toEqual([
+      ['pay', 'pay', 'no_pay'],
+      ['netflix', 'bill', 'didnt_happen'],
+    ]);
+  });
+
+  it('late start from 2026-09-14 is one dated item, settled by start_from 2026-10', () => {
+    const e = evidence();
+    const late = { ...e, months: e.months.map((m) => (m.month === '2026-09' ? monthOf('2026-09', [v3Line({ id: 'l', date: '2026-09-14', amount: 900 })], { full: false }) : m)) };
+    const before = readinessFor(late);
+    expect(before.items?.[0]).toEqual(item({ kind: 'late_start', code: 'past_month_missing', month: '2026-09', date: '2026-09-14' }));
+    const after = readinessFor({ ...late, waivers: [{ kind: 'start_from', month: '2026-10' }] });
+    expect(after.missing).toEqual(['activity_not_current']);
+    expect(waivedBy(after)).toEqual([[null, 'late_start', 'start_from']]);
+    // start_from the past month itself settles nothing there
+    expect(readinessFor({ ...late, waivers: [{ kind: 'start_from', month: '2026-09' }] }).waived).toEqual([]);
+  });
+
+  it('a waiver dated in the future settles nothing; always_other settles that series in both months', () => {
+    const future = readinessFor(evidence({ waivers: [{ kind: 'nothing_to_add', month: '2026-10', at: '2026-11-02' }, { kind: 'month_complete', month: '2026-09', at: '2026-10-31' }] }));
+    expect(future.items).toEqual(EVIDENCE_ITEMS);
+    expect(future.waived).toEqual([]);
+    const noOct = editLines(evidence(), '2026-10', (lines) => lines.filter((l) => l.id !== 'netflix-oct'));
+    const always = readinessFor({ ...noOct, waivers: [{ kind: 'always_other', seriesId: 'netflix' }] });
+    expect(waivedBy(always)).toEqual([
+      ['netflix', 'bill', 'always_other'],
+      ['netflix', 'bill', 'always_other'],
+    ]);
+    expect(always.waived?.map((w) => w.item.month)).toEqual(['2026-09', '2026-10']);
+  });
+
+  it('this month: month_complete settles bills dated on or before its date and, when recent, the spending clock; old answers do not', () => {
+    const noOct = editLines(evidence(), '2026-10', (lines) => lines.filter((l) => l.id !== 'netflix-oct'));
+    const r = readinessFor({ ...noOct, waivers: [{ kind: 'month_complete', month: '2026-10', at: '2026-10-25' }] });
+    expect(waivedBy(r)).toEqual([
+      ['netflix', 'bill', 'month_complete'],
+      [null, 'spending', 'month_complete'],
+    ]);
+    const early = readinessFor({ ...noOct, waivers: [{ kind: 'month_complete', month: '2026-10', at: '2026-10-02' }] });
+    expect(early.waived).toEqual([]);
+    const oldAdd = readinessFor(evidence({ waivers: [{ kind: 'nothing_to_add', month: '2026-10', at: '2026-10-15' }] }));
+    expect(oldAdd.waived).toEqual([]);
+  });
+
+  it('nothing_to_add settles a past month spending item whatever its date', () => {
+    const noEveryday = editLines(evidence(), '2026-09', (lines) => lines.filter((l) => l.status === 'pending'));
+    const r = readinessFor({ ...noEveryday, waivers: [{ kind: 'nothing_to_add', month: '2026-09', at: '2026-10-01' }] });
+    expect(waivedBy(r)).toEqual([[null, 'spending', 'nothing_to_add']]);
+    expect(r.waived?.[0]?.item.month).toBe('2026-09');
+  });
+
+  it('precedence picks one waiver whatever the input order: kind first, then the latest date, then a fixed order', () => {
+    const lunch = { kind: 'paid_by_other', seriesId: 'lunch', date: '2026-09-21' } as const;
+    const early = { kind: 'month_complete', month: '2026-09', at: '2026-10-01' } as const;
+    const late = { kind: 'month_complete', month: '2026-09', at: '2026-10-05' } as const;
+    for (const waivers of [[lunch, early, late], [late, early, lunch]]) {
+      const r = readinessFor(evidence({ waivers }));
+      expect(r.waived?.find((w) => w.item.seriesId === 'lunch')).toEqual({ item: LUNCH_SEP, by: 'month_complete', waiver: late });
+    }
+    const e = evidence();
+    const unfull = { ...e, months: e.months.map((m) => (m.month === '2026-09' ? { ...m, full: false } : m)) };
+    const s10 = { kind: 'start_from', month: '2026-10' } as const;
+    const s11 = { kind: 'start_from', month: '2026-11' } as const;
+    for (const waivers of [[s10, s11], [s11, s10]]) {
+      expect(readinessFor({ ...unfull, waivers }).waived?.[0]?.waiver).toEqual(s10);
+    }
+  });
+
+  it('D-54: no waiver ever settles an envelopes item', () => {
+    const all = [
+      { kind: 'start_from', month: '2026-12' },
+      { kind: 'month_complete', month: '2026-10', at: '2026-10-30' },
+      { kind: 'nothing_to_add', month: '2026-10', at: '2026-10-30' },
+      { kind: 'income_elsewhere' },
+    ] as const;
+    const r = readinessFor(evidence({ envelopes: [envelope('b', null, 'Trip'), envelope('a', null)], waivers: all }));
+    expect(r.items).toEqual([
+      item({ kind: 'envelopes', code: 'envelopes_unconfirmed', month: '2026-10', envelopeId: 'a' }),
+      item({ kind: 'envelopes', code: 'envelopes_unconfirmed', month: '2026-10', envelopeId: 'b', name: 'Trip' }),
+    ]);
+    expect(r.missing).toEqual(['envelopes_unconfirmed']);
+    expect(r.waived).toHaveLength(4);
+  });
+});
+
+describe('05.3-54 waiver and skip properties', () => {
+  const variants: readonly V3Inputs[] = [
+    evidence(),
+    editLines(evidence(), '2026-10', (lines) => lines.filter((l) => l.id !== 'netflix-oct')),
+    editLines(evidence(), '2026-09', (lines) => lines.filter((l) => l.status === 'pending')),
+    { ...evidence(), months: evidence().months.map((m) => (m.month === '2026-09' ? { ...m, full: false } : m)) },
+    editLines(
+      editLines(evidence(), '2026-09', (lines) => lines.map((l) => ({ ...l, status: 'paid' as const }))),
+      '2026-10',
+      (lines) => [...lines, v3Line({ id: 'recent', date: '2026-10-28', amount: 900000 })],
+    ),
+  ];
+  const ids = fc.constantFrom('pay', 'netflix', 'lunch', 'ghost');
+  const dates = fc.constantFrom('2026-09-03', '2026-09-21', '2026-10-03', '2026-10-21', '2026-09-04');
+  const months = fc.constantFrom('2026-08', '2026-09', '2026-10', '2026-11');
+  const ats = fc.constantFrom('2026-10-01', '2026-10-15', '2026-10-25', '2026-10-30', '2026-11-03');
+  const waiver: fc.Arbitrary<ReadinessWaiver> = fc.oneof(
+    fc.record({ kind: fc.constantFrom('paid_by_other' as const, 'didnt_happen' as const, 'no_pay' as const), seriesId: ids, date: dates }),
+    fc.record({ kind: fc.constant('always_other' as const), seriesId: ids }),
+    fc.constant({ kind: 'income_elsewhere' as const }),
+    fc.record({ kind: fc.constantFrom('nothing_to_add' as const, 'month_complete' as const), month: months, at: ats }),
+    fc.record({ kind: fc.constant('start_from' as const), month: months }),
+  );
+  const skip = fc.record({ seriesId: ids, date: dates });
+  const keyOf = (i: ReadinessItem): string => JSON.stringify(i);
+
+  it('adding a waiver never adds an item; items plus waived never exceed the items with no waivers; nothing turns ready into not ready', () => {
+    fc.assert(
+      fc.property(fc.nat(variants.length - 1), fc.array(waiver, { maxLength: 4 }), waiver, fc.array(skip, { maxLength: 3 }), (pick, ws, extra, skips) => {
+        const base = variants[pick] as V3Inputs;
+        const month = evaluate(base, check).month;
+        const plain = readinessOf(base, month);
+        const withSkips = readinessOf({ ...base, skipped: skips }, month);
+        const some = readinessOf({ ...base, skipped: skips, waivers: ws }, month);
+        const more = readinessOf({ ...base, skipped: skips, waivers: [...ws, extra] }, month);
+        const someKeys = new Set((some.items ?? []).map(keyOf));
+        for (const i of more.items ?? []) expect(someKeys.has(keyOf(i))).toBe(true);
+        expect((some.items ?? []).length + (some.waived ?? []).length).toBeLessThanOrEqual((withSkips.items ?? []).length);
+        expect((withSkips.items ?? []).length).toBeLessThanOrEqual((plain.items ?? []).length);
+        if (plain.ready) expect(more.ready).toBe(true);
+      }),
+      { numRuns: 300, seed: 5404 },
+    );
   });
 });
