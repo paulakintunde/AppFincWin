@@ -24,6 +24,8 @@ jest.mock('@/features/decide/v3/nav/V3NotFound', () => {
   const { Text: T } = jest.requireActual('react-native');
   return { V3NotFound: () => <T>{'not-found'}</T> };
 });
+// 05.3-40: the layer cards pull in data hooks that read the env config; the route test only checks params and the gate.
+jest.mock('@/features/decide/v3/layers/LayerStack', () => ({ LayerStack: () => null }));
 jest.mock('@/features/decide/v3/check/CheckScreen', () => {
   const { Text: T } = jest.requireActual('react-native');
   return { CheckScreen: ({ id, focus }: { id: string; focus: string | null }) => <T>{`check:${id}:${String(focus)}`}</T> };
