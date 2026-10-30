@@ -40,7 +40,7 @@ export interface V3SettingsSource {
 }
 
 export interface V3AnswerLite {
-  kind: 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover';
+  kind: 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover' | 'readiness_waiver'; // 05.3-54: readiness_waiver rows pass through; buildV3Inputs reads them in 05.3-55
   key: string;
   amount: number | null;
   bool_value: boolean | null;

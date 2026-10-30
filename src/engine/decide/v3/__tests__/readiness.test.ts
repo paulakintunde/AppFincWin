@@ -40,7 +40,7 @@ const samLate = (): V3Inputs =>
 describe('D-52 readiness', () => {
   it('D-52 ready: Sam on 2026-10-03', () => {
     expect(missingOf(sam())).toEqual([]);
-    expect(evaluate(sam(), check).result.readiness).toEqual({ ready: true, missing: [] });
+    expect(evaluate(sam(), check).result.readiness).toEqual({ ready: true, missing: [], items: [], waived: [] });
   });
 
   it('D-52 ready: Sam on 2026-10-20 with a recent everyday line', () => {

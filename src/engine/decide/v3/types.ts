@@ -29,10 +29,10 @@ export interface CustomOptions { readonly itemTypes: readonly CustomItemType[]; 
 export type SeriesStatus = 'live' | 'ended' | 'dismissed'; // D-21: ended keeps the past; dismissed = "It was never regular" (D-25)
 export type TypicalChoice = 'monthly' | 'excluded' | null; // D-03, null = not yet chosen
 export type SeriesRole = 'pay' | 'other_income' | 'bill' | 'debt_payment' | 'saving' | 'investing';
-export interface V3Series { readonly id: string; readonly role: SeriesRole; readonly cadence: Cadence; readonly anchorDate: LocalDate; readonly endDate: LocalDate | null; readonly amount: MinorUnits; readonly status: SeriesStatus; readonly confirmed: boolean; readonly payGroup: string | null; readonly countsAs: CountsAs; readonly incomeKind: IncomeKind | null; readonly typicalChoice: TypicalChoice; readonly categoryId: string | null; readonly isHousing: boolean; readonly savingMode: 'fixed' | 'flexible' | null }
+export interface V3Series { readonly id: string; readonly role: SeriesRole; readonly cadence: Cadence; readonly anchorDate: LocalDate; readonly endDate: LocalDate | null; readonly amount: MinorUnits; readonly status: SeriesStatus; readonly confirmed: boolean; readonly payGroup: string | null; readonly countsAs: CountsAs; readonly incomeKind: IncomeKind | null; readonly typicalChoice: TypicalChoice; readonly categoryId: string | null; readonly isHousing: boolean; readonly savingMode: 'fixed' | 'flexible' | null; readonly name?: string | null /* 05.3-54 D-24: display name for readiness items only */ }
 export interface RecurringCandidate { readonly key: string; readonly name: string; readonly direction: 'in' | 'out'; readonly cadence: Cadence; readonly anchorDate: LocalDate; readonly amount: MinorUnits; readonly rowIds: readonly string[]; readonly payGroupKey: string | null }
 export type LineRole = 'income' | 'spending' | 'refund' | 'debt_payment' | 'saved_invested' | 'other_in' | 'other_out' | 'own_transfer' | 'envelope_deposit' | 'envelope_withdrawal' | 'emergency_move'; // envelope_* = money into / out of an envelope or savings goal (D-22 stand-in until Grow)
-export interface V3Line { readonly source?: 'manual' | 'statement'; /* D-51: absent = manual; 'statement' = imported or synced statement line */ readonly id: string; readonly date: LocalDate; readonly amount: MinorUnits; readonly role: LineRole; readonly status: 'paid' | 'pending'; readonly seriesId: string | null; readonly categoryId: string | null; readonly coversMonths: number | null; readonly expected: boolean; readonly incomeKind: IncomeKind | null; readonly countsAs: CountsAs; readonly refundOf?: string | null /* 05.2 D-06..D-08: id of the purchase line this refund is linked to; absent/null = not linked */ }
+export interface V3Line { readonly source?: 'manual' | 'statement'; /* D-51: absent = manual; 'statement' = imported or synced statement line */ readonly id: string; readonly date: LocalDate; readonly amount: MinorUnits; readonly role: LineRole; readonly status: 'paid' | 'pending'; readonly seriesId: string | null; readonly categoryId: string | null; readonly coversMonths: number | null; readonly expected: boolean; readonly incomeKind: IncomeKind | null; readonly countsAs: CountsAs; readonly refundOf?: string | null /* 05.2 D-06..D-08: id of the purchase line this refund is linked to; absent/null = not linked */; readonly name?: string | null /* 05.3-54 D-24: display name for readiness items only */ }
 export type MonthMark = 'normal' | 'out' | 'half' | null; // null = not reviewed by the user
 export interface V3Month { readonly month: YearMonth; readonly full: boolean; readonly mark: MonthMark; readonly lines: readonly V3Line[] }
 export type IncomeType = 'salary' | 'commission' | 'freelance' | 'none' | 'mix';
@@ -49,7 +49,7 @@ export interface PayArrival { readonly seriesId: string; readonly date: LocalDat
 export interface RoughFigures { readonly income: MinorUnits; readonly expenses: MinorUnits; readonly saving: MinorUnits; readonly debt: MinorUnits; readonly invest: MinorUnits; readonly asOf: LocalDate }
 export interface UnspentAnchor { readonly amount: MinorUnits; readonly at: LocalDate }
 export interface EmergencyFund { readonly amount: MinorUnits; readonly accountId?: string | null }
-export interface Envelope { readonly id: string; readonly kind: 'pot' | 'wait'; readonly target: MinorUnits | null; readonly monthlyAmount: MinorUnits | null; readonly readyBy: LocalDate | null; readonly saved: MinorUnits; readonly purposeId: string | null; readonly accountId?: string | null; readonly bucket?: boolean /* 05.2 D-23: a saving bucket carved out of regular saving */ } // structurally a PotInput plus purposeId
+export interface Envelope { readonly id: string; readonly kind: 'pot' | 'wait'; readonly target: MinorUnits | null; readonly monthlyAmount: MinorUnits | null; readonly readyBy: LocalDate | null; readonly saved: MinorUnits; readonly purposeId: string | null; readonly accountId?: string | null; readonly bucket?: boolean /* 05.2 D-23: a saving bucket carved out of regular saving */; readonly name?: string | null /* 05.3-54 D-24: display name for readiness items only */ } // structurally a PotInput plus purposeId
 export interface V3Debt { readonly id: string; readonly kind: 'loan' | 'card' | 'other'; readonly balance: MinorUnits; readonly minimum: MinorUnits; readonly apr: Percent | null; readonly secured: boolean; readonly isHousing: boolean }
 export type LineSpec =
   | { readonly kind: 'housing_share'; readonly pct: Percent }
@@ -62,7 +62,7 @@ export type LineSpec =
 export interface LimitLine { readonly id: string; readonly on: boolean; readonly source: 'builtin' | 'own' | 'legacy'; readonly spec: LineSpec }
 export interface Limits { readonly lines: readonly LimitLine[] } // D-10..D-13: <= 3 builtin + <= 5 own
 export interface HomeThresholds { readonly bandEdges: readonly MinorUnits[]; readonly unspentDrift: MinorUnits; readonly quotedTolerance: MinorUnits; readonly source: 'table' | 'fallback' | 'missing' } // D-06, D-07, D-26; bandEdges [] when source 'missing'
-export interface V3Inputs { readonly asOf: LocalDate; readonly currency: CurrencyCode; readonly region: string | null; readonly months: readonly V3Month[]; readonly series: readonly V3Series[]; readonly dismissedKeys: readonly string[]; readonly profile: IncomeProfile | null; readonly rough: RoughFigures | null; readonly balance: MinorUnits; readonly unspent: UnspentAnchor | null; readonly emergency: EmergencyFund | null; readonly envelopes: readonly Envelope[]; readonly debts: readonly V3Debt[]; readonly everydayOverride: MinorUnits | null; readonly limits: Limits; readonly custom: CustomOptions; readonly thresholds: HomeThresholds; readonly unsavedWrites: number; readonly provisionalRates: boolean; readonly expectedIncome?: readonly ExpectedMonthIncome[]; readonly heldBridges?: readonly HeldBridge[]; readonly accounts?: readonly V3Account[]; readonly unexplainedAnswer?: UnexplainedAnswer | null; readonly payArrivals?: readonly PayArrival[]; /* 05.2 two-date refunds: the months as logged, before refund re-dating. Set only by the evaluate pre-pass (withRedatedRefunds) when a refund moved; callers leave it absent. rollForward counts cash after the anchor from these. */ readonly loggedMonths?: readonly V3Month[] }
+export interface V3Inputs { readonly asOf: LocalDate; readonly currency: CurrencyCode; readonly region: string | null; readonly months: readonly V3Month[]; readonly series: readonly V3Series[]; readonly dismissedKeys: readonly string[]; readonly profile: IncomeProfile | null; readonly rough: RoughFigures | null; readonly balance: MinorUnits; readonly unspent: UnspentAnchor | null; readonly emergency: EmergencyFund | null; readonly envelopes: readonly Envelope[]; readonly debts: readonly V3Debt[]; readonly everydayOverride: MinorUnits | null; readonly limits: Limits; readonly custom: CustomOptions; readonly thresholds: HomeThresholds; readonly unsavedWrites: number; readonly provisionalRates: boolean; readonly expectedIncome?: readonly ExpectedMonthIncome[]; readonly heldBridges?: readonly HeldBridge[]; readonly accounts?: readonly V3Account[]; readonly unexplainedAnswer?: UnexplainedAnswer | null; readonly payArrivals?: readonly PayArrival[]; /* 05.2 two-date refunds: the months as logged, before refund re-dating. Set only by the evaluate pre-pass (withRedatedRefunds) when a refund moved; callers leave it absent. rollForward counts cash after the anchor from these. */ readonly loggedMonths?: readonly V3Month[]; /* 05.3-54 D-24, D-28: the user's readiness answers and the occurrences marked skipped; absent = none */ readonly waivers?: readonly ReadinessWaiver[]; readonly skipped?: readonly SkippedOccurrence[] }
 export type FirstPayment = { readonly kind: 'today' } | { readonly kind: 'one_period' } | { readonly kind: 'deferred'; readonly firstDate: LocalDate; readonly interestDuringPause: boolean | null }; // D-04, D-24
 export interface PlanFees { readonly setup: MinorUnits; readonly perPeriod: MinorUnits; readonly end: MinorUnits }
 export type PayV2 = { readonly mode: 'once' } | { readonly mode: 'plan'; readonly cadence: Cadence; readonly count: number | null; readonly termMonths: number | null; readonly apr: Percent | null; readonly fees: PlanFees; readonly deposit: MinorUnits; readonly tradeIn: MinorUnits; readonly quotedPayment: MinorUnits | null; readonly firstPayment: FirstPayment | null; readonly deferredInterestTerm: boolean };
@@ -118,5 +118,32 @@ export type FundingSource = 'month' | 'unspent_earlier' | 'envelope' | 'emergenc
 export interface FundingSegment { readonly source: FundingSource; readonly amount: MinorUnits }
 export type ReadyBy = { readonly kind: 'date'; readonly date: LocalDate } | { readonly kind: 'month'; readonly month: YearMonth };
 export type ReadinessCode = 'past_month_missing' | 'activity_not_current' | 'envelopes_unconfirmed'; // D-52
-export interface Readiness { readonly ready: boolean; readonly missing: readonly ReadinessCode[] }
+/** 05.3-54 D-24: one named readiness gap. Amounts are integer minor units. */
+export type ReadinessItemKind = 'bill' | 'pay' | 'spending' | 'late_start' | 'envelopes';
+export interface ReadinessItem {
+  readonly kind: ReadinessItemKind;
+  readonly code: ReadinessCode;
+  readonly month: YearMonth; // envelopes: the asOf month
+  readonly seriesId: string | null; // bill, pay
+  readonly envelopeId: string | null; // envelopes
+  readonly lineId: string | null; // a pending line of the SAME series for this occurrence, else null (B1)
+  readonly name: string | null; // pending line name, else series or envelope name, else null
+  readonly amount: MinorUnits | null; // pending line amount, else series amount; null for spending, late_start, envelopes
+  readonly date: LocalDate | null; // bill/pay: due date; spending: newest paid everyday (null if none); late_start: earliest line date in that month (null if none); envelopes: null
+}
+/** 05.3-54 D-24, D-28: the user's answer to a readiness gap. Stored owner-private in decide_answers. */
+export type ReadinessWaiver =
+  | { readonly kind: 'paid_by_other'; readonly seriesId: string; readonly date: LocalDate }
+  | { readonly kind: 'didnt_happen'; readonly seriesId: string; readonly date: LocalDate } // only when no same-series pending line exists to skip
+  | { readonly kind: 'no_pay'; readonly seriesId: string; readonly date: LocalDate } // same rule
+  | { readonly kind: 'always_other'; readonly seriesId: string }
+  | { readonly kind: 'income_elsewhere' }
+  | { readonly kind: 'nothing_to_add'; readonly month: YearMonth; readonly at: LocalDate }
+  | { readonly kind: 'month_complete'; readonly month: YearMonth; readonly at: LocalDate }
+  | { readonly kind: 'start_from'; readonly month: YearMonth };
+export type ReadinessWaiverKind = ReadinessWaiver['kind'];
+export interface WaivedItem { readonly item: ReadinessItem; readonly by: ReadinessWaiverKind; readonly waiver: ReadinessWaiver }
+export interface SkippedOccurrence { readonly seriesId: string; readonly date: LocalDate }
+/** D-52; 05.3-54 D-24: items and waived are always set by readinessOf; optional so UI fixtures stay valid. */
+export interface Readiness { readonly ready: boolean; readonly missing: readonly ReadinessCode[]; readonly items?: readonly ReadinessItem[]; readonly waived?: readonly WaivedItem[] }
 export interface Result { readonly code: Code; readonly variant: Variant | null; readonly legacyState: LegacyState; readonly split: readonly FundingSegment[]; readonly facts: readonly Fact[]; readonly notices: readonly Notice[]; readonly missing: readonly MissingCode[]; readonly reasons: readonly ReasonCode[]; readonly readyBy: ReadyBy | null; readonly band: Band | null; readonly layers: readonly Layer[]; readonly confidence: Confidence; readonly parts: { readonly oneOff: Code; readonly monthly: Code | null }; readonly readiness?: Readiness /* D-52: a not-ready result is never a verdict */ }
