@@ -4,7 +4,8 @@
 import { NotFoundError, VersionConflictError, toDbError } from './errors';
 import { assertAllowedKeys, type DbClient } from './rows';
 
-export type DecideAnswerKind = 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover';
+// 05.3-54 (D-28): 'readiness_waiver' is type-only here; 05.3-61 widens the database check.
+export type DecideAnswerKind = 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover' | 'readiness_waiver';
 
 export interface DecideAnswerRow {
   id: string;
