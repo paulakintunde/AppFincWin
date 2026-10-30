@@ -1,0 +1,25 @@
+// 05.3 decide.v3.ui.band: UI-SPEC Check a purchase (price bands)
+export const band = {
+  title: 'Band {{n}} · {{range}}',
+  titleOnly: 'Band {{n}}',
+  asksAbout: 'Asks about: {{layers}}',
+  badge: 'B{{n}}',
+  badgeA11y: 'Band {{n}}',
+  below: 'under {{high}}',
+  between: '{{low}}–{{high}}',
+  above: '{{low}} and over',
+  thousands: '{{amount}}k',
+  millions: '{{amount}}M',
+  layer: {
+    L0: 'basics',
+    L1p: 'purpose',
+    L1e: 'purpose',
+    L2: 'value',
+    L3: 'payment plan',
+    L4: 'item costs',
+    L5: 'whole plan',
+    L6: 'major asset',
+    L7: 'very large purchase',
+  },
+  layerJoin: ' · ',
+} as const;
