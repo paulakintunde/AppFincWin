@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 
 Phase: 05.3 (decide-screens-v3) — EXECUTING
 Phase: 05.1 (decide-engine-v3) — COMPLETE 2026-10-27
-Plan: 46 of 50 (waves 1-5 of 9 done: 01-42 and 47-49 merged; full suite and lint green)
+Plan: 47 of 50 (waves 1-6 of 9 done: 01-43 and 47-49 merged; v3 routes registered behind per-account access; full suite and lint green)
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
