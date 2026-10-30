@@ -8,6 +8,8 @@ import { needsFirstAccount } from '../firstAccountGate';
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
 let mockRedirectHref: unknown = null;
+// 05.3-43: the tabs layout reads Decide access, whose profile hook reaches the env config.
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false, testAccount: false }) }));
 jest.mock('@/data/sync/useSyncStatus', () => ({
   useSyncStatus: () => ({ isOnline: true, queued: 0, failed: 0, conflicts: 0, lastSyncedAt: null }),
 }));

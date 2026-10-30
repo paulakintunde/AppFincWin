@@ -7,6 +7,8 @@ const mockPush = jest.fn();
 const mockReplace = jest.fn();
 let mockParams: Record<string, string | undefined> = {};
 
+// 05.3-43: the tabs layout reads Decide access, whose profile hook reaches the env config.
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false, testAccount: false }) }));
 jest.mock('expo-router', () => {
   const R = require('react');
   function Stack({ children }: { children?: React.ReactNode }) {

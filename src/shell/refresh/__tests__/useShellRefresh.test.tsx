@@ -181,4 +181,6 @@ describe('useShellRefresh', () => {
     });
     expect(getToast()?.text?.key).toBe('refresh.nothingNew');
   });
-});
+});// 05.3-43: the tabs layout reads Decide access, whose profile hook reaches the env config.
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false, testAccount: false }) }));
+
