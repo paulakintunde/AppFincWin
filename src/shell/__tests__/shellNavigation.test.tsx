@@ -34,6 +34,8 @@ jest.mock('@/features/record/history/UndoToastHost', () => ({
 }));
 // Leaf stub: the entry host pulls in the whole transaction sheet (and the Supabase client).
 jest.mock('@/features/record/entry/ShellEntryHost', () => ({ ShellEntryHost: () => null }));
+// 05.3-43: the layouts read the per-account Decide switch (it reaches the Supabase profile read); these tests are about navigation, not Decide.
+jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false, testAccount: false }) }));
 jest.mock('@/features/decide/DecideShellHost', () => ({ DecideShellHost: () => null }));
 jest.mock('@/features/decide/notifications/useNotificationObserver', () => ({ useNotificationObserver: () => undefined }));
 jest.mock('@/features/record/useDeviceHomeCurrencyDefault', () => ({ DeviceHomeCurrencyDefault: () => null }));
