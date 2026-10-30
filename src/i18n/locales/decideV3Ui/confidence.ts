@@ -2,6 +2,8 @@
 export const confidence = {
   level: { rough: 'Rough', fair: 'Fair', firm: 'Firm' },
   sheetTitle: 'How sure this answer is',
+  a11y: '{{strength}}. Opens what this answer rests on.',
+  close: 'Close',
   reason: {
     few_months: 'It is based on fewer than 3 months of records.',
     early_in_month: 'It is early in the month, so more spending could still come.',
