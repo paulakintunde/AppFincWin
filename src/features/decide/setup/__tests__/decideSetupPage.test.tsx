@@ -11,7 +11,6 @@ import { MATRIX, expectFits, matrixName } from '@/features/decide/__tests__/help
 import type { SetupFacts } from '../setupFlow';
 import type { UnspentView } from '../unspentView';
 import { DecideSetupPage } from '../DecideSetupPage';
-import DecideRoute from '../../../../../app/(app)/(tabs)/decide';
 
 jest.setTimeout(60000);
 let mockScale = 1;
@@ -239,20 +238,7 @@ describe('states', () => {
   });
 });
 
-describe('the Decide tab', () => {
-  it('shows the setup page for a switch-on account', async () => {
-    await mount(<DecideRoute />);
-    expect(screen.getByText('WHAT DECIDE RECEIVES')).toBeTruthy();
-    expect(screen.queryByText('A better Decide is on its way')).toBeNull();
-  });
-
-  it('shows Coming soon for everyone else', async () => {
-    mockAccess = { v3: false };
-    await mount(<DecideRoute />);
-    expect(screen.getByText('A better Decide is on its way')).toBeTruthy();
-    expect(screen.queryByText('WHAT DECIDE RECEIVES')).toBeNull();
-  });
-});
+// 05.3-43: the Decide tab root now shows the v3 home for a switch-on account; its ladder is tested in v3/home/__tests__/tabRoot.test.tsx.
 
 describe('text fit', () => {
   for (const m of MATRIX) {

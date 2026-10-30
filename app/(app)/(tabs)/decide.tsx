@@ -1,7 +1,7 @@
-import { DECIDE_OPEN } from '@/features/decide/availability';
 import { DecideComingSoonScreen } from '@/features/decide/home/DecideComingSoonScreen';
-import { DecideHomeScreen } from '@/features/decide/home/DecideHomeScreen';
-import { DecideSetupPage } from '@/features/decide/setup/DecideSetupPage';
+import { HomeScreen } from '@/features/decide/v3/home/HomeScreen';
+import { V3Skeleton } from '@/features/decide/v3/nav/V3Skeleton';
+import { useProfile } from '@/features/you/useProfile';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 
 // D-27: the shadow export is development-only. The require sits inside the __DEV__ branch, which Metro folds away in a
@@ -13,12 +13,13 @@ function DevShadowExport() {
   return <ShadowExportDevMenu />;
 }
 
-// 05.2 D-18: a test account (the per-account switch on) gets the setup page and engine readout; everyone else keeps today's tab.
+// 05.3 DSV-02: a v3 account gets the v3 home; while the profile loads a skeleton (never a flash of Coming soon); everyone else keeps Coming soon.
 export default function DecideRoute() {
   const access = useDecideAccess();
+  const { loading } = useProfile();
   return (
     <>
-      {DECIDE_OPEN ? <DecideHomeScreen /> : access.v3 ? <DecideSetupPage /> : <DecideComingSoonScreen />}
+      {!access.v3 ? loading ? <V3Skeleton /> : <DecideComingSoonScreen /> : <HomeScreen />}
       {__DEV__ ? <DevShadowExport /> : null}
     </>
   );

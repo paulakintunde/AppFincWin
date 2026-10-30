@@ -7,7 +7,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import { StyleSheet, View } from 'react-native';
 import { useAccounts } from '@/data/queries/accounts';
 import { needsFirstAccount } from '@/features/record/setup/firstAccountGate';
-import { DECIDE_OPEN } from '@/features/decide/availability';
+import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { DecideShellHost } from '@/features/decide/DecideShellHost';
 import { ShellEntryHost } from '@/features/record/entry/ShellEntryHost';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -20,6 +20,7 @@ import { isTabId } from '@/shell/tabBar/tabs';
 
 export default function TabsLayout() {
   const rc = useRecordContext();
+  const access = useDecideAccess();
   const accounts = useAccounts(rc.householdId ?? undefined);
   const gate = needsFirstAccount({
     loading: !rc.ready || accounts.isLoading,
@@ -52,7 +53,7 @@ export default function TabsLayout() {
       <FabQuickMenu />
       <ShellEntryHost />
       {/* quick-261025-f46: its 'newCheck' registration feeds both the FAB quick menu and You > Add, so hiding it removes "New check" everywhere. */}
-      {DECIDE_OPEN ? <DecideShellHost /> : null}
+      {access.v3 ? <DecideShellHost /> : null}
     </View>
   );
 }
