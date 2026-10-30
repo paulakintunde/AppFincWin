@@ -24,6 +24,8 @@ jest.mock('@/theme/layout', () => ({ ...jest.requireActual('@/theme/layout'), us
 jest.mock('@/ui/haptics', () => ({ hapticSuccess: () => mockHaptic() }));
 jest.mock('@/state/undoToast', () => ({ showToast: (...a: unknown[]) => mockToast(...a) }));
 jest.mock('@/data/mutations/undo', () => ({ useUndo: () => ({ undo: mockUndo }) }));
+const mockCancel = jest.fn(() => Promise.resolve());
+jest.mock('@/features/decide/notifications/waitReminder', () => ({ cancelCheckReminders: (...a: unknown[]) => mockCancel(...(a as [])) }));
 jest.mock('@/features/decide/ui/textFit', () => ({ useShouldStack: () => mockStack }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', timeZone: 'UTC', today: '2026-10-30' }),
@@ -49,8 +51,8 @@ function actions(over: Partial<RecordMutations> = {}): RecordMutations {
   return {
     canRecordBought: jest.fn(() => true),
     recordBought: jest.fn(() => ({ stepId: 'step-1' })),
-    planIt: jest.fn(() => Promise.resolve({ reminder: 'set' as const })),
-    notBuying: jest.fn(),
+    planIt: jest.fn(() => Promise.resolve({ reminder: 'set' as const, stepId: 'step-plan' as string | null })),
+    notBuying: jest.fn(() => 'step-pass' as string | null),
     ...over,
   };
 }
@@ -173,12 +175,46 @@ describe('RecordSheet plan and pass', () => {
     expect(a.planIt).toHaveBeenCalledTimes(1);
     expect(screen.getByText('planTitle')).toBeTruthy();
     expect(await screen.findByText('reminderOn')).toBeTruthy();
-    expect(screen.queryByText('undo')).toBeNull();
+    expect(await screen.findByText('undo')).toBeTruthy();
     expect(mockToast).not.toHaveBeenCalled();
   });
 
+  it('Plan it Undo reverses its own step, clears the reminders and closes (D-21)', async () => {
+    const onClose = await open('plan', actions());
+    await fireEvent.press(await screen.findByText('undo'));
+    expect(mockUndo).toHaveBeenCalledWith({
+      stepId: 'step-plan',
+      ownerId: 'u1',
+      householdId: 'h1',
+      labelKey: 'planSaved',
+      labelParams: { name: 'Sofa' },
+    });
+    expect(mockCancel).toHaveBeenCalledWith('c1');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('Not buying Undo reverses its own step and closes (D-21)', async () => {
+    const onClose = await open('pass', actions());
+    await fireEvent.press(await screen.findByText('undo'));
+    expect(mockUndo).toHaveBeenCalledWith({
+      stepId: 'step-pass',
+      ownerId: 'u1',
+      householdId: 'h1',
+      labelKey: 'notBuyingSaved',
+      labelParams: { name: 'Sofa' },
+    });
+    expect(mockCancel).toHaveBeenCalledWith('c1');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('with no step recorded there is no Undo, only Back to Decide', async () => {
+    await open('pass', actions({ notBuying: jest.fn(() => null) }));
+    expect(screen.getByText('backToDecide')).toBeTruthy();
+    expect(screen.queryByText('undo')).toBeNull();
+  });
+
   it('reminder off shows the off line', async () => {
-    await open('plan', actions({ planIt: jest.fn(() => Promise.resolve({ reminder: 'off' as const })) }));
+    await open('plan', actions({ planIt: jest.fn(() => Promise.resolve({ reminder: 'off' as const, stepId: null })) }));
     expect(await screen.findByText('reminderOff')).toBeTruthy();
   });
 

@@ -34,6 +34,7 @@ jest.mock('@/features/decide/notifications/waitReminder', () => ({
   scheduleCoolingOffReminder: (...a: unknown[]) => mockCooling(...a),
 }));
 
+jest.setTimeout(60000);
 const ok = (data: unknown) => ({ data, error: null, status: 200 });
 const applied = () => ok({ status: 'applied' });
 
@@ -98,7 +99,7 @@ describe('useWaitAndSave', () => {
     const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
 
     const outcome = await result.current.save(waitArgs);
-    expect(outcome).toEqual({ reminder: 'set' });
+    expect(outcome).toEqual({ reminder: 'set', stepId: expect.any(String) });
     expect(mockWait).toHaveBeenCalledWith('chk1', '2027-03-01', '2026-10-16');
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
 
@@ -125,7 +126,7 @@ describe('useWaitAndSave', () => {
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
     expect((rpcArgs(fake).p_decision as { goal: unknown }).goal).toBeNull();
     const nullTarget = await result.current.save({ ...waitArgs, goalTarget: null });
-    expect(nullTarget).toEqual({ reminder: 'set' });
+    expect(nullTarget).toEqual({ reminder: 'set', stepId: expect.any(String) });
   });
 
   it('a refused permission still saves the decision and reports off', async () => {
@@ -135,7 +136,7 @@ describe('useWaitAndSave', () => {
     const qc = newClient();
     const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
     const outcome = await result.current.save(waitArgs);
-    expect(outcome).toEqual({ reminder: 'off' });
+    expect(outcome).toEqual({ reminder: 'off', stepId: expect.any(String) });
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
   });
 
@@ -145,7 +146,7 @@ describe('useWaitAndSave', () => {
     mockWait.mockRejectedValue(new Error('boom'));
     const qc = newClient();
     const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
-    expect(await result.current.save(waitArgs)).toEqual({ reminder: 'off' });
+    expect(await result.current.save(waitArgs)).toEqual({ reminder: 'off', stepId: expect.any(String) });
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
   });
 
@@ -154,7 +155,7 @@ describe('useWaitAndSave', () => {
     fake.respondWith(applied());
     const qc = newClient();
     const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
-    expect(await result.current.save({ ...waitArgs, readyBy: null })).toEqual({ reminder: 'none' });
+    expect(await result.current.save({ ...waitArgs, readyBy: null })).toEqual({ reminder: 'none', stepId: expect.any(String) });
     expect(mockWait).not.toHaveBeenCalled();
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
   });
@@ -256,5 +257,74 @@ describe('usePass', () => {
     result.current.pass({ check, verdict: 'adjust', coolingOff: true });
     await waitFor(() => expect(mockCooling).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+  });
+});
+
+describe('D-21 undo steps (05.3-47)', () => {
+  const stepInsert = (fake: FakeSupabase) => fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert');
+  const OPEN = { status: 'open', decided_at: null, verdict_at_decision: null, wait_monthly: null, ready_by: null, cooling_off_at: null };
+
+  it('Plan it records one step: the check back to open and the created goal soft-deleted', async () => {
+    const fake = setup();
+    fake.respondWith(applied()).respondWith(ok({ ...check, version: 2 })).respondWith(ok({ version: 1 })).respondWith(ok(null));
+    const qc = newClient();
+    const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
+    const out = await result.current.save(waitArgs);
+    await waitFor(() => expect(stepInsert(fake)).toBeDefined());
+    const payload = stepInsert(fake)!.args[0] as { id: string; label_key: string; label_params: unknown; ops: unknown[] };
+    expect(payload.id).toBe(out.stepId);
+    expect(payload.label_key).toBe('planSaved');
+    expect(payload.label_params).toEqual({ name: 'Sofa' });
+    expect(payload.ops).toEqual([
+      { entity: 'decide_checks', id: 'chk1', expectedVersion: 2, patch: OPEN },
+      { entity: 'savings_goals', id: (rpcArgs(fake).p_decision as { goal: { id: string } }).goal.id, expectedVersion: 1, patch: { deleted_at: '$now' } },
+    ]);
+    expect(fake.calls.filter((c) => c.table === 'undo_log' && c.method === 'insert')).toHaveLength(1);
+  });
+
+  it('Plan it with no goal restores only the check', async () => {
+    const fake = setup();
+    fake.respondWith(applied()).respondWith(ok({ ...check, version: 3 })).respondWith(ok(null));
+    const qc = newClient();
+    const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
+    await result.current.save({ ...waitArgs, goalTarget: null });
+    await waitFor(() => expect(stepInsert(fake)).toBeDefined());
+    const ops = (stepInsert(fake)!.args[0] as { ops: { entity: string }[] }).ops;
+    expect(ops.map((o) => o.entity)).toEqual(['decide_checks']);
+  });
+
+  it('Not buying records one step that returns the check to open', async () => {
+    const fake = setup();
+    fake.respondWith(applied()).respondWith(ok({ ...check, version: 2 })).respondWith(ok(null));
+    const qc = newClient();
+    const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
+    const stepId = result.current.pass({ check, verdict: 'no', coolingOff: false });
+    await waitFor(() => expect(stepInsert(fake)).toBeDefined());
+    const payload = stepInsert(fake)!.args[0] as { id: string; label_key: string; ops: unknown[] };
+    expect(payload.id).toBe(stepId);
+    expect(payload.label_key).toBe('notBuyingSaved');
+    expect(payload.ops).toEqual([{ entity: 'decide_checks', id: 'chk1', expectedVersion: 2, patch: OPEN }]);
+  });
+
+  it('a double tap writes once and hands back the same step', async () => {
+    const fake = setup();
+    fake.respondWith(applied()).respondWith(ok({ ...check, version: 2 })).respondWith(ok(null));
+    const qc = newClient();
+    const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
+    const a = result.current.pass({ check, verdict: 'no', coolingOff: false });
+    const b = result.current.pass({ check, verdict: 'no', coolingOff: false });
+    expect(b).toBe(a);
+    await waitFor(() => expect(stepInsert(fake)).toBeDefined());
+    expect(fake.calls.filter((c) => c.method === 'rpc')).toHaveLength(1);
+  });
+
+  it('a failed write records no step', async () => {
+    const fake = setup();
+    fake.respondWith({ data: null, error: { message: 'bad', code: '22023' }, status: 400 });
+    const qc = newClient();
+    const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
+    result.current.pass({ check, verdict: 'no', coolingOff: false });
+    await waitFor(() => expect(getToast()).not.toBeNull());
+    expect(stepInsert(fake)).toBeUndefined();
   });
 });

@@ -21,6 +21,7 @@ import { seenOf } from '@/engine/decide/v3';
 import type { Evaluation } from '@/engine/decide/v3';
 import type { DecideCheckRow, StoredSeenV3 } from '@/db/decideChecks';
 import { useUndo } from '@/data/mutations/undo';
+import { cancelCheckReminders } from '@/features/decide/notifications/waitReminder';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { WrittenList } from '../../ui/WrittenList';
 import { useShouldStack } from '../../ui/textFit';
@@ -113,10 +114,13 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
     if (variant === 'bought' || sentRef.current) return;
     sentRef.current = true;
     if (variant === 'pass') {
-      actions.notBuying(args);
+      void Promise.resolve(actions.notBuying(args)).then(setStepId);
       return;
     }
-    void actions.planIt({ ...args, goalTarget: price > 0 ? price : null, reminderOn: true }).then((r) => setReminder(r.reminder));
+    void actions.planIt({ ...args, goalTarget: price > 0 ? price : null, reminderOn: true }).then((r) => {
+      setReminder(r.reminder);
+      setStepId(r.stepId);
+    });
   }, [visible, variant, actions, args, price]);
 
   // Step B of Bought: one Success haptic, announced politely.
@@ -150,12 +154,14 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
         stepId,
         ownerId: row.created_by,
         householdId: row.household_id,
-        labelKey: 'decisionWritten',
+        labelKey: variant === 'plan' ? 'planSaved' : variant === 'pass' ? 'notBuyingSaved' : 'decisionWritten',
         labelParams: { name: item },
       });
+      // D-21: a reopened check holds no wait or cooling-off reminder; the reconcile would clear it later, this does it now.
+      if (variant !== 'bought') void cancelCheckReminders(row.id).catch(() => undefined);
     }
     onClose();
-  }, [undo, stepId, row.created_by, row.household_id, item, onClose]);
+  }, [undo, stepId, variant, row.id, row.created_by, row.household_id, item, onClose]);
 
   const text = (key: string, params: Readonly<Record<string, string | number>>): string => {
     const out: Record<string, string | number> = {};
@@ -248,7 +254,7 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
                   ),
                 ]
               : [
-                  variant === 'bought' ? button(<Pill label={t(`${K}undo`)} variant="secondary" onPress={onUndo} />, 'undo') : null,
+                  stepId !== null ? button(<Pill label={t(`${K}undo`)} variant="secondary" onPress={onUndo} />, 'undo') : null,
                   button(<Pill label={t(`${K}backToDecide`)} variant="primary" onPress={onClose} />, 'back'),
                 ]}
           </View>

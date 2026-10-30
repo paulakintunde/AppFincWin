@@ -1,11 +1,15 @@
 // 05-20 (D-10, D-11, D-34, D-35): Wait and save, and Pass, through the write queue. Both call record_decide_outcome
-// (05-04), which stamps the status and cooling_off_at, and for Wait creates the savings goal in the same call. There is
-// no undo step. 'already-applied' is success. Variables are JSON only; failed-write records carry ids and kinds only.
+// (05-04), which stamps the status and cooling_off_at, and for Wait creates the savings goal in the same call. 05.3-47
+// (D-21): each save also records ONE undo step, built after the server write from the versions it left behind (the same
+// apply_patches / undo_log path abandon uses; no new SQL). 'already-applied' is success. Variables are JSON only; failed-write records carry ids and kinds only.
 import * as Crypto from 'expo-crypto';
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import * as reminders from '@/features/decide/notifications/waitReminder';
 import { getAnalytics } from '@/services/analytics';
+import { buildStep, inverseOfInserts, inverseOfPatches, type PatchOp } from '@/engine/undo';
+import { toDbError } from '@/db/errors';
+import { fetchDecideCheck } from '@/db/decideChecks';
 import { recordDecideOutcome, type DecideOutcomeDecision, type DecideWaitGoal } from '@/db/decideOutcomes';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
@@ -22,6 +26,23 @@ import { showToast } from '@/state/undoToast';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { writeClient } from './writeClient';
 import { coolingOffAt } from './coolingOff';
+import { newStepId, recordUndoStepSafely } from './undoCapture';
+
+/** What a decided check looked like while open: the fields the outcome write stamps are all empty (D-21 undo target). */
+const OPEN_FIELDS = {
+  status: 'open',
+  decided_at: null,
+  verdict_at_decision: null,
+  wait_monthly: null,
+  ready_by: null,
+  cooling_off_at: null,
+} as const;
+
+export interface DecideOutcomeUndo {
+  stepId: string;
+  labelKey: 'planSaved' | 'notBuyingSaved';
+  labelName: string;
+}
 
 type CheckList = WithPending<DecideCheckRow>[];
 
@@ -30,12 +51,49 @@ export interface DecideOutcomeVars {
   ownerId: string;
   householdId: string;
   decision: DecideOutcomeDecision;
+  /** 05.3-47: when set, the write records one undo step after it lands. Old callers leave it off. */
+  undo?: DecideOutcomeUndo;
+}
+
+/** Check ids with an outcome write queued or in flight: a second tap returns the first step and writes nothing. */
+const inFlight = new Map<string, string>();
+
+async function recordOutcomeUndo(qc: QueryClient, vars: DecideOutcomeVars): Promise<void> {
+  const undo = vars.undo;
+  if (!undo) return;
+  try {
+    const client = await writeClient();
+    const row = await fetchDecideCheck(client, vars.checkId);
+    if (!row) return;
+    const ops: PatchOp[] = inverseOfPatches('decide_checks', [
+      { id: row.id, before: OPEN_FIELDS, versionAfter: row.version },
+    ]);
+    const goalId = vars.decision.outcome === 'wait' ? vars.decision.goal?.id : undefined;
+    if (goalId) {
+      const { data, error, status } = await client.from('savings_goals').select('version').eq('id', goalId).maybeSingle();
+      if (error) throw toDbError(error, status);
+      const version = (data as { version?: unknown } | null)?.version;
+      if (typeof version === 'number') ops.push(...inverseOfInserts('savings_goals', [{ id: goalId, version }]));
+    }
+    await recordUndoStepSafely(
+      qc,
+      client,
+      buildStep(undo.stepId, undo.labelKey, undo.labelName ? { name: undo.labelName } : {}, ops),
+      vars.ownerId
+    );
+  } catch {
+    // The decision is saved; a step that could not be built just means no Undo for it.
+  }
 }
 
 export function registerDecideOutcomeMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.decideOutcome, {
     mutationFn: (vars: DecideOutcomeVars) =>
-      guardSession(vars, async () => recordDecideOutcome(await writeClient(), vars.checkId, vars.decision)),
+      guardSession(vars, async () => {
+        const result = await recordDecideOutcome(await writeClient(), vars.checkId, vars.decision);
+        await recordOutcomeUndo(qc, vars);
+        return result;
+      }),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
@@ -84,6 +142,9 @@ export function registerDecideOutcomeMutations(qc: QueryClient): void {
           optimistic,
         ]);
       }
+    },
+    onSettled: (_result: unknown, _err: unknown, vars: DecideOutcomeVars) => {
+      inFlight.delete(vars.checkId);
     },
     onSuccess: (_result: unknown, vars: DecideOutcomeVars) => {
       void qc.invalidateQueries({ queryKey: queryKeys.decideChecks(vars.ownerId, vars.householdId) });
@@ -140,12 +201,14 @@ export function useWaitAndSave(): {
     today: string;
     goalTarget: number | null;
     coolingOff: boolean;
-  }): Promise<{ reminder: 'set' | 'off' | 'none' }>;
+  }): Promise<{ reminder: 'set' | 'off' | 'none'; stepId: string }>;
 } {
   const mutation = useOutcomeMutation();
   return {
     async save(args) {
       const { check } = args;
+      const earlier = inFlight.get(check.id);
+      if (earlier) return { reminder: 'none', stepId: earlier };
       const fallbackName = typeof check.inputs.name === 'string' ? check.inputs.name : '';
       const goal: DecideWaitGoal | null =
         args.goalTarget !== null && args.goalTarget > 0
@@ -156,6 +219,8 @@ export function useWaitAndSave(): {
               target: args.goalTarget,
             }
           : null;
+      const stepId = newStepId();
+      inFlight.set(check.id, stepId);
       mutation.mutate({
         checkId: check.id,
         ownerId: check.created_by,
@@ -168,36 +233,44 @@ export function useWaitAndSave(): {
           cooling_off: args.coolingOff,
           goal,
         },
+        undo: { stepId, labelKey: 'planSaved', labelName: check.name || fallbackName },
       });
       getAnalytics().track('decision_recorded', { decision: 'wait' });
       void scheduleCooling(check.id, args.coolingOff);
-      if (args.readyBy === null) return { reminder: 'none' };
+      if (args.readyBy === null) return { reminder: 'none', stepId };
       try {
         const result = await reminders.scheduleWaitReminder(check.id, args.readyBy, args.today);
-        return { reminder: result.scheduled ? 'set' : 'off' };
+        return { reminder: result.scheduled ? 'set' : 'off', stepId };
       } catch {
         // A refused or failing scheduler still leaves the decision saved.
-        return { reminder: 'off' };
+        return { reminder: 'off', stepId };
       }
     },
   };
 }
 
 export function usePass(): {
-  pass(args: { check: CheckRef; verdict: VerdictState; coolingOff: boolean }): void;
+  pass(args: { check: CheckRef; verdict: VerdictState; coolingOff: boolean }): string | null;
 } {
   const mutation = useOutcomeMutation();
   return {
     pass(args) {
       const { check } = args;
+      const earlier = inFlight.get(check.id);
+      if (earlier) return earlier;
+      const stepId = newStepId();
+      inFlight.set(check.id, stepId);
+      const fallbackName = typeof check.inputs.name === 'string' ? check.inputs.name : '';
       mutation.mutate({
         checkId: check.id,
         ownerId: check.created_by,
         householdId: check.household_id,
         decision: { outcome: 'pass', verdict: args.verdict, cooling_off: args.coolingOff },
+        undo: { stepId, labelKey: 'notBuyingSaved', labelName: check.name || fallbackName },
       });
       getAnalytics().track('decision_recorded', { decision: 'pass' });
       void scheduleCooling(check.id, args.coolingOff);
+      return stepId;
     },
   };
 }
