@@ -406,6 +406,7 @@ describe('05.2 undo labels (DSU-21, DCU-09)', () => {
     incomeTypeSaved: 'Income type saved', incomeTagged: 'Income tagged', refundLinked: 'Refund linked', refundUnlinked: 'Refund unlinked',
     answerSaved: 'Answer saved', answerRemoved: 'Answer removed', refineSnoozed: 'Check-in snoozed',
     payArrivalSaved: 'Pay arrival saved', expectedIncomeSaved: 'Expected income saved', incomePatternSaved: 'Income pattern saved', payUpdated: 'Pay updated', keptYourFigure: 'Kept your figure',
+    planSaved: 'Plan saved · {{name}}', notBuyingSaved: 'Not buying · {{name}}',
   };
 
   it('every 05.2 step has a key and its English text', () => {
