@@ -147,7 +147,7 @@ function DecisionRow({
               <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>{t('decide.v3.ui.home.refundLine')}</Text>
             ) : null}
           </View>
-          <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ color: colors.inkFaint }}>
+          <Text accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ color: colors.inkMuted }}>
             {'›'}
           </Text>
         </View>

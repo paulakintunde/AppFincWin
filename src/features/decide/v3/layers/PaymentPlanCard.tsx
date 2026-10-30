@@ -4,8 +4,8 @@
 // value stays. Every write goes through the 05.3-17 edits.
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { cardEligibility } from '@/engine/decide';
-import type { ItemType } from '@/engine/decide';
+import { cardEligibility } from '@/engine/decide/v3';
+import type { ItemType } from '@/engine/decide/v3';
 import type { Cadence, CheckV2, Evaluation, V3PresetItemType } from '@/engine/decide/v3';
 import { minorUnits } from '@/engine/money';
 import { CustomValueChips } from '@/features/decide/ui/CustomValueChips';

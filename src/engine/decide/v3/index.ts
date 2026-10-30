@@ -24,6 +24,9 @@ export { liveEmergencyOf, withLiveEmergency } from './funds/emergency';
 export type { OptionsProblem, ResolvedItemType } from './judge/options';
 export { PRESET_QUESTIONS, QUESTION_LIBRARY, V3_ITEM_TYPES, questionSpec } from './judge/presetQuestions';
 export type { QuestionSpec } from './judge/presetQuestions';
+// 05.3-44: the card-eligibility rule is shared with the old engine; v3 screens reach it here so they never import the old barrel (P-01).
+export { cardEligibility } from '../cardRule';
+export type { ItemType, CardRule } from '../cardRule';
 export { buildSchedule } from './plan/schedule';
 export type { ScheduleInput, ScheduleOutcome } from './plan/schedule';
 export { monthlyEquivalentOf } from './plan/cadence';
