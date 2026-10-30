@@ -180,7 +180,7 @@ describe('formatMoneyA11y (D-94)', () => {
     const real = Intl.NumberFormat.prototype.formatToParts;
     const spy = jest
       .spyOn(Intl.NumberFormat.prototype, 'formatToParts')
-      .mockImplementation(function (this: Intl.NumberFormat, value?: number | bigint) {
+      .mockImplementation(function (this: Intl.NumberFormat, value: Parameters<typeof real>[0]) {
         if (this.resolvedOptions().currencyDisplay !== 'name') return real.call(this, value);
         return [
           { type: 'currency', value: 'Dollar' },
