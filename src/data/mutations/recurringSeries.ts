@@ -15,6 +15,7 @@
 import * as Crypto from 'expo-crypto';
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
+import type { UndoLabelKey } from '@/engine/undo';
 import type { RecurringFreq, RecurringSuggestion } from '@/engine/recurring';
 import { localDateIn } from '@/engine/time';
 import { addDays, stopDateProblem, resumeAllowed } from '@/features/record/entry/seriesStatus';
@@ -438,7 +439,8 @@ export function useCreateSeries(): {
 }
 
 export function useEditSeriesFrom(): {
-  editFrom(input: Omit<EditSeriesFromVars, 'undo'> & { name: string }): string;
+  /** `labelKey` defaults to 'seriesEdited'; 05.3 refine passes 'payUpdated' for a pay figure. */
+  editFrom(input: Omit<EditSeriesFromVars, 'undo'> & { name: string; labelKey?: UndoLabelKey }): string;
 } {
   const mutation = useMutation<SeriesWriteResult, unknown, EditSeriesFromVars>({
     mutationKey: mutationKeys.editSeriesFrom,
@@ -446,9 +448,9 @@ export function useEditSeriesFrom(): {
   });
 
   return {
-    editFrom({ name, ...vars }): string {
+    editFrom({ name, labelKey, ...vars }): string {
       const stepId = Crypto.randomUUID();
-      mutation.mutate({ ...vars, undo: { id: stepId, labelKey: 'seriesEdited', labelParams: { name } } });
+      mutation.mutate({ ...vars, undo: { id: stepId, labelKey: labelKey ?? 'seriesEdited', labelParams: { name } } });
       return stepId;
     },
   };

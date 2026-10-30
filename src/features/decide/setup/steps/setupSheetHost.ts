@@ -21,6 +21,14 @@ export interface SetupSheetActions {
   addDebt(kind: DebtKindChoice): void;
   /** 05.2-28: open the account-use step in edit mode (the Unspent money notes: "Set them"). */
   editAccountUse(): void;
+  /**
+   * 05.3-34 (refine): change a series' amount from today on, as one undoable edit. Returns the undo step id, or null when
+   * no host is registered or the write could not be made. Lives behind the registry because the series write path
+   * reaches the FX fetch door, which Decide features must not (depcruise fx-fetch-never-from-reads).
+   */
+  updateSeriesAmount(input: { series: RecurringSeriesRow; amount: number; labelKey: 'payUpdated' | 'seriesEdited'; ownerId: string; from: string }): string | null;
+  /** 05.3-34 (refine): pause a series from `from` (user-led, Undo-able). Same return rule as updateSeriesAmount. */
+  pauseSeries(input: { series: RecurringSeriesRow; from: string; ownerId: string }): string | null;
 }
 
 const NONE: SetupSheetActions = {
@@ -29,6 +37,8 @@ const NONE: SetupSheetActions = {
   editDebt: () => undefined,
   addDebt: () => undefined,
   editAccountUse: () => undefined,
+  updateSeriesAmount: () => null,
+  pauseSeries: () => null,
 };
 
 let current: SetupSheetActions = NONE;

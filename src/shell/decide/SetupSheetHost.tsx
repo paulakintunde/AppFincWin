@@ -9,9 +9,10 @@
 //  - Account use "Set them": opens the account-use step on its own (edit-one-step) over the unspent step.
 //  - Loans "Edit" and "Add a loan or card" (05.2-43): open the loan and card sheet (DebtSheet, mounted by SetupRoute) in edit
 //    or add mode. The "editor unavailable" toast stays only for the regular-payment fallbacks.
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Href } from 'expo-router';
 import { monthRange } from '@/engine/time';
+import { useEditSeriesFrom, useSetSeriesStatus } from '@/data/mutations/recurringSeries';
 import type { TransactionRow } from '@/db/rows';
 import { fetchTransactionsInRange } from '@/db/transactions';
 import { openEntry } from '@/features/record/entry/entryHost';
@@ -51,6 +52,13 @@ export function useSetupSheetHost(): void {
   const rc = useRecordContext();
   const householdId = rc.householdId;
   const today = rc.today;
+  // 05.3-34: the refine screen's series writes. Held in a ref so the registered actions always call the latest hooks.
+  const edit = useEditSeriesFrom();
+  const status = useSetSeriesStatus();
+  const seriesWrites = useRef({ edit, status });
+  useEffect(() => {
+    seriesWrites.current = { edit, status };
+  });
   useEffect(() => {
     const openRow = async (target: { seriesId: string } | { rowIds: readonly string[] }): Promise<void> => {
       if (householdId === null) return unavailable();
@@ -75,6 +83,26 @@ export function useSetupSheetHost(): void {
       editDebt: (debt) => openDebtSheet({ mode: 'edit', debt }),
       addDebt: (kind) => openDebtSheet({ mode: 'add', kind }),
       editAccountUse: () => pushOnce('/decide/setup?only=accountUse' as Href),
+      updateSeriesAmount: ({ series, amount, labelKey, ownerId, from }) => {
+        const sign = series.amount < 0 ? -1 : 1;
+        return seriesWrites.current.edit.editFrom({
+          id: series.id,
+          householdId: series.household_id,
+          expectedVersion: series.version,
+          patch: { amount: sign * Math.abs(amount) },
+          effectiveFrom: from,
+          ownerId,
+          name: series.name,
+          labelKey,
+        });
+      },
+      pauseSeries: ({ series, from, ownerId }) => {
+        try {
+          return seriesWrites.current.status.pause(series, from, ownerId);
+        } catch {
+          return null;
+        }
+      },
     };
     return registerSetupSheetActions(actions);
   }, [householdId, today]);

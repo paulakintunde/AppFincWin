@@ -13,6 +13,11 @@ const mockFetch = jest.fn();
 const mockOpenDebtSheet = jest.fn();
 
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
+// 05.3-34: the host also registers the refine series writes; their mutation hooks need a QueryClient, which these tests do not use.
+jest.mock('@/data/mutations/recurringSeries', () => ({
+  useEditSeriesFrom: () => ({ editFrom: () => 'step-edit' }),
+  useSetSeriesStatus: () => ({ pause: () => 'step-pause', stop: jest.fn(), resume: jest.fn() }),
+}));
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ householdId: 'h1', today: '2026-10-15' }) }));
 jest.mock('@/features/record/entry/entryHost', () => ({ openEntry: (m: unknown) => mockOpenEntry(m) }));
 jest.mock('@/features/decide/setup/debtSheetHost', () => ({ openDebtSheet: (r: unknown) => mockOpenDebtSheet(r) }));
@@ -44,6 +49,13 @@ describe('pickEditRow', () => {
 });
 
 describe('useSetupSheetHost', () => {
+  it('registers the refine series writes (05.3-34)', async () => {
+    await renderHook(() => useSetupSheetHost());
+    const series = { id: 's', amount: -500, version: 1, name: 'Gym', household_id: 'h1' } as never;
+    expect(setupSheetActions().updateSeriesAmount({ series, amount: 700, labelKey: 'seriesEdited', ownerId: 'u', from: '2026-10-15' })).toBe('step-edit');
+    expect(setupSheetActions().pauseSeries({ series, from: '2026-10-15', ownerId: 'u' })).toBe('step-pause');
+  });
+
   it('Add a regular payment opens a new expense in the entry sheet', async () => {
     await renderHook(() => useSetupSheetHost());
     setupSheetActions().addRegular('rent', 'Rent or mortgage');
