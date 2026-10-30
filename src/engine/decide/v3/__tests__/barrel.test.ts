@@ -115,6 +115,7 @@ export const V3_RUNTIME_EXPORTS = [
   'readStoredCheck',
   'refine',
   'refineNoise',
+  'salesTaxOf',
   'seenOf',
   'seriesDrift',
   'stagedRequired',
