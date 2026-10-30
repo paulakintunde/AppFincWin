@@ -108,7 +108,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('HomeScreen', () => {
-  it('ready: month card, refine, check card, envelopes, saved plans, row, past count and footer in order', async () => {
+  it('ready: month card, check card, refine, envelopes, saved plans, row, past count and footer in order', async () => {
     const sofa = checkRow({ id: 'sofa', name: 'Sofa', status: 'waiting' });
     const car = checkRow({ id: 'car', name: 'Used car', status: 'waiting' });
     homeState.rows = [sofa, car, checkRow({ id: 'b', status: 'bought' }), checkRow({ id: 'p', status: 'passed' })];
