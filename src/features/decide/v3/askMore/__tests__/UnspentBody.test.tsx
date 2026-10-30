@@ -35,7 +35,7 @@ describe('UnspentBody', () => {
     await wrap(<UnspentBody {...props} onSaved={onSaved} />);
     await fireEvent.press(screen.getByLabelText('That’s right'));
     expect(mockConfirm).toHaveBeenCalledWith(84000);
-    expect(mockToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'undo.label.unspentConfirmed', params: {} }, stepId: 'step-4' });
+    expect(mockToast).not.toHaveBeenCalled(); // the question card shows the toast (askToastKey)
     expect(onSaved).toHaveBeenCalledWith('step-4');
   });
 

@@ -36,7 +36,20 @@ export interface AskCardProps {
 export function askToastKey(q: AskQuestion): string {
   if (q.code === 'account_use_question') return q.variant === 'fund' ? 'emergencySaved' : 'accountUseSaved';
   if (q.code === 'pay_arrival_question') return 'payArrivalSaved';
+  if (q.code === 'unspent_not_confirmed') return 'unspentConfirmed';
+  if (q.code === 'income_pattern_unconfirmed') return 'incomePatternSaved';
+  if (q.code === 'expected_income_needed') return 'expectedIncomeSaved';
+  // Not an undo label: the unexplained-money answer reads "Saved" (a decide.v3.ui key).
+  if (q.code === 'unexplained_money_question') return UNEXPLAINED_SAVED_KEY;
   return 'answerSaved';
+}
+
+const UNEXPLAINED_SAVED_KEY = 'decide.v3.ui.check.saved';
+
+/** The toast text for askToastKey: a decide.v3.ui key is shown as is; the rest are undo.label keys. */
+export function askToastText(q: AskQuestion): { key: string; params?: Record<string, string | number> } {
+  const key = askToastKey(q);
+  return key === UNEXPLAINED_SAVED_KEY ? { key } : undoLabelText(key, {});
 }
 
 /** The question as a sentence: money formatted, account ids resolved to names, dates and months in the user's locale. */
@@ -72,7 +85,7 @@ export function AskCard({ model, renderBody, onDone }: AskCardProps): React.JSX.
   }, [q.code, text]);
 
   const onSaved = (stepId: string | null): void => {
-    if (stepId !== null) showToast({ kind: 'ordinary', text: undoLabelText(askToastKey(q), {}), stepId });
+    if (stepId !== null) showToast({ kind: 'ordinary', text: askToastText(q), stepId });
     getAnalytics().track('decide_question_answered', askAnsweredProps(q.code));
     if (model.more === 0) onDone();
     else setSavedFrom(text);

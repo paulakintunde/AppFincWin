@@ -38,13 +38,13 @@ describe('ExpectedIncomeBody', () => {
     expect(mockSave).not.toHaveBeenCalled();
   });
 
-  it('saves the typed figure for the month and toasts with Undo', async () => {
+  it('saves the typed figure for the month and reports the step', async () => {
     const onSaved = jest.fn();
     await wrap(<ExpectedIncomeBody {...base} question={question(['2026-11'])} onSaved={onSaved} />);
     await fireEvent.changeText(screen.getByLabelText('Expected money in for November'), '1200');
     await fireEvent.press(screen.getByLabelText('Save expected income'));
     expect(mockSave).toHaveBeenCalledWith({ kind: 'expected_income', month: '2026-11', amount: 120000, at: '2026-10-30' });
-    expect(mockToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'undo.label.expectedIncomeSaved', params: {} }, stepId: 'step-3' });
+    expect(mockToast).not.toHaveBeenCalled(); // the question card shows the toast (askToastKey)
     expect(onSaved).toHaveBeenCalledWith('step-3');
   });
 

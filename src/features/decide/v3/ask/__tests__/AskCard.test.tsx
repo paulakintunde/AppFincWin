@@ -4,7 +4,7 @@ import { AccessibilityInfo, Text as RNText } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
-import { AskCard, askToastKey } from '../AskCard';
+import { AskCard, askToastKey, askToastText } from '../AskCard';
 import { accountUseQuestion, coverQuestion, fakeFormat, modelOf, payQuestion } from './askTestKit';
 
 jest.setTimeout(60000);
@@ -107,6 +107,21 @@ describe('askToastKey', () => {
     expect(askToastKey(accountUseQuestion({ variant: 'fund' }))).toBe('emergencySaved');
     expect(askToastKey(payQuestion())).toBe('payArrivalSaved');
     expect(askToastKey(coverQuestion())).toBe('answerSaved');
+  });
+
+  it.each([
+    ['unspent_not_confirmed', 'unspentConfirmed'],
+    ['income_pattern_unconfirmed', 'incomePatternSaved'],
+    ['expected_income_needed', 'expectedIncomeSaved'],
+  ])('picks the undo label for %s (05.3-41: one toast, the card owns it)', (code, key) => {
+    expect(askToastKey({ ...coverQuestion(), code } as never)).toBe(key);
+    expect(askToastText({ ...coverQuestion(), code } as never)).toEqual({ key: 'undo.label.' + key, params: {} });
+  });
+
+  it('shows the unexplained answer as Saved, not an undo label', () => {
+    const q = { ...coverQuestion(), code: 'unexplained_money_question' } as never;
+    expect(askToastKey(q)).toBe('decide.v3.ui.check.saved');
+    expect(askToastText(q)).toEqual({ key: 'decide.v3.ui.check.saved' });
   });
 });
 

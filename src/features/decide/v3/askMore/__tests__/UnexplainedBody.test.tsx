@@ -38,7 +38,7 @@ describe('UnexplainedBody', () => {
     await wrap(<UnexplainedBody {...props} onSaved={onSaved} />);
     await fireEvent.press(screen.getByLabelText(label));
     expect(mockSave).toHaveBeenCalledWith({ amount: 25000, use, at: '2026-10-30' });
-    expect(mockToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.v3.ui.check.saved' }, stepId: 'step-1' });
+    expect(mockToast).not.toHaveBeenCalled(); // the question card shows the toast (askToastKey)
     expect(onSaved).toHaveBeenCalledWith('step-1');
   });
 
