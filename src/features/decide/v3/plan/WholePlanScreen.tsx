@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { useCheckV3 } from '@/data/queries/decideCheckV3';
 import { readStoredCheck } from '@/engine/decide/v3';
-import { useT } from '@/i18n';
+import { useLooseT } from '@/features/decide/v3/check/useLooseT';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
@@ -56,7 +56,7 @@ export function WholePlanScreen({ id }: { id: string }): React.JSX.Element {
 }
 
 function PlanBody({ name, inputs, evaluation }: { name: string; inputs: unknown; evaluation: NonNullable<ReturnType<typeof useCheckV3>['evaluation']> }): React.JSX.Element {
-  const t = useT();
+  const t = useLooseT();
   const f = useV3Format();
   const { colors, fonts } = useTheme();
   const stack = useShouldStack();
@@ -74,18 +74,18 @@ function PlanBody({ name, inputs, evaluation }: { name: string; inputs: unknown;
 
   const s = model.summary;
   const every = s.cadenceWord === 'other'
-    ? t((s.cadence.unit === 'week' ? `${KEY}.everyNWeeks` : `${KEY}.everyNMonths`) as never, { n: s.cadence.every } as never)
-    : t(EVERY_WORD[s.cadenceWord] as never);
+    ? t((s.cadence.unit === 'week' ? `${KEY}.everyNWeeks` : `${KEY}.everyNMonths`), { n: s.cadence.every })
+    : t(EVERY_WORD[s.cadenceWord]);
   const ends = f.monthYear(s.endsYm);
-  const caption = t(`${KEY}.caption` as never, { count: s.count, every } as never);
-  const a11yLabel = t(`${KEY}.cardA11y` as never, {
+  const caption = t(`${KEY}.caption`, { count: s.count, every });
+  const a11yLabel = t(`${KEY}.cardA11y`, {
     count: s.count,
     payment: f.moneyA11y(Number(s.payment)),
     every,
     perMonth: f.moneyA11y(Number(s.perMonth)),
     date: ends,
-  } as never);
-  const rowText = (r: PlanRow): string => t(r.labelKey as never, r.labelParams as never);
+  });
+  const rowText = (r: PlanRow): string => t(r.labelKey, r.labelParams);
   const textStyle = { fontFamily: fonts.body[500], fontSize: fontSize.body, lineHeight: fontSize.body * 1.5, color: colors.ink };
 
   const line = (label: string, figure: React.JSX.Element, key: string, last: boolean): React.JSX.Element => (
@@ -102,13 +102,13 @@ function PlanBody({ name, inputs, evaluation }: { name: string; inputs: unknown;
   );
 
   return (
-    <DetailScreen title={t(`${KEY}.header` as never, { item: name } as never)}>
+    <DetailScreen title={t(`${KEY}.header`, { item: name })}>
       <View style={styles.body}>
         <PlanSummaryCard
           caption={caption}
           payment={f.money(Number(s.payment))}
-          perMonthEnds={t(`${KEY}.perMonthEnds` as never, { amount: f.money(Number(s.perMonth)), date: ends } as never)}
-          running={s.running > 0 ? t(`${KEY}.running` as never, { amount: f.money(Number(s.running)) } as never) : null}
+          perMonthEnds={t(`${KEY}.perMonthEnds`, { amount: f.money(Number(s.perMonth)), date: ends })}
+          running={s.running > 0 ? t(`${KEY}.running`, { amount: f.money(Number(s.running)) }) : null}
           a11yLabel={a11yLabel}
         />
         <View style={[styles.rows, { backgroundColor: colors.surface }]}>
@@ -117,24 +117,24 @@ function PlanBody({ name, inputs, evaluation }: { name: string; inputs: unknown;
           )}
           <View style={[stack ? styles.totalStack : styles.totalSide, { borderTopColor: colors.ink, borderTopWidth: RULE }]}>
             <Text style={[textStyle, styles.label, { fontFamily: fonts.body[600], fontSize: fontSize.sheetTitle, lineHeight: fontSize.sheetTitle * 1.2 }]}>
-              {t(`${KEY}.total` as never, { count: model.total.months } as never)}
+              {t(`${KEY}.total`, { count: model.total.months })}
             </Text>
             <Figure big text={f.money(Number(model.total.amount))} color={colors.ink} />
           </View>
         </View>
         <PlanMixBar mix={model.mix} />
         <View style={[styles.note, { backgroundColor: colors.fill2 }]}>
-          <Text style={{ fontFamily: fonts.body[500], fontSize: fontSize.s13_5, lineHeight: fontSize.s13_5 * 1.5, color: colors.inkDim }}>{t(`${KEY}.note` as never)}</Text>
+          <Text style={{ fontFamily: fonts.body[500], fontSize: fontSize.s13_5, lineHeight: fontSize.s13_5 * 1.5, color: colors.inkDim }}>{t(`${KEY}.note`)}</Text>
           {model.quotedDiffers === null ? null : (
             <Text style={{ fontFamily: fonts.body[500], fontSize: fontSize.s13_5, lineHeight: fontSize.s13_5 * 1.5, color: colors.warn1 }}>
-              {t('decide.v3.fact.quoted_differs' as never, {
+              {t('decide.v3.fact.quoted_differs', {
                 quoted: f.money(Number(model.quotedDiffers.quoted)),
                 computed: f.money(Number(model.quotedDiffers.computed)),
-              } as never)}
+              })}
             </Text>
           )}
         </View>
-        <Pill variant="primary" label={t(`${KEY}.back` as never)} onPress={() => router.back()} />
+        <Pill variant="primary" label={t(`${KEY}.back`)} onPress={() => router.back()} />
       </View>
     </DetailScreen>
   );

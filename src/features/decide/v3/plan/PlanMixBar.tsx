@@ -2,7 +2,7 @@
 // parts are not drawn. The bar and legend are one accessibility element with the whole sentence.
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useT } from '@/i18n';
+import { useLooseT } from '@/features/decide/v3/check/useLooseT';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
@@ -21,17 +21,17 @@ const DOT = 10;
 const RUNNING_OPACITY = 0.5;
 
 export function PlanMixBar({ mix }: { mix: readonly PlanMixPart[] }): React.JSX.Element {
-  const t = useT();
+  const t = useLooseT();
   const f = useV3Format();
   const { colors, fonts } = useTheme();
   const color = (p: PlanMixPart['part']): string => (p === 'price' ? colors.ink : p === 'taxFees' ? colors.warn2 : p === 'interest' ? colors.danger : colors.accent);
   const opacity = (p: PlanMixPart['part']): number => (p === 'running' ? RUNNING_OPACITY : 1);
   const parts = mix.filter((p) => p.amount > 0);
-  const label = (p: PlanMixPart): string => t(LABEL_KEY[p.part] as never);
+  const label = (p: PlanMixPart): string => t(LABEL_KEY[p.part]);
   // "Price $x, tax and fees $x, ...": the first word keeps its capital, the rest are lower-case.
   const sentence = parts.map((p, i) => `${i === 0 ? label(p) : label(p).toLowerCase()} ${f.moneyA11y(Number(p.amount))}`).join(', ');
   return (
-    <View accessible accessibilityLabel={t('decide.v3.ui.plan.mixA11y' as never, { parts: sentence } as never)} style={styles.wrap}>
+    <View accessible accessibilityLabel={t('decide.v3.ui.plan.mixA11y', { parts: sentence })} style={styles.wrap}>
       <View style={[styles.bar, { backgroundColor: colors.fill1 }]}>
         {parts.map((p) => (
           <View key={p.part} style={{ flexGrow: Number(p.amount), flexBasis: 0, backgroundColor: color(p.part), opacity: opacity(p.part) }} />
