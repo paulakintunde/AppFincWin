@@ -67,6 +67,20 @@ describe('LayerStack', () => {
     expect(screen.getByLabelText('You pay $140 a month for Car insurance now. Use it?')).toBeTruthy();
   });
 
+  it('D-18: shows the value, major asset and very large cards when the layers list L2, L6 and L7, and hides them otherwise', async () => {
+    const edit = jest.fn();
+    const { rerender } = await render(stack(emptyCheck(), evalWith(['L0', 'L1p', 'L2', 'L6', 'L7'], 15), edit));
+    expect(screen.getByTestId('value-card')).toBeTruthy();
+    expect(screen.getByTestId('major-asset-card')).toBeTruthy();
+    expect(screen.getByTestId('very-large-card')).toBeTruthy();
+    expect(screen.getByText('Staged payments are needed at this size.')).toBeTruthy();
+    await rerender(stack(emptyCheck(), evalWith(['L0', 'L1p'], 3), edit));
+    expect(screen.queryByTestId('value-card')).toBeNull();
+    expect(screen.queryByTestId('major-asset-card')).toBeNull();
+    expect(screen.queryByTestId('very-large-card')).toBeNull();
+    expect(edit).not.toHaveBeenCalled();
+  });
+
   it('shows no costs card when the engine does not list L4', async () => {
     await render(stack(emptyCheck(), evalWith(['L0', 'L1p', 'L2'], 6)));
     expect(screen.queryByTestId('item-costs-card')).toBeNull();
