@@ -25,6 +25,8 @@ export const worked = {
   noRegular: 'No regular payments are confirmed yet.',
   confirmRegular: 'Confirm regular payments',
   assumes: 'What this assumes',
+  incomePay: 'your regular pay',
+  incomeRecords: 'what your logged months show',
   assumeIncome: 'Income counted as {{summary}}',
   assumeEveryday: 'Everyday spending continues at your usual pace to {{date}}',
   assumeUnspent: 'Unspent money is the figure you confirmed {{date}}: {{amount}}',
