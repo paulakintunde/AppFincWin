@@ -3,7 +3,7 @@
  * never read off the engine. `legacyMissing` is today's readinessOf, copied before the refactor, so `missing` can be
  * pinned against it for every input with no waivers and no skips.
  */
-import fc from 'fast-check';
+import * as fc from 'fast-check';
 import { minorUnits } from '../../../money/types';
 import { MATCH_DAYS, NEEDS_INPUT_ENTRY_AGE_DAYS, UNDER_LOGGED_PACE_PERCENT } from '../constants';
 import { addDays, addYearMonths, daysBetween, yearMonthOf } from '../dates';
@@ -94,7 +94,7 @@ const SERIES = [
 
 function paidMonth(ym: string): V3Line[] {
   return [
-    v3Line({ id: `pay-${ym}`, date: `${ym}-03`, amount: 1619942, role: 'income', seriesId: 'pay', incomeKind: 'salary' }),
+    v3Line({ id: `pay-${ym}`, date: `${ym}-03`, amount: 1619942, role: 'income', seriesId: 'pay' }),
     v3Line({ id: `netflix-${ym}`, date: `${ym}-03`, amount: 1199, seriesId: 'netflix' }),
     v3Line({ id: `lunch-${ym}`, date: `${ym}-21`, amount: 1000, seriesId: 'lunch' }),
     v3Line({ id: `e1-${ym}`, date: `${ym}-08`, amount: 150000 }),
@@ -105,14 +105,14 @@ function paidMonth(ym: string): V3Line[] {
 /** The owner's evidence on 2026-10-30. */
 function evidence(over: Partial<V3Inputs> = {}): V3Inputs {
   const sep: V3Line[] = [
-    v3Line({ id: 'pay-sep', date: '2026-09-03', amount: 1619942, role: 'income', seriesId: 'pay', incomeKind: 'salary', status: 'pending', name: 'Pay' }),
+    v3Line({ id: 'pay-sep', date: '2026-09-03', amount: 1619942, role: 'income', seriesId: 'pay', status: 'pending', name: 'Pay' }),
     v3Line({ id: 'netflix-sep', date: '2026-09-03', amount: 1199, seriesId: 'netflix', status: 'pending', name: 'Netflix' }),
     v3Line({ id: 'lunch-sep', date: '2026-09-21', amount: 1000, seriesId: 'lunch', status: 'pending', name: 'Lunch' }),
     v3Line({ id: 'e1-sep', date: '2026-09-08', amount: 150000 }),
     v3Line({ id: 'e2-sep', date: '2026-09-18', amount: 150000 }),
   ];
   const oct: V3Line[] = [
-    v3Line({ id: 'pay-oct', date: '2026-10-03', amount: 1619942, role: 'income', seriesId: 'pay', incomeKind: 'salary' }),
+    v3Line({ id: 'pay-oct', date: '2026-10-03', amount: 1619942, role: 'income', seriesId: 'pay' }),
     v3Line({ id: 'netflix-oct', date: '2026-10-03', amount: 1199, seriesId: 'netflix' }),
     v3Line({ id: 'lunch-oct', date: '2026-10-21', amount: 1000, seriesId: 'lunch' }),
     v3Line({ id: 'e1-oct', date: '2026-10-14', amount: 5000 }),
