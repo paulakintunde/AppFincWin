@@ -91,6 +91,9 @@ beforeEach(() => {
   resetToastForTests();
 });
 
+const mockOpenCheck = jest.fn();
+jest.mock('@/features/decide/v3/nav/hrefs', () => ({ openV3NewCheck: () => mockOpenCheck() }));
+
 describe('SetupStepper shell', () => {
   it('opens on Welcome with Start and Not now, fires decide_setup_started once', async () => {
     const { onClose } = await mount();
@@ -240,6 +243,17 @@ describe('SetupStepper shell', () => {
     expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({ patch: { setup_done_at: expect.any(String) } }));
     expect(mockTrack).toHaveBeenCalledWith('decide_setup_finished', {});
     expect(onClose).toHaveBeenCalledWith('done', expect.any(Array));
+    expect(mockOpenCheck).not.toHaveBeenCalled();
+  });
+
+  it('Summary leads with "Check a purchase": finishes setup and opens a new v3 check', async () => {
+    const { onClose } = await mount({ startAt: 'reminders' });
+    await press('Finish setup');
+    expect(screen.getByLabelText('Check a purchase')).toBeTruthy();
+    await press('Check a purchase');
+    expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({ patch: { setup_done_at: expect.any(String) } }));
+    expect(onClose).toHaveBeenCalledWith('done', expect.any(Array));
+    expect(mockOpenCheck).toHaveBeenCalledTimes(1);
   });
 
   it('analytics carry step keys only', async () => {

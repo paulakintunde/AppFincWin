@@ -7,10 +7,12 @@ import { decideEngine } from './availability';
 
 export interface DecideAccess {
   readonly v3: boolean;
+  /** 05.3-37: the raw per-account flag (profiles.decide_v3). Never grants v3 by itself; v3 comes from decideEngine(). */
+  readonly testAccount: boolean;
 }
 
 export function useDecideAccess(): DecideAccess {
   const { profile } = useProfile();
   const flag = profile?.decide_v3 === true;
-  return useMemo(() => ({ v3: decideEngine({ decideV3: flag }) === 'v3' }), [flag]);
+  return useMemo(() => ({ v3: decideEngine({ decideV3: flag }) === 'v3', testAccount: flag }), [flag]);
 }

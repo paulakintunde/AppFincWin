@@ -19,6 +19,7 @@ import { useT } from '@/i18n';
 import { getAnalytics } from '@/services/analytics';
 import { BackButton } from '@/shell/header/BackButton';
 import { RiseIn } from '@/features/decide/ui/RiseIn';
+import { openV3NewCheck } from '@/features/decide/v3/nav/hrefs';
 import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { queueToast, setToastFloor, showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, space, useScreenInsets } from '@/theme/layout';
@@ -224,6 +225,12 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
     advance();
   };
 
+  /** 05.3-37: the Summary's primary action. Finishes setup exactly as Done does, then opens a new check. */
+  const onCheckPurchase = () => {
+    finish();
+    openV3NewCheck();
+  };
+
   const onChange = () => {
     if (onChangeAnswer === undefined) return;
     markDone();
@@ -338,12 +345,22 @@ function StepperBody({ mode, startAt, only, onChangeAnswer, renderStep, stepTitl
           </Text>
         ) : null}
         <Pill
-          label={editing ? t('decide.settings.save') : nextLabel}
+          label={editing ? t('decide.settings.save') : isSummary ? t('decide.v3.ui.summary.checkPurchase') : nextLabel}
           variant="primary"
           disabled={editing ? !canContinue || ready === null || !ready.dirty : !canContinue}
-          onPress={editing ? onSaveAnswer : onNext}
+          onPress={editing ? onSaveAnswer : isSummary ? onCheckPurchase : onNext}
           accessibilityHint={reason ?? undefined}
         />
+        {isSummary && !editing ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('decide.setup.shell.done')}
+            onPress={onNext}
+            style={({ pressed }) => [styles.later, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+          >
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('decide.setup.shell.done')}</Text>
+          </Pressable>
+        ) : null}
         {isSummary && onChangeAnswer === undefined ? null : (
           <Pressable
             accessibilityRole="button"
