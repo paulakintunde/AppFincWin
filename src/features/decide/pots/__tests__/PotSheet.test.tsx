@@ -172,3 +172,17 @@ describe('PotSheet', () => {
     expect(mockToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.pots.toast.saved', params: { undoLabel: 'potEdited', name: 'Car service and MOT' } }, stepId: 's-edit' });
   });
 });
+
+// 05.3-52 (F8): the empty Target and Already saved fields show a muted zero hint; the label stays the field name.
+describe('PotSheet empty money hints', () => {
+  it('Target and Already saved hint 0.00 in inkMuted when empty', async () => {
+    await wrap(<PotSheet visible pot={null} onClose={jest.fn()} />);
+    for (const label of ['Target', 'Already saved']) {
+      const field = screen.getByLabelText(label);
+      expect(field.props.value).toBe('');
+      expect(field.props.placeholder).toBe('0.00');
+      expect(field.props.placeholderTextColor).toBe('#6E6A5E');
+      expect(field.props.accessibilityLabel).toBe(label);
+    }
+  });
+});

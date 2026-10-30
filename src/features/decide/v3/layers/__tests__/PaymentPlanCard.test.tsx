@@ -145,3 +145,36 @@ describe('PaymentPlanCard', () => {
     expect(screen.getByText('No card limit applies to this kind of purchase.')).toBeTruthy();
   });
 });
+
+// 05.3-52 (F8): an empty or zero fee shows the muted zero hint, never a pre-filled 0.00 value.
+describe('PaymentPlanCard fee hints', () => {
+  it('Set-up and other fees and Down payment are empty with a 0.00 hint', async () => {
+    await mount(planCheck());
+    for (const label of ['Set-up and other fees', 'Down payment']) {
+      const field = screen.getByLabelText(label);
+      expect(field.props.value).toBe('');
+      expect(field.props.placeholder).toBe('0.00');
+      expect(field.props.accessibilityLabel).toBe(label);
+      expect(field.props.accessibilityValue).toBeUndefined();
+    }
+  });
+
+  it('a fee typed back to 0 returns to the hint', async () => {
+    await mount(planCheck());
+    await fireEvent.changeText(screen.getByLabelText('Set-up and other fees'), '25');
+    await fireEvent(screen.getByLabelText('Set-up and other fees'), 'blur');
+    expect(screen.getByLabelText('Set-up and other fees').props.value).toBe('25');
+    await fireEvent.changeText(screen.getByLabelText('Set-up and other fees'), '');
+    await fireEvent(screen.getByLabelText('Set-up and other fees'), 'blur');
+    const field = screen.getByLabelText('Set-up and other fees');
+    expect(field.props.value).toBe('');
+    expect(field.props.placeholder).toBe('0.00');
+  });
+
+  it('More fees fields hint 0.00 too', async () => {
+    await mount(planCheck());
+    await fireEvent.press(screen.getByText('More fees'));
+    expect(screen.getByLabelText('Fee with each payment').props.placeholder).toBe('0.00');
+    expect(screen.getByLabelText('Fee at the end').props.placeholder).toBe('0.00');
+  });
+});
