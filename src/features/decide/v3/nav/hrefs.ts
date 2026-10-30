@@ -5,20 +5,22 @@ import { pushOnce } from '@/shell/navigation/pushOnce';
 
 export type PurchaseFocus = 'price';
 
+// Object hrefs go through unknown: a stale local .expo/types/router.d.ts may not list the v3 routes yet.
+
 export function purchaseHref(id: string, params: { focus?: PurchaseFocus } = {}): Href {
-  return { pathname: '/decide/purchase/[id]', params: { id, ...params } } as Href;
+  return { pathname: '/decide/purchase/[id]', params: { id, ...params } } as unknown as Href;
 }
 export function answerHref(id: string): Href {
-  return { pathname: '/decide/answer/[id]', params: { id } } as Href;
+  return { pathname: '/decide/answer/[id]', params: { id } } as unknown as Href;
 }
 export function planHref(id: string): Href {
-  return { pathname: '/decide/plan/[id]', params: { id } } as Href;
+  return { pathname: '/decide/plan/[id]', params: { id } } as unknown as Href;
 }
 export function insteadHref(id: string): Href {
-  return { pathname: '/decide/instead/[id]', params: { id } } as Href;
+  return { pathname: '/decide/instead/[id]', params: { id } } as unknown as Href;
 }
 export function helpHref(id: string): Href {
-  return { pathname: '/decide/help/[id]', params: { id } } as Href;
+  return { pathname: '/decide/help/[id]', params: { id } } as unknown as Href;
 }
 export const WORKED_HREF = '/decide/worked' as Href;
 export const REFINE_HREF = '/decide/refine' as Href;
