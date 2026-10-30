@@ -16,3 +16,8 @@ function stripMonth(m: V3Month): V3Month {
 export function stripRefunds(inputs: V3Inputs): V3Inputs {
   return { ...inputs, months: inputs.months.map(stripMonth) };
 }
+
+/** D-13: true when any month line carries a refund link, so the comparison run is worth doing. */
+export function hasRefundLinks(inputs: V3Inputs): boolean {
+  return inputs.months.some((m) => m.lines.some(linked));
+}
