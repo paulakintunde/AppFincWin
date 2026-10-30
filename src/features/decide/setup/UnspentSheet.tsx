@@ -93,9 +93,10 @@ function UnspentForm({ onClose, onSetThem }: UnspentSheetProps) {
   const view = model.view;
   const sum = model.sum;
   const body = { ...textRole(pairing, 'body'), color: colors.ink };
+  // 05.3-51 (F7b): the app's medium style ("Oct 29, 2026"); 'short' gave en-CA a raw "2026-10-29". A timestamp reads its day.
   const date = (iso: string): string => {
     try {
-      return formatLocalDate(iso, locale, 'short');
+      return formatLocalDate(iso.slice(0, 10), locale, 'medium');
     } catch {
       return iso;
     }
