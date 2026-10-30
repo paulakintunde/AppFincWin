@@ -1,8 +1,8 @@
 /**
  * 05.3-39 (DSV-02, DSV-03, D-06, D-20): the v3 Decide home, assembled from the built cards and lists.
- * Order: setup status (only while setup is unfinished), month card, refine card, check card or the not-ready card in its
- * slot, envelopes, saved plans, unfinished checks, "Something changed?", Past decisions row, footer. Every number comes from
- * useChecksV3, so the rows here and the answer screen show one code per check.
+ * Order: setup status (only while setup is unfinished), month card, check card or the not-ready card in its slot, refine
+ * card (05.3-53: after the main card), envelopes, saved plans, unfinished checks, "Something changed?", Past decisions row,
+ * footer. Every number comes from useChecksV3, so the rows here and the answer screen show one code per check.
  */
 import React, { useCallback, useMemo } from 'react';
 import { AccessibilityInfo, Pressable, StyleSheet, View } from 'react-native';
@@ -173,9 +173,10 @@ export function HomeScreen(): React.JSX.Element {
           />
         ) : null}
         <MonthBarCard evaluation={home} unspentStaleDays={staleDays} />
-        <RefineCard />
         {ready ? <CheckCard /> : null}
         <NotReadyCard readiness={readiness} thisMonth={thisMonth} onReady={announceReady} />
+        {/* 05.3-53 (F9): the nudge follows the main card so it never pushes that card below the fold. */}
+        <RefineCard />
         <EnvelopeGrid envelopes={envelopes} />
         {saved.length > 0 ? (
           <View style={styles.section}>
