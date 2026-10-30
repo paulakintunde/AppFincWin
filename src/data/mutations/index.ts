@@ -40,6 +40,7 @@ import { registerDismissalMutations } from './dismissals';
 import { registerIncomeTagMutations } from './incomeTags';
 import { registerRefundLinkMutations } from './refundLinks';
 import { registerDecideAnswerMutations } from './decideAnswers';
+import { registerRecordBoughtMutations } from './boughtWrite';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
@@ -92,4 +93,6 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerIncomeTagMutations(qc);
   registerRefundLinkMutations(qc);
   registerDecideAnswerMutations(qc);
+  // 05.3-13: Record as bought (v3 write path).
+  registerRecordBoughtMutations(qc);
 }
