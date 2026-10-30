@@ -13,7 +13,7 @@ jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('../../../pots/PotSheet', () => ({
   PotSheet: ({ visible }: { visible: boolean }) => {
     const { Text } = jest.requireActual('react-native');
-    return visible ? <Text testID="pot-sheet-open">open</Text> : null;
+    return visible ? <Text testID="pot-sheet-open">{'open'}</Text> : null;
   },
 }));
 

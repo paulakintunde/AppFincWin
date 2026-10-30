@@ -17,7 +17,7 @@ jest.mock('@/features/decide/v3/nav/V3Skeleton', () => {
 });
 jest.mock('@/features/decide/v3/help/HelpScreen', () => {
   const { Text: T } = jest.requireActual('react-native');
-  return { HelpScreen: () => <T>help-form</T> };
+  return { HelpScreen: () => <T>{'help-form'}</T> };
 });
 
 describe('HelpRoute', () => {

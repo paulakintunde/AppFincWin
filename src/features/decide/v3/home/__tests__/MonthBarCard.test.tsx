@@ -20,7 +20,7 @@ jest.mock('../../../setup/EmergencyFundSheet', () => ({ EmergencyFundSheet: ({ v
 let mockReduced = false;
 function mockText(id: string): React.JSX.Element {
   const { Text } = jest.requireActual('react-native');
-  return <Text testID={id}>open</Text>;
+  return <Text testID={id}>{'open'}</Text>;
 }
 
 beforeEach(() => {

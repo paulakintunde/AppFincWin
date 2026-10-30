@@ -7,7 +7,7 @@
  * first appears or its code changes (heroHaptic); none for fits or needs_input, none while typing.
  * `busy` keeps the previous text on screen and marks the group busy: a recompute never blanks the hero.
  */
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { Code, Evaluation } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
@@ -63,9 +63,11 @@ export function AnswerHero({ evaluation, busy = false, extraChip }: AnswerHeroPr
   }, [evaluation, fmt, t]);
 
   // busy: keep what was on screen. The first render has nothing to keep, so it shows what it has.
-  const last = useRef<Shown>(current);
-  if (!busy) last.current = current;
-  const shown = last.current;
+  const [kept, setKept] = useState<Shown>(current);
+  const differs = kept.code !== current.code || kept.tone !== current.tone || kept.chip !== current.chip ||
+    kept.title !== current.title || kept.body !== current.body || kept.spoken !== current.spoken;
+  if (!busy && differs) setKept(current);
+  const shown = busy ? kept : current;
 
   const label = useSettledLabel(shown.spoken, shown.chip, SETTLE_MS);
 
