@@ -6,6 +6,7 @@
  * Two-date refunds (05.2): the month view dates a linked refund on its purchase, but rolled unspent counts it on the day it arrived.
  */
 import { minorUnits, type MinorUnits } from '../../../money/types';
+import { dueDrops } from '../month/dueDrops';
 import type { Funds, MonthModel, UnspentSum, V3Inputs } from '../types';
 import { emergencyOf, withLiveEmergency } from './emergency';
 import { envelopesOf, ownEnvelope } from './envelopes';
@@ -118,6 +119,7 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
     erest: month.erest,
     profile: inputs.profile,
     series: inputs.series,
+    drops: dueDrops(inputs), // 05.3-64 (D-27, D-31): the same rule as the month model and the cash path
   });
   const roll =
     inputs.unspent === null
@@ -176,7 +178,7 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
 export function unspentSum(raw: V3Inputs, month: MonthModel): UnspentSum {
   const inputs = withLiveEmergency(raw); // the UI calls this on inputs that never went through evaluate
   const sp = spendingOf(inputs);
-  const input = { asOf: inputs.asOf, billsDue: month.billsDue, erest: month.erest, profile: inputs.profile, series: inputs.series };
+  const input = { asOf: inputs.asOf, billsDue: month.billsDue, erest: month.erest, profile: inputs.profile, series: inputs.series, drops: dueDrops(inputs) };
   const be = billsAndErest(input);
   const suggested = suggestedUnspent({ ...input, spending: sp.spending });
   const heldBack = heldBackOf(inputs.heldBridges ?? []);
