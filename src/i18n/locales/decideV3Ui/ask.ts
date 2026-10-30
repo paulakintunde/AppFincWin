@@ -19,6 +19,8 @@ export const ask = {
   pattern: { steady: 'Steady', variable: 'Changes month to month', seasonal: 'Follows the seasons' },
   expectedCaption: 'Expected money in for {{month}}',
   saveExpectedIncome: 'Save expected income',
+  expectedMore_one: 'and 1 more month',
+  expectedMore_other: 'and {{count}} more months',
   coverYes: 'Yes, I can cover it',
   coverNo: 'No, I can’t',
   coverNote: 'This is only your answer. It is not checked against your records.',
