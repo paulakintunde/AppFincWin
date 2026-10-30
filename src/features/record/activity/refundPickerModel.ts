@@ -75,6 +75,40 @@ export function purchaseCandidates(input: PickerInput): TransactionRow[] {
   return order(list, payerKeyOf(anchor.name)).slice(0, PICKER_CAP);
 }
 
+/** The payee key with a bare "refund" word dropped, so "IKEA Refund" and "IKEA" read as the same payee. */
+function hintKeyOf(name: string | null): string | null {
+  const key = payerKeyOf(name);
+  if (key === null) return null;
+  const stripped = key.replace(/\b(refunds?|refunded)\b/g, ' ').replace(/\s+/g, ' ').trim();
+  return stripped === '' ? null : stripped;
+}
+
+/**
+ * 05.3-35 (D-14): the purchase a money-in row most likely refunds, for the quiet "Refund of your {payee} purchase?"
+ * chip. Same normalised payee, same currency, within the 12 months up to the row; the row must be live, unlinked and
+ * not a transfer leg. Newest purchase wins. Nothing here links anything (05.2 D-21): the user still picks and saves.
+ */
+export function refundHintFor<R extends TransactionRow>(
+  row: R,
+  purchases: readonly R[],
+  today: string
+): { purchaseId: string; payee: string } | null {
+  if (!isLive(row) || row.original_amount <= 0 || (row.refund_of ?? null) !== null || row.is_refund) return null;
+  const key = hintKeyOf(row.name);
+  if (key === null) return null;
+  const from = monthsBefore(row.local_date, PICKER_WINDOW_MONTHS);
+  const latest = row.local_date < today ? row.local_date : today;
+  let best: R | null = null;
+  for (const p of purchases) {
+    if (!isLive(p) || p.original_amount >= 0 || p.id === row.id) continue;
+    if (p.original_currency !== row.original_currency) continue;
+    if (p.local_date < from || p.local_date > latest) continue;
+    if (hintKeyOf(p.name) !== key) continue;
+    if (best === null || p.local_date > best.local_date || (p.local_date === best.local_date && p.id < best.id)) best = p;
+  }
+  return best === null ? null : { purchaseId: best.id, payee: best.name ?? '' };
+}
+
 /** Unlinked money-in rows in the purchase's currency dated on or after the purchase. */
 export function refundCandidates(input: PickerInput): TransactionRow[] {
   const { anchor, rows, today, query, amountText } = input;

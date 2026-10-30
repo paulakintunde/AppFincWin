@@ -45,6 +45,8 @@ export interface RefundPickerSheetProps {
   anchor: TransactionRow | null;
   formatter: MoneyFormatter;
   onClose: () => void;
+  /** 05.3-35 (D-14): start with this purchase selected when the refund has no link yet. The user still saves. */
+  preselectId?: string;
 }
 
 export function RefundPickerSheet(props: RefundPickerSheetProps) {
@@ -56,7 +58,7 @@ function monthName(month: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(Date.UTC(Number(y), Number(m) - 1, 1));
 }
 
-function RefundPickerForm({ direction, anchor, formatter, onClose }: RefundPickerSheetProps & { anchor: TransactionRow }) {
+function RefundPickerForm({ direction, anchor, formatter, onClose, preselectId }:RefundPickerSheetProps & { anchor: TransactionRow }) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
@@ -69,7 +71,7 @@ function RefundPickerForm({ direction, anchor, formatter, onClose }: RefundPicke
   const forward = direction === 'refund->purchase';
 
   const [query, setQuery] = useState('');
-  const [selectedId, setSelectedId] = useState<string | null>(forward ? (anchor.refund_of ?? null) : null);
+  const [selectedId, setSelectedId] = useState<string | null>(forward ? (anchor.refund_of ?? preselectId ?? null) : null);
 
   // Cached window: the 12 months before the refund, or the purchase date up to today.
   const from = forward ? monthsBefore(anchor.local_date, PICKER_WINDOW_MONTHS) : anchor.local_date;

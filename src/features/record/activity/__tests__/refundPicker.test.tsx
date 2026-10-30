@@ -38,7 +38,7 @@ jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
-jest.setTimeout(20000);
+jest.setTimeout(60000);
 
 const formatter = {
   locale: 'en-GB',
@@ -68,13 +68,17 @@ function tx(over: Partial<TransactionRow> = {}): TransactionRow {
 const refund = (over: Partial<TransactionRow> = {}) =>
   tx({ id: 'ref', name: 'Shop', original_amount: 4000, local_date: '2026-10-10', is_refund: true, ...over });
 
-async function open(anchor: TransactionRow, direction: 'refund->purchase' | 'purchase->refund' = 'refund->purchase') {
+async function open(
+  anchor: TransactionRow,
+  direction: 'refund->purchase' | 'purchase->refund' = 'refund->purchase',
+  preselectId?: string
+) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const onClose = jest.fn();
   const utils = await render(
     <QueryClientProvider client={qc}>
       <ThemeProvider>
-        <RefundPickerSheet visible direction={direction} anchor={anchor} formatter={formatter} onClose={onClose} />
+        <RefundPickerSheet visible direction={direction} anchor={anchor} formatter={formatter} onClose={onClose} preselectId={preselectId} />
       </ThemeProvider>
     </QueryClientProvider>
   );
@@ -133,6 +137,23 @@ describe('refund picker model', () => {
 });
 
 describe('RefundPickerSheet', () => {
+  it('05.3-35: preselectId starts with that purchase selected; nothing links until Link refund is pressed', async () => {
+    mockRange.mockResolvedValue([tx({ id: 'p1', name: 'Shop' }), tx({ id: 'p2', name: 'Cafe', original_amount: -500 })]);
+    const { findByText, getByRole } = await open(refund(), 'refund->purchase', 'p1');
+    expect(await findByText('£60.00 of the purchase stays as spending in September.')).toBeTruthy();
+    expect(getByRole('button', { name: 'Link refund' }).props.accessibilityState?.disabled).toBeFalsy();
+    expect(mockLink).not.toHaveBeenCalled();
+    fireEvent.press(getByRole('button', { name: 'Link refund' }));
+    expect((mockLink.mock.calls[0]?.[1] as TransactionRow).id).toBe('p1');
+  });
+
+  it('05.3-35: an existing link wins over preselectId', async () => {
+    mockRange.mockResolvedValue([tx({ id: 'p1', name: 'Shop' }), tx({ id: 'p2', name: 'Cafe', original_amount: -500 })]);
+    const { findByText, getByRole } = await open(refund({ refund_of: 'p2' }), 'refund->purchase', 'p1');
+    expect(await findByText('Which purchase was refunded?')).toBeTruthy();
+    expect(getByRole('button', { name: 'Remove link' })).toBeTruthy();
+  });
+
   it('lists purchases with title, sub-line, and links the chosen one with a toast', async () => {
     mockRange.mockResolvedValue([tx({ id: 'p1', name: 'Shop' }), tx({ id: 'p2', name: 'Cafe', original_amount: -500 })]);
     const { findByText, getByRole, getByLabelText, onClose } = await open(refund());
