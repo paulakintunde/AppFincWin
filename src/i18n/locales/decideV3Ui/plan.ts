@@ -6,6 +6,8 @@ export const plan = {
   perMonthEnds: 'about {{amount}} a month · ends {{date}}',
   running: 'plus running costs of {{amount}} a month',
   cardA11y: '{{count}} payments of {{payment}} {{every}}. About {{perMonth}} a month. Ends {{date}}.',
+  everyNWeeks: 'every {{n}} weeks',
+  everyNMonths: 'every {{n}} months',
   price: 'Price',
   tax: 'Tax and one-off costs',
   fees: 'Set-up and other fees',
