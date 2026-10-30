@@ -1,6 +1,6 @@
 /**
  * 05.3-15 (D-16): a saved-plan or unfinished row on Decide home. The chip comes from the stored answer_v3, never from
- * verdict_at_decision; "changed since you saved" is true only when changeSinceLooked reports a change. A malformed stored
+ * the recorded decision verdict; "changed since you saved" is true only when changeSinceLooked reports a change. A malformed stored
  * answer falls back to the live chip.
  */
 import { changeSinceLooked, verdictRowFor } from '@/engine/decide/v3';
