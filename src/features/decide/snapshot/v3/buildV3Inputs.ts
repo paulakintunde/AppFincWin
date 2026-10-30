@@ -33,6 +33,7 @@ import {
   type PayArrival,
   type RoughFigures,
   type SeriesRole,
+  type SkippedOccurrence,
   type UnexplainedAnswer,
   type UnexplainedUse,
   type UsdRate,
@@ -262,6 +263,9 @@ function accountUseFromColumns(a: UseColumns): AccountUse | null {
   }
 }
 
+/** 05.3-55 (D-24): a display name for readiness items; an empty or missing name is null. */
+const nameOf = (x: string | null | undefined): string | null => (typeof x === 'string' && x !== '' ? x : null);
+
 type AnswerLite = NonNullable<V3SettingsSource['answers']>[number];
 
 /** D-58: pay_arrival answers; the key is `<series id>:<YYYY-MM-DD>`. */
@@ -388,6 +392,7 @@ export function buildV3Inputs(
       categoryId,
       isHousing: categoryKey(categoryId) === 'Housing',
       savingMode: saving ? (x.saving_mode ?? 'fixed') : null,
+      name: nameOf(seriesRow.get(id)?.name),
     };
   };
 
@@ -403,7 +408,7 @@ export function buildV3Inputs(
   // OQ6: a stored envelope account wins over the transfer-leg guess, which stays as the fallback. D-23: bucket = a saving bucket.
   const envelopes: Envelope[] = (built.pots ?? []).map((p) => {
     const g = goalRow.get(p.id);
-    return { ...p, purposeId: null, accountId: g?.account_id ?? landing.get(p.id)?.account_id ?? null, bucket: (g?.bucket ?? null) !== null };
+    return { ...p, purposeId: null, accountId: g?.account_id ?? landing.get(p.id)?.account_id ?? null, bucket: (g?.bucket ?? null) !== null, name: nameOf(g?.name) };
   });
   const toHome = makeConverter({ home, rates: source.rates, customs: source.customCurrencies, today }).toHome;
   const accounts: V3Account[] = source.accounts.flatMap((a) => {
@@ -499,6 +504,7 @@ export function buildV3Inputs(
               incomeKind: role === 'income' ? (incomeKindOf(str(row?.income_kind)) ?? (s !== undefined ? s.incomeKind : null)) : null,
               countsAs: role === 'income' ? (row?.counts_as ?? (s !== undefined ? s.countsAs : null)) : null,
               refundOf: str(row?.refund_of),
+              name: nameOf(row?.name),
             },
           ];
         }),
@@ -533,6 +539,10 @@ export function buildV3Inputs(
   }
 
   const answers = v3?.answers ?? [];
+  // W2 (05.3-55): skipped occurrences come from the live source rows that belong to a series, never from the built months.
+  const skipped: SkippedOccurrence[] = source.rows.flatMap((r) =>
+    r.status === 'skipped' && r.recurring_series_id !== null && r.deleted_at === null ? [{ seriesId: r.recurring_series_id, date: r.local_date }] : [],
+  );
 
   // ── funds ──
   const reserve = st === null || !moneyUsable ? null : moneyOf(st.reserve);
@@ -565,5 +575,7 @@ export function buildV3Inputs(
     heldBridges: heldBridgesOf(answers, new Set(v3?.live_bridge_check_ids ?? [])),
     unsavedWrites: pendingWrites,
     provisionalRates,
+    waivers: v3?.waivers ?? [], // D-28: the owner's readiness answers (settingsSourceOf)
+    skipped,
   };
 }

@@ -145,7 +145,7 @@ describe('buildV3Inputs: line roles', () => {
     expect(lineOf(src, 'dep-in')!.role).toBe('own_transfer');
     expect(lineOf(src, 'wd-in')!.role).toBe('envelope_withdrawal');
     expect(lineOf(src, 'old-out')!.role).toBe('saved_invested'); // a done goal counts as saving again
-    expect(inputs.envelopes).toEqual([{ id: 'g1', kind: 'pot', target: 90000, monthlyAmount: 5000, readyBy: '2027-03-01', saved: 17000, purposeId: null, accountId: SAVINGS, bucket: false }]);
+    expect(inputs.envelopes).toEqual([{ id: 'g1', kind: 'pot', target: 90000, monthlyAmount: 5000, readyBy: '2027-03-01', saved: 17000, purposeId: null, accountId: SAVINGS, bucket: false, name: null }]);
   });
 });
 

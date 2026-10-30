@@ -81,4 +81,21 @@ describe('settingsSourceOf', () => {
     const v3 = run({ dismissals: [dismissal(), dismissal({ id: 'd2', payee_key: 'not-pay:refund|USD|1', direction: 'in' })] })!;
     expect(v3.dismissals).toEqual(['netflix|USD|-1']);
   });
+
+  it('fills waivers from the live readiness_waiver answers only (D-28); the other kinds still reach answers', () => {
+    const series = '11111111-1111-4111-8111-111111111111';
+    const v3 = run({
+      answers: [
+        answer({ id: 'w1', kind: 'readiness_waiver', key: `paid-by-other:${series}:2026-09-03`, amount: null, on_date: '2026-10-30' }),
+        answer({ id: 'w2', kind: 'readiness_waiver', key: 'month-complete:2026-09', amount: null, on_date: '2026-10-30', deleted_at: '2026-10-30T01:00:00Z' }),
+        answer({ id: 'p1', kind: 'pay_arrival', key: 'pay-key', amount: 500, on_date: '2026-10-03' }),
+      ],
+    })!;
+    expect(v3.waivers).toEqual([{ kind: 'paid_by_other', seriesId: series, date: '2026-09-03' }]);
+    expect(v3.answers).toContainEqual({ kind: 'pay_arrival', key: 'pay-key', amount: 500, bool_value: null, on_date: '2026-10-03', check_id: null });
+  });
+
+  it('gives no waivers when there are no answers', () => {
+    expect(run()!.waivers).toEqual([]);
+  });
 });

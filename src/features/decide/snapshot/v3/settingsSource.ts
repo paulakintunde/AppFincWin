@@ -6,6 +6,7 @@ import type { DecideSettingsRow } from '@/db/decideSettings';
 import type { RecurringDismissalRow } from '@/db/recurringDismissals';
 import { isNotPayKey } from '@/features/income/notPay';
 import type { V3SettingsSource } from './types';
+import { waiversFromAnswers } from './waiverKeys';
 
 const ENGINE_TYPE: Readonly<Record<string, IncomeType>> = {
   salary_or_wages: 'salary',
@@ -83,5 +84,8 @@ export function settingsSourceOf(input: SettingsSourceInput): V3SettingsSource |
       .filter((a) => a.deleted_at === null)
       .map((a) => ({ kind: a.kind, key: a.key, amount: a.amount, bool_value: a.bool_value, on_date: a.on_date, check_id: a.check_id })),
     live_bridge_check_ids: liveBridgeCheckIds(input),
+    // 05.3-55 (D-28): the owner's readiness answers. input.answers is the owner-scoped decide_answers read
+    // (useDecideAnswers(userId, householdId), RLS created_by = auth.uid()), so no other user's waiver can reach here.
+    waivers: waiversFromAnswers(input.answers),
   };
 }
