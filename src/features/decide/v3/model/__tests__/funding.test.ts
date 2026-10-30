@@ -49,7 +49,7 @@ describe('fundingStrip', () => {
   it('fits_month adds a soft left-after part; none when nothing is left', () => {
     const base = { code: 'fits_month', dayOne: 10000, split: [{ source: 'month', amount: 10000 }] as Seg[] };
     const s = fundingStrip(ev({ ...base, facts: [{ code: 'month_left_after', values: { month: '2026-10', left: 5000 } }] }))!;
-    expect(s.parts[1]).toEqual({ amount: 5000, labelKey: 'decide.v3.ui.answer.leftAfter', style: 'soft' });
+    expect(s.parts[1]).toEqual({ amount: 5000, labelKey: 'decide.v3.ui.answer.leftAfter', params: { month: '2026-10' }, style: 'soft' });
     expect(fundingStrip(ev({ ...base, facts: [{ code: 'month_left_after', values: { month: '2026-10', left: -5 } }] }))!.parts).toHaveLength(1);
     expect(fundingStrip(ev({ ...base }))!.parts).toHaveLength(1);
   });
