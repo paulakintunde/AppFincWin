@@ -38,16 +38,16 @@ describe('workedModel rows', () => {
     expect(w.rows.map((r) => Number(r.amount))).toEqual([400000, 200000, 3000, 7000, 120500, 27000]);
     expect(w.rows[1]).toMatchObject({ key: 'decide.v3.ui.worked.regular_other', params: { count: 2 } });
     expect(w.rows[5]).toMatchObject({ key: 'decide.v3.ui.worked.toCome_other', params: { count: 13 } });
-    expect(w.rows[0].params).toEqual({ date: '2026-10-01' });
+    expect(w.rows[0]!.params).toEqual({ date: '2026-10-01' });
   });
 
   it('singular keys, no pay series, loans clamped to set-aside, negative result', () => {
     const w = workedModel(ev({}, { day: 30 }), inp({ debts: [debt(99999)], series: [bill('a', true)] }));
-    expect(w.rows[1].key).toBe('decide.v3.ui.worked.regular_one');
-    expect(w.rows[5].key).toBe('decide.v3.ui.worked.toCome_one');
-    expect(w.rows[0].params).toEqual({ date: '' });
-    expect(Number(w.rows[2].amount)).toBe(10000);
-    expect(Number(w.rows[3].amount)).toBe(0);
+    expect(w.rows[1]!.key).toBe('decide.v3.ui.worked.regular_one');
+    expect(w.rows[5]!.key).toBe('decide.v3.ui.worked.toCome_one');
+    expect(w.rows[0]!.params).toEqual({ date: '' });
+    expect(Number(w.rows[2]!.amount)).toBe(10000);
+    expect(Number(w.rows[3]!.amount)).toBe(0);
     const neg = workedModel(ev({ moneyIn: mu(0), monthLeft: mu(-5) }), inp());
     expect(neg.result.negative).toBe(true);
   });
@@ -56,7 +56,7 @@ describe('workedModel rows', () => {
     const n = fc.integer({ min: 0, max: 1_000_000 });
     fc.assert(
       fc.property(n, n, n, n, n, n, n, (moneyIn, billsPaid, billsDue, everydayLogged, erest, setAside, d) => {
-        const w = workedModel(ev(monthOf({ moneyIn, billsPaid, billsDue, everydayLogged, erest, setAside })), inp({ debts: [debt(Math.min(d, setAside))] }));
+        const w = workedModel(ev(monthOf({ moneyIn, billsPaid, billsDue, everydayLogged, erest, setAside }) as unknown as Record<string, unknown>), inp({ debts: [debt(Math.min(d, setAside))] }));
         return sum(w) === Number(w.result.amount);
       }),
     );
@@ -92,7 +92,7 @@ describe('workedModel six months', () => {
     );
     expect(w.six.map((s) => s.month)).toEqual(['2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08']);
     expect(w.six.map((s) => s.state)).toEqual(['normal', 'normal', 'half', 'half', 'normal', 'out']);
-    expect(Number(w.six[0].left)).toBe(777);
+    expect(Number(w.six[0]!.left)).toBe(777);
     expect(w.basedOn).toBe(6);
     expect(w.typical).toBe(500);
     expect(w.largest).toEqual({ month: '2026-03', amount: 777 });
@@ -111,7 +111,7 @@ describe('workedModel six months', () => {
       line('spending', 99999, 'pending'),
     ];
     const w = workedModel(ev({}, { monthsUsed: ['2026-02'] }), inp({ months: [pm('2026-02', null, lines)] }));
-    expect(Number(w.six[0].left)).toBe(500002 - 105002);
+    expect(Number(w.six[0]!.left)).toBe(500002 - 105002);
   });
 
   it('fewer than six -> basedOn n; fewer than 3 used -> no largest; ties keep earliest', () => {
