@@ -28,6 +28,7 @@ jest.mock('@/features/decide/ui/textFit', () => ({
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', timeZone: 'UTC', today: '2026-10-30' }),
 }));
+jest.mock('../useCheckWritesSettled', () => ({ useCheckWritesSettled: () => true }));
 jest.mock('../useBoughtContext', () => ({ useBoughtContext: () => ({ cashAccountId: 'a1', today: '2026-10-30' }) }));
 jest.mock('../../shared/useV3Format', () => ({
   useV3Format: () => ({ money: (n: number) => `$${n / 100}`, month: (m: string) => m, date: (d: string) => d }),
