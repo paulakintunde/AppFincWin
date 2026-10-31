@@ -35,7 +35,8 @@ describe('MonthBarCard', () => {
     expect(screen.getByText('October')).toBeTruthy();
     expect(screen.getByText('day 18 of 31')).toBeTruthy();
     expect(screen.getByText('$2,705', HIDDEN)).toBeTruthy();
-    expect(screen.getByText('$870', HIDDEN)).toBeTruthy();
+    expect(screen.getByText('$770', HIDDEN)).toBeTruthy();
+    expect(screen.getByText('$100', HIDDEN)).toBeTruthy();
     expect(screen.getByText('$4,000 in · on track to leave')).toBeTruthy();
     expect(screen.getByTestId('month-figure').props.children).toBe('$425');
     expect(screen.getAllByText('$425', HIDDEN).length).toBeGreaterThan(0);
@@ -44,7 +45,7 @@ describe('MonthBarCard', () => {
   it('reads the bar and legend as one sentence', async () => {
     await wrap(<MonthBarCard evaluation={samEvaluation()} />);
     // the guards ban "left" for month figures under decide.v3, so the shipped copy says "remaining"
-    expect(screen.getByLabelText('October, day 18 of 31. $2,705 out so far, $870 still to come, $425 remaining.')).toBeTruthy();
+    expect(screen.getByLabelText('October, day 18 of 31. $2,705 out so far, $100 set aside, $770 still to come, $425 remaining.')).toBeTruthy();
   });
 
   it('overspent month: danger figure with a minus, an over segment and no left segment', async () => {

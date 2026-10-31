@@ -58,12 +58,14 @@ export function MonthBarCard({ evaluation, unspentStaleDays }: MonthBarCardProps
   const dayLine = t(`${K}monthDay`, { day: m.day, days: m.daysInMonth });
   const lastLabel = bar.negative ? t(`${K}legendOverspent`) : t(`${K}legendLeft`);
   const lastAmount = bar.negative ? bar.over : bar.left;
+  const hasSet = bar.setAside > 0;
+  const a11yBase = { month: monthName, day: m.day, days: m.daysInMonth, out: f.moneyA11y(bar.outSoFar), set: f.moneyA11y(bar.setAside), toCome: f.moneyA11y(bar.stillToCome) };
   const barA11y = bar.negative
-    ? t(`${K}barA11yOver`, { month: monthName, day: m.day, days: m.daysInMonth, out: f.moneyA11y(bar.outSoFar), toCome: f.moneyA11y(bar.stillToCome), over: f.moneyA11y(bar.over) })
-    : t(`${K}barA11y`, { month: monthName, day: m.day, days: m.daysInMonth, out: f.moneyA11y(bar.outSoFar), toCome: f.moneyA11y(bar.stillToCome), left: f.moneyA11y(bar.left) });
+    ? t(hasSet ? `${K}barA11yOverSet` : `${K}barA11yOver`, { ...a11yBase, over: f.moneyA11y(bar.over) })
+    : t(hasSet ? `${K}barA11ySet` : `${K}barA11y`, { ...a11yBase, left: f.moneyA11y(bar.left) });
 
   const fill = (s: BarSegment): string =>
-    s.kind === 'out' ? colors.ink : s.kind === 'toCome' ? colors.inkSoft1 : s.kind === 'left' ? colors.accent : colors.danger;
+    s.kind === 'out' ? colors.ink : s.kind === 'setAside' ? colors.accentTint1 : s.kind === 'toCome' ? colors.inkSoft1 : s.kind === 'left' ? colors.accent : colors.danger;
 
   const grow = useSharedValue(reduced ? 1 : 0);
   useEffect(() => {
@@ -112,6 +114,7 @@ export function MonthBarCard({ evaluation, unspentStaleDays }: MonthBarCardProps
         </View>
         <View importantForAccessibility="no-hide-descendants" style={styles.legend}>
           <LegendItem color={colors.ink} amount={f.money(bar.outSoFar)} label={t(`${K}legendOut`)} />
+          {hasSet ? <LegendItem color={colors.accentTint1} amount={f.money(bar.setAside)} label={t(`${K}legendSetAside`)} /> : null}
           <LegendItem color={colors.inkSoft1} amount={f.money(bar.stillToCome)} label={t(`${K}legendToCome`)} />
           <LegendItem color={bar.negative ? colors.danger : colors.accent} amount={f.money(lastAmount)} label={lastLabel} />
         </View>
