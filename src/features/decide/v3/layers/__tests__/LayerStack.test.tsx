@@ -11,7 +11,7 @@ jest.setTimeout(60000);
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('../../nav/hrefs', () => ({ planHref: (id: string) => `/decide/plan/${id}` }));
 jest.mock('@/features/record/useRecordContext', () => ({
-  useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: false, ready: true }),
+  useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: false, ready: true, today: '2026-10-31' }),
 }));
 jest.mock('@/services/locale/deviceLocale', () => ({
   useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC', separators: { decimal: '.', group: ',' } }),
@@ -28,7 +28,7 @@ jest.mock('@/data/queries/categories', () => ({
   useCategoryLookup: () => ({ byId: new Map([['cat-ins', { id: 'cat-ins', builtin_key: 'Insurance' }]]) }),
 }));
 jest.mock('../../shared/useV3Format', () => ({
-  useV3Format: () => ({ money: (minor: number) => `$${Math.round(minor / 100).toLocaleString('en-US')}` }),
+  useV3Format: () => ({ date: (iso: string) => iso, money: (minor: number) => `$${Math.round(minor / 100).toLocaleString('en-US')}` }),
 }));
 
 function evalWith(layers: Layer[], band = 5): Evaluation {
@@ -65,6 +65,16 @@ describe('LayerStack', () => {
     expect(screen.getByTestId('item-costs-card')).toBeTruthy();
     // only the live saved payment is offered
     expect(screen.getByLabelText('You pay $140 a month for Car insurance now. Use it?')).toBeTruthy();
+  });
+
+  it('05.3-71: a periodic check with no first payment yet keeps the purpose, value, plan and costs cards', async () => {
+    const check = withPayMode(withItemType(withPrice(emptyCheck(), 700000 as never), { kind: 'preset', value: 'vehicle' }), 'plan');
+    const ev = { result: { band: 6, layers: ['L0', 'L1p', 'L2', 'L3', 'L4'] }, purchase: null, planCard: null } as unknown as Evaluation;
+    await render(stack(check, ev));
+    expect(screen.getByTestId('purpose-block')).toBeTruthy();
+    expect(screen.getByTestId('value-card')).toBeTruthy();
+    expect(screen.getByTestId('payment-plan-card')).toBeTruthy();
+    expect(screen.getByTestId('item-costs-card')).toBeTruthy();
   });
 
   it('D-18: shows the value, major asset and very large cards when the layers list L2, L6 and L7, and hides them otherwise', async () => {

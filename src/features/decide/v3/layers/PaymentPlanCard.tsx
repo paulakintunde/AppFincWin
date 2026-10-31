@@ -5,13 +5,14 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { cardEligibility } from '@/engine/decide/v3';
-import type { ItemType } from '@/engine/decide/v3';
-import type { Cadence, CheckV2, Evaluation, V3PresetItemType } from '@/engine/decide/v3';
+import type { Cadence, CheckV2, Evaluation, FirstPayment, ItemType, V3PresetItemType } from '@/engine/decide/v3';
 import { minorUnits } from '@/engine/money';
 import { CustomValueChips } from '@/features/decide/ui/CustomValueChips';
 import { MoneyInput } from '@/features/decide/ui/MoneyInput';
 import { RateInput } from '@/features/decide/ui/RateInput';
 import { useShouldStack } from '@/features/decide/ui/textFit';
+import { DateField } from '@/features/record/entry/pickers/DateField';
+import { useRecordContext } from '@/features/record/useRecordContext';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -21,6 +22,7 @@ import { Text } from '@/ui/Text';
 import { useLooseT } from '../check/useLooseT';
 import { withDeposit, withPlan } from '../model/checkEdits';
 import { percentToText, textToPercent } from '../model/percentText';
+import { laterDateDefault, planNeeds, tomorrowOf } from '../model/planNeeds';
 import { planHref } from '../nav/hrefs';
 import { useV3Format } from '../shared/useV3Format';
 import { LayerCard } from './LayerCard';
@@ -52,6 +54,11 @@ export function cardNoteKey(itemType: V3PresetItemType): string | null {
   if (rule.eligibility === 'capped') return 'decide.v3.ui.layers.cardVehicle';
   if (rule.eligibility === 'permitted') return rule.note === null ? 'decide.v3.ui.layers.cardNone' : null;
   return itemType === 'property' ? 'decide.v3.ui.layers.cardProperty' : null;
+}
+
+function firstOneKey(c: Cadence): string {
+  if (c.unit === 'week') return c.every === 1 ? 'decide.v3.ui.layers.firstOneWeek' : 'decide.v3.ui.layers.firstTwoWeeks';
+  return 'decide.v3.ui.layers.firstOneMonth';
 }
 
 function cadenceIs(a: Cadence, b: Cadence): boolean {
@@ -91,6 +98,7 @@ export function PaymentPlanCard({ check, evaluation, edit, checkId, currency, re
   const { colors, pairing } = useTheme();
   const stacked = useShouldStack();
   const fmt = useV3Format();
+  const rc = useRecordContext();
   const pay = check.pay;
   const [rateText, setRateText] = useState(() => (pay.mode === 'plan' ? percentToText(pay.apr) : ''));
   const [moreFees, setMoreFees] = useState(false);
@@ -106,6 +114,15 @@ export function PaymentPlanCard({ check, evaluation, edit, checkId, currency, re
   const set = (patch: Parameters<typeof withPlan>[1]): void => edit(withPlan(check, patch));
   const money = (n: number | null): number | null => (n === null || n === 0 ? null : n);
   const summaryText = schedule === null ? null : summaryKey(schedule.cadence);
+
+  const needs = planNeeds(pay, rc.today);
+  const fp = pay.firstPayment;
+  const setFirst = (next: FirstPayment): void => set({ firstPayment: next });
+  const needLine = (code: string): React.JSX.Element => (
+    <Text key={code} accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>
+      {t(`decide.v3.missing.${code}`)}
+    </Text>
+  );
 
   const onRate = (text: string): void => {
     setRateText(text);
@@ -131,6 +148,58 @@ export function PaymentPlanCard({ check, evaluation, edit, checkId, currency, re
             />
           ))}
         </View>
+      </View>
+
+      <View style={styles.group}>
+        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('decide.v3.ui.layers.firstPayment')}</Text>
+        <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.v3.ui.layers.firstPayment')} style={styles.wrap}>
+          <Chip
+            label={t('decide.v3.ui.layers.firstToday')}
+            selected={fp?.kind === 'today'}
+            onPress={readOnly ? undefined : () => setFirst({ kind: 'today' })}
+          />
+          <Chip
+            label={t(firstOneKey(pay.cadence))}
+            selected={fp?.kind === 'one_period'}
+            onPress={readOnly ? undefined : () => setFirst({ kind: 'one_period' })}
+          />
+          <Chip
+            label={t('decide.v3.ui.layers.firstLater')}
+            selected={fp?.kind === 'deferred'}
+            onPress={
+              readOnly
+                ? undefined
+                : () => {
+                    if (fp?.kind !== 'deferred') setFirst({ kind: 'deferred', firstDate: laterDateDefault(rc.today), interestDuringPause: null });
+                  }
+            }
+          />
+        </View>
+        {fp?.kind === 'deferred' ? (
+          <>
+            <DateField
+              label={t('decide.v3.ui.layers.firstDate')}
+              value={fp.firstDate}
+              display={fmt.date(fp.firstDate)}
+              minDate={tomorrowOf(rc.today)}
+              onChange={(firstDate) => setFirst({ ...fp, firstDate })}
+            />
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('decide.v3.ui.layers.pauseInterest')}</Text>
+            <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.v3.ui.layers.pauseInterest')} style={styles.wrap}>
+              <Chip
+                label={t('decide.v3.ui.layers.pauseYes')}
+                selected={fp.interestDuringPause === true}
+                onPress={readOnly ? undefined : () => setFirst({ ...fp, interestDuringPause: true })}
+              />
+              <Chip
+                label={t('decide.v3.ui.layers.pauseNo')}
+                selected={fp.interestDuringPause === false}
+                onPress={readOnly ? undefined : () => setFirst({ ...fp, interestDuringPause: false })}
+              />
+            </View>
+          </>
+        ) : null}
+        {needs.filter((n) => n !== 'plan_rate_missing').map(needLine)}
       </View>
 
       <View style={styles.group}>
@@ -167,6 +236,7 @@ export function PaymentPlanCard({ check, evaluation, edit, checkId, currency, re
             rangeText={t('decide.v3.ui.layers.rateTooHigh')}
             readOnly={readOnly}
           />
+          {needs.includes('plan_rate_missing') ? needLine('plan_rate_missing') : null}
         </View>
         <View style={cell}>
           <MoneyInput
