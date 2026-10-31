@@ -34,7 +34,7 @@ jest.mock('@/data/mutations/decideOutcome', () => ({
 const args = {
   check: { id: 'c1' },
   seen: { v: 3 },
-  ctx: { currency: 'USD', today: '2026-10-18' },
+  ctx: { currency: 'USD', today: '2026-10-18', cashAccountId: 'acc-gbp' },
   evaluation: {
     purchase: { monthly: 12000 },
     result: { legacyState: 'adjust', readyBy: { kind: 'month', month: '2027-03' }, facts: [] },
@@ -82,7 +82,16 @@ describe('V3RecordProvider', () => {
       monthlyAmount: 12000,
       goalTarget: 50000,
       today: '2026-10-18',
+      currency: 'USD',
+      accountId: 'acc-gbp',
     });
+  });
+
+  it('planIt with no everyday account saves the plan without a pot', async () => {
+    const m = await mount();
+    const noCash = { ...args, ctx: { ...args.ctx, cashAccountId: null } } as RecordArgs;
+    await m.get().planIt({ ...noCash, goalTarget: 30000, reminderOn: false });
+    expect(mockWait.mock.calls[0]![0]).toMatchObject({ goalTarget: null, accountId: null });
   });
 
   it('notBuying saves, then passes', async () => {

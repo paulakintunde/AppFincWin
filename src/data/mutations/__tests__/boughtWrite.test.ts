@@ -96,6 +96,11 @@ describe('buildBoughtWrite', () => {
     });
   });
 
+  it('labels the rows in the context currency (home) on the everyday account, amounts unchanged', () => {
+    const w = build(purchase(), { ...ctx, currency: 'USD', cashAccountId: 'acc-gbp' });
+    expect(w.rows[0]).toMatchObject({ original_currency: 'USD', account_id: 'acc-gbp', original_amount: -100000 });
+  });
+
   it('verdict is Result.legacyState and broke_line follows a line_crossed fact', () => {
     const w = build(purchase(), ctx, {
       legacyState: 'adjust',

@@ -1,6 +1,7 @@
 // 05.3-27 (DSV-13, T-05.3-27-03): where and under what names Record as bought writes. The money goes to an everyday account
 // only; with none, the context is null and the sheet shows why the confirm is off. The loan's rate is not carried by the
-// Purchase, so the caller may pass it as aprText.
+// Purchase, so the caller may pass it as aprText. The purchase's amounts are in the home currency, so the written rows and
+// the plan pot are labelled in it; the server's FX stamp converts a row on a foreign-currency account (05.3-68, gap 1).
 import { useMemo } from 'react';
 import { useAccounts } from '@/data/queries/accounts';
 import { useCategoryLookup } from '@/data/queries/categories';
@@ -39,7 +40,7 @@ export function useBoughtContext(
     if (row === null || householdId === null || cash === null) return null;
     return {
       householdId,
-      currency: cash.currency,
+      currency: rc.homeCurrency,
       timeZone,
       today,
       cashAccountId: cash.id,
@@ -48,5 +49,5 @@ export function useBoughtContext(
       name,
       aprText: aprText ?? null,
     };
-  }, [row, householdId, cash, timeZone, today, debtCategoryId, runningCostCategoryId, name, aprText]);
+  }, [row, householdId, cash, rc.homeCurrency, timeZone, today, debtCategoryId, runningCostCategoryId, name, aprText]);
 }

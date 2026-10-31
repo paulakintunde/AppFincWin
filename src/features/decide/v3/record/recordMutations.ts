@@ -7,7 +7,7 @@ import type { DecideCheckRow, StoredSeenV3 } from '@/db/decideChecks';
 /** Where and under what names Record as bought writes (defined here so features never import the write path). */
 export interface BoughtContext {
   householdId: string;
-  /** The currency of the check (the cash account's). */
+  /** The home currency: every amount of the Purchase is in it. */
   currency: string;
   timeZone: string;
   /** 'YYYY-MM-DD'. */

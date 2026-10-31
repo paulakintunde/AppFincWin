@@ -10,7 +10,7 @@ jest.mock('@/data/queries/categories', () => ({
   useCategoryLookup: () => ({ builtinIds: new Map([['Debt', 'cat-debt']]) }),
 }));
 jest.mock('@/features/record/useRecordContext', () => ({
-  useRecordContext: () => ({ householdId: mockHousehold, userId: 'u1', timeZone: 'Europe/London', today: '2026-10-30' }),
+  useRecordContext: () => ({ householdId: mockHousehold, userId: 'u1', timeZone: 'Europe/London', today: '2026-10-30', homeCurrency: 'USD' }),
 }));
 
 type Acct = { id: string; kind: 'savings' | 'cash' | 'checking'; currency: string; archived_at: string | null; deleted_at: string | null; use: 'everyday' | null };
@@ -52,7 +52,7 @@ describe('useBoughtContext', () => {
     const { result } = await renderHook(() => useBoughtContext(row, purchase, '7.5'));
     expect(result.current).toEqual({
       householdId: 'h1',
-      currency: 'EUR',
+      currency: 'USD',
       timeZone: 'Europe/London',
       today: '2026-10-30',
       cashAccountId: 'a1',
@@ -61,6 +61,13 @@ describe('useBoughtContext', () => {
       name: 'Sofa',
       aprText: '7.5',
     });
+  });
+
+  it('uses the home currency, not the everyday account currency', async () => {
+    mockAccounts = [acct({ id: 'a-gbp', use: 'everyday', currency: 'GBP' })];
+    const ctx = (await renderHook(() => useBoughtContext(row, purchase))).result.current;
+    expect(ctx?.currency).toBe('USD');
+    expect(ctx?.cashAccountId).toBe('a-gbp');
   });
 
   it('is null with no everyday account, no household or no check', async () => {
