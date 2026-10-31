@@ -17,6 +17,7 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   default: () => ({ width: mockWidth, height: 874, scale: 2, fontScale: mockScale }),
 }));
 jest.mock('../../shared/useV3Format', () => ({ useV3Format: () => jest.requireActual('./workedKit').fakeFormat }));
+jest.mock('@/data/queries/decide', () => ({ useDecideSnapshot: () => ({ result: null }) }));
 jest.mock('@/data/queries/decideCheckV3', () => ({ useChecksV3: jest.fn() }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: jest.fn() }));
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ householdId: 'h' }) }));

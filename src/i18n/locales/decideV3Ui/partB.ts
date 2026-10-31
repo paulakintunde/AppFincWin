@@ -8,4 +8,5 @@ import { refine } from './refine';
 import { refund } from './refund';
 import { decisions } from './decisions';
 import { summary } from './summary';
-export const partB = { record, plan, instead, worked, help, refine, refund, decisions, summary } as const;
+import { rates } from './rates';
+export const partB = { record, plan, instead, worked, help, refine, refund, decisions, summary, rates } as const;

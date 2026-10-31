@@ -23,6 +23,7 @@ import { useShouldStack } from '../../ui/textFit';
 import { V3Skeleton } from '../nav/V3Skeleton';
 import { workedModel } from '../model/workedModel';
 import { useV3Format } from '../shared/useV3Format';
+import { RateNote } from './RateNote';
 import { SixMonthBars } from './SixMonthBars';
 
 const REGULAR_STEP_HREF = '/decide/setup?only=regular' as Href;
@@ -154,6 +155,7 @@ export function WorkedBody({ evaluation, inputs, names }: WorkedBodyProps): Reac
               {a}
             </Text>
           ))}
+          <RateNote />
         </View>
 
         <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{t('legal.decideFooter')}</Text>

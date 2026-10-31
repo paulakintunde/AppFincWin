@@ -10,6 +10,7 @@ jest.setTimeout(60000);
 const mockPush = jest.fn();
 jest.mock('../../shared/useV3Format', () => ({ useV3Format: () => jest.requireActual('./workedKit').fakeFormat }));
 const mockChecks = jest.fn();
+jest.mock('@/data/queries/decide', () => ({ useDecideSnapshot: () => ({ result: null }) }));
 jest.mock('@/data/queries/decideCheckV3', () => ({ useChecksV3: () => mockChecks() }));
 jest.mock('@/data/queries/recurringSeries', () => ({
   useRecurringSeries: () => ({ data: [{ id: 'rent', name: 'Rent' }, { id: 'phone', name: 'Phone' }, { id: 'gym', name: 'Gym' }] }),
