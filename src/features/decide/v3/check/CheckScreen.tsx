@@ -1,7 +1,7 @@
 // 05.3-24 (DSV-05, DSV-13, D-13, D-16, D-19): Check a purchase. The core: item and price, band chip, item type, how-pay, an
 // autosaving draft, validation and "Check it". Layer cards plug into `renderLayers` (05.3-40, 05.3-42). The draft saves as you
 // type; the stored answer (answer_v3) is written only when "Check it" is pressed.
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useCheckV3 } from '@/data/queries/decideCheckV3';
@@ -17,7 +17,8 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
-import { priceProblem } from '../model/draftStatus';
+import { MAX_ABS_AMOUNT_MINOR } from '@/engine/money/types';
+import { priceCeiling, priceProblem } from '../model/draftStatus';
 import { withItemType, withPayMode, withPrice } from '../model/checkEdits';
 import { revealedLayers } from '../model/layerVisibility';
 import { answerHref } from '../nav/hrefs';
@@ -79,9 +80,21 @@ export function CheckScreen({ id, focus, renderLayers }: CheckScreenProps): Reac
     else if (draft.status === 'notSaved') AccessibilityInfo.announceForAccessibility(t('decide.v3.ui.check.notSaved'));
   }, [draft.status, t]);
 
-  const problem = priceProblem(check.price);
+  // 05.3-72 (gap 6): a price past the range is refused; the last valid price stays in force.
+  const ceiling = live.inputs === null ? MAX_ABS_AMOUNT_MINOR : priceCeiling(live.inputs.thresholds);
+  const [tooBigTyped, setTooBigTyped] = useState(false);
+  const onPrice = (minor: number | null): void => {
+    if (minor !== null && minor > ceiling) {
+      setTooBigTyped(true);
+      return;
+    }
+    setTooBigTyped(false);
+    edit(withPrice(check, minor === null ? null : (minor as never)));
+  };
+  const problem = tooBigTyped ? 'priceTooBig' : priceProblem(check.price, ceiling);
   const disabled = problem !== null || evaluation === null || readOnly;
-  const reason = problem === 'priceNeeded' ? t('decide.v3.ui.check.priceNeeded') : null;
+  const reason =
+    problem === 'priceNeeded' ? t('decide.v3.ui.check.priceNeeded') : problem === 'priceTooBig' ? t('decide.v3.ui.check.priceTooBig') : null;
 
   const ready =
     evaluation !== null &&
@@ -112,7 +125,8 @@ export function CheckScreen({ id, focus, renderLayers }: CheckScreenProps): Reac
           name={draft.name}
           onName={draft.setName}
           price={check.price}
-          onPrice={(minor) => edit(withPrice(check, minor === null ? null : (minor as never)))}
+          onPrice={onPrice}
+          priceNote={problem === 'priceTooBig' ? reason : null}
           currency={rc.homeCurrency}
           focusPrice={focus === 'price'}
           readOnly={readOnly}
@@ -134,7 +148,7 @@ export function CheckScreen({ id, focus, renderLayers }: CheckScreenProps): Reac
         ) : null}
       </ScrollView>
       <View style={[styles.bar, { borderTopColor: colors.line1, backgroundColor: colors.canvas, paddingBottom: insets.bottom + space.gapMd }]}>
-        {reason === null ? null : (
+        {reason === null || problem === 'priceTooBig' ? null : (
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{reason}</Text>
         )}
         <Pill

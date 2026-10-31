@@ -7,7 +7,7 @@ import { useShouldStack } from '@/features/decide/ui/textFit';
 import { useT } from '@/i18n';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
-import { textRole } from '@/theme/typography';
+import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import type { TextInput as TextInputInstance } from '@/ui/TextInput';
@@ -21,12 +21,14 @@ export interface ItemPriceFieldsProps {
   /** D-19: arriving from "Change the price" focuses the price with its text selected. */
   focusPrice: boolean;
   readOnly?: boolean;
+  /** 05.3-72: a note under the price (the too-big message). */
+  priceNote?: string | null;
 }
 
 const SELECT_ALL_END = 64;
 const ITEM_MAX = 80;
 
-export function ItemPriceFields({ name, onName, price, onPrice, currency, focusPrice, readOnly = false }: ItemPriceFieldsProps): React.JSX.Element {
+export function ItemPriceFields({ name, onName, price, onPrice, currency, focusPrice, readOnly = false, priceNote = null }: ItemPriceFieldsProps): React.JSX.Element {
   const t = useT();
   const { colors, pairing } = useTheme();
   const stacked = useShouldStack();
@@ -67,6 +69,11 @@ export function ItemPriceFields({ name, onName, price, onPrice, currency, focusP
           readOnly={readOnly}
           inputRef={priceRef}
         />
+        {priceNote === undefined || priceNote === null ? null : (
+          <Text accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>
+            {priceNote}
+          </Text>
+        )}
       </View>
     </View>
   );

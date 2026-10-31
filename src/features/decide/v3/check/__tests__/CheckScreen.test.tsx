@@ -108,6 +108,31 @@ describe('CheckScreen', () => {
     expect(screen.getByText(/^Band 5/)).toBeTruthy();
   });
 
+  it('refuses a too-large price, says so, and keeps the last valid price', async () => {
+    await render(wrap());
+    const TOO_BIG = 'That price is past the range Decide can check.';
+    await fireEvent.changeText(screen.getByLabelText('Price'), '300');
+    await fireEvent.changeText(screen.getByLabelText('Price'), '10000000000');
+    expect(screen.getByText(TOO_BIG)).toBeTruthy();
+    expect(screen.getByLabelText('Check it').props.accessibilityState.disabled).toBe(true);
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 450));
+    });
+    for (const call of mockSaveDraft.mock.calls) {
+      expect(readStoredCheck(call[0].inputs).check.price).not.toBe(1_000_000_000_000);
+    }
+    await fireEvent.changeText(screen.getByLabelText('Price'), '300');
+    expect(screen.queryByText(TOO_BIG)).toBeNull();
+    expect(screen.getByLabelText('Check it').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('opens a stored too-large draft with the message and Check it disabled', async () => {
+    mockRows = [storedRow(1_000_000_000_000)];
+    await render(wrap());
+    expect(screen.getByText('That price is past the range Decide can check.')).toBeTruthy();
+    expect(screen.getByLabelText('Check it').props.accessibilityState.disabled).toBe(true);
+  });
+
   it('writes the stored answer and opens the answer only when Check it is pressed', async () => {
     await render(wrap());
     await fireEvent.changeText(screen.getByLabelText('Price'), '1200');
