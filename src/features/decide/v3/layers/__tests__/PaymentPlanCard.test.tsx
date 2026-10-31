@@ -13,13 +13,13 @@ const mockPush = jest.fn();
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (href: unknown) => mockPush(href) }));
 jest.mock('../../nav/hrefs', () => ({ planHref: (id: string) => `/decide/plan/${id}` }));
 jest.mock('@/features/record/useRecordContext', () => ({
-  useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: false, ready: true }),
+  useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: false, ready: true, today: '2026-10-31' }),
 }));
 jest.mock('@/services/locale/deviceLocale', () => ({
   useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC', separators: { decimal: '.', group: ',' } }),
 }));
 jest.mock('../../shared/useV3Format', () => ({
-  useV3Format: () => ({ money: (minor: number) => `$${Math.round(minor / 100).toLocaleString('en-US')}` }),
+  useV3Format: () => ({ date: (iso: string) => iso, money: (minor: number) => `$${Math.round(minor / 100).toLocaleString('en-US')}` }),
 }));
 
 const ID = 'chk-1';
@@ -176,5 +176,53 @@ describe('PaymentPlanCard fee hints', () => {
     await fireEvent.press(screen.getByText('More fees'));
     expect(screen.getByLabelText('Fee with each payment').props.placeholder).toBe('0.00');
     expect(screen.getByLabelText('Fee at the end').props.placeholder).toBe('0.00');
+  });
+  describe('first payment (05.3-71)', () => {
+    it('asks for the first payment with nothing chosen and shows the missing line', async () => {
+      await mount(planCheck(), null);
+      expect(screen.getByText('First payment')).toBeTruthy();
+      expect(screen.getByText('The first payment date isn’t chosen yet.')).toBeTruthy();
+      expect(screen.getByText('The plan’s rate isn’t entered yet.')).toBeTruthy();
+      expect(screen.getByLabelText('Today').props.accessibilityState?.selected).toBeFalsy();
+    });
+
+    it('Today and In a month write firstPayment', async () => {
+      let latest = planCheck();
+      await mount(latest, null, (c) => { latest = c; });
+      await fireEvent.press(screen.getByLabelText('Today'));
+      expect(plan(latest).firstPayment).toEqual({ kind: 'today' });
+      expect(screen.queryByText('The first payment date isn’t chosen yet.')).toBeNull();
+      await fireEvent.press(screen.getByLabelText('In a month'));
+      expect(plan(latest).firstPayment).toEqual({ kind: 'one_period' });
+    });
+
+    it('labels the next-payment chip by how often', async () => {
+      await mount(planCheck(), null);
+      await fireEvent.press(screen.getByLabelText('Weekly'));
+      expect(screen.getByLabelText('In a week')).toBeTruthy();
+      await fireEvent.press(screen.getByLabelText('Every 2 weeks'));
+      expect(screen.getByLabelText('In 2 weeks')).toBeTruthy();
+    });
+
+    it('On a later date sets a default date, shows the date field and asks about interest', async () => {
+      let latest = planCheck();
+      await mount(latest, null, (c) => { latest = c; });
+      await fireEvent.press(screen.getByLabelText('On a later date'));
+      expect(plan(latest).firstPayment).toEqual({ kind: 'deferred', firstDate: '2026-11-30', interestDuringPause: null });
+      expect(screen.getByText('First payment date')).toBeTruthy();
+      expect(screen.getByText('Does interest build until then?')).toBeTruthy();
+      expect(screen.getByText('Whether interest builds during a pause isn’t answered yet.')).toBeTruthy();
+      await fireEvent.press(screen.getByLabelText('Yes'));
+      expect(plan(latest).firstPayment).toEqual({ kind: 'deferred', firstDate: '2026-11-30', interestDuringPause: true });
+      expect(screen.queryByText('Whether interest builds during a pause isn’t answered yet.')).toBeNull();
+    });
+
+    it('typing a rate removes the rate line, and a complete plan shows the estimate tile', async () => {
+      let latest = planCheck();
+      await mount(latest, EVAL, (c) => { latest = c; });
+      await fireEvent.changeText(screen.getByLabelText('Interest rate or APR'), '6');
+      expect(screen.queryByText('The plan’s rate isn’t entered yet.')).toBeNull();
+      expect(screen.getByTestId('plan-summary')).toBeTruthy();
+    });
   });
 });
