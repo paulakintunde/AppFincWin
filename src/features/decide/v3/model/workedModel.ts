@@ -1,6 +1,8 @@
 /**
  * 05.3-22: "How this was worked out". Pure view-model over the engine month. Only integer adds of engine minor
  * units (bigint, back through minorUnits); no rates, no division. The month rows sum to MonthModel.monthLeft by
+ * 05.3-73: series someone else always pays (D-31) are not listed; with no days left and nothing to come the everyday
+ * row is omitted. The month rows sum to MonthModel.monthLeft by
  * construction: moneyIn - (regular + loans + saving + everydaySoFar + toCome) = monthLeft.
  */
 import type { Evaluation, V3Inputs, V3Month, YearMonth } from '@/engine/decide/v3';
@@ -56,7 +58,8 @@ export function workedModel(
   const saving = setAside - loans;
   const regularTotal = BigInt(m.billsPaid) + BigInt(m.billsDue);
 
-  const bills = inputs.series.filter((s) => s.role === 'bill' && s.status !== 'dismissed');
+  const always = new Set((m.alwaysOther ?? []).map((a) => a.seriesId));
+  const bills = inputs.series.filter((s) => s.role === 'bill' && s.status !== 'dismissed' && !always.has(s.id));
   const confirmedBills = bills.filter((s) => s.confirmed);
   const pay = inputs.series.find((s) => s.role === 'pay' && s.confirmed && s.status !== 'dismissed');
   const daysLeft = m.daysInMonth - m.day;
@@ -72,13 +75,15 @@ export function workedModel(
     { key: `${K}loans`, params: {}, amount: minorUnits(Number(loans)), deduct: true },
     { key: `${K}saving`, params: {}, amount: minorUnits(Number(saving)), deduct: true },
     { key: `${K}everydaySoFar`, params: {}, amount: m.everydayLogged, deduct: true },
-    {
+  ];
+  if (daysLeft > 0 || m.erest !== 0) {
+    rows.push({
       key: `${K}toCome_${daysLeft === 1 ? 'one' : 'other'}`,
       params: { count: daysLeft },
       amount: m.erest,
       deduct: true,
-    },
-  ];
+    });
+  }
 
   const pictureLeft = new Map<string, MinorUnits>();
   for (const pm of m.incomePicture?.months ?? []) pictureLeft.set(pm.month, pm.left);
