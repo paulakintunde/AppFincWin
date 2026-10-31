@@ -477,7 +477,7 @@ describe('05.3-70 preview: band and layers while the plan is incomplete', () => 
     expect(b.preview).toBeNull();
   });
   it('evaluate on an incomplete plan keeps result.band and result.layers', () => {
-    const r = evaluate(inputs, checkPlan(700000, {}, vehicle as Partial<CheckV2>));
+    const r = evaluate(inputs, checkPlan(700000, {}, vehicle as Partial<CheckV2>)).result;
     expect(r.code).toBe('needs_input');
     expect(r.band).toBe(6);
     expect(r.layers).toEqual(layersFor(6, { periodic: true, hasExtras: true }));

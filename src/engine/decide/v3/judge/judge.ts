@@ -34,9 +34,11 @@ import { capConfidence } from '../month/confidence';
 import { dependsOnMonths, expectedFor, isLeanMonth, leanRun, seasonEveryday } from '../month/incomePattern';
 import { seasonalReadyMonth } from '../month/seasonWalk';
 import type {
+  Band,
   Code,
   ExpectedMonthIncome,
   IncomePicture,
+  Layer,
   LowMonth,
   Confidence,
   Fact,
@@ -61,6 +63,8 @@ export interface JudgeInput {
   readonly funds: Funds;
   readonly purchase: Purchase | null;
   readonly purchaseMissing: readonly MissingCode[];
+  /** Band and layers for a priced check whose purchase is not built yet. */
+  readonly purchasePreview?: { readonly band: Band; readonly layers: readonly Layer[] } | null;
   readonly purchaseFacts: readonly Fact[];
   readonly purchaseReasons: readonly ReasonCode[];
   readonly cash: CashCheck;
@@ -434,8 +438,8 @@ export function judge(j: JudgeInput): Result {
   const p = j.purchase;
   const confidence = judgeConfidence(j);
   const reasons = unique([...month.reasons, ...j.purchaseReasons]);
-  const band = p?.band ?? null;
-  const layers = p?.layers ?? [];
+  const band = p?.band ?? j.purchasePreview?.band ?? null;
+  const layers = p?.layers ?? j.purchasePreview?.layers ?? [];
 
   const missing = [...needsInput({ inputs: j.inputs, month, funds, purchase: p, purchaseMissing: j.purchaseMissing })];
   if (p === null && missing.length === 0) missing.push('no_price');

@@ -29,6 +29,7 @@ import type {
   CustomOptions,
   Fact,
   HomeThresholds,
+  Layer,
   LocalDate,
   MissingCode,
   Purchase,
@@ -51,12 +52,16 @@ export interface PurchaseBuild {
   readonly missing: readonly MissingCode[];
   readonly reasons: readonly ReasonCode[];
   readonly facts: readonly Fact[];
+  /** Band and layers from the price alone, present while the plan fields are incomplete (same functions as the built Purchase). */
+  readonly preview: { readonly band: Band; readonly layers: readonly Layer[] } | null;
 }
 
 const NONE: QuotedCheck = { kind: 'none' };
 
-function nothing(missing: readonly MissingCode[], reasons: readonly ReasonCode[] = [], facts: readonly Fact[] = []): PurchaseBuild {
-  return { purchase: null, planCard: null, quoted: NONE, missing, reasons, facts };
+function nothing(missing: readonly MissingCode[], reasons: readonly ReasonCode[] = [], facts: readonly Fact[] = [],
+  preview: PurchaseBuild['preview'] = null
+): PurchaseBuild {
+  return { purchase: null, planCard: null, quoted: NONE, missing, reasons, facts, preview };
 }
 
 const mb = (v: bigint): MinorUnits => minorFromBigInt(v, FN);
@@ -175,26 +180,44 @@ function buildResolved(
       missing.push('pause_interest_not_answered');
     }
   }
-  if (missing.length > 0 || check.price === null) return nothing(missing);
-  // L-01: a deferred first payment dated before today asks for a new date; it is not an out-of-range schedule.
-  if (pay.mode === 'plan' && pay.firstPayment?.kind === 'deferred' && pay.firstPayment.firstDate < ctx.asOf) {
-    return nothing(['first_payment_passed']);
-  }
+  if (check.price === null) return nothing(missing);
+  const price = check.price;
+  const passed = pay.mode === 'plan' && pay.firstPayment?.kind === 'deferred' && pay.firstPayment.firstDate < ctx.asOf;
 
   // Whole value, full (before my share): price + tax + one-off fees.
-  const tax = salesTaxOf(check.price, check.taxPercent);
-  const fullWhole = BigInt(check.price) + BigInt(tax) + BigInt(check.oneOffFees);
-  const whole = myPart(mb(fullWhole), share);
-
-  // Typed amounts only (I36, D-19). Library questions and own questions are treated alike.
-  const resolved = resolveItemType(check.itemType, ctx.custom);
-  reasons.push(...resolved.reasons);
+  let fullWhole: bigint;
+  let whole: MinorUnits;
+  let tax: MinorUnits;
+  let resolved: ReturnType<typeof resolveItemType>;
   const specs: ExtraSpec[] = [];
-  for (const id of resolved.questionIds) {
-    const s = questionSpec(id);
-    if (s !== null) specs.push({ id, cadence: s.cadence, cash: s.cash, role: s.role });
+  let bandResult: ReturnType<typeof bandOf>;
+  let band: Band;
+  let layers: readonly Layer[];
+  try {
+    tax = salesTaxOf(price, check.taxPercent);
+    fullWhole = BigInt(price) + BigInt(tax) + BigInt(check.oneOffFees);
+    whole = myPart(mb(fullWhole), share);
+    // Typed amounts only (I36, D-19). Library questions and own questions are treated alike.
+    resolved = resolveItemType(check.itemType, ctx.custom);
+    for (const id of resolved.questionIds) {
+      const s = questionSpec(id);
+      if (s !== null) specs.push({ id, cadence: s.cadence, cash: s.cash, role: s.role });
+    }
+    for (const o of resolved.ownQuestions) specs.push({ id: o.id, cadence: o.cadence, cash: o.cash, role: 'cost' });
+    bandResult = bandOf(whole, ctx.thresholds);
+    band = bandResult.band;
+    layers = layersFor(band, { periodic: pay.mode === 'plan', hasExtras: specs.length > 0 });
+  } catch (e) {
+    // An incomplete check keeps its missing list even when the price is out of range; a complete one reports exceeds_range.
+    if (e instanceof RangeError && (missing.length > 0 || passed)) return nothing(missing.length > 0 ? missing : ['first_payment_passed']);
+    throw e;
   }
-  for (const o of resolved.ownQuestions) specs.push({ id: o.id, cadence: o.cadence, cash: o.cash, role: 'cost' });
+  const preview = { band, layers };
+  if (missing.length > 0) return nothing(missing, [], [], preview);
+  // L-01: a deferred first payment dated before today asks for a new date; it is not an out-of-range schedule.
+  if (passed) return nothing(['first_payment_passed'], [], [], preview);
+
+  reasons.push(...resolved.reasons);
   let runningFull = 0n;
   let oneOffExtras = 0n;
   let credits = 0n;
@@ -213,10 +236,7 @@ function buildResolved(
     else oneOffExtras += BigInt(amount);
   }
 
-  const bandResult = bandOf(whole, ctx.thresholds);
   reasons.push(...bandResult.reasons);
-  const band: Band = bandResult.band;
-  const layers = layersFor(band, { periodic: pay.mode === 'plan', hasExtras: specs.length > 0 });
 
   if (check.foreign !== null) facts.push({ code: 'at_todays_rate', values: { currency: check.foreign.currency } });
 
@@ -283,7 +303,7 @@ function buildResolved(
     const upfrontRaw = BigInt(pay.deposit) + BigInt(pay.fees.setup) + firstNow + oneOffExtras - credits;
     dayOne = BigInt(myPart(mb(upfrontRaw < 0n ? 0n : upfrontRaw), share));
     monthly = BigInt(myPart(mb(BigInt(sched.monthlyEquivalent) + runningFull), share));
-    card = planCard({ price: check.price, tax, oneOffFees: check.oneOffFees, schedule: sched, runningMonthly: mb(runningFull) });
+    card = planCard({ price, tax, oneOffFees: check.oneOffFees, schedule: sched, runningMonthly: mb(runningFull) });
   }
 
   const base = resolved.base;
@@ -306,7 +326,7 @@ function buildResolved(
     envelopeId: check.envelopeId,
     volatileCover: check.volatileCover ?? null, // D-48: the user's answer rides with the plan
   };
-  return { purchase, planCard: card, quoted, missing: [], reasons, facts };
+  return { purchase, planCard: card, quoted, missing: [], reasons, facts, preview: { band, layers } };
 }
 
 /**
