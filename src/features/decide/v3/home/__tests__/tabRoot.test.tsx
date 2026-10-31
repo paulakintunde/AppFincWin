@@ -10,6 +10,10 @@ let mockV3 = false;
 let mockLoading = false;
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockV3, testAccount: mockV3 }) }));
 jest.mock('@/features/you/useProfile', () => ({ useProfile: () => ({ loading: mockLoading, profile: null }) }));
+// The readiness provider pulls in the data writes (env config); only its place in the tree matters here.
+jest.mock('@/shell/decide/ReadinessAnswerProvider', () => ({
+  ReadinessAnswerProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 jest.mock('@/features/decide/v3/home/HomeScreen', () => {
   const { Text } = jest.requireActual('react-native');
   return { HomeScreen: () => <Text>{'v3-home'}</Text> };
