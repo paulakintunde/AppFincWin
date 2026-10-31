@@ -162,6 +162,15 @@ export function renameOwnOption(stored: StoredOwnOptions, kind: OwnKind, id: str
   return { ok: true, next: { ...stored, purposes: stored.purposes.map((p) => (p.id === id ? { ...p, name: checked.name } : p)) } };
 }
 
+/** 05.3-84: changes which preset a live own kind counts like; it takes that preset's cost questions. Own questions are kept. */
+export function setOwnItemTypeBase(stored: StoredOwnOptions, id: string, base: V3PresetItemType): OwnEditResult {
+  if (!stored.itemTypes.some((t) => t.id === id && t.deletedAt === null)) return { ok: false, reason: 'not_found' };
+  return {
+    ok: true,
+    next: { ...stored, itemTypes: stored.itemTypes.map((t) => (t.id === id ? { ...t, base, questionIds: PRESET_QUESTIONS[base] } : t)) },
+  };
+}
+
 /** Marks the entry deleted. The entry stays stored so past checks keep their label; an unknown or already deleted id changes nothing. */
 export function removeOwnOption(stored: StoredOwnOptions, kind: OwnKind, id: string, todayIso: string): StoredOwnOptions {
   if (kind === 'itemType') {
