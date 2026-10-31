@@ -134,6 +134,7 @@ function evaluateOnce(inputs: V3Inputs, check: CheckV2): Evaluation {
     funds,
     purchase: pb.purchase,
     purchaseMissing: pb.missing,
+    purchasePreview: pb.preview,
     purchaseFacts: pb.facts,
     purchaseReasons: pb.reasons,
     cash,

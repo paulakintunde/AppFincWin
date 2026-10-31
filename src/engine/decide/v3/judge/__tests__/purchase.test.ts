@@ -5,6 +5,7 @@ import { currencyCode, minorUnits as mu } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import { ASOF, checkOnce, checkPlan, inputsOf } from '../../__tests__/helpers/fixtures';
 import type { CheckV2, CustomOptions } from '../../types';
+import { layersFor } from '../bands';
 import { buildPurchase, purchaseCashFlows } from '../purchase';
 
 const inputs = inputsOf();
@@ -427,5 +428,58 @@ describe('L-09 withPayment: a larger quote recomputes the paying periods', () =>
         expect(CODE_PRECEDENCE.indexOf(q.result.code)).toBeLessThanOrEqual(CODE_PRECEDENCE.indexOf(a.result.code));
       }
     }
+  });
+});
+
+describe('05.3-70 preview: band and layers while the plan is incomplete', () => {
+  const vehicle = { itemType: { kind: 'preset', value: 'vehicle' } } as const;
+  it('a priced plan with no fields keeps its band and layers, and the missing list is unchanged', () => {
+    const b = build(checkPlan(700000, {}, vehicle as Partial<CheckV2>));
+    expect(b.purchase).toBeNull();
+    expect(b.missing).toEqual(['plan_count_missing', 'plan_rate_missing', 'first_payment_not_chosen']);
+    expect(b.reasons).toEqual([]);
+    expect(b.facts).toEqual([]);
+    expect(b.preview).toEqual({ band: 6, layers: layersFor(6, { periodic: true, hasExtras: true }) });
+    expect(b.preview?.layers).toEqual(expect.arrayContaining(['L1p', 'L2', 'L3', 'L4', 'L5']));
+  });
+  it('a complete plan previews what the purchase carries', () => {
+    const b = build(checkPlan(700000, { count: 12, apr: percent('9.9'), firstPayment: today }, vehicle as Partial<CheckV2>));
+    expect(b.preview).toEqual({ band: b.purchase!.band, layers: b.purchase!.layers });
+  });
+  it('a deferred first payment before asOf still has a preview', () => {
+    const b = build(checkPlan(120000, { count: 12, apr: percent('9.9'), firstPayment: { kind: 'deferred', firstDate: '2026-09-01', interestDuringPause: false } }));
+    expect(b.missing).toEqual(['first_payment_passed']);
+    expect(b.preview).not.toBeNull();
+  });
+  it('keeps the passed-date missing when the price is out of range', () => {
+    const b = build(checkPlan(Number.MAX_SAFE_INTEGER, { count: 12, apr: percent('9.9'), firstPayment: { kind: 'deferred', firstDate: '2026-09-01', interestDuringPause: false } }, { taxPercent: percent('50') }));
+    expect(b.missing).toEqual(['first_payment_passed']);
+    expect(b.preview).toBeNull();
+  });
+  it('keeps the plan missing list when the price is out of range', () => {
+    const b = build(checkPlan(Number.MAX_SAFE_INTEGER, {}, { taxPercent: percent('50') }));
+    expect(b.missing).toEqual(['plan_count_missing', 'plan_rate_missing', 'first_payment_not_chosen']);
+    expect(b.preview).toBeNull();
+  });
+  it('a complete check out of range is exceeds_range with no preview', () => {
+    const b = build(checkPlan(Number.MAX_SAFE_INTEGER, { count: 12, apr: percent('9.9'), firstPayment: today }, { taxPercent: percent('50') }));
+    expect(b.reasons).toContain('exceeds_range');
+    expect(b.preview).toBeNull();
+  });
+  it('no price: no preview', () => {
+    const b = build({ ...checkPlan(1, {}), price: null });
+    expect(b.missing).toContain('no_price');
+    expect(b.preview).toBeNull();
+  });
+  it('an invalid share: no preview', () => {
+    const b = build({ ...checkOnce(1000), share: { kind: 'household', memberCount: 0, myIndex: 0, rule: { kind: 'even' } } } as CheckV2);
+    expect(b.missing).toEqual(['share_invalid']);
+    expect(b.preview).toBeNull();
+  });
+  it('evaluate on an incomplete plan keeps result.band and result.layers', () => {
+    const r = evaluate(inputs, checkPlan(700000, {}, vehicle as Partial<CheckV2>)).result;
+    expect(r.code).toBe('needs_input');
+    expect(r.band).toBe(6);
+    expect(r.layers).toEqual(layersFor(6, { periodic: true, hasExtras: true }));
   });
 });
