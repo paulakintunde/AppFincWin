@@ -25,7 +25,7 @@ jest.mock('../useRowActions', () => ({
   useDeleteRow: () => ({ remove: mockRemove, confirmCopy: () => ({ title: 'Delete this plan?', body: 'It leaves Decide.' }) }),
 }));
 jest.mock('../../../ui/DeletableRow', () => ({
-  DeletableRow: ({ children, onOpen, onDelete, accessibilityLabel, menu, confirm }: { children: React.ReactNode; onOpen: () => void; onDelete: () => void; accessibilityLabel: string; menu: { key: string }[]; confirm: { title: string } }) => {
+  DeletableRow: ({ children, onOpen, onDelete, accessibilityLabel, menu, confirm }: { children: React.ReactNode; onOpen: () => void; onDelete: () => void; accessibilityLabel: string; menu: { key: string }[]; confirm: { title: string; body: string } }) => {
     const { Pressable, Text } = jest.requireActual('react-native');
     return (
       <>
@@ -33,6 +33,7 @@ jest.mock('../../../ui/DeletableRow', () => ({
         <Pressable accessibilityLabel="del" onPress={onDelete}><Text>{'del'}</Text></Pressable>
         <Text>{`menu:${menu.map((m) => m.key).join(',')}`}</Text>
         <Text>{confirm.title}</Text>
+        <Text>{confirm.body}</Text>
       </>
     );
   },
@@ -79,6 +80,8 @@ describe('SavedPlanRow', () => {
     const row = checkRow({ status: 'open', answer_v3: null });
     await wrap(<SavedPlanRow row={row} live={undefined} without={undefined} />);
     expect(screen.getByText('Unfinished')).toBeTruthy();
+    expect(screen.getByText('Delete this check?')).toBeTruthy();
+    expect(screen.getByText('It leaves Unfinished checks. Nothing was written, so no balance changes.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText(/Unfinished/));
     expect(pushOnce).toHaveBeenCalledWith(purchaseHref(row.id));
     await fireEvent.press(screen.getByLabelText('del'));
@@ -95,7 +98,9 @@ describe('SavedPlanRow', () => {
     const row = checkRow();
     await wrap(<SavedPlanRow row={row} live={liveEval('not_yet', 'not_covered')} without={undefined} />);
     expect(screen.getByText('menu:open')).toBeTruthy();
-    expect(screen.getByText('Delete this plan?')).toBeTruthy();
+    expect(screen.getByText('Delete this saved plan?')).toBeTruthy();
+    expect(screen.getByText(/It leaves Saved plans with its envelope and reminder/)).toBeTruthy();
+    expect(screen.queryByText(/Past decisions/)).toBeNull();
     await fireEvent.press(screen.getByLabelText('del'));
     expect(mockRemove).toHaveBeenCalledTimes(1);
     expect(mockRemove).toHaveBeenCalledWith(row);

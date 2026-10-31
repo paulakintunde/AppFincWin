@@ -115,7 +115,7 @@ export function SavedPlanRow({ row, live, without }: SavedPlanRowProps): React.J
           accessibilityLabel={a11y}
           onOpen={onOpen}
           menu={[{ key: 'open', label: t('decide.delete.menuOpen'), onSelect: onOpen }]}
-          confirm={{ title: t('decide.delete.checkTitle'), body: t('decide.delete.checkBody') }}
+          confirm={{ title: t('decide.v3.ui.home.deleteCheckTitle'), body: t('decide.v3.ui.home.deleteCheckBody') }}
           onDelete={onDelete}
         >
           <View style={styles.pad}>{body}</View>
@@ -133,7 +133,7 @@ export function SavedPlanRow({ row, live, without }: SavedPlanRowProps): React.J
         accessibilityLabel={a11y}
         onOpen={onOpenAnswer}
         menu={[{ key: 'open', label: t('decide.delete.menuOpen'), onSelect: onOpenAnswer }]}
-        confirm={del.confirmCopy(row, 0)}
+        confirm={{ title: t('decide.v3.ui.home.deletePlanTitle'), body: t('decide.v3.ui.home.deletePlanBody') }}
         onDelete={onDeletePlan}
       >
         <View style={[styles.pad, styles.pressRow]}>

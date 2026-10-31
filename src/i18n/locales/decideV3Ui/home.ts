@@ -13,6 +13,10 @@ export const home = {
   figureUnspent: 'Unspent money',
   figureEmergency: 'Emergency fund',
   notSet: 'Not set',
+  deletePlanTitle: 'Delete this saved plan?',
+  deletePlanBody: 'It leaves Saved plans with its envelope and reminder. Transfers tagged to the envelope stay in Activity.',
+  deleteCheckTitle: 'Delete this check?',
+  deleteCheckBody: 'It leaves Unfinished checks. Nothing was written, so no balance changes.',
   // 05.3-60 (D-26): each figure row carries a detail line from the same Evaluation
   // D-76 rule U: count and unit joined by a no-break space. The none and unlinked lines are declarative (the
   // 2026-10-23 guard bans sentences that open with Add or Pick), so they read as facts about the row, not orders.
