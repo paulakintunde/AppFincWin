@@ -29,6 +29,7 @@ import { useV3Format } from '../shared/useV3Format';
 import { recordLines } from '../model/recordLines';
 import { useRecordMutations, type BoughtContext, type RecordArgs } from './recordMutations';
 import { useBoughtContext } from './useBoughtContext';
+import { useCheckWritesSettled } from './useCheckWritesSettled';
 
 export type RecordVariant = 'bought' | 'plan' | 'pass';
 
@@ -61,25 +62,30 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
   const actions = useRecordMutations();
   const { undo } = useUndo();
   const boughtCtx = useBoughtContext(row, evaluation.purchase, aprText);
+  // 05.3-74: writes wait for the check's own draft saves, so they use the inputs the user saw.
+  const settled = useCheckWritesSettled(row.id);
 
   const [step, setStep] = useState<'A' | 'B'>(variant === 'bought' ? 'A' : 'B');
   const [stepId, setStepId] = useState<string | null>(null);
   const [reminder, setReminder] = useState<'set' | 'off' | 'none' | null>(null);
+  // What was written (item and price at that moment); the sheet keeps showing it if the cache moves on.
+  const [written, setWritten] = useState<{ item: string; price: number | null } | null>(null);
   const sentRef = useRef(false);
   const headingRef = useRef<React.ComponentRef<typeof Text>>(null);
 
   // Closed: the next opening starts fresh (state adjusted during render, so it settles in one extra pass).
   const first = variant === 'bought' ? 'A' : 'B';
-  if (!visible && (step !== first || stepId !== null || reminder !== null)) {
+  if (!visible && (step !== first || stepId !== null || reminder !== null || written !== null)) {
     setStep(first);
     setStepId(null);
     setReminder(null);
+    setWritten(null);
   }
 
   const item = row.name.trim();
   const month = (boughtCtx?.today ?? rc.today).slice(0, 7);
   const purchase = evaluation.purchase;
-  const price = purchase?.whole ?? 0;
+  const price: number | null = purchase === null ? null : purchase.whole;
 
   // Plan it and Not buying carry no cash account; they write with the household's own context.
   const writeCtx = useMemo<BoughtContext>(
@@ -111,17 +117,18 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
       sentRef.current = false;
       return;
     }
-    if (variant === 'bought' || sentRef.current) return;
+    if (variant === 'bought' || sentRef.current || !settled) return;
     sentRef.current = true;
+    setWritten({ item, price });
     if (variant === 'pass') {
       void Promise.resolve(actions.notBuying(args)).then(setStepId);
       return;
     }
-    void actions.planIt({ ...args, goalTarget: price > 0 ? price : null, reminderOn: true }).then((r) => {
+    void actions.planIt({ ...args, goalTarget: price !== null && price > 0 ? price : null, reminderOn: true }).then((r) => {
       setReminder(r.reminder);
       setStepId(r.stepId);
     });
-  }, [visible, variant, actions, args, price]);
+  }, [visible, variant, actions, args, price, item, settled]);
 
   // Step B of Bought: one Success haptic, announced politely.
   useEffect(() => {
@@ -139,6 +146,7 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
   const confirm = useCallback(() => {
     if (sentRef.current || boughtCtx === null || !canRecord) return;
     sentRef.current = true;
+    setWritten({ item, price });
     const sent = actions.recordBought({ ...args, ctx: boughtCtx });
     if (sent === null) {
       sentRef.current = false;
@@ -146,7 +154,7 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
     }
     setStepId(sent.stepId);
     setStep('B');
-  }, [actions, args, boughtCtx, canRecord]);
+  }, [actions, args, boughtCtx, canRecord, item, price]);
 
   const onUndo = useCallback(() => {
     if (stepId !== null) {
@@ -182,7 +190,13 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
   }, [purchase, evaluation.result, item, month, step, f, t]);
 
   const readyDate = evaluation.result.readyBy;
-  const planLines: string[] = [t(`${K}planLine`, { item, price: f.money(price) })];
+  const shownItem = written?.item ?? item;
+  const shownPrice = written !== null ? written.price : price;
+  const planLines: string[] = [
+    shownPrice === null
+      ? t(`${K}planLineNoPrice`, { item: shownItem })
+      : t(`${K}planLine`, { item: shownItem, price: f.money(shownPrice) }),
+  ];
   if (variant === 'plan') {
     if (evaluation.result.variant === 'payday' && reminder === 'set' && readyDate !== null) {
       planLines.push(t(`${K}reminderOnDate`, { date: f.date(readyDate.kind === 'date' ? readyDate.date : `${readyDate.month}-01`) }));
@@ -204,8 +218,8 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
     shown = planLines;
   } else {
     title = t(`${K}notTitle`);
-    body = t(`${K}notBody`, { price: f.money(price) });
-    shown = [t(`${K}notLine`, { item })];
+    body = shownPrice === null ? t(`${K}notBodyNoPrice`) : t(`${K}notBody`, { price: f.money(shownPrice) });
+    shown = [t(`${K}notLine`, { item: shownItem })];
   }
 
   const button = (node: React.ReactNode, key: string): React.JSX.Element => (
@@ -246,7 +260,7 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
                     <Pill
                       label={t(`${K}confirm`)}
                       variant="primary"
-                      disabled={!canRecord}
+                      disabled={!canRecord || !settled}
                       accessibilityHint={blockedReason ?? undefined}
                       onPress={confirm}
                     />,
