@@ -19,6 +19,9 @@ jest.mock('@/data/queries/decideCheckV3', () => ({ useChecksV3: () => jest.requi
 jest.mock('../../../pots/usePots', () => ({ usePotsRead: () => jest.requireActual('./homeScreenKit').usePotsReadDouble() }));
 jest.mock('../../../setup/useSetupFacts', () => ({ useSetupFacts: () => ({ fake: true }) }));
 jest.mock('../../../setup/useUnspent', () => ({ useUnspent: () => ({ view: null }) }));
+// 05.3-58: the real NotReadyCard renders here; its answer hook reads queries that need the Supabase env.
+jest.mock('../../ready/useReadinessAnswer', () => ({ useReadinessAnswer: () => ({ answer: jest.fn(), clearWaiver: jest.fn() }) }));
+jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ today: '2026-10-20', userId: 'u1', householdId: 'h1' }) }));
 jest.mock('../../../setup/setupFlow', () => ({
   setupStatus: () => 'done',
   remainingNeeded: () => [],
