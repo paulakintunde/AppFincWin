@@ -94,6 +94,7 @@ export const V3_RUNTIME_EXPORTS = [
   'cadenceOfFreq',
   'canUseEmergency',
   'cardEligibility', // 05.3-44: shared card rule, so v3 screens never import the old barrel (P-01)
+  'cardPaidInFullHistory', // 05.3-80
   'changeSinceLooked',
   'checkQuoted',
   'detectCandidates',
