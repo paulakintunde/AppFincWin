@@ -5,7 +5,8 @@ const WORDS: Record<string, string> = {
   'activity.tag.paid': 'Paid',
   'activity.tag.received': 'Received',
   'activity.tag.overdue': 'Overdue',
-  'activity.detail.kindRefund': 'Refund to {{category}}',
+  'activity.detail.kindRefund': 'Refund · lowers {{category}} spending',
+  'activity.detail.kindRefundPlain': 'Refund',
   'activity.detail.methodAutomatic': 'Automatic',
   'activity.detail.methodManual': 'Manual',
 };
@@ -66,7 +67,7 @@ describe('detailRowsFor', () => {
   it('adds a Kind row for a refund', () => {
     const rows = detailRowsFor({ ...base, row: tx({ is_refund: true, original_amount: 2999 }) });
     const kind = rows.find((r) => r.key === 'kind');
-    expect(kind).toMatchObject({ value: 'Refund to Groceries', tone: 'accent' });
+    expect(kind).toMatchObject({ value: 'Refund · lowers Groceries spending', tone: 'accent' });
     expect(rows[1]?.labelKey).toBe('activity.detail.paidFrom');
   });
 
@@ -99,7 +100,8 @@ describe('statusActionFor', () => {
     [{ status: 'paid', original_amount: 500 }, 'markExpected', 'pending'],
     [{ status: 'pending', transfer_id: 't' }, 'markMoved', 'paid'],
     [{ status: 'paid', transfer_id: 't' }, 'markScheduled', 'pending'],
-    [{ status: 'pending', is_refund: true, original_amount: 500 }, 'markPaid', 'paid'],
+    [{ status: 'pending', is_refund: true, original_amount: 500 }, 'markReceived', 'paid'],
+    [{ status: 'paid', is_refund: true, original_amount: 500 }, 'markExpected', 'pending'],
   ])('%j -> %s', (over, key, next) => {
     expect(statusActionFor(tx(over as Partial<TransactionRow>))).toEqual({ key, next });
   });

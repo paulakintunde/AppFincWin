@@ -61,7 +61,7 @@ export function detailRowsFor(input: DetailRowsInput): DetailRowSpec[] {
     rows.push({
       key: 'kind',
       labelKey: 'activity.detail.kind',
-      value: t('activity.detail.kindRefund', { category: categoryName ?? '' }),
+      value: categoryName ? t('activity.detail.kindRefund', { category: categoryName }) : t('activity.detail.kindRefundPlain'),
       tone: 'accent',
     });
   }
@@ -107,6 +107,9 @@ export function statusActionFor(
 ): { key: StatusActionKey; next: 'paid' | 'pending' } | null {
   if (row.status === 'skipped') return null;
   const pending = row.status === 'pending';
+  if (row.is_refund === true && row.original_amount > 0) {
+    return pending ? { key: 'markReceived', next: 'paid' } : { key: 'markExpected', next: 'pending' };
+  }
   const flow = flowOf(row);
   if (flow === 'transfer') return pending ? { key: 'markMoved', next: 'paid' } : { key: 'markScheduled', next: 'pending' };
   if (flow === 'in') return pending ? { key: 'markReceived', next: 'paid' } : { key: 'markExpected', next: 'pending' };
