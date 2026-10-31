@@ -129,7 +129,7 @@ describe('recordDecideOutcome', () => {
   it('sends a wait outcome without the outcome key in p_decision', async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: { status: 'applied' }, error: null, status: 200 });
-    const goal = { id: 'g1', name: 'Laptop', currency: 'GBP', target: 90000 };
+    const goal = { id: 'g1', name: 'Laptop', currency: 'GBP', target: 90000, account_id: null };
     await expect(
       recordDecideOutcome(client, 'k1', {
         outcome: 'wait',
@@ -139,7 +139,7 @@ describe('recordDecideOutcome', () => {
         cooling_off: false,
         goal,
       })
-    ).resolves.toEqual({ status: 'applied' });
+    ).resolves.toEqual({ status: 'applied', undoStepId: null, checkVersion: null, goalVersion: null });
     const [name, args] = client.calls.find((c) => c.method === 'rpc')?.args as [string, Record<string, unknown>];
     expect(name).toBe('record_decide_outcome');
     expect(args).toEqual({
@@ -154,9 +154,26 @@ describe('recordDecideOutcome', () => {
     client.respondWith({ data: { status: 'already-applied' }, error: null, status: 200 });
     await expect(recordDecideOutcome(client, 'k1', { outcome: 'pass', verdict: 'no', cooling_off: true })).resolves.toEqual({
       status: 'already-applied',
+      undoStepId: null,
+      checkVersion: null,
+      goalVersion: null,
     });
     const [, args] = client.calls.find((c) => c.method === 'rpc')?.args as [string, Record<string, unknown>];
     expect(args).toEqual({ p_check_id: 'k1', p_outcome: 'pass', p_decision: { verdict: 'no', cooling_off: true } });
+  });
+
+  it('sends p_undo_step when a step is given and returns the versions', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { status: 'applied', undo_step_id: 's1', check_version: 4, goal_version: 0 }, error: null, status: 200 });
+    const step = { id: 's1', label_key: 'planSaved' as const, label_params: { name: 'Sofa' } };
+    const goal = { id: 'g1', name: 'Sofa', currency: 'USD', target: 30000, account_id: 'acc-1' };
+    await expect(
+      recordDecideOutcome(client, 'k1', { outcome: 'wait', verdict: 'adjust', wait_monthly: 1, ready_by: null, cooling_off: false, goal }, step)
+    ).resolves.toEqual({ status: 'applied', undoStepId: 's1', checkVersion: 4, goalVersion: null });
+    const [, args] = client.calls.find((c) => c.method === 'rpc')?.args as [string, Record<string, unknown>];
+    expect(Object.keys(args).sort()).toEqual(['p_check_id', 'p_decision', 'p_outcome', 'p_undo_step']);
+    expect(args.p_undo_step).toEqual(step);
+    expect((args.p_decision as { goal: unknown }).goal).toEqual(goal);
   });
 
   it('rejects a goal target below 1 before any request', async () => {
@@ -168,7 +185,7 @@ describe('recordDecideOutcome', () => {
         wait_monthly: 0,
         ready_by: null,
         cooling_off: false,
-        goal: { id: 'g1', name: 'x', currency: 'GBP', target: 0 },
+        goal: { id: 'g1', name: 'x', currency: 'GBP', target: 0, account_id: null },
       })
     ).rejects.toBeInstanceOf(RangeError);
     expect(client.calls).toHaveLength(0);

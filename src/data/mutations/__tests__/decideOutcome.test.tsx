@@ -9,7 +9,7 @@ import type { DbClient } from '@/db/rows';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
-import { queryKeys } from '@/data/keys';
+import { mutationKeys, queryKeys } from '@/data/keys';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { registerDecideOutcomeMutations, usePass, useWaitAndSave } from '../decideOutcome';
@@ -110,7 +110,7 @@ describe('useWaitAndSave', () => {
       wait_monthly: 25000,
       ready_by: '2027-03-01',
       cooling_off: false,
-      goal: { id: 'id-1', name: 'Sofa', currency: 'USD', target: 100000 },
+      goal: { id: 'id-1', name: 'Sofa', currency: 'USD', target: 100000, account_id: null },
     });
     expect(mockTrack).toHaveBeenCalledWith('decision_recorded', { decision: 'wait' });
     await waitFor(() => expect(qc.getQueryData<DecideCheckRow[]>(CHECKS)?.[0]?.status).toBe('waiting'));
@@ -260,71 +260,91 @@ describe('usePass', () => {
   });
 });
 
-describe('D-21 undo steps (05.3-47)', () => {
-  const stepInsert = (fake: FakeSupabase) => fake.calls.find((c) => c.table === 'undo_log' && c.method === 'insert');
-  const OPEN = { status: 'open', decided_at: null, verdict_at_decision: null, wait_monthly: null, ready_by: null, cooling_off_at: null };
+describe('D-21 undo steps (05.3-68: recorded by the server)', () => {
+  const undoInserts = (fake: FakeSupabase) => fake.calls.filter((c) => c.table === 'undo_log');
+  const noClientStep = (fake: FakeSupabase) => {
+    expect(undoInserts(fake)).toHaveLength(0);
+    expect(fake.calls.filter((c) => c.method === 'from' || c.table === 'decide_checks')).toHaveLength(0);
+  };
 
-  it('Plan it records one step: the check back to open and the created goal soft-deleted', async () => {
+  it('Plan it sends p_undo_step in the one RPC and writes nothing to undo_log', async () => {
     const fake = setup();
-    fake.respondWith(applied()).respondWith(ok({ ...check, version: 2 })).respondWith(ok({ version: 1 })).respondWith(ok(null));
+    fake.respondWith(applied());
     const qc = newClient();
     const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
-    const out = await result.current.save(waitArgs);
-    await waitFor(() => expect(stepInsert(fake)).toBeDefined());
-    const payload = stepInsert(fake)!.args[0] as { id: string; label_key: string; label_params: unknown; ops: unknown[] };
-    expect(payload.id).toBe(out.stepId);
-    expect(payload.label_key).toBe('planSaved');
-    expect(payload.label_params).toEqual({ name: 'Sofa' });
-    expect(payload.ops).toEqual([
-      { entity: 'decide_checks', id: 'chk1', expectedVersion: 2, patch: OPEN },
-      { entity: 'savings_goals', id: (rpcArgs(fake).p_decision as { goal: { id: string } }).goal.id, expectedVersion: 1, patch: { deleted_at: '$now' } },
-    ]);
-    expect(fake.calls.filter((c) => c.table === 'undo_log' && c.method === 'insert')).toHaveLength(1);
+    const out = await result.current.save({ ...waitArgs, accountId: 'acc-1' });
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    expect(rpcArgs(fake).p_undo_step).toEqual({ id: out.stepId, label_key: 'planSaved', label_params: { name: 'Sofa' } });
+    expect((rpcArgs(fake).p_decision as { goal: { account_id: string } }).goal.account_id).toBe('acc-1');
+    await waitFor(() => expect(qc.getQueryData<SavingsGoalRow[]>(GOALS)?.[0]?.account_id).toBe('acc-1'));
+    noClientStep(fake);
   });
 
-  it('Plan it with no goal restores only the check', async () => {
+  it('Not buying sends p_undo_step', async () => {
     const fake = setup();
-    fake.respondWith(applied()).respondWith(ok({ ...check, version: 3 })).respondWith(ok(null));
-    const qc = newClient();
-    const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
-    await result.current.save({ ...waitArgs, goalTarget: null });
-    await waitFor(() => expect(stepInsert(fake)).toBeDefined());
-    const ops = (stepInsert(fake)!.args[0] as { ops: { entity: string }[] }).ops;
-    expect(ops.map((o) => o.entity)).toEqual(['decide_checks']);
-  });
-
-  it('Not buying records one step that returns the check to open', async () => {
-    const fake = setup();
-    fake.respondWith(applied()).respondWith(ok({ ...check, version: 2 })).respondWith(ok(null));
+    fake.respondWith(applied());
     const qc = newClient();
     const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
     const stepId = result.current.pass({ check, verdict: 'no', coolingOff: false });
-    await waitFor(() => expect(stepInsert(fake)).toBeDefined());
-    const payload = stepInsert(fake)!.args[0] as { id: string; label_key: string; ops: unknown[] };
-    expect(payload.id).toBe(stepId);
-    expect(payload.label_key).toBe('notBuyingSaved');
-    expect(payload.ops).toEqual([{ entity: 'decide_checks', id: 'chk1', expectedVersion: 2, patch: OPEN }]);
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    expect(rpcArgs(fake).p_undo_step).toEqual({ id: stepId, label_key: 'notBuyingSaved', label_params: { name: 'Sofa' } });
+    noClientStep(fake);
+  });
+
+  it('sends empty label_params when the name is empty', async () => {
+    const fake = setup();
+    fake.respondWith(applied());
+    const qc = newClient();
+    const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
+    result.current.pass({ check: { ...check, name: '', inputs: {} }, verdict: 'no', coolingOff: false });
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    expect((rpcArgs(fake).p_undo_step as { label_params: unknown }).label_params).toEqual({});
+  });
+
+  it('a persisted write without undo still makes the 3-key call', async () => {
+    const fake = setup();
+    fake.respondWith(applied());
+    const qc = newClient();
+    await qc
+      .getMutationCache()
+      .build(qc, { mutationKey: mutationKeys.decideOutcome })
+      .execute({
+        checkId: 'chk1',
+        ownerId: 'u1',
+        householdId: 'h1',
+        decision: { outcome: 'pass', verdict: 'no', cooling_off: false },
+      });
+    expect(Object.keys(rpcArgs(fake)).sort()).toEqual(['p_check_id', 'p_decision', 'p_outcome']);
+  });
+
+  it('invalidates the undo log on success', async () => {
+    setup().respondWith(applied());
+    const qc = newClient();
+    const spy = jest.spyOn(qc, 'invalidateQueries');
+    const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
+    result.current.pass({ check, verdict: 'no', coolingOff: false });
+    await waitFor(() => expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.undoLog('u1') }));
   });
 
   it('a double tap writes once and hands back the same step', async () => {
     const fake = setup();
-    fake.respondWith(applied()).respondWith(ok({ ...check, version: 2 })).respondWith(ok(null));
+    fake.respondWith(applied());
     const qc = newClient();
     const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
     const a = result.current.pass({ check, verdict: 'no', coolingOff: false });
     const b = result.current.pass({ check, verdict: 'no', coolingOff: false });
     expect(b).toBe(a);
-    await waitFor(() => expect(stepInsert(fake)).toBeDefined());
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
     expect(fake.calls.filter((c) => c.method === 'rpc')).toHaveLength(1);
   });
 
-  it('a failed write records no step', async () => {
+  it('a failed write toasts and sends no client step', async () => {
     const fake = setup();
     fake.respondWith({ data: null, error: { message: 'bad', code: '22023' }, status: 400 });
     const qc = newClient();
     const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
     result.current.pass({ check, verdict: 'no', coolingOff: false });
     await waitFor(() => expect(getToast()).not.toBeNull());
-    expect(stepInsert(fake)).toBeUndefined();
+    noClientStep(fake);
   });
 });
