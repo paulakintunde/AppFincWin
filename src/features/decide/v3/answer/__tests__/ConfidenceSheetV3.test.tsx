@@ -1,9 +1,11 @@
 /** Plan 05.3-25: ConfidenceChipV3 and ConfidenceSheetV3. */
 import React from 'react';
-import { fireEvent, screen } from '@testing-library/react-native';
+import { cleanup, fireEvent, screen } from '@testing-library/react-native';
 import type { Confidence } from '@/engine/decide/v3';
 import { ConfidenceChipV3 } from '../ConfidenceChipV3';
 import { ConfidenceSheetV3 } from '../ConfidenceSheetV3';
+import { waiverRows } from '../../model/waiverNote';
+import { fakeFormat } from './answerKit';
 import { wrap } from './kit';
 
 jest.setTimeout(60000);
@@ -52,5 +54,43 @@ describe('ConfidenceSheetV3', () => {
     expect(screen.getByText('It is based on fewer than 3 months of records.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Close'));
     expect(screen.queryByText('How sure this answer is')).toBeNull();
+  });
+});
+
+describe('ConfidenceSheetV3 answers (05.3-59)', () => {
+  const rows = waiverRows(
+    [
+      {
+        item: { kind: 'bill', code: 'past_month_missing', month: '2026-09', seriesId: null, envelopeId: null, lineId: null, name: null, amount: null, date: null },
+        by: 'month_complete',
+        waiver: { kind: 'month_complete', month: '2026-09', at: '2026-10-30' },
+      },
+    ],
+    [],
+    [{ seriesId: 'gym', name: null }],
+    '2026-10',
+  );
+
+  it('lists each answer after the reasons, with its effect line and its own Ask again', async () => {
+    const onAskAgain = jest.fn();
+    await wrap(<ConfidenceSheetV3 visible confidence={FAIR} onClose={jest.fn()} waivers={rows} format={fakeFormat} onAskAgain={onAskAgain} />);
+    expect(screen.getByText('It is based on fewer than 3 months of records.')).toBeTruthy();
+    expect(screen.getByText('Your answers this rests on')).toBeTruthy();
+    expect(screen.getByText('2026-09: counted as complete')).toBeTruthy();
+    expect(screen.getByText('A payment: counted as always paid by someone else')).toBeTruthy();
+    expect(screen.getByText('Not counted against your months, including your typical month.')).toBeTruthy();
+    expect(screen.getAllByText('Ask again')).toHaveLength(2);
+    await fireEvent.press(screen.getByLabelText('Ask again: A payment: counted as always paid by someone else'));
+    expect(onAskAgain).toHaveBeenCalledTimes(1);
+    expect(onAskAgain).toHaveBeenCalledWith(rows[1]);
+  });
+
+  it('with no answers and no handler, shows only the reasons; Ask again without a handler does nothing', async () => {
+    await wrap(<ConfidenceSheetV3 visible confidence={FAIR} onClose={jest.fn()} waivers={[]} />);
+    expect(screen.queryByText('Your answers this rests on')).toBeNull();
+    await cleanup();
+    await wrap(<ConfidenceSheetV3 visible confidence={FAIR} onClose={jest.fn()} waivers={rows} />);
+    expect(screen.getByText('2026-09: counted as complete')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Ask again: 2026-09: counted as complete'));
   });
 });

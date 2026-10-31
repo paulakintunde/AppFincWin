@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { cleanup, screen } from '@testing-library/react-native';
+import { cleanup, fireEvent, screen } from '@testing-library/react-native';
 import { MATRIX, expectFits, expectTargets, matrixName } from '@/features/decide/__tests__/helpers/r18Fit';
 import { copy } from './answerKit';
 import { wrap } from './kit';
@@ -19,11 +19,16 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
   default: () => ({ width: mockWidth, height: 874, scale: 2, fontScale: mockScale }),
 }));
-// One stable value, as the real hook memoises its result.
+// One stable value, as the real hook memoises its result. 05.3-59: a second value carries two of the user's answers.
+let mockWaivers = false;
 jest.mock('@/data/queries/decideCheckV3', () => {
   const k = jest.requireActual('./answerKit');
   const value = { status: 'ready', row: k.rowOf(), evaluation: k.fullEv(), withoutRefunds: null, inputs: k.SCREEN_INPUTS };
-  return { useCheckV3: () => value };
+  const withWaivers = {
+    ...value,
+    evaluation: k.fullEv({ confidence: { level: 'fair', reasons: ['few_months'] }, readiness: k.READY_WITH([k.WAIVED_LUNCH]), month: { paidByOther: [k.PBO_NETFLIX] } }),
+  };
+  return { useCheckV3: () => (mockWaivers ? withWaivers : value) };
 });
 jest.mock('@/data/mutations/decideChecks', () => ({ useReopenCheck: () => ({ reopen: () => 'new-id' }) }));
 jest.mock('expo-router', () => ({ router: { navigate: jest.fn(), push: jest.fn() }, useFocusEffect: jest.fn() }));
@@ -76,5 +81,40 @@ describe.each(MATRIX)('Answer screen, $width wide at $scale x', (cell) => {
     const group = StyleSheet.flatten(pill.parent?.props.style);
     const stacked = cell.width < 360 || cell.scale > 1.3;
     expect(group.flexDirection === 'row').toBe(!stacked);
+  });
+});
+
+describe.each(MATRIX)('Answer screen with the confidence sheet open and two answers, $width wide at $scale x (05.3-59, W7)', (cell) => {
+  const NOTE = 'Rests on 2 of your answers.';
+  const LUNCH = 'Lunch, 21 Sep: counted as paid by someone else';
+  const NETFLIX = 'Netflix, 3 Oct: counted as paid by someone else';
+  beforeEach(() => {
+    mockWidth = cell.width;
+    mockScale = cell.scale;
+    mockWaivers = true;
+  });
+  afterEach(() => {
+    mockWaivers = false;
+    cleanup();
+  });
+
+  it(`${matrixName(cell)}: the note and every Ask again fit, at 44 or more, each answer one text group then its button`, async () => {
+    await wrap(<AnswerScreen id="c1" />, cell.scale);
+    expectTargets(NOTE);
+    await fireEvent.press(screen.getByLabelText(NOTE));
+    expect(screen.getByText('Your answers this rests on')).toBeTruthy();
+    expectFits({ clampCount: 3 });
+    expectTargets(NOTE, `Ask again: ${LUNCH}`, `Ask again: ${NETFLIX}`);
+    // TalkBack: each answer is one accessible group, and its Ask again button follows it
+    const lunch = screen.getByLabelText(LUNCH);
+    const netflix = screen.getByLabelText(`${NETFLIX}. Not counted as money going out this month.`);
+    for (const [group, button] of [[lunch, `Ask again: ${LUNCH}`], [netflix, `Ask again: ${NETFLIX}`]] as const) {
+      expect(group.props.accessible).toBe(true);
+      const siblings = group.parent!.children.filter((c) => typeof c !== 'string');
+      const at = siblings.indexOf(group);
+      expect(siblings[at + 1]!.props.accessibilityLabel).toBe(button);
+    }
+    const note = screen.getByLabelText(NOTE);
+    expect(note.props.accessibilityRole).toBe('button');
   });
 });

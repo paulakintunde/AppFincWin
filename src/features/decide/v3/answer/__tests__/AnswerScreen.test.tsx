@@ -5,7 +5,7 @@
 import React from 'react';
 import { cleanup, fireEvent, screen } from '@testing-library/react-native';
 import { percent } from '@/engine/payoff';
-import { copy, fullEv, rowOf, storedOf, SCREEN_INPUTS } from './answerKit';
+import { copy, fullEv, rowOf, storedOf, PBO_NETFLIX, READY_WITH, SCREEN_INPUTS, WAIVED_LUNCH } from './answerKit';
 import { wrap } from './kit';
 import { AnswerScreen } from '../AnswerScreen';
 
@@ -41,7 +41,10 @@ jest.mock('@/features/record/useRecordContext', () => ({
 jest.mock('../../shared/useV3Format', () => ({ useV3Format: () => jest.requireActual('./answerKit').fakeFormat }));
 jest.mock('../../ask/focusNode', () => ({ focusNode: jest.fn() }));
 // 05.3-58: the real NotReadyCard renders here; its answer hook reads queries that need the Supabase env.
-jest.mock('../../ready/useReadinessAnswer', () => ({ useReadinessAnswer: () => ({ answer: jest.fn(), clearWaiver: jest.fn() }) }));
+const mockClearWaiver = jest.fn();
+jest.mock('../../ready/useReadinessAnswer', () => ({
+  useReadinessAnswer: () => ({ answer: jest.fn(), clearWaiver: (...a: unknown[]) => mockClearWaiver(...a) }),
+}));
 jest.mock('../questionBodies', () => ({ renderQuestionBody: () => null }));
 jest.mock('../../nav/V3Skeleton', () => {
   const { Text } = jest.requireActual('react-native');
@@ -291,5 +294,54 @@ describe('analytics', () => {
     setCheck({ evaluation: fullEv({ readiness: { ready: false, missing: ['past_month_missing'] } }) });
     await wrap(<AnswerScreen id="c1" />);
     expect(mockTrack).not.toHaveBeenCalledWith('decide_answer_shown', expect.anything());
+  });
+});
+
+describe('AnswerScreen: the answers it rests on (05.3-59, D-24, D-27, D-31)', () => {
+  const NETFLIX_ROW = 'Netflix, 3 Oct: counted as paid by someone else';
+
+  it('one paid-by-other bill: the note names it and opens the sheet, where Ask again clears it once', async () => {
+    setCheck({ evaluation: fullEv({ month: { paidByOther: [PBO_NETFLIX] } }) });
+    await wrap(<AnswerScreen id="c1" />);
+    const note = screen.getByLabelText('Netflix counted as paid by someone else.');
+    expect(screen.queryByText('Your answers this rests on')).toBeNull();
+    await fireEvent.press(note);
+    expect(screen.getByText('How sure this answer is')).toBeTruthy();
+    expect(screen.getByText('Your answers this rests on')).toBeTruthy();
+    expect(screen.getByText(NETFLIX_ROW)).toBeTruthy();
+    expect(screen.getByText('Not counted as money going out this month.')).toBeTruthy();
+    expect(screen.getByLabelText(`${NETFLIX_ROW}. Not counted as money going out this month.`)).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText(`Ask again: ${NETFLIX_ROW}`));
+    expect(mockClearWaiver).toHaveBeenCalledTimes(1);
+    expect(mockClearWaiver).toHaveBeenCalledWith({ kind: 'paid_by_other', seriesId: 'netflix', date: '2026-10-03' }, 'Netflix');
+  });
+
+  it('two answers: the note gives a count', async () => {
+    setCheck({ evaluation: fullEv({ readiness: READY_WITH([WAIVED_LUNCH]), month: { paidByOther: [PBO_NETFLIX] } }) });
+    await wrap(<AnswerScreen id="c1" />);
+    await fireEvent.press(screen.getByLabelText('Rests on 2 of your answers.'));
+    expect(screen.getByText('Lunch, 21 Sep: counted as paid by someone else')).toBeTruthy();
+    expect(screen.getByText(NETFLIX_ROW)).toBeTruthy();
+    // September's Lunch is not this month: one effect line only
+    expect(screen.getAllByText('Not counted as money going out this month.')).toHaveLength(1);
+  });
+
+  it('always paid by someone else, with October recorded paid and no readiness items: one named row', async () => {
+    setCheck({ evaluation: fullEv({ readiness: READY_WITH([]), month: { paidByOther: [], alwaysOther: [{ seriesId: 'netflix', name: 'Netflix' }] } }) });
+    await wrap(<AnswerScreen id="c1" />);
+    await fireEvent.press(screen.getByLabelText('Netflix counted as always paid by someone else.'));
+    expect(screen.getAllByText('Netflix: counted as always paid by someone else')).toHaveLength(1);
+    expect(screen.getByText('Not counted against your months, including your typical month.')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Ask again: Netflix: counted as always paid by someone else'));
+    expect(mockClearWaiver).toHaveBeenCalledWith({ kind: 'always_other', seriesId: 'netflix' }, 'Netflix');
+  });
+
+  it('no answers: no note, and the chip and level are unchanged', async () => {
+    setCheck({ evaluation: fullEv({ confidence: { level: 'fair', reasons: ['few_months'] } }) });
+    await wrap(<AnswerScreen id="c1" />);
+    expect(screen.queryByText(/Rests on|counted as/)).toBeNull();
+    await fireEvent.press(screen.getByText('Fair'));
+    expect(screen.queryByText('Your answers this rests on')).toBeNull();
+    expect(screen.queryByText(/Ask again/)).toBeNull();
   });
 });

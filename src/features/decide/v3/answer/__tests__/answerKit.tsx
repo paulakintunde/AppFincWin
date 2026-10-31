@@ -11,7 +11,9 @@ export interface FullOver {
   split?: unknown[];
   notices?: unknown[];
   missing?: string[];
-  readiness?: { ready: boolean; missing: string[] };
+  readiness?: { ready: boolean; missing: string[]; waived?: unknown[] };
+  /** 05.3-59: extra MonthModel fields (paidByOther, alwaysOther) */
+  month?: Record<string, unknown>;
   cash?: unknown;
   band?: number;
   financed?: boolean;
@@ -39,7 +41,7 @@ export function fullEv(o: FullOver = {}): Evaluation {
       parts: { oneOff: code, monthly: null },
       ...(o.readiness === undefined ? {} : { readiness: o.readiness }),
     },
-    month: { month: '2026-10', daysInMonth: 31, erest: 20000, monthLeft: 42500, typicalLeft: 30000, low: null, unseenPay: [] },
+    month: { month: '2026-10', daysInMonth: 31, erest: 20000, monthLeft: 42500, typicalLeft: 30000, low: null, unseenPay: [], ...o.month },
     purchase: {
       whole: 120000,
       dayOne: 120000,
@@ -110,3 +112,12 @@ export const fakeFormat = {
 };
 
 export const SCREEN_INPUTS = { months: [{ full: true }] };
+
+/** 05.3-59: the user's answers fixtures. Netflix paid by someone else on 3 Oct, Lunch paid by someone else in September. */
+export const PBO_NETFLIX = { seriesId: 'netflix', name: 'Netflix', date: '2026-10-03', amount: 1199, by: 'paid_by_other' };
+export const WAIVED_LUNCH = {
+  item: { kind: 'bill', code: 'past_month_missing', month: '2026-09', seriesId: 'lunch', envelopeId: null, lineId: null, name: 'Lunch', amount: 1000, date: '2026-09-21' },
+  by: 'paid_by_other',
+  waiver: { kind: 'paid_by_other', seriesId: 'lunch', date: '2026-09-21' },
+};
+export const READY_WITH = (waived: unknown[]) => ({ ready: true, missing: [], waived });
