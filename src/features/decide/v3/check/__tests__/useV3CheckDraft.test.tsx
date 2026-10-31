@@ -21,7 +21,8 @@ jest.mock('@/data/mutations/decideChecks', () => ({
   useSaveCheckDraft: () => ({ save: mockSaveDraft }),
   useSaveCheckAnswer: () => ({ save: mockSaveAnswer }),
 }));
-jest.mock('@tanstack/react-query', () => ({ useMutationState: () => [] }));
+const mockQc = new (jest.requireActual('@tanstack/react-query').QueryClient)();
+jest.mock('@tanstack/react-query', () => ({ useMutationState: () => [], useQueryClient: () => mockQc }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: mockTrack }) }));
 
 const RESULT = { code: 'fits_month', variant: null, readyBy: null, facts: [] } as never;
@@ -39,6 +40,7 @@ describe('useV3CheckDraft', () => {
     jest.clearAllMocks();
     mockRows = [];
     mockCtx = { userId: 'u1', householdId: 'h1' };
+    mockQc.clear();
   });
   afterEach(() => jest.useRealTimers());
 
@@ -127,6 +129,51 @@ describe('useV3CheckDraft', () => {
       jest.advanceTimersByTime(V3_DRAFT_DEBOUNCE_MS + 10);
     });
     expect(mockSaveDraft).not.toHaveBeenCalled();
+  });
+
+  describe('commit patches the checks cache first (05.3-85, UAT step 22)', () => {
+    const KEY = ['decide-checks', 'u1', 'h1'];
+    it('holds the typed price in the cache right after commit, marked pending, with one draft save and one answer save', async () => {
+      const row = storedRow(0, 'Lamp');
+      const other = { ...storedRow(100, 'Other'), id: '22222222-2222-4222-8222-222222222222' };
+      mockRows = [row];
+      mockQc.setQueryData(KEY, [row, other]);
+      const { result } = await renderHook(() => useV3CheckDraft(ID));
+      await act(async () => result.current.edit(withPrice(result.current.check, 3000 as never)));
+      await act(async () => {
+        result.current.commit(RESULT);
+      });
+      const cached = mockQc.getQueryData(KEY) as Array<Record<string, unknown>>;
+      expect(cached[0]).toMatchObject({ id: ID, pending: true, inputs: toStoredV2(withPrice(emptyCheck(), 3000 as never)) });
+      expect(cached[1]).toBe(other);
+      expect(mockSaveDraft).toHaveBeenCalledTimes(1);
+      expect(mockSaveAnswer).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns a cache that does not hold the id unchanged', async () => {
+      const other = { ...storedRow(100, 'Other'), id: '22222222-2222-4222-8222-222222222222' };
+      const list = [other];
+      mockQc.setQueryData(KEY, list);
+      mockRows = [storedRow(5000, 'Lamp')];
+      const { result } = await renderHook(() => useV3CheckDraft(ID));
+      await act(async () => result.current.edit(withPrice(result.current.check, 3000 as never)));
+      await act(async () => {
+        result.current.commit(RESULT);
+      });
+      expect(mockQc.getQueryData(KEY)).toBe(list);
+    });
+
+    it('patches nothing when the row is not created yet', async () => {
+      const list: unknown[] = [];
+      mockQc.setQueryData(KEY, list);
+      const { result } = await renderHook(() => useV3CheckDraft(ID));
+      let ok = true;
+      await act(async () => {
+        ok = result.current.commit(RESULT);
+      });
+      expect(ok).toBe(false);
+      expect(mockQc.getQueryData(KEY)).toBe(list);
+    });
   });
 });
 

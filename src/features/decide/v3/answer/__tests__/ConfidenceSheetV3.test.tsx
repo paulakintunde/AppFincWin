@@ -72,8 +72,10 @@ describe('ConfidenceSheetV3 answers (05.3-59)', () => {
   );
 
   it('lists each answer after the reasons, with its effect line and its own Ask again', async () => {
-    const onAskAgain = jest.fn();
-    await wrap(<ConfidenceSheetV3 visible confidence={FAIR} onClose={jest.fn()} waivers={rows} format={fakeFormat} onAskAgain={onAskAgain} />);
+    const log: string[] = [];
+    const onClose = jest.fn(() => log.push('close'));
+    const onAskAgain = jest.fn(() => log.push('ask'));
+    await wrap(<ConfidenceSheetV3 visible confidence={FAIR} onClose={onClose} waivers={rows} format={fakeFormat} onAskAgain={onAskAgain} />);
     expect(screen.getByText('It is based on fewer than 3 months of records.')).toBeTruthy();
     expect(screen.getByText('Your answers this rests on')).toBeTruthy();
     expect(screen.getByText('2026-09: counted as complete')).toBeTruthy();
@@ -83,14 +85,18 @@ describe('ConfidenceSheetV3 answers (05.3-59)', () => {
     await fireEvent.press(screen.getByLabelText('Ask again: A payment: counted as always paid by someone else'));
     expect(onAskAgain).toHaveBeenCalledTimes(1);
     expect(onAskAgain).toHaveBeenCalledWith(rows[1]);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(log).toEqual(['close', 'ask']);
   });
 
   it('with no answers and no handler, shows only the reasons; Ask again without a handler does nothing', async () => {
     await wrap(<ConfidenceSheetV3 visible confidence={FAIR} onClose={jest.fn()} waivers={[]} />);
     expect(screen.queryByText('Your answers this rests on')).toBeNull();
     await cleanup();
-    await wrap(<ConfidenceSheetV3 visible confidence={FAIR} onClose={jest.fn()} waivers={rows} />);
+    const onClose = jest.fn();
+    await wrap(<ConfidenceSheetV3 visible confidence={FAIR} onClose={onClose} waivers={rows} />);
     expect(screen.getByText('2026-09: counted as complete')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Ask again: 2026-09: counted as complete'));
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

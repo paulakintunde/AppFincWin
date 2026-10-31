@@ -3,7 +3,7 @@
 // on "Check it" (D-13/D-16), never by an edit. Only plain stored JSON (toStoredV2) reaches the write queue.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { useMutationState } from '@tanstack/react-query';
+import { useMutationState, useQueryClient } from '@tanstack/react-query';
 import { mutationKeys } from '@/data/keys';
 import { useCreateCheck, useSaveCheckAnswer, useSaveCheckDraft } from '@/data/mutations/decideChecks';
 import { useDecideChecks } from '@/data/queries/decide';
@@ -56,6 +56,7 @@ const NO_ROWS: readonly never[] = [];
 
 export function useV3CheckDraft(id: string): V3CheckDraft {
   const rc = useRecordContext();
+  const qc = useQueryClient();
   const checks = useDecideChecks(rc.userId ?? undefined, rc.householdId ?? undefined);
   const { create, pendingRows = NO_ROWS } = useCreateCheck();
   const { save: saveDraft } = useSaveCheckDraft();
@@ -152,6 +153,21 @@ export function useV3CheckDraft(id: string): V3CheckDraft {
 
   const commit = useCallback(
     (result: Result): boolean => {
+      if (dirty.current) {
+        // 05.3-85 (UAT step 22): the queued draft save's onMutate waits behind earlier writes in WRITE_SCOPE, so the answer screen would
+        // read the stale row; the latest inputs go into the cache now, the same patch the save's onMutate makes later.
+        const { check, name } = latest.current;
+        const inputs = toStoredV2(check) as unknown as Record<string, unknown>;
+        qc.setQueriesData<readonly (DecideCheckRow & { pending?: boolean })[]>({ queryKey: ['decide-checks'] }, (old) => {
+          if (!Array.isArray(old)) return old;
+          const i = old.findIndex((r) => r.id === id);
+          if (i < 0) return old;
+          const prev = old[i]!;
+          const out = old.slice();
+          out[i] = { ...prev, name: name.slice(0, NAME_MAX), inputs, furthest_step: Math.max(1, prev.furthest_step ?? 1), pending: true };
+          return out;
+        });
+      }
       flush();
       const stored = live.current.row;
       if (stored === null) return false;
@@ -159,7 +175,7 @@ export function useV3CheckDraft(id: string): V3CheckDraft {
       live.current.answer.save(stored, { ...seen, lineFacts: [...seen.lineFacts] } as StoredSeenV3);
       return true;
     },
-    [flush],
+    [flush, qc, id],
   );
 
   const mutations = useMutationState<SaveMutation>({

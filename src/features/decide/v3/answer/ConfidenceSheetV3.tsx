@@ -1,7 +1,7 @@
 /**
  * 05.3-25 (UI-SPEC Hero): "How sure this answer is". One sentence per reason key from confidenceChip(), the header Close control. Built on the shared Sheet (modal, so focus stays inside and returns to the chip on close).
  * 05.3-59 (D-24, D-27, D-31): after the reasons, the user's answers the result rests on, each once, with its effect line
- * and its own "Ask again" button. The confidence level never changes here.
+ * and its own "Ask again" button. The confidence level never changes here. Ask again closes the sheet first (UAT step 0.24).
  */
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -83,7 +83,10 @@ export function ConfidenceSheetV3({ visible, confidence, onClose, waivers, forma
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={t(`${W}askAgainA11y`, { text })}
-                      onPress={() => onAskAgain?.(row)}
+                      onPress={() => {
+                        onClose();
+                        onAskAgain?.(row);
+                      }}
                       style={styles.askAgain}
                     >
                       <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t(`${W}askAgain`)}</Text>
