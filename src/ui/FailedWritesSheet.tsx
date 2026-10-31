@@ -21,6 +21,8 @@ import {
   type FailedWrite,
 } from "@/data/sync/failedWrites";
 import { useT } from "@/i18n";
+import { useDeviceLocale } from "@/services/locale/deviceLocale";
+import { clockText } from "./clockText";
 import { useTheme } from "@/theme/ThemeProvider";
 import { radii, space } from "@/theme/layout";
 import { fontSize, textRole } from "@/theme/typography";
@@ -30,16 +32,15 @@ import {
   failedWriteName,
 } from "./failedWriteLabels";
 
-function whenText(at: string): string {
+function whenText(at: string, locale: string): string {
   const d = new Date(at);
-  return Number.isNaN(d.getTime())
-    ? ""
-    : d.toLocaleString(undefined, {
-        day: "numeric",
-        month: "short",
-        hour: "numeric",
-        minute: "2-digit",
-      });
+  if (Number.isNaN(d.getTime())) return "";
+  const date = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+  }).format(d);
+  const time = clockText({ hours: d.getHours(), minutes: d.getMinutes() }, locale);
+  return `${date}, ${time}`;
 }
 
 export function FailedWritesSheet({
@@ -50,6 +51,7 @@ export function FailedWritesSheet({
   onClose: () => void;
 }) {
   const t = useT();
+  const { locale } = useDeviceLocale();
   const { colors, pairing } = useTheme();
   const entries = useSyncExternalStore(subscribeFailedWrites, getFailedWrites);
   const [confirmAll, setConfirmAll] = useState(false);
@@ -100,7 +102,7 @@ export function FailedWritesSheet({
                 >
                   <View style={styles.text}>
                     <Text style={{ ...body, fontWeight: "600" }}>{what}</Text>
-                    <Text style={meta}>{whenText(entry.at)}</Text>
+                    <Text style={meta}>{whenText(entry.at, locale)}</Text>
                     <Text style={body}>{t(failedReasonKey(entry))}</Text>
                   </View>
                   <View style={styles.actions}>

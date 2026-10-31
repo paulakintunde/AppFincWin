@@ -137,7 +137,7 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
       accessibilityLabel={name}
       leading={<CategoryGlyph colorKey={swatchKey} letter={(name.trim().charAt(0) || '?').toUpperCase()} />}
       title={name}
-      subtitle={[categoryLabel, formatter.formatDate(row.local_date, 'short')].filter((p) => p !== null && p !== '').join(' · ')}
+      subtitle={[categoryLabel, formatter.formatDate(row.local_date, 'medium')].filter((p) => p !== null && p !== '').join(' · ')}
       trailing={<Text style={{ ...textRole(pairing, 'body'), color: amountColor }}>{amountShown}</Text>}
       note={
         statementLine !== null || fxNote !== null ? (

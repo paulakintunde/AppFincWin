@@ -176,7 +176,7 @@ export function ActivityRow({
   const swatchKey: CategorySwatchKey = (category?.color_key as CategorySwatchKey | undefined) ?? 'slate';
   const letter = letterOf(isTransfer ? t('activity.transferOther') : name || categoryLabel);
 
-  const metaParts = [isTransfer ? '' : categoryLabel, accountName(row.account_id), formatter.formatDate(row.local_date, 'short')];
+  const metaParts = [isTransfer ? '' : categoryLabel, accountName(row.account_id), formatter.formatDate(row.local_date, 'medium')];
   const meta = metaParts.filter((p) => p !== '').join(' · ');
 
   const amountText = formatter.formatMoney(money(row.original_amount, row.original_currency));
@@ -388,7 +388,7 @@ export function ProjectionRow({ projection, categories, accountName, formatter, 
   const swatchKey: CategorySwatchKey = (category?.color_key as CategorySwatchKey | undefined) ?? 'slate';
   const amountText = formatter.formatMoney(money(projection.amount, projection.currency));
   const showHome = projection.currency !== homeCurrency && projection.amountHome !== null;
-  const meta = [categoryLabel, accountName(projection.accountId), formatter.formatDate(projection.date, 'short')]
+  const meta = [categoryLabel, accountName(projection.accountId), formatter.formatDate(projection.date, 'medium')]
     .filter((p) => p !== '')
     .join(' · ');
 

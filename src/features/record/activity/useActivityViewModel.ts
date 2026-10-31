@@ -337,7 +337,7 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
         notes.set(item.row.id, {
           kind: 'after',
           text: t('activity.balance.after', {
-            date: formatter.formatDate(item.row.local_date, 'short'),
+            date: formatter.formatDate(item.row.local_date, 'medium'),
             amount: formatter.formatMoney(money(item.balance.after, balance.currency)),
           }),
         });
