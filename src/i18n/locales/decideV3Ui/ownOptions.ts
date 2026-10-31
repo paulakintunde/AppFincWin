@@ -1,0 +1,21 @@
+// 05.3-83 decide.v3.ui.ownOptions: the user's own kinds of purchase and purposes, added on Check a purchase
+export const ownOptions = {
+  addChip: '+ Your own',
+  addChipA11y: 'Add your own {{group}}',
+  itemTitle: 'Your own kind of purchase',
+  purposeTitle: 'Your own purpose',
+  nameLabel: 'Name',
+  namePlaceholderItem: 'For example: Bike',
+  namePlaceholderPurpose: 'For example: For the kids',
+  nameRange: '1 to 40 characters',
+  countsLike: 'Counts like',
+  countsLikeHint: 'Its cost questions come from this kind.',
+  save: 'Save',
+  cancel: 'Cancel',
+  tooMany: 'You have 10 of your own. Remove one to add another.',
+  nameTaken: 'That name is already in your list.',
+  removedName: 'A removed option',
+  savedToast: '{{name}} added',
+  groupItem: 'kind of purchase',
+  groupPurpose: 'purpose',
+} as const;

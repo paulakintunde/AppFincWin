@@ -59,6 +59,7 @@ const ACTION_LABELS = new Set([
   'decide.delete.keep', // dialog choice: keep the record instead of deleting it
   'decide.verdict.key.putInCaption', // field caption: the key figure "Put in a month" (investing amount)
   'decide.pots.sheet.save', // button: "Save pot" (05-131, R18.7); "Try again" reuses decide.flow.retry
+  'decide.v3.ui.ownOptions.save', // button: "Save" (05.3-83)
   // 05.2 (plan 20): setup controls and UI-SPEC titles that open with a verb. Each names an action in the app, not advice about money.
   'decide.setup.shell.skip', // button: skip this step
   'decide.accountUse.save', // button: "Save account use"
@@ -96,6 +97,8 @@ const CONTROL_LABELS = new Set([
   'decide.flow.commit.none', // disabled primary button label
   'decide.hint.foldTap', // reveal hint named in UI-SPEC as a control
   // 05-110 (R17.6): UI controls on the keyed list; none is a prescription about money
+  'decide.v3.ui.ownOptions.save', // button: "Save" (05.3-83)
+  'decide.v3.ui.ownOptions.addChipA11y', // accessibility label of the "+ Your own" chip (05.3-83)
   'decide.home.field.check', // button: "Check it"
   'decide.home.field.full', // text link: "Full check"
   'decide.home.field.fullA11y', // the same link's accessibility label

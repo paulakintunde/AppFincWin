@@ -43,3 +43,20 @@ describe('itemTypeOptions', () => {
     expect(o[9]).toMatchObject({ ref: { kind: 'preset', value }, selected: true, readOnly: true, labelKey: `decide.v3.ui.check.itemType.${value}` });
   });
 });
+
+describe('retired own options', () => {
+  it('keeps a removed own kind visible, by stored name or the generic copy', () => {
+    const sel: ItemTypeRef = { kind: 'custom', id: 'x' };
+    expect(itemTypeOptions(sel, [], new Map([['x', 'Bike']])).at(-1)).toMatchObject({ label: 'Bike', labelKey: null, selected: true, readOnly: true });
+    expect(itemTypeOptions(sel, []).at(-1)).toMatchObject({ label: null, labelKey: 'decide.v3.ui.ownOptions.removedName', readOnly: true });
+  });
+  it('keeps a removed own purpose visible, by stored name or the generic copy', () => {
+    const sel: Purpose = { kind: 'custom', id: 'p' };
+    expect(purposeOptions(sel, [], new Map([['p', 'Kids']])).at(-1)).toMatchObject({ label: 'Kids', labelKey: null, selected: true, readOnly: true });
+    expect(purposeOptions(sel, []).at(-1)).toMatchObject({ labelKey: 'decide.v3.ui.ownOptions.removedName', label: null, readOnly: true });
+  });
+  it('a live own option is not duplicated', () => {
+    expect(purposeOptions({ kind: 'custom', id: 'p' }, [{ id: 'p', label: 'K' }])).toHaveLength(7);
+    expect(itemTypeOptions({ kind: 'custom', id: 'p' }, [{ id: 'p', label: 'K' }])).toHaveLength(10);
+  });
+});
