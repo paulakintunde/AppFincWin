@@ -108,9 +108,16 @@ function PotForm({ pot, onClose, prefill }: { pot: SavingsGoalRow | null; onClos
 
   const currency = pot?.currency ?? ctx.home;
   const liveAccounts = useMemo(() => (accountsQuery.data ?? []).filter((a) => a.deleted_at === null && a.archived_at === null), [accountsQuery.data]);
-  const mixedAccounts = useMemo(() => liveAccounts.filter((a) => a.use === 'mixed'), [liveAccounts]);
+  // 05.3-87 (UAT step 61; D-54; owner approved overriding 05.2 D-05 on 2026-10-31): every envelope must name its account, so the row shows for any money account, not only 'A mix'.
+  const moneyAccounts = useMemo(
+    () =>
+      liveAccounts
+        .filter((a) => a.kind !== 'credit' && a.kind !== 'loan')
+        .sort((a, b) => ((a.use === 'mixed') === (b.use === 'mixed') ? a.name.localeCompare(b.name) : a.use === 'mixed' ? -1 : 1)),
+    [liveAccounts],
+  );
   // D-01 / D-05: the row exists only for a user with the new Decide and at least one account set to "A mix".
-  const showHeldIn = v3 && mixedAccounts.length > 0;
+  const showHeldIn = v3 && moneyAccounts.length > 0;
   const heldInName = value.accountId === null ? null : (liveAccounts.find((a) => a.id === value.accountId)?.name ?? null);
   const trimmed = value.name.trim();
   const nameOk = trimmed.length >= 1 && trimmed.length <= NAME_MAX;
@@ -363,7 +370,7 @@ function PotForm({ pot, onClose, prefill }: { pot: SavingsGoalRow | null; onClos
           <SheetHeader title={t('decide.setup.envelopes.heldIn')} cancelLabel={t('decide.pots.sheet.cancel')} onCancel={() => setPickingAccount(false)} />
           <SheetScroll contentContainerStyle={styles.column}>
             <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.setup.envelopes.heldIn')} style={{ gap: space.gapSm }}>
-              {[null, ...mixedAccounts].map((a) => {
+              {[null, ...moneyAccounts].map((a) => {
                 const selected = (a?.id ?? null) === value.accountId;
                 const name = a === null ? t('decide.setup.envelopes.heldInNone') : a.name;
                 return (

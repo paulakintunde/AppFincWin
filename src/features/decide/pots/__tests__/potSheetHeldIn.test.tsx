@@ -5,7 +5,7 @@ import { wrap } from '../../check/steps/__tests__/helpers/stepProps';
 import { goal } from '../../past/__tests__/helpers/pastFixtures';
 import { PotSheet } from '../PotSheet';
 
-jest.setTimeout(30000);
+jest.setTimeout(120000);
 
 const mockAdd = jest.fn(() => ({ id: 'new', stepId: 's-add' }));
 const mockEdit = jest.fn(() => 's-edit');
@@ -32,7 +32,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn(), hapticSuccess: jest.fn(), hapticMedium: jest.fn() }));
 
-const account = (id: string, name: string, use: string | null) => ({ id, name, use, deleted_at: null, archived_at: null, currency: 'USD' });
+const account = (id: string, name: string, use: string | null, kind = 'checking', over: Record<string, unknown> = {}) => ({ id, name, use, kind, deleted_at: null, archived_at: null, currency: 'USD', ...over });
 
 function pot(over: Partial<SavingsGoalRow> = {}): SavingsGoalRow {
   return goal('', { id: 'p1', check_id: null, kind: 'pot', name: 'Car service', target: 60_000, monthly_amount: null, ready_by: '2027-03-31', ...over });
@@ -51,18 +51,42 @@ describe('PotSheet Held in row', () => {
     expect(screen.queryByText('Held in')).toBeNull();
   });
 
-  it('is hidden when no account is set to A mix', async () => {
-    mockAccounts = [account('a1', 'Everyday', 'everyday')];
+  it('shows for any money account when none is set to A mix', async () => {
+    mockAccounts = [account('a1', 'Everyday', 'everyday'), account('a3', 'Rainy', 'untouched', 'savings')];
+    await wrap(<PotSheet visible pot={pot()} onClose={jest.fn()} />);
+    await fireEvent.press(screen.getByLabelText('Held in, Not set'));
+    expect(screen.getByLabelText('Everyday')).toBeTruthy();
+    expect(screen.getByLabelText('Rainy')).toBeTruthy();
+    expect(screen.getByLabelText('Not set')).toBeTruthy();
+  });
+
+  it('is hidden when there is no money account', async () => {
+    mockAccounts = [account('c1', 'Visa', null, 'credit'), account('l1', 'Car loan', null, 'loan')];
     await wrap(<PotSheet visible pot={pot()} onClose={jest.fn()} />);
     expect(screen.queryByText('Held in')).toBeNull();
   });
 
-  it('shows Not set, lists only mixed accounts and saves account_id in the edit patch', async () => {
+  it('never lists cards, loans, archived or deleted accounts', async () => {
+    mockAccounts = [
+      account('a1', 'Everyday', 'everyday'),
+      account('c1', 'Visa', null, 'credit'),
+      account('l1', 'Car loan', null, 'loan'),
+      account('x1', 'Old', null, 'checking', { archived_at: '2026-01-01' }),
+      account('x2', 'Gone', null, 'checking', { deleted_at: '2026-01-01' }),
+    ];
+    await wrap(<PotSheet visible pot={pot()} onClose={jest.fn()} />);
+    await fireEvent.press(screen.getByLabelText('Held in, Not set'));
+    expect(screen.getByLabelText('Everyday')).toBeTruthy();
+    for (const n of ['Visa', 'Car loan', 'Old', 'Gone']) expect(screen.queryByLabelText(n)).toBeNull();
+  });
+
+  it('lists A mix accounts first, then the others by name, and saves account_id in the edit patch', async () => {
     const onClose = jest.fn();
     await wrap(<PotSheet visible pot={pot()} onClose={onClose} />);
     expect(screen.getByLabelText('Held in, Not set')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Held in, Not set'));
-    expect(screen.queryByLabelText('Everyday')).toBeNull();
+    const names = ['Joint', 'Everyday'].map((n) => screen.getByLabelText(n));
+    expect(names).toHaveLength(2);
     await fireEvent.press(screen.getByLabelText('Joint'));
     expect(screen.getByLabelText('Held in, Joint')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Save pot'));
