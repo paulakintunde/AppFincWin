@@ -52,7 +52,28 @@ describe('settingsSourceOf', () => {
       hold_months: 2, unspent_anchor: -4, unspent_anchor_at: '2026-10-01', reserve_account_id: 'acc', reserve_goal: 9, everyday_override: 7, everyday_override_at: '2026-10-02',
       month_marks: { '2026-09': 'out' }, rough_saving: 1, rough_debt: 2, rough_invest: 3, rough_as_of: '2026-10-03',
       unexplained_amount: 11, unexplained_use: 'spare', unexplained_at: '2026-10-04',
-      series_extra: {}, own_lines: [], custom_options: null,
+      series_extra: {}, own_lines: [], custom_options: { itemTypes: [], purposes: [], cadences: [], incomeKinds: [] },
+    });
+  });
+
+  it('passes only live own options, without names (05.3-81)', () => {
+    const v3 = run({
+      settings: settings({
+        custom_options: {
+          v: 1,
+          itemTypes: [
+            { id: 'i1', name: 'Bike', base: 'vehicle', questionIds: ['q1'], ownQuestions: [], deletedAt: null },
+            { id: 'i2', name: 'Old', base: 'general', questionIds: [], ownQuestions: [], deletedAt: '2026-10-01' },
+          ],
+          purposes: [{ id: 'p1', name: 'For the kids', deletedAt: null }, { id: 'p2', name: 'Gone', deletedAt: '2026-10-01' }],
+        },
+      }),
+    })!;
+    expect(v3.custom_options).toEqual({
+      itemTypes: [{ id: 'i1', base: 'vehicle', questionIds: ['q1'], ownQuestions: [] }],
+      purposes: [{ id: 'p1' }],
+      cadences: [],
+      incomeKinds: [],
     });
   });
 

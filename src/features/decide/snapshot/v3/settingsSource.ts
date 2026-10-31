@@ -6,6 +6,7 @@ import type { DecideSettingsRow } from '@/db/decideSettings';
 import type { RecurringDismissalRow } from '@/db/recurringDismissals';
 import { isNotPayKey } from '@/features/income/notPay';
 import type { V3SettingsSource } from './types';
+import { liveCustomOptions } from './ownOptions';
 import { waiversFromAnswers } from './waiverKeys';
 
 const ENGINE_TYPE: Readonly<Record<string, IncomeType>> = {
@@ -64,7 +65,7 @@ export function settingsSourceOf(input: SettingsSourceInput): V3SettingsSource |
     series_extra: {},
     dismissals: input.dismissals.filter((d) => d.deleted_at === null && !isNotPayKey(d.payee_key)).map((d) => d.payee_key),
     own_lines: [],
-    custom_options: null,
+    custom_options: liveCustomOptions(s.custom_options),
     income_pattern: s.income_pattern,
     income_pattern_confirmed: s.income_pattern_confirmed,
     // 05.2-37: three stored fields are passed through but not mapped into V3Inputs, on purpose.
