@@ -1128,3 +1128,16 @@ describe('D-48 volatile income', () => {
     }
   });
 });
+
+describe('05.3-70 purchasePreview fallback', () => {
+  it('with no purchase and no preview: band null, layers empty', () => {
+    const r = judge(input({ purchase: null, purchaseMissing: ['plan_rate_missing'] as MissingCode[] }));
+    expect(r.band).toBeNull();
+    expect(r.layers).toEqual([]);
+  });
+  it('with no purchase and a preview: the preview fills band and layers', () => {
+    const r = judge(input({ purchase: null, purchaseMissing: ['plan_rate_missing'] as MissingCode[], purchasePreview: { band: 4, layers: ['L1p', 'L2'] as never } }));
+    expect(r.band).toBe(4);
+    expect(r.layers).toEqual(['L1p', 'L2']);
+  });
+});
