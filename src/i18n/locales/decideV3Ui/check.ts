@@ -29,5 +29,6 @@ export const check = {
   updatedToday: 'Updated today.',
   cta: 'Check it',
   priceNeeded: 'A price is needed first.',
+  priceTooBig: 'That price is past the range Decide can check.',
   revealed: '{{layer}} questions added',
 } as const;
