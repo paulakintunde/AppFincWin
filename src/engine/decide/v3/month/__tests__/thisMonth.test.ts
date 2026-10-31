@@ -70,12 +70,22 @@ describe('erestOf', () => {
   it('is 0 on the last day when everything is logged', () => {
     expect(erestOf(mu(1000), mu(1000), 31, 31)).toBe(0);
   });
+  it('05.3-75 is 0 on the last day even when less than a typical month is logged', () => {
+    expect(erestOf(mu(500000), mu(50000), 31, 31)).toBe(0);
+    expect(erestOf(mu(500000), mu(0), 30, 30)).toBe(0);
+  });
+  it('05.3-75 the day before the last: the floor still wins', () => {
+    expect(erestOf(mu(500000), mu(50000), 30, 31)).toBe(450000);
+  });
+  it('05.3-75 the day before the last: the pace still wins', () => {
+    expect(erestOf(mu(310000), mu(300000), 30, 31)).toBe(10000);
+  });
   it('rejects a day outside the month', () => {
     expect(() => erestOf(mu(1), mu(0), 0, 31)).toThrow(RangeError);
     expect(() => erestOf(mu(1), mu(0), 32, 31)).toThrow(RangeError);
     expect(() => erestOf(mu(1), mu(0), 1, 0)).toThrow(RangeError);
   });
-  it('I2 no zero-spend', () => {
+  it('I2 no zero-spend (05.3-75: except on the last day)', () => {
     fcAssert(
       property(
         integer({ min: 0, max: 5_000_000 }),
@@ -84,7 +94,7 @@ describe('erestOf', () => {
         (e, d, logged) => {
           const r = erestOf(mu(e), mu(logged), d, 31);
           expect(r).toBeGreaterThanOrEqual(Math.round((e * (31 - d)) / 31) - 1);
-          if (logged <= e) expect(r + logged).toBeGreaterThanOrEqual(e);
+          if (logged <= e && d < 31) expect(r + logged).toBeGreaterThanOrEqual(e);
         }
       ),
       { numRuns: 150 }
@@ -93,6 +103,19 @@ describe('erestOf', () => {
 });
 
 describe('thisMonth', () => {
+  it('05.3-75 last day, e set: nothing everyday is still to come', () => {
+    const r = thisMonth(input({ asOf: '2026-10-31', current: month(samLines) }));
+    expect(r.erest).toBe(0);
+    expect(r.monthLeft).toBe(400000 - (r.billsPaid + r.billsDue + r.everydayLogged + 30000));
+  });
+
+  it('05.3-75 last day, e null, rough set: erest 0; another day keeps the rough gap', () => {
+    const last = thisMonth(input({ asOf: '2026-10-31', current: month(samLines), e: null, roughExpenses: mu(200000) }));
+    expect(last.erest).toBe(0);
+    const other = thisMonth(input({ asOf: '2026-10-30', current: month(samLines), e: null, roughExpenses: mu(200000) }));
+    expect(other.erest).toBe(190000);
+  });
+
   it('C15 Sam Oct 3', () => {
     const r = thisMonth(input({ current: month(samLines) }));
     expect(r.day).toBe(3);

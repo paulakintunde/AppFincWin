@@ -205,6 +205,14 @@ describe('rollForward', () => {
     expect(over.value).toBe(233000);
   });
 
+  test('05.3-75 an anchor on a month last day plans no everyday for that month', () => {
+    const e = mu(300000);
+    expect(erestOf(e, mu(0), 31, 31)).toBe(0);
+    const r = roll({ e, anchor: anchor(240000, '2026-10-31'), asOf: '2026-11-05', lines: [line({ id: 'n', date: '2026-11-02', amount: mu(5000) })] });
+    expect(r.breakdown.everyday).toBe(5000);
+    expect(r.value).toBe(235000);
+  });
+
   test('D-22 later months: Sam November', () => {
     const lines = [
       line({ id: 'pay', date: '2026-11-28', role: 'income', seriesId: 'pay', amount: mu(400000) }),

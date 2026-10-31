@@ -24,6 +24,9 @@ export function erestOf(e: MinorUnits, everydayLogged: MinorUnits, day: number, 
   if (!Number.isInteger(day) || day < 1 || day > daysInMonth) {
     throw new RangeError(`erestOf: day ${day} must be an integer from 1 to ${daysInMonth}`);
   }
+  // 05.3-75 (gap 10, owner truth 2026-10-31): on the last day nothing is still to come; under-logging still shows
+  // through the month_looks_under_logged notice and confidence.
+  if (day === daysInMonth) return minorUnits(0);
   const eb = BigInt(e);
   const pace = divideHalfUp(eb * BigInt(daysInMonth - day), BigInt(daysInMonth));
   const gap = eb - BigInt(everydayLogged);
@@ -157,7 +160,7 @@ export function thisMonth(input: ThisMonthInput): ThisMonthResult {
     erest = erestOf(input.e, logged, day, n);
   } else if (input.roughExpenses !== null) {
     const gap = BigInt(input.roughExpenses) - everyday;
-    erest = minorFromBigInt(gap > 0n ? gap : 0n, FN);
+    erest = day === n ? minorUnits(0) : minorFromBigInt(gap > 0n ? gap : 0n, FN);
   } else {
     erest = minorUnits(0);
     everydayUnknown = true;
