@@ -23,6 +23,9 @@ jest.mock('../../nav/hrefs', () => ({ planHref: (id: string) => `/decide/plan/${
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: false, ready: true, today: '2026-10-31' }),
 }));
+jest.mock('@/features/decide/v3/check/useOwnOptions', () => ({
+  useOwnOptions: () => ({ itemTypes: [], purposes: [], retired: new Map(), liveCount: { itemTypes: 0, purposes: 0 }, add: jest.fn() }),
+}));
 jest.mock('@/services/locale/deviceLocale', () => ({
   useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC', separators: { decimal: '.', group: ',' } }),
 }));

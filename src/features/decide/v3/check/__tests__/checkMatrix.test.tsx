@@ -22,6 +22,9 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: false, ready: true }),
 }));
+jest.mock('@/features/decide/v3/check/useOwnOptions', () => ({
+  useOwnOptions: () => ({ itemTypes: [], purposes: [], retired: new Map(), liveCount: { itemTypes: 0, purposes: 0 }, add: jest.fn() }),
+}));
 jest.mock('@/services/locale/deviceLocale', () => ({
   useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC', separators: { decimal: '.', group: ',' } }),
 }));
