@@ -1,6 +1,6 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, type ViewStyle } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import * as decideChecks from '@/data/mutations/decideChecks';
@@ -144,7 +144,7 @@ describe('FailedWritesSheet text fit', () => {
     const { getByTestId, getByText, getByLabelText } = await ui;
     const row = StyleSheet.flatten(getByTestId('failed-write-w1').props.style);
     expect(row.flexDirection).toBe('column');
-    const textBlock = getByTestId('failed-write-w1').children[0] as unknown as { props: { style: object } };
+    const textBlock = getByTestId('failed-write-w1').children[0] as unknown as { props: { style: ViewStyle } };
     const textStyle = StyleSheet.flatten(textBlock.props.style);
     expect(textStyle.flexShrink).toBe(1);
     expect(textStyle.width).toBeUndefined();

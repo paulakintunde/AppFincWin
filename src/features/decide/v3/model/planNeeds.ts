@@ -20,7 +20,8 @@ export function planNeeds(pay: PayV2, today: string): readonly PlanNeed[] {
 const pad = (n: number): string => String(n).padStart(2, '0');
 
 function parts(iso: string): { y: number; m: number; d: number } {
-  const [y = 1970, m = 1, d = 1] = iso.split('-').map((p) => parseInt(p, 10));
+  // Callers pass 'YYYY-MM-DD'; a missing part comes through as NaN and the Date maths yields an invalid date.
+  const [y, m, d] = iso.split('-').map((p) => parseInt(p, 10)) as [number, number, number];
   return { y, m, d };
 }
 
