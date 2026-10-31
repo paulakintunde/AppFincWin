@@ -8,5 +8,6 @@ import { factRow } from './factRow';
 import { home } from './home';
 import { layers } from './layers';
 import { notReady } from './notReady';
+import { ownOptions } from './ownOptions';
 import { question } from './question';
-export const partA = { home, notReady, check, band, layers, question, answer, factRow, confidence, ask } as const;
+export const partA = { home, notReady, check, band, layers, question, answer, factRow, confidence, ask, ownOptions } as const;
