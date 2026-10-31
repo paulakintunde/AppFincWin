@@ -28,7 +28,7 @@ export function GroupHeader({ item, month, homeCurrency, formatter }: GroupHeade
   const { colors, pairing } = useTheme();
   const label =
     item.kind === 'day'
-      ? formatter.formatDate(item.day as string, 'short')
+      ? formatter.formatDate(item.day as string, 'medium')
       : item.kind === 'week'
         ? t('activity.group.week', { n: item.week ?? 0 })
         : t(item.kind === 'in' ? 'activity.group.in' : 'activity.group.out');

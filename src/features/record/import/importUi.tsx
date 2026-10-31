@@ -27,7 +27,7 @@ export function useFormatAmount(): { amount: (minor: number, currency: string) =
         return `${minor} ${currency}`;
       }
     },
-    date: (localDate) => formatter.formatDate(localDate, 'short'),
+    date: (localDate) => formatter.formatDate(localDate, 'medium'),
   };
 }
 
