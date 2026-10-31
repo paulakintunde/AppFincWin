@@ -10,7 +10,7 @@
  * Every record write goes through RecordSheet and V3RecordProvider; this screen never saves an answer itself.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,16 +50,18 @@ import { helpOffered } from '../model/helpOffered';
 import { percentToText } from '../model/percentText';
 import { planModel } from '../model/planModel';
 import { refundHint } from '../model/refundHint';
+import { waiverNote, waiverRows, type WaiverText } from '../model/waiverNote';
 import { DECIDE_TAB_HREF, answerHref, purchaseHref } from '../nav/hrefs';
 import { V3NotFound } from '../nav/V3NotFound';
 import { V3Skeleton } from '../nav/V3Skeleton';
 import { NotReadyCard } from '../ready/NotReadyCard';
+import { useReadinessAnswer } from '../ready/useReadinessAnswer';
 import { RecordSheet, type RecordVariant } from '../record/RecordSheet';
 import { useV3Format } from '../shared/useV3Format';
 import { AnswerHeader } from './AnswerHeader';
 import { AnswerHero } from './AnswerHero';
 import { ConfidenceChipV3 } from './ConfidenceChipV3';
-import { ConfidenceSheetV3 } from './ConfidenceSheetV3';
+import { ConfidenceSheetV3, waiverText } from './ConfidenceSheetV3';
 import { NoticeTiles } from './NoticeTiles';
 import { renderQuestionBody } from './questionBodies';
 
@@ -126,6 +128,7 @@ function AnswerBody({ id, row, evaluation, withoutRefunds, inputs, busy }: BodyP
   const rc = useRecordContext();
   const insets = useSafeAreaInsets();
   const { reopen } = useReopenCheck();
+  const { clearWaiver } = useReadinessAnswer();
 
   const titleRef = useRef<React.ComponentRef<typeof Text>>(null);
   useScreenTitleFocus(titleRef as never);
@@ -201,13 +204,29 @@ function AnswerBody({ id, row, evaluation, withoutRefunds, inputs, busy }: BodyP
     pushOnce(answerHref(newId));
   };
 
+  // 05.3-59 (D-24, D-27, D-31): the user's answers the result rests on, named once each; the confidence level is unchanged.
+  const waivers = waiverRows(result.readiness?.waived, evaluation.month.paidByOther ?? [], evaluation.month.alwaysOther ?? [], evaluation.month.month);
+  const note = waiverNote(waivers);
+  let noteText: string | null = null;
+  if (note !== null) {
+    const one = note.params.text as WaiverText | undefined;
+    noteText = one === undefined ? t(note.key, note.params) : t(note.key, { text: waiverText(t, f, one.key, one.params) });
+  }
+
   const heroNode = (
-    <AnswerHero
-      evaluation={evaluation}
-      busy={busy}
-      focusRef={heroRef}
-      extraChip={<ConfidenceChipV3 confidence={result.confidence} onPress={() => setConfOpen(true)} />}
-    />
+    <>
+      <AnswerHero
+        evaluation={evaluation}
+        busy={busy}
+        focusRef={heroRef}
+        extraChip={<ConfidenceChipV3 confidence={result.confidence} onPress={() => setConfOpen(true)} />}
+      />
+      {noteText === null ? null : (
+        <Pressable accessibilityRole="button" accessibilityLabel={noteText} onPress={() => setConfOpen(true)} style={styles.note}>
+          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{noteText}</Text>
+        </Pressable>
+      )}
+    </>
   );
 
   return (
@@ -293,7 +312,14 @@ function AnswerBody({ id, row, evaluation, withoutRefunds, inputs, busy }: BodyP
         </View>
       ) : null}
 
-      <ConfidenceSheetV3 visible={confOpen} confidence={result.confidence} onClose={() => setConfOpen(false)} />
+      <ConfidenceSheetV3
+        visible={confOpen}
+        confidence={result.confidence}
+        onClose={() => setConfOpen(false)}
+        waivers={waivers}
+        format={f}
+        onAskAgain={(w) => clearWaiver(w.waiver, w.name)}
+      />
       {sheet === null ? null : (
         <RecordSheet
           variant={sheet.variant}
@@ -311,5 +337,6 @@ function AnswerBody({ id, row, evaluation, withoutRefunds, inputs, busy }: BodyP
 const styles = StyleSheet.create({
   root: { flex: 1 },
   body: { gap: space.groupGap },
+  note: { alignSelf: 'flex-start', marginTop: space.gapSm, maxWidth: '100%', minHeight: space.touchMin, justifyContent: 'center' },
   bar: { borderTopWidth: 1, paddingTop: space.gapMd, paddingHorizontal: space.cardPad, gap: space.gapSm },
 });
