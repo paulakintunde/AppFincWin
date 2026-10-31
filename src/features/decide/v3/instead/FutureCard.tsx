@@ -8,6 +8,8 @@ import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { useShouldStack } from '../../ui/textFit';
 
+const FIGURE_MIN_SCALE = 0.8;
+
 export interface FutureCardProps {
   title: string;
   /** The head figure; its screen-reader form is `figureA11y`. */
@@ -26,7 +28,12 @@ export function FutureCard({ title, figure, figureA11y, children }: FutureCardPr
           {title}
         </Text>
         {figure === null ? null : (
-          <Text accessibilityLabel={figureA11y} style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink, flexShrink: 1 }}>
+          <Text
+            accessibilityLabel={figureA11y}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={FIGURE_MIN_SCALE}
+            style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink, flexShrink: 1 }}>
             {figure}
           </Text>
         )}

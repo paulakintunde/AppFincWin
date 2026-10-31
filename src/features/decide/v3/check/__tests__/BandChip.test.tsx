@@ -8,14 +8,13 @@ import { BandChip, BAND_SETTLE_MS } from '../BandChip';
 
 jest.setTimeout(60000);
 
+let mockLocale = 'en-US';
+let mockCurrency = 'USD';
 jest.mock('@/features/record/useRecordContext', () => ({
-  useRecordContext: () => ({ userId: 'u', householdId: 'h', homeCurrency: 'USD', showCents: false }),
+  useRecordContext: () => ({ userId: 'u', householdId: 'h', homeCurrency: mockCurrency, showCents: false }),
 }));
 jest.mock('@/services/locale/deviceLocale', () => ({
-  useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC', separators: { decimal: '.', group: ',' } }),
-}));
-jest.mock('../../shared/useV3Format', () => ({
-  useV3Format: () => ({ money: (minor: number) => `$${Math.round(minor / 100).toLocaleString('en-US')}` }),
+  useDeviceLocale: () => ({ locale: mockLocale, timeZone: 'UTC', separators: { decimal: '.', group: ',' } }),
 }));
 
 const METRICS = { frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top: 0, bottom: 0, left: 0, right: 0 } };
@@ -38,7 +37,35 @@ const live = (): string => screen.getByTestId('band-chip').props.accessibilityLa
 
 describe('BandChip', () => {
   beforeEach(() => jest.useFakeTimers());
-  afterEach(() => jest.useRealTimers());
+  afterEach(() => {
+    jest.useRealTimers();
+    mockLocale = 'en-US';
+    mockCurrency = 'USD';
+  });
+
+  it('uses one money style for both edges on an en-CA device with a USD home', async () => {
+    mockLocale = 'en-CA';
+    await render(chip(3)); // edges $100 and $500
+    expect(screen.getByText('Band 3 · $100–$500')).toBeTruthy();
+    await screen.unmount();
+    await render(chip(8)); // $20k and $50k
+    expect(screen.getByText('Band 8 · $20k–$50k')).toBeTruthy();
+    expect(screen.queryByText(/US\$/)).toBeNull();
+    await screen.unmount();
+    await render(chip(12)); // $1M and $2M
+    expect(screen.getByText('Band 12 · $1M–$2M')).toBeTruthy();
+  });
+
+  it('uses the CAD symbol style on an en-US device with a CAD home, for both edges', async () => {
+    mockCurrency = 'CAD';
+    await render(chip(3));
+    const label = (screen.getByTestId('band-chip').props.accessibilityLabel as string) || '';
+    const text = screen.getByText(/^Band 3 · /).props.children as string;
+    expect(label).toBeDefined();
+    const [low = '', high = ''] = String(text).replace('Band 3 · ', '').split('–');
+    expect(low.replace(/[\d,.]+/, '')).toBe(high.replace(/[\d,.]+/, ''));
+    expect(text).not.toContain('US$');
+  });
 
   it('reads Band n with its range from the home thresholds and what it asks about', async () => {
     await render(chip(5));

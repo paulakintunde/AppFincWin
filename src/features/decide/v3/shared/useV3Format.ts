@@ -1,3 +1,4 @@
+// 05.3-88: money() never inserts break points; a figure that must fit a line shrinks (heroAmountText is applied only by the hero / month bar, which call it themselves).
 // 05.3: the one place v3 screens turn model params into strings. Money via the shipped formatter (integer minor units in, never floats).
 import { useCallback, useMemo } from 'react';
 import { useAccounts } from '@/data/queries/accounts';
@@ -10,7 +11,6 @@ import { useT } from '@/i18n';
 import { categoryName } from '@/features/record/categoryName';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
-import { heroAmountText } from './heroAmountText';
 import type { ViewParams } from './params';
 
 type Strings = Record<string, string>;
@@ -59,7 +59,7 @@ export function useV3Format(): V3Format {
   }, [categories.all, accounts, series, pots, t]);
 
   const money = useCallback(
-    (minor: number) => heroAmountText(formatMoney({ amount: minorUnits(minor), currency } as never)).text,
+    (minor: number) => formatMoney({ amount: minorUnits(minor), currency } as never),
     [formatMoney, currency],
   );
   const moneyA11y = useCallback(
