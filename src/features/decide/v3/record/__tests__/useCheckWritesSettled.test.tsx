@@ -12,7 +12,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientPro
 
 function start(key: readonly string[], id: string) {
   let resolve: () => void = () => undefined;
-  const fn = () => new Promise<void>((r) => { resolve = r; });
+  const fn = (_vars: { id: string }) => new Promise<void>((r) => { resolve = r; });
   const obs = new MutationObserver(client, { mutationKey: key, mutationFn: fn });
   void obs.mutate({ id }).catch(() => undefined);
   return () => resolve();
