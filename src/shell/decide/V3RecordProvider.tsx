@@ -45,7 +45,9 @@ export function V3RecordProvider({ children }: { children: ReactNode }) {
           monthlyAmount: evaluation.purchase?.monthly ?? 0,
           readyBy: reminderOn ? readyBy : null,
           today: ctx.today,
-          goalTarget,
+          // A pot with no account would leave Decide not ready (D-54): with no everyday account the plan saves without a pot.
+          goalTarget: ctx.cashAccountId === null ? null : goalTarget,
+          accountId: ctx.cashAccountId,
           coolingOff: false,
         });
       },
