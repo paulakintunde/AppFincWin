@@ -1,8 +1,9 @@
 import { array, assert as fcAssert, constantFrom, integer, property } from 'fast-check';
 import { minorUnits as mu } from '../../../../money/types';
 import { erestOf } from '../../month/thisMonth';
-import type { LineRole, V3Line, V3Month, V3Series } from '../../types';
-import { rollForward, suggestedUnspent, unspentState } from '../unspent';
+import { dueDrops } from '../../month/dueDrops';
+import type { LineRole, ReadinessWaiver, SkippedOccurrence, V3Line, V3Month, V3Series } from '../../types';
+import { billsAndErest, rollForward, suggestedUnspent, unspentState } from '../unspent';
 
 function ser(over: Partial<V3Series> & { id: string }): V3Series {
   return {
@@ -70,6 +71,42 @@ describe('suggestedUnspent', () => {
     const profile = { types: ['mix' as const], variable: 'balance' as const, steady: null, billsHorizonMonths: 2 as const };
     // rent 10th, util 20th: window [Oct 3, Dec 3) holds Oct 10/20, Nov 10/20 = 2 x 180000
     expect(suggestedUnspent({ ...base, profile, series: [rent, util] })).toBe(450000 - 360000);
+  });
+
+  describe('dropped dues (05.3-64; D-27, D-31, skips)', () => {
+    const profile = { types: ['mix' as const], variable: 'balance' as const, steady: null, billsHorizonMonths: 2 as const };
+    const series = [rent, util];
+    const drops = (waivers: ReadinessWaiver[], skipped: SkippedOccurrence[] = []) => dueDrops({ asOf: base.asOf, series, waivers, skipped });
+
+    test('profile (d): always_other leaves every occurrence of the series out of the horizon bills', () => {
+      const b = billsAndErest({ ...base, profile, series, drops: drops([{ kind: 'always_other', seriesId: 'util' }]) });
+      expect(b.bills).toBe(2 * 150000);
+      expect(b.erest).toBe(0);
+      expect(suggestedUnspent({ ...base, profile, series, drops: drops([{ kind: 'always_other', seriesId: 'util' }]) })).toBe(450000 - 300000);
+    });
+
+    test('profile (d): a skip leaves only its occurrence out', () => {
+      const b = billsAndErest({ ...base, profile, series, drops: drops([], [{ seriesId: 'rent', date: '2026-11-10' }]) });
+      expect(b.bills).toBe(360000 - 150000);
+    });
+
+    test('profile (d): a paid_by_other dated on asOf drops that occurrence; one after asOf drops nothing', () => {
+      const rentOnAsOf = ser({ id: 'rent', anchorDate: '2026-01-03', amount: mu(150000) });
+      const s = [rentOnAsOf, util];
+      const on = dueDrops({ asOf: base.asOf, series: s, waivers: [{ kind: 'paid_by_other', seriesId: 'rent', date: '2026-10-03' }] });
+      const later = dueDrops({ asOf: base.asOf, series: s, waivers: [{ kind: 'paid_by_other', seriesId: 'util', date: '2026-10-20' }] });
+      expect(billsAndErest({ ...base, profile, series: s }).bills).toBe(360000);
+      expect(billsAndErest({ ...base, profile, series: s, drops: on }).bills).toBe(360000 - 150000);
+      expect(billsAndErest({ ...base, profile, series: s, drops: later }).bills).toBe(360000);
+    });
+
+    test('no drops: the same figures as without the field', () => {
+      expect(billsAndErest({ ...base, profile, series, drops: drops([]) })).toEqual(billsAndErest({ ...base, profile, series }));
+    });
+
+    test('other profiles take billsDue as given (the month model already left the drops out)', () => {
+      expect(billsAndErest({ ...base, series, drops: drops([{ kind: 'always_other', seriesId: 'util' }]) })).toEqual({ bills: 30000, erest: 137500 });
+    });
   });
 });
 

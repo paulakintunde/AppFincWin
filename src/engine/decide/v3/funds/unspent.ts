@@ -15,6 +15,7 @@ import { minorUnits, type MinorUnits } from '../../../money/types';
 import { minorFromBigInt } from '../../../payoff/types';
 import { MATCH_DAYS, UNSPENT_DRIFT_PERCENT_DIVISOR, UNSPENT_STALE_DAYS } from '../constants';
 import { addDays, addMonthsClamped, addYearMonths, dayOfMonth, daysBetween, daysInYearMonth, yearMonthOf } from '../dates';
+import type { DueDrops } from '../month/dueDrops';
 import { classifyLine, liveSeriesOf, seriesIndex, seriesOccurrences } from '../month/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from '../month/settle';
 import { erestOf } from '../month/thisMonth';
@@ -42,6 +43,8 @@ export function suggestedUnspent(input: {
   readonly erest: MinorUnits;
   readonly profile: IncomeProfile | null;
   readonly series: readonly V3Series[];
+  /** 05.3-64 (D-27, D-31): dues that no longer count; read only for profile (d)'s horizon bills. Absent = none. */
+  readonly drops?: DueDrops;
 }): MinorUnits {
   const b = billsAndErest(input);
   return minorFromBigInt(BigInt(input.spending) - BigInt(b.bills) - BigInt(b.erest), FN);
@@ -54,6 +57,8 @@ export function billsAndErest(input: {
   readonly erest: MinorUnits;
   readonly profile: IncomeProfile | null;
   readonly series: readonly V3Series[];
+  /** 05.3-64 (D-27, D-31): dues that no longer count. billsDue comes from the month model, which already left them out. */
+  readonly drops?: DueDrops;
 }): { readonly bills: MinorUnits; readonly erest: MinorUnits } {
   let bills = BigInt(input.billsDue);
   let erest = BigInt(input.erest);
@@ -62,7 +67,9 @@ export function billsAndErest(input: {
     const to = addMonthsClamped(input.asOf, p.billsHorizonMonths);
     bills = 0n;
     for (const s of liveSeriesOf(input.series, input.asOf, 'bill')) {
-      bills += BigInt(Math.abs(s.amount)) * BigInt(seriesOccurrences(s, input.asOf, to).length);
+      // D-27, D-31, skips: count only the occurrences the one rule (month/dueDrops.ts) still counts
+      const counted = seriesOccurrences(s, input.asOf, to).filter((d) => (input.drops?.has(s.id, d) ?? null) === null);
+      bills += BigInt(Math.abs(s.amount)) * BigInt(counted.length);
     }
     erest = 0n;
   }
@@ -109,6 +116,10 @@ export function rollForward(input: {
 
   // Bills still due at the anchor: occurrences dated after it in the anchor month. `today = asOf` keeps an ended series'
   // occurrences from before today (D-41 end rule). Settled by the one matcher in month/settle.ts (M-02, D-51, D-56).
+  // dueDrops is deliberately not read here (05.3-64): these dues only mark which paid lines were already held back, and
+  // a recorded payment wins over a drop, so a dropped (unsettled) due never changes the rolled value. Releasing a dropped
+  // due's held-back amount would count it twice whenever the user confirmed the figure after giving the answer (the
+  // suggested figure they confirmed already left it out), so the confirmed figure stays the user's (D-30).
   const dueAtAnchor: Due[] = [];
   const bySeries = new Map<string, V3Series>();
   for (const s of liveSeriesOf(input.series, anchor.at, 'bill', asOf)) {

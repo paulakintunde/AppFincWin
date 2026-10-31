@@ -15,6 +15,7 @@ import { judge } from './judge/judge';
 import { mayUseEmergency, withLiveEmergency } from './funds/emergency';
 import { buildPurchase, purchaseCashFlows } from './judge/purchase';
 import { withRedatedRefunds } from './month/refunds';
+import { dueDrops } from './month/dueDrops';
 import { buildMonthModel } from './month/model';
 import { incomeThisMonth, type IncomeInput } from './month/incomeProfile';
 import { expectedFor } from './month/incomePattern';
@@ -124,6 +125,7 @@ function evaluateOnce(inputs: V3Inputs, check: CheckV2): Evaluation {
     e: month.e ?? minorUnits(0),
     extraOut: pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3) : [],
     payCaps: payCapsOf(inputs, month),
+    drops: dueDrops(inputs), // 05.3-64 (D-27, D-31, skips): the same rule as the month model and unspent
   });
   const cash = cashCheck(path, nextPayDate(inputs.series, inputs.asOf));
   const judged = judge({

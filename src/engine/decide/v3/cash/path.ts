@@ -5,7 +5,8 @@
  *
  * Bills and debt payments sit on their real dates; only confirmed live pay lands (I3, I34). Debt payments are dated
  * money out that Erest does not contain (I19), so they are taken on their dates too. Saving and investing are
- * pausable and are not taken.
+ * pausable and are not taken. A due that dueDrops says no longer counts (05.3-64; D-27, D-31, skips) is not taken, in
+ * any month of the path; one already settled by a paid line is skipped first.
  */
 import { divideHalfUp } from '../../../money/rounding';
 import { minorUnits, type MinorUnits } from '../../../money/types';
@@ -13,6 +14,7 @@ import { minorFromBigInt } from '../../../payoff/types';
 import { myPart, type ResolvedShare } from '../../share';
 import { CASH_PATH_DAYS_V3 } from '../constants';
 import { addDays, daysBetween, daysInYearMonth, dayOfMonth, yearMonthOf } from '../dates';
+import type { DueDrops } from '../month/dueDrops';
 import { liveSeriesOf, seriesOccurrences } from '../month/series';
 import { paymentsInRange } from '../plan/schedule';
 import type { Schedule, V3Series } from '../types';
@@ -68,6 +70,8 @@ export function buildCashPathV3(input: {
   readonly extraOut: readonly DatedFlow[];
   /** D-35: per month (YYYY-MM), the most pay that may land. null = steady, every pay lands at its amount. */
   readonly payCaps?: ReadonlyMap<string, MinorUnits> | null;
+  /** 05.3-64 (D-27, D-31): bill and debt dues that no longer count (paid by someone else, always paid by someone else, skipped). Absent = none. */
+  readonly drops?: DueDrops;
 }): CashPathV3 {
   const { asOf, days } = input;
   if (!Number.isInteger(days) || days < 1 || days > CASH_PATH_DAYS_V3) {
@@ -108,7 +112,8 @@ export function buildCashPathV3(input: {
   for (const role of ['bill', 'debt_payment'] as const) {
     for (const s of liveSeriesOf(input.series, asOf, role)) {
       for (const d of seriesOccurrences(s, asOf, end)) {
-        if (input.paidThisMonth.has(`${s.id}|${d}`)) continue;
+        if (input.paidThisMonth.has(`${s.id}|${d}`)) continue; // a recorded payment wins: settled before any drop
+        if ((input.drops?.has(s.id, d) ?? null) !== null) continue; // D-27, D-31, skips: one rule (month/dueDrops.ts)
         put(d, -BigInt(s.amount));
       }
     }
