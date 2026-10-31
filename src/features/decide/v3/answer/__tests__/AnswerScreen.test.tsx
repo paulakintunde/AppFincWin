@@ -30,7 +30,7 @@ jest.mock('@/data/queries/decideCheckV3', () => ({ useCheckV3: () => mockCheck }
 jest.mock('@/data/mutations/decideChecks', () => ({ useReopenCheck: () => ({ reopen: mockReopen }) }));
 jest.mock('expo-router', () => ({ router: { navigate: (h: unknown) => mockNavigate(h), push: jest.fn() }, useFocusEffect: jest.fn() }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'uuid' }));
-jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPushOnce(h) }));
+jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPushOnce(h), replaceOnce: (h: unknown) => mockPushOnce(h) }));
 jest.mock('@/shell/a11yFocus', () => ({ useScreenTitleFocus: jest.fn(), focusAccessibility: jest.fn() }));
 jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({ useBackHistory: () => ({ goBack: () => mockGoBack() }) }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...a: unknown[]) => mockTrack(...a) }) }));

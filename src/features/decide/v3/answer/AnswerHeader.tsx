@@ -8,7 +8,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import type { Band } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
 import { useBackHistory } from '@/shell/backHistory/BackHistoryProvider';
-import { pushOnce } from '@/shell/navigation/pushOnce';
+import { replaceOnce } from '@/shell/navigation/pushOnce';
 import { PRESSED_OPACITY, radii, size, space, useScreenInsets } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
@@ -71,7 +71,7 @@ export function AnswerHeader({ checkId, item, price, band, titleRef }: AnswerHea
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${title}. ${t('decide.v3.ui.answer.changeDetails')}`}
-        onPress={() => pushOnce(purchaseHref(checkId))}
+        onPress={() => replaceOnce(purchaseHref(checkId))}
         style={({ pressed }) => [styles.titleHit, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
       >
         <Text
