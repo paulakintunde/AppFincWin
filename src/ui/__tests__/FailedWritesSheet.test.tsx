@@ -1,5 +1,6 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import * as decideChecks from '@/data/mutations/decideChecks';
@@ -19,6 +20,15 @@ jest.mock('../Sheet', () => {
 });
 jest.mock('@/services/locale/deviceLocale', () => ({
   useDeviceLocale: () => ({ locale: 'en-CA', timeZone: 'UTC' }),
+}));
+let mockWidth = 402;
+let mockScale = 1;
+jest.mock('@/features/decide/ui/textFit', () => ({
+  useShouldStack: () =>
+    (jest.requireActual('@/features/decide/ui/textFit') as typeof import('@/features/decide/ui/textFit')).shouldStack({
+      width: mockWidth,
+      fontScale: mockScale,
+    }),
 }));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: jest.fn() }));
 
@@ -43,7 +53,11 @@ const entry = (over: Partial<FailedWrite>): FailedWrite => ({
 
 const two = [entry({}), entry({ id: 'w2', entity: 'decide_settings', attempted: {}, code: 'weird' })];
 
-afterEach(() => jest.restoreAllMocks());
+afterEach(() => {
+  jest.restoreAllMocks();
+  mockWidth = 402;
+  mockScale = 1;
+});
 
 function mount(list: readonly FailedWrite[]) {
   jest.spyOn(failedWrites, 'getFailedWrites').mockReturnValue(list);
@@ -119,6 +133,40 @@ describe('FailedWritesSheet', () => {
   it('keeps an unreadable date out of the row', async () => {
     const { ui } = mount([entry({ at: 'not a date' })]);
     expect((await ui).getByText('Decide check: Sofa')).toBeTruthy();
+  });
+});
+
+describe('FailedWritesSheet text fit', () => {
+  it('stacks each row at 320 x 2.0: column, shrinking text, whole words, actions below', async () => {
+    mockWidth = 320;
+    mockScale = 2;
+    const { ui } = mount(two);
+    const { getByTestId, getByText, getByLabelText } = await ui;
+    const row = StyleSheet.flatten(getByTestId('failed-write-w1').props.style);
+    expect(row.flexDirection).toBe('column');
+    const textBlock = getByTestId('failed-write-w1').children[0] as unknown as { props: { style: object } };
+    const textStyle = StyleSheet.flatten(textBlock.props.style);
+    expect(textStyle.flexShrink).toBe(1);
+    expect(textStyle.width).toBeUndefined();
+    expect(getByText('Decide check: Sofa').props.numberOfLines).toBeUndefined();
+    expect(getByLabelText('Dismiss Decide check: Sofa')).toBeTruthy();
+    expect(getByText('Close').props.numberOfLines).toBeUndefined();
+  });
+
+  it('keeps the row a row at 402 x 1.0', async () => {
+    const { ui } = mount(two);
+    const row = StyleSheet.flatten((await ui).getByTestId('failed-write-w1').props.style);
+    expect(row.flexDirection).toBe('row');
+  });
+
+  it('Dismiss and Dismiss all still clear entries at 320 x 2.0', async () => {
+    mockWidth = 320;
+    mockScale = 2;
+    const { ui, dismiss } = mount(two);
+    const { getByLabelText, getByText } = await ui;
+    await fireEvent.press(getByLabelText('Dismiss Decide check: Sofa'));
+    expect(dismiss).toHaveBeenCalledWith('w1');
+    expect(getByText('Dismiss all')).toBeTruthy();
   });
 });
 
