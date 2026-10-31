@@ -60,6 +60,7 @@ const ACTION_LABELS = new Set([
   'decide.verdict.key.putInCaption', // field caption: the key figure "Put in a month" (investing amount)
   'decide.pots.sheet.save', // button: "Save pot" (05-131, R18.7); "Try again" reuses decide.flow.retry
   'decide.v3.ui.ownOptions.save', // button: "Save" (05.3-83)
+  'decide.v3.ui.ownOptions.keep', // dialog choice: "Keep it" leaves the option in the list (05.3-84)
   // 05.2 (plan 20): setup controls and UI-SPEC titles that open with a verb. Each names an action in the app, not advice about money.
   'decide.setup.shell.skip', // button: skip this step
   'decide.accountUse.save', // button: "Save account use"
