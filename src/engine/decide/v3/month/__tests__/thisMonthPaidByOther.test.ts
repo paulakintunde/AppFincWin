@@ -123,8 +123,12 @@ describe('this month without dropped dues (D-27, D-31)', () => {
     const m = buildMonthModel(inputs({ lines: paid, waivers: [{ kind: 'always_other', seriesId: 'netflix' }] }));
     expect(m.paidByOther).toBeUndefined();
     expect(m.alwaysOther).toEqual([{ seriesId: 'netflix', name: 'Netflix' }]);
-    const { alwaysOther: _a, ...rest } = m;
-    expect(rest).toEqual(recorded);
+    // 05.3-65 D-31: the typical month leaves the series out (recurringBills); this month's recorded payment stays.
+    const { alwaysOther: _a, recurringBills, ...rest } = m;
+    const { recurringBills: recordedBills, ...recordedRest } = recorded;
+    expect(rest).toEqual(recordedRest);
+    expect(recordedBills - recurringBills).toBe(1199);
+    expect(m.billsPaid).toBe(recorded.billsPaid);
   });
 
   it('always_other for an unknown or ended series adds no entry', () => {

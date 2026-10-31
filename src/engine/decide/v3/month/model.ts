@@ -80,7 +80,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
   const income = incomeThisMonth(incomeInput);
   const ti = typicalIncome(incomeInput);
   const setAside = setAsideOf(inputs);
-  // 05.3-63: one rule for dues that no longer count (D-27, D-31, skips). 05.3-64 reuses it for the typical month.
+  // 05.3-63: one rule for dues that no longer count (D-27, D-31, skips). 05.3-65 passes alwaysOther to the typical month.
   const drops = dueDrops(inputs);
   // D-31: every live bill series someone else always pays, whether or not it falls due or was paid this month.
   const alwaysOther: AlwaysOtherSeries[] = liveSeriesOf(inputs.series, inputs.asOf, 'bill')
@@ -109,6 +109,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     rough: inputs.rough,
     windowMonths,
     incomeByMonth: pattern.treated === 'steady' ? null : incomeByMonth,
+    excludedSeries: drops.alwaysOther, // D-31: also out of buildIncomeMonths below, which uses typical.recurringBills
   });
   const months =
     pattern.treated === 'steady'

@@ -330,3 +330,43 @@ describe('typicalOf: window and recorded income (05.1-43)', () => {
     expect(r.low).toBeNull();
   });
 });
+
+describe('typicalOf: D-31 series someone else always pays (05.3-65)', () => {
+  const rent = seriesBill({ id: 'rent', amount: 150000, isHousing: true, categoryId: 'housing' });
+  const netflix = seriesBill({ id: 'netflix', amount: 1199, categoryId: 'fun' });
+  const ins = v3Series({ id: 'ins', role: 'bill', cadence: { unit: 'month', every: 3 }, anchorDate: '2026-01-05', amount: 30000 });
+  const history = MONTHS6.map((m) => everydayMonth(m, 50000));
+  const base = (over: Partial<TypicalInput> = {}): TypicalInput => input({ history, series: [rent, netflix, ins], ...over });
+
+  it('an always-other series leaves recurringBills and its category, and typicalLeft rises by its monthly figure', () => {
+    const before = typicalOf(base());
+    const after = typicalOf(base({ excludedSeries: new Set(['netflix']) }));
+    expect(before.recurringBills - after.recurringBills).toBe(1199);
+    expect((after.typicalLeft as number) - (before.typicalLeft as number)).toBe(1199);
+    expect(before.categoryMonthly.find((c) => c.categoryId === 'fun')?.amount).toBe(1199);
+    expect(after.categoryMonthly.find((c) => c.categoryId === 'fun')).toBeUndefined();
+    expect(after.housingMonthly).toBe(before.housingMonthly);
+    expect(after.e).toBe(before.e);
+  });
+
+  it('an always-other housing series leaves housingMonthly and the housing category', () => {
+    const before = typicalOf(base());
+    const after = typicalOf(base({ excludedSeries: new Set(['rent']) }));
+    expect(after.housingMonthly).toBe(0);
+    expect(after.categoryMonthly.find((c) => c.categoryId === 'housing')).toBeUndefined();
+    expect(before.recurringBills - after.recurringBills).toBe(150000);
+  });
+
+  it('an always-other quarterly series raises no yearly_bill_choice_needed notice', () => {
+    expect(typicalOf(base()).notices).toEqual([{ code: 'yearly_bill_choice_needed', values: { seriesId: 'ins' } }]);
+    const after = typicalOf(base({ excludedSeries: new Set(['ins']) }));
+    expect(after.notices).toEqual([]);
+    expect(after.reasons).not.toContain('typical_choice_defaulted');
+  });
+
+  it('no excluded series (absent, empty or unknown id) is byte-identical', () => {
+    const before = JSON.stringify(typicalOf(base()));
+    expect(JSON.stringify(typicalOf(base({ excludedSeries: new Set() })))).toBe(before);
+    expect(JSON.stringify(typicalOf(base({ excludedSeries: new Set(['nope']) })))).toBe(before);
+  });
+});
