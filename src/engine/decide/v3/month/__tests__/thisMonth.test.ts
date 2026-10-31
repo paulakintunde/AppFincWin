@@ -85,7 +85,7 @@ describe('erestOf', () => {
     expect(() => erestOf(mu(1), mu(0), 32, 31)).toThrow(RangeError);
     expect(() => erestOf(mu(1), mu(0), 1, 0)).toThrow(RangeError);
   });
-  it('I2 no zero-spend', () => {
+  it('I2 no zero-spend (05.3-75: except on the last day)', () => {
     fcAssert(
       property(
         integer({ min: 0, max: 5_000_000 }),
@@ -94,7 +94,7 @@ describe('erestOf', () => {
         (e, d, logged) => {
           const r = erestOf(mu(e), mu(logged), d, 31);
           expect(r).toBeGreaterThanOrEqual(Math.round((e * (31 - d)) / 31) - 1);
-          if (logged <= e) expect(r + logged).toBeGreaterThanOrEqual(e);
+          if (logged <= e && d < 31) expect(r + logged).toBeGreaterThanOrEqual(e);
         }
       ),
       { numRuns: 150 }
