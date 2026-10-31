@@ -53,7 +53,7 @@ function makeServer() {
     calls.push({ name, args });
     let out: unknown;
     if (name === 'record_decide_outcome') {
-      versions['decide_checks:chk1'] += 1;
+      versions['decide_checks:chk1'] = versions['decide_checks:chk1']! + 1;
       const goal = (args.p_decision as { goal: { id: string } | null }).goal;
       if (goal) versions[`savings_goals:${goal.id}`] = 1;
       out = {
@@ -71,7 +71,7 @@ function makeServer() {
           conflict: { entity: bad.entity, id: bad.id, updated_by: null, record_name: null, builtin_key: null, reason: 'changed' },
         };
       } else {
-        for (const o of ops) versions[`${o.entity}:${o.id}`] += 1;
+        for (const o of ops) versions[`${o.entity}:${o.id}`] = versions[`${o.entity}:${o.id}`]! + 1;
         out = { status: 'applied', rows: ops.map((o) => ({ entity: o.entity, id: o.id, version: versions[`${o.entity}:${o.id}`] })) };
       }
     } else if (name === 'apply_undo_step') {

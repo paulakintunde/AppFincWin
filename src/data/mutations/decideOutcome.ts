@@ -7,7 +7,7 @@ import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import * as reminders from '@/features/decide/notifications/waitReminder';
 import { getAnalytics } from '@/services/analytics';
-import { recordDecideOutcome, type DecideOutcomeDecision, type DecideWaitGoal } from '@/db/decideOutcomes';
+import { recordDecideOutcome, type DecideOutcomeDecision, type DecideOutcomeResult, type DecideWaitGoal } from '@/db/decideOutcomes';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
@@ -21,6 +21,7 @@ import {
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { showToast } from '@/state/undoToast';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
+import { recordWrittenVersion } from '@/data/sync/versionChain';
 import { writeClient } from './writeClient';
 import { coolingOffAt } from './coolingOff';
 import { newStepId } from './undoCapture';
@@ -38,6 +39,8 @@ export interface DecideOutcomeVars {
   ownerId: string;
   householdId: string;
   decision: DecideOutcomeDecision;
+  /** 05.3-78: the cached check version when the outcome was queued; the server moves it by one for the answer save queued just before and one for the outcome. */
+  baseVersion?: number;
   /** 05.3-47: when set, the write records one undo step after it lands. Old callers leave it off. */
   undo?: DecideOutcomeUndo;
 }
@@ -51,7 +54,7 @@ export function registerDecideOutcomeMutations(qc: QueryClient): void {
       guardSession(vars, async () => {
         const undo = vars.undo;
         // A persisted write from an older build has no undo: it keeps the 3-key call.
-        return recordDecideOutcome(
+        const result = await recordDecideOutcome(
           await writeClient(),
           vars.checkId,
           vars.decision,
@@ -63,6 +66,14 @@ export function registerDecideOutcomeMutations(qc: QueryClient): void {
               }
             : undefined
         );
+        // 05.3-78: remember the versions the server wrote, so a delete queued before any refetch resolves past them.
+        if (result.checkVersion !== null && vars.baseVersion !== undefined) {
+          recordWrittenVersion('decide_checks', vars.checkId, [vars.baseVersion, vars.baseVersion + 1], result.checkVersion);
+        }
+        if (result.goalVersion !== null && vars.decision.outcome === 'wait' && vars.decision.goal) {
+          recordWrittenVersion('savings_goals', vars.decision.goal.id, [1], result.goalVersion);
+        }
+        return result;
       }),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
@@ -117,7 +128,22 @@ export function registerDecideOutcomeMutations(qc: QueryClient): void {
     onSettled: (_result: unknown, _err: unknown, vars: DecideOutcomeVars) => {
       inFlight.delete(vars.checkId);
     },
-    onSuccess: (_result: unknown, vars: DecideOutcomeVars) => {
+    onSuccess: (data: unknown, vars: DecideOutcomeVars) => {
+      const result = data as DecideOutcomeResult | undefined;
+      // 05.3-78: patch the cached rows to the written versions before the (un-awaited) refetch lands.
+      if (result?.checkVersion != null) {
+        const version = result.checkVersion;
+        qc.setQueryData<CheckList>(queryKeys.decideChecks(vars.ownerId, vars.householdId), (old) =>
+          old?.map((r) => (r.id === vars.checkId ? { ...r, version } : r))
+        );
+      }
+      if (result?.goalVersion != null && vars.decision.outcome === 'wait' && vars.decision.goal) {
+        const goalId = vars.decision.goal.id;
+        const version = result.goalVersion;
+        qc.setQueryData<SavingsGoalRow[]>(queryKeys.savingsGoals(vars.ownerId, vars.householdId), (old) =>
+          old?.map((g) => (g.id === goalId ? { ...g, version } : g))
+        );
+      }
       void qc.invalidateQueries({ queryKey: queryKeys.decideChecks(vars.ownerId, vars.householdId) });
       void qc.invalidateQueries({ queryKey: queryKeys.undoLog(vars.ownerId) });
       if (vars.decision.outcome === 'wait' && vars.decision.goal) {
@@ -142,7 +168,7 @@ export function registerDecideOutcomeMutations(qc: QueryClient): void {
   });
 }
 
-type CheckRef = Pick<DecideCheckRow, 'id' | 'created_by' | 'household_id' | 'name' | 'inputs'>;
+type CheckRef = Pick<DecideCheckRow, 'id' | 'created_by' | 'household_id' | 'name' | 'inputs'> & { version?: number };
 type VerdictState = DecideOutcomeDecision['verdict'];
 
 function useOutcomeMutation() {
@@ -200,6 +226,7 @@ export function useWaitAndSave(): {
         checkId: check.id,
         ownerId: check.created_by,
         householdId: check.household_id,
+        baseVersion: check.version,
         decision: {
           outcome: 'wait',
           verdict: args.verdict,
@@ -240,6 +267,7 @@ export function usePass(): {
         checkId: check.id,
         ownerId: check.created_by,
         householdId: check.household_id,
+        baseVersion: check.version,
         decision: { outcome: 'pass', verdict: args.verdict, cooling_off: args.coolingOff },
         undo: { stepId, labelKey: 'notBuyingSaved', labelName: check.name || fallbackName },
       });
