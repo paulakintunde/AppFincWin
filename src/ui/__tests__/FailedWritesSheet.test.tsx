@@ -17,6 +17,9 @@ jest.mock('../Sheet', () => {
     SheetScroll: ({ children }: { children: React.ReactNode }) => <View>{children}</View>,
   };
 });
+jest.mock('@/services/locale/deviceLocale', () => ({
+  useDeviceLocale: () => ({ locale: 'en-CA', timeZone: 'UTC' }),
+}));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: jest.fn() }));
 
 jest.setTimeout(20000);
@@ -104,6 +107,13 @@ describe('FailedWritesSheet', () => {
     expect(queryByText('Dismiss all')).toBeNull();
     await fireEvent.press(getByText('Close'));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('shows 12:39 in the afternoon as p.m.', async () => {
+    const at = new Date(2026, 9, 31, 12, 39).toISOString();
+    const { ui } = mount([entry({ at })]);
+    const { getByText } = await ui;
+    expect(getByText(/12:39.p.?m/i)).toBeTruthy();
   });
 
   it('keeps an unreadable date out of the row', async () => {
