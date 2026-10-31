@@ -32,6 +32,8 @@ jest.mock('@/features/record/useRecordContext', () => ({
 }));
 jest.mock('../../shared/useV3Format', () => ({ useV3Format: () => jest.requireActual('./answerKit').fakeFormat }));
 jest.mock('../../ask/focusNode', () => ({ focusNode: (n: unknown) => mockFocus(n) }));
+// 05.3-58: the real NotReadyCard renders here; its answer hook reads queries that need the Supabase env.
+jest.mock('../../ready/useReadinessAnswer', () => ({ useReadinessAnswer: () => ({ answer: jest.fn(), clearWaiver: jest.fn() }) }));
 jest.mock('../../record/RecordSheet', () => ({ RecordSheet: () => null }));
 jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => ({
   __esModule: true,
