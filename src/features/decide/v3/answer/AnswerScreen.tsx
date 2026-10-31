@@ -24,7 +24,7 @@ import { useRecordContext } from '@/features/record/useRecordContext';
 import { getAnalytics } from '@/services/analytics';
 import type { DecideBand } from '@/services/analytics/catalogue';
 import { useScreenTitleFocus } from '@/shell/a11yFocus';
-import { pushOnce } from '@/shell/navigation/pushOnce';
+import { replaceOnce } from '@/shell/navigation/pushOnce';
 import { space } from '@/theme/layout';
 import { DURATION, EASING, useReduceMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -197,11 +197,11 @@ function AnswerBody({ id, row, evaluation, withoutRefunds, inputs, busy }: BodyP
 
   const anotherPrice = (): void => {
     const newId = reopen(row, new Date().toISOString().slice(0, 10));
-    pushOnce(purchaseHref(newId, { focus: 'price' }));
+    replaceOnce(purchaseHref(newId, { focus: 'price' }));
   };
   const checkAgain = (): void => {
     const newId = reopen(row, new Date().toISOString().slice(0, 10));
-    pushOnce(answerHref(newId));
+    replaceOnce(answerHref(newId));
   };
 
   // 05.3-59 (D-24, D-27, D-31): the user's answers the result rests on, named once each; the confidence level is unchanged.

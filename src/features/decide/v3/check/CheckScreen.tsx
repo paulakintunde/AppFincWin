@@ -11,7 +11,7 @@ import { useRecordContext } from '@/features/record/useRecordContext';
 import { useLooseT } from './useLooseT';
 import { DetailHeader } from '@/shell/header/DetailHeader';
 import { useScreenTitleFocus } from '@/shell/a11yFocus';
-import { pushOnce } from '@/shell/navigation/pushOnce';
+import { replaceOnce } from '@/shell/navigation/pushOnce';
 import { space, useScreenInsets } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
@@ -90,7 +90,7 @@ export function CheckScreen({ id, focus, renderLayers }: CheckScreenProps): Reac
 
   const onCheck = (): void => {
     if (disabled || evaluation === null) return;
-    if (draft.commit(evaluation.result)) pushOnce(answerHref(id));
+    if (draft.commit(evaluation.result)) replaceOnce(answerHref(id));
   };
 
   const statusText = t(`decide.v3.ui.check.${draft.status}`);

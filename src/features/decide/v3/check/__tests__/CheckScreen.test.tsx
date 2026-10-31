@@ -32,7 +32,7 @@ jest.mock('@/data/mutations/decideChecks', () => ({
 }));
 jest.mock('@tanstack/react-query', () => ({ useMutationState: () => [], useQueryClient: () => ({ setQueriesData: jest.fn() }) }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: jest.fn() }) }));
-jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (href: unknown) => mockPush(href) }));
+jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (href: unknown) => mockPush(href), replaceOnce: (href: unknown) => mockPush(href) }));
 jest.mock('@/shell/a11yFocus', () => ({ useScreenTitleFocus: () => undefined }));
 jest.mock('@/shell/header/DetailHeader', () => {
   const { View, Text } = jest.requireActual('react-native');
