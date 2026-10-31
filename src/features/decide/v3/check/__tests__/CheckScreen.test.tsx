@@ -30,7 +30,7 @@ jest.mock('@/data/mutations/decideChecks', () => ({
   useSaveCheckDraft: () => ({ save: mockSaveDraft }),
   useSaveCheckAnswer: () => ({ save: mockSaveAnswer }),
 }));
-jest.mock('@tanstack/react-query', () => ({ useMutationState: () => [] }));
+jest.mock('@tanstack/react-query', () => ({ useMutationState: () => [], useQueryClient: () => ({ setQueriesData: jest.fn() }) }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: jest.fn() }) }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (href: unknown) => mockPush(href) }));
 jest.mock('@/shell/a11yFocus', () => ({ useScreenTitleFocus: () => undefined }));
