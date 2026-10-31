@@ -77,6 +77,18 @@ describe('InsteadScreen', () => {
     expect(fit).toBeDefined();
   });
 
+  it('05.3-88: a long amount stays whole and its figure shrinks to one line', async () => {
+    const base = (seasonalNc ?? steadyNc)!.ev;
+    const big = { ...base, purchase: { ...base.purchase!, whole: 15005512401 } } as unknown as Evaluation;
+    await show(big);
+    const hits = screen.getAllByText(/150,055,124\.01|150,055,124/);
+    expect(hits.length).toBeGreaterThan(0);
+    for (const h of hits) expect(String(h.props.children)).not.toContain('​');
+    const figures = screen.getAllByText(/./).filter((n) => n.props.adjustsFontSizeToFit === true);
+    expect(figures.length).toBeGreaterThan(0);
+    for (const f of figures) expect(f.props.numberOfLines).toBe(1);
+  });
+
   it('four cards in order with their heads, and the footer', async () => {
     const ev = fit!.ev;
     await show(ev);

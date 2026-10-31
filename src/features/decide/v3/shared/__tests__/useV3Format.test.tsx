@@ -29,6 +29,15 @@ describe('useV3Format', () => {
     expect(f.moneyA11y(42500)).toMatch(/dollar/i);
   });
 
+  it('05.3-88: a long amount carries no break point', async () => {
+    mockCents = true;
+    const f = (await renderHook(() => useV3Format())).result.current;
+    expect(f.money(15005512401)).toBe('$150,055,124.01');
+    expect(f.money(15005512401)).not.toContain('​');
+    expect(f.params({ x: { kind: 'money', minor: 15005512401 } }).screen.x).not.toContain('​');
+    expect(f.flat({ amount: 15005512401 }, ['amount']).screen.amount).not.toContain('​');
+  });
+
   it('formats months and dates', async () => {
     mockCents = false;
     const f = (await renderHook(() => useV3Format())).result.current;

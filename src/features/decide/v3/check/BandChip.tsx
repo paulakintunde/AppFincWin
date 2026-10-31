@@ -3,17 +3,16 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { Band, HomeThresholds, Layer } from '@/engine/decide/v3';
-import { currencyExponent } from '@/engine/money';
+import { currencyExponent, minorUnits } from '@/engine/money';
 import { useLooseT } from './useLooseT';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
-import { useDeviceLocale } from '@/services/locale/deviceLocale';
+import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { bandChip, compactAmount } from '../model/bandChip';
 import { useSettledLabel } from '../shared/useSettledLabel';
-import { useV3Format } from '../shared/useV3Format';
 
 export const BAND_SETTLE_MS = 150;
 const BADGE_MIN = 32;
@@ -27,22 +26,17 @@ export interface BandChipProps {
 export function BandChip({ band, thresholds, layers }: BandChipProps): React.JSX.Element | null {
   const t = useLooseT();
   const { colors, pairing } = useTheme();
-  const fmt = useV3Format();
   const rc = useRecordContext();
-  const { locale } = useDeviceLocale();
+  const whole = useMoneyFormatter(false, rc.homeCurrency);
   const model = bandChip({ band, thresholds, layers });
 
   const edge = (minor: number | null): string => {
     if (minor === null) return '';
     const exponent = currencyExponent(rc.homeCurrency);
     const c = compactAmount(minor as never, exponent);
-    if (c.key === null) return fmt.money(minor);
-    let amount: string;
-    try {
-      amount = new Intl.NumberFormat(locale, { style: 'currency', currency: rc.homeCurrency, maximumFractionDigits: 0 }).format(c.value);
-    } catch {
-      amount = String(c.value);
-    }
+    if (c.key === null) return whole.formatMoney({ amount: minorUnits(minor), currency: rc.homeCurrency } as never);
+    const unit = 10 ** exponent;
+    const amount = whole.formatMoney({ amount: minorUnits(c.value * unit), currency: rc.homeCurrency } as never);
     return t(c.key, { amount });
   };
 
