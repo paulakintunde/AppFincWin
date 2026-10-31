@@ -166,6 +166,9 @@ describe('setOwnItemTypeBase', () => {
     const s = must(addOwnItemType(EMPTY, { id: 'i1', name: 'Bike', base: 'general' })).next;
     const out = must(setOwnItemTypeBase(s, 'i1', 'vehicle')).next;
     expect(out.itemTypes[0]).toMatchObject({ name: 'Bike', base: 'vehicle', questionIds: PRESET_QUESTIONS.vehicle });
+    const two = must(addOwnItemType(s, { id: 'i2', name: 'Boat', base: 'general' })).next;
+    const only = must(setOwnItemTypeBase(two, 'i1', 'vehicle')).next;
+    expect(only.itemTypes[1]).toEqual(two.itemTypes[1]);
   });
 
   it('refuses an unknown or removed id', () => {
