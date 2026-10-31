@@ -8,19 +8,30 @@ describe('monthBar', () => {
     expect(b).toEqual({
       moneyIn: 400000,
       outSoFar: 270500,
-      stillToCome: 87000,
+      setAside: 10000,
+      stillToCome: 77000,
       left: 42500,
       over: 0,
       negative: false,
       segments: [
         { kind: 'out', amount: 270500 },
-        { kind: 'toCome', amount: 87000 },
+        { kind: 'setAside', amount: 10000 },
+        { kind: 'toCome', amount: 77000 },
         { kind: 'left', amount: 42500 },
       ],
       captionKey: 'decide.v3.ui.home.onTrack',
       figure: 42500,
     });
-    expect(b.outSoFar + b.stillToCome + b.left).toBe(b.moneyIn);
+    expect(b.outSoFar + b.setAside + b.stillToCome + b.left).toBe(b.moneyIn);
+  });
+
+  it('set aside is its own part, not still to come (A4)', () => {
+    const b = monthBar(monthOf({ moneyIn: 500000, billsPaid: 100000, everydayLogged: 50000, billsDue: 20000, erest: 30000, setAside: 40000 }));
+    expect(b.stillToCome).toBe(50000);
+    expect(b.setAside).toBe(40000);
+    expect(b.left).toBe(260000);
+    expect(b.segments.map((x) => [x.kind, x.amount])).toEqual([['out', 150000], ['setAside', 40000], ['toCome', 50000], ['left', 260000]]);
+    expect(monthBar(monthOf({ ...SAM, setAside: 0 })).segments.some((x) => x.kind === 'setAside')).toBe(false);
   });
 
   it('overspent: no left segment, an over segment, capped out + toCome', () => {
@@ -53,7 +64,7 @@ describe('monthBar', () => {
     fc.assert(
       fc.property(n, n, n, n, n, fc.integer({ min: 0, max: 3_000_000 }), (billsPaid, billsDue, everydayLogged, erest, setAside, moneyIn) => {
         const b = monthBar(monthOf({ moneyIn, billsPaid, billsDue, everydayLogged, erest, setAside }));
-        if (!b.negative) expect(b.outSoFar + b.stillToCome + b.left).toBe(moneyIn);
+        if (!b.negative) expect(b.outSoFar + b.setAside + b.stillToCome + b.left).toBe(moneyIn);
         for (const s of b.segments) expect(s.amount).toBeGreaterThan(0);
       }),
       { numRuns: 300 },

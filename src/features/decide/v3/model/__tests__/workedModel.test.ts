@@ -52,6 +52,27 @@ describe('workedModel rows', () => {
     expect(neg.result.negative).toBe(true);
   });
 
+  it('leaves out series someone else always pays (D-31)', () => {
+    const alwaysOther = [{ seriesId: 'e', name: 'Electric Co' }];
+    const w = workedModel(ev({}, { alwaysOther }), inp({ names: {}, series: [bill('r', true), bill('e', true)] }), { r: 'Rent', e: 'Electric Co' });
+    expect(w.regular.map((x) => x.name)).toEqual(['Rent']);
+    expect(w.rows[1]).toMatchObject({ key: 'decide.v3.ui.worked.regular_one', params: { count: 1 } });
+    expect(w.regularEmpty).toBe(false);
+    const none = workedModel(ev({}, { alwaysOther }), inp({ series: [bill('e', true)] }));
+    expect(none.regular).toEqual([]);
+    expect(none.regularEmpty).toBe(true);
+  });
+
+  it('omits the everyday-to-come row with no days left and nothing to come', () => {
+    const last = workedModel(ev({ erest: mu(0), monthLeft: mu(42500 + 27000) }, { day: 31 }), inp());
+    expect(last.rows.some((r) => r.key.includes('toCome'))).toBe(false);
+    expect(sum(last)).toBe(Number(last.result.amount));
+    const kept = workedModel(ev({}, { day: 31 }), inp());
+    expect(kept.rows[5]).toMatchObject({ key: 'decide.v3.ui.worked.toCome_other', params: { count: 0 } });
+    expect(sum(kept)).toBe(Number(kept.result.amount));
+    expect(workedModel(ev({}, { day: 30 }), inp()).rows[5]).toMatchObject({ key: 'decide.v3.ui.worked.toCome_one', params: { count: 1 } });
+  });
+
   it('property: rows always sum to monthLeft', () => {
     const n = fc.integer({ min: 0, max: 1_000_000 });
     fc.assert(

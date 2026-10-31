@@ -2,10 +2,13 @@
 export const home = {
   monthDay: 'day {{day}} of {{days}}',
   legendOut: 'out so far',
+  legendSetAside: 'set aside',
   legendToCome: 'still to come',
   legendLeft: 'remaining',
   legendOverspent: 'overspent',
   barA11y: '{{month}}, day {{day}} of {{days}}. {{out}} out so far, {{toCome}} still to come, {{left}} remaining.',
+  barA11ySet: '{{month}}, day {{day}} of {{days}}. {{out}} out so far, {{set}} set aside, {{toCome}} still to come, {{left}} remaining.',
+  barA11yOverSet: '{{month}}, day {{day}} of {{days}}. {{out}} out so far, {{set}} set aside, {{toCome}} still to come, {{over}} overspent.',
   barA11yOver: '{{month}}, day {{day}} of {{days}}. {{out}} out so far, {{toCome}} still to come, {{over}} overspent.',
   onTrack: '{{amount}} in · on track to leave',
   onTrackOver: '{{amount}} in · on track to be overspent by',
