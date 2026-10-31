@@ -1,6 +1,7 @@
 /**
  * 05.3-56 (D-24, D-28, D-29): one readiness answer is one undoable write. The mutation modules are replaced with spies, so
  * these tests pin which write each chip makes, its undo label and what the card is told when the write settles.
+ * 05.3-FIX-depcruise: the writes moved to the shell provider; the hook is the features-side consumer read through it.
  */
 import { act, renderHook } from '@testing-library/react-native';
 import { router } from 'expo-router';
@@ -10,7 +11,8 @@ import { minorUnits } from '@/engine/money';
 import { ENVELOPES_HREF } from '@/features/decide/v3/nav/hrefs';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
-import { useReadinessAnswer, type ReadinessAction } from '../useReadinessAnswer';
+import { useReadinessAnswer, type ReadinessAction } from '@/features/decide/v3/ready/useReadinessAnswer';
+import { ReadinessAnswerProvider } from '../ReadinessAnswerProvider';
 
 const SERIES = '3f0c2a9e-1b4d-4c5e-8f60-1234567890ab';
 const PAY_SERIES = '9a1b2c3d-4e5f-4a6b-8c7d-0123456789ab';
@@ -76,7 +78,7 @@ const waiverRow = (key: string): DecideAnswerRow =>
   ({ id: 'w1', household_id: 'h1', created_by: 'u1', kind: 'readiness_waiver', key, amount: null, bool_value: null, on_date: '2026-10-30', check_id: null, deleted_at: null, version: 1, created_at: '', updated_at: '' }) as DecideAnswerRow;
 
 async function hook(): Promise<ReturnType<typeof useReadinessAnswer>> {
-  return (await renderHook(() => useReadinessAnswer())).result.current;
+  return (await renderHook(() => useReadinessAnswer(), { wrapper: ReadinessAnswerProvider })).result.current;
 }
 
 beforeEach(() => {
@@ -329,5 +331,32 @@ describe('clearWaiver', () => {
     const h = await hook();
     await act(async () => h.clearWaiver(waiver));
     expect(mockRemove).not.toHaveBeenCalled();
+  });
+});
+
+describe('the consumer with no provider mounted', () => {
+  it('writes nothing, shows no toast and settles every answer false', async () => {
+    const h = (await renderHook(() => useReadinessAnswer())).result.current;
+    const actions: ReadinessAction[] = [
+      { kind: 'markPaid', lineId: 'line-1' },
+      { kind: 'skip', lineId: 'line-1' },
+      { kind: 'waive', waiver: { kind: 'income_elsewhere' } },
+      { kind: 'open', target: 'envelopes' },
+    ];
+    for (const action of actions) {
+      const done = jest.fn();
+      await act(async () => h.answer(item(), action, done));
+      expect(done).toHaveBeenCalledTimes(1);
+      expect(done).toHaveBeenCalledWith(false);
+    }
+    mockAnswers.data = [waiverRow(`always-other:${SERIES}`)];
+    await act(async () => h.clearWaiver({ kind: 'always_other', seriesId: SERIES }, 'Lunch'));
+    expect(mockMarkPaid).not.toHaveBeenCalled();
+    expect(mockSkip).not.toHaveBeenCalled();
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(mockRemove).not.toHaveBeenCalled();
+    expect(toast).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
   });
 });

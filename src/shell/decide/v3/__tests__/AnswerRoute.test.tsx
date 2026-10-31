@@ -29,6 +29,10 @@ jest.mock('@/shell/decide/V3RecordProvider', () => {
   const { View, Text: T } = jest.requireActual('react-native');
   return { V3RecordProvider: ({ children }: { children: React.ReactNode }) => <View><T>{'record-provider'}</T>{children}</View> };
 });
+// The readiness provider pulls in the data writes (env config); only its place in the tree matters here.
+jest.mock('@/shell/decide/ReadinessAnswerProvider', () => ({
+  ReadinessAnswerProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 jest.mock('@/features/decide/v3/answer/AnswerScreen', () => {
   const { Text: T } = jest.requireActual('react-native');
   return { AnswerScreen: ({ id }: { id: string }) => <T>{`answer:${id}`}</T> };

@@ -1,5 +1,5 @@
 import { DecideComingSoonScreen } from '@/features/decide/home/DecideComingSoonScreen';
-import { HomeScreen } from '@/features/decide/v3/home/HomeScreen';
+import { HomeRoute } from '@/shell/decide/v3/HomeRoute';
 import { V3Skeleton } from '@/features/decide/v3/nav/V3Skeleton';
 import { useProfile } from '@/features/you/useProfile';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
@@ -19,7 +19,7 @@ export default function DecideRoute() {
   const { loading } = useProfile();
   return (
     <>
-      {!access.v3 ? loading ? <V3Skeleton /> : <DecideComingSoonScreen /> : <HomeScreen />}
+      {!access.v3 ? loading ? <V3Skeleton /> : <DecideComingSoonScreen /> : <HomeRoute />}
       {__DEV__ ? <DevShadowExport /> : null}
     </>
   );

@@ -103,6 +103,10 @@ function mockScreen(label: string): () => React.JSX.Element {
     return <Text>{label}</Text>;
   };
 }
+// The readiness provider pulls in the data writes (env config); only its place in the tree matters here.
+jest.mock('@/shell/decide/ReadinessAnswerProvider', () => ({
+  ReadinessAnswerProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 jest.mock('@/features/decide/v3/home/HomeScreen', () => ({ HomeScreen: mockScreen('v3-home') }));
 jest.mock('@/features/decide/v3/check/CheckScreen', () => ({ CheckScreen: mockScreen('screen:purchase') }));
 jest.mock('@/features/decide/v3/layers/LayerStack', () => ({ LayerStack: () => null }));
