@@ -56,13 +56,22 @@ function invalidateAfterUndo(qc: QueryClient, vars: { householdId: string; owner
   void qc.invalidateQueries({ queryKey: queryKeys.incomePayerPrompts(vars.householdId) });
 }
 
-async function recordRefusal(entityId: string, conflict: UndoConflict | null, stepId: string): Promise<void> {
+async function recordRefusal(
+  entityId: string,
+  conflict: UndoConflict | null,
+  stepId: string,
+  label?: { key: UndoLabelKey; name?: string }
+): Promise<void> {
   await recordFailedWrite({
     entity: 'undo_log',
     entityId,
     kind: 'conflict',
     code: 'version-conflict',
-    attempted: { stepId, ...(conflict ? { conflictEntity: conflict.entity, conflictId: conflict.id } : {}) },
+    attempted: {
+      stepId,
+      ...(label ? { labelKey: label.key, ...(label.name ? { name: label.name } : {}) } : {}),
+      ...(conflict ? { conflictEntity: conflict.entity, conflictId: conflict.id } : {}),
+    },
   });
 }
 
@@ -88,7 +97,10 @@ export function registerUndoMutations(qc: QueryClient): void {
           });
           return;
         case 'refused':
-          await recordRefusal(vars.stepId, outcome.conflict, vars.stepId);
+          await recordRefusal(vars.stepId, outcome.conflict, vars.stepId, {
+            key: vars.labelKey,
+            name: vars.labelParams.name,
+          });
           invalidateAfterUndo(qc, vars);
           showToast({ kind: 'refusal', refusal: outcome.conflict });
           return;
