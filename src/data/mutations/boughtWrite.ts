@@ -110,7 +110,8 @@ export function buildBoughtWrite(args: {
       note: null,
       name,
       category_id: categoryId,
-      status: 'pending',
+      // 05.3-107 (UAT gap 24), owner 2026-10-31: spent. Rows dated today or earlier are paid; later instalments stay pending.
+      status: date <= ctx.today ? 'paid' : 'pending',
       // The day-one lump won't recur, so it is a one-off and stays out of later averages. Payment rows stay regular.
       ...(role === 'day_one' ? { one_off: true } : {}),
     });
