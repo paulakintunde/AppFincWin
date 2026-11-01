@@ -81,7 +81,7 @@ describe('buildBoughtWrite', () => {
       category_id: 'cat-home',
       one_off: true,
       name: 'Sofa',
-      status: 'pending',
+      status: 'paid',
     });
     expect(w.series).toEqual([]);
     expect(w.debt).toBeNull();
@@ -141,6 +141,7 @@ describe('buildBoughtWrite', () => {
     );
     expect(w.rows).toHaveLength(1);
     expect(w.rows[0]).toMatchObject({ original_amount: -21234, local_date: '2027-10-18' });
+    expect(w.rows[0]!.status).toBe('pending');
     expect(w.series[0]!.occurrence_count).toBe(11);
     expect(w.decision.row_roles).toEqual(['payment']);
   });
