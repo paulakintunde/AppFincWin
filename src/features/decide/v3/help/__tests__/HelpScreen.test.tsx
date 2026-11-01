@@ -4,6 +4,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { wrap } from '../../../check/steps/__tests__/helpers/stepProps';
 import { HelpScreen, prefillOf } from '../HelpScreen';
 import { roughInputs } from './helpKit';
+import { returnToTab } from '@/shell/navigation/returnToTab';
 
 jest.setTimeout(60000);
 
@@ -11,7 +12,8 @@ const mockBack = jest.fn();
 const mockNavigate = jest.fn();
 const mockUpdate = jest.fn();
 const mockTrack = jest.fn();
-jest.mock('expo-router', () => ({ router: { back: () => mockBack(), navigate: (h: unknown) => mockNavigate(h) } }));
+jest.mock('expo-router', () => ({ useRootNavigationState: () => undefined, router: { back: () => mockBack(), navigate: (h: unknown) => mockNavigate(h) } }));
+jest.mock('@/shell/navigation/returnToTab', () => ({ returnToTab: jest.fn() }));
 jest.mock('@/shell/screen/DetailScreen', () => ({ DetailScreen: ({ children }: { children: React.ReactNode }) => <>{children}</> }));
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: null }) }));
 jest.mock('@/data/mutations/decideSettings', () => ({ useUpdateDecideSettings: () => ({ update: (p: unknown) => mockUpdate(p) }) }));
@@ -74,6 +76,6 @@ describe('HelpScreen', () => {
   it('opens the Activity tab from Update my records instead', async () => {
     await wrap(<HelpScreen id="x" inputs={roughInputs()} />);
     await fireEvent.press(screen.getByText('Update my records instead'));
-    expect(mockNavigate).toHaveBeenCalledWith('/activity');
+    expect(returnToTab).toHaveBeenCalledWith('/activity', undefined);
   });
 });

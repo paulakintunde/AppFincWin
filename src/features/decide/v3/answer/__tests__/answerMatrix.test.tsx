@@ -7,6 +7,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { cleanup, fireEvent, screen } from '@testing-library/react-native';
 import { MATRIX, expectFits, expectTargets, matrixName } from '@/features/decide/__tests__/helpers/r18Fit';
+import { returnToTab } from '@/shell/navigation/returnToTab';
 import { copy } from './answerKit';
 import { wrap } from './kit';
 import { AnswerScreen } from '../AnswerScreen';
@@ -31,7 +32,8 @@ jest.mock('@/data/queries/decideCheckV3', () => {
   return { useCheckV3: () => (mockWaivers ? withWaivers : value) };
 });
 jest.mock('@/data/mutations/decideChecks', () => ({ useReopenCheck: () => ({ reopen: () => 'new-id' }), useReopenRedirect: () => null, useReopenFailed: () => false }));
-jest.mock('expo-router', () => ({ router: { navigate: jest.fn(), push: jest.fn() }, useFocusEffect: jest.fn() }));
+jest.mock('expo-router', () => ({ useRootNavigationState: () => undefined, router: { navigate: jest.fn(), push: jest.fn() }, useFocusEffect: jest.fn() }));
+jest.mock('@/shell/navigation/returnToTab', () => ({ returnToTab: jest.fn() }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'uuid' }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn(), replaceOnce: jest.fn() }));
 jest.mock('@/shell/a11yFocus', () => ({ useScreenTitleFocus: jest.fn(), focusAccessibility: jest.fn() }));

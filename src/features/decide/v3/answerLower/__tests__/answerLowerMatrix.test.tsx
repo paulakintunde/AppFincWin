@@ -9,6 +9,7 @@ import { cleanup, screen } from '@testing-library/react-native';
 import { MATRIX, expectFits, expectTargets, matrixName } from '@/features/decide/__tests__/helpers/r18Fit';
 import { factRows } from '@/features/decide/v3/model/factRows';
 import { wrap } from '@/features/decide/v3/answer/__tests__/kit';
+import { returnToTab } from '@/shell/navigation/returnToTab';
 import { AnswerActionBar } from '../AnswerActionBar';
 import { AnswerLinks } from '../AnswerLinks';
 import { FactRows } from '../FactRows';
@@ -24,7 +25,8 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   default: () => ({ width: mockWidth, height: 874, scale: 2, fontScale: mockScale }),
 }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
-jest.mock('expo-router', () => ({ router: { navigate: jest.fn(), push: jest.fn() } }));
+jest.mock('expo-router', () => ({ useRootNavigationState: () => undefined, router: { navigate: jest.fn(), push: jest.fn() } }));
+jest.mock('@/shell/navigation/returnToTab', () => ({ returnToTab: jest.fn() }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'uuid' }));
 jest.mock('@/data/mutations/decideChecks', () => ({ useReopenCheck: () => ({ reopen: () => 'new-id' }) }));
 jest.mock('@/features/decide/v3/shared/useV3Format', () => {

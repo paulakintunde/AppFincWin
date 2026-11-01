@@ -5,6 +5,7 @@ import { wrap } from '../../../check/steps/__tests__/helpers/stepProps';
 import { MATRIX, expectFits, expectTargets, matrixName } from '../../../__tests__/helpers/r18Fit';
 import { HelpScreen } from '../HelpScreen';
 import { roughInputs } from './helpKit';
+import { returnToTab } from '@/shell/navigation/returnToTab';
 
 jest.setTimeout(60000);
 
@@ -14,7 +15,8 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
   default: () => ({ width: mockWidth, height: 874, scale: 2, fontScale: mockScale }),
 }));
-jest.mock('expo-router', () => ({ router: { back: jest.fn(), navigate: jest.fn() } }));
+jest.mock('expo-router', () => ({ useRootNavigationState: () => undefined, router: { back: jest.fn(), navigate: jest.fn() } }));
+jest.mock('@/shell/navigation/returnToTab', () => ({ returnToTab: jest.fn() }));
 jest.mock('@/shell/screen/DetailScreen', () => ({ DetailScreen: ({ children }: { children: React.ReactNode }) => <>{children}</> }));
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: null }) }));
 jest.mock('@/data/mutations/decideSettings', () => ({ useUpdateDecideSettings: () => ({ update: jest.fn() }) }));
