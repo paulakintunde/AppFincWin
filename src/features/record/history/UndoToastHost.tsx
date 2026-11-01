@@ -37,9 +37,10 @@ function asNumber(v: unknown): number | undefined {
 // `undoableLabel` returns null and the toast shows no Undo.
 const DECIDE_TOAST_LABEL: Readonly<Record<string, UndoLabelKey>> = {
   // 05.3-101 (UAT gap 25): own kind / purpose toasts replay their saved setup step.
-  'decide.v3.ui.ownOptions.savedToast': 'setupStepSaved',
-  'decide.v3.ui.ownOptions.renamedToast': 'setupStepSaved',
-  'decide.v3.ui.ownOptions.removedToast': 'setupStepSaved',
+  // 05.3-120 (UAT gap 37): each replays its own named step.
+  'decide.v3.ui.ownOptions.savedToast': 'ownOptionAdded',
+  'decide.v3.ui.ownOptions.renamedToast': 'ownOptionRenamed',
+  'decide.v3.ui.ownOptions.removedToast': 'ownOptionRemoved',
   'decide.delete.toastCheck': 'checkDeleted',
   'decide.clear.toast': 'checkCleared',
   'decide.delete.toastDecision': 'decisionDeleted',

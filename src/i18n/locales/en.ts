@@ -1575,6 +1575,9 @@ const en = {
       monthComplete: 'Marked complete · {{name}}',
       decideStartMonth: 'Decide starts from · {{name}}',
       readinessAnswerCleared: 'Asked again · {{name}}',
+      ownOptionAdded: 'Your own option added · {{name}}',
+      ownOptionRenamed: 'Your own option renamed · {{name}}',
+      ownOptionRemoved: 'Your own option removed · {{name}}',
     },
     // C-WR-06: shown instead of the matching `label` entry when the row has no name, so a
     // nameless row never renders a raw "{{name}}" (picked by src/i18n/undoLabel.ts).
@@ -1639,6 +1642,9 @@ const en = {
       monthComplete: 'Marked as complete',
       decideStartMonth: 'Decide start month saved',
       readinessAnswerCleared: 'Asked again',
+      ownOptionAdded: 'Your own option added',
+      ownOptionRenamed: 'Your own option renamed',
+      ownOptionRemoved: 'Your own option removed',
     },
     reverted: 'Undone · {{label}}',
     batchRefused: 'That batch couldn’t be saved. Nothing was changed.',

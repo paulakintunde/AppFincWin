@@ -1,12 +1,15 @@
 // 05.3-83 (UAT step 75 item 2): the user's own item types and purposes, read from decide_settings.custom_options and added
 // from Check a purchase. One add = one undo step through useSaveSetupStep. Names are never sent to analytics.
 // 05.3-84: rename, re-base ("counts like") and remove, each one undoable save. Remove only marks the entry deleted.
+// 05.3-120 (UAT gap 37): each save names its own undo step with the option name, so History reads
+// "Your own option added · Bike" rather than "Setup answer saved".
 import { useMemo } from 'react';
 import * as Crypto from 'expo-crypto';
 import type { V3PresetItemType } from '@/engine/decide/v3';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useDecideSettings } from '@/data/queries/decide';
 import { useSaveSetupStep } from '@/data/mutations/decideSetup';
+import type { UndoLabelKey } from '@/engine/undo';
 import { showToast } from '@/state/undoToast';
 import {
   addOwnItemType,
@@ -66,8 +69,14 @@ export function useOwnOptions(): UseOwnOptions {
     return new Map([...labels.allNames].filter(([id]) => !live.has(id)));
   }, [labels]);
 
-  const commit = (next: StoredOwnOptions, key: string, name: string, kind: 'ordinary' | 'destructive'): EditOwnResult => {
-    const saved = saver.save({ labelKey: 'setupStepSaved', patch: { custom_options: next } });
+  const commit = (
+    next: StoredOwnOptions,
+    labelKey: UndoLabelKey,
+    key: string,
+    name: string,
+    kind: 'ordinary' | 'destructive',
+  ): EditOwnResult => {
+    const saved = saver.save({ labelKey, stepTitle: name, patch: { custom_options: next } });
     showToast({ kind, text: { key, params: { name } }, stepId: saved?.stepId ?? null });
     return { ok: true };
   };
@@ -88,8 +97,9 @@ export function useOwnOptions(): UseOwnOptions {
           ? addOwnItemType(stored, { id, name: input.name, base: input.base ?? 'general' })
           : addOwnPurpose(stored, { id, name: input.name });
       if (!r.ok) return r;
-      const saved = saver.save({ labelKey: 'setupStepSaved', patch: { custom_options: r.next } });
-      showToast({ kind: 'ordinary', text: { key: 'decide.v3.ui.ownOptions.savedToast', params: { name: input.name.trim() } }, stepId: saved?.stepId ?? null });
+      const name = input.name.trim();
+      const saved = saver.save({ labelKey: 'ownOptionAdded', stepTitle: name, patch: { custom_options: r.next } });
+      showToast({ kind: 'ordinary', text: { key: 'decide.v3.ui.ownOptions.savedToast', params: { name } }, stepId: saved?.stepId ?? null });
       return { ok: true, id };
     },
     rename(kind, id, name, base) {
@@ -98,20 +108,20 @@ export function useOwnOptions(): UseOwnOptions {
       if (!r.ok) return r;
       const b = kind === 'itemType' && base !== undefined ? setOwnItemTypeBase(r.next, id, base) : r;
       if (!b.ok) return b;
-      return commit(b.next, 'decide.v3.ui.ownOptions.renamedToast', name.trim(), 'ordinary');
+      return commit(b.next, 'ownOptionRenamed', 'decide.v3.ui.ownOptions.renamedToast', name.trim(), 'ordinary');
     },
     remove(kind, id) {
       if (unavailable) return { ok: false, reason: 'not_found' };
       const stored = parseOwnOptions(raw);
       const entry = (kind === 'itemType' ? stored.itemTypes : stored.purposes).find((e) => e.id === id && e.deletedAt === null);
       if (entry === undefined) return { ok: false, reason: 'not_found' };
-      return commit(removeOwnOption(stored, kind, id, rc.today), 'decide.v3.ui.ownOptions.removedToast', entry.name, 'destructive');
+      return commit(removeOwnOption(stored, kind, id, rc.today), 'ownOptionRemoved', 'decide.v3.ui.ownOptions.removedToast', entry.name, 'destructive');
     },
     setBase(_kind, id, base) {
       if (unavailable) return { ok: false, reason: 'not_found' };
       const r = setOwnItemTypeBase(parseOwnOptions(raw), id, base);
       if (!r.ok) return r;
-      return commit(r.next, 'decide.v3.ui.ownOptions.renamedToast', r.next.itemTypes.find((t) => t.id === id)?.name ?? '', 'ordinary');
+      return commit(r.next, 'ownOptionRenamed', 'decide.v3.ui.ownOptions.renamedToast', r.next.itemTypes.find((t) => t.id === id)?.name ?? '', 'ordinary');
     },
   };
 }
