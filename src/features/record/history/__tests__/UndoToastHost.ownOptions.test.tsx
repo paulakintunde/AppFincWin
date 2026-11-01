@@ -33,17 +33,22 @@ async function mount() {
   );
 }
 
-const KEYS = ['savedToast', 'renamedToast', 'removedToast'];
+// 05.3-120 (UAT gap 37): each toast replays its own named step.
+const KEYS: readonly (readonly [string, string])[] = [
+  ['savedToast', 'ownOptionAdded'],
+  ['renamedToast', 'ownOptionRenamed'],
+  ['removedToast', 'ownOptionRemoved'],
+];
 
 describe('UndoToastHost own-option toasts (05.3-101)', () => {
-  it.each(KEYS)('%s offers Undo that replays the saved step', async (k) => {
+  it.each(KEYS)('%s offers Undo that replays the saved step as %s', async (k, label) => {
     await mount();
     await act(async () => {
       showToast({ kind: 'destructive', text: { key: `decide.v3.ui.ownOptions.${k}`, params: { name: 'Bike' } }, stepId: 's1' });
     });
     await fireEvent.press(screen.getByLabelText('Undo'));
     expect(mockUndo).toHaveBeenCalledTimes(1);
-    expect(mockUndo).toHaveBeenCalledWith(expect.objectContaining({ stepId: 's1', labelKey: 'setupStepSaved' }));
+    expect(mockUndo).toHaveBeenCalledWith(expect.objectContaining({ stepId: 's1', labelKey: label, labelParams: { name: 'Bike' } }));
   });
 
   it('stays up at 9.9 s and is gone at 10.1 s', async () => {

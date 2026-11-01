@@ -44,7 +44,8 @@ describe('useOwnOptions manage actions', () => {
     const { result } = await renderHook(() => useOwnOptions());
     expect(result.current.rename('itemType', 'a', ' Road bike ')).toEqual({ ok: true });
     const call = mockSave.mock.calls[0][0];
-    expect(call.labelKey).toBe('setupStepSaved');
+    expect(call.labelKey).toBe('ownOptionRenamed'); // 05.3-120 (UAT gap 37)
+    expect(call.stepTitle).toBe('Road bike');
     expect(call.patch.custom_options.itemTypes[0]).toMatchObject({ id: 'a', name: 'Road bike', base: 'vehicle' });
     expect(call.patch.custom_options.itemTypes[1].name).toBe(LONG);
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ kind: 'ordinary', stepId: 's1', text: { key: 'decide.v3.ui.ownOptions.renamedToast', params: { name: 'Road bike' } } }));
@@ -58,10 +59,17 @@ describe('useOwnOptions manage actions', () => {
     expect(mockSave.mock.calls[1][0].patch.custom_options.purposes[0].name).toBe('Children');
   });
 
+  it('05.3-120 removing an own kind names it in the undo step', async () => {
+    const { result } = await renderHook(() => useOwnOptions());
+    expect(result.current.remove('itemType', 'a')).toEqual({ ok: true });
+    expect(mockSave.mock.calls[0][0]).toMatchObject({ labelKey: 'ownOptionRemoved', stepTitle: 'Bike' });
+  });
+
   it('remove marks the entry deleted with today and moves it to retired', async () => {
     const { result } = await renderHook(() => useOwnOptions());
     expect(result.current.remove('purpose', 'p')).toEqual({ ok: true });
     expect(mockSave.mock.calls[0][0].patch.custom_options.purposes[0]).toMatchObject({ id: 'p', deletedAt: '2026-10-31' });
+    expect(mockSave.mock.calls[0][0]).toMatchObject({ labelKey: 'ownOptionRemoved', stepTitle: 'Kids' });
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ kind: 'destructive', text: { key: 'decide.v3.ui.ownOptions.removedToast', params: { name: 'Kids' } } }));
     mockRow = { custom_options: mockSave.mock.calls[0][0].patch.custom_options };
     const again = await renderHook(() => useOwnOptions());
@@ -74,6 +82,7 @@ describe('useOwnOptions manage actions', () => {
     const { result } = await renderHook(() => useOwnOptions());
     expect(result.current.setBase('itemType', 'a', 'electronics')).toEqual({ ok: true });
     expect(mockSave.mock.calls[0][0].patch.custom_options.itemTypes[0].base).toBe('electronics');
+    expect(mockSave.mock.calls[0][0]).toMatchObject({ labelKey: 'ownOptionRenamed', stepTitle: 'Bike' });
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: null }));
   });
 
