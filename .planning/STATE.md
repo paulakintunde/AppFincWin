@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 05.3 UI-SPEC approved
-last_updated: "2026-10-31T16:30:20.481Z"
-last_activity: 2026-10-31 -- Phase 05.3 execution started
+last_updated: "2026-11-01T04:26:15.512Z"
+last_activity: 2026-11-01 -- Phase 05.3 execution started
 progress:
   total_phases: 24
   completed_phases: 11
-  total_plans: 594
-  completed_plans: 573
-  percent: 96
+  total_plans: 611
+  completed_plans: 598
+  percent: 98
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 
 Phase: 05.3 (decide-screens-v3) — EXECUTING
 Phase: 05.1 (decide-engine-v3) — COMPLETE 2026-10-27
-Plan: 1 of 91
+Plan: 1 of 108
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
@@ -35,7 +35,7 @@ Phase 02.1 (PDF statement import): COMPLETE 2026-10-11 — 17/17 plans (PR #60 m
 Phase 05 (decide-ui): planned 2026-10-15, revised 2026-10-16 for the planning-review decisions D-38..D-44, DCU-12..DCU-24 and the final Phase 4 API (D-61..D-63) — 53 plans in 10 waves, plan checker passed (3 iterations, final 0 blockers, 0 warnings); originally against 05-CONTEXT D-01..D-37 (incl. the depth expansion D-24..D-37 and the amended D-24) and the 22-plan Phase 4 `decide()` API; research with a depth addendum, pattern map, VALIDATION.md (nyquist_compliant); plan checker passed after the scope expansion (3 iterations, final 0 blockers; earlier 29-plan set had 2 iterations), decision coverage D-01..D-37 and DCU-01..DCU-11, ANL-06 verified; defaults and items for user review in 05-PLANNING-NOTES.md (OQ1/OQ3 debts table and full-month rule, OQ-A1 FX stamps, OQ-A2/A3/A9 UI-SPEC touch-ups, card minimum gap R4-W2, A19/A21). Execution unblocked once the Phase 4 PR merges; migrations ship via the human-gated `npm run supabase:db:push` in 05-25.
 Walkthrough (2026-10-10): Phase 02.2 Android device walkthrough Parts A–D approved, with exceptions fixed by quick task 261010-i7u (calendar wrap/highlight/scroll, swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check). Part E (sign-out/sign-in) is pending and needs an Expo restart. The sign-in account chooser was requested (ACC-14, Phase 02.3 with REC-26 and REC-27).
 Status: Executing Phase 05.3
-Last activity: 2026-10-31 -- Phase 05.3 execution started
+Last activity: 2026-11-01 -- Phase 05.3 execution started
 
 ## Performance Metrics
 
