@@ -12,7 +12,7 @@
  * The card and the answer screen read it through ReadinessAnswerContext (features/decide/v3/ready/useReadinessAnswer).
  */
 import React, { useEffect, useMemo, useRef, type ReactNode } from 'react';
-import { router, type Href } from 'expo-router';
+import { useRootNavigationState, type Href } from 'expo-router';
 import type { ReadinessItem, ReadinessWaiver, ReadinessWaiverKind } from '@/engine/decide/v3';
 import type { UndoLabelKey } from '@/engine/undo';
 import type { TransactionRow } from '@/db/rows';
@@ -30,7 +30,9 @@ import {
 import { useV3Format } from '@/features/decide/v3/shared/useV3Format';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { undoLabelText } from '@/i18n/undoLabel';
+import type { NavStateLike } from '@/shell/backHistory/navLocation';
 import { pushOnce } from '@/shell/navigation/pushOnce';
+import { returnToTab } from '@/shell/navigation/returnToTab';
 import { showToast } from '@/state/undoToast';
 
 const WAIVER_LABEL: Readonly<Record<ReadinessWaiverKind, UndoLabelKey>> = {
@@ -51,10 +53,14 @@ function toastFor(key: UndoLabelKey, name: string | null | undefined, stepId: st
   showToast({ kind: 'ordinary', text: undoLabelText(key, name ? { name } : {}), stepId });
 }
 
-const openActivity = (): void => router.navigate('/activity' as Href);
+const ACTIVITY_HREF = '/activity' as Href;
 
 function useReadinessAnswerWrites(): ReadinessAnswer {
   const rc = useRecordContext();
+  // UAT gap 33: this provider wraps the answer (an outer-stack screen) as well as Decide home (a tab). From the answer,
+  // router.navigate would push a second (tabs); returnToTab keeps the plain tab switch when it runs on a tab.
+  const navState = useRootNavigationState() as unknown as NavStateLike | undefined;
+  const openActivity = (): void => returnToTab(ACTIVITY_HREF, navState);
   const f = useV3Format();
   const { source } = useDecideSnapshot();
   const answers = useDecideAnswers(rc.userId ?? undefined, rc.householdId ?? undefined).data;

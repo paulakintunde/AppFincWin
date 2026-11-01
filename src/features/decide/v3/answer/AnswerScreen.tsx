@@ -11,7 +11,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
+import { useRootNavigationState } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCheckV3 } from '@/data/queries/decideCheckV3';
@@ -24,7 +24,9 @@ import { useRecordContext } from '@/features/record/useRecordContext';
 import { getAnalytics } from '@/services/analytics';
 import type { DecideBand } from '@/services/analytics/catalogue';
 import { useScreenTitleFocus } from '@/shell/a11yFocus';
+import type { NavStateLike } from '@/shell/backHistory/navLocation';
 import { replaceOnce } from '@/shell/navigation/pushOnce';
+import { returnToTab } from '@/shell/navigation/returnToTab';
 import { space } from '@/theme/layout';
 import { DURATION, EASING, useReduceMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -134,6 +136,7 @@ function AnswerBody({ id, row, evaluation, withoutRefunds, inputs, busy }: BodyP
   const t = useT() as unknown as Translate;
   const f = useV3Format();
   const { colors, pairing } = useTheme();
+  const navState = useRootNavigationState() as unknown as NavStateLike | undefined;
   const rc = useRecordContext();
   const insets = useSafeAreaInsets();
   const { reopen } = useReopenCheck();
@@ -186,7 +189,8 @@ function AnswerBody({ id, row, evaluation, withoutRefunds, inputs, busy }: BodyP
     const wrote = sheet !== null && row.status !== sheet.status;
     setSheet((s) => (s === null ? s : { ...s, open: false }));
     // "Back to Decide": once the record sheet has written, the check is done and the user returns to the Decide tab.
-    if (wrote) router.navigate(DECIDE_TAB_HREF);
+    // UAT gap 33: the answer is an outer-stack screen; router.navigate would push a second (tabs).
+    if (wrote) returnToTab(DECIDE_TAB_HREF, navState);
   };
 
   const purchase = evaluation.purchase;
