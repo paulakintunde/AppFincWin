@@ -1,9 +1,9 @@
 // 05.3-24 (DSV-05, D-16, D-19): the Check screen's draft. The first edit creates the decide_checks row (status open); later edits
 // debounce into useSaveCheckDraft; leaving flushes and never prompts. The stored answer (answer_v3) is written only by commit(),
 // on "Check it" (D-13/D-16), never by an edit. Only plain stored JSON (toStoredV2) reaches the write queue.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
-import { useMutationState, useQueryClient } from '@tanstack/react-query';
+import { onlineManager, useMutationState, useQueryClient } from '@tanstack/react-query';
 import { mutationKeys } from '@/data/keys';
 import { useCreateCheck, useSaveCheckAnswer, useSaveCheckDraft } from '@/data/mutations/decideChecks';
 import { useDecideChecks } from '@/data/queries/decide';
@@ -12,13 +12,15 @@ import { readStoredCheck, seenOf, toStoredV2 } from '@/engine/decide/v3';
 import type { CheckV2, Result } from '@/engine/decide/v3';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { getAnalytics } from '@/services/analytics';
+import { isOfflinePaused } from '@/data/sync/writeQueueState';
 import { draftStatus } from '../model/draftStatus';
+import type { DraftSaveStatus } from '../model/draftStatus';
 import { emptyCheck } from '../model/checkEdits';
 
 export const V3_DRAFT_DEBOUNCE_MS = 400;
 const NAME_MAX = 80;
 
-export type DraftSaveStatus = 'saved' | 'offline' | 'notSaved';
+export type { DraftSaveStatus };
 
 export interface V3CheckDraft {
   check: CheckV2;
@@ -38,12 +40,13 @@ interface SaveMutation {
   submittedAt: number;
 }
 
-/** The newest create or draft save decides the status; a paused write reads as offline, a pending one as saved. */
-export function saveStatusOf(mutations: readonly SaveMutation[]): DraftSaveStatus {
-  const paused = mutations.some((m) => m.status === 'pending' && m.isPaused);
+/** The newest create or draft save decides error; offline only when paused with the app offline; any pending save reads saving. */
+export function saveStatusOf(mutations: readonly SaveMutation[], online: boolean): DraftSaveStatus {
+  const offlinePaused = mutations.some((m) => isOfflinePaused(m, online));
+  const pending = mutations.some((m) => m.status === 'pending');
   const newest = mutations.reduce<SaveMutation | null>((a, m) => (a === null || m.submittedAt >= a.submittedAt ? m : a), null);
   if (newest === null) return 'saved';
-  return draftStatus({ status: paused ? 'pending' : newest.status, isPaused: paused });
+  return draftStatus({ status: newest.status, offlinePaused, pending });
 }
 
 const isSaveKey = (key: readonly unknown[] | undefined): boolean =>
@@ -178,6 +181,7 @@ export function useV3CheckDraft(id: string): V3CheckDraft {
     [flush, qc, id],
   );
 
+  const online = useSyncExternalStore(onlineManager.subscribe.bind(onlineManager), () => onlineManager.isOnline());
   const mutations = useMutationState<SaveMutation>({
     filters: {
       predicate: (m) => isSaveKey(m.options.mutationKey) && (m.state.variables as { id?: string } | undefined)?.id === id,
@@ -185,5 +189,5 @@ export function useV3CheckDraft(id: string): V3CheckDraft {
     select: (m) => ({ status: m.state.status, isPaused: m.state.isPaused, submittedAt: m.state.submittedAt }),
   });
 
-  return { check: current.check, name: current.name, row, status: saveStatusOf(mutations), readOnly, edit, setName, commit };
+  return { check: current.check, name: current.name, row, status: saveStatusOf(mutations, online), readOnly, edit, setName, commit };
 }

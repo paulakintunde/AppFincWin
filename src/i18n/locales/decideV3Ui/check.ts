@@ -5,6 +5,7 @@ export const check = {
   item: 'Item',
   price: 'Price',
   saved: 'Saved',
+  saving: 'Saving…',
   offline: 'Offline, will save',
   notSaved: 'Not saved',
   kind: 'What kind of purchase?',

@@ -4,14 +4,13 @@ import { draftStatus, priceCeiling, priceProblem } from '../draftStatus';
 jest.setTimeout(60000);
 
 describe('draftStatus', () => {
-  it('maps the save mutation state', () => {
-    expect(draftStatus({ status: 'success' })).toBe('saved');
-    expect(draftStatus({ status: 'idle' })).toBe('saved');
-    expect(draftStatus({ status: 'pending' })).toBe('saved');
-    expect(draftStatus({ status: 'pending', isPaused: true })).toBe('offline');
-    expect(draftStatus({ status: 'idle', isPaused: true })).toBe('offline');
-    expect(draftStatus({ status: 'error' })).toBe('notSaved');
-    expect(draftStatus({ status: 'error', isPaused: false })).toBe('notSaved');
+  const d = (status: 'idle' | 'pending' | 'success' | 'error', offlinePaused = false, pending = false) => draftStatus({ status, offlinePaused, pending });
+  it('maps the save mutation state to four words', () => {
+    expect(d('success')).toBe('saved');
+    expect(d('idle')).toBe('saved');
+    expect(d('pending', false, true)).toBe('saving');
+    expect(d('pending', true, true)).toBe('offline');
+    expect(d('error')).toBe('notSaved');
   });
 });
 
