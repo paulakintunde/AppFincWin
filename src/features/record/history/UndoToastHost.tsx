@@ -36,6 +36,10 @@ function asNumber(v: unknown): number | undefined {
 // other, so each carries the engine label key of the step it recorded. Without this map their text is not an `undo.label.*` key,
 // `undoableLabel` returns null and the toast shows no Undo.
 const DECIDE_TOAST_LABEL: Readonly<Record<string, UndoLabelKey>> = {
+  // 05.3-101 (UAT gap 25): own kind / purpose toasts replay their saved setup step.
+  'decide.v3.ui.ownOptions.savedToast': 'setupStepSaved',
+  'decide.v3.ui.ownOptions.renamedToast': 'setupStepSaved',
+  'decide.v3.ui.ownOptions.removedToast': 'setupStepSaved',
   'decide.delete.toastCheck': 'checkDeleted',
   'decide.clear.toast': 'checkCleared',
   'decide.delete.toastDecision': 'decisionDeleted',
