@@ -9,6 +9,8 @@ import { useT } from '@/i18n';
 import { verdictRowFor } from '@/engine/decide/v3';
 import type { StoredSeenV3 } from '@/db/decideChecks';
 import type { ChangeTile } from '@/features/decide/v3/model/answerChange';
+import { useRecordContext } from '@/features/record/useRecordContext';
+import { localDayOf } from '@/features/decide/v3/model/localDay';
 import { useV3Format } from '@/features/decide/v3/shared/useV3Format';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -53,12 +55,13 @@ export interface SavedAnswerLineProps {
 export function SavedAnswerLine({ stored, decidedAt, variant = 'saved' }: SavedAnswerLineProps): React.JSX.Element {
   const t = useT() as unknown as Translate;
   const f = useV3Format();
+  const { timeZone } = useRecordContext();
   const { colors, pairing } = useTheme();
   const chip = t(verdictRowFor(stored.code, stored.variant).chipKey);
   const key = variant === 'last' ? 'decide.v3.ui.notReady.lastSaved' : 'decide.v3.ui.answer.savedAnswer';
   return (
     <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>
-      {t(key, { chip, date: f.date(decidedAt.slice(0, 10)) })}
+      {t(key, { chip, date: f.date(localDayOf(decidedAt, timeZone) ?? decidedAt.slice(0, 10)) })}
     </Text>
   );
 }

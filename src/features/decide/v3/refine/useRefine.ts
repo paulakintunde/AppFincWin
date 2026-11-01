@@ -7,6 +7,7 @@ import { minorUnits } from '@/engine/money';
 import { DECIDE_LOOKBACK_MONTHS, useDecideSettings, useDebts, useDecideSnapshot } from '@/data/queries/decide';
 import { useChecksV3 } from '@/data/queries/decideCheckV3';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import { localDayOf } from '../model/localDay';
 import { useRegularCandidates } from '../../setup/steps/useRegularCandidates';
 
 export interface RefineState {
@@ -35,7 +36,7 @@ export function useRefine(): RefineState {
 
   return useMemo((): RefineState => {
     if (inputs === null) return { result: null, snoozed: false, asOf: null };
-    const snoozeUntil = dateOf(settings?.refine_snooze_until);
+    const snoozeUntil = localDayOf(settings?.refine_snooze_until, rc.timeZone);
     const snoozed = snoozeUntil !== null && inputs.asOf < snoozeUntil;
     const input: RefineInput = {
       inputs,
@@ -72,5 +73,5 @@ export function useRefine(): RefineState {
         }),
     };
     return { result: refine(input), snoozed, asOf: inputs.asOf };
-  }, [inputs, settings, debts, rows, source]);
+  }, [inputs, settings, debts, rows, source, rc.timeZone]);
 }

@@ -18,6 +18,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { writtenCount } from '../../past/useDeleteDecision';
 import { DeletableRow } from '../../ui/DeletableRow';
+import { localDayOf } from '../model/localDay';
 import { refundHint } from '../model/refundHint';
 import { answerHref } from '../nav/hrefs';
 import { V3NotFound } from '../nav/V3NotFound';
@@ -93,6 +94,7 @@ function DecisionRow({
 }): React.JSX.Element {
   const t = useT() as unknown as Translate;
   const f = useV3Format();
+  const { timeZone } = useRecordContext();
   const { colors, pairing } = useTheme();
   const del = useDeleteRow();
   const checkAgain = useCheckAgain();
@@ -101,7 +103,7 @@ function DecisionRow({
   const whole = live?.purchase?.whole;
   const price = whole === undefined ? null : f.money(Number(whole));
   const priceA11y = whole === undefined ? '' : f.moneyA11y(Number(whole));
-  const date = f.date(stamp(row).slice(0, 10));
+  const date = f.date(localDayOf(stamp(row), timeZone) ?? stamp(row).slice(0, 10));
   const bought = row.status === 'bought';
   const lines = bought
     ? [t(`${K}bought`, { date })]
