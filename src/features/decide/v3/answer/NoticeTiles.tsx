@@ -1,5 +1,7 @@
 /**
- * 05.3-25 (UI-SPEC Notices, D-46, D-48): one fill2 tile per notice the engine returned, in engine order, none added.
+ * 05.3-25 (UI-SPEC Notices, D-46, D-48): one fill2 tile per notice the engine returned, in engine order, none added,
+ * except that two or more lightly logged months share one tile at the first one's place (05.3-121, UAT gap 38, the
+ * UI-SPEC §Notices amendment; noticeTileItems), months in month order joined "A, B and C".
  * The catalogue key and plain params come from noticeCopy (singular forms, lean-month wording with the absolute amount).
  * Then months and dates are written out, money is formatted (never a float), and ids become names (COPY_RESOLVERS in
  * useV3Format.flat). A tile has no icon; its words are the whole message.
@@ -13,6 +15,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { noticeCopy } from '../model/copyPick';
+import { noticeTileItems } from '../model/noticeGroups';
 import { useV3Format } from '../shared/useV3Format';
 
 /** Which values of each notice are minor-unit money. Everything else passes through as written. */
@@ -49,7 +52,21 @@ export function NoticeTiles({ notices }: NoticeTilesProps): React.JSX.Element | 
   if (notices.length === 0) return null;
   return (
     <View style={styles.list}>
-      {notices.map((n, i) => {
+      {noticeTileItems(notices).map((item, i) => {
+        if (item.kind === 'underLogged') {
+          const names = item.months.map((m) => fmt.month(m));
+          let list = names[0] ?? '';
+          for (let j = 1; j < names.length; j++) {
+            list = t(j === names.length - 1 ? 'decide.v3.ui.answer.listLast' : 'decide.v3.ui.answer.listJoin', { list, item: names[j] ?? '' });
+          }
+          const sentence = t('decide.v3.ui.answer.underLoggedMonths', { months: list });
+          return (
+            <View key="under-logged" accessible accessibilityLabel={sentence} style={[styles.tile, { backgroundColor: colors.fill2 }]}>
+              <Text style={{ ...textRole(pairing, 'body'), fontSize: fontSize.s13_5, color: colors.ink }}>{sentence}</Text>
+            </View>
+          );
+        }
+        const n = item.notice;
         const picked = noticeCopy(n);
         const written: Record<string, string | number> = {};
         for (const [k, v] of Object.entries(picked.params)) {

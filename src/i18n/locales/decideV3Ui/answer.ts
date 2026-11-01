@@ -48,6 +48,12 @@ export const answer = {
   setAmount: 'Set an amount',
   notCoveredNoDate: 'Based on your records, when it could be covered isn’t known yet.',
   emergencyNoRebuild: 'Marked as an emergency.',
+  // 05.3-121 (UAT gap 38): two or more lightly logged months share one notice tile. Wording owner approved 2026-11-01
+  // (popup: "One line, months listed"). One such month keeps decide.v3.notice.month_looks_under_logged.
+  underLoggedMonths: '{{months}} look lightly logged, so their figures could be low.',
+  // Joining a list of names: "A, B and C". No Oxford comma, matching the house style.
+  listJoin: '{{list}}, {{item}}',
+  listLast: '{{list}} and {{item}}',
   copyNotSaved: {
     heading: 'This copy didn’t save',
     body: 'Nothing changed. The check it was copied from is as it was.',
