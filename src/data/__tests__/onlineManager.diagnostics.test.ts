@@ -40,6 +40,15 @@ describe('onlineManager diagnostics', () => {
     expect(spy).toHaveBeenCalledWith('[sync-diag]', expect.stringContaining('"source":"netinfo"'));
   });
 
+  it('05.3-116 logs a reachability blip as unreachable while still online', () => {
+    (global as { __DEV__?: boolean }).__DEV__ = true;
+    const listener = listenerFor(new QueryClient());
+    listener({ isConnected: true, isInternetReachable: false });
+    const line = spy.mock.calls.find((c) => c[0] === '[sync-diag]')?.[1] as string;
+    expect(JSON.parse(line)).toMatchObject({ source: 'netinfo', net: 'unreachable', online: true });
+    resetOnlineManagerForTests();
+  });
+
   it('logs nothing when __DEV__ is false', () => {
     (global as { __DEV__?: boolean }).__DEV__ = false;
     const listener = listenerFor(new QueryClient());

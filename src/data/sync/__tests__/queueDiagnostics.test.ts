@@ -34,20 +34,33 @@ describe('recordOnlineChange', () => {
   });
   afterEach(() => spy.mockRestore());
 
-  it('logs one line per change and nothing for repeats', () => {
-    recordOnlineChange('netinfo', { isConnected: true, isInternetReachable: false }, null);
-    recordOnlineChange('netinfo', { isConnected: false, isInternetReachable: false }, null);
+  it('logs one line per change of (net, online) and nothing for repeats', () => {
+    // 05.3-116: a reachability blip inside the grace is logged with online still true.
+    recordOnlineChange('netinfo', { isConnected: true, isInternetReachable: false }, true, null);
+    recordOnlineChange('netinfo', { isConnected: true, isInternetReachable: false }, true, null);
     expect(spy).toHaveBeenCalledTimes(1);
     const [tag, json] = spy.mock.calls[0] as [string, string];
     expect(tag).toBe(DIAG_TAG);
     expect(JSON.parse(json)).toEqual({
       source: 'netinfo',
-      online: false,
+      net: 'unreachable',
+      online: true,
       isConnected: true,
       isInternetReachable: false,
       head: null,
     });
-    recordOnlineChange('focus', { isConnected: true, isInternetReachable: true }, null);
+
+    // The grace ran out: same net class, the online value changed, so a new line.
+    recordOnlineChange('netinfo', { isConnected: true, isInternetReachable: false }, false, null);
     expect(spy).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(spy.mock.calls[1][1] as string)).toMatchObject({ net: 'unreachable', online: false });
+
+    recordOnlineChange('netinfo', { isConnected: false, isInternetReachable: false }, false, null);
+    expect(spy).toHaveBeenCalledTimes(3);
+    expect(JSON.parse(spy.mock.calls[2][1] as string)).toMatchObject({ net: 'offline', online: false });
+
+    recordOnlineChange('focus', { isConnected: true, isInternetReachable: true }, true, null);
+    expect(spy).toHaveBeenCalledTimes(4);
+    expect(JSON.parse(spy.mock.calls[3][1] as string)).toMatchObject({ source: 'focus', net: 'online', online: true });
   });
 });
