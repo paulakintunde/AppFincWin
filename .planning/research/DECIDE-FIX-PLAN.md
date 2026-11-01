@@ -20,7 +20,8 @@
 - **A household privacy gap must close before anyone can be invited.** Today the database lets any household member read every record in that household. That is harmless while every household has one person. The day a partner joins, they would see everything. Household's first job is to make every record **personal unless marked shared**, enforced by the database itself.
 - **Why Decide needed so many fixes, and how this plan stops it (Theme M, added 1 November).** The design kept changing after code was written (18 revisions of the screen spec, and an engine rewrite after the screens were built). The tests checked that the app matched the design prototype, not that its answers were right, so too-kind rules passed with every line tested. Four safeguards fix this: **freeze the design** after reading-test round 1; **write the right answers first** in a table you approve; **check the engine against a second, simple calculator** on thousands of random cases; and **test the tests** by breaking the engine on purpose and making sure a test fails each time.
 - **How long:** roughly **16 to 20 weeks of fix work**, spread across the build (Theme N moves the screen build into 08.1 and drops the rest of 05.3). About 7.5 to 9.5 weeks of it come before Grow starts (05.4 and 05.5). The rest is added to Grow and Household, plus a 3 to 4 week Decide rebuild and about 1 week of re-audit. These are on top of the work Grow and Household already need. Public launch also waits on Apple enrolment and Phases 9 to 11.
-- **What you must decide:** 13 questions (section 11). Question 2 is already settled, and question 13, about tax and running costs, was added on 1 November. The most important ones: approve the order, accept amber "dips into your safety net" answers, and agree the household privacy defaults. Five topics need a lawyer.
+- **Design: Variant C (chosen 1 November).** Reading-test round 1 checks it with about 5 people before the design freeze.
+- **What you must decide:** 13 questions (section 11). Questions 2 and 7 are already settled, and question 13, about tax and running costs, was added on 1 November. The most important ones: approve the order, accept amber "dips into your safety net" answers, and agree the household privacy defaults. Five topics need a lawyer.
 
 ---
 
@@ -60,7 +61,7 @@
 | **OTA update** | A small update sent straight to phones without a store release. |
 | **Reading test** | Sessions where people outside the team read Decide's answers and say what they mean. Planned as 5 people, then 5 more after fixes. |
 | **DPIA** | A written privacy risk check, required by GDPR for this kind of data. |
-| **Mockups** | Clickable phone designs used to compare two layouts before building. |
+| **Mockups** | Clickable phone designs used to test a layout with real people before building. |
 
 ---
 
@@ -1046,7 +1047,7 @@ Each auditor scores 10 only when every line holds and has evidence (a test, a do
 
 **Decision, 1 November 2026: Variant C is the Decide design.** Variants A and B below are retired and kept only as the record of what was compared. The blend at the end of this section is dropped. Reading-test round 1 runs on Variant C alone (about 5 people) to find what confuses people; its findings are fixed, then the screens are frozen (QA-01). Grow is not part of the Decide reading test.
 
-Both variants use only the §2 design tokens, the same test person (Sam) and the same three purchases, so you compare designs, not data. Both share the new rules: answer first, tone symbols, the confidence sentence, equal choice buttons, the footer, and "Fits, but dips into your safety net".
+Variants A and B used only the §2 design tokens, the same test person (Sam) and the same three purchases, so the two could be compared on design, not data. Both share the new rules: answer first, tone symbols, the confidence sentence, equal choice buttons, the footer, and "Fits, but dips into your safety net".
 
 **Sam's test purchases:** headphones $180 (Fits, October still leaves about $245); a laptop $3,500 (Fits, but uses $675 of a $2,300 safety net); a used car $9,000 (Not yet, about January 2028; a 36-month loan at 7.9% would cost $1,138 in interest).
 
@@ -1095,12 +1096,13 @@ Mockups: https://claude.ai/artifact/FnBAFpiS9QmdMM8xPjzaAf (open it, then press 
 **The idea:** a clear answer first, with graphs, and the purchase judged both as cash and as installments from one shared input. It is 40 screens plus a full prototype with shared state (boards C0 to C40 on the canvas above). It covers:
 - the full cost of a purchase (Theme L): what kind of purchase, price and tax, running costs, home costs and closing costs, and "What it really costs";
 - the answers: fits, fits but leaves little, dips into the safety net, not yet, and short each month;
-- your month after buying, every date of your cash, and the next 12 months as bars and a line;
+- your month after buying, your cash on every date, and the next 12 months as bars and a line;
+- pick a date and see the answer on that date, the answer on the Installments tab, how often a cost comes, your own running costs and kinds, and "Something changed?";
 - other ways to look at it: buy later, the cheaper one, installments, and cash and installments side by side;
 - what it replaces (an old car sold, rent and old bills), matched to Activity;
 - record as bought, saved plans, first-time setup, make it surer, the safety net settings, and save for it in Grow.
 
-The Grow and Household connection points (BO-07) follow its handoff screens: C18 (safety net), C20 and C31 (selling an old item closes its debt), C24 and C25 (loan and mortgage plans), and C36 and C40 (save for it in Grow).
+Its Grow handoff screens match the agreed connection points (BO-07): C18 (safety net), C20 and C31 (selling an old item and its loan), C24 and C25 (loan and mortgage plans), and C36 and C40 (save for it in Grow). No board shows the Household scope.
 
 ### The UX expert's suggested blend (dropped 1 November: Variant C chosen)
 
