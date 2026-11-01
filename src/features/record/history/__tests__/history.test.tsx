@@ -128,7 +128,7 @@ describe('UndoToastHost', () => {
     }
   );
 
-  it('auto-dismisses a plain ordinary toast at 3200 ms, an Undo toast and a destructive one at 6000 ms', async () => {
+  it('auto-dismisses a plain ordinary toast at 3200 ms, an Undo toast and a destructive one at 10000 ms (05.3-101)', async () => {
     jest.useFakeTimers();
     await renderThemed(<UndoToastHost />);
     await show({ kind: 'ordinary', text: { key: 'decide.flow.saveWaiting' } });
@@ -137,15 +137,15 @@ describe('UndoToastHost', () => {
     await advance(1);
     expect(getToast()).toBeNull();
 
-    // 05.2 F-12: Undo toasts 6 s
+    // 05.3-101 (UAT gap 25): Undo toasts 10 s (was 6 s, 05.2 F-12)
     await show({ kind: 'ordinary', text: { key: 'undo.label.added', params: { name: 'A' } }, stepId: 's1' });
-    await advance(5999);
+    await advance(9999);
     expect(getToast()).not.toBeNull();
     await advance(1);
     expect(getToast()).toBeNull();
 
     await show({ kind: 'destructive', text: { key: 'undo.label.deleted', params: { name: 'A' } }, stepId: 's2' });
-    await advance(5999);
+    await advance(9999);
     expect(getToast()).not.toBeNull();
     await advance(1);
     expect(getToast()).toBeNull();

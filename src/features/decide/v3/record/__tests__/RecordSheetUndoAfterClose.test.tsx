@@ -17,6 +17,7 @@ jest.mock('@/ui/Sheet', () => {
     Sheet: ({ children, onDismiss }: { children: React.ReactNode; onDismiss: () => void }) => (
       <V>
         <P onPress={onDismiss}>
+          {/* eslint-disable-next-line i18next/no-literal-string -- test stand-in for the sheet backdrop */}
           <T>backdrop</T>
         </P>
         {children}

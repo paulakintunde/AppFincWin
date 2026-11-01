@@ -83,8 +83,11 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
     setStepId(null);
     setReminder(null);
     setWritten(null);
-    undoneRef.current = false;
   }
+  // 05.3-101: a closed sheet forgets that its own Undo was pressed (in an effect: refs are not touched during render).
+  useEffect(() => {
+    if (!visible) undoneRef.current = false;
+  }, [visible]);
 
   const item = row.name.trim();
   const month = (boughtCtx?.today ?? rc.today).slice(0, 7);
