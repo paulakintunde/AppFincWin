@@ -26,6 +26,10 @@ Channels map 1:1 to the three build profiles, and each channel's branch name equ
 
 A build made with a given profile only ever receives updates published to the matching channel.
 
+## Release checklist
+
+- Before any App Store / Play production build: confirm the 05.4 Decide safety patch is merged, or set DECIDE_V3=false for that build. (Decide fix plan, phase 05.4 safety patch; the known issues it fixes are listed in `docs/ops/decide-tester-note.md`.)
+
 ## Publishing an update
 
 ```bash
