@@ -13,6 +13,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { hapticSelection } from '@/ui/haptics';
 import { Text } from '@/ui/Text';
 import { OwnOptionSheet, type OwnSaveOutcome } from '../check/OwnOptionSheet';
+import { EditOwnLink } from '../check/OwnOptionsListSheet';
 import { useLooseT } from '../check/useLooseT';
 import { useOwnOptions } from '../check/useOwnOptions';
 import { OWN_LIVE_MAX } from '../model/ownOptions';
@@ -110,6 +111,7 @@ export function PurposeBlock({ check, edit, readOnly = false }: PurposeBlockProp
           <Choice label={t('decide.v3.ui.ownOptions.addChip')} selected={false} width={width} disabled={false} role="button" onPress={addPress} />
         )}
       </View>
+      {readOnly ? null : <EditOwnLink mode="purpose" />}
       {limit ? (
         <Text accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>
           {t('decide.v3.ui.ownOptions.tooMany')}

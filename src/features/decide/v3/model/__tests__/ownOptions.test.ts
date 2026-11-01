@@ -10,6 +10,7 @@ import {
   parseOwnOptions,
   removeOwnOption,
   renameOwnOption,
+  setOwnItemTypeBase,
   type StoredOwnOptions,
 } from '../ownOptions';
 
@@ -157,6 +158,24 @@ describe('removeOwnOption', () => {
       })),
     };
     expect(removeOwnOption(types, 'itemType', 'nope', 'd').itemTypes.map((t) => t.id)).not.toContain('i3');
+  });
+});
+
+describe('setOwnItemTypeBase', () => {
+  it('changes the base and takes that preset questions, keeping the name', () => {
+    const s = must(addOwnItemType(EMPTY, { id: 'i1', name: 'Bike', base: 'general' })).next;
+    const out = must(setOwnItemTypeBase(s, 'i1', 'vehicle')).next;
+    expect(out.itemTypes[0]).toMatchObject({ name: 'Bike', base: 'vehicle', questionIds: PRESET_QUESTIONS.vehicle });
+    const two = must(addOwnItemType(s, { id: 'i2', name: 'Boat', base: 'general' })).next;
+    const only = must(setOwnItemTypeBase(two, 'i1', 'vehicle')).next;
+    expect(only.itemTypes[1]).toEqual(two.itemTypes[1]);
+  });
+
+  it('refuses an unknown or removed id', () => {
+    const s = must(addOwnItemType(EMPTY, { id: 'i1', name: 'Bike', base: 'general' })).next;
+    expect(setOwnItemTypeBase(s, 'nope', 'vehicle')).toEqual({ ok: false, reason: 'not_found' });
+    const gone = removeOwnOption(s, 'itemType', 'i1', '2026-10-05');
+    expect(setOwnItemTypeBase(gone, 'i1', 'vehicle')).toEqual({ ok: false, reason: 'not_found' });
   });
 });
 

@@ -23,23 +23,26 @@ export interface OwnOptionSheetProps {
   mode: 'itemType' | 'purpose';
   onCancel(): void;
   onSave(input: { name: string; base?: V3PresetItemType }): OwnSaveOutcome;
+  /** 05.3-84: prefill for Rename. Mount the sheet fresh for each option so the fields start from these values. */
+  initial?: { name: string; base?: V3PresetItemType };
+  title?: string;
 }
 
 const P = 'decide.v3.ui.ownOptions.';
 
-export function OwnOptionSheet({ visible, mode, onCancel, onSave }: OwnOptionSheetProps): React.JSX.Element {
+export function OwnOptionSheet({ visible, mode, onCancel, onSave, initial, title: titleOverride }: OwnOptionSheetProps): React.JSX.Element {
   const t = useLooseT();
   const { colors, pairing } = useTheme();
-  const [name, setName] = useState('');
-  const [base, setBase] = useState<V3PresetItemType>('general');
+  const [name, setName] = useState(initial?.name ?? '');
+  const [base, setBase] = useState<V3PresetItemType>(initial?.base ?? 'general');
   const [refusal, setRefusal] = useState<OwnSaveOutcome | null>(null);
   const item = mode === 'itemType';
   const trimmed = name.trim();
   const valid = trimmed.length >= 1 && trimmed.length <= OWN_NAME_MAX;
-  const title = t(item ? `${P}itemTitle` : `${P}purposeTitle`);
+  const title = titleOverride ?? t(item ? `${P}itemTitle` : `${P}purposeTitle`);
   const cancel = (): void => {
-    setName('');
-    setBase('general');
+    setName(initial?.name ?? '');
+    setBase(initial?.base ?? 'general');
     setRefusal(null);
     onCancel();
   };
@@ -47,8 +50,8 @@ export function OwnOptionSheet({ visible, mode, onCancel, onSave }: OwnOptionShe
     if (!valid) return;
     const r = onSave(item ? { name: trimmed, base } : { name: trimmed });
     if (r === 'ok') {
-      setName('');
-      setBase('general');
+      setName(initial?.name ?? '');
+      setBase(initial?.base ?? 'general');
       setRefusal(null);
     } else setRefusal(r);
   };

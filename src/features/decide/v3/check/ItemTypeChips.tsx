@@ -13,6 +13,7 @@ import { Text } from '@/ui/Text';
 import { itemTypeOptions, type CustomLabel } from '../model/checkOptions';
 import { OWN_LIVE_MAX } from '../model/ownOptions';
 import { OwnOptionSheet, type OwnSaveOutcome } from './OwnOptionSheet';
+import { EditOwnLink } from './OwnOptionsListSheet';
 import { useOwnOptions } from './useOwnOptions';
 
 export interface ItemTypeChipsProps {
@@ -72,6 +73,7 @@ export function ItemTypeChips({ selected, custom, onSelect, readOnly = false }: 
           />
         )}
       </View>
+      {readOnly ? null : <EditOwnLink mode="itemType" />}
       {limit ? (
         <Text accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>
           {t('decide.v3.ui.ownOptions.tooMany')}
