@@ -3,6 +3,7 @@
 // can tell a real network "offline" from a busy queue. No variables, names or amounts are read.
 import type { QueryClient } from '@tanstack/react-query';
 import { WRITE_SCOPE } from '../keys';
+import { netClass, type NetClass, type NetState } from './connectivity';
 
 export const DIAG_TAG = '[sync-diag]';
 
@@ -34,25 +35,26 @@ export function queueHead(qc: QueryClient, now: number = Date.now()): QueueHead 
   };
 }
 
-let lastOnline: boolean | null = null;
+let last: { net: NetClass; online: boolean } | null = null;
 
 /** Test seam. */
 export function resetQueueDiagnosticsForTests(): void {
-  lastOnline = null;
+  last = null;
 }
 
-export function recordOnlineChange(
-  source: OnlineSource,
-  state: { isConnected: boolean | null; isInternetReachable: boolean | null },
-  head: QueueHead | null,
-): void {
-  const online = state.isConnected !== false && state.isInternetReachable !== false;
-  if (online === lastOnline) return;
-  lastOnline = online;
+/**
+ * 05.3-116: `net` is the raw class of the report (so a reachability blip still shows in the log)
+ * and `online` is the value the online gate put in force. A line is written when either changes.
+ */
+export function recordOnlineChange(source: OnlineSource, state: NetState, online: boolean, head: QueueHead | null): void {
+  const net = netClass(state);
+  if (last && last.net === net && last.online === online) return;
+  last = { net, online };
   console.log(
     DIAG_TAG,
     JSON.stringify({
       source,
+      net,
       online,
       isConnected: state.isConnected,
       isInternetReachable: state.isInternetReachable,

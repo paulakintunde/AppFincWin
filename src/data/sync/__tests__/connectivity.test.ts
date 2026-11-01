@@ -113,7 +113,8 @@ describe('createOnlineGate', () => {
     const gate = createOnlineGate(setOnline, timers);
     gate.update(UNREACHABLE);
     expect(timers.set).toHaveBeenCalledWith(expect.any(Function), UNREACHABLE_GRACE_MS);
-    fns[0]();
+    expect(fns).toHaveLength(1);
+    fns[0]?.();
     expect(gate.isOnline()).toBe(false);
     expect(setOnline).toHaveBeenLastCalledWith(false);
   });
