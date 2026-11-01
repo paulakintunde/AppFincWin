@@ -83,7 +83,20 @@ function makeServer() {
       then: <T,>(f: (v: unknown) => T, r?: (e: unknown) => T) => Promise.resolve(ok(out)).then(f, r),
     };
   };
-  const client = { rpc, auth: { getSession: async () => ({ data: { session: { access_token: 't' } }, error: null }) } };
+  // 05.3-97: a Decide delete Undo reads the step's label and rows first.
+  const from = () => {
+    const q = {
+      select: () => q,
+      eq: () => q,
+      maybeSingle: async () => ({
+        data: { id: 'x', label_key: 'decisionDeleted', status: 'available', touched_ids: ['chk1'] },
+        error: null,
+        status: 200,
+      }),
+    };
+    return q;
+  };
+  const client = { rpc, from, auth: { getSession: async () => ({ data: { session: { access_token: 't' } }, error: null }) } };
   return { client, calls, versions };
 }
 

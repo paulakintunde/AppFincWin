@@ -10,7 +10,7 @@
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import type { UndoConflict, UndoLabelKey, UndoLabelParams } from '@/engine/undo';
-import { applyUndoStep, rollbackUndoTo, type RollbackOutcome, type UndoOutcome } from '@/db/undoLog';
+import { applyUndoStep, fetchUndoStepMeta, rollbackUndoTo, type RollbackOutcome, type UndoOutcome } from '@/db/undoLog';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import {
   classifySettledWriteError,
@@ -29,9 +29,17 @@ export interface UndoVars {
   householdId: string;
   labelKey: UndoLabelKey;
   labelParams: UndoLabelParams;
+  /**
+   * 05.3-97: the row the toast named. Optional so a paused undo persisted by an installed build still replays. When set, the
+   * step's label and touched rows are checked before it is applied; a step that is not the one shown is never applied.
+   */
+  expect?: { entityId: string };
 }
 
-export type RollbackVars = Omit<UndoVars, 'labelKey' | 'labelParams'>;
+/** 'mismatch': the step on the server is not the one the toast was shown for. Nothing was sent to apply_undo_step. */
+export type UndoRunOutcome = UndoOutcome | { status: 'mismatch' };
+
+export type RollbackVars = Omit<UndoVars, 'labelKey' | 'labelParams' | 'expect'>;
 
 /** An undo can touch transactions, accounts, categories, series and Decide rows: refresh every one. */
 function invalidateAfterUndo(qc: QueryClient, vars: { householdId: string; ownerId: string }): void {
@@ -75,17 +83,38 @@ async function recordRefusal(
   });
 }
 
+/** Decide check steps whose Undo is label-guarded even without `expect` (05.3-97). */
+const DECIDE_CHECK_LABELS: ReadonlySet<string> = new Set([
+  'planSaved',
+  'notBuyingSaved',
+  'decisionWritten',
+  'decisionDeleted',
+  'checkDeleted',
+  'checkCleared',
+]);
+
 export function registerUndoMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.undoStep, {
-    mutationFn: (vars: UndoVars): Promise<UndoOutcome> =>
-      guardSession(vars, async () => applyUndoStep(await writeClient(), vars.stepId)),
+    mutationFn: (vars: UndoVars): Promise<UndoRunOutcome> =>
+      guardSession(vars, async () => {
+        const client = await writeClient();
+        // 05.3-97: confirm the step is the one the toast was shown for before replaying it. An undo with no `expect` (a paused one
+        // persisted by an older build, or a toast that names no row) is guarded by label for the Decide check steps, where a
+        // wrong step edits a saved decision; every other undo is sent as before, with no extra read.
+        if (vars.expect === undefined && !DECIDE_CHECK_LABELS.has(vars.labelKey)) return applyUndoStep(client, vars.stepId);
+        const meta = await fetchUndoStepMeta(client, vars.stepId);
+        if (meta === null) return { status: 'not-found' } as const;
+        if (meta.labelKey !== vars.labelKey) return { status: 'mismatch' } as const;
+        if (vars.expect !== undefined && !meta.touchedIds.includes(vars.expect.entityId)) return { status: 'mismatch' } as const;
+        return applyUndoStep(client, vars.stepId);
+      }),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
     retryDelay: writeRetryDelay,
     onMutate: (vars: UndoVars) => {
       markSession(vars); // WR-A09
     },
-    onSuccess: async (outcome: UndoOutcome, vars: UndoVars) => {
+    onSuccess: async (outcome: UndoRunOutcome, vars: UndoVars) => {
       switch (outcome.status) {
         case 'undone':
         case 'already-undone':
@@ -104,7 +133,12 @@ export function registerUndoMutations(qc: QueryClient): void {
           invalidateAfterUndo(qc, vars);
           showToast({ kind: 'refusal', refusal: outcome.conflict });
           return;
+        case 'mismatch':
+          void qc.invalidateQueries({ queryKey: queryKeys.undoLog(vars.ownerId) });
+          showToast({ kind: 'info', text: { key: 'undo.wrongStep' } });
+          return;
         case 'not-found':
+          void qc.invalidateQueries({ queryKey: queryKeys.undoLog(vars.ownerId) });
           showToast({ kind: 'info', text: { key: 'undo.notRecorded' } });
           return;
       }
@@ -177,7 +211,7 @@ function definedParams(params: UndoLabelParams): Record<string, string | number>
 }
 
 export function useUndo(): { undo(vars: UndoVars): void } {
-  const mutation = useMutation<UndoOutcome, unknown, UndoVars>({
+  const mutation = useMutation<UndoRunOutcome, unknown, UndoVars>({
     mutationKey: mutationKeys.undoStep,
     scope: WRITE_SCOPE,
   });

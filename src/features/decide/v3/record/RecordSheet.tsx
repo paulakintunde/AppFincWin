@@ -164,6 +164,7 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
         householdId: row.household_id,
         labelKey: variant === 'plan' ? 'planSaved' : variant === 'pass' ? 'notBuyingSaved' : 'decisionWritten',
         labelParams: { name: item },
+        expect: { entityId: row.id },
       });
       // D-21: a reopened check holds no wait or cooling-off reminder; the reconcile would clear it later, this does it now.
       if (variant !== 'bought') void cancelCheckReminders(row.id).catch(() => undefined);

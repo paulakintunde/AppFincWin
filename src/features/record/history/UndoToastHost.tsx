@@ -88,6 +88,11 @@ function undoableLabel(toast: ToastState): { labelKey: UndoLabelKey; labelParams
   };
 }
 
+/** 05.3-97: a toast that names the row it changed has its step checked against that row before it is applied. */
+function expectOf(toast: ToastState): { expect: { entityId: string } } | Record<string, never> {
+  return toast.target ? { expect: { entityId: toast.target.id } } : {};
+}
+
 export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'sheet' }) {
   const t = useT();
   const toast = useToast();
@@ -196,6 +201,7 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
           householdId: ctx.householdId,
           labelKey: label.labelKey,
           labelParams: label.labelParams,
+          ...expectOf(toast),
         });
       }
       dismissToast(toast.id);
@@ -207,6 +213,7 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
       householdId: ctx.householdId,
       labelKey: label.labelKey,
       labelParams: label.labelParams,
+      ...expectOf(toast),
     });
     dismissToast(toast.id);
   };

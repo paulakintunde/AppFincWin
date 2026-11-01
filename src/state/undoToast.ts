@@ -35,6 +35,11 @@ export interface ToastState {
    */
   onUndo: (() => void) | null;
   refusal: UndoConflict | null;
+  /**
+   * 05.3-97: the row this toast's step changed. Undo checks the step touches it before applying (a wrong step refuses). In
+   * memory only. Null for toasts that do not name one: their Undo is unchanged.
+   */
+  target: { entity: string; id: string } | null;
   /** ms epoch when this toast became visible; hosts schedule the REMAINING time so moving between layers never restarts it (03 D-16, research Pitfall 9). */
   shownAt: number;
 }
@@ -84,6 +89,7 @@ export function showToast(t: {
   stepIds?: readonly string[] | null;
   onUndo?: (() => void) | null;
   refusal?: UndoConflict | null;
+  target?: { entity: string; id: string } | null;
 }): void {
   toast = {
     id: nextId++,
@@ -94,6 +100,7 @@ export function showToast(t: {
     stepIds: t.stepIds && t.stepIds.length > 0 ? Array.from(new Set(t.stepIds)) : null,
     onUndo: t.onUndo ?? null,
     refusal: t.refusal ?? null,
+    target: t.target ?? null,
     shownAt: Date.now(),
   };
   notify();

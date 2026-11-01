@@ -122,6 +122,7 @@ describe('RecordSheet bought', () => {
       householdId: 'h1',
       labelKey: 'decisionWritten',
       labelParams: { name: 'Sofa' },
+      expect: { entityId: 'c1' },
     });
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(mockToast).not.toHaveBeenCalled();
@@ -189,6 +190,7 @@ describe('RecordSheet plan and pass', () => {
       householdId: 'h1',
       labelKey: 'planSaved',
       labelParams: { name: 'Sofa' },
+      expect: { entityId: 'c1' },
     });
     expect(mockCancel).toHaveBeenCalledWith('c1');
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -203,6 +205,7 @@ describe('RecordSheet plan and pass', () => {
       householdId: 'h1',
       labelKey: 'notBuyingSaved',
       labelParams: { name: 'Sofa' },
+      expect: { entityId: 'c1' },
     });
     expect(mockCancel).toHaveBeenCalledWith('c1');
     expect(onClose).toHaveBeenCalledTimes(1);

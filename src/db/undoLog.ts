@@ -91,6 +91,28 @@ export async function undoStepExists(client: DbClient, stepId: string): Promise<
   return data !== null && data !== undefined;
 }
 
+/** 05.3-97: what a step is and which rows it touches, read before a toast's Undo applies it. Null when the step is not recorded. */
+export interface UndoStepMeta {
+  labelKey: string;
+  status: string;
+  touchedIds: string[];
+}
+
+export async function fetchUndoStepMeta(client: DbClient, stepId: string): Promise<UndoStepMeta | null> {
+  const { data, error, status } = await client
+    .from('undo_log')
+    .select('id, label_key, status, touched_ids')
+    .eq('id', stepId)
+    .maybeSingle();
+  if (error) throw toDbError(error, status);
+  if (data === null || data === undefined) return null;
+  const row = data as unknown as Record<string, unknown>;
+  const touched = row.touched_ids;
+  if (typeof row.label_key !== 'string' || typeof row.status !== 'string') throw badResponse('malformed undo step');
+  if (!Array.isArray(touched) || !touched.every((x) => typeof x === 'string')) throw badResponse('malformed touched_ids');
+  return { labelKey: row.label_key, status: row.status, touchedIds: touched as string[] };
+}
+
 /** D-26/D-28: replays one step's ops through `apply_patches` server-side and marks it undone/refused. */
 export async function applyUndoStep(client: DbClient, stepId: string): Promise<UndoOutcome> {
   const { data, error, status } = await client.rpc('apply_undo_step', { p_step_id: stepId });
