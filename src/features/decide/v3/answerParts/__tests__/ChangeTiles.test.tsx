@@ -12,6 +12,8 @@ jest.mock('@/features/decide/v3/shared/useV3Format', () => ({
   useV3Format: () => ({ date: () => '12 Oct' }),
 }));
 
+jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ timeZone: 'America/Vancouver' }) }));
+
 const wrap = (ui: React.ReactElement) =>
   render(
     <FontScaleProvider>

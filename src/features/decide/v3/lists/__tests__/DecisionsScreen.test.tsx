@@ -20,7 +20,7 @@ jest.mock('../useRowActions', () => ({
   useCheckAgain: () => mockAgain,
 }));
 jest.mock('@/data/queries/decide', () => ({ useDecideLinks: () => ({ data: [] }) }));
-jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u', householdId: 'h' }) }));
+jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u', householdId: 'h', timeZone: 'America/Vancouver' }) }));
 jest.mock('../../../ui/DeletableRow', () => ({
   DeletableRow: ({
     children,
@@ -94,6 +94,12 @@ describe('DecisionsScreen', () => {
     const labels = screen.getAllByRole('button').map((b) => String(b.props.accessibilityLabel));
     expect(labels[0]).toMatch(/^Boat/);
     expect(labels[1]).toMatch(/^Laptop/);
+  });
+
+  it('shows the decided day in the user zone, not the UTC day (UAT 23)', async () => {
+    mockState.rows = [checkRow({ id: 'b1', name: 'Laptop', status: 'bought', decided_at: '2026-11-01T03:00:00Z' })];
+    await wrap(<DecisionsScreen />);
+    expect(screen.getByText(/^Bought .+ 2026-10-31$/)).toBeTruthy();
   });
 
   it('a row opens its answer', async () => {
