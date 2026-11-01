@@ -196,6 +196,7 @@ Recent decisions affecting current work:
 | 261025-f46 | Decide "Coming soon" switch: DECIDE_OPEN=false hides today's Decide (tab shows "A better Decide is on its way"; New check, decide/* routes, rough/first-check onboarding and reminder taps off) until v3 | 2026-10-25 | fdb39ea | [261025-f46-decide-coming-soon-switch](./quick/261025-f46-decide-coming-soon-switch/) |
 | 261101-fmv | Decide fix plan Theme M: root causes of the fix volume and four owner-approved safeguards (design freeze, right-answer table, cross-check calculator, mutation testing) in 05.4, 08.1 and 08.2 | 2026-11-01 | 1129e791 | [261101-fmv-decide-fix-plan-safeguards](./quick/261101-fmv-decide-fix-plan-safeguards/) |
 | 261101-ir4 | Decide fix plan Theme N: build Decide once (05.3 stopped and parked, parts harvest and Variant C engine types in 05.4, six connection points in 05.5, Variant C screens built once in 08.1) | 2026-11-01 | 253737e3 | [261101-ir4-decide-build-once-path](./quick/261101-ir4-decide-build-once-path/) |
+| 261101-jh5 | Decide fix plan Theme O: Variant C audit fix IDs, version 1 scope (decision record in v1, home buying its own phase after 08.2, mockup round 4 before reading-test round 1) | 2026-11-01 | c2c828a0 | [261101-jh5-decide-variant-c-scope-and-audit-ids](./quick/261101-jh5-decide-variant-c-scope-and-audit-ids/) |
 
 ## Deferred Items
 

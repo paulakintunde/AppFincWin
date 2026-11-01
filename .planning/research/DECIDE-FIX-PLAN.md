@@ -4,7 +4,7 @@
 **Date:** 31 October 2026
 **From:** the fix-plan team (financial, engine, architecture, mobile app, UX and compliance experts), combined by the lead editor
 **Based on:** today's Decide audit (overall about 6/10, themes A to F, 21 must-fix items) and your seven settled decisions
-**Status:** approved by the owner on 1 November 2026. Phases 05.4, 05.5, 08.1 and 08.2 are in ROADMAP.md, and Phases 6, 7 and 8 carry its amendments. Theme M (four safeguards against repeat errors) was added and approved on 1 November 2026. Theme N (build Decide once: 05.3 stopped, Variant C built from scratch in 08.1 on fixed foundations) was approved on 1 November 2026 after a six-expert review.
+**Status:** approved by the owner on 1 November 2026. Phases 05.4, 05.5, 08.1 and 08.2 are in ROADMAP.md, and Phases 6, 7 and 8 carry its amendments. Theme M (four safeguards against repeat errors) was added and approved on 1 November 2026. Theme N (build Decide once: 05.3 stopped, Variant C built from scratch in 08.1 on fixed foundations) was approved on 1 November 2026 after a six-expert review. Theme O (the Variant C audit and the version 1 scope) was added on 1 November 2026.
 
 ---
 
@@ -12,6 +12,7 @@
 
 - **The goal is 10/10 from every auditor.** Six auditors scored Decide today: financial, engine, app, UI, UX and compliance. The plan adds a seventh, an integration auditor, who checks that Decide, Activity, Grow and Household share data without copying it. Each auditor has a checklist (section 7). Decide is switched on for the public only when every line is ticked, or you sign a waiver for a gap.
 - **Build Decide once (Theme N, added 1 November).** The Calm Ledger screens (05.3) stop and their branch is parked. Its engine fixes and shared plumbing come onto main in 05.4. The engine is fixed and proven with no screens. Six connection points, each owned by one feature, are written in 05.5. Grow and Household are built to them, designed for Variant C. Then the Variant C screens are built once, from scratch, in 08.1. Decide stays off for everyone, testers included, until then, and testers' real records are run through the engine quietly instead.
+- **What version 1 contains (Theme O, added 1 November).** Version 1 is the full Variant C Decide, built once in 08.1, including the decision record. Home buying is its own phase after 08.2. Reminders, search, bank sync and checking a price from outside the app are in v1.1. Before reading-test round 1, the mockups get a fourth round of fixes from the full audit: money mistakes, 14 missing states and copy that instructs.
 - **Build order in one line:** 05.3 stopped (branch parked) → **05.4 safety patch** → **05.5 one shared money model** → **Grow** → **Household** → **08.1 Decide rebuild** → **08.2 re-audit** → Insights → Tiers, System, Compliance.
 - **Why this order:** the "says Fits when it shouldn't" bugs get fixed and locked by automatic tests in the first few weeks. Every later phase is then checked against a correct engine. The bigger rebuild still waits for real goals, debts and household data, as you wanted.
 - **The safety net:** Decide keeps a safety net (emergency fund) out of spendable money by default. The starter size is about 1 month of your essential costs, worked out from your records. Later the app suggests 3 months. A purchase that dips into it gets its own amber answer: "Fits, but dips into your safety net." You can resize it or switch protection off at any time. Nothing is forced.
@@ -824,6 +825,114 @@ The Grow and Household cases are written now, and marked "to do" until their pha
 
 ---
 
+### Theme O: Variant C audit and the version 1 scope (added 1 November at your request)
+
+**The problem.** A full audit of Variant C ran on 1 November, in three parts: dependencies and connections, every sheet and screen, and fit with this plan and the research (https://claude.ai/artifact/XmYAfmyWX3CYxP7YYDhr6M).
+- It found that Variant C designs the full cost of a purchase well but is not ready to freeze:
+  - about 14 answers and screen states have no screen;
+  - several money mistakes in the mockup would become real bugs if copied;
+  - about a third of its roughly 35 figures have no source in the app today.
+- It also showed that "version 1" had never been written down as one list.
+
+**Your decisions (1 November):**
+- **Mockup round 4, all of it, before reading-test round 1:**
+  - fix the money mistakes;
+  - add the 14 missing states;
+  - rewrite the copy so it states facts and never instructs;
+  - apply the two settled rules: "Fits, leaves little" becomes "Fits, but tight", and answers carry no filled button.
+- **Home buying gets its own phase after 08.2** (question 13 answered). Its screens stay in the mockup, marked hidden. If that phase finishes before the release phases (9 to 11), it can still ship at launch.
+- **The decision record and "did it cost what you expected?" go back into version 1** (UX-20 moves to 08.1). The research calls it the moat: what competitors do not have. The database already stores what it needs (05.2).
+
+**Why the pieces are not all built at once.** The Variant C screens *are* built at once, in one phase (08.1). Work only waits for one of three reasons:
+1. **The data must exist first.** Decide reads goals, debts and household money. Building Decide before Grow and Household is what made it guess, and the guesses leaned generous.
+2. **Each layer is proven before the next builds on it.** The engine (05.4) and the connection points (05.5) come first. Otherwise every mistake in them spreads into Grow, Household and Decide at the same time: the fix loop.
+3. **One audit at a time stays small enough to pass.** Home buying adds mortgage maths, about 7 screens and extra compliance wording. Inside 08.1, one problem there would hold up all of Decide.
+
+When everything changes together, nobody can tell which change broke what. That is how phase 05 ended with 145 plans and 199 fixes.
+
+**What goes where:**
+
+| Stage | What is in it |
+|---|---|
+| **Reading-test round 1** (5 + 5 people, on the mockups after round 4) | A, B and C compared on the core tasks: read the answer, see what breaks, the "$0 left" task, "talk the app into a yes", cash versus installments, what it replaces, and save for it |
+| **Version 1** (built once in 08.1, switched on after 08.2) | <ul><li>Item types: car, phone, pet, tech and your own</li><li>Price, tax and fees; cash and installments</li><li>Running costs</li><li>What it replaces, and selling the old one</li><li>All five answers and their variants (tight, dips into the safety net, only by borrowing, on your answer, uses the overdraft)</li><li>Make it surer; the safety net</li><li>Real cost, month after, timeline and the 12-month chart</li><li>Buy later, cheaper, pay over time; compare; pick a date</li><li>Save for it (a Grow goal); record as bought (Activity bills)</li><li>Saved checks and plans, with the decision record and its follow-up</li><li>Offline and error cards</li><li>First answer from quick estimates</li><li>Region, tax and currency settings</li><li>Household view, with partner opt-in</li></ul> |
+| **Home-buying phase** (after 08.2) | Mortgage, closing costs, home running costs, rent that stops, and selling your current home (FIN-30) |
+| **v1.1** (the first update after launch) | Reminders for "ready by" and "bill stops"; links from notifications and goals back to a check; search and filters; checking a price from outside the app (APP-23); bank sync; the accent picker; the "0% if paid in full" plan type if it is not drawn in time (FIN-12) |
+
+**The agreed fixes (from the audit, Audit 3 section 5 and Audit 1 section 4):**
+- **VC-01: Mockup round 4.**
+  - **Money:** the Record-as-bought double count of the sale and loan payoff; Sam's car loan and insurance added to his month; one "spare money" figure everywhere; tax on installments matching the engine.
+  - **Copy:** the next-step orders become plain facts; "suggestion" is removed; the last line of C17 is fixed; C10 sentences carry at most 3 numbers; every untyped rate is labelled "example"; the "not a lender" line appears on the price step and the loan sheet; "Pay in 4" is renamed.
+  - **New screens for the missing states:**
+    - first answer from quick estimates;
+    - "Fits on your answer", with the question asked during the check;
+    - overdraft use;
+    - "Fits only by borrowing", with saving beside it;
+    - the expensive-debt fact;
+    - yearly bills held back;
+    - the pay-gap notice;
+    - a crossed line;
+    - protection off;
+    - the smaller safety-net offer;
+    - the free-help pointer;
+    - offline, error and not-ready cards;
+    - the first-payment date and fees on the plan sheet;
+    - the couples note;
+    - saved checks and plans with open, edit and delete;
+    - the decision record and its follow-up.
+  - **Rules:** "leaves little" becomes "tight"; no filled buttons on answers.
+  - *Now, before round 1. M.*
+- **VC-02: The mockup's maths is not the rule.** The freeze record (QA-01) states that the right-answer table decides, in particular:
+  - spare money *and* the 90-day path must stay above the safety net;
+  - nothing is clamped at $0;
+  - running costs start on their own dates.
+  - *05.4. S.*
+- **CMP-F25 (new): Next-step and offer copy states facts.** No instruction to move money, and "suggestion" is on the banned list. *05.4. S.*
+- **ARC-23 (new): "Costs that stop" end the real Activity record.**
+  - A bill ends through Activity's Stopped status, with one source and no second copy.
+  - A cost that is part of everyday spending (for example a bus pass) lowers usual spending instead.
+  - *05.5. S.*
+- **ARC-24 (new): Record as bought writes the right kind of row.**
+  - Fixed running costs (insurance, registration) become Activity bills, each with a paying account and a category.
+  - Costs that vary (fuel, maintenance, utilities) become expected spending, never invented transactions.
+  - The sale and the loan payoff are written once.
+  - A matching "Save for it" goal is closed in the same save.
+  - *05.5 contract, 08.1 screen. M.*
+- **ARC-25 (new): Region defaults have one owner.** The tax rate, VAT-included and currency come from the region setting, with the user's own choice first.
+  - Example loan and mortgage rates are labelled examples and never stored as the user's rate. This keeps the existing "no default rate" rule (05.1 D-07).
+  - *05.4 engine default, 08.1 settings screen. S.*
+- **ARC-26 (new, docs): Requirements updated for Variant C.**
+  - Pre-filled amounts (DCU-20, DEC-30).
+  - Setup is 4 steps (DSU-04).
+  - Retired check requirements: DCU-34, 35, 39 and 40.
+  - The decision record is in version 1 (DCU-07).
+  - One line in PROJECT.md: purchase tax *estimates* are in scope; tax *calculation* stays out.
+  - *05.5. S.*
+- **APP-30 (new): Selling the old one closes its Grow debt in the same save.**
+  - The server's purchase save gains a way to close an existing debt. Today it can only add one.
+  - *Grow (6), used in 08.1. M.*
+- **UX-42 (new): What it replaces, and selling the old one** (the screens). *08.1. M.*
+- **UX-43 (new): The 12-month chart**, with one kind of figure per chart. *08.1. S.*
+- **Changed:**
+  - **QA-01:** the frozen set includes the round 4 screens and the VC-02 note.
+  - **QA-02:** more cases: a stopped cost never counted; sale money arriving a month later; an old loan paid by the sale; a card at exactly 20% APR; a running cost starting 3 months later; a quick-estimates user.
+  - **FIN-07 and UX-03:** "Fits, leaves little" is retired as its own answer.
+  - **CMP-F24:** the example-rate label shows on every screen with an untyped rate.
+  - **UX-10:** confirmed against Variant C.
+  - **UX-13 and ENG-29:** the first-payment date is always asked (05.1 D-04); every-3-months and yearly costs are added.
+  - **ARC-08:** contracts for a goal for a purchase (up-front-only target) and for sale-closes-debt.
+  - **ARC-11:** "what each account is for" and regular saving are placed now that setup is 4 steps.
+  - **FIN-10 and CMP-F16:** the debt-fact screen reads balance and rate from Grow.
+  - **FIN-20:** becomes a user-typed set-aside, because the project excludes tax calculation.
+  - **APP-22, UX-21 and CMP-F19:** the household-scope control and partner opt-in are drawn in Variant C style.
+  - **FIN-05 and CMP-F15:** the save-versus-borrow line sits on the answer itself.
+  - **APP-13:** robot flows for replaces, sell-old, goal, and record-as-bought with ends and closes.
+  - **UX-26 round 2:** tasks for "what it replaces" and the "Fits, but tight" reading.
+  - **UX-20:** moved from Release or v1.1 into 08.1.
+  - **FIN-30:** moves to its own home-buying phase after 08.2.
+
+---
+
 ## 7. What 10/10 looks like for each auditor
 
 Each auditor scores 10 only when every line holds and has evidence (a test, a document or a device check). One miss means a gap plan in 08.1 and a re-run for that auditor.
@@ -1064,7 +1173,7 @@ We merged about 45 questions from the six experts into these 12, most important 
 11. **Do you want an invite-only, cash-only closed beta after the safety patch?** **We recommend: yes, but only for named testers, behind a server switch, with loans and payment plans off.** It gives real speed, crash and reading data months before launch without showing anyone outside the allow-list a Decide answer.
 12. **[LAWYER] Which launch countries, which lawyer, and do you accept the store name "FincWin: Can I Afford It?" with the subtitle "Check a price against your own months"?** **We recommend: name the countries now, engage a UK fintech-aware solicitor plus a short US opinion, and keep the name with that subtitle.** The country list sets the free-help lines; five topics need a lawyer (Apple 3.2.1(viii), US "financial advisory services", the UK debt-counselling line for debt facts and payoff plans, the DPIA, and whether the name over-promises).
 
-13. **Full cost of a purchase (added 1 November): should tax go into the 05.4 safety patch, and should the home-buying check be part of v1?** **We recommend: tax in 05.4; running-cost templates for car, phone, pet and tech in 08.1; and the home-buying check as its own phase after 08.2.** Tax is a small fix that stops "Fits" being too generous. The home check needs mortgage maths, many cost lines and extra compliance wording, so it deserves its own phase and its own review.
+13. **Answered 1 November: home buying is its own phase after 08.2 (Theme O).** Full cost of a purchase (added 1 November): should tax go into the 05.4 safety patch, and should the home-buying check be part of v1? **We recommend: tax in 05.4; running-cost templates for car, phone, pet and tech in 08.1; and the home-buying check as its own phase after 08.2.** Tax is a small fix that stops "Fits" being too generous. The home check needs mortgage maths, many cost lines and extra compliance wording, so it deserves its own phase and its own review.
 
 **Smaller points we will assume "yes" to unless you say otherwise:** "safety net" is the only on-screen name; "spare money" replaces "unspent money"; Home and Decide keep two clearly named "left" figures; the Activity cap wins when merging caps; the safety net and confidence sentence are never paid features; the "protect" switch also shows on the Grow goal card; a staged switch-on at launch (10%, 50%, 100%); the app stays iPhone-only for v1.
 
@@ -1096,7 +1205,7 @@ We merged about 45 questions from the six experts into these 12, most important 
 
 Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 architecture (ARC), 28 app (APP), 40 UX and 23 compliance (CMP-F), 167 in all. Each is listed once, under the phase where its main part lands. A later part is shown in brackets.
 
-**Theme key:** A = "Fits" too generous; B = broken buttons; C = speed and offline; D = setup and first answer; E = clarity, colours and words; F = rules, privacy and stores; G = safety net; H = confidence sentence; I = household privacy; J = testing and monitoring; K = one shared money model; L = the full cost of a purchase; M = getting it right first time; N = build Decide once.
+**Theme key:** A = "Fits" too generous; B = broken buttons; C = speed and offline; D = setup and first answer; E = clarity, colours and words; F = rules, privacy and stores; G = safety net; H = confidence sentence; I = household privacy; J = testing and monitoring; K = one shared money model; L = the full cost of a purchase; M = getting it right first time; N = build Decide once; O = Variant C audit and version 1 scope.
 
 **Size key:** S = a day or less; M = 2 to 4 days; L = 1 to 2 weeks.
 
@@ -1111,6 +1220,13 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 
 | ID | Short title | Theme | Phase | Size | Depends on |
 |---|---|---|---|---|---|
+| FIN-27 | Tax and fees on every check | L | 05.4 | M | none |
+| ENG-29 | Full-cost input; running costs on cash path | L | 05.4 / 08.1 | M | FIN-27 |
+| CMP-F24 | Estimate and not-tax-advice wording | L | with each | S | none |
+| VC-01 | Mockup round 4 before reading-test round 1 | O | now | M | the seven round-3 fixes |
+| VC-02 | Freeze record: mockup maths is not the rule | O | 05.4 | S | QA-01, QA-02 |
+| CMP-F25 | Next-step and offer copy states facts | O | 05.4 | S | none |
+| ARC-25 | Region defaults have one owner; example rates never stored | O | 05.4 (+08.1) | S | FIN-27 |
 | FIN-01 | Safety net held back by default | G | 05.4 | M | 05.3 |
 | FIN-02 | Cash path stays above safety net | G | 05.4 | S | FIN-01 |
 | FIN-03 | Overdrafts never rounded up to zero | A | 05.4 | M | none |
@@ -1214,6 +1330,9 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 
 | ID | Short title | Theme | Phase | Size | Depends on |
 |---|---|---|---|---|---|
+| ARC-23 | Costs that stop end the real Activity record | O | 05.5 | S | BO-07 |
+| ARC-24 | Record as bought writes the right kind of row | O | 05.5 (+08.1) | M | BO-07, APP-29 |
+| ARC-26 | Requirements updated for Variant C | O | 05.5 | S | your approval |
 | BO-07 | Six connection points, one owner each | N | 05.5 (+6, +8) | L | 05.4 |
 | ARC-03 | Builder from records; delete old engine | K | 05.5 | L | ARC-01, 05.4 |
 | ARC-04 | Move month model out of Decide | K | 05.5 | M | ARC-03 |
@@ -1243,6 +1362,7 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 
 | ID | Short title | Theme | Phase | Size | Depends on |
 |---|---|---|---|---|---|
+| APP-30 | Selling the old one closes its Grow debt in one save | O | 6 (+08.1) | M | BO-07 |
 | ARC-13 | Safety net becomes one flagged goal | G | 6 | M | ARC-07, ARC-08 |
 | ARC-14 | Grow owns debts; Decide reads them | A | 6 | M | ENG-01 due day, ARC-08 |
 | ARC-15 | Contribution is a linked saving series | K | 6 | S | Grow |
@@ -1284,6 +1404,13 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 
 | ID | Short title | Theme | Phase | Size | Depends on |
 |---|---|---|---|---|---|
+| FIN-28 | Running-cost templates by item type | L | 08.1 | M | ENG-29 |
+| FIN-29 | Short-each-month and tight answers | L | 08.1 | S | FIN-28 |
+| FIN-31 | What it really costs view | L | 08.1 | S | FIN-28 |
+| APP-29 | Bought adds running costs as bills | L | 08.1 | S | FIN-28 |
+| UX-41 | Item type, tax and cost screens | L | 08.1 | M | FIN-28 |
+| UX-42 | What it replaces and selling the old one (screens) | O | 08.1 | M | ARC-23, APP-30 |
+| UX-43 | 12-month chart, one kind of figure per chart | O | 08.1 | S | ENG-29 |
 | BO-09 | Variant C screens built once, behind the per-account switch | N | 08.1 (+08.2) | L | Phase 8, BO-07 |
 | FIN-12 | "0% if paid in full" back-charge costed | A | 08.1 | S | none |
 | FIN-20 | Tax set-aside for self-employed income | A | 08.1 | M | none |
@@ -1312,26 +1439,23 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 | ID | Short title | Theme | Phase | Size | Depends on |
 |---|---|---|---|---|---|
 | ENG-27 | Measured speed budget on real phones | C | 11 | S | ENG-12, ENG-13, iOS build |
-| UX-20 | Bring back pause and cost follow-up | E | 11 or v1.1 | M | none |
+| UX-20 | Bring back pause and cost follow-up (decision record, version 1) | E | 08.1 | M | none |
 | UX-35 | Record known limits; archive old screens | F | 11 | S | 05.3 follow-up |
 | UX-39 | Quiet free-help pointer (copy) | F | 11 | S | CMP-F04 |
 | UX-40 | Measure after launch, no amounts | J | 11 | S | CMP-F03 |
 | CMP-F05 | Apple 3.2.1(viii) position, lawyer-checked | F | 11 (draft now) | S + lawyer | organisation enrolment |
 | CMP-F22 | Store listing, review notes, IAP hygiene | F | 11 | M | Phases 9 to 11 |
 
+### Home-buying phase (after 08.2)
+
+| ID | Short title | Theme | Phase | Size | Depends on |
+|---|---|---|---|---|---|
+| FIN-30 | Home-buying check | L | home-buying phase, after 08.2 | L | 08.2 |
+
 ### After launch (v1.1)
 
 | ID | Short title | Theme | Phase | Size | Depends on |
 |---|---|---|---|---|---|
 | APP-23 | Check a price from outside the app | D | v1.1 | L | launch |
-| FIN-27 | Tax and fees on every check | L | 05.4 | M | none |
-| ENG-29 | Full-cost input; running costs on cash path | L | 05.4 / 08.1 | M | FIN-27 |
-| FIN-28 | Running-cost templates by item type | L | 08.1 | M | ENG-29 |
-| FIN-29 | Short-each-month and tight answers | L | 08.1 | S | FIN-28 |
-| FIN-31 | What it really costs view | L | 08.1 | S | FIN-28 |
-| APP-29 | Bought adds running costs as bills | L | 08.1 | S | FIN-28 |
-| UX-41 | Item type, tax and cost screens | L | 08.1 | M | FIN-28 |
-| CMP-F24 | Estimate and not-tax-advice wording | L | with each | S | none |
-| FIN-30 | Home-buying check | L | after 08.2 | L | owner Q13 |
 
 *This plan is a planning and technical document, not legal advice. Items marked [LAWYER] need a qualified lawyer before submission.*
