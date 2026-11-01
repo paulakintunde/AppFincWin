@@ -4,6 +4,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { TabBar } from '../TabBar';
 import { markBackStep } from '../tabSlide';
+import type { TabId } from '../tabs';
 import { renderWithShellProviders } from '@/shell/__tests__/testUtils';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import { colors } from '@/theme/tokens';
@@ -108,18 +109,21 @@ describe('TabBar', () => {
     }
   });
 
-  it('registers a back-step switcher and clears it on unmount', async () => {
+  it('registers a back-step switcher and releases it on unmount', async () => {
     const { props, navigation } = makeProps(['home', 'activity'], 1);
-    const registerTabSwitcher = jest.fn();
+    const release = jest.fn();
+    const registerTabSwitcher = jest.fn((_fn: (tab: TabId) => void) => release);
     const r = await renderWithShellProviders(<TabBar {...props} />, {
       backHistory: { registerTabSwitcher },
     });
-    const fn = registerTabSwitcher.mock.calls[0][0];
+    const fn = registerTabSwitcher.mock.calls[0]![0];
     fn('home');
     expect(markBackStep).toHaveBeenCalledTimes(1);
     expect(navigation.navigate).toHaveBeenCalledWith({ name: 'home', merge: true });
+    expect(release).not.toHaveBeenCalled();
     await r.unmount();
-    expect(registerTabSwitcher).toHaveBeenLastCalledWith(null);
+    expect(release).toHaveBeenCalledTimes(1);
+    expect(registerTabSwitcher).toHaveBeenCalledTimes(1);
   });
 
   it('reports its height and pads the bottom by the inset', async () => {

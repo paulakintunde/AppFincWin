@@ -26,7 +26,7 @@ export function mockBackHistory(
     current: { area: 'tab', tab: 'home', href: '/home' },
     canGoBack: false,
     goBack: jest.fn(() => true),
-    registerTabSwitcher: jest.fn(),
+    registerTabSwitcher: jest.fn(() => () => undefined),
     ...overrides,
   };
 }
