@@ -637,8 +637,7 @@ describe('useReopenCheck', () => {
         status: 'waiting',
         furthest_step: 4,
         inputs: { kind: 'buy', outcome: 'wait', wait: { monthlyAmount: 25000 }, why: 'x' },
-      }),
-      '2026-10-10'
+      })
     );
     expect(id).toBe('id-1');
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'insert')).toBe(true));
@@ -657,7 +656,7 @@ describe('useReopenCheck', () => {
     fake.respondWith({ data: null, error: null, status: 200 }); // the tried id never landed
     fake.respondWith(ok(check('live-1', { reopened_from: 'k1' })));
     const { result } = await renderHook(() => useReopenCheck(), { wrapper: wrapper(qc) });
-    const tried = result.current.reopen(check('k1', { status: 'passed' }), '2026-10-10');
+    const tried = result.current.reopen(check('k1', { status: 'passed' }));
     const redirect = await renderHook(() => useReopenRedirect(tried), { wrapper: wrapper(qc) });
     await waitFor(() => expect(redirect.result.current).toBe('live-1'));
     const ids = (qc.getQueryData<DecideCheckRow[]>(KEY) ?? []).map((r) => r.id);

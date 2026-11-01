@@ -14,6 +14,7 @@ export type FailedReasonKey =
   | 'sync.failedSheet.reason.missingReference'
   | 'sync.failedSheet.reason.notAllowedValue'
   | 'sync.failedSheet.reason.unknownField'
+  | 'sync.failedSheet.reason.copyNotSaved'
   | 'sync.failedSheet.reason.generic';
 
 const ENTITIES: ReadonlySet<string> = new Set<WriteEntity>([
@@ -58,7 +59,11 @@ export function failedWriteName(attempted: Record<string, unknown>): string | nu
   return null;
 }
 
-export function failedReasonKey(entry: Pick<FailedWrite, 'kind' | 'code'>): FailedReasonKey {
+export function failedReasonKey(entry: Pick<FailedWrite, 'kind' | 'code'> & Partial<Pick<FailedWrite, 'entity' | 'attempted'>>
+): FailedReasonKey {
+  if (entry.entity === 'decide_checks' && typeof entry.attempted?.reopenedFrom === 'string') {
+    return 'sync.failedSheet.reason.copyNotSaved';
+  }
   if (entry.kind === 'conflict') return 'sync.failedSheet.reason.conflict';
   if (entry.kind === 'not-found') return 'sync.failedSheet.reason.notFound';
   switch (entry.code) {
