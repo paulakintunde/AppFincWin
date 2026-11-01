@@ -52,6 +52,7 @@ import { planModel } from '../model/planModel';
 import { refundHint } from '../model/refundHint';
 import { waiverNote, waiverRows, type WaiverText } from '../model/waiverNote';
 import { DECIDE_TAB_HREF, answerHref, purchaseHref } from '../nav/hrefs';
+import { useBackToDecide } from '../nav/useBackToDecide';
 import { useReopenOutcome } from '../nav/useReopenOutcome';
 import { V3CopyNotSaved } from '../nav/V3CopyNotSaved';
 import { V3NotFound } from '../nav/V3NotFound';
@@ -178,6 +179,8 @@ function AnswerBody({ id, row, evaluation, withoutRefunds, inputs, busy }: BodyP
 
   const [confOpen, setConfOpen] = useState(false);
   const [sheet, setSheet] = useState<{ variant: RecordVariant; open: boolean; status: DecideCheckRow['status'] } | null>(null);
+  // 05.3-110: one Back from the answer reaches Decide home; an open sheet keeps Back for itself.
+  useBackToDecide(!(sheet?.open ?? false) && !confOpen);
   const openSheet = (variant: RecordVariant): void => setSheet({ variant, open: true, status: row.status });
   const closeSheet = (): void => {
     const wrote = sheet !== null && row.status !== sheet.status;
