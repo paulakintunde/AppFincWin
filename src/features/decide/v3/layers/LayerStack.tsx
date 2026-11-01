@@ -12,6 +12,8 @@ import { minorUnits } from '@/engine/money';
 import { RiseIn } from '@/features/decide/ui/RiseIn';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { space } from '@/theme/layout';
+import { useOwnOptions } from '../check/useOwnOptions';
+import { itemBaseOf } from '../model/itemBase';
 import { layerVisibility } from '../model/layerVisibility';
 import type { PrefillSeries } from '../model/costPrefill';
 import { ItemCostsCard, costsPresetOf } from './ItemCostsCard';
@@ -36,6 +38,9 @@ export function LayerStack({ check, evaluation, edit, checkId, readOnly = false 
   const rc = useRecordContext();
   const seriesRows = useRecurringSeries(rc.householdId ?? undefined).data;
   const categories = useCategoryLookup(rc.userId ?? undefined);
+  const own = useOwnOptions();
+  // 05.3-113 (UAT gap 32): an own kind brings the cards of the preset it counts like, as the engine judges it.
+  const itemBase = useMemo(() => itemBaseOf(check.itemType, own.itemRows), [check.itemType, own.itemRows]);
 
   const prefillSeries = useMemo<readonly PrefillSeries[]>(() => {
     if (seriesRows === undefined) return NO_SERIES;
@@ -68,17 +73,17 @@ export function LayerStack({ check, evaluation, edit, checkId, readOnly = false 
       ) : null}
       {vis.plan && check.pay.mode === 'plan' ? (
         <RiseIn key="plan">
-          <PaymentPlanCard check={check} evaluation={evaluation} edit={edit} checkId={checkId} currency={rc.homeCurrency} readOnly={readOnly} />
+          <PaymentPlanCard check={check} evaluation={evaluation} edit={edit} checkId={checkId} currency={rc.homeCurrency} readOnly={readOnly} itemBase={itemBase} />
         </RiseIn>
       ) : null}
-      {vis.costs && costsPresetOf(check) !== null ? (
+      {vis.costs && costsPresetOf(check, itemBase) !== null ? (
         <RiseIn key="costs">
-          <ItemCostsCard check={check} edit={edit} currency={rc.homeCurrency} prefillSeries={prefillSeries} readOnly={readOnly} />
+          <ItemCostsCard check={check} edit={edit} currency={rc.homeCurrency} prefillSeries={prefillSeries} readOnly={readOnly} itemBase={itemBase} />
         </RiseIn>
       ) : null}
       {vis.major ? (
         <RiseIn key="major">
-          <MajorAssetCard check={check} edit={edit} currency={rc.homeCurrency} readOnly={readOnly} />
+          <MajorAssetCard check={check} edit={edit} currency={rc.homeCurrency} readOnly={readOnly} itemBase={itemBase} />
         </RiseIn>
       ) : null}
       {vis.veryLarge ? (

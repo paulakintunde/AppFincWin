@@ -20,6 +20,7 @@ import { useLooseT } from '../check/useLooseT';
 import { withExtra, withLayerAnswer, withTaxPercent } from '../model/checkEdits';
 import { costFields, type CostField } from '../model/costFields';
 import { costPrefill, type PrefillSeries } from '../model/costPrefill';
+import { itemBaseOf } from '../model/itemBase';
 import { percentToText, textToPercent } from '../model/percentText';
 import { useV3Format } from '../shared/useV3Format';
 import { LayerCard } from './LayerCard';
@@ -31,18 +32,19 @@ export interface ItemCostsCardProps {
   /** Saved regular payments the records hold (names and exact category keys); empty when there are none. */
   prefillSeries: readonly PrefillSeries[];
   readOnly?: boolean;
+  /** 05.3-113: the preset the kind counts like (LayerStack resolves own kinds); absent = a preset itself, an own kind is General. */
+  itemBase?: V3PresetItemType;
 }
 
 const MAX_RATE = '100';
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const ANSWER_PREFIX = 'L4.';
+const NO_ROWS = [] as const;
 
-/** The preset item type of a check that has an item-cost card, or null (custom types and types with no questions). */
-export function costsPresetOf(check: CheckV2): V3PresetItemType | null {
-  if (check.itemType.kind !== 'preset') return null;
-  const v = check.itemType.value;
-  const asks = PRESET_QUESTIONS[v].some((id) => id === 'sales_tax') || costFields(v).length > 0;
-  return asks ? v : null;
+/** The preset whose questions the item-cost card asks (an own kind asks those of the kind it counts like), or null when it has none. */
+export function costsPresetOf(check: CheckV2, base: V3PresetItemType = itemBaseOf(check.itemType, NO_ROWS)): V3PresetItemType | null {
+  const asks = PRESET_QUESTIONS[base].some((id) => id === 'sales_tax') || costFields(base).length > 0;
+  return asks ? base : null;
 }
 
 function DateField({ id, caption, stored, onValid, readOnly }: { id: string; caption: string; stored: string | null; onValid(v: string | undefined): void; readOnly: boolean }): React.JSX.Element {
@@ -72,13 +74,13 @@ function DateField({ id, caption, stored, onValid, readOnly }: { id: string; cap
   );
 }
 
-export function ItemCostsCard({ check, edit, currency, prefillSeries, readOnly = false }: ItemCostsCardProps): React.JSX.Element | null {
+export function ItemCostsCard({ check, edit, currency, prefillSeries, readOnly = false, itemBase }: ItemCostsCardProps): React.JSX.Element | null {
   const t = useLooseT();
   const { colors, pairing } = useTheme();
   const stacked = useShouldStack();
   const fmt = useV3Format();
   const [taxText, setTaxText] = useState(() => percentToText(check.taxPercent));
-  const itemType = costsPresetOf(check);
+  const itemType = costsPresetOf(check, itemBase);
   if (itemType === null) return null;
 
   const asksTax = PRESET_QUESTIONS[itemType].some((id) => id === 'sales_tax');

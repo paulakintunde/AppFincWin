@@ -21,6 +21,7 @@ import { Chip } from '@/ui/Chip';
 import { Text } from '@/ui/Text';
 import { useLooseT } from '../check/useLooseT';
 import { withDeposit, withPlan } from '../model/checkEdits';
+import { itemBaseOf } from '../model/itemBase';
 import { percentToText, textToPercent } from '../model/percentText';
 import { laterDateDefault, planNeeds, tomorrowOf } from '../model/planNeeds';
 import { planHref } from '../nav/hrefs';
@@ -34,8 +35,11 @@ export interface PaymentPlanCardProps {
   checkId: string;
   currency: string;
   readOnly?: boolean;
+  /** 05.3-113: the preset the kind counts like (LayerStack resolves own kinds); absent = a preset itself, an own kind is General. */
+  itemBase?: V3PresetItemType;
 }
 
+const NO_ROWS = [] as const;
 const TERM_CHIPS = [12, 24, 36, 48, 60, 72, 84] as const;
 const MIN_TERM = 1;
 const MAX_TERM = 120;
@@ -93,7 +97,7 @@ function Disclosure({ label, open, onPress }: DisclosureProps): React.JSX.Elemen
   );
 }
 
-export function PaymentPlanCard({ check, evaluation, edit, checkId, currency, readOnly = false }: PaymentPlanCardProps): React.JSX.Element | null {
+export function PaymentPlanCard({ check, evaluation, edit, checkId, currency, readOnly = false, itemBase }: PaymentPlanCardProps): React.JSX.Element | null {
   const t = useLooseT();
   const { colors, pairing } = useTheme();
   const stacked = useShouldStack();
@@ -107,7 +111,7 @@ export function PaymentPlanCard({ check, evaluation, edit, checkId, currency, re
 
   const schedule = evaluation?.purchase?.schedule ?? null;
   const card = evaluation?.planCard ?? null;
-  const itemType: V3PresetItemType = check.itemType.kind === 'preset' ? check.itemType.value : 'general';
+  const itemType: V3PresetItemType = itemBase ?? itemBaseOf(check.itemType, NO_ROWS);
   const noteKey = cardNoteKey(itemType);
   const lengthMissing = pay.termMonths === null && pay.count === null;
   const cell = stacked ? styles.cellFull : styles.cell;

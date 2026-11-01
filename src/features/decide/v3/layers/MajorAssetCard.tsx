@@ -1,10 +1,10 @@
 // 05.3-42 (DSV-06, D-18, T-05.3-42-01, UI-SPEC Major asset): "Major purchase details". Every answer is stored under
 // layerAnswers 'L6.*' and nothing reaches extras or the answer. Legal/closing and moving costs are not asked here when the
-// item type's preset already asks them (a property), so nothing is counted twice; a custom type is treated the same way,
-// since its own questions are not known to this card.
+// item type's preset already asks them (a property), so nothing is counted twice. 05.3-113: an own kind follows the preset
+// it counts like (a removed one is General), the same base the item costs card asks.
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import type { CheckV2 } from '@/engine/decide/v3';
+import type { CheckV2, V3PresetItemType } from '@/engine/decide/v3';
 import { minorUnits } from '@/engine/money';
 import { MoneyInput } from '@/features/decide/ui/MoneyInput';
 import { useShouldStack } from '@/features/decide/ui/textFit';
@@ -16,6 +16,7 @@ import { Text } from '@/ui/Text';
 import { useLooseT } from '../check/useLooseT';
 import { withLayerAnswer } from '../model/checkEdits';
 import { majorAssetFields } from '../model/costFields';
+import { itemBaseOf } from '../model/itemBase';
 import { VALUE_YEARS } from './ValueCard';
 import { LayerCard } from './LayerCard';
 
@@ -24,19 +25,22 @@ export interface MajorAssetCardProps {
   edit(next: CheckV2): void;
   currency: string;
   readOnly?: boolean;
+  /** 05.3-113: the preset the kind counts like (LayerStack resolves own kinds); absent = a preset itself, an own kind is General. */
+  itemBase?: V3PresetItemType;
 }
 
+const NO_ROWS = [] as const;
 const SOURCES = ['unspent', 'envelope', 'selling', 'other'] as const;
 
 function minorOf(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
-export function MajorAssetCard({ check, edit, currency, readOnly = false }: MajorAssetCardProps): React.JSX.Element {
+export function MajorAssetCard({ check, edit, currency, readOnly = false, itemBase }: MajorAssetCardProps): React.JSX.Element {
   const t = useLooseT();
   const { colors, pairing } = useTheme();
   const stacked = useShouldStack();
-  const asks = check.itemType.kind === 'preset' ? majorAssetFields(check.itemType.value) : { legal: false, moving: false };
+  const asks = majorAssetFields(itemBase ?? itemBaseOf(check.itemType, NO_ROWS));
   const anyHidden = !asks.legal || !asks.moving;
   const label = { ...textRole(pairing, 'label'), color: colors.inkDim };
   const yearCell = stacked ? styles.yearCellStacked : styles.yearCell;
