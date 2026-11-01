@@ -52,6 +52,8 @@ import { planModel } from '../model/planModel';
 import { refundHint } from '../model/refundHint';
 import { waiverNote, waiverRows, type WaiverText } from '../model/waiverNote';
 import { DECIDE_TAB_HREF, answerHref, purchaseHref } from '../nav/hrefs';
+import { useReopenOutcome } from '../nav/useReopenOutcome';
+import { V3CopyNotSaved } from '../nav/V3CopyNotSaved';
 import { V3NotFound } from '../nav/V3NotFound';
 import { V3Skeleton } from '../nav/V3Skeleton';
 import { NotReadyCard } from '../ready/NotReadyCard';
@@ -99,6 +101,11 @@ type Loaded = Omit<BodyProps, 'id' | 'busy'>;
 
 export function AnswerScreen({ id }: { id: string }): React.JSX.Element {
   const { status, row, evaluation, withoutRefunds, inputs } = useCheckV3(id);
+  // 05.3-100: a reopen copy the server answered with an existing live copy moves there; one that did not save says so.
+  const { redirectTo, failed } = useReopenOutcome(id);
+  useEffect(() => {
+    if (redirectTo !== null) replaceOnce(answerHref(redirectTo));
+  }, [redirectTo]);
   // A recompute never blanks the screen: while the reads reload, the last answer stays and the hero is marked busy.
   const [kept, setKept] = useState<Loaded | null>(null);
   const fresh = status !== 'loading' && row !== null && evaluation !== null && inputs !== null;
@@ -109,7 +116,8 @@ export function AnswerScreen({ id }: { id: string }): React.JSX.Element {
   if (status === 'loading') {
     return kept === null ? <V3Skeleton /> : <AnswerBody id={id} {...kept} busy />;
   }
-  return <V3NotFound />;
+  if (redirectTo !== null) return <V3Skeleton />;
+  return failed ? <V3CopyNotSaved /> : <V3NotFound />;
 }
 
 interface BodyProps {
@@ -196,11 +204,11 @@ function AnswerBody({ id, row, evaluation, withoutRefunds, inputs, busy }: BodyP
   });
 
   const anotherPrice = (): void => {
-    const newId = reopen(row, new Date().toISOString().slice(0, 10));
+    const newId = reopen(row);
     replaceOnce(purchaseHref(newId, { focus: 'price' }));
   };
   const checkAgain = (): void => {
-    const newId = reopen(row, new Date().toISOString().slice(0, 10));
+    const newId = reopen(row);
     replaceOnce(answerHref(newId));
   };
 

@@ -28,7 +28,7 @@ export function useDeleteRow() {
   };
 }
 
-/** Check again: one new check per decision. A second press opens the check already reopened from it. */
+/** Check again: a press opens the copy still unfinished, or makes a new one when every copy is decided. */
 export function useCheckAgain(): (row: DecideCheckRow) => void {
   const { reopen } = useReopenCheck();
   const rc = useRecordContext();
@@ -38,16 +38,19 @@ export function useCheckAgain(): (row: DecideCheckRow) => void {
   ).data;
   const opened = useRef(new Map<string, string>());
   return (row) => {
-    const live =
-      (checks ?? []).find(
-        (c) => c.reopened_from === row.id && c.deleted_at === null,
-      )?.id ?? opened.current.get(row.id);
+    // Reuse a copy only while it is still unfinished; a decided copy means the next press makes a new one.
+    const list = checks ?? [];
+    const copy = list.find((c) => c.reopened_from === row.id && c.deleted_at === null && c.status === 'open');
+    const remembered = opened.current.get(row.id);
+    const rememberedRow = remembered === undefined ? undefined : list.find((c) => c.id === remembered);
+    const stillOpen = remembered !== undefined && (rememberedRow === undefined || (rememberedRow.status === 'open' && rememberedRow.deleted_at === null));
+    const live = copy?.id ?? (stillOpen ? remembered : undefined);
     if (live !== undefined) {
       pushOnce(purchaseHref(live));
       return;
     }
     cancelCheckReminders(row.id).catch(() => {});
-    const id = reopen(row, '');
+    const id = reopen(row);
     opened.current.set(row.id, id);
     showToast({ kind: 'ordinary', text: { key: 'decide.toast.reopened' } });
     pushOnce(purchaseHref(id));
