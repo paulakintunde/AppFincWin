@@ -198,7 +198,7 @@ describe('DecisionDetailSheet', () => {
     const links = [link('l1', 'b', { target_id: 'tx1' }), link('l2', 'b', { target_id: 'tx2', source: 'attached' })];
     await renderSheet(decision('b'), links, [line('tx1'), line('tx2')]);
     await fireEvent.press(screen.getByText('Delete'));
-    expect(screen.getByText(/The line Go ahead wrote stays in Activity/)).toBeTruthy();
+    expect(screen.getByText(/The line Record as bought wrote stays in Activity/)).toBeTruthy();
   });
 
   it('D-75 linked lines beyond 3 sit behind Show details', async () => {

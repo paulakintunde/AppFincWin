@@ -219,7 +219,7 @@ describe('PastDecisionsScreen', () => {
     await pressMenu('Laptop', 'Delete');
     expect(screen.getByText('Delete this decision?')).toBeTruthy();
     expect(
-      screen.getByText('It leaves Past decisions. The 2 lines Go ahead wrote stay in Activity, and every figure that uses them stays the same.')
+      screen.getByText('It leaves Past decisions. The 2 lines Record as bought wrote stay in Activity, and every figure that uses them stays the same.')
     ).toBeTruthy();
     expect(mockRemove).not.toHaveBeenCalled();
   });
@@ -229,7 +229,7 @@ describe('PastDecisionsScreen', () => {
     mockLinks = [link('l1', 'b')];
     await renderScreen();
     await pressMenu('Laptop', 'Delete');
-    expect(screen.getByText(/The line Go ahead wrote stays in Activity/)).toBeTruthy();
+    expect(screen.getByText(/The line Record as bought wrote stays in Activity/)).toBeTruthy();
   });
 
   it('D-101 the waiting-decision delete confirm names the pot (D-73 Waiting and Passed confirms use their own copy)', async () => {
