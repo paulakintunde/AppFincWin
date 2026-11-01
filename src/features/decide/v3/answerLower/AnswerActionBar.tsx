@@ -80,7 +80,7 @@ export function AnswerActionBar({ result, row, onBought, onPlan, onNotBuying }: 
   const rightLabel = t(model.right.key, rightParams);
 
   const anotherPrice = (): void => {
-    const newId = reopen(row, new Date().toISOString().slice(0, 10));
+    const newId = reopen(row);
     pushOnce(purchaseHref(newId, { focus: 'price' }));
   };
 

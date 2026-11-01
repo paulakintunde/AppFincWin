@@ -152,6 +152,17 @@ function subscribeRedirects(listener: () => void): () => void {
     redirectListeners.delete(listener);
   };
 }
+// A reopen copy the server refused: the screen opened on its id says so instead of "This check isn't here".
+const reopenFailures = new Set<string>();
+function markReopenFailed(id: string): void {
+  reopenFailures.add(id);
+  for (const listener of redirectListeners) listener();
+}
+/** True once a reopen copy with this id could not be saved. */
+export function useReopenFailed(id: string): boolean {
+  return useSyncExternalStore(subscribeRedirects, () => reopenFailures.has(id));
+}
+
 /** IN-B05: the live check a reopen of `id` resolved to, when it found the decision already reopened; otherwise null. */
 export function useReopenRedirect(id: string): string | null {
   return useSyncExternalStore(subscribeRedirects, () => reopenRedirects.get(id) ?? null);
@@ -252,7 +263,12 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
           ...(vars.reopenedFrom ? { reopenedFrom: vars.reopenedFrom } : {}),
         },
       });
-      showToast({ kind: 'refusal', tone: 'warning', text: { key: 'sync.checkNotSaved' } });
+      if (vars.reopenedFrom) markReopenFailed(vars.id);
+      showToast({
+        kind: 'refusal',
+        tone: 'warning',
+        text: { key: vars.reopenedFrom ? 'sync.checkCopyNotSaved' : 'sync.checkNotSaved' },
+      });
     },
   });
 
@@ -643,9 +659,9 @@ function reopenedInputs(inputs: Record<string, unknown>): Record<string, unknown
 
 /**
  * A waiting or passed decision reopens as a NEW open check from its inputs; the old decision and its goal stay.
- * `_today` is kept in the signature so callers pass the same context they use elsewhere; dates are not rewritten.
+ * Dates are not rewritten.
  */
-export function useReopenCheck(): { reopen(row: DecideCheckRow, _today: string): string } {
+export function useReopenCheck(): { reopen(row: DecideCheckRow): string } {
   const mutation = useMutation<DecideCheckRow, unknown, CreateCheckVars>({
     mutationKey: mutationKeys.createCheck,
     scope: WRITE_SCOPE,

@@ -605,7 +605,7 @@ export function CheckFlowScreen({ id, initialStep = null, kind = 'buy', cleared 
     reopening.current = true;
     setReopened(true);
     void cancelCheckReminders(row.id).catch(() => undefined);
-    const newId = reopen(row, today);
+    const newId = reopen(row);
     showToast({ kind: 'ordinary', text: { key: 'decide.toast.reopened' } });
     // WR-C08: the reopened check replaces the decided one, so finishing it returns to Decide, not to the old view
     router.replace(checkHref(newId, { step: '3' }));

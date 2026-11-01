@@ -24,7 +24,7 @@ export function RefundHintTile({ show, row }: { show: boolean; row: DecideCheckR
   const { reopen } = useReopenCheck();
   if (!show) return null;
   const onPress = (): void => {
-    const newId = reopen(row, new Date().toISOString().slice(0, 10));
+    const newId = reopen(row);
     pushOnce(answerHref(newId));
   };
   return (

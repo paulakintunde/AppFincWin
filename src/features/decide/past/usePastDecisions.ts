@@ -235,7 +235,7 @@ export function useReopenDecision(today: string): (row: DecideCheckRow) => void 
       return;
     }
     cancelCheckReminders(row.id).catch(() => {});
-    const id = reopen(row, today);
+    const id = reopen(row);
     opened.current.set(row.id, id);
     showToast({ kind: 'ordinary', text: { key: 'decide.toast.reopened' } });
     pushOnce(checkHref(id, { step: '1' }));
