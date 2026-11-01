@@ -237,7 +237,7 @@ describe('DecisionDetailSheet', () => {
     expect(screen.getByText('Kept until you delete it')).toBeTruthy();
     expect(screen.queryByText(/twelve months|kept on file/i)).toBeNull();
     await fireEvent.press(screen.getByText('Reopen the check'));
-    expect(mockReopen).toHaveBeenCalledWith(d, '2026-10-15');
+    expect(mockReopen).toHaveBeenCalledWith(d);
     expect(mockCancel).toHaveBeenCalledWith('p');
     expect(mockPush).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalled();

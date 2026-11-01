@@ -27,7 +27,7 @@ const mockTrack = jest.fn();
 const mockReopen = jest.fn(() => 'new-id');
 
 jest.mock('@/data/queries/decideCheckV3', () => ({ useCheckV3: () => mockCheck }));
-jest.mock('@/data/mutations/decideChecks', () => ({ useReopenCheck: () => ({ reopen: mockReopen }) }));
+jest.mock('@/data/mutations/decideChecks', () => ({ useReopenCheck: () => ({ reopen: mockReopen }), useReopenRedirect: () => null, useReopenFailed: () => false }));
 jest.mock('expo-router', () => ({ router: { navigate: (h: unknown) => mockNavigate(h), push: jest.fn() }, useFocusEffect: jest.fn() }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'uuid' }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPushOnce(h), replaceOnce: (h: unknown) => mockPushOnce(h) }));

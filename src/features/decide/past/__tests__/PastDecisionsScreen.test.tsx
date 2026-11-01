@@ -180,7 +180,7 @@ describe('PastDecisionsScreen', () => {
     mockChecks = [decision('p', { name: 'Watch', status: 'passed', decided_at: '2026-09-01T12:00:00Z' })];
     await renderScreen();
     await pressMenu('Watch', 'Reopen');
-    expect(mockReopen).toHaveBeenCalledWith(expect.objectContaining({ id: 'p' }), TODAY);
+    expect(mockReopen).toHaveBeenCalledWith(expect.objectContaining({ id: 'p' }));
     expect(mockCancel).toHaveBeenCalledWith('p');
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ text: { key: 'decide.toast.reopened' } }));
     expect(mockPush).toHaveBeenCalledTimes(1);
