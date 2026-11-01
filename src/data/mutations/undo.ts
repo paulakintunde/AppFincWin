@@ -9,6 +9,7 @@
 // (D-19) and raises a refusal toast carrying who and what (D-26). Only transport/DB errors throw.
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
+import type { UndoLogRow } from '@/db/rows';
 import type { UndoConflict, UndoLabelKey, UndoLabelParams } from '@/engine/undo';
 import { applyUndoStep, fetchUndoStepMeta, rollbackUndoTo, type RollbackOutcome, type UndoOutcome } from '@/db/undoLog';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
@@ -114,6 +115,10 @@ export function registerUndoMutations(qc: QueryClient): void {
     onMutate: (vars: UndoVars) => {
       markSession(vars); // WR-A09
     },
+    // History must never keep a stale list: refresh after every outcome, including not-found and a thrown error (05.3-111).
+    onSettled: (_data: UndoRunOutcome | undefined, _err: unknown, vars: UndoVars) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.undoLog(vars.ownerId) });
+    },
     onSuccess: async (outcome: UndoRunOutcome, vars: UndoVars) => {
       switch (outcome.status) {
         case 'undone':
@@ -164,8 +169,20 @@ export function registerUndoMutations(qc: QueryClient): void {
     retryDelay: writeRetryDelay,
     onMutate: (vars: RollbackVars) => {
       markSession(vars); // WR-A09
+      // Optimistic: hide the rows being rolled back (the target and every newer one). The settled refetch restores any the
+      // server refused.
+      const key = queryKeys.undoLog(vars.ownerId);
+      const cached = qc.getQueryData<UndoLogRow[]>(key);
+      if (cached) {
+        const at = cached.findIndex((r) => r.id === vars.stepId);
+        if (at >= 0) qc.setQueryData<UndoLogRow[]>(key, cached.slice(at + 1));
+      }
+      return { before: cached };
     },
-    onSuccess: async (outcome: RollbackOutcome, vars: RollbackVars) => {
+    onSettled: (_data: RollbackOutcome | undefined, _err: unknown, vars: RollbackVars) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.undoLog(vars.ownerId) });
+    },
+    onSuccess: async (outcome: RollbackOutcome, vars: RollbackVars, context: { before?: UndoLogRow[] } | undefined) => {
       switch (outcome.status) {
         case 'undone':
           invalidateAfterUndo(qc, vars);
@@ -175,7 +192,16 @@ export function registerUndoMutations(qc: QueryClient): void {
         case 'blocked': {
           const stepId = outcome.status === 'refused' ? outcome.stepId : outcome.blockedBy;
           // A step that was already refused earlier blocks without a fresh conflict: nothing new to record.
-          if (outcome.conflict) await recordRefusal(stepId, outcome.conflict, stepId);
+          if (outcome.conflict) {
+            const row = (context?.before ?? qc.getQueryData<UndoLogRow[]>(queryKeys.undoLog(vars.ownerId)))?.find((r) => r.id === stepId);
+            const name = row?.label_params?.name;
+            await recordRefusal(
+              stepId,
+              outcome.conflict,
+              stepId,
+              row ? { key: row.label_key as UndoLabelKey, ...(typeof name === 'string' ? { name } : {}) } : undefined
+            );
+          }
           invalidateAfterUndo(qc, vars);
           showToast({
             kind: 'refusal',
