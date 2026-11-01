@@ -28,15 +28,17 @@ export interface NeedsInputCardProps {
 export function NeedsInputCard({ lines, helpOffered, checkId }: NeedsInputCardProps): React.JSX.Element {
   const t = useT() as unknown as Translate;
   const { colors, pairing } = useTheme();
+  // UAT gap 29: show each distinct, non-empty line once; a line with no words (or only its own key) is dropped.
+  const texts = [...new Set(lines.map((key) => t(key)))].filter((text) => text.trim() !== '' && !lines.includes(text));
   return (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{t('decide.v3.ui.answer.missingHeading')}</Text>
-      {lines.map((key) => (
-        <View key={key} style={styles.line}>
+      {texts.map((text) => (
+        <View key={text} style={styles.line}>
           <Text importantForAccessibility="no" style={{ ...textRole(pairing, 'body'), fontSize: fontSize.s13_5, color: colors.inkDim }}>
             {'·'}
           </Text>
-          <Text style={[styles.lineText, { ...textRole(pairing, 'body'), fontSize: fontSize.s13_5, color: colors.inkDim }]}>{t(key)}</Text>
+          <Text style={[styles.lineText, { ...textRole(pairing, 'body'), fontSize: fontSize.s13_5, color: colors.inkDim }]}>{text}</Text>
         </View>
       ))}
       <View style={styles.actions}>
