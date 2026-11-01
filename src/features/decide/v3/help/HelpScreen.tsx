@@ -6,7 +6,7 @@
  */
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { router, type Href } from 'expo-router';
+import { router, useRootNavigationState, type Href } from 'expo-router';
 import { useDecideSettings } from '@/data/queries/decide';
 import { useUpdateDecideSettings } from '@/data/mutations/decideSettings';
 import type { DecideSettingsPatch } from '@/db/decideSettings';
@@ -14,6 +14,8 @@ import type { V3Inputs } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { getAnalytics } from '@/services/analytics';
+import type { NavStateLike } from '@/shell/backHistory/navLocation';
+import { returnToTab } from '@/shell/navigation/returnToTab';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { space, useScreenInsets } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -78,6 +80,8 @@ export function HelpScreen({ inputs }: { id: string; inputs: V3Inputs }): React.
   const { colors, pairing } = useTheme();
   const insets = useScreenInsets();
   const rc = useRecordContext();
+  // UAT gap 33: help is an outer-stack screen; router.navigate to a tab would push a second (tabs).
+  const navState = useRootNavigationState() as unknown as NavStateLike | undefined;
   const settings = useDecideSettings(rc.userId ?? undefined).data ?? null;
   const mutation = useUpdateDecideSettings(rc.userId ?? '');
   const currency = String(inputs.currency);
@@ -134,7 +138,7 @@ export function HelpScreen({ inputs }: { id: string; inputs: V3Inputs }): React.
       </ScrollView>
       <View style={[styles.bar, { backgroundColor: colors.canvas, paddingBottom: insets.bottom + space.gapMd, paddingHorizontal: space.screenH }]}>
         <Pill label={t('decide.v3.ui.help.cta')} variant="primary" disabled={!canSave} onPress={save} />
-        <Pill label={t('decide.v3.ui.help.update')} variant="secondary" onPress={() => router.navigate(ACTIVITY_HREF)} />
+        <Pill label={t('decide.v3.ui.help.update')} variant="secondary" onPress={() => returnToTab(ACTIVITY_HREF, navState)} />
       </View>
     </DetailScreen>
   );

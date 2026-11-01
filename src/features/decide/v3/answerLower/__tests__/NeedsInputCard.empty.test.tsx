@@ -2,12 +2,14 @@
 import React from 'react';
 import { screen } from '@testing-library/react-native';
 import { wrap } from '@/features/decide/v3/answer/__tests__/kit';
+import { returnToTab } from '@/shell/navigation/returnToTab';
 import { NeedsInputCard } from '../NeedsInputCard';
 
 jest.setTimeout(60000);
 
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
-jest.mock('expo-router', () => ({ router: { navigate: jest.fn(), push: jest.fn() } }));
+jest.mock('expo-router', () => ({ useRootNavigationState: () => undefined, router: { navigate: jest.fn(), push: jest.fn() } }));
+jest.mock('@/shell/navigation/returnToTab', () => ({ returnToTab: jest.fn() }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'uuid' }));
 jest.mock('@/i18n', () => {
   const actual = jest.requireActual('@/i18n');

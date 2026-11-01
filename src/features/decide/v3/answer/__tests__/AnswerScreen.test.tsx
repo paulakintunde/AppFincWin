@@ -5,6 +5,7 @@
 import React from 'react';
 import { cleanup, fireEvent, screen } from '@testing-library/react-native';
 import { percent } from '@/engine/payoff';
+import { returnToTab } from '@/shell/navigation/returnToTab';
 import { copy, fullEv, rowOf, storedOf, PBO_NETFLIX, READY_WITH, SCREEN_INPUTS, WAIVED_LUNCH } from './answerKit';
 import { wrap } from './kit';
 import { AnswerScreen } from '../AnswerScreen';
@@ -28,7 +29,8 @@ const mockReopen = jest.fn(() => 'new-id');
 
 jest.mock('@/data/queries/decideCheckV3', () => ({ useCheckV3: () => mockCheck }));
 jest.mock('@/data/mutations/decideChecks', () => ({ useReopenCheck: () => ({ reopen: mockReopen }), useReopenRedirect: () => null, useReopenFailed: () => false }));
-jest.mock('expo-router', () => ({ router: { navigate: (h: unknown) => mockNavigate(h), push: jest.fn() }, useFocusEffect: jest.fn() }));
+jest.mock('expo-router', () => ({ useRootNavigationState: () => undefined, router: { navigate: (h: unknown) => mockNavigate(h), push: jest.fn() }, useFocusEffect: jest.fn() }));
+jest.mock('@/shell/navigation/returnToTab', () => ({ returnToTab: jest.fn() }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'uuid' }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPushOnce(h), replaceOnce: (h: unknown) => mockPushOnce(h) }));
 jest.mock('@/shell/a11yFocus', () => ({ useScreenTitleFocus: jest.fn(), focusAccessibility: jest.fn() }));
@@ -258,7 +260,7 @@ describe('record sheets', () => {
     await wrap(<AnswerScreen id="c1" />);
     await fireEvent.press(screen.getByLabelText('Record as bought'));
     await fireEvent.press(screen.getByText('sheet:bought:true:null'));
-    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(returnToTab).not.toHaveBeenCalled();
   });
 
   it('returns to the Decide tab when the sheet closes after the check was decided', async () => {
@@ -269,7 +271,7 @@ describe('record sheets', () => {
       <AnswerScreen id="c1" />,
     );
     await fireEvent.press(screen.getByText('sheet:pass:true:null'));
-    expect(mockNavigate).toHaveBeenCalledWith('/decide');
+    expect(returnToTab).toHaveBeenCalledWith('/decide', undefined);
   });
 });
 

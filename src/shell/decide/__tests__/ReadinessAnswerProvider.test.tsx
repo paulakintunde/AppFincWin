@@ -12,6 +12,7 @@ import { ENVELOPES_HREF } from '@/features/decide/v3/nav/hrefs';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { useReadinessAnswer, type ReadinessAction } from '@/features/decide/v3/ready/useReadinessAnswer';
+import { returnToTab } from '@/shell/navigation/returnToTab';
 import { ReadinessAnswerProvider } from '../ReadinessAnswerProvider';
 
 const SERIES = '3f0c2a9e-1b4d-4c5e-8f60-1234567890ab';
@@ -43,7 +44,8 @@ jest.mock('@/features/decide/v3/shared/useV3Format', () => ({
 }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
-jest.mock('expo-router', () => ({ router: { navigate: jest.fn() } }));
+jest.mock('expo-router', () => ({ useRootNavigationState: () => undefined, router: { navigate: jest.fn() } }));
+jest.mock('@/shell/navigation/returnToTab', () => ({ returnToTab: jest.fn() }));
 
 const toast = showToast as jest.Mock;
 const navigate = router.navigate as jest.Mock;
@@ -183,7 +185,7 @@ describe('a line that is not cached', () => {
       expect(mockMarkPaid).not.toHaveBeenCalled();
       expect(mockSkip).not.toHaveBeenCalled();
       expect(mockSave).not.toHaveBeenCalled();
-      expect(navigate).toHaveBeenCalledWith('/activity');
+      expect(returnToTab).toHaveBeenCalledWith('/activity', undefined);
       expect(done).toHaveBeenCalledWith(true);
     });
   }
@@ -193,7 +195,7 @@ describe('a line that is not cached', () => {
     const h = await hook();
     await act(async () => h.answer(item(), { kind: 'markPaid', lineId: 'line-1' }));
     expect(mockMarkPaid).not.toHaveBeenCalled();
-    expect(navigate).toHaveBeenCalledWith('/activity');
+    expect(returnToTab).toHaveBeenCalledWith('/activity', undefined);
   });
 });
 
@@ -270,7 +272,7 @@ describe('open', () => {
     const h = await hook();
     const done = jest.fn();
     await act(async () => h.answer(null, { kind: 'open', target: 'activity' }, done));
-    expect(navigate).toHaveBeenCalledWith('/activity');
+    expect(returnToTab).toHaveBeenCalledWith('/activity', undefined);
     await act(async () => h.answer(null, { kind: 'open', target: 'envelopes' }, done));
     expect(push).toHaveBeenCalledWith(ENVELOPES_HREF);
     expect(done).toHaveBeenCalledTimes(2);
@@ -295,6 +297,7 @@ describe('no user or household', () => {
     expect(mockSkip).not.toHaveBeenCalled();
     expect(mockSave).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
+    expect(returnToTab).not.toHaveBeenCalled();
   });
 });
 
@@ -357,6 +360,7 @@ describe('the consumer with no provider mounted', () => {
     expect(mockRemove).not.toHaveBeenCalled();
     expect(toast).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
+    expect(returnToTab).not.toHaveBeenCalled();
     expect(push).not.toHaveBeenCalled();
   });
 });

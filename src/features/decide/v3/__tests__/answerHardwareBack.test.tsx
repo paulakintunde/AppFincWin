@@ -15,6 +15,8 @@ import { AnswerScreen } from '../answer/AnswerScreen';
 jest.setTimeout(60000);
 
 const mockNavigate = jest.fn();
+const mockDismissTo = jest.fn();
+const mockReplace = jest.fn();
 const mockBack = jest.fn();
 // The tab under the answer is Activity: the check was started from the FAB on another tab.
 const mockState = {
@@ -36,7 +38,15 @@ const mockState = {
 jest.mock('expo-router', () => {
   const R = jest.requireActual('react');
   return {
-    router: { navigate: (h: unknown) => mockNavigate(h), back: () => mockBack(), canGoBack: () => true, push: jest.fn() },
+    router: {
+      navigate: (h: unknown) => mockNavigate(h),
+      dismissTo: (h: unknown) => mockDismissTo(h),
+      replace: (h: unknown) => mockReplace(h),
+      canDismiss: () => true,
+      back: () => mockBack(),
+      canGoBack: () => true,
+      push: jest.fn(),
+    },
     useRootNavigationState: () => mockState,
     usePathname: () => '/decide/answer/c1',
     useFocusEffect: (cb: () => void | (() => void)) => R.useEffect(cb, [cb]),
@@ -127,8 +137,11 @@ describe('answer screen hardware Back (gap 27)', () => {
     await act(async () => {
       pressBack();
     });
-    expect(mockNavigate).toHaveBeenCalledTimes(1);
-    expect(mockNavigate).toHaveBeenCalledWith('/decide');
+    // 05.3-114 (gap 33): a (tabs) is beneath, so Back dismisses to it; navigate would push a second (tabs).
+    expect(mockDismissTo).toHaveBeenCalledTimes(1);
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide');
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
     expect(mockBack).not.toHaveBeenCalled();
   });
 
@@ -145,12 +158,12 @@ describe('answer screen hardware Back (gap 27)', () => {
     await act(async () => {
       pressBack();
     });
-    expect(mockNavigate).not.toHaveBeenCalledWith('/decide');
+    expect(mockDismissTo).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByText('sheet:bought:true'));
     await act(async () => {
       pressBack();
     });
-    expect(mockNavigate).toHaveBeenCalledWith('/decide');
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide');
   });
 
   it('two quick Backs navigate once', async () => {
@@ -159,6 +172,6 @@ describe('answer screen hardware Back (gap 27)', () => {
       pressBack();
       pressBack();
     });
-    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(mockDismissTo).toHaveBeenCalledTimes(1);
   });
 });

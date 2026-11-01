@@ -5,9 +5,11 @@
  */
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { router, type Href } from 'expo-router';
+import { useRootNavigationState, type Href } from 'expo-router';
 import { useT } from '@/i18n';
+import type { NavStateLike } from '@/shell/backHistory/navLocation';
 import { pushOnce } from '@/shell/navigation/pushOnce';
+import { returnToTab } from '@/shell/navigation/returnToTab';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { helpHref } from '@/features/decide/v3/nav/hrefs';
@@ -28,6 +30,8 @@ export interface NeedsInputCardProps {
 export function NeedsInputCard({ lines, helpOffered, checkId }: NeedsInputCardProps): React.JSX.Element {
   const t = useT() as unknown as Translate;
   const { colors, pairing } = useTheme();
+  // UAT gap 33: the card sits on an outer-stack answer; router.navigate would push a second (tabs).
+  const navState = useRootNavigationState() as unknown as NavStateLike | undefined;
   // UAT gap 29: show each distinct, non-empty line once; a line with no words (or only its own key) is dropped.
   const texts = [...new Set(lines.map((key) => t(key)))].filter((text) => text.trim() !== '' && !lines.includes(text));
   return (
@@ -43,7 +47,7 @@ export function NeedsInputCard({ lines, helpOffered, checkId }: NeedsInputCardPr
       ))}
       <View style={styles.actions}>
         {helpOffered ? <Pill label={t('decide.v3.ui.answer.help')} variant="primary" onPress={() => pushOnce(helpHref(checkId))} /> : null}
-        <Pill label={t('decide.v3.ui.answer.updateRecords')} variant="secondary" onPress={() => router.navigate(ACTIVITY_HREF)} />
+        <Pill label={t('decide.v3.ui.answer.updateRecords')} variant="secondary" onPress={() => returnToTab(ACTIVITY_HREF, navState)} />
       </View>
     </View>
   );
