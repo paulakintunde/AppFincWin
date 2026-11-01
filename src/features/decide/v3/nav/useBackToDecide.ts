@@ -5,7 +5,7 @@
 // Back on Decide home popped it and showed the answer again. returnToTab dismisses to the (tabs) beneath instead. The old
 // 600 ms window kept its timestamp across focus and could swallow the first Back on a re-opened answer; an in-flight flag
 // reset at every focus replaces it.
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { BackHandler } from 'react-native';
 import { useFocusEffect, useRootNavigationState } from 'expo-router';
 import { setSwipeBackInterceptor } from '@/features/navigation/swipeBackGesture';
@@ -17,7 +17,10 @@ import { DECIDE_TAB_HREF } from './hrefs';
 export function useBackToDecide(enabled: boolean): void {
   const navState = useRootNavigationState() as unknown as NavStateLike | undefined;
   const navStateRef = useRef(navState);
-  navStateRef.current = navState;
+  // The listener reads the latest state at press time; refs are written in an effect, not during render.
+  useEffect(() => {
+    navStateRef.current = navState;
+  });
   useFocusEffect(
     useCallback(() => {
       if (!enabled) return undefined;
