@@ -48,4 +48,9 @@ export const answer = {
   setAmount: 'Set an amount',
   notCoveredNoDate: 'Based on your records, when it could be covered isn’t known yet.',
   emergencyNoRebuild: 'Marked as an emergency.',
+  copyNotSaved: {
+    heading: 'This copy didn’t save',
+    body: 'Nothing changed. The check it was copied from is as it was.',
+    back: 'Back to Decide',
+  },
 } as const;
