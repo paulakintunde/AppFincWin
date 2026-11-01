@@ -11,6 +11,7 @@ import { HistoryScreen } from '../HistoryScreen';
 import { UndoToastHost } from '../UndoToastHost';
 
 jest.setTimeout(20000);
+jest.mock('@/shell/a11yFocus', () => ({ useScreenTitleFocus: jest.fn(), focusAccessibility: jest.fn() }));
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -216,6 +217,8 @@ describe('HistoryScreen', () => {
     expect(screen.getByText('Undoes 1 change')).toBeTruthy();
     expect(screen.getByText('Undoes 3 changes')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Undo to here, Added · a'));
+    expect(mockRollbackTo).not.toHaveBeenCalled(); // 05.3-111: asks first
+    await fireEvent.press(screen.getByText('Undo 3 changes'));
     expect(mockRollbackTo).toHaveBeenCalledWith({ stepId: 'a', ownerId: 'me', householdId: 'h1' });
   });
 
