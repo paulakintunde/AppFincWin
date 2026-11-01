@@ -2,7 +2,7 @@ import { minorUnits, type MinorUnits } from '../../../../money/types';
 import { SOLE_SHARE } from '../../../share';
 import type { Funds, IncomeMonth, IncomePicture, MonthModel, Purchase, UnspentState, V3Inputs } from '../../types';
 import { ASOF, inputsOf, monthOf, v3Line, v3Series } from '../../__tests__/helpers/fixtures';
-import { needsInput } from '../needsInput';
+import { needsInput, uncoveredIncomeMonths } from '../needsInput';
 
 const mu = (n: number): MinorUnits => minorUnits(n);
 
@@ -154,16 +154,25 @@ describe('needsInput', () => {
     expect(run(base, { month: withPic(pic()) })).not.toContain('expected_income_needed');
   });
 
-  it('D-35 fewer than 12 full months asks, unless every depended-on month is confirmed', () => {
+  const sched = (firstDate: string, count = 3) =>
+    ({
+      cadence: { unit: 'month', every: 1 }, count, payment: mu(1_000), finalPayment: mu(1_000), lastPaying: count, firstDate,
+      fees: { perPeriod: mu(0), end: mu(0) },
+    }) as unknown as Purchase['schedule'];
+
+  it('D-35 fewer than 12 full months asks about a future month, unless it is confirmed; this month is never asked (05.3-106)', () => {
     const short = pic({ fullMonths: 8, months: twelve().slice(4) });
-    expect(run(base, { month: withPic(short) })).toContain('expected_income_needed');
-    const confirmed = inputsOf({ series: [pay], expectedIncome: [exp('2026-10')] });
-    expect(run(confirmed, { month: withPic(short) })).not.toContain('expected_income_needed');
+    // 05.3-106: a purchase that only touches this month asks nothing about income
+    expect(run(base, { month: withPic(short) })).not.toContain('expected_income_needed');
+    const later = purchase({ schedule: sched('2026-11-15'), monthly: mu(1_000) });
+    expect(run(base, { month: withPic(short), purchase: later })).toContain('expected_income_needed');
+    const confirmed = inputsOf({ series: [pay], expectedIncome: [exp('2026-11'), exp('2026-12'), exp('2027-01')] });
+    expect(run(confirmed, { month: withPic(short), purchase: later })).not.toContain('expected_income_needed');
   });
 
   it('D-35 b: a payment in a calendar month with no kept window month asks', () => {
     const noOct = pic({ months: twelve().filter((m) => m.month !== '2025-10') });
-    expect(run(base, { month: withPic(noOct) })).toContain('expected_income_needed');
+    expect(run(base, { month: withPic(noOct) })).not.toContain('expected_income_needed'); // 05.3-106: this month is never asked
     const schedule = {
       cadence: { unit: 'month', every: 1 }, count: 3, payment: mu(1_000), finalPayment: mu(1_000), lastPaying: 3, firstDate: '2026-11-15',
       fees: { perPeriod: mu(0), end: mu(0) },
@@ -176,7 +185,8 @@ describe('needsInput', () => {
   it('D-35 variable: 12 months not asked, 6 months asked; steady and absent picture never', () => {
     const v = (n: number) => pic({ treated: 'variable', stated: 'variable', fullMonths: n, months: twelve().slice(12 - n) });
     expect(run(base, { month: withPic(v(12)) })).not.toContain('expected_income_needed');
-    expect(run(base, { month: withPic(v(6)) })).toContain('expected_income_needed');
+    expect(run(base, { month: withPic(v(6)), purchase: purchase({ schedule: sched('2026-11-15'), monthly: mu(1_000) }) })).toContain('expected_income_needed');
+    expect(run(base, { month: withPic(v(6)) })).not.toContain('expected_income_needed');
     expect(run(base, { month: withPic(pic({ treated: 'steady', stated: 'steady', months: [], fullMonths: 3 })) })).not.toContain('expected_income_needed');
     expect(run(base)).not.toContain('expected_income_needed');
   });
@@ -219,5 +229,19 @@ describe('needsInput', () => {
       funds: { ...funds(), unstatedAccounts: ['a1'], unexplained: mu(base.thresholds.unspentDrift + 1) },
     });
     expect(r).toEqual(['account_use_question', 'pay_arrival_question', 'unexplained_money_question', 'everyday_unknown']);
+  });
+
+  it('05.3-106 uncoveredIncomeMonths lists the future months with no expected income, never this month', () => {
+    const short = pic({ fullMonths: 8, months: twelve().slice(4) });
+    const p = purchase({ schedule: sched('2026-11-30', 36), monthly: mu(1_000) });
+    const list = uncoveredIncomeMonths(base, withPic(short), p);
+    expect(list[0]).toBe('2026-11');
+    expect(list).not.toContain('2026-10');
+    expect(list.length).toBeGreaterThan(3);
+    const some = inputsOf({ series: [pay], expectedIncome: [exp('2026-11')] });
+    expect(uncoveredIncomeMonths(some, withPic(short), p)[0]).toBe('2026-12');
+    expect(uncoveredIncomeMonths(base, withPic(short), null)).toEqual([]);
+    expect(uncoveredIncomeMonths(base, withPic(pic({ treated: 'steady', stated: 'steady' })), p)).toEqual([]);
+    expect(uncoveredIncomeMonths(base, month(), p)).toEqual([]);
   });
 });

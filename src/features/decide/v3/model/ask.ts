@@ -54,7 +54,7 @@ const VALUE_KEYS: Readonly<Record<ValueSourceCode, readonly string[]>> = {
   pay_arrival_question: ['amount', 'date'],
 };
 
-function build(code: MissingCode, ev: Pick<Evaluation, 'result' | 'month'>): AskQuestion {
+function build(code: MissingCode, ev: Pick<Evaluation, 'result' | 'month' | 'uncoveredIncome'>): AskQuestion {
   const notices = ev.result.notices;
   const base = { code, questionKey: MISSING_KEYS[code], variant: null, params: {}, pay: null, months: [] } satisfies AskQuestion;
   if (code === 'account_use_question') {
@@ -74,13 +74,15 @@ function build(code: MissingCode, ev: Pick<Evaluation, 'result' | 'month'>): Ask
     return { ...base, params };
   }
   if (code === 'expected_income_needed') {
-    // The engine reports only that some month is uncovered, not which; this month is shown and the count is one.
-    return { ...base, params: { month: ev.month.month, months: 1 }, months: [ev.month.month] };
+    // 05.3-106: the engine lists the uncovered months; the first is named and the count is how many are still needed.
+    const listed = ev.uncoveredIncome ?? [];
+    const months = listed.length > 0 ? listed : [ev.month.month];
+    return { ...base, params: { month: months[0] as YearMonth, months: months.length }, months };
   }
   return base;
 }
 
-export function askModel(ev: Pick<Evaluation, 'result' | 'month'>): { first: AskQuestion; k: number; n: number; more: number; moreKey: string | null } | null {
+export function askModel(ev: Pick<Evaluation, 'result' | 'month' | 'uncoveredIncome'>): { first: AskQuestion; k: number; n: number; more: number; moreKey: string | null } | null {
   const questions = ev.result.missing.filter((m) => QUESTION_CODES.has(m));
   const head = questions[0];
   if (head === undefined) return null;

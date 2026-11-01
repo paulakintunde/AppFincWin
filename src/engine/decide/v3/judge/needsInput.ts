@@ -17,12 +17,12 @@
  * expected stays a notice, only more money than explained asks (D-50).
  * Result is unique and in MISSING_PRIORITY order (D-59); [] means the judge can answer.
  */
-import { daysBetween } from '../dates';
+import { daysBetween, yearMonthOf } from '../dates';
 import { MISSING_PRIORITY, NEEDS_INPUT_ENTRY_AGE_DAYS, NEEDS_INPUT_MIN_BAND, UNDER_LOGGED_PACE_PERCENT } from '../constants';
 import { minorUnits } from '../../../money/types';
 import { dependsOnMonths, expectedFor } from '../month/incomePattern';
 import { classifyLine, liveSeriesOf, seriesIndex } from '../month/series';
-import type { Funds, MissingCode, MonthModel, Purchase, V3Inputs } from '../types';
+import type { Funds, MissingCode, MonthModel, Purchase, V3Inputs, YearMonth } from '../types';
 
 export interface NeedsInputContext {
   readonly inputs: V3Inputs;
@@ -48,6 +48,24 @@ function newestSpending(inputs: V3Inputs): string | null {
   return newest;
 }
 
+/**
+ * D-35: the months a purchase depends on that have no confirmed or record-based expected income, in order. Empty for a
+ * steady earner or no picture.
+ * 05.3-106 (UAT gap 23), owner 2026-10-31: future-only. The current month is never asked about; it is already worked out
+ * from the money in so far plus the pay still due (payCapsOf), so only months still to come can be uncovered.
+ */
+export function uncoveredIncomeMonths(
+  inputs: V3Inputs,
+  month: Pick<MonthModel, 'incomePicture'>,
+  purchase: Pick<Purchase, 'schedule' | 'runningMonthly'> | null,
+): readonly YearMonth[] {
+  const pic = month.incomePicture;
+  if (pic === undefined || pic.treated === 'steady') return [];
+  const current = yearMonthOf(inputs.asOf);
+  const months = dependsOnMonths(inputs.asOf, purchase?.schedule ?? null, purchase?.runningMonthly ?? minorUnits(0));
+  return months.filter((ym) => ym !== current && expectedFor(pic, inputs.expectedIncome ?? [], ym) === null);
+}
+
 export function needsInput(ctx: NeedsInputContext): readonly MissingCode[] {
   const { inputs, month, funds, purchase } = ctx;
   const out = new Set<MissingCode>(ctx.purchaseMissing);
@@ -64,11 +82,7 @@ export function needsInput(ctx: NeedsInputContext): readonly MissingCode[] {
 
   const pic = month.incomePicture;
   if (pic?.confirmNeeded) out.add('income_pattern_unconfirmed'); // D-34
-  if (pic !== undefined && pic.treated !== 'steady') {
-    // D-35: ask when any month the purchase depends on has no confirmed or record-based expected income.
-    const months = dependsOnMonths(inputs.asOf, purchase?.schedule ?? null, purchase?.runningMonthly ?? minorUnits(0));
-    if (months.some((ym) => expectedFor(pic, inputs.expectedIncome ?? [], ym) === null)) out.add('expected_income_needed');
-  }
+  if (uncoveredIncomeMonths(inputs, month, purchase).length > 0) out.add('expected_income_needed'); // D-35
 
   if (purchase !== null) {
     if (funds.unspent === null && purchase.dayOne > Math.max(0, month.monthLeft) + Math.max(0, funds.ownEnvelope)) out.add('unspent_not_confirmed');
