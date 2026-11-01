@@ -5,6 +5,8 @@
  *  5.4.2 unspent not confirmed and day one above this month's room               -> unspent_not_confirmed
  *  5.4.3 band >= 5, newest spending entry over 10 days old and the month below
  *        50% of the usual pace                                                   -> records_look_behind
+ *        skipped when the user answered this month is up to date or has nothing to add, within the same
+ *        staleness clock readiness uses (05.3-119, UAT gap 36)
  *  5.4.4 income swings and the pattern is not stated or confirmed (D-34)            -> income_pattern_unconfirmed
  *  5.4.5 variable or seasonal, and a month the purchase depends on has no expected
  *        income (D-35: fewer than 12 full months, no confirmed figure, or an empty
@@ -46,6 +48,22 @@ function newestSpending(inputs: V3Inputs): string | null {
     }
   }
   return newest;
+}
+
+/**
+ * 05.3-119 (UAT gap 36): the user said this month is up to date, or has nothing to add, recently enough to stand in for
+ * a recent everyday line. Same rule as readiness: current month only, answered on or before asOf, and within
+ * NEEDS_INPUT_ENTRY_AGE_DAYS of asOf.
+ */
+function currentMonthAnswered(inputs: V3Inputs): boolean {
+  const ym = yearMonthOf(inputs.asOf);
+  return (inputs.waivers ?? []).some(
+    (w) =>
+      (w.kind === 'month_complete' || w.kind === 'nothing_to_add') &&
+      w.month === ym &&
+      w.at <= inputs.asOf &&
+      daysBetween(w.at, inputs.asOf) <= NEEDS_INPUT_ENTRY_AGE_DAYS,
+  );
 }
 
 /**
@@ -93,7 +111,7 @@ export function needsInput(ctx: NeedsInputContext): readonly MissingCode[] {
       const behind =
         BigInt(month.everydayLogged) * BigInt(month.daysInMonth) * 100n <
         BigInt(UNDER_LOGGED_PACE_PERCENT) * BigInt(month.e) * BigInt(month.day);
-      if (old && behind) out.add('records_look_behind');
+      if (old && behind && !currentMonthAnswered(inputs)) out.add('records_look_behind');
     }
   }
 

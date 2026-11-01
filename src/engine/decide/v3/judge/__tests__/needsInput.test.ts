@@ -1,6 +1,8 @@
 import { minorUnits, type MinorUnits } from '../../../../money/types';
 import { SOLE_SHARE } from '../../../share';
-import type { Funds, IncomeMonth, IncomePicture, MonthModel, Purchase, UnspentState, V3Inputs } from '../../types';
+import type { Funds, IncomeMonth, IncomePicture, MonthModel, Purchase, ReadinessWaiver, UnspentState, V3Inputs } from '../../types';
+import { addDays } from '../../dates';
+import { NEEDS_INPUT_ENTRY_AGE_DAYS } from '../../constants';
 import { ASOF, inputsOf, monthOf, v3Line, v3Series } from '../../__tests__/helpers/fixtures';
 import { needsInput, uncoveredIncomeMonths } from '../needsInput';
 
@@ -100,6 +102,42 @@ describe('needsInput', () => {
     expect(run(fresh, { month: behindMonth, purchase: purchase({ band: 5 }) })).toEqual([]);
     const none = inputsOf({ series: [pay] });
     expect(run(none, { month: behindMonth, purchase: purchase({ band: 5 }) })).toEqual(['records_look_behind']);
+  });
+
+  it('05.3-119 (UAT gap 36) a fresh current-month "up to date" or "nothing to add" answer skips records_look_behind', () => {
+    const behindMonth = month({ everydayLogged: mu(10_000) });
+    const old = [monthOf('2026-10', [v3Line({ id: 'a', date: '2026-09-18', amount: 100 })])]; // 15 days before ASOF
+    const withW = (waivers: ReadinessWaiver[]) => inputsOf({ series: [pay], months: old, waivers });
+    const at = (w: ReadinessWaiver[]) => run(withW(w), { month: behindMonth, purchase: purchase({ band: 5 }) });
+    expect(at([])).toEqual(['records_look_behind']);
+    expect(at([{ kind: 'month_complete', month: '2026-10', at: ASOF }])).toEqual([]);
+    expect(at([{ kind: 'nothing_to_add', month: '2026-10', at: ASOF }])).toEqual([]);
+    // only the current month counts
+    expect(at([{ kind: 'month_complete', month: '2026-09', at: ASOF }])).toEqual(['records_look_behind']);
+    expect(at([{ kind: 'nothing_to_add', month: '2026-09', at: ASOF }])).toEqual(['records_look_behind']);
+    // the same staleness clock readiness uses: at the limit still counts, one day past does not
+    expect(at([{ kind: 'month_complete', month: '2026-10', at: addDays(ASOF, -NEEDS_INPUT_ENTRY_AGE_DAYS) }])).toEqual([]);
+    expect(at([{ kind: 'month_complete', month: '2026-10', at: addDays(ASOF, -(NEEDS_INPUT_ENTRY_AGE_DAYS + 1)) }])).toEqual(['records_look_behind']);
+    // an answer given after asOf does not exist yet
+    expect(at([{ kind: 'month_complete', month: '2026-10', at: addDays(ASOF, 1) }])).toEqual(['records_look_behind']);
+    // other answers do not speak to the spending clock
+    expect(
+      at([
+        { kind: 'paid_by_other', seriesId: 'p', date: ASOF },
+        { kind: 'didnt_happen', seriesId: 'p', date: ASOF },
+        { kind: 'no_pay', seriesId: 'p', date: ASOF },
+        { kind: 'always_other', seriesId: 'p' },
+        { kind: 'income_elsewhere' },
+        { kind: 'start_from', month: '2026-10' },
+      ]),
+    ).toEqual(['records_look_behind']);
+    // a stale answer next to a fresh one: the fresh one counts
+    expect(
+      at([
+        { kind: 'month_complete', month: '2026-10', at: addDays(ASOF, -30) },
+        { kind: 'nothing_to_add', month: '2026-10', at: ASOF },
+      ]),
+    ).toEqual([]);
   });
 
   it('everyday unknown', () => {
