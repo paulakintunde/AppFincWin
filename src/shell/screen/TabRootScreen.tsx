@@ -7,6 +7,7 @@ import { View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { FAB_CLEARANCE } from '@/shell/fab/useShellPositions';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useScreenInsets } from '@/theme/layout';
 import { useTabRootChrome, type TabRootChromeOptions } from './useTabRootChrome';
 
 export interface TabRootScreenProps extends TabRootChromeOptions {
@@ -16,10 +17,13 @@ export interface TabRootScreenProps extends TabRootChromeOptions {
 
 export function TabRootScreen({ overlay, children, ...options }: TabRootScreenProps): React.JSX.Element {
   const { colors } = useTheme();
+  const insets = useScreenInsets();
   const chrome = useTabRootChrome(options);
   /* eslint-disable react-hooks/refs -- the chrome object carries the animated scroll ref to the ScrollView; nothing reads .current during render */
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      {chrome.compactInFlow ? <View testID="status-backdrop" style={{ height: insets.top, backgroundColor: colors.canvas }} /> : null}
+      {chrome.compactInFlow && chrome.compactVisible ? chrome.compactHeader : null}
       <Animated.ScrollView
         ref={chrome.scrollRef}
         onScroll={chrome.onScroll}
@@ -30,7 +34,7 @@ export function TabRootScreen({ overlay, children, ...options }: TabRootScreenPr
         {chrome.largeHeader}
         {children}
       </Animated.ScrollView>
-      {chrome.compactHeader}
+      {chrome.compactInFlow ? null : chrome.compactHeader}
       {overlay}
     </View>
   );
