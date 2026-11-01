@@ -24,7 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged with Decide hidden behind "Coming soon" until 05.1-05.3)
 - [x] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine (50/50 plans: 32 on 2026-10-26, gap closure 05.1-33..50 on 2026-10-27; owner shadow sign-off and re-verification 6/6 passed 2026-10-27) (completed 2026-10-27)
 - [ ] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations
-- [ ] **Phase 05.3: Decide screens v3** (INSERTED) - The Calm Ledger screens in the current theme; old Decide screens removed at cutover
+- [ ] **Phase 05.3: Decide screens v3** (INSERTED) - STOPPED 2026-11-01 (Theme N): the Calm Ledger screens; branch parked, not merged; parts harvested in 05.4
 - [ ] **Phase 05.4: Decide safety patch** (INSERTED) - Decide never says "Fits" when a careful person would say "careful": safety net, overdraft, debt minimums, tax, after-purchase figure; plain confidence sentence replaces Rough/Fair/Firm
 - [ ] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
@@ -1029,6 +1029,8 @@ Plans:
 
 ### Phase 05.3: Decide screens v3 (INSERTED)
 
+**Status: STOPPED 2026-11-01** by the owner after a six-expert review (`.planning/research/DECIDE-FIX-PLAN.md` Theme N, BO-01). The eight in-flight round-3 fix plans finish and the branch `phase/05.3-decide-screens-v3` is pushed and parked. It is not merged and Decide is not switched on for testers. Its engine fixes and shared plumbing are brought onto main in 05.4 (BO-02, BO-03); the screens are replaced by Variant C in 08.1 (BO-09). The text below is kept as the record.
+
 **Goal:** The Calm Ledger mockup ("Can I Afford It — Decide mockup") is built in the current theme (Bold pairing, green accent, 26 px cards, the five-tab bar):
 - home, the layered check (15 bands, item-type questions, payment plan), the answer ladder;
 - the whole plan, "What could I do instead?", how it was worked out, "Help me check this", and the record sheets.
@@ -1049,8 +1051,8 @@ Plans:
 ### Phase 05.4: Decide safety patch (INSERTED)
 
 **Goal:** Decide never says "Fits" when a careful person would say "careful". Every such rule is locked by a property test, and a plain confidence sentence replaces Rough / Fair / Firm. Source: `.planning/research/DECIDE-FIX-PLAN.md` section 4 (approved by the owner 2026-11-01).
-**Requirements**: Fix IDs FIN-01..11, FIN-14, FIN-15, FIN-25..27; ENG-01..15, ENG-17..19, ENG-28, ENG-29 (tax part); ARC-07; UX-01..10, UX-13..15, UX-17..19, UX-21 (interim), UX-22..25, UX-26 round 1, UX-27..30, UX-32..34; APP-01..07, APP-10, APP-11, APP-15, APP-16 (footer), APP-19, APP-20; CMP-F01..04, F06..08, F11..13, F24 (tax wording); QA-01..04 (Theme M)
-**Depends on:** Phase 05.3
+**Requirements**: Fix IDs FIN-01..11, FIN-14, FIN-15, FIN-25..27; ENG-01..15, ENG-17..19, ENG-28, ENG-29 (tax part); ARC-07; UX-01..10, UX-13..15, UX-17..19, UX-21 (interim), UX-22..25, UX-26 round 1, UX-27..30, UX-32..34; APP-01..07, APP-10, APP-11, APP-15, APP-16 (footer), APP-19, APP-20; CMP-F01..04, F06..08, F11..13, F24 (tax wording); QA-01..04 (Theme M); BO-02..06, BO-08 (Theme N). Screen-side copy and app items move to 08.1 (Theme N)
+**Depends on:** Phase 05.3 stopped and its branch pushed (BO-01)
 **Success Criteria** (what must be TRUE):
   1. The safety net (starter of about 1 month of essential costs) is protected by default and can be switched off or resized. A purchase that only fits by using it gets "Fits, but dips into your safety net".
   2. Overdrafts count as negative, debt minimums sit on the 90-day cash path, sales tax and one-off fees are added to the price, and the big figure shows money left after the purchase.
@@ -1060,6 +1062,7 @@ Plans:
   6. Decide opens offline on the 1st of the month with an honest "Records up to" date, and Android speed is measured on the Pixel 6.
   7. Compliance gate: CMP-F01, F02, F03, F07, F08 and F11 merged; purge job deployed after the Supabase preflight; the owner signs off every changed answer string.
   8. Theme M: the owner-approved right-answer table (about 50 cases) is committed as tests before the first Theme A engine change, and every case passes; a separate plain calculator agrees with the engine on 1,000 random cases per change and 20,000 nightly; at least 90% of Stryker's breaking changes in `src/engine/decide/` are caught; after reading-test round 1 the chosen screens are signed and frozen, with a v1.1 list for later ideas.
+  9. Theme N: the 05.3 engine and plumbing changes are on main with their tests; Maestro flows for Back, saving offline and Record as bought are green; Variant C's inputs (running-cost lines, closing %, cash and installments from one input, what it replaces, purchase date, save-for-it ready date) exist as engine types with tests; a release check fails if any account outside the tester list has `profiles.decide_v3` on; the first shadow run on testers' records has been reviewed by the owner. Decide stays off for everyone.
 **Plans:** 0 plans
 
 Plans:
@@ -1068,13 +1071,14 @@ Plans:
 ### Phase 05.5: One shared money model (INSERTED)
 
 **Goal:** Every screen gets each money figure from one owner, the old engine is gone, and Grow and Household have declared plugs to connect to. Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 4 and 5.
-**Requirements**: Fix IDs ARC-03..06, ARC-08..12; ENG-16, ENG-20..22; APP-08 (steps 1-2), APP-12 (Android), APP-13 (core flows), APP-14 (Android), APP-17, APP-18; UX-31; CMP-F09, F10, F20
-**Depends on:** Phase 05.4, and the 2-week hold after the 05.3 tester switch-on (the 05.3 removal list runs here, once)
+**Requirements**: Fix IDs ARC-03..06, ARC-08..12; ENG-16, ENG-20..22; APP-08 (steps 1-2), APP-12 (Android), APP-13 (core flows), APP-14 (Android), APP-17, APP-18; UX-31; CMP-F09, F10, F20; BO-07 (Theme N)
+**Depends on:** Phase 05.4
 **Success Criteria** (what must be TRUE):
   1. The snapshot builder reads database rows directly and no import of the old engine remains; a shadow comparison on test accounts and goldens shows only approved differences; coverage stays at 100%.
   2. Home and Decide read one month picture with two named figures ("left so far" and "left after the month's plans").
   3. One recurring-bill detector and one date calendar, proven identical by a property test; one cap per category; one confidence module.
   4. Contract tests exist for the safety net, debt facts, household scope, settlements, income profile and visibility, each marked "to do" until its phase turns it on.
+  5. Theme N: six connection points with one owner each are written and tested (month picture, Grow goal, safety net, Grow debt, Activity bills, household scope); the move of the safety-net, debt, savings and share columns out of `decide_settings` is planned; only one Decide remains in the app's routes.
   5. Core Maestro flows run green on the Android emulator.
   6. Compliance gate: retired screens deleted; the copy guard runs at sentence level and in lint.
 **Plans:** 0 plans
@@ -1084,7 +1088,7 @@ Plans:
 
 ### Phase 6: Grow
 **Goal**: A user can track savings goals, investments and debt payoff against their real numbers.
-**Depends on**: Phase 3 (Shell provides the navigation these screens live in), Phase 05.5 (the shared money model and contracts, per the Decide fix plan)
+**Depends on**: Phase 3 (Shell provides the navigation these screens live in), Phase 05.5 (the shared money model and contracts, per the Decide fix plan). Designed for Variant C (fix plan Theme N, BO-07): goals, the safety net and debts follow the agreed connection points, with a "Create from Decide" entry and a "linked to a decision" label
 **Requirements**: GRW-01, GRW-02, GRW-03, GRW-04, GRW-05, GRW-06, GRW-07, GRW-08, GRW-09, GRW-10, GRW-11
 **Success Criteria** (what must be TRUE):
   1. A user can create a savings goal with a target amount or leave it open-ended, flag exactly one goal as their emergency fund, and set an automatic contribution to any goal.
@@ -1114,7 +1118,7 @@ Plans:
 
 ### Phase 8: Household
 **Goal**: Multiple people can share one household's money, live, on top of the RLS foundation Phase 0 already laid.
-**Depends on**: Phase 0 (schema/RLS foundation), Phase 3 (Shell for the UI this phase adds)
+**Depends on**: Phase 0 (schema/RLS foundation), Phase 3 (Shell for the UI this phase adds). Designed for Variant C (fix plan Theme N, BO-07): the household scope connection point; the first wave fixes the household-wide read rule on `debts` and `statement_periods`
 **Requirements**: HH-01, HH-02, HH-03, HH-04, HH-05, HH-06, HH-07, HH-08, HH-09, HH-10, HH-11, HH-12, HH-13, HH-14, HH-15
 **Success Criteria** (what must be TRUE):
   1. A user can invite another person with an expiring link and code; the invited person joins by signing in and gains access only to that household's shared records.
@@ -1133,7 +1137,7 @@ Plans:
 ### Phase 08.1: Decide rebuild on real data (INSERTED)
 
 **Goal:** Decide reaches 10/10 on every auditor's checklist using real goals, debts and household data, with the full cost of a purchase (tax, fees and running costs) and the design the owner confirms. Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 4, 6 (Theme L) and 8. Design: Variant C is proposed ("Decide redesign: three variants" canvas). The owner confirms it after reading-test round 1, which tests Variants A, B and C.
-**Requirements**: Fix IDs FIN-12, FIN-20..24, FIN-28, FIN-29, FIN-31; ENG-26, ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-21, APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-26 round 2, UX-38, UX-41; CMP-F12 (layout), F14, F15, F19; ARC-11 (moved setup steps removed); QA-01 (freeze held), QA-02 and QA-03 (extended)
+**Requirements**: Fix IDs FIN-12, FIN-20..24, FIN-28, FIN-29, FIN-31; ENG-26, ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-21, APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-26 round 2, UX-38, UX-41; CMP-F12 (layout), F14, F15, F19; ARC-11 (moved setup steps removed); QA-01 (freeze held), QA-02 and QA-03 (extended); BO-09 and the screen side of the 05.4 copy and app items (Theme N)
 **Depends on:** Phase 8
 **Success Criteria** (what must be TRUE):
   1. "Check a purchase" is always visible, and a new user gets a first answer from quick estimates (target under 60 seconds and 8 taps; hard limit 90 seconds and 12 taps). Decide setup has at most 5 steps of its own.
@@ -1143,6 +1147,7 @@ Plans:
   5. Compliance gate: CMP-F12, F14 and F15 merged; no plain "Fits" below the safety net, with a short month, or resting on the user's word; free-help trigger tests green; builder scoped to the viewer.
   6. The public switch-on is the last task and runs only after Phase 08.2 passes.
   7. Screens match the signed set from the design freeze (QA-01), with every change traced to a reading-test round 2 finding or another allowed reason; the right-answer table and the plain calculator cover running costs, loans and household money and still agree with the engine.
+  8. Theme N: the Variant C screens are built once, in a new folder, on the finished plumbing and the six connection points, with nothing copied from the parked 05.3 screens; named testers see them behind the per-account switch (not a second tab), with the build name in the footer.
 **Plans:** 0 plans
 
 Plans:
@@ -1158,6 +1163,7 @@ Plans:
   2. All seven auditors score 10/10, or the owner signs a waiver for each gap; a failed line opens a gap plan in 08.1 and only that auditor re-runs.
   3. The four household personas run on both partners' accounts, and the reading test (5 + 5 people) passes.
   4. At least 95% of Stryker's breaking changes across the Decide engine are caught by a test; each one not caught is recorded as harmless with a reason (QA-04).
+  5. The public switch-on and the deletion of the old Decide screens and routes happen in the same release (Theme N, BO-09).
 **Plans:** 0 plans
 
 Plans:
@@ -1258,7 +1264,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
-| 05.3 Decide screens v3 | 0/TBD | Not started | - |
+| 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
 | 05.4 Decide safety patch | 0/TBD | Not started | - |
 | 05.5 One shared money model | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |

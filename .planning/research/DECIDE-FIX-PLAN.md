@@ -4,20 +4,21 @@
 **Date:** 31 October 2026
 **From:** the fix-plan team (financial, engine, architecture, mobile app, UX and compliance experts), combined by the lead editor
 **Based on:** today's Decide audit (overall about 6/10, themes A to F, 21 must-fix items) and your seven settled decisions
-**Status:** approved by the owner on 1 November 2026. Phases 05.4, 05.5, 08.1 and 08.2 are in ROADMAP.md, and Phases 6, 7 and 8 carry its amendments. Theme M (four safeguards against repeat errors) was added and approved on 1 November 2026.
+**Status:** approved by the owner on 1 November 2026. Phases 05.4, 05.5, 08.1 and 08.2 are in ROADMAP.md, and Phases 6, 7 and 8 carry its amendments. Theme M (four safeguards against repeat errors) was added and approved on 1 November 2026. Theme N (build Decide once: 05.3 stopped, Variant C built from scratch in 08.1 on fixed foundations) was approved on 1 November 2026 after a six-expert review.
 
 ---
 
 ## 1. The short version
 
 - **The goal is 10/10 from every auditor.** Six auditors scored Decide today: financial, engine, app, UI, UX and compliance. The plan adds a seventh, an integration auditor, who checks that Decide, Activity, Grow and Household share data without copying it. Each auditor has a checklist (section 7). Decide is switched on for the public only when every line is ticked, or you sign a waiver for a gap.
-- **Build order in one line:** finish 05.3 (Decide on for testers) → **05.4 safety patch** → **05.5 one shared money model** → **Grow** → **Household** → **08.1 Decide rebuild** → **08.2 re-audit** → Insights → Tiers, System, Compliance.
+- **Build Decide once (Theme N, added 1 November).** The Calm Ledger screens (05.3) stop and their branch is parked. Its engine fixes and shared plumbing come onto main in 05.4. The engine is fixed and proven with no screens. Six connection points, each owned by one feature, are written in 05.5. Grow and Household are built to them, designed for Variant C. Then the Variant C screens are built once, from scratch, in 08.1. Decide stays off for everyone, testers included, until then, and testers' real records are run through the engine quietly instead.
+- **Build order in one line:** 05.3 stopped (branch parked) → **05.4 safety patch** → **05.5 one shared money model** → **Grow** → **Household** → **08.1 Decide rebuild** → **08.2 re-audit** → Insights → Tiers, System, Compliance.
 - **Why this order:** the "says Fits when it shouldn't" bugs get fixed and locked by automatic tests in the first few weeks. Every later phase is then checked against a correct engine. The bigger rebuild still waits for real goals, debts and household data, as you wanted.
 - **The safety net:** Decide keeps a safety net (emergency fund) out of spendable money by default. The starter size is about 1 month of your essential costs, worked out from your records. Later the app suggests 3 months. A purchase that dips into it gets its own amber answer: "Fits, but dips into your safety net." You can resize it or switch protection off at any time. Nothing is forced.
 - **Rough / Fair / Firm is gone.** Every answer carries one plain sentence: what it is based on, and what would make it surer. Example: "Based on 2 months of your records. Logging 1 more month makes this surer." Typed-in figures are now called **"quick estimates"** on screen.
 - **A household privacy gap must close before anyone can be invited.** Today the database lets any household member read every record in that household. That is harmless while every household has one person. The day a partner joins, they would see everything. Household's first job is to make every record **personal unless marked shared**, enforced by the database itself.
 - **Why Decide needed so many fixes, and how this plan stops it (Theme M, added 1 November).** The design kept changing after code was written (18 revisions of the screen spec, and an engine rewrite after the screens were built). The tests checked that the app matched the design prototype, not that its answers were right, so too-kind rules passed with every line tested. Four safeguards fix this: **freeze the design** after reading-test round 1; **write the right answers first** in a table you approve; **check the engine against a second, simple calculator** on thousands of random cases; and **test the tests** by breaking the engine on purpose and making sure a test fails each time.
-- **How long:** roughly **14 to 18 weeks of fix work**, spread across the build. About 7 to 9 weeks of it come before Grow starts (05.4 and 05.5). The rest is added to Grow and Household, plus a 3 to 4 week Decide rebuild and about 1 week of re-audit. These are on top of the work Grow and Household already need. Public launch also waits on Apple enrolment and Phases 9 to 11.
+- **How long:** roughly **16 to 20 weeks of fix work**, spread across the build (Theme N moves the screen build into 08.1 and drops the rest of 05.3). About 7.5 to 9.5 weeks of it come before Grow starts (05.4 and 05.5). The rest is added to Grow and Household, plus a 3 to 4 week Decide rebuild and about 1 week of re-audit. These are on top of the work Grow and Household already need. Public launch also waits on Apple enrolment and Phases 9 to 11.
 - **What you must decide:** 13 questions (section 11). Question 2 is already settled, and question 13, about tax and running costs, was added on 1 November. The most important ones: approve the order, accept amber "dips into your safety net" answers, and agree the household privacy defaults. Five topics need a lawyer.
 
 ---
@@ -128,7 +129,7 @@
 
 The phase list is the architect's (ARC section 1.4). Sizes and contents merge in the financial, engine, app, UX and compliance views. Every size is a rough guide for one developer per track, not a promise.
 
-**Order:** 05.3 (finish) → 05.4 → 05.5 → 6 Grow → 06.1 (optional) → 8 Household → 08.1 → 08.2 → 7 Insights → 9 → 10 → 11
+**Order:** 05.3 (stopped, branch parked) → 05.4 → 05.5 → 6 Grow → 06.1 (optional) → 8 Household → 08.1 → 08.2 → 7 Insights → 9 → 10 → 11
 
 **Standing exit lines for every phase** (compliance gate S1 to S6): the shared copy guard is green over every screen's text; no hard-typed text in screens; analytics carry no amounts or price ranges; database rules tests are green; every new table with user data has a data-map entry, a deletion path and a database rule; and a short written "compliance note" is in the merge request.
 
@@ -136,22 +137,23 @@ The phase list is the architect's (ARC section 1.4). Sizes and contents merge in
 
 | Phase | Name | Rough length (fix work) | Running total | Decide visible to |
 |---|---|---|---|---|
-| 05.3 | Finish Decide screens v3 | as planned (14 open plans) | 0 | on for testers |
-| 05.4 | Decide safety patch | 5 to 6 weeks (includes Theme M) | 5 to 6 | on for testers |
-| 05.5 | One shared money model | 2 to 3 weeks | 7 to 9 | on for testers |
-| 6 | Grow (amended) | as planned + about 1.5 weeks | 8.5 to 10.5 | on for testers |
+| 05.3 | Decide screens v3 (Calm Ledger) | stopped; the eight in-flight plans finish | 0 | off |
+| 05.4 | Decide safety patch | 5 to 6 weeks (screen work moves to 08.1; parts harvest and Variant C engine types come in) | 5 to 6 | off; shadow runs on testers' records |
+| 05.5 | One shared money model and six connection points | 2.5 to 3.5 weeks | 7.5 to 9.5 | off; shadow runs |
+| 6 | Grow (amended) | as planned + about 1.5 weeks | 9 to 11 | off; shadow runs |
 | 06.1 | Activity views (optional) | small, can run alongside | — | — |
-| 8 | Household (amended) | as planned + about 2 weeks | 10.5 to 12.5 | on for testers |
-| 08.1 | Decide rebuild on real data | 3 to 4 weeks | 13.5 to 16.5 | test accounts; named beta testers if you choose |
-| 08.2 | Re-audit | about 1 week (+ any gap fixes) | 14.5 to 17.5 | same |
+| 8 | Household (amended) | as planned + about 2 weeks | 11 to 13 | off; shadow runs |
+| 08.1 | Variant C Decide, built once | 4 to 6 weeks (estimate, set at planning) | 15 to 19 | named testers, behind the per-account switch |
+| 08.2 | Re-audit | about 1 week (+ any gap fixes) | 16 to 20 | same |
 | 7 | Insights (moved later) | as planned | — | — |
 | 9, 10, 11 | Tiers, System, Compliance and Release | as planned + Release items | — | public, after 08.2 passes and Phase 11 gates |
 
-The "running total" counts only the extra work this plan adds. Grow's and Household's own planned work comes on top. The two biggest outside risks to the dates are Apple enrolment and the speed of the iPhone XR (section 12).
+The "running total" counts only the extra work this plan adds. Theme N makes 08.1 longer on paper, because the screens are built from scratch, but it drops the rest of 05.3 and the second screen rebuild that would have followed it. Nobody has measured the net effect; the experts judged it similar or shorter. Grow's and Household's own planned work comes on top. The two biggest outside risks to the dates are Apple enrolment and the speed of the iPhone XR (section 12).
 
-### Phase 05.3: finish Decide screens v3
+### Phase 05.3: Decide screens v3 (stopped 1 November, Theme N)
 
-- **Goal:** the v3 screens are built and the walkthrough is signed, with Decide visible **only on test accounts**.
+- **Status:** stopped by your decision on 1 November (BO-01). The eight in-flight round-3 fix plans finish, the branch is pushed and parked, and nothing is merged. The rest of this section is kept as the record of what 05.3 was for.
+- **Goal (original):** the v3 screens are built and the walkthrough is signed, with Decide visible **only on test accounts**.
 - **What it fixes:** ARC-01. Closes Theme B through 05.3-68, -69, -71, -72 and -78 (re-checked later by UX-14, UX-15, UX-25).
 - **Length:** as planned.
 - **Exit gate:**
@@ -169,6 +171,8 @@ The "running total" counts only the extra work this plan adds. Grow's and Househ
   - *App reliability:* APP-01 to APP-07, APP-10, APP-11, APP-19, APP-20, APP-16 (footer only), APP-04 (Android timings), APP-15 (demo-account machinery).
   - *Getting it right first time (Theme M):* QA-01 (design freeze after reading-test round 1), QA-02 (right-answer table, first task), QA-03 (cross-check calculator for the Theme A rules), QA-04 (mutation testing, 90% gate).
   - *Compliance:* CMP-F01, F02, F03, F04 (Help entry and Decide trigger), F06 (purge job), F07, F08, F11, F12 (copy and guard), F13 (the "untouched" truth fix).
+  - *Build once (Theme N):* BO-02 (engine harvest, first), BO-03 (plumbing harvest and robot flows), BO-04 (shared parts to `src/ui/`), BO-05 (Variant C engine types and tests), BO-06 (per-account switch release check), BO-08 (shadow runs begin); QA-02 grows to about 70 cases.
+  - *Moved to 08.1 by Theme N:* the screen side of the clarity, copy and app items above (layout, on-screen copy, the offline card, typing speed on screen, the footer). They are written into the Variant C screens instead of the Calm Ledger ones. Their engine and data parts (for example the after-purchase figure, `records_synced`, and price limits) stay here. ARC-01's tester note is no longer needed, because testers do not see Decide.
 - **Length:** 5 to 6 weeks. The right-answer table comes first (about 3 to 4 days, including your approval). The core money rules land in the next 2 to 3 weeks. Copy, app work and the Theme M test tools run alongside.
 - **Exit gate:**
   - All Theme A property tests pass, including "never fits below the protected safety net", "adding a debt never raises the lowest point", "a lower balance never gives a better answer", "a dearer loan never looks better", "a short month never fits a new payment" and "a yes never turns a records gap green".
@@ -177,24 +181,26 @@ The "running total" counts only the extra work this plan adds. Grow's and Househ
   - **Theme M:** the right-answer table (QA-02) was approved by you and committed as tests before the first Theme A engine change, and every case passes. The cross-check calculator (QA-03) agrees with the engine on every case: 1,000 random cases on each change and 20,000 nightly. At least 90% of Stryker's breaking changes in `src/engine/decide/` are caught by a test (QA-04). After reading-test round 1, the chosen screen set is signed and frozen (QA-01), and a v1.1 list exists for later ideas.
   - No `ConfidenceLevel` type and no tier words anywhere.
   - Decide opens offline on the 1st of the month with an honest "Records up to" date, never an endless spinner.
-  - Android speed measured on the Pixel 6 (APP-04).
+  - Android speed measured on the Pixel 6 (APP-04), for the engine part of each key press.
+  - **Theme N:** the 05.3 engine and plumbing changes are on main with their tests; Maestro flows for Back, saving offline and Record as bought are green on the Android emulator; Variant C's inputs exist as engine types with tests; the per-account switch check is in the release gate; the first shadow run on testers' records has been reviewed by you.
   - **Compliance gate:** CMP-F01, F02, F03, F07, F08 and F11 merged; purge job deployed after the Supabase preflight; Help entry has a dated sign-off; you sign off every changed answer string.
-- **Depends on:** 05.3. Small additive database changes are needed: allowing the new answer code `fits_uses_net` in stored answers, and new columns for the safety-net switch and size, account overdraft limit and rate, and debt due day.
+- **Depends on:** 05.3 stopped and its branch pushed (BO-01). Small additive database changes are needed: allowing the new answer code `fits_uses_net` in stored answers, and new columns for the safety-net switch and size, account overdraft limit and rate, and debt due day.
 
 ### Phase 05.5: one shared money model (new)
 
 - **Goal:** every screen gets each money figure from one owner, the old engine is gone, and Grow and Household have declared plugs to connect to.
-- **What it fixes:** ARC-03 to ARC-06, ARC-08 to ARC-12; ENG-16, ENG-20, ENG-21 (builder rebuilt, old engine deleted), ENG-22 (shared "money this month"); APP-08 (steps 1 and 2), APP-12 (Android), APP-13 (core robot flows), APP-14 (Android rows), APP-17 (old code deleted), APP-18 (paywall switches); UX-31 (design spec re-approved); CMP-F09 (guard enforced in code), CMP-F10 (retired screens deleted), CMP-F20 (privacy text drafted).
-- **Length:** 2 to 3 weeks.
+- **What it fixes:** ARC-03 to ARC-06, ARC-08 to ARC-12; ENG-16, ENG-20, ENG-21 (builder rebuilt, old engine deleted), ENG-22 (shared "money this month"); APP-08 (steps 1 and 2), APP-12 (Android), APP-13 (core robot flows), APP-14 (Android rows), APP-17 (old code deleted), APP-18 (paywall switches); UX-31 (design spec re-approved); CMP-F09 (guard enforced in code), CMP-F10 (retired screens deleted), CMP-F20 (privacy text drafted); BO-07 (six connection points with one owner each).
+- **Length:** 2.5 to 3.5 weeks.
 - **Exit gate:**
   - The snapshot builder reads database rows directly. No import of the old engine remains. Coverage is still 100%. A shadow comparison of old and new builders on test accounts and goldens shows only approved differences.
   - Home and Decide read the same month picture, with two clearly named figures ("left so far" and "left after the month's plans").
   - One recurring-bill detector and one date calendar, proven identical by a property test.
   - Contract tests exist for the safety net, debt facts, household scope, settlements, income profile and visibility. Each is marked "to do" until its phase turns it on.
+  - **Theme N:** the six connection points (BO-07) are written and tested: month picture, goal, safety net, debt, bills and household scope. The plan for moving the safety-net, debt, savings and share columns out of `decide_settings` is recorded. Only one Decide remains in the app's routes.
   - The setup-question ownership table is recorded as a decision file.
   - Core Maestro flows run green on the Android emulator.
   - **Compliance gate:** retired screens deleted (a bundle search for "Lines you will not cross" finds nothing); the guard runs at sentence level and in lint.
-- **Depends on:** 05.4 merged; the 2-week hold from ARC-01 has ended.
+- **Depends on:** 05.4 merged. (The 2-week hold from ARC-01 no longer applies: 05.3 never switched on.)
 
 ### Phase 6: Grow (amended)
 
@@ -208,6 +214,7 @@ The "running total" counts only the extra work this plan adds. Grow's and Househ
   - The Loans, Saving, Emergency and Envelopes setup steps live in Grow. Decide links to them.
   - Contract tests for the safety net and debt facts are turned on.
   - **Compliance gate:** safety-net copy table in place and guarded; no assumed investment return anywhere; payoff plans shown unranked; footer and not-a-lender line on debt screens; Grow tables cascade on account deletion; Grow analytics carry no goal names or amounts.
+- **Designed for Variant C (Theme N):** the goal, safety-net and debt connection points (BO-07) are built to their agreed shape, with a "Create from Decide" entry point and a "linked to a decision" label. Selling an old item closes its debt in the same save. No Decide code needs to be present.
 - **Depends on:** 05.5.
 
 ### Phase 06.1: Activity views (optional)
@@ -229,13 +236,14 @@ The "running total" counts only the extra work this plan adds. Grow's and Househ
   - The Share setup step lives in Household.
   - Contract tests for household scope, settlements, income profile and visibility are turned on.
   - **Compliance gate:** opt-in default off and its property test green; every string that names a member uses the "hide real names" resolver; the live-sync test shows no personal-row events reach other members; the share-link summary excludes Decide and personal rows; erasure test green; DPIA drafted.
+- **Designed for Variant C (Theme N):** the household scope connection point (BO-07). The first wave also fixes the household-wide read rule on `debts` and `statement_periods`.
 - **Depends on:** Phase 6 and the 05.5 contracts.
 
-### Phase 08.1: Decide rebuild on real data (new)
+### Phase 08.1: Variant C Decide, built once (new; changed by Theme N)
 
-- **Goal:** Decide reaches 10/10 on every checklist, using real goals, debts and household data.
-- **What it fixes:** FIN-12, FIN-20 to FIN-24; ENG-26; APP-09, APP-13 (loan, waiver and safety-net flows), APP-21 (server switches built), APP-24 (settings screen), APP-25; UX-03 (full layout), UX-11, UX-13 (cost in the hero and the save-versus-borrow rows), UX-16, UX-38, UX-26 round 2; CMP-F12 (layout), F14, F15, F19 (viewer scoping in the builder). It also removes the moved setup steps from Decide (ARC-11) and applies the chosen design variant.
-- **Length:** 3 to 4 weeks.
+- **Goal:** the Variant C screens are built once, from scratch, in a new folder, on the finished plumbing and the six connection points, and Decide reaches 10/10 on every checklist using real goals, debts and household data.
+- **What it fixes:** FIN-12, FIN-20 to FIN-24; ENG-26; APP-09, APP-13 (loan, waiver and safety-net flows), APP-21 (server switches built), APP-24 (settings screen), APP-25; UX-03 (full layout), UX-11, UX-13 (cost in the hero and the save-versus-borrow rows), UX-16, UX-38, UX-26 round 2; CMP-F12 (layout), F14, F15, F19 (viewer scoping in the builder). It also removes the moved setup steps from Decide (ARC-11) and applies the chosen design variant. **Theme N:** BO-09 (Variant C screens from scratch, behind the per-account switch, with the build name in the footer), plus the screen side of the 05.4 clarity, copy and app items.
+- **Length:** 4 to 6 weeks (an estimate, to be set when the phase is planned).
 - **Exit gate:**
   - "Check a purchase" is always visible. A new user gets a first answer from quick estimates (design target under 60 seconds and 8 taps; hard limit 90 seconds and 12 taps).
   - Decide setup has at most 5 steps of its own.
@@ -251,7 +259,7 @@ The "running total" counts only the extra work this plan adds. Grow's and Househ
 - **Goal:** prove 10/10, first against this plan, then fresh, across Decide, Activity, Home, Grow and Household.
 - **What it fixes:** nothing directly. A failed line opens a gap plan in 08.1, and only that auditor re-runs.
 - **Length:** about 1 week, plus any gap fixes.
-- **Exit gate:** every auditor scores 10/10, or you sign a waiver for each gap (section 9). At least 95% of Stryker's breaking changes across the Decide engine are caught by a test, and every one that is not is recorded as harmless with a reason (QA-04).
+- **Exit gate:** every auditor scores 10/10, or you sign a waiver for each gap (section 9). The public switch-on and the deletion of the old Decide screens and routes happen in the same release (BO-09). At least 95% of Stryker's breaking changes across the Decide engine are caught by a test, and every one that is not is recorded as harmless with a reason (QA-04).
 - **Depends on:** 08.1.
 
 ### Phase 7: Insights (moved after 08.2)
@@ -721,6 +729,101 @@ Causes 3, 4 and 5 are already handled by the build order, Theme K and Theme J. T
 
 ---
 
+### Theme N: Build Decide once (added 1 November at your request)
+
+**The problem.** Variant C is about to replace the Calm Ledger design that 05.3 was building. Finishing 05.3 and then rebuilding the screens as Variant C in 08.1 would build Decide's screens twice more. That is the design churn Theme M names as the biggest cause of past fixes. You also asked that Grow and Household know Variant C is coming, without inheriting the pieces of today's Decide that keep looping through fixes.
+
+**How it was decided.** Six experts (financial, engine, architecture, mobile app, UX and compliance) reviewed three options on 1 November:
+- **Two Decides side by side, each with its own menu:** average score 9 out of 25. Both would write the same tables (checks, answers, goals, debts and bills), so they would damage each other's data.
+- **Freeze Decide until Household:** 18. Safe, but Grow and Household would be checked against an engine known to be wrong.
+- **The blend:** 21, rising to about 23 with the experts' additions.
+
+You adopted the blend, with shadow runs for testers and the Variant C mockup fixes first. The full report: https://claude.ai/artifact/4HMamczsnMN4RwQvTGhton
+
+**The agreed fixes:**
+- **BO-01: Stop 05.3 and park its branch.**
+  - The 05.3 session finishes the eight round-3 fix plans already in flight (113 to 118, 120, 121; 119 is done), pushes the branch, and stops. No 05.3-122 re-check, no plan 46 tester switch-on, and no merge, not even switched off, because merged code can be reached by a switch.
+  - Branch `phase/05.3-decide-screens-v3` stays as a source of parts. Its handoff note for 05.4 is `.planning/phases/05.4-decide-safety-patch/05.4-HANDOFF-FROM-05.3.md` on that branch: the November figure mismatch, and "emergency fund untouched" shown with no fund.
+  - *Done 1 November. S.*
+- **BO-02: Bring the 05.3 engine fixes onto main.** One reviewed change, before any other engine work:
+  - What it brings: the 25 engine source commits on the branch, about 2,400 lines, with their tests. These include `readiness.ts`, `judge/purchase.ts`, `month/dueDrops.ts`, `month/cardStatements.ts` and `money/formatAmount.ts`.
+  - If it clashes for more than about 2 days, take only `readiness.ts`, `purchase.ts` and `dueDrops.ts`, and rebuild the rest.
+  - *05.4, first week. M.*
+- **BO-03: Bring the shared plumbing onto main, with robot tests.** One reviewed change, containing:
+  - the save-queue fix (05.3-116);
+  - the settings-cache fix (-117);
+  - the Back fixes (-114, -115);
+  - the sticky header (-109);
+  - local-day dates (-104);
+  - `boughtWrite.ts` (Record as bought makes Activity bills), and the related undo and save changes.
+
+  These are the problems that kept coming back on the phone (gaps 22 and 34, 27 and 33). Maestro flows for Back, saving offline and Record as bought land with it. *05.4. M.*
+- **BO-04: Shared screen parts move to `src/ui/`.**
+  - The parts: money input, segmented toggle, state chip, label-value row, check row, written list, warning card and custom value chips.
+  - Also the two-step "What gets written" record sheet, as a pattern.
+  - Grow and Household use these from their first screen. *05.4 or 05.5. S.*
+- **BO-05: Variant C's inputs become engine types and tests now, with no screens.** Each one gets its own pure function and tests:
+  - running-cost lines, each with an amount, how often, start date and optional end date, placed on the 90-day cash path;
+  - home closing costs as a % of the price;
+  - cash and installments judged from one shared input, so the answer tab and the compare screen read both results;
+  - "what it replaces": costs that stop, each linked to an Activity bill or to everyday spending, with a stop date; and a sale, with its amount and the Grow debt it pays off;
+  - a purchase date;
+  - the save-for-it ready date, where installments count only the up-front part.
+
+  The old engine's recorded answers (`legacy-answers.json`) stop being a pass/fail check. *05.4. M.*
+- **BO-06: A release check for the per-account switch.**
+  - The build fails if any account outside a named tester list has Decide switched on from the server (`profiles.decide_v3`).
+  - Demo and reviewer accounts are listed in code and must never have it on.
+  - *05.4. S.*
+- **BO-07: Six connection points, each with one owner.** Written as contracts with tests before Grow's first table changes. Decide only reads them, or asks the owning feature to save:
+  1. **Month picture** (shared engine module): "left so far", "left after the month's plans", and usual essential costs.
+  2. **Goal** (Grow): target, saved so far, monthly amount, ready date, a link back to where it came from, and an "up-front part only" flag. Goals are no longer tied to Decide checks.
+  3. **Safety net** (Grow): exactly one flagged goal, with its size, the amount in it, and protected on or off.
+  4. **Debt** (Grow): amount owed, rate, minimum, due day, payoff date, a link to what it paid for, and a "paid off" action.
+  5. **Bills** (Activity): one record per bill, with how often, the day, start and end dates, an end reason and a link to any Grow debt.
+  6. **Household scope** (Household): records personal unless shared; my share of each shared line; a partner's money counts only with their opt-in.
+
+  The safety net, debt totals, savings and share stored in `decide_settings` move to their owners and are then removed. *05.5. L.*
+- **BO-08: Shadow runs for testers.**
+  - Decide stays off for everyone, testers included, until BO-09.
+  - Testers keep logging their months. The corrected engine runs quietly on their real records with no answer shown on screen (the 05.1 D-14 shadow idea).
+  - You review the results, and every surprise becomes a right-answer case (QA-02).
+  - *From the end of 05.4 to 08.1. S per round.*
+- **BO-09: Build the Variant C screens once, from scratch.**
+  - They go in a new folder, on the finished plumbing and the six connection points. Nothing from `src/features/decide/v3/` or `src/shell/decide/v3/` is copied.
+  - Named testers see them behind the per-account switch, not a second tab. The build name shows in the footer of every Decide screen.
+  - The old Decide screens and routes are deleted in the same release that switches the new Decide on for the public, after 08.2.
+  - *08.1 and 08.2. L.*
+
+**Grow and Household, designed for Variant C.** Grow builds the goal, safety-net and debt connection points to the shape above, including:
+- a "Create from Decide" entry point;
+- a "linked to a decision" label;
+- the rule that selling an old item closes its debt in the same save.
+
+Household builds the scope point, and fixes the household-wide read rule on `debts` and `statement_periods` in its first wave. Neither needs any Decide code to be present.
+
+**Do not copy or build on:**
+- the safety net, debt totals, savings and share columns in `decide_settings`;
+- goals tied to checks (the locked "wait" kind and Decide-made "pots");
+- goal progress worked out inside Decide;
+- the old engine, `buildSnapshot.ts`, `buildV3Inputs.ts`, and the adapters that feed v3 through v1 (`legacy.ts`, `inputsV2.ts`);
+- Decide's own calendar (`v3/dates.ts`), bill finder (`v3/month/recurring.ts`) and month model;
+- the "envelope" stand-ins and the `ConfidenceLevel` type;
+- the Decide-only save actions for pots, go-ahead and checks;
+- the 15-band forms, the 17-step setup and the nine-answer table.
+
+**The right-answer table grows** from about 50 cases to about 70 (QA-02). The extra cases cover:
+- selling and replacing an item (a sale on the day versus a month later, a loan bigger than the sale price, a cost that stops but is due once more);
+- save-for-it (no double counting; installments save only the up-front part);
+- the safety net (none set, full, partly full, protection off, and a dip followed by a refill);
+- tax on financed purchases, and tax already included in the price;
+- running costs that start later;
+- about six two-person household cases.
+
+The Grow and Household cases are written now, and marked "to do" until their phase turns them on.
+
+---
+
 ## 7. What 10/10 looks like for each auditor
 
 Each auditor scores 10 only when every line holds and has evidence (a test, a document or a device check). One miss means a gap plan in 08.1 and a re-run for that auditor.
@@ -948,7 +1051,7 @@ The architect's plan, run as phase 08.2, on the commit that closes 08.1, on a cl
 
 We merged about 45 questions from the six experts into these 12, most important first. Each has our recommended answer. Questions marked **[LAWYER]** should also be checked by a lawyer.
 
-1. **Do you approve the build order?** 05.3 → 05.4 safety patch → 05.5 shared model → Grow → Household → 08.1 Decide rebuild → 08.2 re-audit → Insights → 9, 10, 11. **We recommend: yes.** It fixes the known wrong answers in weeks, not months, while still building Decide's final shape on real Grow and Household data.
+1. **Do you approve the build order?** (Approved; since 1 November 05.3 is stopped, Theme N.) 05.3 → 05.4 safety patch → 05.5 shared model → Grow → Household → 08.1 Decide rebuild → 08.2 re-audit → Insights → 9, 10, 11. **We recommend: yes.** It fixes the known wrong answers in weeks, not months, while still building Decide's final shape on real Grow and Household data.
 2. **Settled: Decide switches on for testers at the end of 05.3.** Only testers have the app, so 05.3-46 runs as written on the preview channel, with a tester note and a release check before any public store build.
 3. **When a purchase only fits by dipping into the safety net, should the answer be amber "Fits, but dips into your safety net" rather than "Not yet"?** **We recommend: amber.** The money is there and it is your call; "Not yet" would block, which goes against "never force".
 4. **Is a 1-month starter right for everyone, with a smaller size offered once to people whose spare money is below it?** **We recommend: yes.** It is honest for people with little slack, and offering 25% or 50% of the starter keeps answers from feeling like a wall.
@@ -993,7 +1096,7 @@ We merged about 45 questions from the six experts into these 12, most important 
 
 Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 architecture (ARC), 28 app (APP), 40 UX and 23 compliance (CMP-F), 167 in all. Each is listed once, under the phase where its main part lands. A later part is shown in brackets.
 
-**Theme key:** A = "Fits" too generous; B = broken buttons; C = speed and offline; D = setup and first answer; E = clarity, colours and words; F = rules, privacy and stores; G = safety net; H = confidence sentence; I = household privacy; J = testing and monitoring; K = one shared money model; L = the full cost of a purchase; M = getting it right first time.
+**Theme key:** A = "Fits" too generous; B = broken buttons; C = speed and offline; D = setup and first answer; E = clarity, colours and words; F = rules, privacy and stores; G = safety net; H = confidence sentence; I = household privacy; J = testing and monitoring; K = one shared money model; L = the full cost of a purchase; M = getting it right first time; N = build Decide once.
 
 **Size key:** S = a day or less; M = 2 to 4 days; L = 1 to 2 weeks.
 
@@ -1099,11 +1202,19 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 | QA-02 | Right-answer table, approved, tests before engine changes | M | 05.4 (first task) (+08.1) | M | none |
 | QA-03 | Cross-check calculator, random-case comparison | M | 05.4 (+08.1) | M | QA-02 |
 | QA-04 | Mutation testing (Stryker), 90% then 95% gate | M | 05.4 (+08.2) | M | none |
+| BO-01 | Stop 05.3, park the branch | N | done 1 Nov | S | none |
+| BO-02 | 05.3 engine fixes onto main | N | 05.4 (first) | M | BO-01 |
+| BO-03 | Shared plumbing onto main, robot flows | N | 05.4 | M | BO-01 |
+| BO-04 | Shared screen parts to `src/ui/` | N | 05.4 or 05.5 | S | BO-01 |
+| BO-05 | Variant C inputs as engine types and tests | N | 05.4 | M | BO-02 |
+| BO-06 | Per-account switch release check | N | 05.4 | S | none |
+| BO-08 | Shadow runs on testers' records | N | 05.4 to 08.1 | S per round | BO-02, QA-02 |
 
 ### Phase 05.5: one shared money model
 
 | ID | Short title | Theme | Phase | Size | Depends on |
 |---|---|---|---|---|---|
+| BO-07 | Six connection points, one owner each | N | 05.5 (+6, +8) | L | 05.4 |
 | ARC-03 | Builder from records; delete old engine | K | 05.5 | L | ARC-01, 05.4 |
 | ARC-04 | Move month model out of Decide | K | 05.5 | M | ARC-03 |
 | ARC-05 | One month picture, two named figures | K | 05.5 | M | ARC-04 |
@@ -1173,6 +1284,7 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 
 | ID | Short title | Theme | Phase | Size | Depends on |
 |---|---|---|---|---|---|
+| BO-09 | Variant C screens built once, behind the per-account switch | N | 08.1 (+08.2) | L | Phase 8, BO-07 |
 | FIN-12 | "0% if paid in full" back-charge costed | A | 08.1 | S | none |
 | FIN-20 | Tax set-aside for self-employed income | A | 08.1 | M | none |
 | FIN-21 | Prompt for running costs on big items | A | 08.1 | S | none |
