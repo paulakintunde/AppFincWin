@@ -194,6 +194,7 @@ Recent decisions affecting current work:
 | 261013-kf4 | Phase 02.3 walkthrough: Undo toast ("Removed · {name}") when removing an entry-list item; optional local onUndo on the undo toast | 2026-10-13 | 6918c34 | [261013-kf4-local-undo-toast-for-removing-an-entry-l](./quick/261013-kf4-local-undo-toast-for-removing-an-entry-l/) |
 | 261013-l8i | EAS build profiles set the expo-updates check through eas.json env (APP_UPDATES_CHECK), not EAS_BUILD_PROFILE, so local and EAS fingerprints match; unblocks preview and production builds broken since 261009-uuw | 2026-10-13 | 51ac7b8 | [261013-l8i-eas-build-profiles-set-the-updates-check](./quick/261013-l8i-eas-build-profiles-set-the-updates-check/) |
 | 261025-f46 | Decide "Coming soon" switch: DECIDE_OPEN=false hides today's Decide (tab shows "A better Decide is on its way"; New check, decide/* routes, rough/first-check onboarding and reminder taps off) until v3 | 2026-10-25 | fdb39ea | [261025-f46-decide-coming-soon-switch](./quick/261025-f46-decide-coming-soon-switch/) |
+| 261101-fmv | Decide fix plan Theme M: root causes of the fix volume and four owner-approved safeguards (design freeze, right-answer table, cross-check calculator, mutation testing) in 05.4, 08.1 and 08.2 | 2026-11-01 | 1129e791 | [261101-fmv-decide-fix-plan-safeguards](./quick/261101-fmv-decide-fix-plan-safeguards/) |
 
 ## Deferred Items
 

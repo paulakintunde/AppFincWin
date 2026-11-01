@@ -4,7 +4,7 @@
 **Date:** 31 October 2026
 **From:** the fix-plan team (financial, engine, architecture, mobile app, UX and compliance experts), combined by the lead editor
 **Based on:** today's Decide audit (overall about 6/10, themes A to F, 21 must-fix items) and your seven settled decisions
-**Status:** approved by the owner on 1 November 2026. Phases 05.4, 05.5, 08.1 and 08.2 are in ROADMAP.md, and Phases 6, 7 and 8 carry its amendments.
+**Status:** approved by the owner on 1 November 2026. Phases 05.4, 05.5, 08.1 and 08.2 are in ROADMAP.md, and Phases 6, 7 and 8 carry its amendments. Theme M (four safeguards against repeat errors) was added and approved on 1 November 2026.
 
 ---
 
@@ -16,7 +16,8 @@
 - **The safety net:** Decide keeps a safety net (emergency fund) out of spendable money by default. The starter size is about 1 month of your essential costs, worked out from your records. Later the app suggests 3 months. A purchase that dips into it gets its own amber answer: "Fits, but dips into your safety net." You can resize it or switch protection off at any time. Nothing is forced.
 - **Rough / Fair / Firm is gone.** Every answer carries one plain sentence: what it is based on, and what would make it surer. Example: "Based on 2 months of your records. Logging 1 more month makes this surer." Typed-in figures are now called **"quick estimates"** on screen.
 - **A household privacy gap must close before anyone can be invited.** Today the database lets any household member read every record in that household. That is harmless while every household has one person. The day a partner joins, they would see everything. Household's first job is to make every record **personal unless marked shared**, enforced by the database itself.
-- **How long:** roughly **13 to 17 weeks of fix work**, spread across the build. About 6 to 8 weeks of it come before Grow starts (05.4 and 05.5). The rest is added to Grow and Household, plus a 3 to 4 week Decide rebuild and about 1 week of re-audit. These are on top of the work Grow and Household already need. Public launch also waits on Apple enrolment and Phases 9 to 11.
+- **Why Decide needed so many fixes, and how this plan stops it (Theme M, added 1 November).** The design kept changing after code was written (18 revisions of the screen spec, and an engine rewrite after the screens were built). The tests checked that the app matched the design prototype, not that its answers were right, so too-kind rules passed with every line tested. Four safeguards fix this: **freeze the design** after reading-test round 1; **write the right answers first** in a table you approve; **check the engine against a second, simple calculator** on thousands of random cases; and **test the tests** by breaking the engine on purpose and making sure a test fails each time.
+- **How long:** roughly **14 to 18 weeks of fix work**, spread across the build. About 7 to 9 weeks of it come before Grow starts (05.4 and 05.5). The rest is added to Grow and Household, plus a 3 to 4 week Decide rebuild and about 1 week of re-audit. These are on top of the work Grow and Household already need. Public launch also waits on Apple enrolment and Phases 9 to 11.
 - **What you must decide:** 13 questions (section 11). Question 2 is already settled, and question 13, about tax and running costs, was added on 1 November. The most important ones: approve the order, accept amber "dips into your safety net" answers, and agree the household privacy defaults. Five topics need a lawyer.
 
 ---
@@ -136,13 +137,13 @@ The phase list is the architect's (ARC section 1.4). Sizes and contents merge in
 | Phase | Name | Rough length (fix work) | Running total | Decide visible to |
 |---|---|---|---|---|
 | 05.3 | Finish Decide screens v3 | as planned (14 open plans) | 0 | on for testers |
-| 05.4 | Decide safety patch | 4 to 5 weeks | 4 to 5 | on for testers |
-| 05.5 | One shared money model | 2 to 3 weeks | 6 to 8 | on for testers |
-| 6 | Grow (amended) | as planned + about 1.5 weeks | 7.5 to 9.5 | on for testers |
+| 05.4 | Decide safety patch | 5 to 6 weeks (includes Theme M) | 5 to 6 | on for testers |
+| 05.5 | One shared money model | 2 to 3 weeks | 7 to 9 | on for testers |
+| 6 | Grow (amended) | as planned + about 1.5 weeks | 8.5 to 10.5 | on for testers |
 | 06.1 | Activity views (optional) | small, can run alongside | — | — |
-| 8 | Household (amended) | as planned + about 2 weeks | 9.5 to 11.5 | on for testers |
-| 08.1 | Decide rebuild on real data | 3 to 4 weeks | 12.5 to 15.5 | test accounts; named beta testers if you choose |
-| 08.2 | Re-audit | about 1 week (+ any gap fixes) | 13.5 to 16.5 | same |
+| 8 | Household (amended) | as planned + about 2 weeks | 10.5 to 12.5 | on for testers |
+| 08.1 | Decide rebuild on real data | 3 to 4 weeks | 13.5 to 16.5 | test accounts; named beta testers if you choose |
+| 08.2 | Re-audit | about 1 week (+ any gap fixes) | 14.5 to 17.5 | same |
 | 7 | Insights (moved later) | as planned | — | — |
 | 9, 10, 11 | Tiers, System, Compliance and Release | as planned + Release items | — | public, after 08.2 passes and Phase 11 gates |
 
@@ -166,12 +167,14 @@ The "running total" counts only the extra work this plan adds. Grow's and Househ
   - *Money rules:* FIN-01 to FIN-11, FIN-14 (joint-loan fact), FIN-15, FIN-25, FIN-26; ENG-01 to ENG-15, ENG-17 to ENG-19, ENG-28; ARC-07 (essential costs, built first inside Decide).
   - *Clarity and copy:* UX-01 to UX-10, UX-13 (date-field check and live cost tile), UX-14, UX-15, UX-17 to UX-19, UX-21 (interim couples note), UX-22 to UX-25, UX-26 round 1 (on the mockups), UX-27 to UX-30, UX-32 to UX-34.
   - *App reliability:* APP-01 to APP-07, APP-10, APP-11, APP-19, APP-20, APP-16 (footer only), APP-04 (Android timings), APP-15 (demo-account machinery).
+  - *Getting it right first time (Theme M):* QA-01 (design freeze after reading-test round 1), QA-02 (right-answer table, first task), QA-03 (cross-check calculator for the Theme A rules), QA-04 (mutation testing, 90% gate).
   - *Compliance:* CMP-F01, F02, F03, F04 (Help entry and Decide trigger), F06 (purge job), F07, F08, F11, F12 (copy and guard), F13 (the "untouched" truth fix).
-- **Length:** 4 to 5 weeks. The core money rules land in the first 2 to 3 weeks. Copy and app work run alongside.
+- **Length:** 5 to 6 weeks. The right-answer table comes first (about 3 to 4 days, including your approval). The core money rules land in the next 2 to 3 weeks. Copy, app work and the Theme M test tools run alongside.
 - **Exit gate:**
   - All Theme A property tests pass, including "never fits below the protected safety net", "adding a debt never raises the lowest point", "a lower balance never gives a better answer", "a dearer loan never looks better", "a short month never fits a new payment" and "a yes never turns a records gap green".
   - The 16 audit personas are golden tests with their corrected answers. Every changed answer is listed in a reviewed diff, tagged with its fix ID, and approved by you (the 05.2 rule).
   - Engine branch coverage is still 100%.
+  - **Theme M:** the right-answer table (QA-02) was approved by you and committed as tests before the first Theme A engine change, and every case passes. The cross-check calculator (QA-03) agrees with the engine on every case: 1,000 random cases on each change and 20,000 nightly. At least 90% of Stryker's breaking changes in `src/engine/decide/` are caught by a test (QA-04). After reading-test round 1, the chosen screen set is signed and frozen (QA-01), and a v1.1 list exists for later ideas.
   - No `ConfidenceLevel` type and no tier words anywhere.
   - Decide opens offline on the 1st of the month with an honest "Records up to" date, never an endless spinner.
   - Android speed measured on the Pixel 6 (APP-04).
@@ -237,6 +240,7 @@ The "running total" counts only the extra work this plan adds. Grow's and Househ
   - "Check a purchase" is always visible. A new user gets a first answer from quick estimates (design target under 60 seconds and 8 taps; hard limit 90 seconds and 12 taps).
   - Decide setup has at most 5 steps of its own.
   - Reading test round 2 meets its pass bars, including the "$0 left" and "talk the app into a yes" tasks.
+  - **Theme M:** screens match the signed set from QA-01, with any change traced to a round 2 finding or another allowed reason. The right-answer table and the cross-check calculator cover running costs, loans and household money, and still agree with the engine on every case.
   - iOS and VoiceOver checked if Apple enrolment has landed.
   - **Compliance gate:** CMP-F12, F14 and F15 merged; property tests show no plain "Fits" below the safety net, with a short month, or resting on the user's word; interest total on every borrowing card; free-help trigger tests green; builder scoped to the viewer.
   - **Public switch-on is the last task**, and runs only after 08.2 passes.
@@ -247,7 +251,7 @@ The "running total" counts only the extra work this plan adds. Grow's and Househ
 - **Goal:** prove 10/10, first against this plan, then fresh, across Decide, Activity, Home, Grow and Household.
 - **What it fixes:** nothing directly. A failed line opens a gap plan in 08.1, and only that auditor re-runs.
 - **Length:** about 1 week, plus any gap fixes.
-- **Exit gate:** every auditor scores 10/10, or you sign a waiver for each gap (section 9).
+- **Exit gate:** every auditor scores 10/10, or you sign a waiver for each gap (section 9). At least 95% of Stryker's breaking changes across the Decide engine are caught by a test, and every one that is not is recorded as harmless with a reason (QA-04).
 - **Depends on:** 08.1.
 
 ### Phase 7: Insights (moved after 08.2)
@@ -671,6 +675,50 @@ The plan already had a small prompt for running costs on big items (FIN-21) and 
 
 **Why tax goes in the safety patch:** it is a one-line change to the upfront amount and a test, it needs no Grow or Household data, and without it every "Fits" on a taxed item is too generous.
 
+### Theme M: Getting it right the first time (added 1 November at your request)
+
+**The problem.** You asked why the app, and Decide most of all, has needed so many fixes. The repo history (main, 1 November) gives the answer:
+
+- **How many.** 459 of the 3,025 commits are fixes, about 1 in 7. 199 of them are in the Decide phases (05, 05.1 and 05.2), more than any other feature. 85 of those came from code-review rounds after the code was written. Only about 3 came from checks on a phone.
+
+The fixes came from five causes, biggest first:
+
+1. **The design moved while it was being built.** The Decide screen spec went through 18 revision rounds (R1 to R18). The engine was rewritten (05.1, v3) after the screens were built on the old engine, so the screens are being rebuilt (05.3). Decide has used 270 plans so far. Each change reopened finished work, and every reopen brings new bugs.
+2. **The tests checked the code matched the prototype, not that the answer was right.** The first "golden" answer tests were made by running the design prototype and saving what it said (`scripts/decide-golden/generate-golden.mjs`). The engine has 100% branch coverage, so every line runs in a test. But no test said what the *right* answer was. The prototype's too-kind rules (Theme A) were copied faithfully and passed every check.
+3. **Decide was built before the data it needs.** Debts, goals and household money arrive with Grow and Household. Until then Decide guesses, or asks "Can you cover it?", and guesses lean generous.
+4. **The same figure is worked out twice** (Theme K): two "money left this month" figures, two bill finders, two calendars. When the copies disagree, it shows up as a bug. In a keyword count of Decide fixes, dates and months were the largest group (23).
+5. **Bugs are found late** (Theme J). There are no robot tap-through tests and no phone timings yet, so problems show up in review rounds and walkthroughs.
+
+Causes 3, 4 and 5 are already handled by the build order, Theme K and Theme J. This theme adds four safeguards for causes 1 and 2. You approved all four on 1 November.
+
+**The agreed fixes:**
+- **QA-01: Freeze the design before code.**
+  - When reading-test round 1 picks a design (A, B, C or a blend), you sign off its screens. That signed set is the design for 08.1.
+  - After the freeze, a change reopens a screen only if it fixes a wrong answer, a safety-net or privacy problem, a store rule, or a finding from reading-test round 2.
+  - Any other new idea goes on the v1.1 list, with a date and a one-line reason. You can still pull an item forward, but it is then planned as its own task, not slipped into a running plan.
+  - The same freeze applies to the money rules once the right-answer table (QA-02) is signed.
+  - *05.4 (after round 1), held through 08.1. S.*
+- **QA-02: Write the right answers first.**
+  - The financial auditor writes a table of about 50 real-life cases, in plain words. Each one gives the situation, the answer it **should** get, and why. Example: "Overdrawn by £200, pay day in 9 days, £60 purchase → Not yet, because the purchase deepens the overdraft."
+  - The table covers every Theme A rule, every answer code and variant, the safety net, tax, running costs, loans, short months, thin records and the 16 audit personas.
+  - You approve the table. It then becomes engine tests **before** any Theme A engine change is written.
+  - From then on the table is the source of truth, not the prototype. The prototype-made golden files are kept only as a record of the old behaviour, and are deleted with the old engine in 05.5.
+  - Changing an expected answer later needs the same steps: a reason, the auditor's note and your approval (the 05.2 reviewed-diff rule).
+  - *05.4, first task. M.*
+- **QA-03: Check the engine against a second, simple calculator.**
+  - A small, deliberately plain version of the answer rules is written separately from the engine: about 200 lines, no shortcuts and no shared code. It works in whole pennies, like the engine.
+  - On every change, 1,000 random money situations go through both the engine and the plain calculator, and 20,000 run each night. Any disagreement on the answer code, or on the money left after buying, fails the build and prints the smallest case that shows it.
+  - Every right-answer case (QA-02) also runs through the plain calculator, so the calculator itself is checked.
+  - When a rule changes, both the engine and the calculator change in the same merge, and the right-answer table is updated first.
+  - *05.4 for the Theme A rules; extended in 08.1 for running costs, loans and household money. M.*
+- **QA-04: Test the tests.**
+  - A mutation-testing tool (Stryker) makes small breaking changes to the engine, such as turning `>` into `>=` or `+` into `-`, and checks that at least one test fails for each change.
+  - It runs on every change for the engine files that change, and on the whole Decide engine each night.
+  - Gate: at least 90% of changes are caught across `src/engine/decide/` when 05.4 ends, and at least 95% by 08.2. Any change that no test catches is either covered by a new test or recorded as harmless, with a reason.
+  - *05.4 (set-up and first gate), 08.2 (95% gate). M.*
+
+**What changes for you:** you approve two things you did not approve before: the frozen screen set (QA-01) and the right-answer table (QA-02). Both are short documents in plain words. The safeguards add about 1 week to 05.4.
+
 ---
 
 ## 7. What 10/10 looks like for each auditor
@@ -693,6 +741,7 @@ Each auditor scores 10 only when every line holds and has evidence (a test, a do
 - All maths in whole pennies, with cautious rounding stated for every new formula.
 - All 16 audit personas (plus the 4 new household personas at re-audit) give the corrected answers.
 - Both members of each household persona get a consistent story about shared money.
+- Every case in the right-answer table (QA-02) gives its approved answer, and every changed expected answer has a reason and your approval.
 
 ### Engine auditor
 
@@ -709,6 +758,7 @@ Each auditor scores 10 only when every line holds and has evidence (a test, a do
 - Price-independent work runs once per data change; typing re-runs only the price part; timings measured on the Pixel 6 and iPhone XR.
 - One shared module each for money this month, safety net, debt payoff and my share.
 - All Grow and Household contract tests are on; the old engine is gone; the full suite is green on a normal machine.
+- The cross-check calculator (QA-03) agrees with the engine on 20,000 random cases nightly, and at least 95% of Stryker's breaking changes are caught (QA-04).
 
 ### Mobile app auditor
 
@@ -928,12 +978,14 @@ We merged about 45 questions from the six experts into these 12, most important 
 | **Lawyer topics** | Apple 3.2.1(viii) now names "money management"; US "financial advisory services" has been read broadly; UK debt-counselling line; DPIA; the store name | Written review notes, honest copy and a lawyer's sign-off keep these low, but cannot remove them |
 | **More caution answers** | People with little spare money see amber answers often and may feel discouraged | Amber, never red; a "ready by" date without touching the net; a one-time offer of a smaller starter; protection can be switched off |
 | **A flag flipped by mistake** | A wrong answer reaches the public before the rebuild | ARC-01, a production test that both flags are off, server switches, and the safety patch itself |
-| **Schedule** | The hybrid adds 6 to 8 weeks before Grow | The rebuild shrinks later. If the date matters most, 05.5 can be cut to just the old-engine deletion and the contracts, with the rest folded into Grow |
+| **Schedule** | The hybrid adds 7 to 9 weeks before Grow, including about 1 week for Theme M | The rebuild shrinks later. If the date matters most, 05.5 can be cut to just the old-engine deletion and the contracts, with the rest folded into Grow |
 | **Roadmap tool bugs** | Inserting decimal phases can mis-number or reorder them | Insert one phase at a time and check the roadmap and state files by hand |
 | **Robot tests on iOS from Windows** | Maestro needs a cloud runner for iOS; cost and access unconfirmed | Use a scripted hand run on the XR until a cloud runner is confirmed |
 | **Android saved-data size** | A heavy importer could hit a storage limit and break offline Decide | Measure the saved blob in 05.5; split it if over 1 MB |
 | **Variant B cost** | Building the money-path chart for real is about one extra L-size piece | Decide after reading-test round 1; the likely blend uses B only for the timeline screen |
-| **Scope growth** | New ideas keep arriving during the fixes | New ideas go to a v1.1 list, not the current phase |
+| **Scope growth** | New ideas keep arriving during the fixes, reopening finished screens (the main cause of past fixes) | The design freeze (QA-01): after sign-off, new ideas go to a dated v1.1 list, not the current phase; only wrong answers, safety, privacy, store rules and round 2 findings reopen a screen |
+| **Mutation tests are slow** | Stryker on a BigInt-heavy engine could take too long to run on every change | Run it on every change only for changed engine files, and on the whole Decide engine nightly. If a nightly run takes over an hour, split it by folder |
+| **The plain calculator copies the engine's mistakes** | If the same person writes both from the same notes, both can be wrong the same way | The calculator is written from the right-answer table (QA-02), not from the engine code, shares no code with it, and is checked against every table case |
 
 ---
 
@@ -941,7 +993,7 @@ We merged about 45 questions from the six experts into these 12, most important 
 
 Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 architecture (ARC), 28 app (APP), 40 UX and 23 compliance (CMP-F), 167 in all. Each is listed once, under the phase where its main part lands. A later part is shown in brackets.
 
-**Theme key:** A = "Fits" too generous; B = broken buttons; C = speed and offline; D = setup and first answer; E = clarity, colours and words; F = rules, privacy and stores; G = safety net; H = confidence sentence; I = household privacy; J = testing and monitoring; K = one shared money model.
+**Theme key:** A = "Fits" too generous; B = broken buttons; C = speed and offline; D = setup and first answer; E = clarity, colours and words; F = rules, privacy and stores; G = safety net; H = confidence sentence; I = household privacy; J = testing and monitoring; K = one shared money model; L = the full cost of a purchase; M = getting it right first time.
 
 **Size key:** S = a day or less; M = 2 to 4 days; L = 1 to 2 weeks.
 
@@ -1043,6 +1095,10 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 | CMP-F11 | Estimated rate is not lender's APR | F | 05.4 | S | none |
 | CMP-F12 | Confidence sentence wording rules | H | 05.4 (+08.1) | S to M | none |
 | CMP-F13 | Safety-net wording, encourage not push | G | 05.4 truth fix (+6) | M | Grow for Grow copy |
+| QA-01 | Design freeze after reading-test round 1; v1.1 list | M | 05.4 (held through 08.1) | S | UX-26 round 1 |
+| QA-02 | Right-answer table, approved, tests before engine changes | M | 05.4 (first task) (+08.1) | M | none |
+| QA-03 | Cross-check calculator, random-case comparison | M | 05.4 (+08.1) | M | QA-02 |
+| QA-04 | Mutation testing (Stryker), 90% then 95% gate | M | 05.4 (+08.2) | M | none |
 
 ### Phase 05.5: one shared money model
 

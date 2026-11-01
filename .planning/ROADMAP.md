@@ -1049,7 +1049,7 @@ Plans:
 ### Phase 05.4: Decide safety patch (INSERTED)
 
 **Goal:** Decide never says "Fits" when a careful person would say "careful". Every such rule is locked by a property test, and a plain confidence sentence replaces Rough / Fair / Firm. Source: `.planning/research/DECIDE-FIX-PLAN.md` section 4 (approved by the owner 2026-11-01).
-**Requirements**: Fix IDs FIN-01..11, FIN-14, FIN-15, FIN-25..27; ENG-01..15, ENG-17..19, ENG-28, ENG-29 (tax part); ARC-07; UX-01..10, UX-13..15, UX-17..19, UX-21 (interim), UX-22..25, UX-26 round 1, UX-27..30, UX-32..34; APP-01..07, APP-10, APP-11, APP-15, APP-16 (footer), APP-19, APP-20; CMP-F01..04, F06..08, F11..13, F24 (tax wording)
+**Requirements**: Fix IDs FIN-01..11, FIN-14, FIN-15, FIN-25..27; ENG-01..15, ENG-17..19, ENG-28, ENG-29 (tax part); ARC-07; UX-01..10, UX-13..15, UX-17..19, UX-21 (interim), UX-22..25, UX-26 round 1, UX-27..30, UX-32..34; APP-01..07, APP-10, APP-11, APP-15, APP-16 (footer), APP-19, APP-20; CMP-F01..04, F06..08, F11..13, F24 (tax wording); QA-01..04 (Theme M)
 **Depends on:** Phase 05.3
 **Success Criteria** (what must be TRUE):
   1. The safety net (starter of about 1 month of essential costs) is protected by default and can be switched off or resized. A purchase that only fits by using it gets "Fits, but dips into your safety net".
@@ -1059,6 +1059,7 @@ Plans:
   5. The 16 audit personas are golden tests. Every changed answer is listed in a reviewed diff and approved by the owner.
   6. Decide opens offline on the 1st of the month with an honest "Records up to" date, and Android speed is measured on the Pixel 6.
   7. Compliance gate: CMP-F01, F02, F03, F07, F08 and F11 merged; purge job deployed after the Supabase preflight; the owner signs off every changed answer string.
+  8. Theme M: the owner-approved right-answer table (about 50 cases) is committed as tests before the first Theme A engine change, and every case passes; a separate plain calculator agrees with the engine on 1,000 random cases per change and 20,000 nightly; at least 90% of Stryker's breaking changes in `src/engine/decide/` are caught; after reading-test round 1 the chosen screens are signed and frozen, with a v1.1 list for later ideas.
 **Plans:** 0 plans
 
 Plans:
@@ -1132,7 +1133,7 @@ Plans:
 ### Phase 08.1: Decide rebuild on real data (INSERTED)
 
 **Goal:** Decide reaches 10/10 on every auditor's checklist using real goals, debts and household data, with the full cost of a purchase (tax, fees and running costs) and the design the owner confirms. Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 4, 6 (Theme L) and 8. Design: Variant C is proposed ("Decide redesign: three variants" canvas). The owner confirms it after reading-test round 1, which tests Variants A, B and C.
-**Requirements**: Fix IDs FIN-12, FIN-20..24, FIN-28, FIN-29, FIN-31; ENG-26, ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-21, APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-26 round 2, UX-38, UX-41; CMP-F12 (layout), F14, F15, F19; ARC-11 (moved setup steps removed)
+**Requirements**: Fix IDs FIN-12, FIN-20..24, FIN-28, FIN-29, FIN-31; ENG-26, ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-21, APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-26 round 2, UX-38, UX-41; CMP-F12 (layout), F14, F15, F19; ARC-11 (moved setup steps removed); QA-01 (freeze held), QA-02 and QA-03 (extended)
 **Depends on:** Phase 8
 **Success Criteria** (what must be TRUE):
   1. "Check a purchase" is always visible, and a new user gets a first answer from quick estimates (target under 60 seconds and 8 taps; hard limit 90 seconds and 12 taps). Decide setup has at most 5 steps of its own.
@@ -1141,6 +1142,7 @@ Plans:
   4. Reading test round 2 meets its pass bars, including the "$0 left" and "talk the app into a yes" tasks; iOS and VoiceOver checked if Apple enrolment has landed.
   5. Compliance gate: CMP-F12, F14 and F15 merged; no plain "Fits" below the safety net, with a short month, or resting on the user's word; free-help trigger tests green; builder scoped to the viewer.
   6. The public switch-on is the last task and runs only after Phase 08.2 passes.
+  7. Screens match the signed set from the design freeze (QA-01), with every change traced to a reading-test round 2 finding or another allowed reason; the right-answer table and the plain calculator cover running costs, loans and household money and still agree with the engine.
 **Plans:** 0 plans
 
 Plans:
@@ -1155,6 +1157,7 @@ Plans:
   1. Every fix ID in the plan is checked as done, waived by the owner, or moved with a reason.
   2. All seven auditors score 10/10, or the owner signs a waiver for each gap; a failed line opens a gap plan in 08.1 and only that auditor re-runs.
   3. The four household personas run on both partners' accounts, and the reading test (5 + 5 people) passes.
+  4. At least 95% of Stryker's breaking changes across the Decide engine are caught by a test; each one not caught is recorded as harmless with a reason (QA-04).
 **Plans:** 0 plans
 
 Plans:
