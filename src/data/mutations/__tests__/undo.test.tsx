@@ -161,6 +161,8 @@ describe('useUndo', () => {
   it('a refused undo records what it was: the label key and name', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
+    // 05.3-97: a Decide check step is label-guarded, so the step's row is read first.
+    fake.respondWith({ data: { id: 'step-1', label_key: 'planSaved', status: 'available', touched_ids: ['c1'] }, error: null, status: 200 });
     fake.respondWith({ data: { status: 'refused', refusal: refusalJson }, error: null, status: 200 });
     const qc = newClient();
     const { result } = await renderHook(() => useUndo(), { wrapper: wrapper(qc) });

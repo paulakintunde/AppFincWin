@@ -105,7 +105,12 @@ export function SavedPlanRow({ row, live, without }: SavedPlanRowProps): React.J
     const onOpen = () => pushOnce(purchaseHref(row.id));
     const onDelete = () => {
       const stepId = abandon(row, 'deleted');
-      showToast({ kind: 'destructive', text: { key: 'decide.delete.toastCheck', params: { name: item } }, stepId });
+      showToast({
+        kind: 'destructive',
+        text: { key: 'decide.delete.toastCheck', params: { name: item } },
+        stepId,
+        target: { entity: 'decide_checks', id: row.id },
+      });
       getAnalytics().track('check_abandoned', {});
     };
     return (
