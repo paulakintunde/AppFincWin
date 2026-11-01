@@ -25,9 +25,13 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine (50/50 plans: 32 on 2026-10-26, gap closure 05.1-33..50 on 2026-10-27; owner shadow sign-off and re-verification 6/6 passed 2026-10-27) (completed 2026-10-27)
 - [x] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations
 - [ ] **Phase 05.3: Decide screens v3** (INSERTED) - The Calm Ledger screens in the current theme; old Decide screens removed at cutover
+- [ ] **Phase 05.4: Decide safety patch** (INSERTED) - Decide never says "Fits" when a careful person would say "careful": safety net, overdraft, debt minimums, tax, after-purchase figure; plain confidence sentence replaces Rough/Fair/Firm
+- [ ] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
-- [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views
+- [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
+- [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Decide reads real goals, debts and household data; full cost with running costs; design: Variant C proposed, confirmed after reading-test round 1; short setup; public switch-on last
+- [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
 - [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
 - [ ] **Phase 11: Compliance & Release** - Privacy manifests, store declarations, policy pages, store assets, TestFlight/internal testing, submission
@@ -1048,9 +1052,44 @@ Plans:
 - [ ] Wave 9: 05.3-46 (walkthrough, switch-on, removal list)
 - [ ] Waves 20-23: 05.3-96..112 (gap closure round 2: undo targets its own step, many reopen copies with migration 20261101000100 and its owner-gated push, offline status, local dates, expected-income month, bought line status, own kinds, empty missing item, History safety, Back, sticky header, device re-check)
 
+### Phase 05.4: Decide safety patch (INSERTED)
+
+**Goal:** Decide never says "Fits" when a careful person would say "careful". Every such rule is locked by a property test, and a plain confidence sentence replaces Rough / Fair / Firm. Source: `.planning/research/DECIDE-FIX-PLAN.md` section 4 (approved by the owner 2026-11-01).
+**Requirements**: Fix IDs FIN-01..11, FIN-14, FIN-15, FIN-25..27; ENG-01..15, ENG-17..19, ENG-28, ENG-29 (tax part); ARC-07; UX-01..10, UX-13..15, UX-17..19, UX-21 (interim), UX-22..25, UX-26 round 1, UX-27..30, UX-32..34; APP-01..07, APP-10, APP-11, APP-15, APP-16 (footer), APP-19, APP-20; CMP-F01..04, F06..08, F11..13, F24 (tax wording)
+**Depends on:** Phase 05.3
+**Success Criteria** (what must be TRUE):
+  1. The safety net (starter of about 1 month of essential costs) is protected by default and can be switched off or resized. A purchase that only fits by using it gets "Fits, but dips into your safety net".
+  2. Overdrafts count as negative, debt minimums sit on the 90-day cash path, sales tax and one-off fees are added to the price, and the big figure shows money left after the purchase.
+  3. All Theme A property tests pass, including "never fits below the protected safety net", "adding a debt never raises the lowest point", "a lower balance never gives a better answer", "a dearer loan never looks better" and "adding tax never makes an answer better". Engine branch coverage stays at 100%.
+  4. No `ConfidenceLevel` type and no Rough / Fair / Firm anywhere. Each answer carries one plain sentence with its reason and a "Make it surer" step.
+  5. The 16 audit personas are golden tests. Every changed answer is listed in a reviewed diff and approved by the owner.
+  6. Decide opens offline on the 1st of the month with an honest "Records up to" date, and Android speed is measured on the Pixel 6.
+  7. Compliance gate: CMP-F01, F02, F03, F07, F08 and F11 merged; purge job deployed after the Supabase preflight; the owner signs off every changed answer string.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.4 to break down)
+
+### Phase 05.5: One shared money model (INSERTED)
+
+**Goal:** Every screen gets each money figure from one owner, the old engine is gone, and Grow and Household have declared plugs to connect to. Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 4 and 5.
+**Requirements**: Fix IDs ARC-03..06, ARC-08..12; ENG-16, ENG-20..22; APP-08 (steps 1-2), APP-12 (Android), APP-13 (core flows), APP-14 (Android), APP-17, APP-18; UX-31; CMP-F09, F10, F20
+**Depends on:** Phase 05.4, and the 2-week hold after the 05.3 tester switch-on (the 05.3 removal list runs here, once)
+**Success Criteria** (what must be TRUE):
+  1. The snapshot builder reads database rows directly and no import of the old engine remains; a shadow comparison on test accounts and goldens shows only approved differences; coverage stays at 100%.
+  2. Home and Decide read one month picture with two named figures ("left so far" and "left after the month's plans").
+  3. One recurring-bill detector and one date calendar, proven identical by a property test; one cap per category; one confidence module.
+  4. Contract tests exist for the safety net, debt facts, household scope, settlements, income profile and visibility, each marked "to do" until its phase turns it on.
+  5. Core Maestro flows run green on the Android emulator.
+  6. Compliance gate: retired screens deleted; the copy guard runs at sentence level and in lint.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 05.5 to break down)
+
 ### Phase 6: Grow
 **Goal**: A user can track savings goals, investments and debt payoff against their real numbers.
-**Depends on**: Phase 3 (Shell provides the navigation these screens live in)
+**Depends on**: Phase 3 (Shell provides the navigation these screens live in), Phase 05.5 (the shared money model and contracts, per the Decide fix plan)
 **Requirements**: GRW-01, GRW-02, GRW-03, GRW-04, GRW-05, GRW-06, GRW-07, GRW-08, GRW-09, GRW-10, GRW-11
 **Success Criteria** (what must be TRUE):
   1. A user can create a savings goal with a target amount or leave it open-ended, flag exactly one goal as their emergency fund, and set an automatic contribution to any goal.
@@ -1059,12 +1098,15 @@ Plans:
   4. A user can record loans and revolving credit with balance, rate and minimum, then compare avalanche and snowball payoff strategies with an optional extra payment.
   5. A user can see a projected payoff date and total interest for their chosen strategy.
   6. A user records a holding's market value by hand, and its as-of date appears wherever that value is shown — no live price feed exists in v1.
+  7. (Decide fix plan) The safety net is the one flagged emergency-fund goal: Decide's old settings copy is migrated, and changing the goal's size in Grow changes Decide's next answer (ARC-13, FIN-16, APP-28).
+  8. (Decide fix plan) Debts carry a due day and a payoff strategy in one payoff module; Decide reads them and "adding a debt never raises the lowest point" still passes (ARC-14, ENG-24).
+  9. (Decide fix plan) A goal contribution counts exactly once; the Loans, Saving, Emergency and Envelopes setup steps live in Grow; the safety-net and debt contract tests are on (ARC-15, ARC-16).
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
-**Depends on**: Phase 6
+**Depends on**: Phase 6, and Phase 08.2 (Decide fix plan: built after the re-audit so charts include the household view and the health score agrees with Decide; ARC-21)
 **Requirements**: INS-01, INS-02, INS-03, INS-04, INS-05, INS-06
 **Success Criteria** (what must be TRUE):
   1. A user can see net worth over time with a selectable range.
@@ -1086,9 +1128,43 @@ Plans:
   4. A user can toggle between their own figures and the household's, and hide real names from other members with a colour-name fallback.
   5. A shared record created by one member appears on another member's device without a manual refresh, and a user can share a read-only household summary as an expiring link.
   6. A member can leave, be removed, or receive ownership; deleting an account follows the documented rule and leaves the remaining members' balances correct; and guessing invite codes is rate-limited to futility.
+  7. (Decide fix plan, blocking) Every record is personal unless marked shared, enforced by database rules, and the two-user tests are green BEFORE the invite flow merges: member B cannot read, edit, receive live updates for, or export member A's personal rows (CMP-F18, ARC-22).
+  8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money.
+  9. (Decide fix plan) Household split rules are the one source of "my share"; settlements count as neither spending nor income; money owed to you is not spendable until it arrives (ARC-17, ARC-18, ENG-25).
 **Plans**: TBD
 **UI hint**: yes
 **Research flag**: The Realtime reconciliation state machine (no pending write / write still queued / own-write echo / genuine version conflict) is a synthesized design, not a documented Supabase recipe. Budget a dedicated spike — two simulated clients, one taken offline mid-edit — before trusting it in production. Also resolve explicitly what happens when a settlement's expiry window lapses unresolved; the prototype specifies the window but not the outcome.
+
+### Phase 08.1: Decide rebuild on real data (INSERTED)
+
+**Goal:** Decide reaches 10/10 on every auditor's checklist using real goals, debts and household data, with the full cost of a purchase (tax, fees and running costs) and the design the owner confirms. Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 4, 6 (Theme L) and 8. Design: Variant C is proposed ("Decide redesign: three variants" canvas). The owner confirms it after reading-test round 1, which tests Variants A, B and C.
+**Requirements**: Fix IDs FIN-12, FIN-20..24, FIN-28, FIN-29, FIN-31; ENG-26, ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-21, APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-26 round 2, UX-38, UX-41; CMP-F12 (layout), F14, F15, F19; ARC-11 (moved setup steps removed)
+**Depends on:** Phase 8
+**Success Criteria** (what must be TRUE):
+  1. "Check a purchase" is always visible, and a new user gets a first answer from quick estimates (target under 60 seconds and 8 taps; hard limit 90 seconds and 12 taps). Decide setup has at most 5 steps of its own.
+  2. Running-cost templates by item type are pre-filled, editable and can be switched off; "Short each month" and "Fits, but tight each month" answers exist; recording a purchase as bought offers its running costs as Activity bills the user confirms one by one.
+  3. Every borrowing option shows its total cost next to paying cash, with preset and custom lengths.
+  4. Reading test round 2 meets its pass bars, including the "$0 left" and "talk the app into a yes" tasks; iOS and VoiceOver checked if Apple enrolment has landed.
+  5. Compliance gate: CMP-F12, F14 and F15 merged; no plain "Fits" below the safety net, with a short month, or resting on the user's word; free-help trigger tests green; builder scoped to the viewer.
+  6. The public switch-on is the last task and runs only after Phase 08.2 passes.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 08.1 to break down)
+
+### Phase 08.2: Decide re-audit (INSERTED)
+
+**Goal:** Prove 10/10, first by checking every fix ID in the Decide fix plan, then with a fresh audit of Decide alongside Activity, Home, Grow and Household. Source: `.planning/research/DECIDE-FIX-PLAN.md` section 9.
+**Requirements**: The section 7 checklists for the financial, engine, app, UI, UX, compliance and integration auditors
+**Depends on:** Phase 08.1
+**Success Criteria** (what must be TRUE):
+  1. Every fix ID in the plan is checked as done, waived by the owner, or moved with a reason.
+  2. All seven auditors score 10/10, or the owner signs a waiver for each gap; a failed line opens a gap plan in 08.1 and only that auditor re-runs.
+  3. The four household personas run on both partners' accounts, and the reading test (5 + 5 people) passes.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 08.2 to break down)
 
 ### Phase 9: Tiers & Onboarding
 **Goal**: The app reveals its depth gradually and converts to a paid subscription cleanly.
@@ -1186,9 +1262,13 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | 106/108 | In Progress|  |
+| 05.4 Decide safety patch | 0/TBD | Not started | - |
+| 05.5 One shared money model | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |
+| 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
+| 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
