@@ -6,6 +6,8 @@ import { PurposeBlock } from '../../layers/PurposeBlock';
 import { Wrap } from '../../layers/__tests__/harness';
 import { ItemTypeChips } from '../ItemTypeChips';
 import { useOwnOptions } from '../useOwnOptions';
+import { i18n } from '@/i18n';
+import { undoLabelText } from '@/i18n/undoLabel';
 
 jest.setTimeout(60000);
 
@@ -57,9 +59,26 @@ describe('useOwnOptions', () => {
     const r = result.current.add('itemType', { name: ' Bike ', base: 'vehicle' });
     expect(r).toEqual({ ok: true, id: 'new-id' });
     const call = mockSave.mock.calls[0][0];
-    expect(call.labelKey).toBe('setupStepSaved');
+    // 05.3-120 (UAT gap 37): History names the option, not "Setup answer saved".
+    expect(call.labelKey).toBe('ownOptionAdded');
+    expect(call.stepTitle).toBe('Bike');
     expect(call.patch.custom_options.itemTypes[0]).toMatchObject({ id: 'new-id', name: 'Bike', base: 'vehicle' });
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 's1', text: { key: 'decide.v3.ui.ownOptions.savedToast', params: { name: 'Bike' } } }));
+  });
+
+  it('05.3-120 the own-option History labels name the option, and fall back without a name', () => {
+    const text = (l: { key: string; params: Record<string, string | number> }): string =>
+      (i18n.t as (k: string, o?: Record<string, string | number>) => string)(l.key, l.params);
+    const named = undoLabelText('ownOptionAdded', { name: 'Bike' });
+    expect(named.key).toBe('undo.label.ownOptionAdded');
+    expect(text(named)).toBe('Your own option added · Bike');
+    const unnamed = undoLabelText('ownOptionAdded', {});
+    expect(unnamed.key).toBe('undo.labelUnnamed.ownOptionAdded');
+    expect(text(unnamed)).toBe('Your own option added');
+    expect(text(undoLabelText('ownOptionRenamed', { name: 'Road bike' }))).toBe('Your own option renamed · Road bike');
+    expect(text(undoLabelText('ownOptionRenamed', {}))).toBe('Your own option renamed');
+    expect(text(undoLabelText('ownOptionRemoved', { name: 'Bike' }))).toBe('Your own option removed · Bike');
+    expect(text(undoLabelText('ownOptionRemoved', {}))).toBe('Your own option removed');
   });
 
   it('adds a purpose, and an item type with no base counts like General', async () => {
