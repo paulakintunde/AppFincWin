@@ -95,7 +95,8 @@ export function askModel(ev: Pick<Evaluation, 'result' | 'month'>): { first: Ask
 }
 
 export function needsInputLines(result: Pick<Result, 'missing'>): readonly string[] {
-  return result.missing.filter((m) => !QUESTION_CODES.has(m)).map((m) => MISSING_KEYS[m]);
+  const keys = [...new Set(result.missing)].filter((m) => !QUESTION_CODES.has(m)).map((m) => MISSING_KEYS[m] as string | undefined);
+  return keys.filter((k): k is string => k !== undefined);
 }
 
 export function askAnsweredProps(code: MissingCode): {
