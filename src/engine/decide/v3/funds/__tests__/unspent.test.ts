@@ -258,6 +258,15 @@ describe('rollForward', () => {
     expect(roll({ lines, e: mu(0) }).value).toBe(240000);
   });
 
+  test('refunds above spending before the anchor clamp the held-back base at zero', () => {
+    // Anchor 2026-10-03: a refund larger than the everyday spend logged by then would make the base negative.
+    const before = [line({ id: 'buy', date: '2026-10-02', amount: mu(10000) }), line({ id: 'ref', date: '2026-10-01', role: 'refund', amount: mu(50000) })];
+    const none = [line({ id: 'buy', date: '2026-10-02', amount: mu(0) }), line({ id: 'ref', date: '2026-10-01', role: 'refund', amount: mu(0) })];
+    const clamped = roll({ lines: before, e: mu(90000) }).value;
+    // Lines before the anchor add no cash, so a clamped base gives the same figure as nothing logged by then.
+    expect(clamped).toBe(roll({ lines: none, e: mu(90000) }).value);
+  });
+
   test('pending lines and lines after asOf are ignored', () => {
     const r = roll({ asOf: '2026-10-20', lines: [line({ id: 'p', status: 'pending' }), line({ id: 'f', date: '2026-10-25' })] });
     expect(r.value).toBe(240000);
