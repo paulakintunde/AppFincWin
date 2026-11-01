@@ -7,6 +7,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { AppState, type AppStateStatus } from 'react-native';
 import { focusManager, onlineManager, type QueryClient } from '@tanstack/react-query';
 import { getEnv } from '@/config/env';
+import { queueHead, recordOnlineChange } from './sync/queueDiagnostics';
 
 /**
  * null means "not yet known" (NetInfo has not reported a first state, or a platform detail is
@@ -75,6 +76,7 @@ export function startOnlineManager(qc?: QueryClient): void {
   onlineManager.setEventListener((setOnline) =>
     NetInfo.addEventListener((state) => {
       const reachable = isReachable(state);
+      if (__DEV__) recordOnlineChange('netinfo', state, client ? queueHead(client) : null);
       setOnline(reachable);
       if (reachable && client) resumeAndRefetch(client);
     }),
@@ -87,6 +89,7 @@ export function startOnlineManager(qc?: QueryClient): void {
       // Ask NetInfo to re-check against Supabase now rather than trusting a stale offline flag.
       void NetInfo.refresh().then(
         (net) => {
+          if (__DEV__) recordOnlineChange('focus', net, client ? queueHead(client) : null);
           if (isReachable(net) && client) resumeAndRefetch(client);
         },
         () => {
