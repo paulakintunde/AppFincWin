@@ -22,7 +22,7 @@ jest.mock('@/data/mutations/decideChecks', () => ({
   useSaveCheckAnswer: () => ({ save: mockSaveAnswer }),
 }));
 const mockQc = new (jest.requireActual('@tanstack/react-query').QueryClient)();
-jest.mock('@tanstack/react-query', () => ({ useMutationState: () => [], useQueryClient: () => mockQc }));
+jest.mock('@tanstack/react-query', () => ({ useMutationState: () => [], useQueryClient: () => mockQc, onlineManager: { subscribe: () => () => undefined, isOnline: () => true } }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: mockTrack }) }));
 
 const RESULT = { code: 'fits_month', variant: null, readyBy: null, facts: [] } as never;
@@ -180,10 +180,11 @@ describe('useV3CheckDraft', () => {
 describe('saveStatusOf', () => {
   const m = (status: 'pending' | 'success' | 'error', isPaused: boolean, submittedAt: number) => ({ status, isPaused, submittedAt });
   it('maps pending to saved, paused to offline and error to notSaved', () => {
-    expect(saveStatusOf([])).toBe('saved');
-    expect(saveStatusOf([m('pending', false, 1)])).toBe('saved');
-    expect(saveStatusOf([m('pending', true, 1)])).toBe('offline');
-    expect(saveStatusOf([m('success', false, 1), m('error', false, 2)])).toBe('notSaved');
-    expect(saveStatusOf([m('error', false, 1), m('success', false, 2)])).toBe('saved');
+    expect(saveStatusOf([], true)).toBe('saved');
+    expect(saveStatusOf([m('pending', false, 1)], true)).toBe('saving');
+    expect(saveStatusOf([m('pending', true, 1)], false)).toBe('offline');
+    expect(saveStatusOf([m('pending', true, 1)], true)).toBe('saving');
+    expect(saveStatusOf([m('success', false, 1), m('error', false, 2)], true)).toBe('notSaved');
+    expect(saveStatusOf([m('error', false, 1), m('success', false, 2)], true)).toBe('saved');
   });
 });

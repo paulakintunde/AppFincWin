@@ -34,7 +34,7 @@ jest.mock('@/data/mutations/decideChecks', () => ({
   useSaveCheckDraft: () => ({ save: jest.fn() }),
   useSaveCheckAnswer: () => ({ save: jest.fn() }),
 }));
-jest.mock('@tanstack/react-query', () => ({ useMutationState: () => [], useQueryClient: () => ({ setQueriesData: jest.fn() }) }));
+jest.mock('@tanstack/react-query', () => ({ onlineManager: { subscribe: () => () => undefined, isOnline: () => true }, useMutationState: () => [], useQueryClient: () => ({ setQueriesData: jest.fn() }) }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: jest.fn() }) }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn(), replaceOnce: jest.fn() }));
 jest.mock('@/shell/a11yFocus', () => ({ useScreenTitleFocus: () => undefined }));

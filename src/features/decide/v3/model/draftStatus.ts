@@ -1,6 +1,6 @@
 /**
  * 05.3-17: the draft's save status from the save mutation state, and the price check.
- * A pending save that is not paused counts as saved: the screen shows only saved, offline or notSaved.
+ * 05.3-102: four words. Offline only when the save is paused with the app offline; a save in flight or queued behind another write reads saving.
  * 05.3-72 (gap 6): a price above 100 x the top band edge is past the range Decide checks; the figure is refused, the last valid price stays (UI-SPEC).
  * Owner decision (2026-10-31): 100 times the biggest price band, about $500 million in USD.
  */
@@ -11,9 +11,12 @@ import type { MinorUnits } from '@/engine/money';
 export const PRICE_CEILING_EDGE_MULTIPLE = 100;
 export const PRICE_CEILING_NO_EDGES = 100_000_000_000;
 
-export function draftStatus(m: { status: 'idle' | 'pending' | 'success' | 'error'; isPaused?: boolean }): 'saved' | 'offline' | 'notSaved' {
-  if (m.isPaused === true) return 'offline';
+export type DraftSaveStatus = 'saved' | 'saving' | 'offline' | 'notSaved';
+
+export function draftStatus(m: { status: 'idle' | 'pending' | 'success' | 'error'; offlinePaused: boolean; pending: boolean }): DraftSaveStatus {
+  if (m.offlinePaused) return 'offline';
   if (m.status === 'error') return 'notSaved';
+  if (m.pending) return 'saving';
   return 'saved';
 }
 
