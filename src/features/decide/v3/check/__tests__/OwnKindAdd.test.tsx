@@ -1,5 +1,5 @@
 /** Plan 05.3-108 (UAT gap 28 re-check): a fresh '+ Your own' add with Vehicle chosen saves base 'vehicle' and selects the new kind. */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { ItemTypeRef } from '@/engine/decide/v3';
 import { Wrap } from '../../layers/__tests__/harness';
@@ -26,7 +26,9 @@ let selectedRef: ItemTypeRef = { kind: 'preset', value: 'vehicle' };
 
 function Host(): React.JSX.Element {
   const [sel, setSel] = useState<ItemTypeRef>({ kind: 'preset', value: 'vehicle' });
-  selectedRef = sel;
+  useEffect(() => {
+    selectedRef = sel;
+  }, [sel]);
   return <ItemTypeChips selected={sel} onSelect={setSel} />;
 }
 
