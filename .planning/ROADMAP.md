@@ -1261,7 +1261,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
-| 05.3 Decide screens v3 | 106/108 | In Progress|  |
+| 05.3 Decide screens v3 | 115/118 | Parked (branch not merged; harvested in 05.4) | - |
 | 05.4 Decide safety patch | 0/TBD | Not started | - |
 | 05.5 One shared money model | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
