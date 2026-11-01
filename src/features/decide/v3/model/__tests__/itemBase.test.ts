@@ -41,12 +41,10 @@ describe('itemBaseOf', () => {
     const uiRows = parseOwnOptions(raw)
       .itemTypes.filter((t) => t.deletedAt === null)
       .map((t) => ({ id: t.id, name: t.name, base: t.base }));
-    const refs: ItemTypeRef[] = [
-      { kind: 'custom', id: 'bike' },
-      { kind: 'custom', id: 'old' },
-    ];
-    for (const ref of refs) expect(itemBaseOf(ref, engineRows)).toBe(itemBaseOf(ref, uiRows));
-    expect(itemBaseOf(refs[0], engineRows)).toBe('vehicle');
-    expect(itemBaseOf(refs[1], engineRows)).toBe('general');
+    const live: ItemTypeRef = { kind: 'custom', id: 'bike' };
+    const removed: ItemTypeRef = { kind: 'custom', id: 'old' };
+    for (const ref of [live, removed]) expect(itemBaseOf(ref, engineRows)).toBe(itemBaseOf(ref, uiRows));
+    expect(itemBaseOf(live, engineRows)).toBe('vehicle');
+    expect(itemBaseOf(removed, engineRows)).toBe('general');
   });
 });
