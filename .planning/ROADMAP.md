@@ -1046,6 +1046,7 @@ Plans:
 - [ ] Waves 4-7: 05.3-38..44 (assembly, layer cards, entry wiring, phase-wide checks)
 - [ ] Wave 8: 05.3-45 (owner device checks)
 - [ ] Wave 9: 05.3-46 (walkthrough, switch-on, removal list)
+- [ ] Waves 20-23: 05.3-96..112 (gap closure round 2: undo targets its own step, many reopen copies with migration 20261101000100 and its owner-gated push, offline status, local dates, expected-income month, bought line status, own kinds, empty missing item, History safety, Back, sticky header, device re-check)
 
 ### Phase 6: Grow
 **Goal**: A user can track savings goals, investments and debt payoff against their real numbers.
