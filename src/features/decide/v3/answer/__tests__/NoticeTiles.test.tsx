@@ -101,6 +101,48 @@ describe('NoticeTiles', () => {
     ]);
   });
 
+  // 05.3-121 (UAT gap 38): six lightly logged months showed six tiles on the device; they read as one tile now.
+  it('merges six under-logged months into one tile, months in month order', async () => {
+    const months = ['2025-11', '2025-12', '2026-01', '2026-04', '2026-05', '2026-10'];
+    await wrap(<NoticeTiles notices={months.map((month) => n('month_looks_under_logged', { month }))} />);
+    const sentence = 'November, December, January, April, May and October look lightly logged, so their figures could be low.';
+    const texts = screen.getAllByText(/./, { includeHiddenElements: true }).map((t) => String(t.props.children));
+    expect(texts).toEqual([sentence]);
+    expect(screen.getByLabelText(sentence)).toBeTruthy();
+  });
+
+  it('two under-logged months read "A and B"', async () => {
+    await wrap(
+      <NoticeTiles notices={[n('month_looks_under_logged', { month: '2025-12' }), n('month_looks_under_logged', { month: '2025-11' })]} />,
+    );
+    expect(allText()).toBe('November and December look lightly logged, so their figures could be low.');
+  });
+
+  it('one under-logged month keeps today’s text', async () => {
+    await wrap(<NoticeTiles notices={[n('month_looks_under_logged', { month: '2026-10' })]} />);
+    expect(allText()).toBe('October looks lightly logged, so its figures could be low.');
+    expect(screen.getByLabelText('October looks lightly logged, so its figures could be low.')).toBeTruthy();
+  });
+
+  it('the merged tile takes the first one’s place; other notices keep their own tiles and order', async () => {
+    await wrap(
+      <NoticeTiles
+        notices={[
+          n('emergency_not_set', {}),
+          n('month_looks_under_logged', { month: '2026-01' }),
+          n('unspent_stale', { days: 40 }),
+          n('month_looks_under_logged', { month: '2025-12' }),
+        ]}
+      />,
+    );
+    const texts = screen.getAllByText(/./, { includeHiddenElements: true }).map((t) => String(t.props.children));
+    expect(texts).toEqual([
+      'An emergency fund goal isn’t set yet.',
+      'December and January look lightly logged, so their figures could be low.',
+      'Your unspent money was confirmed 40 days ago.',
+    ]);
+  });
+
   it('writes a due date for a pay that has not arrived', async () => {
     await wrap(<NoticeTiles notices={[n('pay_not_seen', { amount: 250000, date: '2026-10-28' })]} />);
     const text = allText();
