@@ -88,7 +88,7 @@ Last activity: 2026-10-27 -- Phase 05.1 complete, verification passed
 - Phase 05.3 inserted after Phase 05.2: Decide screens v3
 - Phase 05.4 inserted after Phase 05.3: Decide safety patch (approved Decide fix plan, 2026-11-01; .planning/research/DECIDE-FIX-PLAN.md)
 - Phase 05.5 inserted after Phase 05.4: One shared money model
-- Phase 08.1 inserted after Phase 8: Decide rebuild on real data (full cost with tax and running costs; Variant C proposed, not yet chosen)
+- Phase 08.1 inserted after Phase 8: Decide rebuild on real data (full cost with tax and running costs; Variant C chosen 2026-11-01)
 - Phase 08.2 inserted after Phase 08.1: Decide re-audit
 - Phases 6 and 8 amended and Phase 7 moved after 08.2 by the same plan
 
@@ -97,6 +97,7 @@ Last activity: 2026-10-27 -- Phase 05.1 complete, verification passed
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Decide design, 2026-11-01]: the owner chose Variant C ("Decide redesign: three variants" canvas, 40 screens) as the Decide design; Variants A and B are retired and the A+B blend is dropped. Reading-test round 1 runs on Variant C alone (about 5 people) to find what confuses people; findings are fixed, then the screens are frozen (QA-01). Grow stays out of the Decide reading test. Quick task 261101-jee.
 - Roadmap: Supabase provisioning, Apple/Google auth and household-of-one RLS moved into Phase 0 (Foundation) rather than Household — every phase from Record onward is hard-blocked on an authenticated, RLS-protected Supabase connection since local-first was rejected
 - Roadmap: Decide engine (Phase 4) has zero data-layer dependency by design and is flagged as parallel-eligible with Phases 1-3 (Money Core, Record, Shell)
 - Roadmap: Design Fidelity requirements (DSG-01 to DSG-04) filed under Foundation as standards established day one; DSG-05 (no on-device-storage claims in copy) filed under Compliance & Release since it feeds the App Privacy questionnaire's accuracy

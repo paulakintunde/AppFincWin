@@ -30,7 +30,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
-- [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Decide reads real goals, debts and household data; full cost with running costs; design: Variant C proposed, confirmed after reading-test round 1; short setup; public switch-on last
+- [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
 - [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
 - [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
@@ -1136,7 +1136,7 @@ Plans:
 
 ### Phase 08.1: Decide rebuild on real data (INSERTED)
 
-**Goal:** Decide reaches 10/10 on every auditor's checklist using real goals, debts and household data, with the full cost of a purchase (tax, fees and running costs) and the design the owner confirms. Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 4, 6 (Theme L) and 8. Design: Variant C is proposed ("Decide redesign: three variants" canvas). The owner confirms it after reading-test round 1, which tests Variants A, B and C.
+**Goal:** Decide reaches 10/10 on every auditor's checklist using real goals, debts and household data, with the full cost of a purchase (tax, fees and running costs) and the design the owner confirms. Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 4, 6 (Theme L) and 8. Design: Variant C, chosen by the owner on 2026-11-01 ("Decide redesign: three variants" canvas, 40 screens); Variants A and B are retired. Reading-test round 1 runs on Variant C alone (about 5 people) to find what confuses people; its findings are fixed and the screens are then frozen (QA-01).
 **Requirements**: Fix IDs FIN-12, FIN-20..24, FIN-28, FIN-29, FIN-31; ENG-26, ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-21, APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-26 round 2, UX-38, UX-41; CMP-F12 (layout), F14, F15, F19; ARC-11 (moved setup steps removed); QA-01 (freeze held), QA-02 and QA-03 (extended); BO-09 and the screen side of the 05.4 copy and app items (Theme N); UX-20 (decision record, version 1), UX-42, UX-43, the rest of ARC-24 and ARC-25 (Theme O). Home buying (FIN-30) is its own phase after 08.2; its screens stay hidden
 **Depends on:** Phase 8
 **Success Criteria** (what must be TRUE):
