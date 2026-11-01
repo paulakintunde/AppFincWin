@@ -115,6 +115,91 @@ describe('BackHistoryProvider', () => {
     expect(result.current.history).toHaveLength(0);
   });
 
+  describe('05.3-115 owner-aware switcher registration', () => {
+    const goBackOnActivity = async () => {
+      const { result } = await setup(tabState('activity'));
+      return result;
+    };
+
+    it('register A, register B, release B: goBack switches via A', async () => {
+      const result = await goBackOnActivity();
+      const a = jest.fn();
+      const b = jest.fn();
+      await act(() => {
+        result.current.registerTabSwitcher(a);
+        const releaseB = result.current.registerTabSwitcher(b);
+        releaseB();
+      });
+      await act(async () => {
+        result.current.goBack();
+      });
+      expect(a).toHaveBeenCalledWith('home');
+      expect(b).not.toHaveBeenCalled();
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('register A, register B, release A: goBack switches via B', async () => {
+      const result = await goBackOnActivity();
+      const a = jest.fn();
+      const b = jest.fn();
+      await act(() => {
+        const releaseA = result.current.registerTabSwitcher(a);
+        result.current.registerTabSwitcher(b);
+        releaseA();
+      });
+      await act(async () => {
+        result.current.goBack();
+      });
+      expect(b).toHaveBeenCalledWith('home');
+      expect(a).not.toHaveBeenCalled();
+    });
+
+    it('releasing twice is harmless and does not remove another entry', async () => {
+      const result = await goBackOnActivity();
+      const a = jest.fn();
+      const b = jest.fn();
+      await act(() => {
+        result.current.registerTabSwitcher(a);
+        const releaseB = result.current.registerTabSwitcher(b);
+        releaseB();
+        releaseB();
+      });
+      await act(async () => {
+        result.current.goBack();
+      });
+      expect(a).toHaveBeenCalledWith('home');
+    });
+
+    it('the same function registered twice is released one entry at a time', async () => {
+      const result = await goBackOnActivity();
+      const a = jest.fn();
+      await act(() => {
+        result.current.registerTabSwitcher(a);
+        const release2 = result.current.registerTabSwitcher(a);
+        release2();
+      });
+      await act(async () => {
+        result.current.goBack();
+      });
+      expect(a).toHaveBeenCalledWith('home');
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('with every switcher released, goBack falls back to router.navigate', async () => {
+      const result = await goBackOnActivity();
+      const a = jest.fn();
+      await act(() => {
+        const releaseA = result.current.registerTabSwitcher(a);
+        releaseA();
+      });
+      await act(async () => {
+        result.current.goBack();
+      });
+      expect(a).not.toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith('/home');
+    });
+  });
+
   describe('L1 no-op back switch', () => {
     beforeEach(() => jest.useFakeTimers());
     afterEach(() => jest.useRealTimers());
