@@ -88,7 +88,7 @@ Last activity: 2026-10-27 -- Phase 05.1 complete, verification passed
 - Phase 05.3 inserted after Phase 05.2: Decide screens v3
 - Phase 05.4 inserted after Phase 05.3: Decide safety patch (approved Decide fix plan, 2026-11-01; .planning/research/DECIDE-FIX-PLAN.md)
 - Phase 05.5 inserted after Phase 05.4: One shared money model
-- Phase 08.1 inserted after Phase 8: Decide rebuild on real data (full cost with tax and running costs; Variant C design)
+- Phase 08.1 inserted after Phase 8: Decide rebuild on real data (full cost with tax and running costs; Variant C proposed, not yet chosen)
 - Phase 08.2 inserted after Phase 08.1: Decide re-audit
 - Phases 6 and 8 amended and Phase 7 moved after 08.2 by the same plan
 
