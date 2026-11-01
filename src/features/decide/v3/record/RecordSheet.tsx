@@ -21,6 +21,8 @@ import { seenOf } from '@/engine/decide/v3';
 import type { Evaluation } from '@/engine/decide/v3';
 import type { DecideCheckRow, StoredSeenV3 } from '@/db/decideChecks';
 import { useUndo } from '@/data/mutations/undo';
+import { showToast } from '@/state/undoToast';
+import { undoLabelText } from '@/i18n/undoLabel';
 import { cancelCheckReminders } from '@/features/decide/notifications/waitReminder';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { WrittenList } from '../../ui/WrittenList';
@@ -71,6 +73,7 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
   // What was written (item and price at that moment); the sheet keeps showing it if the cache moves on.
   const [written, setWritten] = useState<{ item: string; price: number | null } | null>(null);
   const sentRef = useRef(false);
+  const undoneRef = useRef(false);
   const headingRef = useRef<React.ComponentRef<typeof Text>>(null);
 
   // Closed: the next opening starts fresh (state adjusted during render, so it settles in one extra pass).
@@ -80,6 +83,7 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
     setStepId(null);
     setReminder(null);
     setWritten(null);
+    undoneRef.current = false;
   }
 
   const item = row.name.trim();
@@ -156,13 +160,29 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
     setStep('B');
   }, [actions, args, boughtCtx, canRecord, item, price]);
 
+  const undoLabel = variant === 'plan' ? 'planSaved' : variant === 'pass' ? 'notBuyingSaved' : 'decisionWritten';
+
+  // 05.3-101 (UAT gap 25) amends UI-SPEC 537: no toast while the sheet shows; one Undo toast when it closes without Undo.
+  const closeSheet = useCallback(() => {
+    if (stepId !== null && !undoneRef.current) {
+      showToast({
+        kind: 'ordinary',
+        text: undoLabelText(undoLabel, { name: item }),
+        stepId,
+        target: { entity: 'decide_checks', id: row.id },
+      });
+    }
+    onClose();
+  }, [stepId, undoLabel, item, row.id, onClose]);
+
   const onUndo = useCallback(() => {
     if (stepId !== null) {
+      undoneRef.current = true;
       undo({
         stepId,
         ownerId: row.created_by,
         householdId: row.household_id,
-        labelKey: variant === 'plan' ? 'planSaved' : variant === 'pass' ? 'notBuyingSaved' : 'decisionWritten',
+        labelKey: undoLabel,
         labelParams: { name: item },
         expect: { entityId: row.id },
       });
@@ -170,7 +190,7 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
       if (variant !== 'bought') void cancelCheckReminders(row.id).catch(() => undefined);
     }
     onClose();
-  }, [undo, stepId, variant, row.id, row.created_by, row.household_id, item, onClose]);
+  }, [undo, stepId, variant, undoLabel, row.id, row.created_by, row.household_id, item, onClose]);
 
   const text = (key: string, params: Readonly<Record<string, string | number>>): string => {
     const out: Record<string, string | number> = {};
@@ -230,7 +250,7 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
   );
 
   return (
-    <Sheet visible={visible} onDismiss={onClose} accessibilityLabel={title}>
+    <Sheet visible={visible} onDismiss={closeSheet} accessibilityLabel={title}>
       {/* the sheet may open from a read-only check; its own buttons stay live */}
       <ReadOnlyScope.Provider value={false}>
         <View style={[styles.content, { paddingBottom: space.sheetPadBottom + insets.bottom }]}>
@@ -270,7 +290,7 @@ export function RecordSheet({ variant, visible, onClose, row, evaluation, aprTex
                 ]
               : [
                   stepId !== null ? button(<Pill label={t(`${K}undo`)} variant="secondary" onPress={onUndo} />, 'undo') : null,
-                  button(<Pill label={t(`${K}backToDecide`)} variant="primary" onPress={onClose} />, 'back'),
+                  button(<Pill label={t(`${K}backToDecide`)} variant="primary" onPress={closeSheet} />, 'back'),
                 ]}
           </View>
         </View>
