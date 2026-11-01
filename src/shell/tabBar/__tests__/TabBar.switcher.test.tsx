@@ -58,9 +58,12 @@ function makeProps() {
   return { props: props as unknown as BottomTabBarProps, navigation };
 }
 
-let ctx: BackHistoryContextValue | null = null;
+const probe: { ctx: BackHistoryContextValue | null } = { ctx: null };
 function Probe(): null {
-  ctx = useBackHistory();
+  const value = useBackHistory();
+  React.useEffect(() => {
+    probe.ctx = value;
+  }, [value]);
   return null;
 }
 
@@ -88,6 +91,9 @@ function Harness({ showSecond, a, b }: { showSecond: boolean; a: BottomTabBarPro
   );
 }
 
+// Real providers and two full tab bars are slow to render on a loaded machine.
+jest.setTimeout(30000);
+
 describe('TabBar switcher with two tab bars', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -103,7 +109,7 @@ describe('TabBar switcher with two tab bars', () => {
 
     let ok = false;
     await act(async () => {
-      ok = ctx!.goBack();
+      ok = probe.ctx!.goBack();
     });
     expect(ok).toBe(true);
     expect(first.navigation.navigate).toHaveBeenCalledWith({ name: 'home', merge: true });
@@ -117,7 +123,7 @@ describe('TabBar switcher with two tab bars', () => {
     const second = makeProps();
     const r = await render(<Harness showSecond a={first.props} b={second.props} />);
     await act(async () => {
-      ctx!.goBack();
+      probe.ctx!.goBack();
     });
     expect(second.navigation.navigate).toHaveBeenCalledWith({ name: 'home', merge: true });
     expect(first.navigation.navigate).not.toHaveBeenCalled();

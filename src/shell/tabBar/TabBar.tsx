@@ -34,14 +34,16 @@ export function TabBar({
   const { registerTabSwitcher } = useBackHistory();
   const { setTabBarHeight } = useShellLayout();
 
-  useEffect(() => {
-    // History's goBack is the only caller, so every call is a back step (D-05).
-    registerTabSwitcher((tab) => {
-      markBackStep();
-      navigation.navigate({ name: tab, merge: true } as never);
-    });
-    return () => registerTabSwitcher(null);
-  }, [navigation, registerTabSwitcher]);
+  // History's goBack is the only caller, so every call is a back step (D-05). The returned
+  // release is the clean-up and removes only this tab bar's switcher (05.3-115).
+  useEffect(
+    () =>
+      registerTabSwitcher((tab) => {
+        markBackStep();
+        navigation.navigate({ name: tab, merge: true } as never);
+      }),
+    [navigation, registerTabSwitcher],
+  );
 
   const visible = state.routes.filter(
     (r) => isTabId(r.name) && isTabAvailable(r.name, availability),
