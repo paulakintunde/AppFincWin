@@ -1,7 +1,7 @@
 // D-14/D-15: the compact header shown once the large one has scrolled away. Opacity is driven by the
 // caller (03-11) through animatedStyle; while invisible it is removed from touch and screen readers.
 import React from 'react';
-import { View, type StyleProp, type ViewStyle } from 'react-native';
+import { View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Text } from '@/ui/Text';
 import { useBackHistory } from '@/shell/backHistory/BackHistoryProvider';
@@ -28,6 +28,9 @@ export interface CompactHeaderProps {
   showBack?: boolean;
   /** 05-117: Decide home shows its sync problem in the notice row instead. */
   hideSyncLine?: boolean;
+  /** 05.3-109: laid out in the column above the scroll view (no absolute position, no inset: a backdrop owns the status bar). */
+  inFlow?: boolean;
+  onLayout?: (e: LayoutChangeEvent) => void;
 }
 
 export function CompactHeader({
@@ -40,6 +43,8 @@ export function CompactHeader({
   titleRole,
   showBack,
   hideSyncLine = false,
+  inFlow = false,
+  onLayout,
 }: CompactHeaderProps): React.JSX.Element {
   const { colors, pairing } = useTheme();
   const insets = useScreenInsets();
@@ -47,21 +52,20 @@ export function CompactHeader({
   return (
     <Animated.View
       testID="compact-header"
+      onLayout={onLayout}
       pointerEvents={visible ? 'auto' : 'none'}
       accessibilityElementsHidden={!visible}
       importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
       style={[
         {
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          paddingTop: insets.top + space.gapSm,
+          position: inFlow ? 'relative' : 'absolute',
+          ...(inFlow ? {} : { top: 0, left: 0, right: 0 }),
+          paddingTop: (inFlow ? 0 : insets.top) + space.gapSm,
           backgroundColor: colors.canvas,
           borderBottomWidth: 1,
           borderBottomColor: colors.line1,
         },
-        animatedStyle,
+        inFlow ? undefined : animatedStyle,
       ]}
     >
       <View

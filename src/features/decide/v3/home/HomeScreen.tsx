@@ -97,6 +97,7 @@ export function HomeScreen(): React.JSX.Element {
     title: t('decide.setupPage.title'),
     eyebrow: t('decide.setupPage.eyebrow'),
     trailing: <SettingsButton />,
+    compactInFlow: true,
     compactTrailing: (
       <>
         <SettingsButton />
