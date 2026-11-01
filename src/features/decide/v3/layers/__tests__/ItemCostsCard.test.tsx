@@ -101,9 +101,22 @@ describe('ItemCostsCard', () => {
     expect(Object.keys(latest.extras)).toEqual([]);
   });
 
-  it('a stored non-preset type has no card', async () => {
+  it('05.3-113: an own kind asks the questions of the kind it counts like; with no base given it counts as General', async () => {
     const custom: CheckV2 = { ...emptyCheck(), itemType: { kind: 'custom', id: 'c1' } };
-    await mount(custom);
+    const { unmount } = await mount(custom);
+    expect(screen.getByText('Extras to consider')).toBeTruthy();
+    expect(screen.queryByText('Car costs to consider')).toBeNull();
+    await unmount();
+    await render(
+      <Stateful initial={custom}>
+        {({ check, edit }) => <ItemCostsCard check={check} edit={edit} currency="USD" prefillSeries={[]} itemBase="vehicle" />}
+      </Stateful>,
+    );
+    expect(screen.getByText('Car costs to consider')).toBeTruthy();
+  });
+
+  it('a kind with no cost questions has no card', async () => {
+    await mount(withItemType(emptyCheck(), { kind: 'preset', value: 'rent_bill' }));
     expect(screen.queryByTestId('item-costs-card')).toBeNull();
   });
 });
