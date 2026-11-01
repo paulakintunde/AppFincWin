@@ -87,3 +87,35 @@ describe('fresh own kind with Vehicle', () => {
     expect(last.base).toBe('general');
   });
 });
+
+describe('05.3-118 (UAT gap 35): the just-added kind shows its own name before the cache holds it', () => {
+  it('reads Bike, never A removed option, while the settings cache is not yet patched', async () => {
+    // The real onMutate patches the cache only after `await qc.cancelQueries`, so the first frames see the old list.
+    let pending: unknown = null;
+    mockSave.mockImplementation((args: { patch: { custom_options: unknown } }) => {
+      pending = args.patch.custom_options;
+      return { stepId: 's1' };
+    });
+    const view = await render(<Wrap><Host /></Wrap>);
+    await addBike();
+    expect(selectedRef).toEqual({ kind: 'custom', id: 'id-1' });
+    expect(screen.getByText('Bike')).toBeTruthy();
+    expect(screen.queryByText('A removed option')).toBeNull();
+    // Once the cache lists the id, exactly one Bike chip shows.
+    mockRow = { custom_options: pending };
+    await view.rerender(<Wrap><Host /></Wrap>);
+    expect(screen.getAllByText('Bike')).toHaveLength(1);
+    expect(screen.queryByText('A removed option')).toBeNull();
+  });
+
+  it('a refused add sets no local label', async () => {
+    await render(<Wrap><Host /></Wrap>);
+    await addBike();
+    await fireEvent.press(screen.getByText('+ Your own'));
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'bike');
+    await fireEvent.press(screen.getByText('Save'));
+    // the duplicate is refused: the save count stays at one and no second chip appears
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(screen.queryAllByText('bike')).toHaveLength(0);
+  });
+});

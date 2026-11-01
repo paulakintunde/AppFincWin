@@ -1,5 +1,5 @@
 /** Plan 05.3-40: D-10 purpose block: six labels in order, nothing selected, emergency follow-up. */
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import type { CheckV2 } from '@/engine/decide/v3';
@@ -12,9 +12,16 @@ jest.setTimeout(60000);
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: false, ready: true }),
 }));
+const mockAdd = jest.fn();
+let mockPurposes: { id: string; label: string }[] = [];
 jest.mock('@/features/decide/v3/check/useOwnOptions', () => ({
-  useOwnOptions: () => ({ itemTypes: [], purposes: [], retired: new Map(), liveCount: { itemTypes: 0, purposes: 0 }, add: jest.fn() }),
+  useOwnOptions: () => ({ itemTypes: [], purposes: mockPurposes, retired: new Map(), liveCount: { itemTypes: 0, purposes: 0 }, add: mockAdd }),
 }));
+
+beforeEach(() => {
+  mockPurposes = [];
+  mockAdd.mockReset();
+});
 jest.mock('@/services/locale/deviceLocale', () => ({
   useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC', separators: { decimal: '.', group: ',' } }),
 }));
@@ -75,5 +82,38 @@ describe('PurposeBlock', () => {
       return flat.backgroundColor;
     };
     expect(bg('A luxury')).not.toBe(bg('A treat'));
+  });
+});
+
+describe('05.3-118 (UAT gap 35): a just-added own purpose shows its own name', () => {
+  function Host(): React.JSX.Element {
+    const [check, setCheck] = useState<CheckV2>(emptyCheck());
+    return <Wrap><PurposeBlock check={check} edit={setCheck} /></Wrap>;
+  }
+
+  async function addKids(): Promise<void> {
+    await fireEvent.press(screen.getByText('+ Your own'));
+    await fireEvent.changeText(screen.getByLabelText('Name'), '  For the kids ');
+    await fireEvent.press(screen.getByText('Save'));
+  }
+
+  it('reads For the kids, selected, while the purposes list is not yet updated; then the cache takes over', async () => {
+    mockAdd.mockReturnValue({ ok: true, id: 'kids' });
+    const view = await render(<Host />);
+    await addKids();
+    expect(mockAdd).toHaveBeenCalledWith('purpose', { name: 'For the kids' });
+    expect(screen.getByLabelText('For the kids').props.accessibilityState.checked).toBe(true);
+    expect(screen.queryByText('A removed option')).toBeNull();
+    mockPurposes = [{ id: 'kids', label: 'For the kids' }];
+    await view.rerender(<Host />);
+    expect(screen.getAllByLabelText('For the kids')).toHaveLength(1);
+  });
+
+  it('a refused add sets no local label', async () => {
+    mockAdd.mockReturnValue({ ok: false, reason: 'name_taken' });
+    await render(<Host />);
+    await addKids();
+    expect(screen.queryByLabelText('For the kids')).toBeNull();
+    expect(screen.queryByText('A removed option')).toBeNull();
   });
 });

@@ -18,7 +18,7 @@ import { useLooseT } from '../check/useLooseT';
 import { useOwnOptions } from '../check/useOwnOptions';
 import { OWN_LIVE_MAX } from '../model/ownOptions';
 import { withEmergency, withLayerAnswer, withPurpose } from '../model/checkEdits';
-import { purposeOptions } from '../model/checkOptions';
+import { purposeOptions, withJustAdded, type CustomLabel } from '../model/checkOptions';
 
 export interface PurposeBlockProps {
   check: CheckV2;
@@ -69,7 +69,11 @@ export function PurposeBlock({ check, edit, readOnly = false }: PurposeBlockProp
   const own = useOwnOptions();
   const [open, setOpen] = useState(false);
   const [limit, setLimit] = useState(false);
-  const options = purposeOptions(check.purpose, own.purposes, own.retired);
+  // 05.3-118 (UAT gap 35): the purpose just saved, shown by its own name until the settings cache lists its id.
+  const [justAdded, setJustAdded] = useState<CustomLabel | null>(null);
+  const options = purposeOptions(check.purpose, withJustAdded(own.purposes, justAdded), own.retired);
+  // Once the cache lists the id the local label is dropped (adjusting state while rendering, not in an effect).
+  if (justAdded !== null && own.purposes.some((c) => c.id === justAdded.id)) setJustAdded(null);
   const addPress = (): void => {
     if (own.liveCount.purposes >= OWN_LIVE_MAX) {
       setLimit(true);
@@ -82,6 +86,7 @@ export function PurposeBlock({ check, edit, readOnly = false }: PurposeBlockProp
     const r = own.add('purpose', input);
     if (!r.ok) return r.reason;
     setOpen(false);
+    setJustAdded({ id: r.id, label: input.name.trim() });
     edit(withPurpose(check, { kind: 'custom', id: r.id }));
     return 'ok';
   };
