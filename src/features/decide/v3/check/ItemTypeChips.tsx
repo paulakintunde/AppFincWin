@@ -10,7 +10,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { Text } from '@/ui/Text';
-import { itemTypeOptions, type CustomLabel } from '../model/checkOptions';
+import { itemTypeOptions, withJustAdded, type CustomLabel } from '../model/checkOptions';
 import { OWN_LIVE_MAX } from '../model/ownOptions';
 import { OwnOptionSheet, type OwnSaveOutcome } from './OwnOptionSheet';
 import { EditOwnLink } from './OwnOptionsListSheet';
@@ -29,7 +29,13 @@ export function ItemTypeChips({ selected, custom, onSelect, readOnly = false }: 
   const own = useOwnOptions();
   const [open, setOpen] = useState(false);
   const [limit, setLimit] = useState(false);
-  const options = itemTypeOptions(selected, custom ?? own.itemTypes, own.retired);
+  // 05.3-118 (UAT gap 35): the kind just saved, shown by its own name until the settings cache lists its id.
+  const [justAdded, setJustAdded] = useState<CustomLabel | null>(null);
+  const live = custom ?? own.itemTypes;
+  const options = itemTypeOptions(selected, withJustAdded(live, justAdded), own.retired);
+  // Once the cache lists the id the local label is dropped (adjusting state while rendering, not in an effect), so a
+  // later remove or undo shows what the cache says.
+  if (justAdded !== null && live.some((c) => c.id === justAdded.id)) setJustAdded(null);
 
   const press = (): void => {
     if (own.liveCount.itemTypes >= OWN_LIVE_MAX) {
@@ -43,6 +49,7 @@ export function ItemTypeChips({ selected, custom, onSelect, readOnly = false }: 
     const r = own.add('itemType', input);
     if (!r.ok) return r.reason;
     setOpen(false);
+    setJustAdded({ id: r.id, label: input.name.trim() });
     onSelect({ kind: 'custom', id: r.id });
     return 'ok';
   };

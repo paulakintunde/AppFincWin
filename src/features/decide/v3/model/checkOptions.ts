@@ -31,6 +31,16 @@ export interface ItemTypeOption {
 }
 
 const REMOVED_KEY = 'decide.v3.ui.ownOptions.removedName';
+
+/**
+ * 05.3-118 (UAT gap 35): the cached own options plus the one just saved, while the settings cache does not hold it yet.
+ * Without it the first frames after '+ Your own' label the new selected chip 'A removed option'. Once the cache lists
+ * the id, the cache wins (same reference back), including any newer name.
+ */
+export function withJustAdded(custom: readonly CustomLabel[], added: CustomLabel | null): readonly CustomLabel[] {
+  if (added === null || custom.some((c) => c.id === added.id)) return custom;
+  return [...custom, added];
+}
 const NO_RETIRED: ReadonlyMap<string, string> = new Map();
 
 export function purposeOptions(

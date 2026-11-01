@@ -1,5 +1,5 @@
 import { V3_ITEM_TYPES, type ItemTypeRef, type Purpose } from '@/engine/decide/v3';
-import { ITEM_TYPE_ORDER, PURPOSE_ORDER, itemTypeOptions, purposeOptions } from '../checkOptions';
+import { ITEM_TYPE_ORDER, PURPOSE_ORDER, itemTypeOptions, purposeOptions, withJustAdded } from '../checkOptions';
 
 describe('purposeOptions', () => {
   it('D-10 order is exact', () => {
@@ -58,5 +58,25 @@ describe('retired own options', () => {
   it('a live own option is not duplicated', () => {
     expect(purposeOptions({ kind: 'custom', id: 'p' }, [{ id: 'p', label: 'K' }])).toHaveLength(7);
     expect(itemTypeOptions({ kind: 'custom', id: 'p' }, [{ id: 'p', label: 'K' }])).toHaveLength(10);
+  });
+});
+
+describe('withJustAdded (05.3-118, UAT gap 35)', () => {
+  const bike = { id: 'b', label: 'Bike' };
+  it('nothing just added returns the same list', () => {
+    const custom = [{ id: 'a', label: 'A' }];
+    expect(withJustAdded(custom, null)).toBe(custom);
+  });
+  it('adds the just-saved option at the end while the cache does not hold it', () => {
+    expect(withJustAdded([{ id: 'a', label: 'A' }], bike)).toEqual([{ id: 'a', label: 'A' }, bike]);
+  });
+  it('the cache wins once it holds the id, including a newer name', () => {
+    const custom = [{ id: 'b', label: 'Bicycle' }];
+    expect(withJustAdded(custom, bike)).toBe(custom);
+  });
+  it('a selected just-added kind is a selectable chip with its own name, not the removed copy', () => {
+    const o = itemTypeOptions({ kind: 'custom', id: 'b' }, withJustAdded([], bike));
+    expect(o).toHaveLength(10);
+    expect(o.at(-1)).toMatchObject({ label: 'Bike', labelKey: null, selected: true, readOnly: false });
   });
 });
