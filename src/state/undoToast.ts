@@ -35,13 +35,18 @@ export interface ToastState {
    */
   onUndo: (() => void) | null;
   refusal: UndoConflict | null;
+  /**
+   * 05.3-97: the row this toast's step changed. Undo checks the step touches it before applying (a wrong step refuses). In
+   * memory only. Null for toasts that do not name one: their Undo is unchanged.
+   */
+  target: { entity: string; id: string } | null;
   /** ms epoch when this toast became visible; hosts schedule the REMAINING time so moving between layers never restarts it (03 D-16, research Pitfall 9). */
   shownAt: number;
 }
 
 export const TOAST_MS_ORDINARY = 3200; // D-31 (prototype say())
-export const TOAST_MS_DESTRUCTIVE = 6000; // D-31 deletes, bulk deletes, imports
-export const TOAST_MS_UNDO = 6000; // F-12 (05.2 walkthrough): long enough to reach Undo on a phone
+export const TOAST_MS_DESTRUCTIVE = 10000; // 05.3-101 (UAT gap 25): 6 s was about 4 s visible after a sheet closed; D-31 deletes, bulk deletes, imports
+export const TOAST_MS_UNDO = 10000; // 05.3-101 (UAT gap 25); F-12 (05.2 walkthrough): long enough to reach Undo on a phone
 
 /**
  * D-31 / C-CR-02: how long the host keeps a toast up before auto-dismissing it. `null` means
@@ -84,6 +89,7 @@ export function showToast(t: {
   stepIds?: readonly string[] | null;
   onUndo?: (() => void) | null;
   refusal?: UndoConflict | null;
+  target?: { entity: string; id: string } | null;
 }): void {
   toast = {
     id: nextId++,
@@ -94,6 +100,7 @@ export function showToast(t: {
     stepIds: t.stepIds && t.stepIds.length > 0 ? Array.from(new Set(t.stepIds)) : null,
     onUndo: t.onUndo ?? null,
     refusal: t.refusal ?? null,
+    target: t.target ?? null,
     shownAt: Date.now(),
   };
   notify();

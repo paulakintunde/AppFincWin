@@ -36,6 +36,11 @@ function asNumber(v: unknown): number | undefined {
 // other, so each carries the engine label key of the step it recorded. Without this map their text is not an `undo.label.*` key,
 // `undoableLabel` returns null and the toast shows no Undo.
 const DECIDE_TOAST_LABEL: Readonly<Record<string, UndoLabelKey>> = {
+  // 05.3-101 (UAT gap 25): own kind / purpose toasts replay their saved setup step.
+  // 05.3-120 (UAT gap 37): each replays its own named step.
+  'decide.v3.ui.ownOptions.savedToast': 'ownOptionAdded',
+  'decide.v3.ui.ownOptions.renamedToast': 'ownOptionRenamed',
+  'decide.v3.ui.ownOptions.removedToast': 'ownOptionRemoved',
   'decide.delete.toastCheck': 'checkDeleted',
   'decide.clear.toast': 'checkCleared',
   'decide.delete.toastDecision': 'decisionDeleted',
@@ -86,6 +91,11 @@ function undoableLabel(toast: ToastState): { labelKey: UndoLabelKey; labelParams
     labelKey: labelKey as UndoLabelKey,
     labelParams: { ...(n !== undefined ? { n } : {}), ...(name !== undefined ? { name } : {}) },
   };
+}
+
+/** 05.3-97: a toast that names the row it changed has its step checked against that row before it is applied. */
+function expectOf(toast: ToastState): { expect: { entityId: string } } | Record<string, never> {
+  return toast.target ? { expect: { entityId: toast.target.id } } : {};
 }
 
 export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'sheet' }) {
@@ -196,6 +206,7 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
           householdId: ctx.householdId,
           labelKey: label.labelKey,
           labelParams: label.labelParams,
+          ...expectOf(toast),
         });
       }
       dismissToast(toast.id);
@@ -207,6 +218,7 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
       householdId: ctx.householdId,
       labelKey: label.labelKey,
       labelParams: label.labelParams,
+      ...expectOf(toast),
     });
     dismissToast(toast.id);
   };
