@@ -40,9 +40,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 100000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -126,9 +139,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -212,9 +238,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -296,9 +335,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -548,9 +600,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 240000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 240000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -631,9 +696,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 340000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 340000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -714,9 +792,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
         "bills": [],
         "debts": [],
         "userLine": 30000,
@@ -797,9 +888,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 100000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -883,9 +987,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 148000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 148000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -1137,9 +1254,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 158000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 158000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,

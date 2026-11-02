@@ -40,9 +40,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -210,9 +223,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
         "bills": [],
         "debts": [
           {
@@ -310,9 +336,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
         "bills": [],
         "debts": [
           {
@@ -412,9 +451,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
         "bills": [
           {
             "id": "b-phone",
@@ -524,9 +576,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
