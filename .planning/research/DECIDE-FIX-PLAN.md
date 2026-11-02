@@ -778,7 +778,7 @@ You adopted the blend, with shadow runs for testers and the Variant C mockup fix
 - **BO-06: A release check for the per-account switch.**
   - The build fails if any account outside a named tester list has Decide switched on from the server (`profiles.decide_v3`).
   - Demo and reviewer accounts are listed in code and must never have it on.
-  - **Closes the test-flag gap (owner, 2 November).** Today an account with `profiles.decide_v3` on can open the 05.2 setup page and its engine readout. 05.4 hides both from every account. The tester list is a repo file of account IDs: the owner's accounts plus each tester the owner names, changed only by an owner-approved PR (05.4 D-29, D-30). Until 08.1 the flag only drives quiet shadow runs on those accounts (BO-08); from 08.1 it also shows them the Variant C screens (BO-09).
+  - **Closes the test-flag gap (owner, 2 November).** Today an account with `profiles.decide_v3` on can open the 05.2 setup page and its engine readout. 05.4 hides both from every account. The tester list is a repo file of account IDs: the owner's accounts plus each tester the owner names, changed only by an owner-approved PR (05.4 D-29, D-30). The flag stays off until 08.1, when it shows those accounts the Variant C screens (BO-09). Shadow runs use the separate server-only `profiles.decide_shadow` flag (05.4-30, BO-08).
   - First step: count the production accounts that have the flag on today (not yet checked).
   - *05.4. S.*
 - **BO-07: Six connection points, each with one owner.** Written as contracts with tests before Grow's first table changes. Decide only reads them, or asks the owning feature to save:
