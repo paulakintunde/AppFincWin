@@ -1,4 +1,880 @@
 {
   "topic": "debts",
-  "cases": []
+  "cases": [
+    {
+      "id": "DB-01",
+      "topic": "debts",
+      "persona": "Dev (invented)",
+      "situation": "Dev has $1,400 in his account on 15 November and November leaves $1,000 spare before his card. His card minimum of $300 is due on 25 November, before pay on 1 December. He is looking at an $800 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [
+          {
+            "id": "d-card",
+            "kind": "card",
+            "balance": 200000,
+            "minimum": 30000,
+            "apr": "22.9",
+            "dueDay": 25,
+            "joint": false
+          }
+        ],
+        "userLine": null,
+        "factLines": false,
+        "check": {
+          "price": 80000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The card minimum lands on the 90-day path on its due date: $1,400 - $400 everyday spending - $300 minimum - $800 = -$100 before payday, with no overdraft, so \"Not yet\". On 1 December, $700 left from November plus $700 spare in December (after the next minimum) covers the $800.",
+      "fixIds": [
+        "FIN-04",
+        "ENG-01"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "DB-02",
+      "topic": "debts",
+      "persona": "Dev, due day unknown (invented)",
+      "situation": "Same Dev as DB-01, but he never entered the day his $300 card minimum is due. He is looking at a $600 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [
+          {
+            "id": "d-card",
+            "kind": "card",
+            "balance": 200000,
+            "minimum": 30000,
+            "apr": "22.9",
+            "dueDay": null,
+            "joint": false
+          }
+        ],
+        "userLine": null,
+        "factLines": false,
+        "check": {
+          "price": 60000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 10000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [
+          "debt_due_day_assumed"
+        ],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "With the due day unknown, the earliest likely day (tomorrow) is used, so the $300 still counts this month: $1,000 - $300 = $700 spare, and $700 - $600 = $100 left. The answer says the day was assumed and asks for the real one.",
+      "fixIds": [
+        "FIN-04",
+        "ENG-01"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "DB-03",
+      "topic": "debts",
+      "persona": "Iris (invented)",
+      "situation": "Iris pays her $300 card minimum as a monthly bill; it went out on 5 November and is part of this month's $1,500 of bills paid. November leaves $700 spare. She is looking at a $600 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 110000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "b-card",
+            "amount": 30000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-05",
+            "lastPaid": "2026-11-05",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [
+          {
+            "id": "d-card",
+            "kind": "card",
+            "balance": 200000,
+            "minimum": 30000,
+            "apr": "22.9",
+            "dueDay": 5,
+            "joint": false
+          }
+        ],
+        "userLine": null,
+        "factLines": false,
+        "check": {
+          "price": 60000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 10000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The card payment is already in this month's bills, so it is counted once: $700 - $600 = $100 left. Counting it a second time as a debt would wrongly make this $400 spare and \"Not yet\".",
+      "fixIds": [
+        "FIN-04",
+        "ENG-01"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "DB-04",
+      "topic": "debts",
+      "persona": "A13 Sam (audit, invented)",
+      "situation": "Sam carries £6,000 on a card at 24.9% and pays the £150 minimum each month as a bill. He has £2,000 free after this month's plans. Debt fact lines are on (the default). He is looking at a £1,800 holiday, paid in cash. (The safety net is left out of this case so it tests the debt fact alone.)",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 75000,
+          "essentialEveryday": 45000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 37500
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Main",
+            "balance": 237500,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "b-card",
+            "amount": 15000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-05",
+            "lastPaid": "2026-11-05",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [
+          {
+            "id": "d-card",
+            "kind": "card",
+            "balance": 600000,
+            "minimum": 15000,
+            "apr": "24.9",
+            "dueDay": 5,
+            "joint": false
+          }
+        ],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 180000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "debt_interest_cost"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "The money is there: £2,000 - £1,800 = £200 left, using £1,050 saved from earlier months as well as £750 of this month. The answer adds the fact \"You carry £6,000 at 24.9%. That costs about £125 a month in interest\" (6,000 x 24.9% / 12 = £124.50), which never changes the answer (D-08).",
+      "fixIds": [
+        "FIN-10",
+        "ENG-09"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "DB-05",
+      "topic": "debts",
+      "persona": "A13 Sam, lines off (audit, invented)",
+      "situation": "Same Sam and holiday as DB-04, but he switched the debt fact lines off in settings.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 75000,
+          "essentialEveryday": 45000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 37500
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Main",
+            "balance": 237500,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "b-card",
+            "amount": 15000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-05",
+            "lastPaid": "2026-11-05",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [
+          {
+            "id": "d-card",
+            "kind": "card",
+            "balance": 600000,
+            "minimum": 15000,
+            "apr": "24.9",
+            "dueDay": 5,
+            "joint": false
+          }
+        ],
+        "userLine": null,
+        "factLines": false,
+        "check": {
+          "price": 180000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [
+          "debt_interest_cost"
+        ]
+      },
+      "why": "Same sums as DB-04, so the same answer: £200 left. The interest line is not shown because he switched it off; facts never change the answer either way.",
+      "fixIds": [
+        "FIN-10",
+        "ENG-09"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "DB-06",
+      "topic": "debts",
+      "persona": "Chris (invented)",
+      "situation": "Chris has a $12,000 car loan in both his and his brother's names; the $250 monthly payment is one of his bills. November leaves him $1,000 spare. He is looking at a $500 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "b-car",
+            "amount": 25000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-03",
+            "lastPaid": "2026-11-03",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [
+          {
+            "id": "d-car",
+            "kind": "loan",
+            "balance": 1200000,
+            "minimum": 25000,
+            "apr": "7.5",
+            "dueDay": 3,
+            "joint": true
+          }
+        ],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "joint_loan_risk"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Spare money $1,000 - $500 = $500 left, so it fits. Because the loan is in both names, the answer adds the fact \"If this plan is in both names, each of you can be asked to pay all of it\" (FIN-14).",
+      "fixIds": [
+        "FIN-14"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "DB-07",
+      "topic": "debts",
+      "persona": "Pat (invented)",
+      "situation": "Pat has a $250,000 mortgage at 5.5%; the $1,500 monthly payment is one of her $2,200 of bills. November leaves her $800 spare. Housing fact lines are on (the default). She is looking at a $500 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 400000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 220000,
+          "everyday": 100000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 400000,
+          "billsPaid": 220000,
+          "billsDue": 0,
+          "everydaySoFar": 50000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 130000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "b-home",
+            "amount": 150000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-01",
+            "lastPaid": "2026-11-01",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [
+          {
+            "id": "d-home",
+            "kind": "loan",
+            "balance": 25000000,
+            "minimum": 150000,
+            "apr": "5.5",
+            "dueDay": 1,
+            "joint": false,
+            "housing": true
+          }
+        ],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 30000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "housing_cost"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Spare money $800 - $500 = $300 left, so it fits. The answer adds a housing fact about the mortgage payment, as a fact only; it never changes the answer (D-08).",
+      "fixIds": [
+        "FIN-10",
+        "ENG-09"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "DB-08",
+      "topic": "debts",
+      "persona": "Dev, second debt (invented)",
+      "situation": "Same Dev and $600 purchase as DB-02, but he also has a personal loan with a $200 minimum due on 20 November.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [
+          {
+            "id": "d-card",
+            "kind": "card",
+            "balance": 200000,
+            "minimum": 30000,
+            "apr": "22.9",
+            "dueDay": null,
+            "joint": false
+          },
+          {
+            "id": "d-loan",
+            "kind": "loan",
+            "balance": 500000,
+            "minimum": 20000,
+            "apr": "11.9",
+            "dueDay": 20,
+            "joint": false
+          }
+        ],
+        "userLine": null,
+        "factLines": false,
+        "check": {
+          "price": 60000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [
+          "debt_due_day_assumed"
+        ],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Both minimums count: $1,000 - $300 - $200 = $500 spare, less than $600, and the account would reach $1,400 - $400 - $500 - $600 = -$100. So the answer is stricter than DB-02 (\"Fits\"): adding a debt can never make the answer better. On 1 December the $500 left plus December's $500 covers it.",
+      "fixIds": [
+        "FIN-04",
+        "ENG-01"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "DB-09",
+      "topic": "debts",
+      "persona": "A14 Sam, holiday on a plan (audit, invented)",
+      "situation": "Same Sam as DB-04 (a £6,000 card at 24.9%, £2,000 free, usual month leaves £750), but this time the £1,800 holiday is paid over 12 months at 29.9%, first payment on 15 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 75000,
+          "essentialEveryday": 45000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 37500
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Main",
+            "balance": 237500,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "b-card",
+            "amount": 15000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-05",
+            "lastPaid": "2026-11-05",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [
+          {
+            "id": "d-card",
+            "kind": "card",
+            "balance": 600000,
+            "minimum": 15000,
+            "apr": "24.9",
+            "dueDay": 5,
+            "joint": false
+          }
+        ],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 180000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "29.9",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 57461
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "debt_interest_cost"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "The cash is there (DB-04), so borrowing at 29.9%, above the 20% line, gets \"Fits only by borrowing\" (D-07), not a plain \"Fits\". Payments of £175.39 leave £750 - £175.39 = £574.61 in a usual month, and the £6,000 card at 24.9% is still stated as a fact.",
+      "fixIds": [
+        "FIN-10",
+        "ENG-09",
+        "FIN-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    }
+  ]
 }

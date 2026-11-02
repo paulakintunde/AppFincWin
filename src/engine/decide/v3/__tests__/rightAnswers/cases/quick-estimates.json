@@ -1,4 +1,1050 @@
 {
   "topic": "quick-estimates",
-  "cases": []
+  "cases": [
+    {
+      "id": "QE-01",
+      "topic": "quick-estimates",
+      "persona": "A12 Zoe (audit, invented)",
+      "situation": "Zoe started three weeks ago. She has no full month of records yet, so Decide uses her quick estimates (pay £2,500, bills £1,000, everyday £300). November leaves £1,200 free. She is looking at £1,150. (The safety net is left out here; SN-11 shows the same thin margin with the default safety net.)",
+      "fixture": {
+        "asOf": "2026-11-22",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 30000,
+          "essentialEveryday": 20000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 22000
+        },
+        "historyMonths": 0,
+        "quickEstimates": {
+          "income": 250000,
+          "bills": 100000,
+          "everyday": 30000
+        },
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Main",
+            "balance": 128000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 115000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 5000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [
+          "quick_estimates"
+        ],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "£1,200 - £1,150 = £50 left. The answer is based on quick estimates, not records, and says so in its sentence (\"Based on your quick estimates\"), so it is never shown as more certain than it is.",
+      "fixIds": [
+        "ENG-11",
+        "FIN-25",
+        "ENG-10"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-02",
+      "topic": "quick-estimates",
+      "persona": "Ben (invented)",
+      "situation": "Ben has 2 full months of records (September and October) plus this month. November leaves $1,000 spare. He is looking at a $500 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 2,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [
+          "few_months"
+        ],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "$1,000 - $500 = $500 left, so it fits. The sentence under the answer reads \"Based on 2 of the 3 months of records Decide looks for.\"",
+      "fixIds": [
+        "FIN-25",
+        "ENG-10"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-03",
+      "topic": "quick-estimates",
+      "persona": "Ada, freelancer (invented)",
+      "situation": "Ada is a freelancer. Most months bring $3,000, but in September only $1,500 came in; her usual month leaves $600. She has $500 in savings. She is looking at $2,400 in 12 payments of $200 at 0%, and answered yes to \"Can you cover the low months?\"",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": [
+            300000,
+            150000,
+            300000
+          ]
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 105000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "s1",
+            "kind": "savings",
+            "name": "Savings",
+            "balance": 50000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": null
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 240000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "yourAnswer": "yes"
+        }
+      },
+      "expected": {
+        "code": "fits_on_your_answer",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 40000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "A usual month leaves $600 - $200 = $400, but a month like September would be $1,500 - $2,400 of bills and spending - $200 = -$1,100, and $500 of savings cannot carry that. Only her yes makes it fit, so the answer is \"Only on your answer\" and says the records do not show it (FIN-08).",
+      "fixIds": [
+        "FIN-08",
+        "ENG-07"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-04",
+      "topic": "quick-estimates",
+      "persona": "Ada, with savings (invented)",
+      "situation": "Same Ada and $200-a-month plan as QE-03, but she has $4,000 in savings. She has not been asked the cover question.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": [
+            300000,
+            150000,
+            300000
+          ]
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 105000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "s1",
+            "kind": "savings",
+            "name": "Savings",
+            "balance": 400000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": null
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 240000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "yourAnswer": null
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 40000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "lean_bridge"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Savings are tried first: $4,000 covers a September-like gap of $1,100 more than three times over, so the records alone show it fits ($400 left in a usual month) and the question is never asked.",
+      "fixIds": [
+        "FIN-08",
+        "ENG-07"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-05",
+      "topic": "quick-estimates",
+      "persona": "Ada, answered no (invented)",
+      "situation": "Same Ada as QE-03 ($500 in savings, a $200-a-month plan), but she answered no to \"Can you cover the low months?\"",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": [
+            300000,
+            150000,
+            300000
+          ]
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 105000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "s1",
+            "kind": "savings",
+            "name": "Savings",
+            "balance": 50000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": null
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 240000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "yourAnswer": "no"
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 40000
+        },
+        "readyBy": "2026-12",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "With her no, the plan waits until savings can carry a low month: she needs $1,100 and has $500, and a usual month adds $600, so that is reached in December 2026. The answer gives that date, never a bare \"never\".",
+      "fixIds": [
+        "FIN-08",
+        "ENG-07"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-06",
+      "topic": "quick-estimates",
+      "persona": "Omar (invented)",
+      "situation": "Omar's set-up pay is $3,000 a month, but his last three pay days brought $2,700, $2,750 and $2,720. Bills are $1,200 and everyday spending $800. He is looking at $10,200 in 12 payments of $850 at 0%, first payment on 15 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": 300000,
+          "lastThree": [
+            270000,
+            275000,
+            272000
+          ]
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 272000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 112000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 1020000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": -13000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [
+          "pay_gap"
+        ],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "He is judged on the lower figure, the middle of the last three: $2,720, which is 9.3% below the set-up pay, over the 5% line, so the gap is named and he is asked about it; his pay is never edited for him. On $2,720 a usual month leaves $720, and $720 - $850 = -$130, so \"Short each month\" (on $3,000 it would have looked like a fit).",
+      "fixIds": [
+        "FIN-15"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-07",
+      "topic": "quick-estimates",
+      "persona": "Lucy (invented)",
+      "situation": "It is 1 December and Lucy is offline. Her records last synced on 29 November, so December has no records yet. November was a full, usual month that left $1,000. She is looking at a $500 purchase.",
+      "fixture": {
+        "asOf": "2026-12-01",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 0,
+          "billsPaid": 0,
+          "billsDue": 0,
+          "everydaySoFar": 0
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": "2026-11-29",
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [
+          "records_synced"
+        ],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Last month's records are fresh (2 days old), so Decide answers from them instead of asking for more: December should leave $1,000 like a usual month, and $1,000 - $500 = $500. The sentence says \"Offline. Using records up to Nov 29.\"",
+      "fixIds": [
+        "ENG-14"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-08",
+      "topic": "quick-estimates",
+      "persona": "Rosa (invented)",
+      "situation": "Rosa has $1,000 spare in November after her expected pay, bills and usual spending. She is looking at a $975 purchase, paid once.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 97500,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 2500,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The big figure is November after its plans minus the purchase: $1,000 - $975 = $25, so the answer reads \"November would still leave about $25\" (D-22). Decide Home shows $1,000 for the same month, exactly the purchase more.",
+      "fixIds": [
+        "FIN-09",
+        "ENG-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-09",
+      "topic": "quick-estimates",
+      "persona": "Theo (invented)",
+      "situation": "Theo is paid $1,400 every two weeks: on 13 November and next on 27 November. On 15 November he has $1,400 in his account, rent of $600 due on 20 November, and no overdraft. Counting the pay on the 27th, November leaves $800. He is looking at a $600 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 140000,
+          "cadence": "fortnightly",
+          "nextDate": "2026-11-27",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 140000,
+          "billsPaid": 60000,
+          "billsDue": 60000,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "b-rent",
+            "amount": 60000,
+            "everyMonths": 1,
+            "nextDue": "2026-11-20",
+            "lastPaid": "2026-10-20",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 60000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": 20000,
+          "usualMonth": null
+        },
+        "readyBy": "2026-11-27",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The pay on the 27th counts in the month figure ($800 - $600 = $200 left), but the rent still has to be paid first: $1,400 - $600 rent - $320 everyday spending - $600 = -$120 before the 27th. So it is \"Not yet\" until that payday (D-23).",
+      "fixIds": [
+        "FIN-09",
+        "ENG-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-10",
+      "topic": "quick-estimates",
+      "persona": "Will (invented)",
+      "situation": "Will's usual month leaves $1,000. He is looking at $6,000 in 12 payments of $500 at 0%, first payment on 15 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 600000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 50000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "For a plan, the lead figure is the usual month once payments start: $1,000 - $500 = $500 a month. That is half the room and well above a tenth of a month's spending ($200), so it is not tight.",
+      "fixIds": [
+        "FIN-09",
+        "ENG-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-11",
+      "topic": "quick-estimates",
+      "persona": "A5 and A6 Jordan, freelancer (audit, invented)",
+      "situation": "Same Jordan as OD-09: £3,000 in her account, a usual month about £150 short, October heading about £1,009 below £0, and an £8,000 car over 48 months at 9.9%. This time she answered yes to \"Can you cover the low months?\" (A6; A5 is the same check before she answered).",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 115000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 164100,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 55645
+        },
+        "historyMonths": 12,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Main",
+            "balance": 300000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 800000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 48,
+            "apr": "9.9",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-10-30"
+          },
+          "yourAnswer": "yes"
+        }
+      },
+      "expected": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": -35252
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Her yes never beats the records (FIN-08): the usual month is already -£150, and -£150 - £202.52 = -£352.52, so \"Short each month\", not \"Only on your answer\". No cover question is needed, because the usual month alone decides it.",
+      "fixIds": [
+        "FIN-08",
+        "ENG-07",
+        "FIN-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-12",
+      "topic": "quick-estimates",
+      "persona": "A21 and A22 Jordan, with savings (audit, invented)",
+      "situation": "Jordan again, but with £16,000 in her account. Usual month about £150 short, October heading about £1,009 below £0, the same £8,000 car over 48 months at 9.9%. She answered no to the cover question (A22); A21 is the same check answered yes.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 115000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 164100,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 55645
+        },
+        "historyMonths": 12,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Main",
+            "balance": 1600000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 800000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 48,
+            "apr": "9.9",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-10-30"
+          },
+          "yourAnswer": "no"
+        }
+      },
+      "expected": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": -35252
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "covered_from_savings"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Either answer gives \"Short each month\", never a plain \"Fits\": each month is £352.52 short once payments start. The answer is not a bare \"never\" either: it adds that her £16,000 would cover that gap for about 45 months (16,000 / 352.52), close to the 48-month term.",
+      "fixIds": [
+        "FIN-08",
+        "ENG-07",
+        "FIN-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    }
+  ]
 }

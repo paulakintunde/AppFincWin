@@ -91,7 +91,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   // mapped when FIN-09 lands: bills list, recordsAsOf, quickEstimates, pay.lastThree and pay.setupAmount
   const accounts: V3Account[] = f.accounts.map((a) => ({ id: a.id, balance: mu(a.balance), use: useOf(a) }));
   const debts: V3Debt[] = f.debts.map((d) => ({
-    id: d.id, kind: d.kind, balance: mu(d.balance), minimum: mu(d.minimum), apr: d.apr === null ? null : percent(d.apr), secured: false, isHousing: false,
+    id: d.id, kind: d.kind, balance: mu(d.balance), minimum: mu(d.minimum), apr: d.apr === null ? null : percent(d.apr), secured: false, isHousing: d.housing === true,
   }));
   const spending = f.accounts.filter((a) => a.kind === 'checking' || a.kind === 'current').reduce((s, a) => s + a.balance, 0);
   const inputs = inputsOf({

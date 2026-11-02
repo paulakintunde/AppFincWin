@@ -7,7 +7,7 @@ export type Topic = typeof TOPICS[number];
 export type CaseStatus = 'draft' | 'approved' | 'to_do' | 'disputed';
 export interface FixtureAccount { id: string; kind: 'checking'|'current'|'savings'|'card'; name: string; balance: number; overdraftLimit: number|null; overdraftRate: string|null; use: 'everyday'|'emergency'|'untouched'|null }
 export interface FixtureBill { id: string; amount: number; everyMonths: 1|3|12; nextDue: string; lastPaid: string|null; paidBy: 'me'|'other' }
-export interface FixtureDebt { id: string; kind: 'loan'|'card'|'other'; balance: number; minimum: number; apr: string|null; dueDay: number|null; joint: boolean }
+export interface FixtureDebt { id: string; kind: 'loan'|'card'|'other'; balance: number; minimum: number; apr: string|null; dueDay: number|null; joint: boolean; /** a mortgage or other housing debt (D-08 housing fact); absent = false */ housing?: boolean }
 export interface FixtureRunningCost { id: string; amount: number; everyMonths: 1|3|12; start: string; end: string|null }
 export interface FixtureCheck {
   price: number|null; taxPercent: string|null; taxIncluded: boolean|null; oneOffFees: number;
