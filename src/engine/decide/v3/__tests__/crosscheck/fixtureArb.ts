@@ -69,4 +69,19 @@ const firstOfMonthArb: fc.Arbitrary<RightAnswerFixture> = fc
     };
   });
 
-export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc.oneof({ weight: 5, arbitrary: midMonthArb }, { weight: 1, arbitrary: firstOfMonthArb });
+/**
+ * 05.4-17 (FIN-03): the mid-month fixture with its account lowered, possibly below 0, and an overdraft limit and rate on it
+ * (or none set), so Uses your overdraft, past the limit and no limit set are all drawn.
+ */
+const overdraftArb: fc.Arbitrary<RightAnswerFixture> = fc
+  .tuple(midMonthArb, fc.option(money(1_500_000), { nil: null }), fc.constantFrom(null, '0', '19.9', '39.9'), money(2_000_000))
+  .map(([f, limit, rate, drop]) => ({
+    ...f,
+    accounts: f.accounts.map((a) => ({ ...a, balance: a.balance - drop, overdraftLimit: limit, overdraftRate: rate })),
+  }));
+
+export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc.oneof(
+  { weight: 5, arbitrary: midMonthArb },
+  { weight: 1, arbitrary: firstOfMonthArb },
+  { weight: 3, arbitrary: overdraftArb }
+);

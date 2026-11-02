@@ -1,1 +1,89 @@
-{ "changes": [] }
+{
+  "changes": [
+    {
+      "fixId": "FIN-03",
+      "key": "persona:audit-p4-overdrawn:6000:cash",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-03",
+      "key": "persona:audit-p4-overdrawn:50000:cash",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-03",
+      "key": "persona:audit-p4-overdrawn:200000:cash",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-03",
+      "key": "persona:audit-p4-overdrawn:900000:cash",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-03",
+      "key": "persona:audit-p4-overdrawn:900000:plan",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    }
+  ]
+}

@@ -21,12 +21,13 @@ const LABEL: Record<string, string> = {
   fits_month: 'Fits',
   fits_unspent: 'Fits from spare money',
   emergency_use: 'Uses your safety net',
+  fits_uses_overdraft: 'Uses your overdraft',
   monthly_short: 'Short each month',
   not_yet: 'Not yet',
   needs_input: 'Needs a figure first',
 };
-const RANK: Record<string, number> = { fits_month: 0, fits_unspent: 1, emergency_use: 2, monthly_short: 3, not_yet: 4, needs_input: 5 };
-const VARIANT: Record<string, string> = { payday: 'payday', not_covered: 'not covered', low_month: 'low month' };
+const RANK: Record<string, number> = { fits_month: 0, fits_unspent: 1, emergency_use: 2, fits_uses_overdraft: 3, monthly_short: 4, not_yet: 5, needs_input: 6 };
+const VARIANT: Record<string, string> = { payday: 'payday', not_covered: 'not covered', low_month: 'low month', not_cleared: 'past payday' };
 
 const words = (a: ReviewedAnswer): string => {
   const base = LABEL[a.code] ?? a.code;

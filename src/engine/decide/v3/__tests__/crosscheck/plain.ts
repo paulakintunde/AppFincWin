@@ -127,16 +127,33 @@ export function plainAnswer(f: RightAnswerFixture): PlainAnswer {
   const after = left - cost;
   const sitting = sittingMoney(f);
   // Cash check first: what is in the spending accounts has to carry the bills still due and the everyday spending
-  // still to come until payday (the next pay lands after this month ends), as well as the cost itself.
-  if (cashMargin(f, cost, true) < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
-  // Room next: this month's money left (never below zero). What it cannot cover comes from money already sitting
-  // in the spending accounts, less the part of it this month's room already counted.
+  // still to come until payday (the next pay lands after this month ends), as well as the cost itself. Balances keep their
+  // sign ("-$1,500 is treated as $1,500 worse, never rounded up to $0", OD-10). Below 0 is fine only inside the overdraft
+  // limit; past it, or below 0 with no limit set, it is Not yet (D-27, D-28).
+  const margin = cashMargin(f, cost, true);
+  if (margin < -overdraftRoom(f)) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
+  // Room next: this month's money left (a month already below zero funds nothing). What it cannot cover comes from money
+  // already sitting in the spending accounts, less the part of it this month's room already counted. Money below 0 there
+  // has to be made up first.
   const room = maxC(0n, left);
   const fromMonth = cost < room ? cost : room;
   const rest = cost - fromMonth;
-  if (rest === 0n) return { code: 'fits_month', variant: null, afterBuy: Number(after) };
-  const earlier = maxC(0n, sitting - fromMonth);
-  return { code: rest <= earlier ? 'fits_unspent' : 'not_yet', variant: null, afterBuy: Number(after) };
+  const earlier = sitting - fromMonth;
+  const dip = margin < 0n ? -margin : 0n;
+  // "Uses your overdraft": inside the limit, any fit is a caution (D-26, D-36); the overdraft also carries what earlier
+  // money cannot, but only as far as the account really goes below 0 (OD-01).
+  const fits = rest === 0n || rest <= earlier || (dip > 0n && rest <= earlier + dip);
+  if (!fits) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
+  if (dip > 0n) return { code: 'fits_uses_overdraft', variant: notCleared(f, cost) ? 'not_cleared' : null, afterBuy: Number(after) };
+  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: null, afterBuy: Number(after) };
+}
+
+/** OD-11: "her next pay does not clear it": after the next pay (and that day's bills and spending) the account is still below 0. */
+export function notCleared(f: RightAnswerFixture, cost: Cents): boolean {
+  const path = plainPath(f, cost);
+  const next = payDates(f).find((d) => d > f.asOf);
+  const onPay = next === undefined ? undefined : path.find((p) => p.date === next);
+  return onPay === undefined || onPay.balance < 0n;
 }
 
 /**
@@ -154,9 +171,97 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   const fromMonth = cost < room ? cost : room;
   const rest = cost - fromMonth;
   if (rest === 0n) return { code: 'fits_month', variant: null, afterBuy: Number(after) };
-  // As below: money already sitting, less the part of it this month's room already counted.
-  const earlier = maxC(0n, sitting - fromMonth);
+  // As below: money already sitting, less the part of it this month's room already counted (signed).
+  const earlier = sitting - fromMonth;
   return { code: rest <= earlier ? 'fits_unspent' : 'not_yet', variant: null, afterBuy: Number(after) };
+}
+
+// --- Overdraft (05.4 FIN-03 / ENG-02). Restated from the approved overdraft cases (OD-01 .. OD-12), CONTEXT D-26..D-28 and
+// D-36..D-38, and the 05.4-12 revision notes "How the figures were made". Not read from the engine.
+
+/** "Only checking and current accounts have an overdraft", and only one used for everyday spending; no limit set counts as 0. */
+export function overdraftRoom(f: RightAnswerFixture): Cents {
+  return f.accounts
+    .filter((a) => (a.kind === 'checking' || a.kind === 'current') && a.use === 'everyday' && a.overdraftLimit !== null && a.overdraftLimit > 0)
+    .reduce((s, a) => s + big(a.overdraftLimit as number), 0n);
+}
+
+/** The date `d` days after 'YYYY-MM-DD'. */
+function dayAfter(date: string, d: number): string {
+  return new Date(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)) + d)).toISOString().slice(0, 10);
+}
+
+/** Months from 'YYYY-MM' a to b. */
+function monthsBetween(a: string, b: string): number {
+  return (Number(b.slice(0, 4)) - Number(a.slice(0, 4))) * 12 + Number(b.slice(5, 7)) - Number(a.slice(5, 7));
+}
+
+const PATH_DAYS = 90;
+
+/** Pay dates from the next pay on, every month on the same day (or every 1 or 2 weeks), inside the 90 days. */
+export function payDates(f: RightAnswerFixture): string[] {
+  const end = dayAfter(f.asOf, PATH_DAYS);
+  const out: string[] = [];
+  for (let i = 0; ; i++) {
+    const d =
+      f.pay.cadence === 'monthly'
+        ? new Date(Date.UTC(Number(f.pay.nextDate.slice(0, 4)), Number(f.pay.nextDate.slice(5, 7)) - 1 + i, Number(f.pay.nextDate.slice(8, 10)))).toISOString().slice(0, 10)
+        : dayAfter(f.pay.nextDate, i * (f.pay.cadence === 'fortnightly' ? 14 : 7));
+    if (d >= end) return out;
+    if (d >= f.asOf) out.push(d);
+  }
+}
+
+/**
+ * "The day-by-day path follows: day 0 is the 'as of' day, the purchase is on day 0, the rest of this month's everyday
+ * spending is spread evenly over the days left including day 0 (cumulative, rounded half up), later months spread by day of
+ * month, and pay and the usual bills land on payday." Bills still due this month land on their due date when the fixture's
+ * bills list gives one this month (OD-03: "after the $500 bill on the 28th"); the rest land the day before the next pay.
+ */
+export function plainPath(f: RightAnswerFixture, cost: Cents): { date: string; balance: Cents }[] {
+  const ym = f.asOf.slice(0, 7);
+  const dim = daysInMonthOf(f.asOf);
+  const left = dim - BigInt(Number(f.asOf.slice(8, 10))) + 1n; // days left in this month, day 0 included
+  const toCome = everydayToCome(f);
+  const usual = big(f.usualMonth.everyday);
+  const pays = new Set(payDates(f));
+  const billsMonths = new Set<string>();
+  const firstPay = [...pays].find((d) => d > f.asOf) ?? null;
+  const dueDay = firstPay === null ? null : dayAfter(firstPay, -1);
+  const dated = f.bills.filter((b) => b.paidBy === 'me' && b.nextDue >= f.asOf && b.nextDue.slice(0, 7) === ym);
+  const undated = big(f.thisMonth.billsDue) - dated.reduce((t, b) => t + big(b.amount), 0n);
+  const out: { date: string; balance: Cents }[] = [];
+  let money = sittingMoney(f) - cost;
+  for (let i = 0; i < PATH_DAYS; i++) {
+    const date = dayAfter(f.asOf, i);
+    if (pays.has(date)) {
+      money += big(f.pay.amount);
+      if (!billsMonths.has(date.slice(0, 7))) {
+        billsMonths.add(date.slice(0, 7));
+        money -= big(f.usualMonth.bills);
+      }
+    }
+    for (const b of dated) if (b.nextDue === date) money -= big(b.amount);
+    if (date === (dueDay ?? '') || (dueDay === null && i === 0)) money -= undated > 0n ? undated : 0n;
+    const m = date.slice(0, 7);
+    const spent =
+      m === ym
+        ? halfUp(toCome * BigInt(i + 1), left)
+        : toCome + usual * BigInt(monthsBetween(ym, m) - 1) + halfUp(usual * BigInt(Number(date.slice(8, 10))), daysInMonthOf(date));
+    out.push({ date, balance: money - spent });
+  }
+  return out;
+}
+
+/** Non-negative a / b, rounded half up. */
+function halfUp(a: Cents, b: Cents): Cents {
+  return (2n * a + b) / (2n * b);
+}
+
+/** D-36: "(sum over each day below $0 of how far below) x rate / 365, rounded half up". */
+export function plainOverdraftCost(path: readonly { balance: Cents }[], rate: string): Cents {
+  const below = path.reduce((s, p) => (p.balance < 0n ? s - p.balance : s), 0n);
+  return halfUp(below * basisPoints(rate), 10_000n * 365n);
 }
 
 /** Named so the table's thresholds have one reader; the Theme A plans use them. */

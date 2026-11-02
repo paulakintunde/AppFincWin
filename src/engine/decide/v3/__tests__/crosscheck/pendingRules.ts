@@ -1,5 +1,5 @@
 import type { RightAnswerFixture } from '../rightAnswers/schema';
-import { cashMargin } from './plain';
+import { cashMargin, overdraftRoom } from './plain';
 
 /**
  * Rules the engine has not landed yet. A fixture that triggers one is skipped (and counted) by the comparison.
@@ -9,11 +9,16 @@ export interface PendingRule { fixId: string; applies: (f: RightAnswerFixture) =
 
 const plan = (f: RightAnswerFixture): boolean => f.check.pay.mode === 'plan';
 
-/** The cash check passes or fails depending on whether bills still due are counted (the adapter gives them no due date yet). */
+/**
+ * The cash check passes or fails depending on whether bills still due are counted (the adapter gives them no due date yet).
+ * With an overdraft (05.4-17) how far below 0 the account goes decides the answer too, so any dip with bills still due waits.
+ */
 function duesDecideCash(f: RightAnswerFixture): boolean {
   if (f.check.price === null) return false;
   const cost = BigInt(f.check.price) + BigInt(f.check.oneOffFees);
-  return (cashMargin(f, cost, true) < 0n) !== (cashMargin(f, cost, false) < 0n);
+  const withDues = cashMargin(f, cost, true);
+  if (overdraftRoom(f) > 0n && f.thisMonth.billsDue > 0 && withDues < 0n) return true;
+  return (withDues < 0n) !== (cashMargin(f, cost, false) < 0n);
 }
 
 /**
@@ -32,7 +37,6 @@ function billsPartlyPaid(f: RightAnswerFixture): boolean {
 }
 
 export const PENDING_RULES: PendingRule[] = [
-  { fixId: 'FIN-03', applies: (f) => f.accounts.some((a) => a.balance < 0 || a.overdraftLimit !== null), note: 'overdraft counts as borrowed money' },
   { fixId: 'FIN-01', applies: (f) => f.safetyNet !== null, note: 'safety net protected by default' },
   { fixId: 'FIN-11', applies: (f) => f.bills.some((b) => b.everyMonths === 3 || b.everyMonths === 12) || duesDecideCash(f) || everydayLooksLikeBill(f) || billsPartlyPaid(f), note: 'quarterly and yearly bills; bills still due need real due dates before they count in the cash check' },
   { fixId: 'FIN-04', applies: (f) => f.debts.length > 0, note: 'debt payments in the month' },
