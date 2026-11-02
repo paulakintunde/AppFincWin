@@ -5,7 +5,7 @@
       "id": "DB-01",
       "topic": "debts",
       "persona": "Dev (invented)",
-      "situation": "Dev has $1,400 in his account on 15 November and November leaves $1,000 spare before his card. His card minimum of $300 is due on 25 November, before pay on 1 December. He is looking at an $800 purchase.",
+      "situation": "Dev has $1,400 in his account on 15 November and November leaves $1,000 spare before his card. His card minimum of $300 is due on 25 November, before pay on 1 December. He is looking at an $800 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -84,8 +84,8 @@
         "FIN-04",
         "ENG-01"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -93,7 +93,7 @@
       "id": "DB-02",
       "topic": "debts",
       "persona": "Dev, due day unknown (invented)",
-      "situation": "Same Dev as DB-01, but he never entered the day his $300 card minimum is due. He is looking at a $600 purchase.",
+      "situation": "Same Dev as DB-01, but he never entered the day his $300 card minimum is due. He is looking at a $600 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -178,8 +178,8 @@
         "FIN-04",
         "ENG-01"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -187,7 +187,7 @@
       "id": "DB-03",
       "topic": "debts",
       "persona": "Iris (invented)",
-      "situation": "Iris pays her $300 card minimum as a monthly bill; it went out on 5 November and is part of this month's $1,500 of bills paid. November leaves $700 spare. She is looking at a $600 purchase.",
+      "situation": "Iris pays her $300 card minimum as a monthly bill; it went out on 5 November and is part of this month's $1,500 of bills paid. November leaves $700 spare. She is looking at a $600 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,500 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -278,8 +278,8 @@
         "FIN-04",
         "ENG-01"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -287,7 +287,7 @@
       "id": "DB-04",
       "topic": "debts",
       "persona": "A13 Sam (audit, invented)",
-      "situation": "Sam carries £6,000 on a card at 24.9% and pays the £150 minimum each month as a bill. He has £2,000 free after this month's plans, and his safety net is full (£1,450). Debt fact lines are on (the default). He is looking at a £1,800 holiday, paid in cash.",
+      "situation": "Sam carries £6,000 on a card at 24.9% and pays the £150 minimum each month as a bill. He has £2,000 free after this month's plans, and his safety net is full (£1,450). Debt fact lines are on (the default). He is looking at a £1,800 holiday, paid in cash. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay £2,500, bills £1,000 and everyday spending £750 (£450 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "GBP",
@@ -393,8 +393,8 @@
         "FIN-10",
         "ENG-09"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -402,7 +402,7 @@
       "id": "DB-06",
       "topic": "debts",
       "persona": "Chris (invented)",
-      "situation": "Chris has a $12,000 car loan in both his and his brother's names; the $250 monthly payment is one of his bills. November leaves him $1,000 spare, and his safety net is full ($1,700). He is looking at a $500 purchase.",
+      "situation": "Chris has a $12,000 car loan in both his and his brother's names; the $250 monthly payment is one of his bills. November leaves him $1,000 spare, and his safety net is full ($1,700). He is looking at a $500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -504,8 +504,8 @@
       "fixIds": [
         "FIN-14"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -513,7 +513,7 @@
       "id": "DB-07",
       "topic": "debts",
       "persona": "Pat (invented)",
-      "situation": "Pat has a $250,000 mortgage at 5.5%; the $1,500 monthly payment is one of her $2,200 of bills. November leaves her $800 spare. Housing fact lines are on (the default). She is looking at a $500 purchase.",
+      "situation": "Pat has a $250,000 mortgage at 5.5%; the $1,500 monthly payment is one of her $2,200 of bills. November leaves her $800 spare. Housing fact lines are on (the default). She is looking at a $500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $4,000, bills $2,200 and everyday spending $1,000 ($600 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -606,8 +606,8 @@
         "FIN-10",
         "ENG-09"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -615,7 +615,7 @@
       "id": "DB-08",
       "topic": "debts",
       "persona": "Dev, second debt (invented)",
-      "situation": "Same Dev and $600 purchase as DB-02, but he also has a personal loan with a $200 minimum due on 20 November.",
+      "situation": "Same Dev and $600 purchase as DB-02, but he also has a personal loan with a $200 minimum due on 20 November. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -705,8 +705,8 @@
         "FIN-04",
         "ENG-01"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -714,7 +714,7 @@
       "id": "DB-09",
       "topic": "debts",
       "persona": "A14 Sam, holiday on a plan (audit, invented)",
-      "situation": "Same Sam as DB-04 (a £6,000 card at 24.9%, £2,000 free, a usual month that leaves £750, a full safety net), but this time the £1,800 holiday is paid over 12 months at 29.9%, first payment on 15 December.",
+      "situation": "Same Sam as DB-04 (a £6,000 card at 24.9%, £2,000 free, a usual month that leaves £750, a full safety net), but this time the £1,800 holiday is paid over 12 months at 29.9%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay £2,500, bills £1,000 and everyday spending £750 (£450 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "GBP",
@@ -824,8 +824,8 @@
         "ENG-09",
         "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -833,7 +833,7 @@
       "id": "DB-10",
       "topic": "debts",
       "persona": "Iris, minimum part paid (invented)",
-      "situation": "Iris has a $2,000 card at 22.9% with a $300 minimum due on 25 November. She has already paid $100 of it this month. Pay of $3,000 came on 1 November; bills are $1,200 and everyday spending $800 a month. On 15 November she has $1,300 in her account and a full safety net ($1,700). She is looking at a $450 purchase.",
+      "situation": "Iris has a $2,000 card at 22.9% with a $300 minimum due on 25 November. She has already paid $100 of it this month. Pay of $3,000 came on 1 November; bills are $1,200 and everyday spending $800 a month. On 15 November she has $1,300 in her account and a full safety net ($1,700). She is looking at a $450 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -928,8 +928,8 @@
         "FIN-04",
         "ENG-01"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -937,7 +937,7 @@
       "id": "DB-11",
       "topic": "debts",
       "persona": "A13 Sam, paid from this month (audit, invented)",
-      "situation": "Same Sam as DB-04: £6,000 on a card at 24.9%, £2,000 free, November leaves £750 spare, and his safety net is full. This time he is looking at a £500 purchase.",
+      "situation": "Same Sam as DB-04: £6,000 on a card at 24.9%, £2,000 free, November leaves £750 spare, and his safety net is full. This time he is looking at a £500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay £2,500, bills £1,000 and everyday spending £750 (£450 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "GBP",
@@ -1042,8 +1042,8 @@
         "FIN-10",
         "ENG-09"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -1051,7 +1051,7 @@
       "id": "DB-12",
       "topic": "debts",
       "persona": "Pat, mortgage with room (invented)",
-      "situation": "Pat has a $250,000 mortgage at 5.5%; the $1,500 monthly payment is one of her $2,200 of bills. Her pay is $5,000 a month and November leaves $1,800 spare. Her safety net is full ($2,800). She is looking at a $600 purchase.",
+      "situation": "Pat has a $250,000 mortgage at 5.5%; the $1,500 monthly payment is one of her $2,200 of bills. Her pay is $5,000 a month and November leaves $1,800 spare. Her safety net is full ($2,800). She is looking at a $600 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $5,000, bills $2,200 and everyday spending $1,000 ($600 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -1157,8 +1157,8 @@
         "FIN-10",
         "ENG-09"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     }

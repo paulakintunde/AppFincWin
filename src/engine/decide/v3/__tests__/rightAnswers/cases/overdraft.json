@@ -5,7 +5,7 @@
       "id": "OD-01",
       "topic": "overdraft",
       "persona": "Priya (invented)",
-      "situation": "Priya's everyday account is already $200 overdrawn, inside a $500 overdraft limit at 22%. Spending of $2,200 this month, including a car repair, put her there. Pay of $3,000 lands in 9 days, on 1 December. She is looking at a $60 purchase.",
+      "situation": "Priya's everyday account is already $200 overdrawn, inside a $500 overdraft limit at 22%. Spending of $2,200 this month, including a car repair, put her there. Pay of $3,000 lands in 9 days, on 1 December. She is looking at a $60 purchase. It is bought on 22 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,000 and everyday spending $750 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-22",
         "currency": "USD",
@@ -69,20 +69,21 @@
         "mustHaveFacts": [
           "overdraft_use",
           "overdraft_without_purchase",
-          "overdraft_purchase_adds"
+          "overdraft_purchase_adds",
+          "net_none_start"
         ],
         "mustNotHaveFacts": [
           "no_overdraft_limit",
           "overdraft_repeat"
         ]
       },
-      "why": "Lowest point before payday: -$200 now, minus the $200 of everyday spending still to come (spread evenly, about $22.22 a day over the 9 days from 22 to 30 November), minus $60 = -$460 on 30 November. That is inside the $500 limit, and pay on 1 December brings the account back above $0 (December leaves $1,250 after bills and spending), so the answer is \"Uses your overdraft\" (D-36). The cost adds up each day below $0 instead of using the deepest day for the whole time: on the 9 days from 22 to 30 November the amounts below $0 add up to $3,340, and $3,340 x 22% / 365 = about $2.01. Without the purchase the account still goes $400 below $0 (about $1.69), so this purchase adds about $0.32 ($2.01 - $1.69). November after its plans would be -$400 - $60 = -$460, shown as it is, not as $0. Only 1 of her next 3 paydays comes after a dip below $0, so there is no repeat-use line (D-37 needs 2 of 3).",
+      "why": "Lowest point before payday: -$200 now, minus the $200 of everyday spending still to come (spread evenly, about $22.22 a day over the 9 days from 22 to 30 November), minus $60 = -$460 on 30 November. That is inside the $500 limit, and pay on 1 December brings the account back above $0 (December leaves $1,250 after bills and spending), so the answer is \"Uses your overdraft\" (D-36). The cost adds up each day below $0 instead of using the deepest day for the whole time: on the 9 days from 22 to 30 November the amounts below $0 add up to $3,340, and $3,340 x 22% / 365 = about $2.01. Without the purchase the account still goes $400 below $0 (about $1.69), so this purchase adds about $0.32 ($2.01 - $1.69). November after its plans would be -$400 - $60 = -$460, shown as it is, not as $0. Only 1 of her next 3 paydays comes after a dip below $0, so there is no repeat-use line (D-37 needs 2 of 3). Nothing is saved in a safety net, so the no-safety-net line also shows as a fact under this answer: \"Nothing is saved for emergencies yet. One month of essential costs is about $1,500. 1 month is a start; 3 to 6 months is common.\" (round 1b).",
       "fixIds": [
         "FIN-03",
         "ENG-02"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -90,7 +91,7 @@
       "id": "OD-03",
       "topic": "overdraft",
       "persona": "Elena (invented)",
-      "situation": "Elena has $673 in her everyday account on 22 November, with a $1,000 overdraft limit at 22%. A $500 bill is due on 28 November and pay of $3,000 lands on 1 December, in 9 days. November leaves her $750 after its plans. She is looking at a $600 purchase.",
+      "situation": "Elena has $673 in her everyday account on 22 November, with a $1,000 overdraft limit at 22%. A $500 bill is due on 28 November and pay of $3,000 lands on 1 December, in 9 days. November leaves her $750 after its plans. She is looking at a $600 purchase. It is bought on 22 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,500 and everyday spending $750 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-22",
         "currency": "USD",
@@ -163,19 +164,20 @@
         "mustHaveFacts": [
           "overdraft_use",
           "overdraft_without_purchase",
-          "overdraft_purchase_adds"
+          "overdraft_purchase_adds",
+          "net_none_start"
         ],
         "mustNotHaveFacts": [
           "overdraft_repeat"
         ]
       },
-      "why": "Spare money $750 - price $600 = $150 left in November, but the timing does not work. The $200 of everyday spending still to come is spread evenly over the 9 days from 22 to 30 November. The account goes below $0 on 25 November, and after the $500 bill on the 28th it reaches $673 - $500 - $200 - $600 = -$627 on 30 November, inside the $1,000 limit, until pay arrives on 1 December. That is 6 days below $0 (25 to 30 November), not 9. On those 6 days the amounts below $0 add up to $1,928.67, and $1,928.67 x 22% / 365 = about $1.16. Without the purchase the account would still go $27 below $0 for 2 days (about $0.02), so this purchase adds about $1.14. So the answer is \"Uses your overdraft\", never a plain \"Fits\" (D-26, D-36).",
+      "why": "Spare money $750 - price $600 = $150 left in November, but the timing does not work. The $200 of everyday spending still to come is spread evenly over the 9 days from 22 to 30 November. The account goes below $0 on 25 November, and after the $500 bill on the 28th it reaches $673 - $500 - $200 - $600 = -$627 on 30 November, inside the $1,000 limit, until pay arrives on 1 December. That is 6 days below $0 (25 to 30 November), not 9. On those 6 days the amounts below $0 add up to $1,928.67, and $1,928.67 x 22% / 365 = about $1.16. Without the purchase the account would still go $27 below $0 for 2 days (about $0.02), so this purchase adds about $1.14. So the answer is \"Uses your overdraft\", never a plain \"Fits\" (D-26, D-36). Nothing is saved in a safety net, so the no-safety-net line also shows as a fact under this answer: \"Nothing is saved for emergencies yet. One month of essential costs is about $2,000. 1 month is a start; 3 to 6 months is common.\" (round 1b).",
       "fixIds": [
         "FIN-03",
         "ENG-02"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -183,7 +185,7 @@
       "id": "OD-04",
       "topic": "overdraft",
       "persona": "Owen (invented)",
-      "situation": "Owen's month looks exactly like Elena's (OD-03): $673 in the account on 22 November, a $500 bill on 28 November, pay on 1 December, a $600 purchase. His overdraft limit is only $500.",
+      "situation": "Owen's month looks exactly like Elena's (OD-03): $673 in the account on 22 November, a $500 bill on 28 November, pay on 1 December, a $600 purchase. His overdraft limit is only $500. It is bought on 22 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,500 and everyday spending $750 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-22",
         "currency": "USD",
@@ -261,8 +263,8 @@
         "FIN-03",
         "ENG-02"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -270,7 +272,7 @@
       "id": "OD-05",
       "topic": "overdraft",
       "persona": "A9 and A20 Tom (audit, invented)",
-      "situation": "Tom's current account shows exactly £0 on 27 October. His records say October still has about £400 spare, so some spending was not logged. No overdraft limit is set on the account. Pay of £2,000 lands on 1 November. He is looking at a £200 purchase. (The audit's payday was the 20th; it is moved to the 1st here, with the same 5-day wait.)",
+      "situation": "Tom's current account shows exactly £0 on 27 October. His records say October still has about £400 spare, so some spending was not logged. No overdraft limit is set on the account. Pay of £2,000 lands on 1 November. He is looking at a £200 purchase. (The audit's payday was the 20th; it is moved to the 1st here, with the same 5-day wait.) It is bought on 27 October 2026 (today), paid in one go. A usual month: pay £2,000, bills £1,000 and everyday spending £600 (£400 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-27",
         "currency": "GBP",
@@ -341,8 +343,8 @@
         "FIN-03",
         "ENG-02"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -350,7 +352,7 @@
       "id": "OD-06",
       "topic": "overdraft",
       "persona": "Grace (invented)",
-      "situation": "Grace has $1,400 in her everyday account on 15 November and a $1,000 overdraft limit at 19.9%. November leaves her $1,000 spare. Her safety net is full ($1,700). She is looking at a $500 purchase.",
+      "situation": "Grace has $1,400 in her everyday account on 15 November and a $1,000 overdraft limit at 19.9%. November leaves her $1,000 spare. Her safety net is full ($1,700). She is looking at a $500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -434,8 +436,8 @@
         "FIN-03",
         "ENG-02"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -443,7 +445,7 @@
       "id": "OD-07",
       "topic": "overdraft",
       "persona": "Hiro (invented)",
-      "situation": "Hiro has $1,400 in his checking account on 15 November and no overdraft limit on it. His savings account is empty, but a $1,000 overdraft limit was typed on the savings account by mistake. November leaves $1,000 spare. He is looking at a $1,200 purchase.",
+      "situation": "Hiro has $1,400 in his checking account on 15 November and no overdraft limit on it. His savings account is empty, but a $1,000 overdraft limit was typed on the savings account by mistake. November leaves $1,000 spare. He is looking at a $1,200 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -525,8 +527,8 @@
         "FIN-03",
         "ENG-02"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -534,7 +536,7 @@
       "id": "OD-08",
       "topic": "overdraft",
       "persona": "Sofia (invented)",
-      "situation": "Sofia has two checking accounts on 15 November: one is $300 overdrawn (limit $500 at 20%), the other holds $2,000. Together that is $1,700. November leaves her $1,000 spare. Her safety net is full ($1,700). She is looking at a $600 purchase.",
+      "situation": "Sofia has two checking accounts on 15 November: one is $300 overdrawn (limit $500 at 20%), the other holds $2,000. Together that is $1,700. November leaves her $1,000 spare. Her safety net is full ($1,700). She is looking at a $600 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -629,8 +631,8 @@
         "FIN-03",
         "ENG-02"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -638,7 +640,7 @@
       "id": "OD-10",
       "topic": "overdraft",
       "persona": "A10 and A19 Tess (audit, invented)",
-      "situation": "Tess's current account is £1,500 overdrawn on 27 October and no overdraft limit is set in the app. Her usual month leaves £400. Pay of £2,000 lands on 1 November. She is looking at a £200 purchase. Her month is otherwise the same as Tom's (OD-05), who is at £0.",
+      "situation": "Tess's current account is £1,500 overdrawn on 27 October and no overdraft limit is set in the app. Her usual month leaves £400. Pay of £2,000 lands on 1 November. She is looking at a £200 purchase. Her month is otherwise the same as Tom's (OD-05), who is at £0. It is bought on 27 October 2026 (today), paid in one go. A usual month: pay £2,000, bills £1,000 and everyday spending £600 (£400 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-27",
         "currency": "GBP",
@@ -711,8 +713,8 @@
         "FIN-03",
         "ENG-02"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -720,7 +722,7 @@
       "id": "OD-11",
       "topic": "overdraft",
       "persona": "A11 Tess, limit set (audit, invented)",
-      "situation": "Same Tess as OD-10: £1,500 below £0 on 27 October, a usual month that leaves £400, pay of £2,000 on 1 November and a £200 purchase. This time her £2,000 overdraft at 39.9% is set in the app.",
+      "situation": "Same Tess as OD-10: £1,500 below £0 on 27 October, a usual month that leaves £400, pay of £2,000 on 1 November and a £200 purchase. This time her £2,000 overdraft at 39.9% is set in the app. It is bought on 27 October 2026 (today), paid in one go. A usual month: pay £2,000, bills £1,000 and everyday spending £600 (£400 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-27",
         "currency": "GBP",
@@ -788,19 +790,20 @@
           "wait_clears",
           "overdraft_repeat",
           "overdraft_without_purchase",
-          "overdraft_purchase_adds"
+          "overdraft_purchase_adds",
+          "net_none_start"
         ],
         "mustNotHaveFacts": [
           "no_overdraft_limit"
         ]
       },
-      "why": "The lowest point is -£1,500 - £77.42 of October spending still to come - £200 = -£1,777.42 on 31 October. That is inside the £2,000 limit, so the answer is \"Uses your overdraft\", never \"Not yet\" (D-36). But her next pay does not clear it: after pay and bills on 1 November the account is still £797.42 below £0, and it ends November £1,377.42 below. Her usual month adds only £400 (£2,000 pay - £1,000 bills - £600 everyday spending), so the strong warning reads as facts: \"Uses your overdraft past payday\", and \"Waiting until March 2027 keeps the account above £0.\" Cost over the next 90 days (27 October to 24 January): the amounts below £0 on each day add up to £67,922.63, and £67,922.63 x 39.9% / 365 = about £74.25. Without the purchase it is about £55.85, so this purchase adds about £18.40. Even without the purchase the account is below £0 before each of her next 3 paydays (1 November, 1 December, 1 January), so the repeat-use line shows (D-37). October after its plans still leaves £400 - £200 = £200.",
+      "why": "The lowest point is -£1,500 - £77.42 of October spending still to come - £200 = -£1,777.42 on 31 October. That is inside the £2,000 limit, so the answer is \"Uses your overdraft\", never \"Not yet\" (D-36). But her next pay does not clear it: after pay and bills on 1 November the account is still £797.42 below £0, and it ends November £1,377.42 below. Her usual month adds only £400 (£2,000 pay - £1,000 bills - £600 everyday spending), so the strong warning reads as facts: \"Uses your overdraft past payday\", and \"Waiting until March 2027 keeps the account above £0.\" Cost over the next 90 days (27 October to 24 January): the amounts below £0 on each day add up to £67,922.63, and £67,922.63 x 39.9% / 365 = about £74.25. Without the purchase it is about £55.85, so this purchase adds about £18.40. Even without the purchase the account is below £0 before each of her next 3 paydays (1 November, 1 December, 1 January), so the repeat-use line shows (D-37). October after its plans still leaves £400 - £200 = £200. Nothing is saved in a safety net, so the no-safety-net line also shows as a fact under this answer: \"Nothing is saved for emergencies yet. One month of essential costs is about £1,400. 1 month is a start; 3 to 6 months is common.\" (round 1b).",
       "fixIds": [
         "FIN-03",
         "ENG-02"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -808,7 +811,7 @@
       "id": "OD-12",
       "topic": "overdraft",
       "persona": "Ivy, repeat use (invented)",
-      "situation": "Ivy is paid $2,750 on the 1st of each month. Bills of $1,200 go out on payday and she spends about $1,500 a month on everyday things. Each month her pay brings the account back above $0, then spending takes it below $0 again before the next payday: it ended October $350 below $0. On 15 November she has $450 in her everyday account, a $1,000 overdraft limit at 22%, and November leaves $50 after its plans. She is looking at a $100 purchase.",
+      "situation": "Ivy is paid $2,750 on the 1st of each month. Bills of $1,200 go out on payday and she spends about $1,500 a month on everyday things. Each month her pay brings the account back above $0, then spending takes it below $0 again before the next payday: it ended October $350 below $0. On 15 November she has $450 in her everyday account, a $1,000 overdraft limit at 22%, and November leaves $50 after its plans. She is looking at a $100 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $2,750, bills $1,200 and everyday spending $1,500 ($900 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -873,20 +876,21 @@
           "overdraft_use",
           "overdraft_repeat",
           "overdraft_without_purchase",
-          "overdraft_purchase_adds"
+          "overdraft_purchase_adds",
+          "net_none_start"
         ],
         "mustNotHaveFacts": [
           "overdraft_not_cleared",
           "no_overdraft_limit"
         ]
       },
-      "why": "$450 - $750 of everyday spending still to come (spread evenly, about $46.88 a day over the 16 days from 15 to 30 November) - $100 = -$400 on 30 November, inside the $1,000 limit. Pay on 1 December brings it back to $1,101.61 above $0, so the next pay clears it: \"Uses your overdraft\", with no past-payday warning. But even without this purchase the account goes below $0 before each of her next 3 paydays: -$300 on 30 November, -$250 on 31 December and -$200 on 31 January, because her usual month leaves only $50 ($2,750 - $1,200 - $1,500). That is 3 of 3, over the line of 2 of the next 3 paydays (D-37), so the answer adds: \"Without this purchase, your Everyday account still goes below $0 before each of your next 3 paydays. At 22%, that costs about $1.45 over the next 90 days.\" With the purchase the 90-day cost is about $2.68, so the purchase adds about $1.23. November after its plans would be $50 - $100 = -$50.",
+      "why": "$450 - $750 of everyday spending still to come (spread evenly, about $46.88 a day over the 16 days from 15 to 30 November) - $100 = -$400 on 30 November, inside the $1,000 limit. Pay on 1 December brings it back to $1,101.61 above $0, so the next pay clears it: \"Uses your overdraft\", with no past-payday warning. But even without this purchase the account goes below $0 before each of her next 3 paydays: -$300 on 30 November, -$250 on 31 December and -$200 on 31 January, because her usual month leaves only $50 ($2,750 - $1,200 - $1,500). That is 3 of 3, over the line of 2 of the next 3 paydays (D-37), so the answer adds: \"Without this purchase, your Everyday account still goes below $0 before each of your next 3 paydays. At 22%, that costs about $1.45 over the next 90 days.\" With the purchase the 90-day cost is about $2.68, so the purchase adds about $1.23. November after its plans would be $50 - $100 = -$50. Nothing is saved in a safety net, so the no-safety-net line also shows as a fact under this answer: \"Nothing is saved for emergencies yet. One month of essential costs is about $2,100. 1 month is a start; 3 to 6 months is common.\" (round 1b).",
       "fixIds": [
         "FIN-03",
         "ENG-02"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     }

@@ -1,4 +1,41 @@
 {
   "topic": "overdraft",
-  "red": []
+  "red": [
+    {
+      "id": "OD-01",
+      "fixId": "FIN-03"
+    },
+    {
+      "id": "OD-03",
+      "fixId": "FIN-03"
+    },
+    {
+      "id": "OD-04",
+      "fixId": "FIN-03"
+    },
+    {
+      "id": "OD-05",
+      "fixId": "FIN-03"
+    },
+    {
+      "id": "OD-07",
+      "fixId": "FIN-03"
+    },
+    {
+      "id": "OD-08",
+      "fixId": "FIN-03"
+    },
+    {
+      "id": "OD-10",
+      "fixId": "FIN-03"
+    },
+    {
+      "id": "OD-11",
+      "fixId": "FIN-03"
+    },
+    {
+      "id": "OD-12",
+      "fixId": "FIN-03"
+    }
+  ]
 }

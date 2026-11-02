@@ -5,7 +5,7 @@
       "id": "SN-01",
       "topic": "safety-net",
       "persona": "Leo (invented)",
-      "situation": "Leo has no safety-net record at all, so the default applies: protection on, the starter size, nothing saved. He has $800 spare this month and is looking at a $500 purchase.",
+      "situation": "Leo has no safety-net record at all, so the default applies: protection on, the starter size, nothing saved. He has $800 spare this month and is looking at a $500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,400 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -79,8 +79,8 @@
         "FIN-01",
         "CMP-F13"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -88,7 +88,7 @@
       "id": "SN-02",
       "topic": "safety-net",
       "persona": "Amara (invented)",
-      "situation": "Amara has a full safety net: $1,700 saved, the starter size of about one month of essential costs (bills $1,200 + essential everyday spending $500). November leaves her $1,000 spare. She is looking at a $600 purchase.",
+      "situation": "Amara has a full safety net: $1,700 saved, the starter size of about one month of essential costs (bills $1,200 + essential everyday spending $500). November leaves her $1,000 spare. She is looking at a $600 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -175,8 +175,8 @@
         "ENG-03",
         "CMP-F13"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -184,7 +184,7 @@
       "id": "SN-03",
       "topic": "safety-net",
       "persona": "Kai (invented)",
-      "situation": "Kai set his safety net to $1,000 and it is full. November leaves him $300 spare, and his usual month leaves $300. He is looking at a $500 purchase.",
+      "situation": "Kai set his safety net to $1,000 and it is full. November leaves him $300 spare, and his usual month leaves $300. He is looking at a $500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -270,8 +270,8 @@
         "FIN-01",
         "ENG-03"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -279,7 +279,7 @@
       "id": "SN-04",
       "topic": "safety-net",
       "persona": "Kai, bigger purchase (invented)",
-      "situation": "Same Kai as SN-03: a full $1,000 safety net and $300 spare in November, $300 in a usual month. This time he is looking at a $1,500 purchase.",
+      "situation": "Same Kai as SN-03: a full $1,000 safety net and $300 spare in November, $300 in a usual month. This time he is looking at a $1,500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -364,8 +364,8 @@
         "ENG-03",
         "ENG-04"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -373,7 +373,7 @@
       "id": "SN-05",
       "topic": "safety-net",
       "persona": "Kai, protection off (invented)",
-      "situation": "Same Kai as SN-03, but he switched safety-net protection off. $300 spare in November, $1,000 in the savings account marked as his safety net, a $500 purchase.",
+      "situation": "Same Kai as SN-03, but he switched safety-net protection off. $300 spare in November, $1,000 in the savings account marked as his safety net, a $500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -455,8 +455,8 @@
         "FIN-01",
         "ENG-03"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -464,7 +464,7 @@
       "id": "SN-07",
       "topic": "safety-net",
       "persona": "Kai, net set to $0 (invented)",
-      "situation": "Same Kai as SN-05, but instead of switching protection off he typed $0 as his safety-net size. $1,000 still sits in the savings account marked as his safety net. $300 spare, a $500 purchase.",
+      "situation": "Same Kai as SN-05, but instead of switching protection off he typed $0 as his safety-net size. $1,000 still sits in the savings account marked as his safety net. $300 spare, a $500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -548,8 +548,8 @@
         "FIN-01",
         "ENG-03"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -557,7 +557,7 @@
       "id": "SN-08",
       "topic": "safety-net",
       "persona": "Ravi (invented)",
-      "situation": "Ravi keeps the starter safety net of $1,700 (bills $1,200 + essential everyday spending $500) and has saved $1,200 of it. November leaves him $1,000 spare. He is looking at a $400 purchase.",
+      "situation": "Ravi keeps the starter safety net of $1,700 (bills $1,200 + essential everyday spending $500) and has saved $1,200 of it. November leaves him $1,000 spare. He is looking at a $400 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -644,8 +644,8 @@
         "ENG-03",
         "ENG-04"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -653,7 +653,7 @@
       "id": "SN-09",
       "topic": "safety-net",
       "persona": "Noor (invented)",
-      "situation": "Noor is paid $1,400 every two weeks: on 13 November and next on 27 November. On 15 November she has $1,400 in her account and a full $1,700 safety net. Rent of $600 is due on 20 November. Counting the pay on the 27th, November leaves $800 spare. She is looking at a $700 purchase.",
+      "situation": "Noor is paid $1,400 every two weeks: on 13 November and next on 27 November. On 15 November she has $1,400 in her account and a full $1,700 safety net. Rent of $600 is due on 20 November. Counting the pay on the 27th, November leaves $800 spare. She is looking at a $700 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $1,400 every two weeks, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -747,8 +747,8 @@
         "FIN-02",
         "ENG-04"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -756,7 +756,7 @@
       "id": "SN-10",
       "topic": "safety-net",
       "persona": "Bea (invented)",
-      "situation": "Bea typed a very small safety-net size: $50, and she has saved it. Her starter would have been $1,700. November leaves her $1,000 spare. She is looking at a $980 purchase.",
+      "situation": "Bea typed a very small safety-net size: $50, and she has saved it. Her starter would have been $1,700. November leaves her $1,000 spare. She is looking at a $980 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -843,8 +843,8 @@
         "FIN-01",
         "ENG-03"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -852,7 +852,7 @@
       "id": "SN-11",
       "topic": "safety-net",
       "persona": "A15 Ellis (audit, invented)",
-      "situation": "Ellis has £3,000 free after this month's plans and nothing saved for emergencies. Safety-net protection is on by default, at the starter size of £1,400 (bills £1,000 + essential everyday spending £400). November leaves £800 spare and so does his usual month. He is looking at a £2,950 TV.",
+      "situation": "Ellis has £3,000 free after this month's plans and nothing saved for emergencies. Safety-net protection is on by default, at the starter size of £1,400 (bills £1,000 + essential everyday spending £400). November leaves £800 spare and so does his usual month. £2,200 of the £3,000 is left over from earlier months and is still in his current account; it was never moved to savings or spent. He is looking at a £2,950 TV. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay £2,500, bills £1,000 and everyday spending £700 (£400 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "GBP",
@@ -931,8 +931,8 @@
         "ENG-03",
         "CMP-F13"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -940,7 +940,7 @@
       "id": "SN-12",
       "topic": "safety-net",
       "persona": "A1 Mia, student (audit, invented)",
-      "situation": "Mia is a student with £400 free after this month's plans and no safety-net record. Her usual month leaves £80. She is looking at a £900 phone, paid in one go.",
+      "situation": "Mia is a student with £400 free after this month's plans and no safety-net record. Her usual month leaves £80. She is looking at a £900 phone, paid in one go. It is bought on 15 October 2026 (today), paid in one go. A usual month: pay £1,200, bills £700 and everyday spending £420 (£300 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-15",
         "currency": "GBP",
@@ -1011,8 +1011,8 @@
         "FIN-01",
         "CMP-F13"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -1020,7 +1020,7 @@
       "id": "SN-13",
       "topic": "safety-net",
       "persona": "Kai, net above its size (invented)",
-      "situation": "Kai set his safety net to $1,000, but $1,500 sits in the savings account marked as his safety net. November leaves him $300 spare, and his usual month leaves $300. He is looking at a $500 purchase.",
+      "situation": "Kai set his safety net to $1,000, but $1,500 sits in the savings account marked as his safety net. November leaves him $300 spare, and his usual month leaves $300. He is looking at a $500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -1107,8 +1107,8 @@
         "FIN-01",
         "ENG-03"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -1116,7 +1116,7 @@
       "id": "SN-14",
       "topic": "safety-net",
       "persona": "Kai, car repair marked as a need (invented)",
-      "situation": "Same Kai as SN-03: a full $1,000 safety net and $300 spare in November. His car needs a $500 repair, and he marked it as a need.",
+      "situation": "Same Kai as SN-03: a full $1,000 safety net and $300 spare in November. His car needs a $500 repair, and he marked it as a need. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -1202,8 +1202,8 @@
         "FIN-01",
         "ENG-03"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -1211,7 +1211,7 @@
       "id": "SN-15",
       "topic": "safety-net",
       "persona": "Kai, same price marked as a want (invented)",
-      "situation": "Same Kai and the same $500 price as SN-14, but this time it is a games console, marked as a want.",
+      "situation": "Same Kai and the same $500 price as SN-14, but this time it is a games console, marked as a want. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -1299,8 +1299,8 @@
         "FIN-01",
         "ENG-03"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     }
