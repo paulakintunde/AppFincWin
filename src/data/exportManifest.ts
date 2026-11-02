@@ -52,7 +52,7 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     // profiles.decide_v3 is an access switch, not user data: excluded on purpose (05.2).
   ],
   decide_checks: [
-    'id', 'household_id', 'created_by', 'kind', 'name', 'inputs', 'status', 'furthest_step', 'last_seen_state', 'last_seen_basis',
+    'id', 'household_id', 'created_by', 'kind', 'name', 'inputs', 'status', 'furthest_step', 'last_seen_state', 'last_seen_basis', 'answer_v3',
     'reopened_from', 'decided_at', 'verdict_at_decision', 'estimate_day_one', 'estimate_monthly', 'wait_monthly', 'ready_by',
     'broke_line', 'cooling_off_at', 'estimate_monthly_payment', 'estimate_running', 'deleted_at', 'created_at', 'updated_at',
   ],
@@ -83,6 +83,7 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'everyday_override_at', 'month_marks', 'unspent_anchor', 'unspent_anchor_at', 'reserve_account_id', 'reserve_goal',
     'rough_saving', 'rough_debt', 'rough_invest', 'rough_as_of', 'unexplained_amount', 'unexplained_use', 'unexplained_at',
     'refine_last_at', 'refine_snooze_until',
+    'custom_options', // 05.3-81
   ],
   recurring_dismissals: ['id', 'household_id', 'payee_key', 'direction', 'dismissed_at', 'created_by', 'deleted_at', 'created_at', 'updated_at'],
   income_payer_prompts: [
