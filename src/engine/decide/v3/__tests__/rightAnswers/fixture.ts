@@ -39,16 +39,16 @@ function payOf(p: RightAnswerFixture['check']['pay']): PayV2 {
   if (p.mode === 'once') return { mode: 'once' };
   return {
     mode: 'plan',
-    cadence: { unit: 'month', every: 1 },
+    cadence: p.every === 'fortnight' ? { unit: 'week', every: 2 } : { unit: 'month', every: 1 },
     count: p.months,
-    termMonths: p.months,
+    termMonths: p.every === 'fortnight' ? null : p.months,
     apr: p.apr === null ? null : percent(p.apr),
     fees: { setup: mu(p.fees), perPeriod: mu(0), end: mu(0) },
     deposit: mu(p.deposit),
     tradeIn: mu(0),
     quotedPayment: null,
     firstPayment: { kind: 'deferred', firstDate: p.firstPaymentDate, interestDuringPause: null },
-    deferredInterestTerm: false,
+    deferredInterestTerm: p.deferredInterest === true,
   };
 }
 

@@ -5,7 +5,7 @@
       "id": "TX-01",
       "topic": "tax",
       "persona": "Ana (invented)",
-      "situation": "Ana lives in California and has $3,100 spare this month. A $3,000 item adds 8.25% sales tax, which brings it to $3,247.50.",
+      "situation": "Ana lives in California. On 10 October she has $3,100 in her account and $2,500 free after the rest of this month's everyday spending. Her usual month leaves $1,200. A $3,000 item adds 8.25% sales tax, which brings it to $3,247.50.",
       "fixture": {
         "asOf": "2026-10-10",
         "currency": "USD",
@@ -62,9 +62,90 @@
       },
       "expected": {
         "code": "not_yet",
-        "variant": null,
+        "variant": "payday",
         "afterBuy": {
           "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-11-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The price plus tax, $3,247.50, is $747.50 more than the $2,500 she has free. Without the tax it would still be $500 short. Pay on 1 November brings a usual month of $1,200, so it fits from payday: Not yet, ready 1 November.",
+      "fixIds": [
+        "FIN-27",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "TX-02",
+      "topic": "tax",
+      "persona": "Oliver, UK, VAT in the price (invented)",
+      "situation": "Oliver lives in the UK. He has £1,000 free this month and looks at a £600 TV. Shop prices in the UK already include VAT, and \"Price already includes tax\" is on by default.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "GBP",
+        "region": {
+          "country": "GB",
+          "subdivision": null
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 60000,
+          "taxPercent": null,
+          "taxIncluded": true,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 40000,
           "usualMonth": null
         },
         "readyBy": null,
@@ -72,8 +153,593 @@
         "mustHaveFacts": [],
         "mustNotHaveFacts": []
       },
-      "why": "The price plus tax is more than she has spare this month.",
+      "why": "The £600 already includes 20% VAT, so nothing is added on top (D-19). £1,000 - £600 = £400 left this month. Adding VAT again would make the TV look £120 dearer than it is.",
       "fixIds": [
+        "FIN-27",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "TX-03",
+      "topic": "tax",
+      "persona": "Lea, Germany, VAT in the price (invented)",
+      "situation": "Lea lives in Germany. She has €1,000 free this month and looks at a €600 bike. \"Price already includes tax\" is on by default for the EU.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "EUR",
+        "region": {
+          "country": "DE",
+          "subdivision": null
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 60000,
+          "taxPercent": null,
+          "taxIncluded": true,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 40000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "EU shop prices include VAT, so nothing is added (D-19): €1,000 - €600 = €400 left this month.",
+      "fixIds": [
+        "FIN-27",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "TX-04",
+      "topic": "tax",
+      "persona": "Sol, region not known (invented)",
+      "situation": "Sol has not set a region, and the phone gives no region or time zone Decide can use. He has $1,000 free this month and looks at a $600 desk.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 60000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 40000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [
+          "tax_not_included"
+        ],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "With no region, no tax is added and no rate is guessed: $1,000 - $600 = $400 left. The answer says so plainly: \"Tax not included. Set your region to add it\" (D-20). The figure may be too kind by the local tax, which is why the reason is shown.",
+      "fixIds": [
+        "FIN-27",
+        "ARC-25",
+        "CMP-F24"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "TX-05",
+      "topic": "tax",
+      "persona": "Jess, US with no state (invented)",
+      "situation": "Jess's region is the United States, but she has not picked a state. She has $1,000 free this month and looks at a $600 desk.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": {
+          "country": "US",
+          "subdivision": null
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 60000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 40000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [
+          "tax_not_included"
+        ],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "US sales tax depends on the state, and there is no country-wide rate. With no state set this is treated like an unknown region: no tax is added and no rate is made up, so $1,000 - $600 = $400 left, with \"Tax not included. Set your region to add it\" (D-19, D-20).",
+      "fixIds": [
+        "FIN-27",
+        "ARC-25",
+        "CMP-F24"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "TX-06",
+      "topic": "tax",
+      "persona": "Ben, Ontario (invented)",
+      "situation": "Ben lives in Ontario, Canada. Decide pre-filled the usual 13% HST as an estimate he can change, and he kept it. He has $1,000 free this month, his usual month leaves $1,000, and he looks at a $900 laptop.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "CAD",
+        "region": {
+          "country": "CA",
+          "subdivision": "ON"
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": "13",
+          "taxIncluded": false,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "13% of $900 is $117, so the laptop costs $1,017, which is $17 more than his $1,000 free. Without the tax it would fit with $100 left, so leaving tax out would give the wrong answer. December leaves $1,000, so it fits from payday on 1 December. The rate is labelled an estimate (D-19, CMP-F24).",
+      "fixIds": [
+        "FIN-27",
+        "ENG-29",
+        "CMP-F24"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "TX-07",
+      "topic": "tax",
+      "persona": "Sam, car with tax and fees (invented)",
+      "situation": "Sam lives in Texas. Decide pre-filled 8.25% sales tax and he changed it to 8%. He looks at a $9,000 used car with $300 of registration and title fees. He has $10,000 free this month and his usual month leaves $1,000.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": {
+          "country": "US",
+          "subdivision": "TX"
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 1040000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 900000,
+          "taxPercent": "8",
+          "taxIncluded": false,
+          "oneOffFees": 30000,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Up-front cost = price + tax + fees = $9,000 + $720 (8%) + $300 = $10,020. That is $20 more than his $10,000 free, so Not yet; on the price alone it would have looked like $1,000 to spare (Theme L). December leaves $1,000, so it fits from payday on 1 December. His own 8% is used, not the pre-filled rate.",
+      "fixIds": [
+        "FIN-27",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "TX-08",
+      "topic": "tax",
+      "persona": "Ana, laptop on a plan with tax (invented)",
+      "situation": "Ana lives in California (8.25% estimate). Her usual month leaves $1,000. She looks at a $3,000 laptop in 12 payments at 0%, with the tax added to the plan, first payment on 15 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": {
+          "country": "US",
+          "subdivision": "CA"
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 300000,
+          "taxPercent": "8.25",
+          "taxIncluded": false,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 72937
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The tax is $247.50, so $3,247.50 is paid over the plan, not $3,000. Payments are $270.63 a month (rounded up; the last one is $270.57) instead of $250. Her usual month leaves $1,000 - $270.63 = $729.37. Adding tax never makes an answer better (ENG-29).",
+      "fixIds": [
+        "FIN-27",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "TX-09",
+      "topic": "tax",
+      "persona": "Raj, loan with no rate typed (invented)",
+      "situation": "Raj lives in Texas (8.25% estimate). He looks at a $9,000 car over 48 monthly payments, first payment on 15 December. The loan screen shows an example rate labelled \"Example rate, not a lender's offer\", but he has not typed his own rate.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": {
+          "country": "US",
+          "subdivision": "TX"
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 900000,
+          "taxPercent": "8.25",
+          "taxIncluded": false,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 48,
+            "apr": null,
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [
+          "plan_rate_missing"
+        ],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "An example rate is only an example. It is never saved as Raj's rate and never used in the sums (D-21, ARC-25). With no rate, the monthly payment and the interest are unknown, so the answer asks for the rate instead of guessing one.",
+      "fixIds": [
+        "ARC-25",
+        "CMP-F24",
         "FIN-27"
       ],
       "status": "draft",

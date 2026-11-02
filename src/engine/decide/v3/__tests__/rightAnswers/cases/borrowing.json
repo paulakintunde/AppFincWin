@@ -1,4 +1,1189 @@
 {
   "topic": "borrowing",
-  "cases": []
+  "cases": [
+    {
+      "id": "BR-01",
+      "topic": "borrowing",
+      "persona": "A3 Mia, phone over 36 months (audit, invented)",
+      "situation": "Mia (SN-12) has £400 free and her usual month leaves £80. Paying cash for the £900 phone is Not yet. This time she looks at 36 monthly payments at 39.9%, first payment on 15 November.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 120000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 70000,
+          "everyday": 42000,
+          "essentialEveryday": 30000
+        },
+        "thisMonth": {
+          "received": 120000,
+          "billsPaid": 70000,
+          "billsDue": 0,
+          "everydaySoFar": 20323
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Main",
+            "balance": 61677,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 36,
+            "apr": "39.9",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-11-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 3675
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "save_vs_borrow"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Payments are £43.25 a month and the loan costs £656.77 in interest, so she pays £1,556.77 for a £900 phone. Her usual month then leaves £80 - £43.25 = £36.75. Cash says Not yet (ready May 2027, SN-12) and the rate is far above 20%, so this is \"Fits only by borrowing\", never a plain \"Fits\" (D-07). Both routes show side by side: \"Saving for it: ready May 2027. Borrowing: costs £657 more.\" The £36.75 left is also under the tight floor (a tenth of £1,120 = £112); the borrowing caution comes first.",
+      "fixIds": [
+        "FIN-05",
+        "ENG-08",
+        "UX-13"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-02",
+      "topic": "borrowing",
+      "persona": "Lena, chair on a plan at exactly 20% (invented)",
+      "situation": "Lena has $1,000 free this month and her usual month leaves $1,000. Cash would pay for a $600 chair today, but she picks 6 monthly payments at 20%, first payment on 15 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 60000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 6,
+            "apr": "20",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 89408
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "save_vs_borrow"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Payments are $105.92 a month with $35.48 interest (5.91% of the $600, under the 10% line). The rate is exactly 20%, and the line is \"20% or more\", so this gets \"Fits only by borrowing\" (D-07, Theme O). Cash fits now, so both routes show: \"Paying cash: fits now. Borrowing: costs $35 more.\" Her usual month then leaves $1,000 - $105.92 = $894.08.",
+      "fixIds": [
+        "FIN-05",
+        "ENG-08",
+        "UX-13"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-03",
+      "topic": "borrowing",
+      "persona": "Lena, chair on a plan at 19.9% (invented)",
+      "situation": "Same as BR-02, but the plan is 6 monthly payments at 19.9%.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 60000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 6,
+            "apr": "19.9",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 89411
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Payments are $105.89 a month with $35.31 interest, which is 5.88% of the $600. The rate is under 20% and the interest is under 10% of the amount borrowed, so there is no borrowing caution: plain \"Fits\". Her usual month leaves $1,000 - $105.89 = $894.11, far above the tight lines. (Over 12 months at 19.9% the interest would be $66.60, 11.1%, and the caution would apply.)",
+      "fixIds": [
+        "FIN-05",
+        "ENG-08",
+        "UX-13"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-04",
+      "topic": "borrowing",
+      "persona": "Raj, car over 5 years at 7.9% (invented)",
+      "situation": "Raj has $7,000 free this month and his usual month leaves $1,000. He could pay cash for a $6,000 car, but looks at 60 monthly payments at 7.9%, first payment on 15 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 740000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 600000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 60,
+            "apr": "7.9",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 87862
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "save_vs_borrow"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Payments are $121.38 a month. The rate is low, but over 5 years the interest is $1,282.14, 21.37% of the $6,000 borrowed, so the \"10% or more of the amount borrowed\" part of D-07 applies: \"Fits only by borrowing\". Cash fits now, so: \"Paying cash: fits now. Borrowing: costs $1,282 more.\" His usual month leaves $1,000 - $121.38 = $878.62.",
+      "fixIds": [
+        "FIN-05",
+        "ENG-08",
+        "UX-13"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-05",
+      "topic": "borrowing",
+      "persona": "Noor, usual month already short (invented)",
+      "situation": "Noor's usual month ends $100 short: pay $3,000, bills $1,500, everyday spending $1,600. She has $2,000 in her account from a tax refund. She looks at a $1,200 phone in 12 payments of $100 at 0%, first payment on 15 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 160000,
+          "essentialEveryday": 96000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 80000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 280000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 120000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": -20000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Her usual month is already at -$100, so no new monthly payment can fit: \"Short each month\" (FIN-06). With the $100 payment the usual month is -$200. The $2,000 in the account and the 0% rate do not change this; the money left each month is below $0 before she buys anything.",
+      "fixIds": [
+        "FIN-06",
+        "ENG-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-06",
+      "topic": "borrowing",
+      "persona": "Theo, this month heading below $0 (invented)",
+      "situation": "Theo's usual month leaves $300, but October ended $500 overdrawn, so on 15 November he has $400 with $600 of everyday spending still to come. He looks at a $1,200 laptop in 12 payments of $100 at 0%, the first on 28 November.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 120000,
+          "essentialEveryday": 72000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 60000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 40000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 120000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-11-28"
+          }
+        }
+      },
+      "expected": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuy": {
+          "month": -30000,
+          "usualMonth": 20000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "$400 - $600 means November is heading to -$200, and the first $100 payment falls on 28 November, inside this month, so November would end at -$300. A new payment cannot start in a month that is already going below $0: \"Short each month\" (FIN-06, settled disagreement 5). His usual month after the payments would be $300 - $100 = $200, but this month rules it out.",
+      "fixIds": [
+        "FIN-06",
+        "ENG-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-07",
+      "topic": "borrowing",
+      "persona": "Priya, payment takes 85% of her room (invented)",
+      "situation": "Priya's usual month leaves $2,200 (pay $5,000, bills $1,800, everyday $1,000). She looks at a $22,440 used car in 12 payments of $1,870 at 0%, first payment on 15 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 500000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 180000,
+          "everyday": 100000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 500000,
+          "billsPaid": 180000,
+          "billsDue": 0,
+          "everydaySoFar": 50000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 2244000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 33000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "$1,870 is 85% of her $2,200 room, which is more than 80%, so the answer is \"Fits, but tight each month\" (owner tight rule, FIN-07). The $330 left is above the floor (a tenth of $2,800 = $280), so only the 80% part applies here. Plan answers lead with the usual month: $2,200 - $1,870 = $330.",
+      "fixIds": [
+        "FIN-07",
+        "ENG-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-08",
+      "topic": "borrowing",
+      "persona": "Marco, little left after a big month of spending (invented)",
+      "situation": "Marco earns $5,000 and spends $4,000 a month (bills $2,500, everyday $1,500), so his usual month leaves $1,000. He looks at a $7,800 kitchen in 12 payments of $650 at 0%, first payment on 15 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 500000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 250000,
+          "everyday": 150000,
+          "essentialEveryday": 90000
+        },
+        "thisMonth": {
+          "received": 500000,
+          "billsPaid": 250000,
+          "billsDue": 0,
+          "everydaySoFar": 75000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 175000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 780000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 35000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "$650 is 65% of the $1,000 room, under 80%. But it leaves $350 a month, which is less than a tenth of a month's spending ($4,000 / 10 = $400), so it is \"Fits, but tight each month\" (\"under $400, a tenth of what you usually spend in a month\").",
+      "fixIds": [
+        "FIN-07",
+        "ENG-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-09",
+      "topic": "borrowing",
+      "persona": "Lena, below her own line (invented)",
+      "situation": "Lena set her own line: she wants at least $300 left each month. Her usual month leaves $1,000. She looks at a $9,000 car in 12 payments of $750 at 0%, first payment on 15 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": 30000,
+        "factLines": true,
+        "check": {
+          "price": 900000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 25000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "$750 is 75% of her room, under 80%, and $250 left is above a tenth of a month's spending ($200). But $250 is below the $300 line she set, so it is \"Fits, but tight each month\". A line the user sets replaces the tenth-of-spending floor.",
+      "fixIds": [
+        "FIN-07",
+        "ENG-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-10",
+      "topic": "borrowing",
+      "persona": "A2 Mia, phone over 24 months (audit, invented)",
+      "situation": "Same Mia as BR-01, but this loan is 24 monthly payments at 29.9%, first payment on 15 November. It is the cheaper of the two loans.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 120000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 70000,
+          "everyday": 42000,
+          "essentialEveryday": 30000
+        },
+        "thisMonth": {
+          "received": 120000,
+          "billsPaid": 70000,
+          "billsDue": 0,
+          "everydaySoFar": 20323
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Main",
+            "balance": 61677,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 24,
+            "apr": "29.9",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-11-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 2972
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "save_vs_borrow"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Payments are £50.28 a month with £306.55 interest, leaving £80 - £50.28 = £29.72 a month. \"Saving for it: ready May 2027. Borrowing: costs £307 more.\" The 36-month loan in BR-01 costs £656.77, more than twice as much, but has the lower payment (£43.25). A dearer loan must never get a better answer than a cheaper one for the same item: both are \"Fits only by borrowing\", so BR-01 is never above BR-10 (Theme A, H1).",
+      "fixIds": [
+        "FIN-05",
+        "ENG-08",
+        "UX-13"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-11",
+      "topic": "borrowing",
+      "persona": "A17 Kai, payment uses all his room (audit, invented)",
+      "situation": "Kai's usual month leaves £200 (pay £2,000, bills £1,000, everyday £800). He looks at £2,400 in 12 payments of £200 at 0%, first payment on 15 November.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 200000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 200000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Everyday",
+            "balance": 90000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 240000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-11-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 0
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The £200 payment is 100% of his £200 room, so it leaves £0 a month: more than 80% of the room, and below the floor (a tenth of £1,800 = £180). Both parts of the tight rule apply: \"Fits, but tight each month\", never a plain \"Fits\" (audit M4). It is not \"Short each month\", because the payment is not bigger than the room.",
+      "fixIds": [
+        "FIN-07",
+        "ENG-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-12",
+      "topic": "borrowing",
+      "persona": "A4 Mia, buy now pay later (audit, invented)",
+      "situation": "Same Mia (£400 free, usual month leaves £80). This time the £900 phone is 4 payments of £225 every two weeks at 0%, the first one today, 15 October.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 120000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 70000,
+          "everyday": 42000,
+          "essentialEveryday": 30000
+        },
+        "thisMonth": {
+          "received": 120000,
+          "billsPaid": 70000,
+          "billsDue": 0,
+          "everydaySoFar": 20323
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Main",
+            "balance": 61677,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 4,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-10-15",
+            "every": "fortnight"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2027-05",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The four payments fall on 15 October, 29 October, 12 November and 26 November: all £900 inside six weeks, about £487.50 a month while it runs. She has £400 now and about £80 more by the end of November, so she would run out after the first payment. All four land so soon that this is judged like paying £900 at once: Not yet, ready May 2027, as in SN-12 (£500 more at £80 a month = 7 months). The audit found Not yet correct.",
+      "fixIds": [
+        "FIN-05",
+        "ENG-08",
+        "FIN-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-13",
+      "topic": "borrowing",
+      "persona": "A11 Tess, 0% plan while overdrawn (audit, invented)",
+      "situation": "Same Tess as OD-10: £1,500 overdrawn on 27 October, no overdraft limit set, usual month leaves £400. She looks at £300 in 3 payments of £100 at 0%, the first on 27 November.",
+      "fixture": {
+        "asOf": "2026-10-27",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 200000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 60000,
+          "essentialEveryday": 40000
+        },
+        "thisMonth": {
+          "received": 200000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 52258
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Main",
+            "balance": -150000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 30000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 3,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-11-27"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2027-03",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "no_overdraft_limit"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "From OD-10 her account is about -£1,577 at the end of October and climbs £400 a month. With the £100 payments it would be about -£1,277 at the end of November, -£977 in December and -£677 in January: below £0 the whole time. A 0% plan cannot look fine while the account is £1,500 overdrawn. At the end of February she is back to about +£23, so a plan started in March fits (£423 - £100 = £323 after the first payment): Not yet, ready March 2027. No \"unexplained money\" question is asked.",
+      "fixIds": [
+        "FIN-03",
+        "ENG-02",
+        "FIN-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "BR-14",
+      "topic": "borrowing",
+      "persona": "A18 Ade, 0% with interest held back (audit, invented)",
+      "situation": "Ade's usual month leaves £600. He looks at a £1,500 sofa on a 12-month 0% deal that charges all the held-back interest if it is not paid in full in time. Payments are £125 a month, first on 15 November.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 110000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 110000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Everyday",
+            "balance": 90000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-11-15",
+            "deferredInterest": true
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 47500
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "deferred_interest_term"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "£125 is about 21% of his £600 room and leaves £475, above the floor (a tenth of £1,900 = £190), so it fits and is not tight. The rate is 0% and no interest is charged when paid on time, so there is no borrowing caution. But the deal's back-charge must be stated as a fact: miss the end date and the held-back interest is added, about £200 to £250 by the audit's estimate (audit M2). Costing that charge exactly is FIN-12 (08.1).",
+      "fixIds": [
+        "FIN-05",
+        "ENG-08",
+        "FIN-12"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    }
+  ]
 }
