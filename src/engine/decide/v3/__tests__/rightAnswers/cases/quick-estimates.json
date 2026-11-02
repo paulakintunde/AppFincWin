@@ -5,7 +5,7 @@
       "id": "QE-01",
       "topic": "quick-estimates",
       "persona": "A12 Zoe (audit, invented)",
-      "situation": "Zoe started three weeks ago. She has no full month of records yet, so Decide uses her quick estimates (pay £2,500, bills £1,000, everyday £300). November leaves £1,200 free. She is looking at £1,150. (The safety net is left out here; SN-11 shows the same thin margin with the default safety net.)",
+      "situation": "Zoe started three weeks ago. She has no full month of records yet, so Decide uses her quick estimates (pay £2,500, bills £1,000, everyday £300). November leaves £1,200 free and she has nothing saved for emergencies. She is looking at £1,150.",
       "fixture": {
         "asOf": "2026-11-22",
         "currency": "GBP",
@@ -63,7 +63,7 @@
       },
       "expected": {
         "code": "fits_month",
-        "variant": null,
+        "variant": "tight",
         "afterBuy": {
           "month": 5000,
           "usualMonth": null
@@ -72,10 +72,14 @@
         "mustHaveReasons": [
           "quick_estimates"
         ],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "no_full_month",
+          "tight_floor",
+          "net_none_start"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "£1,200 - £1,150 = £50 left. The answer is based on quick estimates, not records, and says so in its sentence (\"Based on your quick estimates\"), so it is never shown as more certain than it is.",
+      "why": "£1,200 - £1,150 = £50 left. With no full month of records, the floor comes from her estimates: a tenth of £1,000 bills + £300 everyday spending = £130, and £50 is under it, so the answer is \"Fits, but tight\" (D-40). The sentence says it is based on her quick estimates, and a fact says \"No full month of records yet.\", so it is never shown as more certain than it is. Nothing is saved in a safety net, so that line shows as a fact.",
       "fixIds": [
         "ENG-11",
         "FIN-25",
@@ -90,7 +94,7 @@
       "id": "QE-02",
       "topic": "quick-estimates",
       "persona": "Ben (invented)",
-      "situation": "Ben has 2 full months of records (September and October) plus this month. November leaves $1,000 spare. He is looking at a $500 purchase.",
+      "situation": "Ben has 2 full months of records (September and October) plus this month. November leaves $1,000 spare and his safety net is full ($1,700). He is looking at a $500 purchase.",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -125,9 +129,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 170000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 170000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -267,7 +284,7 @@
       "id": "QE-04",
       "topic": "quick-estimates",
       "persona": "Ada, with savings (invented)",
-      "situation": "Same Ada and $200-a-month plan as QE-03, but she has $4,000 in savings. She has not been asked the cover question.",
+      "situation": "Same Ada and $200-a-month plan as QE-03, but she has $4,000 in savings (not marked as a safety net). Her records show 1 low month in the last 6: September, when $1,500 came in. She has not been asked the cover question.",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -281,6 +298,12 @@
             300000,
             150000,
             300000
+          ],
+          "lean": [
+            {
+              "month": "2026-09",
+              "amount": 150000
+            }
           ]
         },
         "usualMonth": {
@@ -340,7 +363,7 @@
       },
       "expected": {
         "code": "fits_month",
-        "variant": null,
+        "variant": "low_month",
         "afterBuy": {
           "month": null,
           "usualMonth": 40000
@@ -348,11 +371,12 @@
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [
-          "lean_bridge"
+          "lean_bridge",
+          "net_none_start"
         ],
         "mustNotHaveFacts": []
       },
-      "why": "Savings are tried first: $4,000 covers a September-like gap of $1,100 more than three times over, so the records alone show it fits ($400 left in a usual month) and the question is never asked.",
+      "why": "Savings are tried first for the low months. 1 low month in the last 6 means about 2 over the 12 payments (12 / 6). Each one is $1,500 - $2,400 of bills and spending - $200 = -$1,100, so about 2 x $1,100 = $2,200 of her $4,000 would come from savings. The bridge holds, so the records alone show it fits ($600 - $200 = $400 left in a usual month). A plain \"Fits\" would hide the low months, so the answer is \"Fits, a low month is tight\": \"In a month like September, about $1,100 would come from savings. Over 12 payments that could happen about 2 times, about $2,200 of your $4,000.\" Nothing is saved in a safety net, so that line shows as a fact.",
       "fixIds": [
         "FIN-08",
         "ENG-07"
@@ -551,7 +575,7 @@
       "id": "QE-07",
       "topic": "quick-estimates",
       "persona": "Lucy (invented)",
-      "situation": "It is 1 December and Lucy is offline. Her records last synced on 29 November, so December has no records yet. November was a full, usual month that left $1,000. She is looking at a $500 purchase.",
+      "situation": "It is 1 December and Lucy is offline. Her records last synced on 29 November, so December has no records yet. November was a full, usual month that left $1,000. Her safety net is full ($1,700). She is looking at a $500 purchase.",
       "fixture": {
         "asOf": "2026-12-01",
         "currency": "USD",
@@ -586,9 +610,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 170000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 170000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -617,7 +654,7 @@
         "mustHaveFacts": [],
         "mustNotHaveFacts": []
       },
-      "why": "Last month's records are fresh (2 days old), so Decide answers from them instead of asking for more: December should leave $1,000 like a usual month, and $1,000 - $500 = $500. The sentence says \"Offline. Using records up to Nov 29.\"",
+      "why": "Last month's records are fresh (2 days old), so Decide answers from them instead of asking for more: December is expected to leave $1,000, like a usual month, and $1,000 - $500 = $500. The sentence says \"Offline. Using records up to Nov 29.\"",
       "fixIds": [
         "ENG-14"
       ],
@@ -684,17 +721,20 @@
       },
       "expected": {
         "code": "fits_month",
-        "variant": null,
+        "variant": "tight",
         "afterBuy": {
           "month": 2500,
           "usualMonth": null
         },
         "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "tight_floor",
+          "net_none_start"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "The big figure is November after its plans minus the purchase: $1,000 - $975 = $25, so the answer reads \"November would still leave about $25\" (D-22). Decide Home shows $1,000 for the same month, exactly the purchase more.",
+      "why": "The big figure is November after its plans minus the purchase: $1,000 - $975 = $25 (D-22), and Decide Home shows $1,000 for the same month, exactly the purchase more. $25 is under the tight floor of $200 (a tenth of $1,200 bills + $800 everyday spending), so the answer is \"Fits, but tight\": \"November would still leave about $25. That is under $200, a tenth of what you usually spend in a month.\" (D-40). Nothing is saved in a safety net, so that line shows as a fact.",
       "fixIds": [
         "FIN-09",
         "ENG-05"
@@ -781,7 +821,7 @@
         "mustHaveFacts": [],
         "mustNotHaveFacts": []
       },
-      "why": "The pay on the 27th counts in the month figure ($800 - $600 = $200 left), but the rent still has to be paid first: $1,400 - $600 rent - $320 everyday spending - $600 = -$120 before the 27th. So it is \"Not yet\" until that payday (D-23).",
+      "why": "The pay on the 27th counts in the month figure ($800 - $600 = $200 left), but the rent still has to be paid first. The $400 of everyday spending still to come is spread evenly, $25 a day over the 16 days from 15 to 30 November, so by 26 November: $1,400 - $600 rent - $300 everyday spending - $600 = -$100 before the 27th, with no overdraft. So it is \"Not yet\" until that payday (D-23).",
       "fixIds": [
         "FIN-09",
         "ENG-05"
@@ -795,7 +835,7 @@
       "id": "QE-10",
       "topic": "quick-estimates",
       "persona": "Will (invented)",
-      "situation": "Will's usual month leaves $1,000. He is looking at $6,000 in 12 payments of $500 at 0%, first payment on 15 December.",
+      "situation": "Will's usual month leaves $1,000 and his safety net is full ($1,700). He is looking at $6,000 in 12 payments of $500 at 0%, first payment on 15 December.",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -830,9 +870,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 170000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 170000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -877,8 +930,8 @@
     {
       "id": "QE-11",
       "topic": "quick-estimates",
-      "persona": "A5 and A6 Jordan, freelancer (audit, invented)",
-      "situation": "Same Jordan as OD-09: £3,000 in her account, a usual month about £150 short, October heading about £1,009 below £0, and an £8,000 car over 48 months at 9.9%. This time she answered yes to \"Can you cover the low months?\" (A6; A5 is the same check before she answered).",
+      "persona": "A5, A6 and A7 Jordan, freelancer (audit, invented)",
+      "situation": "Jordan is a freelancer with £3,000 in her current account. Her usual month ends about £150 short, and October is heading about £1,009 below £0 because little work came in. She is looking at an £8,000 car over 48 months at 9.9%, first payment on 30 October. She answered yes to \"Can you cover the low months?\" (A6; A5 is the same check before she answered, and A7, from the retired OD-09, is the same check answered no).",
       "fixture": {
         "asOf": "2026-10-15",
         "currency": "GBP",
@@ -948,7 +1001,7 @@
         "mustHaveFacts": [],
         "mustNotHaveFacts": []
       },
-      "why": "Her yes never beats the records (FIN-08): the usual month is already -£150, and -£150 - £202.52 = -£352.52, so \"Short each month\", not \"Only on your answer\". No cover question is needed, because the usual month alone decides it.",
+      "why": "Her answer never beats the records (FIN-08): the usual month is already -£150, and -£150 - £202.52 = -£352.52 once payments start, so \"Short each month\", not \"Only on your answer\". October itself goes from -£1,009 to -£1,211.52, shown as it is, never rounded up to £0. Yes, no or no answer gives the same result (A5, A6, A7), because the usual month alone decides it.",
       "fixIds": [
         "FIN-08",
         "ENG-07",
@@ -1031,15 +1084,228 @@
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [
-          "covered_from_savings"
+          "covered_from_savings",
+          "save_vs_borrow"
         ],
         "mustNotHaveFacts": []
       },
-      "why": "Either answer gives \"Short each month\", never a plain \"Fits\": each month is £352.52 short once payments start. The answer is not a bare \"never\" either: it adds that her £16,000 would cover that gap for about 45 months (16,000 / 352.52), close to the 48-month term.",
+      "why": "Either answer gives \"Short each month\", never a plain \"Fits\": once payments start, each usual month is £150 + £202.52 = £352.52 short (D-40). The answer is not a bare \"never\" either. Her £16,000, less the £593.55 of October spending still to come and the first £202.52 payment on 30 October, is £15,203.93 at the end of October. That covers 43 more months of the £352.52 gap (15,203.93 / 352.52 = 43.1), so savings cover about 44 of the 48 payments and run out about 4 payments before the end: \"Your £16,000 would cover the £352.52 monthly gap for about 44 of the 48 payments.\" Paying cash also fits, leaving about £7,406.45 at the end of October (£16,000 - £593.55 - £8,000), while the plan costs £1,720.75 in interest (47 payments of £202.52 and a last one of £202.31, £9,720.75 in all), 21.5% of the £8,000.",
       "fixIds": [
         "FIN-08",
         "ENG-07",
         "FIN-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-13",
+      "topic": "quick-estimates",
+      "persona": "A12 Zoe, room to spare (audit, invented)",
+      "situation": "Same Zoe as QE-01: three weeks of records, quick estimates (pay £2,500, bills £1,000, everyday £300), £1,200 free in November. Her safety net is full (£1,200). This time she is looking at £600.",
+      "fixture": {
+        "asOf": "2026-11-22",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 30000,
+          "essentialEveryday": 20000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 22000
+        },
+        "historyMonths": 0,
+        "quickEstimates": {
+          "income": 250000,
+          "bills": 100000,
+          "everyday": 30000
+        },
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Main",
+            "balance": 128000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 120000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 120000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 60000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 60000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [
+          "quick_estimates"
+        ],
+        "mustHaveFacts": [
+          "no_full_month"
+        ],
+        "mustNotHaveFacts": [
+          "tight_floor"
+        ]
+      },
+      "why": "£1,200 free - £600 = £600 left, well over the £130 floor from her estimates (a tenth of £1,000 + £300), and her £1,200 safety net (one month of £1,000 bills + £200 essential everyday spending) is full. So it is a plain \"Fits\": quick estimates alone do not turn an answer amber. The sentence still says it is based on her quick estimates, with \"No full month of records yet.\"",
+      "fixIds": [
+        "ENG-11",
+        "FIN-25",
+        "ENG-10"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QE-14",
+      "topic": "quick-estimates",
+      "persona": "Ada, savings are her safety net (invented)",
+      "situation": "Same Ada and $200-a-month plan as QE-04 (1 low month in the last 6, September at $1,500), but her $4,000 is her safety net: she set its size to $4,000 and it is full. She has not been asked the cover question.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": [
+            300000,
+            150000,
+            300000
+          ],
+          "lean": [
+            {
+              "month": "2026-09",
+              "amount": 150000
+            }
+          ]
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 105000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "s1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 400000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 400000,
+          "saved": 400000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 240000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "yourAnswer": null
+        }
+      },
+      "expected": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 40000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "lean_bridge",
+          "net_used"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Same sums as QE-04: about 2 low months over the 12 payments, each $1,100 short, so about $2,200 would come from savings. Here those savings are her protected safety net, and the low-month bridge never uses protected money without saying so. The answer is \"Dips into your safety net\": \"In a month like September, about $1,100 would come from your safety net.\" A usual month still leaves $600 - $200 = $400.",
+      "fixIds": [
+        "FIN-08",
+        "ENG-07"
       ],
       "status": "draft",
       "approvedAt": null,

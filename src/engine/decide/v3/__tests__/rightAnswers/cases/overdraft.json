@@ -67,94 +67,16 @@
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [
-          "overdraft_use"
-        ],
-        "mustNotHaveFacts": [
-          "no_overdraft_limit"
-        ]
-      },
-      "why": "Lowest point before payday: -$200 now, minus $200 of everyday spending still to come, minus $60 = -$460, inside the $500 limit, and pay on 1 December brings the account back above $0 for good (December leaves $1,250 after bills and spending). So it uses the overdraft for about 9 days; at 22% that costs about $2.50 (460 x 22% x 9 / 365), and November after its plans would be -$400 - $60 = -$460, shown as it is, not as $0.",
-      "fixIds": [
-        "FIN-03",
-        "ENG-02"
-      ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
-      "expertNote": null
-    },
-    {
-      "id": "OD-02",
-      "topic": "overdraft",
-      "persona": "Marcus (invented)",
-      "situation": "Marcus has $1,400 in his everyday account on 15 November and $1,000 spare this month after bills and usual spending. He has no overdraft. He is looking at a $300 purchase.",
-      "fixture": {
-        "asOf": "2026-11-15",
-        "currency": "USD",
-        "region": null,
-        "pay": {
-          "amount": 300000,
-          "cadence": "monthly",
-          "nextDate": "2026-12-01",
-          "setupAmount": null,
-          "lastThree": null
-        },
-        "usualMonth": {
-          "bills": 120000,
-          "everyday": 80000,
-          "essentialEveryday": 50000
-        },
-        "thisMonth": {
-          "received": 300000,
-          "billsPaid": 120000,
-          "billsDue": 0,
-          "everydaySoFar": 40000
-        },
-        "historyMonths": 6,
-        "quickEstimates": null,
-        "recordsAsOf": null,
-        "accounts": [
-          {
-            "id": "a1",
-            "kind": "checking",
-            "name": "Everyday",
-            "balance": 140000,
-            "overdraftLimit": null,
-            "overdraftRate": null,
-            "use": "everyday"
-          }
-        ],
-        "safetyNet": null,
-        "bills": [],
-        "debts": [],
-        "userLine": null,
-        "factLines": true,
-        "check": {
-          "price": 30000,
-          "taxPercent": null,
-          "taxIncluded": null,
-          "oneOffFees": 0,
-          "pay": {
-            "mode": "once"
-          }
-        }
-      },
-      "expected": {
-        "code": "fits_month",
-        "variant": null,
-        "afterBuy": {
-          "month": 70000,
-          "usualMonth": null
-        },
-        "readyBy": null,
-        "mustHaveReasons": [],
-        "mustHaveFacts": [],
-        "mustNotHaveFacts": [
           "overdraft_use",
-          "no_overdraft_limit"
+          "overdraft_without_purchase",
+          "overdraft_purchase_adds"
+        ],
+        "mustNotHaveFacts": [
+          "no_overdraft_limit",
+          "overdraft_repeat"
         ]
       },
-      "why": "Spare money $1,000 - price $300 = $700 left this month. The account never goes below $0 ($1,400 - $400 still to spend - $300 = $700 at the lowest), so this is a clean fit.",
+      "why": "Lowest point before payday: -$200 now, minus the $200 of everyday spending still to come (spread evenly, about $22.22 a day over the 9 days from 22 to 30 November), minus $60 = -$460 on 30 November. That is inside the $500 limit, and pay on 1 December brings the account back above $0 (December leaves $1,250 after bills and spending), so the answer is \"Uses your overdraft\" (D-36). The cost adds up each day below $0 instead of using the deepest day for the whole time: on the 9 days from 22 to 30 November the amounts below $0 add up to $3,340, and $3,340 x 22% / 365 = about $2.01. Without the purchase the account still goes $400 below $0 (about $1.69), so this purchase adds about $0.32 ($2.01 - $1.69). November after its plans would be -$400 - $60 = -$460, shown as it is, not as $0. Only 1 of her next 3 paydays comes after a dip below $0, so there is no repeat-use line (D-37 needs 2 of 3).",
       "fixIds": [
         "FIN-03",
         "ENG-02"
@@ -239,11 +161,15 @@
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [
-          "overdraft_use"
+          "overdraft_use",
+          "overdraft_without_purchase",
+          "overdraft_purchase_adds"
         ],
-        "mustNotHaveFacts": []
+        "mustNotHaveFacts": [
+          "overdraft_repeat"
+        ]
       },
-      "why": "Spare money $750 - price $600 = $150 left in November, but the timing does not work: $673 - $500 bill - $200 everyday still to come - $600 = -$627, inside the $1,000 limit, until pay arrives in 9 days. At 22% that costs about $3.40 (627 x 22% x 9 / 365), so the answer is \"Uses your overdraft\", never a plain \"Fits\" (D-26).",
+      "why": "Spare money $750 - price $600 = $150 left in November, but the timing does not work. The $200 of everyday spending still to come is spread evenly over the 9 days from 22 to 30 November. The account goes below $0 on 25 November, and after the $500 bill on the 28th it reaches $673 - $500 - $200 - $600 = -$627 on 30 November, inside the $1,000 limit, until pay arrives on 1 December. That is 6 days below $0 (25 to 30 November), not 9. On those 6 days the amounts below $0 add up to $1,928.67, and $1,928.67 x 22% / 365 = about $1.16. Without the purchase the account would still go $27 below $0 for 2 days (about $0.02), so this purchase adds about $1.14. So the answer is \"Uses your overdraft\", never a plain \"Fits\" (D-26, D-36).",
       "fixIds": [
         "FIN-03",
         "ENG-02"
@@ -410,7 +336,7 @@
         ],
         "mustNotHaveFacts": []
       },
-      "why": "The account is the truth: £0 - £77 of everyday spending still to come - £200 = -£277, and with no overdraft limit set the limit counts as £0, so going below £0 is \"Not yet\" (D-28). On 1 November pay arrives and November leaves about £323 after its plans, so the £200 fits from payday; the answer says no limit is set and points to the account settings.",
+      "why": "The account is the truth: £0 - £77 of everyday spending still to come - £200 = -£277. With no overdraft limit set, the limit counts as £0, so going below £0 is \"Not yet\" (D-28). The answer says so and asks a question instead of assuming: \"Main would go £277 below £0. No overdraft limit is set for it. Does Main have an overdraft?\", with \"Add limit\" and \"No overdraft\" (D-38). On 1 November pay arrives and November leaves about £323 after its plans, so the £200 fits from payday.",
       "fixIds": [
         "FIN-03",
         "ENG-02"
@@ -424,7 +350,7 @@
       "id": "OD-06",
       "topic": "overdraft",
       "persona": "Grace (invented)",
-      "situation": "Grace has $1,400 in her everyday account on 15 November and a $1,000 overdraft limit at 19.9%. November leaves her $1,000 spare. She is looking at a $500 purchase.",
+      "situation": "Grace has $1,400 in her everyday account on 15 November and a $1,000 overdraft limit at 19.9%. November leaves her $1,000 spare. Her safety net is full ($1,700). She is looking at a $500 purchase.",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -459,9 +385,22 @@
             "overdraftLimit": 100000,
             "overdraftRate": "19.9",
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 170000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 170000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -490,7 +429,7 @@
           "overdraft_use"
         ]
       },
-      "why": "Spare money $1,000 - price $500 = $500 left. The lowest point is $1,400 - $400 still to spend - $500 = $500, above $0, so the overdraft is never touched and nothing about it is mentioned.",
+      "why": "Spare money $1,000 - price $500 = $500 left, over the tight floor of $200 (a tenth of $1,200 bills + $800 everyday spending). The lowest point is $1,400 - $400 still to spend - $500 = $500, above $0, so the overdraft is never touched and nothing about it is mentioned. Her safety net is full, so this is a clean \"Fits\". (This case also covers the retired OD-02, a clean fit with no overdraft.)",
       "fixIds": [
         "FIN-03",
         "ENG-02"
@@ -581,7 +520,7 @@
           "overdraft_use"
         ]
       },
-      "why": "Only checking and current accounts have an overdraft, so the limit on the savings account is ignored. Checking would reach $1,400 - $400 - $1,200 = -$200 with no limit set there, so it is \"Not yet\"; on 1 December, $1,000 left from November plus $1,000 spare in December covers the $1,200.",
+      "why": "Only checking and current accounts have an overdraft, so the limit on the savings account is ignored. Checking would reach $1,400 - $400 - $1,200 = -$200 with no limit set there, so it is \"Not yet\". The answer says no limit is set on the checking account and asks whether it has an overdraft (D-38). On 1 December, $1,000 left from November plus $1,000 spare in December covers the $1,200.",
       "fixIds": [
         "FIN-03",
         "ENG-02"
@@ -595,7 +534,7 @@
       "id": "OD-08",
       "topic": "overdraft",
       "persona": "Sofia (invented)",
-      "situation": "Sofia has two checking accounts on 15 November: one is $300 overdrawn (limit $500 at 20%), the other holds $2,000. Together that is $1,700. November leaves her $1,000 spare. She is looking at a $600 purchase.",
+      "situation": "Sofia has two checking accounts on 15 November: one is $300 overdrawn (limit $500 at 20%), the other holds $2,000. Together that is $1,700. November leaves her $1,000 spare. Her safety net is full ($1,700). She is looking at a $600 purchase.",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -639,9 +578,22 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 170000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 170000
+        },
         "bills": [],
         "debts": [],
         "userLine": null,
@@ -665,100 +617,17 @@
         },
         "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "other_account_overdrawn"
+        ],
         "mustNotHaveFacts": [
           "overdraft_use"
         ]
       },
-      "why": "Balances are added with their signs: -$300 + $2,000 = $1,700, never rounding the -$300 up to $0. Lowest point $1,700 - $400 still to spend - $600 = $700, and spare money $1,000 - $600 = $400 left, so it fits from the account that has the money.",
+      "why": "Balances are added with their signs: -$300 + $2,000 = $1,700, never rounding the -$300 up to $0. Lowest point $1,700 - $400 still to spend - $600 = $700, and spare money $1,000 - $600 = $400 left, over the $200 tight floor, so it fits from the account that has the money. Adding the two together would hide a live overdraft, so the answer also states it as a fact: \"Your Joint bills account is $300 below $0. At 20%, that costs about $5.00 a month.\" ($300 x 20% / 12 = $5.00).",
       "fixIds": [
         "FIN-03",
         "ENG-02"
-      ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
-      "expertNote": null
-    },
-    {
-      "id": "OD-09",
-      "topic": "overdraft",
-      "persona": "A7 Jordan, freelancer (audit, invented)",
-      "situation": "Jordan is a freelancer with £3,000 in her current account. Her usual month ends about £150 short, and October is heading about £1,009 below £0 because little work came in. She is looking at an £8,000 car over 48 months at 9.9%, first payment on 30 October, and said no when asked if she can cover the low months.",
-      "fixture": {
-        "asOf": "2026-10-15",
-        "currency": "GBP",
-        "region": null,
-        "pay": {
-          "amount": 250000,
-          "cadence": "monthly",
-          "nextDate": "2026-11-01",
-          "setupAmount": null,
-          "lastThree": null
-        },
-        "usualMonth": {
-          "bills": 150000,
-          "everyday": 115000,
-          "essentialEveryday": 60000
-        },
-        "thisMonth": {
-          "received": 164100,
-          "billsPaid": 150000,
-          "billsDue": 0,
-          "everydaySoFar": 55645
-        },
-        "historyMonths": 12,
-        "quickEstimates": null,
-        "recordsAsOf": null,
-        "accounts": [
-          {
-            "id": "a1",
-            "kind": "current",
-            "name": "Main",
-            "balance": 300000,
-            "overdraftLimit": null,
-            "overdraftRate": null,
-            "use": "everyday"
-          }
-        ],
-        "safetyNet": null,
-        "bills": [],
-        "debts": [],
-        "userLine": null,
-        "factLines": true,
-        "check": {
-          "price": 800000,
-          "taxPercent": null,
-          "taxIncluded": null,
-          "oneOffFees": 0,
-          "pay": {
-            "mode": "plan",
-            "months": 48,
-            "apr": "9.9",
-            "fees": 0,
-            "deposit": 0,
-            "firstPaymentDate": "2026-10-30"
-          },
-          "yourAnswer": "no"
-        }
-      },
-      "expected": {
-        "code": "monthly_short",
-        "variant": null,
-        "afterBuy": {
-          "month": -121152,
-          "usualMonth": -35252
-        },
-        "readyBy": null,
-        "mustHaveReasons": [],
-        "mustHaveFacts": [],
-        "mustNotHaveFacts": []
-      },
-      "why": "A usual month of -£150 minus the £202.52 payment leaves -£352.52, and October itself goes from -£1,009 to -£1211.52, so a new monthly payment cannot fit: \"Short each month\" (FIN-06, settled disagreement 5). The minus figures are shown as they are, never rounded up to £0; her \"no\" does not change the answer because the records already rule it out.",
-      "fixIds": [
-        "FIN-03",
-        "ENG-02",
-        "FIN-06"
       ],
       "status": "draft",
       "approvedAt": null,
@@ -831,11 +700,187 @@
         "readyBy": "2027-03",
         "mustHaveReasons": [],
         "mustHaveFacts": [
-          "no_overdraft_limit"
+          "no_overdraft_limit",
+          "ready_without_interest",
+          "clearing_first"
         ],
         "mustNotHaveFacts": []
       },
-      "why": "Her account ends October at about -£1,577 and climbs £400 a month: about -£1,177 in November, -£777 in December, -£377 in January and +£23 at the end of February. So the £200 fits without going below £0 from March 2027, much later than Tom at £0 (ready on payday): -£1,500 is treated as £1,500 worse, never rounded up to £0, and no confusing \"unexplained money\" question is asked.",
+      "why": "Her account ends October at about -£1,577 (-£1,500 - £77 still to spend) and climbs £400 a month: about -£1,177 at the end of November, -£777 in December, -£377 in January and +£23 at the end of February. With no overdraft limit set the limit counts as £0 (D-28), so the £200 fits without going below £0 from March 2027. That is much later than Tom at £0 (ready on payday, OD-05): -£1,500 is treated as £1,500 worse, never rounded up to £0. The answer says no limit is set and asks \"Does Main have an overdraft?\" (D-38), and states as facts: \"This date does not count overdraft interest, because no rate is set.\" and \"Money below £0 costs interest every day it stays there. Clearing it first lowers that cost.\" No \"unexplained money\" question is asked.",
+      "fixIds": [
+        "FIN-03",
+        "ENG-02"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "OD-11",
+      "topic": "overdraft",
+      "persona": "A11 Tess, limit set (audit, invented)",
+      "situation": "Same Tess as OD-10: £1,500 below £0 on 27 October, a usual month that leaves £400, pay of £2,000 on 1 November and a £200 purchase. This time her £2,000 overdraft at 39.9% is set in the app.",
+      "fixture": {
+        "asOf": "2026-10-27",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 200000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 60000,
+          "essentialEveryday": 40000
+        },
+        "thisMonth": {
+          "received": 200000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 52258
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Main",
+            "balance": -150000,
+            "overdraftLimit": 200000,
+            "overdraftRate": "39.9",
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 20000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_uses_overdraft",
+        "variant": "not_cleared",
+        "afterBuy": {
+          "month": 20000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "overdraft_use",
+          "overdraft_not_cleared",
+          "overdraft_cost_90d",
+          "wait_clears",
+          "overdraft_repeat",
+          "overdraft_without_purchase",
+          "overdraft_purchase_adds"
+        ],
+        "mustNotHaveFacts": [
+          "no_overdraft_limit"
+        ]
+      },
+      "why": "The lowest point is -£1,500 - £77.42 of October spending still to come - £200 = -£1,777.42 on 31 October. That is inside the £2,000 limit, so the answer is \"Uses your overdraft\", never \"Not yet\" (D-36). But her next pay does not clear it: after pay and bills on 1 November the account is still £797.42 below £0, and it ends November £1,377.42 below. Her usual month adds only £400 (£2,000 pay - £1,000 bills - £600 everyday spending), so the strong warning reads as facts: \"Uses your overdraft past payday\", and \"Waiting until March 2027 keeps the account above £0.\" Cost over the next 90 days (27 October to 24 January): the amounts below £0 on each day add up to £67,922.63, and £67,922.63 x 39.9% / 365 = about £74.25. Without the purchase it is about £55.85, so this purchase adds about £18.40. Even without the purchase the account is below £0 before each of her next 3 paydays (1 November, 1 December, 1 January), so the repeat-use line shows (D-37). October after its plans still leaves £400 - £200 = £200.",
+      "fixIds": [
+        "FIN-03",
+        "ENG-02"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "OD-12",
+      "topic": "overdraft",
+      "persona": "Ivy, repeat use (invented)",
+      "situation": "Ivy is paid $2,750 on the 1st of each month. Bills of $1,200 go out on payday and she spends about $1,500 a month on everyday things. Each month her pay brings the account back above $0, then spending takes it below $0 again before the next payday: it ended October $350 below $0. On 15 November she has $450 in her everyday account, a $1,000 overdraft limit at 22%, and November leaves $50 after its plans. She is looking at a $100 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 275000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 150000,
+          "essentialEveryday": 90000
+        },
+        "thisMonth": {
+          "received": 275000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 75000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 45000,
+            "overdraftLimit": 100000,
+            "overdraftRate": "22",
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 10000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_uses_overdraft",
+        "variant": null,
+        "afterBuy": {
+          "month": -5000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "overdraft_use",
+          "overdraft_repeat",
+          "overdraft_without_purchase",
+          "overdraft_purchase_adds"
+        ],
+        "mustNotHaveFacts": [
+          "overdraft_not_cleared",
+          "no_overdraft_limit"
+        ]
+      },
+      "why": "$450 - $750 of everyday spending still to come (spread evenly, about $46.88 a day over the 16 days from 15 to 30 November) - $100 = -$400 on 30 November, inside the $1,000 limit. Pay on 1 December brings it back to $1,101.61 above $0, so the next pay clears it: \"Uses your overdraft\", with no past-payday warning. But even without this purchase the account goes below $0 before each of her next 3 paydays: -$300 on 30 November, -$250 on 31 December and -$200 on 31 January, because her usual month leaves only $50 ($2,750 - $1,200 - $1,500). That is 3 of 3, over the line of 2 of the next 3 paydays (D-37), so the answer adds: \"Without this purchase, your Everyday account still goes below $0 before each of your next 3 paydays. At 22%, that costs about $1.45 over the next 90 days.\" With the purchase the 90-day cost is about $2.68, so the purchase adds about $1.23. November after its plans would be $50 - $100 = -$50.",
       "fixIds": [
         "FIN-03",
         "ENG-02"

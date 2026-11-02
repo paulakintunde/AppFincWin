@@ -5,7 +5,7 @@
       "id": "SN-01",
       "topic": "safety-net",
       "persona": "Leo (invented)",
-      "situation": "Leo has no safety-net record at all (nothing saved, nothing set). He has $800 spare this month and is looking at a $500 purchase.",
+      "situation": "Leo has no safety-net record at all, so the default applies: protection on, the starter size, nothing saved. He has $800 spare this month and is looking at a $500 purchase.",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -59,19 +59,22 @@
       },
       "expected": {
         "code": "fits_month",
-        "variant": null,
+        "variant": "no_net",
         "afterBuy": {
           "month": 30000,
           "usualMonth": null
         },
         "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "net_none_start"
+        ],
         "mustNotHaveFacts": [
-          "emergency_untouched"
+          "emergency_untouched",
+          "net_used"
         ]
       },
-      "why": "With no safety net set, there is nothing to protect, so the spare money decides: $800 - $500 = $300 left. No answer may say a safety net is \"untouched\" when there is none (D-25).",
+      "why": "No record means the default: protection on, a starter size of one month of essential costs ($1,400 bills + $500 essential everyday spending = $1,900), and $0 saved. Only money already in the net is protected, so nothing is held back (D-35): $800 spare - $500 = $300 left. $300 is not under the tight floor of $220 (a tenth of $1,400 bills + $800 everyday spending), so the answer is the amber \"Fits, but no safety net\", with \"Nothing is saved for emergencies yet. One month of essential costs is about $1,900. 1 month is a start; 3 to 6 months is common.\" It never says a safety net is \"untouched\" (D-25).",
       "fixIds": [
         "FIN-01",
         "CMP-F13"
@@ -262,7 +265,7 @@
         ],
         "mustNotHaveFacts": []
       },
-      "why": "Spare money $300 - price $500 = -$200, so $200 comes from the safety net and $800 stays in it. At $300 spare a month it is refilled in about 1 month (200 / 300, rounded up): \"Dips into your safety net\", with the month figure shown as -$200, not $0.",
+      "why": "November's $300 spare is what is left after its remaining bills and the $400 of everyday spending still to come. Spare money $300 - price $500 = -$200, so $200 comes from the safety net and $800 stays in it. At $300 spare a month it is refilled in about 1 month (200 / 300, rounded up): \"Dips into your safety net\", with the month figure shown as -$200, not $0.",
       "fixIds": [
         "FIN-01",
         "ENG-03"
@@ -458,99 +461,6 @@
       "expertNote": null
     },
     {
-      "id": "SN-06",
-      "topic": "safety-net",
-      "persona": "Lina (invented)",
-      "situation": "Lina switched safety-net protection off; she has $1,000 in a savings account marked as her safety net. November leaves her $1,000 spare. She is looking at a $400 purchase.",
-      "fixture": {
-        "asOf": "2026-11-15",
-        "currency": "USD",
-        "region": null,
-        "pay": {
-          "amount": 300000,
-          "cadence": "monthly",
-          "nextDate": "2026-12-01",
-          "setupAmount": null,
-          "lastThree": null
-        },
-        "usualMonth": {
-          "bills": 120000,
-          "everyday": 80000,
-          "essentialEveryday": 50000
-        },
-        "thisMonth": {
-          "received": 300000,
-          "billsPaid": 120000,
-          "billsDue": 0,
-          "everydaySoFar": 40000
-        },
-        "historyMonths": 6,
-        "quickEstimates": null,
-        "recordsAsOf": null,
-        "accounts": [
-          {
-            "id": "a1",
-            "kind": "checking",
-            "name": "Everyday",
-            "balance": 140000,
-            "overdraftLimit": null,
-            "overdraftRate": null,
-            "use": "everyday"
-          },
-          {
-            "id": "n1",
-            "kind": "savings",
-            "name": "Safety net",
-            "balance": 100000,
-            "overdraftLimit": null,
-            "overdraftRate": null,
-            "use": "emergency"
-          }
-        ],
-        "safetyNet": {
-          "protect": false,
-          "size": null,
-          "saved": 100000
-        },
-        "bills": [],
-        "debts": [],
-        "userLine": null,
-        "factLines": true,
-        "check": {
-          "price": 40000,
-          "taxPercent": null,
-          "taxIncluded": null,
-          "oneOffFees": 0,
-          "pay": {
-            "mode": "once"
-          }
-        }
-      },
-      "expected": {
-        "code": "fits_month",
-        "variant": null,
-        "afterBuy": {
-          "month": 60000,
-          "usualMonth": null
-        },
-        "readyBy": null,
-        "mustHaveReasons": [],
-        "mustHaveFacts": [],
-        "mustNotHaveFacts": [
-          "net_used"
-        ]
-      },
-      "why": "Spare money $1,000 - $400 = $600 left, so the net money is never needed. With protection off and the net untouched, the answer is the same plain \"Fits\" it would be with protection on.",
-      "fixIds": [
-        "FIN-01",
-        "ENG-03"
-      ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
-      "expertNote": null
-    },
-    {
       "id": "SN-07",
       "topic": "safety-net",
       "persona": "Kai, net set to $0 (invented)",
@@ -714,19 +624,21 @@
       },
       "expected": {
         "code": "fits_month",
-        "variant": null,
+        "variant": "small_net",
         "afterBuy": {
-          "month": null,
+          "month": 60000,
           "usualMonth": null
         },
         "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "net_progress"
+        ],
         "mustNotHaveFacts": [
           "net_used"
         ]
       },
-      "why": "Money already saved counts first, so only the $500 gap is held back: $1,000 - $500 = $500 of spare money, and $500 - $400 = $100 still free. Holding back the whole $1,700 instead would wrongly make this \"Not yet\".",
+      "why": "Only money already saved in the net is protected (D-35), so the $500 not yet saved is no longer held back: $1,000 spare - $400 = $600 left, well over the $200 tight floor. The net is below its size, so the answer is the amber \"Fits, but your safety net is small\", with \"Your safety net has $1,200 of its $1,700. 1 month is a start; 3 to 6 months is common.\" Holding back the $500 gap would have left only $100, so someone with $1,200 saved would get a worse answer than someone with nothing saved.",
       "fixIds": [
         "FIN-01",
         "ENG-03",
@@ -825,11 +737,12 @@
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [
-          "net_used"
+          "net_used",
+          "wait_keeps_net"
         ],
         "mustNotHaveFacts": []
       },
-      "why": "Spare money says yes ($800 - $700 = $100), but the 90-day path does not: before the 27th her account would go $1,400 - $600 rent - $320 everyday spending (12 days) - $700 = -$220, so $220 of the net would be needed for a week. The path must stay above the net (FIN-02), so this is \"Dips into your safety net\", not a plain \"Fits\".",
+      "why": "Spare money says yes ($800 - $700 = $100), but the day-by-day path does not. The $400 of everyday spending still to come is spread evenly, $25 a day over the 16 days from 15 to 30 November. After rent on the 20th the account goes below $0, reaching $1,400 - $600 rent - $300 everyday spending (15 to 26 November) - $700 = -$200 on 26 November. So the answer says it \"needs $200 from your safety net until 27 Nov\", the next payday. The path must stay above the net (FIN-02), so this is \"Dips into your safety net\", not a plain \"Fits\". It adds \"Waiting until 27 Nov keeps your safety net whole.\"",
       "fixIds": [
         "FIN-02",
         "ENG-04"
@@ -910,7 +823,7 @@
       },
       "expected": {
         "code": "fits_month",
-        "variant": null,
+        "variant": "tight",
         "afterBuy": {
           "month": 2000,
           "usualMonth": null
@@ -918,13 +831,14 @@
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [
+          "tight_floor",
           "emergency_untouched"
         ],
         "mustNotHaveFacts": [
           "net_used"
         ]
       },
-      "why": "The size she typed is respected, however small (D-05): her $50 net is full, so nothing is held back and $1,000 - $980 = $20 is left. Using the $1,700 starter in its place would wrongly hold back $1,650.",
+      "why": "The size she typed is respected, however small (D-05): her $50 net is full, so there is no safety-net caution and nothing is held back. $1,000 - $980 = $20 left, which is under the tight floor of $200 (a tenth of $1,200 bills + $800 everyday spending), so the answer is \"Fits, but tight\": \"November would still leave about $20. That is under $200, a tenth of what you usually spend in a month.\" (D-40).",
       "fixIds": [
         "FIN-01",
         "ENG-03"
@@ -938,7 +852,7 @@
       "id": "SN-11",
       "topic": "safety-net",
       "persona": "A15 Ellis (audit, invented)",
-      "situation": "Ellis has £3,000 free after this month's plans and nothing saved for emergencies. Safety-net protection is on by default, at the starter size of £1,400 (bills £1,000 + essential everyday spending £400). His usual month leaves £800. He is looking at a £2,950 TV.",
+      "situation": "Ellis has £3,000 free after this month's plans and nothing saved for emergencies. Safety-net protection is on by default, at the starter size of £1,400 (bills £1,000 + essential everyday spending £400). November leaves £800 spare and so does his usual month. He is looking at a £2,950 TV.",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "GBP",
@@ -995,20 +909,23 @@
         }
       },
       "expected": {
-        "code": "not_yet",
-        "variant": "not_covered",
+        "code": "fits_unspent",
+        "variant": "tight",
         "afterBuy": {
           "month": null,
           "usualMonth": null
         },
-        "readyBy": "2027-01",
+        "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "tight_floor",
+          "net_none_start"
+        ],
         "mustNotHaveFacts": [
           "emergency_untouched"
         ]
       },
-      "why": "The whole £1,400 starter is still a gap, so it is held back: £3,000 - £1,400 = £1,600 spare, less than £2,950, and the net has no money to dip into. He needs £2,950 + £1,400 = £4,350; with £800 a month that is £3,800 by December and £4,600 in January 2027. The answer never says a safety net is \"untouched\".",
+      "why": "Only money already saved in a net is protected, and Ellis has £0 saved, so nothing is held back (D-35): £3,000 free - £2,950 = £50 left. That uses £2,150 saved from earlier months as well as November's £800 spare, so the code is \"fits from money saved earlier\" (as in DB-04), not a plain month fit. £50 is under the tight floor of £170 (a tenth of £1,000 bills + £700 everyday spending), so the answer is \"Fits, but tight\" (D-40). Tight leads; the no-safety-net line still shows as a fact: \"Nothing is saved for emergencies yet. One month of essential costs is about £1,400. 1 month is a start; 3 to 6 months is common.\" It never says a safety net is \"untouched\". (The month figure for money saved earlier is left to 05.4-24.)",
       "fixIds": [
         "FIN-01",
         "ENG-03",
@@ -1093,6 +1010,294 @@
       "fixIds": [
         "FIN-01",
         "CMP-F13"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SN-13",
+      "topic": "safety-net",
+      "persona": "Kai, net above its size (invented)",
+      "situation": "Kai set his safety net to $1,000, but $1,500 sits in the savings account marked as his safety net. November leaves him $300 spare, and his usual month leaves $300. He is looking at a $500 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 190000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 190000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 70000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 150000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 150000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_above_size",
+          "emergency_untouched"
+        ],
+        "mustNotHaveFacts": [
+          "net_used"
+        ]
+      },
+      "why": "Only the $1,000 size is protected, so the $500 above it is spare savings. $300 spare in November plus $200 of the extra $500 (moved from the safety-net account) pays for the $500 purchase, and the $1,000 safety net stays whole. That leaves $300 of free money ($300 of the extra), not under the tight floor of $270 (a tenth of $1,900 bills + $800 everyday spending), so it is not tight. The answer says \"Your $1,000 safety net stays whole\" and that $500 sits above its size.",
+      "fixIds": [
+        "FIN-01",
+        "ENG-03"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SN-14",
+      "topic": "safety-net",
+      "persona": "Kai, car repair marked as a need (invented)",
+      "situation": "Same Kai as SN-03: a full $1,000 safety net and $300 spare in November. His car needs a $500 repair, and he marked it as a need.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 190000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 190000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 70000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 100000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "purpose": "necessity"
+        }
+      },
+      "expected": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuy": {
+          "month": -20000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_used",
+          "need_net_line"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "The sums are the same as SN-03: $300 spare - $500 = -$200, so $200 comes from the safety net and $800 stays in it. Marking it as a need changes only the words and their order, never the answer or the sums (D-41). The answer adds \"Marked as a need. A safety net is money kept for needs like this.\"",
+      "fixIds": [
+        "FIN-01",
+        "ENG-03"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SN-15",
+      "topic": "safety-net",
+      "persona": "Kai, same price marked as a want (invented)",
+      "situation": "Same Kai and the same $500 price as SN-14, but this time it is a games console, marked as a want.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 190000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 190000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 70000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 100000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "purpose": "nice_to_have"
+        }
+      },
+      "expected": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuy": {
+          "month": -20000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_used",
+          "wait_keeps_net"
+        ],
+        "mustNotHaveFacts": [
+          "need_net_line"
+        ]
+      },
+      "why": "Same sums as SN-14 and SN-03, so the same answer: \"Dips into your safety net\", with $200 from the net. Marked as a want, the waiting line comes first: \"Waiting until 1 Dec keeps your safety net whole.\" On 1 December, the $300 left from November plus December's $300 covers the $500 without touching the net. The tag never changes the code, the variant or any figure (D-41).",
+      "fixIds": [
+        "FIN-01",
+        "ENG-03"
       ],
       "status": "draft",
       "approvedAt": null,
