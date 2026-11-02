@@ -29,7 +29,12 @@ export interface BackHistoryContextValue {
   current: Location | null;
   canGoBack: boolean; // history.length > 0 (prototype canBack)
   goBack(): boolean; // false only when the system should exit (D-06 step 4)
-  registerTabSwitcher(fn: ((tab: TabId) => void) | null): void;
+  /**
+   * 05.3-115: registers a tab switcher and returns its release. The newest live switcher is used;
+   * a release removes only its own entry (idempotent), so one tab bar's clean-up never clears
+   * another's.
+   */
+  registerTabSwitcher(fn: (tab: TabId) => void): () => void;
 }
 
 export const BackHistoryContext = createContext<BackHistoryContextValue | null>(null);
@@ -55,7 +60,9 @@ export function BackHistoryProvider({
   const prevRef = useRef<Location | null>(null);
   const pendingBackRef = useRef(false);
   const noopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const switcherRef = useRef<((tab: TabId) => void) | null>(null);
+  // 05.3-115: ordered list of live switchers, newest last. Entries are wrapped so the same
+  // function registered twice is still released one entry at a time.
+  const switchersRef = useRef<{ fn: (tab: TabId) => void }[]>([]);
   // Kept in sync after commit (declared before the observing effect so it runs first).
   useEffect(() => {
     historyRef.current = history;
@@ -107,7 +114,9 @@ export function BackHistoryProvider({
       if (action.type === 'switchTab') {
         pendingBackRef.current = true;
         const before = currentRef.current;
-        if (switcherRef.current) switcherRef.current(action.tab as TabId);
+        const switchers = switchersRef.current;
+        const switcher = switchers[switchers.length - 1];
+        if (switcher) switcher.fn(action.tab as TabId);
         else router.navigate(('/' + action.tab) as Href);
         // L1 / WR-01: a switch that produced no transition must not leave the back-step flags set.
         // A generous timeout, not a frame count: a slow commit must not be mistaken for a no-op.
@@ -129,8 +138,12 @@ export function BackHistoryProvider({
     return false;
   }, [cancelNoopCheck]);
 
-  const registerTabSwitcher = useCallback((fn: ((tab: TabId) => void) | null): void => {
-    switcherRef.current = fn;
+  const registerTabSwitcher = useCallback((fn: (tab: TabId) => void): (() => void) => {
+    const entry = { fn };
+    switchersRef.current = [...switchersRef.current, entry];
+    return () => {
+      switchersRef.current = switchersRef.current.filter((e) => e !== entry);
+    };
   }, []);
 
   const value = useMemo<BackHistoryContextValue>(

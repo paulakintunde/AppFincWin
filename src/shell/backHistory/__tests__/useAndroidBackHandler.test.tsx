@@ -20,7 +20,7 @@ function setup(goBack: () => boolean) {
     current: null,
     canGoBack: false,
     goBack,
-    registerTabSwitcher: jest.fn(),
+    registerTabSwitcher: jest.fn(() => () => undefined),
   };
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <BackHistoryContext.Provider value={value}>{children}</BackHistoryContext.Provider>

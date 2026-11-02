@@ -69,6 +69,8 @@ export interface TabRootChromeOptions {
   compactTrailing?: React.ReactNode | ((api: { scrollToTop: () => void }) => React.ReactNode);
   /** 05-117 (D-96): Decide home folds the sync problem into its notice row, so this screen alone drops the header line. */
   hideSyncLine?: boolean;
+  /** 05.3-109: pin the compact header in the layout column (Decide home) so it never covers rows or links. */
+  compactInFlow?: boolean;
 }
 
 export interface TabRootChrome {
@@ -79,6 +81,9 @@ export interface TabRootChrome {
   largeHeader: React.ReactElement;
   compactHeader: React.ReactElement;
   refreshControl: React.ReactElement<RefreshControlProps> | undefined;
+  /** 05.3-109: true when TabRootScreen should lay the compact header out in flow while `compactVisible`. */
+  compactInFlow: boolean;
+  compactVisible: boolean;
 }
 
 // D-93: every screen built from this hook is a tab root (under (tabs)). Whether to show the back
@@ -87,7 +92,7 @@ export interface TabRootChrome {
 const isTabRoot = true;
 
 export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
-  const { title, eyebrow, trailing, refreshKeys, compactTitle, compactTitleRole, compactTrailing, hideSyncLine = false } = options;
+  const { title, eyebrow, trailing, refreshKeys, compactTitle, compactTitleRole, compactTrailing, hideSyncLine = false, compactInFlow = false } = options;
   const { colors } = useTheme();
   const insets = useScreenInsets();
 
@@ -119,12 +124,53 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
     scrollY.value = e.contentOffset.y;
   });
 
+  // 05.3-109: in-flow mode measures the compact header and moves the scroll offset by its height as
+  // it appears or goes, so the content does not jump. Show above the threshold, hide below
+  // threshold minus the header height: the compensation can never flip it back (hysteresis).
+  const headerHeight = useSharedValue(0);
+  const shown = useSharedValue(false);
+  const compensated = useRef(0);
+
+  const scrollByDelta = useCallback(
+    (delta: number) => {
+      if (delta === 0) return;
+      const node = scrollRef.current as unknown as { scrollTo?: (o: { y: number; animated: boolean }) => void } | null;
+      node?.scrollTo?.({ y: Math.max(0, scrollY.get() + delta), animated: false });
+    },
+    [scrollRef, scrollY],
+  );
+  const onVisibleChange = useCallback(
+    (now: boolean) => {
+      setCompactVisible(now);
+      if (!compactInFlow || now) return; // appearing is compensated once the header reports its height
+      const h = compensated.current;
+      compensated.current = 0;
+      scrollByDelta(-h);
+    },
+    [compactInFlow, scrollByDelta],
+  );
+  const onCompactLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const h = e.nativeEvent.layout.height;
+      headerHeight.set(h);
+      const delta = h - compensated.current;
+      compensated.current = h;
+      scrollByDelta(delta);
+    },
+    [headerHeight, scrollByDelta],
+  );
+
   useAnimatedReaction(
-    () => scrollY.value > threshold.value,
+    () => {
+      const y = scrollY.value;
+      if (!compactInFlow) return y > threshold.value;
+      return shown.value ? y >= threshold.value - headerHeight.value : y > threshold.value;
+    },
     (now, prev) => {
       if (now !== prev) {
-        opacity.value = withTiming(now ? 1 : 0, { duration: DURATION.fade });
-        scheduleOnRN(setCompactVisible, now);
+        shown.value = now;
+        if (!compactInFlow) opacity.value = withTiming(now ? 1 : 0, { duration: DURATION.fade });
+        scheduleOnRN(onVisibleChange, now);
       }
     },
   );
@@ -159,7 +205,7 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
   );
 
   const largeHeader = (
-    <View onLayout={onLargeLayout}>
+    <View onLayout={onLargeLayout} style={compactInFlow ? { marginTop: -insets.top } : undefined}>
       <TabHeader title={title} eyebrow={eyebrow} trailing={trailing} titleRef={largeTitleRef} showBack={!isTabRoot} />
       {hideSyncLine ? null : <SyncProblemLine />}
     </View>
@@ -175,6 +221,8 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
       visible={compactVisible}
       animatedStyle={opacityStyle as unknown as StyleProp<ViewStyle>}
       titleRef={compactTitleRef}
+      inFlow={compactInFlow}
+      onLayout={compactInFlow ? onCompactLayout : undefined}
     />
   );
   const refreshControl = refreshKeys ? (
@@ -187,5 +235,5 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
     />
   ) : undefined;
 
-  return { scrollRef, onScroll, scrollEventThrottle: 16, largeHeader, compactHeader, refreshControl, scrollToTop };
+  return { scrollRef, onScroll, scrollEventThrottle: 16, largeHeader, compactHeader, refreshControl, scrollToTop, compactInFlow, compactVisible };
 }
