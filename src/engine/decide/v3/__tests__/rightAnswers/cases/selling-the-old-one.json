@@ -1,4 +1,816 @@
 {
   "topic": "selling-the-old-one",
-  "cases": []
+  "cases": [
+    {
+      "id": "SO-01",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, sells her old car the same day (invented)",
+      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She buys a $6,000 car today and sells her old one today for $5,500.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 600000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "replaces": {
+            "stops": [],
+            "sale": {
+              "amount": 550000,
+              "arrives": "2026-11-15",
+              "paysDebtId": null
+            }
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The sale money arrives the same day, so she needs only $6,000 - $5,500 = $500 of her own money: $1,000 - $500 = $500 left this month. Without the sale it would be Not yet.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SO-02",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, sale money a month later (invented)",
+      "situation": "Same as SO-01, but the buyer pays the $5,500 on 20 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 600000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "replaces": {
+            "stops": [],
+            "sale": {
+              "amount": 550000,
+              "arrives": "2026-12-20",
+              "paysDebtId": null
+            }
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Paying $6,000 today with $1,000 free would take the account about $5,000 below $0 until 20 December. Money that arrives later does not help today's cash path. On 20 December she has $1,000 + December's $1,000 + $5,500 = $7,500, so it fits from December 2026.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SO-03",
+      "topic": "selling-the-old-one",
+      "persona": "Omar, sale pays off the old loan (invented)",
+      "situation": "Omar's usual month leaves $1,000 after his $250 old car-loan minimum. He sells the old car for $5,000 on 20 November; $4,000 of it pays off the loan and $1,000 comes to him. The new car is $12,000 in 48 payments of $250 at 0%, first payment on 15 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [
+          {
+            "id": "d-old",
+            "kind": "loan",
+            "balance": 400000,
+            "minimum": 25000,
+            "apr": "6.9",
+            "dueDay": 5,
+            "joint": false
+          }
+        ],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 1200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 48,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "replaces": {
+            "stops": [],
+            "sale": {
+              "amount": 500000,
+              "arrives": "2026-11-20",
+              "paysDebtId": "d-old"
+            }
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 100000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The sale clears the $4,000 loan, so its $250 minimum stops after 20 November. Usual month after buying: $1,000 + $250 (old minimum gone) - $250 (new payment) = $1,000. The other $1,000 of the sale goes to his account. $250 is a quarter of his room, so it is not tight.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SO-04",
+      "topic": "selling-the-old-one",
+      "persona": "Omar, old loan bigger than the sale (invented)",
+      "situation": "Same as SO-03, but the old loan is $7,000. The $5,000 sale goes to the loan and $2,000 is still owed, with the $250 minimum still due.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [
+          {
+            "id": "d-old",
+            "kind": "loan",
+            "balance": 700000,
+            "minimum": 25000,
+            "apr": "6.9",
+            "dueDay": 5,
+            "joint": false
+          }
+        ],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 1200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 48,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "replaces": {
+            "stops": [],
+            "sale": {
+              "amount": 500000,
+              "arrives": "2026-11-20",
+              "paysDebtId": "d-old"
+            }
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 75000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "debt_left_after_sale"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "The sale pays $5,000 of the $7,000, so $2,000 is still owed and the $250 minimum keeps coming. Usual month after buying: $1,000 - $250 (new payment) = $750. The answer states the $2,000 still owed as a fact. $750 is well above the tight lines, so it fits.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SO-05",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, old phone plan due once more (invented)",
+      "situation": "Lena's usual month leaves $1,000 and includes an $80 phone plan, next due on 1 December. She is ending it on 20 December. The new phone is $1,200 in 24 payments of $50 at 0%, first payment on 15 December, and its new plan is $60 a month from 20 December.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "b-phone",
+            "amount": 8000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-01",
+            "lastPaid": "2026-11-01",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 120000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 24,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "runningCosts": [
+            {
+              "id": "rc-plan",
+              "amount": 6000,
+              "everyMonths": 1,
+              "start": "2026-12-20",
+              "end": null
+            }
+          ],
+          "replaces": {
+            "stops": [
+              {
+                "id": "b-phone",
+                "amount": 8000,
+                "everyMonths": 1,
+                "stopDate": "2026-12-20",
+                "source": "bill"
+              }
+            ],
+            "sale": null
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 97000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The old $80 is due on 1 December, before the 20 December stop, so it is counted once more and then never again. December has the old $80, the new $60 and the first $50. From January the usual month is $1,000 + $80 - $50 - $60 = $970.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SO-06",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, gym replaced by a rowing machine (invented)",
+      "situation": "Lena pays $50 a month for a gym out of everyday spending and stops it on 30 November. She buys a $900 rowing machine today, paid in cash. She has $1,000 free and her usual month leaves $1,000.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "replaces": {
+            "stops": [
+              {
+                "id": "gym",
+                "amount": 5000,
+                "everyMonths": 1,
+                "stopDate": "2026-11-30",
+                "source": "everyday"
+              }
+            ],
+            "sale": null
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 10000,
+          "usualMonth": 105000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "$1,000 - $900 = $100 left this month (November's gym fee is already paid). After 30 November the gym is never counted again, so the usual month becomes $1,000 + $50 = $1,050.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SO-07",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, saving for a sofa (invented)",
+      "situation": "Lena wants a $3,000 sofa and asks when she could have saved for it. She has $1,000 free now and her usual month leaves $1,000.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 300000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "saveForIt": true
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2027-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "She needs $3,000 - $1,000 = $2,000 more. December adds $1,000 ($2,000 saved) and January adds $1,000 ($3,000): ready January 2027. The $1,000 she has now is counted once. Counting it again as part of November's room would wrongly say December.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SO-08",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, saving for the up-front part only (invented)",
+      "situation": "Same $3,000 sofa, but on a plan: $600 up front, then 12 payments of $200 at 0% from 1 February 2027. She has $500 free now and her usual month leaves $1,000.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 90000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 300000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 60000,
+            "firstPaymentDate": "2027-02-01"
+          },
+          "saveForIt": true
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Only the $600 up front has to be saved; the $200 payments come from the usual month later ($1,000 - $200 = $800). She has $500, so she needs $100 more, and pay on 1 December covers it. Saving for the whole $3,000 would wrongly say February 2027.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SO-09",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, cash and plan from one input (invented)",
+      "situation": "Lena types a $2,400 laptop once. Decide judges paying cash and paying 12 x $200 at 0% (first payment 15 December) from that one input. This case holds the cash side; she has $1,000 free and her usual month leaves $1,000.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 240000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2027-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Cash: she needs $1,400 more; December gives $2,000, January $3,000, so ready January 2027. Plan: $1,000 - $200 = $800 a month, \"Fits\". Both answers must match two separate checks (one cash, one plan) exactly: one shared input never changes either answer (BO-05).",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    }
+  ]
 }

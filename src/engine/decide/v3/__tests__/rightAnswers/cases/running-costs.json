@@ -1,4 +1,903 @@
 {
   "topic": "running-costs",
-  "cases": []
+  "cases": [
+    {
+      "id": "RC-01",
+      "topic": "running-costs",
+      "persona": "Sam, car costs more each month than he has (invented)",
+      "situation": "Sam has $8,000 free and his usual month leaves $250 (pay $3,000, bills $1,700, everyday $1,050). He looks at a $6,000 used car, paid in cash. It brings insurance $150, fuel $120 and upkeep $30 a month, plus $276 registration once a year from May.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 170000,
+          "everyday": 105000,
+          "essentialEveryday": 63000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 170000,
+          "billsDue": 0,
+          "everydaySoFar": 52500
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 852500,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 600000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "runningCosts": [
+            {
+              "id": "rc-ins",
+              "amount": 15000,
+              "everyMonths": 1,
+              "start": "2026-11-15",
+              "end": null
+            },
+            {
+              "id": "rc-fuel",
+              "amount": 12000,
+              "everyMonths": 1,
+              "start": "2026-11-15",
+              "end": null
+            },
+            {
+              "id": "rc-maint",
+              "amount": 3000,
+              "everyMonths": 1,
+              "start": "2026-11-15",
+              "end": null
+            },
+            {
+              "id": "rc-reg",
+              "amount": 27600,
+              "everyMonths": 12,
+              "start": "2027-05-01",
+              "end": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": -7300
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Running costs are $150 + $120 + $30 + $23 (the monthly share of $276 a year) = $323 a month. His usual month goes from $250 to $250 - $323 = -$73, so it is \"Short each month\" even though the cash for the car is there (Theme L, FIN-29).",
+      "fixIds": [
+        "BO-05",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "RC-02",
+      "topic": "running-costs",
+      "persona": "Sam, car takes most of his room (invented)",
+      "situation": "Same car and running costs as RC-01 ($323 a month), but Sam's usual month leaves $380 (bills $1,600, everyday $1,020).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 160000,
+          "everyday": 102000,
+          "essentialEveryday": 61200
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 160000,
+          "billsDue": 0,
+          "everydaySoFar": 51000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 851000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 600000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "runningCosts": [
+            {
+              "id": "rc-ins",
+              "amount": 15000,
+              "everyMonths": 1,
+              "start": "2026-11-15",
+              "end": null
+            },
+            {
+              "id": "rc-fuel",
+              "amount": 12000,
+              "everyMonths": 1,
+              "start": "2026-11-15",
+              "end": null
+            },
+            {
+              "id": "rc-maint",
+              "amount": 3000,
+              "everyMonths": 1,
+              "start": "2026-11-15",
+              "end": null
+            },
+            {
+              "id": "rc-reg",
+              "amount": 27600,
+              "everyMonths": 12,
+              "start": "2027-05-01",
+              "end": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 5700
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "$323 is 85% of his $380 room, more than 80%, and the $57 left is below a tenth of a month's spending ($2,620 / 10 = $262). So it is \"Fits, but tight each month\". The usual month is shown before and after: $380, then $57.",
+      "fixIds": [
+        "BO-05",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "RC-03",
+      "topic": "running-costs",
+      "persona": "Lena, insurance starts in February (invented)",
+      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She buys a $500 scooter today. The shop covers insurance for three months; her own $100 a month starts on 1 February 2027.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "runningCosts": [
+            {
+              "id": "rc-ins",
+              "amount": 10000,
+              "everyMonths": 1,
+              "start": "2027-02-01",
+              "end": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": 90000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "This month: $1,000 - $500 = $500 left; the insurance is not in November, December or January. On the 90-day path (to 13 February) only one $100 payment falls, on 1 February. From then on the usual month is $1,000 - $100 = $900. A cost is counted only from its start date.",
+      "fixIds": [
+        "BO-05",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "RC-04",
+      "topic": "running-costs",
+      "persona": "Lena, yearly pet insurance (invented)",
+      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She gets a $400 puppy today. Pet insurance is $600 once a year, first due on 15 January 2027.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 40000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "runningCosts": [
+            {
+              "id": "rc-pet",
+              "amount": 60000,
+              "everyMonths": 12,
+              "start": "2027-01-15",
+              "end": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 60000,
+          "usualMonth": 95000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "$1,000 - $400 = $600 left this month. The yearly $600 counts as $50 a month in the usual month: $1,000 - $50 = $950. On the cash path the full $600 falls on 15 January, after December's pay, so the account never goes below $0.",
+      "fixIds": [
+        "BO-05",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "RC-05",
+      "topic": "running-costs",
+      "persona": "Lena, parking pass for the winter only (invented)",
+      "situation": "Lena buys an $800 e-bike today. A $60 a month bike-parking pass runs from 1 December 2026 to 28 February 2027, then ends. She has $1,000 free and her usual month leaves $1,000.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 80000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "runningCosts": [
+            {
+              "id": "rc-park",
+              "amount": 6000,
+              "everyMonths": 1,
+              "start": "2026-12-01",
+              "end": "2027-02-28"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 20000,
+          "usualMonth": 94000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "$1,000 - $800 = $200 left this month. The pass counts in December, January and February ($180 in total), so the usual month while it runs is $1,000 - $60 = $940. After 28 February it is never counted again.",
+      "fixIds": [
+        "BO-05",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "RC-06",
+      "topic": "running-costs",
+      "persona": "Ines, land with closing costs (invented)",
+      "situation": "Ines has $40,500 free and her usual month leaves $1,000. She looks at a $40,000 plot of land, paid in cash, with closing costs of 2.5% of the price.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 4090000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 4000000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "closingPercent": "2.5"
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Closing costs are 2.5% of $40,000 = $1,000, so the up-front amount is $41,000. That is $500 more than her $40,500 free. On the price alone it would fit with $500 left. December leaves $1,000, so it fits from payday on 1 December (BO-05).",
+      "fixIds": [
+        "BO-05",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "RC-07",
+      "topic": "running-costs",
+      "persona": "Lena, bike with and without insurance (invented)",
+      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She buys a $500 bike today with $50 a month insurance from 1 December. The pair to this case is the same bike with no running costs (RC-09).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "runningCosts": [
+            {
+              "id": "rc-ins",
+              "amount": 5000,
+              "everyMonths": 1,
+              "start": "2026-12-01",
+              "end": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": 95000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "$1,000 - $500 = $500 left this month, and the usual month is $1,000 - $50 = $950. With no running costs (RC-09) it is $1,000. Adding a running cost never raises the money left and never gives a better answer (ENG-29 property test).",
+      "fixIds": [
+        "BO-05",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "RC-08",
+      "topic": "running-costs",
+      "persona": "Lena, buying in January (invented)",
+      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She plans to buy a $1,500 sofa on 15 January 2027, not today, paid in cash.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "purchaseDate": "2027-01-15"
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The $1,500 is paid on 15 January, so it is judged on that date. By then she has her $1,000 now plus December's $1,000 = $2,000 before January's pay, so it fits. Bought today it would be Not yet ($500 short). The month figure for a later date is left to 05.4-24.",
+      "fixIds": [
+        "BO-05",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "RC-09",
+      "topic": "running-costs",
+      "persona": "Lena, insurance switched off (invented)",
+      "situation": "Same bike as RC-07, but Lena switched the $50 insurance line off.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "runningCosts": [
+            {
+              "id": "rc-ins",
+              "amount": 5000,
+              "everyMonths": 1,
+              "start": "2026-12-01",
+              "end": null,
+              "off": true
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": 100000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "A switched-off line is not counted, so this gives exactly the same answer as no running costs at all: $500 left this month and a usual month of $1,000 (FIN-28: each line can be switched off).",
+      "fixIds": [
+        "BO-05",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "RC-10",
+      "topic": "running-costs",
+      "persona": "A16 Hana, yearly insurance held back (audit, invented)",
+      "situation": "Hana has £1,500 free this month and her usual month leaves £700. Her £1,200 car insurance is paid once a year; it was last paid on 1 March and is next due on 1 March 2027. She looks at £1,450 paid in cash.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Everyday",
+            "balance": 190000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "b-ins",
+            "amount": 120000,
+            "everyMonths": 12,
+            "nextDue": "2027-03-01",
+            "lastPaid": "2026-03-01",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 145000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Seven months have passed since the insurance was paid, so 7 x £100 = £700 is held back (FIN-11): £1,500 - £700 = £800 free, less than £1,450. On 1 November she adds £700 and holds back £100 more: £800 + £700 - £100 = £1,400, still short. On 1 December: £1,400 + £600 = £2,000, so it fits from December 2026. The audit called the old \"Fits\" OK only because her surplus is large; this case follows the FIN-11 rule as written, for the owner to confirm.",
+      "fixIds": [
+        "FIN-11",
+        "ENG-04",
+        "ENG-29"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    }
+  ]
 }
