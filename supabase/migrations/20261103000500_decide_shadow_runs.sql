@@ -27,5 +27,6 @@ create policy "insert own shadow run with consent" on public.decide_shadow_runs
     and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.decide_shadow)
   );
 
--- Insert only. No select, update or delete is granted.
+-- Insert only. Supabase default privileges hand new public tables to anon and authenticated, so strip them first.
+revoke all on public.decide_shadow_runs from public, anon, authenticated;
 grant insert (user_id, engine_revision, sample_id, code, variant, reasons, figures) on public.decide_shadow_runs to authenticated;
