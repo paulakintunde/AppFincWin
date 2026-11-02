@@ -1,0 +1,1552 @@
+{
+  "persona:sam:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 36500
+  },
+  "persona:sam:50000:cash": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "persona:sam:200000:cash": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "persona:sam:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:sam:900000:plan": {
+    "code": "fits_month",
+    "variant": "low_month",
+    "afterBuyMonth": null
+  },
+  "persona:maya:6000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:maya:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:maya:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:maya:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:maya:900000:plan": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:riley:6000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:riley:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:riley:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:riley:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:riley:900000:plan": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:leo:6000:cash": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": -19484
+  },
+  "persona:leo:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:leo:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:leo:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:leo:900000:plan": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:tia:6000:cash": {
+    "code": "not_yet",
+    "variant": "payday",
+    "afterBuyMonth": null
+  },
+  "persona:tia:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:tia:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:tia:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:tia:900000:plan": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:dana:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 77710
+  },
+  "persona:dana:50000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 33710
+  },
+  "persona:dana:200000:cash": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "persona:dana:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:dana:900000:plan": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:kim:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 84000
+  },
+  "persona:kim:50000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 40000
+  },
+  "persona:kim:200000:cash": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "persona:kim:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:kim:900000:plan": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:priya:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 114000
+  },
+  "persona:priya:50000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 70000
+  },
+  "persona:priya:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:priya:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:priya:900000:plan": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:jordan:6000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:jordan:50000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:jordan:200000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:jordan:900000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:jordan:900000:plan": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p1:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 2000
+  },
+  "persona:audit-p1:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p1:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p1:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p1:900000:plan": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2:6000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2:200000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2:900000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2:900000:plan": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2-rich:6000:cash": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": -100000
+  },
+  "persona:audit-p2-rich:50000:cash": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": -100000
+  },
+  "persona:audit-p2-rich:200000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2-rich:900000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2-rich:900000:plan": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p3:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 54000
+  },
+  "persona:audit-p3:50000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 10000
+  },
+  "persona:audit-p3:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p3:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p3:900000:plan": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p4:6000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p4:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p4:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p4:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p4:900000:plan": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p4-overdrawn:6000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p4-overdrawn:50000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p4-overdrawn:200000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p4-overdrawn:900000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p4-overdrawn:900000:plan": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p5:6000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p5:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p5:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p5:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p5:900000:plan": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p6:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 69000
+  },
+  "persona:audit-p6:50000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 25000
+  },
+  "persona:audit-p6:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p6:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p6:900000:plan": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p6-lines:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 69000
+  },
+  "persona:audit-p6-lines:50000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 25000
+  },
+  "persona:audit-p6-lines:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p6-lines:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p6-lines:900000:plan": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p7:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 74000
+  },
+  "persona:audit-p7:50000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 30000
+  },
+  "persona:audit-p7:200000:cash": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "persona:audit-p7:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p7:900000:plan": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p8:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 74000
+  },
+  "persona:audit-p8:50000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 30000
+  },
+  "persona:audit-p8:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p8:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p8:900000:plan": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p9:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 14000
+  },
+  "persona:audit-p9:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p9:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p9:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p9:900000:plan": {
+    "code": "monthly_short",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p10:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 54000
+  },
+  "persona:audit-p10:50000:cash": {
+    "code": "not_yet",
+    "variant": "payday",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p10:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p10:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "persona:audit-p10:900000:plan": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:0": {
+    "code": "not_yet",
+    "variant": "payday",
+    "afterBuyMonth": null
+  },
+  "gen:1": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:2": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:3": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:4": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:5": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:6": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:7": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:8": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:9": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:10": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:11": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:12": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:13": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:14": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:15": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:16": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:17": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:18": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:19": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:20": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:21": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:22": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:23": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:24": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:25": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:26": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:27": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:28": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:29": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:30": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:31": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:32": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:33": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:34": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:35": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:36": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:37": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:38": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:39": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:40": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:41": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:42": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:43": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:44": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:45": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:46": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:47": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:48": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:49": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:50": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:51": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:52": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:53": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:54": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:55": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:56": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:57": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:58": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:59": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:60": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:61": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:62": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:63": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:64": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:65": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:66": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:67": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:68": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:69": {
+    "code": "not_yet",
+    "variant": "payday",
+    "afterBuyMonth": null
+  },
+  "gen:70": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:71": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:72": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:73": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:74": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:75": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:76": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:77": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:78": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:79": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:80": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:81": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:82": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:83": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:84": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:85": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:86": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:87": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:88": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:89": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:90": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:91": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:92": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:93": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:94": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:95": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:96": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:97": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:98": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:99": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:100": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:101": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:102": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:103": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:104": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:105": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:106": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:107": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:108": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:109": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:110": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:111": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:112": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:113": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:114": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:115": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:116": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:117": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:118": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:119": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:120": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:121": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:122": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:123": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:124": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:125": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:126": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:127": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:128": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:129": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:130": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:131": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:132": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:133": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:134": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:135": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:136": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:137": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:138": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:139": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:140": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:141": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:142": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:143": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:144": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:145": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:146": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:147": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:148": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:149": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:150": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:151": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:152": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:153": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:154": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:155": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:156": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:157": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:158": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:159": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:160": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:161": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:162": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:163": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:164": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:165": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:166": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:167": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:168": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:169": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:170": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:171": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:172": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:173": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:174": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:175": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:176": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 345497
+  },
+  "gen:177": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:178": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:179": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:180": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:181": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:182": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:183": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:184": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:185": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:186": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:187": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:188": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:189": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:190": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:191": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:192": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:193": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:194": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:195": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:196": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:197": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
+  },
+  "gen:198": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:199": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  }
+}
