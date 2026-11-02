@@ -1063,7 +1063,7 @@ Plans:
   7. Compliance gate: CMP-F01, F02, F03, F07, F08 and F11 merged; purge job deployed after the Supabase preflight; the owner signs off every changed answer string.
   8. Theme M: the owner-approved right-answer table (about 70 cases: the first 50 plus the Variant C cases from Themes N and O) is committed as tests before the first Theme A engine change, and every case passes; a separate plain calculator agrees with the engine on 1,000 random cases per change and 20,000 nightly; at least 90% of Stryker's breaking changes in `src/engine/decide/` are caught; after reading-test round 1 on Variant C, its findings are fixed and the screens are signed and frozen, with a v1.1 list for later ideas.
   9. Theme N: the 05.3 engine and plumbing changes are on main with their tests; Maestro flows for Back, saving offline and Record as bought are green; Variant C's inputs (running-cost lines, closing %, cash and installments from one input, what it replaces, purchase date, save-for-it ready date) exist as engine types with tests; a release check fails if any account outside the tester list has `profiles.decide_v3` on; the first shadow run on testers' records has been reviewed by the owner. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1: no account sees the 05.2 setup page or engine readout, and `profiles.decide_v3` is on only for accounts on the repo tester list (05.4 D-29, D-30), and stays off until 08.1; shadow runs use the separate server-only `profiles.decide_shadow` flag (05.4-30).
-**Plans:** 7/46 plans executed
+**Plans:** 12/46 plans executed
 
 Plans:
 **Wave 1**
@@ -1076,11 +1076,11 @@ Plans:
 - [x] 05.4-06-PLAN.md — Harvest the rest of the shared plumbing (Class B, part B): the bought write, cooling-off, go-ahead and outcome edits, undo and refresh fixes, failed-writes labels, reopen-many.
 - [x] 05.4-07-PLAN.md — Get the 16 audit personas into the repo: the orchestrator exports them from the audit artifact, then they are encoded as invented-person fixtures with an A-id map.
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 05.4-08-PLAN.md — Record the Stryker baseline, retire the prototype-made goldens as an oracle, and rebuild the reviewed diff as "previous v3 answer vs new v3 answer" with a D-14 page per fix.
-- [ ] 05.4-09-PLAN.md — Build the independent cross-check calculator skeleton with its independence guards, the random-fixture comparison, the pending-rule ratchet, the CI job at 1,000 cases and the nightly workflow at 20,000.
-- [ ] 05.4-10-PLAN.md — Author the first four topic groups of the right-answer table (overdraft, safety net, debts, quick estimates) plus the six household to_do cases, as drafts ready for owner approval in 05.4-12.
-- [ ] 05.4-11-PLAN.md — Author the second four topic groups (borrowing incl.
-- [ ] 05.4-29-PLAN.md — Write the first batch of 05.4 migrations (answer codes, overdraft rate, debt due day with one apply_patches re-issue, interim safety-net columns) with pgTAP tests and matching src/db and export-manifest updates.
+- [x] 05.4-08-PLAN.md — Record the Stryker baseline, retire the prototype-made goldens as an oracle, and rebuild the reviewed diff as "previous v3 answer vs new v3 answer" with a D-14 page per fix.
+- [x] 05.4-09-PLAN.md — Build the independent cross-check calculator skeleton with its independence guards, the random-fixture comparison, the pending-rule ratchet, the CI job at 1,000 cases and the nightly workflow at 20,000.
+- [x] 05.4-10-PLAN.md — Author the first four topic groups of the right-answer table (overdraft, safety net, debts, quick estimates) plus the six household to_do cases, as drafts ready for owner approval in 05.4-12.
+- [x] 05.4-11-PLAN.md — Author the second four topic groups (borrowing incl.
+- [x] 05.4-29-PLAN.md — Write the first batch of 05.4 migrations (answer codes, overdraft rate, debt due day with one apply_patches re-issue, interim safety-net columns) with pgTAP tests and matching src/db and export-manifest updates.
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 05.4-12-PLAN.md — Get owner approval for the first four topic groups, then commit them as tests with knownRed entries.
 - [ ] 05.4-13-PLAN.md — Split the v3 pipeline into prepare once / judge per key press, with an equality property proving no answer changes.
@@ -1336,7 +1336,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
-| 05.4 Decide safety patch | 7/46 | In Progress|  |
+| 05.4 Decide safety patch | 12/46 | In Progress|  |
 | 05.5 One shared money model | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
