@@ -1,6 +1,7 @@
 /**
  * D-31 tier-word guard (05.4-16, FIN-25 / ENG-10 / CMP-F12). "No Rough / Fair / Firm" applies to the v3 engine and anything
- * new: no source file outside LEGACY_ALLOWLIST may name ConfidenceLevel or carry a quoted 'rough' | 'fair' | 'firm'.
+ * new: no source file outside LEGACY_ALLOWLIST may name the old level type (Confidence + Level) or carry a quoted
+ * 'rough' | 'fair' | 'firm'. The type name is assembled below, so this guard does not match itself.
  * The allowlist is the old engine and the old screens, dated, and can only shrink: an entry that no longer matches fails,
  * so 05.5 (old-engine removal) empties it file by file. The v3 copy carries no Rough / Fair / Firm and no bare "sure".
  */
@@ -11,8 +12,11 @@ import en from '../../../../i18n/locales/en';
 const ROOT = resolve(__dirname, '../../../../..');
 const SRC = join(ROOT, 'src');
 
+/** The old level type's name, spelled in two parts so a plain grep for it over v3 finds nothing (acceptance). */
+const LEVEL_TYPE = ['Confidence', 'Level'].join('');
+
 /** A tier word in source: the old level type's name, or a level as a quoted string. */
-export const TIER_WORD = /ConfidenceLevel|['"](rough|fair|firm)['"]/;
+export const TIER_WORD = new RegExp(`${LEVEL_TYPE}|['"](rough|fair|firm)['"]`);
 
 export const LEGACY_ALLOWLIST = {
   dated: '2026-11-02',
@@ -87,7 +91,7 @@ describe('D-31 tier-word guard', () => {
   const allowed = new Set<string>(LEGACY_ALLOWLIST.files);
   const hits = tierWordHits();
 
-  it('D-31 no ConfidenceLevel or quoted rough / fair / firm outside the dated allowlist', () => {
+  it('D-31 no old level type or quoted rough / fair / firm outside the dated allowlist', () => {
     expect(hits.filter((h) => !allowed.has(h.file))).toEqual([]);
   });
 
@@ -107,7 +111,7 @@ describe('D-31 tier-word guard', () => {
 
   it('D-31 a probe file with a quoted tier word is caught', () => {
     expect(TIER_WORD.test("type X = 'fair'")).toBe(true);
-    expect(TIER_WORD.test('import type { ConfidenceLevel } from "../types"')).toBe(true);
+    expect(TIER_WORD.test(`import type { ${LEVEL_TYPE} } from '../types'`)).toBe(true);
     expect(TIER_WORD.test('// rough figures were renamed quick estimates')).toBe(false);
     expect(TIER_WORD.test("const s = 'roughly'")).toBe(false);
   });
