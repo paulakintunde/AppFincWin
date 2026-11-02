@@ -4,12 +4,13 @@
 import React from 'react';
 import { Redirect, type Href } from 'expo-router';
 import { DecideSettingsScreen } from '@/features/decide/settings/DecideSettingsScreen';
+import { DECIDE_SETUP_VISIBLE } from '@/features/decide/availability';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 
 const DECIDE_TAB = '/decide' as Href;
 
 export function SettingsRoute(): React.JSX.Element {
   const { v3 } = useDecideAccess();
-  if (!v3) return <Redirect href={DECIDE_TAB} />;
+  if (!(DECIDE_SETUP_VISIBLE && v3)) return <Redirect href={DECIDE_TAB} />;
   return <DecideSettingsScreen />;
 }

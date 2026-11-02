@@ -240,10 +240,10 @@ describe('states', () => {
 });
 
 describe('the Decide tab', () => {
-  it('shows the setup page for a switch-on account', async () => {
+  it('05.4 BO-06 shows Coming soon even for a switch-on account', async () => {
     await mount(<DecideRoute />);
-    expect(screen.getByText('WHAT DECIDE RECEIVES')).toBeTruthy();
-    expect(screen.queryByText('A better Decide is on its way')).toBeNull();
+    expect(screen.getByText('A better Decide is on its way')).toBeTruthy();
+    expect(screen.queryByText('WHAT DECIDE RECEIVES')).toBeNull();
   });
 
   it('shows Coming soon for everyone else', async () => {

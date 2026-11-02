@@ -14,6 +14,12 @@ export const DECIDE_OPEN: boolean = false;
  */
 export const DECIDE_V3: boolean = false;
 
+/**
+ * 05.4 BO-06: the 05.2 setup page, engine readout and Decide settings are hidden from every account until 08.1.
+ * profiles.decide_v3 only drives shadow runs (BO-08) until then.
+ */
+export const DECIDE_SETUP_VISIBLE: boolean = false;
+
 /** The one place the engine choice is read (UP §8: two engines must never mix). */
 export function decideEngine(flags?: { readonly decideV3?: boolean }): 'v2' | 'v3' {
   return DECIDE_V3 || flags?.decideV3 === true ? 'v3' : 'v2';

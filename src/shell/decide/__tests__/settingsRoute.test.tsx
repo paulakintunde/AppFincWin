@@ -9,6 +9,8 @@ jest.mock('expo-router', () => {
   const { Text: T } = jest.requireActual('react-native');
   return { Redirect: ({ href }: { href: string }) => <T>{`redirect:${href}`}</T> };
 });
+// The body is tested with the build gate open; the real (closed) gate is proved in decideHiddenForEveryone.test.tsx.
+jest.mock('@/features/decide/availability', () => ({ DECIDE_SETUP_VISIBLE: true }));
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockV3 }) }));
 jest.mock('@/features/decide/settings/DecideSettingsScreen', () => {
   const { Text: T } = jest.requireActual('react-native');
