@@ -212,7 +212,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DEC-27**: Engine projects the price invested instead, the payments invested instead, investing growth lost to a pause, and a net-worth path, at 0% and up to three user-entered rates, never a supplied rate (04 D-51, D-52)
 - [x] **DEC-28**: Engine applies a purchase-linked income loss to the verdict, and shows a purchase-linked income gain only in a separate assessment with payback months (04 D-53)
 - [x] **DEC-29**: Engine re-runs the setbacks with the new plan and reports runway lost and which setbacks the new payments cannot survive (04 D-54)
-- [x] **DEC-30**: Engine provides running-cost prompt categories by item type with no amounts, and treats user-entered loss of value and holding fees as non-cash figures (04 D-55, D-63)
+- [x] **DEC-30**: Engine provides running-cost prompt categories by item type with no amounts, and treats user-entered loss of value and holding fees as non-cash figures (04 D-55, D-63) — **Variant C (fix plan Theme O, ARC-26):** pre-filled running-cost amounts replace blank prompts (08.1); final wording in 05.5
 - [x] **DEC-31**: Engine computes the average gap between past estimates and actuals once three decisions have actuals (04 D-56)
 - [x] **DEC-32**: Engine payment maths pass published reference amortisation tables, and every behaviour threshold carries a citation or is labelled a FincWin line (04 D-57, D-58)
 - [x] **DEC-33**: Engine builds the month from paid Record lines only, nets refunds, skips transfers, and smooths confirmed non-monthly bills and weekly/fortnightly pay to monthly equivalents (04 D-23, D-25..D-28, D-60)
@@ -229,7 +229,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [ ] **DCU-04**: User can abandon an open check
 - [ ] **DCU-05**: User sees four alternatives — as planned, cheaper, wait and save, skip entirely — each with its outcome
 - [ ] **DCU-06**: An alternative is suppressed and labelled when the money it assumes is not genuinely spare
-- [ ] **DCU-07**: User can record a decision and later compare what they estimated against what actually happened
+- [ ] **DCU-07**: User can record a decision and later compare what they estimated against what actually happened — **Variant C (fix plan Theme O, ARC-26):** in version 1 as the decision record and its follow-up (UX-20, 08.1)
 - [ ] **DCU-08**: Date selection refuses past dates and offers quick offsets
 - [x] **DCU-09**: No verdict copy uses "advice", "recommendation" or "you should"
 - [ ] **DCU-10**: A new user gets a first verdict in their first session, before any months are logged. It is labelled as a first read, says what it rests on, and is superseded by imported or logged history. Settled 2026-09-26 (04-CONTEXT D-11): rough figures give a cash-level first read only, computed by DEC-16; the full verdict needs one real full month
@@ -242,7 +242,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DCU-17**: User can enter promotional rates with deferred interest, a variable-rate flag, and instalment late fees in the full check (05 D-30, D-42)
 - [x] **DCU-18**: User sees what the price or payments would be worth invested instead, at 0% and up to three rates they enter, labelled as projections (05 D-31)
 - [ ] **DCU-19**: User can record how a purchase changes their income and see payback and runway lost (05 D-32)
-- [x] **DCU-20**: User is prompted for running costs by item type with blank amounts, and sees their past estimate gap (05 D-33, D-36)
+- [x] **DCU-20**: User is prompted for running costs by item type with blank amounts, and sees their past estimate gap (05 D-33, D-36) — **Variant C (fix plan Theme O, ARC-26):** running costs gain pre-filled amounts (08.1); final wording in 05.5
 - [ ] **DCU-21**: Wait and save creates a savings goal with progress (05 D-34)
 - [ ] **DCU-22**: User can set a 48-hour cooling-off reminder on a purchase that needs spreading (05 D-35)
 - [ ] **DCU-23**: Amounts in other currencies are converted at the stamped rate for past lines and the latest rate for balances, and the verdict says so (05 D-37, D-39)
@@ -256,40 +256,48 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DCU-31**: User can set an instalment plan's frequency (weekly, every 2 weeks, monthly or quarterly, up to 500 payments) and sees the true yearly rate implied by a plan with no quoted rate (05 D-89, D-90)
 - [ ] **DCU-32**: A check counts at most US$100,000 (converted at the latest stored rate) on a card, never counts property or cash-like purchases on a card, and treats tax and tuition by region with a fee note (05 D-91, D-92)
 - [ ] **DCU-33**: The check flow keeps the verdict within 50 ms of a keystroke and the details within 300 ms after typing stops on the test device (05 D-88)
-- [ ] **DCU-34**: Decide home leads with one dark card stating the month left after spending, debts and saving, with the quick check inside it, the lists one quiet row each, and problems gathered in one notice row with a fixing action per problem (05 D-95..D-99)
-- [ ] **DCU-35**: Decide home names its hero Net free cash flow, states the basis it used in the line under it (worst month, average month, tightest figures or rough figures, each "after spending, debts and everything set aside"), shows In and Out so that In minus Out equals the hero, and Month details lists the parts that add up to it (05 D-100)
+- [ ] **DCU-34**: Decide home leads with one dark card stating the month left after spending, debts and saving, with the quick check inside it, the lists one quiet row each, and problems gathered in one notice row with a fixing action per problem (05 D-95..D-99) — **Variant C (fix plan Theme O, ARC-26):** to be retired in 05.5, replaced by the Variant C screens in 08.1
+- [ ] **DCU-35**: Decide home names its hero Net free cash flow, states the basis it used in the line under it (worst month, average month, tightest figures or rough figures, each "after spending, debts and everything set aside"), shows In and Out so that In minus Out equals the hero, and Month details lists the parts that add up to it (05 D-100) — **Variant C (fix plan Theme O, ARC-26):** to be retired in 05.5, replaced by the Variant C screens in 08.1
 - [ ] **DCU-36**: User can keep named pots (a name, a target and a month) whose monthly set-aside comes off net free cash flow and is protected from every check, add, edit, mark done and delete them with Undo, offline, and see Wait-and-save goals as one kind of pot (05 D-101)
 - [ ] **DCU-37**: A purchase verdict shows the total cost over the check's years (price, interest and fees, running costs, less expected resale where loss of value is set) and, only when the user has typed a rate, what the same money would have become invested instead, labelled a projection (05 D-102, D-104)
 - [ ] **DCU-38**: User can set a housing line (default 28% of money in) that counts housing-category spending and payments on loans marked "This is for housing", and a property check that pushes housing over it gets a warning like the debt-to-income line (05 D-103)
-- [ ] **DCU-39**: Decide words a month figure as "{amount} free" or "{amount} overspent" (amount absolute, no minus, overspent in the danger tint) everywhere it appears, and the home card judges "This month (expected)" by default - the current month as it is expected to end, with pay and bills still due counted - while Month details lets the user judge on This month, Worst or Average (a missing rate falls back to the Worst figure with a stated reason); checks keep their own basis (05 D-106)
-- [ ] **DCU-40**: One Judge-on choice - This month (the default for everyone), Worst month or Average month, picked from a dropdown on the Decide card and the same choice in Month details - drives the card and every check, with 'month' a first-class basis in the engine; the verdict shows the outcome on each basis side by side; the FAB is back on Decide home, and switching the choice never marks checks changed (05 D-107)
+- [ ] **DCU-39**: Decide words a month figure as "{amount} free" or "{amount} overspent" (amount absolute, no minus, overspent in the danger tint) everywhere it appears, and the home card judges "This month (expected)" by default - the current month as it is expected to end, with pay and bills still due counted - while Month details lets the user judge on This month, Worst or Average (a missing rate falls back to the Worst figure with a stated reason); checks keep their own basis (05 D-106) — **Variant C (fix plan Theme O, ARC-26):** to be retired in 05.5, replaced by the Variant C screens in 08.1
+- [ ] **DCU-40**: One Judge-on choice - This month (the default for everyone), Worst month or Average month, picked from a dropdown on the Decide card and the same choice in Month details - drives the card and every check, with 'month' a first-class basis in the engine; the verdict shows the outcome on each basis side by side; the FAB is back on Decide home, and switching the choice never marks checks changed (05 D-107) — **Variant C (fix plan Theme O, ARC-26):** to be retired in 05.5, replaced by the Variant C screens in 08.1
 
 ### Decide — Data and setup (Phase 05.2)
 
-- [ ] **DSU-01**: A per-account Decide v3 switch (`profiles.decide_v3`, server-written only) is read in one place, `decideEngine()`; every 05.2 surface stays hidden for accounts without it; DECIDE_OPEN and DECIDE_V3 stay false (05.2 D-01, D-02)
-- [ ] **DSU-02**: Every 05.2 migration is additive, squawk-clean and proven by pgTAP RLS, grant, guard and cascade tests (05.2 D-14)
-- [ ] **DSU-03**: The income questions are one shared component (`IncomeProfileSteps`): how are you paid, regular pay, season, counting method with follow-ups, other income; the six setup pay types map to the engine with no engine change (05.2 D-15..D-17)
-- [ ] **DSU-04**: The Decide setup stepper: Welcome, sections and rail, needed and optional steps, Skip / Needed, Finish later, rough marking and Summary; the minimum setup is 6 needed screens (05.2 D-03)
-- [ ] **DSU-05**: Regular payments step: candidates computed on device, Regular / Not regular / Edit, dismissals stored, series attributes stored, only confirmed series count
-- [ ] **DSU-06**: Loans (`pays_in_full`) and Regular saving (Fixed / Flexible, saving buckets, the over-budget line with Lower / Raise); Decide counts the larger of bucket total and regular saving, never both (05.2 D-22, D-23)
-- [ ] **DSU-07**: Everyday spending override with its date, and unusual-month marks
-- [ ] **DSU-08**: What each account is for, stored on the account and asked in setup and on the account edit screen; mixed-account envelope placement and extra set-aside; suggestions count only once confirmed (05.2 D-03..D-05)
-- [ ] **DSU-09**: Emergency fund step and sheet: an amount or an account, asked once about the account’s use (05.2 D-04)
-- [ ] **DSU-10**: Unspent money step and sheet: the worked sum, confirm, own figure, drifted, stale and clear, with Undo
-- [ ] **DSU-11**: Envelopes step and the PotSheet “Held in” row
-- [ ] **DSU-12**: Answers section: shared costs, detail level and reminders
-- [ ] **DSU-13**: Decide settings: every answer editable alone, effect lines, and Reset that clears setup answers only
-- [ ] **DSU-14**: Test-account setup page with a plain readout of what the engine receives (05.2 D-18, D-19)
-- [ ] **DSU-15**: Activity: “How are you paid?” card, income tags, and the once-only new-payer question that tags earlier payments in one write with one Undo
-- [ ] **DSU-16**: Refund link: picker, tags on both rows, several refunds per purchase, over-refund shown; balances unchanged (05.2 D-06..D-10)
-- [ ] **DSU-17**: Engine refund re-dating with five golden cases, shadow and I28 re-run, and owner approval of every new fit (05.2 D-11)
-- [ ] **DSU-18**: Pure `month/refine.ts` with the merged life-change prompts, `refine_last_at` / `refine_snooze_until` storage, and a suggestion never smaller than the owner-approved noise rule (05.2 D-12, D-20, D-21)
-- [ ] **DSU-19**: In-check answers (pay arrival, unexplained money, expected income, held-back bridge, can-you-cover-low-months) stored with a write-queue mutation, Undo, offline support and mapping into the engine (05.2 D-13)
-- [ ] **DSU-20**: `buildV3Inputs` maps every stored answer; no engine-input stub remains
-- [ ] **DSU-21**: Every new piece of data has add, edit, delete and undo through the serial write queue, works offline, bumps `version` and uses soft deletes
-- [ ] **DSU-22**: Every new table and column is covered by account deletion (cascade, pgTAP) and by an export manifest with a coverage test
-- [ ] **DSU-23**: One human-gated production step: owner approval, `npm run supabase:preflight`, `npm run supabase:db:push`, then the owner’s flag (05.2 D-14)
-- [ ] **DSU-24**: Copy, analytics, accessibility and fit gates for every new surface: declarative copy guard, four `decide_setup_*` events, 320/402 dp at font scale 1.0/2.0, TalkBack
+- [x] **DSU-01**: A per-account Decide v3 switch (`profiles.decide_v3`, server-written only) is read in one place, `decideEngine()`; every 05.2 surface stays hidden for accounts without it; DECIDE_OPEN and DECIDE_V3 stay false (05.2 D-01, D-02) — **Tightened 2026-11-02 (fix plan BO-06, BO-08):** from 05.4, no account sees the 05.2 setup page or readout until the Variant C screens are built in 08.1
+- [x] **DSU-02**: Every 05.2 migration is additive, squawk-clean and proven by pgTAP RLS, grant, guard and cascade tests (05.2 D-14)
+- [x] **DSU-03**: The income questions are one shared component (`IncomeProfileSteps`): how are you paid, regular pay, season, counting method with follow-ups, other income; the six setup pay types map to the engine with no engine change (05.2 D-15..D-17)
+- [x] **DSU-04**: The Decide setup stepper: Welcome, sections and rail, needed and optional steps, Skip / Needed, Finish later, rough marking and Summary; the minimum setup is 6 needed screens (05.2 D-03) — **Variant C (fix plan Theme O, ARC-26):** setup shrinks to 4 steps (05.5 and 08.1); the 6-step stepper stays as built until then
+- [x] **DSU-05**: Regular payments step: candidates computed on device, Regular / Not regular / Edit, dismissals stored, series attributes stored, only confirmed series count
+- [x] **DSU-06**: Loans (`pays_in_full`) and Regular saving (Fixed / Flexible, saving buckets, the over-budget line with Lower / Raise); Decide counts the larger of bucket total and regular saving, never both (05.2 D-22, D-23)
+- [x] **DSU-07**: Everyday spending override with its date, and unusual-month marks
+- [x] **DSU-08**: What each account is for, stored on the account and asked in setup and on the account edit screen; mixed-account envelope placement and extra set-aside; suggestions count only once confirmed (05.2 D-03..D-05)
+- [x] **DSU-09**: Emergency fund step and sheet: an amount or an account, asked once about the account’s use (05.2 D-04)
+- [x] **DSU-10**: Unspent money step and sheet: the worked sum, confirm, own figure, drifted, stale and clear, with Undo
+- [x] **DSU-11**: Envelopes step and the PotSheet “Held in” row
+- [x] **DSU-12**: Answers section: shared costs, detail level and reminders
+- [x] **DSU-13**: Decide settings: every answer editable alone, effect lines, and Reset that clears setup answers only
+- [x] **DSU-14**: Test-account setup page with a plain readout of what the engine receives (05.2 D-18, D-19) — hidden from every account from 05.4 until 08.1 (BO-06, BO-08)
+- [x] **DSU-15**: Activity: “How are you paid?” card, income tags, and the once-only new-payer question that tags earlier payments in one write with one Undo
+- [x] **DSU-16**: Refund link: picker, tags on both rows, several refunds per purchase, over-refund shown; balances unchanged (05.2 D-06..D-10)
+- [x] **DSU-17**: Engine refund re-dating with five golden cases, shadow and I28 re-run, and owner approval of every new fit (05.2 D-11)
+- [x] **DSU-18**: Pure `month/refine.ts` with the merged life-change prompts, `refine_last_at` / `refine_snooze_until` storage, and a suggestion never smaller than the owner-approved noise rule (05.2 D-12, D-20, D-21)
+- [x] **DSU-19**: In-check answers (pay arrival, unexplained money, expected income, held-back bridge, can-you-cover-low-months) stored with a write-queue mutation, Undo, offline support and mapping into the engine (05.2 D-13)
+- [x] **DSU-20**: `buildV3Inputs` maps every stored answer; no engine-input stub remains
+- [x] **DSU-21**: Every new piece of data has add, edit, delete and undo through the serial write queue, works offline, bumps `version` and uses soft deletes
+- [x] **DSU-22**: Every new table and column is covered by account deletion (cascade, pgTAP) and by an export manifest with a coverage test
+- [x] **DSU-23**: One human-gated production step: owner approval, `npm run supabase:preflight`, `npm run supabase:db:push`, then the owner’s flag (05.2 D-14)
+- [x] **DSU-24**: Copy, analytics, accessibility and fit gates for every new surface: declarative copy guard, four `decide_setup_*` events, 320/402 dp at font scale 1.0/2.0, TalkBack
+
+### Decide — Fix plan (Phases 05.4, 05.5, 08.1, 08.2)
+
+The Decide fix plan's IDs (FIN, ENG, APP, UX, CMP-F, ARC, QA, BO, VC) are tracked in the appendix of `.planning/research/DECIDE-FIX-PLAN.md`, not repeated here. Each phase's **Requirements** line in ROADMAP.md names the IDs it delivers.
+
+- Design: Variant C, chosen by the owner on 2026-11-01 (A and B retired). Reading-test round 1 runs on Variant C alone, then the screens are frozen (QA-01).
+- Visibility: Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08). From 08.1 only named testers see it, behind the per-account switch and the BO-06 release check; the public gets it after 08.2.
+- ARC-26 (05.5) makes the final requirement changes against the frozen screens; the Variant C notes above mark what it will change.
 
 ### Grow
 
@@ -668,30 +676,30 @@ Populated during roadmap creation.
 | DCU-39 | Phase 5 - Decide UI | Pending |
 | DCU-40 | Phase 5 - Decide UI | Pending |
 | MON-15 | Phase 5 - Decide UI | Pending |
-| DSU-01 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-02 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-03 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-04 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-05 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-06 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-07 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-08 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-09 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-10 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-11 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-12 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-13 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-14 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-15 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-16 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-17 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-18 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-19 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-20 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-21 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-22 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-23 | Phase 05.2 - Decide data and setup | Pending |
-| DSU-24 | Phase 05.2 - Decide data and setup | Pending |
+| DSU-01 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-02 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-03 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-04 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-05 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-06 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-07 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-08 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-09 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-10 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-11 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-12 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-13 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-14 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-15 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-16 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-17 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-18 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-19 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-20 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-21 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-22 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-23 | Phase 05.2 - Decide data and setup | Complete |
+| DSU-24 | Phase 05.2 - Decide data and setup | Complete |
 | GRW-01 | Phase 6 - Grow | Pending |
 | GRW-02 | Phase 6 - Grow | Pending |
 | GRW-03 | Phase 6 - Grow | Pending |
@@ -769,13 +777,15 @@ Populated during roadmap creation.
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
 
 **Coverage:**
-- v1 requirements: 292 total (100 ticked)
-- Mapped to phases: 258
+- v1 requirements: 316 total (188 ticked)
+- Mapped to phases: 316
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
-*Last updated: 2026-10-11 — Phase 2.1 closed: IMP-01..IMP-05 ticked on 02.1-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough and privacy-policy publication pending, 02.1-HUMAN-UAT.md); coverage 237/237 (100 ticked).*
+*Last updated: 2026-11-02 — Phase 05.2 closed: DSU-01..DSU-24 ticked on 05.2-VERIFICATION.md evidence (passed 2026-10-29, PR #86). Variant C notes added for ARC-26 (DSU-04, DCU-07, DCU-20, DEC-30, DCU-34, 35, 39, 40); DSU-01 and DSU-14 tightened by fix plan BO-06 and BO-08; fix-plan IDs tracked in DECIDE-FIX-PLAN.md (quick task 261101-mxs). Coverage recounted.*
+
+*2026-10-11 — Phase 2.1 closed: IMP-01..IMP-05 ticked on 02.1-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough and privacy-policy publication pending, 02.1-HUMAN-UAT.md); coverage 237/237 (100 ticked).*
 
 *2026-10-10 — REC-28, REC-29 and REC-30 (entry sheet: compact amount, Add account in the picker, bulk Add to list) added to Phase 2.3; coverage 237/237 (95 ticked).*
 

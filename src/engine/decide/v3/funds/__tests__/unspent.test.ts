@@ -213,6 +213,17 @@ describe('rollForward', () => {
     expect(roll({ lines, e: mu(0) }).value).toBe(240000);
   });
 
+  test('refunds before the anchor never take the anchor-month everyday base below zero', () => {
+    // A refund on or before the anchor day with no everyday spending would make the base negative. It is held at 0, so the
+    // held-back Erest matches a month with nothing logged. Pinned here because the I40 property only reaches it by chance.
+    const later = line({ id: 'buy', date: '2026-10-10', amount: mu(150000) });
+    const ref = line({ id: 'ref', date: '2026-10-02', role: 'refund', amount: mu(50000) });
+    const withRefund = roll({ lines: [ref, later], e: mu(137500) });
+    const without = roll({ lines: [later], e: mu(137500) });
+    expect(withRefund.breakdown.everyday).toBe(without.breakdown.everyday);
+    expect(withRefund.breakdown.everyday).toBeGreaterThan(0);
+  });
+
   test('pending lines and lines after asOf are ignored', () => {
     const r = roll({ asOf: '2026-10-20', lines: [line({ id: 'p', status: 'pending' }), line({ id: 'f', date: '2026-10-25' })] });
     expect(r.value).toBe(240000);

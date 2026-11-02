@@ -21,16 +21,16 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content (completed 2026-10-14)
 - [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
 - [x] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3) (completed 2026-10-16)
-- [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged with Decide hidden behind "Coming soon" until 05.1-05.3)
+- [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged with Decide hidden behind "Coming soon" until the Variant C rebuild: named testers in 08.1, the public after 08.2)
 - [x] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine (50/50 plans: 32 on 2026-10-26, gap closure 05.1-33..50 on 2026-10-27; owner shadow sign-off and re-verification 6/6 passed 2026-10-27) (completed 2026-10-27)
-- [ ] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations
+- [x] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations (completed 2026-10-29)
 - [ ] **Phase 05.3: Decide screens v3** (INSERTED) - STOPPED 2026-11-01 (Theme N): the Calm Ledger screens; branch parked, not merged; parts harvested in 05.4
 - [ ] **Phase 05.4: Decide safety patch** (INSERTED) - Decide never says "Fits" when a careful person would say "careful": safety net, overdraft, debt minimums, tax, after-purchase figure; plain confidence sentence replaces Rough/Fair/Firm
 - [ ] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
-- [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Decide reads real goals, debts and household data; full cost with running costs; design: Variant C proposed, confirmed after reading-test round 1; short setup; public switch-on last
+- [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
 - [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
 - [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
@@ -1061,8 +1061,8 @@ Plans:
   5. The 16 audit personas are golden tests. Every changed answer is listed in a reviewed diff and approved by the owner.
   6. Decide opens offline on the 1st of the month with an honest "Records up to" date, and Android speed is measured on the Pixel 6.
   7. Compliance gate: CMP-F01, F02, F03, F07, F08 and F11 merged; purge job deployed after the Supabase preflight; the owner signs off every changed answer string.
-  8. Theme M: the owner-approved right-answer table (about 50 cases) is committed as tests before the first Theme A engine change, and every case passes; a separate plain calculator agrees with the engine on 1,000 random cases per change and 20,000 nightly; at least 90% of Stryker's breaking changes in `src/engine/decide/` are caught; after reading-test round 1 the chosen screens are signed and frozen, with a v1.1 list for later ideas.
-  9. Theme N: the 05.3 engine and plumbing changes are on main with their tests; Maestro flows for Back, saving offline and Record as bought are green; Variant C's inputs (running-cost lines, closing %, cash and installments from one input, what it replaces, purchase date, save-for-it ready date) exist as engine types with tests; a release check fails if any account outside the tester list has `profiles.decide_v3` on; the first shadow run on testers' records has been reviewed by the owner. Decide stays off for everyone.
+  8. Theme M: the owner-approved right-answer table (about 70 cases: the first 50 plus the Variant C cases from Themes N and O) is committed as tests before the first Theme A engine change, and every case passes; a separate plain calculator agrees with the engine on 1,000 random cases per change and 20,000 nightly; at least 90% of Stryker's breaking changes in `src/engine/decide/` are caught; after reading-test round 1 on Variant C, its findings are fixed and the screens are signed and frozen, with a v1.1 list for later ideas.
+  9. Theme N: the 05.3 engine and plumbing changes are on main with their tests; Maestro flows for Back, saving offline and Record as bought are green; Variant C's inputs (running-cost lines, closing %, cash and installments from one input, what it replaces, purchase date, save-for-it ready date) exist as engine types with tests; a release check fails if any account outside the tester list has `profiles.decide_v3` on; the first shadow run on testers' records has been reviewed by the owner. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1: no account sees the 05.2 setup page or engine readout, and `profiles.decide_v3` is on only for accounts on the repo tester list (05.4 D-29, D-30), where it drives quiet shadow runs.
 **Plans:** 0 plans
 
 Plans:
@@ -1079,8 +1079,8 @@ Plans:
   3. One recurring-bill detector and one date calendar, proven identical by a property test; one cap per category; one confidence module.
   4. Contract tests exist for the safety net, debt facts, household scope, settlements, income profile and visibility, each marked "to do" until its phase turns it on.
   5. Theme N: six connection points with one owner each are written and tested (month picture, Grow goal, safety net, Grow debt, Activity bills, household scope); the move of the safety-net, debt, savings and share columns out of `decide_settings` is planned; only one Decide remains in the app's routes.
-  5. Core Maestro flows run green on the Android emulator.
-  6. Compliance gate: retired screens deleted; the copy guard runs at sentence level and in lint.
+  6. Core Maestro flows run green on the Android emulator.
+  7. Compliance gate: retired screens deleted; the copy guard runs at sentence level and in lint.
 **Plans:** 0 plans
 
 Plans:
@@ -1136,7 +1136,7 @@ Plans:
 
 ### Phase 08.1: Decide rebuild on real data (INSERTED)
 
-**Goal:** Decide reaches 10/10 on every auditor's checklist using real goals, debts and household data, with the full cost of a purchase (tax, fees and running costs) and the design the owner confirms. Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 4, 6 (Theme L) and 8. Design: Variant C is proposed ("Decide redesign: three variants" canvas). The owner confirms it after reading-test round 1, which tests Variants A, B and C.
+**Goal:** Decide reaches 10/10 on every auditor's checklist using real goals, debts and household data, with the full cost of a purchase (tax, fees and running costs) and the Variant C screens the owner signs off at the design freeze (QA-01). Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 4, 6 (Theme L) and 8. Design: Variant C, chosen by the owner on 2026-11-01 ("Decide redesign: three variants" canvas, 40 screens); Variants A and B are retired. Reading-test round 1 runs on Variant C alone (about 5 people) to find what confuses people; its findings are fixed and the screens are then frozen (QA-01).
 **Requirements**: Fix IDs FIN-12, FIN-20..24, FIN-28, FIN-29, FIN-31; ENG-26, ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-21, APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-26 round 2, UX-38, UX-41; CMP-F12 (layout), F14, F15, F19; ARC-11 (moved setup steps removed); QA-01 (freeze held), QA-02 and QA-03 (extended); BO-09 and the screen side of the 05.4 copy and app items (Theme N); UX-20 (decision record, version 1), UX-42, UX-43, the rest of ARC-24 and ARC-25 (Theme O). Home buying (FIN-30) is its own phase after 08.2; its screens stay hidden
 **Depends on:** Phase 8
 **Success Criteria** (what must be TRUE):
@@ -1162,7 +1162,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Every fix ID in the plan is checked as done, waived by the owner, or moved with a reason.
   2. All seven auditors score 10/10, or the owner signs a waiver for each gap; a failed line opens a gap plan in 08.1 and only that auditor re-runs.
-  3. The four household personas run on both partners' accounts, and the reading test (5 + 5 people) passes.
+  3. The four household personas run on both partners' accounts, and the reading test (about 5 people) passes.
   4. At least 95% of Stryker's breaking changes across the Decide engine are caught by a test; each one not caught is recorded as harmless with a reason (QA-04).
   5. The public switch-on and the deletion of the old Decide screens and routes happen in the same release (Theme N, BO-09).
 **Plans:** 0 plans
@@ -1248,7 +1248,8 @@ Ideas parked outside the active phases. Promote one with `/gsd-review-backlog`. 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 5 → 6 → 7 → 8 → 9 → 10 → 11
+Phases execute in this order: 0 → 1 → 2 → 2.2 → 2.1 → 2.3 → 3 → 03.1 → 4* → 5 → 05.1 → 05.2 → (05.3 stopped) → 05.4 → 05.5 → 6 → 8 → 08.1 → 08.2 → 7 → 9 → 10 → 11
+The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (7) runs after 08.2. Two agreed phases are not inserted yet: home buying (FIN-30), after 08.2, and an optional 06.1 for the Activity views. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08).
 *Phase 4 has no data-layer dependency and may run concurrently with Phases 1-3 if parallel workstreams are available.
 2.2 runs before 2.1 because it changes the import commit path that 2.1's plans build on; 2.1 is replanned after 2.2 (STATE.md Blockers).
 
@@ -1262,7 +1263,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 2.2 → 2.1 → 3 → 4* → 
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
-| 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 05.1-05.3) | 2026-10-25 |
+| 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 08.1 for named testers and after 08.2 for the public) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |

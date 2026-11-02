@@ -21,11 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 05.2 — decide-data-and-setup (verification)
+**Current focus:** Phase 05.4 — decide-safety-patch (context gathered 2026-11-02, D-01..D-30; next /gsd-plan-phase 05.4). The Variant C design freeze runs alongside it.
 
 ## Current Position
 
-Phase: 05.2 (decide-data-and-setup) — COMPLETE 2026-10-29, 75/75 plans. VERIFICATION passed; code review CR/WR fixed in 69-75. Owner signed off after the round-3 Pixel re-check and TalkBack pass (05.2-WALKTHROUGH-FINDINGS.md). Migrations through 20261028001400 in production. N-05 moved to 05.3 D-15. DECIDE_V3 and DECIDE_OPEN stay false. Next: PR into main. Branch phase/05.2-decide-data-and-setup in C:/dev/fincwin-p5.
+Phase: 05.4 (decide-safety-patch) — CONTEXT GATHERED 2026-11-02 (05.4-CONTEXT.md, D-01..D-30; PR #92). Next: /gsd-plan-phase 05.4. Alongside it: Variant C mockup round 4 (VC-01), reading-test round 1 on Variant C alone (about 5 people), then the owner signs and freezes the screens (QA-01). The 05.3 handoff note is on main (05.4-HANDOFF-FROM-05.3.md). Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (fix plan BO-08); 05.4 also hides the 05.2 setup page and engine readout from every account; the `profiles.decide_v3` flag is on only for accounts on the repo tester list (account IDs: the owner's accounts plus each tester the owner names; 05.4 D-29, D-30), where it drives quiet shadow runs (BO-06, BO-08).
+Phase: 05.3 (decide-screens-v3) — STOPPED 2026-11-01 (fix plan Theme N, BO-01). Branch phase/05.3-decide-screens-v3 is pushed and parked (518 commits ahead of main), never merged. Its engine and plumbing changes are harvested in 05.4 (BO-02, BO-03); the screens are not reused (BO-09).
+Phase: 05.2 (decide-data-and-setup) — COMPLETE 2026-10-29, 75/75 plans. VERIFICATION passed; code review CR/WR fixed in 69-75. Owner signed off after the round-3 Pixel re-check and TalkBack pass (05.2-WALKTHROUGH-FINDINGS.md). Migrations through 20261028001400 in production. N-05 moved to 05.3 D-15. DECIDE_V3 and DECIDE_OPEN stay false. Merged to main as PR #86 (2026-10-29). in C:/dev/fincwin-p5.
 Phase: 05.1 (decide-engine-v3) — COMPLETE 2026-10-27
 Plan: 50 of 50 (32 original + gap closure 05.1-33..50). 05.1-VERIFICATION.md re-verification passed 6/6 success criteria, all 6 earlier gaps and H-01..H-03, M-01..M-09 closed; owner signed off the shadow review (reviewed: true, 2026-10-27; D-64 added). DECIDE_V3 and DECIDE_OPEN stay false. Deferrals: 05.2-OWNER-NOTES.md and 05.1-CONTEXT.md <deferred> (05.3). Branch phase/05.1-decide-engine-v3 in C:/dev/fincwin-p5, not pushed.
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
@@ -34,8 +36,8 @@ Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closur
 Phase 02.1 (PDF statement import): COMPLETE 2026-10-11 — 17/17 plans (PR #60 main 22f8f57, walkthrough fixes PR #62 main ef8bbfa), production at 20261011000300 with read-pdf-statement and purge-statement-uploads deployed, preview APK d7f35c19; 02.1-VERIFICATION.md 5/5 criteria, IMP-01..IMP-05 satisfied, status human_needed (1 item in 02.1-HUMAN-UAT.md: iOS walkthrough; privacy paragraph published 2026-10-11). Phase 02.2 (record-polish): COMPLETE 2026-10-10 — 35/35 plans, 02.2-VERIFICATION.md 8/8 criteria and 20/20 requirements (ACT-06..ACT-18, REC-19..REC-25), status human_needed (1 item in 02.2-HUMAN-UAT.md: iOS walkthrough, blocked on Apple enrolment). Phase 02.3 (record follow-ups): planned 2026-10-12 — 20 plans in 5 waves, checker passed (1 revision); next /gsd-execute-phase 02.3. Phase 03 (shell): planned (16 plans); check against 02.2 before executing (see Blockers). Phase 04 (decide-engine): replanned 2026-10-15 against D-23..D-58 (engine depth expansion D-41..D-58 plus the user's consistency amendments to D-41/D-42/D-24-D-44) — 22 plans in 8 waves (04-01..04-04 unchanged, 04-05..04-13 amended, new 04-14..04-22), research addendum for D-58 thresholds and D-57 reference tables appended to 04-RESEARCH.md, plan checker passed (3 iterations, 0 blockers), decision coverage 35/35 plus D-41..D-58 verified by script; judgment calls in 04-REPLAN-NOTES.md ; user decisions D-59 (cash_dip only when the purchase lowers the 90-day low; cash_tight_before_payday fact) and D-60 (confirmed weekly/fortnightly pay smoothed for CV and income averages) folded in, re-check passed (3 iterations, 0 blockers); open for user review: D-60 partial-month reading and cash_path margin definition (04-REPLAN-NOTES); EXECUTED 2026-10-16 — 22/22 plans on branch phase/04-decide-engine; 04-VERIFICATION.md 6/6 success criteria, DEC-01..DEC-37 complete; code review 14 findings (4 high, 5 medium, 5 low) all fixed with regression tests (D-64 level payment rounds up); engine/decide and engine/payoff at 100% coverage; golden parity holds.
 Phase 05 (decide-ui): planned 2026-10-15, revised 2026-10-16 for the planning-review decisions D-38..D-44, DCU-12..DCU-24 and the final Phase 4 API (D-61..D-63) — 53 plans in 10 waves, plan checker passed (3 iterations, final 0 blockers, 0 warnings); originally against 05-CONTEXT D-01..D-37 (incl. the depth expansion D-24..D-37 and the amended D-24) and the 22-plan Phase 4 `decide()` API; research with a depth addendum, pattern map, VALIDATION.md (nyquist_compliant); plan checker passed after the scope expansion (3 iterations, final 0 blockers; earlier 29-plan set had 2 iterations), decision coverage D-01..D-37 and DCU-01..DCU-11, ANL-06 verified; defaults and items for user review in 05-PLANNING-NOTES.md (OQ1/OQ3 debts table and full-month rule, OQ-A1 FX stamps, OQ-A2/A3/A9 UI-SPEC touch-ups, card minimum gap R4-W2, A19/A21). Execution unblocked once the Phase 4 PR merges; migrations ship via the human-gated `npm run supabase:db:push` in 05-25.
 Walkthrough (2026-10-10): Phase 02.2 Android device walkthrough Parts A–D approved, with exceptions fixed by quick task 261010-i7u (calendar wrap/highlight/scroll, swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check). Part E (sign-out/sign-in) is pending and needs an Expo restart. The sign-in account chooser was requested (ACC-14, Phase 02.3 with REC-26 and REC-27).
-Status: Phase complete; next /gsd-discuss-phase 05.2
-Last activity: 2026-10-27 -- Phase 05.1 complete, verification passed
+Status: Decide fix plan approved 2026-11-01 (PRs #87, #88, #89, #91); Variant C chosen 2026-11-01; 05.4 context gathered 2026-11-02 (PR #92); next /gsd-plan-phase 05.4
+Last activity: 2026-11-02 -- 05.4 context gathered (PR #92); Stage 0 housekeeping (quick task 261101-mxs)
 
 ## Performance Metrics
 
@@ -88,7 +90,7 @@ Last activity: 2026-10-27 -- Phase 05.1 complete, verification passed
 - Phase 05.3 inserted after Phase 05.2: Decide screens v3
 - Phase 05.4 inserted after Phase 05.3: Decide safety patch (approved Decide fix plan, 2026-11-01; .planning/research/DECIDE-FIX-PLAN.md)
 - Phase 05.5 inserted after Phase 05.4: One shared money model
-- Phase 08.1 inserted after Phase 8: Decide rebuild on real data (full cost with tax and running costs; Variant C proposed, not yet chosen)
+- Phase 08.1 inserted after Phase 8: Decide rebuild on real data (full cost with tax and running costs; Variant C chosen 2026-11-01)
 - Phase 08.2 inserted after Phase 08.1: Decide re-audit
 - Phases 6 and 8 amended and Phase 7 moved after 08.2 by the same plan
 
@@ -97,6 +99,8 @@ Last activity: 2026-10-27 -- Phase 05.1 complete, verification passed
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Decide visibility, 2026-11-02]: Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (fix plan BO-08). From 08.1 only named testers see it, behind the per-account switch and the BO-06 release check; the public gets it after 08.2. The closed beta (question 11) is retired. Until then the `profiles.decide_v3` flag is on only for accounts on the repo tester list (account IDs: the owner's accounts plus each tester the owner names; 05.4 D-29, D-30), and only drives quiet shadow runs (BO-08). 05.4 closes today's gap where a flagged account can open the 05.2 setup page and engine readout. Reading-test round 1 is about 5 people on Variant C (owner, 2026-11-02).
+- [Decide design, 2026-11-01]: the owner chose Variant C ("Decide redesign: three variants" canvas, 40 screens) as the Decide design; Variants A and B are retired and the A+B blend is dropped. Reading-test round 1 runs on Variant C alone (about 5 people) to find what confuses people; findings are fixed, then the screens are frozen (QA-01). Grow stays out of the Decide reading test. Quick task 261101-jee.
 - Roadmap: Supabase provisioning, Apple/Google auth and household-of-one RLS moved into Phase 0 (Foundation) rather than Household — every phase from Record onward is hard-blocked on an authenticated, RLS-protected Supabase connection since local-first was rejected
 - Roadmap: Decide engine (Phase 4) has zero data-layer dependency by design and is flagged as parallel-eligible with Phases 1-3 (Money Core, Record, Shell)
 - Roadmap: Design Fidelity requirements (DSG-01 to DSG-04) filed under Foundation as standards established day one; DSG-05 (no on-device-storage claims in copy) filed under Compliance & Release since it feeds the App Privacy questionnaire's accuracy
@@ -142,6 +146,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
+- **Decide test flag in production** — count the accounts with `profiles.decide_v3` on (not yet checked; the auto-mode classifier blocked a read-only production query on 2026-11-02). First step of BO-06 in 05.4.
+- **Decide owner decisions** — fix plan section 11, question 10 is open (3, 4 and 5 were answered in 05.4-CONTEXT); question 12 (legal launch countries) is open; the Free vs Pro list is needed by APP-18 (05.5) as well as Phase 9; decide whether to insert the home-buying phase (FIN-30) and 06.1 into ROADMAP.
 - **Phase 0 verification** — run the gsd-verifier for Phase 00 once 00-07 and 00-20 have SUMMARY files (triggered by the D-U-N-S number, ETA 2026-10-13, then Apple enrolment).
 - **Phase 0 code review fixes** — `00-REVIEW.md`: 2 critical (CR-01 a malformed `min_supported_version` blanks the app for every user; CR-02 the device is only wiped on the sign-out button, not when a session ends another way) and 20 warnings. Run `/gsd-code-review-fix 0`.
 - **Phase 0 security** — `00-SECURITY.md`: 2 open, neither high (T-00-01-03 no DMARC on fincwin.com; T-00-03-04 DB password shorter than declared). Add the DMARC record and rotate or accept, then re-run `/gsd-secure-phase 0`. Also: remove leftover `POSTHOG_CLI_*` vars from the EAS preview env and revoke that key; disable the unused Supabase email provider and fix `site_url` (still localhost); purge production test accounts before launch (AR-11 drift).
@@ -197,6 +203,9 @@ Recent decisions affecting current work:
 | 261101-fmv | Decide fix plan Theme M: root causes of the fix volume and four owner-approved safeguards (design freeze, right-answer table, cross-check calculator, mutation testing) in 05.4, 08.1 and 08.2 | 2026-11-01 | 1129e791 | [261101-fmv-decide-fix-plan-safeguards](./quick/261101-fmv-decide-fix-plan-safeguards/) |
 | 261101-ir4 | Decide fix plan Theme N: build Decide once (05.3 stopped and parked, parts harvest and Variant C engine types in 05.4, six connection points in 05.5, Variant C screens built once in 08.1) | 2026-11-01 | 253737e3 | [261101-ir4-decide-build-once-path](./quick/261101-ir4-decide-build-once-path/) |
 | 261101-jh5 | Decide fix plan Theme O: Variant C audit fix IDs, version 1 scope (decision record in v1, home buying its own phase after 08.2, mockup round 4 before reading-test round 1) | 2026-11-01 | c2c828a0 | [261101-jh5-decide-variant-c-scope-and-audit-ids](./quick/261101-jh5-decide-variant-c-scope-and-audit-ids/) |
+| 261101-jee | Variant C chosen as the Decide design (A and B retired, blend dropped); reading-test round 1 on Variant C alone before the QA-01 freeze; Grow out of the Decide reading test | 2026-11-01 | 862f3ba6 | [261101-jee-record-variant-c-as-the-chosen-decide-de](./quick/261101-jee-record-variant-c-as-the-chosen-decide-de/) |
+| 261101-mxs | Decide Stage 0: PR #90 rebased on #91; docs follow BO-08 (Decide off for everyone, testers included, until 08.1; closed beta retired; test-flag gap closed in 05.4); STATE, ROADMAP and REQUIREMENTS refreshed for Variant C; 05.4 handoff note copied to main | 2026-11-02 | 59de1a80 | [261101-mxs-decide-stage-0-housekeeping](./quick/261101-mxs-decide-stage-0-housekeeping/) |
+| 261101-vmi | Engine test pins the unspent roll-forward clamp (unspent.ts:104); fixes the flaky 100% engine coverage gate that failed main and PR #90 | 2026-11-02 | 3416e419 | [261101-vmi-pin-unspent-clamp-coverage](./quick/261101-vmi-pin-unspent-clamp-coverage/) |
 
 ## Deferred Items
 
@@ -208,6 +217,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-10-27T22:05:00.000Z
-Stopped at: Phase 05.2 planned (36 plans, 7 waves)
-Resume file: .planning/phases/05.2-decide-data-and-setup/05.2-01-PLAN.md
+Last session: 2026-11-02T04:00:00.000Z
+Stopped at: Phase 05.4 context gathered; next /gsd-plan-phase 05.4
+Resume file: .planning/phases/05.4-decide-safety-patch/05.4-CONTEXT.md
