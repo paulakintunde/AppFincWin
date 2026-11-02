@@ -1,4 +1,37 @@
 {
   "topic": "selling-the-old-one",
-  "red": []
+  "red": [
+    {
+      "id": "SO-01",
+      "fixId": "BO-05"
+    },
+    {
+      "id": "SO-02",
+      "fixId": "BO-05"
+    },
+    {
+      "id": "SO-03",
+      "fixId": "BO-05"
+    },
+    {
+      "id": "SO-04",
+      "fixId": "BO-05"
+    },
+    {
+      "id": "SO-05",
+      "fixId": "BO-05"
+    },
+    {
+      "id": "SO-06",
+      "fixId": "BO-05"
+    },
+    {
+      "id": "SO-08",
+      "fixId": "BO-05"
+    },
+    {
+      "id": "SO-09",
+      "fixId": "BO-05"
+    }
+  ]
 }

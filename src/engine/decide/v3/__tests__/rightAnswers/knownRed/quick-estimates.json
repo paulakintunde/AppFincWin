@@ -1,4 +1,61 @@
 {
   "topic": "quick-estimates",
-  "red": []
+  "red": [
+    {
+      "id": "QE-01",
+      "fixId": "FIN-25"
+    },
+    {
+      "id": "QE-02",
+      "fixId": "FIN-25"
+    },
+    {
+      "id": "QE-03",
+      "fixId": "FIN-08"
+    },
+    {
+      "id": "QE-04",
+      "fixId": "FIN-08"
+    },
+    {
+      "id": "QE-05",
+      "fixId": "FIN-08"
+    },
+    {
+      "id": "QE-06",
+      "fixId": "FIN-15"
+    },
+    {
+      "id": "QE-07",
+      "fixId": "ENG-14"
+    },
+    {
+      "id": "QE-08",
+      "fixId": "FIN-09"
+    },
+    {
+      "id": "QE-09",
+      "fixId": "FIN-09"
+    },
+    {
+      "id": "QE-10",
+      "fixId": "FIN-09"
+    },
+    {
+      "id": "QE-11",
+      "fixId": "FIN-08"
+    },
+    {
+      "id": "QE-12",
+      "fixId": "FIN-08"
+    },
+    {
+      "id": "QE-13",
+      "fixId": "FIN-25"
+    },
+    {
+      "id": "QE-14",
+      "fixId": "FIN-08"
+    }
+  ]
 }

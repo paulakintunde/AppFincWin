@@ -94,8 +94,8 @@
       "fixIds": [
         "BO-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -179,8 +179,8 @@
       "fixIds": [
         "BO-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -285,16 +285,20 @@
         },
         "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "The sale clears the $4,000 loan, so its $250 minimum stops after 20 November. Usual month after buying: $1,000 + $250 (old minimum gone) - $250 (new payment) = $1,000. The other $1,000 of the sale goes to his account. $250 is a quarter of his room, so it is not tight.",
+      "why": "The sale clears the $4,000 loan, so its $250 minimum stops after 20 November. Usual month after buying: $1,000 + $250 (old minimum gone) - $250 (new payment) = $1,000. The other $1,000 of the sale goes to his account. $250 is a quarter of his room, so it is not tight. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
-        "BO-05"
+        "BO-05",
+        "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     },
     {
@@ -399,17 +403,20 @@
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [
-          "debt_left_after_sale"
+          "debt_left_after_sale",
+          "net_covers_surprises",
+          "income_or_costs_first"
         ],
         "mustNotHaveFacts": []
       },
-      "why": "The sale pays $5,000 of the $7,000, so $2,000 is still owed and the $250 minimum keeps coming. Usual month after buying: $1,000 - $250 (new payment) = $750. The answer states the $2,000 still owed as a fact. $750 is well above the tight lines, so it fits.",
+      "why": "The sale pays $5,000 of the $7,000, so $2,000 is still owed and the $250 minimum keeps coming. Usual month after buying: $1,000 - $250 (new payment) = $750. The answer states the $2,000 still owed as a fact. $750 is well above the tight lines, so it fits. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
-        "BO-05"
+        "BO-05",
+        "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     },
     {
@@ -525,16 +532,20 @@
         },
         "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "The old $80 is due on 1 December, before the 20 December stop, so it is counted once more and then never again. December has the old $80, the new $60 and the first $50. From January the usual month is $1,000 + $80 - $50 - $60 = $970.",
+      "why": "The old $80 is due on 1 December, before the 20 December stop, so it is counted once more and then never again. December has the old $80, the new $60 and the first $50. From January the usual month is $1,000 + $80 - $50 - $60 = $970. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
-        "BO-05"
+        "BO-05",
+        "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     },
     {
@@ -620,25 +631,27 @@
       },
       "expected": {
         "code": "fits_month",
-        "variant": null,
+        "variant": "tight",
         "afterBuy": {
           "month": 10000,
           "usualMonth": 105000
         },
         "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "tight_floor"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "$1,000 - $900 = $100 left this month (November's gym fee is already paid). After 30 November the gym is never counted again, so the usual month becomes $1,000 + $50 = $1,050.",
+      "why": "$1,000 - $900 = $100 left this month (November's gym fee is already paid). After 30 November the gym is never counted again, so the usual month becomes $1,000 + $50 = $1,050. The $100 left is under the $200 floor (a tenth of $1,200 bills + $800 everyday spending), so the answer is \"Fits, but tight\" (D-40). Her safety net is full, so there is no net line.",
       "fixIds": [
-        "BO-05"
+        "BO-05",
+        "FIN-07"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
-      "expertNote": null,
-      "reviewNote": "Not applied yet; shown for your check. Under D-40 (tight on one-off purchases) this answer would become \"Fits, but tight\": $100 left this month is under the $200 floor (a tenth of $1,200 bills + $800 everyday spending). The figures stay the same."
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02): \"Approve, apply SO-06 'tight'.\"",
+      "expertNote": null
     },
     {
       "id": "SO-07",
@@ -713,8 +726,8 @@
       "fixIds": [
         "BO-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -789,16 +802,20 @@
         },
         "readyBy": "2026-12-01",
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "Only the $600 up front has to be saved; the $200 payments come from the usual month later ($1,000 - $200 = $800). She has $500, so she needs $100 more, and pay on 1 December covers it. Saving for the whole $3,000 would wrongly say February 2027.",
+      "why": "Only the $600 up front has to be saved; the $200 payments come from the usual month later ($1,000 - $200 = $800). She has $500, so she needs $100 more, and pay on 1 December covers it. Saving for the whole $3,000 would wrongly say February 2027. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
-        "BO-05"
+        "BO-05",
+        "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     },
     {
@@ -873,8 +890,8 @@
       "fixIds": [
         "BO-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     }

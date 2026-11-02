@@ -77,8 +77,8 @@
         "FIN-27",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -171,8 +171,8 @@
         "FIN-27",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -265,8 +265,8 @@
         "FIN-27",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -359,8 +359,8 @@
         "ARC-25",
         "CMP-F24"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -456,8 +456,8 @@
         "ARC-25",
         "CMP-F24"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -538,8 +538,8 @@
         "ENG-29",
         "CMP-F24"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -619,8 +619,8 @@
         "FIN-27",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -710,17 +710,21 @@
         },
         "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "The tax is $247.50, so $3,247.50 is paid over the plan, not $3,000. Payments are $270.63 a month (rounded up; the last one is $270.57) instead of $250. Her usual month leaves $1,000 - $270.63 = $729.37. Adding tax never makes an answer better (ENG-29).",
+      "why": "The tax is $247.50, so $3,247.50 is paid over the plan, not $3,000. Payments are $270.63 a month (rounded up; the last one is $270.57) instead of $250. Her usual month leaves $1,000 - $270.63 = $729.37. Adding tax never makes an answer better (ENG-29). Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
         "FIN-27",
-        "ENG-29"
+        "ENG-29",
+        "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     },
     {
@@ -807,8 +811,8 @@
         "CMP-F24",
         "FIN-27"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     }

@@ -112,8 +112,8 @@
         "FIN-25",
         "ENG-10"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -205,8 +205,8 @@
         "FIN-25",
         "ENG-10"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -294,17 +294,23 @@
         },
         "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "net_covers_surprises",
+          "income_or_costs_first",
+          "net_none_start"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "A usual month leaves $600 - $200 = $400, but a month like September would be $1,500 - $2,400 of bills and spending - $200 = -$1,100, and $500 of savings cannot carry that. Only her yes makes it fit, so the answer is \"Only on your answer\" and says the records do not show it (FIN-08). The earlier leftovers were spent, not saved, so only the $500 in savings can carry a low month (D-44); had they been saved, the savings bridge in QE-04 would apply instead.",
+      "why": "A usual month leaves $600 - $200 = $400, but a month like September would be $1,500 - $2,400 of bills and spending - $200 = -$1,100, and $500 of savings cannot carry that. Only her yes makes it fit, so the answer is \"Only on your answer\" and says the records do not show it (FIN-08). The earlier leftovers were spent, not saved, so only the $500 in savings can carry a low month (D-44); had they been saved, the savings bridge in QE-04 would apply instead. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first) She has no safety net, so the line \"1 month is a start; 3 to 6 months is common.\" shows as a fact (net_none_start).",
       "fixIds": [
         "FIN-08",
-        "ENG-07"
+        "ENG-07",
+        "FIN-05",
+        "FIN-01"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 1b (2026-11-02): \"Net line: Yes, as a fact line below.\" Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     },
     {
@@ -399,18 +405,21 @@
         "mustHaveReasons": [],
         "mustHaveFacts": [
           "lean_bridge",
-          "net_none_start"
+          "net_none_start",
+          "net_covers_surprises",
+          "income_or_costs_first"
         ],
         "mustNotHaveFacts": []
       },
-      "why": "Savings are tried first for the low months. 1 low month in the last 6 means about 2 over the 12 payments (12 / 6). Each one is $1,500 - $2,400 of bills and spending - $200 = -$1,100, so about 2 x $1,100 = $2,200 of her $4,000 would come from savings. The bridge holds, so the records alone show it fits ($600 - $200 = $400 left in a usual month). A plain \"Fits\" would hide the low months, so the answer is \"Fits, a low month is tight\": \"In a month like September, about $1,100 would come from savings. Over 12 payments that could happen about 2 times, about $2,200 of your $4,000.\" Nothing is saved in a safety net, so that line shows as a fact.",
+      "why": "Savings are tried first for the low months. 1 low month in the last 6 means about 2 over the 12 payments (12 / 6). Each one is $1,500 - $2,400 of bills and spending - $200 = -$1,100, so about 2 x $1,100 = $2,200 of her $4,000 would come from savings. The bridge holds, so the records alone show it fits ($600 - $200 = $400 left in a usual month). A plain \"Fits\" would hide the low months, so the answer is \"Fits, a low month is tight\": \"In a month like September, about $1,100 would come from savings. Over 12 payments that could happen about 2 times, about $2,200 of your $4,000.\" Nothing is saved in a safety net, so that line shows as a fact. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
         "FIN-08",
-        "ENG-07"
+        "ENG-07",
+        "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     },
     {
@@ -497,17 +506,21 @@
         },
         "readyBy": "2026-12",
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "With her no, the plan waits until savings can carry a low month: she needs $1,100 and has $500, and a usual month adds $600, so that is reached in December 2026. The answer gives that date, never a bare \"never\".",
+      "why": "With her no, the plan waits until savings can carry a low month: she needs $1,100 and has $500, and a usual month adds $600, so that is reached in December 2026. The answer gives that date, never a bare \"never\". Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
         "FIN-08",
-        "ENG-07"
+        "ENG-07",
+        "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     },
     {
@@ -586,16 +599,20 @@
         "mustHaveReasons": [
           "pay_gap"
         ],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "He is judged on the lower figure, the middle of the last three: $2,720, which is 9.3% below the set-up pay, over the 5% line, so the gap is named and he is asked about it; his pay is never edited for him. On $2,720 a usual month leaves $720, and $720 - $850 = -$130, so \"Short each month\" (on $3,000 it would have looked like a fit).",
+      "why": "He is judged on the lower figure, the middle of the last three: $2,720, which is 9.3% below the set-up pay, over the 5% line, so the gap is named and he is asked about it; his pay is never edited for him. On $2,720 a usual month leaves $720, and $720 - $850 = -$130, so \"Short each month\" (on $3,000 it would have looked like a fit). Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
-        "FIN-15"
+        "FIN-15",
+        "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     },
     {
@@ -685,8 +702,8 @@
       "fixIds": [
         "ENG-14"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null,
       "plannerNote": "D-45 (verify before building), checked 2026-11-02. Mostly already happens. (1) Server: the daily materialise_recurring job (migration 20260926000400) writes every occurrence of a recurring bill or pay series through the end of next month (recurring_horizon) as a \"pending\" row, which the app labels \"Expected\"; it stays pending until the user confirms it paid or received. So when Lucy last synced on 29 November, December's Expected rows were already in her cache. (2) Engine: v3 month/thisMonth.ts counts each live bill occurrence in the month as due until a paid line settles it (month/settle.ts: a pending line never settles, and a due date passing settles nothing); month/incomeProfile.ts counts pay series at their dates (dropped only after the missed-pay grace days) and other pending income only when the user marked it expected. Gaps for the planner: everyday spending that is not a recurring series does not roll over as rows (the engine uses the typical month instead); and fixture.ts does not model pending rows, so this case cannot assert the rollover yet."
@@ -767,8 +784,8 @@
         "FIN-09",
         "ENG-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -854,8 +871,8 @@
         "FIN-09",
         "ENG-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -942,17 +959,21 @@
         },
         "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "For a plan, the lead figure is the usual month once payments start: $1,000 - $500 = $500 a month. That is half the room and well above a tenth of a month's spending ($200), so it is not tight.",
+      "why": "For a plan, the lead figure is the usual month once payments start: $1,000 - $500 = $500 a month. That is half the room and well above a tenth of a month's spending ($200), so it is not tight. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
         "FIN-09",
-        "ENG-05"
+        "ENG-05",
+        "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     },
     {
@@ -1026,18 +1047,23 @@
         },
         "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "interest_is_a_cost",
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "Her answer never beats the records (FIN-08): the usual month is already -£150, and -£150 - £202.52 = -£352.52 once payments start, so \"Short each month\", not \"Only on your answer\". October itself goes from -£1,009 to -£1,211.52, shown as it is, never rounded up to £0. Yes, no or no answer gives the same result (A5, A6, A7), because the usual month alone decides it.",
+      "why": "Her answer never beats the records (FIN-08): the usual month is already -£150, and -£150 - £202.52 = -£352.52 once payments start, so \"Short each month\", not \"Only on your answer\". October itself goes from -£1,009 to -£1,211.52, shown as it is, never rounded up to £0. Yes, no or no answer gives the same result (A5, A6, A7), because the usual month alone decides it. Every borrowing answer also shows, as facts (D-48): \"This plan costs £1,720.75 in interest: money that could stay with you.\" (interest_is_a_cost) \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
         "FIN-08",
         "ENG-07",
-        "FIN-06"
+        "FIN-06",
+        "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     },
     {
@@ -1115,19 +1141,22 @@
           "covered_from_savings",
           "further_shortfall_runway",
           "income_or_costs_first",
-          "save_vs_borrow"
+          "save_vs_borrow",
+          "interest_is_a_cost",
+          "net_covers_surprises"
         ],
         "mustNotHaveFacts": []
       },
-      "why": "Either answer gives \"Short each month\", never a plain \"Fits\": once payments start, each usual month is £150 + £202.52 = £352.52 short (D-40). The answer is not a bare \"never\" either. Her £16,000, less the £593.55 of October spending still to come and the first £202.52 payment on 30 October, is £15,203.93 at the end of October. That covers 43 more months of the £352.52 gap (15,203.93 / 352.52 = 43.1), so savings cover about 44 of the 48 payments and run out about 4 payments before the end: \"Your £16,000 would cover the £352.52 monthly gap for about 44 of the 48 payments.\" Paying cash also fits, leaving about £7,406.45 at the end of October (£16,000 - £593.55 - £8,000), while the plan costs £1,720.75 in interest (47 payments of £202.52 and a last one of £202.31, £9,720.75 in all), 21.5% of the £8,000. Because her income is unpredictable, the answer also shows how fragile that runway is (D-46): \"If each month from November came up another £1,000 short, your £16,000 would cover about 12 of the 48 payments.\" (£15,203.93 / £1,352.52 = 11.2, so 11 more months after the first payment.) And, as a fact, never as a push: \"Raising income or lowering costs before the payments start makes the £16,000 last longer.\"",
+      "why": "Either answer gives \"Short each month\", never a plain \"Fits\": once payments start, each usual month is £150 + £202.52 = £352.52 short (D-40). The answer is not a bare \"never\" either. Her £16,000, less the £593.55 of October spending still to come and the first £202.52 payment on 30 October, is £15,203.93 at the end of October. That covers 43 more months of the £352.52 gap (15,203.93 / 352.52 = 43.1), so savings cover about 44 of the 48 payments and run out about 4 payments before the end: \"Your £16,000 would cover the £352.52 monthly gap for about 44 of the 48 payments.\" Paying cash also fits, leaving about £7,406.45 at the end of October (£16,000 - £593.55 - £8,000), while the plan costs £1,720.75 in interest (47 payments of £202.52 and a last one of £202.31, £9,720.75 in all), 21.5% of the £8,000. Because her income is unpredictable, the answer also shows how fragile that runway is (D-46): \"If each month from November came up another £1,000 short, your £16,000 would cover about 12 of the 48 payments.\" (£15,203.93 / £1,352.52 = 11.2, so 11 more months after the first payment.) And, as a fact, never as a push: \"Raising income or lowering costs before the payments start makes the £16,000 last longer.\" Every borrowing answer also shows, as facts (D-48): \"This plan costs £1,720.75 in interest: money that could stay with you.\" (interest_is_a_cost) \"A safety net covers surprises while you repay.\" (net_covers_surprises) and the income line above (income_or_costs_first).",
       "fixIds": [
         "FIN-08",
         "ENG-07",
-        "FIN-06"
+        "FIN-06",
+        "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     },
     {
@@ -1228,8 +1257,8 @@
         "FIN-25",
         "ENG-10"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -1329,18 +1358,21 @@
         "mustHaveReasons": [],
         "mustHaveFacts": [
           "lean_bridge",
-          "net_used"
+          "net_used",
+          "net_covers_surprises",
+          "income_or_costs_first"
         ],
         "mustNotHaveFacts": []
       },
-      "why": "Same sums as QE-04: about 2 low months over the 12 payments, each $1,100 short, so about $2,200 would come from savings. Here those savings are her protected safety net, and the low-month bridge never uses protected money without saying so. The answer is \"Dips into your safety net\": \"In a month like September, about $1,100 would come from your safety net.\" A usual month still leaves $600 - $200 = $400.",
+      "why": "Same sums as QE-04: about 2 low months over the 12 payments, each $1,100 short, so about $2,200 would come from savings. Here those savings are her protected safety net, and the low-month bridge never uses protected money without saying so. The answer is \"Dips into your safety net\": \"In a month like September, about $1,100 would come from your safety net.\" A usual month still leaves $600 - $200 = $400. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
         "FIN-08",
-        "ENG-07"
+        "ENG-07",
+        "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
     }
   ]

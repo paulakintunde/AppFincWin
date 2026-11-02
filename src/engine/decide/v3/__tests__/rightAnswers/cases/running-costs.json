@@ -104,8 +104,8 @@
         "BO-05",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -225,8 +225,8 @@
         "BO-05",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -325,8 +325,8 @@
         "BO-05",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -425,8 +425,8 @@
         "BO-05",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -525,8 +525,8 @@
         "BO-05",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -604,8 +604,8 @@
         "BO-05",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -704,8 +704,8 @@
         "BO-05",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -796,8 +796,8 @@
         "BO-05",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
@@ -897,16 +897,16 @@
         "BO-05",
         "ENG-29"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
     },
     {
       "id": "RC-10",
       "topic": "running-costs",
-      "persona": "A16 Hana, yearly insurance held back (audit, invented)",
-      "situation": "Hana has £1,500 free this month and her usual month leaves £700. Her £1,200 car insurance is paid once a year; it was last paid on 1 March and is next due on 1 March 2027. She looks at £1,450 paid in cash. It is bought on 15 October 2026 (today), paid in one go. A usual month: pay £2,500, bills £1,000 and everyday spending £800 (£480 of it on essentials).",
+      "persona": "A16 Hana, yearly insurance ahead (audit, invented)",
+      "situation": "Hana has £1,500 free this month and her usual month leaves £700. Her £1,200 car insurance is paid once a year; it was last paid on 1 March and is next due on 1 March 2027. She looks at £1,450 paid in cash. She has no safety net set up. It is bought on 15 October 2026 (today), paid in one go. A usual month: pay £2,500, bills £1,000 and everyday spending £800 (£480 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-15",
         "currency": "GBP",
@@ -968,26 +968,32 @@
         }
       },
       "expected": {
-        "code": "not_yet",
-        "variant": "not_covered",
+        "code": "fits_month",
+        "variant": "tight",
         "afterBuy": {
-          "month": null,
+          "month": 5000,
           "usualMonth": null
         },
-        "readyBy": "2026-12",
+        "readyBy": null,
         "mustHaveReasons": [],
-        "mustHaveFacts": [],
+        "mustHaveFacts": [
+          "tight_floor",
+          "yearly_bill_ahead",
+          "net_none_start"
+        ],
         "mustNotHaveFacts": []
       },
-      "why": "Seven months have passed since the insurance was paid, so 7 x £100 = £700 is held back (FIN-11): £1,500 - £700 = £800 free, less than £1,450. On 1 November she adds £700 and holds back £100 more: £800 + £700 - £100 = £1,400, still short. On 1 December: £1,400 + £600 = £2,000, so it fits from December 2026. The audit called the old \"Fits\" OK only because her surplus is large; this case follows the FIN-11 rule as written, for the owner to confirm.",
+      "why": "Under D-47 only the part of the insurance that the months before it is due cannot cover is held back. Her usual month leaves £2,500 - £1,000 - £800 = £700, and 4 whole months pass before 1 March 2027 (paydays on 1 November, 1 December, 1 January and 1 February), so they bring in 4 x £700 = £2,800, more than the £1,200 bill. Hold-back = the larger of £0 and £1,200 - £2,800, so £0 (the cap, the £700 built up over the 7 months since the last payment, is not reached). She has £1,500 free, so £1,500 - £1,450 = £50 is left this month. That is under the £180 floor (a tenth of £1,000 bills + £800 everyday spending), so the answer is \"Fits, but tight\" (D-40). The coming bill shows as a fact: \"Your £1,200 car insurance is due on 1 March 2027.\" (yearly_bill_ahead). On the cash path her lowest point is £50 on 31 October; by 28 February she has £2,850 before the bill is taken. She has no safety net, so the no-net line shows as a fact (net_none_start; tight comes first, D-35). The built-up share resets after each payment. Under the old FIN-11 rule (hold back the whole £700) this was \"Not yet\"; the owner replaced that rule (D-47). Someone whose usual month leaves too little to cover the bill still gets the full built-up share held back.",
       "fixIds": [
         "FIN-11",
         "ENG-04",
-        "ENG-29"
+        "ENG-29",
+        "FIN-07",
+        "FIN-01"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), after seven questions on RC-10: chose \"Hold back only what's not covered\" (D-47).",
       "expertNote": null
     }
   ]

@@ -814,11 +814,14 @@
         "mustHaveReasons": [],
         "mustHaveFacts": [
           "save_vs_borrow",
-          "debt_interest_cost"
+          "debt_interest_cost",
+          "interest_is_a_cost",
+          "net_covers_surprises",
+          "income_or_costs_first"
         ],
         "mustNotHaveFacts": []
       },
-      "why": "The cash is there (DB-04: £2,000 free - £1,800 = £200 left), so \"Only by borrowing\" would wrongly say he has no cash. The answer is \"Fits, but borrowing costs more\" (D-39a). Payments are £175.39 a month (the last one £175.37), £2,104.66 in all, so the plan costs £304.66 in interest. Both routes show: \"Paying in cash fits, leaving £200. The plan costs about £304.66 in interest over 12 months.\" In a usual month the payment leaves £750 - £175.39 = £574.61, and the £6,000 card at 24.9% is still stated as a fact.",
+      "why": "The cash is there (DB-04: £2,000 free - £1,800 = £200 left), so \"Only by borrowing\" would wrongly say he has no cash. The answer is \"Fits, but borrowing costs more\" (D-39a). Payments are £175.39 a month (the last one £175.37), £2,104.66 in all, so the plan costs £304.66 in interest. Both routes show: \"Paying in cash fits, leaving £200. The plan costs about £304.66 in interest over 12 months.\" In a usual month the payment leaves £750 - £175.39 = £574.61, and the £6,000 card at 24.9% is still stated as a fact. Every borrowing answer also shows, as facts (D-48): \"This plan costs £304.66 in interest: money that could stay with you.\" (interest_is_a_cost) \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
         "FIN-10",
         "ENG-09",
@@ -826,8 +829,9 @@
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
-      "ownerReason": null,
-      "expertNote": null
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
+      "expertNote": null,
+      "changeApproved": "2026-11-02"
     },
     {
       "id": "DB-10",
