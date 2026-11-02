@@ -1,5 +1,5 @@
 /**
- * SC-6 coverage index (05.1-27, T-05.1-55): every invariant I1..I43 has at least one test whose title starts with its id.
+ * SC-6 coverage index (05.1-27, T-05.1-55): every invariant I1..I44 has at least one test whose title starts with its id.
  * A missing id fails here by name. I24 is retired (CONTEXT: v2's I24 and protection months are superseded) and keeps its
  * number through a documented test below. I28 (the back-test) lives in 05.1-29; until its folder exists it is listed as
  * pending, and becomes strict the moment the folder lands.
@@ -13,7 +13,7 @@ const SNAPSHOT_V3 = join(ROOT, 'src/features/decide/snapshot/v3');
 const COPY_TEST = join(ROOT, 'src/i18n/__tests__/decideCopy.test.ts');
 
 const TITLE = /(it|test|describe)(\.each\([^)]*\))?\(\s*['"`]I(\d+)\b/g;
-const IDS = Array.from({ length: 43 }, (_, i) => i + 1);
+const IDS = Array.from({ length: 44 }, (_, i) => i + 1);
 
 /** Ids that may be absent only while the folder that will carry them does not exist yet. */
 const PENDING_UNTIL: Readonly<Record<number, { readonly owner: string; readonly folder: string }>> = {

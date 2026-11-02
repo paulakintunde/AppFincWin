@@ -59,31 +59,44 @@ export function spreadThrough(
   return erest + e * BigInt(full) + partial;
 }
 
-export function buildCashPathV3(input: {
+/** The price-independent part of the path: net flows per day, the cumulative spread per day, and the pay withheld by caps. */
+export interface OpenCashPath {
   readonly asOf: string;
   readonly days: number;
-  readonly opening: MinorUnits;
+  readonly end: string;
+  readonly net: readonly bigint[];
+  readonly spread: readonly bigint[];
+  readonly capped: bigint;
+}
+
+export interface OpenCashPathInput {
+  readonly asOf: string;
+  readonly days: number;
   readonly series: readonly V3Series[];
   readonly paidThisMonth: ReadonlySet<string>;
   readonly erest: MinorUnits;
   readonly e: MinorUnits;
-  readonly extraOut: readonly DatedFlow[];
   /** D-35: per month (YYYY-MM), the most pay that may land. null = steady, every pay lands at its amount. */
   readonly payCaps?: ReadonlyMap<string, MinorUnits> | null;
   /** 05.3-64 (D-27, D-31): bill and debt dues that no longer count (paid by someone else, always paid by someone else, skipped). Absent = none. */
   readonly drops?: DueDrops;
-}): CashPathV3 {
+}
+
+function putFlow(net: bigint[], asOf: string, end: string, date: string, amount: bigint): void {
+  if (date >= end) return;
+  const idx = date <= asOf ? 0 : daysBetween(asOf, date);
+  net[idx] = (net[idx] as bigint) + amount;
+}
+
+/** Everything about the path that does not depend on the opening balance or the purchase (05.4-13: runs once per prepare). */
+export function openCashPath(input: OpenCashPathInput): OpenCashPath {
   const { asOf, days } = input;
   if (!Number.isInteger(days) || days < 1 || days > CASH_PATH_DAYS_V3) {
     throw new RangeError(`${FN}: days must be 1..${CASH_PATH_DAYS_V3}`);
   }
   const end = addDays(asOf, days);
   const net = new Array<bigint>(days).fill(0n);
-  const put = (date: string, amount: bigint): void => {
-    if (date >= end) return;
-    const idx = date <= asOf ? 0 : daysBetween(asOf, date);
-    net[idx] = (net[idx] as bigint) + amount;
-  };
+  const put = (date: string, amount: bigint): void => putFlow(net, asOf, end, date, amount);
   const pays: { readonly id: string; readonly date: string; readonly amount: bigint }[] = [];
   for (const s of liveSeriesOf(input.series, asOf, 'pay')) {
     for (const d of seriesOccurrences(s, asOf, end)) {
@@ -118,15 +131,30 @@ export function buildCashPathV3(input: {
       }
     }
   }
-  for (const f of input.extraOut) put(f.date, -BigInt(f.amount));
+  const spread: bigint[] = [];
+  for (let i = 0; i < days; i++) spread.push(spreadThrough(i, { erest: input.erest, e: input.e, asOf }));
+  return { asOf, days, end, net, spread, capped };
+}
+
+/** Adds the opening balance and the purchase's dated flows to an open path. The open path is not changed. */
+export function applyPurchaseFlows(open: OpenCashPath, opening: MinorUnits, extraOut: readonly DatedFlow[]): CashPathV3 {
+  const { asOf, days, end } = open;
+  const net = open.net.slice();
+  for (const f of extraOut) putFlow(net, asOf, end, f.date, -BigInt(f.amount));
   const points: CashPoint[] = [];
-  let running = BigInt(input.opening);
+  let running = BigInt(opening);
   for (let i = 0; i < days; i++) {
     running += net[i] as bigint;
-    const balance = running - spreadThrough(i, { erest: input.erest, e: input.e, asOf });
+    const balance = running - (open.spread[i] as bigint);
     points.push({ date: addDays(asOf, i), balance: minorFromBigInt(balance, FN) });
   }
-  return capped > 0n ? { asOf, points, capped: minorFromBigInt(capped, FN) } : { asOf, points };
+  return open.capped > 0n ? { asOf, points, capped: minorFromBigInt(open.capped, FN) } : { asOf, points };
+}
+
+export function buildCashPathV3(
+  input: OpenCashPathInput & { readonly opening: MinorUnits; readonly extraOut: readonly DatedFlow[] }
+): CashPathV3 {
+  return applyPurchaseFlows(openCashPath(input), input.opening, input.extraOut);
 }
 
 /** First confirmed live pay occurrence on or after asOf (a missed pay before asOf never counts: I3). */
