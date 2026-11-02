@@ -49,6 +49,9 @@ jobs:
     name: mutation-changed
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    # Per-change mutation check. Static mutants re-run the whole suite, so they are
+    # left to the nightly full run; the cap stops a large change from hanging CI.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
         with: { fetch-depth: 0 }
@@ -64,7 +67,7 @@ jobs:
         run: |
           FILES=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- 'src/engine/decide/**/*.ts' | grep -v __tests__ | paste -sd, - || true)
           if [ -n "$FILES" ]; then
-            FC_RUNS=10 npx stryker run --incremental --mutate "$FILES"
+            FC_RUNS=10 npx stryker run --incremental --ignoreStatic --mutate "$FILES"
           else
             echo "No engine source changed; nothing to mutate."
           fi
