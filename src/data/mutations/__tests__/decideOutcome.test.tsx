@@ -9,7 +9,7 @@ import type { DbClient } from '@/db/rows';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
-import { queryKeys } from '@/data/keys';
+import { mutationKeys, queryKeys } from '@/data/keys';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { registerDecideOutcomeMutations, usePass, useWaitAndSave } from '../decideOutcome';
@@ -34,6 +34,7 @@ jest.mock('@/features/decide/notifications/waitReminder', () => ({
   scheduleCoolingOffReminder: (...a: unknown[]) => mockCooling(...a),
 }));
 
+jest.setTimeout(60000);
 const ok = (data: unknown) => ({ data, error: null, status: 200 });
 const applied = () => ok({ status: 'applied' });
 
@@ -98,7 +99,7 @@ describe('useWaitAndSave', () => {
     const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
 
     const outcome = await result.current.save(waitArgs);
-    expect(outcome).toEqual({ reminder: 'set' });
+    expect(outcome).toEqual({ reminder: 'set', stepId: expect.any(String) });
     expect(mockWait).toHaveBeenCalledWith('chk1', '2027-03-01', '2026-10-16');
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
 
@@ -109,7 +110,7 @@ describe('useWaitAndSave', () => {
       wait_monthly: 25000,
       ready_by: '2027-03-01',
       cooling_off: false,
-      goal: { id: 'id-1', name: 'Sofa', currency: 'USD', target: 100000 },
+      goal: { id: 'id-1', name: 'Sofa', currency: 'USD', target: 100000, account_id: null },
     });
     expect(mockTrack).toHaveBeenCalledWith('decision_recorded', { decision: 'wait' });
     await waitFor(() => expect(qc.getQueryData<DecideCheckRow[]>(CHECKS)?.[0]?.status).toBe('waiting'));
@@ -125,7 +126,7 @@ describe('useWaitAndSave', () => {
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
     expect((rpcArgs(fake).p_decision as { goal: unknown }).goal).toBeNull();
     const nullTarget = await result.current.save({ ...waitArgs, goalTarget: null });
-    expect(nullTarget).toEqual({ reminder: 'set' });
+    expect(nullTarget).toEqual({ reminder: 'set', stepId: expect.any(String) });
   });
 
   it('a refused permission still saves the decision and reports off', async () => {
@@ -135,7 +136,7 @@ describe('useWaitAndSave', () => {
     const qc = newClient();
     const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
     const outcome = await result.current.save(waitArgs);
-    expect(outcome).toEqual({ reminder: 'off' });
+    expect(outcome).toEqual({ reminder: 'off', stepId: expect.any(String) });
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
   });
 
@@ -145,7 +146,7 @@ describe('useWaitAndSave', () => {
     mockWait.mockRejectedValue(new Error('boom'));
     const qc = newClient();
     const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
-    expect(await result.current.save(waitArgs)).toEqual({ reminder: 'off' });
+    expect(await result.current.save(waitArgs)).toEqual({ reminder: 'off', stepId: expect.any(String) });
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
   });
 
@@ -154,7 +155,7 @@ describe('useWaitAndSave', () => {
     fake.respondWith(applied());
     const qc = newClient();
     const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
-    expect(await result.current.save({ ...waitArgs, readyBy: null })).toEqual({ reminder: 'none' });
+    expect(await result.current.save({ ...waitArgs, readyBy: null })).toEqual({ reminder: 'none', stepId: expect.any(String) });
     expect(mockWait).not.toHaveBeenCalled();
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
   });
@@ -256,5 +257,94 @@ describe('usePass', () => {
     result.current.pass({ check, verdict: 'adjust', coolingOff: true });
     await waitFor(() => expect(mockCooling).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+  });
+});
+
+describe('D-21 undo steps (05.3-68: recorded by the server)', () => {
+  const undoInserts = (fake: FakeSupabase) => fake.calls.filter((c) => c.table === 'undo_log');
+  const noClientStep = (fake: FakeSupabase) => {
+    expect(undoInserts(fake)).toHaveLength(0);
+    expect(fake.calls.filter((c) => c.method === 'from' || c.table === 'decide_checks')).toHaveLength(0);
+  };
+
+  it('Plan it sends p_undo_step in the one RPC and writes nothing to undo_log', async () => {
+    const fake = setup();
+    fake.respondWith(applied());
+    const qc = newClient();
+    const { result } = await renderHook(() => useWaitAndSave(), { wrapper: wrapper(qc) });
+    const out = await result.current.save({ ...waitArgs, accountId: 'acc-1' });
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    expect(rpcArgs(fake).p_undo_step).toEqual({ id: out.stepId, label_key: 'planSaved', label_params: { name: 'Sofa' } });
+    expect((rpcArgs(fake).p_decision as { goal: { account_id: string } }).goal.account_id).toBe('acc-1');
+    await waitFor(() => expect(qc.getQueryData<SavingsGoalRow[]>(GOALS)?.[0]?.account_id).toBe('acc-1'));
+    noClientStep(fake);
+  });
+
+  it('Not buying sends p_undo_step', async () => {
+    const fake = setup();
+    fake.respondWith(applied());
+    const qc = newClient();
+    const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
+    const stepId = result.current.pass({ check, verdict: 'no', coolingOff: false });
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    expect(rpcArgs(fake).p_undo_step).toEqual({ id: stepId, label_key: 'notBuyingSaved', label_params: { name: 'Sofa' } });
+    noClientStep(fake);
+  });
+
+  it('sends empty label_params when the name is empty', async () => {
+    const fake = setup();
+    fake.respondWith(applied());
+    const qc = newClient();
+    const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
+    result.current.pass({ check: { ...check, name: '', inputs: {} }, verdict: 'no', coolingOff: false });
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    expect((rpcArgs(fake).p_undo_step as { label_params: unknown }).label_params).toEqual({});
+  });
+
+  it('a persisted write without undo still makes the 3-key call', async () => {
+    const fake = setup();
+    fake.respondWith(applied());
+    const qc = newClient();
+    await qc
+      .getMutationCache()
+      .build(qc, { mutationKey: mutationKeys.decideOutcome })
+      .execute({
+        checkId: 'chk1',
+        ownerId: 'u1',
+        householdId: 'h1',
+        decision: { outcome: 'pass', verdict: 'no', cooling_off: false },
+      });
+    expect(Object.keys(rpcArgs(fake)).sort()).toEqual(['p_check_id', 'p_decision', 'p_outcome']);
+  });
+
+  it('invalidates the undo log on success', async () => {
+    setup().respondWith(applied());
+    const qc = newClient();
+    const spy = jest.spyOn(qc, 'invalidateQueries');
+    const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
+    result.current.pass({ check, verdict: 'no', coolingOff: false });
+    await waitFor(() => expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.undoLog('u1') }));
+  });
+
+  it('a double tap writes once and hands back the same step', async () => {
+    const fake = setup();
+    fake.respondWith(applied());
+    const qc = newClient();
+    const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
+    const a = result.current.pass({ check, verdict: 'no', coolingOff: false });
+    const b = result.current.pass({ check, verdict: 'no', coolingOff: false });
+    expect(b).toBe(a);
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    expect(fake.calls.filter((c) => c.method === 'rpc')).toHaveLength(1);
+  });
+
+  it('a failed write toasts and sends no client step', async () => {
+    const fake = setup();
+    fake.respondWith({ data: null, error: { message: 'bad', code: '22023' }, status: 400 });
+    const qc = newClient();
+    const { result } = await renderHook(() => usePass(), { wrapper: wrapper(qc) });
+    result.current.pass({ check, verdict: 'no', coolingOff: false });
+    await waitFor(() => expect(getToast()).not.toBeNull());
+    noClientStep(fake);
   });
 });

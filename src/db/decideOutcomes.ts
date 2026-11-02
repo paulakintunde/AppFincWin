@@ -8,6 +8,9 @@
 //   separate request) is no longer called.
 // record_decide_outcome(p_check_id, p_outcome 'wait' | 'pass', p_decision)
 //   -> { status: 'applied' | 'already-applied' }
+//   20261031000100 (05.3-66): the 4-arg overload record_decide_outcome(..., p_undo_step) records the undo step
+//   server-side with allow_system_keys, accepts goal.account_id and returns undo_step_id, check_version, goal_version.
+//   Without a step the 3-key call is made as before (queued writes from older builds).
 
 import { DbError, toDbError } from './errors';
 import type { NewRecurringSeries } from './recurringSeries';
@@ -151,7 +154,25 @@ export interface DecideWaitGoal {
   name: string;
   currency: string;
   target: number;
+  /** 05.3-68: the everyday account the plan pot is linked to (null: unlinked). */
+  account_id: string | null;
 }
+
+/** The undo step the server records with the decision (05.3-66). */
+export interface DecideOutcomeStep {
+  id: string;
+  label_key: 'planSaved' | 'notBuyingSaved';
+  label_params: { name?: string };
+}
+
+export interface DecideOutcomeResult {
+  status: 'applied' | 'already-applied';
+  undoStepId: string | null;
+  checkVersion: number | null;
+  goalVersion: number | null;
+}
+
+const positiveInt = (v: unknown): number | null => (typeof v === 'number' && Number.isSafeInteger(v) && v > 0 ? v : null);
 
 export type DecideOutcomeDecision =
   | {
@@ -164,12 +185,13 @@ export type DecideOutcomeDecision =
     }
   | { outcome: 'pass'; verdict: DecideGoDecision['verdict']; cooling_off: boolean };
 
-/** Wait or Pass: records the outcome on the check. No undo step (D-11). */
+/** Wait or Pass: records the outcome on the check. With a step, the server records the undo step in the same transaction. */
 export async function recordDecideOutcome(
   client: DbClient,
   checkId: string,
-  decision: DecideOutcomeDecision
-): Promise<{ status: 'applied' | 'already-applied' }> {
+  decision: DecideOutcomeDecision,
+  step?: DecideOutcomeStep
+): Promise<DecideOutcomeResult> {
   let payload: Record<string, unknown>;
   if (decision.outcome === 'wait') {
     if (!Number.isSafeInteger(decision.wait_monthly) || decision.wait_monthly < 0) {
@@ -183,7 +205,7 @@ export async function recordDecideOutcome(
       wait_monthly: decision.wait_monthly,
       ready_by: decision.ready_by,
       cooling_off: decision.cooling_off,
-      goal: decision.goal,
+      goal: decision.goal === null ? null : { ...decision.goal, account_id: decision.goal.account_id ?? null },
     };
   } else {
     payload = { verdict: decision.verdict, cooling_off: decision.cooling_off };
@@ -193,12 +215,20 @@ export async function recordDecideOutcome(
     p_check_id: checkId,
     p_outcome: decision.outcome,
     p_decision: payload,
+    ...(step ? { p_undo_step: step } : {}),
   });
   if (error) throw toDbError(error, status);
 
-  const state = typeof data === 'object' && data !== null ? (data as Record<string, unknown>).status : undefined;
+  const rec = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {};
+  const state = rec.status;
   if (state !== 'applied' && state !== 'already-applied') {
     throw new DbError(`record_decide_outcome response: unrecognised ${JSON.stringify(state)}`, BAD_RESPONSE, null);
   }
-  return { status: state };
+  const stepId = rec.undo_step_id;
+  return {
+    status: state,
+    undoStepId: typeof stepId === 'string' && stepId.length > 0 ? stepId : null,
+    checkVersion: positiveInt(rec.check_version),
+    goalVersion: positiveInt(rec.goal_version),
+  };
 }

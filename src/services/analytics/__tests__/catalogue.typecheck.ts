@@ -77,3 +77,22 @@ track('decide_setup_step_saved', { step: 'Your regular pay' });
 // Invalid: no amounts or names on setup events.
 // @ts-expect-error
 track('decide_setup_left', { step: 'pay', amount: 4000 });
+
+// 05.3: v3 Decide events.
+track('decide_check_started', {});
+track('decide_answer_shown', { code: 'fits_month', variant: 'none', band: '3' });
+track('decide_answer_shown', { code: 'not_yet', variant: 'payday', band: '15' });
+track('decide_question_answered', { missing: 'pay_arrival_question' });
+track('decide_recorded', { outcome: 'planned' });
+track('decide_instead_opened', {});
+track('decide_help_used', {});
+track('decide_refine_choice', { kind: 'under_logged_month', choice: 'kept' });
+track('decide_not_ready_shown', { first: 'past_month_missing', count: '2' });
+
+// Invalid: no amounts or names on v3 Decide events.
+// @ts-expect-error
+track('decide_recorded', { outcome: 'planned', amount: 4000 });
+
+// Invalid: a free string is not an outcome.
+// @ts-expect-error
+track('decide_recorded', { outcome: 'Laptop' });
