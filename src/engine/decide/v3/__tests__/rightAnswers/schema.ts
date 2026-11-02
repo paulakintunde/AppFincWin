@@ -7,7 +7,7 @@ export type Topic = typeof TOPICS[number];
 export type CaseStatus = 'draft' | 'approved' | 'to_do' | 'disputed';
 export interface FixtureAccount { id: string; kind: 'checking'|'current'|'savings'|'card'; name: string; balance: number; overdraftLimit: number|null; overdraftRate: string|null; use: 'everyday'|'emergency'|'untouched'|null }
 export interface FixtureBill { id: string; amount: number; everyMonths: 1|3|12; nextDue: string; lastPaid: string|null; paidBy: 'me'|'other' }
-export interface FixtureDebt { id: string; kind: 'loan'|'card'|'other'; balance: number; minimum: number; apr: string|null; dueDay: number|null; joint: boolean; /** a mortgage or other housing debt (D-08 housing fact); absent = false */ housing?: boolean }
+export interface FixtureDebt { id: string; kind: 'loan'|'card'|'other'; balance: number; minimum: number; apr: string|null; dueDay: number|null; joint: boolean; /** a mortgage or other housing debt (D-08 housing fact); absent = false */ housing?: boolean; /** already paid toward this month's minimum (DB-10); absent = 0 */ paidThisMonth?: number }
 export interface FixtureRunningCost { id: string; amount: number; everyMonths: 1|3|12; start: string; end: string|null; /** switched off by the user (FIN-28); absent = on */ off?: boolean }
 export interface FixtureCheck {
   price: number|null; taxPercent: string|null; taxIncluded: boolean|null; oneOffFees: number;
@@ -15,10 +15,12 @@ export interface FixtureCheck {
   runningCosts?: FixtureRunningCost[]; closingPercent?: string|null; purchaseDate?: string|null;
   replaces?: { stops: { id: string; amount: number; everyMonths: 1|3|12; stopDate: string; source: 'bill'|'everyday' }[]; sale: { amount: number; arrives: string; paysDebtId: string|null } | null } | null;
   saveForIt?: boolean; yourAnswer?: 'yes'|'no'|null;
+  /** the check's existing `purpose` preset; necessity and for_work read as a need, nice_to_have/treat/luxury as a want (D-41: words and order only) */
+  purpose?: 'invest_in_me'|'for_work'|'necessity'|'nice_to_have'|'treat'|'luxury'|null;
 }
 export interface RightAnswerFixture {
   asOf: string; currency: 'USD'|'CAD'|'GBP'|'EUR'; region: { country: string; subdivision: string|null } | null;
-  pay: { amount: number; cadence: 'monthly'|'fortnightly'|'weekly'; nextDate: string; setupAmount: number|null; lastThree: [number,number,number]|null };
+  pay: { amount: number; cadence: 'monthly'|'fortnightly'|'weekly'; nextDate: string; setupAmount: number|null; lastThree: [number,number,number]|null; /** low months stated explicitly ('YYYY-MM', pay that month); absent = none beyond lastThree */ lean?: { month: string; amount: number }[] };
   usualMonth: { bills: number; everyday: number; essentialEveryday: number };
   thisMonth: { received: number; billsPaid: number; billsDue: number; everydaySoFar: number };
   historyMonths: number; quickEstimates: { income: number; bills: number; everyday: number } | null; recordsAsOf: string|null;
@@ -34,6 +36,15 @@ export const ID_PREFIX: Readonly<Record<Topic, string>> = {
   'selling-the-old-one': 'SO', 'quick-estimates': 'QE', household: 'HH',
 };
 const STATUSES: readonly string[] = ['draft', 'approved', 'to_do', 'disputed'];
+/** Answer codes a case may expect (no new codes in 05.4; the shadow-run CHECK in migration 20261103000500 holds the same list). */
+export const CODES = ['needs_input', 'not_yet', 'monthly_short', 'emergency_use', 'fits_unspent', 'fits_month', 'fits_uses_net', 'fits_uses_overdraft', 'fits_by_borrowing', 'fits_on_your_answer'] as const;
+/**
+ * Variants a case may expect. Round 1 (D-35..D-41) adds: not_cleared (overdraft not cleared by the next pay), no_net and
+ * small_net (nothing saved / net below its size), costly_debt (earlier savings spent while 20%+ APR debt remains) and
+ * borrowing_costs_more (cash fits but a plan is chosen). tight now also applies to one-off answers. Keep in step with the
+ * migration's variant CHECK.
+ */
+export const VARIANTS = ['payday', 'not_covered', 'low_month', 'tight', 'protection_off', 'not_cleared', 'no_net', 'small_net', 'costly_debt', 'borrowing_costs_more'] as const;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const COUNT_KEYS = ['everyMonths', 'months', 'historyMonths', 'dueDay'];
 
@@ -90,6 +101,8 @@ export function validateCase(c: unknown): string[] {
   const ex = k.expected;
   if (!ex || typeof ex.code !== 'string') errs.push(`${id}: expected.code is required`);
   else {
+    if (!(CODES as readonly string[]).includes(ex.code)) errs.push(`${id}: unknown answer code "${ex.code}"`);
+    if (ex.variant !== null && !(VARIANTS as readonly string[]).includes(String(ex.variant))) errs.push(`${id}: unknown variant "${String(ex.variant)}"`);
     for (const f of ['mustHaveReasons', 'mustHaveFacts', 'mustNotHaveFacts'] as const) {
       if (!Array.isArray(ex[f])) errs.push(`${id}: expected.${f} must be a list`);
     }

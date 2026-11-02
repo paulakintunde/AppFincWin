@@ -15,10 +15,20 @@ const TOPIC_TOTAL = 9;
 const LABELS = {
   fits_month: 'Fits',
   'fits_month.tight': 'Fits, but tight each month',
+  'fits_month.low_month': 'Fits, a low month is tight',
+  'fits_month.no_net': 'Fits, but no safety net',
+  'fits_month.small_net': 'Fits, but your safety net is small',
+  'fits_unspent.tight': 'Fits, but tight',
+  'fits_unspent.no_net': 'Fits, but no safety net',
+  'fits_unspent.small_net': 'Fits, but your safety net is small',
+  'fits_unspent.costly_debt': 'Fits, but you carry costly debt',
+  'fits_unspent.low_month': 'Fits, a low month is tight',
   fits_uses_net: 'Dips into your safety net',
   'fits_uses_net.protection_off': 'Uses your safety net · protection off',
   fits_uses_overdraft: 'Uses your overdraft',
+  'fits_uses_overdraft.not_cleared': 'Uses your overdraft past payday',
   fits_by_borrowing: 'Only by borrowing',
+  'fits_by_borrowing.borrowing_costs_more': 'Fits, but borrowing costs more',
   fits_on_your_answer: 'Only on your answer',
   not_yet: 'Not yet',
   monthly_short: 'Short each month',
@@ -27,7 +37,9 @@ const LABELS = {
   emergency_use: 'Uses your safety net',
 };
 
-function labelOf(code, variant) {
+// D-40: tight on a one-off purchase reads "Fits, but tight"; on a plan it stays "Fits, but tight each month".
+function labelOf(code, variant, payMode) {
+  if (code === 'fits_month' && variant === 'tight' && payMode === 'once') return 'Fits, but tight';
   return LABELS[`${code}.${variant}`] ?? LABELS[code] ?? code;
 }
 
@@ -76,7 +88,7 @@ function card(c) {
   return `<section class="card" id="${esc(c.id)}">
 <h2>${esc(c.id)} <span class="who">${esc(c.persona)}</span></h2>
 <h3>Situation</h3><p>${esc(c.situation)}</p>
-<h3>Expected answer</h3><p class="answer">${esc(labelOf(c.expected.code, c.expected.variant))}</p>
+<h3>Expected answer</h3><p class="answer">${esc(labelOf(c.expected.code, c.expected.variant, c.fixture.check.pay.mode))}</p>
 <h3>Why</h3><p>${esc(c.why)}</p>
 <h3>Numbers</h3><table>${rows}</table>
 <p class="status">Status: ${esc(c.status)}</p>

@@ -70,6 +70,23 @@ describe('validateCase', () => {
   it('rejects an approved case with no approvedAt', () => {
     expect(validateCase(minimalCase({ status: 'approved' })).join()).toMatch(/needs approvedAt/);
   });
+  it('rejects an answer code that does not exist', () => {
+    const c = minimalCase();
+    c.expected.code = 'fits_maybe';
+    expect(validateCase(c).join()).toMatch(/unknown answer code/);
+  });
+  it('rejects a variant that is not on the allowed list', () => {
+    const c = minimalCase();
+    c.expected.variant = 'net_not_full';
+    expect(validateCase(c).join()).toMatch(/unknown variant/);
+  });
+  it('accepts every round-1 variant', () => {
+    for (const v of ['not_cleared', 'no_net', 'small_net', 'costly_debt', 'borrowing_costs_more', 'tight']) {
+      const c = minimalCase();
+      c.expected.variant = v;
+      expect(validateCase(c)).toEqual([]);
+    }
+  });
   it('rejects a non-object', () => {
     expect(validateCase(null)).toEqual(['case must be an object']);
   });
