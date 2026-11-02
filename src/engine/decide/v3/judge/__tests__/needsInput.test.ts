@@ -50,7 +50,7 @@ describe('needsInput', () => {
   it('5.4.1 no income figures', () => {
     expect(run(inputsOf())).toContain('no_income_figures');
     expect(run(inputsOf({ series: [pay] }))).not.toContain('no_income_figures');
-    expect(run(inputsOf({ rough }))).not.toContain('no_income_figures');
+    expect(run(inputsOf({ typedEstimates: rough }))).not.toContain('no_income_figures');
     expect(run(inputsOf({ profile: { types: ['salary'], variable: null, steady: null, billsHorizonMonths: null } }))).not.toContain('no_income_figures');
     expect(run(inputsOf({ series: [{ ...pay, confirmed: false }] }))).toContain('no_income_figures');
     expect(run(inputsOf({ series: [{ ...pay, status: 'dismissed' }] }))).toContain('no_income_figures');
@@ -104,6 +104,21 @@ describe('needsInput', () => {
     expect(run(none, { month: behindMonth, purchase: purchase({ band: 5 }) })).toEqual(['records_look_behind']);
   });
 
+  it('05.4 ENG-14 (QE-07) records synced in the last 3 days of a new month with no records yet: no records_look_behind', () => {
+    const behindMonth = month({ everydayLogged: mu(0) });
+    const nov = monthOf('2026-11', [v3Line({ id: 'n', date: '2026-11-15', amount: 100 })]); // 16 days before 1 December
+    const at = (recordsAsOf: string | null | undefined) =>
+      run(inputsOf({ asOf: '2026-12-01', series: [pay], months: [nov], ...(recordsAsOf === undefined ? {} : { recordsAsOf }) }), {
+        month: behindMonth,
+        purchase: purchase({ band: 5 }),
+      });
+    expect(at('2026-11-29')).toEqual([]);
+    // older than the freshness limit, or no records date: the records still look behind
+    expect(at('2026-11-27')).toEqual(['records_look_behind']);
+    expect(at(null)).toEqual(['records_look_behind']);
+    expect(at(undefined)).toEqual(['records_look_behind']);
+  });
+
   it('05.3-119 (UAT gap 36) a fresh current-month "up to date" or "nothing to add" answer skips records_look_behind', () => {
     const behindMonth = month({ everydayLogged: mu(10_000) });
     const old = [monthOf('2026-10', [v3Line({ id: 'a', date: '2026-09-18', amount: 100 })])]; // 15 days before ASOF
@@ -145,7 +160,7 @@ describe('needsInput', () => {
   });
 
   it('D-32 rough only answers', () => {
-    const r = run(inputsOf({ rough }), { month: month({ e: null }) });
+    const r = run(inputsOf({ typedEstimates: rough }), { month: month({ e: null }) });
     expect(r).not.toContain('no_income_figures');
     expect(r).not.toContain('everyday_unknown');
   });

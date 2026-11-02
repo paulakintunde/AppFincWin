@@ -73,7 +73,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     history,
     series: inputs.series,
     profile: inputs.profile,
-    rough: inputs.rough,
+    typedEstimates: inputs.typedEstimates,
     custom: inputs.custom,
     payArrivals: inputs.payArrivals ?? [],
   };
@@ -106,7 +106,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     typicalIncome: ti.amount,
     setAside,
     everydayOverride: inputs.everydayOverride,
-    rough: inputs.rough,
+    typedEstimates: inputs.typedEstimates,
     windowMonths,
     incomeByMonth: pattern.treated === 'steady' ? null : incomeByMonth,
     excludedSeries: drops.alwaysOther, // D-31: also out of buildIncomeMonths below, which uses typical.recurringBills
@@ -141,7 +141,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     series: inputs.series,
     income: incomeUsed,
     e: seasonE ?? typical.e,
-    roughExpenses: inputs.rough?.expenses ?? null,
+    typedExpenses: inputs.typedEstimates?.expenses ?? null,
     setAside,
     drops,
   });
@@ -156,7 +156,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     everydayLogged: tm.everydayLogged,
     e: typical.e,
     unsavedWrites: inputs.unsavedWrites,
-    roughUsed: reasonSet.has('rough_figures_used'),
+    typedEstimatesUsed: reasonSet.has('quick_estimates_used'),
     provisionalRates: inputs.provisionalRates,
   });
 

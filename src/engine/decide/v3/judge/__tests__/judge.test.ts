@@ -419,14 +419,14 @@ describe('judge: notices and confidence', () => {
   it('D-32 rough figures only: judged against the typical month with from_your_figures', () => {
     const r = judge(
       input({
-        month: month({ typicalLeft: mu(115_000), reasons: ['rough_figures_used'] }),
+        month: month({ typicalLeft: mu(115_000), reasons: ['quick_estimates_used'] }),
         purchase: purchase({ dayOne: mu(0), whole: mu(10_000), monthly: mu(10_000) }),
       })
     );
     expect(r.parts.monthly).toBe('fits_month');
     expect(r.notices.map((n) => n.code)).toContain('from_your_figures');
     expect(r.confidence.level).toBe('rough');
-    expect(r.reasons).toContain('rough_figures_used');
+    expect(r.reasons).toContain('quick_estimates_used');
   });
 
   it('stale unspent caps confidence at fair with a days notice', () => {

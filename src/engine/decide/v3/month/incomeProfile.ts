@@ -22,7 +22,7 @@ import type {
   IncomeProfile,
   IncomeThisMonth,
   ReasonCode,
-  RoughFigures,
+  TypedEstimates,
   V3Line,
   V3Month,
   PayArrival,
@@ -45,7 +45,7 @@ export interface IncomeInput {
   readonly history: readonly V3Month[];
   readonly series: readonly V3Series[];
   readonly profile: IncomeProfile | null;
-  readonly rough: RoughFigures | null;
+  readonly typedEstimates: TypedEstimates | null;
   readonly custom: CustomOptions;
   readonly payArrivals?: readonly PayArrival[]; // D-58: the user's answers about pay dated before asOf with no matching line
 }
@@ -146,7 +146,7 @@ function sumMonthly(s: V3Series): bigint {
 }
 
 export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
-  const { asOf, current, history, series, profile, rough, custom } = input;
+  const { asOf, current, history, series, profile, typedEstimates, custom } = input;
   const plan = planOf(profile);
   const idx = seriesIndex(series);
   const { ym, start, next } = monthBounds(asOf);
@@ -337,10 +337,10 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
     received === 0n &&
     dueConfirmed === 0n &&
     !hasPay &&
-    rough !== null
+    typedEstimates !== null
   ) {
-    total = big(rough.income);
-    reasons.add("rough_figures_used");
+    total = big(typedEstimates.income);
+    reasons.add("quick_estimates_used");
   }
 
   return {
@@ -357,7 +357,7 @@ export function typicalIncome(input: IncomeInput): {
   readonly hasConfirmedIncome: boolean;
   readonly reasons: readonly ReasonCode[];
 } {
-  const { asOf, series, profile, rough, custom } = input;
+  const { asOf, series, profile, typedEstimates, custom } = input;
   const plan = planOf(profile);
   const reasons = new Set<ReasonCode>();
   const pay = liveSeriesOf(series, asOf, "pay");
@@ -393,9 +393,9 @@ export function typicalIncome(input: IncomeInput): {
       }
     }
   }
-  if (!any && rough !== null) {
-    reasons.add("rough_figures_used");
-    return { amount: rough.income, hasConfirmedIncome, reasons: [...reasons] };
+  if (!any && typedEstimates !== null) {
+    reasons.add("quick_estimates_used");
+    return { amount: typedEstimates.income, hasConfirmedIncome, reasons: [...reasons] };
   }
   return {
     amount: minorFromBigInt(sum, "typicalIncome"),

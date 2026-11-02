@@ -5,8 +5,8 @@
  * D-51 settle module; it adds no threshold of its own.
  *
  * With history, ready means: the previous calendar month is fully recorded AND the current month is up to date AND
- * every envelope says which account holds it. A person with no history who gave rough figures is always ready (D-57):
- * the answer is the rough one. A missed pay is never a readiness item (D-58); needsInput asks about it instead.
+ * every envelope says which account holds it. A person with no history who gave quick estimates is always ready (D-57):
+ * the answer is the estimate-based one. A missed pay is never a readiness item (D-58); needsInput asks about it instead.
  *
  * D-24: readiness names lines. Each gap is an item with its series or envelope, the pending line of the same series
  * (B1), a name, an amount and a date, so the asking card can say "Netflix, $11.99, due Sep 3". `missing` keeps the
@@ -18,6 +18,7 @@
  */
 import { MATCH_DAYS, NEEDS_INPUT_ENTRY_AGE_DAYS, PAY_MATCH_DAYS, UNDER_LOGGED_PACE_PERCENT } from './constants';
 import { addDays, addYearMonths, daysBetween, yearMonthOf } from './dates';
+import { recordsSynced } from './month/freshness';
 import { classifyLine, seriesIndex, seriesOccurrences } from './month/series';
 import { dueKey, matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './month/settle';
 import type {
@@ -128,7 +129,8 @@ function currentMonthItems(ctx: Ctx, month: MonthModel, ym: YearMonth): { readon
   const behind =
     month.e === null ||
     BigInt(month.everydayLogged) * BigInt(month.daysInMonth) * 100n < BigInt(UNDER_LOGGED_PACE_PERCENT) * BigInt(month.e) * BigInt(month.day);
-  if (old && behind) items.push(plainItem('spending', code, ym, newest));
+  // 05.4 ENG-14: the same freshness rule as needsInput; recently synced records stand in for a new month's spending (QE-07).
+  if (old && behind && !recordsSynced(inputs)) items.push(plainItem('spending', code, ym, newest));
   const dues = duesOf(inputs, ['bill'], `${ym}-01`, addDays(inputs.asOf, 1));
   const gaps = unsettled(ctx, dues, [...ctx.paid, ...ctx.skips])
     .filter((d) => daysBetween(d.date, inputs.asOf) > NEEDS_INPUT_ENTRY_AGE_DAYS)
@@ -233,8 +235,8 @@ function settles(w: ReadinessWaiver, item: ReadinessItem, ym: YearMonth, fresh: 
 
 export function readinessOf(inputs: V3Inputs, month: MonthModel): Readiness {
   const ym = yearMonthOf(inputs.asOf);
-  // D-57: no history and rough figures given: the answer is the rough one.
-  if (inputs.rough !== null && !inputs.months.some((m) => m.month < ym)) return { ready: true, missing: [], items: [], waived: [] };
+  // D-57: no history and quick estimates given: the answer is the estimate-based one.
+  if (inputs.typedEstimates !== null && !inputs.months.some((m) => m.month < ym)) return { ready: true, missing: [], items: [], waived: [] };
   const ctx = contextOf(inputs);
   const past = pastMonthItems(ctx, ym);
   const current = currentMonthItems(ctx, month, ym);

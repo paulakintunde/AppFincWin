@@ -30,7 +30,7 @@ import type {
   PayV2,
   PresetPurpose,
   ReadyBy,
-  RoughFigures,
+  TypedEstimates,
   SeriesRole,
   SeriesStatus,
   TypicalChoice,
@@ -112,7 +112,7 @@ export interface FixturePerson {
   months: FixtureMonth[];
   series: FixtureSeries[];
   profile: IncomeProfile | null;
-  rough: RoughFigures | null;
+  rough: TypedEstimates | null;
   balance: number;
   unspent: { amount: number; at: string } | null;
   emergency: number | null;
@@ -341,7 +341,7 @@ export function toV3Inputs(person: FixturePerson, overrides: Partial<V3Inputs> =
       })
     ),
     profile: person.profile,
-    rough: person.rough,
+    typedEstimates: person.rough,
     balance: stated ? stated.balance : mu(person.balance),
     unspent: person.unspent ? { amount: mu(person.unspent.amount), at: person.unspent.at } : null,
     emergency: stated ? stated.emergency : person.emergency === null ? null : { amount: mu(person.emergency) },

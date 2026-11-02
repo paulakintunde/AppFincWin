@@ -170,9 +170,9 @@ describe('D-42 the stricter of the as-given and the all-full reading', () => {
   });
 
   it('D-42 the all-full reading is stricter: it wins, and the answer says so', () => {
-    const out = stricterOf(fake('fits_month', 'firm', { reasons: ['rough_figures_used'] }), fake('fits_unspent', 'fair', { cReasons: ['few_months'] }));
+    const out = stricterOf(fake('fits_month', 'firm', { reasons: ['quick_estimates_used'] }), fake('fits_unspent', 'fair', { cReasons: ['few_months'] }));
     expect(out.result.code).toBe('fits_unspent');
-    expect(out.result.reasons).toEqual(['rough_figures_used', 'thin_history_stricter']);
+    expect(out.result.reasons).toEqual(['quick_estimates_used', 'thin_history_stricter']);
     expect(out.result.confidence).toEqual({ level: 'fair', reasons: ['few_months'] });
   });
 

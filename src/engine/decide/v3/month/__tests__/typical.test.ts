@@ -21,7 +21,7 @@ function input(over: Partial<TypicalInput> = {}): TypicalInput {
     typicalIncome: mu(400000),
     setAside: mu(30000),
     everydayOverride: null,
-    rough: null,
+    typedEstimates: null,
     ...over,
   };
 }
@@ -230,15 +230,15 @@ describe('typicalOf', () => {
 
   it('D-32 rough figures only', () => {
     const rough = { income: mu(300000), expenses: mu(150000), debt: mu(20000), saving: mu(10000), invest: mu(5000), asOf: ASOF };
-    const r = typicalOf(input({ rough }));
+    const r = typicalOf(input({ typedEstimates: rough }));
     expect(r.e).toBe(150000);
     expect(r.typicalLeft).toBe(115000);
     expect(r.low).toBeNull();
-    expect(r.reasons).toContain('rough_figures_used');
+    expect(r.reasons).toContain('quick_estimates_used');
     expect(r.notices).toEqual([{ code: 'from_your_figures', values: {} }]);
-    const withHistory = typicalOf(input({ rough, history: [everydayMonth('2026-09', 80000)] }));
+    const withHistory = typicalOf(input({ typedEstimates: rough, history: [everydayMonth('2026-09', 80000)] }));
     expect(withHistory.e).toBe(80000);
-    expect(withHistory.reasons).not.toContain('rough_figures_used');
+    expect(withHistory.reasons).not.toContain('quick_estimates_used');
     expect(withHistory.notices).toEqual([]);
   });
 

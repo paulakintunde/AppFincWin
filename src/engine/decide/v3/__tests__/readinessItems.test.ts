@@ -65,7 +65,7 @@ function legacyCurrent(inputs: V3Inputs, month: MonthModel, ym: string): boolean
 }
 function legacyMissing(inputs: V3Inputs, month: MonthModel): readonly ReadinessCode[] {
   const ym = yearMonthOf(inputs.asOf);
-  if (inputs.rough !== null && !inputs.months.some((m) => m.month < ym)) return [];
+  if (inputs.typedEstimates !== null && !inputs.months.some((m) => m.month < ym)) return [];
   const missing: ReadinessCode[] = [];
   if (legacyPast(inputs, ym)) missing.push('past_month_missing');
   if (legacyCurrent(inputs, month, ym)) missing.push('activity_not_current');
@@ -265,7 +265,7 @@ describe('05.3-54 D-24 named readiness items', () => {
 
   it('D-57: the rough shortcut has no items and nothing waived', () => {
     const rough = { income: mu(300000), expenses: mu(200000), saving: mu(0), debt: mu(0), invest: mu(0), asOf: '2026-10-03' };
-    expect(readinessFor(inputsOf({ rough }))).toEqual({ ready: true, missing: [], items: [], waived: [] });
+    expect(readinessFor(inputsOf({ typedEstimates: rough }))).toEqual({ ready: true, missing: [], items: [], waived: [] });
   });
 });
 

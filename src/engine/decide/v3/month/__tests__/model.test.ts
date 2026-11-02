@@ -154,7 +154,7 @@ describe('buildMonthModel', () => {
     const m = buildMonthModel(
       inputsOf({
         asOf: '2026-10-03',
-        rough: {
+        typedEstimates: {
           income: mu(400000),
           expenses: mu(150000),
           saving: mu(30000),
@@ -166,7 +166,7 @@ describe('buildMonthModel', () => {
     );
     expect(m.notices.map((n) => n.code)).toContain('from_your_figures');
     expect(m.confidence.level).toBe('rough');
-    expect(m.confidence.reasons).toContain('rough_figures');
+    expect(m.confidence.reasons).toContain('quick_estimates');
     expect(m.typicalLeft).toBe(220000);
   });
 

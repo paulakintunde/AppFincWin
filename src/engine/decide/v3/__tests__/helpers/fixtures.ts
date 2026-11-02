@@ -75,7 +75,7 @@ export function inputsOf(over: Partial<V3Inputs> = {}): V3Inputs {
     series: [],
     dismissedKeys: [],
     profile: null,
-    rough: null,
+    typedEstimates: null,
     balance: mu(0),
     unspent: null,
     emergency: null,

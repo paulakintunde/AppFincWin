@@ -173,7 +173,7 @@ describe('this month without dropped dues (D-27, D-31)', () => {
 
   it('thisMonth without drops is unchanged and lists nothing', () => {
     const income: IncomeThisMonth = { received: mu(0), dueConfirmed: mu(0), total: mu(0), reasons: [] };
-    const tmIn = { asOf: '2026-10-30', current: null, series: [rent], income, e: null, roughExpenses: null, setAside: mu(0) };
+    const tmIn = { asOf: '2026-10-30', current: null, series: [rent], income, e: null, typedExpenses: null, setAside: mu(0) };
     const none = thisMonth(tmIn);
     const empty = thisMonth({ ...tmIn, drops: dueDrops({ asOf: '2026-10-30', series: [rent] }) });
     expect(none.billsDue).toBe(90000);

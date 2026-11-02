@@ -13,7 +13,7 @@ export interface ConfidenceInput {
   readonly everydayLogged: MinorUnits;
   readonly e: MinorUnits | null;
   readonly unsavedWrites: number;
-  readonly roughUsed: boolean;
+  readonly typedEstimatesUsed: boolean;
   readonly provisionalRates: boolean;
 }
 
@@ -22,7 +22,7 @@ const LEVEL_RANK: Readonly<Record<ConfidenceLevel, number>> = { rough: 0, fair: 
 // Fixed order so two equal confidences always compare equal.
 const REASON_ORDER: readonly ConfidenceReason[] = [
   'few_months',
-  'rough_figures',
+  'quick_estimates',
   'early_in_month',
   'under_logged',
   'unsaved_changes',
@@ -49,8 +49,8 @@ export function confidenceOf(input: ConfidenceInput): Confidence {
     reasons.add('few_months');
     level = 'rough';
   }
-  if (input.roughUsed) {
-    reasons.add('rough_figures');
+  if (input.typedEstimatesUsed) {
+    reasons.add('quick_estimates');
     level = 'rough';
   }
   if (input.day < CONFIDENCE_FIRM_MIN_DAY) {

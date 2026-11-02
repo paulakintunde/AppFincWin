@@ -31,7 +31,7 @@ import {
   type Limits,
   type MonthMark,
   type PayArrival,
-  type RoughFigures,
+  type TypedEstimates,
   type SeriesRole,
   type UnexplainedAnswer,
   type UnexplainedUse,
@@ -412,7 +412,7 @@ export function buildV3Inputs(
     const balance = toHome(source.balances[a.id] ?? 0, a.currency);
     return balance === null ? [] : [{ id: a.id, balance: minorUnits(balance), use: effectiveUses[a.id] ?? null }];
   });
-  let rough: RoughFigures | null = null;
+  let rough: TypedEstimates | null = null;
   let provisionalRates = (built.provisional ?? null) !== null;
 
   if (built.kind === 'logged') {
@@ -546,7 +546,7 @@ export function buildV3Inputs(
     series,
     dismissedKeys: (v3?.dismissals ?? []).filter((k): k is string => typeof k === 'string'),
     profile: profileOf(v3),
-    rough,
+    typedEstimates: rough,
     balance: built.cash,
     unspent: anchorAmount === null || anchorAt === null ? null : { amount: minorUnits(anchorAmount), at: anchorAt },
     emergency: reserve === null ? null : { amount: minorUnits(reserve), accountId: v3?.reserve_account_id ?? null },

@@ -169,7 +169,7 @@ export const REFINE_WINDOW_MONTHS = 6; // 05.2
 // Cite: 05.2 D-12, UP §4.12: check in after 3 full months of records since setup.
 export const REFINE_SETUP_MONTHS = 3; // 05.2
 
-// Cite: 05.2 D-12, UP §4.12: check in after 1 full month when setup used rough figures.
+// Cite: 05.2 D-12, UP §4.12: check in after 1 full month when setup used quick estimates.
 export const REFINE_ROUGH_MONTHS = 1; // 05.2
 
 // Cite: 05.2 D-12, UP §4.12: a typed figure 15% off the records.
@@ -204,3 +204,11 @@ export const REFINE_UNDERLOGGED_PCT = 50; // 05.2
 
 // Cite: 05.2 D-20: a regular pay with no paid line for its last 2 expected dates has stopped. FincWin choice (05.2 OQ2, owner approved 2026-10-28).
 export const REFINE_PAY_STOPPED_MISSES = 2; // 05.2
+
+// Cite: 05.4 ENG-14, right-answer case QE-07 (settled dispute 12): records synced recently stand in for a new month with no
+// records yet only in its first 7 days. FincWin choice (owner approved QE-07, 2026-11-02).
+export const RECORDS_FRESH_FIRST_DAYS = 7; // QE-07
+
+// Cite: 05.4 ENG-14, right-answer case QE-07: records count as fresh when they synced at most 3 days before asOf (QE-07: 2 days).
+// FincWin choice (owner approved QE-07, 2026-11-02).
+export const RECORDS_FRESH_SYNC_DAYS = 3; // QE-07

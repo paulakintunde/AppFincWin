@@ -52,7 +52,7 @@ function input(over: Partial<ThisMonthInput> = {}): ThisMonthInput {
     series: [rent, utilities],
     income: income(400000),
     e: mu(147500),
-    roughExpenses: null,
+    typedExpenses: null,
     setAside: mu(30000),
     ...over,
   };
@@ -110,9 +110,9 @@ describe('thisMonth', () => {
   });
 
   it('05.3-75 last day, e null, rough set: erest 0; another day keeps the rough gap', () => {
-    const last = thisMonth(input({ asOf: '2026-10-31', current: month(samLines), e: null, roughExpenses: mu(200000) }));
+    const last = thisMonth(input({ asOf: '2026-10-31', current: month(samLines), e: null, typedExpenses: mu(200000) }));
     expect(last.erest).toBe(0);
-    const other = thisMonth(input({ asOf: '2026-10-30', current: month(samLines), e: null, roughExpenses: mu(200000) }));
+    const other = thisMonth(input({ asOf: '2026-10-30', current: month(samLines), e: null, typedExpenses: mu(200000) }));
     expect(other.erest).toBe(190000);
   });
 
@@ -307,12 +307,12 @@ describe('thisMonth', () => {
   });
 
   it('e unknown: rough expenses fill in, otherwise flagged', () => {
-    const rough = thisMonth(input({ e: null, roughExpenses: mu(50000), current: month([line({ id: 'a', amount: mu(20000) })]) }));
+    const rough = thisMonth(input({ e: null, typedExpenses: mu(50000), current: month([line({ id: 'a', amount: mu(20000) })]) }));
     expect(rough.erest).toBe(30000);
     expect(rough.everydayUnknown).toBe(false);
-    const over = thisMonth(input({ e: null, roughExpenses: mu(1000), current: month([line({ id: 'a', amount: mu(20000) })]) }));
+    const over = thisMonth(input({ e: null, typedExpenses: mu(1000), current: month([line({ id: 'a', amount: mu(20000) })]) }));
     expect(over.erest).toBe(0);
-    const none = thisMonth(input({ e: null, roughExpenses: null }));
+    const none = thisMonth(input({ e: null, typedExpenses: null }));
     expect(none.erest).toBe(0);
     expect(none.everydayUnknown).toBe(true);
   });

@@ -7,7 +7,7 @@ const firmInput: ConfidenceInput = {
   everydayLogged: mu(100000),
   e: mu(150000),
   unsavedWrites: 0,
-  roughUsed: false,
+  typedEstimatesUsed: false,
   provisionalRates: false,
 };
 
@@ -36,7 +36,7 @@ describe('confidenceOf', () => {
   });
 
   it('rough figures are rough; provisional rates are at most fair', () => {
-    expect(confidenceOf({ ...firmInput, roughUsed: true })).toEqual({ level: 'rough', reasons: ['rough_figures'] });
+    expect(confidenceOf({ ...firmInput, typedEstimatesUsed: true })).toEqual({ level: 'rough', reasons: ['quick_estimates'] });
     expect(confidenceOf({ ...firmInput, provisionalRates: true })).toEqual({ level: 'fair', reasons: ['provisional_rates'] });
   });
 

@@ -1,12 +1,13 @@
 /**
  * UP §5.4, D-30, D-32 (05.1). The fixed needs-input rules; nothing else can ask the user for more.
  *  5.4.1 no confirmed pay series (D-41: ended with no end date is ended as of today),
- *        no income profile and no rough figures                                  -> no_income_figures
+ *        no income profile and no quick estimates                                  -> no_income_figures
  *  5.4.2 unspent not confirmed and day one above this month's room               -> unspent_not_confirmed
  *  5.4.3 band >= 5, newest spending entry over 10 days old and the month below
  *        50% of the usual pace                                                   -> records_look_behind
  *        skipped when the user answered this month is up to date or has nothing to add, within the same
- *        staleness clock readiness uses (05.3-119, UAT gap 36)
+ *        staleness clock readiness uses (05.3-119, UAT gap 36), and skipped when the records synced recently on
+ *        the first days of a new month (05.4 ENG-14, month/freshness.ts)
  *  5.4.4 income swings and the pattern is not stated or confirmed (D-34)            -> income_pattern_unconfirmed
  *  5.4.5 variable or seasonal, and a month the purchase depends on has no expected
  *        income (D-35: fewer than 12 full months, no confirmed figure, or an empty
@@ -14,14 +15,15 @@
  *  5.4.6 money above what the records explain (D-50)                              -> unexplained_money_question
  *  5.4.7 an account with no stated use, or an unlinked emergency fund (D-54, D-62) -> account_use_question
  *  5.4.8 a past pay with no matching line and no answer (D-58)                    -> pay_arrival_question
- *  plus everyday_unknown (no everyday figure and no rough figures) and the purchase's own missing facts.
- * Rough figures alone satisfy 5.4.1 and give E (D-32). Drift alone is never needs-input (D-30); less money than
+ *  plus everyday_unknown (no everyday figure and no quick estimates) and the purchase's own missing facts.
+ * Quick estimates alone satisfy 5.4.1 and give E (D-32). Drift alone is never needs-input (D-30); less money than
  * expected stays a notice, only more money than explained asks (D-50).
  * Result is unique and in MISSING_PRIORITY order (D-59); [] means the judge can answer.
  */
 import { daysBetween, yearMonthOf } from '../dates';
 import { MISSING_PRIORITY, NEEDS_INPUT_ENTRY_AGE_DAYS, NEEDS_INPUT_MIN_BAND, UNDER_LOGGED_PACE_PERCENT } from '../constants';
 import { minorUnits } from '../../../money/types';
+import { recordsSynced } from '../month/freshness';
 import { dependsOnMonths, expectedFor } from '../month/incomePattern';
 import { classifyLine, liveSeriesOf, seriesIndex } from '../month/series';
 import type { Funds, MissingCode, MonthModel, Purchase, V3Inputs, YearMonth } from '../types';
@@ -88,8 +90,8 @@ export function needsInput(ctx: NeedsInputContext): readonly MissingCode[] {
   const { inputs, month, funds, purchase } = ctx;
   const out = new Set<MissingCode>(ctx.purchaseMissing);
 
-  if (!hasConfirmedIncome(inputs) && inputs.profile === null && inputs.rough === null) out.add('no_income_figures');
-  if (month.e === null && inputs.rough === null) out.add('everyday_unknown');
+  if (!hasConfirmedIncome(inputs) && inputs.profile === null && inputs.typedEstimates === null) out.add('no_income_figures');
+  if (month.e === null && inputs.typedEstimates === null) out.add('everyday_unknown');
 
   // D-54, D-62: an account with no stated use, or an emergency fund that sits in no known account.
   if ((funds.unstatedAccounts ?? []).length > 0 || funds.fundUnlinked === true) out.add('account_use_question');
@@ -111,7 +113,8 @@ export function needsInput(ctx: NeedsInputContext): readonly MissingCode[] {
       const behind =
         BigInt(month.everydayLogged) * BigInt(month.daysInMonth) * 100n <
         BigInt(UNDER_LOGGED_PACE_PERCENT) * BigInt(month.e) * BigInt(month.day);
-      if (old && behind && !currentMonthAnswered(inputs)) out.add('records_look_behind');
+      // 05.4 ENG-14: records synced in the last few days of a new month stand in for this month's records (QE-07).
+      if (old && behind && !currentMonthAnswered(inputs) && !recordsSynced(inputs)) out.add('records_look_behind');
     }
   }
 

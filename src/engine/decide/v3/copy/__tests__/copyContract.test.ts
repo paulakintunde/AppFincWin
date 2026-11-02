@@ -148,7 +148,7 @@ function buildCorpus(): Emitted[] {
     checkOnce(90_000, { envelopeId: 'e1' })
   );
   // from_your_figures: rough figures only
-  collect(out, inputsOf({ rough: { income: mu(400_000), expenses: mu(150_000), saving: mu(30_000), debt: mu(0), invest: mu(0), asOf: '2026-10-01' } }), checkOnce(10_000));
+  collect(out, inputsOf({ typedEstimates: { income: mu(400_000), expenses: mu(150_000), saving: mu(30_000), debt: mu(0), invest: mu(0), asOf: '2026-10-01' } }), checkOnce(10_000));
   // income_kind_unmarked: other income whose kind carries no counts-as
   collect(
     out,

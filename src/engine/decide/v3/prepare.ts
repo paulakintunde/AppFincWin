@@ -20,6 +20,7 @@ import { mayUseEmergency, withLiveEmergency } from './funds/emergency';
 import { ownEnvelope } from './funds/envelopes';
 import { buildPurchase, purchaseCashFlows } from './judge/purchase';
 import { withRedatedRefunds } from './month/refunds';
+import { recordsSynced } from './month/freshness';
 import { dueDrops } from './month/dueDrops';
 import { buildMonthModel } from './month/model';
 import { incomeThisMonth, type IncomeInput } from './month/incomeProfile';
@@ -98,7 +99,7 @@ function payCapsOf(inputs: V3Inputs, month: MonthModel): ReadonlyMap<string, Min
     history: inputs.months.filter((m) => m.month !== currentYm),
     series: inputs.series,
     profile: inputs.profile,
-    rough: inputs.rough,
+    typedEstimates: inputs.typedEstimates,
     custom: inputs.custom,
     payArrivals: inputs.payArrivals ?? [],
   };
@@ -126,6 +127,8 @@ export interface Prepared {
   readonly inputs: V3Inputs;
   readonly readings: readonly Reading[];
   readonly readiness: ReturnType<typeof readinessOf>;
+  /** 05.4 ENG-14: a new month with no records yet is judged on recently synced records (month/freshness.ts). */
+  readonly recordsSynced: boolean;
 }
 
 function readingOf(inputs: V3Inputs): Reading {
@@ -225,7 +228,7 @@ export function prepare(raw: V3Inputs): Prepared {
   const thin = inputs.months.some((m) => m.month < ym && !m.full);
   const first = readingOf(inputs);
   const readings = thin ? [first, readingOf({ ...inputs, months: inputs.months.map((m) => (m.month < ym ? { ...m, full: true } : m)) })] : [first];
-  return { inputs, readings, readiness: readinessOf(inputs, first.month) };
+  return { inputs, readings, readiness: readinessOf(inputs, first.month), recordsSynced: recordsSynced(inputs) };
 }
 
 /** Per key press: purchase -> cash -> judge on each prepared reading, the stricter kept (D-42). */
@@ -233,5 +236,9 @@ export function judgeCheck(p: Prepared, check: CheckV2): Evaluation {
   const [first, second] = p.readings as readonly [Reading, Reading | undefined];
   const a = judgeReading(first, check);
   const chosen = second === undefined ? a : stricterOf(a, judgeReading(second, check));
-  return { ...chosen, result: { ...chosen.result, readiness: p.readiness } };
+  // 05.4 ENG-14, UX-29: the records date travels with the result when the caller gave one (absent stays absent, so a
+  // result for inputs without it is unchanged); records_synced says the answer rests on recently synced records.
+  const reasons: readonly ReasonCode[] = p.recordsSynced ? [...chosen.result.reasons, 'records_synced'] : chosen.result.reasons;
+  const asOf = p.inputs.recordsAsOf;
+  return { ...chosen, result: { ...chosen.result, reasons, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) } };
 }

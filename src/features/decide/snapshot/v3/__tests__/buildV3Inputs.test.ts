@@ -63,7 +63,7 @@ describe('buildV3Inputs: the demo (S9)', () => {
     expect(inputs.unspent).toBeNull();
     expect(inputs.profile).toBeNull();
     expect(inputs.emergency).toBeNull();
-    expect(inputs.rough).toBeNull();
+    expect(inputs.typedEstimates).toBeNull();
     expect(inputs.everydayOverride).toBeNull();
     expect(inputs.dismissedKeys).toEqual([]);
     expect(inputs.thresholds.source).toBe('table');
@@ -321,10 +321,10 @@ describe('buildV3Inputs: thresholds and other snapshot kinds', () => {
     };
     expect(buildDecideSnapshot(rough).kind).toBe('rough');
     const plain = buildV3Inputs(rough, null);
-    expect(plain.rough).toEqual({ income: 400000, expenses: 250000, saving: 0, debt: 0, invest: 0, asOf: TODAY });
+    expect(plain.typedEstimates).toEqual({ income: 400000, expenses: 250000, saving: 0, debt: 0, invest: 0, asOf: TODAY });
     expect(plain.months).toEqual([]);
     const filled = buildV3Inputs(rough, v3s({ rough_saving: 1000, rough_debt: 2000, rough_invest: 3000, rough_as_of: '2026-09-15' }));
-    expect(filled.rough).toEqual({ income: 400000, expenses: 250000, saving: 1000, debt: 2000, invest: 3000, asOf: '2026-09-15' });
+    expect(filled.typedEstimates).toEqual({ income: 400000, expenses: 250000, saving: 1000, debt: 2000, invest: 3000, asOf: '2026-09-15' });
   });
 
   it('a snapshot with nothing to go on gives empty months and no rough figures', () => {
@@ -332,7 +332,7 @@ describe('buildV3Inputs: thresholds and other snapshot kinds', () => {
     expect(buildDecideSnapshot(none).kind).toBe('none');
     const inputs = buildV3Inputs(none, null);
     expect(inputs.months).toEqual([]);
-    expect(inputs.rough).toBeNull();
+    expect(inputs.typedEstimates).toBeNull();
     expect(inputs.series).toEqual([]);
     expect(inputs.debts).toEqual([]);
   });

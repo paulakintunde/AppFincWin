@@ -88,7 +88,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   // mapped when ENG-14 lands: check.runningCosts and check.closingPercent
   // mapped when FIN-07 lands: check.replaces (stops and sale)
   // mapped when FIN-08 lands: userLine, check.yourAnswer, check.saveForIt
-  // mapped when FIN-09 lands: bills list, recordsAsOf, quickEstimates, pay.lastThree and pay.setupAmount
+  // mapped when FIN-09 lands: bills list, pay.lastThree and pay.setupAmount
   // mapped when FIN-08 / plan 05.4-23 lands: pay.lean (low months stated explicitly)
   // mapped when FIN-04 lands: debt paidThisMonth (part of a minimum already paid)
   // mapped when D-41 lands (05.4-18): check.purpose (need or want; words and order only)
@@ -108,6 +108,13 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     accounts,
     debts,
     unspent: { amount: mu(Math.max(0, spending)), at: f.asOf },
+    // 05.4-15 (ENG-11, ENG-14): quick estimates are the engine's typed estimates; their spending is bills plus everyday
+    // (the same total the app stores as rough_spending). The records date is passed as given.
+    typedEstimates:
+      f.quickEstimates === null
+        ? null
+        : { income: mu(f.quickEstimates.income), expenses: mu(f.quickEstimates.bills + f.quickEstimates.everyday), saving: mu(0), debt: mu(0), invest: mu(0), asOf: f.asOf },
+    recordsAsOf: f.recordsAsOf,
   });
   const c = f.check;
   const check = checkOnce(c.price ?? 0, {

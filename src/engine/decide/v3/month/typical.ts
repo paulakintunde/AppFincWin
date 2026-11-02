@@ -9,7 +9,7 @@ import { minorFromBigInt } from '../../../payoff/types';
 import { yearMonthOf } from '../dates';
 import { LOW_MONTH_RANK, UNDER_LOGGED_PACE_PERCENT, V3_HISTORY_MONTHS } from '../constants';
 import { monthlyEquivalentOf } from '../plan/cadence';
-import type { LowMonth, MonthMark, Notice, ReasonCode, RoughFigures, V3Month, V3Series } from '../types';
+import type { LowMonth, MonthMark, Notice, ReasonCode, TypedEstimates, V3Month, V3Series } from '../types';
 import { classifyLine, liveSeriesOf, seriesIndex } from './series';
 
 /** Median; odd count = middle value, even count = half-up mean of the two middle values (D-29). */
@@ -60,7 +60,7 @@ export interface TypicalInput {
   readonly typicalIncome: MinorUnits;
   readonly setAside: MinorUnits;
   readonly everydayOverride: MinorUnits | null;
-  readonly rough: RoughFigures | null; // D-32: used only when no eligible history month remains
+  readonly typedEstimates: TypedEstimates | null; // D-32: used only when no eligible history month remains
   readonly windowMonths?: number; // D-33: months of history used; default V3_HISTORY_MONTHS (6)
   /** D-36: recorded income per month. When given (variable or seasonal), the typical income and every low-month candidate come from the months' own income. */
   readonly incomeByMonth?: ReadonlyMap<string, bigint> | null;
@@ -153,24 +153,24 @@ export function typicalOf(input: TypicalInput): TypicalResult {
   const typicalIncomeBig =
     byMonth !== null && used.length > 0 ? medianHalfUp(used.map((m) => incomeOf(m.month))) : BigInt(input.typicalIncome);
 
-  // E: override first, then the median of real months, then rough figures (D-32).
+  // E: override first, then the median of real months, then quick estimates (D-32).
   let eBig: bigint | null = null;
-  let roughOnly = false;
+  let typedOnly = false;
   if (input.everydayOverride !== null) {
     eBig = BigInt(input.everydayOverride);
     reasons.add('everyday_override_used');
   } else if (used.length > 0) {
     eBig = medianHalfUp(used.map((m) => BigInt(m.everyday)));
-  } else if (input.rough !== null) {
-    eBig = BigInt(input.rough.expenses);
-    roughOnly = true;
-    reasons.add('rough_figures_used');
+  } else if (input.typedEstimates !== null) {
+    eBig = BigInt(input.typedEstimates.expenses);
+    typedOnly = true;
+    reasons.add('quick_estimates_used');
     notices.push({ code: 'from_your_figures', values: {} });
   }
 
   let typicalLeftBig: bigint | null = null;
-  if (roughOnly && input.rough !== null) {
-    const r = input.rough;
+  if (typedOnly && input.typedEstimates !== null) {
+    const r = input.typedEstimates;
     typicalLeftBig = BigInt(r.income) - BigInt(r.expenses) - BigInt(r.debt) - BigInt(r.saving) - BigInt(r.invest);
   } else if (eBig !== null) {
     typicalLeftBig = typicalIncomeBig - bills - eBig - BigInt(input.setAside);

@@ -5,7 +5,7 @@
  */
 import fc from 'fast-check';
 import { evaluate } from '../../evaluate';
-import type { CheckV2, Fact, Notice, Result, RoughFigures, V3Inputs, V3Line } from '../../types';
+import type { CheckV2, Fact, Notice, Result, TypedEstimates, V3Inputs, V3Line } from '../../types';
 import { loadPersons, personById, toV3Inputs } from '../golden/adapter';
 import { checkOnce } from '../helpers/fixtures';
 import { v3Line, v3Series } from '../helpers/fixtures';
@@ -160,7 +160,7 @@ describe('end-to-end invariants through evaluate()', () => {
   it('I5 not enough data: no figures at all is needs_input with no_income_figures, whatever the check', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
-        const bare: V3Inputs = { ...inputs, months: [], series: [], profile: null, rough: null, everydayOverride: null };
+        const bare: V3Inputs = { ...inputs, months: [], series: [], profile: null, typedEstimates: null, everydayOverride: null };
         const r = evaluate(bare, check).result;
         expect(r.code).toBe('needs_input');
         expect(r.missing).toContain('no_income_figures');
@@ -235,7 +235,7 @@ describe('end-to-end invariants through evaluate()', () => {
   });
 
   it('I20 rough figures only lower figures for a person with records', () => {
-    const roughArb: fc.Arbitrary<RoughFigures> = fc.record({
+    const roughArb: fc.Arbitrary<TypedEstimates> = fc.record({
       income: fc.integer({ min: 0, max: 10_000_000 }).map(mu),
       expenses: fc.integer({ min: 0, max: 10_000_000 }).map(mu),
       saving: fc.integer({ min: 0, max: 1_000_000 }).map(mu),
@@ -246,8 +246,8 @@ describe('end-to-end invariants through evaluate()', () => {
     fc.assert(
       fc.property(recordedInputsArb, roughArb, (inputs, rough) => {
         const check = checkOnce(10_000);
-        const before = evaluate({ ...inputs, rough: null }, check);
-        const after = evaluate({ ...inputs, rough: { ...rough, asOf: inputs.asOf } }, check);
+        const before = evaluate({ ...inputs, typedEstimates: null }, check);
+        const after = evaluate({ ...inputs, typedEstimates: { ...rough, asOf: inputs.asOf } }, check);
         expect(after.month.monthLeft).toBeLessThanOrEqual(before.month.monthLeft);
         if (before.month.typicalLeft !== null && after.month.typicalLeft !== null) {
           expect(after.month.typicalLeft).toBeLessThanOrEqual(before.month.typicalLeft);

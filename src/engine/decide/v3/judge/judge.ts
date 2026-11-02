@@ -393,7 +393,7 @@ function judgeNotices(j: JudgeInput, missing: readonly MissingCode[]): Notice[] 
   const u = j.funds.unspent;
   if (u !== null && u.stale) out.push({ code: 'unspent_stale', values: { days: daysBetween(u.anchor.at, j.inputs.asOf) } });
   if (u !== null && u.drifted) out.push({ code: 'unspent_drifted', values: { suggested: j.funds.suggested } });
-  if (j.month.reasons.includes('rough_figures_used')) out.push({ code: 'from_your_figures', values: {} });
+  if (j.month.reasons.includes('quick_estimates_used')) out.push({ code: 'from_your_figures', values: {} });
   const f = j.funds;
   // D-49, D-54: an envelope linked to no account is taken to sit inside the spending money.
   if ((f.envelopesAssumedInside ?? 0) > 0) out.push({ code: 'envelope_location_assumed', values: { count: f.envelopesAssumedInside as number } });
@@ -421,7 +421,7 @@ function judgeConfidence(j: JudgeInput): Confidence {
   const u = j.funds.unspent;
   if (u !== null && u.stale) c = capConfidence(c, 'unspent_stale');
   if (u !== null && u.drifted) c = capConfidence(c, 'unspent_drifted', 'rough');
-  if (j.month.reasons.includes('rough_figures_used')) c = capConfidence(c, 'rough_figures', 'rough');
+  if (j.month.reasons.includes('quick_estimates_used')) c = capConfidence(c, 'quick_estimates', 'rough');
   // D-58: a pay counted as missed is a careful answer that still works, so the figure is a rough one.
   if ((j.month.unseenPay ?? []).some((p) => p.arrived === false)) c = capConfidence(c, 'pay_missed', 'rough');
   return c;

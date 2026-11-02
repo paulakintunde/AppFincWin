@@ -40,7 +40,7 @@ export interface ThisMonthInput {
   readonly series: readonly V3Series[];
   readonly income: IncomeThisMonth;
   readonly e: MinorUnits | null;
-  readonly roughExpenses: MinorUnits | null;
+  readonly typedExpenses: MinorUnits | null;
   readonly setAside: MinorUnits;
   /** 05.3-63: dues that no longer count (D-27, D-31, skips); absent = none. */
   readonly drops?: DueDrops;
@@ -158,8 +158,8 @@ export function thisMonth(input: ThisMonthInput): ThisMonthResult {
   let everydayUnknown = false;
   if (input.e !== null) {
     erest = erestOf(input.e, logged, day, n);
-  } else if (input.roughExpenses !== null) {
-    const gap = BigInt(input.roughExpenses) - everyday;
+  } else if (input.typedExpenses !== null) {
+    const gap = BigInt(input.typedExpenses) - everyday;
     erest = day === n ? minorUnits(0) : minorFromBigInt(gap > 0n ? gap : 0n, FN);
   } else {
     erest = minorUnits(0);
