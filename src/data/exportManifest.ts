@@ -26,6 +26,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'credit_limit', 'deleted_at', 'created_at', 'updated_at',
     // 05.2
     'use', 'use_purpose', 'use_envelope_id', 'use_extra_set_aside',
+    // 05.4
+    'overdraft_rate',
   ],
   categories: ['id', 'owner_id', 'builtin_key', 'name', 'color_key', 'is_system', 'archived_at', 'monthly_cap', 'created_at', 'updated_at'],
   category_rules: [
@@ -67,6 +69,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'deleted_at', 'created_at', 'updated_at',
     // 05.2
     'pays_in_full', 'paid_off_on',
+    // 05.4
+    'due_day',
   ],
   savings_goals: [
     'id', 'household_id', 'created_by', 'check_id', 'name', 'currency', 'target', 'monthly_amount', 'ready_by', 'opening_saved',
@@ -84,6 +88,7 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'rough_saving', 'rough_debt', 'rough_invest', 'rough_as_of', 'unexplained_amount', 'unexplained_use', 'unexplained_at',
     'refine_last_at', 'refine_snooze_until',
     'custom_options', // 05.3-81
+    'safety_net_protect', 'safety_net_size', // 05.4 D-33 interim, removed in 05.5
   ],
   recurring_dismissals: ['id', 'household_id', 'payee_key', 'direction', 'dismissed_at', 'created_by', 'deleted_at', 'created_at', 'updated_at'],
   income_payer_prompts: [
