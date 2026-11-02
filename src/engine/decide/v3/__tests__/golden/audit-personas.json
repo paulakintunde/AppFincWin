@@ -1,0 +1,3826 @@
+{
+ "persons": [
+  {
+   "id": "audit-p1",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p1-pay-04",
+       "date": "2026-04-01",
+       "amount": 120000,
+       "role": "income",
+       "seriesId": "audit-p1-pay"
+      },
+      {
+       "id": "audit-p1-rent-04",
+       "date": "2026-04-01",
+       "amount": 70000,
+       "role": "spending",
+       "seriesId": "audit-p1-rent"
+      },
+      {
+       "id": "audit-p1-e-04-1",
+       "date": "2026-04-03",
+       "amount": 21000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p1-e-04-2",
+       "date": "2026-04-17",
+       "amount": 21000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p1-pay-05",
+       "date": "2026-05-01",
+       "amount": 120000,
+       "role": "income",
+       "seriesId": "audit-p1-pay"
+      },
+      {
+       "id": "audit-p1-rent-05",
+       "date": "2026-05-01",
+       "amount": 70000,
+       "role": "spending",
+       "seriesId": "audit-p1-rent"
+      },
+      {
+       "id": "audit-p1-e-05-1",
+       "date": "2026-05-03",
+       "amount": 21000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p1-e-05-2",
+       "date": "2026-05-17",
+       "amount": 21000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p1-pay-06",
+       "date": "2026-06-01",
+       "amount": 120000,
+       "role": "income",
+       "seriesId": "audit-p1-pay"
+      },
+      {
+       "id": "audit-p1-rent-06",
+       "date": "2026-06-01",
+       "amount": 70000,
+       "role": "spending",
+       "seriesId": "audit-p1-rent"
+      },
+      {
+       "id": "audit-p1-e-06-1",
+       "date": "2026-06-03",
+       "amount": 21000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p1-e-06-2",
+       "date": "2026-06-17",
+       "amount": 21000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p1-pay-07",
+       "date": "2026-07-01",
+       "amount": 120000,
+       "role": "income",
+       "seriesId": "audit-p1-pay"
+      },
+      {
+       "id": "audit-p1-rent-07",
+       "date": "2026-07-01",
+       "amount": 70000,
+       "role": "spending",
+       "seriesId": "audit-p1-rent"
+      },
+      {
+       "id": "audit-p1-e-07-1",
+       "date": "2026-07-03",
+       "amount": 21000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p1-e-07-2",
+       "date": "2026-07-17",
+       "amount": 21000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p1-pay-08",
+       "date": "2026-08-01",
+       "amount": 120000,
+       "role": "income",
+       "seriesId": "audit-p1-pay"
+      },
+      {
+       "id": "audit-p1-rent-08",
+       "date": "2026-08-01",
+       "amount": 70000,
+       "role": "spending",
+       "seriesId": "audit-p1-rent"
+      },
+      {
+       "id": "audit-p1-e-08-1",
+       "date": "2026-08-03",
+       "amount": 21000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p1-e-08-2",
+       "date": "2026-08-17",
+       "amount": 21000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p1-pay-09",
+       "date": "2026-09-01",
+       "amount": 120000,
+       "role": "income",
+       "seriesId": "audit-p1-pay"
+      },
+      {
+       "id": "audit-p1-rent-09",
+       "date": "2026-09-01",
+       "amount": 70000,
+       "role": "spending",
+       "seriesId": "audit-p1-rent"
+      },
+      {
+       "id": "audit-p1-e-09-1",
+       "date": "2026-09-03",
+       "amount": 21000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p1-e-09-2",
+       "date": "2026-09-17",
+       "amount": 21000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p1-pay-10",
+       "date": "2026-10-01",
+       "amount": 120000,
+       "role": "income",
+       "seriesId": "audit-p1-pay"
+      },
+      {
+       "id": "audit-p1-rent-10",
+       "date": "2026-10-01",
+       "amount": 70000,
+       "role": "spending",
+       "seriesId": "audit-p1-rent"
+      },
+      {
+       "id": "audit-p1-e-10-1",
+       "date": "2026-10-02",
+       "amount": 379,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p1-e-10-2",
+       "date": "2026-10-09",
+       "amount": 379,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "audit-p1-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 120000
+    },
+    {
+     "id": "audit-p1-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 70000,
+     "isHousing": true
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 64258,
+   "unspent": {
+    "amount": 40000,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Invented. Student, GBP. Typical month leaves 80; 400 spare; no safety net. Audit A1-A4 (P1a-P1d). Bills derived from typicalLeft 8000: pay 1200, rent 700, everyday 420."
+  },
+  {
+   "id": "audit-p2",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2025-10",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-inc-10",
+       "date": "2025-10-05",
+       "amount": 185000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rent-10",
+       "date": "2025-10-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      },
+      {
+       "id": "audit-p2-e-10-1",
+       "date": "2025-10-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-e-10-2",
+       "date": "2025-10-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-11",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-inc-11",
+       "date": "2025-11-05",
+       "amount": 250000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rent-11",
+       "date": "2025-11-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      },
+      {
+       "id": "audit-p2-e-11-1",
+       "date": "2025-11-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-e-11-2",
+       "date": "2025-11-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-12",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rent-12",
+       "date": "2025-12-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      },
+      {
+       "id": "audit-p2-e-12-1",
+       "date": "2025-12-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-e-12-2",
+       "date": "2025-12-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-01",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-inc-01",
+       "date": "2026-01-05",
+       "amount": 185000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rent-01",
+       "date": "2026-01-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      },
+      {
+       "id": "audit-p2-e-01-1",
+       "date": "2026-01-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-e-01-2",
+       "date": "2026-01-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-02",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-inc-02",
+       "date": "2026-02-05",
+       "amount": 100000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rent-02",
+       "date": "2026-02-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      },
+      {
+       "id": "audit-p2-e-02-1",
+       "date": "2026-02-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-e-02-2",
+       "date": "2026-02-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-03",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-inc-03",
+       "date": "2026-03-05",
+       "amount": 150000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rent-03",
+       "date": "2026-03-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      },
+      {
+       "id": "audit-p2-e-03-1",
+       "date": "2026-03-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-e-03-2",
+       "date": "2026-03-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-inc-04",
+       "date": "2026-04-05",
+       "amount": 600000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rent-04",
+       "date": "2026-04-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      },
+      {
+       "id": "audit-p2-e-04-1",
+       "date": "2026-04-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-e-04-2",
+       "date": "2026-04-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-inc-05",
+       "date": "2026-05-05",
+       "amount": 170000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rent-05",
+       "date": "2026-05-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      },
+      {
+       "id": "audit-p2-e-05-1",
+       "date": "2026-05-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-e-05-2",
+       "date": "2026-05-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-inc-06",
+       "date": "2026-06-05",
+       "amount": 400000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rent-06",
+       "date": "2026-06-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      },
+      {
+       "id": "audit-p2-e-06-1",
+       "date": "2026-06-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-e-06-2",
+       "date": "2026-06-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-inc-07",
+       "date": "2026-07-05",
+       "amount": 180000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rent-07",
+       "date": "2026-07-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      },
+      {
+       "id": "audit-p2-e-07-1",
+       "date": "2026-07-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-e-07-2",
+       "date": "2026-07-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-inc-08",
+       "date": "2026-08-05",
+       "amount": 200000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rent-08",
+       "date": "2026-08-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      },
+      {
+       "id": "audit-p2-e-08-1",
+       "date": "2026-08-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-e-08-2",
+       "date": "2026-08-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-inc-09",
+       "date": "2026-09-05",
+       "amount": 190000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rent-09",
+       "date": "2026-09-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      },
+      {
+       "id": "audit-p2-e-09-1",
+       "date": "2026-09-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-e-09-2",
+       "date": "2026-09-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p2-rent-10",
+       "date": "2026-10-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rent"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "audit-p2-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 80000,
+     "isHousing": true
+    }
+   ],
+   "profile": {
+    "types": [
+     "freelance"
+    ],
+    "variable": "match",
+    "steady": null,
+    "billsHorizonMonths": null,
+    "pattern": "variable"
+   },
+   "rough": null,
+   "balance": 330968,
+   "unspent": {
+    "amount": 300000,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Invented. Freelancer, GBP, income 0 to 6000 over 12 months; 3000 spare. Audit A5-A7 (P2a-P2c). Income months chosen so typicalLeft is -150 and the second-lowest month (Feb) is -1000."
+  },
+  {
+   "id": "audit-p2-rich",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2025-10",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rich-inc-10",
+       "date": "2025-10-05",
+       "amount": 185000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rich-rent-10",
+       "date": "2025-10-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      },
+      {
+       "id": "audit-p2-rich-e-10-1",
+       "date": "2025-10-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-rich-e-10-2",
+       "date": "2025-10-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-11",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rich-inc-11",
+       "date": "2025-11-05",
+       "amount": 250000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rich-rent-11",
+       "date": "2025-11-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      },
+      {
+       "id": "audit-p2-rich-e-11-1",
+       "date": "2025-11-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-rich-e-11-2",
+       "date": "2025-11-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2025-12",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rich-rent-12",
+       "date": "2025-12-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      },
+      {
+       "id": "audit-p2-rich-e-12-1",
+       "date": "2025-12-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-rich-e-12-2",
+       "date": "2025-12-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-01",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rich-inc-01",
+       "date": "2026-01-05",
+       "amount": 185000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rich-rent-01",
+       "date": "2026-01-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      },
+      {
+       "id": "audit-p2-rich-e-01-1",
+       "date": "2026-01-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-rich-e-01-2",
+       "date": "2026-01-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-02",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rich-inc-02",
+       "date": "2026-02-05",
+       "amount": 100000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rich-rent-02",
+       "date": "2026-02-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      },
+      {
+       "id": "audit-p2-rich-e-02-1",
+       "date": "2026-02-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-rich-e-02-2",
+       "date": "2026-02-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-03",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rich-inc-03",
+       "date": "2026-03-05",
+       "amount": 150000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rich-rent-03",
+       "date": "2026-03-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      },
+      {
+       "id": "audit-p2-rich-e-03-1",
+       "date": "2026-03-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-rich-e-03-2",
+       "date": "2026-03-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rich-inc-04",
+       "date": "2026-04-05",
+       "amount": 600000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rich-rent-04",
+       "date": "2026-04-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      },
+      {
+       "id": "audit-p2-rich-e-04-1",
+       "date": "2026-04-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-rich-e-04-2",
+       "date": "2026-04-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rich-inc-05",
+       "date": "2026-05-05",
+       "amount": 170000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rich-rent-05",
+       "date": "2026-05-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      },
+      {
+       "id": "audit-p2-rich-e-05-1",
+       "date": "2026-05-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-rich-e-05-2",
+       "date": "2026-05-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rich-inc-06",
+       "date": "2026-06-05",
+       "amount": 400000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rich-rent-06",
+       "date": "2026-06-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      },
+      {
+       "id": "audit-p2-rich-e-06-1",
+       "date": "2026-06-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-rich-e-06-2",
+       "date": "2026-06-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rich-inc-07",
+       "date": "2026-07-05",
+       "amount": 180000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rich-rent-07",
+       "date": "2026-07-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      },
+      {
+       "id": "audit-p2-rich-e-07-1",
+       "date": "2026-07-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-rich-e-07-2",
+       "date": "2026-07-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rich-inc-08",
+       "date": "2026-08-05",
+       "amount": 200000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rich-rent-08",
+       "date": "2026-08-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      },
+      {
+       "id": "audit-p2-rich-e-08-1",
+       "date": "2026-08-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-rich-e-08-2",
+       "date": "2026-08-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p2-rich-inc-09",
+       "date": "2026-09-05",
+       "amount": 190000,
+       "role": "income"
+      },
+      {
+       "id": "audit-p2-rich-rent-09",
+       "date": "2026-09-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      },
+      {
+       "id": "audit-p2-rich-e-09-1",
+       "date": "2026-09-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p2-rich-e-09-2",
+       "date": "2026-09-17",
+       "amount": 60000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p2-rich-rent-10",
+       "date": "2026-10-01",
+       "amount": 80000,
+       "role": "spending",
+       "seriesId": "audit-p2-rich-rent"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "audit-p2-rich-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 80000,
+     "isHousing": true
+    }
+   ],
+   "profile": {
+    "types": [
+     "freelance"
+    ],
+    "variable": "match",
+    "steady": null,
+    "billsHorizonMonths": null,
+    "pattern": "variable"
+   },
+   "rough": null,
+   "balance": 1630968,
+   "unspent": {
+    "amount": 1600000,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Invented. Same freelancer as audit-p2 with 16000 spare. Audit A21-A22 (P2d, P2e)."
+  },
+  {
+   "id": "audit-p3",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p3-pay-04",
+       "date": "2026-04-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "audit-p3-pay"
+      },
+      {
+       "id": "audit-p3-rent-04",
+       "date": "2026-04-01",
+       "amount": 160000,
+       "role": "spending",
+       "seriesId": "audit-p3-rent"
+      },
+      {
+       "id": "audit-p3-e-04-1",
+       "date": "2026-04-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p3-e-04-2",
+       "date": "2026-04-17",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p3-pay-05",
+       "date": "2026-05-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "audit-p3-pay"
+      },
+      {
+       "id": "audit-p3-rent-05",
+       "date": "2026-05-01",
+       "amount": 160000,
+       "role": "spending",
+       "seriesId": "audit-p3-rent"
+      },
+      {
+       "id": "audit-p3-e-05-1",
+       "date": "2026-05-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p3-e-05-2",
+       "date": "2026-05-17",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p3-pay-06",
+       "date": "2026-06-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "audit-p3-pay"
+      },
+      {
+       "id": "audit-p3-rent-06",
+       "date": "2026-06-01",
+       "amount": 160000,
+       "role": "spending",
+       "seriesId": "audit-p3-rent"
+      },
+      {
+       "id": "audit-p3-e-06-1",
+       "date": "2026-06-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p3-e-06-2",
+       "date": "2026-06-17",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p3-pay-07",
+       "date": "2026-07-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "audit-p3-pay"
+      },
+      {
+       "id": "audit-p3-rent-07",
+       "date": "2026-07-01",
+       "amount": 160000,
+       "role": "spending",
+       "seriesId": "audit-p3-rent"
+      },
+      {
+       "id": "audit-p3-e-07-1",
+       "date": "2026-07-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p3-e-07-2",
+       "date": "2026-07-17",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p3-pay-08",
+       "date": "2026-08-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "audit-p3-pay"
+      },
+      {
+       "id": "audit-p3-rent-08",
+       "date": "2026-08-01",
+       "amount": 160000,
+       "role": "spending",
+       "seriesId": "audit-p3-rent"
+      },
+      {
+       "id": "audit-p3-e-08-1",
+       "date": "2026-08-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p3-e-08-2",
+       "date": "2026-08-17",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p3-pay-09",
+       "date": "2026-09-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "audit-p3-pay"
+      },
+      {
+       "id": "audit-p3-rent-09",
+       "date": "2026-09-01",
+       "amount": 160000,
+       "role": "spending",
+       "seriesId": "audit-p3-rent"
+      },
+      {
+       "id": "audit-p3-e-09-1",
+       "date": "2026-09-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p3-e-09-2",
+       "date": "2026-09-17",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p3-pay-10",
+       "date": "2026-10-01",
+       "amount": 300000,
+       "role": "income",
+       "seriesId": "audit-p3-pay"
+      },
+      {
+       "id": "audit-p3-rent-10",
+       "date": "2026-10-01",
+       "amount": 160000,
+       "role": "spending",
+       "seriesId": "audit-p3-rent"
+      },
+      {
+       "id": "audit-p3-e-10-1",
+       "date": "2026-10-02",
+       "amount": 726,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p3-e-10-2",
+       "date": "2026-10-09",
+       "amount": 726,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "audit-p3-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 300000
+    },
+    {
+     "id": "audit-p3-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 160000,
+     "isHousing": true
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 146452,
+   "unspent": {
+    "amount": 100000,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Invented. Couple, my half of the money, GBP; 1000 spare. Audit A8 (P3). Typical left 600: pay 3000, rent 1600, everyday 800."
+  },
+  {
+   "id": "audit-p4",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p4-pay-04",
+       "date": "2026-04-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-pay"
+      },
+      {
+       "id": "audit-p4-rent-04",
+       "date": "2026-04-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-rent"
+      },
+      {
+       "id": "audit-p4-e-04-1",
+       "date": "2026-04-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-e-04-2",
+       "date": "2026-04-17",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p4-pay-05",
+       "date": "2026-05-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-pay"
+      },
+      {
+       "id": "audit-p4-rent-05",
+       "date": "2026-05-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-rent"
+      },
+      {
+       "id": "audit-p4-e-05-1",
+       "date": "2026-05-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-e-05-2",
+       "date": "2026-05-17",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p4-pay-06",
+       "date": "2026-06-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-pay"
+      },
+      {
+       "id": "audit-p4-rent-06",
+       "date": "2026-06-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-rent"
+      },
+      {
+       "id": "audit-p4-e-06-1",
+       "date": "2026-06-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-e-06-2",
+       "date": "2026-06-17",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p4-pay-07",
+       "date": "2026-07-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-pay"
+      },
+      {
+       "id": "audit-p4-rent-07",
+       "date": "2026-07-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-rent"
+      },
+      {
+       "id": "audit-p4-e-07-1",
+       "date": "2026-07-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-e-07-2",
+       "date": "2026-07-17",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p4-pay-08",
+       "date": "2026-08-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-pay"
+      },
+      {
+       "id": "audit-p4-rent-08",
+       "date": "2026-08-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-rent"
+      },
+      {
+       "id": "audit-p4-e-08-1",
+       "date": "2026-08-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-e-08-2",
+       "date": "2026-08-17",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p4-pay-09",
+       "date": "2026-09-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-pay"
+      },
+      {
+       "id": "audit-p4-rent-09",
+       "date": "2026-09-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-rent"
+      },
+      {
+       "id": "audit-p4-e-09-1",
+       "date": "2026-09-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-e-09-2",
+       "date": "2026-09-17",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p4-pay-10",
+       "date": "2026-10-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-pay"
+      },
+      {
+       "id": "audit-p4-rent-10",
+       "date": "2026-10-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-rent"
+      },
+      {
+       "id": "audit-p4-e-10-1",
+       "date": "2026-10-02",
+       "amount": 645,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-e-10-2",
+       "date": "2026-10-09",
+       "amount": 645,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "audit-p4-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-20",
+     "amount": 200000
+    },
+    {
+     "id": "audit-p4-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 100000,
+     "isHousing": true
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 0,
+   "unspent": {
+    "amount": 0,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Invented. Account at 0, payday the 20th, GBP. Audit A9, A20 (P4a, P4e). Typical left 400: pay 2000, rent 1000, everyday 600."
+  },
+  {
+   "id": "audit-p4-overdrawn",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p4-overdrawn-pay-04",
+       "date": "2026-04-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-overdrawn-pay"
+      },
+      {
+       "id": "audit-p4-overdrawn-rent-04",
+       "date": "2026-04-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-overdrawn-rent"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-04-1",
+       "date": "2026-04-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-04-2",
+       "date": "2026-04-17",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p4-overdrawn-pay-05",
+       "date": "2026-05-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-overdrawn-pay"
+      },
+      {
+       "id": "audit-p4-overdrawn-rent-05",
+       "date": "2026-05-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-overdrawn-rent"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-05-1",
+       "date": "2026-05-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-05-2",
+       "date": "2026-05-17",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p4-overdrawn-pay-06",
+       "date": "2026-06-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-overdrawn-pay"
+      },
+      {
+       "id": "audit-p4-overdrawn-rent-06",
+       "date": "2026-06-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-overdrawn-rent"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-06-1",
+       "date": "2026-06-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-06-2",
+       "date": "2026-06-17",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p4-overdrawn-pay-07",
+       "date": "2026-07-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-overdrawn-pay"
+      },
+      {
+       "id": "audit-p4-overdrawn-rent-07",
+       "date": "2026-07-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-overdrawn-rent"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-07-1",
+       "date": "2026-07-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-07-2",
+       "date": "2026-07-17",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p4-overdrawn-pay-08",
+       "date": "2026-08-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-overdrawn-pay"
+      },
+      {
+       "id": "audit-p4-overdrawn-rent-08",
+       "date": "2026-08-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-overdrawn-rent"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-08-1",
+       "date": "2026-08-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-08-2",
+       "date": "2026-08-17",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p4-overdrawn-pay-09",
+       "date": "2026-09-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-overdrawn-pay"
+      },
+      {
+       "id": "audit-p4-overdrawn-rent-09",
+       "date": "2026-09-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-overdrawn-rent"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-09-1",
+       "date": "2026-09-03",
+       "amount": 30000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-09-2",
+       "date": "2026-09-17",
+       "amount": 30000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p4-overdrawn-pay-10",
+       "date": "2026-10-20",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p4-overdrawn-pay"
+      },
+      {
+       "id": "audit-p4-overdrawn-rent-10",
+       "date": "2026-10-01",
+       "amount": 100000,
+       "role": "spending",
+       "seriesId": "audit-p4-overdrawn-rent"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-10-1",
+       "date": "2026-10-02",
+       "amount": 645,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p4-overdrawn-e-10-2",
+       "date": "2026-10-09",
+       "amount": 645,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "audit-p4-overdrawn-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-20",
+     "amount": 200000
+    },
+    {
+     "id": "audit-p4-overdrawn-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 100000,
+     "isHousing": true
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": -150000,
+   "unspent": {
+    "amount": -150000,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "accounts": [
+    {
+     "id": "audit-p4-overdrawn-main",
+     "balance": -150000,
+     "use": {
+      "kind": "everyday"
+     }
+    }
+   ],
+   "note": "Invented. Same as audit-p4 but the account is at minus 1500 (stated account, no clamp). Audit A10, A11, A19 (P4b, P4c, P4d)."
+  },
+  {
+   "id": "audit-p5",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p5-e-10-1",
+       "date": "2026-10-03",
+       "amount": 60000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p5-e-10-2",
+       "date": "2026-10-10",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": {
+    "income": 300000,
+    "expenses": 200000,
+    "saving": 0,
+    "debt": 0,
+    "invest": 0,
+    "asOf": "2026-10-15"
+   },
+   "balance": 230000,
+   "unspent": {
+    "amount": 120000,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Invented. Three weeks of records only, rough figures (income 3000, spending 2000), 1200 spare. Audit A12 (P5). Rough typical left 1000; no pay line is logged so the rough income stands."
+  },
+  {
+   "id": "audit-p6",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p6-pay-04",
+       "date": "2026-04-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-pay"
+      },
+      {
+       "id": "audit-p6-rent-04",
+       "date": "2026-04-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-rent"
+      },
+      {
+       "id": "audit-p6-card-04",
+       "date": "2026-04-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-card"
+      },
+      {
+       "id": "audit-p6-e-04-1",
+       "date": "2026-04-03",
+       "amount": 70000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-e-04-2",
+       "date": "2026-04-17",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p6-pay-05",
+       "date": "2026-05-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-pay"
+      },
+      {
+       "id": "audit-p6-rent-05",
+       "date": "2026-05-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-rent"
+      },
+      {
+       "id": "audit-p6-card-05",
+       "date": "2026-05-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-card"
+      },
+      {
+       "id": "audit-p6-e-05-1",
+       "date": "2026-05-03",
+       "amount": 70000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-e-05-2",
+       "date": "2026-05-17",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p6-pay-06",
+       "date": "2026-06-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-pay"
+      },
+      {
+       "id": "audit-p6-rent-06",
+       "date": "2026-06-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-rent"
+      },
+      {
+       "id": "audit-p6-card-06",
+       "date": "2026-06-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-card"
+      },
+      {
+       "id": "audit-p6-e-06-1",
+       "date": "2026-06-03",
+       "amount": 70000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-e-06-2",
+       "date": "2026-06-17",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p6-pay-07",
+       "date": "2026-07-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-pay"
+      },
+      {
+       "id": "audit-p6-rent-07",
+       "date": "2026-07-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-rent"
+      },
+      {
+       "id": "audit-p6-card-07",
+       "date": "2026-07-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-card"
+      },
+      {
+       "id": "audit-p6-e-07-1",
+       "date": "2026-07-03",
+       "amount": 70000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-e-07-2",
+       "date": "2026-07-17",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p6-pay-08",
+       "date": "2026-08-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-pay"
+      },
+      {
+       "id": "audit-p6-rent-08",
+       "date": "2026-08-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-rent"
+      },
+      {
+       "id": "audit-p6-card-08",
+       "date": "2026-08-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-card"
+      },
+      {
+       "id": "audit-p6-e-08-1",
+       "date": "2026-08-03",
+       "amount": 70000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-e-08-2",
+       "date": "2026-08-17",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p6-pay-09",
+       "date": "2026-09-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-pay"
+      },
+      {
+       "id": "audit-p6-rent-09",
+       "date": "2026-09-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-rent"
+      },
+      {
+       "id": "audit-p6-card-09",
+       "date": "2026-09-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-card"
+      },
+      {
+       "id": "audit-p6-e-09-1",
+       "date": "2026-09-03",
+       "amount": 70000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-e-09-2",
+       "date": "2026-09-17",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p6-pay-10",
+       "date": "2026-10-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-pay"
+      },
+      {
+       "id": "audit-p6-rent-10",
+       "date": "2026-10-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-rent"
+      },
+      {
+       "id": "audit-p6-card-10",
+       "date": "2026-10-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-card"
+      },
+      {
+       "id": "audit-p6-e-10-1",
+       "date": "2026-10-02",
+       "amount": 645,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-e-10-2",
+       "date": "2026-10-09",
+       "amount": 645,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "audit-p6-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 350000
+    },
+    {
+     "id": "audit-p6-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 120000,
+     "isHousing": true
+    },
+    {
+     "id": "audit-p6-card",
+     "name": "Card minimum",
+     "role": "debt_payment",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-03",
+     "amount": 15000
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 241290,
+   "unspent": {
+    "amount": 200000,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [
+    {
+     "id": "p6-card-debt",
+     "kind": "card",
+     "balance": 600000,
+     "minimum": 15000,
+     "aprText": "24.9",
+     "secured": false,
+     "isHousing": false
+    }
+   ],
+   "everydayOverride": null,
+   "note": "Invented. Pays minimums on a 6000 card at 24.9 percent, 2000 spare. Audit A13 (P6). Typical left 750: pay 3500, rent 1200, card minimum 150, everyday 1400."
+  },
+  {
+   "id": "audit-p6-lines",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p6-lines-pay-04",
+       "date": "2026-04-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-lines-pay"
+      },
+      {
+       "id": "audit-p6-lines-rent-04",
+       "date": "2026-04-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-lines-rent"
+      },
+      {
+       "id": "audit-p6-lines-card-04",
+       "date": "2026-04-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-lines-card"
+      },
+      {
+       "id": "audit-p6-lines-e-04-1",
+       "date": "2026-04-03",
+       "amount": 70000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-lines-e-04-2",
+       "date": "2026-04-17",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p6-lines-pay-05",
+       "date": "2026-05-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-lines-pay"
+      },
+      {
+       "id": "audit-p6-lines-rent-05",
+       "date": "2026-05-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-lines-rent"
+      },
+      {
+       "id": "audit-p6-lines-card-05",
+       "date": "2026-05-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-lines-card"
+      },
+      {
+       "id": "audit-p6-lines-e-05-1",
+       "date": "2026-05-03",
+       "amount": 70000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-lines-e-05-2",
+       "date": "2026-05-17",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p6-lines-pay-06",
+       "date": "2026-06-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-lines-pay"
+      },
+      {
+       "id": "audit-p6-lines-rent-06",
+       "date": "2026-06-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-lines-rent"
+      },
+      {
+       "id": "audit-p6-lines-card-06",
+       "date": "2026-06-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-lines-card"
+      },
+      {
+       "id": "audit-p6-lines-e-06-1",
+       "date": "2026-06-03",
+       "amount": 70000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-lines-e-06-2",
+       "date": "2026-06-17",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p6-lines-pay-07",
+       "date": "2026-07-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-lines-pay"
+      },
+      {
+       "id": "audit-p6-lines-rent-07",
+       "date": "2026-07-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-lines-rent"
+      },
+      {
+       "id": "audit-p6-lines-card-07",
+       "date": "2026-07-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-lines-card"
+      },
+      {
+       "id": "audit-p6-lines-e-07-1",
+       "date": "2026-07-03",
+       "amount": 70000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-lines-e-07-2",
+       "date": "2026-07-17",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p6-lines-pay-08",
+       "date": "2026-08-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-lines-pay"
+      },
+      {
+       "id": "audit-p6-lines-rent-08",
+       "date": "2026-08-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-lines-rent"
+      },
+      {
+       "id": "audit-p6-lines-card-08",
+       "date": "2026-08-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-lines-card"
+      },
+      {
+       "id": "audit-p6-lines-e-08-1",
+       "date": "2026-08-03",
+       "amount": 70000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-lines-e-08-2",
+       "date": "2026-08-17",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p6-lines-pay-09",
+       "date": "2026-09-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-lines-pay"
+      },
+      {
+       "id": "audit-p6-lines-rent-09",
+       "date": "2026-09-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-lines-rent"
+      },
+      {
+       "id": "audit-p6-lines-card-09",
+       "date": "2026-09-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-lines-card"
+      },
+      {
+       "id": "audit-p6-lines-e-09-1",
+       "date": "2026-09-03",
+       "amount": 70000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-lines-e-09-2",
+       "date": "2026-09-17",
+       "amount": 70000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p6-lines-pay-10",
+       "date": "2026-10-01",
+       "amount": 350000,
+       "role": "income",
+       "seriesId": "audit-p6-lines-pay"
+      },
+      {
+       "id": "audit-p6-lines-rent-10",
+       "date": "2026-10-01",
+       "amount": 120000,
+       "role": "spending",
+       "seriesId": "audit-p6-lines-rent"
+      },
+      {
+       "id": "audit-p6-lines-card-10",
+       "date": "2026-10-03",
+       "amount": 15000,
+       "role": "debt_payment",
+       "seriesId": "audit-p6-lines-card"
+      },
+      {
+       "id": "audit-p6-lines-e-10-1",
+       "date": "2026-10-02",
+       "amount": 645,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p6-lines-e-10-2",
+       "date": "2026-10-09",
+       "amount": 645,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "audit-p6-lines-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 350000
+    },
+    {
+     "id": "audit-p6-lines-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 120000,
+     "isHousing": true
+    },
+    {
+     "id": "audit-p6-lines-card",
+     "name": "Card minimum",
+     "role": "debt_payment",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-03",
+     "amount": 15000
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 241290,
+   "unspent": {
+    "amount": 200000,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [
+    {
+     "id": "p6-card-debt",
+     "kind": "card",
+     "balance": 600000,
+     "minimum": 15000,
+     "aprText": "24.9",
+     "secured": false,
+     "isHousing": false
+    }
+   ],
+   "everydayOverride": null,
+   "limits": [
+    {
+     "id": "p6-debt-line",
+     "on": true,
+     "source": "builtin",
+     "spec": {
+      "kind": "debt_share",
+      "pctText": "36"
+     }
+    },
+    {
+     "id": "p6-unsecured-line",
+     "on": true,
+     "source": "builtin",
+     "spec": {
+      "kind": "unsecured_multiple",
+      "times": 12
+     }
+    }
+   ],
+   "note": "Invented. Same as audit-p6 with the debt-share and unsecured-multiple lines switched on. Audit A14 (P6b)."
+  },
+  {
+   "id": "audit-p7",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p7-pay-04",
+       "date": "2026-04-01",
+       "amount": 320000,
+       "role": "income",
+       "seriesId": "audit-p7-pay"
+      },
+      {
+       "id": "audit-p7-rent-04",
+       "date": "2026-04-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "audit-p7-rent"
+      },
+      {
+       "id": "audit-p7-e-04-1",
+       "date": "2026-04-03",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p7-e-04-2",
+       "date": "2026-04-17",
+       "amount": 45000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p7-pay-05",
+       "date": "2026-05-01",
+       "amount": 320000,
+       "role": "income",
+       "seriesId": "audit-p7-pay"
+      },
+      {
+       "id": "audit-p7-rent-05",
+       "date": "2026-05-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "audit-p7-rent"
+      },
+      {
+       "id": "audit-p7-e-05-1",
+       "date": "2026-05-03",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p7-e-05-2",
+       "date": "2026-05-17",
+       "amount": 45000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p7-pay-06",
+       "date": "2026-06-01",
+       "amount": 320000,
+       "role": "income",
+       "seriesId": "audit-p7-pay"
+      },
+      {
+       "id": "audit-p7-rent-06",
+       "date": "2026-06-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "audit-p7-rent"
+      },
+      {
+       "id": "audit-p7-e-06-1",
+       "date": "2026-06-03",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p7-e-06-2",
+       "date": "2026-06-17",
+       "amount": 45000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p7-pay-07",
+       "date": "2026-07-01",
+       "amount": 320000,
+       "role": "income",
+       "seriesId": "audit-p7-pay"
+      },
+      {
+       "id": "audit-p7-rent-07",
+       "date": "2026-07-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "audit-p7-rent"
+      },
+      {
+       "id": "audit-p7-e-07-1",
+       "date": "2026-07-03",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p7-e-07-2",
+       "date": "2026-07-17",
+       "amount": 45000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p7-pay-08",
+       "date": "2026-08-01",
+       "amount": 320000,
+       "role": "income",
+       "seriesId": "audit-p7-pay"
+      },
+      {
+       "id": "audit-p7-rent-08",
+       "date": "2026-08-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "audit-p7-rent"
+      },
+      {
+       "id": "audit-p7-e-08-1",
+       "date": "2026-08-03",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p7-e-08-2",
+       "date": "2026-08-17",
+       "amount": 45000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p7-pay-09",
+       "date": "2026-09-01",
+       "amount": 320000,
+       "role": "income",
+       "seriesId": "audit-p7-pay"
+      },
+      {
+       "id": "audit-p7-rent-09",
+       "date": "2026-09-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "audit-p7-rent"
+      },
+      {
+       "id": "audit-p7-e-09-1",
+       "date": "2026-09-03",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p7-e-09-2",
+       "date": "2026-09-17",
+       "amount": 45000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p7-pay-10",
+       "date": "2026-10-01",
+       "amount": 320000,
+       "role": "income",
+       "seriesId": "audit-p7-pay"
+      },
+      {
+       "id": "audit-p7-rent-10",
+       "date": "2026-10-01",
+       "amount": 150000,
+       "role": "spending",
+       "seriesId": "audit-p7-rent"
+      },
+      {
+       "id": "audit-p7-e-10-1",
+       "date": "2026-10-02",
+       "amount": 807,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p7-e-10-2",
+       "date": "2026-10-09",
+       "amount": 806,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "audit-p7-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 320000
+    },
+    {
+     "id": "audit-p7-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 150000,
+     "isHousing": true
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 351613,
+   "unspent": {
+    "amount": 300000,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Invented. No safety net, 3000 spare. Audit A15 (P7). Typical left 800: pay 3200, rent 1500, everyday 900."
+  },
+  {
+   "id": "audit-p8",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p8-pay-04",
+       "date": "2026-04-01",
+       "amount": 310000,
+       "role": "income",
+       "seriesId": "audit-p8-pay"
+      },
+      {
+       "id": "audit-p8-rent-04",
+       "date": "2026-04-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "audit-p8-rent"
+      },
+      {
+       "id": "audit-p8-e-04-1",
+       "date": "2026-04-03",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p8-e-04-2",
+       "date": "2026-04-17",
+       "amount": 45000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p8-pay-05",
+       "date": "2026-05-01",
+       "amount": 310000,
+       "role": "income",
+       "seriesId": "audit-p8-pay"
+      },
+      {
+       "id": "audit-p8-rent-05",
+       "date": "2026-05-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "audit-p8-rent"
+      },
+      {
+       "id": "audit-p8-e-05-1",
+       "date": "2026-05-03",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p8-e-05-2",
+       "date": "2026-05-17",
+       "amount": 45000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p8-pay-06",
+       "date": "2026-06-01",
+       "amount": 310000,
+       "role": "income",
+       "seriesId": "audit-p8-pay"
+      },
+      {
+       "id": "audit-p8-rent-06",
+       "date": "2026-06-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "audit-p8-rent"
+      },
+      {
+       "id": "audit-p8-e-06-1",
+       "date": "2026-06-03",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p8-e-06-2",
+       "date": "2026-06-17",
+       "amount": 45000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p8-pay-07",
+       "date": "2026-07-01",
+       "amount": 310000,
+       "role": "income",
+       "seriesId": "audit-p8-pay"
+      },
+      {
+       "id": "audit-p8-rent-07",
+       "date": "2026-07-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "audit-p8-rent"
+      },
+      {
+       "id": "audit-p8-e-07-1",
+       "date": "2026-07-03",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p8-e-07-2",
+       "date": "2026-07-17",
+       "amount": 45000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p8-pay-08",
+       "date": "2026-08-01",
+       "amount": 310000,
+       "role": "income",
+       "seriesId": "audit-p8-pay"
+      },
+      {
+       "id": "audit-p8-rent-08",
+       "date": "2026-08-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "audit-p8-rent"
+      },
+      {
+       "id": "audit-p8-e-08-1",
+       "date": "2026-08-03",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p8-e-08-2",
+       "date": "2026-08-17",
+       "amount": 45000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p8-pay-09",
+       "date": "2026-09-01",
+       "amount": 310000,
+       "role": "income",
+       "seriesId": "audit-p8-pay"
+      },
+      {
+       "id": "audit-p8-rent-09",
+       "date": "2026-09-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "audit-p8-rent"
+      },
+      {
+       "id": "audit-p8-e-09-1",
+       "date": "2026-09-03",
+       "amount": 45000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p8-e-09-2",
+       "date": "2026-09-17",
+       "amount": 45000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p8-pay-10",
+       "date": "2026-10-01",
+       "amount": 310000,
+       "role": "income",
+       "seriesId": "audit-p8-pay"
+      },
+      {
+       "id": "audit-p8-rent-10",
+       "date": "2026-10-01",
+       "amount": 140000,
+       "role": "spending",
+       "seriesId": "audit-p8-rent"
+      },
+      {
+       "id": "audit-p8-e-10-1",
+       "date": "2026-10-02",
+       "amount": 807,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p8-e-10-2",
+       "date": "2026-10-09",
+       "amount": 806,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "audit-p8-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 310000
+    },
+    {
+     "id": "audit-p8-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 140000,
+     "isHousing": true
+    },
+    {
+     "id": "audit-p8-ins",
+     "name": "Home insurance (yearly)",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 12
+     },
+     "anchorDate": "2026-03-10",
+     "amount": 120000
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 201613,
+   "unspent": {
+    "amount": 150000,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Invented. 1200 yearly insurance due in March, 1500 spare, surplus 700 a month. Audit A16 (P8). Pay 3100, rent 1400, everyday 900 (the yearly bill counts 100 a month)."
+  },
+  {
+   "id": "audit-p9",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p9-pay-04",
+       "date": "2026-04-01",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p9-pay"
+      },
+      {
+       "id": "audit-p9-rent-04",
+       "date": "2026-04-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p9-rent"
+      },
+      {
+       "id": "audit-p9-e-04-1",
+       "date": "2026-04-03",
+       "amount": 35000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p9-e-04-2",
+       "date": "2026-04-17",
+       "amount": 35000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p9-pay-05",
+       "date": "2026-05-01",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p9-pay"
+      },
+      {
+       "id": "audit-p9-rent-05",
+       "date": "2026-05-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p9-rent"
+      },
+      {
+       "id": "audit-p9-e-05-1",
+       "date": "2026-05-03",
+       "amount": 35000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p9-e-05-2",
+       "date": "2026-05-17",
+       "amount": 35000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p9-pay-06",
+       "date": "2026-06-01",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p9-pay"
+      },
+      {
+       "id": "audit-p9-rent-06",
+       "date": "2026-06-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p9-rent"
+      },
+      {
+       "id": "audit-p9-e-06-1",
+       "date": "2026-06-03",
+       "amount": 35000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p9-e-06-2",
+       "date": "2026-06-17",
+       "amount": 35000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p9-pay-07",
+       "date": "2026-07-01",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p9-pay"
+      },
+      {
+       "id": "audit-p9-rent-07",
+       "date": "2026-07-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p9-rent"
+      },
+      {
+       "id": "audit-p9-e-07-1",
+       "date": "2026-07-03",
+       "amount": 35000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p9-e-07-2",
+       "date": "2026-07-17",
+       "amount": 35000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p9-pay-08",
+       "date": "2026-08-01",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p9-pay"
+      },
+      {
+       "id": "audit-p9-rent-08",
+       "date": "2026-08-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p9-rent"
+      },
+      {
+       "id": "audit-p9-e-08-1",
+       "date": "2026-08-03",
+       "amount": 35000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p9-e-08-2",
+       "date": "2026-08-17",
+       "amount": 35000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p9-pay-09",
+       "date": "2026-09-01",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p9-pay"
+      },
+      {
+       "id": "audit-p9-rent-09",
+       "date": "2026-09-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p9-rent"
+      },
+      {
+       "id": "audit-p9-e-09-1",
+       "date": "2026-09-03",
+       "amount": 35000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p9-e-09-2",
+       "date": "2026-09-17",
+       "amount": 35000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p9-pay-10",
+       "date": "2026-10-01",
+       "amount": 200000,
+       "role": "income",
+       "seriesId": "audit-p9-pay"
+      },
+      {
+       "id": "audit-p9-rent-10",
+       "date": "2026-10-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p9-rent"
+      },
+      {
+       "id": "audit-p9-e-10-1",
+       "date": "2026-10-02",
+       "amount": 645,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p9-e-10-2",
+       "date": "2026-10-09",
+       "amount": 645,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "audit-p9-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 200000
+    },
+    {
+     "id": "audit-p9-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 110000,
+     "isHousing": true
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 91290,
+   "unspent": {
+    "amount": 50000,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Invented. Typical month leaves only 200. Audit A17 (P9). Pay 2000, rent 1100, everyday 700."
+  },
+  {
+   "id": "audit-p10",
+   "currency": "GBP",
+   "asOf": "2026-10-15",
+   "months": [
+    {
+     "month": "2026-04",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p10-pay-04",
+       "date": "2026-04-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "audit-p10-pay"
+      },
+      {
+       "id": "audit-p10-rent-04",
+       "date": "2026-04-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p10-rent"
+      },
+      {
+       "id": "audit-p10-e-04-1",
+       "date": "2026-04-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p10-e-04-2",
+       "date": "2026-04-17",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-05",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p10-pay-05",
+       "date": "2026-05-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "audit-p10-pay"
+      },
+      {
+       "id": "audit-p10-rent-05",
+       "date": "2026-05-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p10-rent"
+      },
+      {
+       "id": "audit-p10-e-05-1",
+       "date": "2026-05-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p10-e-05-2",
+       "date": "2026-05-17",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-06",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p10-pay-06",
+       "date": "2026-06-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "audit-p10-pay"
+      },
+      {
+       "id": "audit-p10-rent-06",
+       "date": "2026-06-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p10-rent"
+      },
+      {
+       "id": "audit-p10-e-06-1",
+       "date": "2026-06-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p10-e-06-2",
+       "date": "2026-06-17",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-07",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p10-pay-07",
+       "date": "2026-07-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "audit-p10-pay"
+      },
+      {
+       "id": "audit-p10-rent-07",
+       "date": "2026-07-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p10-rent"
+      },
+      {
+       "id": "audit-p10-e-07-1",
+       "date": "2026-07-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p10-e-07-2",
+       "date": "2026-07-17",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-08",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p10-pay-08",
+       "date": "2026-08-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "audit-p10-pay"
+      },
+      {
+       "id": "audit-p10-rent-08",
+       "date": "2026-08-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p10-rent"
+      },
+      {
+       "id": "audit-p10-e-08-1",
+       "date": "2026-08-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p10-e-08-2",
+       "date": "2026-08-17",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-09",
+     "full": true,
+     "lines": [
+      {
+       "id": "audit-p10-pay-09",
+       "date": "2026-09-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "audit-p10-pay"
+      },
+      {
+       "id": "audit-p10-rent-09",
+       "date": "2026-09-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p10-rent"
+      },
+      {
+       "id": "audit-p10-e-09-1",
+       "date": "2026-09-03",
+       "amount": 40000,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p10-e-09-2",
+       "date": "2026-09-17",
+       "amount": 40000,
+       "role": "spending"
+      }
+     ]
+    },
+    {
+     "month": "2026-10",
+     "full": false,
+     "lines": [
+      {
+       "id": "audit-p10-pay-10",
+       "date": "2026-10-01",
+       "amount": 250000,
+       "role": "income",
+       "seriesId": "audit-p10-pay"
+      },
+      {
+       "id": "audit-p10-rent-10",
+       "date": "2026-10-01",
+       "amount": 110000,
+       "role": "spending",
+       "seriesId": "audit-p10-rent"
+      },
+      {
+       "id": "audit-p10-e-10-1",
+       "date": "2026-10-02",
+       "amount": 726,
+       "role": "spending"
+      },
+      {
+       "id": "audit-p10-e-10-2",
+       "date": "2026-10-09",
+       "amount": 726,
+       "role": "spending"
+      }
+     ]
+    }
+   ],
+   "series": [
+    {
+     "id": "audit-p10-pay",
+     "name": "Pay",
+     "role": "pay",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 250000
+    },
+    {
+     "id": "audit-p10-rent",
+     "name": "Rent",
+     "role": "bill",
+     "cadence": {
+      "unit": "month",
+      "every": 1
+     },
+     "anchorDate": "2026-04-01",
+     "amount": 110000,
+     "isHousing": true
+    }
+   ],
+   "profile": {
+    "types": [
+     "salary"
+    ],
+    "variable": null,
+    "steady": null,
+    "billsHorizonMonths": null
+   },
+   "rough": null,
+   "balance": 96452,
+   "unspent": {
+    "amount": 50000,
+    "at": "2026-10-15"
+   },
+   "emergency": null,
+   "envelopes": [],
+   "debts": [],
+   "everydayOverride": null,
+   "note": "Invented. Typical left 600, 500 spare. Audit A18 (P10), deferred-interest plan. Pay 2500, rent 1100, everyday 800."
+  }
+ ]
+}
