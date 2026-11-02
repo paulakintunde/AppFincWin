@@ -1,0 +1,85 @@
+{
+  "topic": "tax",
+  "cases": [
+    {
+      "id": "TX-01",
+      "topic": "tax",
+      "persona": "Ana (invented)",
+      "situation": "Ana lives in California and has $3,100 spare this month. A $3,000 item adds 8.25% sales tax, which brings it to $3,247.50.",
+      "fixture": {
+        "asOf": "2026-10-10",
+        "currency": "USD",
+        "region": {
+          "country": "US",
+          "subdivision": "CA"
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 20000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 310000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": false,
+        "check": {
+          "price": 300000,
+          "taxPercent": "8.25",
+          "taxIncluded": false,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The price plus tax is more than she has spare this month.",
+      "fixIds": [
+        "FIN-27"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    }
+  ]
+}
