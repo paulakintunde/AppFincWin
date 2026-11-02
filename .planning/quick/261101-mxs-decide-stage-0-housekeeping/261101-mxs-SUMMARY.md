@@ -2,7 +2,7 @@
 quick_id: 261101-mxs
 status: complete
 date: 2026-11-02
-commit: 241b7faf
+commit: 59de1a80
 files_modified:
   - .planning/ROADMAP.md
   - .planning/STATE.md
@@ -18,7 +18,7 @@ decisions:
 # Quick Task 261101-mxs: Decide Stage 0 housekeeping
 
 ## What changed
-- **PR #90 rebased** on main after PR #91. Three clashes were resolved by keeping both sides: the 08.1 goal now carries Variant C and #91's requirement IDs, the STATE table keeps both rows, and the fix-plan Status line keeps both sentences. The jee row now shows the rebased commit 6c0a4d56.
+- **PR #90 rebased** on main after PR #91. Three clashes were resolved by keeping both sides: the 08.1 goal now carries Variant C and #91's requirement IDs, the STATE table keeps both rows, and the fix-plan Status line keeps both sentences. The jee row now shows the rebased commit 862f3ba6.
 - **Fix plan:**
   - Every tester switch-on line is marked withdrawn or retired: Decision 4, the 05.3 exit gate, question 2, section 10 row 6, question 11, APP-21 and appendix ARC-01.
   - The 2-week hold and ARC-01 dependencies are gone from ARC-03, APP-17 and CMP-F10.
