@@ -25,3 +25,7 @@ regex = '''phx_[A-Za-z0-9]{30,}'''
 [allowlist]
 description = "Documentation of key names only"
 paths = ['''\.env\.example$''']
+# Owner-approved false positive (2026-11-02): an i18n copy key name in a 05.3 plan
+# summary (commit f11990a9) that generic-api-key matched after the word "keys".
+# Exact match on the reported secret only; it is not a credential.
+regexes = ['''^savedRowA11yRefund$''']
