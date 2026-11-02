@@ -39,7 +39,7 @@ function run(
 }
 
 function shortBy(e: Evaluation): number {
-  if (e.cash.kind === 'ok') throw new Error('expected the falling path to be short');
+  if (e.cash.kind === 'ok' || e.cash.kind === 'overdraft') throw new Error('expected the falling path to be short');
   return e.cash.shortBy;
 }
 

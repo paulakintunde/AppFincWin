@@ -42,7 +42,13 @@ export interface IncomeProfile { readonly types: readonly IncomeType[]; readonly
 export interface ExpectedMonthIncome { readonly month: YearMonth; readonly amount: MinorUnits; readonly at: LocalDate } // D-35: confirmed expected income for one month, used as given, never guessed
 export interface HeldBridge { readonly id: string; readonly amount: MinorUnits } // D-38: unspent money spoken for by an earlier plan's lean-month bridge
 export type AccountUse = { readonly kind: 'everyday' } | { readonly kind: 'mixed'; readonly extraSetAside: MinorUnits | null } | { readonly kind: 'dedicated'; readonly purpose: { readonly kind: 'emergency' } | { readonly kind: 'envelope'; readonly envelopeId: string } } | { readonly kind: 'untouched' }; // D-54, D-55
-export interface V3Account { readonly id: string; readonly balance: MinorUnits; readonly use: AccountUse | null } // use null = not stated (not counted, asked first)
+/**
+ * use null = not stated (not counted, asked first). 05.4 FIN-03 (D-26..D-28, D-36..D-38): only a checking or current account has
+ * an overdraft; its limit and rate come from the account, and a null limit counts as 0 (D-28). Cards use their credit limit from
+ * Grow debts, never an overdraft. kind absent or null = not stated (no overdraft).
+ */
+export type AccountKind = 'checking' | 'current' | 'savings' | 'card' | 'other';
+export interface V3Account { readonly id: string; readonly balance: MinorUnits; readonly use: AccountUse | null; readonly kind?: AccountKind | null; readonly overdraftLimit?: MinorUnits | null; readonly overdraftRate?: Percent | null }
 export type UnexplainedUse = 'spare' | 'envelope_or_goal' | 'set_aside_for_bill' | 'someone_elses';
 export interface UnexplainedAnswer { readonly amount: MinorUnits; readonly use: UnexplainedUse; readonly at: LocalDate } // D-50; stored and reused by 05.2
 export interface PayArrival { readonly seriesId: string; readonly date: LocalDate; readonly arrived: boolean } // D-58
@@ -89,13 +95,13 @@ export type Basis =
 export type NextStepCode = 'add_records' | 'log_spending' | 'confirm_unspent' | 'save_changes' | 'record_pay' | 'finish_setup';
 export interface NextStep { readonly reason: ConfidenceReason; readonly step: NextStepCode }
 export interface Confidence { readonly reasons: readonly ReasonItem[]; readonly basis: Basis; readonly nextStep: NextStep | null }
-export type Code = 'needs_input' | 'not_yet' | 'monthly_short' | 'emergency_use' | 'fits_unspent' | 'fits_month';
-export type Variant = 'payday' | 'not_covered' | 'low_month';
+export type Code = 'needs_input' | 'not_yet' | 'monthly_short' | 'fits_uses_overdraft' | 'emergency_use' | 'fits_unspent' | 'fits_month'; // fits_uses_overdraft: 05.4 FIN-03 (D-26, D-36)
+export type Variant = 'payday' | 'not_covered' | 'low_month' | 'not_cleared'; // not_cleared: fits_uses_overdraft when the next pay leaves the account below 0 (D-36)
 export type LegacyState = 'fits' | 'adjust' | 'no' | 'missing';
 export type MissingCode = 'no_income_figures' | 'unspent_not_confirmed' | 'records_look_behind' | 'no_price' | 'plan_count_missing' | 'first_payment_not_chosen' | 'pause_interest_not_answered' | 'plan_rate_missing' | 'everyday_unknown' | 'legacy_invest_check' | 'share_invalid' | 'income_pattern_unconfirmed' | 'expected_income_needed' | 'first_payment_passed' | 'volatile_cover_question' | 'unexplained_money_question' | 'account_use_question' | 'pay_arrival_question';
 export type ReasonCode = 'band_currency_fallback' | 'band_rate_missing' | 'typical_choice_defaulted' | 'custom_option_missing' | 'income_kind_unmarked' | 'missed_pay_excluded' | 'month_excluded_marked' | 'month_excluded_under_logged' | 'quick_estimates_used' | 'everyday_override_used' | 'quote_used_no_rate' | 'exceeds_range' | 'legacy_upgraded' | 'legacy_method_mapped' | 'long_history_window' | 'same_season_spending' | 'expected_income_used' | 'lean_months_used' | 'thin_history_stricter' | 'volatile_cover_declined' | 'records_synced'; // records_synced: 05.4 ENG-14, a new month with no records yet judged on recently synced records
 export type NoticeCode = 'typical_short' | 'month_heading_short' | 'unspent_stale' | 'unspent_drifted' | 'emergency_not_set' | 'unsaved_changes' | 'yearly_bill_choice_needed' | 'month_looks_under_logged' | 'income_kind_unmarked' | 'from_your_figures' | 'income_from_expected' | 'pay_capped_expected' | 'same_season_compared' | 'history_window_12' | 'income_volatile' | 'envelope_location_assumed' | 'unexplained_money' | 'account_use_unknown' | 'pay_not_seen' | 'pay_counted_missed' | 'fund_account_unknown'; // from_your_figures: D-32
-export type FactCode = 'month_left_after' | 'unspent_before_after' | 'emergency_untouched' | 'emergency_used' | 'envelope_used' | 'line_crossed' | 'quoted_differs' | 'implied_rate' | 'deferred_interest_term' | 'at_todays_rate' | 'low_month' | 'lean_bridge' | 'unspent_held_back' | 'lean_months_judged' | 'low_month_judged' | 'rests_on_your_answer' | 'no_full_month'; // no_full_month: 05.4 FIN-25, the records hold no complete month yet
+export type FactCode = 'month_left_after' | 'unspent_before_after' | 'emergency_untouched' | 'emergency_used' | 'envelope_used' | 'line_crossed' | 'quoted_differs' | 'implied_rate' | 'deferred_interest_term' | 'at_todays_rate' | 'low_month' | 'lean_bridge' | 'unspent_held_back' | 'lean_months_judged' | 'low_month_judged' | 'rests_on_your_answer' | 'no_full_month' | 'overdraft_use' | 'overdraft_without_purchase' | 'overdraft_purchase_adds' | 'overdraft_not_cleared' | 'overdraft_cost_90d' | 'wait_clears' | 'overdraft_repeat' | 'other_account_overdrawn' | 'no_overdraft_limit' | 'ready_without_interest' | 'clearing_first'; // no_full_month: 05.4 FIN-25, the records hold no complete month yet. overdraft_use .. clearing_first: 05.4 FIN-03 (D-26..D-28, D-36..D-38)
 // Value keys per code (M-03, 05.1-40). The runtime source is FACT_VALUE_KEYS and NOTICE_VALUE_KEYS in copy/verdictTable.ts;
 // copyContract.test.ts keeps them in step with the en.ts copy. In short:
 //   facts:   month_left_after {month, left}; unspent_before_after {before, after}; emergency_untouched {amount};

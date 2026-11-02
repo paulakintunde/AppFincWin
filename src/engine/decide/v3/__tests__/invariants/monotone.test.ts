@@ -157,7 +157,8 @@ describe('end-to-end monotonicity through evaluate()', () => {
         fc.pre(!asking(...results.map((r) => r.result)));
         for (let i = 1; i < results.length; i++) {
           expect(codeRank(results[i]!.result.code)).toBeLessThanOrEqual(codeRank(results[i - 1]!.result.code));
-          if (results[i - 1]!.cash.kind !== 'ok') expect(results[i]!.result.code).toBe('not_yet');
+          const failed = results[i - 1]!.cash.kind === 'payday' || results[i - 1]!.cash.kind === 'not_covered'; // an overdraft dip is not a failed check (05.4 FIN-03)
+          if (failed) expect(results[i]!.result.code).toBe('not_yet');
         }
       }),
       RUNS

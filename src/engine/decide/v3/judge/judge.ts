@@ -6,11 +6,15 @@
  *   cash payday / not covered                       -> not_yet (payday only when the ladder below would pass by then;
  *                                                      otherwise the later of payday and the ladder month; a cash
  *                                                      not_covered is also the later of the ladder month and the pay date)
- *   P <= max(0, monthLeft)                          -> fits_month
+ *   P <= monthLeft (when above 0)                   -> fits_month
  *   P <= unspent (this month's room counted once)   -> fits_unspent
  *   unspent unknown and P above this month's room   -> needs_input
  *   marked emergency (necessity / for work) and P <= unspent + fund -> emergency_use
- *   otherwise                                       -> not_yet, ready in ceilDiv(P - max(0, unspent), typicalLeft) months
+ *   the cash path dips into the overdraft and P <= unspent + that dip -> fits_uses_overdraft (05.4 FIN-03)
+ *   otherwise                                       -> not_yet, ready in ceilDiv(P - unspent, typicalLeft) months
+ * 05.4 ENG-02: unspent and month left are signed; a negative unspent figure needs that much more before it is ready.
+ * Overdraft (05.4 FIN-03, D-26..D-28, D-36..D-38): a 90-day low point below 0 but not past the overdraft floor turns any fit
+ * into fits_uses_overdraft (variant not_cleared when the next pay does not clear it); past the floor is not_yet (D-27).
  * Monthly part: typicalLeft - M < 0 -> monthly_short; lowLeft - M < 0 -> fits with the low-month clause (I23).
  * The stricter part leads (CODE_PRECEDENCE). The funding split always sums to P (month, own envelope, earlier unspent,
  * emergency only when emergency_use). The user's confirmed (rolled) unspent figure is always the one judged against,
@@ -30,6 +34,7 @@ import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_
 import { addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck } from '../cash/path';
 import { emergencyOf, emergencyUse, mayUseEmergency } from '../funds/emergency';
+import { noLimitFacts, otherOverdrawnFacts, overdraftUseFacts, type OverdraftCtx } from '../overdraft';
 import { withReason } from '../confidence/reasons';
 import { dependsOnMonths, expectedFor, isLeanMonth, leanRun, seasonEveryday } from '../month/incomePattern';
 import { seasonalReadyMonth } from '../month/seasonWalk';
@@ -68,6 +73,8 @@ export interface JudgeInput {
   readonly purchaseFacts: readonly Fact[];
   readonly purchaseReasons: readonly ReasonCode[];
   readonly cash: CashCheck;
+  /** 05.4 FIN-03: the overdraft floor and the paths with and without the purchase; absent in hand-built judge tests (no overdraft). */
+  readonly overdraft?: OverdraftCtx | null;
 }
 
 export interface OneOffPart {
@@ -99,7 +106,9 @@ function notYet(variant: Variant, readyBy: ReadyBy | null): OneOffPart {
  * else's is the gap over the typical month.
  */
 function readyMonth(month: MonthModel, price: number, unspent: number | null): Extract<ReadyBy, { kind: 'month' }> | null {
-  const gap = Math.max(0, price - Math.max(0, unspent ?? 0));
+  // 05.4 ENG-02: signed. Money below 0 is that much more to make up (OD-10: -1,500 is 1,500 worse, never rounded up to 0).
+  const short = price - (unspent ?? 0);
+  const gap = short > 0 ? short : 0; // nothing left to make up still waits for the next month
   const pic = month.incomePicture;
   if (pic !== undefined && pic.treated === 'seasonal') {
     const walked = seasonalReadyMonth(pic, month.month, BigInt(gap));
@@ -112,17 +121,23 @@ function readyMonth(month: MonthModel, price: number, unspent: number | null): E
   return { kind: 'month', month: addYearMonths(month.month, n) };
 }
 
-/** The one-off ladder on its own: month, own envelope, earlier unspent, emergency, else not covered. No cash check. */
+/**
+ * The one-off ladder on its own: month, own envelope, earlier unspent, emergency, overdraft, else not covered. `overdraft` is how
+ * far the cash path goes below 0 inside the limit (0 when it never does): only money the account really borrows can carry what
+ * unspent money cannot, so money spoken for never counts as overdraft (I47).
+ */
 function ladder(
   j: JudgeInput,
   p: Purchase,
-  available: { readonly unspent: MinorUnits | null; readonly envelope: MinorUnits }
+  available: { readonly unspent: MinorUnits | null; readonly envelope: MinorUnits },
+  overdraft: number
 ): OneOffPart {
   const P = p.dayOne;
   const { month } = j;
-  const room = Math.max(0, month.monthLeft);
-  const B = Math.min(P, room);
-  const A = Math.min(P - B, Math.max(0, available.envelope));
+  // A funding segment is never negative: a month already below 0 funds nothing, and its shortfall is inside unspent already
+  // (this month's room is counted once), so it is not taken off twice.
+  const B = month.monthLeft > 0 ? Math.min(P, month.monthLeft) : 0;
+  const A = Math.min(P - B, available.envelope);
   const rest = P - B - A;
 
   const split: FundingSegment[] = [];
@@ -137,20 +152,27 @@ function ladder(
   if (unspent === null) {
     return { code: 'needs_input', variant: null, split: [], readyBy: null, emergencyUsed: mu(0), rebuildMonths: null };
   }
-  const earlierRoom = Math.max(0, unspent - B);
+  // 05.4 ENG-02: signed; earlier money below 0 has to be made up first.
+  const earlierRoom = unspent - B;
   if (rest <= earlierRoom) {
     split.push({ source: 'unspent_earlier', amount: mu(rest) });
     return { code: 'fits_unspent', variant: null, split, readyBy: null, emergencyUsed: mu(0), rebuildMonths: null };
   }
 
   if (mayUseEmergency(p)) {
-    const fund = Math.max(0, j.funds.emergency ?? 0);
+    const fund = j.funds.emergency ?? 0;
     if (rest <= earlierRoom + fund) {
-      if (earlierRoom > 0) split.push({ source: 'unspent_earlier', amount: mu(earlierRoom) });
-      const use = emergencyUse({ need: mu(rest - earlierRoom), fund: mu(fund), typicalLeft: month.typicalLeft });
+      const fromEarlier = earlierRoom > 0 ? earlierRoom : 0;
+      if (fromEarlier > 0) split.push({ source: 'unspent_earlier', amount: mu(fromEarlier) });
+      const use = emergencyUse({ need: mu(rest - fromEarlier), fund: mu(fund), typicalLeft: month.typicalLeft });
       split.push({ source: 'emergency', amount: use.used });
       return { code: 'emergency_use', variant: null, split, readyBy: null, emergencyUsed: use.used, rebuildMonths: use.rebuildMonths };
     }
+  }
+
+  // 05.4 FIN-03 (D-26, D-36): what earlier money cannot cover, the overdraft does, up to how far the account really goes below 0.
+  if (overdraft > 0 && rest <= earlierRoom + overdraft) {
+    return { code: 'fits_uses_overdraft', variant: null, split, readyBy: null, emergencyUsed: mu(0), rebuildMonths: null };
   }
 
   return notYet('not_covered', readyMonth(month, P, unspent));
@@ -176,7 +198,20 @@ export function oneOffPart(
     const pay = j.cash.payDate ?? null;
     return notYet('not_covered', ready !== null && pay !== null && pay > `${ready.month}-01` ? { kind: 'date', date: pay } : ready);
   }
-  const part = ladder(j, p, available);
+  if (j.cash.kind === 'overdraft') {
+    const part = ladder(j, p, available, -j.cash.lowest.balance);
+    if (part.code === 'not_yet' || part.code === 'needs_input') return part;
+    // D-22, D-36: the account pays now and goes below 0, so the purchase (less its own envelope and any fund money) comes out
+    // of this month; nothing is taken from earlier money, which is below 0 on the way.
+    const fromEnvelope = part.split.find((s) => s.source === 'envelope')?.amount ?? 0;
+    const fromMonth = p.dayOne - fromEnvelope - part.emergencyUsed;
+    const split: FundingSegment[] = [];
+    if (fromMonth > 0) split.push({ source: 'month', amount: mu(fromMonth) });
+    if (fromEnvelope > 0) split.push({ source: 'envelope', amount: mu(fromEnvelope) });
+    if (part.emergencyUsed > 0) split.push({ source: 'emergency', amount: part.emergencyUsed });
+    return { ...part, code: 'fits_uses_overdraft', split };
+  }
+  const part = ladder(j, p, available, 0);
   if (j.cash.kind === 'ok') return part;
   const until = j.cash.until;
   const onPayday = notYet('payday', { kind: 'date', date: until });
@@ -484,7 +519,10 @@ export function judge(j: JudgeInput): Result {
 
   const code = mon === null ? one.code : stricter(one.code, mon.code);
   const lowClause = mon !== null && mon.lowClause;
-  const variant: Variant | null = code === 'not_yet' ? null : (code === 'fits_month' || code === 'fits_unspent') && lowClause ? 'low_month' : null;
+  // 05.4 FIN-03 (D-26, D-36, D-37): the one-off part uses the overdraft. Its facts lead, the not-cleared warning first.
+  const od = one.code === 'fits_uses_overdraft' && j.overdraft != null ? overdraftUseFacts(j.inputs.accounts, j.overdraft, readyMonth(month, purchase.dayOne, unspentValue)) : null;
+  const variant: Variant | null =
+    code === 'fits_uses_overdraft' ? (od?.variant ?? null) : (code === 'fits_month' || code === 'fits_unspent') && lowClause ? 'low_month' : null;
   // When both parts are not yet, the later ready-by leads; ties go to the one-off part (D-36).
   let notYetVariant: Variant | null = null;
   let readyBy: ReadyBy | null = null;
@@ -494,8 +532,13 @@ export function judge(j: JudgeInput): Result {
     readyBy = monthlyLeads ? (mon as MonthlyPart).readyBy : one.readyBy;
   }
 
-  // Facts (fixed order): month, unspent, held back, emergency, envelope, plan, low month, why months, bridge, lines.
-  const facts: Fact[] = [];
+  // Facts (fixed order): overdraft or the no-limit question, month, unspent, held back, emergency, envelope, plan, low month,
+  // why months, bridge, lines, other accounts below 0.
+  const facts: Fact[] = [...(od?.facts ?? [])];
+  // D-28, D-38: below 0 with no overdraft limit recorded is Not yet, and the answer asks about it.
+  if (code === 'not_yet' && (j.overdraft?.floor ?? 0) === 0 && (j.cash.kind === 'payday' || j.cash.kind === 'not_covered')) {
+    facts.push(...noLimitFacts(j.inputs.accounts, j.cash.shortBy, readyBy));
+  }
   if (one.split.length > 0) {
     facts.push({ code: 'month_left_after', values: { month: month.month, left: month.monthLeft - fromMonth } });
   }
@@ -530,8 +573,10 @@ export function judge(j: JudgeInput): Result {
       isHousing: purchase.itemType === 'rent_bill' || purchase.itemType === 'property',
     })
   );
+  facts.push(...otherOverdrawnFacts(j.inputs.accounts)); // OD-08: a fact only, never the code
 
-  const keepSplit = code === 'fits_month' || code === 'fits_unspent' || code === 'emergency_use' || (code === 'monthly_short' && one.code !== 'not_yet');
+  const keepSplit =
+    code === 'fits_month' || code === 'fits_unspent' || code === 'emergency_use' || code === 'fits_uses_overdraft' || (code === 'monthly_short' && one.code !== 'not_yet');
 
   return {
     code,

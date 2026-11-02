@@ -77,7 +77,7 @@ describe('unspentSum (05.2-28)', () => {
     expect(netted(sum)).toBe(funds.suggested);
   });
 
-  it('deductions that overshoot give way envelopes first and never push the spending balance below zero', () => {
+  it('deductions that overshoot give way envelopes first and never push the spending balance below zero; an overdrawn balance stays signed', () => {
     const { sum, funds } = sumOf({
       accounts: [acct('e', 100_000, { kind: 'everyday' })],
       envelopes: [env('a', 400_000, 'e')],
@@ -85,8 +85,14 @@ describe('unspentSum (05.2-28)', () => {
     expect(sum.envelopes).toBe(100_000);
     expect(netted(sum)).toBe(funds.suggested);
     const overdrawn = sumOf({ accounts: [acct('e', -5_000, { kind: 'everyday' })] });
-    expect(overdrawn.sum.gross).toBe(0);
+    // 05.4 ENG-02: an overdrawn account is not rounded up to 0, and it takes no deductions
+    expect(overdrawn.sum.gross).toBe(-5_000);
+    expect(overdrawn.funds.spending).toBe(-5_000);
     expect(netted(overdrawn.sum)).toBe(overdrawn.funds.suggested);
+    const overdrawnWithEnvelope = sumOf({ accounts: [acct('e', -5_000, { kind: 'everyday' })], envelopes: [env('a', 2_000, 'e')] });
+    expect(overdrawnWithEnvelope.sum.envelopes).toBe(0);
+    expect(overdrawnWithEnvelope.funds.spending).toBe(-5_000);
+    expect(netted(overdrawnWithEnvelope.sum)).toBe(overdrawnWithEnvelope.funds.suggested);
   });
 
   it('held-back bridges take the total below the suggested figure; invalid and duplicate ones do not count', () => {

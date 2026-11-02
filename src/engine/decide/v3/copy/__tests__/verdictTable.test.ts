@@ -12,9 +12,9 @@ import {
 } from '../verdictTable';
 
 describe('verdict table (I22 one code one text)', () => {
-  it('I22 one code one text: nine rows, no shared title key', () => {
+  it('I22 one code one text: eleven rows, no shared title key', () => {
     expect(Object.keys(VERDICT_TABLE).sort()).toEqual(
-      ['fits_month', 'fits_month.low_month', 'fits_unspent', 'fits_unspent.low_month', 'not_yet.payday', 'not_yet.not_covered', 'monthly_short', 'emergency_use', 'needs_input'].sort()
+      ['fits_month', 'fits_month.low_month', 'fits_unspent', 'fits_unspent.low_month', 'not_yet.payday', 'not_yet.not_covered', 'monthly_short', 'emergency_use', 'needs_input', 'fits_uses_overdraft', 'fits_uses_overdraft.not_cleared'].sort()
     );
     const rows = Object.values(VERDICT_TABLE);
     for (const r of rows) {
@@ -38,6 +38,11 @@ describe('verdict table (I22 one code one text)', () => {
     expect(verdictRowFor('monthly_short', 'low_month')).toBe(VERDICT_TABLE.monthly_short);
     expect(verdictRowFor('emergency_use', null)).toBe(VERDICT_TABLE.emergency_use);
     expect(verdictRowFor('needs_input', 'low_month')).toBe(VERDICT_TABLE.needs_input);
+    // 05.4 FIN-03: Uses your overdraft, and past payday when the next pay does not clear it (D-36); same caution tone
+    expect(verdictRowFor('fits_uses_overdraft', null)).toBe(VERDICT_TABLE.fits_uses_overdraft);
+    expect(verdictRowFor('fits_uses_overdraft', 'not_cleared')).toBe(VERDICT_TABLE['fits_uses_overdraft.not_cleared']);
+    expect(VERDICT_TABLE.fits_uses_overdraft.tone).toBe('caution');
+    expect(VERDICT_TABLE['fits_uses_overdraft.not_cleared'].tone).toBe('caution');
   });
 
   it('every key starts with decide.v3. except the footer', () => {
@@ -66,7 +71,9 @@ describe('verdict table (I22 one code one text)', () => {
         'month_left_after', 'unspent_before_after', 'emergency_untouched', 'emergency_used', 'envelope_used',
         'line_crossed', 'quoted_differs', 'implied_rate', 'deferred_interest_term', 'at_todays_rate', 'low_month',
         'lean_bridge', 'unspent_held_back', 'lean_months_judged', 'low_month_judged', 'rests_on_your_answer',
-        'no_full_month',
+        'no_full_month', 'overdraft_use', 'overdraft_without_purchase', 'overdraft_purchase_adds', 'overdraft_not_cleared',
+        'overdraft_cost_90d', 'wait_clears', 'overdraft_repeat', 'other_account_overdrawn', 'no_overdraft_limit',
+        'ready_without_interest', 'clearing_first',
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

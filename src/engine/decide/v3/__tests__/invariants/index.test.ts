@@ -1,5 +1,7 @@
 /**
- * SC-6 coverage index (05.1-27, T-05.1-55): every invariant I1..I46 has at least one test whose title starts with its id.
+ * SC-6 coverage index (05.1-27, T-05.1-55): every invariant I1..I49 has at least one test whose title starts with its id.
+ * Named properties (05.4-12 revision notes section 4: I-limit here; I-saved, I-D41 and I-DB05 in later plans) are listed
+ * apart in NAMED_IDS, so the numbered IDS lengths in later plans stay as written.
  * A missing id fails here by name. I24 is retired (CONTEXT: v2's I24 and protection months are superseded) and keeps its
  * number through a documented test below. I28 (the back-test) lives in 05.1-29; until its folder exists it is listed as
  * pending, and becomes strict the moment the folder lands.
@@ -13,7 +15,9 @@ const SNAPSHOT_V3 = join(ROOT, 'src/features/decide/snapshot/v3');
 const COPY_TEST = join(ROOT, 'src/i18n/__tests__/decideCopy.test.ts');
 
 const TITLE = /(it|test|describe)(\.each\([^)]*\))?\(\s*['"`]I(\d+)\b/g;
-const IDS = Array.from({ length: 46 }, (_, i) => i + 1);
+const IDS = Array.from({ length: 49 }, (_, i) => i + 1);
+const NAMED_IDS: readonly string[] = ['I-limit'];
+const NAMED_TITLE = /(it|test|describe)(\.each\([^)]*\))?\(\s*['"`](I-[A-Za-z0-9]+)\b/g;
 
 /** Ids that may be absent only while the folder that will carry them does not exist yet. */
 const PENDING_UNTIL: Readonly<Record<number, { readonly owner: string; readonly folder: string }>> = {
@@ -42,6 +46,13 @@ function coveredIds(): ReadonlySet<number> {
   return seen;
 }
 
+function coveredNames(): ReadonlySet<string> {
+  const files = [...testFilesUnder(V3), ...testFilesUnder(SNAPSHOT_V3), ...(existsSync(COPY_TEST) ? [COPY_TEST] : [])];
+  const seen = new Set<string>();
+  for (const f of files) for (const m of readFileSync(f, 'utf8').matchAll(NAMED_TITLE)) seen.add(m[3]!);
+  return seen;
+}
+
 describe('SC-6 invariant coverage index', () => {
   it('SC-6 every invariant has a named test', () => {
     const seen = coveredIds();
@@ -50,6 +61,11 @@ describe('SC-6 invariant coverage index', () => {
       return p === undefined || existsSync(p.folder); // strict once the owning folder exists
     });
     expect(missing.map((id) => `I${id}`)).toEqual([]);
+  });
+
+  it('SC-6 every named property has a named test', () => {
+    const seen = coveredNames();
+    expect(NAMED_IDS.filter((id) => !seen.has(id))).toEqual([]);
   });
 
   it('SC-6 an id is pending only while its owner has not landed', () => {

@@ -3528,6 +3528,17 @@ const en = {
           title: 'A little more is needed to check this properly.',
           body: 'Here’s what’s missing.',
         },
+        // 05.4 FIN-03 (D-26, D-36): the condition first; the cost is always labelled an estimate.
+        fitsUsesOverdraft: {
+          chip: 'Uses your overdraft',
+          title: 'This goes into your overdraft until payday.',
+          body: 'Your {{account}} account would go {{below}} below {{zero}} for about {{days}} days. At {{rate}}%, that costs about {{cost}}. This is an estimate.',
+        },
+        fitsUsesOverdraftNotCleared: {
+          chip: 'Uses your overdraft past payday',
+          title: 'This goes into your overdraft, and payday does not clear it.',
+          body: 'After your pay on {{date}}, {{account}} would still be {{below}} below {{zero}}. At {{rate}}%, the next 90 days below {{zero}} cost about {{cost}}. This is an estimate.',
+        },
       },
       notice: {
         typical_short: 'Your typical month is already overspent by {{short}}.',
@@ -3578,6 +3589,28 @@ const en = {
         rests_on_your_answer: 'This rests on what you said, that {{monthly}} a month for {{months}} months is covered, not on your records.',
         unspent_held_back: '{{amount}} of your unspent money is held back for an earlier plan.',
         no_full_month: 'No full month of records yet.',
+        // 05.4 FIN-03 (D-26..D-28, D-36..D-38). {{zero}} is the currency's zero, e.g. "$0".
+        overdraft_use: 'Your {{account}} account would go {{below}} below {{zero}} for about {{days}} days. At {{rate}}%, that costs about {{cost}}. This is an estimate.',
+        overdraft_use_no_rate: 'Your {{account}} account would go {{below}} below {{zero}} for about {{days}} days. No rate is set for it, so the cost is not counted.',
+        overdraft_without_purchase: 'Without this purchase, the account would still go {{below}} below {{zero}} for about {{days}} days, costing about {{cost}}.',
+        overdraft_without_purchase_above: 'Without this purchase, the account would stay at or above {{zero}}.',
+        overdraft_purchase_adds: 'This purchase adds about {{cost}} to that cost.',
+        overdraft_not_cleared: 'After your pay on {{date}}, {{account}} would still be {{below}} below {{zero}}.',
+        overdraft_not_cleared_no_pay: 'No pay is due in the next 90 days, so {{account}} would still be {{below}} below {{zero}}.',
+        overdraft_cost_90d: 'At {{rate}}%, the next 90 days below {{zero}} cost about {{cost}}. This is an estimate.',
+        wait_clears: 'Waiting until {{month}} keeps the account above {{zero}}.',
+        overdraft_repeat: 'Without this purchase, {{account}} still goes below {{zero}} before {{count}} of your next {{of}} paydays. At {{rate}}%, that costs about {{cost}} over the next 90 days.',
+        overdraft_repeat_no_rate: 'Without this purchase, {{account}} still goes below {{zero}} before {{count}} of your next {{of}} paydays.',
+        other_account_overdrawn: 'Your {{account}} account is {{below}} below {{zero}}. At {{rate}}%, that costs about {{monthlyCost}} a month.',
+        other_account_overdrawn_no_rate: 'Your {{account}} account is {{below}} below {{zero}}.',
+        no_overdraft_limit: '{{account}} would go {{below}} below {{zero}}. No overdraft limit is set for it. Does {{account}} have an overdraft?',
+        ready_without_interest: 'This date does not count overdraft interest, because no rate is set.',
+        clearing_first: 'Money below {{zero}} costs interest every day it stays there. Clearing it first lowers that cost.',
+      },
+      // 05.4 FIN-03 (D-38): the two answers to the no-limit question; both open the account's settings.
+      factAction: {
+        addLimit: 'Add limit',
+        noOverdraft: 'No overdraft',
       },
       // 05.4 UX-04 / CMP-F12: the one plain sentence under every answer, never more confident than the answer.
       basis: {

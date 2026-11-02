@@ -168,15 +168,30 @@ export function nextPayDate(series: readonly V3Series[], asOf: string): string |
   return best;
 }
 
+/** Pay dates strictly after asOf and inside a path of `days` days, in order, one per date (D-36 next pay, D-37 next 3). */
+export function payDatesIn(series: readonly V3Series[], asOf: string, days: number): readonly string[] {
+  const end = addDays(asOf, days);
+  const out = new Set<string>();
+  for (const s of liveSeriesOf(series, asOf, 'pay')) for (const d of seriesOccurrences(s, addDays(asOf, 1), end)) out.add(d);
+  return [...out].sort();
+}
+
+/**
+ * ok: never below 0. overdraft (05.4 FIN-03, D-26, D-36): below 0 but never past the overdraft floor; exactly at the floor is
+ * inside it (I-limit). payday / not_covered: past the floor (D-27; with no limit recorded the floor is 0, D-28).
+ */
 export type CashCheck =
   | { readonly kind: 'ok'; readonly lowest: CashPoint }
+  | { readonly kind: 'overdraft'; readonly lowest: CashPoint }
   | { readonly kind: 'payday'; readonly until: string; readonly shortBy: MinorUnits }
   | { readonly kind: 'not_covered'; readonly shortBy: MinorUnits; readonly payDate?: string | null };
 
-export function cashCheck(withPurchase: CashPathV3, payDate: string | null): CashCheck {
+/** floor: minus the overdraft limits (overdraft.ts overdraftFloor); 0 = no overdraft. */
+export function cashCheck(withPurchase: CashPathV3, payDate: string | null, floor: MinorUnits = minorUnits(0)): CashCheck {
   let lowest = withPurchase.points[0] as CashPoint;
   for (const p of withPurchase.points) if (p.balance < lowest.balance) lowest = p;
   if (lowest.balance >= 0) return { kind: 'ok', lowest };
+  if (lowest.balance >= floor) return { kind: 'overdraft', lowest };
   const shortBy = minorUnits(-lowest.balance);
   if (payDate !== null) {
     const after = withPurchase.points.filter((p) => p.date >= payDate);

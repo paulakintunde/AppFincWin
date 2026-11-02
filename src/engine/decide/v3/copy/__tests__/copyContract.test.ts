@@ -20,6 +20,8 @@ import {
   type FixtureScenario,
 } from '../../__tests__/golden/adapter';
 import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series, volatileInputs } from '../../__tests__/helpers/fixtures';
+import { toEngineInputs } from '../../__tests__/rightAnswers/fixture';
+import { loadCases } from '../../__tests__/rightAnswers/loader';
 import {
   COPY_RESOLVERS,
   DISCRIMINATOR_KEYS,
@@ -216,6 +218,12 @@ function buildCorpus(): Emitted[] {
   });
   collect(out, noPay(sam), checkOnce(10_000));
   collect(out, { ...noPay(sam), payArrivals: [{ seriesId: 'sam-pay', date: '2026-10-01', arrived: false }] }, checkOnce(10_000));
+  // 05.4 FIN-03: every approved overdraft case (each overdraft fact), and each with no rates set (the _no_rate values).
+  for (const c of loadCases().filter((x) => x.topic === 'overdraft')) {
+    const { inputs, check } = toEngineInputs(c.fixture);
+    collect(out, inputs, check);
+    collect(out, { ...inputs, accounts: (inputs.accounts ?? []).map((a) => ({ ...a, overdraftRate: null })) }, check);
+  }
   return out;
 }
 

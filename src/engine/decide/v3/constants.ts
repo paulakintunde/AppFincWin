@@ -53,14 +53,16 @@ export const BAND_EDGES_USD: readonly number[] = [
   100_000_000, 200_000_000, 500_000_000,
 ]; // v3 §5.2, O11
 
-// Cite: UP §5.3 (00-UPGRADE-PLAN): six codes, strictest first. The strictest part wins.
-export const CODE_PRECEDENCE = ['needs_input', 'not_yet', 'monthly_short', 'emergency_use', 'fits_unspent', 'fits_month'] as const; // UP §5.3
+// Cite: UP §5.3 (00-UPGRADE-PLAN): the codes, strictest first. The strictest part wins. 05.4 FIN-03 (D-26, D-36) inserts
+// fits_uses_overdraft after monthly_short, its place in the phase target order. FincWin choice.
+export const CODE_PRECEDENCE = ['needs_input', 'not_yet', 'monthly_short', 'fits_uses_overdraft', 'emergency_use', 'fits_unspent', 'fits_month'] as const; // UP §5.3
 
 // Cite: D-23 (05.1-CONTEXT), overriding the research table: the old four-state verdict each code maps to. FincWin choice.
 export const LEGACY_STATE_OF_CODE = Object.freeze({
   fits_month: 'fits',
   fits_unspent: 'fits',
   monthly_short: 'adjust',
+  fits_uses_overdraft: 'adjust', // 05.4: every new caution code maps to adjust
   emergency_use: 'adjust',
   not_yet: 'no',
   needs_input: 'missing',
@@ -212,3 +214,12 @@ export const RECORDS_FRESH_FIRST_DAYS = 7; // QE-07
 // Cite: 05.4 ENG-14, right-answer case QE-07: records count as fresh when they synced at most 3 days before asOf (QE-07: 2 days).
 // FincWin choice (owner approved QE-07, 2026-11-02).
 export const RECORDS_FRESH_SYNC_DAYS = 3; // QE-07
+
+// Cite: D-37 (05.4-CONTEXT, owner round 1): repeat overdraft use looks at the next 3 paydays. FincWin choice.
+export const OVERDRAFT_REPEAT_PAYDAYS = 3; // D-37
+
+// Cite: D-37 (05.4-CONTEXT, owner round 1): below 0 before at least 2 of them is repeat use. FincWin choice.
+export const OVERDRAFT_REPEAT_MIN = 2; // D-37
+
+// Cite: D-36 (05.4-CONTEXT, owner round 1): overdraft interest is charged daily, at the yearly rate over 365 days. FincWin choice.
+export const OVERDRAFT_DAYS_PER_YEAR = 365; // D-36

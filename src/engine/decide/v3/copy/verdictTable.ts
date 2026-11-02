@@ -31,6 +31,9 @@ export const VERDICT_TABLE = Object.freeze({
   monthly_short: row('monthlyShort', 'short'),
   emergency_use: row('emergencyUse', 'caution'),
   needs_input: row('needsInput', 'input'),
+  // 05.4 FIN-03 (D-26, D-36): no new tone (design restraint); the not-cleared warning leads its body.
+  fits_uses_overdraft: row('fitsUsesOverdraft', 'caution'),
+  'fits_uses_overdraft.not_cleared': row('fitsUsesOverdraftNotCleared', 'caution'),
 } as const satisfies Record<string, VerdictRow>);
 
 export type VerdictRowKey = keyof typeof VERDICT_TABLE;
@@ -48,6 +51,8 @@ export function verdictRowFor(code: Code, variant: Variant | null): VerdictRow {
       return VERDICT_TABLE.monthly_short;
     case 'emergency_use':
       return VERDICT_TABLE.emergency_use;
+    case 'fits_uses_overdraft':
+      return variant === 'not_cleared' ? VERDICT_TABLE['fits_uses_overdraft.not_cleared'] : VERDICT_TABLE.fits_uses_overdraft;
     case 'needs_input':
       return VERDICT_TABLE.needs_input;
   }
@@ -95,7 +100,26 @@ export const FACT_KEYS = Object.freeze({
   low_month_judged: 'decide.v3.fact.low_month_judged',
   rests_on_your_answer: 'decide.v3.fact.rests_on_your_answer',
   no_full_month: 'decide.v3.fact.no_full_month',
+  overdraft_use: 'decide.v3.fact.overdraft_use',
+  overdraft_without_purchase: 'decide.v3.fact.overdraft_without_purchase',
+  overdraft_purchase_adds: 'decide.v3.fact.overdraft_purchase_adds',
+  overdraft_not_cleared: 'decide.v3.fact.overdraft_not_cleared',
+  overdraft_cost_90d: 'decide.v3.fact.overdraft_cost_90d',
+  wait_clears: 'decide.v3.fact.wait_clears',
+  overdraft_repeat: 'decide.v3.fact.overdraft_repeat',
+  other_account_overdrawn: 'decide.v3.fact.other_account_overdrawn',
+  no_overdraft_limit: 'decide.v3.fact.no_overdraft_limit',
+  ready_without_interest: 'decide.v3.fact.ready_without_interest',
+  clearing_first: 'decide.v3.fact.clearing_first',
 } as const satisfies Record<FactCode, string>);
+
+/**
+ * 05.4 FIN-03 (D-38): the answers a fact offers. no_overdraft_limit asks whether the account has an overdraft; both actions open
+ * the account's settings (the fact carries accountId). Screens are 08.1.
+ */
+export const FACT_ACTION_KEYS = Object.freeze({
+  no_overdraft_limit: { addLimit: 'decide.v3.factAction.addLimit', noOverdraft: 'decide.v3.factAction.noOverdraft' },
+} as const satisfies Partial<Record<FactCode, Readonly<Record<string, string>>>>);
 
 export const MISSING_KEYS = Object.freeze({
   no_income_figures: 'decide.v3.missing.no_income_figures',
@@ -182,6 +206,19 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   low_month_judged: ['month', 'left'],
   rests_on_your_answer: ['monthly', 'months'],
   no_full_month: [],
+  // 05.4 FIN-03. zero is always 0, formatted as the currency's zero ("below $0"). rate and cost are left out when no rate is
+  // set (the _no_rate copy); date is left out when no pay lands inside the 90 days (the _no_pay copy).
+  overdraft_use: ['accountId', 'below', 'days', 'rate', 'cost', 'zero'],
+  overdraft_without_purchase: ['below', 'days', 'cost', 'zero'], // days 0: the _above copy
+  overdraft_purchase_adds: ['cost'],
+  overdraft_not_cleared: ['accountId', 'date', 'below', 'zero'],
+  overdraft_cost_90d: ['rate', 'cost', 'zero'],
+  wait_clears: ['month', 'zero'],
+  overdraft_repeat: ['accountId', 'count', 'of', 'rate', 'cost', 'zero'],
+  other_account_overdrawn: ['accountId', 'below', 'rate', 'monthlyCost', 'zero'],
+  no_overdraft_limit: ['accountId', 'below', 'zero'],
+  ready_without_interest: [],
+  clearing_first: ['zero'],
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({

@@ -58,12 +58,14 @@ function spendingOf(inputs: V3Inputs): Spending {
       pEnv += linkedTo(a.id);
     } else if (use.kind === 'mixed') {
       const aside = linkedTo(a.id) + (inputs.emergency?.accountId === a.id ? inputs.emergency.amount : 0) + (use.extraSetAside ?? 0);
-      const kept = Math.max(0, a.balance - aside);
+      // Put-aside money can only fence off money that is there: an overdrawn mixed account fences nothing and its balance
+      // stays signed (05.4 ENG-02). With money in it this is the old max(0, balance - aside).
+      const fe = Math.min(aside, a.balance > 0 ? a.balance : 0);
+      const kept = a.balance - fe;
       total += kept;
-      fenced += a.balance - kept;
+      fenced += fe;
       gross += a.balance;
       // the fenced money is named in turn: envelopes, then the fund, then the extra the user set aside
-      const fe = a.balance - kept;
       const toEnv = Math.min(fe, linkedTo(a.id));
       const toEmg = Math.min(fe - toEnv, inputs.emergency?.accountId === a.id ? inputs.emergency.amount : 0);
       pEnv += toEnv;
@@ -83,8 +85,11 @@ function spendingOf(inputs: V3Inputs): Spending {
     fenced += inputs.emergency.amount;
     pEmg += inputs.emergency.amount;
   }
+  // 05.4 ENG-02 / FIN-03: balances are signed. Deductions (envelopes, the fund, set-asides) never take more than the money that
+  // is there, so with money in the accounts the spending balance stops at 0 as before; an overdrawn total stays below 0.
+  const lowest = gross < 0 ? gross : 0;
   return {
-    spending: minorUnits(Math.max(0, total)),
+    spending: minorUnits(total < lowest ? lowest : total),
     ringFenced: minorUnits(fenced),
     envelopesAssumedInside: unlinked.filter((e) => e.saved > 0).length,
     unstatedAccounts: unstated,
@@ -93,10 +98,15 @@ function spendingOf(inputs: V3Inputs): Spending {
   };
 }
 
-/** Names the deductions so they net to the spending balance: when they overshoot, envelopes give way first, then the fund, then the set-aside. */
+/**
+ * Names the deductions so they net to the spending balance: when they overshoot the money there, envelopes give way first, then
+ * the fund, then the set-aside. gross is signed (05.4 ENG-02): an overdrawn gross takes no deductions and nets to itself.
+ */
 function partsOf(gross: number, mixed: number, env: number, emg: number): SpendingParts {
-  const g = Math.max(0, gross);
-  let over = Math.max(0, mixed + env + emg - g);
+  const there = gross > 0 ? gross : 0;
+  let over = mixed + env + emg - there;
+  if (over < 0) over = 0; // an overshoot is never negative
+  const g = gross;
   const cut = (v: number): number => {
     const c = Math.min(v, over);
     over -= c;

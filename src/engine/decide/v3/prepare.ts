@@ -10,7 +10,8 @@
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { mergeConfidence } from './confidence/reasons';
-import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, type CashCheck, type OpenCashPath } from './cash/path';
+import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, type CashCheck, type OpenCashPath } from './cash/path';
+import { overdraftFloor } from './overdraft';
 import { addDays, addYearMonths, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
 import { insteadFutures, type Futures } from './instead/futures';
@@ -122,6 +123,9 @@ interface Reading {
   readonly funds: Funds;
   readonly open: OpenCashPath;
   readonly payDate: string | null;
+  /** 05.4 FIN-03: minus the overdraft limits (D-28: no limit = 0), and the pay dates inside the path (D-36, D-37). */
+  readonly floor: MinorUnits;
+  readonly paydays: readonly string[];
 }
 
 export interface Prepared {
@@ -148,7 +152,15 @@ function readingOf(inputs: V3Inputs): Reading {
     payCaps: payCapsOf(inputs, month),
     drops: dueDrops(inputs), // 05.3-64 (D-27, D-31, skips): the same rule as the month model and unspent
   });
-  return { inputs, month, funds, open, payDate: nextPayDate(inputs.series, inputs.asOf) };
+  return {
+    inputs,
+    month,
+    funds,
+    open,
+    payDate: nextPayDate(inputs.series, inputs.asOf),
+    floor: overdraftFloor(inputs.accounts),
+    paydays: payDatesIn(inputs.series, inputs.asOf, CASH_PATH_DAYS_V3),
+  };
 }
 
 function judgeReading(r: Reading, check: CheckV2): Evaluation {
@@ -159,13 +171,12 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
   // else keeps it out of reach (D-09, D-43a). An unlinked fund (D-62) is already subtracted from spending, so it is added
   // back here once.
   const fundForCash = pb.purchase !== null && mayUseEmergency(pb.purchase) ? (funds.emergency ?? 0) : 0;
-  const path = applyPurchaseFlows(
-    r.open,
-    // D-54: spending money plus the purchase's own envelope; other put-aside money never cushions the check (the fund only per D-63).
-    minorUnits(funds.spending + funds.ownEnvelope + fundForCash),
-    pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3) : []
-  );
-  const cash = cashCheck(path, r.payDate);
+  // D-54: spending money plus the purchase's own envelope; other put-aside money never cushions the check (the fund only per D-63).
+  const opening = minorUnits(funds.spending + funds.ownEnvelope + fundForCash);
+  const path = applyPurchaseFlows(r.open, opening, pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3) : []);
+  const cash = cashCheck(path, r.payDate, r.floor);
+  // 05.4 FIN-03 (D-36): the same open path with no purchase flows gives the cost without it; only needed with an overdraft.
+  const overdraft = { floor: r.floor, withPurchase: path, withoutPurchase: r.floor < 0 ? applyPurchaseFlows(r.open, opening, []) : null, paydays: r.paydays };
   const judged = judge({
     inputs,
     month,
@@ -176,6 +187,7 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
     purchaseFacts: pb.facts,
     purchaseReasons: pb.reasons,
     cash,
+    overdraft,
   });
   // D-46: say so when the expected-income cap lowered the pay in the 90-day path; last, after the judge's notices.
   const result: Result =

@@ -28,10 +28,14 @@ function monthlyPay(p: RightAnswerFixture['pay']): number {
   return Math.round((p.amount * (p.cadence === 'fortnightly' ? 26 : 52)) / 12);
 }
 
+/**
+ * A savings account with no use stated is money kept aside, not spending money (05.4-17, OD-07: an empty savings account is
+ * not asked about). Any other account with no use stays unstated, so the engine asks first.
+ */
 function useOf(a: RightAnswerFixture['accounts'][number]): AccountUse | null {
   if (a.use === 'everyday') return { kind: 'everyday' };
   if (a.use === 'emergency') return { kind: 'dedicated', purpose: { kind: 'emergency' } };
-  if (a.use === 'untouched') return { kind: 'untouched' };
+  if (a.use === 'untouched' || a.kind === 'savings') return { kind: 'untouched' };
   return null;
 }
 
@@ -80,7 +84,6 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
       { full: false }
     )
   );
-  // mapped when FIN-03 lands: overdraftLimit, overdraftRate
   // mapped when FIN-01 lands: safetyNet (protect, size, saved)
   // mapped when FIN-04 lands: debt dueDay and joint
   // mapped when BO-05 lands: plan first-payment choices beyond the engine's own
@@ -93,7 +96,15 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   // mapped when FIN-04 lands: debt paidThisMonth (part of a minimum already paid)
   // mapped when D-41 lands (05.4-18): check.purpose (need or want; words and order only)
   // mapped when FIN-05 / D-39c lands: check.pay.housing (a mortgage skips the 10% interest test)
-  const accounts: V3Account[] = f.accounts.map((a) => ({ id: a.id, balance: mu(a.balance), use: useOf(a) }));
+  // 05.4 FIN-03: kind, overdraft limit and rate as stated (the engine reads a limit only on checking and current accounts).
+  const accounts: V3Account[] = f.accounts.map((a) => ({
+    id: a.id,
+    balance: mu(a.balance),
+    use: useOf(a),
+    kind: a.kind,
+    overdraftLimit: a.overdraftLimit === null ? null : mu(a.overdraftLimit),
+    overdraftRate: a.overdraftRate === null ? null : percent(a.overdraftRate),
+  }));
   const debts: V3Debt[] = f.debts.map((d) => ({
     id: d.id, kind: d.kind, balance: mu(d.balance), minimum: mu(d.minimum), apr: d.apr === null ? null : percent(d.apr), secured: false, isHousing: d.housing === true,
   }));
@@ -107,7 +118,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     balance: mu(spending),
     accounts,
     debts,
-    unspent: { amount: mu(Math.max(0, spending)), at: f.asOf },
+    unspent: { amount: mu(spending), at: f.asOf }, // 05.4 ENG-02: signed, never rounded up to 0
     // 05.4-15 (ENG-11, ENG-14): quick estimates are the engine's typed estimates; their spending is bills plus everyday
     // (the same total the app stores as rough_spending). The records date is passed as given.
     typedEstimates:

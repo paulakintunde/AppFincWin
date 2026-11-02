@@ -3,7 +3,7 @@ import en from '../locales/en';
 import { DRAFT_COPY_KEYS } from '../copyStatus';
 import { UNDO_LABEL_KEYS } from '../../engine/undo/types';
 import { undoLabelText } from '../undoLabel';
-import { BASIS_KEYS, BASIS_REASON_KEYS, FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, READINESS_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
+import { BASIS_KEYS, BASIS_REASON_KEYS, FACT_ACTION_KEYS, FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, READINESS_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
 
 interface Leaf {
   path: string;
@@ -93,6 +93,7 @@ const CONTROL_LABELS = new Set([
   'decide.flow.commit.none', // disabled primary button label
   'decide.hint.foldTap', // reveal hint named in UI-SPEC as a control
   // 05-110 (R17.6): UI controls on the keyed list; none is a prescription about money
+  'decide.v3.factAction.addLimit', // 05.4 FIN-03 (D-38): answer button to "Does Main have an overdraft?"
   'decide.home.field.check', // button: "Check it"
   'decide.home.field.full', // text link: "Full check"
   'decide.home.field.fullA11y', // the same link's accessibility label
@@ -332,6 +333,13 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       'decide.v3.fact.line_crossed_money',
       'decide.v3.fact.line_crossed_tenths',
       'decide.v3.notice.month_heading_short_category',
+      // 05.4 FIN-03: variants chosen by the UI (no rate set, no days below 0 without the purchase, no pay in the 90 days)
+      'decide.v3.fact.overdraft_use_no_rate',
+      'decide.v3.fact.overdraft_without_purchase_above',
+      'decide.v3.fact.overdraft_not_cleared_no_pay',
+      'decide.v3.fact.overdraft_repeat_no_rate',
+      'decide.v3.fact.other_account_overdrawn_no_rate',
+      ...Object.values(FACT_ACTION_KEYS).flatMap((a) => Object.values(a)),
       FOOTER_KEY,
     ];
     expect(keys.filter((k) => resolve(k) === undefined)).toEqual([]);
