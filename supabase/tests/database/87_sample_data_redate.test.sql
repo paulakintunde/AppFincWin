@@ -20,7 +20,8 @@ select extensions.lives_ok($$select public.seed_sample_data((select id from hh w
 select extensions.is(public.redate_sample_data_if_stale((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), current_date),
   false, 'a current seed is left alone');
 
--- A user row that must survive: written as a normal (non-sample) transaction on the sample checking account.
+-- A user row that must survive: seeded as the table owner (clients write transactions through apply_patches, not direct inserts).
+reset role;
 insert into public.transactions (id, household_id, account_id, created_by, original_amount, original_currency, local_date, time_zone, name, status, is_sample)
 select 'a8700000-0000-0000-0000-000000000001', a.household_id, a.id, '11111111-1111-1111-1111-111111111111', -500, a.currency, current_date, 'UTC', 'My coffee', 'paid', false
   from public.accounts a
@@ -28,7 +29,6 @@ select 'a8700000-0000-0000-0000-000000000001', a.household_id, a.id, '11111111-1
  limit 1;
 
 -- Age the sample: move every sample transaction two months back (as the table owner).
-reset role;
 select set_config('fincwin.system_restamp', 'on', true);
 update public.transactions set local_date = (local_date - interval '2 months')::date where is_sample;
 set local role authenticated;
