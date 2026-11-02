@@ -84,10 +84,12 @@ function card(c) {
   const notes = [
     c.ownerReason ? `<p><strong>Owner:</strong> ${esc(c.ownerReason)}</p>` : '',
     c.expertNote ? `<p><strong>Expert:</strong> ${esc(c.expertNote)}</p>` : '',
+    c.plannerNote ? `<p><strong>Planner note:</strong> ${esc(c.plannerNote)}</p>` : '',
   ].join('');
   return `<section class="card" id="${esc(c.id)}">
 <h2>${esc(c.id)} <span class="who">${esc(c.persona)}</span></h2>
 <h3>Situation</h3><p>${esc(c.situation)}</p>
+${c.reviewNote ? `<div class="check"><h3>Owner check</h3><p>${esc(c.reviewNote)}</p></div>` : ''}
 <h3>Expected answer</h3><p class="answer">${esc(labelOf(c.expected.code, c.expected.variant, c.fixture.check.pay.mode))}</p>
 <h3>Why</h3><p>${esc(c.why)}</p>
 <h3>Numbers</h3><table>${rows}</table>
@@ -109,7 +111,7 @@ const CSS = `body{font-family:system-ui,sans-serif;color:#000;background:#fff;ma
 h1{font-size:1.5rem}h2{font-size:1.15rem;margin:0}h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;margin:12px 0 2px}
 .card{border:1px solid #000;padding:12px 16px;margin:16px 0}.who{font-weight:normal}.answer{font-size:1.1rem;font-weight:bold;margin:0}
 table{border-collapse:collapse;width:100%}th,td{text-align:left;border-bottom:1px solid #ccc;padding:4px 6px;font-size:.9rem}th{width:45%;font-weight:normal}
-.status{font-size:.85rem;margin-bottom:0}`;
+.status{font-size:.85rem;margin-bottom:0}.check{border:2px solid #000;padding:4px 10px;margin:8px 0}`;
 
 function buildPage(topic, cases, approvedTopics) {
   return `<!doctype html>

@@ -5,7 +5,7 @@
       "id": "QE-01",
       "topic": "quick-estimates",
       "persona": "A12 Zoe (audit, invented)",
-      "situation": "Zoe started three weeks ago. She has no full month of records yet, so Decide uses her quick estimates (pay £2,500, bills £1,000, everyday £300). November leaves £1,200 free and she has nothing saved for emergencies. She is looking at £1,150.",
+      "situation": "Zoe started three weeks ago. She has no full month of records yet, so Decide uses her quick estimates (pay £2,500, bills £1,000, everyday £300). Besides the estimates, Decide counts what she has recorded: £1,280 in her Main current account on 22 November, a card with £400 on it at 24.9% whose £25 minimum is due on 28 November (it is not one of her bills), and £300 in a savings account she marked as her safety net. She has not recorded an overdraft limit on Main, or any loan. Pay of £2,500 lands on 1 December. She is looking at £1,150. It is bought on 22 November 2026 (today), paid in one go. Monthly spending from the quick estimates: bills £1,000 and everyday spending £300 (£200 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-22",
         "currency": "GBP",
@@ -44,11 +44,34 @@
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 30000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
           }
         ],
-        "safetyNet": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 30000
+        },
         "bills": [],
-        "debts": [],
+        "debts": [
+          {
+            "id": "d1",
+            "kind": "card",
+            "balance": 40000,
+            "minimum": 2500,
+            "apr": "24.9",
+            "dueDay": 28,
+            "joint": false
+          }
+        ],
         "userLine": null,
         "factLines": true,
         "check": {
@@ -65,7 +88,7 @@
         "code": "fits_month",
         "variant": "tight",
         "afterBuy": {
-          "month": 5000,
+          "month": 2500,
           "usualMonth": null
         },
         "readyBy": null,
@@ -75,11 +98,15 @@
         "mustHaveFacts": [
           "no_full_month",
           "tight_floor",
-          "net_none_start"
+          "net_progress",
+          "debt_interest_cost",
+          "ask_debts_not_recorded"
         ],
-        "mustNotHaveFacts": []
+        "mustNotHaveFacts": [
+          "net_none_start"
+        ]
       },
-      "why": "£1,200 - £1,150 = £50 left. With no full month of records, the floor comes from her estimates: a tenth of £1,000 bills + £300 everyday spending = £130, and £50 is under it, so the answer is \"Fits, but tight\" (D-40). The sentence says it is based on her quick estimates, and a fact says \"No full month of records yet.\", so it is never shown as more certain than it is. Nothing is saved in a safety net, so that line shows as a fact.",
+      "why": "Quick estimates never stand alone: what she has recorded is counted too (D-43). The rest of her £300 everyday estimate is £80, so her £1,280 leaves £1,200 free; the £25 card minimum on 28 November comes before payday, so £1,200 - £25 - £1,150 = £25 left. With no full month of records, the floor comes from her estimates: a tenth of £1,000 bills + £300 everyday spending = £130, and £25 is under it, so the answer is \"Fits, but tight\" (D-40). Tight leads; the safety-net line shows as a fact, because her £300 net is below its £1,200 starter size (£1,000 bills + £200 essential everyday spending): \"Your safety net has £300 of its £1,200. 1 month is a start; 3 to 6 months is common.\" The card shows as a fact (about £8.30 a month in interest at 24.9%). The sentence says it is based on her quick estimates, a fact says \"No full month of records yet.\", and because no overdraft limit or loan is recorded the answer asks, without blocking: \"No loan or overdraft is recorded. Do you have one?\" with \"Add it\" and \"None\" (ask, don't block).",
       "fixIds": [
         "ENG-11",
         "FIN-25",
@@ -94,7 +121,7 @@
       "id": "QE-02",
       "topic": "quick-estimates",
       "persona": "Ben (invented)",
-      "situation": "Ben has 2 full months of records (September and October) plus this month. November leaves $1,000 spare and his safety net is full ($1,700). He is looking at a $500 purchase.",
+      "situation": "Ben has 2 full months of records (September and October) plus this month. November leaves $1,000 spare and his safety net is full ($1,700). He is looking at a $500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -187,7 +214,7 @@
       "id": "QE-03",
       "topic": "quick-estimates",
       "persona": "Ada, freelancer (invented)",
-      "situation": "Ada is a freelancer. Most months bring $3,000, but in September only $1,500 came in; her usual month leaves $600. She has $500 in savings. She is looking at $2,400 in 12 payments of $200 at 0%, and answered yes to \"Can you cover the low months?\"",
+      "situation": "Ada is a freelancer. Most months bring $3,000, but in September only $1,500 came in; her usual month leaves $600. What her earlier months left is gone from her everyday account: $500 of it is in her savings account (all she has saved) and she spent the rest on a summer trip. Her everyday account holds only November's money ($1,050 on 15 November). She is looking at $2,400 in 12 payments of $200 at 0%, and answered yes to \"Can you cover the low months?\" It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,500 and everyday spending $900 ($600 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -270,7 +297,7 @@
         "mustHaveFacts": [],
         "mustNotHaveFacts": []
       },
-      "why": "A usual month leaves $600 - $200 = $400, but a month like September would be $1,500 - $2,400 of bills and spending - $200 = -$1,100, and $500 of savings cannot carry that. Only her yes makes it fit, so the answer is \"Only on your answer\" and says the records do not show it (FIN-08).",
+      "why": "A usual month leaves $600 - $200 = $400, but a month like September would be $1,500 - $2,400 of bills and spending - $200 = -$1,100, and $500 of savings cannot carry that. Only her yes makes it fit, so the answer is \"Only on your answer\" and says the records do not show it (FIN-08). The earlier leftovers were spent, not saved, so only the $500 in savings can carry a low month (D-44); had they been saved, the savings bridge in QE-04 would apply instead.",
       "fixIds": [
         "FIN-08",
         "ENG-07"
@@ -284,7 +311,7 @@
       "id": "QE-04",
       "topic": "quick-estimates",
       "persona": "Ada, with savings (invented)",
-      "situation": "Same Ada and $200-a-month plan as QE-03, but she has $4,000 in savings (not marked as a safety net). Her records show 1 low month in the last 6: September, when $1,500 came in. She has not been asked the cover question.",
+      "situation": "Same Ada and $200-a-month plan as QE-03, but she saved what her earlier months left: $4,000 is in her savings account (not marked as a safety net). Her everyday account holds only November's money ($1,050 on 15 November). Her records show 1 low month in the last 6: September, when $1,500 came in. She has not been asked the cover question. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,500 and everyday spending $900 ($600 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -390,7 +417,7 @@
       "id": "QE-05",
       "topic": "quick-estimates",
       "persona": "Ada, answered no (invented)",
-      "situation": "Same Ada as QE-03 ($500 in savings, a $200-a-month plan), but she answered no to \"Can you cover the low months?\"",
+      "situation": "Same Ada as QE-03 ($500 in savings, the rest of her earlier leftovers spent, a $200-a-month plan), but she answered no to \"Can you cover the low months?\" It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,500 and everyday spending $900 ($600 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -487,7 +514,7 @@
       "id": "QE-06",
       "topic": "quick-estimates",
       "persona": "Omar (invented)",
-      "situation": "Omar's set-up pay is $3,000 a month, but his last three pay days brought $2,700, $2,750 and $2,720. Bills are $1,200 and everyday spending $800. He is looking at $10,200 in 12 payments of $850 at 0%, first payment on 15 December.",
+      "situation": "Omar's set-up pay is $3,000 a month, but his last three pay days brought $2,700, $2,750 and $2,720. Bills are $1,200 and everyday spending $800. He is looking at $10,200 in 12 payments of $850 at 0%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -575,7 +602,7 @@
       "id": "QE-07",
       "topic": "quick-estimates",
       "persona": "Lucy (invented)",
-      "situation": "It is 1 December and Lucy is offline. Her records last synced on 29 November, so December has no records yet. November was a full, usual month that left $1,000. Her safety net is full ($1,700). She is looking at a $500 purchase.",
+      "situation": "It is 1 December and Lucy is offline. Her records last synced on 29 November, so December has no records yet. November was a full, usual month that left $1,000, and that $1,000 is still in her everyday account. December's pay of $3,000 is due today and has not arrived yet. Her safety net is full ($1,700). She is looking at a $500 purchase. It is bought on 1 December 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-12-01",
         "currency": "USD",
@@ -661,13 +688,14 @@
       "status": "draft",
       "approvedAt": null,
       "ownerReason": null,
-      "expertNote": null
+      "expertNote": null,
+      "plannerNote": "D-45 (verify before building), checked 2026-11-02. Mostly already happens. (1) Server: the daily materialise_recurring job (migration 20260926000400) writes every occurrence of a recurring bill or pay series through the end of next month (recurring_horizon) as a \"pending\" row, which the app labels \"Expected\"; it stays pending until the user confirms it paid or received. So when Lucy last synced on 29 November, December's Expected rows were already in her cache. (2) Engine: v3 month/thisMonth.ts counts each live bill occurrence in the month as due until a paid line settles it (month/settle.ts: a pending line never settles, and a due date passing settles nothing); month/incomeProfile.ts counts pay series at their dates (dropped only after the missed-pay grace days) and other pending income only when the user marked it expected. Gaps for the planner: everyday spending that is not a recurring series does not roll over as rows (the engine uses the typical month instead); and fixture.ts does not model pending rows, so this case cannot assert the rollover yet."
     },
     {
       "id": "QE-08",
       "topic": "quick-estimates",
       "persona": "Rosa (invented)",
-      "situation": "Rosa has $1,000 spare in November after her expected pay, bills and usual spending. She is looking at a $975 purchase, paid once.",
+      "situation": "Rosa has $1,000 spare in November after her expected pay, bills and usual spending. She is looking at a $975 purchase, paid once. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -748,7 +776,7 @@
       "id": "QE-09",
       "topic": "quick-estimates",
       "persona": "Theo (invented)",
-      "situation": "Theo is paid $1,400 every two weeks: on 13 November and next on 27 November. On 15 November he has $1,400 in his account, rent of $600 due on 20 November, and no overdraft. Counting the pay on the 27th, November leaves $800. He is looking at a $600 purchase.",
+      "situation": "Theo is paid $1,400 every two weeks: on 13 November and next on 27 November, so November brings $2,800. A usual month: bills $1,200 (rent of $600 on the 20th, and $600 of other bills already paid this month) and everyday spending $800 ($500 of it on essentials). $400 of November's everyday spending is already spent. On 15 November he has $1,400 in his everyday account: $400 is what is left of November's pay so far, and $1,000 is left from October and still in the account. He has no overdraft. Counting the pay on the 27th, November leaves $800 ($2,800 - $1,200 - $800). He is looking at a $600 purchase, bought on 15 November 2026 (today), paid in one go.",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -835,7 +863,7 @@
       "id": "QE-10",
       "topic": "quick-estimates",
       "persona": "Will (invented)",
-      "situation": "Will's usual month leaves $1,000 and his safety net is full ($1,700). He is looking at $6,000 in 12 payments of $500 at 0%, first payment on 15 December.",
+      "situation": "Will's usual month leaves $1,000 and his safety net is full ($1,700). He is looking at $6,000 in 12 payments of $500 at 0%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -931,7 +959,7 @@
       "id": "QE-11",
       "topic": "quick-estimates",
       "persona": "A5, A6 and A7 Jordan, freelancer (audit, invented)",
-      "situation": "Jordan is a freelancer with £3,000 in her current account. Her usual month ends about £150 short, and October is heading about £1,009 below £0 because little work came in. She is looking at an £8,000 car over 48 months at 9.9%, first payment on 30 October. She answered yes to \"Can you cover the low months?\" (A6; A5 is the same check before she answered, and A7, from the retired OD-09, is the same check answered no).",
+      "situation": "Jordan is a freelancer with £3,000 in her current account. Her usual month ends about £150 short, and October is heading about £1,009 below £0 because little work came in. She is looking at an £8,000 car over 48 months at 9.9%, first payment on 30 October. She answered yes to \"Can you cover the low months?\" (A6; A5 is the same check before she answered, and A7, from the retired OD-09, is the same check answered no). It is bought on 15 October 2026 (today), with the first payment on 30 October 2026. A usual month: pay £2,500, bills £1,500 and everyday spending £1,150 (£600 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-15",
         "currency": "GBP",
@@ -1016,7 +1044,7 @@
       "id": "QE-12",
       "topic": "quick-estimates",
       "persona": "A21 and A22 Jordan, with savings (audit, invented)",
-      "situation": "Jordan again, but with £16,000 in her account. Usual month about £150 short, October heading about £1,009 below £0, the same £8,000 car over 48 months at 9.9%. She answered no to the cover question (A22); A21 is the same check answered yes.",
+      "situation": "Jordan again, but with £16,000 in her current account, saved from earlier work and still in the account. Usual month about £150 short, October heading about £1,009 below £0, the same £8,000 car over 48 months at 9.9%, first payment on 30 October. She answered no to the cover question (A22); A21 is the same check answered yes. It is bought on 15 October 2026 (today), with the first payment on 30 October 2026. A usual month: pay £2,500, bills £1,500 and everyday spending £1,150 (£600 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-15",
         "currency": "GBP",
@@ -1085,11 +1113,13 @@
         "mustHaveReasons": [],
         "mustHaveFacts": [
           "covered_from_savings",
+          "further_shortfall_runway",
+          "income_or_costs_first",
           "save_vs_borrow"
         ],
         "mustNotHaveFacts": []
       },
-      "why": "Either answer gives \"Short each month\", never a plain \"Fits\": once payments start, each usual month is £150 + £202.52 = £352.52 short (D-40). The answer is not a bare \"never\" either. Her £16,000, less the £593.55 of October spending still to come and the first £202.52 payment on 30 October, is £15,203.93 at the end of October. That covers 43 more months of the £352.52 gap (15,203.93 / 352.52 = 43.1), so savings cover about 44 of the 48 payments and run out about 4 payments before the end: \"Your £16,000 would cover the £352.52 monthly gap for about 44 of the 48 payments.\" Paying cash also fits, leaving about £7,406.45 at the end of October (£16,000 - £593.55 - £8,000), while the plan costs £1,720.75 in interest (47 payments of £202.52 and a last one of £202.31, £9,720.75 in all), 21.5% of the £8,000.",
+      "why": "Either answer gives \"Short each month\", never a plain \"Fits\": once payments start, each usual month is £150 + £202.52 = £352.52 short (D-40). The answer is not a bare \"never\" either. Her £16,000, less the £593.55 of October spending still to come and the first £202.52 payment on 30 October, is £15,203.93 at the end of October. That covers 43 more months of the £352.52 gap (15,203.93 / 352.52 = 43.1), so savings cover about 44 of the 48 payments and run out about 4 payments before the end: \"Your £16,000 would cover the £352.52 monthly gap for about 44 of the 48 payments.\" Paying cash also fits, leaving about £7,406.45 at the end of October (£16,000 - £593.55 - £8,000), while the plan costs £1,720.75 in interest (47 payments of £202.52 and a last one of £202.31, £9,720.75 in all), 21.5% of the £8,000. Because her income is unpredictable, the answer also shows how fragile that runway is (D-46): \"If each month from November came up another £1,000 short, your £16,000 would cover about 12 of the 48 payments.\" (£15,203.93 / £1,352.52 = 11.2, so 11 more months after the first payment.) And, as a fact, never as a push: \"Raising income or lowering costs before the payments start makes the £16,000 last longer.\"",
       "fixIds": [
         "FIN-08",
         "ENG-07",
@@ -1104,7 +1134,7 @@
       "id": "QE-13",
       "topic": "quick-estimates",
       "persona": "A12 Zoe, room to spare (audit, invented)",
-      "situation": "Same Zoe as QE-01: three weeks of records, quick estimates (pay £2,500, bills £1,000, everyday £300), £1,200 free in November. Her safety net is full (£1,200). This time she is looking at £600.",
+      "situation": "Zoe (the same start as QE-01): three weeks of records, quick estimates (pay £2,500, bills £1,000, everyday £300), £1,280 in her Main current account on 22 November and £1,200 free in November. Her safety net is full (£1,200). She has recorded no card, loan, other debt or overdraft limit. Pay of £2,500 lands on 1 December. This time she is looking at £600. It is bought on 22 November 2026 (today), paid in one go. Monthly spending from the quick estimates: bills £1,000 and everyday spending £300 (£200 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-22",
         "currency": "GBP",
@@ -1185,13 +1215,14 @@
           "quick_estimates"
         ],
         "mustHaveFacts": [
-          "no_full_month"
+          "no_full_month",
+          "ask_debts_not_recorded"
         ],
         "mustNotHaveFacts": [
           "tight_floor"
         ]
       },
-      "why": "£1,200 free - £600 = £600 left, well over the £130 floor from her estimates (a tenth of £1,000 + £300), and her £1,200 safety net (one month of £1,000 bills + £200 essential everyday spending) is full. So it is a plain \"Fits\": quick estimates alone do not turn an answer amber. The sentence still says it is based on her quick estimates, with \"No full month of records yet.\"",
+      "why": "£1,200 free - £600 = £600 left, well over the £130 floor from her estimates (a tenth of £1,000 + £300), and her £1,200 safety net (one month of £1,000 bills + £200 essential everyday spending) is full. So it is a plain \"Fits\": quick estimates alone do not turn an answer amber. The sentence still says it is based on her quick estimates, with \"No full month of records yet.\" Because nothing is recorded about debts, the fit names what was not checked and asks, without blocking: \"No loan, card, other debt or overdraft is recorded. Do you have any?\" with \"Add it\" and \"None\" (D-43).",
       "fixIds": [
         "ENG-11",
         "FIN-25",
@@ -1206,7 +1237,7 @@
       "id": "QE-14",
       "topic": "quick-estimates",
       "persona": "Ada, savings are her safety net (invented)",
-      "situation": "Same Ada and $200-a-month plan as QE-04 (1 low month in the last 6, September at $1,500), but her $4,000 is her safety net: she set its size to $4,000 and it is full. She has not been asked the cover question.",
+      "situation": "Same Ada and $200-a-month plan as QE-04 (1 low month in the last 6, September at $1,500), but the $4,000 she saved from earlier months is her safety net: she set its size to $4,000 and it is full. She has not been asked the cover question. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,500 and everyday spending $900 ($600 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",

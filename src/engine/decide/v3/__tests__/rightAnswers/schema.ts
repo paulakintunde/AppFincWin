@@ -29,7 +29,11 @@ export interface RightAnswerFixture {
   check: FixtureCheck;
 }
 export interface Expected { code: string; variant: string|null; afterBuy: { month: number|null; usualMonth: number|null }; readyBy: string|null; mustHaveReasons: string[]; mustHaveFacts: string[]; mustNotHaveFacts: string[] }
-export interface RightAnswerCase { id: string; topic: Topic; persona: string; situation: string; fixture: RightAnswerFixture; expected: Expected; why: string; fixIds: string[]; status: CaseStatus; approvedAt: string|null; ownerReason: string|null; expertNote: string|null; changeApproved?: string|null }
+export interface RightAnswerCase { id: string; topic: Topic; persona: string; situation: string; fixture: RightAnswerFixture; expected: Expected; why: string; fixIds: string[]; status: CaseStatus; approvedAt: string|null; ownerReason: string|null; expertNote: string|null; changeApproved?: string|null;
+  /** round 1b: an "Owner check" note the review page shows, for a pending change the owner sees before it is applied; absent = none */
+  reviewNote?: string|null;
+  /** round 1b: a note for the rule planner, shown on the review page; absent = none */
+  plannerNote?: string|null }
 
 export const ID_PREFIX: Readonly<Record<Topic, string>> = {
   'safety-net': 'SN', overdraft: 'OD', debts: 'DB', borrowing: 'BR', tax: 'TX', 'running-costs': 'RC',
@@ -86,6 +90,10 @@ export function validateCase(c: unknown): string[] {
     if (typeof k[f] !== 'string' || (k[f] as string).length === 0) errs.push(`${id}: ${f} is required`);
   }
   if (!Array.isArray(k.fixIds)) errs.push(`${id}: fixIds must be a list`);
+  for (const f of ['reviewNote', 'plannerNote'] as const) {
+    const v = k[f];
+    if (v !== undefined && v !== null && (typeof v !== 'string' || v.length === 0)) errs.push(`${id}: ${f} must be text or null`);
+  }
   const fx = k.fixture;
   if (!fx || typeof fx !== 'object') {
     errs.push(`${id}: fixture is required`);

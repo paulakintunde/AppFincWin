@@ -75,6 +75,10 @@ describe('validateCase', () => {
     c.expected.code = 'fits_maybe';
     expect(validateCase(c).join()).toMatch(/unknown answer code/);
   });
+  it('accepts review and planner notes as text or null, and rejects an empty note', () => {
+    expect(validateCase(minimalCase({ reviewNote: 'Owner check.', plannerNote: null }))).toEqual([]);
+    expect(validateCase(minimalCase({ plannerNote: '' })).join()).toMatch(/plannerNote must be text or null/);
+  });
   it('rejects a variant that is not on the allowed list', () => {
     const c = minimalCase();
     c.expected.variant = 'net_not_full';
