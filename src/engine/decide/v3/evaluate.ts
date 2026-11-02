@@ -12,9 +12,11 @@ import { buildFunds } from './funds/build';
 import { insteadFutures, type Futures } from './instead/futures';
 import { readinessOf } from './readiness';
 import { judge } from './judge/judge';
+import { uncoveredIncomeMonths } from './judge/needsInput';
 import { mayUseEmergency, withLiveEmergency } from './funds/emergency';
 import { buildPurchase, purchaseCashFlows } from './judge/purchase';
 import { withRedatedRefunds } from './month/refunds';
+import { dueDrops } from './month/dueDrops';
 import { buildMonthModel } from './month/model';
 import { incomeThisMonth, type IncomeInput } from './month/incomeProfile';
 import { expectedFor } from './month/incomePattern';
@@ -22,7 +24,7 @@ import { liveSeriesOf, seriesOccurrences } from './month/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './month/settle';
 import type { PlanCard } from './plan/planCard';
 import type { QuotedCheck } from './plan/quoted';
-import type { CheckV2, ConfidenceLevel, Funds, MonthModel, Purchase, ReadyBy, ReasonCode, Result, V3Inputs } from './types';
+import type { CheckV2, ConfidenceLevel, Funds, MonthModel, Purchase, ReadyBy, ReasonCode, Result, V3Inputs, YearMonth } from './types';
 
 export interface Evaluation {
   readonly result: Result;
@@ -34,6 +36,8 @@ export interface Evaluation {
   readonly cash: CashCheck;
   /** D-48: "What could I do instead?" attached straight away when the user said they cannot cover a volatile monthly payment; otherwise null. */
   readonly futures: Futures | null;
+  /** 05.3-106: the future months the purchase depends on that have no expected income yet, in order; the first is the one the question names. */
+  readonly uncoveredIncome?: readonly YearMonth[];
 }
 
 /**
@@ -124,6 +128,7 @@ function evaluateOnce(inputs: V3Inputs, check: CheckV2): Evaluation {
     e: month.e ?? minorUnits(0),
     extraOut: pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3) : [],
     payCaps: payCapsOf(inputs, month),
+    drops: dueDrops(inputs), // 05.3-64 (D-27, D-31, skips): the same rule as the month model and unspent
   });
   const cash = cashCheck(path, nextPayDate(inputs.series, inputs.asOf));
   const judged = judge({
@@ -132,6 +137,7 @@ function evaluateOnce(inputs: V3Inputs, check: CheckV2): Evaluation {
     funds,
     purchase: pb.purchase,
     purchaseMissing: pb.missing,
+    purchasePreview: pb.preview,
     purchaseFacts: pb.facts,
     purchaseReasons: pb.reasons,
     cash,
@@ -145,7 +151,7 @@ function evaluateOnce(inputs: V3Inputs, check: CheckV2): Evaluation {
     pb.purchase !== null && result.reasons.includes('volatile_cover_declined')
       ? insteadFutures({ result, month, funds, purchase: pb.purchase, userRate: null, years: 1 })
       : null;
-  return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash, futures };
+  return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash, futures, uncoveredIncome: uncoveredIncomeMonths(inputs, month, pb.purchase) };
 }
 
 const LEVEL_RANK: Readonly<Record<ConfidenceLevel, number>> = { rough: 0, fair: 1, firm: 2 };

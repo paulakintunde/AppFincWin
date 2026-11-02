@@ -64,6 +64,8 @@ export interface TypicalInput {
   readonly windowMonths?: number; // D-33: months of history used; default V3_HISTORY_MONTHS (6)
   /** D-36: recorded income per month. When given (variable or seasonal), the typical income and every low-month candidate come from the months' own income. */
   readonly incomeByMonth?: ReadonlyMap<string, bigint> | null;
+  /** 05.3-65 D-31: bill series someone else always pays; left out of every typical figure. Absent means none. */
+  readonly excludedSeries?: ReadonlySet<string>;
 }
 
 export interface TypicalResult {
@@ -91,8 +93,10 @@ export function typicalOf(input: TypicalInput): TypicalResult {
   let bills = 0n;
   let housing = 0n;
   const billByCategory = new Map<string, bigint>();
+  // D-31: a series someone else always pays is left out before the loop, so it raises no yearly-bill notice either.
+  const excluded = input.excludedSeries;
   const live = liveSeriesOf(input.series, input.asOf, 'bill')
-    .slice()
+    .filter((s) => excluded === undefined || !excluded.has(s.id))
     .sort((a, b) => cmp(a.id, b.id));
   for (const s of live) {
     const eq = BigInt(monthlyEquivalentOf(s.amount, s.cadence));

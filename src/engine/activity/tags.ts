@@ -50,7 +50,8 @@ export function rowTag(row: TagInput, today: string): RowTag {
     return { kind: 'moved', tone: 'neutral', refund };
   }
   if (future) return { kind: 'scheduled', tone: 'scheduled', refund };
-  const outflow = row.original_amount < 0 || refund;
+  // 05.3-90 (UAT step 61): a refund is money coming back, so its status word follows its sign (Received / Expected); flowOf still keeps refunds out of income (D-03).
+  const outflow = row.original_amount < 0;
   if (row.status === 'pending') {
     if (!outflow) return { kind: 'expected', tone: 'unpaid', refund };
     // Future-dated lines are Scheduled above, so a pending outflow here is

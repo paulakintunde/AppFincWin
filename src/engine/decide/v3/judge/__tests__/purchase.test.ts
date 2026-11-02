@@ -1,8 +1,11 @@
 import { assert as fcAssert, integer, property, constantFrom } from 'fast-check';
+import { CODE_PRECEDENCE } from '../../constants';
+import { evaluate } from '../../evaluate';
 import { currencyCode, minorUnits as mu } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import { ASOF, checkOnce, checkPlan, inputsOf } from '../../__tests__/helpers/fixtures';
 import type { CheckV2, CustomOptions } from '../../types';
+import { layersFor } from '../bands';
 import { buildPurchase, purchaseCashFlows } from '../purchase';
 
 const inputs = inputsOf();
@@ -309,10 +312,14 @@ describe('buildPurchase', () => {
       const flows = purchaseCashFlows(b.purchase, ASOF, 400);
       expect(flows.reduce((a, f) => a + f.amount, 0)).toBe(120000);
     });
-    it('a day one smaller than the payment due today is held at zero, not negative', () => {
+    it('a pay-once purchase is one flow of dayOne on asOf', () => {
+      const b = must(checkOnce(10_000));
+      expect(purchaseCashFlows(b.purchase, ASOF, 400)).toEqual([{ date: ASOF, amount: b.purchase.dayOne }]);
+    });
+    it('L-03 a day one smaller than the payment due today is not clamped: today still nets to dayOne', () => {
       const b = must(checkPlan(250000, { count: 10, apr: percent('0'), firstPayment: today }));
       const flows = purchaseCashFlows({ dayOne: mu(0), schedule: b.purchase.schedule, share: b.purchase.share }, ASOF, 400);
-      expect(flows.filter((f) => f.date === ASOF).reduce((a, f) => a + f.amount, 0)).toBe(25000);
+      expect(flows.filter((f) => f.date === ASOF).reduce((a, f) => a + f.amount, 0)).toBe(0);
     });
     it('a plan starting a period on has dayOne only from fees and deposit', () => {
       const b = must(checkPlan(120000, { count: 12, apr: percent('0'), firstPayment: { kind: 'one_period' } }));
@@ -320,5 +327,159 @@ describe('buildPurchase', () => {
       expect(flows.some((f) => f.date === ASOF)).toBe(false);
       expect(flows.reduce((a, f) => a + f.amount, 0)).toBe(120000);
     });
+  });
+});
+
+describe('L-03: the cash path and the ladder agree to the minor unit under a share', () => {
+  const vehicle = { kind: 'preset', value: 'vehicle' } as const;
+  const onToday = (flows: readonly { date: string; amount: number }[]) => flows.filter((f) => f.date === ASOF).reduce((a, f) => a + f.amount, 0);
+
+  it('L-03 one third of 100,001 up front plus a first payment today', () => {
+    const b = must(
+      checkPlan(100_001 + 7 * 33_334, { count: 7, apr: percent('0'), firstPayment: today, deposit: mu(100_001) }, {
+        share: { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: 'weight', weights: [1, 2] } },
+      })
+    );
+    expect(onToday(purchaseCashFlows(b.purchase, ASOF, 400))).toBe(b.purchase.dayOne);
+  });
+
+  it('L-03 property: cash-path day one equals Purchase.dayOne', () => {
+    fcAssert(
+      property(
+        integer({ min: 1, max: 9 }),
+        integer({ min: 1, max: 9 }),
+        integer({ min: 0, max: 10_000_000 }),
+        integer({ min: 1, max: 60 }),
+        integer({ min: 0, max: 12_000_000 }),
+        (num, den, deposit, count, tradeIn) => {
+          const b = must(
+            checkPlan(deposit + 1_000_000, { count, apr: percent('0'), firstPayment: today, deposit: mu(deposit) }, {
+              itemType: vehicle,
+              extras: { trade_in: mu(tradeIn) },
+              share: { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: 'weight', weights: [num, den] } },
+            })
+          );
+          return onToday(purchaseCashFlows(b.purchase, ASOF, 400)) === b.purchase.dayOne;
+        }
+      ),
+      { numRuns: 300 }
+    );
+  });
+
+  it('L-03 a credit larger than everything due today is not hidden by a clamp: today nets to day one (0)', () => {
+    const b = must(checkPlan(250_000, { count: 10, apr: percent('0'), firstPayment: today }, { itemType: vehicle, extras: { trade_in: mu(9_000_000) } }));
+    expect(b.purchase.dayOne).toBe(0);
+    // Documented: day one is floored at 0 in buildPurchase (the surplus credit is not paid out); the cash path follows it exactly.
+    expect(onToday(purchaseCashFlows(b.purchase, ASOF, 400))).toBe(0);
+  });
+});
+
+describe('L-09 withPayment: a larger quote recomputes the paying periods', () => {
+  const at = (quoted: number | null, apr = '0') =>
+    must(checkPlan(120_000, { count: 12, apr: percent(apr), firstPayment: { kind: 'one_period' }, quotedPayment: quoted === null ? null : mu(quoted) }));
+
+  it('L-09 withPayment 10,000 x 12 with a 12,000 quote pays off in 10 periods, total 120,000', () => {
+    const s = at(12_000).purchase.schedule;
+    expect(s?.payment).toBe(12_000);
+    expect(s?.lastPaying).toBe(10);
+    expect(s?.finalPayment).toBe(12_000);
+    expect(s?.totalPaid).toBe(120_000);
+    expect(s?.totalInterest).toBe(0);
+  });
+  it('L-09 withPayment keeps a short final payment and totals financed plus interest at a rate', () => {
+    const s = at(13_000, '12').purchase.schedule;
+    if (s === null || s === undefined) throw new Error('no schedule');
+    expect(s.lastPaying).toBeLessThan(12);
+    expect(s.finalPayment).toBeLessThanOrEqual(13_000);
+    expect(s.totalPaid).toBe(13_000 * (s.lastPaying - 1) + s.finalPayment);
+    expect(s.totalPaid - s.fees.end - s.fees.perPeriod * s.lastPaying).toBe(s.financed + s.totalInterest);
+  });
+  it('L-09 withPayment: a quote at or below the computed payment is unchanged', () => {
+    const base = at(null).purchase.schedule;
+    expect(at(10_000).purchase.schedule?.totalPaid).toBe(base?.totalPaid);
+    expect(at(9_000).purchase.schedule?.totalPaid).toBe(base?.totalPaid);
+  });
+  it('L-09 withPayment: per-period fees follow the recomputed count', () => {
+    const b = must(checkPlan(120_000, { count: 12, apr: percent('0'), firstPayment: { kind: 'one_period' }, quotedPayment: mu(12_000), fees: { ...noFees, perPeriod: mu(100), end: mu(50) } }));
+    const s = b.purchase.schedule;
+    expect(s?.lastPaying).toBe(10);
+    expect(s?.totalPaid).toBe(120_000 + 100 * 10 + 50);
+  });
+  it('L-09 withPayment: a due-today first payment and a deferred first payment recompute too', () => {
+    const due = must(checkPlan(120_000, { count: 12, apr: percent('12'), firstPayment: today, quotedPayment: mu(12_000) })).purchase.schedule;
+    expect(due?.lastPaying).toBeLessThanOrEqual(11);
+    const def = must(
+      checkPlan(120_000, { count: 12, apr: percent('12'), firstPayment: { kind: 'deferred', firstDate: '2026-12-01', interestDuringPause: true }, quotedPayment: mu(14_000) })
+    ).purchase.schedule;
+    expect(def?.lastPaying).toBeLessThan(12);
+    expect(def?.totalPaid).toBe(14_000 * ((def?.lastPaying ?? 1) - 1) + (def?.finalPayment ?? 0));
+  });
+  it('L-09 withPayment: nothing financed stays at nothing', () => {
+    const s = must(checkPlan(100_000, { count: 12, apr: percent('0'), firstPayment: { kind: 'one_period' }, deposit: mu(100_000), quotedPayment: mu(5_000) })).purchase.schedule;
+    expect(s?.lastPaying).toBe(0);
+    expect(s?.totalPaid).toBe(0);
+  });
+  it('I41: a quote is never more favourable than the computed plan', () => {
+    for (const balance of [0, 20_000, 60_000, 130_000, 400_000]) {
+      for (const quoted of [8_000, 10_000, 11_000, 15_000, 40_000]) {
+        const pay = { count: 12, apr: percent('12'), firstPayment: { kind: 'one_period' } } as const;
+        const a = evaluate(inputsOf({ balance: mu(balance) }), checkPlan(120_000, pay));
+        const q = evaluate(inputsOf({ balance: mu(balance) }), checkPlan(120_000, { ...pay, quotedPayment: mu(quoted) }));
+        expect(CODE_PRECEDENCE.indexOf(q.result.code)).toBeLessThanOrEqual(CODE_PRECEDENCE.indexOf(a.result.code));
+      }
+    }
+  });
+});
+
+describe('05.3-70 preview: band and layers while the plan is incomplete', () => {
+  const vehicle = { itemType: { kind: 'preset', value: 'vehicle' } } as const;
+  it('a priced plan with no fields keeps its band and layers, and the missing list is unchanged', () => {
+    const b = build(checkPlan(700000, {}, vehicle as Partial<CheckV2>));
+    expect(b.purchase).toBeNull();
+    expect(b.missing).toEqual(['plan_count_missing', 'plan_rate_missing', 'first_payment_not_chosen']);
+    expect(b.reasons).toEqual([]);
+    expect(b.facts).toEqual([]);
+    expect(b.preview).toEqual({ band: 6, layers: layersFor(6, { periodic: true, hasExtras: true }) });
+    expect(b.preview?.layers).toEqual(expect.arrayContaining(['L1p', 'L2', 'L3', 'L4', 'L5']));
+  });
+  it('a complete plan previews what the purchase carries', () => {
+    const b = build(checkPlan(700000, { count: 12, apr: percent('9.9'), firstPayment: today }, vehicle as Partial<CheckV2>));
+    expect(b.preview).toEqual({ band: b.purchase!.band, layers: b.purchase!.layers });
+  });
+  it('a deferred first payment before asOf still has a preview', () => {
+    const b = build(checkPlan(120000, { count: 12, apr: percent('9.9'), firstPayment: { kind: 'deferred', firstDate: '2026-09-01', interestDuringPause: false } }));
+    expect(b.missing).toEqual(['first_payment_passed']);
+    expect(b.preview).not.toBeNull();
+  });
+  it('keeps the passed-date missing when the price is out of range', () => {
+    const b = build(checkPlan(Number.MAX_SAFE_INTEGER, { count: 12, apr: percent('9.9'), firstPayment: { kind: 'deferred', firstDate: '2026-09-01', interestDuringPause: false } }, { taxPercent: percent('50') }));
+    expect(b.missing).toEqual(['first_payment_passed']);
+    expect(b.preview).toBeNull();
+  });
+  it('keeps the plan missing list when the price is out of range', () => {
+    const b = build(checkPlan(Number.MAX_SAFE_INTEGER, {}, { taxPercent: percent('50') }));
+    expect(b.missing).toEqual(['plan_count_missing', 'plan_rate_missing', 'first_payment_not_chosen']);
+    expect(b.preview).toBeNull();
+  });
+  it('a complete check out of range is exceeds_range with no preview', () => {
+    const b = build(checkPlan(Number.MAX_SAFE_INTEGER, { count: 12, apr: percent('9.9'), firstPayment: today }, { taxPercent: percent('50') }));
+    expect(b.reasons).toContain('exceeds_range');
+    expect(b.preview).toBeNull();
+  });
+  it('no price: no preview', () => {
+    const b = build({ ...checkPlan(1, {}), price: null });
+    expect(b.missing).toContain('no_price');
+    expect(b.preview).toBeNull();
+  });
+  it('an invalid share: no preview', () => {
+    const b = build({ ...checkOnce(1000), share: { kind: 'household', memberCount: 0, myIndex: 0, rule: { kind: 'even' } } } as CheckV2);
+    expect(b.missing).toEqual(['share_invalid']);
+    expect(b.preview).toBeNull();
+  });
+  it('evaluate on an incomplete plan keeps result.band and result.layers', () => {
+    const r = evaluate(inputs, checkPlan(700000, {}, vehicle as Partial<CheckV2>)).result;
+    expect(r.code).toBe('needs_input');
+    expect(r.band).toBe(6);
+    expect(r.layers).toEqual(layersFor(6, { periodic: true, hasExtras: true }));
   });
 });
