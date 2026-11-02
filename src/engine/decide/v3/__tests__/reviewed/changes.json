@@ -13,9 +13,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-03/ENG-02 signed balances: the account is 1,500 below 0 with no overdraft limit, so the old \"unexplained money\" question (caused by rounding -1,500 up to 0) is gone and the answer is Not yet (D-28), ready about February 2027.",
+      "approved": true,
+      "approvedAt": "2026-11-02"
     },
     {
       "fixId": "FIN-03",
@@ -30,9 +30,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-03/ENG-02 signed balances: the account is 1,500 below 0 with no overdraft limit, so the old \"unexplained money\" question (caused by rounding -1,500 up to 0) is gone and the answer is Not yet (D-28), ready about March 2027.",
+      "approved": true,
+      "approvedAt": "2026-11-02"
     },
     {
       "fixId": "FIN-03",
@@ -47,9 +47,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-03/ENG-02 signed balances: the account is 1,500 below 0 with no overdraft limit, so the old \"unexplained money\" question (caused by rounding -1,500 up to 0) is gone and the answer is Not yet (D-28), ready about July 2027.",
+      "approved": true,
+      "approvedAt": "2026-11-02"
     },
     {
       "fixId": "FIN-03",
@@ -64,9 +64,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-03/ENG-02 signed balances: the account is 1,500 below 0 with no overdraft limit, so the old \"unexplained money\" question (caused by rounding -1,500 up to 0) is gone and the answer is Not yet (D-28), ready about January 2029.",
+      "approved": true,
+      "approvedAt": "2026-11-02"
     },
     {
       "fixId": "FIN-03",
@@ -81,9 +81,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-03/ENG-02 signed balances: the account is 1,500 below 0 with no overdraft limit, so the old \"unexplained money\" question (caused by rounding -1,500 up to 0) is gone; the account stays below 0 for the whole 90 days, so the answer is Not yet (D-28), ready about February 2027.",
+      "approved": true,
+      "approvedAt": "2026-11-02"
     }
   ]
 }
