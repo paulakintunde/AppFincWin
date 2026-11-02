@@ -50,8 +50,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   households: ['id', 'horizon_month'],
   household_members: ['household_id', 'user_id', 'display_name'],
   profiles: [
-    'home_currency', 'show_cents', 'lead_figure', 'region', 'week_start', 'sample_prompt_answered_at',
-    // profiles.decide_v3 is an access switch, not user data: excluded on purpose (05.2).
+    'home_currency', 'show_cents', 'lead_figure', 'region', 'region_subdivision', 'week_start', 'sample_prompt_answered_at',
+    // profiles.decide_v3 and profiles.decide_shadow are access switches, not user data: excluded on purpose (05.2, 05.4).
   ],
   decide_checks: [
     'id', 'household_id', 'created_by', 'kind', 'name', 'inputs', 'status', 'furthest_step', 'last_seen_state', 'last_seen_basis', 'answer_v3',
@@ -103,4 +103,5 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
 export const NOT_USER_DATA: readonly string[] = [
   'transactions_active', // a view over transactions (not-deleted rows); exported through transactions
   'statement_periods_live', // a view over statement_periods; exported through statement_periods
+  'decide_shadow_runs', // rounded engine results, no client read; erased by FK cascade; added to the server export in Phase 10 (CMP-F06 export)
 ];

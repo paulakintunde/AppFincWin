@@ -7,7 +7,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(35);
+select extensions.plan(37);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -86,6 +86,11 @@ insert into public.decide_answers (id, household_id, created_by, kind, key, amou
   -- 05.3 D-28: B's owner-private readiness waiver.
   ('b7700000-0000-0000-0000-000000000006', (select id from a_hh), '22222222-2222-2222-2222-222222222222', 'readiness_waiver', 'income-elsewhere', null, '2026-10-30', null, null);
 
+-- 05.4 BO-08: rounded shadow-run results, erased with the account by the FK cascade.
+insert into public.decide_shadow_runs (user_id, engine_revision, sample_id, code, figures) values
+  ('11111111-1111-1111-1111-111111111111', 'r1', 's60', 'fits_month', '{}'),
+  ('22222222-2222-2222-2222-222222222222', 'r1', 's60', 'not_yet', '{}');
+
 -- ---------------------------------------------------------------------
 -- 1. Seeded (1-2).
 -- ---------------------------------------------------------------------
@@ -104,6 +109,7 @@ select extensions.is((select count(*)::int from public.decide_settings where use
 select extensions.is((select count(*)::int from public.decide_answers where id = 'b7700000-0000-0000-0000-000000000005'), 0, 'B''s owner-private decide_answers row is gone');
 select extensions.is((select count(*)::int from public.decide_answers where id = 'b7700000-0000-0000-0000-000000000006'), 0, 'B''s readiness waiver is gone (D-28)');
 select extensions.is((select count(*)::int from public.decide_answers where household_id = (select id from a_hh)), 4, 'A''s answers remain');
+select extensions.is((select count(*)::int from public.decide_shadow_runs), 1, 'B''s shadow run is gone, A''s remains (05.4)');
 select extensions.is((select created_by from public.recurring_dismissals where id = 'f7000000-0000-0000-0000-000000000002'), null,
   'B''s household-scoped dismissal stays but no longer points at B');
 select extensions.is((select count(*)::int from public.decide_settings where user_id = '11111111-1111-1111-1111-111111111111'), 1, 'A''s decide_settings remain');
@@ -127,6 +133,7 @@ select extensions.is((select count(*)::int from public.decide_checks where house
 select extensions.is((select count(*)::int from public.profiles where id = '11111111-1111-1111-1111-111111111111'), 0, 'the profile (decide_v3 switch) is gone');
 select extensions.is((select count(*)::int from public.households where id in (select id from a_hh_gone)), 0, 'the household is gone');
 select extensions.is((select count(*)::int from public.decide_answers), 0, 'no decide_answers rows remain anywhere');
+select extensions.is((select count(*)::int from public.decide_shadow_runs), 0, 'no decide_shadow_runs rows remain (05.4)');
 
 -- ---------------------------------------------------------------------
 -- 4. Generic FK delete-rule guard (25-35).
