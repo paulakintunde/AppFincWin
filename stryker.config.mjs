@@ -22,6 +22,10 @@ export default {
   htmlReporter: { fileName: 'reports/mutation/index.html' },
   jsonReporter: { fileName: 'reports/mutation/mutation.json' },
   thresholds: { high: 95, low: 90, break: 0 },
+  // 05.4-08: the whole engine suite (backtest alone ~2 min) takes longer than the 5-minute default for the first run
+  dryRunTimeoutMinutes: 45,
+  // Keep the sandbox small: build output, reports and caches are not source
+  ignorePatterns: ['coverage', 'reports', '.stryker-cache', '.stryker-tmp', '.planning', 'android', 'ios', '.expo', 'scratch-jest.txt'],
   timeoutMS: 60000,
   timeoutFactor: 3,
   concurrency: 4,

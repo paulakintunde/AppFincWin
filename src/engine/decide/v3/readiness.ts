@@ -211,7 +211,12 @@ function settles(w: ReadinessWaiver, item: ReadinessItem, ym: YearMonth, fresh: 
       if (item.month !== w.month) return false;
       if (item.month < ym) return true;
       // The current month's items are bills and the spending clock only.
-      return item.kind === 'bill' ? (item.date as LocalDate) <= w.at : fresh(w.at);
+      if (item.kind !== 'bill') return fresh(w.at);
+      // Typed constant, not an inline cast: Stryker rewrites `(x as T) <= y` into `x as T < y`, which does not parse.
+      {
+        const billDate: LocalDate = item.date as LocalDate;
+        return billDate <= w.at;
+      }
     case 'income_elsewhere':
       return item.kind === 'pay';
     case 'always_other':
