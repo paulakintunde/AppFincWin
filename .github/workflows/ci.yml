@@ -23,6 +23,16 @@ jobs:
       - run: npm run check:ignores
       - run: npm run test:coverage
       - run: npm run verify:gates
+      - name: Cross-check calculator agrees with the engine (QA-03, 1,000 cases)
+        run: npm run test:crosscheck
+        env:
+          CROSSCHECK_RUNS: 1000
+      - name: Stryker disables need a reason
+        run: npm run check:stryker-disables
+      - name: Right answers unchanged without sign-off
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          npm run check:right-answers
       - name: Migration compatibility (FND-10)
         run: npm run lint:migrations
       - name: Migration gate self-test (FND-10)
@@ -35,6 +45,29 @@ jobs:
         run: npm run check:decide-demo-mirror
       - name: Service-role key never referenced by client code (ENV-04)
         run: "! grep -rnE 'SERVICE_ROLE|service_role|sb_secret_' src app"
+  mutation-changed:
+    name: mutation-changed
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4.4.0 (v4)
+        with: { node-version: 24, cache: npm }
+      - run: npm ci --legacy-peer-deps
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0 (v4)
+        with:
+          path: .stryker-cache
+          key: stryker-${{ github.base_ref }}-${{ github.sha }}
+          restore-keys: stryker-${{ github.base_ref }}-
+      - name: Mutate only the engine files this change touches
+        run: |
+          FILES=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- 'src/engine/decide/**/*.ts' | grep -v __tests__ | paste -sd, - || true)
+          if [ -n "$FILES" ]; then
+            FC_RUNS=10 npx stryker run --incremental --mutate "$FILES"
+          else
+            echo "No engine source changed; nothing to mutate."
+          fi
   secret-scan:
     name: secret-scan
     runs-on: ubuntu-latest

@@ -1,0 +1,36 @@
+name: Nightly
+# QA-03 and QA-04 at full strength: 20,000 cross-check cases and the whole-engine mutation run.
+# The first run of this workflow is the authoritative Stryker baseline (a local Windows run cannot finish).
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+jobs:
+  engine-deep-checks:
+    name: engine-deep-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4.4.0 (v4)
+        with: { node-version: 24, cache: npm }
+      - run: npm ci --legacy-peer-deps
+      - name: Cross-check calculator vs engine (20,000 cases)
+        run: npm run test:crosscheck
+        env:
+          CROSSCHECK_RUNS: 20000
+      # 8,204 mutants, 5,449 of them static: --ignoreStatic skips the static ones; FC_RUNS=10 keeps property tests quick.
+      - name: Full Stryker mutation run
+        run: FC_RUNS=10 npx stryker run --force --ignoreStatic
+      - name: Keep the mutation report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mutation-report
+          path: reports/mutation/
+          if-no-files-found: warn
