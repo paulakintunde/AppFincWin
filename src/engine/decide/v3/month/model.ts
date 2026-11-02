@@ -9,7 +9,7 @@ import { V3_VARIABLE_HISTORY_MONTHS } from '../constants';
 import { yearMonthOf } from '../dates';
 import { monthlyEquivalentOf } from '../plan/cadence';
 import type { AlwaysOtherSeries, IncomePicture, MonthModel, Notice, NoticeCode, ReasonCode, V3Inputs } from '../types';
-import { confidenceOf } from './confidence';
+import { confidenceOf } from '../confidence/reasons';
 import { dueDrops } from './dueDrops';
 import { incomeThisMonth, typicalIncome, type IncomeInput } from './incomeProfile';
 import {
@@ -158,6 +158,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     unsavedWrites: inputs.unsavedWrites,
     typedEstimatesUsed: reasonSet.has('quick_estimates_used'),
     provisionalRates: inputs.provisionalRates,
+    upTo: inputs.recordsAsOf ?? inputs.asOf, // ENG-14: the records date when known
   });
 
   const raw: Notice[] = [...typical.notices];

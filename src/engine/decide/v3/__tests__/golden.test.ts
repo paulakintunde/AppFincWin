@@ -1,3 +1,4 @@
+import { goldenLevel } from './helpers/restsOn';
 import { evaluate } from '../evaluate';
 import { redateRefunds } from '../month/refunds';
 import { minorUnits } from '../../../money/types';
@@ -79,7 +80,7 @@ function expectMatches(s: Scenario): void {
     expect(fact).toBeDefined();
     expect(fact?.values.after).toBe(e.unspentAfter);
   }
-  if (e.confidence !== undefined) expect(r.confidence.level).toBe(e.confidence);
+  if (e.confidence !== undefined) expect(goldenLevel(r.confidence)).toBe(e.confidence);
 }
 
 describe('C15 Sam yardstick through evaluate', () => {

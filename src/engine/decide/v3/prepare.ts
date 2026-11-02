@@ -9,6 +9,7 @@
  */
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
+import { mergeConfidence } from './confidence/reasons';
 import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, type CashCheck, type OpenCashPath } from './cash/path';
 import { addDays, addYearMonths, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
@@ -29,7 +30,7 @@ import { liveSeriesOf, seriesOccurrences } from './month/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './month/settle';
 import type { PlanCard } from './plan/planCard';
 import type { QuotedCheck } from './plan/quoted';
-import type { CheckV2, ConfidenceLevel, Funds, MonthModel, Purchase, ReadyBy, ReasonCode, Result, V3Inputs, YearMonth } from './types';
+import type { CheckV2, Funds, MonthModel, Purchase, ReadyBy, ReasonCode, Result, V3Inputs, YearMonth } from './types';
 
 export interface Evaluation {
   readonly result: Result;
@@ -129,6 +130,8 @@ export interface Prepared {
   readonly readiness: ReturnType<typeof readinessOf>;
   /** 05.4 ENG-14: a new month with no records yet is judged on recently synced records (month/freshness.ts). */
   readonly recordsSynced: boolean;
+  /** 05.4 FIN-25: the months as given hold no complete month before this one. */
+  readonly noFullMonth: boolean;
 }
 
 function readingOf(inputs: V3Inputs): Reading {
@@ -186,8 +189,6 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
   return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash, futures, uncoveredIncome: uncoveredIncomeMonths(inputs, month, pb.purchase) };
 }
 
-const LEVEL_RANK: Readonly<Record<ConfidenceLevel, number>> = { rough: 0, fair: 1, firm: 2 };
-
 /** A comparable key: a date, or the first of a month; null (never) sorts last. */
 function readyKey(r: ReadyBy | null): string {
   if (r === null) return '9999-99-99';
@@ -196,8 +197,8 @@ function readyKey(r: ReadyBy | null): string {
 
 /**
  * D-42: partially thin history never improves on reading the thin months as full; the stricter reading wins (I1).
- * The code, the split and every figure come from the stricter reading. The confidence is the lower of the two and the
- * reasons are the sorted union, so a thin month can never raise either.
+ * The code, the split and every figure come from the stricter reading, compared by CODE_PRECEDENCE only. The reasons are the
+ * sorted union and the basis is built from the smaller reading (mergeConfidence), so a thin month can never make either surer.
  */
 export function stricterOf(a: Evaluation, b: Evaluation): Evaluation {
   const ra = CODE_PRECEDENCE.indexOf(a.result.code);
@@ -211,10 +212,8 @@ export function stricterOf(a: Evaluation, b: Evaluation): Evaluation {
     pick = b;
     bStricter = true;
   }
-  const lowest = LEVEL_RANK[b.result.confidence.level] < LEVEL_RANK[a.result.confidence.level] ? b.result.confidence : a.result.confidence;
-  const confidenceReasons = [...new Set([...a.result.confidence.reasons, ...b.result.confidence.reasons])].sort();
   const reasons: ReasonCode[] = [...new Set([...a.result.reasons, ...b.result.reasons, ...(bStricter ? (['thin_history_stricter'] as const) : [])])].sort();
-  return { ...pick, result: { ...pick.result, reasons, confidence: { level: lowest.level, reasons: confidenceReasons } } };
+  return { ...pick, result: { ...pick.result, reasons, confidence: mergeConfidence(pick.result.confidence, (bStricter ? a : b).result.confidence) } };
 }
 
 /**
@@ -228,7 +227,9 @@ export function prepare(raw: V3Inputs): Prepared {
   const thin = inputs.months.some((m) => m.month < ym && !m.full);
   const first = readingOf(inputs);
   const readings = thin ? [first, readingOf({ ...inputs, months: inputs.months.map((m) => (m.month < ym ? { ...m, full: true } : m)) })] : [first];
-  return { inputs, readings, readiness: readinessOf(inputs, first.month), recordsSynced: recordsSynced(inputs) };
+  // 05.4 FIN-25: no complete month of records before this one, read from the months as given (never the all-full reading).
+  const noFullMonth = !inputs.months.some((m) => m.month < ym && m.full);
+  return { inputs, readings, readiness: readinessOf(inputs, first.month), recordsSynced: recordsSynced(inputs), noFullMonth };
 }
 
 /** Per key press: purchase -> cash -> judge on each prepared reading, the stricter kept (D-42). */
@@ -240,5 +241,8 @@ export function judgeCheck(p: Prepared, check: CheckV2): Evaluation {
   // result for inputs without it is unchanged); records_synced says the answer rests on recently synced records.
   const reasons: readonly ReasonCode[] = p.recordsSynced ? [...chosen.result.reasons, 'records_synced'] : chosen.result.reasons;
   const asOf = p.inputs.recordsAsOf;
-  return { ...chosen, result: { ...chosen.result, reasons, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) } };
+  // 05.4 FIN-25 (round 1, research section 6): thin records say so as a fact next to the quick_estimates or few_months reason,
+  // whatever the answer (an ask included: the fact is true either way).
+  const facts = p.noFullMonth ? [...chosen.result.facts, { code: 'no_full_month' as const, values: {} }] : chosen.result.facts;
+  return { ...chosen, result: { ...chosen.result, reasons, facts, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) } };
 }

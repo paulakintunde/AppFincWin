@@ -3577,6 +3577,28 @@ const en = {
         low_month_judged: 'Judged against a low month like {{month}}, which leaves about {{left}}.',
         rests_on_your_answer: 'This rests on what you said, that {{monthly}} a month for {{months}} months is covered, not on your records.',
         unspent_held_back: '{{amount}} of your unspent money is held back for an earlier plan.',
+        no_full_month: 'No full month of records yet.',
+      },
+      // 05.4 UX-04 / CMP-F12: the one plain sentence under every answer, never more confident than the answer.
+      basis: {
+        partial: 'Based on {{used}} of the {{lookedFor}} months of records Decide looks for.',
+        records: 'Based on {{months}} months of your records, up to {{date}}.',
+        quickEstimates: 'Based on your quick estimates, not your records.',
+        recordsWithReason: {
+          user_said_cover: 'Based on {{months}} months of your records, up to {{date}}, and on what you said about covering it.',
+          quick_estimates: 'Based on {{months}} months of your records, up to {{date}}, and your quick estimates.',
+          pay_missed: 'Based on {{months}} months of your records, up to {{date}}, leaving out pay that hasn’t arrived.',
+          close_to_line: 'Based on {{months}} months of your records, up to {{date}}. This is close to the line.',
+        },
+      },
+      // 05.4 FIN-25: at most one next step, stated as a fact.
+      nextStep: {
+        add_records: 'More months of records give this more to go on.',
+        log_spending: 'Logging this month’s spending gives this more to go on.',
+        confirm_unspent: 'Confirming your unspent money gives this more to go on.',
+        save_changes: 'Changes not saved yet are counted once they save.',
+        record_pay: 'Recording your pay when it arrives gives this more to go on.',
+        finish_setup: 'Finishing setup gives this more to go on.',
       },
       missing: {
         no_income_figures: 'No regular income is set up yet.',

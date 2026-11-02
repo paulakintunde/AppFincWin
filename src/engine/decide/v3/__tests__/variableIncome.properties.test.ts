@@ -4,6 +4,7 @@
  * D-48 branches are exercised. A pair where either side asks (needs_input) is skipped with fc.pre: asking is a request for
  * a figure, not a verdict.
  */
+import { restsOn } from './helpers/restsOn';
 import fc from 'fast-check';
 import { evaluate } from '../evaluate';
 import type { CheckV2, ReadyBy, Result, V3Inputs } from '../types';
@@ -35,7 +36,6 @@ function withFund(inputs: V3Inputs, amount: number): V3Inputs {
   };
 }
 
-const LEVELS = { rough: 0, fair: 1, firm: 2 } as const;
 
 describe('variable-income persons: fixed-seed properties', () => {
   it('I9 a cheaper price is never worse', () => {
@@ -89,7 +89,7 @@ describe('variable-income persons: fixed-seed properties', () => {
         const a = run(thin, check);
         const b = run(treatedFull, check);
         expect(codeRank(a.code)).toBeLessThanOrEqual(codeRank(b.code));
-        expect(LEVELS[a.confidence.level]).toBeLessThanOrEqual(LEVELS[b.confidence.level]);
+        expect(restsOn(a.confidence)).toBeLessThanOrEqual(restsOn(b.confidence));
       }),
       { numRuns: 100, seed: 0x054b }
     );

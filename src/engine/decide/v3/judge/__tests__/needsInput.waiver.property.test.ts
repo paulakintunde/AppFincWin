@@ -2,6 +2,7 @@
  * 05.3-119 (UAT gap 36), T-05.3-119-02: a readiness answer can only ever remove a needs-input item, never add one.
  * For any purchase band, pace and newest-line age, needsInput with waivers is a subset of needsInput without them.
  */
+import { CLEAN_CONFIDENCE } from '../../__tests__/helpers/restsOn';
 import { array, assert as fcAssert, boolean, constantFrom, integer, oneof, property, record, type Arbitrary } from 'fast-check';
 import { minorUnits as mu } from '../../../../money/types';
 import { SOLE_SHARE } from '../../../share';
@@ -17,7 +18,7 @@ function monthModel(everydayLogged: number, e: number | null): MonthModel {
     month: '2026-10', day: 3, daysInMonth: 31, moneyIn: mu(0), moneyOut: mu(0), billsPaid: mu(0), billsDue: mu(0),
     everydayLogged: mu(everydayLogged), erest: mu(0), setAside: mu(0), monthLeft: mu(50_000), e: e === null ? null : mu(e),
     typicalIncome: mu(500_000), recurringBills: mu(0), typicalLeft: null, low: null, monthsUsed: [], categoryMonthly: [],
-    housingMonthly: mu(0), largestLine: null, confidence: { level: 'fair', reasons: [] }, notices: [], reasons: [],
+    housingMonthly: mu(0), largestLine: null, confidence: CLEAN_CONFIDENCE, notices: [], reasons: [],
   };
 }
 

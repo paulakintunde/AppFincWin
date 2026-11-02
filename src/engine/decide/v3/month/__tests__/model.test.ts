@@ -114,7 +114,7 @@ describe('buildMonthModel', () => {
     expect(m.notices.map((n) => n.code)).toEqual(['typical_short', 'month_heading_short', 'unsaved_changes']);
     expect(m.notices[1]?.values).toMatchObject({ categoryId: 'food', largest: 20000 });
     expect(m.reasons).toContain('everyday_override_used');
-    expect(m.confidence.reasons).toContain('unsaved_changes');
+    expect(m.confidence.reasons.map((r) => r.code)).toContain('unsaved_changes');
   });
 
   it('month_heading_short carries nulls when nothing is categorised', () => {
@@ -150,7 +150,7 @@ describe('buildMonthModel', () => {
     expect(m.reasons).toContain('typical_choice_defaulted');
   });
 
-  it('rough figures only: from_your_figures and a rough confidence', () => {
+  it('quick estimates only: from_your_figures, the quick_estimates reason and basis', () => {
     const m = buildMonthModel(
       inputsOf({
         asOf: '2026-10-03',
@@ -165,8 +165,8 @@ describe('buildMonthModel', () => {
       })
     );
     expect(m.notices.map((n) => n.code)).toContain('from_your_figures');
-    expect(m.confidence.level).toBe('rough');
-    expect(m.confidence.reasons).toContain('quick_estimates');
+    expect(m.confidence.reasons.map((r) => r.code)).toContain('quick_estimates');
+    expect(m.confidence.basis).toEqual({ kind: 'quick_estimates' });
     expect(m.typicalLeft).toBe(220000);
   });
 

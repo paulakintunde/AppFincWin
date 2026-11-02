@@ -4,6 +4,7 @@
  * (rae). Every expectation was worked by hand from the rules and is written with its working in variable-income.json
  * (D-28 style). The engine's own output is never the source of an expectation.
  */
+import { codesOf, goldenLevel } from './helpers/restsOn';
 import en from '../../../../i18n/locales/en';
 import { evaluate } from '../evaluate';
 import type { Evaluation } from '../evaluate';
@@ -31,7 +32,7 @@ function expectMatches(c: LoadedCase): void {
   for (const n of e.notices ?? []) expect(r.notices).toContainEqual(n);
   for (const code of e.noticesAbsent ?? []) expect(r.notices.map((n) => n.code)).not.toContain(code);
   for (const x of e.reasons ?? []) expect(r.reasons).toContain(x);
-  if (e.confidence !== undefined) expect(r.confidence.level).toBe(e.confidence);
+  if (e.confidence !== undefined) expect(goldenLevel(r.confidence)).toBe(e.confidence);
   if (e.futures !== undefined) expect(ev.futures !== null).toBe(e.futures);
   if (e.readyBy !== undefined) expect(r.readyBy).toEqual(e.readyBy);
   if (e.split !== undefined) expect(r.split.map((s) => ({ source: s.source, amount: s.amount }))).toEqual(e.split);
@@ -109,8 +110,8 @@ describe('D-48: ask, yes and no each appear in a golden', () => {
     const yes = run(byId('vic-yes'));
     expect(yes.result.code).toBe('fits_month');
     expect(yes.result.facts).toContainEqual({ code: 'rests_on_your_answer', values: { monthly: 20000, months: 6 } });
-    expect(yes.result.confidence.level).toBe('rough');
-    expect(yes.result.confidence.reasons).toContain('user_said_cover');
+    expect(goldenLevel(yes.result.confidence)).toBe('rough');
+    expect(codesOf(yes.result.confidence)).toContain('user_said_cover');
     const no = run(byId('vic-no'));
     expect(no.result.code).toBe('not_yet');
     expect(no.result.reasons).toContain('volatile_cover_declined');
@@ -183,7 +184,8 @@ describe('D-57: rough-only answers', () => {
   it('a person with only rough figures is ready and the answer is marked rough', () => {
     const r = run(byId('rae-rough')).result;
     expect(r.readiness).toEqual({ ready: true, missing: [], items: [], waived: [] });
-    expect(r.confidence.level).toBe('rough');
+    expect(codesOf(r.confidence)).toContain('quick_estimates');
+    expect(r.confidence.basis).toEqual({ kind: 'quick_estimates' });
     expect(r.notices.map((n) => n.code)).toContain('from_your_figures');
     expect(JSON.stringify(CASES.map((c) => c.expect))).not.toContain('income_not_recorded');
   });
@@ -195,8 +197,8 @@ describe('D-58: ask, arrived, not yet', () => {
     expect(run(byId('dee-pay-arrived')).month.monthLeft).toBe(97250);
     const missed = run(byId('dee-pay-not-yet')).result;
     expect(missed.notices).toContainEqual({ code: 'pay_counted_missed', values: { amount: 300000, date: '2026-10-01' } });
-    expect(missed.confidence.level).toBe('rough');
-    expect(missed.confidence.reasons).toContain('pay_missed');
+    expect(goldenLevel(missed.confidence)).toBe('rough');
+    expect(codesOf(missed.confidence)).toContain('pay_missed');
   });
 });
 

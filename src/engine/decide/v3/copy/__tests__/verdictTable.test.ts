@@ -66,6 +66,7 @@ describe('verdict table (I22 one code one text)', () => {
         'month_left_after', 'unspent_before_after', 'emergency_untouched', 'emergency_used', 'envelope_used',
         'line_crossed', 'quoted_differs', 'implied_rate', 'deferred_interest_term', 'at_todays_rate', 'low_month',
         'lean_bridge', 'unspent_held_back', 'lean_months_judged', 'low_month_judged', 'rests_on_your_answer',
+        'no_full_month',
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

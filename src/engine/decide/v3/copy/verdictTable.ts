@@ -3,7 +3,7 @@
  *
  * One code, one sentence: every code and variant maps to exactly one chip key, one title key and one body key.
  */
-import type { Code, FactCode, MissingCode, NoticeCode, ReadinessCode, Variant } from '../types';
+import type { Basis, Code, ConfidenceReason, FactCode, MissingCode, NextStepCode, NoticeCode, ReadinessCode, Variant } from '../types';
 
 export interface VerdictRow {
   readonly chipKey: string;
@@ -94,6 +94,7 @@ export const FACT_KEYS = Object.freeze({
   lean_months_judged: 'decide.v3.fact.lean_months_judged',
   low_month_judged: 'decide.v3.fact.low_month_judged',
   rests_on_your_answer: 'decide.v3.fact.rests_on_your_answer',
+  no_full_month: 'decide.v3.fact.no_full_month',
 } as const satisfies Record<FactCode, string>);
 
 export const MISSING_KEYS = Object.freeze({
@@ -116,6 +117,41 @@ export const MISSING_KEYS = Object.freeze({
   account_use_question: 'decide.v3.missing.account_use_question',
   pay_arrival_question: 'decide.v3.missing.pay_arrival_question',
 } as const satisfies Record<MissingCode, string>);
+
+/** 05.4 UX-04 / CMP-F12: the basis sentence for each kind. records_with_reason reads BASIS_REASON_KEYS[basis.reason]. */
+export const BASIS_KEYS = Object.freeze({
+  quick_estimates: 'decide.v3.basis.quickEstimates',
+  partial: 'decide.v3.basis.partial',
+  records: 'decide.v3.basis.records',
+} as const satisfies Record<Exclude<Basis['kind'], 'records_with_reason'>, string>);
+
+/**
+ * The 'answer' reasons that can lead a records basis. few_months never does: under 3 months the basis is partial first
+ * (confidence/reasons.ts buildBasis).
+ */
+export const BASIS_REASON_KEYS = Object.freeze({
+  user_said_cover: 'decide.v3.basis.recordsWithReason.user_said_cover',
+  quick_estimates: 'decide.v3.basis.recordsWithReason.quick_estimates',
+  pay_missed: 'decide.v3.basis.recordsWithReason.pay_missed',
+  close_to_line: 'decide.v3.basis.recordsWithReason.close_to_line',
+} as const satisfies Partial<Record<ConfidenceReason, string>>);
+
+/** The placeholders in each basis sentence: date is basis.upTo; quick_estimates has none. */
+export const BASIS_VALUE_KEYS: Readonly<Record<Basis['kind'], readonly string[]>> = Object.freeze({
+  quick_estimates: [],
+  partial: ['used', 'lookedFor'],
+  records: ['months', 'date'],
+  records_with_reason: ['months', 'date'],
+});
+
+export const NEXT_STEP_KEYS = Object.freeze({
+  add_records: 'decide.v3.nextStep.add_records',
+  log_spending: 'decide.v3.nextStep.log_spending',
+  confirm_unspent: 'decide.v3.nextStep.confirm_unspent',
+  save_changes: 'decide.v3.nextStep.save_changes',
+  record_pay: 'decide.v3.nextStep.record_pay',
+  finish_setup: 'decide.v3.nextStep.finish_setup',
+} as const satisfies Record<NextStepCode, string>);
 
 export const READINESS_KEYS = Object.freeze({
   past_month_missing: 'decide.v3.readiness.past_month_missing',
@@ -145,6 +181,7 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   lean_months_judged: ['from', 'to', 'leanLeft'],
   low_month_judged: ['month', 'left'],
   rests_on_your_answer: ['monthly', 'months'],
+  no_full_month: [],
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({

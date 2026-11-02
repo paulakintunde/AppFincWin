@@ -1,3 +1,4 @@
+import { CLEAN_CONFIDENCE } from '../../__tests__/helpers/restsOn';
 import * as fs from 'fs';
 import * as path from 'path';
 import type { Fact, ReadyBy, Result } from '../../types';
@@ -6,7 +7,7 @@ import { changeSinceLooked, seenOf } from '../seen';
 function result(over: Partial<Result> = {}): Result {
   return {
     code: 'fits_month', variant: null, legacyState: 'fits', split: [], facts: [], notices: [], missing: [], reasons: [], readyBy: null,
-    band: 5, layers: [], confidence: { level: 'fair', reasons: [] }, parts: { oneOff: 'fits_month', monthly: null }, ...over,
+    band: 5, layers: [], confidence: CLEAN_CONFIDENCE, parts: { oneOff: 'fits_month', monthly: null }, ...over,
   };
 }
 const after = (n: number): Fact => ({ code: 'unspent_before_after', values: { before: 0, after: n } });

@@ -14,7 +14,7 @@
  * Monthly part: typicalLeft - M < 0 -> monthly_short; lowLeft - M < 0 -> fits with the low-month clause (I23).
  * The stricter part leads (CODE_PRECEDENCE). The funding split always sums to P (month, own envelope, earlier unspent,
  * emergency only when emergency_use). The user's confirmed (rolled) unspent figure is always the one judged against,
- * even when it has drifted (D-30); drift only adds a notice and caps confidence.
+ * even when it has drifted (D-30); drift only adds a notice and the unspent_drifted reason.
  *
  * Unspent after = unspent - (money taken from this month and from earlier unspent). Money from the purchase's own
  * envelope and the emergency fund is not unspent money, so it does not reduce it. Scenario 02 (price 120000 against
@@ -30,7 +30,7 @@ import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_
 import { addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck } from '../cash/path';
 import { emergencyOf, emergencyUse, mayUseEmergency } from '../funds/emergency';
-import { capConfidence } from '../month/confidence';
+import { withReason } from '../confidence/reasons';
 import { dependsOnMonths, expectedFor, isLeanMonth, leanRun, seasonEveryday } from '../month/incomePattern';
 import { seasonalReadyMonth } from '../month/seasonWalk';
 import type {
@@ -209,8 +209,8 @@ export interface MonthlyPart {
   readonly notices: readonly Notice[];
   /** D-48: rests_on_your_answer, set when the user said they can cover it. */
   readonly rests: Fact | null;
-  /** D-48: confidence is capped at rough (user_said_cover). */
-  readonly capRough: boolean;
+  /** D-48: the user said they can cover it; the answer carries the user_said_cover reason with these numbers. */
+  readonly saidCover: { readonly monthly: number; readonly months: number } | null;
   /** D-48, D-59: what a needs_input monthly part asks for. */
   readonly missing: readonly MissingCode[];
 }
@@ -224,7 +224,7 @@ const monthly = (code: MonthlyCode, over: Partial<MonthlyPart> = {}): MonthlyPar
   reasons: [],
   notices: [],
   rests: null,
-  capRough: false,
+  saidCover: null,
   missing: [],
   ...over,
 });
@@ -313,7 +313,7 @@ function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: 
   const used = BigInt(ctx.takenByOneOff);
 
   // D-48: income too volatile to judge the monthly payment from the records alone. The leanest months do not cover it, so
-  // the user is asked; what they say decides the monthly part, and a yes is labelled and capped at rough confidence.
+  // the user is asked; what they say decides the monthly part, and a yes is labelled and carries the user_said_cover reason.
   // The emergency fund plays no part (D-43a): the fund is not read here.
   if (pic.volatile) {
     const sched = ctx.purchase.schedule;
@@ -333,7 +333,7 @@ function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: 
     if (answer === null) return monthly('needs_input', { why, notices: [notice], missing: ['volatile_cover_question'] });
     if (answer) {
       const rests: Fact = { code: 'rests_on_your_answer', values: { monthly: M, months: planMonths.length } };
-      return monthly('fits_month', { why, notices: [notice], rests, capRough: true });
+      return monthly('fits_month', { why, notices: [notice], rests, saidCover: { monthly: M, months: planMonths.length } });
     }
     return monthly('not_yet', {
       why,
@@ -419,11 +419,12 @@ function judgeNotices(j: JudgeInput, missing: readonly MissingCode[]): Notice[] 
 function judgeConfidence(j: JudgeInput): Confidence {
   let c = j.month.confidence;
   const u = j.funds.unspent;
-  if (u !== null && u.stale) c = capConfidence(c, 'unspent_stale');
-  if (u !== null && u.drifted) c = capConfidence(c, 'unspent_drifted', 'rough');
-  if (j.month.reasons.includes('quick_estimates_used')) c = capConfidence(c, 'quick_estimates', 'rough');
-  // D-58: a pay counted as missed is a careful answer that still works, so the figure is a rough one.
-  if ((j.month.unseenPay ?? []).some((p) => p.arrived === false)) c = capConfidence(c, 'pay_missed', 'rough');
+  if (u !== null && u.stale) c = withReason(c, 'unspent_stale', { days: daysBetween(u.anchor.at, j.inputs.asOf) });
+  if (u !== null && u.drifted) c = withReason(c, 'unspent_drifted', { value: u.value, suggested: j.funds.suggested });
+  if (j.month.reasons.includes('quick_estimates_used')) c = withReason(c, 'quick_estimates');
+  // D-58: a pay counted as missed is a careful answer that still works; the reason carries the pay left out.
+  const missed = (j.month.unseenPay ?? []).filter((p) => p.arrived === false);
+  if (missed.length > 0) c = withReason(c, 'pay_missed', { count: missed.length, amount: minorFromBigInt(missed.reduce((t, p) => t + BigInt(p.amount), 0n), 'judgeConfidence') });
   return c;
 }
 
@@ -544,7 +545,7 @@ export function judge(j: JudgeInput): Result {
     readyBy,
     band,
     layers,
-    confidence: mon !== null && mon.capRough ? capConfidence(confidence, 'user_said_cover', 'rough') : confidence,
+    confidence: mon !== null && mon.saidCover !== null ? withReason(confidence, 'user_said_cover', mon.saidCover) : confidence,
     parts: { oneOff: one.code, monthly: mon === null ? null : mon.code },
   };
 }

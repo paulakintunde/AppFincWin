@@ -5,6 +5,7 @@
  * input (monthLeft, E, typicalLeft, suggested sum): those appear only in `expect`, with a `working` string. Expectations
  * come from REBUILD-PLAN-v3 section 12 (D-28), never from 00-SCENARIOS.md numbers. Everyone here is synthetic (T-05.1-08).
  */
+import type { GoldenLevel } from '../helpers/restsOn';
 import { minorUnits, type MinorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import type {
@@ -12,7 +13,6 @@ import type {
   Cadence,
   Code,
   CheckV2,
-  ConfidenceLevel,
   CountsAs,
   EmergencyFund,
   Envelope,
@@ -174,7 +174,7 @@ export interface FixtureExpect {
     erest?: number;
   };
   unspentAfter?: number;
-  confidence?: ConfidenceLevel;
+  confidence?: GoldenLevel;
   working: string;
 }
 /**

@@ -1,3 +1,4 @@
+import { CLEAN_CONFIDENCE, codesOf } from '../../__tests__/helpers/restsOn';
 import fc from 'fast-check';
 import { minorUnits, type MinorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
@@ -50,7 +51,7 @@ function month(over: Partial<MonthModel> = {}): MonthModel {
     categoryMonthly: [],
     housingMonthly: mu(0),
     largestLine: null,
-    confidence: { level: 'firm', reasons: [] },
+    confidence: CLEAN_CONFIDENCE,
     notices: [],
     reasons: [],
     ...over,
@@ -402,7 +403,7 @@ describe('judge: monthly part and precedence', () => {
 });
 
 describe('judge: notices and confidence', () => {
-  it('D-30 drifted unspent: the user figure is judged, notice and rough confidence', () => {
+  it('D-30 drifted unspent: the user figure is judged, notice and the unspent_drifted reason with its numbers', () => {
     const f = funds(300_000, { suggested: mu(200_000) });
     const r = judge(
       input({
@@ -412,8 +413,9 @@ describe('judge: notices and confidence', () => {
     );
     expect(r.code).toBe('fits_unspent');
     expect(r.notices).toContainEqual({ code: 'unspent_drifted', values: { suggested: 200_000 } });
-    expect(r.confidence.level).toBe('rough');
-    expect(r.confidence.reasons).toContain('unspent_drifted');
+    expect(r.confidence.reasons).toEqual([{ code: 'unspent_drifted', numbers: { value: 300_000, suggested: 200_000 }, weight: 40, audience: 'detail' }]);
+    expect(r.confidence.nextStep).toEqual({ reason: 'unspent_drifted', step: 'confirm_unspent' });
+    expect(r.confidence.basis).toEqual(CLEAN_CONFIDENCE.basis);
   });
 
   it('D-32 rough figures only: judged against the typical month with from_your_figures', () => {
@@ -425,18 +427,20 @@ describe('judge: notices and confidence', () => {
     );
     expect(r.parts.monthly).toBe('fits_month');
     expect(r.notices.map((n) => n.code)).toContain('from_your_figures');
-    expect(r.confidence.level).toBe('rough');
+    expect(codesOf(r.confidence)).toEqual(['quick_estimates']);
+    expect(r.confidence.basis).toEqual({ kind: 'records_with_reason', months: 3, upTo: '2026-10-03', reason: 'quick_estimates' });
     expect(r.reasons).toContain('quick_estimates_used');
   });
 
-  it('stale unspent caps confidence at fair with a days notice', () => {
+  it('stale unspent adds the unspent_stale reason with its days, and a days notice', () => {
     const f = funds(240_000);
     const r = judge(
       input({
         funds: { ...f, unspent: unspentState(240_000, { stale: true, anchor: { amount: mu(240_000), at: '2026-09-01' } }) },
       })
     );
-    expect(r.confidence.level).toBe('fair');
+    expect(r.confidence.reasons).toEqual([{ code: 'unspent_stale', numbers: { days: 32 }, weight: 90, audience: 'detail' }]);
+    expect(r.confidence.basis.kind).toBe('records');
     expect(r.notices).toContainEqual({ code: 'unspent_stale', values: { days: 32 } });
   });
 
@@ -1016,21 +1020,24 @@ describe('D-49 D-50 D-54 D-58 D-62 notices', () => {
 
   const unseen = (arrived: boolean | null, date = '2026-10-01') => ({ seriesId: 'p', date, amount: mu(70_000), arrived });
 
-  it('D-58 the first unanswered pay is asked about; an answered "not yet" is counted missed and caps confidence at rough', () => {
+  it('D-58 the first unanswered pay is asked about; an answered "not yet" is counted missed with the pay_missed reason', () => {
     const r = judge(input({ month: month({ unseenPay: [unseen(false, '2026-09-15'), unseen(null)] }) }));
     expect(r.missing).toContain('pay_arrival_question');
     expect(r.notices).toContainEqual({ code: 'pay_not_seen', values: { amount: 70_000, date: '2026-10-01' } });
     expect(r.notices).toContainEqual({ code: 'pay_counted_missed', values: { amount: 70_000, date: '2026-09-15' } });
-    expect(r.confidence.level).toBe('rough');
-    expect(r.confidence.reasons).toContain('pay_missed');
+    expect(r.confidence.reasons).toEqual([{ code: 'pay_missed', numbers: { count: 1, amount: 70_000 }, weight: 50, audience: 'answer' }]);
   });
 
-  it('D-58 only "not yet" answers: a careful answer that still works, at rough confidence', () => {
+  it('D-58 only "not yet" answers: a careful answer that still works, with the pay left out named in the basis', () => {
     const r = judge(input({ month: month({ unseenPay: [unseen(false)] }) }));
     expect(r.code).not.toBe('needs_input');
     expect(r.notices.map((n) => n.code)).toContain('pay_counted_missed');
     expect(r.notices.map((n) => n.code)).not.toContain('pay_not_seen');
-    expect(r.confidence).toEqual({ level: 'rough', reasons: ['pay_missed'] });
+    expect(r.confidence).toEqual({
+      reasons: [{ code: 'pay_missed', numbers: { count: 1, amount: 70_000 }, weight: 50, audience: 'answer' }],
+      basis: { kind: 'records_with_reason', months: 3, upTo: '2026-10-03', reason: 'pay_missed' },
+      nextStep: { reason: 'pay_missed', step: 'record_pay' },
+    });
   });
 
   it('D-58 a pay that arrived adds no notice and no cap', () => {
@@ -1072,13 +1079,14 @@ describe('D-48 volatile income', () => {
     expect(ask(null, volatileMonth(), null).missing).toEqual(['volatile_cover_question']);
   });
 
-  it('D-48 yes: the monthly part fits on the user word, rests_on_your_answer, rough confidence, user_said_cover', () => {
+  it('D-48 yes: the monthly part fits on the user word, rests_on_your_answer and the user_said_cover reason', () => {
     const r = ask(true);
     expect(r.code).toBe('fits_month');
     expect(r.parts).toEqual({ oneOff: 'fits_month', monthly: 'fits_month' });
     expect(factOf(r, 'rests_on_your_answer')).toEqual({ monthly: 25_000, months: 12 });
-    expect(r.confidence.level).toBe('rough');
-    expect(r.confidence.reasons).toContain('user_said_cover');
+    expect(r.confidence.reasons).toEqual([{ code: 'user_said_cover', numbers: { monthly: 25_000, months: 12 }, weight: 10, audience: 'answer' }]);
+    expect(r.confidence.basis).toEqual({ kind: 'records_with_reason', months: 3, upTo: '2026-10-03', reason: 'user_said_cover' });
+    expect(r.confidence.nextStep).toBeNull();
     expect(noticeOf(r)).toEqual(VALUES);
     expect(r.facts.map((f) => f.code)).not.toContain('lean_bridge');
   });

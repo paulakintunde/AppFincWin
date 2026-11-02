@@ -5,12 +5,12 @@
  * must exist and every patch and field name must be one this loader knows, otherwise it throws. Expectations are written
  * by hand with their working (D-28 style); nothing here derives an expectation from the engine.
  */
+import type { GoldenLevel } from '../helpers/restsOn';
 import { minorUnits } from '../../../../money/types';
 import type {
   AccountUse,
   CheckV2,
   Code,
-  ConfidenceLevel,
   ExpectedMonthIncome,
   IncomeProfile,
   MissingCode,
@@ -47,7 +47,7 @@ export interface VariableExpect {
   notices?: Pair[];
   noticesAbsent?: NoticeCode[];
   reasons?: ReasonCode[];
-  confidence?: ConfidenceLevel;
+  confidence?: GoldenLevel;
   futures?: boolean;
   readyBy?: ReadyBy;
   split?: { source: string; amount: number }[];

@@ -3,6 +3,7 @@
  * Every property runs through evaluate() over inputs built on the golden persons (see arbitraries.ts).
  * A failure names its invariant in the test title.
  */
+import { codesOf, restsOn } from '../helpers/restsOn';
 import fc from 'fast-check';
 import { evaluate } from '../../evaluate';
 import type { CheckV2, Fact, Notice, Result, TypedEstimates, V3Inputs, V3Line } from '../../types';
@@ -57,29 +58,27 @@ describe('end-to-end invariants through evaluate()', () => {
     );
   });
 
-  it('I1 thin data is never more confident: thinning any history months never raises confidence', () => {
-    const LEVEL = { rough: 0, fair: 1, firm: 2 } as const;
+  it('I1 thin data is never more confident: thinning any history months never makes the basis surer', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, fc.array(fc.boolean(), { minLength: 7, maxLength: 7 }), (inputs, check, mask) => {
         const treatedFull: V3Inputs = { ...inputs, months: inputs.months.map((m) => ({ ...m, full: true })) };
         const thin: V3Inputs = { ...inputs, months: inputs.months.map((m, i) => ({ ...m, full: mask[i % mask.length]! })) };
-        const a = evaluate(thin, check).result.confidence.level;
-        const b = evaluate(treatedFull, check).result.confidence.level;
-        expect(LEVEL[a]).toBeLessThanOrEqual(LEVEL[b]);
+        const a = evaluate(thin, check).result.confidence;
+        const b = evaluate(treatedFull, check).result.confidence;
+        expect(restsOn(a)).toBeLessThanOrEqual(restsOn(b));
       }),
       { ...RUNS, seed: 0x0541 }
     );
   });
 
   // D-42: evaluate() takes the stricter of the as-given and the all-full reading, so partial thinning can never help.
-  const LEVELS = { rough: 0, fair: 1, firm: 2 } as const;
   const partialThinning = (inputs: V3Inputs, check: Parameters<typeof evaluate>[1], mask: readonly boolean[]): void => {
     const treatedFull: V3Inputs = { ...inputs, months: inputs.months.map((m) => ({ ...m, full: true })) };
     const thin: V3Inputs = { ...inputs, months: inputs.months.map((m, i) => ({ ...m, full: mask[i % mask.length]! })) };
     const a = evaluate(thin, check).result;
     const b = evaluate(treatedFull, check).result;
     expect(codeRank(a.code)).toBeLessThanOrEqual(codeRank(b.code));
-    expect(LEVELS[a.confidence.level]).toBeLessThanOrEqual(LEVELS[b.confidence.level]);
+    expect(restsOn(a.confidence)).toBeLessThanOrEqual(restsOn(b.confidence));
   };
 
   it('I1 thin data is never better: PARTIAL thinning, recorded counterexample (D-42)', () => {
@@ -169,7 +168,7 @@ describe('end-to-end invariants through evaluate()', () => {
     );
   });
 
-  it('I25 condition in title: under 3 months used, every result is rough and says why', () => {
+  it('I25 condition in title: under 3 months used, every result says so: few_months and a partial or quick-estimates basis', () => {
     fc.assert(
       fc.property(recordedInputsArb, checkArb, fc.integer({ min: 0, max: 2 }), (inputs, check, keep) => {
         const ym = currentMonth(inputs);
@@ -178,29 +177,29 @@ describe('end-to-end invariants through evaluate()', () => {
         const few: V3Inputs = { ...inputs, months: [...past, ...cur] };
         const ev = evaluate(few, check);
         expect(ev.month.monthsUsed.length).toBeLessThan(3);
-        expect(ev.result.confidence.level).toBe('rough');
-        expect(ev.result.confidence.reasons).toContain('few_months');
+        expect(codesOf(ev.result.confidence)).toContain('few_months');
+        expect(['partial', 'quick_estimates']).toContain(ev.result.confidence.basis.kind);
       }),
       RUNS
     );
   });
 
-  it('I25 below Firm every result carries its reasons (a Firm result has none from the month)', () => {
+  it('I25 a basis other than the clean records sentence always carries a reason', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
         const c = evaluate(inputs, check).result.confidence;
-        if (c.level !== 'firm') expect(c.reasons.length).toBeGreaterThan(0);
+        if (c.basis.kind !== 'records') expect(c.reasons.length).toBeGreaterThan(0);
       }),
       RUNS
     );
   });
 
-  it('I7 unsaved writes are never firm and the freshness notice shows', () => {
+  it('I7 unsaved writes always carry the unsaved_changes reason and the freshness notice shows', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, fc.integer({ min: 1, max: 9 }), (inputs, check, n) => {
         const r = evaluate({ ...inputs, unsavedWrites: n }, check).result;
-        expect(r.confidence.level).not.toBe('firm');
-        expect(r.confidence.reasons).toContain('unsaved_changes');
+        expect(codesOf(r.confidence)).toContain('unsaved_changes');
+        expect(r.confidence.reasons.find((x) => x.code === 'unsaved_changes')?.numbers).toEqual({ count: n });
         const note = r.notices.find((x) => x.code === 'unsaved_changes');
         expect(note?.values.count).toBe(n);
       }),

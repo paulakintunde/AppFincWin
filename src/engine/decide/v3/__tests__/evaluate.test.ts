@@ -2,7 +2,9 @@ import { minorUnits } from '../../../money/types';
 import { percent } from '../../../payoff/types';
 import { purchaseCashFlows } from '../judge/purchase';
 import { evaluate, stricterOf, type Evaluation } from '../evaluate';
-import type { Code, ConfidenceLevel, ReadyBy } from '../types';
+import type { Code, ConfidenceReason, ReadyBy } from '../types';
+import { reasonItem } from '../confidence/reasons';
+import { codesOf } from './helpers/restsOn';
 import { personById, toV3Inputs } from './golden/adapter';
 import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series, volatileInputs } from './helpers/fixtures';
 
@@ -142,14 +144,18 @@ describe('evaluate', () => {
 
 describe('D-42 the stricter of the as-given and the all-full reading', () => {
   const base = evaluate(sam(), checkOnce(15000));
-  const fake = (code: Code, level: ConfidenceLevel, extra: { readyBy?: ReadyBy | null; reasons?: Evaluation['result']['reasons']; cReasons?: Evaluation['result']['confidence']['reasons'] } = {}): Evaluation => ({
+  const fake = (code: Code, months: number, extra: { readyBy?: ReadyBy | null; reasons?: Evaluation['result']['reasons']; cReasons?: readonly ConfidenceReason[] } = {}): Evaluation => ({
     ...base,
     result: {
       ...base.result,
       code,
       readyBy: extra.readyBy ?? null,
       reasons: extra.reasons ?? [],
-      confidence: { level, reasons: extra.cReasons ?? [] },
+      confidence: {
+        reasons: (extra.cReasons ?? []).map((c) => reasonItem(c)),
+        basis: months < 3 ? { kind: 'partial', used: months, lookedFor: 3, upTo: '2026-10-15' } : { kind: 'records', months, upTo: '2026-10-15' },
+        nextStep: null,
+      },
     },
   });
 
@@ -170,28 +176,34 @@ describe('D-42 the stricter of the as-given and the all-full reading', () => {
   });
 
   it('D-42 the all-full reading is stricter: it wins, and the answer says so', () => {
-    const out = stricterOf(fake('fits_month', 'firm', { reasons: ['quick_estimates_used'] }), fake('fits_unspent', 'fair', { cReasons: ['few_months'] }));
+    const out = stricterOf(fake('fits_month', 3, { reasons: ['quick_estimates_used'] }), fake('fits_unspent', 2, { cReasons: ['few_months'] }));
     expect(out.result.code).toBe('fits_unspent');
     expect(out.result.reasons).toEqual(['quick_estimates_used', 'thin_history_stricter']);
-    expect(out.result.confidence).toEqual({ level: 'fair', reasons: ['few_months'] });
+    expect(out.result.confidence).toEqual({
+      reasons: [reasonItem('few_months')],
+      basis: { kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-10-15' },
+      nextStep: { reason: 'few_months', step: 'add_records' },
+    });
   });
 
-  it('D-42 the as-given reading is stricter or equal: it wins, no thin_history_stricter, confidence is the lower', () => {
-    const out = stricterOf(fake('fits_unspent', 'rough', { cReasons: ['under_logged'] }), fake('fits_month', 'firm', { cReasons: ['few_months'] }));
+  it('D-42 the as-given reading is stricter or equal: it wins, no thin_history_stricter, reasons are the union and the basis the smaller', () => {
+    const out = stricterOf(fake('fits_unspent', 3, { cReasons: ['under_logged'] }), fake('fits_month', 2, { cReasons: ['few_months'] }));
     expect(out.result.code).toBe('fits_unspent');
     expect(out.result.reasons).toEqual([]);
-    expect(out.result.confidence).toEqual({ level: 'rough', reasons: ['few_months', 'under_logged'] });
-    const same = stricterOf(fake('fits_month', 'fair'), fake('fits_month', 'firm'));
-    expect(same.result.confidence.level).toBe('fair');
+    expect(codesOf(out.result.confidence)).toEqual(['few_months', 'under_logged']);
+    expect(out.result.confidence.basis).toEqual({ kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-10-15' });
+    const same = stricterOf(fake('fits_month', 5), fake('fits_month', 3));
+    expect(same.result.confidence.basis).toEqual({ kind: 'records', months: 3, upTo: '2026-10-15' });
+    expect(same.result.confidence.nextStep).toBeNull();
   });
 
   it('D-42 both not_yet: the later readyBy wins, null (never) last, ties keep the as-given reading', () => {
     const d = (date: string): ReadyBy => ({ kind: 'date', date });
     const m = (month: string): ReadyBy => ({ kind: 'month', month });
-    expect(stricterOf(fake('not_yet', 'fair', { readyBy: d('2026-11-01') }), fake('not_yet', 'fair', { readyBy: m('2026-12') })).result.readyBy).toEqual(m('2026-12'));
-    expect(stricterOf(fake('not_yet', 'fair', { readyBy: m('2026-12') }), fake('not_yet', 'fair', { readyBy: d('2026-11-01') })).result.readyBy).toEqual(m('2026-12'));
-    expect(stricterOf(fake('not_yet', 'fair', { readyBy: d('2026-11-01') }), fake('not_yet', 'fair', { readyBy: null })).result.readyBy).toBeNull();
-    const tie = stricterOf(fake('not_yet', 'fair', { readyBy: d('2026-11-01'), reasons: ['exceeds_range'] }), fake('not_yet', 'fair', { readyBy: d('2026-11-01') }));
+    expect(stricterOf(fake('not_yet', 3, { readyBy: d('2026-11-01') }), fake('not_yet', 3, { readyBy: m('2026-12') })).result.readyBy).toEqual(m('2026-12'));
+    expect(stricterOf(fake('not_yet', 3, { readyBy: m('2026-12') }), fake('not_yet', 3, { readyBy: d('2026-11-01') })).result.readyBy).toEqual(m('2026-12'));
+    expect(stricterOf(fake('not_yet', 3, { readyBy: d('2026-11-01') }), fake('not_yet', 3, { readyBy: null })).result.readyBy).toBeNull();
+    const tie = stricterOf(fake('not_yet', 3, { readyBy: d('2026-11-01'), reasons: ['exceeds_range'] }), fake('not_yet', 3, { readyBy: d('2026-11-01') }));
     expect(tie.result.reasons).toEqual(['exceeds_range']);
   });
 });
@@ -332,7 +344,7 @@ describe('D-48 futures on a declined volatile cover', () => {
     expect(ask.futures).toBeNull();
     const yes = evaluate(volatileInputs(), plan(true));
     expect(yes.result.facts.map((f) => f.code)).toContain('rests_on_your_answer');
-    expect(yes.result.confidence.level).toBe('rough');
+    expect(codesOf(yes.result.confidence)).toContain('user_said_cover');
     expect(yes.futures).toBeNull();
     expect(evaluate(sam(), checkOnce(15000)).futures).toBeNull();
   });

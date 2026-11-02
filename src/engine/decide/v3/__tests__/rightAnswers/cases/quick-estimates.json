@@ -110,7 +110,10 @@
       "fixIds": [
         "ENG-11",
         "FIN-25",
-        "ENG-10"
+        "ENG-10",
+        "FIN-01",
+        "FIN-04",
+        "FIN-07"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
@@ -1255,7 +1258,8 @@
       "fixIds": [
         "ENG-11",
         "FIN-25",
-        "ENG-10"
+        "ENG-10",
+        "FIN-04"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",

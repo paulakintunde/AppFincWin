@@ -1,3 +1,4 @@
+import { CLEAN_CONFIDENCE } from '../../__tests__/helpers/restsOn';
 import { minorUnits, type MinorUnits } from '../../../../money/types';
 import { SOLE_SHARE } from '../../../share';
 import type { Funds, IncomeMonth, IncomePicture, MonthModel, Purchase, ReadinessWaiver, UnspentState, V3Inputs } from '../../types';
@@ -13,7 +14,7 @@ function month(over: Partial<MonthModel> = {}): MonthModel {
     month: '2026-10', day: 20, daysInMonth: 31, moneyIn: mu(0), moneyOut: mu(0), billsPaid: mu(0), billsDue: mu(0),
     everydayLogged: mu(100_000), erest: mu(0), setAside: mu(0), monthLeft: mu(50_000), e: mu(100_000),
     typicalIncome: mu(500_000), recurringBills: mu(0), typicalLeft: null, low: null, monthsUsed: [], categoryMonthly: [],
-    housingMonthly: mu(0), largestLine: null, confidence: { level: 'fair', reasons: [] }, notices: [], reasons: [], ...over,
+    housingMonthly: mu(0), largestLine: null, confidence: CLEAN_CONFIDENCE, notices: [], reasons: [], ...over,
   };
 }
 
