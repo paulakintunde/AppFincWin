@@ -29,6 +29,55 @@ export function monthlyPayment(amount: Cents, months: number, apr: string | null
   return (amount * r * growth) / (S * (growth - S));
 }
 
+// Restated from the right-answer table (QE-07) and the needs-input rule (UP §5.4 rule 3); not imported from the engine (QA-03).
+/** A purchase over 1,000.00 (band 5 and up) asks for more records first when the records look behind. */
+const ASK_FOR_RECORDS_ABOVE: Cents = 100_000n;
+/** The newest everyday record must be at most 10 days old to count as current. */
+const RECORD_AGE_DAYS = 10;
+/** QE-07: only in the first 7 days of a month ... */
+const FRESH_FIRST_DAYS = 7;
+/** ... and only when the records synced at most 3 days before today. */
+const FRESH_SYNC_DAYS = 3;
+
+/** Whole days from a to b ('YYYY-MM-DD'). */
+function daysFrom(a: string, b: string): number {
+  const at = (d: string): number => Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10)));
+  return Math.round((at(b) - at(a)) / 86_400_000);
+}
+
+/** The month before 'YYYY-MM'. */
+function monthBefore(ym: string): string {
+  const t = Number(ym.slice(0, 4)) * 12 + Number(ym.slice(5, 7)) - 2;
+  return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`;
+}
+
+/**
+ * QE-07: "Last month's records are fresh (2 days old), so Decide answers from them instead of asking for more." In the
+ * first 7 days of a month, with nothing recorded yet this month and last month complete, records synced at most 3 days
+ * ago stand in for this month.
+ */
+export function recordsFresh(f: RightAnswerFixture): boolean {
+  const t = f.thisMonth;
+  if (f.recordsAsOf === null || f.recordsAsOf > f.asOf) return false;
+  if (Number(f.asOf.slice(8, 10)) > FRESH_FIRST_DAYS || daysFrom(f.recordsAsOf, f.asOf) > FRESH_SYNC_DAYS) return false;
+  return t.received === 0 && t.billsPaid === 0 && t.everydaySoFar === 0 && f.historyMonths > 0;
+}
+
+/**
+ * Records look behind: everyday spending logged this month is under half the usual pace, and the newest everyday record
+ * is more than 10 days old. A fixture records this month's spending on the 1st and each earlier month's on the 15th.
+ * Fresh records (QE-07) never look behind.
+ */
+export function recordsLookBehind(f: RightAnswerFixture): boolean {
+  if (f.historyMonths === 0 && f.quickEstimates === null) return false; // no usual pace to compare with
+  const ym = f.asOf.slice(0, 7);
+  const newest = f.thisMonth.everydaySoFar > 0 ? `${ym}-01` : f.historyMonths > 0 ? `${monthBefore(ym)}-15` : null;
+  const old = newest === null || daysFrom(newest, f.asOf) > RECORD_AGE_DAYS;
+  const day = BigInt(Number(f.asOf.slice(8, 10)));
+  const behind = big(f.thisMonth.everydaySoFar) * daysInMonthOf(f.asOf) * 100n < 50n * big(f.usualMonth.everyday) * day;
+  return old && behind && !recordsFresh(f);
+}
+
 /** Days in the month of a 'YYYY-MM-DD' date. */
 function daysInMonthOf(date: string): bigint {
   return BigInt(new Date(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)), 0)).getUTCDate());
@@ -66,8 +115,10 @@ export function cashMargin(f: RightAnswerFixture, cost: Cents, withDues: boolean
 export function plainAnswer(f: RightAnswerFixture): PlainAnswer {
   const c = f.check;
   if (c.price === null) return { code: 'needs_input', variant: null, afterBuy: null };
-  const left = leftThisMonth(f);
   const cost = big(c.price) + big(c.oneOffFees);
+  if (cost > ASK_FOR_RECORDS_ABOVE && recordsLookBehind(f)) return { code: 'needs_input', variant: null, afterBuy: null };
+  if (recordsFresh(f)) return freshAnswer(f, cost);
+  const left = leftThisMonth(f);
   if (c.pay.mode === 'plan') {
     const pay = monthlyPayment(cost - big(c.pay.deposit) + big(c.pay.fees), c.pay.months, c.pay.apr);
     const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday);
@@ -84,6 +135,26 @@ export function plainAnswer(f: RightAnswerFixture): PlainAnswer {
   const fromMonth = cost < room ? cost : room;
   const rest = cost - fromMonth;
   if (rest === 0n) return { code: 'fits_month', variant: null, afterBuy: Number(after) };
+  const earlier = maxC(0n, sitting - fromMonth);
+  return { code: rest <= earlier ? 'fits_unspent' : 'not_yet', variant: null, afterBuy: Number(after) };
+}
+
+/**
+ * QE-07: "December is expected to leave $1,000, like a usual month, and $1,000 - $500 = $500." With fresh records and
+ * nothing recorded yet, this month is a usual month: the pay lands on the 1st, the usual bills and everyday spending go
+ * out. The cash check counts that pay, then the same ladder as below: this month's room, then money already sitting
+ * (less the part this month's room already counted).
+ */
+function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
+  const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday);
+  const after = usualLeft - cost;
+  const sitting = sittingMoney(f);
+  if (sitting + usualLeft - cost < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
+  const room = maxC(0n, usualLeft);
+  const fromMonth = cost < room ? cost : room;
+  const rest = cost - fromMonth;
+  if (rest === 0n) return { code: 'fits_month', variant: null, afterBuy: Number(after) };
+  // As below: money already sitting, less the part of it this month's room already counted.
   const earlier = maxC(0n, sitting - fromMonth);
   return { code: rest <= earlier ? 'fits_unspent' : 'not_yet', variant: null, afterBuy: Number(after) };
 }

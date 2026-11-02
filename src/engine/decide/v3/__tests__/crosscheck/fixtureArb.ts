@@ -4,7 +4,7 @@ import type { RightAnswerFixture } from '../rightAnswers/schema';
 const money = (max: number): fc.Arbitrary<number> => fc.integer({ min: 0, max });
 
 /** Valid fixtures: monthly pay already received, one spending account, one-off or plan purchase. */
-export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc
+const midMonthArb: fc.Arbitrary<RightAnswerFixture> = fc
   .record({
     pay: fc.integer({ min: 100_000, max: 1_200_000 }),
     billsShare: fc.integer({ min: 5, max: 60 }),
@@ -35,3 +35,38 @@ export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc
       },
     };
   });
+
+/**
+ * 05.4-15 (ENG-14, QE-07): the 1st of a month with nothing recorded yet, last month full and the records synced 0 to 6
+ * days ago. Pay and bills fall due today. Fresh records (0 to 3 days) answer as a usual month; older records keep the
+ * usual rules, so only purchases from band 5 up are drawn for them (they ask for more records first on both sides).
+ */
+const firstOfMonthArb: fc.Arbitrary<RightAnswerFixture> = fc
+  .record({
+    pay: fc.integer({ min: 100_000, max: 1_200_000 }),
+    billsShare: fc.integer({ min: 5, max: 50 }),
+    everydayShare: fc.integer({ min: 5, max: 45 }),
+    history: fc.integer({ min: 3, max: 6 }),
+    price: fc.integer({ min: 1, max: 2_000_000 }),
+    fees: fc.constantFrom(0, 0, 500, 2500),
+    cushion: money(1_500_000),
+    syncedDaysAgo: fc.integer({ min: 0, max: 6 }),
+  })
+  .map((r): RightAnswerFixture => {
+    const bills = Math.floor((r.pay * r.billsShare) / 100);
+    const everyday = Math.floor((r.pay * r.everydayShare) / 100);
+    const recordsAsOf = new Date(Date.UTC(2026, 10, 1 - r.syncedDaysAgo)).toISOString().slice(0, 10);
+    const price = r.syncedDaysAgo > 3 ? Math.max(r.price, 100_001) : r.price;
+    return {
+      asOf: '2026-11-01', currency: 'USD', region: null,
+      pay: { amount: r.pay, cadence: 'monthly', nextDate: '2026-11-01', setupAmount: null, lastThree: null },
+      usualMonth: { bills, everyday, essentialEveryday: Math.floor(everyday / 2) },
+      thisMonth: { received: 0, billsPaid: 0, billsDue: 0, everydaySoFar: 0 },
+      historyMonths: r.history, quickEstimates: null, recordsAsOf,
+      accounts: [{ id: 'a1', kind: 'checking', name: 'Main', balance: r.cushion, overdraftLimit: null, overdraftRate: null, use: 'everyday' }],
+      safetyNet: null, bills: [], debts: [], userLine: null, factLines: false,
+      check: { price, taxPercent: null, taxIncluded: null, oneOffFees: r.fees, pay: { mode: 'once' } },
+    };
+  });
+
+export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc.oneof({ weight: 5, arbitrary: midMonthArb }, { weight: 1, arbitrary: firstOfMonthArb });

@@ -9,13 +9,6 @@ export interface PendingRule { fixId: string; applies: (f: RightAnswerFixture) =
 
 const plan = (f: RightAnswerFixture): boolean => f.check.pay.mode === 'plan';
 
-/** Everyday spending logged so far is under half the usual pace for this point in the month. */
-function recordsLookBehind(f: RightAnswerFixture): boolean {
-  const day = Number(f.asOf.slice(8, 10));
-  const days = new Date(Date.UTC(Number(f.asOf.slice(0, 4)), Number(f.asOf.slice(5, 7)), 0)).getUTCDate();
-  return f.thisMonth.everydaySoFar * days * 100 < 50 * f.usualMonth.everyday * day;
-}
-
 /** The cash check passes or fails depending on whether bills still due are counted (the adapter gives them no due date yet). */
 function duesDecideCash(f: RightAnswerFixture): boolean {
   if (f.check.price === null) return false;
@@ -50,7 +43,6 @@ export const PENDING_RULES: PendingRule[] = [
   { fixId: 'FIN-15', applies: (f) => f.pay.lastThree !== null, note: 'variable pay from the last three' },
   { fixId: 'FIN-27', applies: (f) => f.check.taxPercent !== null || f.region !== null, note: 'tax by region' },
   { fixId: 'BO-05', applies: (f) => (f.check.runningCosts?.length ?? 0) > 0 || f.check.closingPercent != null || f.check.replaces != null || f.check.saveForIt === true || f.check.purchaseDate != null, note: 'running costs, selling the old one, save-for-it' },
-  { fixId: 'ENG-14', applies: (f) => f.recordsAsOf !== null || recordsLookBehind(f), note: 'records-as-of date; a month logged below half the usual pace asks for more records first' },
 ];
 
 export function pendingFixIds(f: RightAnswerFixture): string[] {
