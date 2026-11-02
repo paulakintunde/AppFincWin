@@ -4,7 +4,7 @@
 **Date:** 31 October 2026
 **From:** the fix-plan team (financial, engine, architecture, mobile app, UX and compliance experts), combined by the lead editor
 **Based on:** today's Decide audit (overall about 6/10, themes A to F, 21 must-fix items) and your seven settled decisions
-**Status:** approved by the owner on 1 November 2026. Phases 05.4, 05.5, 08.1 and 08.2 are in ROADMAP.md, and Phases 6, 7 and 8 carry its amendments. Theme M (four safeguards against repeat errors) was added and approved on 1 November 2026. Theme N (build Decide once: 05.3 stopped, Variant C built from scratch in 08.1 on fixed foundations) was approved on 1 November 2026 after a six-expert review. Theme O (the Variant C audit and the version 1 scope) was added on 1 November 2026.
+**Status:** approved by the owner on 1 November 2026. Phases 05.4, 05.5, 08.1 and 08.2 are in ROADMAP.md, and Phases 6, 7 and 8 carry its amendments. Theme M (four safeguards against repeat errors) was added and approved on 1 November 2026. Theme N (build Decide once: 05.3 stopped, Variant C built from scratch in 08.1 on fixed foundations) was approved on 1 November 2026 after a six-expert review. Theme O (the Variant C audit and the version 1 scope) was added on 1 November 2026. **Variant C was chosen as the Decide design on 1 November 2026**; Variants A and B are retired and reading-test round 1 runs on Variant C alone (section 8).
 
 ---
 
@@ -20,7 +20,8 @@
 - **A household privacy gap must close before anyone can be invited.** Today the database lets any household member read every record in that household. That is harmless while every household has one person. The day a partner joins, they would see everything. Household's first job is to make every record **personal unless marked shared**, enforced by the database itself.
 - **Why Decide needed so many fixes, and how this plan stops it (Theme M, added 1 November).** The design kept changing after code was written (18 revisions of the screen spec, and an engine rewrite after the screens were built). The tests checked that the app matched the design prototype, not that its answers were right, so too-kind rules passed with every line tested. Four safeguards fix this: **freeze the design** after reading-test round 1; **write the right answers first** in a table you approve; **check the engine against a second, simple calculator** on thousands of random cases; and **test the tests** by breaking the engine on purpose and making sure a test fails each time.
 - **How long:** roughly **16 to 20 weeks of fix work**, spread across the build (Theme N moves the screen build into 08.1 and drops the rest of 05.3). About 7.5 to 9.5 weeks of it come before Grow starts (05.4 and 05.5). The rest is added to Grow and Household, plus a 3 to 4 week Decide rebuild and about 1 week of re-audit. These are on top of the work Grow and Household already need. Public launch also waits on Apple enrolment and Phases 9 to 11.
-- **What you must decide:** 13 questions (section 11). Question 2 is already settled, and question 13, about tax and running costs, was added on 1 November. The most important ones: approve the order, accept amber "dips into your safety net" answers, and agree the household privacy defaults. Five topics need a lawyer.
+- **Design: Variant C (chosen 1 November).** Reading-test round 1 checks it with about 5 people before the design freeze.
+- **What you must decide:** 13 questions (section 11). Questions 2 and 7 are already settled, and question 13, about tax and running costs, was added on 1 November. The most important ones: approve the order, accept amber "dips into your safety net" answers, and agree the household privacy defaults. Five topics need a lawyer.
 
 ---
 
@@ -60,7 +61,7 @@
 | **OTA update** | A small update sent straight to phones without a store release. |
 | **Reading test** | Sessions where people outside the team read Decide's answers and say what they mean. Planned as 5 people, then 5 more after fixes. |
 | **DPIA** | A written privacy risk check, required by GDPR for this kind of data. |
-| **Mockups** | Clickable phone designs used to compare two layouts before building. |
+| **Mockups** | Clickable phone designs used to test a layout with real people before building. |
 
 ---
 
@@ -108,7 +109,8 @@
 ### Decision 4: Finish 05.3 first, Decide stays hidden
 
 - **Accepted.** 05.3 also closes most of the three broken buttons (Theme B): 05.3-71 adds the first-payment date, 05.3-68 fixes the wrong pot, 05.3-69 and 05.3-78 fix Undo. The plan only re-checks them.
-- **Settled with you on 31 October (ARC-01).** Plan **05.3-46** switches Decide on for every phone on the channel you pick, after your Pixel walkthrough and your OK. Today only testers have the app, so this runs **as written, published to the preview channel**. Three guards come with it: testers are told the known wrong-answer cases until 05.4 lands; a release check blocks any public store build with Decide on before 05.4 is done (the APP-21 server switch makes this one tap); and switching on also turns on the 05.2 Activity surfaces for testers.
+- **Superseded on 1 November (Theme N, BO-01).** 05.3 stopped and plan 05.3-46 never ran. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08, BO-09). The original text is kept for the record:
+- *Settled with you on 31 October (ARC-01).* Plan **05.3-46** switches Decide on for every phone on the channel you pick, after your Pixel walkthrough and your OK. Today only testers have the app, so this runs **as written, published to the preview channel**. Three guards come with it: testers are told the known wrong-answer cases until 05.4 lands; a release check blocks any public store build with Decide on before 05.4 is done (the APP-21 server switch makes this one tap); and switching on also turns on the 05.2 Activity surfaces for testers.
 
 ### Decision 5: Report first, roadmap after approval
 
@@ -123,6 +125,7 @@
 ### Decision 7: Two clickable mockup variants
 
 - **Accepted.** The UX expert wrote the brief for Variant A ("One clear answer") and Variant B ("Money path"), using only the §2 design tokens and one test person, Sam. Section 8 summarises them.
+- **Update, 1 November: Variant C chosen.** A third variant, C ("Clear answer + graphs, Cash or Installments"), was added to the same canvas. You chose it as the Decide design going forward. A and B are retired and kept only for the record. Reading-test round 1 still runs, on Variant C alone, to find what confuses people rather than to pick a winner.
 
 ---
 
@@ -158,17 +161,17 @@ The "running total" counts only the extra work this plan adds. Theme N makes 08.
 - **What it fixes:** ARC-01. Closes Theme B through 05.3-68, -69, -71, -72 and -78 (re-checked later by UX-14, UX-15, UX-25).
 - **Length:** as planned.
 - **Exit gate:**
-  - **ARC-01 (settled):** 05.3-46 runs as written and publishes to the preview channel for testers. Testers get a short note on the known wrong-answer cases. A release check confirms no public store build ships with Decide on before 05.4 is merged.
+  - **ARC-01 (withdrawn 1 November, BO-01; the release check moved to BO-06):** originally, 05.3-46 runs as written and publishes to the preview channel for testers. Testers get a short note on the known wrong-answer cases. A release check confirms no public store build ships with Decide on before 05.4 is merged.
   - The three Theme B blockers pass the device re-walk (05.3-77, -95).
   - **Compliance gate:** a test proves both flags are off in production; the retired-screens gate test (CMP-F10) is in place; no new string uses Rough, Fair or Firm.
-- **Depends on:** nothing new. The 2-week hold before deleting the old engine starts at the test-account switch-on.
+- **Depends on:** nothing new. The 2-week hold before deleting the old engine starts at the test-account switch-on. (Withdrawn: 05.3 never switched on, so there is no hold.)
 
 ### Phase 05.4: Decide safety patch (new)
 
 - **Goal:** Decide never says "Fits" when a careful person would say "careful", every such rule is locked by a property test, and the confidence sentence replaces the tier words.
 - **What it fixes:**
   - *Money rules:* FIN-01 to FIN-11, FIN-14 (joint-loan fact), FIN-15, FIN-25, FIN-26; ENG-01 to ENG-15, ENG-17 to ENG-19, ENG-28; ARC-07 (essential costs, built first inside Decide).
-  - *Clarity and copy:* UX-01 to UX-10, UX-13 (date-field check and live cost tile), UX-14, UX-15, UX-17 to UX-19, UX-21 (interim couples note), UX-22 to UX-25, UX-26 round 1 (on the mockups), UX-27 to UX-30, UX-32 to UX-34.
+  - *Clarity and copy:* UX-01 to UX-10, UX-13 (date-field check and live cost tile), UX-14, UX-15, UX-17 to UX-19, UX-21 (interim couples note), UX-22 to UX-25, UX-26 round 1 (on the Variant C mockups), UX-27 to UX-30, UX-32 to UX-34.
   - *App reliability:* APP-01 to APP-07, APP-10, APP-11, APP-19, APP-20, APP-16 (footer only), APP-04 (Android timings), APP-15 (demo-account machinery).
   - *Getting it right first time (Theme M):* QA-01 (design freeze after reading-test round 1), QA-02 (right-answer table, first task), QA-03 (cross-check calculator for the Theme A rules), QA-04 (mutation testing, 90% gate).
   - *Compliance:* CMP-F01, F02, F03, F04 (Help entry and Decide trigger), F06 (purge job), F07, F08, F11, F12 (copy and guard), F13 (the "untouched" truth fix).
@@ -272,7 +275,7 @@ The "running total" counts only the extra work this plan adds. Theme N makes 08.
 
 ### Phases 9, 10 and 11: Tiers, System, Compliance and Release
 
-- **What they take on:** ENG-27 (device speed budget), APP-04, APP-12 and APP-14 (iOS parts), APP-15 (final demo seed and notes), APP-16 (screenshots), APP-21 (staged switch-on), UX-20, UX-35, UX-39, UX-40, CMP-F05, F06 (policy text and export), F09 (sign-off gate), F20 (final store forms), F21 (lawyer sign-off), F22, F23 (deletion test green). Phase 10 also takes over Decide reminders.
+- **What they take on:** ENG-27 (device speed budget), APP-04, APP-12 and APP-14 (iOS parts), APP-15 (final demo seed and notes), APP-16 (screenshots), APP-21 (staged switch-on), UX-35, UX-39, UX-40, CMP-F05, F06 (policy text and export), F09 (sign-off gate), F20 (final store forms), F21 (lawyer sign-off), F22, F23 (deletion test green). Phase 10 also takes over Decide reminders.
 - **Compliance gate (Phase 11):** live Apple 3.2.1, 3.2.2 and 5.1.1 text re-fetched within 7 days of submission and compared; a lawyer signs the review notes, DPIA, disclaimer and screenshot strings; store forms match the data map; no string still marked "draft"; free-help numbers re-checked within 90 days; the in-app-purchase hygiene checklist passes.
 - **After launch (v1.1):** APP-23 (check a price from outside the app).
 
@@ -552,7 +555,7 @@ Each theme gives the problem in plain words, then the agreed fixes. Where expert
 - **Re-approve the design spec** with standing rules: every needs-input code maps to a visible input, and every input appears in an output (UX-31). *S.*
 - **"What changes if I buy it"**, a dated list of the next 90 days with the lowest point marked (UX-38). *Decide rebuild. M.*
 - **Couples note** before Household: "Money in {account} may be planned by someone else too" (UX-21). *Now (interim), With Household (full).*
-- **The pause and the "did it cost what you expected?" check** return (UX-20). *Release or v1.1. M.*
+- **The pause and the "did it cost what you expected?" check** return (UX-20). *08.1: moved into version 1 by Theme O. M.*
 
 ### Theme F: Rules, privacy and app stores
 
@@ -626,8 +629,8 @@ Each theme gives the problem in plain words, then the agreed fixes. Where expert
 - **Maestro robot flows** (APP-13): 13 core flows plus review-account, household, remote-off, onboarding and screenshots. *Now (core), rebuild (rest). L.*
 - **Device matrix** (APP-14): Pixel 9, Pixel 6, iPhone XR, 320 dp and large fonts, TalkBack and VoiceOver. *Now (Android), Release (iOS). M.*
 - **Sentry with crash targets** (APP-12): at least 99.8% crash-free sessions over a 14-day closed test; no amounts in breadcrumbs. *Now (Android), Release (iOS). S.*
-- **Server switches** (APP-21): turn Decide or one payment method off fast; open it to a share of users. *Built in the rebuild, used at Release; pulled forward if you choose a closed beta. M.*
-- **Reading test, 5 + 5** (UX-26): round 1 on the mockups, round 2 on a preview build. *Now and rebuild. M per round.*
+- **Server switches** (APP-21): turn Decide or one payment method off fast; open it to a share of users. *Built in the rebuild (08.1), where it also carries the named-tester switch (BO-06, BO-09); used at Release. The closed beta is retired (question 11). M.*
+- **Reading test, about 5 people a round** (UX-26): round 1 on the Variant C mockups (to find what confuses them; the design is already chosen), round 2 on a preview build seen only by the named testers (BO-09). *Now and rebuild. M per round.*
 - **Measure after launch** (UX-40), with consent and no amounts. *Release. S.*
 
 ### Theme K: One shared money model (new)
@@ -702,7 +705,7 @@ Causes 3, 4 and 5 are already handled by the build order, Theme K and Theme J. T
 
 **The agreed fixes:**
 - **QA-01: Freeze the design before code.**
-  - When reading-test round 1 picks a design (A, B, C or a blend), you sign off its screens. That signed set is the design for 08.1.
+  - Reading-test round 1 runs on Variant C, the design you chose on 1 November. Its findings are fixed, then you sign off the screens. That signed set is the design for 08.1.
   - After the freeze, a change reopens a screen only if it fixes a wrong answer, a safety-net or privacy problem, a store rule, or a finding from reading-test round 2.
   - Any other new idea goes on the v1.1 list, with a date and a one-line reason. You can still pull an item forward, but it is then planned as its own task, not slipped into a running plan.
   - The same freeze applies to the money rules once the right-answer table (QA-02) is signed.
@@ -775,6 +778,8 @@ You adopted the blend, with shadow runs for testers and the Variant C mockup fix
 - **BO-06: A release check for the per-account switch.**
   - The build fails if any account outside a named tester list has Decide switched on from the server (`profiles.decide_v3`).
   - Demo and reviewer accounts are listed in code and must never have it on.
+  - **Closes the test-flag gap (owner, 2 November).** Today an account with `profiles.decide_v3` on can open the 05.2 setup page and its engine readout. 05.4 hides both from every account. The tester list is a repo file of account IDs: the owner's accounts plus each tester the owner names, changed only by an owner-approved PR (05.4 D-29, D-30). Until 08.1 the flag only drives quiet shadow runs on those accounts (BO-08); from 08.1 it also shows them the Variant C screens (BO-09).
+  - First step: count the production accounts that have the flag on today (not yet checked).
   - *05.4. S.*
 - **BO-07: Six connection points, each with one owner.** Written as contracts with tests before Grow's first table changes. Decide only reads them, or asks the owning feature to save:
   1. **Month picture** (shared engine module): "left so far", "left after the month's plans", and usual essential costs.
@@ -786,7 +791,7 @@ You adopted the blend, with shadow runs for testers and the Variant C mockup fix
 
   The safety net, debt totals, savings and share stored in `decide_settings` move to their owners and are then removed. *05.5. L.*
 - **BO-08: Shadow runs for testers.**
-  - Decide stays off for everyone, testers included, until BO-09.
+  - Decide stays off for everyone, testers included, until BO-09. That includes the 05.2 setup page and engine readout (BO-06). The closed beta (question 11) is retired.
   - Testers keep logging their months. The corrected engine runs quietly on their real records with no answer shown on screen (the 05.1 D-14 shadow idea).
   - You review the results, and every surprise becomes a right-answer case (QA-02).
   - *From the end of 05.4 to 08.1. S per round.*
@@ -854,7 +859,7 @@ When everything changes together, nobody can tell which change broke what. That 
 
 | Stage | What is in it |
 |---|---|
-| **Reading-test round 1** (5 + 5 people, on the mockups after round 4) | A, B and C compared on the core tasks: read the answer, see what breaks, the "$0 left" task, "talk the app into a yes", cash versus installments, what it replaces, and save for it |
+| **Reading-test round 1** (about 5 people, on the Variant C mockups after round 4) | Variant C alone, to find what confuses people on the core tasks: read the answer, see what breaks, the "$0 left" task, "talk the app into a yes", cash versus installments, what it replaces, and save for it |
 | **Version 1** (built once in 08.1, switched on after 08.2) | <ul><li>Item types: car, phone, pet, tech and your own</li><li>Price, tax and fees; cash and installments</li><li>Running costs</li><li>What it replaces, and selling the old one</li><li>All five answers and their variants (tight, dips into the safety net, only by borrowing, on your answer, uses the overdraft)</li><li>Make it surer; the safety net</li><li>Real cost, month after, timeline and the 12-month chart</li><li>Buy later, cheaper, pay over time; compare; pick a date</li><li>Save for it (a Grow goal); record as bought (Activity bills)</li><li>Saved checks and plans, with the decision record and its follow-up</li><li>Offline and error cards</li><li>First answer from quick estimates</li><li>Region, tax and currency settings</li><li>Household view, with partner opt-in</li></ul> |
 | **Home-buying phase** (after 08.2) | Mortgage, closing costs, home running costs, rent that stops, and selling your current home (FIN-30) |
 | **v1.1** (the first update after launch) | Reminders for "ready by" and "bill stops"; links from notifications and goals back to a check; search and filters; checking a price from outside the app (APP-23); bank sync; the accent picker; the "0% if paid in full" plan type if it is not drawn in time (FIN-12) |
@@ -907,7 +912,7 @@ When everything changes together, nobody can tell which change broke what. That 
   - Retired check requirements: DCU-34, 35, 39 and 40.
   - The decision record is in version 1 (DCU-07).
   - One line in PROJECT.md: purchase tax *estimates* are in scope; tax *calculation* stays out.
-  - *05.5. S.*
+  - *Started 2 November (quick task 261101-mxs): REQUIREMENTS.md now notes the Variant C change on DSU-04, DCU-07, DCU-20, DEC-30 and DCU-34, 35, 39, 40. The final wording against the frozen screens and the PROJECT.md line stay in 05.5. S.*
 - **APP-30 (new): Selling the old one closes its Grow debt in the same save.**
   - The server's purchase save gains a way to close an existing debt. Today it can only add one.
   - *Grow (6), used in 08.1. M.*
@@ -1041,9 +1046,11 @@ Each auditor scores 10 only when every line holds and has evidence (a test, a do
 
 ---
 
-## 8. The two design variants
+## 8. The design variants (Variant C chosen)
 
-Both variants use only the §2 design tokens, the same test person (Sam) and the same three purchases, so you compare designs, not data. Both share the new rules: answer first, tone symbols, the confidence sentence, equal choice buttons, the footer, and "Fits, but dips into your safety net".
+**Decision, 1 November 2026: Variant C is the Decide design.** Variants A and B below are retired and kept only as the record of what was compared. The blend at the end of this section is dropped. Reading-test round 1 runs on Variant C alone (about 5 people) to find what confuses people; its findings are fixed, then the screens are frozen (QA-01). Grow is not part of the Decide reading test.
+
+Variants A and B used only the §2 design tokens, the same test person (Sam) and the same three purchases, so the two could be compared on design, not data. Both share the new rules: answer first, tone symbols, the confidence sentence, equal choice buttons, the footer, and "Fits, but dips into your safety net".
 
 **Sam's test purchases:** headphones $180 (Fits, October still leaves about $245); a laptop $3,500 (Fits, but uses $675 of a $2,300 safety net); a used car $9,000 (Not yet, about January 2028; a 36-month loan at 7.9% would cost $1,138 in interest).
 
@@ -1087,7 +1094,20 @@ Mockups: https://claude.ai/artifact/FnBAFpiS9QmdMM8xPjzaAf (open it, then press 
 
 **Trade-offs:** more to read; charts are harder for people less comfortable with numbers, so the list must carry every fact. A bigger build: a new chart, a text version, and new engine outputs (an event list and a low-month path), roughly one extra L-size piece. Busy at 320 dp and large text, where the chart collapses to the list. Path lines need patterns as well as colours.
 
-### The UX expert's suggested blend
+### Variant C: "Clear answer + graphs, Cash or Installments" (chosen)
+
+**The idea:** a clear answer first, with graphs, and the purchase judged both as cash and as installments from one shared input. It is 40 screens plus a full prototype with shared state (boards C0 to C40 on the canvas above). It covers:
+- the full cost of a purchase (Theme L): what kind of purchase, price and tax, running costs, home costs and closing costs, and "What it really costs";
+- the answers: fits, fits but leaves little, dips into the safety net, not yet, and short each month;
+- your month after buying, your cash on every date, and the next 12 months as bars and a line;
+- pick a date and see the answer on that date, the answer on the Installments tab, how often a cost comes, your own running costs and kinds, and "Something changed?";
+- other ways to look at it: buy later, the cheaper one, installments, and cash and installments side by side;
+- what it replaces (an old car sold, rent and old bills), matched to Activity;
+- record as bought, saved plans, first-time setup, make it surer, the safety net settings, and save for it in Grow.
+
+Its Grow handoff screens match the agreed connection points (BO-07): C18 (safety net), C20 and C31 (selling an old item and its loan), C24 and C25 (loan and mortgage plans), and C36 and C40 (save for it in Grow). No board shows the Household scope.
+
+### The UX expert's suggested blend (dropped 1 November: Variant C chosen)
 
 Test both in reading-test round 1. The expectation, to be tested and not assumed: **A wins on speed and comfort for beginners; B wins on understanding when money runs low and on finding options.** The likely result is **A's answer screen, with B's timeline as the "What changes if I buy it" screen.** Every fix in this plan supports either choice.
 
@@ -1139,7 +1159,7 @@ The architect's plan, run as phase 08.2, on the commit that closes 08.1, on a cl
 | 3 | Keep the confidence level inside the engine? | UX-04 and CMP-F12 allowed an internal level; ENG-10, FIN-25 and ARC-10 delete it | **Delete it** | The engine expert checked that no answer depends on it. Keeping it invites tier words back. Reasons are sorted by a fixed weight table instead |
 | 4 | Tie-break when two readings give the same answer and one carries "on your answer" | ENG-07 found that the code picking the stricter of two readings ignores variants | **Adopt the engine fix:** when the codes tie, prefer the reading **without** "on your answer", with a test | Otherwise a records-based reading could lose to a word-based one, which is the opposite of the rule |
 | 5 | Should FIN-06 also block when *this* month is heading below zero? | ENG-06 suggested adding it; FIN-06 framed the rule on the usual month | **Adopt it.** A new payment cannot fit when the usual month is at or below zero, **or** when this month is heading below zero and the first payment falls this month | It closes the audit's exact A7 case (a freelancer £1,009 into the red this month). It is a one-line change, and FIN-06 already lists it |
-| 6 | Closed beta vs "Decide stays off in outside builds" | APP: invite-only, cash-only beta for 20 to 50 testers after the safety patch. CMP: no Decide in any outside build until the rebuild | **Allowed only for named testers, behind a server switch, after the safety patch.** Conditions: 05.4 complete; Theme B blockers fixed; offline and Android speed done; footer on answers; Sentry release health on; only "All at once" payments (loans and payment plans switched off); Decide off by default for everyone else; testers named on an allow-list and told in writing that it is a test build of a planning tool | It keeps compliance's real point (no member of the public sees a wrong answer) and the app expert's (real speed, crash and reading data early). It needs the server switch (APP-21) pulled forward into 05.4 or 05.5 |
+| 6 | Closed beta vs "Decide stays off in outside builds" | APP: invite-only, cash-only beta for 20 to 50 testers after the safety patch. CMP: no Decide in any outside build until the rebuild | **Retired 2 November: no closed beta.** Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08). From 08.1, named testers on an allow-list see them behind the per-account switch, guarded by the BO-06 release check (BO-09); the public gets Decide after 08.2. *(Originally: allowed only for named testers, behind a server switch, after the safety patch.)* | Shadow runs (BO-08) give real-record data on the corrected engine without showing anyone an answer. No member of the public, and no tester, sees an answer from unfinished screens |
 | 7 | When to rewrite the builder and delete the old engine | ENG-21: with Grow. ARC-03: 05.5. APP-17: right after 05.3 | **05.5** | Grow and Household should plug into the final shape, not the tangled one. The engine expert's worry (writing it twice) is handled by optional contract fields that Grow and Household fill, and by one small reader per table |
 | 8 | When to build the shared "money this month" module | ENG-22: with Grow. ARC-04/05: 05.5 | **05.5**, with goal contributions as an optional field Grow fills | Home and Decide already disagree today. Fixing it before Grow stops Grow inventing a third figure |
 | 9 | A separate "cushion" or "leaves little" answer | CMP-F14 described a margin plus "Fits, leaves little"; FIN and ENG use the safety net as the only cushion plus a "tight" variant | **One cushion: the safety net.** "Leaves little" maps to FIN-07 "tight" with the UX chip "Fits, but tight" | Two cushions would hold money back twice and confuse people. CMP-F14's rules M1 to M6 are all still met |
@@ -1152,7 +1172,7 @@ The architect's plan, run as phase 08.2, on the commit that closes 08.1, on a cl
 | 16 | How many debt facts to show | FIN-10: up to 2. ENG-09: up to 3 plus "and N more" | **Up to 2, plus "and N more"** | Keeps the answer short and still names the rest |
 | 17 | "Spare money" vs "unspent money" | UX and FIN say "spare money"; CMP's tables still say "unspent money" | **"Spare money"** on screen | Avoids confusion with "money I haven't spent this month" |
 
-**Not settled (open for you):** see section 11, questions 3, 4, 10 and 11.
+**Not settled (open for you):** see section 11, question 10. (Questions 3, 4 and 5 were answered in the 05.4 discussion on 2 November; question 11 was retired the same day: no closed beta.)
 
 ---
 
@@ -1161,16 +1181,16 @@ The architect's plan, run as phase 08.2, on the commit that closes 08.1, on a cl
 We merged about 45 questions from the six experts into these 12, most important first. Each has our recommended answer. Questions marked **[LAWYER]** should also be checked by a lawyer.
 
 1. **Do you approve the build order?** (Approved; since 1 November 05.3 is stopped, Theme N.) 05.3 → 05.4 safety patch → 05.5 shared model → Grow → Household → 08.1 Decide rebuild → 08.2 re-audit → Insights → 9, 10, 11. **We recommend: yes.** It fixes the known wrong answers in weeks, not months, while still building Decide's final shape on real Grow and Household data.
-2. **Settled: Decide switches on for testers at the end of 05.3.** Only testers have the app, so 05.3-46 runs as written on the preview channel, with a tester note and a release check before any public store build.
-3. **When a purchase only fits by dipping into the safety net, should the answer be amber "Fits, but dips into your safety net" rather than "Not yet"?** **We recommend: amber.** The money is there and it is your call; "Not yet" would block, which goes against "never force".
-4. **Is a 1-month starter right for everyone, with a smaller size offered once to people whose spare money is below it?** **We recommend: yes.** It is honest for people with little slack, and offering 25% or 50% of the starter keeps answers from feeling like a wall.
-5. **Loans and debt: may a loan turn "Not yet" into "Fits only by borrowing" (amber, with total interest and the save-up date), using the 20% APR and 10% cost thresholds, and may the debt and housing lines switch on by default as facts?** **We recommend: yes to all.** The thresholds are FincWin's own choices, not law, and the debt lines never change the answer.
+2. **Withdrawn 1 November (Theme N, BO-01).** 05.3 stopped and plan 05.3-46 never ran. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08, BO-09). *(Originally settled: Decide switches on for testers at the end of 05.3, on the preview channel.)*
+3. **When a purchase only fits by dipping into the safety net, should the answer be amber "Fits, but dips into your safety net" rather than "Not yet"?** **We recommend: amber.** The money is there and it is your call; "Not yet" would block, which goes against "never force". **(Settled: amber. The caution answer is named "Dips into your safety net"; owner, 05.4-CONTEXT "Answer names".)**
+4. **Is a 1-month starter right for everyone, with a smaller size offered once to people whose spare money is below it?** **We recommend: yes.** It is honest for people with little slack, and offering 25% or 50% of the starter keeps answers from feeling like a wall. **(Answered 2 November, 05.4 D-05 and D-06: the starter stays about 1 month; anyone can type any size; there is no one-time smaller offer; a $0 safety net counts as protection off.)**
+5. **Loans and debt: may a loan turn "Not yet" into "Fits only by borrowing" (amber, with total interest and the save-up date), using the 20% APR and 10% cost thresholds, and may the debt and housing lines switch on by default as facts?** **We recommend: yes to all.** The thresholds are FincWin's own choices, not law, and the debt lines never change the answer. **(Answered 2 November, 05.4 D-07 and D-08: a caution at 20% APR or more, or interest of 10% or more of the amount borrowed; debt and housing fact lines on by default, facts only.)**
 6. **Should "Check a purchase" give an answer from three quick estimates before setup, with Decide setup shrinking to about 4 or 5 steps and the other questions moving to Activity, Grow and Household?** **We recommend: yes.** It reverses 05.3 decisions D-06 and D-17, but it is how a new user gets an answer in about a minute, and how each question gets asked once.
-7. **Should the 5 + 5 reading test come back, with round 1 run on the two mockups?** **We recommend: yes.** It reverses 05.3 D-05, but Decide is the one place where a misread answer causes real harm, and round 1 on mockups is the cheapest way to choose a design.
+7. **Should the 5 + 5 reading test come back, with round 1 run on the two mockups?** **We recommend: yes.** It reverses 05.3 D-05, but Decide is the one place where a misread answer causes real harm, and round 1 on mockups is the cheapest way to choose a design. **(Settled 1 November: yes. Round 1 runs on Variant C alone, about 5 people, to find what confuses people; Variant C was chosen without a contest.)**
 8. **Usage stats: drop the price range and stop linking Decide stats to the person?** **We recommend: yes, both.** You still learn which answers people see, just not who saw them, and the store privacy labels stay simpler.
 9. **[LAWYER] Household privacy: every record personal unless marked shared, old records stay personal when someone joins, and a partner's money counts in your answers only if that partner switches it on (off by default)?** **We recommend: yes.** It is the safe privacy default and stops one partner's "Fits" from planning to spend the other's money. The DPIA needs a lawyer.
 10. **In a household, should each person keep their own safety net, or one shared net?** **We recommend: one per person by default, with the option to mark one as shared.** Goals today belong to the person who made them.
-11. **Do you want an invite-only, cash-only closed beta after the safety patch?** **We recommend: yes, but only for named testers, behind a server switch, with loans and payment plans off.** It gives real speed, crash and reading data months before launch without showing anyone outside the allow-list a Decide answer.
+11. **Do you want an invite-only, cash-only closed beta after the safety patch?** **We recommend: yes, but only for named testers, behind a server switch, with loans and payment plans off.** It gives real speed, crash and reading data months before launch without showing anyone outside the allow-list a Decide answer. **(Retired 2 November: no closed beta. Shadow runs (BO-08) replace it, and named testers first see Decide on the Variant C screens in 08.1, behind the per-account switch and the BO-06 release check.)**
 12. **[LAWYER] Which launch countries, which lawyer, and do you accept the store name "FincWin: Can I Afford It?" with the subtitle "Check a price against your own months"?** **We recommend: name the countries now, engage a UK fintech-aware solicitor plus a short US opinion, and keep the name with that subtitle.** The country list sets the free-help lines; five topics need a lawyer (Apple 3.2.1(viii), US "financial advisory services", the UK debt-counselling line for debt facts and payoff plans, the DPIA, and whether the name over-promises).
 
 13. **Answered 1 November: home buying is its own phase after 08.2 (Theme O).** Full cost of a purchase (added 1 November): should tax go into the 05.4 safety patch, and should the home-buying check be part of v1? **We recommend: tax in 05.4; running-cost templates for car, phone, pet and tech in 08.1; and the home-buying check as its own phase after 08.2.** Tax is a small fix that stops "Fits" being too generous. The home check needs mortgage maths, many cost lines and extra compliance wording, so it deserves its own phase and its own review.
@@ -1189,12 +1209,12 @@ We merged about 45 questions from the six experts into these 12, most important 
 | **Regulator and guidance figures** | The CFPB, MoneyHelper and FCAC safety-net guidance was found through secondary pages | Re-check the primary pages, with dates, before any "about this figure" text quotes them |
 | **Lawyer topics** | Apple 3.2.1(viii) now names "money management"; US "financial advisory services" has been read broadly; UK debt-counselling line; DPIA; the store name | Written review notes, honest copy and a lawyer's sign-off keep these low, but cannot remove them |
 | **More caution answers** | People with little spare money see amber answers often and may feel discouraged | Amber, never red; a "ready by" date without touching the net; a one-time offer of a smaller starter; protection can be switched off |
-| **A flag flipped by mistake** | A wrong answer reaches the public before the rebuild | ARC-01, a production test that both flags are off, server switches, and the safety patch itself |
+| **A flag flipped by mistake** | A wrong answer reaches the public before the rebuild | A production test that both flags are off, the BO-06 release check on the per-account switch, server switches, and the safety patch itself |
 | **Schedule** | The hybrid adds 7 to 9 weeks before Grow, including about 1 week for Theme M | The rebuild shrinks later. If the date matters most, 05.5 can be cut to just the old-engine deletion and the contracts, with the rest folded into Grow |
 | **Roadmap tool bugs** | Inserting decimal phases can mis-number or reorder them | Insert one phase at a time and check the roadmap and state files by hand |
 | **Robot tests on iOS from Windows** | Maestro needs a cloud runner for iOS; cost and access unconfirmed | Use a scripted hand run on the XR until a cloud runner is confirmed |
 | **Android saved-data size** | A heavy importer could hit a storage limit and break offline Decide | Measure the saved blob in 05.5; split it if over 1 MB |
-| **Variant B cost** | Building the money-path chart for real is about one extra L-size piece | Decide after reading-test round 1; the likely blend uses B only for the timeline screen |
+| **Variant B cost** | Building the money-path chart for real is about one extra L-size piece | Closed 1 November: Variant B is retired and Variant C chosen. Variant C's graphs (C13, C34) carry a similar cost, sized when 08.1 is planned |
 | **Scope growth** | New ideas keep arriving during the fixes, reopening finished screens (the main cause of past fixes) | The design freeze (QA-01): after sign-off, new ideas go to a dated v1.1 list, not the current phase; only wrong answers, safety, privacy, store rules and round 2 findings reopen a screen |
 | **Mutation tests are slow** | Stryker on a BigInt-heavy engine could take too long to run on every change | Run it on every change only for changed engine files, and on the whole Decide engine nightly. If a nightly run takes over an hour, split it by folder |
 | **The plain calculator copies the engine's mistakes** | If the same person writes both from the same notes, both can be wrong the same way | The calculator is written from the right-answer table (QA-02), not from the engine code, shares no code with it, and is checked against every table case |
@@ -1213,7 +1233,7 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 
 | ID | Short title | Theme | Phase | Size | Depends on |
 |---|---|---|---|---|---|
-| ARC-01 | Decide on for testers; release check | F | 05.3 | S | 05.3 |
+| ARC-01 | Decide on for testers; release check (withdrawn 1 Nov, BO-01; check moved to BO-06) | F | 05.3 (did not run) | S | 05.3 |
 | ARC-02 | Insert new phases after approval | K | approval | S | your approval |
 
 ### Phase 05.4: Decide safety patch
@@ -1296,7 +1316,7 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 | UX-23 | Account-use choices people recognise | E | 05.4 | S | none |
 | UX-24 | Small copy fixes | E | 05.4 | S | none |
 | UX-25 | Dates, times, price limits (verify) | C | 05.4 | S | 05.3 |
-| UX-26 | Reading test, 5 + 5 people | J | 05.4 round 1 (+08.1 round 2) | M per round | mockups; rebuild |
+| UX-26 | Reading test, about 5 people a round | J | 05.4 round 1 (+08.1 round 2) | M per round | Variant C mockups; rebuild |
 | UX-27 | Screen-reader fixes | E | 05.4 | S | none |
 | UX-28 | Use the "worth it" answers | E | 05.4 | M | none |
 | UX-29 | Honest freshness line | C | 05.4 | S | none |
@@ -1334,7 +1354,7 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 | ARC-24 | Record as bought writes the right kind of row | O | 05.5 (+08.1) | M | BO-07, APP-29 |
 | ARC-26 | Requirements updated for Variant C | O | 05.5 | S | your approval |
 | BO-07 | Six connection points, one owner each | N | 05.5 (+6, +8) | L | 05.4 |
-| ARC-03 | Builder from records; delete old engine | K | 05.5 | L | ARC-01, 05.4 |
+| ARC-03 | Builder from records; delete old engine | K | 05.5 | L | 05.4 |
 | ARC-04 | Move month model out of Decide | K | 05.5 | M | ARC-03 |
 | ARC-05 | One month picture, two named figures | K | 05.5 | M | ARC-04 |
 | ARC-06 | One bill detector and date calendar | K | 05.5 | M | ARC-04 |
@@ -1351,11 +1371,11 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 | APP-12 | Sentry crash targets and breadcrumbs | J | 05.5 (+11 iOS) | S | Apple for iOS |
 | APP-13 | Maestro robot flows for Decide | J | 05.5 (+08.1) | L | 05.3 |
 | APP-14 | Device matrix and screen readers | J | 05.5 Android (+11 iOS) | M | Apple for iOS |
-| APP-17 | Delete the old v2 Decide | D | 05.5 | M | 2-week hold, APP-03 |
+| APP-17 | Delete the old v2 Decide | D | 05.5 | M | APP-03 |
 | APP-18 | Paywall switches; safety stays free | F | 05.5 | S | your feature list |
 | UX-31 | Re-sync and re-approve design spec | E | 05.5 | S | UX-01, UX-09, UX-10, UX-13 |
 | CMP-F09 | Word guard in code, signed off | F | 05.5 (+11) | M | none |
-| CMP-F10 | Delete retired screens | F | 05.5 (gate in 05.3; +11) | S | 2-week hold |
+| CMP-F10 | Delete retired screens | F | 05.5 (+11) | S | none (the 05.3 gate test was not merged) |
 | CMP-F20 | Privacy policy and store forms | F | 05.5 draft (+11) | M | CMP-F03, CMP-F06 |
 
 ### Phase 6: Grow
@@ -1420,7 +1440,7 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 | FIN-24 | Far-off dates, foreign prices labelled | A | 08.1 | S | none |
 | ENG-26 | Setup questions move to data's home | D | 08.1 | S | Grow, Household |
 | APP-09 | "Check a purchase" always visible | D | 08.1 (home part earlier) | M | ENG-10, UX-04 |
-| APP-21 | Server switches: on slowly, off fast | J | 08.1 build (+11; earlier if beta) | M | APP-17 |
+| APP-21 | Server switches: on slowly, off fast | J | 08.1 build (+11) | M | APP-17 |
 | APP-25 | Confidence line under every answer | H | 08.1 | M | ENG-10, UX-04 |
 | UX-11 | First answer within 60 seconds | D | 08.1 (home reorder earlier) | M | UX-04, UX-05, UX-12 |
 | UX-16 | Crossed line shows in the answer | A | 08.1 | S | engine variant |
@@ -1439,7 +1459,7 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 | ID | Short title | Theme | Phase | Size | Depends on |
 |---|---|---|---|---|---|
 | ENG-27 | Measured speed budget on real phones | C | 11 | S | ENG-12, ENG-13, iOS build |
-| UX-20 | Bring back pause and cost follow-up (decision record, version 1) | E | 08.1 | M | none |
+| UX-20 | Bring back pause and cost follow-up (decision record, version 1; moved here from Release by Theme O) | E | 08.1 | M | none |
 | UX-35 | Record known limits; archive old screens | F | 11 | S | 05.3 follow-up |
 | UX-39 | Quiet free-help pointer (copy) | F | 11 | S | CMP-F04 |
 | UX-40 | Measure after launch, no amounts | J | 11 | S | CMP-F03 |
