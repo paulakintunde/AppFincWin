@@ -5,7 +5,7 @@
       "id": "BR-01",
       "topic": "borrowing",
       "persona": "A3 Mia, phone over 36 months (audit, invented)",
-      "situation": "Mia (SN-12) has £400 free and her usual month leaves £80. Paying cash for the £900 phone is Not yet. This time she looks at 36 monthly payments at 39.9%, first payment on 15 November.",
+      "situation": "Mia (SN-12) has £400 free and her usual month leaves £80. Paying cash for the £900 phone is Not yet. This time she looks at 36 monthly payments at 39.9%, first payment on 15 November. It is bought on 15 October 2026 (today), with the first payment on 15 November 2026. A usual month: pay £1,200, bills £700 and everyday spending £420 (£300 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-15",
         "currency": "GBP",
@@ -104,7 +104,7 @@
       "id": "BR-02",
       "topic": "borrowing",
       "persona": "Lena, chair on a plan at exactly 20% (invented)",
-      "situation": "Lena has $1,000 free this month and her usual month leaves $1,000. Cash would pay for a $600 chair today, but she picks 6 monthly payments at 20%, first payment on 15 December.",
+      "situation": "Lena has $1,000 free this month and her usual month leaves $1,000. Cash would pay for a $600 chair today, but she picks 6 monthly payments at 20%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -197,13 +197,14 @@
       "status": "draft",
       "approvedAt": null,
       "ownerReason": null,
-      "expertNote": null
+      "expertNote": null,
+      "reviewNote": "Not applied yet; shown for your check. Under D-39a (cash fits but a plan is chosen) this answer would become \"Fits, but borrowing costs more\", with the $35.48 of interest shown. The figures stay the same."
     },
     {
       "id": "BR-03",
       "topic": "borrowing",
       "persona": "Lena, chair on a plan at 19.9% (invented)",
-      "situation": "Same as BR-02, but the plan is 6 monthly payments at 19.9%.",
+      "situation": "Same as BR-02, but the plan is 6 monthly payments at 19.9%. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -300,7 +301,7 @@
       "id": "BR-04",
       "topic": "borrowing",
       "persona": "Raj, car over 5 years at 7.9% (invented)",
-      "situation": "Raj has $7,000 free this month and his usual month leaves $1,000. He could pay cash for a $6,000 car, but looks at 60 monthly payments at 7.9%, first payment on 15 December.",
+      "situation": "Raj has $7,000 free this month and his usual month leaves $1,000. He could pay cash for a $6,000 car, but looks at 60 monthly payments at 7.9%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -393,13 +394,14 @@
       "status": "draft",
       "approvedAt": null,
       "ownerReason": null,
-      "expertNote": null
+      "expertNote": null,
+      "reviewNote": "Not applied yet; shown for your check. Under D-39a (cash fits but a plan is chosen) this answer would become \"Fits, but borrowing costs more\", with the $1,282.14 of interest shown. The figures stay the same."
     },
     {
       "id": "BR-05",
       "topic": "borrowing",
       "persona": "Noor, usual month already short (invented)",
-      "situation": "Noor's usual month ends $100 short: pay $3,000, bills $1,500, everyday spending $1,600. She has $2,000 in her account from a tax refund. She looks at a $1,200 phone in 12 payments of $100 at 0%, first payment on 15 December.",
+      "situation": "Noor's usual month ends $100 short: pay $3,000, bills $1,500, everyday spending $1,600. She has $2,000 in her account from a tax refund. She looks at a $1,200 phone in 12 payments of $100 at 0%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,500 and everyday spending $1,600 ($960 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -482,7 +484,7 @@
       "id": "BR-06",
       "topic": "borrowing",
       "persona": "Theo, this month heading below $0 (invented)",
-      "situation": "Theo's usual month leaves $300, but October ended $500 overdrawn, so on 15 November he has $400 with $600 of everyday spending still to come. He looks at a $1,200 laptop in 12 payments of $100 at 0%, the first on 28 November.",
+      "situation": "Theo's usual month leaves $300, but October ended $500 overdrawn, so on 15 November he has $400 with $600 of everyday spending still to come. He looks at a $1,200 laptop in 12 payments of $100 at 0%, the first on 28 November. It is bought on 15 November 2026 (today), with the first payment on 28 November 2026. A usual month: pay $3,000, bills $1,500 and everyday spending $1,200 ($720 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -565,7 +567,7 @@
       "id": "BR-07",
       "topic": "borrowing",
       "persona": "Priya, payment takes 85% of her room (invented)",
-      "situation": "Priya's usual month leaves $2,200 (pay $5,000, bills $1,800, everyday $1,000). She looks at a $22,440 used car in 12 payments of $1,870 at 0%, first payment on 15 December.",
+      "situation": "Priya's usual month leaves $2,200 (pay $5,000, bills $1,800, everyday $1,000). She looks at a $22,440 used car in 12 payments of $1,870 at 0%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $5,000, bills $1,800 and everyday spending $1,000 ($600 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -661,7 +663,7 @@
       "id": "BR-08",
       "topic": "borrowing",
       "persona": "Marco, little left after a big month of spending (invented)",
-      "situation": "Marco earns $5,000 and spends $4,000 a month (bills $2,500, everyday $1,500), so his usual month leaves $1,000. He looks at a $7,800 kitchen in 12 payments of $650 at 0%, first payment on 15 December.",
+      "situation": "Marco earns $5,000 and spends $4,000 a month (bills $2,500, everyday $1,500), so his usual month leaves $1,000. He looks at a $7,800 kitchen in 12 payments of $650 at 0%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $5,000, bills $2,500 and everyday spending $1,500 ($900 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -757,7 +759,7 @@
       "id": "BR-09",
       "topic": "borrowing",
       "persona": "Lena, below her own line (invented)",
-      "situation": "Lena set her own line: she wants at least $300 left each month. Her usual month leaves $1,000. She looks at a $9,000 car in 12 payments of $750 at 0%, first payment on 15 December.",
+      "situation": "Lena set her own line: she wants at least $300 left each month. Her usual month leaves $1,000. She looks at a $9,000 car in 12 payments of $750 at 0%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -853,7 +855,7 @@
       "id": "BR-10",
       "topic": "borrowing",
       "persona": "A2 Mia, phone over 24 months (audit, invented)",
-      "situation": "Same Mia as BR-01, but this loan is 24 monthly payments at 29.9%, first payment on 15 November. It is the cheaper of the two loans.",
+      "situation": "Same Mia as BR-01, but this loan is 24 monthly payments at 29.9%, first payment on 15 November. It is the cheaper of the two loans. It is bought on 15 October 2026 (today), with the first payment on 15 November 2026. A usual month: pay £1,200, bills £700 and everyday spending £420 (£300 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-15",
         "currency": "GBP",
@@ -952,7 +954,7 @@
       "id": "BR-11",
       "topic": "borrowing",
       "persona": "A17 Kai, payment uses all his room (audit, invented)",
-      "situation": "Kai's usual month leaves £200 (pay £2,000, bills £1,000, everyday £800). He looks at £2,400 in 12 payments of £200 at 0%, first payment on 15 November.",
+      "situation": "Kai's usual month leaves £200 (pay £2,000, bills £1,000, everyday £800). He looks at £2,400 in 12 payments of £200 at 0%, first payment on 15 November. It is bought on 15 October 2026 (today), with the first payment on 15 November 2026. A usual month: pay £2,000, bills £1,000 and everyday spending £800 (£480 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-15",
         "currency": "GBP",
@@ -1048,7 +1050,7 @@
       "id": "BR-12",
       "topic": "borrowing",
       "persona": "A4 Mia, buy now pay later (audit, invented)",
-      "situation": "Same Mia (£400 free, usual month leaves £80). This time the £900 phone is 4 payments of £225 every two weeks at 0%, the first one today, 15 October.",
+      "situation": "Same Mia (£400 free, usual month leaves £80). This time the £900 phone is 4 payments of £225 every two weeks at 0%, the first one today, 15 October. It is bought on 15 October 2026 (today), with the first payment on 15 October 2026. A usual month: pay £1,200, bills £700 and everyday spending £420 (£300 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-15",
         "currency": "GBP",
@@ -1133,7 +1135,7 @@
       "id": "BR-13",
       "topic": "borrowing",
       "persona": "A11 Tess, 0% plan while overdrawn (audit, invented)",
-      "situation": "Same Tess as OD-10: £1,500 overdrawn on 27 October, no overdraft limit set, usual month leaves £400. She looks at £300 in 3 payments of £100 at 0%, the first on 27 November.",
+      "situation": "Same Tess as OD-10: £1,500 overdrawn on 27 October, no overdraft limit set, usual month leaves £400. She looks at £300 in 3 payments of £100 at 0%, the first on 27 November. It is bought on 27 October 2026 (today), with the first payment on 27 November 2026. A usual month: pay £2,000, bills £1,000 and everyday spending £600 (£400 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-27",
         "currency": "GBP",
@@ -1219,7 +1221,7 @@
       "id": "BR-14",
       "topic": "borrowing",
       "persona": "A18 Ade, 0% with interest held back (audit, invented)",
-      "situation": "Ade's usual month leaves £600. He looks at a £1,500 sofa on a 12-month 0% deal that charges all the held-back interest if it is not paid in full in time. Payments are £125 a month, first on 15 November.",
+      "situation": "Ade's usual month leaves £600. He looks at a £1,500 sofa on a 12-month 0% deal that charges all the held-back interest if it is not paid in full in time. Payments are £125 a month, first on 15 November. It is bought on 15 October 2026 (today), with the first payment on 15 November 2026. A usual month: pay £2,500, bills £1,100 and everyday spending £800 (£480 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-15",
         "currency": "GBP",
@@ -1314,6 +1316,109 @@
       "approvedAt": null,
       "ownerReason": null,
       "expertNote": null
+    },
+    {
+      "id": "BR-15",
+      "topic": "borrowing",
+      "persona": "Sana, first home on a mortgage (invented)",
+      "situation": "Sana is buying her first flat for $300,000 with a $30,000 deposit and a $270,000 mortgage at 5.5% over 25 years (300 monthly payments), first payment on 15 December. She lives with family, so no rent stops. On 15 November she has $31,400 in her everyday account: $30,000 of it is saved from earlier months for the deposit and still in the account. Her safety net is full ($2,200, in a savings account). It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $8,000, bills $1,000 and everyday spending $2,000 ($1,200 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 800000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 200000,
+          "essentialEveryday": 120000
+        },
+        "thisMonth": {
+          "received": 800000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 100000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 3140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 220000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 220000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 30000000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 300,
+            "apr": "5.5",
+            "fees": 0,
+            "deposit": 3000000,
+            "firstPaymentDate": "2026-12-15",
+            "housing": true
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 334196
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "plan_interest_cost",
+          "housing_cost"
+        ],
+        "mustNotHaveFacts": [
+          "save_vs_borrow"
+        ]
+      },
+      "why": "Payments are $1,658.04 a month (the last one $1,655.40). Over 25 years the interest is $227,409.36, 84.23% of the $270,000 borrowed, far over the 10% line that would make a car or a sofa \"Fits only by borrowing\". A mortgage skips that 10% test (D-39c), because almost every home is bought this way; the rate, 5.5%, is under 20%, and cash ($300,000) is not an option, so \"Fits, but borrowing costs more\" does not apply either. It is still costed and shown as a fact: \"Over 25 years this mortgage costs about $227,409 in interest.\" The usual month leaves $8,000 - $1,000 - $2,000 = $5,000; after the payment it leaves $5,000 - $1,658.04 = $3,341.96, well above the $300 floor and the payment is 33% of the room, so it is not tight. Housing shows as a fact: the payment is 20.7% of her $8,000 pay. The $30,000 deposit is the money she saved earlier and kept in the account for it (D-44); after it and the rest of November's spending, November leaves $400. The answer is a plain \"Fits\".",
+      "fixIds": [
+        "FIN-05",
+        "ENG-08"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "reviewNote": "New case for D-39c (mortgages skip the 10% interest test; still costed). Please check the answer before it is approved."
     }
   ]
 }

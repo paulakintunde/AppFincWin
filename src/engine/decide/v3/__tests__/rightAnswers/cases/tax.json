@@ -5,7 +5,7 @@
       "id": "TX-01",
       "topic": "tax",
       "persona": "Ana (invented)",
-      "situation": "Ana lives in California. On 10 October she has $3,100 in her account and $2,500 free after the rest of this month's everyday spending. Her usual month leaves $1,200. A $3,000 item adds 8.25% sales tax, which brings it to $3,247.50.",
+      "situation": "Ana lives in California. On 10 October she has $3,100 in her account and $2,500 free after the rest of this month's everyday spending. Her usual month leaves $1,200. A $3,000 item adds 8.25% sales tax, which brings it to $3,247.50. It is bought on 10 October 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,000 and everyday spending $800 ($500 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-10",
         "currency": "USD",
@@ -86,7 +86,7 @@
       "id": "TX-02",
       "topic": "tax",
       "persona": "Oliver, UK, VAT in the price (invented)",
-      "situation": "Oliver lives in the UK. He has £1,000 free this month and looks at a £600 TV. Shop prices in the UK already include VAT, and \"Price already includes tax\" is on by default.",
+      "situation": "Oliver lives in the UK. He has £1,000 free this month and looks at a £600 TV. Shop prices in the UK already include VAT, and \"Price already includes tax\" is on by default. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay £3,000, bills £1,200 and everyday spending £800 (£480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "GBP",
@@ -180,7 +180,7 @@
       "id": "TX-03",
       "topic": "tax",
       "persona": "Lea, Germany, VAT in the price (invented)",
-      "situation": "Lea lives in Germany. She has €1,000 free this month and looks at a €600 bike. \"Price already includes tax\" is on by default for the EU.",
+      "situation": "Lea lives in Germany. She has €1,000 free this month and looks at a €600 bike. \"Price already includes tax\" is on by default for the EU. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay €3,000, bills €1,200 and everyday spending €800 (€480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "EUR",
@@ -274,7 +274,7 @@
       "id": "TX-04",
       "topic": "tax",
       "persona": "Sol, region not known (invented)",
-      "situation": "Sol has not set a region, and the phone gives no region or time zone Decide can use. He has $1,000 free this month and looks at a $600 desk.",
+      "situation": "Sol has not set a region, and the phone gives no region or time zone Decide can use. He has $1,000 free this month and looks at a $600 desk. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -368,7 +368,7 @@
       "id": "TX-05",
       "topic": "tax",
       "persona": "Jess, US with no state (invented)",
-      "situation": "Jess's region is the United States, but she has not picked a state. She has $1,000 free this month and looks at a $600 desk.",
+      "situation": "Jess's region is the United States, but she has not picked a state. She has $1,000 free this month and looks at a $600 desk. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -465,7 +465,7 @@
       "id": "TX-06",
       "topic": "tax",
       "persona": "Ben, Ontario (invented)",
-      "situation": "Ben lives in Ontario, Canada. Decide pre-filled the usual 13% HST as an estimate he can change, and he kept it. He has $1,000 free this month, his usual month leaves $1,000, and he looks at a $900 laptop.",
+      "situation": "Ben lives in Ontario, Canada. Decide pre-filled the usual 13% HST as an estimate he can change, and he kept it. He has $1,000 free this month, his usual month leaves $1,000, and he looks at a $900 laptop. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "CAD",
@@ -547,7 +547,7 @@
       "id": "TX-07",
       "topic": "tax",
       "persona": "Sam, car with tax and fees (invented)",
-      "situation": "Sam lives in Texas. Decide pre-filled 8.25% sales tax and he changed it to 8%. He looks at a $9,000 used car with $300 of registration and title fees. He has $10,000 free this month and his usual month leaves $1,000.",
+      "situation": "Sam lives in Texas. Decide pre-filled 8.25% sales tax and he changed it to 8%. He looks at a $9,000 used car with $300 of registration and title fees. He has $10,000 free this month and his usual month leaves $1,000. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -628,7 +628,7 @@
       "id": "TX-08",
       "topic": "tax",
       "persona": "Ana, laptop on a plan with tax (invented)",
-      "situation": "Ana lives in California (8.25% estimate). Her usual month leaves $1,000. She looks at a $3,000 laptop in 12 payments at 0%, with the tax added to the plan, first payment on 15 December.",
+      "situation": "Ana lives in California (8.25% estimate). Her usual month leaves $1,000. She looks at a $3,000 laptop in 12 payments at 0%, with the tax added to the plan, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -727,7 +727,7 @@
       "id": "TX-09",
       "topic": "tax",
       "persona": "Raj, loan with no rate typed (invented)",
-      "situation": "Raj lives in Texas (8.25% estimate). He looks at a $9,000 car over 48 monthly payments, first payment on 15 December. The loan screen shows an example rate labelled \"Example rate, not a lender's offer\", but he has not typed his own rate.",
+      "situation": "Raj lives in Texas (8.25% estimate). He looks at a $9,000 car over 48 monthly payments, first payment on 15 December. The loan screen shows an example rate labelled \"Example rate, not a lender's offer\", but he has not typed his own rate. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",

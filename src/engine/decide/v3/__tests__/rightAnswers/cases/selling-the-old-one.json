@@ -5,7 +5,7 @@
       "id": "SO-01",
       "topic": "selling-the-old-one",
       "persona": "Lena, sells her old car the same day (invented)",
-      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She buys a $6,000 car today and sells her old one today for $5,500.",
+      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She buys a $6,000 car today and sells her old one today for $5,500. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -103,7 +103,7 @@
       "id": "SO-02",
       "topic": "selling-the-old-one",
       "persona": "Lena, sale money a month later (invented)",
-      "situation": "Same as SO-01, but the buyer pays the $5,500 on 20 December.",
+      "situation": "Same as SO-01, but the buyer pays the $5,500 on 20 December. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -188,7 +188,7 @@
       "id": "SO-03",
       "topic": "selling-the-old-one",
       "persona": "Omar, sale pays off the old loan (invented)",
-      "situation": "Omar's usual month leaves $1,000 after his $250 old car-loan minimum. He sells the old car for $5,000 on 20 November; $4,000 of it pays off the loan and $1,000 comes to him. The new car is $12,000 in 48 payments of $250 at 0%, first payment on 15 December.",
+      "situation": "Omar's usual month leaves $1,000 after his $250 old car-loan minimum. He sells the old car for $5,000 on 20 November; $4,000 of it pays off the loan and $1,000 comes to him. The new car is $12,000 in 48 payments of $250 at 0%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -301,7 +301,7 @@
       "id": "SO-04",
       "topic": "selling-the-old-one",
       "persona": "Omar, old loan bigger than the sale (invented)",
-      "situation": "Same as SO-03, but the old loan is $7,000. The $5,000 sale goes to the loan and $2,000 is still owed, with the $250 minimum still due.",
+      "situation": "Same as SO-03, but the old loan is $7,000. The $5,000 sale goes to the loan and $2,000 is still owed, with the $250 minimum still due. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -416,7 +416,7 @@
       "id": "SO-05",
       "topic": "selling-the-old-one",
       "persona": "Lena, old phone plan due once more (invented)",
-      "situation": "Lena's usual month leaves $1,000 and includes an $80 phone plan, next due on 1 December. She is ending it on 20 December. The new phone is $1,200 in 24 payments of $50 at 0%, first payment on 15 December, and its new plan is $60 a month from 20 December.",
+      "situation": "Lena's usual month leaves $1,000 and includes an $80 phone plan, next due on 1 December. She is ending it on 20 December. The new phone is $1,200 in 24 payments of $50 at 0%, first payment on 15 December, and its new plan is $60 a month from 20 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -541,7 +541,7 @@
       "id": "SO-06",
       "topic": "selling-the-old-one",
       "persona": "Lena, gym replaced by a rowing machine (invented)",
-      "situation": "Lena pays $50 a month for a gym out of everyday spending and stops it on 30 November. She buys a $900 rowing machine today, paid in cash. She has $1,000 free and her usual month leaves $1,000.",
+      "situation": "Lena pays $50 a month for a gym out of everyday spending and stops it on 30 November. She buys a $900 rowing machine today, paid in cash. She has $1,000 free and her usual month leaves $1,000. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -637,13 +637,14 @@
       "status": "draft",
       "approvedAt": null,
       "ownerReason": null,
-      "expertNote": null
+      "expertNote": null,
+      "reviewNote": "Not applied yet; shown for your check. Under D-40 (tight on one-off purchases) this answer would become \"Fits, but tight\": $100 left this month is under the $200 floor (a tenth of $1,200 bills + $800 everyday spending). The figures stay the same."
     },
     {
       "id": "SO-07",
       "topic": "selling-the-old-one",
       "persona": "Lena, saving for a sofa (invented)",
-      "situation": "Lena wants a $3,000 sofa and asks when she could have saved for it. She has $1,000 free now and her usual month leaves $1,000.",
+      "situation": "Lena wants a $3,000 sofa and asks when she could have saved for it. She has $1,000 free now and her usual month leaves $1,000. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -721,7 +722,7 @@
       "id": "SO-08",
       "topic": "selling-the-old-one",
       "persona": "Lena, saving for the up-front part only (invented)",
-      "situation": "Same $3,000 sofa, but on a plan: $600 up front, then 12 payments of $200 at 0% from 1 February 2027. She has $500 free now and her usual month leaves $1,000.",
+      "situation": "Same $3,000 sofa, but on a plan: $600 up front, then 12 payments of $200 at 0% from 1 February 2027. She has $500 free now and her usual month leaves $1,000. It is bought on 15 November 2026 (today), with the first payment on 1 February 2027. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -804,7 +805,7 @@
       "id": "SO-09",
       "topic": "selling-the-old-one",
       "persona": "Lena, cash and plan from one input (invented)",
-      "situation": "Lena types a $2,400 laptop once. Decide judges paying cash and paying 12 x $200 at 0% (first payment 15 December) from that one input. This case holds the cash side; she has $1,000 free and her usual month leaves $1,000.",
+      "situation": "Lena types a $2,400 laptop once. Decide judges paying cash and paying 12 x $200 at 0% (first payment 15 December) from that one input. This case holds the cash side; she has $1,000 free and her usual month leaves $1,000. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",

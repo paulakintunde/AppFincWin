@@ -5,7 +5,7 @@
       "id": "RC-01",
       "topic": "running-costs",
       "persona": "Sam, car costs more each month than he has (invented)",
-      "situation": "Sam has $8,000 free and his usual month leaves $250 (pay $3,000, bills $1,700, everyday $1,050). He looks at a $6,000 used car, paid in cash. It brings insurance $150, fuel $120 and upkeep $30 a month, plus $276 registration once a year from May.",
+      "situation": "Sam has $8,000 free and his usual month leaves $250 (pay $3,000, bills $1,700, everyday $1,050). He looks at a $6,000 used car, paid in cash. It brings insurance $150, fuel $120 and upkeep $30 a month, plus $276 registration once a year from May. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,700 and everyday spending $1,050 ($630 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -113,7 +113,7 @@
       "id": "RC-02",
       "topic": "running-costs",
       "persona": "Sam, car takes most of his room (invented)",
-      "situation": "Same car and running costs as RC-01 ($323 a month), but Sam's usual month leaves $380 (bills $1,600, everyday $1,020).",
+      "situation": "Same car and running costs as RC-01 ($323 a month), but Sam's usual month leaves $380 (bills $1,600, everyday $1,020). It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,600 and everyday spending $1,020 ($612 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -234,7 +234,7 @@
       "id": "RC-03",
       "topic": "running-costs",
       "persona": "Lena, insurance starts in February (invented)",
-      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She buys a $500 scooter today. The shop covers insurance for three months; her own $100 a month starts on 1 February 2027.",
+      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She buys a $500 scooter today. The shop covers insurance for three months; her own $100 a month starts on 1 February 2027. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -334,7 +334,7 @@
       "id": "RC-04",
       "topic": "running-costs",
       "persona": "Lena, yearly pet insurance (invented)",
-      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She gets a $400 puppy today. Pet insurance is $600 once a year, first due on 15 January 2027.",
+      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She gets a $400 puppy today. Pet insurance is $600 once a year, first due on 15 January 2027. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -434,7 +434,7 @@
       "id": "RC-05",
       "topic": "running-costs",
       "persona": "Lena, parking pass for the winter only (invented)",
-      "situation": "Lena buys an $800 e-bike today. A $60 a month bike-parking pass runs from 1 December 2026 to 28 February 2027, then ends. She has $1,000 free and her usual month leaves $1,000.",
+      "situation": "Lena buys an $800 e-bike today. A $60 a month bike-parking pass runs from 1 December 2026 to 28 February 2027, then ends. She has $1,000 free and her usual month leaves $1,000. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -534,7 +534,7 @@
       "id": "RC-06",
       "topic": "running-costs",
       "persona": "Ines, land with closing costs (invented)",
-      "situation": "Ines has $40,500 free and her usual month leaves $1,000. She looks at a $40,000 plot of land, paid in cash, with closing costs of 2.5% of the price.",
+      "situation": "Ines has $40,500 free and her usual month leaves $1,000. She looks at a $40,000 plot of land, paid in cash, with closing costs of 2.5% of the price. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -613,7 +613,7 @@
       "id": "RC-07",
       "topic": "running-costs",
       "persona": "Lena, bike with and without insurance (invented)",
-      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She buys a $500 bike today with $50 a month insurance from 1 December. The pair to this case is the same bike with no running costs (RC-09).",
+      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She buys a $500 bike today with $50 a month insurance from 1 December. The pair to this case is the same bike with no running costs (RC-09). It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -713,7 +713,7 @@
       "id": "RC-08",
       "topic": "running-costs",
       "persona": "Lena, buying in January (invented)",
-      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She plans to buy a $1,500 sofa on 15 January 2027, not today, paid in cash.",
+      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She plans to buy a $1,500 sofa on 15 January 2027, not today, paid in cash. It is bought on 15 January 2027, paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -805,7 +805,7 @@
       "id": "RC-09",
       "topic": "running-costs",
       "persona": "Lena, insurance switched off (invented)",
-      "situation": "Same bike as RC-07, but Lena switched the $50 insurance line off.",
+      "situation": "Same bike as RC-07, but Lena switched the $50 insurance line off. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -906,7 +906,7 @@
       "id": "RC-10",
       "topic": "running-costs",
       "persona": "A16 Hana, yearly insurance held back (audit, invented)",
-      "situation": "Hana has £1,500 free this month and her usual month leaves £700. Her £1,200 car insurance is paid once a year; it was last paid on 1 March and is next due on 1 March 2027. She looks at £1,450 paid in cash.",
+      "situation": "Hana has £1,500 free this month and her usual month leaves £700. Her £1,200 car insurance is paid once a year; it was last paid on 1 March and is next due on 1 March 2027. She looks at £1,450 paid in cash. It is bought on 15 October 2026 (today), paid in one go. A usual month: pay £2,500, bills £1,000 and everyday spending £800 (£480 of it on essentials).",
       "fixture": {
         "asOf": "2026-10-15",
         "currency": "GBP",

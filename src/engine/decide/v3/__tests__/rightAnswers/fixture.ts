@@ -92,6 +92,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   // mapped when FIN-08 / plan 05.4-23 lands: pay.lean (low months stated explicitly)
   // mapped when FIN-04 lands: debt paidThisMonth (part of a minimum already paid)
   // mapped when D-41 lands (05.4-18): check.purpose (need or want; words and order only)
+  // mapped when FIN-05 / D-39c lands: check.pay.housing (a mortgage skips the 10% interest test)
   const accounts: V3Account[] = f.accounts.map((a) => ({ id: a.id, balance: mu(a.balance), use: useOf(a) }));
   const debts: V3Debt[] = f.debts.map((d) => ({
     id: d.id, kind: d.kind, balance: mu(d.balance), minimum: mu(d.minimum), apr: d.apr === null ? null : percent(d.apr), secured: false, isHousing: d.housing === true,

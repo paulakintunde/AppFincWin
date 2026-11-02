@@ -11,7 +11,7 @@ export interface FixtureDebt { id: string; kind: 'loan'|'card'|'other'; balance:
 export interface FixtureRunningCost { id: string; amount: number; everyMonths: 1|3|12; start: string; end: string|null; /** switched off by the user (FIN-28); absent = on */ off?: boolean }
 export interface FixtureCheck {
   price: number|null; taxPercent: string|null; taxIncluded: boolean|null; oneOffFees: number;
-  pay: { mode: 'once' } | { mode: 'plan'; /** the number of payments */ months: number; apr: string|null; fees: number; deposit: number; firstPaymentDate: string; /** how often a payment falls; absent = month */ every?: 'month'|'fortnight'; /** a 0% deal that back-charges interest if not paid in full; absent = false */ deferredInterest?: boolean };
+  pay: { mode: 'once' } | { mode: 'plan'; /** the number of payments */ months: number; apr: string|null; fees: number; deposit: number; firstPaymentDate: string; /** how often a payment falls; absent = month */ every?: 'month'|'fortnight'; /** a 0% deal that back-charges interest if not paid in full; absent = false */ deferredInterest?: boolean; /** a mortgage or other home loan: skips the 10%-of-amount interest test, still costed (D-39c); absent = false */ housing?: boolean };
   runningCosts?: FixtureRunningCost[]; closingPercent?: string|null; purchaseDate?: string|null;
   replaces?: { stops: { id: string; amount: number; everyMonths: 1|3|12; stopDate: string; source: 'bill'|'everyday' }[]; sale: { amount: number; arrives: string; paysDebtId: string|null } | null } | null;
   saveForIt?: boolean; yourAnswer?: 'yes'|'no'|null;
