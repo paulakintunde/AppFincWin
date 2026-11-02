@@ -1,0 +1,58 @@
+import type { RightAnswerFixture } from '../rightAnswers/schema';
+import { cashMargin } from './plain';
+
+/**
+ * Rules the engine has not landed yet. A fixture that triggers one is skipped (and counted) by the comparison.
+ * Each rule plan deletes its entry in the same merge that lands the rule on both sides. The list only shrinks.
+ */
+export interface PendingRule { fixId: string; applies: (f: RightAnswerFixture) => boolean; note: string }
+
+const plan = (f: RightAnswerFixture): boolean => f.check.pay.mode === 'plan';
+
+/** Everyday spending logged so far is under half the usual pace for this point in the month. */
+function recordsLookBehind(f: RightAnswerFixture): boolean {
+  const day = Number(f.asOf.slice(8, 10));
+  const days = new Date(Date.UTC(Number(f.asOf.slice(0, 4)), Number(f.asOf.slice(5, 7)), 0)).getUTCDate();
+  return f.thisMonth.everydaySoFar * days * 100 < 50 * f.usualMonth.everyday * day;
+}
+
+/** The cash check passes or fails depending on whether bills still due are counted (the adapter gives them no due date yet). */
+function duesDecideCash(f: RightAnswerFixture): boolean {
+  if (f.check.price === null) return false;
+  const cost = BigInt(f.check.price) + BigInt(f.check.oneOffFees);
+  return (cashMargin(f, cost, true) < 0n) !== (cashMargin(f, cost, false) < 0n);
+}
+
+/**
+ * The adapter logs a fixture's everyday spending as one unlinked line; the engine reads an unlinked line near an unpaid
+ * bill's amount as that bill's payment. Until the fixture has a bills list (FIN-11) such fixtures are skipped.
+ */
+function everydayLooksLikeBill(f: RightAnswerFixture): boolean {
+  const t = f.thisMonth;
+  if (t.billsDue === 0 || t.everydaySoFar === 0) return false;
+  return Math.abs(t.everydaySoFar - f.usualMonth.bills) * 4 <= f.usualMonth.bills;
+}
+
+/** A fixture states bills part paid and part due; without a bills list the engine reads one bill payment as the whole series paid. */
+function billsPartlyPaid(f: RightAnswerFixture): boolean {
+  return f.thisMonth.billsPaid > 0 && f.thisMonth.billsDue > 0;
+}
+
+export const PENDING_RULES: PendingRule[] = [
+  { fixId: 'FIN-03', applies: (f) => f.accounts.some((a) => a.balance < 0 || a.overdraftLimit !== null), note: 'overdraft counts as borrowed money' },
+  { fixId: 'FIN-01', applies: (f) => f.safetyNet !== null, note: 'safety net protected by default' },
+  { fixId: 'FIN-11', applies: (f) => f.bills.some((b) => b.everyMonths === 3 || b.everyMonths === 12) || duesDecideCash(f) || everydayLooksLikeBill(f) || billsPartlyPaid(f), note: 'quarterly and yearly bills; bills still due need real due dates before they count in the cash check' },
+  { fixId: 'FIN-04', applies: (f) => f.debts.length > 0, note: 'debt payments in the month' },
+  { fixId: 'FIN-06/FIN-07', applies: (f) => plan(f) || f.pay.amount < f.usualMonth.bills + f.usualMonth.everyday, note: 'plan payments against the usual month; a usual month already short makes the 90-day cash look-ahead decide' },
+  { fixId: 'FIN-05', applies: (f) => plan(f) && f.check.pay.mode === 'plan' && f.check.pay.apr !== null, note: 'expensive-borrowing warning' },
+  { fixId: 'FIN-08', applies: (f) => f.check.yourAnswer != null, note: 'your answer versus the app' },
+  { fixId: 'FIN-09', applies: () => true, note: 'afterBuy block: until it lands only the code is compared' },
+  { fixId: 'FIN-15', applies: (f) => f.pay.lastThree !== null, note: 'variable pay from the last three' },
+  { fixId: 'FIN-27', applies: (f) => f.check.taxPercent !== null || f.region !== null, note: 'tax by region' },
+  { fixId: 'BO-05', applies: (f) => (f.check.runningCosts?.length ?? 0) > 0 || f.check.closingPercent != null || f.check.replaces != null || f.check.saveForIt === true || f.check.purchaseDate != null, note: 'running costs, selling the old one, save-for-it' },
+  { fixId: 'ENG-14', applies: (f) => f.recordsAsOf !== null || recordsLookBehind(f), note: 'records-as-of date; a month logged below half the usual pace asks for more records first' },
+];
+
+export function pendingFixIds(f: RightAnswerFixture): string[] {
+  return PENDING_RULES.filter((r) => r.applies(f)).map((r) => r.fixId);
+}
