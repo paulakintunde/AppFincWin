@@ -36,3 +36,7 @@ supabase/.branches/
 *.local.json
 shadow-source*.json
 .planning/phases/05.1-decide-engine-v3/shadow/*.local.*
+
+.stryker-cache/
+.stryker-tmp/
+reports/
