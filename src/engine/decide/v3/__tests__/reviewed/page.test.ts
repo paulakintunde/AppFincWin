@@ -1,7 +1,8 @@
 import { corpus, type ReviewedChange } from './corpus';
 import * as fs from 'fs';
 import * as path from 'path';
-import { auditOf, breakdown, buildPage, rateText, situationHtml } from './page';
+import { auditOf, breakdown, buildPage, rateText, situationHtml, words } from './page';
+import { TIER_CASES, rileyTier, type TierCase } from '../helpers/tierFixtures';
 
 const cases = corpus();
 const persona = cases.find((c) => c.key.startsWith('persona:audit-p4-overdrawn:6000'));
@@ -85,5 +86,59 @@ describe('reviewed page', () => {
       rowsOf('persona:riley:900000:plan', 'Safety net', (c) => ({ ...c, inputs: { ...c.inputs, safetyNet: { ...(c.inputs.safetyNet as NonNullable<typeof c.inputs.safetyNet>), locked: false } } })),
     );
     expect(unlocked).toContain('unlocked: may lend');
+  });
+  // 05.4-52 (D-65): the three tiers and Large, on the Riley tier people (the same fixtures as the 05.4-51 drafts SN-21..SN-24,
+  // through toEngineInputs). Riley: usual month $300 short; locked $2,000 net.
+  const tierCase = (o: TierCase, key: string): (typeof cases)[number] => ({ key, label: key, ...rileyTier(o) });
+  const stepsOf = (o: TierCase, key: string): { steps: string[]; says: string } => {
+    const b = breakdown(tierCase(o, key));
+    return { steps: b.steps, says: text(b.sections.find((s) => s.title === 'What the answer says')?.rows ?? []) };
+  };
+
+  it('names each D-65 tier in words, code kept in brackets', () => {
+    expect(words({ code: 'fits_unspent', variant: 'month_short_small', afterBuyMonth: null })).toBe('Fits, but your month is already short (code: Fits from spare money)');
+    expect(words({ code: 'fits_unspent', variant: 'month_short_moderate', afterBuyMonth: null })).toBe('Fits from spare money, but your month is already short (code: Fits from spare money)');
+    expect(words({ code: 'fits_unspent', variant: 'month_short_moderate_extra', afterBuyMonth: null })).toBe('Fits from extra savings, but your month is already short (code: Fits from spare money)');
+    expect(words({ code: 'not_yet', variant: 'month_already_short', afterBuyMonth: null })).toBe('No: your month is already short (code: Not yet)');
+  });
+
+  it('Small: the tier line and the page sum (SN-21, $60)', () => {
+    const { steps, says } = stepsOf(TIER_CASES.small, 'tier:small');
+    expect(says).toContain('Fits, but your month is already short');
+    expect(says).toContain('This $60.00 fits your $4,350.00 of spare money and extra savings. Your usual month is $300.00 short.');
+    expect(steps.join(' ')).toContain('= $4,350.00; usual shortfall $300.00 a month; $4,350.00 / $300.00 = 14 months; after this purchase ($60.00): 14 months');
+    expect(steps.join(' ')).toContain('so the tier is Small (D-65)');
+  });
+
+  it('Moderate: "from N months to M." as plain numbers and the page sum (SN-22, $1,000)', () => {
+    const { steps, says } = stepsOf(TIER_CASES.moderate, 'tier:moderate');
+    expect(says).toContain('Fits from spare money, but your month is already short');
+    expect(says).toContain('from 14 months to 11.');
+    expect(steps.join(' ')).toContain('$4,350.00 / $300.00 = 14 months; after this purchase ($1,000.00): 11 months');
+    expect(steps.join(' ')).toContain('so the tier is Moderate, from spare money (D-65)');
+  });
+
+  it('Moderate from extra savings: the sum counts money above the net size, never the locked net (SN-23, $2,000)', () => {
+    const { steps, says } = stepsOf(TIER_CASES.moderateExtra, 'tier:extra');
+    expect(says).toContain('Fits from extra savings, but your month is already short');
+    expect(says).toContain('from 14 months to 7.');
+    expect(steps.join(' ')).toContain('extra savings $4,000.00 (never the locked safety net) = $4,350.00');
+    expect(steps.join(' ')).toContain('so the tier is Moderate, from extra savings (D-65)');
+  });
+
+  it('Large names its reason (SN-24 locked net; the Riley plan payment)', () => {
+    const large = stepsOf(TIER_CASES.large, 'tier:large');
+    expect(large.says).toContain('No: your month is already short');
+    expect(large.steps.join(' ')).toContain('only the locked safety net ($2,000.00) could pay it');
+    const riley = cases.find((c) => c.key === 'persona:riley:900000:plan');
+    expect(breakdown(riley!).steps.join(' ')).toContain('a plan payment of about');
+    for (const k of Object.keys(TIER_CASES) as (keyof typeof TIER_CASES)[]) {
+      const b = breakdown(tierCase(TIER_CASES[k], k));
+      const all = [...b.steps, ...b.sections.flatMap((s) => s.rows.flat())].join(' ');
+      expect(all).not.toContain('{{');
+      expect(all).toContain('How long your money lasts');
+      // D-66: the net is locked, so no "your safety net would last" line.
+      expect(b.sections.find((s) => s.title === 'What the answer says')?.rows.some(([key]) => key === 'Fact net_lasts' || key === 'Fact net_lasts_without')).toBe(false);
+    }
   });
 });

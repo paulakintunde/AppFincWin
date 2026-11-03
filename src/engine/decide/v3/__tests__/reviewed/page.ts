@@ -44,11 +44,20 @@ const VARIANT: Record<string, string> = {
   protection_off: 'protection off',
 };
 
+/** D-63 / D-65: the headline words when the usual month is already short (the owner's wording, en.ts decide.v3.verdict chips). */
+const TIER_WORDS: Record<string, string> = {
+  month_already_short: 'No: your month is already short',
+  month_short_small: 'Fits, but your month is already short',
+  month_short_moderate: 'Fits from spare money, but your month is already short',
+  month_short_moderate_extra: 'Fits from extra savings, but your month is already short',
+};
+
 export const words = (a: ReviewedAnswer): string => {
   const code = LABEL[a.code] ?? a.code;
-  // D-62 and D-63 headlines have their own words; the code the engine gives is kept in brackets for D-63.
-  const base = a.variant === 'month_already_short' ? `No: your month is already short (code: ${code})` : a.variant === 'extra_savings' ? 'Fits from extra savings' : code;
-  const v = a.variant === null || a.variant === 'month_already_short' || a.variant === 'extra_savings' ? '' : ` (${VARIANT[a.variant] ?? a.variant})`;
+  // D-62, D-63 and D-65 headlines have their own words; the code the engine gives is kept in brackets for D-63 and D-65.
+  const tier = a.variant === null ? undefined : TIER_WORDS[a.variant];
+  const base = tier !== undefined ? `${tier} (code: ${code})` : a.variant === 'extra_savings' ? 'Fits from extra savings' : code;
+  const v = a.variant === null || tier !== undefined || a.variant === 'extra_savings' ? '' : ` (${VARIANT[a.variant] ?? a.variant})`;
   const left = a.afterBuyMonth === null ? '' : `, ${(a.afterBuyMonth / 100).toFixed(2)} left that month`;
   return `${base}${v}${left}`;
 };
@@ -195,7 +204,7 @@ const factOf = (ev: Evaluation, code: string): Record<string, unknown> | null =>
 // ---------------------------------------------------------------- the answer's facts and notices (en.ts wording)
 
 type Values = Record<string, unknown>;
-const PLAIN_NUMBER_KEYS = new Set(['months', 'day', 'count', 'everyMonths', 'days', 'of', 'periods', 'value', 'limit']);
+const PLAIN_NUMBER_KEYS = new Set(['months', 'monthsAfter', 'day', 'count', 'everyMonths', 'days', 'of', 'periods', 'value', 'limit']);
 const DATE_KEYS = new Set(['date', 'dueDate']);
 /** COPY_RESOLVERS: the id a value carries and the placeholder the copy reads. */
 const RESOLVED: Record<string, string> = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account' };
@@ -498,9 +507,53 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
     steps.push(net.state === 'none' ? 'Nothing is saved in a safety net, so a fit carries "but no safety net" (D-35).' : net.state === 'small' ? `The safety net holds ${m(net.saved)} of its ${m(net.size)} size, so a fit carries "but your safety net is small" (D-35).` : 'The safety net is at or above its size, so no net caution.');
   }
   if (res.variant === 'month_already_short') steps.push(`The usual month leaves ${mo.typicalLeft === null ? 'an unknown amount' : m(mo.typicalLeft)} before the purchase, so it is already short: the headline is "No: your month is already short" on the code ${res.code} (D-63).`);
+  const tierStep = d65Step(ev, res, m);
+  if (tierStep !== null) steps.push(tierStep);
   if (res.variant === 'extra_savings') steps.push('Part of it is paid from money saved above the safety net\'s size, so the headline is "Fits from extra savings" (D-62).');
   steps.push(`Engine answer: ${words({ code: res.code, variant: res.variant, afterBuyMonth: left === null ? null : (left['left'] as number) })}.`);
   return { sections, steps };
+}
+
+/**
+ * D-65: the page's own "how long your money lasts" sum, from the breakdown figures (not from the engine's tier line), so the owner
+ * sees both side by side. R = spare money judged against (else this month's left) + money saved above the net's size, never the
+ * locked net (D-61), and never below what the purchase uses; S = the usual shortfall; U = the purchase's day-one amount less its
+ * own envelope. U < S is Small, else Moderate. Large names its reason. Null when the usual month is not short.
+ */
+function d65Step(ev: Evaluation, res: Evaluation['result'], m: (n: number) => string): string | null {
+  const tl = ev.month.typicalLeft;
+  if (tl === null || tl >= 0) return null;
+  const S = -tl;
+  const p = ev.purchase;
+  const net = ev.net;
+  const isFit = res.code === 'fits_month' || res.code === 'fits_unspent';
+  if (!isFit || p === null || p.monthly > 0) {
+    const why =
+      p !== null && p.monthly > 0
+        ? `a plan payment of about ${m(p.monthly)} a month makes the ${m(S)} shortfall bigger`
+        : ev.cash.kind === 'not_covered' && net !== undefined && net.locked && net.floor > 0
+          ? `only the locked safety net (${m(net.floor)}) could pay it, and it is left out (D-61)`
+          : ev.cash.kind !== 'ok'
+            ? `the 90-day path goes below ${m(0)} with it`
+            : `the code ${res.code} is not a fit`;
+    return `How long your money lasts: the usual month is ${m(S)} short, and ${why}, so the tier is Large: "No: your month is already short" (D-65).`;
+  }
+  const fromEnvelope = res.split.filter((x) => x.source === 'envelope').reduce((a, x) => a + x.amount, 0);
+  const U = p.dayOne - fromEnvelope;
+  const spare = ev.spare ?? null;
+  const own = spare ?? ev.month.monthLeft;
+  const A = own > 0 ? own : 0;
+  const B = net !== undefined && net.aboveSize > 0 ? net.aboveSize : 0;
+  const R = Math.max(A + B, U);
+  const N = Math.floor(R / S);
+  const M = Math.floor((R - U) / S);
+  const fromExtra = res.split.some((x) => x.source === 'extra_savings' && x.amount > 0);
+  const tier = U < S ? 'Small' : fromExtra ? 'Moderate, from extra savings' : 'Moderate, from spare money';
+  return (
+    `How long your money lasts: ${spare === null ? "this month's left" : 'spare money'} ${m(A)} + extra savings ${m(B)} (never the locked safety net) = ${m(R)}; ` +
+    `usual shortfall ${m(S)} a month; ${m(R)} / ${m(S)} = ${N} months; after this purchase (${m(U)}): ${M} months; ` +
+    `the purchase takes ${m(U)} / ${m(S)} = ${(U / S).toFixed(2)} of a month, so the tier is ${tier} (D-65).`
+  );
 }
 
 function sectionsHtml(sections: readonly Section[]): string {
