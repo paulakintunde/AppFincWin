@@ -98,9 +98,9 @@
         "variant": null,
         "afterBuyMonth": 74000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits; $740.00 left that month. Cause: D-67; D-52; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -115,9 +115,9 @@
         "variant": null,
         "afterBuyMonth": 30000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits; $300.00 left that month. Cause: D-67; D-52; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -132,9 +132,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits. Cause: D-67; D-52; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -149,9 +149,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: D-61 locked by default; D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -166,9 +166,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: D-61 locked by default; D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -183,9 +183,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -200,9 +200,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -217,9 +217,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: D-61 locked by default; D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -234,9 +234,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": -19484
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; -$194.84 left that month. Cause: D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -251,9 +251,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month. Cause: monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -268,9 +268,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -285,9 +285,9 @@
         "variant": "small_net",
         "afterBuyMonth": 77710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but your safety net is small); $777.10 left that month. Cause: D-35; D-51. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -302,9 +302,9 @@
         "variant": "small_net",
         "afterBuyMonth": 33710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but your safety net is small); $337.10 left that month. Cause: D-35; D-51. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -319,9 +319,9 @@
         "variant": "small_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money (but your safety net is small); $0.00 left that month. Cause: D-35; D-51. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -336,9 +336,9 @@
         "variant": "small_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but your safety net is small). Cause: D-35; D-51. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -353,9 +353,9 @@
         "variant": "small_net",
         "afterBuyMonth": 114000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but your safety net is small); $1,140.00 left that month. Cause: D-67; D-35; D-51. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -370,9 +370,9 @@
         "variant": "small_net",
         "afterBuyMonth": 70000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but your safety net is small); $700.00 left that month. Cause: D-67; D-35; D-51. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -387,9 +387,9 @@
         "variant": "payday",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (payday). Cause: D-67; D-61 locked by default. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -404,9 +404,9 @@
         "variant": "small_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but your safety net is small). Cause: D-67; D-35; D-51. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -421,9 +421,9 @@
         "variant": "no_net",
         "afterBuyMonth": 2000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $20.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -438,9 +438,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: D-52 (lowest month $0); D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -455,9 +455,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: D-52 (lowest month $0); D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -472,9 +472,9 @@
         "variant": "month_short_small",
         "afterBuyMonth": -100000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits, but your month is already short (on Fits from spare money); -$1,000.00 left that month. Cause: D-52 (lowest month $0); D-65; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -489,9 +489,9 @@
         "variant": "month_short_moderate",
         "afterBuyMonth": -100000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money, but your month is already short (on Fits from spare money); -$1,000.00 left that month. Cause: D-52 (lowest month $0); D-65; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -506,9 +506,9 @@
         "variant": "no_net",
         "afterBuyMonth": 54000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $540.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -523,9 +523,9 @@
         "variant": "no_net",
         "afterBuyMonth": 10000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $100.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -540,9 +540,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -557,9 +557,9 @@
         "variant": "no_net",
         "afterBuyMonth": 69000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $690.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -574,9 +574,9 @@
         "variant": "no_net",
         "afterBuyMonth": 25000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $250.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -591,9 +591,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -608,9 +608,9 @@
         "variant": "no_net",
         "afterBuyMonth": 69000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $690.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -625,9 +625,9 @@
         "variant": "no_net",
         "afterBuyMonth": 25000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $250.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -642,9 +642,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -659,9 +659,9 @@
         "variant": "no_net",
         "afterBuyMonth": 74000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $740.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -676,9 +676,9 @@
         "variant": "no_net",
         "afterBuyMonth": 30000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $300.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -693,9 +693,9 @@
         "variant": "no_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money (but no safety net); $0.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -710,9 +710,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -727,9 +727,9 @@
         "variant": "no_net",
         "afterBuyMonth": 74000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $740.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -744,9 +744,9 @@
         "variant": "no_net",
         "afterBuyMonth": 30000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $300.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -761,9 +761,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -778,9 +778,9 @@
         "variant": "no_net",
         "afterBuyMonth": 14000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $140.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -795,9 +795,9 @@
         "variant": "no_net",
         "afterBuyMonth": 54000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $540.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -812,9 +812,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -829,9 +829,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -846,9 +846,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -863,9 +863,9 @@
         "variant": "low_month",
         "afterBuyMonth": 84211
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (low month); $842.11 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -880,9 +880,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -897,9 +897,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -914,9 +914,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -931,9 +931,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-61 locked by default. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -948,9 +948,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Short each month). Cause: 05.4-51 generator retune (new person); D-52; D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -965,9 +965,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -9314
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Short each month); -$93.14 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -982,9 +982,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -999,9 +999,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1016,9 +1016,9 @@
         "variant": null,
         "afterBuyMonth": 200683
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits; $2,006.83 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1033,9 +1033,9 @@
         "variant": "month_short_moderate",
         "afterBuyMonth": -1605
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money, but your month is already short (on Fits from spare money); -$16.05 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-65; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1050,9 +1050,9 @@
         "variant": "low_month",
         "afterBuyMonth": 214711
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (low month); $2,147.11 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1067,9 +1067,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52; D-61 locked by default. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1084,9 +1084,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1101,9 +1101,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1118,9 +1118,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1135,9 +1135,9 @@
         "variant": "small_net",
         "afterBuyMonth": 75749
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but your safety net is small); $757.49 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-35; D-51. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1152,9 +1152,9 @@
         "variant": "low_month",
         "afterBuyMonth": 20808
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (low month); $208.08 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1169,9 +1169,9 @@
         "variant": "no_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money (but no safety net); $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1186,9 +1186,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -106693
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Short each month); -$1,066.93 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1203,9 +1203,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -139730
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Short each month); -$1,397.30 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1220,9 +1220,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1237,9 +1237,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1254,9 +1254,9 @@
         "variant": null,
         "afterBuyMonth": 410776
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $4,107.76 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1271,9 +1271,9 @@
         "variant": "payday",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (payday). Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1288,9 +1288,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1305,9 +1305,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1322,9 +1322,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1339,9 +1339,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1356,9 +1356,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1373,9 +1373,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: 05.4-51 generator retune (new person); D-61 locked by default; D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1390,9 +1390,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1407,9 +1407,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1424,9 +1424,9 @@
         "variant": "small_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money (but your safety net is small); $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-35; D-51. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1441,9 +1441,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -63402
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Short each month); -$634.02 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1458,9 +1458,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1475,9 +1475,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1492,9 +1492,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -11821
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Short each month); -$118.21 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1509,9 +1509,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: 05.4-51 generator retune (new person); D-52; D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1526,9 +1526,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1543,9 +1543,9 @@
         "variant": "payday",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (payday). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1560,9 +1560,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1577,9 +1577,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1594,9 +1594,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1611,9 +1611,9 @@
         "variant": "low_month",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money (low month); $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1628,9 +1628,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1645,9 +1645,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1662,9 +1662,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1679,9 +1679,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1696,9 +1696,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1713,9 +1713,9 @@
         "variant": null,
         "afterBuyMonth": 53993
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits; $539.93 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1730,9 +1730,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1747,9 +1747,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1764,9 +1764,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1781,9 +1781,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1798,9 +1798,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52; D-61 locked by default. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1815,9 +1815,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52; D-61 locked by default. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1832,9 +1832,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1849,9 +1849,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52; D-61 locked by default. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1866,9 +1866,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1883,9 +1883,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1900,9 +1900,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: 05.4-51 generator retune (new person); D-52; D-61 locked by default; D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1917,9 +1917,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: 05.4-51 generator retune (new person); D-52; D-61 locked by default; D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1934,9 +1934,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1951,9 +1951,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1968,9 +1968,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -1985,9 +1985,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2002,9 +2002,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2019,9 +2019,9 @@
         "variant": "month_short_moderate",
         "afterBuyMonth": -53492
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money, but your month is already short (on Fits from spare money); -$534.92 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2036,9 +2036,9 @@
         "variant": null,
         "afterBuyMonth": 33171
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits; $331.71 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2053,9 +2053,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2070,9 +2070,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -86975
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Short each month); -$869.75 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2087,9 +2087,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2104,9 +2104,9 @@
         "variant": "month_short_moderate_extra",
         "afterBuyMonth": -11761
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings, but your month is already short (on Fits from spare money); -$117.61 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-54; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2121,9 +2121,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2138,9 +2138,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2155,9 +2155,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2172,9 +2172,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2189,9 +2189,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); D-52; readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2206,9 +2206,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2223,9 +2223,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2240,9 +2240,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2257,9 +2257,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2274,9 +2274,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2291,9 +2291,9 @@
         "variant": null,
         "afterBuyMonth": 20515
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits; $205.15 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2308,9 +2308,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2325,9 +2325,9 @@
         "variant": "low_month",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money (low month); $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2342,9 +2342,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2359,9 +2359,9 @@
         "variant": null,
         "afterBuyMonth": 234278
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $2,342.78 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2376,9 +2376,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2393,9 +2393,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -49453
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Short each month); -$494.53 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2410,9 +2410,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2427,9 +2427,9 @@
         "variant": "month_short_moderate",
         "afterBuyMonth": -106079
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money, but your month is already short (on Fits from spare money); -$1,060.79 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-65; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2444,9 +2444,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2461,9 +2461,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2478,9 +2478,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); D-52; readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2495,9 +2495,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2512,9 +2512,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2529,9 +2529,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2546,9 +2546,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2563,9 +2563,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2580,9 +2580,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2597,9 +2597,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -2386
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Short each month); -$23.86 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2614,9 +2614,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2631,9 +2631,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2648,9 +2648,9 @@
         "variant": "no_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money (but no safety net); $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2665,9 +2665,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2682,9 +2682,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2699,9 +2699,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2716,9 +2716,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2733,9 +2733,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2750,9 +2750,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2767,9 +2767,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2784,9 +2784,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2801,9 +2801,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2818,9 +2818,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2835,9 +2835,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2852,9 +2852,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2869,9 +2869,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2886,9 +2886,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2903,9 +2903,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2920,9 +2920,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Not yet). Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2937,9 +2937,9 @@
         "variant": null,
         "afterBuyMonth": 87311
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits; $873.11 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2954,9 +2954,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2971,9 +2971,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -2988,9 +2988,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3005,9 +3005,9 @@
         "variant": "payday",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (payday). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3022,9 +3022,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3039,9 +3039,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -218233
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Short each month); -$2,182.33 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3056,9 +3056,9 @@
         "variant": null,
         "afterBuyMonth": 21307
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $213.07 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3073,9 +3073,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3090,9 +3090,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3107,9 +3107,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3124,9 +3124,9 @@
         "variant": null,
         "afterBuyMonth": 229109
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits; $2,291.09 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3141,9 +3141,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3158,9 +3158,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -146870
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "No: your month is already short (on Short each month); -$1,468.70 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3175,9 +3175,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-61 locked by default. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3192,9 +3192,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3209,9 +3209,9 @@
         "variant": "small_net",
         "afterBuyMonth": 149144
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but your safety net is small); $1,491.44 left that month. Cause: 05.4-51 generator retune (new person); D-35; D-51. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3226,9 +3226,9 @@
         "variant": null,
         "afterBuyMonth": 57482
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits; $574.82 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3243,9 +3243,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3260,9 +3260,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3277,9 +3277,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3294,9 +3294,9 @@
         "variant": "no_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from spare money (but no safety net); $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3311,9 +3311,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3328,9 +3328,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3345,9 +3345,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3362,9 +3362,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3379,9 +3379,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3396,9 +3396,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3413,9 +3413,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3430,9 +3430,9 @@
         "variant": "no_net",
         "afterBuyMonth": 90987
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (but no safety net); $909.87 left that month. Cause: 05.4-51 generator retune (new person); D-35. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3447,9 +3447,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3464,9 +3464,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3481,9 +3481,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -3498,9 +3498,9 @@
         "variant": "low_month",
         "afterBuyMonth": 238
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "Fits (low month); $2.38 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     }
   ]
 }
