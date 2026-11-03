@@ -48,7 +48,7 @@ export const CODES = ['needs_input', 'not_yet', 'monthly_short', 'emergency_use'
  * borrowing_costs_more (cash fits but a plan is chosen). tight now also applies to one-off answers. Keep in step with the
  * migration's variant CHECK.
  */
-export const VARIANTS = ['payday', 'not_covered', 'low_month', 'tight', 'protection_off', 'not_cleared', 'no_net', 'small_net', 'costly_debt', 'borrowing_costs_more', 'extra_savings'] as const; // extra_savings: 05.4 D-62
+export const VARIANTS = ['payday', 'not_covered', 'low_month', 'tight', 'protection_off', 'not_cleared', 'no_net', 'small_net', 'costly_debt', 'borrowing_costs_more', 'extra_savings', 'month_already_short'] as const; // extra_savings: 05.4 D-62; month_already_short: 05.4 D-63 (both in the CHECK widened by migration 20261103000900)
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const COUNT_KEYS = ['everyMonths', 'months', 'historyMonths', 'dueDay'];
 

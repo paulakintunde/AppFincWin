@@ -10,3 +10,9 @@
 ## Test adapter ignores each person's currency (found 2026-11-03, orchestrator)
 - `golden/adapter.ts` `toV3Inputs(person)` builds on the USD base fixture and never passes `person.currency`, so the 13 GBP audit people run as USD. Amounts are the same minor units, but currency-dependent rules (band edges, tax region) use USD. The changed-answers pages therefore show "$" for them.
 - Fix in 05.4-40 (personas as goldens): pass `person.currency` through, re-run the reviewed diff, and bring any changed answers to the owner (D-14).
+
+## Carried to 08.1 (screens)
+- D-61 compulsory setup step before Decide's first answer: 'Do you have a safety net?': pick the account and amount, locked by default; 'No safety net yet' allowed (then the D-35 no-net line shows). Writes decide_settings.safety_net_locked / safety_net_size and the net account.
+- D-61 unlock in Decide settings only, with a confirm step ('Your safety net will count in answers'); stays unlocked until locked again; only then can 'Dips into your safety net' appear.
+
+05.4-35: map decide_settings.safety_net_locked into V3Inputs.safetyNet.locked (absent = locked).

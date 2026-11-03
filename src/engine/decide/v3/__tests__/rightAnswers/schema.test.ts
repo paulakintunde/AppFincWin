@@ -5,7 +5,7 @@ import { evaluate } from '../../evaluate';
 import { toEngineInputs } from './fixture';
 import { loadCases } from './loader';
 import { pick } from './pick';
-import { validateCase, type RightAnswerCase } from './schema';
+import { VARIANTS, validateCase, type RightAnswerCase } from './schema';
 
 function minimalCase(over: Partial<RightAnswerCase> = {}): RightAnswerCase {
   return {
@@ -131,5 +131,19 @@ describe('toEngineInputs and pick', () => {
     f.thisMonth = { received: 0, billsPaid: 0, billsDue: 0, everydaySoFar: 0 };
     const { inputs, check } = toEngineInputs(f);
     expect(() => evaluate(inputs, check)).not.toThrow();
+  });
+});
+
+describe('05.4-48: VARIANTS and the decide_shadow_runs variant CHECK', () => {
+  it('the newest migration that sets the variant CHECK lists exactly VARIANTS', () => {
+    const dir = path.join(__dirname, '../../../../../../supabase/migrations');
+    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.sql')).sort();
+    const sets = files
+      .map((f) => fs.readFileSync(path.join(dir, f), 'utf8'))
+      .map((sql) => /variant\s+in\s*\(([^)]*)\)/i.exec(sql))
+      .filter((m): m is RegExpExecArray => m !== null);
+    const last = sets[sets.length - 1];
+    const listed = [...last[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
+    expect(listed).toEqual([...VARIANTS].sort());
   });
 });

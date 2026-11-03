@@ -88,7 +88,7 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'rough_saving', 'rough_debt', 'rough_invest', 'rough_as_of', 'unexplained_amount', 'unexplained_use', 'unexplained_at',
     'refine_last_at', 'refine_snooze_until',
     'custom_options', // 05.3-81
-    'safety_net_protect', 'safety_net_size', // 05.4 D-33 interim, removed in 05.5
+    'safety_net_protect', 'safety_net_size', 'safety_net_locked', // 05.4 D-33 / D-61 interim, removed in 05.5
   ],
   recurring_dismissals: ['id', 'household_id', 'payee_key', 'direction', 'dismissed_at', 'created_by', 'deleted_at', 'created_at', 'updated_at'],
   income_payer_prompts: [
