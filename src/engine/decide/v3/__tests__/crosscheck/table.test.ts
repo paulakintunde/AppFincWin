@@ -4,9 +4,9 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { freeMoney, monthEndBalance, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind } from './plain';
+import { freeMoney, longDueInWindow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind } from './plain';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
-import { toEngineInputs } from '../rightAnswers/fixture';
+import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
 import type { RightAnswerFixture } from '../rightAnswers/schema';
 
@@ -93,8 +93,7 @@ describe('plain calculator: safety net (05.4-18, FIN-01, FIN-02; D-05, D-06, D-3
 
   it('every approved safety-net case gets its expected code, and its net variant, from the plain rules', () => {
     for (const c of sn) {
-      // SN-09 needs its rent on its own date (the bills list, FIN-11, 05.4-19); tight (SN-10, SN-11) is 05.4-21.
-      if (c.id === 'SN-09') continue;
+      // tight (SN-10, SN-11) is 05.4-21.
       const got = plainAnswer(c.fixture);
       const variant = NET_VARIANTS.includes(c.expected.variant) ? got.variant : c.expected.variant;
       const expected = c.id === 'SN-11' ? 'no_net' : c.id === 'SN-10' ? null : c.expected.variant;
@@ -445,5 +444,90 @@ describe('05.4-54 drafts BR-17..BR-23 (D-68): hand, plain calculator and engine 
     const months = (whole: number, free: number) => Math.ceil((whole - free) / 50_000);
     expect([months(180_000, 0), months(270_000, 50_000)]).toEqual([4, 5]);
     expect([byId('BR-19').expected.readyBy, byId('BR-20').expected.readyBy]).toEqual(['2027-03', '2027-04']);
+  });
+});
+
+describe('plain calculator: yearly and every-3-month bills (05.4-19, FIN-11 as changed by D-47)', () => {
+  const hana = loadCases().find((c) => c.id === 'RC-10')!.fixture;
+  const bill = hana.bills[0]!;
+  it('RC-10 Hana: built up £700 over 7 months, 4 whole months x £700 cover the £1,200, so nothing is held back', () => {
+    expect(wholeMonths('2026-03-01', '2026-10-15')).toBe(7);
+    expect(wholeMonths('2026-10-15', '2027-03-01')).toBe(4);
+    expect(plainHeld(hana)).toEqual([{ id: 'b-ins', builtUp: 70_000n, uncovered: 0n, holdBack: 0n, months: 4 }]);
+    expect(plainHoldBack(hana)).toBe(0n);
+  });
+  it('a thin usual leftover holds back the whole built-up share; an ample one nothing', () => {
+    // £50 a month left: £1,200 - £50 x 4 = £1,000 uncovered, capped at the £700 built up.
+    const thin = { ...hana, usualMonth: { ...hana.usualMonth, everyday: 145_000 } };
+    expect(plainHeld(thin)[0]).toMatchObject({ builtUp: 70_000n, uncovered: 100_000n, holdBack: 70_000n });
+    // £200 a month left: £1,200 - £800 = £400 uncovered, under the £700 built up.
+    const part = { ...hana, usualMonth: { ...hana.usualMonth, everyday: 130_000 } };
+    expect(plainHeld(part)[0]).toMatchObject({ uncovered: 40_000n, holdBack: 40_000n });
+    // a usual month already short covers nothing
+    expect(plainHeld({ ...hana, usualMonth: { ...hana.usualMonth, everyday: 200_000 } })[0]).toMatchObject({ uncovered: 120_000n, holdBack: 70_000n });
+  });
+  it('the share resets after a payment, a bill never paid has built up nothing, someone else\'s bill and monthly bills are never held back', () => {
+    const justPaid = { ...hana, bills: [{ ...bill, lastPaid: '2026-10-14', nextDue: '2027-10-14' }] };
+    expect(plainHeld(justPaid)[0]).toMatchObject({ builtUp: 0n, holdBack: 0n });
+    expect(plainHeld({ ...hana, bills: [{ ...bill, lastPaid: null }] })[0]).toMatchObject({ builtUp: 0n, holdBack: 0n });
+    expect(plainHeld({ ...hana, bills: [{ ...bill, paidBy: 'other' as const }] })).toEqual([]);
+    expect(plainHeld({ ...hana, bills: [{ ...bill, everyMonths: 1 as const }] })).toEqual([]);
+  });
+  it('every 3 months: a $300 bill paid 1 month ago has built up $100; one due this month is in this month\'s bills already', () => {
+    const q = { ...hana, usualMonth: { ...hana.usualMonth, everyday: 150_000 }, bills: [{ ...bill, amount: 30_000, everyMonths: 3 as const, lastPaid: '2026-09-15', nextDue: '2026-12-15' }] };
+    expect(plainHeld(q)[0]).toMatchObject({ builtUp: 10_000n, holdBack: 10_000n });
+    const due = { ...q, bills: [{ ...q.bills[0]!, lastPaid: '2026-07-20', nextDue: '2026-10-20' }] };
+    expect(plainHeld(due)[0]).toMatchObject({ holdBack: 0n });
+  });
+  it('the hold-back comes off spare money, and a bill inside the 90 days lands on the path on its date', () => {
+    const thin = { ...hana, usualMonth: { ...hana.usualMonth, everyday: 145_000 } };
+    const none = { ...thin, bills: [] };
+    expect(freeMoney(none) - freeMoney(thin)).toBe(70_000n);
+    const soon = { ...hana, bills: [{ ...bill, nextDue: '2026-12-01' }] };
+    const p = plainPath(soon, 0n);
+    const at = (d: string) => p.find((x) => x.date === d)!.balance;
+    const q = plainPath({ ...hana, bills: [] }, 0n);
+    const at0 = (d: string) => q.find((x) => x.date === d)!.balance;
+    expect(at0('2026-11-30') - at('2026-11-30')).toBe(0n);
+    expect(at0('2026-12-01') - at('2026-12-01')).toBe(120_000n);
+    expect(longDueInWindow(soon)).toBe(true);
+    expect(longDueInWindow(hana)).toBe(false);
+  });
+  it('the toEngineInputs undated due day: the day before the next pay, cut to the month end', () => {
+    expect(undatedDueDate(hana)).toBe('2026-10-31');
+    const theo = loadCases().find((c) => c.id === 'QE-09')!.fixture;
+    expect(undatedDueDate(theo)).toBe('2026-11-26');
+    expect(undatedDueDate({ ...theo, pay: { ...theo.pay, nextDate: '2026-12-04' } })).toBe('2026-11-30');
+  });
+  it('a usual month reads fortnightly pay as 26 pays over 12 months (SN-09: $1,400 is about $3,033 a month)', () => {
+    const noor = loadCases().find((c) => c.id === 'SN-09')!.fixture;
+    expect(monthPay(noor)).toBe(303_333n);
+    expect(monthPay({ ...noor, pay: { ...noor.pay, cadence: 'weekly' } })).toBe(606_667n);
+    expect(monthPay(hana)).toBe(250_000n);
+  });
+});
+
+describe('05.4-19 regression: the D-47 hold-back survives the D-56 month-end cap (crosscheck seed 23)', () => {
+  // Pay $1,000, bills $206.50 still due, a $130 saving on the 16th; a $1,130 yearly bill last paid 15 February, due 15 February.
+  // Built up 8 months: $753.33; 4 whole months x $280 left cover $1,120, so $10 is uncovered and held back. Spare money is the
+  // $525 the account holds at month end less the $10: $515. $500 + $25 fees = $525: $280 from this month, then $245, more than the $515 - $280 = $235 left.
+  const f: RightAnswerFixture = {
+    asOf: '2026-10-15', currency: 'USD', region: null,
+    pay: { amount: 100_000, cadence: 'monthly', nextDate: '2026-11-01', setupAmount: null, lastThree: null },
+    usualMonth: { bills: 20_650, everyday: 38_350, essentialEveryday: 19_175, saving: { amount: 13_000, day: 16, movedThisMonth: false } },
+    thisMonth: { received: 100_000, billsPaid: 0, billsDue: 20_650, everydaySoFar: 7_670 },
+    historyMonths: 3, quickEstimates: null, recordsAsOf: null,
+    accounts: [{ id: 'a1', kind: 'checking', name: 'Main', balance: 116_830, overdraftLimit: null, overdraftRate: null, use: 'everyday' }],
+    safetyNet: null,
+    bills: [{ id: 'long', amount: 113_000, everyMonths: 12, nextDue: '2027-02-15', lastPaid: '2026-02-15', paidBy: 'me' }],
+    debts: [], userLine: null, factLines: false,
+    check: { price: 50_000, taxPercent: null, taxIncluded: null, oneOffFees: 2_500, pay: { mode: 'once' } },
+  };
+  it('plain and engine: Not yet', () => {
+    expect(plainHeld(f)[0]).toMatchObject({ builtUp: 75_333n, uncovered: 1_000n, holdBack: 1_000n, months: 4 });
+    expect(freeMoney(f)).toBe(51_500n);
+    expect(plainAnswer(f).code).toBe('not_yet');
+    const { inputs, check } = toEngineInputs(f);
+    expect(pick(evaluate(inputs, check)).code).toBe('not_yet');
   });
 });

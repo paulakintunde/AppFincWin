@@ -2,10 +2,6 @@
   "topic": "safety-net",
   "red": [
     {
-      "id": "SN-09",
-      "fixId": "FIN-11"
-    },
-    {
       "id": "SN-10",
       "fixId": "FIN-07"
     },

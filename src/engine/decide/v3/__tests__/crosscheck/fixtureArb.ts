@@ -57,6 +57,11 @@ interface MidMonthRaw {
   cushion: number;
   /** 05.4-51 (D-58, D-67): a regular saving from the everyday account, as a percent of pay, on its day; null = none. */
   saving: { pct: number; day: number } | null;
+  /**
+   * 05.4-19 (FIN-11, D-47): a yearly or every-3-month bill outside the usual month's bills, as a percent of pay, next due 1 to
+   * (every - 1) months after this month on `day`; lastPaid one period before (so already paid, never this month) or unknown.
+   */
+  longBill: { every: 3 | 12; pct: number; ahead: number; day: number; known: boolean } | null;
 }
 
 const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
@@ -71,7 +76,23 @@ const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
   plan: fc.oneof({ weight: 5, arbitrary: fc.constant(null) }, { weight: 1, arbitrary: fc.record({ months: termMonthsArb, apr: fc.constantFrom(null, '0', '9.9', '19.99', '29.99'), depositPct: fc.constantFrom(0, 0, 5, 10, 20), fees: money(5_000), firstPaymentDate: fc.constantFrom('2026-10-15', '2026-11-15') }) }), // 05.4-51 (Plan-49 re-run): the deposit is a share of the price. 05.4-55 (D-69): 3..60 months; the first payment today (asOf) or on 15 November, so a short plan can end inside the 90 days (D-68)
   cushion: money(1_500_000),
   saving: fc.option(fc.record({ pct: fc.integer({ min: 1, max: 15 }), day: fc.integer({ min: 1, max: 28 }) }), { nil: null, freq: 3 }),
+  // 1 draw in 3 has one (fast-check's option draws null 1 in `freq`, so a weighted oneof keeps most people without one).
+  longBill: fc.oneof(
+    { weight: 2, arbitrary: fc.constant(null) },
+    {
+      weight: 1,
+      arbitrary: fc.constantFrom<3 | 12>(3, 12).chain((every) =>
+        fc.record({ every: fc.constant(every), pct: fc.integer({ min: 5, max: 150 }), ahead: fc.integer({ min: 1, max: every - 1 }), day: fc.integer({ min: 1, max: 28 }), known: fc.boolean() })
+      ),
+    }
+  ),
 });
+
+/** 'YYYY-MM' of 2026-10 plus n months, day `day`. */
+function octPlus(n: number, day: number): string {
+  const t = 2026 * 12 + 9 + n;
+  return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
 
 /**
  * 05.4-48 (audit cause 4): the mid-month account balance follows from its records. `cushion` is the money carried from earlier
@@ -92,7 +113,9 @@ function midMonth(r: MidMonthRaw, received: number): RightAnswerFixture {
     thisMonth: { received, billsPaid, billsDue: bills - billsPaid, everydaySoFar },
     historyMonths: r.history, quickEstimates: null, recordsAsOf: null,
     accounts: [{ id: 'a1', kind: 'checking', name: 'Main', balance, overdraftLimit: null, overdraftRate: null, use: 'everyday' }],
-    safetyNet: null, bills: [], debts: [], userLine: null, factLines: false,
+    safetyNet: null,
+    bills: r.longBill === null ? [] : [{ id: 'long', amount: Math.max(100, Math.floor((r.pay * r.longBill.pct) / 100)), everyMonths: r.longBill.every, nextDue: octPlus(r.longBill.ahead, r.longBill.day), lastPaid: r.longBill.known ? octPlus(r.longBill.ahead - r.longBill.every, r.longBill.day) : null, paidBy: 'me' }],
+    debts: [], userLine: null, factLines: false,
     check: {
       price, taxPercent: null, taxIncluded: null, oneOffFees: r.fees,
       // 05.4-51 (Plan-49 re-run): the deposit is always below the price (0 with no price)

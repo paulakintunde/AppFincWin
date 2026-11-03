@@ -5,7 +5,8 @@
  */
 import { currencyCode, minorUnits, type MinorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
-import type { AccountUse, Cadence, CheckV2, PayV2, V3Account, V3Debt, V3Inputs, V3Month } from '../../types';
+import type { AccountUse, Cadence, CheckV2, PayV2, ReadinessWaiver, V3Account, V3Debt, V3Inputs, V3Line, V3Month, V3Series } from '../../types';
+import { addMonthsClamped } from '../../dates';
 import { buildFunds } from '../../funds/build';
 import { buildMonthModel } from '../../month/model';
 import { checkOnce, inputsOf, monthOf, v3Line, v3Series } from '../helpers/fixtures';
@@ -68,11 +69,155 @@ function payOf(p: RightAnswerFixture['check']['pay']): PayV2 {
   };
 }
 
+/** The first pay date after asOf; null when none in sight (irregular pay has no pay series, D-52). */
+function firstPayAfter(f: RightAnswerFixture): string | null {
+  if (f.pay.irregular !== undefined) return null;
+  for (let i = 0; i < 60; i++) {
+    const d = f.pay.cadence === 'monthly' ? addMonthsClamped(f.pay.nextDate, i) : addDays(f.pay.nextDate, i * (f.pay.cadence === 'fortnightly' ? 14 : 7));
+    if (d > f.asOf) return d;
+  }
+  return null;
+}
+
+function addDays(date: string, n: number): string {
+  return new Date(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)) + n)).toISOString().slice(0, 10);
+}
+
+/**
+ * 05.4-19 (FIN-11): the due date of the bills still due this month that the bills list does not name: the day before the next
+ * pay, or the last day of this month when that is sooner; with irregular pay (no pay series, D-52) the last day of this month;
+ * with no pay in sight, today. The plain calculator lands them on the same day.
+ */
+export function undatedDueDate(f: RightAnswerFixture): string {
+  const ym = f.asOf.slice(0, 7);
+  const monthEnd = `${ym}-${pad(daysIn(ym))}`;
+  if (f.pay.irregular !== undefined) return monthEnd;
+  const next = firstPayAfter(f);
+  if (next === null) return f.asOf;
+  const before = addDays(next, -1);
+  return before < monthEnd ? before : monthEnd;
+}
+
+/** A monthly series anchor on day `day` at or before month `ym`, in a month long enough to hold that day (so later months keep it). */
+function monthlyAnchor(ym: string, day: number): string {
+  for (let back = 0; ; back++) {
+    const m = monthBefore(ym, back);
+    if (daysIn(m) >= day) return `${m}-${pad(day)}`;
+  }
+}
+
+/** Day `day` of month `ym`, clamped to the month (the engine's own month step). */
+const dayOf = (ym: string, day: number): string => `${ym}-${pad(Math.min(day, daysIn(ym)))}`;
+
+interface MappedBills {
+  series: V3Series[];
+  /** the paid bill lines of one history month */
+  history: (m: string) => V3Line[];
+  /** this month's paid bill lines */
+  now: V3Line[];
+  waivers: ReadinessWaiver[];
+}
+
+/**
+ * 05.4-19 (FIN-11): the fixture's bills list as bill series with real due dates and paid lines.
+ * - Monthly bills are part of the usual month's bills: each is its own series on its due day; the rest of the usual bills stays
+ *   one series. This month, a named bill whose next due date is today or later this month is still due (no line); otherwise its
+ *   payment is logged (on its last-paid date when that is this month). Whatever of thisMonth.billsPaid / billsDue the named
+ *   bills do not explain is the rest: paid on the 1st, and due on undatedDueDate (its own series, so a part-paid month is read
+ *   as part paid, not as the whole series paid).
+ * - Yearly and every-3-month bills are not in the usual month's bills (RC-10: the usual month leaves £700 before the
+ *   insurance): each is its own series, left out of the usual month (typicalChoice 'excluded'; D-47 holds back what the months
+ *   before it cannot cover). Its due dates step back from nextDue; every due date inside the records up to asOf is paid on that
+ *   date (the newest on lastPaid when given). With no lastPaid, the bill starts at nextDue, so nothing has built up. One paid or
+ *   due this month is part of thisMonth.billsPaid / billsDue.
+ * - A bill paid by someone else is a series with the always-paid-by-someone-else answer (D-31) and no lines; it is not in the
+ *   usual month's bills.
+ */
+function billsOf(f: RightAnswerFixture, start: string): MappedBills {
+  const ym = f.asOf.slice(0, 7);
+  const startYm = start.slice(0, 7);
+  const series: V3Series[] = [];
+  const hist = new Map<string, V3Line[]>();
+  const now: V3Line[] = [];
+  const waivers: ReadinessWaiver[] = [];
+  const histMonths: string[] = [];
+  for (let i = f.historyMonths; i >= 1; i--) histMonths.push(monthBefore(ym, i));
+  const addHist = (m: string, l: V3Line): void => {
+    hist.set(m, [...(hist.get(m) ?? []), l]);
+  };
+  let namedMonthly = 0;
+  let paidNow = 0;
+  let dueNow = 0;
+  for (const b of f.bills) {
+    const id = `bill-${b.id}`;
+    const day = Number(b.nextDue.slice(8, 10));
+    if (b.paidBy === 'other') {
+      series.push(v3Series({ id, role: 'bill', cadence: { unit: 'month', every: b.everyMonths }, anchorDate: b.nextDue, amount: b.amount, name: b.id, ...(b.everyMonths > 1 ? { typicalChoice: 'excluded' as const } : {}) }));
+      waivers.push({ kind: 'always_other', seriesId: id });
+      continue;
+    }
+    if (b.everyMonths === 1) {
+      namedMonthly += b.amount;
+      series.push(v3Series({ id, role: 'bill', cadence: { unit: 'month', every: 1 }, anchorDate: monthlyAnchor(startYm, day), amount: b.amount, name: b.id }));
+      for (const m of histMonths) addHist(m, v3Line({ id: `${id}-${m}`, date: dayOf(m, day), amount: b.amount, seriesId: id }));
+      if (b.nextDue.slice(0, 7) === ym && b.nextDue >= f.asOf) {
+        dueNow += b.amount;
+        continue;
+      }
+      const paid = b.lastPaid !== null && b.lastPaid.slice(0, 7) === ym && b.lastPaid <= f.asOf ? b.lastPaid : dayOf(ym, day);
+      if (paid <= f.asOf) {
+        paidNow += b.amount;
+        now.push(v3Line({ id: `${id}-${ym}`, date: paid, amount: b.amount, seriesId: id }));
+      }
+      continue;
+    }
+    // Yearly or every 3 months: due dates step back from nextDue to before the records start.
+    let anchor = b.nextDue;
+    let k = 0;
+    if (b.lastPaid !== null) {
+      while (anchor > start) anchor = addMonthsClamped(b.nextDue, -b.everyMonths * ++k);
+    }
+    if (addMonthsClamped(anchor, b.everyMonths * k) !== b.nextDue) throw new Error(`fixture bill ${b.id}: due day ${day} does not repeat every ${b.everyMonths} months`);
+    series.push(v3Series({ id, role: 'bill', cadence: { unit: 'month', every: b.everyMonths }, anchorDate: anchor, amount: b.amount, name: b.id, typicalChoice: 'excluded' }));
+    if (b.nextDue.slice(0, 7) === ym && b.nextDue >= f.asOf) dueNow += b.amount;
+    const dues: string[] = [];
+    for (let n = 0; n < k; n++) {
+      const d = addMonthsClamped(anchor, b.everyMonths * n);
+      if (d >= start && d <= f.asOf) dues.push(d);
+    }
+    dues.forEach((d, n) => {
+      const date = n === dues.length - 1 && b.lastPaid !== null && b.lastPaid >= start && b.lastPaid <= f.asOf ? b.lastPaid : d;
+      const line = v3Line({ id: `${id}-${d}`, date, amount: b.amount, seriesId: id });
+      if (date.slice(0, 7) === ym) {
+        paidNow += b.amount;
+        now.push(line);
+      } else addHist(date.slice(0, 7), line);
+    });
+  }
+  const t = f.thisMonth;
+  const rest = f.usualMonth.bills - namedMonthly;
+  const restPaid = t.billsPaid - paidNow;
+  const restDue = t.billsDue - dueNow;
+  if (rest < 0 || restPaid < 0 || restDue < 0 || restDue > rest) throw new Error('fixture bills list does not fit usualMonth.bills / thisMonth');
+  const paidPart = rest - restDue;
+  if (paidPart > 0) {
+    series.push(v3Series({ id: 'bills', role: 'bill', cadence: { unit: 'month', every: 1 }, anchorDate: start, amount: paidPart }));
+    for (const m of histMonths) addHist(m, v3Line({ id: `bill-${m}`, date: `${m}-02`, amount: paidPart, seriesId: 'bills' }));
+    if (restPaid > 0) now.push(v3Line({ id: `bill-${ym}`, date: `${ym}-01`, amount: restPaid, seriesId: 'bills' }));
+  }
+  if (restDue > 0) {
+    const dueDay = Number(undatedDueDate(f).slice(8, 10));
+    series.push(v3Series({ id: 'bills-due', role: 'bill', cadence: { unit: 'month', every: 1 }, anchorDate: monthlyAnchor(startYm, dueDay), amount: restDue }));
+    for (const m of histMonths) addHist(m, v3Line({ id: `bill-due-${m}`, date: dayOf(m, dueDay), amount: restDue, seriesId: 'bills-due' }));
+  }
+  return { series, history: (m) => hist.get(m) ?? [], now, waivers };
+}
+
 export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check: CheckV2 } {
   const ym = f.asOf.slice(0, 7);
   const start = `${monthBefore(ym, f.historyMonths)}-01`;
   const pay = v3Series({ id: 'pay', role: 'pay', cadence: cadenceOf(f.pay.cadence), anchorDate: f.pay.cadence === 'monthly' ? start : f.pay.nextDate, amount: f.pay.amount });
-  const bills = v3Series({ id: 'bills', role: 'bill', cadence: { unit: 'month', every: 1 }, anchorDate: start, amount: f.usualMonth.bills });
+  const bills = billsOf(f, start);
   // 05.4 D-58: a regular saving is a fixed monthly 'saving' series from the everyday account, logged on its day each full month;
   // the usual month reads it as set aside (as the persona Maya does).
   const sv = f.usualMonth.saving;
@@ -89,7 +234,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     months.push(
       monthOf(m, [
         income,
-        v3Line({ id: `bill-${m}`, date: `${m}-02`, amount: f.usualMonth.bills, seriesId: 'bills' }),
+        ...bills.history(m),
         // 05.4 ARC-07: the essential part of everyday spending sits in a category marked essential (the starter safety net).
         ...(f.usualMonth.everyday - f.usualMonth.essentialEveryday > 0
           ? [v3Line({ id: `day-${m}`, date: `${m}-15`, amount: f.usualMonth.everyday - f.usualMonth.essentialEveryday })]
@@ -107,7 +252,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
       ym,
       [
         ...(t.received > 0 ? [v3Line({ id: `in-${ym}`, date: `${ym}-01`, amount: t.received, role: 'income' as const, seriesId: irr ? null : 'pay' })] : []),
-        ...(t.billsPaid > 0 ? [v3Line({ id: `bill-${ym}`, date: `${ym}-01`, amount: t.billsPaid, seriesId: 'bills' })] : []),
+        ...bills.now,
         ...(t.everydaySoFar > 0 ? [v3Line({ id: `day-${ym}`, date: `${ym}-01`, amount: t.everydaySoFar })] : []),
         ...(sv !== undefined && sv.movedThisMonth ? savingLine(ym) : []),
       ],
@@ -120,7 +265,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   // mapped when ENG-14 lands: check.runningCosts and check.closingPercent
   // mapped when FIN-07 lands: check.replaces (stops and sale)
   // mapped when FIN-08 lands: userLine, check.yourAnswer, check.saveForIt
-  // mapped when FIN-09 lands: bills list, pay.lastThree and pay.setupAmount
+  // mapped when FIN-09 lands: pay.lastThree and pay.setupAmount
   // mapped when FIN-08 / plan 05.4-23 lands: pay.lean (low months stated explicitly)
   // mapped when FIN-04 lands: debt paidThisMonth (part of a minimum already paid)
   // mapped when FIN-05 / D-39c lands: check.pay.housing (a mortgage skips the 10% interest test)
@@ -142,7 +287,8 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     currency: currencyCode(f.currency),
     region: f.region ? (f.region.subdivision ? `${f.region.country}-${f.region.subdivision}` : f.region.country) : null,
     months,
-    series: [...(irr ? [bills] : [pay, bills]), ...(saving === null ? [] : [saving])],
+    series: [...(irr ? [] : [pay]), ...bills.series, ...(saving === null ? [] : [saving])],
+    ...(bills.waivers.length === 0 ? {} : { waivers: bills.waivers }),
     ...(irr ? { profile: { types: ['freelance'], variable: 'steady', steady: mu(f.pay.amount), billsHorizonMonths: null } } : {}),
     balance: mu(spending),
     accounts,

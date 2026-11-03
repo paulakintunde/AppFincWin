@@ -11,6 +11,17 @@ export interface PlainAnswer { code: string; variant: string | null; afterBuy: n
 const big = (n: number): Cents => BigInt(n);
 const maxC = (a: Cents, b: Cents): Cents => (a > b ? a : b);
 
+/**
+ * A usual month's pay: the stated pay for monthly pay (or the steady amount for irregular pay, D-52); 26 fortnights or 52 weeks a
+ * year over 12 months otherwise, rounded half up (SN-09: $1,400 every two weeks is about $3,033 a month, so the usual month is not
+ * short). 05.4-19: the usual month was read as one fortnight's pay before SN-09 came into the comparison.
+ */
+export function monthPay(f: RightAnswerFixture): Cents {
+  if (f.pay.cadence === 'monthly' || f.pay.irregular !== undefined) return big(f.pay.amount);
+  const year = big(f.pay.amount) * (f.pay.cadence === 'fortnightly' ? 26n : 52n);
+  return (year * 2n + 12n) / 24n;
+}
+
 /** '12.5' -> 1250 basis points, digits only, no floats. */
 export function basisPoints(text: string): Cents {
   const [whole = '0', frac = ''] = text.trim().split('.');
@@ -167,7 +178,68 @@ export function freeMoney(f: RightAnswerFixture): Cents {
   // end below 0 is the cash check's to judge, not a cap). Balances follow from their records (05.4-48), so this binds only by
   // rounding; it is restated so the rule has a reader here.
   const cap = maxC(0n, monthEndBalance(f));
-  return free < cap ? free : cap;
+  // D-47: the part of yearly and every-3-month bills the months before they are due cannot cover is held back from it.
+  return (free < cap ? free : cap) - plainHoldBack(f);
+}
+
+// --- Yearly and every-3-month bills (05.4 FIN-11 as changed by D-47). Restated from RC-10 and CONTEXT D-47. Not read from the engine.
+
+/** 'YYYY-MM-DD' plus n months, the day kept or cut to the month's last day. */
+function plusMonths(date: string, n: number): string {
+  const t = Number(date.slice(0, 4)) * 12 + Number(date.slice(5, 7)) - 1 + n;
+  const y = Math.floor(t / 12);
+  const m = (t % 12) + 1;
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return `${y}-${String(m).padStart(2, '0')}-${String(Math.min(Number(date.slice(8, 10)), last)).padStart(2, '0')}`;
+}
+
+/** Whole months from a to b: RC-10 "4 whole months pass before 1 March 2027" from 15 October; 0 when b is not after a. */
+export function wholeMonths(a: string, b: string): number {
+  let n = 0;
+  while (plusMonths(a, n + 1) <= b) n++;
+  return n;
+}
+
+/** A bill the bills list names that comes every 3 or 12 months and is paid by this person (someone else's is never held back, D-31). */
+const longBills = (f: RightAnswerFixture) => f.bills.filter((b) => b.paidBy === 'me' && (b.everyMonths === 3 || b.everyMonths === 12));
+
+export interface PlainHeld { id: string; builtUp: Cents; uncovered: Cents; holdBack: Cents; months: number }
+
+/**
+ * D-47 (owner round 2): "for yearly or quarterly bills, hold back only the part the months before the due date cannot cover from
+ * the usual monthly leftover: hold-back = max(0, bill - usual leftover x whole months until due), capped at the built-up share ...
+ * The built-up share resets after each payment." 05.4-19: "built-up share = bill x months since last paid / every months (half
+ * up), capped at the bill"; "a bill with no last-paid date builds up from its anchor date" (nothing built up before its first due
+ * date). RC-10: "Her usual month leaves £2,500 - £1,000 - £800 = £700, and 4 whole months pass before 1 March 2027 ... Hold-back
+ * = the larger of £0 and £1,200 - £2,800, so £0 (the cap, the £700 built up over the 7 months since the last payment, is not
+ * reached)." The usual leftover is never below 0 (a short month covers nothing). A bill due this month is in this month's bills
+ * already (thisMonth.billsDue), so nothing more is held back for it.
+ */
+export function plainHeld(f: RightAnswerFixture): PlainHeld[] {
+  const mins = f.debts.reduce((t, d) => t + big(d.minimum), 0n);
+  const usual = monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - mins - savingAmount(f);
+  const leftover = maxC(0n, usual);
+  return longBills(f).map((b) => {
+    const bill = big(b.amount);
+    const since = b.lastPaid === null || b.lastPaid > f.asOf ? 0 : wholeMonths(b.lastPaid, f.asOf);
+    const share = (bill * BigInt(since) * 2n + BigInt(b.everyMonths)) / (BigInt(b.everyMonths) * 2n);
+    const builtUp = share < bill ? share : bill;
+    const months = wholeMonths(f.asOf, b.nextDue);
+    const uncovered = maxC(0n, bill - leftover * BigInt(months));
+    const thisMonth = b.nextDue.slice(0, 7) === f.asOf.slice(0, 7);
+    return { id: b.id, builtUp, uncovered, holdBack: thisMonth ? 0n : uncovered < builtUp ? uncovered : builtUp, months };
+  });
+}
+
+/** A yearly or every-3-month bill falls due inside the 90 days, after this month (this month's is in thisMonth.billsDue). */
+export function longDueInWindow(f: RightAnswerFixture): boolean {
+  const end = dayAfter(f.asOf, PATH_DAYS);
+  return longBills(f).some((b) => b.nextDue.slice(0, 7) !== f.asOf.slice(0, 7) ? b.nextDue < end : plusMonths(b.nextDue, b.everyMonths) < end);
+}
+
+/** The D-47 total held back from spare money. */
+export function plainHoldBack(f: RightAnswerFixture): Cents {
+  return plainHeld(f).reduce((t, h) => t + h.holdBack, 0n);
 }
 
 /**
@@ -248,7 +320,7 @@ export function cashMargin(f: RightAnswerFixture, cost: Cents, withDues: boolean
  */
 export function usualShortfall(f: RightAnswerFixture): Cents {
   const mins = f.debts.reduce((t, d) => t + big(d.minimum), 0n);
-  const left = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - mins - savingAmount(f);
+  const left = monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - mins - savingAmount(f);
   return left < 0n ? -left : 0n;
 }
 
@@ -315,7 +387,11 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
   // ("the path must stay above the net", FIN-02, SN-09: "Dips into your safety net"); past both it is Not yet (D-27, D-28).
   // D-52: irregular pay can land mid-month and the next pay can come after next month's bills, so the cash check reads the
   // day-by-day path's lowest point instead of the month-end figure (the same 90-day path the overdraft cases use).
-  const margin = (f.pay.irregular === undefined ? cashMargin(f, cost, true) : pathLow(f, cost)) + net.above;
+  // 05.4-19 (D-47, RC-10 "by 28 February she has £2,850 before the bill is taken"): a yearly or every-3-month bill inside the
+  // 90 days can take a later month below 0, so with one on the path the lower of the two figures decides.
+  const until = f.pay.irregular === undefined ? cashMargin(f, cost, true) : pathLow(f, cost);
+  const longLow = longDueInWindow(f) ? pathLow(f, cost) : until;
+  const margin = (longLow < until ? longLow : until) + net.above;
   const pastLimit = margin < -overdraftRoom(f);
   if (pastLimit && margin + net.lend < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
   // Room next: this month's money left (a month already below zero funds nothing). What it cannot cover comes from free
@@ -459,9 +535,21 @@ export function plainPathFlows(f: RightAnswerFixture, flows: readonly { date: st
   const firstPay = [...pays].find((d) => d > f.asOf) ?? null;
   // Undated bills still due land the day before the next pay; with irregular pay (no pay series) on the last day of this month.
   const monthEnd = `${ym}-${String(dim).padStart(2, '0')}`;
-  const dueDay = f.pay.irregular !== undefined ? monthEnd : firstPay === null ? null : dayAfter(firstPay, -1);
+  // 05.4-19: never later than this month's last day (they are this month's bills).
+  const before = firstPay === null ? null : dayAfter(firstPay, -1);
+  const dueDay = f.pay.irregular !== undefined ? monthEnd : before === null ? null : before < monthEnd ? before : monthEnd;
   const dated = f.bills.filter((b) => b.paidBy === 'me' && b.nextDue >= f.asOf && b.nextDue.slice(0, 7) === ym);
   const undated = big(f.thisMonth.billsDue) - dated.reduce((t, b) => t + big(b.amount), 0n);
+  // 05.4-19 (D-47): a yearly or every-3-month bill lands on each due date inside the 90 days (this month's is in `dated`).
+  const endDay = dayAfter(f.asOf, PATH_DAYS);
+  const longDues: { date: string; amount: Cents }[] = [];
+  for (const b of longBills(f)) {
+    for (let n = b.nextDue.slice(0, 7) === ym ? 1 : 0; ; n++) {
+      const d = plusMonths(b.nextDue, b.everyMonths * n);
+      if (d >= endDay) break;
+      if (d >= f.asOf) longDues.push({ date: d, amount: big(b.amount) });
+    }
+  }
   const out: { date: string; balance: Cents }[] = [];
   let money = sittingMoney(f);
   const saves = new Set(savingDates(f)); // D-67: each saving transfer leaves the account on its date
@@ -472,11 +560,16 @@ export function plainPathFlows(f: RightAnswerFixture, flows: readonly { date: st
     if (saves.has(date)) money -= savingAmount(f);
     // The usual bills land on payday; with irregular pay (D-52) there is no pay series, so on the 1st of each later month.
     const billsDay = f.pay.irregular === undefined ? pays.has(date) : date.slice(8, 10) === '01' && date.slice(0, 7) !== ym;
+    // 05.4-19 (FIN-11): a bill falls on the same day every month, so the part still due this month on its due day falls on that
+    // day (cut to the month's end) in each later month too; only the rest lands on payday.
+    const laterDue = undated > 0n && dueDay !== null ? undated : 0n;
     if (billsDay && !billsMonths.has(date.slice(0, 7))) {
       billsMonths.add(date.slice(0, 7));
-      money -= big(f.usualMonth.bills);
+      money -= big(f.usualMonth.bills) - laterDue;
     }
+    if (laterDue > 0n && date.slice(0, 7) !== ym && Number(date.slice(8, 10)) === Math.min(Number((dueDay as string).slice(8, 10)), Number(daysInMonthOf(date)))) money -= laterDue;
     for (const b of dated) if (b.nextDue === date) money -= big(b.amount);
+    for (const b of longDues) if (b.date === date) money -= b.amount;
     if (date === (dueDay ?? '') || (dueDay === null && i === 0)) money -= undated > 0n ? undated : 0n;
     const m = date.slice(0, 7);
     const spent =
@@ -629,7 +722,7 @@ export function planPathLow(f: RightAnswerFixture): Cents {
 
 /** The usual month's money left (pay less usual bills, everyday spending and the regular saving, D-67), before any plan. */
 function usualLeftOf(f: RightAnswerFixture): Cents {
-  return big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - savingAmount(f);
+  return monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - savingAmount(f);
 }
 
 /**
