@@ -15,9 +15,9 @@
     "afterBuyMonth": 0
   },
   "persona:sam:900000:cash": {
-    "code": "fits_uses_net",
-    "variant": null,
-    "afterBuyMonth": -87500
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
   },
   "persona:sam:900000:plan": {
     "code": "fits_month",
@@ -25,14 +25,14 @@
     "afterBuyMonth": null
   },
   "persona:maya:6000:cash": {
-    "code": "fits_uses_net",
-    "variant": null,
-    "afterBuyMonth": 74000
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
   },
   "persona:maya:50000:cash": {
-    "code": "fits_uses_net",
-    "variant": null,
-    "afterBuyMonth": 30000
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
   },
   "persona:maya:200000:cash": {
     "code": "not_yet",
@@ -45,19 +45,19 @@
     "afterBuyMonth": null
   },
   "persona:maya:900000:plan": {
-    "code": "fits_uses_net",
-    "variant": null,
+    "code": "not_yet",
+    "variant": "not_covered",
     "afterBuyMonth": null
   },
   "persona:riley:6000:cash": {
-    "code": "fits_uses_net",
-    "variant": null,
-    "afterBuyMonth": -36000
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
   },
   "persona:riley:50000:cash": {
-    "code": "fits_uses_net",
-    "variant": null,
-    "afterBuyMonth": -80000
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
   },
   "persona:riley:200000:cash": {
     "code": "not_yet",
@@ -70,8 +70,8 @@
     "afterBuyMonth": null
   },
   "persona:riley:900000:plan": {
-    "code": "monthly_short",
-    "variant": null,
+    "code": "not_yet",
+    "variant": "not_covered",
     "afterBuyMonth": null
   },
   "persona:leo:6000:cash": {
@@ -80,14 +80,14 @@
     "afterBuyMonth": -19484
   },
   "persona:leo:50000:cash": {
-    "code": "fits_unspent",
-    "variant": null,
-    "afterBuyMonth": -19484
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
   },
   "persona:leo:200000:cash": {
-    "code": "fits_uses_net",
-    "variant": null,
-    "afterBuyMonth": -147484
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
   },
   "persona:leo:900000:cash": {
     "code": "not_yet",
@@ -95,8 +95,8 @@
     "afterBuyMonth": null
   },
   "persona:leo:900000:plan": {
-    "code": "monthly_short",
-    "variant": null,
+    "code": "not_yet",
+    "variant": "not_covered",
     "afterBuyMonth": null
   },
   "persona:tia:6000:cash": {
@@ -121,22 +121,22 @@
   },
   "persona:tia:900000:plan": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:dana:6000:cash": {
     "code": "fits_month",
-    "variant": "small_net",
+    "variant": null,
     "afterBuyMonth": 77710
   },
   "persona:dana:50000:cash": {
     "code": "fits_month",
-    "variant": "small_net",
+    "variant": null,
     "afterBuyMonth": 33710
   },
   "persona:dana:200000:cash": {
     "code": "fits_unspent",
-    "variant": "small_net",
+    "variant": null,
     "afterBuyMonth": 0
   },
   "persona:dana:900000:cash": {
@@ -146,7 +146,7 @@
   },
   "persona:dana:900000:plan": {
     "code": "fits_month",
-    "variant": "small_net",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:kim:6000:cash": {
@@ -176,18 +176,18 @@
   },
   "persona:priya:6000:cash": {
     "code": "fits_month",
-    "variant": "small_net",
+    "variant": null,
     "afterBuyMonth": 114000
   },
   "persona:priya:50000:cash": {
     "code": "fits_month",
-    "variant": "small_net",
+    "variant": null,
     "afterBuyMonth": 70000
   },
   "persona:priya:200000:cash": {
-    "code": "fits_uses_net",
-    "variant": null,
-    "afterBuyMonth": -80000
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
   },
   "persona:priya:900000:cash": {
     "code": "not_yet",
@@ -196,7 +196,7 @@
   },
   "persona:priya:900000:plan": {
     "code": "fits_month",
-    "variant": "small_net",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:jordan:6000:cash": {
@@ -226,7 +226,7 @@
   },
   "persona:audit-p1:6000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 2000
   },
   "persona:audit-p1:50000:cash": {
@@ -276,12 +276,12 @@
   },
   "persona:audit-p2-rich:6000:cash": {
     "code": "fits_unspent",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": -100000
   },
   "persona:audit-p2-rich:50000:cash": {
     "code": "fits_unspent",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": -100000
   },
   "persona:audit-p2-rich:200000:cash": {
@@ -301,12 +301,12 @@
   },
   "persona:audit-p3:6000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 54000
   },
   "persona:audit-p3:50000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 10000
   },
   "persona:audit-p3:200000:cash": {
@@ -321,7 +321,7 @@
   },
   "persona:audit-p3:900000:plan": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:audit-p4:6000:cash": {
@@ -401,12 +401,12 @@
   },
   "persona:audit-p6:6000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 69000
   },
   "persona:audit-p6:50000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 25000
   },
   "persona:audit-p6:200000:cash": {
@@ -421,17 +421,17 @@
   },
   "persona:audit-p6:900000:plan": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:audit-p6-lines:6000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 69000
   },
   "persona:audit-p6-lines:50000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 25000
   },
   "persona:audit-p6-lines:200000:cash": {
@@ -446,22 +446,22 @@
   },
   "persona:audit-p6-lines:900000:plan": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:audit-p7:6000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 74000
   },
   "persona:audit-p7:50000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 30000
   },
   "persona:audit-p7:200000:cash": {
     "code": "fits_unspent",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 0
   },
   "persona:audit-p7:900000:cash": {
@@ -471,17 +471,17 @@
   },
   "persona:audit-p7:900000:plan": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:audit-p8:6000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 74000
   },
   "persona:audit-p8:50000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 30000
   },
   "persona:audit-p8:200000:cash": {
@@ -496,12 +496,12 @@
   },
   "persona:audit-p8:900000:plan": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:audit-p9:6000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 14000
   },
   "persona:audit-p9:50000:cash": {
@@ -526,7 +526,7 @@
   },
   "persona:audit-p10:6000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": 54000
   },
   "persona:audit-p10:50000:cash": {
@@ -546,12 +546,12 @@
   },
   "persona:audit-p10:900000:plan": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": null,
     "afterBuyMonth": null
   },
   "gen:0": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "not_yet",
+    "variant": "payday",
     "afterBuyMonth": null
   },
   "gen:1": {
@@ -770,9 +770,9 @@
     "afterBuyMonth": null
   },
   "gen:44": {
-    "code": "fits_month",
-    "variant": null,
-    "afterBuyMonth": 466194
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
   },
   "gen:45": {
     "code": "needs_input",
@@ -890,14 +890,14 @@
     "afterBuyMonth": null
   },
   "gen:68": {
-    "code": "fits_uses_net",
-    "variant": null,
-    "afterBuyMonth": 0
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
   },
   "gen:69": {
-    "code": "fits_month",
-    "variant": null,
-    "afterBuyMonth": 532125
+    "code": "not_yet",
+    "variant": "payday",
+    "afterBuyMonth": null
   },
   "gen:70": {
     "code": "needs_input",
@@ -1165,9 +1165,9 @@
     "afterBuyMonth": null
   },
   "gen:123": {
-    "code": "fits_unspent",
-    "variant": null,
-    "afterBuyMonth": 0
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
   },
   "gen:124": {
     "code": "not_yet",
@@ -1180,8 +1180,8 @@
     "afterBuyMonth": null
   },
   "gen:126": {
-    "code": "monthly_short",
-    "variant": null,
+    "code": "not_yet",
+    "variant": "not_covered",
     "afterBuyMonth": null
   },
   "gen:127": {

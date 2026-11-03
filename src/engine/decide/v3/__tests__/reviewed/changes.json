@@ -87,24 +87,6 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "persona:sam:900000:cash",
-      "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
-        "afterBuyMonth": null
-      },
-      "after": {
-        "code": "fits_uses_net",
-        "variant": null,
-        "afterBuyMonth": -87500
-      },
-      "reason": "D-35: Sam's 9,000 fund is his safety net; 5,725 above the 3,275 starter is spare and 875 more comes from the protected part, so Not yet becomes Dips into your safety net.",
-      "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
-    },
-    {
-      "fixId": "FIN-01",
       "key": "persona:maya:6000:cash",
       "before": {
         "code": "not_yet",
@@ -112,14 +94,13 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_uses_net",
+        "code": "fits_month",
         "variant": null,
         "afterBuyMonth": 74000
       },
-      "reason": "D-35/FIN-02: Maya's 90-day path goes below 0 with no pay recorded; her 3,000 net carries it, so Not yet becomes Dips into your safety net.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -130,14 +111,13 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_uses_net",
+        "code": "fits_month",
         "variant": null,
         "afterBuyMonth": 30000
       },
-      "reason": "D-35/FIN-02: the 90-day path only stays above 0 with money from Maya's 3,000 net, so Not yet becomes Dips into your safety net.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -148,14 +128,13 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_uses_net",
+        "code": "fits_month",
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "D-35/FIN-02: the plan's payments take the 90-day path below 0 and Maya's net carries it, so Not yet becomes Dips into your safety net.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -166,14 +145,13 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_uses_net",
-        "variant": null,
-        "afterBuyMonth": -36000
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
       },
-      "reason": "D-35/FIN-02: Riley's typical month is short; her 2,000 net (below its 3,100 starter) carries the 60 shoes, so Not yet becomes Dips into your safety net.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -184,14 +162,47 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_uses_net",
-        "variant": null,
-        "afterBuyMonth": -80000
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
       },
-      "reason": "D-35/FIN-02: the 500 purchase is more than Riley's spare money, and her 2,000 net covers it, so Not yet becomes Dips into your safety net.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:riley:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:riley:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -202,14 +213,13 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "monthly_short",
-        "variant": null,
+        "code": "not_yet",
+        "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "D-35: the net now carries the one-off part, so the answer is led by the monthly payment, which her short month cannot carry: Not yet becomes Short each month.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -221,31 +231,12 @@
       },
       "after": {
         "code": "fits_unspent",
-        "variant": null,
+        "variant": "extra_savings",
         "afterBuyMonth": -19484
       },
-      "reason": "D-35: Leo's 3,000 fund is 620 above his 2,380 starter, and money above the size is spare, so Not yet becomes Fits from spare money and the net stays whole.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
-    },
-    {
-      "fixId": "FIN-01",
-      "key": "persona:leo:200000:cash",
-      "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
-        "afterBuyMonth": null
-      },
-      "after": {
-        "code": "fits_uses_net",
-        "variant": null,
-        "afterBuyMonth": -147484
-      },
-      "reason": "D-35/D-41: Leo's spare money and the 620 above his net's size do not cover 2,000, so the rest comes from his net: Not yet becomes Dips into your safety net.",
-      "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -260,10 +251,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "D-35: the net now carries the one-off part, so the answer is led by the monthly payment, which his usual month cannot carry: Not yet becomes Short each month.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -278,10 +268,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "D-35: Tia has no safety net, so a plan that fits is the amber Fits, but no safety net, with the line that 1 month is a start; same code and figures.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -296,10 +285,9 @@
         "variant": "small_net",
         "afterBuyMonth": 77710
       },
-      "reason": "D-35: Dana's 3,000 net is below its 4,100 starter (bills, debt minimums and everyday spending), so a fit is the amber Fits, but your safety net is small.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -314,10 +302,9 @@
         "variant": "small_net",
         "afterBuyMonth": 33710
       },
-      "reason": "D-35: Dana's 3,000 net is below its 4,100 starter, so the fit is the amber Fits, but your safety net is small; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -332,10 +319,9 @@
         "variant": "small_net",
         "afterBuyMonth": 0
       },
-      "reason": "D-35: Dana's 3,000 net is below its 4,100 starter, so the fit from earlier money is the amber Fits, but your safety net is small.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -350,10 +336,9 @@
         "variant": "small_net",
         "afterBuyMonth": null
       },
-      "reason": "D-35: Dana's 3,000 net is below its 4,100 starter, so the plan that fits is the amber Fits, but your safety net is small; same code.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -368,10 +353,9 @@
         "variant": "small_net",
         "afterBuyMonth": 114000
       },
-      "reason": "D-35: Priya's 1,500 net is just below its 1,600 starter, so a fit is the amber Fits, but your safety net is small; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -386,10 +370,9 @@
         "variant": "small_net",
         "afterBuyMonth": 70000
       },
-      "reason": "D-35: Priya's 1,500 net is just below its 1,600 starter, so a fit is the amber Fits, but your safety net is small; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -400,14 +383,13 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_uses_net",
-        "variant": null,
-        "afterBuyMonth": -80000
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": null
       },
-      "reason": "D-35/D-41: 2,000 is more than Priya's spare money, and her 1,500 net covers the rest, so Not yet becomes Dips into your safety net.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -422,10 +404,9 @@
         "variant": "small_net",
         "afterBuyMonth": null
       },
-      "reason": "D-35: Priya's 1,500 net is just below its 1,600 starter, so the plan that fits is the amber Fits, but your safety net is small; same code.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -440,10 +421,43 @@
         "variant": "no_net",
         "afterBuyMonth": 2000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p2:6000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p2:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -455,13 +469,12 @@
       },
       "after": {
         "code": "fits_unspent",
-        "variant": "no_net",
+        "variant": "month_already_short",
         "afterBuyMonth": -100000
       },
-      "reason": "D-35: no safety net is saved, so the fit from earlier money is the amber Fits, but no safety net; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -473,13 +486,12 @@
       },
       "after": {
         "code": "fits_unspent",
-        "variant": "no_net",
+        "variant": "month_already_short",
         "afterBuyMonth": -100000
       },
-      "reason": "D-35: no safety net is saved, so the fit from earlier money is the amber Fits, but no safety net; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -494,10 +506,9 @@
         "variant": "no_net",
         "afterBuyMonth": 54000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -512,10 +523,9 @@
         "variant": "no_net",
         "afterBuyMonth": 10000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -530,10 +540,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "D-35: no safety net is saved, so the plan that fits is the amber Fits, but no safety net; same code.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -548,10 +557,9 @@
         "variant": "no_net",
         "afterBuyMonth": 69000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -566,10 +574,9 @@
         "variant": "no_net",
         "afterBuyMonth": 25000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -584,10 +591,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "D-35: no safety net is saved, so the plan that fits is the amber Fits, but no safety net; same code.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -602,10 +608,9 @@
         "variant": "no_net",
         "afterBuyMonth": 69000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -620,10 +625,9 @@
         "variant": "no_net",
         "afterBuyMonth": 25000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -638,10 +642,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "D-35: no safety net is saved, so the plan that fits is the amber Fits, but no safety net; same code.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -656,10 +659,9 @@
         "variant": "no_net",
         "afterBuyMonth": 74000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -674,10 +676,9 @@
         "variant": "no_net",
         "afterBuyMonth": 30000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -692,10 +693,9 @@
         "variant": "no_net",
         "afterBuyMonth": 0
       },
-      "reason": "D-35: no safety net is saved, so the fit from earlier money is the amber Fits, but no safety net; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -710,10 +710,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "D-35: no safety net is saved, so the plan that fits is the amber Fits, but no safety net; same code.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -728,10 +727,9 @@
         "variant": "no_net",
         "afterBuyMonth": 74000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -746,10 +744,9 @@
         "variant": "no_net",
         "afterBuyMonth": 30000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -764,10 +761,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "D-35: no safety net is saved, so the plan that fits is the amber Fits, but no safety net; same code.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -782,10 +778,9 @@
         "variant": "no_net",
         "afterBuyMonth": 14000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -800,10 +795,9 @@
         "variant": "no_net",
         "afterBuyMonth": 54000
       },
-      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -818,10 +812,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "D-35: no safety net is saved, so the plan that fits is the amber Fits, but no safety net; same code.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -836,10 +829,281 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "D-35: this person's fund is well above its 1-month starter; the money above the size is spare and keeps the 90-day path above 0, so Not yet (payday) becomes Fits.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:13",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "month_already_short",
+        "afterBuyMonth": -578983
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:15",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:16",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:19",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:20",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:21",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:26",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:27",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "month_already_short",
+        "afterBuyMonth": -650888
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:28",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:30",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": -323512
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:31",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": 422206
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:35",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:36",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:37",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:39",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:41",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -854,10 +1118,128 @@
         "variant": null,
         "afterBuyMonth": 466194
       },
-      "reason": "D-35: the fund is far above its 1-month starter; the money above the size is spare and keeps the 90-day path above 0, so Not yet becomes Fits.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:45",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "month_already_short",
+        "afterBuyMonth": -120713
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:47",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:49",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:56",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:60",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:61",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:67",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -868,14 +1250,13 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_uses_net",
+        "code": "fits_unspent",
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "D-35/FIN-02: spare money (with the money above the net's size) pays the price, but the 90-day path only stays above 0 with the net's money, so Not yet becomes Dips into your safety net.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -890,10 +1271,349 @@
         "variant": null,
         "afterBuyMonth": 532125
       },
-      "reason": "D-35: the fund is far above its 1-month starter; the money above the size is spare and keeps the 90-day path above 0, so Not yet (payday) becomes Fits.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:75",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:82",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": 426919
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:86",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:88",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:91",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:92",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:97",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "month_already_short",
+        "afterBuyMonth": -594327
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:98",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:99",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:101",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:102",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:103",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:105",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:111",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuyMonth": 111465
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:112",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:113",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:117",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:118",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:121",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:122",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -908,10 +1628,26 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "D-35: the money saved above the net's 1-month size is spare and keeps the 90-day path above 0, so Not yet becomes Fits from spare money.",
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:125",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     },
     {
       "fixId": "FIN-01",
@@ -923,13 +1659,488 @@
       },
       "after": {
         "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:131",
+      "before": {
+        "code": "needs_input",
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "D-35: the money above the net's size now carries the one-off part, so the answer is led by the monthly payment, which the usual month cannot carry: Not yet becomes Short each month.",
+      "after": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": 150757
+      },
+      "reason": "",
       "approved": false,
-      "approvedAt": "2026-11-03",
-      "withdrawn": "2026-11-03: owner withdrew approval pending re-audit of situations (D-53)"
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:132",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:133",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:134",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:135",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:144",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:146",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:149",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:151",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:152",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "no_net",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:154",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "month_already_short",
+        "afterBuyMonth": -596186
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:156",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:162",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:166",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:168",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 538508
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:169",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:171",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:173",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:174",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:175",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:183",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:187",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:189",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:191",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:193",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:194",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:197",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 25670
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:199",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     }
   ]
 }
