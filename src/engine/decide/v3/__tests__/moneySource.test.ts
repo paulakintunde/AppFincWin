@@ -5,11 +5,13 @@
 import { minorUnits } from '../../../money/types';
 import { openCashPath, type CashPathV3 } from '../cash/path';
 import { evaluate } from '../evaluate';
-import { cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit, spareInAccount } from '../moneySource';
+import { cappedSpare, confirmedUnspent, moveMoneyBy, savingTransfers, sourceSplit, spareInAccount } from '../moneySource';
 import { prepare } from '../prepare';
 import type { Result } from '../types';
 import { toEngineInputs } from './rightAnswers/fixture';
 import { loadCases } from './rightAnswers/loader';
+import { v3Series } from './helpers/fixtures';
+import { corpus } from './reviewed/corpus';
 
 const mu = minorUnits;
 const fixtureOf = (id: string) => {
@@ -85,6 +87,57 @@ describe('moveMoneyBy (D-58)', () => {
     expect(moveMoneyBy(p, mu(400))).toEqual({ amount: 400, date: '2026-11-16' });
     expect(moveMoneyBy(p, mu(0))).toBeNull();
     expect(moveMoneyBy(path(['2026-11-15', 0], ['2026-11-16', 5]), mu(10_000))).toBeNull();
+  });
+});
+
+describe('savingTransfers (D-58)', () => {
+  const save = (over: Partial<Parameters<typeof v3Series>[0]> = {}) =>
+    v3Series({ id: 's1', role: 'saving', cadence: { unit: 'month', every: 1 }, anchorDate: '2026-09-06', amount: 20_000, ...over });
+
+  it('each confirmed live fixed saving or investing occurrence from asOf on, at its amount', () => {
+    expect(savingTransfers([save()], new Set(), '2026-10-03', 90)).toEqual([
+      { date: '2026-10-06', amount: 20_000 },
+      { date: '2026-11-06', amount: 20_000 },
+      { date: '2026-12-06', amount: 20_000 },
+    ]);
+    expect(savingTransfers([save({ role: 'investing', savingMode: 'fixed' })], new Set(), '2026-10-03', 90)).toHaveLength(3);
+  });
+
+  it('an occurrence already logged is left out; flexible, dismissed, unconfirmed and other roles give none', () => {
+    expect(savingTransfers([save()], new Set(['s1|2026-10-06']), '2026-10-03', 90).map((f) => f.date)).toEqual(['2026-11-06', '2026-12-06']);
+    expect(savingTransfers([save({ savingMode: 'flexible' })], new Set(), '2026-10-03', 90)).toEqual([]);
+    expect(savingTransfers([save({ status: 'dismissed' })], new Set(), '2026-10-03', 90)).toEqual([]);
+    expect(savingTransfers([save({ confirmed: false })], new Set(), '2026-10-03', 90)).toEqual([]);
+    expect(savingTransfers([save({ role: 'bill' })], new Set(), '2026-10-03', 90)).toEqual([]);
+  });
+});
+
+describe('Maya: the move-by amount counts her regular saving (D-58, Plan-49 re-run)', () => {
+  const CORPUS = corpus();
+  const caseOf = (key: string) => {
+    const c = CORPUS.find((x) => x.key === key);
+    if (c === undefined) throw new RangeError(key);
+    return c;
+  };
+
+  it('$500 cash: move $506.67 by 2026-11-01; the answer and the cash check are unchanged', () => {
+    // by hand (audit): the account-only path's low point was -306.67 on 2026-11-01; the $200 saving on 2026-10-06 also leaves
+    // the everyday account, so it is -506.67: 30,667 + 20,000 = 50,667.
+    const { inputs, check } = caseOf('persona:maya:50000:cash');
+    const ev = evaluate(inputs, check);
+    expect(ev.result.code).toBe('fits_month');
+    expect(ev.result.variant).toBeNull();
+    expect(fact(ev.result, 'move_money_by')).toEqual({ amount: 50_667, date: '2026-11-01' });
+    // the main cash path still leaves saving out (pausable): low point $693.33 on 2026-11-04 (audit)
+    expect(ev.cash).toMatchObject({ kind: 'ok', lowest: { date: '2026-11-04', balance: 69_333 } });
+  });
+
+  it('the 48-month plan: move $225.97 by 2026-11-03', () => {
+    // by hand (audit): 2,597 + 20,000 = 22,597; with the saving the account first goes below 0 on 2026-11-03, a day earlier
+    const { inputs, check } = caseOf('persona:maya:900000:plan');
+    const r = evaluate(inputs, check).result;
+    expect(r.code).toBe('fits_month');
+    expect(fact(r, 'move_money_by')).toEqual({ amount: 22_597, date: '2026-11-03' });
   });
 });
 

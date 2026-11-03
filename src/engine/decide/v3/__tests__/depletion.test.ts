@@ -8,11 +8,13 @@ import { evaluate } from '../evaluate';
 import { NO_NET, type ResolvedNet } from '../safetyNet';
 import type { CheckV2, Fact, Result, Schedule, V3Inputs } from '../types';
 import frozen from './golden/gen126-depletion.json';
+import frozen16 from './golden/gen16-interest.json';
 import { corpus } from './reviewed/corpus';
 
 const mu = minorUnits;
 const revive = (_k: string, v: unknown): unknown => (v !== null && typeof v === 'object' && '$bigint' in v ? BigInt((v as { $bigint: string }).$bigint) : v);
 const gen126 = JSON.parse(JSON.stringify(frozen), revive) as { inputs: V3Inputs; check: CheckV2 };
+const gen16 = JSON.parse(JSON.stringify(frozen16), revive) as { inputs: V3Inputs; check: CheckV2 };
 
 const CORPUS = corpus();
 const caseOf = (key: string): { inputs: V3Inputs; check: CheckV2 } => {
@@ -87,6 +89,13 @@ describe('the depletion lines through evaluate (D-54, D-60, D-63)', () => {
     ]);
   });
 
+  it('gen:16 (frozen): the interest line counts the first payment due today once (Plan-49 re-run): $109.93, $54,060.83 in all', () => {
+    // by hand (audit): price 4,995,454 + tax, 2 payments; the first, 2,703,042, is due today; total paid 5,406,083 holds it once.
+    const r = evaluate(gen16.inputs, gen16.check).result;
+    expect(r.code).toBe('not_yet');
+    expect(r.facts.find((f) => f.code === 'interest_is_a_cost')?.values).toEqual({ interest: 10_993, total: 5_406_083 });
+  });
+
   it('no depletion line on a plain fit with a usual month that balances (Maya $60)', () => {
     const { inputs, check } = caseOf('persona:maya:6000:cash');
     const r = evaluate(inputs, check).result;
@@ -110,6 +119,7 @@ describe('depletionFacts (every branch)', () => {
     typicalIncome: mu(300_000),
     net: net({}),
     netTaken: mu(0),
+    firstNow: mu(0),
   };
   const codes = (d: DepletionInput): string[] => depletionFacts(d).map((f) => f.code);
 
@@ -148,5 +158,14 @@ describe('depletionFacts (every branch)', () => {
   it('interest_is_a_cost on a plan with interest only', () => {
     expect(depletionFacts({ ...base, schedule: sched(7_000), dayOne: mu(1_000) }).find((f) => f.code === 'interest_is_a_cost')?.values).toEqual({ interest: 7_000, total: 68_000 });
     expect(codes({ ...base, schedule: sched(0) })).not.toContain('interest_is_a_cost');
+  });
+
+  it('interest_is_a_cost total: deposit + every payment; a first payment due today is counted once (Plan-49 re-run)', () => {
+    const at = (d: Partial<DepletionInput>) => depletionFacts({ ...base, ...d }).find((f) => f.code === 'interest_is_a_cost')?.values;
+    // a deposit of 1,000 and no payment today: 1,000 + 67,000
+    expect(at({ schedule: sched(7_000), dayOne: mu(1_000), firstNow: mu(0) })).toEqual({ interest: 7_000, total: 68_000 });
+    // day one 28,000 = deposit 1,000 + first payment 27,000 due today; totalPaid 54,000 already holds it: 1,000 + 54,000
+    const s54 = { totalInterest: mu(2_000), totalPaid: mu(54_000) } as unknown as Schedule;
+    expect(at({ schedule: s54, dayOne: mu(28_000), firstNow: mu(27_000) })).toEqual({ interest: 2_000, total: 55_000 });
   });
 });
