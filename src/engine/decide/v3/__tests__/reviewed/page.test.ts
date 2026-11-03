@@ -132,6 +132,9 @@ describe('reviewed page', () => {
     expect(large.steps.join(' ')).toContain('only the locked safety net ($2,000.00) could pay it');
     const riley = cases.find((c) => c.key === 'persona:riley:900000:plan');
     expect(breakdown(riley!).steps.join(' ')).toContain('a plan payment of about');
+    // Riley $9,000 cash: the path goes $9,600 below $0, more than the $2,000 net, so the locked net is not named as the payer.
+    const rileyCash = cases.find((c) => c.key === 'persona:riley:900000:cash');
+    expect(breakdown(rileyCash!).steps.join(' ')).toContain('goes $9,600.00 below $0.00 with it, more than even the locked safety net ($2,000.00) holds');
     for (const k of Object.keys(TIER_CASES) as (keyof typeof TIER_CASES)[]) {
       const b = breakdown(tierCase(TIER_CASES[k], k));
       const all = [...b.steps, ...b.sections.flatMap((s) => s.rows.flat())].join(' ');

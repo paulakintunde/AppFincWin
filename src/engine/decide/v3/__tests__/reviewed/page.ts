@@ -531,11 +531,13 @@ function d65Step(ev: Evaluation, res: Evaluation['result'], m: (n: number) => st
     const why =
       p !== null && p.monthly > 0
         ? `a plan payment of about ${m(p.monthly)} a month makes the ${m(S)} shortfall bigger`
-        : ev.cash.kind === 'not_covered' && net !== undefined && net.locked && net.floor > 0
+        : ev.cash.kind === 'not_covered' && net !== undefined && net.locked && net.floor > 0 && ev.cash.shortBy <= net.floor
           ? `only the locked safety net (${m(net.floor)}) could pay it, and it is left out (D-61)`
-          : ev.cash.kind !== 'ok'
-            ? `the 90-day path goes below ${m(0)} with it`
-            : `the code ${res.code} is not a fit`;
+          : ev.cash.kind === 'not_covered' && net !== undefined && net.locked && net.floor > 0
+            ? `the 90-day path goes ${m(ev.cash.shortBy)} below ${m(0)} with it, more than even the locked safety net (${m(net.floor)}) holds`
+            : ev.cash.kind !== 'ok'
+              ? `the 90-day path goes below ${m(0)} with it`
+              : `the code ${res.code} is not a fit`;
     return `How long your money lasts: the usual month is ${m(S)} short, and ${why}, so the tier is Large: "No: your month is already short" (D-65).`;
   }
   const fromEnvelope = res.split.filter((x) => x.source === 'envelope').reduce((a, x) => a + x.amount, 0);
