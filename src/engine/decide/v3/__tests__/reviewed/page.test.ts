@@ -36,8 +36,8 @@ describe('reviewed page', () => {
       const listed = file.changes.filter((c) => c.fixId === fix);
       if (listed.length === 0) continue;
       // 05.4-56 (D-69): a price's share of monthly pay is not a rate and may pass 100% (up to 1,500% by design); it is left out here
-      // and pinned by its own test below.
-      const html = buildPage(fix, listed, cases).replace(/is \d+\.\d{2}% of monthly pay/g, '');
+      // and pinned by its own test below (the audit notes also name the draw, "0.1% to 1,500% of pay").
+      const html = buildPage(fix, listed, cases).replace(/(\d[\d,]*(?:\.\d+)?% to )?\d[\d,]*(?:\.\d+)?% of (monthly )?pay/g, '');
       const rates = [...html.matchAll(/(-?\d[\d,]*(?:\.\d+)?)%/g)].map((m) => Number((m[1] as string).replace(/,/g, '')));
       expect(rates.length).toBeGreaterThan(0);
       for (const r of rates) expect(r >= 0 && r <= 100).toBe(true);

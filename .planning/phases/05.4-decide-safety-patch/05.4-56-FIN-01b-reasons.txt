@@ -1,0 +1,153 @@
+gen:0: D-69 new purchase (43.93% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:3: D-69 new purchase (261.92% of monthly pay, plan 57 months); right answer Fits (low month), 1552.96 left that month; fits this month's room; audited by hand
+gen:4: D-69 new purchase (15.64% of monthly pay, plan 48 months); right answer Fits, 473.25 left that month; fits this month's room; audited by hand
+gen:5: D-69 new purchase (56.82% of monthly pay, plan 24 months); right answer Fits (low month); fits this month's room; audited by hand
+gen:7: D-69 new purchase (190.70% of monthly pay, plan 56 months); right answer Fits (low month); fits this month's room; audited by hand
+gen:9: D-69 new purchase (0.30% of monthly pay, cash); right answer Fits (but no safety net), 163.74 left that month; fits this month's room; audited by hand
+gen:10: D-69 new purchase (81.37% of monthly pay, cash); right answer Fits from spare money (but your safety net is small), 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:11: D-69 new purchase (299.09% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -254.22 left that month; D-65 Moderate; audited by hand
+gen:12: D-69 new purchase (11.61% of monthly pay, plan 18 months); right answer No: your month is already short (code: Short each month); D-65 Large (plan payment); audited by hand
+gen:13: D-69 new purchase (130.01% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:14: D-69 new purchase (29.22% of monthly pay, plan 24 months); right answer Fits, 1239.13 left that month; fits this month's room; audited by hand
+gen:15: D-69 new purchase (98.47% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:18: D-69 new purchase (9.95% of monthly pay, plan 18 months); right answer Fits, 3370.73 left that month; fits this month's room; audited by hand
+gen:19: D-69 new purchase (32.01% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:20: D-69 new purchase (38.22% of monthly pay, plan 12 months); right answer Fits from spare money (low month), 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:21: D-69 new purchase (0.68% of monthly pay, plan 12 months); right answer Fits, 2420.08 left that month; fits this month's room; audited by hand
+gen:22: D-69 new purchase (3.16% of monthly pay, plan 6 months); right answer Fits (but your safety net is small); fits this month's room; audited by hand
+gen:23: D-69 new purchase (298.24% of monthly pay, cash); right answer Needs a figure first; asks for the spare-money figure first; audited by hand
+gen:24: D-69 new purchase (0.61% of monthly pay, plan 20 months); right answer Fits, 2745.66 left that month; fits this month's room; audited by hand
+gen:30: D-69 new purchase (43.83% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -1397.30 left that month; D-65 Moderate; audited by hand
+gen:33: D-69 new purchase (9.53% of monthly pay, cash); right answer Fits, 152.00 left that month; fits this month's room; audited by hand
+gen:34: D-69 new purchase (70.79% of monthly pay, plan 48 months); right answer Fits; fits this month's room; audited by hand
+gen:35: D-69 new purchase (17.16% of monthly pay, cash); right answer Fits (but no safety net), 852.30 left that month; fits this month's room; audited by hand
+gen:36: D-69 new purchase (10.26% of monthly pay, cash); right answer Fits, 462.08 left that month; fits this month's room; audited by hand
+gen:37: D-69 new purchase (24.81% of monthly pay, cash); right answer Fits, 144.45 left that month; fits this month's room; audited by hand
+gen:38: D-69 new purchase (70.20% of monthly pay, plan 3 months); right answer Fits, 1053.77 left that month; fits this month's room; audited by hand
+gen:40: D-69 new purchase (150.46% of monthly pay, plan 36 months); right answer Fits, 409.18 left that month; fits this month's room; audited by hand
+gen:41: D-69 new purchase (45.19% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:42: D-69 new purchase (25.98% of monthly pay, plan 3 months); right answer Fits, 1351.23 left that month; fits this month's room; audited by hand
+gen:44: D-69 new purchase (49.36% of monthly pay, cash); right answer Fits from extra savings, but your month is already short (code: Fits from spare money), -846.53 left that month; D-65 Moderate, extra savings; audited by hand
+gen:45: D-69 new purchase (63.56% of monthly pay, plan 53 months); right answer Fits; fits this month's room; audited by hand
+gen:46: D-69 new purchase (70.05% of monthly pay, plan 36 months); right answer Fits, 641.31 left that month; fits this month's room; audited by hand
+gen:47: D-69 new purchase (1279.26% of monthly pay, plan 6 months); right answer Not yet (not covered); path below $0 (not covered); audited by hand
+gen:48: D-69 new purchase (168.01% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -634.02 left that month; D-65 Moderate; audited by hand
+gen:49: D-69 new purchase (264.46% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:51: D-69 new purchase (509.44% of monthly pay, cash); right answer Fits from extra savings, but your month is already short (code: Fits from spare money), -118.21 left that month; D-65 Moderate, extra savings; audited by hand
+gen:52: D-69 new purchase (100.20% of monthly pay, plan 34 months); right answer No: your month is already short (code: Short each month), -67.06 left that month; D-65 Large (plan payment); audited by hand
+gen:54: D-69 new purchase (92.60% of monthly pay, cash); right answer Fits from spare money (but no safety net), 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:55: D-69 new purchase (192.25% of monthly pay, plan 24 months); right answer Fits, 2493.17 left that month; fits this month's room; audited by hand
+gen:56: D-69 new purchase (15.13% of monthly pay, plan 48 months); right answer Fits, 1062.29 left that month; fits this month's room; audited by hand
+gen:59: D-69 new purchase (25.75% of monthly pay, plan 12 months); right answer Fits (low month), 1773.81 left that month; fits this month's room; audited by hand
+gen:60: D-69 new purchase (39.24% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:61: D-69 new purchase (20.60% of monthly pay, cash); right answer Fits from spare money (but your safety net is small), 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:62: D-69 new purchase (12.78% of monthly pay, cash); right answer Fits, 1656.67 left that month; fits this month's room; audited by hand
+gen:63: D-69 new purchase (46.74% of monthly pay, plan 6 months); right answer Fits; fits this month's room; audited by hand
+gen:64: D-69 new purchase (0.75% of monthly pay, plan 22 months); right answer Fits (but no safety net), 2588.49 left that month; fits this month's room; audited by hand
+gen:65: D-69 new purchase (53.65% of monthly pay, plan 60 months); right answer Fits; fits this month's room; audited by hand
+gen:66: D-69 new purchase (152.67% of monthly pay, cash); right answer Fits from extra savings, 0.00 left that month; one-off ladder, extra savings (D-62); audited by hand
+gen:67: D-69 new purchase (1273.71% of monthly pay, cash); right answer Not yet (not covered); path below $0 (not covered); audited by hand
+gen:68: D-69 new purchase (32.13% of monthly pay, plan 18 months); right answer Fits, 3925.28 left that month; fits this month's room; audited by hand
+gen:69: D-69 new purchase (89.84% of monthly pay, plan 60 months); right answer Fits, 3024.97 left that month; fits this month's room; audited by hand
+gen:70: D-69 new purchase (122.11% of monthly pay, plan 3 months) judged by cash (D-68); right answer Fits from spare money, 0.00 left that month; the whole cost as a one-off, spare money; audited by hand
+gen:71: D-69 new purchase (25.95% of monthly pay, plan 6 months); right answer Short each month, 0.00 left that month; monthly part (QE-12 rule); audited by hand
+gen:72: D-69 new purchase (92.87% of monthly pay, plan 18 months); right answer Fits from spare money (but your safety net is small), 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:73: D-69 new purchase (5.08% of monthly pay, cash); right answer Fits (but no safety net), 436.76 left that month; fits this month's room; audited by hand
+gen:75: D-69 new purchase (13.93% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:76: D-69 new purchase (55.81% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:77: D-69 new purchase (124.39% of monthly pay, plan 16 months); right answer Fits, 638.77 left that month; fits this month's room; audited by hand
+gen:78: D-69 new purchase (97.10% of monthly pay, plan 46 months); right answer Fits (but your safety net is small), 2962.22 left that month; fits this month's room; audited by hand
+gen:79: D-69 new purchase (638.43% of monthly pay, plan 60 months); right answer No: your month is already short (code: Short each month), -62.21 left that month; D-65 Large (plan payment); audited by hand
+gen:80: D-69 new purchase (136.25% of monthly pay, plan 16 months); right answer No: your month is already short (code: Short each month); D-65 Large (plan payment); audited by hand
+gen:81: D-69 new purchase (43.00% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:82: D-69 new purchase (5.47% of monthly pay, plan 7 months); right answer Fits, 1703.91 left that month; fits this month's room; audited by hand
+gen:83: D-69 new purchase (68.65% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:84: D-69 new purchase (127.84% of monthly pay, plan 48 months); right answer Fits, 1746.19 left that month; fits this month's room; audited by hand
+gen:86: D-69 new purchase (292.83% of monthly pay, cash); right answer No: your month is already short (code: Not yet); D-65 Large; audited by hand
+gen:87: D-69 new purchase (53.23% of monthly pay, plan 33 months); right answer Fits, 351.01 left that month; fits this month's room; audited by hand
+gen:88: D-69 new purchase (181.00% of monthly pay, plan 60 months); right answer Fits, 1628.25 left that month; fits this month's room; audited by hand
+gen:89: D-69 new purchase (59.21% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -869.75 left that month; D-65 Moderate; audited by hand
+gen:90: D-69 new purchase (106.02% of monthly pay, plan 20 months); right answer Fits; fits this month's room; audited by hand
+gen:91: D-69 new purchase (54.08% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:92: D-69 new purchase (0.88% of monthly pay, plan 60 months); right answer No: your month is already short (code: Short each month), -117.61 left that month; D-65 Large (plan payment); audited by hand
+gen:93: D-69 new purchase (47.31% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:94: D-69 new purchase (0.40% of monthly pay, plan 3 months); right answer Fits, 2043.60 left that month; fits this month's room; audited by hand
+gen:95: D-69 new purchase (16.37% of monthly pay, plan 3 months); right answer Fits, 894.13 left that month; fits this month's room; audited by hand
+gen:96: D-69 new purchase (60.08% of monthly pay, cash); right answer Fits from extra savings, 0.00 left that month; one-off ladder, extra savings (D-62); audited by hand
+gen:97: D-69 new purchase (251.83% of monthly pay, plan 60 months); right answer Fits; fits this month's room; audited by hand
+gen:99: D-69 new purchase (13.98% of monthly pay, plan 48 months); right answer Fits; fits this month's room; audited by hand
+gen:100: D-69 new purchase (243.11% of monthly pay, plan 24 months); right answer Fits, 834.65 left that month; fits this month's room; audited by hand
+gen:101: D-69 new purchase (12.08% of monthly pay, plan 60 months); right answer Fits (low month), 2125.98 left that month; fits this month's room; audited by hand
+gen:102: D-69 new purchase (10.41% of monthly pay, plan 60 months); right answer Fits; fits this month's room; audited by hand
+gen:104: D-69 new purchase (0.93% of monthly pay, plan 24 months); right answer Fits, 777.73 left that month; fits this month's room; audited by hand
+gen:105: D-69 new purchase (23.76% of monthly pay, plan 12 months); right answer Fits; fits this month's room; audited by hand
+gen:106: D-69 new purchase (149.31% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:107: D-69 new purchase (5.13% of monthly pay, plan 57 months); right answer Fits, 1888.53 left that month; fits this month's room; audited by hand
+gen:109: D-69 new purchase (20.72% of monthly pay, cash); right answer Fits from spare money (but your safety net is small), 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:110: D-69 new purchase (766.88% of monthly pay, cash); right answer Needs a figure first; asks for the spare-money figure first; audited by hand
+gen:111: D-69 new purchase (0.33% of monthly pay, plan 58 months); right answer Fits, 2976.53 left that month; fits this month's room; audited by hand
+gen:112: D-69 new purchase (23.91% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -494.53 left that month; D-65 Moderate; audited by hand
+gen:113: D-69 new purchase (107.58% of monthly pay, plan 19 months); right answer Fits (low month), 90.05 left that month; fits this month's room; audited by hand
+gen:115: D-69 new purchase (176.00% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:118: D-69 new purchase (110.56% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:119: D-69 new purchase (9.97% of monthly pay, cash); right answer Fits (but your safety net is small), 1632.82 left that month; fits this month's room; audited by hand
+gen:120: D-69 new purchase (25.78% of monthly pay, plan 49 months); right answer Fits (low month), 102.28 left that month; fits this month's room; audited by hand
+gen:121: D-69 new purchase (277.66% of monthly pay, cash); right answer Not yet (payday); path below $0 until payday; audited by hand
+gen:122: D-69 new purchase (64.91% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:123: D-69 new purchase (21.78% of monthly pay, plan 18 months); right answer Fits; fits this month's room; audited by hand
+gen:125: D-69 new purchase (52.50% of monthly pay, cash); right answer Fits from extra savings, 0.00 left that month; one-off ladder, extra savings (D-62); audited by hand
+gen:126: D-69 new purchase (9.01% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -23.86 left that month; D-65 Moderate; audited by hand
+gen:127: D-69 new purchase (98.43% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:128: D-69 new purchase (1180.72% of monthly pay, cash); right answer Not yet (not covered); path below $0 (not covered); audited by hand
+gen:130: D-69 new purchase (71.90% of monthly pay, cash); right answer Fits from spare money (but your safety net is small), 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:131: D-69 new purchase (0.11% of monthly pay, cash); right answer Fits, 2473.10 left that month; fits this month's room; audited by hand
+gen:133: D-69 new purchase (116.14% of monthly pay, plan 24 months); right answer Fits; fits this month's room; audited by hand
+gen:134: D-69 new purchase (175.66% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:136: D-69 new purchase (259.00% of monthly pay, plan 3 months); right answer Short each month, 1645.51 left that month; monthly part (QE-12 rule); audited by hand
+gen:138: D-69 new purchase (47.00% of monthly pay, cash); right answer Fits, 94.09 left that month; fits this month's room; audited by hand
+gen:139: D-69 new purchase (227.54% of monthly pay, plan 24 months); right answer Short each month; monthly part (QE-12 rule); audited by hand
+gen:140: D-69 new purchase (164.17% of monthly pay, plan 60 months); right answer Fits (but no safety net), 373.52 left that month; fits this month's room; audited by hand
+gen:141: D-69 new purchase (236.16% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:142: D-69 new purchase (8.70% of monthly pay, cash); right answer Fits, 560.37 left that month; fits this month's room; audited by hand
+gen:143: D-69 new purchase (82.65% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:144: D-69 new purchase (121.53% of monthly pay, plan 24 months); right answer Fits, 452.78 left that month; fits this month's room; audited by hand
+gen:145: D-69 new purchase (42.18% of monthly pay, cash); right answer Fits from spare money (but no safety net), 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:146: D-69 new purchase (32.63% of monthly pay, cash); right answer Fits, 199.62 left that month; fits this month's room; audited by hand
+gen:147: D-69 new purchase (0.71% of monthly pay, cash); right answer Fits, 437.26 left that month; fits this month's room; audited by hand
+gen:148: D-69 new purchase (30.72% of monthly pay, plan 8 months); right answer Fits; fits this month's room; audited by hand
+gen:149: D-69 new purchase (46.00% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:150: D-69 new purchase (58.78% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:151: D-69 new purchase (32.54% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -78.27 left that month; D-65 Moderate; audited by hand
+gen:152: D-69 new purchase (36.05% of monthly pay, cash); right answer Fits, 627.94 left that month; fits this month's room; audited by hand
+gen:154: D-69 new purchase (21.93% of monthly pay, plan 39 months); right answer Fits, 787.80 left that month; fits this month's room; audited by hand
+gen:158: D-69 new purchase (250.95% of monthly pay, plan 59 months); right answer Fits from spare money (low month), 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:159: D-69 new purchase (128.62% of monthly pay, cash); right answer Fits from spare money (but no safety net), 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:162: D-69 new purchase (0.51% of monthly pay, cash); right answer Fits, but your month is already short (code: Fits from spare money), -2182.33 left that month; D-65 Small; audited by hand
+gen:163: D-69 new purchase (25.27% of monthly pay, cash); right answer Fits, 2207.01 left that month; fits this month's room; audited by hand
+gen:164: D-69 new purchase (132.95% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:165: D-69 new purchase (33.75% of monthly pay, plan 24 months); right answer Fits (but no safety net), 2527.04 left that month; fits this month's room; audited by hand
+gen:166: D-69 new purchase (9.32% of monthly pay, plan 36 months); right answer Fits, 635.35 left that month; fits this month's room; audited by hand
+gen:167: D-69 new purchase (267.27% of monthly pay, cash); right answer Fits from extra savings, 0.00 left that month; one-off ladder, extra savings (D-62); audited by hand
+gen:169: D-69 new purchase (38.89% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -1468.70 left that month; D-65 Moderate; audited by hand
+gen:171: D-69 new purchase (103.88% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:172: D-69 new purchase (245.81% of monthly pay, cash); right answer Fits from extra savings, 0.00 left that month; one-off ladder, extra savings (D-62); audited by hand
+gen:173: D-69 new purchase (81.33% of monthly pay, plan 12 months); right answer Fits (but your safety net is small), 530.84 left that month; fits this month's room; audited by hand
+gen:174: D-69 new purchase (123.21% of monthly pay, cash); right answer Needs a figure first; asks for the spare-money figure first; audited by hand
+gen:176: D-69 new purchase (45.38% of monthly pay, plan 18 months); right answer Fits, 1307.06 left that month; fits this month's room; audited by hand
+gen:177: D-69 new purchase (16.19% of monthly pay, plan 12 months); right answer Fits, 45.64 left that month; fits this month's room; audited by hand
+gen:178: D-69 new purchase (27.90% of monthly pay, plan 17 months); right answer Fits, 1281.02 left that month; fits this month's room; audited by hand
+gen:179: D-69 new purchase (0.16% of monthly pay, plan 24 months); right answer Fits (but no safety net); fits this month's room; audited by hand
+gen:182: D-69 new purchase (230.32% of monthly pay, plan 60 months); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:183: D-69 new purchase (83.30% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:186: D-69 new purchase (49.10% of monthly pay, plan 54 months); right answer Fits (but your safety net is small), 3008.19 left that month; fits this month's room; audited by hand
+gen:187: D-69 new purchase (1.28% of monthly pay, cash); right answer Fits, 1341.49 left that month; fits this month's room; audited by hand
+gen:188: D-69 new purchase (75.47% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:189: D-69 new purchase (292.49% of monthly pay, cash); right answer Not yet (not covered); path below $0 (not covered); audited by hand
+gen:190: D-69 new purchase (117.13% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:191: D-69 new purchase (26.73% of monthly pay, cash); right answer Needs a figure first; asks for the spare-money figure first; audited by hand
+gen:193: D-69 new purchase (0.51% of monthly pay, plan 48 months); right answer Fits; fits this month's room; audited by hand
+gen:194: D-69 new purchase (62.91% of monthly pay, plan 48 months); right answer Fits (but no safety net), 1213.67 left that month; fits this month's room; audited by hand
+gen:196: D-69 new purchase (15.78% of monthly pay, cash); right answer Fits, 679.76 left that month; fits this month's room; audited by hand
+gen:197: D-69 new purchase (45.73% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand
+gen:198: D-69 new purchase (45.72% of monthly pay, plan 6 months); right answer Fits, 749.89 left that month; fits this month's room; audited by hand
+gen:199: D-69 new purchase (6.77% of monthly pay, plan 12 months); right answer Fits, 1892.60 left that month; fits this month's room; audited by hand
