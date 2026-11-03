@@ -55,7 +55,8 @@ export const BAND_EDGES_USD: readonly number[] = [
 
 // Cite: UP §5.3 (00-UPGRADE-PLAN): the codes, strictest first. The strictest part wins. 05.4 FIN-03 (D-26, D-36) inserts
 // fits_uses_overdraft after monthly_short, its place in the phase target order. FincWin choice.
-export const CODE_PRECEDENCE = ['needs_input', 'not_yet', 'monthly_short', 'fits_uses_overdraft', 'emergency_use', 'fits_unspent', 'fits_month'] as const; // UP §5.3
+// 05.4: fits_uses_net sits after emergency_use, which keeps its slot only for answers stored before 05.4 (D-41).
+export const CODE_PRECEDENCE = ['needs_input', 'not_yet', 'monthly_short', 'fits_uses_overdraft', 'emergency_use', 'fits_uses_net', 'fits_unspent', 'fits_month'] as const; // UP §5.3
 
 // Cite: D-23 (05.1-CONTEXT), overriding the research table: the old four-state verdict each code maps to. FincWin choice.
 export const LEGACY_STATE_OF_CODE = Object.freeze({
@@ -64,12 +65,14 @@ export const LEGACY_STATE_OF_CODE = Object.freeze({
   monthly_short: 'adjust',
   fits_uses_overdraft: 'adjust', // 05.4: every new caution code maps to adjust
   emergency_use: 'adjust',
+  fits_uses_net: 'adjust',
   not_yet: 'no',
   needs_input: 'missing',
 }) satisfies Readonly<Record<Code, LegacyState>>; // D-23
 
-// Cite: v3 §3.5, D-19, I38: only these purposes may draw on the emergency fund. FincWin choice.
-export const EMERGENCY_PURPOSES = ['necessity', 'for_work'] as const; // v3 §3.5, I38
+// Cite: D-41 (05.4-CONTEXT, owner round 1): these purposes read as a need. Since D-49 they change wording and the order of facts
+// only, never the answer (the 05.1 I38 purpose gate on the fund is retired). FincWin choice.
+export const NEED_PURPOSES = ['necessity', 'for_work'] as const; // D-41, D-49
 
 // Cite: UP §5.4 rule 3 (00-UPGRADE-PLAN): needs-input applies from band 5 upward. FincWin choice.
 export const NEEDS_INPUT_MIN_BAND = 5; // UP §5.4
@@ -223,3 +226,9 @@ export const OVERDRAFT_REPEAT_MIN = 2; // D-37
 
 // Cite: D-36 (05.4-CONTEXT, owner round 1): overdraft interest is charged daily, at the yearly rate over 365 days. FincWin choice.
 export const OVERDRAFT_DAYS_PER_YEAR = 365; // D-36
+
+// Cite: FIN-01 (05.4 fix plan Theme G), D-05: the starter safety net is 1 month of essential costs. FincWin choice.
+export const NET_STARTER_MONTHS = 1; // FIN-01, D-05
+
+// Cite: ARC-07 (05.4 fix plan): essential costs are rounded up to a whole currency unit (100 minor units). FincWin choice.
+export const ESSENTIAL_ROUND_MINOR = 100; // ARC-07

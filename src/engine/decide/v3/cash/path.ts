@@ -179,10 +179,14 @@ export function payDatesIn(series: readonly V3Series[], asOf: string, days: numb
 /**
  * ok: never below 0. overdraft (05.4 FIN-03, D-26, D-36): below 0 but never past the overdraft floor; exactly at the floor is
  * inside it (I-limit). payday / not_covered: past the floor (D-27; with no limit recorded the floor is 0, D-28).
+ * net (05.4 FIN-02, ENG-04, D-35): past the floor, but the money the safety net can lend carries the low point back to 0 or above;
+ * used is how far the path goes below 0; added is the part the purchase adds (the dip with it less the dip without it); until is the
+ * payday that clears it (null when no payday inside the 90 days does).
  */
 export type CashCheck =
   | { readonly kind: 'ok'; readonly lowest: CashPoint }
   | { readonly kind: 'overdraft'; readonly lowest: CashPoint }
+  | { readonly kind: 'net'; readonly lowest: CashPoint; readonly used: MinorUnits; readonly added: MinorUnits; readonly until: string | null }
   | { readonly kind: 'payday'; readonly until: string; readonly shortBy: MinorUnits }
   | { readonly kind: 'not_covered'; readonly shortBy: MinorUnits; readonly payDate?: string | null };
 
@@ -198,6 +202,26 @@ export function cashCheck(withPurchase: CashPathV3, payDate: string | null, floo
     if (after.length > 0 && after.every((p) => p.balance >= 0)) return { kind: 'payday', until: payDate, shortBy };
   }
   return { kind: 'not_covered', shortBy, payDate };
+}
+
+/**
+ * 05.4 FIN-02 (D-35): a cash check that failed past the floor, read again with the money the safety net can lend (usable). The
+ * net only ever lends to bring the account back to 0, never into an overdraft. Any other check is returned as it is. until is the
+ * payday that clears the dip; a not_covered dip has none (the net carries it through the 90 days).
+ */
+export function withNet(check: CashCheck, withPurchase: CashPathV3, withoutPurchase: () => CashPathV3, usable: MinorUnits): CashCheck {
+  if (check.kind !== 'payday' && check.kind !== 'not_covered') return check;
+  const lowest = lowestOf(withPurchase);
+  if (lowest.balance + usable < 0) return check;
+  const before = lowestOf(withoutPurchase()).balance;
+  const added = before < 0 ? before - lowest.balance : -lowest.balance;
+  return { kind: 'net', lowest, used: minorUnits(-lowest.balance), added: minorUnits(added > 0 ? added : 0), until: check.kind === 'payday' ? check.until : null };
+}
+
+function lowestOf(path: CashPathV3): CashPoint {
+  let lowest = path.points[0] as CashPoint;
+  for (const p of path.points) if (p.balance < lowest.balance) lowest = p;
+  return lowest;
 }
 
 /** Dated flows of the purchase: dayOne (already my share) on asOf; each schedule payment as myPart, applied once. */

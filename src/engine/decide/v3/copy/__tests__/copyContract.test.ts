@@ -224,6 +224,11 @@ function buildCorpus(): Emitted[] {
     collect(out, inputs, check);
     collect(out, { ...inputs, accounts: (inputs.accounts ?? []).map((a) => ({ ...a, overdraftRate: null })) }, check);
   }
+  // 05.4 FIN-01 / FIN-02: every safety-net case (each net fact: off, $0, need and want, above the size, empty and small).
+  for (const c of loadCases().filter((x) => x.topic === 'safety-net')) {
+    const { inputs, check } = toEngineInputs(c.fixture);
+    collect(out, inputs, check);
+  }
   return out;
 }
 

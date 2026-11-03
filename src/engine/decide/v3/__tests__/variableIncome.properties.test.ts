@@ -64,17 +64,16 @@ describe('variable-income persons: fixed-seed properties', () => {
     );
   });
 
-  it('I31 with the emergency flag off, a fund of $0 or $1M changes nothing but its own line', () => {
+  // 05.4 D-35 / D-41 / D-49 retire the 05.1 lock: the fund is the money saved in the safety net, so more of it may only help.
+  it('I31 a fund of $0 or $1M never moves the notices or confidence and never worsens the answer', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
-        const off: CheckV2 = { ...check, emergency: false };
-        const zero = run(withFund(inputs, 0), off);
-        const million = run(withFund(inputs, 100_000_000), off);
-        const norm = (r: Result): Result => ({
-          ...r,
-          facts: r.facts.map((f) => (f.code === 'emergency_untouched' ? { ...f, values: { amount: 0 } } : f)),
-        });
-        expect(norm(million)).toEqual(norm(zero));
+        const zero = run(withFund(inputs, 0), check);
+        const million = run(withFund(inputs, 100_000_000), check);
+        expect(million.notices).toEqual(zero.notices);
+        expect(million.confidence).toEqual(zero.confidence);
+        fc.pre(zero.code !== 'needs_input' && million.code !== 'needs_input');
+        expect(codeRank(million.code)).toBeGreaterThanOrEqual(codeRank(zero.code));
         expect(million.code).not.toBe('emergency_use');
       }),
       { numRuns: 100, seed: 0x054a }

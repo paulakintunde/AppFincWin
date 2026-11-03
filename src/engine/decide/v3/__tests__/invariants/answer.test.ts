@@ -319,38 +319,36 @@ describe('end-to-end invariants through evaluate()', () => {
     );
   });
 
-  it('I31 emergency locked end to end: with the flag off, a fund of $0 or $1M gives the same Result except its amount', () => {
+  // 05.4 D-35 / D-41 / D-49 retire the 05.1 lock (only an emergency-marked need could use the fund). With no safety-net record the
+  // fund is the money saved in the net: its protected part only lends as "Dips into your safety net", and money above the size
+  // is spare. What stays from I31: the fund is out of the spending balance (D-43, D-54), and more of it never makes an answer worse.
+  it('I31 the fund stays out of the spending balance: $0 or $1M never moves the suggested figure, notices or confidence, and never worsens the answer', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
-        const off: CheckV2 = { ...check, emergency: false };
-        const zero = evaluate(withFund(inputs, 0), off).result;
-        const million = evaluate(withFund(inputs, 100_000_000), off).result;
-        // D-43, D-54: the fund is out of the spending balance, so the suggested figure, drift, notices and confidence do not
-        // move with it. Only the fund's own line (emergency_untouched) carries its amount.
-        const norm = (r: Result): Result => ({
-          ...r,
-          facts: r.facts.map((f) => (f.code === 'emergency_untouched' ? { ...f, values: { amount: 0 } } : f)),
-        });
-        expect(norm(million)).toEqual(norm(zero));
-        expect(million.code).not.toBe('emergency_use');
+        const zero = evaluate(withFund(inputs, 0), check);
+        const million = evaluate(withFund(inputs, 100_000_000), check);
+        expect(million.funds.suggested).toBe(zero.funds.suggested);
+        expect(million.funds.spending).toBe(zero.funds.spending);
+        expect(million.result.confidence).toEqual(zero.result.confidence);
+        expect(million.result.notices).toEqual(zero.result.notices);
+        fc.pre(zero.result.code !== 'needs_input' && million.result.code !== 'needs_input');
+        expect(codeRank(million.result.code)).toBeGreaterThanOrEqual(codeRank(zero.result.code));
+        expect(million.result.code).not.toBe('emergency_use');
       }),
       { numRuns: 60, seed: 0x0543 }
     );
   });
 
-  it('I31 a fund that is not set differs only by the emergency notice and fact', () => {
+  it('I31 a fund that is not set differs from a set one only by the emergency notice and the money the net adds', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
-        const off: CheckV2 = { ...check, emergency: false };
-        const none = evaluate(withFund(inputs, null), off).result;
-        const set = evaluate(withFund(inputs, 500_000), off).result;
-        expect(none.code).toBe(set.code);
-        expect(none.split).toEqual(set.split);
-        expect(none.readyBy).toEqual(set.readyBy);
-        expect(none.variant).toEqual(set.variant);
+        const none = evaluate(withFund(inputs, null), check).result;
+        const set = evaluate(withFund(inputs, 500_000), check).result;
         expect(none.confidence).toEqual(set.confidence);
         const rest = (r: Result) => r.notices.filter((n) => n.code !== 'emergency_not_set');
         expect(rest(none)).toEqual(rest(set));
+        fc.pre(none.code !== 'needs_input' && set.code !== 'needs_input');
+        expect(codeRank(set.code)).toBeGreaterThanOrEqual(codeRank(none.code));
       }),
       { numRuns: 60, seed: 0x0544 }
     );
@@ -368,26 +366,21 @@ describe('end-to-end invariants through evaluate()', () => {
     expect(none.suggested - big.suggested).toBe(300_000);
   });
 
-  it('I38 purpose never changes the maths when the check is not an emergency', () => {
-    fc.assert(
-      fc.property(inputsArb, shapeArb, priceArb, (inputs, shape, price) => {
-        const results = PURPOSES.map((purpose) => evaluate(inputs, checkOf(price, { ...shape, purpose, emergency: false })).result);
-        for (const r of results) expect(r).toEqual(results[0]);
-      }),
-      RUNS
-    );
-  });
-
-  it('I38 only necessity and for-work can reach emergency_use; a custom purpose never can (D-19)', () => {
+  it('I38 retired by 05.4 D-35 / D-41 / D-49: the purpose gate on the fund is gone; I-D41 (invariants/safetyNet.test.ts) replaces it', () => {
+    // Any purchase that uses money in the safety net is "Dips into your safety net", whatever its purpose or emergency mark; the
+    // v3 engine never returns emergency_use. The need-or-want reading changes facts and their order only (I-D41).
     fc.assert(
       fc.property(inputsArb, shapeArb, priceArb, fc.constantFrom(...PURPOSES), (inputs, shape, price, purpose) => {
         const big = { ...inputs, emergency: { amount: mu(100_000_000) } };
-        const r = evaluate(big, checkOf(price, { ...shape, purpose, emergency: true })).result;
-        const allowed = purpose !== null && purpose.kind === 'preset' && (purpose.value === 'necessity' || purpose.value === 'for_work');
-        if (!allowed) {
-          expect(r.code).not.toBe('emergency_use');
-          expect(r.split.some((s) => s.source === 'emergency')).toBe(false);
-        }
+        const marked = evaluate(big, checkOf(price, { ...shape, purpose, emergency: true })).result;
+        const unmarked = evaluate(big, checkOf(price, { ...shape, purpose, emergency: false })).result;
+        expect(marked.code).not.toBe('emergency_use');
+        expect({ code: marked.code, variant: marked.variant, split: marked.split, readyBy: marked.readyBy }).toEqual({
+          code: unmarked.code,
+          variant: unmarked.variant,
+          split: unmarked.split,
+          readyBy: unmarked.readyBy,
+        });
         if (purpose !== null && purpose.kind === 'custom') expect(purpose.id).toBe(CUSTOM_PURPOSE_ID);
       }),
       RUNS

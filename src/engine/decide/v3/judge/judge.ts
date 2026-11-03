@@ -9,19 +9,25 @@
  *   P <= monthLeft (when above 0)                   -> fits_month
  *   P <= unspent (this month's room counted once)   -> fits_unspent
  *   unspent unknown and P above this month's room   -> needs_input
- *   marked emergency (necessity / for work) and P <= unspent + fund -> emergency_use
- *   the cash path dips into the overdraft and P <= unspent + that dip -> fits_uses_overdraft (05.4 FIN-03)
+ *   P <= unspent + money saved above the net's size -> fits_unspent (05.4 D-35: money above the size is spare)
+ *   the cash path dips into the overdraft and P <= that + the dip -> fits_uses_overdraft (05.4 FIN-03)
+ *   P <= that + what the net can lend               -> fits_uses_net, "Dips into your safety net" (05.4 FIN-02, ENG-04)
  *   otherwise                                       -> not_yet, ready in ceilDiv(P - unspent, typicalLeft) months
+ * Safety net (05.4 FIN-01, FIN-02, ENG-03, ENG-04; D-05, D-06, D-35, D-41, D-49): only money already saved is protected, so the
+ * floor is min(saved, size) and nothing is held back for the unsaved part. Spare money and the 90-day path stay above that floor;
+ * a purchase that only fits by using the net's money is fits_uses_net, whatever its purpose (the 05.1 I38 gate is retired). A fit
+ * while the net is empty or small is amber (no_net / small_net). Protection off, or a $0 net, counts the net's money like any
+ * other money, and a purchase that uses it says so (protection_off). The engine never returns emergency_use any more.
  * 05.4 ENG-02: unspent and month left are signed; a negative unspent figure needs that much more before it is ready.
  * Overdraft (05.4 FIN-03, D-26..D-28, D-36..D-38): a 90-day low point below 0 but not past the overdraft floor turns any fit
  * into fits_uses_overdraft (variant not_cleared when the next pay does not clear it); past the floor is not_yet (D-27).
  * Monthly part: typicalLeft - M < 0 -> monthly_short; lowLeft - M < 0 -> fits with the low-month clause (I23).
- * The stricter part leads (CODE_PRECEDENCE). The funding split always sums to P (month, own envelope, earlier unspent,
- * emergency only when emergency_use). The user's confirmed (rolled) unspent figure is always the one judged against,
+ * The stricter part leads (CODE_PRECEDENCE). The funding split always sums to P (month, own envelope, earlier unspent, and
+ * 'emergency' for money taken from the safety net's account). The user's confirmed (rolled) unspent figure is always the one judged against,
  * even when it has drifted (D-30); drift only adds a notice and the unspent_drifted reason.
  *
  * Unspent after = unspent - (money taken from this month and from earlier unspent). Money from the purchase's own
- * envelope and the emergency fund is not unspent money, so it does not reduce it. Scenario 02 (price 120000 against
+ * envelope and the safety net is not unspent money, so it does not reduce it. Scenario 02 (price 120000 against
  * unspent 240000) therefore gives 120000. D-18 "return refund" is a re-run after the purchase was logged and refunded:
  * its figure is the rolled unspent, not a judge subtraction, so the two do not conflict.
  */
@@ -33,7 +39,8 @@ import { ceilDivide, minorFromBigInt } from '../../../payoff/types';
 import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_MONTHS } from '../constants';
 import { addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck } from '../cash/path';
-import { emergencyOf, emergencyUse, mayUseEmergency } from '../funds/emergency';
+import { emergencyOf } from '../funds/emergency';
+import { NO_NET, fitVariant, netDip, type ResolvedNet } from '../safetyNet';
 import { noLimitFacts, otherOverdrawnFacts, overdraftUseFacts, type OverdraftCtx } from '../overdraft';
 import { withReason } from '../confidence/reasons';
 import { dependsOnMonths, expectedFor, isLeanMonth, leanRun, seasonEveryday } from '../month/incomePattern';
@@ -75,6 +82,8 @@ export interface JudgeInput {
   readonly cash: CashCheck;
   /** 05.4 FIN-03: the overdraft floor and the paths with and without the purchase; absent in hand-built judge tests (no overdraft). */
   readonly overdraft?: OverdraftCtx | null;
+  /** 05.4 FIN-01 (D-35): the safety net in force; absent in hand-built judge tests (no net: the previous rules). */
+  readonly net?: ResolvedNet;
 }
 
 export interface OneOffPart {
@@ -82,8 +91,12 @@ export interface OneOffPart {
   readonly variant: Variant | null;
   readonly split: readonly FundingSegment[];
   readonly readyBy: ReadyBy | null;
-  readonly emergencyUsed: MinorUnits;
-  readonly rebuildMonths: number | null;
+  /** Money the split takes from the safety net's account: above its size first, then its protected part (D-35). */
+  readonly netTaken: MinorUnits;
+  /** The protected part the split takes (what "Dips into your safety net" names). */
+  readonly netUsed: MinorUnits;
+  /** How much the purchase adds to the 90-day dip the net carries (cash check 'net'); 0 otherwise. */
+  readonly cashNet: MinorUnits;
 }
 
 const mu = (n: number): MinorUnits => minorUnits(n);
@@ -97,8 +110,14 @@ function stricter(a: Code, b: Code): Code {
 }
 
 function notYet(variant: Variant, readyBy: ReadyBy | null): OneOffPart {
-  return { code: 'not_yet', variant, split: [], readyBy, emergencyUsed: mu(0), rebuildMonths: null };
+  return { code: 'not_yet', variant, split: [], readyBy, netTaken: mu(0), netUsed: mu(0), cashNet: mu(0) };
 }
+
+function fit(code: Code, split: readonly FundingSegment[], netTaken = 0, netUsed = 0): OneOffPart {
+  return { code, variant: null, split, readyBy: null, netTaken: mu(netTaken), netUsed: mu(netUsed), cashNet: mu(0) };
+}
+
+const ASK: OneOffPart = Object.freeze({ code: 'needs_input', variant: null, split: [], readyBy: null, netTaken: mu(0), netUsed: mu(0), cashNet: mu(0) });
 
 /**
  * Months until the month could cover what unspent does not. null when it never could. M-04: beyond the simulation horizon
@@ -122,18 +141,19 @@ function readyMonth(month: MonthModel, price: number, unspent: number | null): E
 }
 
 /**
- * The one-off ladder on its own: month, own envelope, earlier unspent, emergency, overdraft, else not covered. `overdraft` is how
- * far the cash path goes below 0 inside the limit (0 when it never does): only money the account really borrows can carry what
- * unspent money cannot, so money spoken for never counts as overdraft (I47).
+ * The one-off ladder on its own: month, own envelope, earlier unspent, money above the net's size, overdraft, the net, else not
+ * covered. `overdraft` is how far the cash path goes below 0 inside the limit (0 when it never does): only money the account
+ * really borrows can carry what unspent money cannot, so money spoken for never counts as overdraft (I47). The net lends after
+ * the overdraft: protection keeps it for last (D-35).
  */
 function ladder(
-  j: JudgeInput,
   p: Purchase,
+  month: MonthModel,
   available: { readonly unspent: MinorUnits | null; readonly envelope: MinorUnits },
-  overdraft: number
+  overdraft: number,
+  net: ResolvedNet
 ): OneOffPart {
   const P = p.dayOne;
-  const { month } = j;
   // A funding segment is never negative: a month already below 0 funds nothing, and its shortfall is inside unspent already
   // (this month's room is counted once), so it is not taken off twice.
   const B = month.monthLeft > 0 ? Math.min(P, month.monthLeft) : 0;
@@ -144,38 +164,36 @@ function ladder(
   if (B > 0) split.push({ source: 'month', amount: mu(B) });
   if (A > 0) split.push({ source: 'envelope', amount: mu(A) });
 
-  if (rest === 0) {
-    return { code: A > 0 ? 'fits_unspent' : 'fits_month', variant: null, split, readyBy: null, emergencyUsed: mu(0), rebuildMonths: null };
-  }
+  if (rest === 0) return fit(A > 0 ? 'fits_unspent' : 'fits_month', split);
 
   const unspent = available.unspent;
-  if (unspent === null) {
-    return { code: 'needs_input', variant: null, split: [], readyBy: null, emergencyUsed: mu(0), rebuildMonths: null };
-  }
+  if (unspent === null) return ASK;
   // 05.4 ENG-02: signed; earlier money below 0 has to be made up first.
   const earlierRoom = unspent - B;
   if (rest <= earlierRoom) {
     split.push({ source: 'unspent_earlier', amount: mu(rest) });
-    return { code: 'fits_unspent', variant: null, split, readyBy: null, emergencyUsed: mu(0), rebuildMonths: null };
+    return fit('fits_unspent', split);
   }
+  const fromEarlier = earlierRoom > 0 ? earlierRoom : 0;
+  const above = net.aboveSize;
+  const withEarlier = (): FundingSegment[] => (fromEarlier > 0 ? [...split, { source: 'unspent_earlier', amount: mu(fromEarlier) }] : split);
 
-  if (mayUseEmergency(p)) {
-    const fund = j.funds.emergency ?? 0;
-    if (rest <= earlierRoom + fund) {
-      const fromEarlier = earlierRoom > 0 ? earlierRoom : 0;
-      if (fromEarlier > 0) split.push({ source: 'unspent_earlier', amount: mu(fromEarlier) });
-      const use = emergencyUse({ need: mu(rest - fromEarlier), fund: mu(fund), typicalLeft: month.typicalLeft });
-      split.push({ source: 'emergency', amount: use.used });
-      return { code: 'emergency_use', variant: null, split, readyBy: null, emergencyUsed: use.used, rebuildMonths: use.rebuildMonths };
-    }
+  // 05.4 D-35: money saved above the net's size is spare savings.
+  if (rest <= earlierRoom + above) {
+    const taken = rest - fromEarlier;
+    return fit('fits_unspent', [...withEarlier(), { source: 'emergency', amount: mu(taken) }], taken);
   }
 
   // 05.4 FIN-03 (D-26, D-36): what earlier money cannot cover, the overdraft does, up to how far the account really goes below 0.
-  if (overdraft > 0 && rest <= earlierRoom + overdraft) {
-    return { code: 'fits_uses_overdraft', variant: null, split, readyBy: null, emergencyUsed: mu(0), rebuildMonths: null };
+  if (overdraft > 0 && rest <= earlierRoom + above + overdraft) return fit('fits_uses_overdraft', split);
+
+  // 05.4 FIN-02 / ENG-04 (D-35, D-41, D-49): the protected part of the net (all of it when protection is off), any purpose.
+  if (rest <= earlierRoom + above + net.usable) {
+    const taken = rest - fromEarlier;
+    return fit('fits_uses_net', [...withEarlier(), { source: 'emergency', amount: mu(taken) }], taken, taken - above);
   }
 
-  return notYet('not_covered', readyMonth(month, P, unspent));
+  return notYet('not_covered', readyMonth(month, P, unspent + above));
 }
 
 /**
@@ -189,35 +207,42 @@ export function oneOffPart(
   available: { readonly unspent: MinorUnits | null; readonly envelope: MinorUnits }
 ): OneOffPart {
   const p = j.purchase;
-  if (p === null) {
-    return { code: 'needs_input', variant: null, split: [], readyBy: null, emergencyUsed: mu(0), rebuildMonths: null };
-  }
+  if (p === null) return ASK;
+  const net = j.net ?? NO_NET;
+  // 05.4 D-35: money above the net's size is spare, so it counts toward the ready date too; the net itself never does.
+  const spare = available.unspent === null ? null : available.unspent + net.aboveSize;
   if (j.cash.kind === 'not_covered') {
     // The later of the ladder month and the next payday (I13 residual): never dated before the pay that would help.
-    const ready = readyMonth(j.month, p.dayOne, available.unspent);
+    const ready = readyMonth(j.month, p.dayOne, spare);
     const pay = j.cash.payDate ?? null;
-    return notYet('not_covered', ready !== null && pay !== null && pay > `${ready.month}-01` ? { kind: 'date', date: pay } : ready);
+    return notYet('not_covered', ready !== null && pay !== null && pay >= `${ready.month}-01` ? { kind: 'date', date: pay } : ready);
   }
   if (j.cash.kind === 'overdraft') {
-    const part = ladder(j, p, available, -j.cash.lowest.balance);
+    const part = ladder(p, j.month, available, -j.cash.lowest.balance, net);
     if (part.code === 'not_yet' || part.code === 'needs_input') return part;
-    // D-22, D-36: the account pays now and goes below 0, so the purchase (less its own envelope and any fund money) comes out
+    // D-22, D-36: the account pays now and goes below 0, so the purchase (less its own envelope and any net money) comes out
     // of this month; nothing is taken from earlier money, which is below 0 on the way.
     const fromEnvelope = part.split.find((s) => s.source === 'envelope')?.amount ?? 0;
-    const fromMonth = p.dayOne - fromEnvelope - part.emergencyUsed;
+    const fromMonth = p.dayOne - fromEnvelope - part.netTaken;
     const split: FundingSegment[] = [];
     if (fromMonth > 0) split.push({ source: 'month', amount: mu(fromMonth) });
     if (fromEnvelope > 0) split.push({ source: 'envelope', amount: mu(fromEnvelope) });
-    if (part.emergencyUsed > 0) split.push({ source: 'emergency', amount: part.emergencyUsed });
+    if (part.netTaken > 0) split.push({ source: 'emergency', amount: part.netTaken });
     return { ...part, code: 'fits_uses_overdraft', split };
   }
-  const part = ladder(j, p, available, 0);
+  const part = ladder(p, j.month, available, 0, net);
   if (j.cash.kind === 'ok') return part;
+  if (j.cash.kind === 'net') {
+    // 05.4 FIN-02 (D-35): the 90-day path stays above 0 only with the net's money, so any fit dips into it.
+    if (part.code === 'not_yet' || part.code === 'needs_input') return part;
+    // What the purchase adds to the dip is what it takes from the net; a dip that is there without it is not the purchase's.
+    return { ...part, code: 'fits_uses_net', cashNet: j.cash.added };
+  }
   const until = j.cash.until;
   const onPayday = notYet('payday', { kind: 'date', date: until });
   if (part.code !== 'not_yet') return onPayday; // the ladder passes (or cannot tell): payday is the only wait
-  const ready = readyMonth(j.month, p.dayOne, available.unspent);
-  return ready !== null && until > `${ready.month}-01` ? onPayday : part;
+  const ready = readyMonth(j.month, p.dayOne, spare);
+  return ready !== null && until >= `${ready.month}-01` ? onPayday : part;
 }
 
 /** What the monthly part of a purchase needs beyond the month model (D-36, D-37). */
@@ -423,8 +448,9 @@ function inPriority(codes: readonly MissingCode[]): MissingCode[] {
 
 function judgeNotices(j: JudgeInput, missing: readonly MissingCode[]): Notice[] {
   const out: Notice[] = [...j.month.notices];
+  // 05.4 FIN-01: a safety-net record says whether a net is set, so "not set" is only said without one.
   const em = emergencyOf(j.inputs.emergency).notice;
-  if (em) out.push(em);
+  if (em && (j.inputs.safetyNet ?? null) === null) out.push(em);
   const u = j.funds.unspent;
   if (u !== null && u.stale) out.push({ code: 'unspent_stale', values: { days: daysBetween(u.anchor.at, j.inputs.asOf) } });
   if (u !== null && u.drifted) out.push({ code: 'unspent_drifted', values: { suggested: j.funds.suggested } });
@@ -467,6 +493,51 @@ function judgeConfidence(j: JudgeInput): Confidence {
 function readyKey(r: ReadyBy | null): string {
   if (r === null) return '9999-99-99';
   return r.kind === 'date' ? r.date : `${r.month}-01`;
+}
+
+/**
+ * 05.4 FIN-02 / ENG-04 (D-35, D-41): the facts of a purchase that dips into the net. used is the larger of what the split takes
+ * from the protected part and what the purchase adds to the 90-day dip the net carries; the wait date is the later of the payday that clears
+ * the dip and the month spare money covers the price alone (a tie keeps the exact day).
+ */
+function netDipFacts(j: JudgeInput, net: ResolvedNet, one: OneOffPart, p: Purchase, unspent: MinorUnits | null): Fact[] {
+  const dip = netDip(mu(Math.max(one.netUsed, one.cashNet)), mu(one.netTaken - one.netUsed), net, j.month.typicalLeft);
+  const waits: ReadyBy[] = [];
+  if (j.cash.kind === 'net' && j.cash.until !== null) waits.push({ kind: 'date', date: j.cash.until });
+  // The split takes protected net money only past known unspent money (ladder), so unspent is known here.
+  if (one.netUsed > 0) {
+    const ready = readyMonth(j.month, p.dayOne, (unspent as MinorUnits) + net.aboveSize);
+    if (ready !== null) waits.push(ready);
+  }
+  const wait = waits.reduce<ReadyBy | null>((a, b) => (a === null || readyKey(b) > readyKey(a) ? b : a), null);
+  const out: Fact[] = [];
+  if (p.canUseEmergency) out.push({ code: 'need_net_line', values: {} });
+  else if (wait !== null) out.push({ code: 'wait_keeps_net', values: wait.kind === 'date' ? { date: wait.date } : { month: wait.month } });
+  out.push({ code: 'net_used', values: { used: dip.used } });
+  // A 90-day dip the net carries also uses the money above its size first: what stays is the net at that low point.
+  const atLow = j.cash.kind === 'net' ? net.saved - net.aboveSize - j.cash.used : dip.left;
+  out.push({ code: 'net_left', values: { left: mu(Math.max(0, Math.min(dip.left, atLow))) } });
+  if (dip.refillMonths !== null) out.push({ code: 'net_refill', values: { months: dip.refillMonths } });
+  if (net.zeroIsOff) out.push({ code: 'net_zero_is_off', values: { zero: 0 } });
+  else if (net.off) out.push({ code: 'net_protection_off', values: {} });
+  else if (net.state === 'small') out.push({ code: 'net_progress', values: { saved: net.saved, size: net.size } });
+  return out;
+}
+
+/**
+ * 05.4 FIN-01 (D-06, D-25, D-35): what the answer says about the net when it does not dip into it. Empty or small: the starter
+ * line or the progress line, on any fit (a losing no_net / small_net variant keeps its fact) and on Uses your overdraft (round
+ * 1b). Above its size: the spare money above it. Untouched only when something is saved (D-25). A $0 net says it counts as off.
+ */
+function netStateFacts(net: ResolvedNet, code: Code, dips: boolean): Fact[] {
+  const out: Fact[] = [];
+  const fits = code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_overdraft';
+  if (!dips && !net.off && fits && net.state === 'none') out.push({ code: 'net_none_start', values: { starter: net.starter } });
+  if (!dips && !net.off && fits && net.state === 'small') out.push({ code: 'net_progress', values: { saved: net.saved, size: net.size } });
+  if (net.aboveSize > 0) out.push({ code: 'net_above_size', values: { above: net.aboveSize } });
+  if (!dips && net.saved > 0) out.push({ code: 'emergency_untouched', values: { amount: net.off ? net.saved : net.floor } });
+  if (!dips && net.zeroIsOff) out.push({ code: 'net_zero_is_off', values: { zero: 0 } });
+  return out;
 }
 
 export function judge(j: JudgeInput): Result {
@@ -519,10 +590,17 @@ export function judge(j: JudgeInput): Result {
 
   const code = mon === null ? one.code : stricter(one.code, mon.code);
   const lowClause = mon !== null && mon.lowClause;
+  const net = j.net ?? NO_NET;
   // 05.4 FIN-03 (D-26, D-36, D-37): the one-off part uses the overdraft. Its facts lead, the not-cleared warning first.
   const od = one.code === 'fits_uses_overdraft' && j.overdraft != null ? overdraftUseFacts(j.inputs.accounts, j.overdraft, readyMonth(month, purchase.dayOne, unspentValue)) : null;
-  const variant: Variant | null =
-    code === 'fits_uses_overdraft' ? (od?.variant ?? null) : (code === 'fits_month' || code === 'fits_unspent') && lowClause ? 'low_month' : null;
+  // 05.4 D-35: a fit while the net is empty or below its size is amber; the variant order is fixed (fitVariant) and a losing
+  // variant still shows its fact. Protection off (or a $0 net) has no net caution, only protection_off when its money is used.
+  const netState: Variant | null = net.off ? null : net.state === 'none' ? 'no_net' : net.state === 'small' ? 'small_net' : null;
+  const fitV = fitVariant([...(lowClause ? (['low_month'] as const) : []), ...(netState === null ? [] : [netState])]).variant;
+  let variant: Variant | null = null;
+  if (code === 'fits_uses_overdraft') variant = od?.variant ?? null;
+  else if (code === 'fits_uses_net') variant = net.off ? 'protection_off' : null;
+  else if (code === 'fits_month' || code === 'fits_unspent') variant = fitV;
   // When both parts are not yet, the later ready-by leads; ties go to the one-off part (D-36).
   let notYetVariant: Variant | null = null;
   let readyBy: ReadyBy | null = null;
@@ -539,22 +617,25 @@ export function judge(j: JudgeInput): Result {
   if (code === 'not_yet' && (j.overdraft?.floor ?? 0) === 0 && (j.cash.kind === 'payday' || j.cash.kind === 'not_covered')) {
     facts.push(...noLimitFacts(j.inputs.accounts, j.cash.shortBy, readyBy));
   }
+  // 05.4 FIN-02 (D-35, D-41): "Dips into your safety net" leads with its own facts. A need reads "Marked as a need" first and
+  // drops the wait line; a want (or no purpose) leads with the date it fits without the net. Purpose changes facts and their
+  // order only, never the code, the variant or a figure (I-D41).
+  const dips = one.code === 'fits_uses_net' && code !== 'not_yet';
+  if (dips) facts.push(...netDipFacts(j, net, one, purchase, unspentValue));
+  // The month figure counts the protected net money the split takes this month (D-22: this month after its plans less the
+  // purchase); money above the size is spare savings, like earlier unspent money.
   if (one.split.length > 0) {
-    facts.push({ code: 'month_left_after', values: { month: month.month, left: month.monthLeft - fromMonth } });
+    facts.push({ code: 'month_left_after', values: { month: month.month, left: month.monthLeft - fromMonth - one.netUsed } });
   }
-  // What would leave unspent if it were bought: this month and earlier money, never the envelope or the fund.
-  const unspentAfter = unspentValue === null ? null : mu(unspentValue - (purchase.dayOne - fromEnvelope - one.emergencyUsed));
+  // What would leave unspent if it were bought: this month and earlier money, never the envelope or the net.
+  const unspentAfter = unspentValue === null ? null : mu(unspentValue - (purchase.dayOne - fromEnvelope - one.netTaken));
   if (one.split.length > 0 && unspentValue !== null) {
     facts.push({ code: 'unspent_before_after', values: { before: unspentValue, after: mu(unspentValue - fromMonth - fromEarlier) } });
   }
   // D-38, D-46: money held back for an earlier plan is said once, next to the unspent figure it reduced.
   const heldBack = funds.unspent?.breakdown.heldBack ?? 0;
   if (heldBack > 0) facts.push({ code: 'unspent_held_back', values: { amount: heldBack } });
-  if (one.emergencyUsed > 0) {
-    facts.push({ code: 'emergency_used', values: one.rebuildMonths === null ? { used: one.emergencyUsed } : { used: one.emergencyUsed, months: one.rebuildMonths } });
-  } else if (funds.emergency !== null) {
-    facts.push({ code: 'emergency_untouched', values: { amount: funds.emergency } });
-  }
+  facts.push(...netStateFacts(net, code, dips));
   if (fromEnvelope > 0) facts.push({ code: 'envelope_used', values: { used: fromEnvelope, envelopeId: purchase.envelopeId } });
   facts.push(...j.purchaseFacts);
   if (variant === 'low_month' && month.low !== null) {
@@ -576,7 +657,7 @@ export function judge(j: JudgeInput): Result {
   facts.push(...otherOverdrawnFacts(j.inputs.accounts)); // OD-08: a fact only, never the code
 
   const keepSplit =
-    code === 'fits_month' || code === 'fits_unspent' || code === 'emergency_use' || code === 'fits_uses_overdraft' || (code === 'monthly_short' && one.code !== 'not_yet');
+    code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_net' || code === 'fits_uses_overdraft' || (code === 'monthly_short' && one.code !== 'not_yet');
 
   return {
     code,

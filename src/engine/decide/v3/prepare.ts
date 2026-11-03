@@ -10,7 +10,9 @@
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { mergeConfidence } from './confidence/reasons';
-import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, type CashCheck, type OpenCashPath } from './cash/path';
+import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, withNet, type CashCheck, type OpenCashPath } from './cash/path';
+import { essentialCosts, essentialSpendingOf } from './essentialCosts';
+import { resolveSafetyNet, type ResolvedNet } from './safetyNet';
 import { overdraftFloor } from './overdraft';
 import { addDays, addYearMonths, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
@@ -18,7 +20,7 @@ import { insteadFutures, type Futures } from './instead/futures';
 import { readinessOf } from './readiness';
 import { judge } from './judge/judge';
 import { uncoveredIncomeMonths } from './judge/needsInput';
-import { mayUseEmergency, withLiveEmergency } from './funds/emergency';
+import { withLiveEmergency } from './funds/emergency';
 import { ownEnvelope } from './funds/envelopes';
 import { buildPurchase, purchaseCashFlows } from './judge/purchase';
 import { withRedatedRefunds } from './month/refunds';
@@ -45,6 +47,8 @@ export interface Evaluation {
   readonly futures: Futures | null;
   /** 05.3-106: the future months the purchase depends on that have no expected income yet, in order; the first is the one the question names. */
   readonly uncoveredIncome?: readonly YearMonth[];
+  /** 05.4 FIN-01 (D-35): the safety net in force: protection, size (the starter when none is set), saved, protected floor, state. */
+  readonly net?: ResolvedNet;
 }
 
 /**
@@ -126,6 +130,8 @@ interface Reading {
   /** 05.4 FIN-03: minus the overdraft limits (D-28: no limit = 0), and the pay dates inside the path (D-36, D-37). */
   readonly floor: MinorUnits;
   readonly paydays: readonly string[];
+  /** 05.4 FIN-01 (D-35): the safety net in force, with its starter from essential costs (ARC-07). */
+  readonly net: ResolvedNet;
 }
 
 export interface Prepared {
@@ -160,6 +166,7 @@ function readingOf(inputs: V3Inputs): Reading {
     payDate: nextPayDate(inputs.series, inputs.asOf),
     floor: overdraftFloor(inputs.accounts),
     paydays: payDatesIn(inputs.series, inputs.asOf, CASH_PATH_DAYS_V3),
+    net: resolveSafetyNet(inputs, essentialCosts(month, inputs.debts, essentialSpendingOf(inputs, month))),
   };
 }
 
@@ -167,14 +174,13 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
   const { inputs, month } = r;
   const pb = buildPurchase(check, { asOf: inputs.asOf, thresholds: inputs.thresholds, custom: inputs.custom });
   const funds: Funds = { ...r.funds, ownEnvelope: ownEnvelope(inputs.envelopes, check.envelopeId) };
-  // D-63: only an emergency-marked purchase whose purpose may use the fund lets the cash check see the fund; everything
-  // else keeps it out of reach (D-09, D-43a). An unlinked fund (D-62) is already subtracted from spending, so it is added
-  // back here once.
-  const fundForCash = pb.purchase !== null && mayUseEmergency(pb.purchase) ? (funds.emergency ?? 0) : 0;
-  // D-54: spending money plus the purchase's own envelope; other put-aside money never cushions the check (the fund only per D-63).
-  const opening = minorUnits(funds.spending + funds.ownEnvelope + fundForCash);
+  // D-54: spending money plus the purchase's own envelope; other put-aside money never cushions the check. 05.4 D-35 (retires
+  // D-63's purpose gate): money saved above the net's size is spare and counts; the protected part only lends when the path
+  // would otherwise fail (withNet), whatever the purchase's purpose (D-41, D-49).
+  const net = r.net;
+  const opening = minorUnits(funds.spending + funds.ownEnvelope + net.aboveSize);
   const path = applyPurchaseFlows(r.open, opening, pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3) : []);
-  const cash = cashCheck(path, r.payDate, r.floor);
+  const cash = withNet(cashCheck(path, r.payDate, r.floor), path, () => applyPurchaseFlows(r.open, opening, []), net.usable);
   // 05.4 FIN-03 (D-36): the same open path with no purchase flows gives the cost without it; only needed with an overdraft.
   const overdraft = { floor: r.floor, withPurchase: path, withoutPurchase: r.floor < 0 ? applyPurchaseFlows(r.open, opening, []) : null, paydays: r.paydays };
   const judged = judge({
@@ -188,6 +194,7 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
     purchaseReasons: pb.reasons,
     cash,
     overdraft,
+    net,
   });
   // D-46: say so when the expected-income cap lowered the pay in the 90-day path; last, after the judge's notices.
   const result: Result =
@@ -198,7 +205,7 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
     pb.purchase !== null && result.reasons.includes('volatile_cover_declined')
       ? insteadFutures({ result, month, funds, purchase: pb.purchase, userRate: null, years: 1 })
       : null;
-  return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash, futures, uncoveredIncome: uncoveredIncomeMonths(inputs, month, pb.purchase) };
+  return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash, futures, uncoveredIncome: uncoveredIncomeMonths(inputs, month, pb.purchase), net };
 }
 
 /** A comparable key: a date, or the first of a month; null (never) sorts last. */

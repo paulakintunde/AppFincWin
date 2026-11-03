@@ -180,7 +180,7 @@ describe('legacyStateOf', () => {
   it('D-23 mapping', () => {
     const codes = Object.keys(LEGACY_STATE_OF_CODE) as Code[];
     expect(codes.map((c) => [c, legacyStateOf(c)])).toEqual([
-      ['fits_month', 'fits'], ['fits_unspent', 'fits'], ['monthly_short', 'adjust'], ['fits_uses_overdraft', 'adjust'], ['emergency_use', 'adjust'], ['not_yet', 'no'], ['needs_input', 'missing'],
+      ['fits_month', 'fits'], ['fits_unspent', 'fits'], ['monthly_short', 'adjust'], ['fits_uses_overdraft', 'adjust'], ['emergency_use', 'adjust'], ['fits_uses_net', 'adjust'], ['not_yet', 'no'], ['needs_input', 'missing'],
     ]);
   });
 });

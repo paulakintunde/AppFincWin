@@ -95,8 +95,9 @@ describe('C15 Sam yardstick through evaluate', () => {
     expect(ev.month.low?.left).toBe(5000);
     expect(ev.funds.unspent?.value).toBe(240000);
     expect(ev.funds.emergency).toBe(900000);
+    // 05.4 D-35: the 900,000 fund is the net; the protected part is the 327,500 starter, which stays untouched.
     const fact = ev.result.facts.find((f) => f.code === 'emergency_untouched');
-    expect(fact).toEqual({ code: 'emergency_untouched', values: { amount: 900000 } });
+    expect(fact).toEqual({ code: 'emergency_untouched', values: { amount: 327500 } });
   });
 });
 
@@ -178,37 +179,41 @@ describe('settled golden questions (05.1-25)', () => {
   });
 });
 
-describe('D-43a the fund never cushions the cash check (D-54)', () => {
+describe('05.4 D-35 (supersedes D-43a / D-63): only money above the net size cushions the cash check; the protected part only lends', () => {
   const sam = () => toV3Inputs(personById('sam'));
   const base = () => (SCENARIOS.find((x) => x.id === '01') as Scenario).purchase;
+  const full = (i: V3Inputs): V3Inputs => ({ ...i, safetyNet: { protect: true, size: minorUnits(900_000), saved: minorUnits(900_000) } });
   // Sam: spending 407,500 (total 1,307,500 less the 900,000 fund); the fund is in its own dedicated account.
-  it('D-43a a purchase the spending money cannot carry is not_yet although the total balance would cover it', () => {
+  it('D-35 with the whole 900,000 protected, a price the spending money cannot carry dips into the net, whatever its purpose', () => {
+    const plain = evaluate(full(sam()), toCheckV2({ ...base(), price: 600_000 }));
+    expect(plain.funds.spending).toBe(407_500);
+    expect(plain.cash.kind).toBe('net');
+    expect(plain.result.code).toBe('fits_uses_net');
+    const need = evaluate(full(sam()), toCheckV2({ ...base(), price: 600_000, emergency: true, purpose: 'necessity' }));
+    expect({ code: need.result.code, split: need.result.split }).toEqual({ code: plain.result.code, split: plain.result.split });
+  });
+
+  it('D-35 with no record, the 572,500 above the 327,500 starter is spare: it carries the check and the price', () => {
     const ev = evaluate(sam(), toCheckV2({ ...base(), price: 600_000 }));
-    expect(ev.funds.spending).toBe(407_500);
-    expect(ev.result.code).toBe('not_yet');
-    expect(ev.cash.kind).not.toBe('ok');
-  });
-
-  it('D-63 marked an emergency for a necessity, a price the spending money cannot carry reaches the fund: emergency_use', () => {
-    // D-63 supersedes the D-43a reading for this case: the cash check opens with the fund (407,500 + 900,000), and the
-    // ladder draws on unspent 240,000 and then the fund: 600,000 - 240,000 = 360,000 from the fund.
-    const ev = evaluate(sam(), toCheckV2({ ...base(), price: 600_000, emergency: true, purpose: 'necessity' }));
+    expect(ev.net).toMatchObject({ size: 327_500, floor: 327_500, aboveSize: 572_500 });
     expect(ev.cash.kind).toBe('ok');
-    expect(ev.result.code).toBe('emergency_use');
+    expect(ev.result.code).toBe('fits_unspent');
+    expect(ev.result.split.find((s) => s.source === 'emergency')?.amount).toBe(360_000);
   });
 
-  it('D-43a the fund is reached only through the ladder: 200,000 with unspent 10,000 is not covered unmarked, emergency_use when marked a necessity', () => {
+  it('D-35 the protected part is reached only through the ladder: 200,000 with unspent 10,000, marked or not, is the same answer', () => {
     // D-50: 240,000 suggested against 10,000 confirmed is money the records do not explain; the user's answer (kept aside) covers it.
-    const low: V3Inputs = {
+    const low: V3Inputs = full({
       ...sam(),
       unspent: { amount: minorUnits(10_000), at: '2026-10-03' },
       unexplainedAnswer: { amount: minorUnits(230_000), use: 'set_aside_for_bill', at: '2026-10-03' },
-    };
+    });
     const unmarked = evaluate(low, toCheckV2({ ...base(), price: 200_000 }));
     expect(unmarked.cash.kind).toBe('ok'); // 407,500 spending carries it: lowest point 240,000 - 200,000
-    expect(unmarked.result.code).toBe('not_yet');
+    expect(unmarked.result.code).toBe('fits_uses_net');
     const marked = evaluate(low, toCheckV2({ ...base(), price: 200_000, emergency: true, purpose: 'necessity' }));
-    expect(marked.result.code).toBe('emergency_use');
+    expect(marked.result.code).toBe('fits_uses_net');
+    expect(marked.result.split).toEqual(unmarked.result.split);
   });
 });
 

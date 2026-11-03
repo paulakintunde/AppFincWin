@@ -26,6 +26,10 @@ import type {
 } from '../../types';
 import { addYearMonths } from '../../dates';
 import { judge, monthlyPart, oneOffPart, type JudgeInput } from '../judge';
+import { NO_NET, type ResolvedNet } from '../../safetyNet';
+
+/** 05.4 FIN-01 (D-35): a full 300,000 net with protection on, the hand-built tests' fund. */
+const FULL_NET: ResolvedNet = { ...NO_NET, protect: true, off: false, size: minorUnits(300_000), starter: minorUnits(300_000), saved: minorUnits(300_000), floor: minorUnits(300_000), usable: minorUnits(300_000), state: 'full' };
 
 const mu = (n: number): MinorUnits => minorUnits(n);
 
@@ -128,7 +132,7 @@ const work: Purpose = { kind: 'preset', value: 'for_work' };
 
 describe('judge: one-off ladder (v3 §12)', () => {
   it('v3 §12 #2 laptop: fits_unspent with month first, then earlier unspent', () => {
-    const r = judge(input());
+    const r = judge(input({ net: FULL_NET }));
     expect(r.code).toBe('fits_unspent');
     expect(r.split).toEqual([
       { source: 'month', amount: 42_500 },
@@ -162,62 +166,141 @@ describe('judge: one-off ladder (v3 §12)', () => {
     expect(r.variant).toBe('not_covered');
     expect(r.readyBy).toBeNull();
     expect(r.notices.map((n) => n.code)).toContain('typical_short');
-    expect(r.facts.map((f) => f.code)).toContain('emergency_untouched');
+    expect(r.facts.map((f) => f.code)).not.toContain('emergency_untouched'); // no net in these hand-built inputs (D-25)
   });
 
-  it('v3 §12 #11 Leo: emergency use for work, rebuild months shown', () => {
+  it('v3 §12 #11 Leo, 05.4 D-41: a work purchase dips into the safety net, refill months shown', () => {
     const r = judge(
       input({
         month: month({ monthLeft: mu(-2_000), typicalLeft: mu(12_000) }),
         funds: funds(10_000),
         purchase: purchase({ dayOne: mu(70_000), whole: mu(70_000), emergency: true, purpose: work, canUseEmergency: true }),
+        net: FULL_NET,
       })
     );
-    expect(r.code).toBe('emergency_use');
+    expect(r.code).toBe('fits_uses_net');
+    expect(r.variant).toBeNull();
     expect(r.split).toEqual([
       { source: 'unspent_earlier', amount: 10_000 },
       { source: 'emergency', amount: 60_000 },
     ]);
-    expect(r.facts).toContainEqual({ code: 'emergency_used', values: { used: 60_000, months: 5 } });
+    expect(r.facts.slice(0, 4)).toEqual([
+      { code: 'need_net_line', values: {} },
+      { code: 'net_used', values: { used: 60_000 } },
+      { code: 'net_left', values: { left: 240_000 } },
+      { code: 'net_refill', values: { months: 5 } },
+    ]);
+    expect(r.facts.some((f) => f.code === 'emergency_untouched')).toBe(false);
+    // the month figure counts the net money the split takes (D-22): -2,000 - 60,000
+    expect(r.facts).toContainEqual({ code: 'month_left_after', values: { month: '2026-10', left: -62_000 } });
     expect(r.legacyState).toBe('adjust');
   });
 
-  it('M-03 emergency_used omits months when the rebuild time is unknown', () => {
+  it('M-03 net_refill is left out when the refill time is unknown', () => {
     const r = judge(
       input({
         month: month({ monthLeft: mu(-2_000), typicalLeft: null }),
         funds: funds(10_000),
         purchase: purchase({ dayOne: mu(70_000), whole: mu(70_000), emergency: true, purpose: work, canUseEmergency: true }),
+        net: FULL_NET,
       })
     );
-    const f = r.facts.find((x) => x.code === 'emergency_used');
-    expect(f?.values).toEqual({ used: 60_000 });
-    expect(f?.values).not.toHaveProperty('months');
+    expect(r.facts.find((x) => x.code === 'net_used')?.values).toEqual({ used: 60_000 });
+    expect(r.facts.some((x) => x.code === 'net_refill')).toBe(false);
   });
 
-  it('an emergency need with no fund figure at all is not met from the fund', () => {
+  it('with no money in a safety net the price is not met from it', () => {
     const r = judge(
       input({
         month: month({ monthLeft: mu(-2_000), typicalLeft: mu(12_000) }),
         funds: funds(10_000, { emergency: null as unknown as MinorUnits }),
         purchase: purchase({ dayOne: mu(70_000), whole: mu(70_000), emergency: true, purpose: work, canUseEmergency: true }),
+        net: NO_NET,
       })
     );
     expect(r.code).toBe('not_yet');
     expect(r.split).toEqual([]);
   });
 
-  it('I38: emergency marked with a nice-to-have or custom purpose never uses the fund', () => {
-    for (const purpose of [nice, { kind: 'custom', id: 'x' } as Purpose]) {
-      const r = judge(
-        input({
-          month: month({ monthLeft: mu(-2_000), typicalLeft: mu(12_000) }),
-          funds: funds(10_000),
-          purchase: purchase({ dayOne: mu(70_000), whole: mu(70_000), emergency: true, purpose }),
-        })
-      );
-      expect(r.code).toBe('not_yet');
+  it('D-41 / D-49: every purpose, emergency mark or not, dips into the net the same way; a want leads with the wait date', () => {
+    const answers = [nice, work, { kind: 'custom', id: 'x' } as Purpose, null].flatMap((purpose) =>
+      [true, false].map((emergency) =>
+        judge(
+          input({
+            month: month({ monthLeft: mu(-2_000), typicalLeft: mu(12_000) }),
+            funds: funds(10_000),
+            purchase: purchase({ dayOne: mu(70_000), whole: mu(70_000), emergency, purpose, canUseEmergency: purpose === work }),
+            net: FULL_NET,
+          })
+        )
+      )
+    );
+    for (const r of answers) {
+      expect(r.code).toBe('fits_uses_net');
+      expect(r.split).toEqual(answers[0]!.split);
+      expect(r.facts.find((f) => f.code === 'net_used')).toEqual({ code: 'net_used', values: { used: 60_000 } });
     }
+    // 70,000 - 10,000 = 60,000 over 12,000 a month: ready without the net in 5 months
+    expect(answers[0]!.facts[0]).toEqual({ code: 'wait_keeps_net', values: { month: '2027-03' } });
+  });
+
+  it('D-06 protection off counts the net money and says so; a $0 net says it counts as off', () => {
+    const dip = { month: month({ monthLeft: mu(-2_000), typicalLeft: mu(12_000) }), funds: funds(10_000), purchase: purchase({ dayOne: mu(70_000), whole: mu(70_000) }) };
+    const off = judge(input({ ...dip, net: { ...FULL_NET, protect: false, off: true, floor: minorUnits(0) } }));
+    expect(off.code).toBe('fits_uses_net');
+    expect(off.variant).toBe('protection_off');
+    expect(off.facts.some((f) => f.code === 'net_protection_off')).toBe(true);
+    const zero = judge(input({ ...dip, net: { ...FULL_NET, off: true, zeroIsOff: true, size: minorUnits(0), floor: minorUnits(0), aboveSize: minorUnits(0), state: 'above' } }));
+    expect(zero.variant).toBe('protection_off');
+    expect(zero.facts).toContainEqual({ code: 'net_zero_is_off', values: { zero: 0 } });
+    const zeroFits = judge(input({ net: { ...FULL_NET, off: true, zeroIsOff: true, size: minorUnits(0), floor: minorUnits(0), state: 'above' } }));
+    expect(zeroFits.code).toBe('fits_unspent');
+    expect(zeroFits.variant).toBeNull();
+    expect(zeroFits.facts).toContainEqual({ code: 'net_zero_is_off', values: { zero: 0 } });
+    expect(zeroFits.facts).toContainEqual({ code: 'emergency_untouched', values: { amount: 300_000 } });
+  });
+
+  it('D-35 a 90-day dip the net carries: a fit dips into it; a price past the ladder, or unknown unspent money, is not a fit', () => {
+    const cash: CashCheck = { kind: 'net', lowest: { date: '2026-10-20', balance: mu(-5_000) }, used: mu(5_000), added: mu(5_000), until: '2026-11-01' };
+    const fits = judge(input({ cash, net: FULL_NET }));
+    expect(fits.code).toBe('fits_uses_net');
+    expect(fits.facts[0]).toEqual({ code: 'wait_keeps_net', values: { date: '2026-11-01' } });
+    expect(fits.facts).toContainEqual({ code: 'net_used', values: { used: 5_000 } });
+    expect(fits.facts).toContainEqual({ code: 'net_left', values: { left: 295_000 } });
+    const big = oneOffPart(input({ cash, net: { ...FULL_NET, usable: minorUnits(0) }, purchase: purchase({ dayOne: mu(400_000), whole: mu(400_000) }) }), { unspent: mu(240_000), envelope: mu(0) });
+    expect(big.code).toBe('not_yet');
+    const ask = oneOffPart(input({ cash, net: FULL_NET }), { unspent: null, envelope: mu(0) });
+    expect(ask.code).toBe('needs_input');
+    const noPay = judge(input({ cash: { ...cash, until: null }, net: FULL_NET }));
+    expect(noPay.facts.some((f) => f.code === 'wait_keeps_net')).toBe(false);
+  });
+
+  it('D-35 a fit with an empty or small net is amber, with the starter or the progress line; low_month wins the variant', () => {
+    const none = judge(input({ net: { ...FULL_NET, saved: minorUnits(0), floor: minorUnits(0), usable: minorUnits(0), state: 'none' } }));
+    expect(none.variant).toBe('no_net');
+    expect(none.facts).toContainEqual({ code: 'net_none_start', values: { starter: 300_000 } });
+    expect(none.facts.some((f) => f.code === 'emergency_untouched')).toBe(false);
+    const small = judge(input({ net: { ...FULL_NET, saved: minorUnits(1_000), floor: minorUnits(1_000), usable: minorUnits(1_000), state: 'small' } }));
+    expect(small.variant).toBe('small_net');
+    expect(small.facts).toContainEqual({ code: 'net_progress', values: { saved: 1_000, size: 300_000 } });
+    const above = judge(input({ net: { ...FULL_NET, saved: minorUnits(400_000), aboveSize: minorUnits(100_000), state: 'above' } }));
+    expect(above.variant).toBeNull();
+    expect(above.facts).toContainEqual({ code: 'net_above_size', values: { above: 100_000 } });
+  });
+
+  it('D-35 money above the net size is spare: it pays what earlier money cannot, and counts toward the ready date', () => {
+    const above: ResolvedNet = { ...FULL_NET, saved: minorUnits(360_000), aboveSize: minorUnits(60_000), state: 'above' };
+    const tight = { month: month({ monthLeft: mu(-2_000), typicalLeft: mu(12_000) }), funds: funds(10_000), net: above };
+    const r = judge(input({ ...tight, purchase: purchase({ dayOne: mu(70_000), whole: mu(70_000) }) }));
+    expect(r.code).toBe('fits_unspent');
+    expect(r.split).toEqual([
+      { source: 'unspent_earlier', amount: 10_000 },
+      { source: 'emergency', amount: 60_000 },
+    ]);
+    const past = judge(input({ ...tight, net: { ...above, usable: minorUnits(0) }, purchase: purchase({ dayOne: mu(100_000), whole: mu(100_000) }) }));
+    expect(past.code).toBe('not_yet');
+    // 100,000 - (10,000 + 60,000) = 30,000 over 12,000 a month: 3 months
+    expect(past.readyBy).toEqual({ kind: 'month', month: '2027-01' });
   });
 
   it('v3 §12 #12 Tia: payday wins even when unspent covers it', () => {
@@ -255,11 +338,13 @@ describe('judge: one-off ladder (v3 §12)', () => {
       expect(r.readyBy).toEqual({ kind: 'date', date: '2026-11-20' });
     });
 
-    it('payday on the first of the ladder month gives the ladder month', () => {
+    it('payday on the first of the ladder month is ready on payday (05.4-18: TX-06, TX-07, OD-07 "fits from payday on 1 December")', () => {
       const first: CashCheck = { kind: 'payday', until: '2026-11-01', shortBy: mu(5_000) };
       const r = judge(input({ cash: first, funds: funds(10_000), month: month({ typicalLeft: mu(1_000_000) }) }));
-      expect(r.variant).toBe('not_covered');
-      expect(r.readyBy).toEqual({ kind: 'month', month: '2026-11' });
+      expect(r.variant).toBe('payday');
+      expect(r.readyBy).toEqual({ kind: 'date', date: '2026-11-01' });
+      const before: CashCheck = { kind: 'payday', until: '2026-10-31', shortBy: mu(5_000) };
+      expect(judge(input({ cash: before, funds: funds(10_000), month: month({ typicalLeft: mu(1_000_000) }) })).readyBy).toEqual({ kind: 'month', month: '2026-11' });
     });
 
     it('is not covered with no ready date when the typical month leaves nothing', () => {
@@ -295,9 +380,11 @@ describe('judge: one-off ladder (v3 §12)', () => {
       expect(readyKey(hi) >= readyKey(lo)).toBe(true);
     });
 
-    it('a pay date on or before the first of the ladder month leaves the ladder month', () => {
-      const r = judge(input({ month: roomy, funds: funds(20_000), cash: { kind: 'not_covered', shortBy: mu(1), payDate: '2026-11-01' } }));
+    it('a pay date before the first of the ladder month leaves the ladder month; on the first, the pay date', () => {
+      const r = judge(input({ month: roomy, funds: funds(20_000), cash: { kind: 'not_covered', shortBy: mu(1), payDate: '2026-10-31' } }));
       expect(r.readyBy).toEqual({ kind: 'month', month: '2026-11' });
+      const first = judge(input({ month: roomy, funds: funds(20_000), cash: { kind: 'not_covered', shortBy: mu(1), payDate: '2026-11-01' } }));
+      expect(first.readyBy).toEqual({ kind: 'date', date: '2026-11-01' });
     });
 
     it('no pay date leaves the ladder month', () => {
@@ -968,6 +1055,7 @@ describe('D-38 available unspent money', () => {
         month: leanMonth(),
         purchase: purchase({ dayOne: mu(120_000), whole: mu(120_000), monthly: mu(25_000), runningMonthly: mu(25_000) }),
         funds: held(400_000, 350_000, 50_000),
+        net: FULL_NET,
       })
     );
     expect(r.facts.map((f) => f.code)).toEqual([

@@ -12,9 +12,12 @@ import {
 } from '../verdictTable';
 
 describe('verdict table (I22 one code one text)', () => {
-  it('I22 one code one text: eleven rows, no shared title key', () => {
+  it('I22 one code one text: seventeen rows; only the documented shared rows share a text', () => {
     expect(Object.keys(VERDICT_TABLE).sort()).toEqual(
-      ['fits_month', 'fits_month.low_month', 'fits_unspent', 'fits_unspent.low_month', 'not_yet.payday', 'not_yet.not_covered', 'monthly_short', 'emergency_use', 'needs_input', 'fits_uses_overdraft', 'fits_uses_overdraft.not_cleared'].sort()
+      [
+        'fits_month', 'fits_month.low_month', 'fits_unspent', 'fits_unspent.low_month', 'not_yet.payday', 'not_yet.not_covered', 'monthly_short', 'emergency_use', 'needs_input', 'fits_uses_overdraft', 'fits_uses_overdraft.not_cleared',
+        'fits_month.no_net', 'fits_month.small_net', 'fits_unspent.no_net', 'fits_unspent.small_net', 'fits_uses_net', 'fits_uses_net.protection_off',
+      ].sort()
     );
     const rows = Object.values(VERDICT_TABLE);
     for (const r of rows) {
@@ -23,8 +26,17 @@ describe('verdict table (I22 one code one text)', () => {
       expect(r.bodyKey).toBeTruthy();
       expect(r.tone).toBeTruthy();
     }
-    expect(new Set(rows.map((r) => r.titleKey)).size).toBe(rows.length);
-    expect(new Set(rows.map((r) => r.bodyKey)).size).toBe(rows.length);
+    // 05.4: one answer, one text. "Fits, but no safety net" and "Fits, but your safety net is small" are one answer each on
+    // either fits code (D-35), and a stored emergency_use answer reads the "Dips into your safety net" copy (D-41).
+    const SHARED: readonly (readonly (keyof typeof VERDICT_TABLE)[])[] = [
+      ['fits_month.no_net', 'fits_unspent.no_net'],
+      ['fits_month.small_net', 'fits_unspent.small_net'],
+      ['fits_uses_net', 'emergency_use'],
+    ];
+    for (const [a, b] of SHARED) expect(VERDICT_TABLE[a!]).toEqual(VERDICT_TABLE[b!]);
+    const distinct = rows.length - SHARED.length;
+    expect(new Set(rows.map((r) => r.titleKey)).size).toBe(distinct);
+    expect(new Set(rows.map((r) => r.bodyKey)).size).toBe(distinct);
   });
 
   it('verdictRowFor resolves variants', () => {
@@ -37,6 +49,17 @@ describe('verdict table (I22 one code one text)', () => {
     expect(verdictRowFor('not_yet', 'payday')).toBe(VERDICT_TABLE['not_yet.payday']);
     expect(verdictRowFor('monthly_short', 'low_month')).toBe(VERDICT_TABLE.monthly_short);
     expect(verdictRowFor('emergency_use', null)).toBe(VERDICT_TABLE.emergency_use);
+    // 05.4 FIN-01 / FIN-02 (D-35, D-06): the safety-net answers, all amber
+    expect(verdictRowFor('fits_month', 'no_net')).toBe(VERDICT_TABLE['fits_month.no_net']);
+    expect(verdictRowFor('fits_month', 'small_net')).toBe(VERDICT_TABLE['fits_month.small_net']);
+    expect(verdictRowFor('fits_unspent', 'no_net')).toBe(VERDICT_TABLE['fits_unspent.no_net']);
+    expect(verdictRowFor('fits_unspent', 'small_net')).toBe(VERDICT_TABLE['fits_unspent.small_net']);
+    expect(verdictRowFor('fits_month', 'protection_off')).toBe(VERDICT_TABLE.fits_month);
+    expect(verdictRowFor('fits_uses_net', null)).toBe(VERDICT_TABLE.fits_uses_net);
+    expect(verdictRowFor('fits_uses_net', 'protection_off')).toBe(VERDICT_TABLE['fits_uses_net.protection_off']);
+    for (const k of ['fits_month.no_net', 'fits_month.small_net', 'fits_unspent.no_net', 'fits_unspent.small_net', 'fits_uses_net', 'fits_uses_net.protection_off'] as const) {
+      expect(VERDICT_TABLE[k].tone).toBe('caution');
+    }
     expect(verdictRowFor('needs_input', 'low_month')).toBe(VERDICT_TABLE.needs_input);
     // 05.4 FIN-03: Uses your overdraft, and past payday when the next pay does not clear it (D-36); same caution tone
     expect(verdictRowFor('fits_uses_overdraft', null)).toBe(VERDICT_TABLE.fits_uses_overdraft);
@@ -68,12 +91,13 @@ describe('verdict table (I22 one code one text)', () => {
     );
     expect(Object.keys(FACT_KEYS).sort()).toEqual(
       [
-        'month_left_after', 'unspent_before_after', 'emergency_untouched', 'emergency_used', 'envelope_used',
+        'month_left_after', 'unspent_before_after', 'emergency_untouched', 'net_used', 'envelope_used',
         'line_crossed', 'quoted_differs', 'implied_rate', 'deferred_interest_term', 'at_todays_rate', 'low_month',
         'lean_bridge', 'unspent_held_back', 'lean_months_judged', 'low_month_judged', 'rests_on_your_answer',
         'no_full_month', 'overdraft_use', 'overdraft_without_purchase', 'overdraft_purchase_adds', 'overdraft_not_cleared',
         'overdraft_cost_90d', 'wait_clears', 'overdraft_repeat', 'other_account_overdrawn', 'no_overdraft_limit',
-        'ready_without_interest', 'clearing_first',
+        'ready_without_interest', 'clearing_first', 'net_left', 'net_refill', 'net_zero_is_off', 'net_protection_off',
+        'net_none_start', 'net_progress', 'net_above_size', 'wait_keeps_net', 'need_net_line',
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

@@ -37,7 +37,7 @@ import type {
   Schedule,
 } from '../types';
 import { bandOf, layersFor } from './bands';
-import { canUseEmergency, resolveItemType } from './options';
+import { isNeedPurpose, resolveItemType } from './options';
 import { questionSpec } from './presetQuestions';
 
 const FN = 'buildPurchase';
@@ -317,7 +317,7 @@ function buildResolved(
     itemType: base,
     purpose: check.purpose,
     emergency: check.emergency,
-    canUseEmergency: canUseEmergency(check.purpose),
+    canUseEmergency: isNeedPurpose(check.purpose), // D-41: reads as a need; wording only
     band,
     layers,
     financed: pay.mode === 'plan',

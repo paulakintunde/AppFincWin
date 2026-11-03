@@ -147,7 +147,10 @@ describe('D-50: unexplained money asks, and only spare counts', () => {
     expect(ask.result.notices).toContainEqual({ code: 'unexplained_money', values: { amount: 50000 } });
     expect(ask.funds.unexplained).toBe(50000);
     expect(run(byId('dee-unexplained-spare')).result.code).toBe('fits_unspent');
-    expect(run(byId('dee-unexplained-someone')).result.code).toBe('not_yet');
+    // 05.4 D-35: kept out of spare money, the someone-else's answer leaves the price to the money saved above the net's size.
+    const fromNet = (id: string): number => run(byId(id)).result.split.filter((s) => s.source === 'emergency').reduce((t, s) => t + s.amount, 0);
+    expect(fromNet('dee-unexplained-spare')).toBe(0);
+    expect(fromNet('dee-unexplained-someone')).toBe(43000);
     expect(run(byId('dee-unexplained-someone')).funds.ringFenced).toBe(130000);
   });
 });
@@ -165,9 +168,9 @@ describe('D-54: one case per account use and an unstated account', () => {
   it('everyday, mixed with put-aside, dedicated emergency, dedicated envelope and untouched each shape the answer', () => {
     expect(run(byId('dee-everyday')).result.code).toBe('fits_unspent');
     expect(run(byId('dee-mixed')).funds.spending).toBe(320000);
-    expect(run(byId('dee-dedicated-emergency')).result.code).toBe('emergency_use');
+    expect(run(byId('dee-dedicated-emergency')).result.code).toBe('fits_uses_net'); // 05.4 D-41: the dedicated account is the net
     expect(run(byId('dee-dedicated-envelope')).result.facts).toContainEqual({ code: 'envelope_used', values: { used: 40000, envelopeId: 'car' } });
-    expect(run(byId('dee-untouched')).result.code).toBe('not_yet');
+    expect(run(byId('dee-untouched')).result.code).toBe('fits_uses_net'); // the untouched account never counts; the net lends (05.4 D-35)
   });
 
   it('an account of no stated use asks first; an envelope linked to no account is assumed inside and unconfirmed', () => {

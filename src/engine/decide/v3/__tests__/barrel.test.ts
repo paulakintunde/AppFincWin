@@ -30,7 +30,7 @@ export const V3_RUNTIME_EXPORTS = [
   'CONFIDENCE_MIN_MONTHS',
   'COPY_RESOLVERS',
   'DISCRIMINATOR_KEYS',
-  'EMERGENCY_PURPOSES',
+  'ESSENTIAL_ROUND_MINOR',
   'FACT_ACTION_KEYS',
   'FACT_KEYS',
   'FACT_VALUE_KEYS',
@@ -53,6 +53,8 @@ export const V3_RUNTIME_EXPORTS = [
   'MISSING_VALUE_SOURCE',
   'NEEDS_INPUT_ENTRY_AGE_DAYS',
   'NEEDS_INPUT_MIN_BAND',
+  'NEED_PURPOSES',
+  'NET_STARTER_MONTHS',
   'NEXT_STEP_KEYS',
   'NOTICE_KEYS',
   'NOTICE_VALUE_KEYS',
@@ -104,7 +106,6 @@ export const V3_RUNTIME_EXPORTS = [
   'buildSchedule',
   'builtinLines',
   'cadenceOfFreq',
-  'canUseEmergency',
   'cardEligibility', // 05.3-44: shared card rule, so v3 screens never import the old barrel (P-01)
   'cardPaidInFullHistory', // 05.3-80
   'changeSinceLooked',
@@ -116,6 +117,7 @@ export const V3_RUNTIME_EXPORTS = [
   'homeThresholds',
   'insteadFutures',
   'insteadLinkFor',
+  'isNeedPurpose',
   'judgeCheck',
   'layerOfAnswerKey',
   'layersFor',

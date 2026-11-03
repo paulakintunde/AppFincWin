@@ -267,7 +267,7 @@ describe('D-35 cap without a current month of records', () => {
   });
 });
 
-describe('D-63 an emergency purchase may count the emergency fund in the cash check', () => {
+describe('05.4 D-35 / D-41 / D-49 (retires D-63): the safety net counts for any purpose, never only for an emergency', () => {
   const leo = (): ReturnType<typeof toV3Inputs> => toV3Inputs(personById('leo'));
   const laptop = (over: Partial<Parameters<typeof checkOnce>[1]> = {}): ReturnType<typeof checkOnce> =>
     checkOnce(70_000, {
@@ -277,40 +277,39 @@ describe('D-63 an emergency purchase may count the emergency fund in the cash ch
       ...over,
     });
 
-  it('D-63 (a) a Leo-like emergency purchase is emergency_use with the emergency_used fact', () => {
+  it('Leo: the 300,000 fund is his net; 62,000 of it sits above the 238,000 starter and is spare, so it pays the rest', () => {
     const ev = evaluate(leo(), laptop());
-    expect(ev.funds.spending).toBe(89_484); // the 300,000 fund sits in its own account
-    expect(ev.cash.kind).toBe('ok'); // the path opens at 89,484 + 300,000
-    expect(ev.result.code).toBe('emergency_use');
-    expect(ev.result.facts.find((f) => f.code === 'emergency_used')?.values).toEqual({ used: 60_000, months: 5 });
+    expect(ev.funds.spending).toBe(89_484); // the fund sits in its own account
+    expect(ev.net).toMatchObject({ protect: true, size: 238_000, starter: 238_000, saved: 300_000, floor: 238_000, aboveSize: 62_000, state: 'above' });
+    expect(ev.cash.kind).toBe('ok'); // the path opens at 89,484 + the 62,000 above the size
+    expect(ev.result.code).toBe('fits_unspent');
+    expect(ev.result.split).toEqual([
+      { source: 'unspent_earlier', amount: 10_000 },
+      { source: 'emergency', amount: 60_000 },
+    ]);
+    expect(ev.result.facts).toContainEqual({ code: 'net_above_size', values: { above: 62_000 } });
+    expect(ev.result.facts).toContainEqual({ code: 'emergency_untouched', values: { amount: 238_000 } });
   });
 
-  it('D-63 (b) the same purchase not marked an emergency never sees the fund: not_yet', () => {
-    const ev = evaluate(leo(), laptop({ emergency: false }));
-    expect(ev.cash.kind).toBe('not_covered');
-    expect(ev.result.code).toBe('not_yet');
+  it('the same purchase with no emergency mark, no purpose or a custom purpose gets the same answer (D-41, D-49)', () => {
+    const marked = evaluate(leo(), laptop()).result;
+    for (const over of [{ emergency: false }, { purpose: null }, { purpose: { kind: 'custom' as const, id: 'mine' } }]) {
+      const r = evaluate({ ...leo(), custom: { itemTypes: [], purposes: [{ id: 'mine' }], cadences: [], incomeKinds: [] } }, laptop(over)).result;
+      expect({ code: r.code, split: r.split, facts: r.facts }).toEqual({ code: marked.code, split: marked.split, facts: marked.facts });
+    }
   });
 
-  it('D-63 (c) emergency-marked with a custom purpose keeps the fund locked: not_yet', () => {
-    const ev = evaluate(
-      { ...leo(), custom: { itemTypes: [], purposes: [{ id: 'mine' }], cadences: [], incomeKinds: [] } },
-      laptop({ purpose: { kind: 'custom', id: 'mine' } })
-    );
-    expect(ev.cash.kind).toBe('not_covered');
-    expect(ev.result.code).toBe('not_yet');
-  });
-
-  it('D-63 (c) emergency-marked with no purpose, or no fund at all, adds nothing', () => {
-    expect(evaluate(leo(), laptop({ purpose: null })).cash.kind).toBe('not_covered');
+  it('no fund at all: nothing to lend, so not_yet', () => {
     const noFund = evaluate({ ...leo(), emergency: null }, laptop());
     expect(noFund.funds.emergency).toBeNull();
+    expect(noFund.net?.saved).toBe(0);
     expect(noFund.cash.kind).toBe('not_covered');
+    expect(noFund.result.code).toBe('not_yet');
   });
 
-  it('D-63 (d) an unlinked fund (D-62) is subtracted from spending and added back once for an eligible purchase', () => {
+  it('an unlinked fund (D-62) is subtracted from spending once and still counts as the net once', () => {
     const base = leo();
     const emergency = base.emergency as NonNullable<typeof base.emergency>;
-    // Every account is stated, but the fund sits in none of them: 389,484 everyday, fund 300,000 unlinked.
     const unlinked = {
       ...base,
       emergency: { ...emergency, accountId: null },
@@ -319,10 +318,9 @@ describe('D-63 an emergency purchase may count the emergency fund in the cash ch
     const ev = evaluate(unlinked, laptop());
     expect(ev.funds.fundUnlinked).toBe(true);
     expect(ev.funds.spending).toBe(89_484);
-    // 89,484 + 300,000 once, never 89,484 + 2 x 300,000: the same cash reading as the linked fund.
+    // 89,484 + the 62,000 above the size once, never twice: the same cash reading as the linked fund.
     expect(ev.cash).toEqual(evaluate(leo(), laptop()).cash);
     expect(ev.result.missing).toContain('account_use_question'); // D-62 asks which account holds the fund
-    expect(evaluate(unlinked, laptop({ emergency: false })).cash.kind).toBe('not_covered');
   });
 });
 

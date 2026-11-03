@@ -208,3 +208,27 @@ export function withOverdraft(inputs: V3Inputs, o: OverdraftTweak): V3Inputs {
 export const overdraftInputsArb: fc.Arbitrary<{ readonly base: V3Inputs; readonly o: OverdraftTweak }> = fc
   .tuple(fc.constantFrom(...PERSON_IDS), tweakArb, overdraftTweakArb)
   .map(([id, t, o]) => ({ base: inputsOfPerson(id, t), o }));
+
+/**
+ * 05.4 FIN-01 / FIN-02 (I50..I52, I-saved, I-D41): a safety-net record on a golden person. A separate arbitrary, so the draws of
+ * tweakArb (and the I44 digests built from it) are unchanged. size null = the starter (1 month of essential costs).
+ */
+export interface NetTweak {
+  readonly protect: boolean;
+  readonly size: number | null;
+  readonly saved: number;
+}
+
+export const netTweakArb: fc.Arbitrary<NetTweak> = fc.record({
+  protect: fc.boolean(),
+  size: fc.option(fc.integer({ min: 0, max: 2_000_000 }), { nil: null }),
+  saved: fc.integer({ min: 0, max: 3_000_000 }),
+});
+
+export function withSafetyNet(inputs: V3Inputs, n: NetTweak): V3Inputs {
+  return { ...inputs, safetyNet: { protect: n.protect, size: n.size === null ? null : mu(n.size), saved: mu(n.saved) } };
+}
+
+export const netInputsArb: fc.Arbitrary<{ readonly base: V3Inputs; readonly n: NetTweak }> = fc
+  .tuple(fc.constantFrom(...PERSON_IDS), tweakArb, netTweakArb)
+  .map(([id, t, n]) => ({ base: inputsOfPerson(id, t), n }));

@@ -3518,11 +3518,6 @@ const en = {
           title: 'This payment could overspend the month each time.',
           body: 'Based on your records, a typical month leaves {{left}}; this adds {{monthly}}.',
         },
-        emergencyUse: {
-          chip: 'Uses emergency fund',
-          title: 'This uses {{used}} of your emergency fund.',
-          body: 'Marked as an emergency. Based on your records, it could be rebuilt in about {{months}} months.',
-        },
         needsInput: {
           chip: 'More needed',
           title: 'A little more is needed to check this properly.',
@@ -3538,6 +3533,27 @@ const en = {
           chip: 'Uses your overdraft past payday',
           title: 'This goes into your overdraft, and payday does not clear it.',
           body: 'After your pay on {{date}}, {{account}} would still be {{below}} below {{zero}}. At {{rate}}%, the next 90 days below {{zero}} cost about {{cost}}. This is an estimate.',
+        },
+        // 05.4 FIN-01 / FIN-02 (D-35, D-06, D-41): the condition first. Stored emergency_use answers read the fitsUsesNet copy.
+        fitsUsesNet: {
+          chip: 'Dips into your safety net',
+          title: 'This dips into your safety net.',
+          body: 'Uses {{used}} of your safety net. {{left}} stays in it. Based on your records, it could be refilled in about {{months}} months from spare money.',
+        },
+        fitsUsesNetProtectionOff: {
+          chip: 'Uses your safety net · protection off',
+          title: 'This uses money in your safety net.',
+          body: 'Protection is off, so this counts the money in your safety net.',
+        },
+        fitsNoNet: {
+          chip: 'Fits, but no safety net',
+          title: 'This fits, and nothing is saved in your safety net yet.',
+          body: '{{month}} is on track to leave about {{left}}, including the everyday spending still to come.',
+        },
+        fitsSmallNet: {
+          chip: 'Fits, but your safety net is small',
+          title: 'This fits, and your safety net is below its size.',
+          body: '{{month}} is on track to leave about {{left}}, including the everyday spending still to come.',
         },
       },
       notice: {
@@ -3570,9 +3586,19 @@ const en = {
       fact: {
         month_left_after: '{{month}} would have about {{left}} to spare after this.',
         unspent_before_after: 'Unspent money goes from {{before}} to {{after}}.',
-        emergency_untouched: 'Your emergency fund of {{amount}} is untouched.',
-        emergency_used: '{{used}} comes from your emergency fund.',
-        emergency_used_rebuild: '{{used}} comes from your emergency fund. Based on your records it could be rebuilt in about {{months}} months.',
+        emergency_untouched: 'Your safety net of {{amount}} is untouched.',
+        // 05.4 FIN-01 / FIN-02 (D-35, D-41, D-06): the safety net. {{zero}} is the currency's zero, e.g. "$0".
+        net_used: 'Uses {{used}} of your safety net.',
+        net_left: '{{left}} stays in it.',
+        net_refill: 'Refilled in about {{months}} months from spare money.',
+        net_zero_is_off: 'Your safety net is set to {{zero}}, so it is treated as switched off.',
+        net_protection_off: 'Protection is off, so this counts the money in your safety net.',
+        net_none_start: 'Nothing is saved in your safety net yet. 1\u00A0month of essential costs, about {{starter}}, is a start; 3 to 6 months is common.',
+        net_progress: 'Your safety net has {{saved}} of its {{size}}. 1\u00A0month is a start; 3 to 6 months is common.',
+        net_above_size: '{{above}} above your safety net’s size counts as spare money.',
+        wait_keeps_net: 'Waiting until {{date}} keeps your safety net whole.',
+        wait_keeps_net_month: 'Waiting until {{month}} keeps your safety net whole.',
+        need_net_line: 'Marked as a need. A safety net is money kept for needs like this.',
         envelope_used: '{{used}} comes from the {{envelope}} envelope.',
         line_crossed: 'This goes past one of your lines.',
         line_crossed_percent: 'This brings it to {{value}}% of your income; your line is {{limit}}%.',

@@ -32,7 +32,8 @@ describe('explorer at lever 0 agrees with the answer (D-12)', () => {
       if (ev.purchase === null || ev.funds.unspent === null) continue;
       // A plan with monthly payments dates its wait from the plan (the monthly part of the judge), not from the whole price.
       if (ev.purchase.monthly > 0) continue;
-      const unspent = ev.funds.unspent.available ?? ev.funds.unspent.value;
+      // 05.4 D-35: money saved above the safety net's size is spare, so the judge counts it toward the ready date too.
+      const unspent = (ev.funds.unspent.available ?? ev.funds.unspent.value) + (ev.net?.aboveSize ?? 0);
       const out = explore({
         month: ev.month,
         flexibleSaving: minorUnits(0),

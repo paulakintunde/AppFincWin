@@ -129,7 +129,7 @@ describe('agreement with 05.3-64 in one evaluate() run (D-31)', () => {
       }),
       checkOnce(5000)
     );
-  const shortBy = (e: Evaluation): number => (e.cash.kind === 'ok' || e.cash.kind === 'overdraft' ? 0 : e.cash.shortBy);
+  const shortBy = (e: Evaluation): number => (e.cash.kind === 'ok' || e.cash.kind === 'overdraft' || e.cash.kind === 'net' ? 0 : e.cash.shortBy);
 
   it('always_other(Netflix 1199): recurringBills, billsDue and the cash path all drop the Netflix amount', () => {
     const b = run();

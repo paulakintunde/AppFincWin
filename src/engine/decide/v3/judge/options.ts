@@ -1,15 +1,18 @@
 /**
- * Custom options and the emergency-purpose rule (05.1, D-19, I38). Custom options are plain data; their names never
+ * Custom options and the need-or-want reading of a purpose (05.1, D-19; 05.4 D-41). Custom options are plain data; their names never
  * reach the engine. A deleted custom option resolves to a preset fallback with a reason and never throws, so a recorded
  * decision is never recomputed differently (I42).
  */
-import { CADENCE_EVERY_MAX, CADENCE_EVERY_MIN, EMERGENCY_PURPOSES, MAX_CUSTOM_OPTIONS, MAX_OWN_QUESTIONS } from '../constants';
+import { CADENCE_EVERY_MAX, CADENCE_EVERY_MIN, MAX_CUSTOM_OPTIONS, MAX_OWN_QUESTIONS, NEED_PURPOSES } from '../constants';
 import type { Cadence, CountsAs, CustomOptions, IncomeKind, ItemTypeRef, OwnQuestion, Purpose, QuestionId, ReasonCode, V3PresetItemType } from '../types';
 import { PRESET_QUESTIONS, questionSpec } from './presetQuestions';
 
-/** I38: only the preset purposes necessity and for_work can use the emergency fund; a custom purpose never can. */
-export function canUseEmergency(p: Purpose | null): boolean {
-  return p !== null && p.kind === 'preset' && (EMERGENCY_PURPOSES as readonly string[]).includes(p.value);
+/**
+ * D-41: the preset purposes necessity and for_work read as a need; any other purpose, a custom one or none reads as a want.
+ * D-49 retired the 05.1 I38 gate: the reading changes wording and the order of facts only, never the code, variant or figures.
+ */
+export function isNeedPurpose(p: Purpose | null): boolean {
+  return p !== null && p.kind === 'preset' && (NEED_PURPOSES as readonly string[]).includes(p.value);
 }
 
 export type OptionsProblem =

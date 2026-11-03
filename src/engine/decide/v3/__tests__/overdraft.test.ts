@@ -242,7 +242,7 @@ describe('judge: the one-off part with the cash path inside the overdraft', () =
     ]);
   });
 
-  it('an emergency purchase that takes the fund and still dips keeps the fund share in the split', () => {
+  it('05.4 D-35: inside the overdraft limit the overdraft carries the dip and the protected net is kept for last, whatever the purpose', () => {
     const { inputs } = ivy();
     const withFund: V3Inputs = {
       ...inputs,
@@ -253,10 +253,7 @@ describe('judge: the one-off part with the cash path inside the overdraft', () =
     const ev = evaluate(withFund, checkOnceWith(10_000, { emergency: true, purpose: { kind: 'preset', value: 'necessity' } }));
     expect(ev.cash.kind).toBe('overdraft');
     expect(ev.result.code).toBe('fits_uses_overdraft');
-    expect(ev.result.split).toEqual([
-      { source: 'month', amount: 5_000 },
-      { source: 'emergency', amount: 5_000 },
-    ]);
-    expect(ev.result.facts.some((f) => f.code === 'emergency_used')).toBe(true);
+    expect(ev.result.split).toEqual([{ source: 'month', amount: 10_000 }]);
+    expect(ev.result.facts.some((f) => f.code === 'net_used')).toBe(false);
   });
 });

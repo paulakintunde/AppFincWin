@@ -328,7 +328,8 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       'decide.v3.notice.income_from_expected_low',
       'decide.v3.missing.account_use_question_fund',
       // Variants chosen by the UI (05.1-40)
-      'decide.v3.fact.emergency_used_rebuild',
+      // 05.4 FIN-02: the wait line names a month when no payday clears the dip
+      'decide.v3.fact.wait_keeps_net_month',
       'decide.v3.fact.line_crossed_percent',
       'decide.v3.fact.line_crossed_money',
       'decide.v3.fact.line_crossed_tenths',
@@ -354,7 +355,7 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
   });
 
   it('v3 4.6 forecasts say could, based on your records or on track', () => {
-    const forecastBodies = ['fitsMonth', 'fitsMonthLowMonth', 'fitsUnspentLowMonth', 'notYetPayday', 'notYetNotCovered', 'monthlyShort', 'emergencyUse'];
+    const forecastBodies = ['fitsMonth', 'fitsMonthLowMonth', 'fitsUnspentLowMonth', 'notYetPayday', 'notYetNotCovered', 'monthlyShort', 'fitsUsesNet'];
     for (const name of forecastBodies) {
       expect(get(`decide.v3.verdict.${name}.body`)).toMatch(/\bcould\b|based on your records|on track/i);
     }

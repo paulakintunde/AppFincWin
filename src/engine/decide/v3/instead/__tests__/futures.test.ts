@@ -112,7 +112,7 @@ describe('insteadFutures', () => {
     expect(f.buyNow.emergencyUntouched).toBe(true);
     expect(f.keep.unspentKept).toBe(240000);
     const e = insteadFutures({
-      result: { code: 'emergency_use', facts: [{ code: 'emergency_used', values: { used: 1, months: 1 } }] } as unknown as Result,
+      result: { code: 'fits_uses_net', facts: [{ code: 'net_used', values: { used: 1 } }] } as unknown as Result,
       month,
       funds,
       purchase: purchase(),
@@ -202,7 +202,7 @@ describe('buyLater', () => {
 
 describe('H-03 one figure per screen', () => {
   test('H-03 monthly_short with an emergency segment: the fund is not untouched', () => {
-    const r = { code: 'monthly_short', facts: [{ code: 'emergency_used', values: { used: 5000, months: 1 } }] } as unknown as Result;
+    const r = { code: 'monthly_short', facts: [{ code: 'net_used', values: { used: 5000 } }] } as unknown as Result;
     const f = insteadFutures({ result: r, month, funds, purchase: purchase(), userRate: null, years: 1 });
     expect(f.buyNow.emergencyUntouched).toBe(false);
   });

@@ -26,10 +26,19 @@ export const VERDICT_TABLE = Object.freeze({
   'fits_month.low_month': row('fitsMonthLowMonth', 'caution'),
   fits_unspent: row('fitsUnspent', 'fits'),
   'fits_unspent.low_month': row('fitsUnspentLowMonth', 'caution'),
+  // 05.4 FIN-01 (D-35): a fit while the safety net is empty or small is amber.
+  'fits_month.no_net': row('fitsNoNet', 'caution'),
+  'fits_month.small_net': row('fitsSmallNet', 'caution'),
+  'fits_unspent.no_net': row('fitsNoNet', 'caution'),
+  'fits_unspent.small_net': row('fitsSmallNet', 'caution'),
   'not_yet.payday': row('notYetPayday', 'caution'),
   'not_yet.not_covered': row('notYetNotCovered', 'short'),
   monthly_short: row('monthlyShort', 'short'),
-  emergency_use: row('emergencyUse', 'caution'),
+  // 05.4 D-41: emergency_use stays a valid stored code; it reads the "Dips into your safety net" copy. The engine never returns it.
+  emergency_use: row('fitsUsesNet', 'caution'),
+  // 05.4 FIN-02 / ENG-04 (D-35, D-06): uses money in the safety net, whatever the purpose.
+  fits_uses_net: row('fitsUsesNet', 'caution'),
+  'fits_uses_net.protection_off': row('fitsUsesNetProtectionOff', 'caution'),
   needs_input: row('needsInput', 'input'),
   // 05.4 FIN-03 (D-26, D-36): no new tone (design restraint); the not-cleared warning leads its body.
   fits_uses_overdraft: row('fitsUsesOverdraft', 'caution'),
@@ -38,19 +47,29 @@ export const VERDICT_TABLE = Object.freeze({
 
 export type VerdictRowKey = keyof typeof VERDICT_TABLE;
 
-/** Variant-aware lookup. A null variant gives the base row (not_yet defaults to not_covered); low_month only applies to fits codes. */
+/** The fits variants with their own row; any other variant on a fits code gives the base row. */
+const FITS_VARIANTS = ['low_month', 'no_net', 'small_net'] as const;
+type FitsVariant = (typeof FITS_VARIANTS)[number];
+const isFitsVariant = (v: Variant | null): v is FitsVariant => v !== null && (FITS_VARIANTS as readonly string[]).includes(v);
+
+/**
+ * Variant-aware lookup. A null variant gives the base row (not_yet defaults to not_covered); low_month, no_net and small_net only
+ * apply to fits codes, protection_off only to fits_uses_net.
+ */
 export function verdictRowFor(code: Code, variant: Variant | null): VerdictRow {
   switch (code) {
     case 'fits_month':
-      return variant === 'low_month' ? VERDICT_TABLE['fits_month.low_month'] : VERDICT_TABLE.fits_month;
+      return isFitsVariant(variant) ? VERDICT_TABLE[`fits_month.${variant}` as const] : VERDICT_TABLE.fits_month;
     case 'fits_unspent':
-      return variant === 'low_month' ? VERDICT_TABLE['fits_unspent.low_month'] : VERDICT_TABLE.fits_unspent;
+      return isFitsVariant(variant) ? VERDICT_TABLE[`fits_unspent.${variant}` as const] : VERDICT_TABLE.fits_unspent;
     case 'not_yet':
       return variant === 'payday' ? VERDICT_TABLE['not_yet.payday'] : VERDICT_TABLE['not_yet.not_covered'];
     case 'monthly_short':
       return VERDICT_TABLE.monthly_short;
     case 'emergency_use':
       return VERDICT_TABLE.emergency_use;
+    case 'fits_uses_net':
+      return variant === 'protection_off' ? VERDICT_TABLE['fits_uses_net.protection_off'] : VERDICT_TABLE.fits_uses_net;
     case 'fits_uses_overdraft':
       return variant === 'not_cleared' ? VERDICT_TABLE['fits_uses_overdraft.not_cleared'] : VERDICT_TABLE.fits_uses_overdraft;
     case 'needs_input':
@@ -86,7 +105,7 @@ export const FACT_KEYS = Object.freeze({
   month_left_after: 'decide.v3.fact.month_left_after',
   unspent_before_after: 'decide.v3.fact.unspent_before_after',
   emergency_untouched: 'decide.v3.fact.emergency_untouched',
-  emergency_used: 'decide.v3.fact.emergency_used',
+  net_used: 'decide.v3.fact.net_used',
   envelope_used: 'decide.v3.fact.envelope_used',
   line_crossed: 'decide.v3.fact.line_crossed',
   quoted_differs: 'decide.v3.fact.quoted_differs',
@@ -111,6 +130,15 @@ export const FACT_KEYS = Object.freeze({
   no_overdraft_limit: 'decide.v3.fact.no_overdraft_limit',
   ready_without_interest: 'decide.v3.fact.ready_without_interest',
   clearing_first: 'decide.v3.fact.clearing_first',
+  net_left: 'decide.v3.fact.net_left',
+  net_refill: 'decide.v3.fact.net_refill',
+  net_zero_is_off: 'decide.v3.fact.net_zero_is_off',
+  net_protection_off: 'decide.v3.fact.net_protection_off',
+  net_none_start: 'decide.v3.fact.net_none_start',
+  net_progress: 'decide.v3.fact.net_progress',
+  net_above_size: 'decide.v3.fact.net_above_size',
+  wait_keeps_net: 'decide.v3.fact.wait_keeps_net',
+  need_net_line: 'decide.v3.fact.need_net_line',
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -192,7 +220,7 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   month_left_after: ['month', 'left'],
   unspent_before_after: ['before', 'after'],
   emergency_untouched: ['amount'],
-  emergency_used: ['used', 'months'], // months is omitted when the rebuild time is unknown
+  net_used: ['used'],
   envelope_used: ['used', 'envelopeId'],
   line_crossed: ['lineId', 'kind', 'unit', 'value', 'limit'], // unit: 'percent' | 'money' | 'tenths'
   quoted_differs: ['quoted', 'computed'],
@@ -219,6 +247,16 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   no_overdraft_limit: ['accountId', 'below', 'zero'],
   ready_without_interest: [],
   clearing_first: ['zero'],
+  // 05.4 FIN-01 / FIN-02 (D-35, D-41, D-06). wait_keeps_net carries date (a payday) or month (the _month copy).
+  net_left: ['left'],
+  net_refill: ['months'],
+  net_zero_is_off: ['zero'],
+  net_protection_off: [],
+  net_none_start: ['starter'],
+  net_progress: ['saved', 'size'],
+  net_above_size: ['above'],
+  wait_keeps_net: ['date', 'month'],
+  need_net_line: [],
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({

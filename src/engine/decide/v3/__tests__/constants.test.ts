@@ -48,6 +48,7 @@ describe('v3 constants.ts citations', () => {
       monthly_short: 'adjust',
       fits_uses_overdraft: 'adjust',
       emergency_use: 'adjust',
+      fits_uses_net: 'adjust',
       not_yet: 'no',
       needs_input: 'missing',
     });
@@ -60,6 +61,7 @@ describe('v3 constants.ts citations', () => {
       'monthly_short',
       'fits_uses_overdraft',
       'emergency_use',
+      'fits_uses_net',
       'fits_unspent',
       'fits_month',
     ]);

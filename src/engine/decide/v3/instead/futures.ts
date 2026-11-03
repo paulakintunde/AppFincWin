@@ -150,7 +150,7 @@ export function insteadFutures(input: {
           : unspent === null
             ? null
             : minorUnits(unspent - purchase.dayOne),
-      emergencyUntouched: !result.facts.some((f) => f.code === 'emergency_used'),
+      emergencyUntouched: !result.facts.some((f) => f.code === 'net_used'),
       planTotal: sched === null ? null : myPart(sched.totalPaid, purchase.share),
     },
     keep: { unspentKept: unspent === null ? null : minorUnits(unspent) },
