@@ -7,11 +7,14 @@
  *   segment always equals the net_used fact (gen:68). Money above the net's size is extra savings, never 'emergency'.
  * - moveMoneyBy: when the everyday account alone would go below 0 within the 90 days with the purchase, and money in another account
  *   (extra savings, or an unlocked net) covers it, the amount to move and the first day it is needed (D-58).
+ * - savingTransfers: the dated regular saving and investing transfers out of the everyday account, which the account-only path for
+ *   the move-by amount takes (D-58, Plan-49 re-run).
  */
 import { minorUnits, type MinorUnits } from '../../money/types';
-import { applyPurchaseFlows, type CashPathV3, type OpenCashPath } from './cash/path';
-import { daysInYearMonth, dayOfMonth, yearMonthOf } from './dates';
-import type { FundingSegment, Funds, LocalDate } from './types';
+import { applyPurchaseFlows, type CashPathV3, type DatedFlow, type OpenCashPath } from './cash/path';
+import { addDays, daysInYearMonth, dayOfMonth, yearMonthOf } from './dates';
+import { liveSeriesOf, seriesOccurrences } from './month/series';
+import type { FundingSegment, Funds, LocalDate, V3Series } from './types';
 
 const FN = 'moneySource';
 
@@ -86,4 +89,21 @@ export function moveMoneyBy(withPurchaseAccountOnly: CashPathV3, cap: MinorUnits
   }
   if (first === null) return null;
   return { amount: minorUnits(Math.min(-lowest, cap)), date: first };
+}
+
+/**
+ * D-58: money moved to savings leaves the everyday account on its date; the main cash path still leaves it out (pausable), the
+ * account-only path for the move-by amount takes it. Every occurrence from asOf for `days` days of a confirmed live 'saving' or
+ * 'investing' series that is not flexible, less the occurrences already logged ("seriesId|date" in paidThisMonth).
+ */
+export function savingTransfers(series: readonly V3Series[], paidThisMonth: ReadonlySet<string>, asOf: LocalDate, days: number): DatedFlow[] {
+  const out: DatedFlow[] = [];
+  const end = addDays(asOf, days);
+  for (const role of ['saving', 'investing'] as const) {
+    for (const s of liveSeriesOf(series, asOf, role)) {
+      if (s.savingMode === 'flexible') continue;
+      for (const d of seriesOccurrences(s, asOf, end, asOf)) if (!paidThisMonth.has(`${s.id}|${d}`)) out.push({ date: d, amount: s.amount });
+    }
+  }
+  return out;
 }

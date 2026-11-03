@@ -343,9 +343,17 @@ export function purchaseCashFlows(
   // L-03: the first payment due today is taken out of the day-one flow and put back by purchaseFlows, both as the same
   // myPart, so the two cancel and the total on asOf is exactly dayOne. There is no clamp: a clamp would hide a negative
   // remainder and make the cash path disagree with the ladder (buildPurchase already floors dayOne itself at 0).
-  let dayOne = BigInt(purchase.dayOne);
-  if (s !== null) {
-    for (const p of paymentsInRange(s, asOf, addDays(asOf, 1))) dayOne -= BigInt(myPart(p.amount, purchase.share));
-  }
+  const dayOne = BigInt(purchase.dayOne) - BigInt(firstPaymentsToday(s, purchase.share, asOf));
   return purchaseFlows({ dayOne: mb(dayOne), schedule: s, share: purchase.share }, asOf, days);
+}
+
+/**
+ * My share of the plan payments dated asOf (0 with no schedule). They are inside Purchase.dayOne and inside Schedule.totalPaid,
+ * so the cash path (purchaseCashFlows) and the interest line's total (depletion.ts, Plan-49 re-run) take them out once.
+ */
+export function firstPaymentsToday(schedule: Schedule | null, share: ResolvedShare, asOf: LocalDate): MinorUnits {
+  if (schedule === null) return mb(0n);
+  let sum = 0n;
+  for (const p of paymentsInRange(schedule, asOf, addDays(asOf, 1))) sum += BigInt(myPart(p.amount, share));
+  return mb(sum);
 }

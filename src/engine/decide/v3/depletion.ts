@@ -7,6 +7,8 @@
  * In order: the shortfall (depletion_payment, usual_month_short or plan_makes_short); price_over_net; net_lasts and
  * net_lasts_without (only while the net is unlocked, D-61: no locked amount is shown as usable); interest_is_a_cost (a plan with
  * interest; 05.4-22 widens it to every plan answer, D-48); balanced_month_room; month_balance_gap (already short, D-63).
+ * The interest line's total is deposit and fees paid on day one plus every plan payment: a first payment dated asOf is inside both
+ * dayOne and schedule.totalPaid, so it is taken out of dayOne once (Plan-49 re-run, 2026-11-03: it was counted twice).
  */
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { myPart, type ResolvedShare } from '../share';
@@ -27,6 +29,8 @@ export interface DepletionInput {
   readonly net: ResolvedNet;
   /** Money the split takes from the net's account. */
   readonly netTaken: MinorUnits;
+  /** My share of the plan payments dated asOf; already inside dayOne and inside schedule.totalPaid. */
+  readonly firstNow: MinorUnits;
 }
 
 /** The usual month is already short before the purchase (D-63). */
@@ -56,7 +60,7 @@ export function depletionFacts(d: DepletionInput): Fact[] {
   if (d.schedule !== null && d.schedule.totalInterest > 0) {
     out.push({
       code: 'interest_is_a_cost',
-      values: { interest: myPart(d.schedule.totalInterest, d.share), total: minorUnits(d.dayOne + myPart(d.schedule.totalPaid, d.share)) },
+      values: { interest: myPart(d.schedule.totalInterest, d.share), total: minorUnits(d.dayOne - d.firstNow + myPart(d.schedule.totalPaid, d.share)) },
     });
   }
   out.push({ code: 'balanced_month_room', values: { pay: d.typicalIncome, costs: minorUnits(d.typicalIncome - TL) } });

@@ -10,7 +10,7 @@
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { mergeConfidence } from './confidence/reasons';
-import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, withNet, type CashCheck, type OpenCashPath } from './cash/path';
+import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, withNet, type CashCheck, type DatedFlow, type OpenCashPath } from './cash/path';
 import { essentialCosts, essentialSpendingOf } from './essentialCosts';
 import { resolveSafetyNet, type ResolvedNet } from './safetyNet';
 import { overdraftFloor } from './overdraft';
@@ -28,7 +28,7 @@ import { recordsSynced } from './month/freshness';
 import { dueDrops } from './month/dueDrops';
 import { buildMonthModel } from './month/model';
 import { historyPay, type HistoryPay } from './month/historyPay';
-import { cappedSpare, confirmedUnspent, spareInAccount } from './moneySource';
+import { cappedSpare, confirmedUnspent, savingTransfers, spareInAccount } from './moneySource';
 import { incomeThisMonth, type IncomeInput } from './month/incomeProfile';
 import { expectedFor } from './month/incomePattern';
 import { liveSeriesOf, seriesOccurrences } from './month/series';
@@ -140,6 +140,8 @@ interface Reading {
   readonly hp: HistoryPay | null;
   /** 05.4 D-56: what the everyday accounts are expected to hold at month end with no purchase; spare money is capped at it. */
   readonly spareInAccount: MinorUnits;
+  /** 05.4 D-58: the regular saving / investing transfers out of the everyday account; the account-only path takes them. */
+  readonly savingOut: readonly DatedFlow[];
 }
 
 export interface Prepared {
@@ -159,11 +161,12 @@ function readingOf(inputs: V3Inputs): Reading {
   // 05.4 D-52: an irregular earner with no pay series expects pay on the usual payday at the low-month amount.
   const hp = historyPay(inputs);
   const histDates = hp?.dates ?? [];
+  const paid = paidOccurrences(inputs);
   const open = openCashPath({
     asOf: inputs.asOf,
     days: CASH_PATH_DAYS_V3,
     series: inputs.series,
-    paidThisMonth: paidOccurrences(inputs),
+    paidThisMonth: paid,
     erest: month.erest,
     e: month.e ?? minorUnits(0),
     payCaps: payCapsOf(inputs, month),
@@ -183,6 +186,7 @@ function readingOf(inputs: V3Inputs): Reading {
     net: resolveSafetyNet(inputs, essentialCosts(month, inputs.debts, essentialSpendingOf(inputs, month))),
     hp,
     spareInAccount: spareInAccount(open, funds.spending),
+    savingOut: savingTransfers(inputs.series, paid, inputs.asOf, CASH_PATH_DAYS_V3),
   };
 }
 
@@ -197,8 +201,9 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
   const opening = minorUnits(funds.spending + funds.ownEnvelope + net.aboveSize);
   const flows = pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3) : [];
   const path = applyPurchaseFlows(r.open, opening, flows);
-  // 05.4 D-56 / D-58: the everyday accounts alone (no money above the net's size), with the purchase.
-  const account = { spareInAccount: r.spareInAccount, withPurchase: applyPurchaseFlows(r.open, minorUnits(funds.spending + funds.ownEnvelope), flows) };
+  // 05.4 D-56 / D-58: the everyday accounts alone (no money above the net's size), with the purchase and the regular saving
+  // transfers that leave them (D-58; the main path and the cash check leave saving out, it is pausable).
+  const account = { spareInAccount: r.spareInAccount, withPurchase: applyPurchaseFlows(r.open, minorUnits(funds.spending + funds.ownEnvelope), [...flows, ...r.savingOut]) };
   const cash = withNet(cashCheck(path, r.payDate, r.floor), path, () => applyPurchaseFlows(r.open, opening, []), net.usable);
   // 05.4 FIN-03 (D-36): the same open path with no purchase flows gives the cost without it; only needed with an overdraft.
   const overdraft = { floor: r.floor, withPurchase: path, withoutPurchase: r.floor < 0 ? applyPurchaseFlows(r.open, opening, []) : null, paydays: r.paydays };

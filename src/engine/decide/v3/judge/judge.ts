@@ -70,6 +70,7 @@ import type {
 } from '../types';
 import { evaluateLines } from './lines';
 import { needsInput } from './needsInput';
+import { firstPaymentsToday } from './purchase';
 
 export interface JudgeInput {
   readonly inputs: V3Inputs;
@@ -669,6 +670,7 @@ export function judge(j: JudgeInput): Result {
       typicalIncome: month.typicalIncome,
       net,
       netTaken: one.netTaken,
+      firstNow: firstPaymentsToday(purchase.schedule, purchase.share, j.inputs.asOf),
     }),
     ...(od?.facts ?? []),
   ];
