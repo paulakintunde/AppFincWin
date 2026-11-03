@@ -80,6 +80,8 @@ export interface OpenCashPathInput {
   readonly payCaps?: ReadonlyMap<string, MinorUnits> | null;
   /** 05.3-64 (D-27, D-31): bill and debt dues that no longer count (paid by someone else, always paid by someone else, skipped). Absent = none. */
   readonly drops?: DueDrops;
+  /** 05.4 D-52: pay expected from history (historyPay) for an irregular earner with no pay series. Never in paidThisMonth. Absent = none. */
+  readonly extraPays?: readonly { readonly date: string; readonly amount: MinorUnits }[];
 }
 
 function putFlow(net: bigint[], asOf: string, end: string, date: string, amount: bigint): void {
@@ -104,8 +106,9 @@ export function openCashPath(input: OpenCashPathInput): OpenCashPath {
       pays.push({ id: s.id, date: d, amount: BigInt(s.amount) });
     }
   }
+  for (const x of input.extraPays ?? []) pays.push({ id: 'history', date: x.date, amount: BigInt(x.amount) }); // before the caps
   // D-35: a variable or seasonal earner's pay in a month never exceeds that month's expected income, so a high-season pay
-  // figure cannot cushion a lean month. A profile with no pay series lands no income at all (cautious, unchanged; review note).
+  // figure cannot cushion a lean month. D-52: a steady-but-irregular earner with no pay series gets history pays (historyPay).
   let capped = 0n;
   if (input.payCaps == null) {
     for (const p of pays) put(p.date, p.amount);

@@ -155,6 +155,10 @@ function buildCorpus(): Emitted[] {
     { ...sam, envelopes: [{ id: 'e1', kind: 'pot', target: null, monthlyAmount: null, readyBy: null, saved: mu(60_000), purposeId: null }] },
     checkOnce(90_000, { envelopeId: 'e1' })
   );
+  // 05.4 D-61: an unlocked net lends, and a need reads need_net_line first; the same net locked is left out (net_locked)
+  const unlockedNet = { ...sam, safetyNet: { protect: true, size: mu(900_000), saved: mu(900_000), locked: false } };
+  collect(out, unlockedNet, checkOnce(600_000, { purpose: { kind: 'preset', value: 'necessity' } }));
+  collect(out, { ...unlockedNet, safetyNet: { protect: true, size: mu(900_000), saved: mu(900_000) } }, checkOnce(600_000));
   // from_your_figures: rough figures only
   collect(out, inputsOf({ typedEstimates: { income: mu(400_000), expenses: mu(150_000), saving: mu(30_000), debt: mu(0), invest: mu(0), asOf: '2026-10-01' } }), checkOnce(10_000));
   // income_kind_unmarked: other income whose kind carries no counts-as

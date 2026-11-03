@@ -182,8 +182,8 @@
     "foreign": null
    },
    "expect": {
-    "code": "fits_uses_net",
-    "legacyState": "adjust",
+    "code": "not_yet",
+    "legacyState": "no",
     "band": 2,
     "readyBy": null,
     "notices": [
@@ -191,20 +191,16 @@
      "month_heading_short"
     ],
     "facts": [
-     "net_used",
-     "net_progress"
+     "net_locked",
+     "emergency_untouched"
     ],
-    "split": [
-     {
-      "source": "emergency",
-      "amount": 6000
-     }
-    ],
+    "split": [],
     "month": {
      "e": 110000,
      "typicalLeft": -30000
     },
-    "working": "E = median(100k,105k,110k,115k,120k,110k) -> sorted middle 110k,110k -> 110,000. typicalLeft = 280,000-200,000-110,000 = -30,000 (typical short). October: Erest = max(round(110,000*28/31)=99,355, 100,000) = 100,000; out = 200,000+10,000+100,000 = 310,000; monthLeft -30,000. Unspent confirmed 0 -> P 6,000 > 0 -> not_yet, never covered (typicalLeft <= 0) so readyBy null. Emergency fund 200,000 untouched. Band 2. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter size of 310000 (1 month of essential costs) with the emergency fund, 200000, as the money saved. Only money already saved is protected: floor 200000. The answer is now fits_uses_net, split emergency 6000, net used 6000; the purpose and the emergency mark no longer gate the net."
+    "working": "E = median(100k,105k,110k,115k,120k,110k) -> sorted middle 110k,110k -> 110,000. typicalLeft = 280,000-200,000-110,000 = -30,000 (typical short). October: Erest = max(round(110,000*28/31)=99,355, 100,000) = 100,000; out = 200,000+10,000+100,000 = 310,000; monthLeft -30,000. Unspent confirmed 0 -> P 6,000 > 0 -> not_yet, never covered (typicalLeft <= 0) so readyBy null. Emergency fund 200,000 untouched. Band 2. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter size of 310000 (1 month of essential costs) with the emergency fund, 200000, as the money saved. Only money already saved is protected: floor 200000. The answer is now fits_uses_net, split emergency 6000, net used 6000; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-47 D-61): fits_uses_net -> not_yet / not_covered, the safety net (no record: locked by default) is left out of the answer, so the 200000 saved lends nothing; the 90-day path is not covered and readyBy stays null (typicalLeft <= 0). net_locked 200000.",
+    "variant": "not_covered"
    },
    "source": "v3 §12 #05"
   },
@@ -354,8 +350,8 @@
     "foreign": null
    },
    "expect": {
-    "code": "fits_uses_net",
-    "legacyState": "adjust",
+    "code": "fits_month",
+    "legacyState": "fits",
     "band": 4,
     "readyBy": null,
     "month": {
@@ -363,10 +359,14 @@
      "typicalLeft": 80000,
      "lowLeft": 75000
     },
-    "working": "Profile (c) steady: typicalIncome = steady 300,000 (not the real months 2,800-3,200). E = median(70k,90k,80k,85k,75k,80k): sorted 70,75,80,80,85,90 -> 80,000. typicalLeft = 300,000-120,000 bills-20,000 saving-80,000 = 80,000. M = 6,000 -> 74,000 >= 0. Real monthly left: 100k,60k,80k,95k,65k,80k; second-lowest 65,000; 65,000-6,000 >= 0. October: monthLeft = 300,000-(120,000+5,000+75,000 Erest+20,000) = 80,000 >= P 6,000 -> fits_month. Band 4 (whole 72,000: 10,000 and 50,000 below). CORRECTION (05.1-25): the low month is judged at today's steady pay (RESEARCH Pitfall 3, \"leftovers at today's pay\"), the same basis as typicalLeft, not at each month's real pay. At 300,000 steady: 300,000-120,000-20,000-everyday (70k,90k,80k,85k,75k,80k) = 90k,70k,80k,75k,85k,80k; sorted 70k,75k,80k,80k,85k,90k; second-lowest 75,000 (August). 75,000-6,000 >= 0 so no low-month clause. RE-BASELINED (05.1-35, D-43a, D-54): the cash check now opens at the spending balance only. Maya has no dated pay series (steady profile, no pay line), so the 90-day path takes no pay (I3). Spending balance = 525,000 total - 300,000 emergency fund (dedicated account, out of spending) = 225,000. Outflows over 90 days: bills 120,000 x 3 + Erest/E spread (to 80,000 a month) leave the path 268,000 below zero and it never recovers -> not_yet / not_covered; ready month 2026-11 (the first month whose left covers the price). The fund used to carry this path (opening 525,000). RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter size of 200000 (1 month of essential costs) with the emergency fund, 300000, as the money saved. Only money already saved is protected: floor 200000, and the 100000 above the size is spare. The answer is now fits_uses_net, split month 6000, net used 18000; the purpose and the emergency mark no longer gate the net.",
+    "working": "Profile (c) steady: typicalIncome = steady 300,000 (not the real months 2,800-3,200). E = median(70k,90k,80k,85k,75k,80k): sorted 70,75,80,80,85,90 -> 80,000. typicalLeft = 300,000-120,000 bills-20,000 saving-80,000 = 80,000. M = 6,000 -> 74,000 >= 0. Real monthly left: 100k,60k,80k,95k,65k,80k; second-lowest 65,000; 65,000-6,000 >= 0. October: monthLeft = 300,000-(120,000+5,000+75,000 Erest+20,000) = 80,000 >= P 6,000 -> fits_month. Band 4 (whole 72,000: 10,000 and 50,000 below). CORRECTION (05.1-25): the low month is judged at today's steady pay (RESEARCH Pitfall 3, \"leftovers at today's pay\"), the same basis as typicalLeft, not at each month's real pay. At 300,000 steady: 300,000-120,000-20,000-everyday (70k,90k,80k,85k,75k,80k) = 90k,70k,80k,75k,85k,80k; sorted 70k,75k,80k,80k,85k,90k; second-lowest 75,000 (August). 75,000-6,000 >= 0 so no low-month clause. RE-BASELINED (05.1-35, D-43a, D-54): the cash check now opens at the spending balance only. Maya has no dated pay series (steady profile, no pay line), so the 90-day path takes no pay (I3). Spending balance = 525,000 total - 300,000 emergency fund (dedicated account, out of spending) = 225,000. Outflows over 90 days: bills 120,000 x 3 + Erest/E spread (to 80,000 a month) leave the path 268,000 below zero and it never recovers -> not_yet / not_covered; ready month 2026-11 (the first month whose left covers the price). The fund used to carry this path (opening 525,000). RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter size of 200000 (1 month of essential costs) with the emergency fund, 300000, as the money saved. Only money already saved is protected: floor 200000, and the 100000 above the size is spare. The answer is now fits_uses_net, split month 6000, net used 18000; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-47 D-52): fits_uses_net -> fits_month, Maya is freelance with no pay series and 6 full months of records, so the 90-day path expects 280000 (her lowest month) on her usual payday, the 5th (2026-11-05, 2026-12-05); the path never goes below 0, so the October month room (80000) carries the 6000 and 74000 is left.",
     "facts": [
-     "net_used",
-     "net_above_size"
+     "month_left_after",
+     "net_above_size",
+     "emergency_untouched"
+    ],
+    "notices": [
+     "pay_expected_from_history"
     ]
    },
    "source": "v3 §12 #08"

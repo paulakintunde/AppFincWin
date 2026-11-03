@@ -99,6 +99,7 @@ export const NOTICE_KEYS = Object.freeze({
   pay_not_seen: 'decide.v3.notice.pay_not_seen',
   pay_counted_missed: 'decide.v3.notice.pay_counted_missed',
   fund_account_unknown: 'decide.v3.notice.fund_account_unknown',
+  pay_expected_from_history: 'decide.v3.notice.pay_expected_from_history',
 } as const satisfies Record<NoticeCode, string>);
 
 export const FACT_KEYS = Object.freeze({
@@ -141,6 +142,7 @@ export const FACT_KEYS = Object.freeze({
   need_net_line: 'decide.v3.fact.need_net_line',
   bills_held_back: 'decide.v3.fact.bills_held_back',
   yearly_bill_ahead: 'decide.v3.fact.yearly_bill_ahead',
+  net_locked: 'decide.v3.fact.net_locked',
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -262,6 +264,8 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   // 05.4 FIN-11 (D-47): seriesId resolves to the bill's name.
   bills_held_back: ['total'],
   yearly_bill_ahead: ['seriesId', 'amount', 'dueDate'],
+  // 05.4 D-61: the locked net up to its size.
+  net_locked: ['locked'],
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({
@@ -286,6 +290,7 @@ export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> 
   pay_not_seen: ['amount', 'date'],
   pay_counted_missed: ['amount', 'date'],
   fund_account_unknown: ['amount'],
+  pay_expected_from_history: ['amount', 'day', 'months'], // 05.4 D-52
 });
 
 /** An id the engine emits that the UI resolves to a name; the copy placeholder is the value. */

@@ -182,7 +182,8 @@ describe('settled golden questions (05.1-25)', () => {
 describe('05.4 D-35 (supersedes D-43a / D-63): only money above the net size cushions the cash check; the protected part only lends', () => {
   const sam = () => toV3Inputs(personById('sam'));
   const base = () => (SCENARIOS.find((x) => x.id === '01') as Scenario).purchase;
-  const full = (i: V3Inputs): V3Inputs => ({ ...i, safetyNet: { protect: true, size: minorUnits(900_000), saved: minorUnits(900_000) } });
+  // 05.4 D-61: these pin the unlocked rule (the net lends), so the record says locked: false.
+  const full = (i: V3Inputs): V3Inputs => ({ ...i, safetyNet: { protect: true, size: minorUnits(900_000), saved: minorUnits(900_000), locked: false } });
   // Sam: spending 407,500 (total 1,307,500 less the 900,000 fund); the fund is in its own dedicated account.
   it('D-35 with the whole 900,000 protected, a price the spending money cannot carry dips into the net, whatever its purpose', () => {
     const plain = evaluate(full(sam()), toCheckV2({ ...base(), price: 600_000 }));

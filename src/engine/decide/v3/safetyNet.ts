@@ -6,6 +6,9 @@
  *   the size not saved yet, and money saved above the size is spare.
  * - Any size is respected, however small (D-05). A size of 0 is treated exactly like protection off, and says so (D-06).
  * - With protection off, the money in the net counts like any other money; a purchase that uses it says so (protection_off).
+ * - D-61: locked by default; while locked the net up to its size is left out entirely (usable 0), so a purchase only it could pay
+ *   is Not yet; money above the size stays usable as extra savings. No record at all is locked too. Unlocked (locked false)
+ *   keeps the D-35 / D-49 rules. Protection off, or a size of 0, keeps the D-06 rule (never locked).
  */
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { ceilDivide } from '../../payoff/types';
@@ -31,8 +34,10 @@ export interface ResolvedNet {
   readonly floor: MinorUnits;
   /** Money saved above the size, which counts as spare (D-35); 0 when off. */
   readonly aboveSize: MinorUnits;
-  /** What the net can lend a purchase beyond spare money: the protected floor, or everything saved when off. */
+  /** What the net can lend a purchase beyond spare money: the protected floor (0 while locked, D-61), or everything saved when off. */
   readonly usable: MinorUnits;
+  /** 05.4 D-61: protection on and the net locked (absent or true; no record at all is locked). Never true when off. */
+  readonly locked: boolean;
   readonly state: NetState;
 }
 
@@ -49,6 +54,7 @@ export function resolveSafetyNet(inputs: V3Inputs, essential: EssentialCosts): R
   const off = !protect || zeroIsOff;
   const floor = off ? 0 : Math.min(saved, size);
   const aboveSize = off ? 0 : saved - floor;
+  const locked = !off && (sn === null ? true : sn.locked !== false);
   let state: NetState = 'full';
   if (saved === 0) state = 'none';
   else if (saved < size) state = 'small';
@@ -62,7 +68,8 @@ export function resolveSafetyNet(inputs: V3Inputs, essential: EssentialCosts): R
     saved: minorUnits(saved),
     floor: minorUnits(floor),
     aboveSize: minorUnits(aboveSize),
-    usable: minorUnits(off ? saved : floor),
+    usable: minorUnits(off ? saved : locked ? 0 : floor),
+    locked,
     state,
   };
 }
@@ -78,6 +85,7 @@ export const NO_NET: ResolvedNet = Object.freeze({
   floor: minorUnits(0),
   aboveSize: minorUnits(0),
   usable: minorUnits(0),
+  locked: false,
   state: 'none',
 });
 

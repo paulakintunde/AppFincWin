@@ -27,13 +27,14 @@ import { withRedatedRefunds } from './month/refunds';
 import { recordsSynced } from './month/freshness';
 import { dueDrops } from './month/dueDrops';
 import { buildMonthModel } from './month/model';
+import { historyPay, type HistoryPay } from './month/historyPay';
 import { incomeThisMonth, type IncomeInput } from './month/incomeProfile';
 import { expectedFor } from './month/incomePattern';
 import { liveSeriesOf, seriesOccurrences } from './month/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './month/settle';
 import type { PlanCard } from './plan/planCard';
 import type { QuotedCheck } from './plan/quoted';
-import type { CheckV2, Funds, MonthModel, Purchase, ReadyBy, ReasonCode, Result, V3Inputs, YearMonth } from './types';
+import type { CheckV2, Funds, MonthModel, Notice, Purchase, ReadyBy, ReasonCode, Result, V3Inputs, YearMonth } from './types';
 
 export interface Evaluation {
   readonly result: Result;
@@ -132,6 +133,8 @@ interface Reading {
   readonly paydays: readonly string[];
   /** 05.4 FIN-01 (D-35): the safety net in force, with its starter from essential costs (ARC-07). */
   readonly net: ResolvedNet;
+  /** 05.4 D-52: pay expected from history (null when the rule does not apply). */
+  readonly hp: HistoryPay | null;
 }
 
 export interface Prepared {
@@ -148,6 +151,9 @@ function readingOf(inputs: V3Inputs): Reading {
   const month = buildMonthModel(inputs);
   // the funds do not depend on the check except for the purchase's own envelope, which judgeReading swaps in
   const funds = buildFunds(inputs, month, null);
+  // 05.4 D-52: an irregular earner with no pay series expects pay on the usual payday at the low-month amount.
+  const hp = historyPay(inputs);
+  const histDates = hp?.dates ?? [];
   const open = openCashPath({
     asOf: inputs.asOf,
     days: CASH_PATH_DAYS_V3,
@@ -157,16 +163,20 @@ function readingOf(inputs: V3Inputs): Reading {
     e: month.e ?? minorUnits(0),
     payCaps: payCapsOf(inputs, month),
     drops: dueDrops(inputs), // 05.3-64 (D-27, D-31, skips): the same rule as the month model and unspent
+    extraPays: histDates.map((date) => ({ date, amount: (hp as HistoryPay).amount })),
   });
+  // history pay exists only with no live pay series, so the two never both give a date: the first history date, else the series'.
+  const payDate = histDates[0] ?? nextPayDate(inputs.series, inputs.asOf);
   return {
     inputs,
     month,
     funds,
     open,
-    payDate: nextPayDate(inputs.series, inputs.asOf),
+    payDate,
     floor: overdraftFloor(inputs.accounts),
-    paydays: payDatesIn(inputs.series, inputs.asOf, CASH_PATH_DAYS_V3),
+    paydays: [...new Set([...payDatesIn(inputs.series, inputs.asOf, CASH_PATH_DAYS_V3), ...histDates])].sort(),
     net: resolveSafetyNet(inputs, essentialCosts(month, inputs.debts, essentialSpendingOf(inputs, month))),
+    hp,
   };
 }
 
@@ -196,9 +206,12 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
     overdraft,
     net,
   });
-  // D-46: say so when the expected-income cap lowered the pay in the 90-day path; last, after the judge's notices.
-  const result: Result =
-    path.capped === undefined ? judged : { ...judged, notices: [...judged.notices, { code: 'pay_capped_expected', values: { capped: path.capped } }] };
+  // D-52: pay expected from history says so, after the judge's notices. D-46: say so when the expected-income cap lowered the
+  // pay in the 90-day path; last.
+  const extra: Notice[] = [];
+  if (r.hp !== null && r.hp.amount > 0) extra.push({ code: 'pay_expected_from_history', values: { amount: r.hp.amount, day: r.hp.day, months: r.hp.months } });
+  if (path.capped !== undefined) extra.push({ code: 'pay_capped_expected', values: { capped: path.capped } });
+  const result: Result = extra.length === 0 ? judged : { ...judged, notices: [...judged.notices, ...extra] };
   // D-48: a declined cover is not_yet with the Instead futures attached at once. The user's own deposit rate is a UI choice
   // (05.3); the payment-stream comparison does not need it.
   const futures =

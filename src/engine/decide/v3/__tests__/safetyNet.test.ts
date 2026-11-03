@@ -66,22 +66,33 @@ describe('the net in force (D-05, D-06, D-35)', () => {
     resolveSafetyNet(inputsOf({ safetyNet, emergency }), essential(190_000));
 
   it('no record: protection on, the starter, the emergency fund (or nothing) saved', () => {
-    expect(at(undefined)).toEqual({ protect: true, off: false, zeroIsOff: false, size: 190_000, starter: 190_000, saved: 0, floor: 0, aboveSize: 0, usable: 0, state: 'none' });
-    expect(at(null, { amount: mu(120_000) })).toMatchObject({ saved: 120_000, floor: 120_000, usable: 120_000, state: 'small' });
+    expect(at(undefined)).toEqual({ protect: true, off: false, zeroIsOff: false, size: 190_000, starter: 190_000, saved: 0, floor: 0, aboveSize: 0, usable: 0, locked: true, state: 'none' });
+    // D-61: no record at all is locked, so the protected part lends nothing
+    expect(at(null, { amount: mu(120_000) })).toMatchObject({ saved: 120_000, floor: 120_000, usable: 0, locked: true, state: 'small' });
   });
 
   it('only money already saved is protected; money above the size is spare; any size is respected', () => {
     expect(at({ protect: true, size: null, saved: mu(190_000) })).toMatchObject({ floor: 190_000, aboveSize: 0, state: 'full' });
-    expect(at({ protect: true, size: mu(100_000), saved: mu(150_000) })).toMatchObject({ size: 100_000, floor: 100_000, aboveSize: 50_000, usable: 100_000, state: 'above' });
+    expect(at({ protect: true, size: mu(100_000), saved: mu(150_000), locked: false })).toMatchObject({ size: 100_000, floor: 100_000, aboveSize: 50_000, usable: 100_000, locked: false, state: 'above' });
     expect(at({ protect: true, size: mu(5_000), saved: mu(5_000) })).toMatchObject({ size: 5_000, floor: 5_000, state: 'full' });
     expect(JSON.stringify(at({ protect: true, size: null, saved: mu(1) }))).not.toContain('heldBack');
   });
 
   it('protection off counts all of it; a $0 size is off and says so; figures below 0 count as 0', () => {
-    expect(at({ protect: false, size: mu(100_000), saved: mu(100_000) })).toMatchObject({ off: true, zeroIsOff: false, floor: 0, aboveSize: 0, usable: 100_000 });
-    expect(at({ protect: true, size: mu(0), saved: mu(100_000) })).toMatchObject({ off: true, zeroIsOff: true, floor: 0, usable: 100_000 });
+    expect(at({ protect: false, size: mu(100_000), saved: mu(100_000) })).toMatchObject({ off: true, zeroIsOff: false, floor: 0, aboveSize: 0, usable: 100_000, locked: false });
+    expect(at({ protect: true, size: mu(0), saved: mu(100_000) })).toMatchObject({ off: true, zeroIsOff: true, floor: 0, usable: 100_000, locked: false });
     expect(at({ protect: true, size: mu(-1), saved: mu(-1) })).toMatchObject({ off: true, zeroIsOff: true, size: 0, saved: 0, state: 'none' });
-    expect(NO_NET).toMatchObject({ off: true, usable: 0, saved: 0 });
+    expect(NO_NET).toMatchObject({ off: true, usable: 0, saved: 0, locked: false });
+  });
+
+  it('D-61 locked by default: absent or true is locked (usable 0); false unlocks; the money above the size is unchanged', () => {
+    const locked = at({ protect: true, size: mu(100_000), saved: mu(150_000) });
+    expect(locked).toMatchObject({ locked: true, usable: 0, floor: 100_000, aboveSize: 50_000, state: 'above' });
+    expect(at({ protect: true, size: mu(100_000), saved: mu(150_000), locked: true })).toEqual(locked);
+    expect(at({ protect: true, size: mu(100_000), saved: mu(150_000), locked: false })).toEqual({ ...locked, locked: false, usable: 100_000 });
+    // off ignores the lock (D-06): everything saved counts
+    expect(at({ protect: false, size: mu(100_000), saved: mu(150_000), locked: true })).toMatchObject({ locked: false, usable: 150_000 });
+    expect(at({ protect: true, size: mu(0), saved: mu(150_000), locked: true })).toMatchObject({ locked: false, zeroIsOff: true, usable: 150_000 });
   });
 });
 

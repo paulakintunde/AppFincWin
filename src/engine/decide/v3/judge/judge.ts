@@ -630,6 +630,8 @@ export function judge(j: JudgeInput): Result {
   if (code === 'not_yet' && (j.overdraft?.floor ?? 0) === 0 && (j.cash.kind === 'payday' || j.cash.kind === 'not_covered')) {
     facts.push(...noLimitFacts(j.inputs.accounts, j.cash.shortBy, readyBy));
   }
+  // 05.4 D-61: a locked net is left out of the answer, and a Not yet says so.
+  if (code === 'not_yet' && net.locked && net.floor > 0) facts.push({ code: 'net_locked', values: { locked: net.floor } });
   // 05.4 FIN-02 (D-35, D-41): "Dips into your safety net" leads with its own facts. A need reads "Marked as a need" first and
   // drops the wait line; a want (or no purpose) leads with the date it fits without the net. Purpose changes facts and their
   // order only, never the code, the variant or a figure (I-D41).

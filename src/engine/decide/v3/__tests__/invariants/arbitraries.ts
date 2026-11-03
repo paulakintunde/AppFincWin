@@ -217,16 +217,19 @@ export interface NetTweak {
   readonly protect: boolean;
   readonly size: number | null;
   readonly saved: number;
+  /** 05.4 D-61: absent = locked. */
+  readonly locked?: boolean;
 }
 
 export const netTweakArb: fc.Arbitrary<NetTweak> = fc.record({
   protect: fc.boolean(),
   size: fc.option(fc.integer({ min: 0, max: 2_000_000 }), { nil: null }),
   saved: fc.integer({ min: 0, max: 3_000_000 }),
+  locked: fc.boolean(), // 05.4 D-61: both sides of the lock
 });
 
 export function withSafetyNet(inputs: V3Inputs, n: NetTweak): V3Inputs {
-  return { ...inputs, safetyNet: { protect: n.protect, size: n.size === null ? null : mu(n.size), saved: mu(n.saved) } };
+  return { ...inputs, safetyNet: { protect: n.protect, size: n.size === null ? null : mu(n.size), saved: mu(n.saved), ...(n.locked === undefined ? {} : { locked: n.locked }) } };
 }
 
 export const netInputsArb: fc.Arbitrary<{ readonly base: V3Inputs; readonly n: NetTweak }> = fc

@@ -232,3 +232,6 @@ export const NET_STARTER_MONTHS = 1; // FIN-01, D-05
 
 // Cite: ARC-07 (05.4 fix plan): essential costs are rounded up to a whole currency unit (100 minor units). FincWin choice.
 export const ESSENTIAL_ROUND_MINOR = 100; // ARC-07
+
+// Cite: D-52 (05.4-CONTEXT, owner 2026-11-03): full months of recorded income before pay is expected from history. FincWin choice.
+export const HISTORY_PAY_MIN_MONTHS = 3; // D-52

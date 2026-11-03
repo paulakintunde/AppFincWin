@@ -4098,15 +4098,15 @@
     "foreign": null
    },
    "expect": {
-    "code": "fits_uses_net",
+    "code": "not_yet",
     "funds": {
      "spending": 320000
     },
     "facts": [
      {
-      "code": "net_used",
+      "code": "net_locked",
       "values": {
-       "used": 56000
+       "locked": 193000
       }
      },
      {
@@ -4115,9 +4115,14 @@
        "above": 107000
       }
      }
-    ]
+    ],
+    "variant": "payday",
+    "readyBy": {
+     "kind": "date",
+     "date": "2026-11-01"
+    }
    },
-   "working": "The savings account (500,000) is untouched: it never counts toward a purchase. 450,000 is above spending 320,000 and unspent 287,000 but far below spending + savings (820,000); it is not a fits. Cash path: 320,000 - 450,000 - 33,000 = -163,000 and still short after the 1 Nov pay (-56,000 on 30 Nov), so not covered. Ready-by = ladder month: gap 450,000 - 287,000 = 163,000, ceil(163,000 / 107,000) = 2, so 2026-12 (payday 2026-11-01 is earlier). RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 193000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 300000 fund as the money saved; only money already saved is protected, floor 193000, and the 107000 above the size is spare money. The answer is now fits_uses_net, split month 97250 + unspent_earlier 189750 + emergency 163000, net used 56000; the purpose and the emergency mark no longer gate the net."
+   "working": "The savings account (500,000) is untouched: it never counts toward a purchase. 450,000 is above spending 320,000 and unspent 287,000 but far below spending + savings (820,000); it is not a fits. Cash path: 320,000 - 450,000 - 33,000 = -163,000 and still short after the 1 Nov pay (-56,000 on 30 Nov), so not covered. Ready-by = ladder month: gap 450,000 - 287,000 = 163,000, ceil(163,000 / 107,000) = 2, so 2026-12 (payday 2026-11-01 is earlier). RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 193000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 300000 fund as the money saved; only money already saved is protected, floor 193000, and the 107000 above the size is spare money. The answer is now fits_uses_net, split month 97250 + unspent_earlier 189750 + emergency 163000, net used 56000; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-47 D-61): fits_uses_net -> not_yet / payday 2026-11-01, the safety net up to its 193000 size is locked by default and left out, so only the 107000 above the size cushions the path; it dips before the 1 Nov pay and is above 0 after it."
   },
   {
    "id": "dee-dedicated-emergency",
@@ -4139,43 +4144,16 @@
     "foreign": null
    },
    "expect": {
-    "code": "fits_uses_net",
+    "code": "not_yet",
     "funds": {
      "spending": 320000
     },
-    "split": [
-     {
-      "source": "month",
-      "amount": 97250
-     },
-     {
-      "source": "unspent_earlier",
-      "amount": 189750
-     },
-     {
-      "source": "emergency",
-      "amount": 263000
-     }
-    ],
+    "split": [],
     "facts": [
      {
-      "code": "net_used",
+      "code": "net_locked",
       "values": {
-       "used": 156000
-      }
-     },
-     {
-      "code": "month_left_after",
-      "values": {
-       "month": "2026-10",
-       "left": -156000
-      }
-     },
-     {
-      "code": "unspent_before_after",
-      "values": {
-       "before": 287000,
-       "after": 0
+       "locked": 193000
       }
      },
      {
@@ -4184,9 +4162,14 @@
        "above": 107000
       }
      }
-    ]
+    ],
+    "variant": "not_covered",
+    "readyBy": {
+     "kind": "month",
+     "month": "2026-12"
+    }
    },
-   "working": "Marked an emergency, purpose necessity, so the fund (300,000, in its own dedicated account) is in the cash path (D-63): opening 320,000 + 300,000 = 620,000; 620,000 - 550,000 - 33,000 = 37,000 >= 0. Ladder: month 97,250, earlier unspent 189,750, rest 452,750 - 189,750 = 263,000 comes from the fund (<= 300,000). Rebuild at the typical 107,000 a month: ceil(263,000 / 107,000) = 3 months. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 193000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 300000 fund as the money saved; only money already saved is protected, floor 193000, and the 107000 above the size is spare money. The answer is now fits_uses_net, split month 97250 + unspent_earlier 189750 + emergency 263000, net used 156000; the purpose and the emergency mark no longer gate the net."
+   "working": "Marked an emergency, purpose necessity, so the fund (300,000, in its own dedicated account) is in the cash path (D-63): opening 320,000 + 300,000 = 620,000; 620,000 - 550,000 - 33,000 = 37,000 >= 0. Ladder: month 97,250, earlier unspent 189,750, rest 452,750 - 189,750 = 263,000 comes from the fund (<= 300,000). Rebuild at the typical 107,000 a month: ceil(263,000 / 107,000) = 3 months. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 193000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 300000 fund as the money saved; only money already saved is protected, floor 193000, and the 107000 above the size is spare money. The answer is now fits_uses_net, split month 97250 + unspent_earlier 189750 + emergency 263000, net used 156000; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-47 D-61): fits_uses_net -> not_yet / not_covered 2026-12, the locked safety net (193000) lends nothing; ready when unspent 287000 + the 107000 above the size + the usual 107000 a month reach 550000: ceil((550000 - 394000) / 107000) = 2 months."
   },
   {
    "id": "dee-dedicated-emergency-unmarked",
@@ -4208,12 +4191,12 @@
     "foreign": null
    },
    "expect": {
-    "code": "fits_uses_net",
+    "code": "not_yet",
     "facts": [
      {
-      "code": "net_used",
+      "code": "net_locked",
       "values": {
-       "used": 156000
+       "locked": 193000
       }
      },
      {
@@ -4222,9 +4205,14 @@
        "above": 107000
       }
      }
-    ]
+    ],
+    "variant": "not_covered",
+    "readyBy": {
+     "kind": "month",
+     "month": "2026-12"
+    }
    },
-   "working": "The same 550,000 not marked an emergency: the fund never cushions it. Cash: 320,000 - 550,000 - 33,000 = -263,000 and still negative after the 1 Nov pay (-156,000 on 30 Nov): not covered. Ready-by: gap 550,000 - 287,000 = 263,000, ceil(263,000 / 107,000) = 3, so 2027-01. The fund stays untouched at 300,000. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 193000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 300000 fund as the money saved; only money already saved is protected, floor 193000, and the 107000 above the size is spare money. The answer is now fits_uses_net, split month 97250 + unspent_earlier 189750 + emergency 263000, net used 156000; the purpose and the emergency mark no longer gate the net."
+   "working": "The same 550,000 not marked an emergency: the fund never cushions it. Cash: 320,000 - 550,000 - 33,000 = -263,000 and still negative after the 1 Nov pay (-156,000 on 30 Nov): not covered. Ready-by: gap 550,000 - 287,000 = 263,000, ceil(263,000 / 107,000) = 3, so 2027-01. The fund stays untouched at 300,000. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 193000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 300000 fund as the money saved; only money already saved is protected, floor 193000, and the 107000 above the size is spare money. The answer is now fits_uses_net, split month 97250 + unspent_earlier 189750 + emergency 263000, net used 156000; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-47 D-61): fits_uses_net -> not_yet / not_covered 2026-12, as dee-dedicated-emergency: the locked net lends nothing, whatever the mark."
   },
   {
    "id": "dee-dedicated-envelope",

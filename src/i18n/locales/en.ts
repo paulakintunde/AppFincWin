@@ -3582,6 +3582,8 @@ const en = {
         pay_not_seen: 'Your pay of {{amount}} was due on {{date}}, and no payment is recorded.',
         pay_counted_missed: 'Your pay of {{amount}} due on {{date}} hasn’t arrived, so it isn’t counted.',
         fund_account_unknown: 'Your emergency fund of {{amount}} isn’t linked to an account yet, so it is kept out of spare money.',
+        // 05.4 D-52: pay expected from history for an irregular earner with no pay scheduled.
+        pay_expected_from_history: 'No pay is scheduled, so about {{amount}} is expected around day {{day}} of each month, the lowest month in your last {{months}} months of records.',
       },
       fact: {
         month_left_after: '{{month}} would have about {{left}} to spare after this.',
@@ -3599,6 +3601,8 @@ const en = {
         wait_keeps_net: 'Waiting until {{date}} keeps your safety net whole.',
         wait_keeps_net_month: 'Waiting until {{month}} keeps your safety net whole.',
         need_net_line: 'Marked as a need. A safety net is money kept for needs like this.',
+        // 05.4 D-61: the safety net is locked by default and left out of the answer.
+        net_locked: 'Your safety net of {{locked}} is locked, so this answer leaves it out.',
         envelope_used: '{{used}} comes from the {{envelope}} envelope.',
         line_crossed: 'This goes past one of your lines.',
         line_crossed_percent: 'This brings it to {{value}}% of your income; your line is {{limit}}%.',

@@ -100,7 +100,7 @@ describe('safety-net invariants', () => {
   });
 
   it('I-D41 a need leads with need_net_line and drops the wait line; a want or no purpose keeps the wait line first', () => {
-    const n: NetTweak = { protect: true, size: 1_000_000, saved: 1_000_000 };
+    const n: NetTweak = { protect: true, size: 1_000_000, saved: 1_000_000, locked: false }; // D-61: the unlocked rule
     fc.assert(
       fc.property(netInputsArb, priceArb, ({ base }, price) => {
         const inputs = withSafetyNet(base, n);

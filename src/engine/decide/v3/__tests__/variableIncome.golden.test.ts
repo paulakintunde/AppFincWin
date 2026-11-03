@@ -168,9 +168,9 @@ describe('D-54: one case per account use and an unstated account', () => {
   it('everyday, mixed with put-aside, dedicated emergency, dedicated envelope and untouched each shape the answer', () => {
     expect(run(byId('dee-everyday')).result.code).toBe('fits_unspent');
     expect(run(byId('dee-mixed')).funds.spending).toBe(320000);
-    expect(run(byId('dee-dedicated-emergency')).result.code).toBe('fits_uses_net'); // 05.4 D-41: the dedicated account is the net
+    expect(run(byId('dee-dedicated-emergency')).result.code).toBe('not_yet'); // 05.4 D-41: the dedicated account is the net; D-61: locked, so it lends nothing
     expect(run(byId('dee-dedicated-envelope')).result.facts).toContainEqual({ code: 'envelope_used', values: { used: 40000, envelopeId: 'car' } });
-    expect(run(byId('dee-untouched')).result.code).toBe('fits_uses_net'); // the untouched account never counts; the net lends (05.4 D-35)
+    expect(run(byId('dee-untouched')).result.code).toBe('not_yet'); // the untouched account never counts; the net is locked (05.4 D-61)
   });
 
   it('an account of no stated use asks first; an envelope linked to no account is assumed inside and unconfirmed', () => {
