@@ -54,13 +54,17 @@ describe('historyPay (D-52)', () => {
     }
   });
 
-  it('audit-p2-rich: the 12-month window holds a month of 0, so nothing lands and the answers stay fits_unspent / no_net', () => {
+  it('audit-p2-rich: the 12-month window holds a month of 0, so nothing lands and the answers stay fits_unspent (D-65 tiers)', () => {
+    // her usual month is 150.00 short and she has 15,109.68 of spare money: $60 is less than one month of it (Small); $500 is more
+    // (Moderate: floor(1,510,968 / 15,000) = 100 months, floor(1,460,968 / 15,000) = 97 after)
+    const tier: Record<string, string> = { 'persona:audit-p2-rich:6000:cash': 'month_short_small', 'persona:audit-p2-rich:50000:cash': 'month_short_moderate' };
     for (const key of ['persona:audit-p2-rich:6000:cash', 'persona:audit-p2-rich:50000:cash']) {
       const c = caseOf(key);
       expect(historyPay(prepare(c.inputs).inputs)).toMatchObject({ amount: 0, months: 12, dates: [] });
       const e = evaluate(c.inputs, c.check);
-      // the code stays; 05.4 D-63: her usual month is already short, so the headline is month_already_short (no_net's fact stays)
-      expect([e.result.code, e.result.variant]).toEqual(['fits_unspent', 'month_already_short']);
+      // the code stays; her usual month is already short (D-63), so the headline is a D-65 tier and its line leads (no_net's fact stays)
+      expect([e.result.code, e.result.variant]).toEqual(['fits_unspent', tier[key]]);
+      expect(['month_short_fits', 'money_lasts_shorter']).toContain(e.result.facts[0]?.code);
       expect(e.result.facts.map((f) => f.code)).toContain('net_none_start');
       expect(e.result.notices.map((n) => n.code)).not.toContain('pay_expected_from_history');
     }

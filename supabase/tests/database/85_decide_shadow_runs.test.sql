@@ -1,10 +1,11 @@
 -- pgTAP: 05.4 M6 -- decide_shadow_runs, migration 20261103000500. Insert with consent only, no client read, unique per revision and sample.
 -- 05.4-48: also needs 20261103000900 (variants extra_savings, D-62, and month_already_short, D-63).
+-- 05.4-50: also needs 20261103001000 (variants month_short_small, month_short_moderate, month_short_moderate_extra, D-65).
 
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(12);
+select extensions.plan(13);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -30,6 +31,11 @@ select extensions.lives_ok($$insert into public.decide_shadow_runs (user_id, eng
   values ('11111111-1111-1111-1111-111111111111', 'r8', 's60', 'fits_unspent', 'extra_savings', '{}'),
          ('11111111-1111-1111-1111-111111111111', 'r9', 'c9000_plan', 'monthly_short', 'month_already_short', '{}')$$,
   'the 05.4-48 variants extra_savings (D-62) and month_already_short (D-63) are accepted');
+select extensions.lives_ok($$insert into public.decide_shadow_runs (user_id, engine_revision, sample_id, code, variant, figures)
+  values ('11111111-1111-1111-1111-111111111111', 'r10', 's60', 'fits_unspent', 'month_short_small', '{}'),
+         ('11111111-1111-1111-1111-111111111111', 'r11', 's60', 'fits_unspent', 'month_short_moderate', '{}'),
+         ('11111111-1111-1111-1111-111111111111', 'r12', 's60', 'fits_unspent', 'month_short_moderate_extra', '{}')$$,
+  'the 05.4-50 D-65 variants are accepted');
 select extensions.throws_ok($$insert into public.decide_shadow_runs (user_id, engine_revision, sample_id, code, variant, figures)
   values ('11111111-1111-1111-1111-111111111111', 'r7', 's60', 'fits_month', 'net_not_full', '{}')$$, '23514', null, 'a variant outside the list is refused');
 select extensions.throws_ok($$insert into public.decide_shadow_runs (user_id, engine_revision, sample_id, code, figures)
@@ -46,7 +52,7 @@ select extensions.throws_ok($$insert into public.decide_shadow_runs (user_id, en
   values ('22222222-2222-2222-2222-222222222222', 'r1', 's60', 'fits_month', '{}')$$, '42501', null, 'without consent the insert is refused');
 
 reset role;
-select extensions.is((select count(*)::int from public.decide_shadow_runs), 8, 'exactly the consenting tester''s rows exist');
+select extensions.is((select count(*)::int from public.decide_shadow_runs), 11, 'exactly the consenting tester''s rows exist');
 select extensions.lives_ok($$delete from auth.users where id = '11111111-1111-1111-1111-111111111111'$$, 'deleting the tester succeeds');
 
 select * from extensions.finish();

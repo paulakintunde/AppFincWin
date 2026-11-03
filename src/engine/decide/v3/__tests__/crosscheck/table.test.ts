@@ -1,7 +1,9 @@
 /** QA-03: every approved right-answer case with no pending rule also runs through the plain calculator. */
 import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
-import { freeMoney, notCleared, overdraftRoom, payDates, plainAnswer, plainNet, plainOverdraftCost, plainPath, recordsFresh, recordsLookBehind } from './plain';
+import { evaluate } from '../../evaluate';
+import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
+import { freeMoney, notCleared, overdraftRoom, payDates, plainAnswer, plainNet, plainOverdraftCost, plainPath, plainTier, recordsFresh, recordsLookBehind } from './plain';
 
 const PENDING_IDS = new Set(PENDING_RULES.flatMap((r) => r.fixId.split('/')).filter((id) => id !== 'FIN-09'));
 
@@ -131,5 +133,20 @@ describe('plain calculator: 05.4-48 drafts (D-52, D-61, D-62)', () => {
   });
   it('SN-13 and SN-17: Fits from extra savings (D-62)', () => {
     for (const id of ['SN-13', 'SN-17']) expect(plainAnswer(byId(id).fixture)).toMatchObject({ code: 'fits_unspent', variant: 'extra_savings' });
+  });
+});
+
+describe('plain calculator: D-65 tiers agree with the engine (Riley-like, usual month 300 short)', () => {
+  const expected = { small: 'month_short_small', moderate: 'month_short_moderate', moderateExtra: 'month_short_moderate_extra', large: 'month_already_short' } as const;
+  it.each(Object.keys(TIER_CASES) as (keyof typeof TIER_CASES)[])('%s: the same variant, and the same N and M', (k) => {
+    const f = rileyTierFixture(TIER_CASES[k]);
+    const { inputs, check } = rileyTier(TIER_CASES[k]);
+    const r = evaluate(inputs, check).result;
+    const plain = plainAnswer(f);
+    expect({ code: plain.code, variant: plain.variant }).toEqual({ code: r.code, variant: expected[k] });
+    expect(r.variant).toBe(expected[k]);
+    const lasts = r.facts.find((x) => x.code === 'money_lasts_shorter')?.values;
+    const t = plainTier(f, plain.code);
+    expect(t.months === null ? undefined : { months: t.months, monthsAfter: t.monthsAfter }).toEqual(lasts);
   });
 });

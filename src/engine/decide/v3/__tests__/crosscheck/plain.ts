@@ -204,11 +204,45 @@ export function cashMargin(f: RightAnswerFixture, cost: Cents, withDues: boolean
   return sittingMoney(f) - (withDues ? big(f.thisMonth.billsDue) : 0n) - everydayToCome(f) - cost;
 }
 
-/** The answer, with D-63's headline on every answer but an ask when the usual month is already short (code and figures kept). */
+/** The usual month's shortfall (pay less usual bills, everyday spending and debt minimums), as a positive figure; 0 when it balances. */
+export function usualShortfall(f: RightAnswerFixture): Cents {
+  const mins = f.debts.reduce((t, d) => t + big(d.minimum), 0n);
+  const left = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - mins;
+  return left < 0n ? -left : 0n;
+}
+
+export interface PlainTier { variant: string; months: number | null; monthsAfter: number | null }
+
+/**
+ * D-65 (owner, 2026-11-03, replaces D-63's single headline): "when the usual month is already short before the purchase, the
+ * headline depends on how much the purchase eats into the money propping up the month. 'How long your money lasts' = months the
+ * spare money + extra savings (never locked safety-net money, D-61) can cover the usual monthly shortfall. Small (cuts it by less
+ * than 1 month): 'Fits, but your month is already short' ... Moderate (cuts it by 1 month or more): 'Fits from [spare money / extra
+ * savings], but your month is already short' ... Large (needs the locked safety net, takes the 90-day path below $0, or a plan
+ * payment makes the month more short): 'No: your month is already short'."
+ * Restated: only a cash fit (Fits or Fits from spare money) that is a one-off with no running cost can be Small or Moderate.
+ * used = the day-one cost (price + one-off fees); S = the usual shortfall; R = the free money (never below 0) + the money above the
+ * net's size, never below used (the protected net is never in it). used < S is Small; else Moderate, from extra savings when the
+ * purchase is more than the free money (extra savings pay part). N = floor(R / S), M = floor((R - used) / S).
+ */
+export function plainTier(f: RightAnswerFixture, code: string): PlainTier {
+  const c = f.check;
+  const oneOff = c.pay.mode === 'once' && (c.runningCosts ?? []).length === 0;
+  if (!((code === 'fits_month' || code === 'fits_unspent') && oneOff)) return { variant: 'month_already_short', months: null, monthsAfter: null };
+  const used = big(c.price ?? 0) + big(c.oneOffFees);
+  const S = usualShortfall(f);
+  const free = maxC(0n, freeMoney(f));
+  const money = free + plainNet(f).above;
+  const R = money > used ? money : used;
+  if (used < S) return { variant: 'month_short_small', months: null, monthsAfter: null };
+  return { variant: used > free ? 'month_short_moderate_extra' : 'month_short_moderate', months: Number(R / S), monthsAfter: Number((R - used) / S) };
+}
+
+/** The answer, with D-65's headline (D-63's on the Large tier) on every answer but an ask when the usual month is already short. */
 export function plainAnswer(f: RightAnswerFixture): PlainAnswer {
   const a = plainCode(f);
   if (a.code === 'needs_input' || !usualMonthShort(f)) return a;
-  return { ...a, variant: 'month_already_short' };
+  return { ...a, variant: plainTier(f, a.code).variant };
 }
 
 function plainCode(f: RightAnswerFixture): PlainAnswer {
