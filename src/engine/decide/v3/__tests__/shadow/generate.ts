@@ -5,7 +5,10 @@
  * engines read it through the same adapters. `fc.sample` with a fixed seed makes the 300 histories identical on every run.
  */
 import * as fc from 'fast-check';
+import { buildFunds } from '../../funds/build';
+import { buildMonthModel } from '../../month/model';
 import type { Cadence, Envelope } from '../../types';
+import { toV3Inputs } from '../golden/adapter';
 import type {
   FixtureDebt,
   FixtureLine,
@@ -225,6 +228,11 @@ export function buildPerson(raw: RawHistory, index: number): GeneratedHistory {
     isHousing: false,
   }));
 
+  // 05.4-48 (audit cause 4): balances follow from the records; no adapter clamp binds. `carried` is September's closing
+  // balance in the everyday account, stated: raw.balance, raised so the first days of October (no overdraft here) never
+  // push the account below 0. The account on the check date is its pots + carried + October's income - October's spending.
+  const { main } = recordBalance(raw.balance, envelopes, currentLines);
+
   const person: FixturePerson = {
     id,
     currency: 'USD',
@@ -235,15 +243,44 @@ export function buildPerson(raw: RawHistory, index: number): GeneratedHistory {
       ? { types: ['freelance'], variable: 'steady', steady: Math.round(raw.pay * 0.7) as never, billsHorizonMonths: null }
       : { types: ['salary'], variable: null, steady: null, billsHorizonMonths: null },
     rough: null,
-    balance: raw.balance,
-    unspent: raw.unspent === null ? null : { amount: raw.unspent.amount, at: SHADOW_AS_OF },
+    balance: main + (raw.emergency ?? 0),
+    unspent: null,
     emergency: raw.emergency,
     envelopes,
     debts,
     everydayOverride: null,
     note: 'synthetic, shadow run',
   };
+  // A confirmed unspent figure is the app's own suggested sum plus pay still to arrive (the rule in rightAnswers/fixture.ts),
+  // so it never exceeds what the account holds. raw.unspent null = not confirmed; its amount is no longer read.
+  if (raw.unspent !== null) person.unspent = { amount: confirmedUnspent(person), at: SHADOW_AS_OF };
   return { person, purchases: raw.purchases.map(purchaseOf) };
+}
+
+/** 05.4-48: the everyday account on the check date, from its records (pots, September's carried close, October's lines). */
+export function recordBalance(
+  septemberClose: number,
+  envelopes: readonly { saved: unknown }[],
+  currentLines: readonly FixtureLine[]
+): { pots: number; octIn: number; octOut: number; carried: number; main: number } {
+  const pots = envelopes.reduce((s, e) => s + Number(e.saved), 0);
+  const octIn = currentLines.filter((l) => l.role === 'income').reduce((s, l) => s + l.amount, 0);
+  const octOut = currentLines.filter((l) => l.role === 'spending').reduce((s, l) => s + l.amount, 0);
+  const carried = Math.max(septemberClose, octOut - octIn - pots);
+  return { pots, octIn, octOut, carried, main: pots + carried + octIn - octOut };
+}
+
+/** 05.4-48: the app's suggested unspent figure for this person, plus this month's pay still to arrive (never below 0 added). */
+export function confirmedUnspent(person: FixturePerson): number {
+  const inputs = toV3Inputs({ ...person, unspent: null });
+  const mm = buildMonthModel(inputs);
+  const received = person.months
+    .filter((m) => m.full === false)
+    .flatMap((m) => m.lines)
+    .filter((l) => l.role === 'income')
+    .reduce((s, l) => s + l.amount, 0);
+  const toArrive = mm.moneyIn - received > 0 ? mm.moneyIn - received : 0;
+  return buildFunds(inputs, mm, null).suggested + toArrive;
 }
 
 /** 300 deterministic histories (D-17): the same seed gives the same people on every machine. */

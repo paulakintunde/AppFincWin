@@ -96,10 +96,15 @@ export function everydayToCome(f: RightAnswerFixture): Cents {
   return maxC(pace, maxC(0n, usual - big(f.thisMonth.everydaySoFar)));
 }
 
-/** The money left this month before the purchase: money in, less everything paid, due, spent and still to come. */
+/**
+ * The money left this month before the purchase: money in, less everything paid, due, spent and still to come. With irregular
+ * pay and a stated steady amount (D-52 fixtures), this month's money in is that steady amount, received or not: "at setup she
+ * chose a steady amount of $3,000" (SN-16, the plan-18 audit's Maya).
+ */
 export function leftThisMonth(f: RightAnswerFixture): Cents {
   const t = f.thisMonth;
-  return big(t.received) - big(t.billsPaid) - big(t.billsDue) - big(t.everydaySoFar) - everydayToCome(f);
+  const moneyIn = f.pay.irregular === undefined ? big(t.received) : big(f.pay.amount);
+  return moneyIn - big(t.billsPaid) - big(t.billsDue) - big(t.everydaySoFar) - everydayToCome(f);
 }
 
 /** Money in the checking and current accounts. */
@@ -115,7 +120,7 @@ export function payToArrive(f: RightAnswerFixture): Cents {
   const ym = f.asOf.slice(0, 7);
   return payDates(f)
     .filter((d) => d.slice(0, 7) === ym && (d > f.asOf || (d === f.asOf && f.thisMonth.received === 0)))
-    .reduce((t) => t + big(f.pay.amount), 0n);
+    .reduce((t) => t + payAmount(f), 0n);
 }
 
 /**
@@ -124,13 +129,23 @@ export function payToArrive(f: RightAnswerFixture): Cents {
  * plans"). This month's room is part of it, counted once.
  */
 export function freeMoney(f: RightAnswerFixture): Cents {
+  const free = sittingMoney(f) + payToArrive(f) - big(f.thisMonth.billsDue) - everydayToCome(f);
+  // D-56: "spare money" is money left in the everyday account, so it is never more than the account holds at month end (a month
+  // end below 0 is the cash check's to judge, not a cap). Balances follow from their records (05.4-48), so this binds only by
+  // rounding; it is restated so the rule has a reader here.
+  const cap = maxC(0n, monthEndBalance(f));
+  return free < cap ? free : cap;
+}
+
+/** What the spending accounts hold at the end of this month: what sits now, plus pay still to arrive, less what is still to go out. */
+export function monthEndBalance(f: RightAnswerFixture): Cents {
   return sittingMoney(f) + payToArrive(f) - big(f.thisMonth.billsDue) - everydayToCome(f);
 }
 
 // --- Safety net (05.4 FIN-01, FIN-02, ENG-03, ENG-04). Restated from the approved safety-net cases SN-01 .. SN-15, CONTEXT D-05,
 // D-06, D-35, D-41 and the 05.4-12 revision notes. Not read from the engine.
 
-export interface PlainNet { off: boolean; saved: Cents; size: Cents; starter: Cents; protectedPart: Cents; above: Cents; lend: Cents }
+export interface PlainNet { off: boolean; locked: boolean; saved: Cents; size: Cents; starter: Cents; protectedPart: Cents; above: Cents; lend: Cents }
 
 /**
  * "No record means the default: protection on, a starter size of one month of essential costs (bills + debt minimums + essential
@@ -138,6 +153,11 @@ export interface PlainNet { off: boolean; saved: Cents; size: Cents; starter: Ce
  * nothing is held back" (D-35): the protected part is what is saved, up to the size; "the $500 above the $1,000 size is spare"
  * (SN-13). "A $0 net is treated exactly like protection off" (D-06, SN-07); with protection off the net's money counts like
  * any other (SN-05).
+ *
+ * D-61: "the safety net (up to its set size) is locked by default and left out of the analysis entirely: a purchase that could
+ * only be paid by using it is Not yet ... Money saved above the set size stays extra savings and can be used". Absent = locked;
+ * no record at all is locked too. While locked the net lends nothing; unlocked (QE-14, SN-03, SN-09, SN-14, SN-15 say
+ * locked: false) it lends its protected part as before. Protection off or a $0 size is never locked (D-06).
  */
 export function plainNet(f: RightAnswerFixture): PlainNet {
   const n = f.safetyNet ?? { protect: true, size: null, saved: 0 };
@@ -148,7 +168,8 @@ export function plainNet(f: RightAnswerFixture): PlainNet {
   const off = !n.protect || size === 0n;
   const protectedPart = off ? 0n : saved < size ? saved : size;
   const above = off ? 0n : saved - protectedPart;
-  return { off, saved, size, starter, protectedPart, above, lend: off ? saved : protectedPart };
+  const locked = !off && n.locked !== false;
+  return { off, locked, saved, size, starter, protectedPart, above, lend: off ? saved : locked ? 0n : protectedPart };
 }
 
 /** D-35: a fit while protection is on and the net is empty or below its size is amber. */
@@ -158,12 +179,39 @@ function netVariant(net: PlainNet): string | null {
   return net.saved < net.size ? 'small_net' : null;
 }
 
+/**
+ * D-63: "when the usual month is already short before the purchase, for any purchase (cash or plan), the answer is a clear no
+ * with the headline 'No: your month is already short' ... on the code the engine would otherwise give". It never changes the
+ * code; it leads the variant on every answer but an ask. The usual month: pay (the stated steady amount for irregular pay,
+ * D-52), less the usual bills, everyday spending and debt minimums.
+ */
+export function usualMonthShort(f: RightAnswerFixture): boolean {
+  const mins = f.debts.reduce((t, d) => t + big(d.minimum), 0n);
+  return big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - mins < 0n;
+}
+
+/**
+ * The variant on a fit (D-59, D-62): extra_savings ("Fits from extra savings": the purchase uses money above the net's size)
+ * before the D-35 safety-net caution. month_already_short (D-63) leads both; plainAnswer sets it.
+ */
+function fitVariant(net: PlainNet, usesExtra: boolean): string | null {
+  if (usesExtra) return 'extra_savings';
+  return netVariant(net);
+}
+
 /** Cash left at the worst point before payday if the cost is paid today; below zero means the cash does not hold. */
 export function cashMargin(f: RightAnswerFixture, cost: Cents, withDues: boolean): Cents {
   return sittingMoney(f) - (withDues ? big(f.thisMonth.billsDue) : 0n) - everydayToCome(f) - cost;
 }
 
+/** The answer, with D-63's headline on every answer but an ask when the usual month is already short (code and figures kept). */
 export function plainAnswer(f: RightAnswerFixture): PlainAnswer {
+  const a = plainCode(f);
+  if (a.code === 'needs_input' || !usualMonthShort(f)) return a;
+  return { ...a, variant: 'month_already_short' };
+}
+
+function plainCode(f: RightAnswerFixture): PlainAnswer {
   const c = f.check;
   if (c.price === null) return { code: 'needs_input', variant: null, afterBuy: null };
   const cost = big(c.price) + big(c.oneOffFees);
@@ -182,7 +230,9 @@ export function plainAnswer(f: RightAnswerFixture): PlainAnswer {
   // sign ("-$1,500 is treated as $1,500 worse, never rounded up to $0", OD-10). Money saved above the net's size is spare
   // and counts here (SN-13). Below 0 is fine only inside the overdraft limit; past it, the money in the net may carry it
   // ("the path must stay above the net", FIN-02, SN-09: "Dips into your safety net"); past both it is Not yet (D-27, D-28).
-  const margin = cashMargin(f, cost, true) + net.above;
+  // D-52: irregular pay can land mid-month and the next pay can come after next month's bills, so the cash check reads the
+  // day-by-day path's lowest point instead of the month-end figure (the same 90-day path the overdraft cases use).
+  const margin = (f.pay.irregular === undefined ? cashMargin(f, cost, true) : pathLow(f, cost)) + net.above;
   const pastLimit = margin < -overdraftRoom(f);
   if (pastLimit && margin + net.lend < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
   // Room next: this month's money left (a month already below zero funds nothing). What it cannot cover comes from free
@@ -202,7 +252,7 @@ export function plainAnswer(f: RightAnswerFixture): PlainAnswer {
   if (dip > 0n) return { code: 'fits_uses_overdraft', variant: notCleared(f, cost) ? 'not_cleared' : null, afterBuy: Number(after) };
   // "Any purchase that uses money in the net is Dips into your safety net, whatever its purpose" (D-41): here the path.
   if (pastLimit) return { code: 'fits_uses_net', variant: offVariant, afterBuy: Number(after) };
-  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: netVariant(net), afterBuy: Number(after) };
+  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(net, rest > maxC(0n, earlier)), afterBuy: Number(after) };
 }
 
 /** OD-11: "her next pay does not clear it": after the next pay (and that day's bills and spending) the account is still below 0. */
@@ -229,10 +279,11 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   const room = maxC(0n, usualLeft);
   const fromMonth = cost < room ? cost : room;
   const rest = cost - fromMonth;
-  if (rest === 0n) return { code: 'fits_month', variant: netVariant(net), afterBuy: Number(after) };
+  if (rest === 0n) return { code: 'fits_month', variant: fitVariant(net, false), afterBuy: Number(after) };
   // Free money is what sits plus this month's room; less the room this purchase already took, it is the earlier money.
   const earlier = sitting + usualLeft - fromMonth + net.above;
-  return { code: rest <= earlier ? 'fits_unspent' : 'not_yet', variant: netVariant(net), afterBuy: Number(after) };
+  if (rest > earlier) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
+  return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above), afterBuy: Number(after) };
 }
 
 // --- Overdraft (05.4 FIN-03 / ENG-02). Restated from the approved overdraft cases (OD-01 .. OD-12), CONTEXT D-26..D-28 and
@@ -257,8 +308,37 @@ function monthsBetween(a: string, b: string): number {
 
 const PATH_DAYS = 90;
 
+/**
+ * D-52: "for steady-but-irregular income ... with enough history and no scheduled pay series, the 90-day cash path expects pay
+ * on the person's usual payday (from history) at their low-month amount". A fixture with pay.irregular pays on its stated day:
+ * one date a month on min(day, days in the month), strictly after asOf; this month's only when nothing is received yet. The
+ * amount is the lowest history month; a lowest month of 0 lands nothing.
+ */
+function irregularDates(f: RightAnswerFixture, day: number): string[] {
+  if (payAmount(f) <= 0n) return [];
+  const end = dayAfter(f.asOf, PATH_DAYS);
+  const out: string[] = [];
+  const y = Number(f.asOf.slice(0, 4));
+  const m = Number(f.asOf.slice(5, 7)) - 1;
+  for (let i = 0; ; i++) {
+    const first = new Date(Date.UTC(y, m + i, 1)).toISOString().slice(0, 10);
+    if (first >= end) return out;
+    if (i === 0 && f.thisMonth.received > 0) continue;
+    const date = first.slice(0, 8) + String(Math.min(day, Number(daysInMonthOf(first)))).padStart(2, '0');
+    if (date > f.asOf && date < end) out.push(date);
+  }
+}
+
+/** One pay: the stated pay, or for irregular pay (D-52) the lowest history month. */
+export function payAmount(f: RightAnswerFixture): Cents {
+  const irr = f.pay.irregular;
+  if (irr === undefined) return big(f.pay.amount);
+  return irr.amounts.reduce((lo, a) => (big(a) < lo ? big(a) : lo), big(irr.amounts[0] ?? 0));
+}
+
 /** Pay dates from the next pay on, every month on the same day (or every 1 or 2 weeks), inside the 90 days. */
 export function payDates(f: RightAnswerFixture): string[] {
+  if (f.pay.irregular !== undefined) return irregularDates(f, f.pay.irregular.day);
   const end = dayAfter(f.asOf, PATH_DAYS);
   const out: string[] = [];
   for (let i = 0; ; i++) {
@@ -286,19 +366,21 @@ export function plainPath(f: RightAnswerFixture, cost: Cents): { date: string; b
   const pays = new Set(payDates(f));
   const billsMonths = new Set<string>();
   const firstPay = [...pays].find((d) => d > f.asOf) ?? null;
-  const dueDay = firstPay === null ? null : dayAfter(firstPay, -1);
+  // Undated bills still due land the day before the next pay; with irregular pay (no pay series) on the last day of this month.
+  const monthEnd = `${ym}-${String(dim).padStart(2, '0')}`;
+  const dueDay = f.pay.irregular !== undefined ? monthEnd : firstPay === null ? null : dayAfter(firstPay, -1);
   const dated = f.bills.filter((b) => b.paidBy === 'me' && b.nextDue >= f.asOf && b.nextDue.slice(0, 7) === ym);
   const undated = big(f.thisMonth.billsDue) - dated.reduce((t, b) => t + big(b.amount), 0n);
   const out: { date: string; balance: Cents }[] = [];
   let money = sittingMoney(f) - cost;
   for (let i = 0; i < PATH_DAYS; i++) {
     const date = dayAfter(f.asOf, i);
-    if (pays.has(date)) {
-      money += big(f.pay.amount);
-      if (!billsMonths.has(date.slice(0, 7))) {
-        billsMonths.add(date.slice(0, 7));
-        money -= big(f.usualMonth.bills);
-      }
+    if (pays.has(date)) money += payAmount(f);
+    // The usual bills land on payday; with irregular pay (D-52) there is no pay series, so on the 1st of each later month.
+    const billsDay = f.pay.irregular === undefined ? pays.has(date) : date.slice(8, 10) === '01' && date.slice(0, 7) !== ym;
+    if (billsDay && !billsMonths.has(date.slice(0, 7))) {
+      billsMonths.add(date.slice(0, 7));
+      money -= big(f.usualMonth.bills);
     }
     for (const b of dated) if (b.nextDue === date) money -= big(b.amount);
     if (date === (dueDay ?? '') || (dueDay === null && i === 0)) money -= undated > 0n ? undated : 0n;
@@ -310,6 +392,11 @@ export function plainPath(f: RightAnswerFixture, cost: Cents): { date: string; b
     out.push({ date, balance: money - spent });
   }
   return out;
+}
+
+/** The lowest point of the day-by-day path with the cost paid today. */
+export function pathLow(f: RightAnswerFixture, cost: Cents): Cents {
+  return plainPath(f, cost).reduce((lo, p) => (p.balance < lo ? p.balance : lo), sittingMoney(f) - cost);
 }
 
 /** Non-negative a / b, rounded half up. */

@@ -1,5 +1,5 @@
 import type { RightAnswerFixture } from '../rightAnswers/schema';
-import { cashMargin, overdraftRoom, plainNet } from './plain';
+import { cashMargin, overdraftRoom, pathLow, plainNet } from './plain';
 
 /**
  * Rules the engine has not landed yet. A fixture that triggers one is skipped (and counted) by the comparison.
@@ -21,6 +21,12 @@ function duesDecideCash(f: RightAnswerFixture): boolean {
   if (overdraftRoom(f) > 0n && f.thisMonth.billsDue > 0 && withDues < 0n) return true;
   const net = plainNet(f);
   if (net.lend > 0n && f.thisMonth.billsDue > 0 && withDues + net.above < 0n) return true;
+  // 05.4-48 (D-52): with irregular pay the cash check reads the path, where the undated bills still due land on a guessed day;
+  // when counting them decides whether the path stays above 0, the answer waits for their real due dates too.
+  if (f.pay.irregular !== undefined && f.thisMonth.billsDue > 0) {
+    const without = { ...f, thisMonth: { ...f.thisMonth, billsDue: 0 } };
+    if ((pathLow(f, cost) + net.above < 0n) !== (pathLow(without, cost) + net.above < 0n)) return true;
+  }
   return (withDues < 0n) !== (cashMargin(f, cost, false) < 0n);
 }
 

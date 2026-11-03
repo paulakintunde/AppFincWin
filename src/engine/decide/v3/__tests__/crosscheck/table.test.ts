@@ -112,3 +112,24 @@ describe('plain calculator: safety net (05.4-18, FIN-01, FIN-02; D-05, D-06, D-3
     }
   });
 });
+
+describe('plain calculator: 05.4-48 drafts (D-52, D-61, D-62)', () => {
+  const byId = (id: string) => {
+    const c = loadCases().find((x) => x.id === id);
+    if (c === undefined) throw new Error(`no case ${id}`);
+    return c;
+  };
+  it('SN-16 Maya: pay expected on her usual day at her lowest month (D-52), a plain Fits with $740 left', () => {
+    const c = byId('SN-16');
+    expect(payDates(c.fixture)).toEqual(['2026-11-05', '2026-12-05']);
+    expect(plainAnswer(c.fixture)).toMatchObject({ code: c.expected.code, afterBuy: c.expected.afterBuy.month });
+  });
+  it('SN-19 locked and SN-20 unlocked (D-61): the locked net lends nothing', () => {
+    expect(plainNet(byId('SN-19').fixture).lend).toBe(0n);
+    expect(plainAnswer(byId('SN-19').fixture).code).toBe('not_yet');
+    expect(plainAnswer(byId('SN-20').fixture).code).toBe('fits_uses_net');
+  });
+  it('SN-13 and SN-17: Fits from extra savings (D-62)', () => {
+    for (const id of ['SN-13', 'SN-17']) expect(plainAnswer(byId(id).fixture)).toMatchObject({ code: 'fits_unspent', variant: 'extra_savings' });
+  });
+});

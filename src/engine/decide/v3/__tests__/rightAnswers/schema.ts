@@ -20,11 +20,12 @@ export interface FixtureCheck {
 }
 export interface RightAnswerFixture {
   asOf: string; currency: 'USD'|'CAD'|'GBP'|'EUR'; region: { country: string; subdivision: string|null } | null;
-  pay: { amount: number; cadence: 'monthly'|'fortnightly'|'weekly'; nextDate: string; setupAmount: number|null; lastThree: [number,number,number]|null; /** low months stated explicitly ('YYYY-MM', pay that month); absent = none beyond lastThree */ lean?: { month: string; amount: number }[] };
+  pay: { amount: number; cadence: 'monthly'|'fortnightly'|'weekly'; nextDate: string; setupAmount: number|null; lastThree: [number,number,number]|null; /** low months stated explicitly ('YYYY-MM', pay that month); absent = none beyond lastThree */ lean?: { month: string; amount: number }[];
+    /** D-52: no pay is scheduled (freelance); amounts = full-month income oldest first, one per history month, paid on `day`; absent = scheduled pay */ irregular?: { amounts: number[]; day: number } };
   usualMonth: { bills: number; everyday: number; essentialEveryday: number };
   thisMonth: { received: number; billsPaid: number; billsDue: number; everydaySoFar: number };
   historyMonths: number; quickEstimates: { income: number; bills: number; everyday: number } | null; recordsAsOf: string|null;
-  accounts: FixtureAccount[]; safetyNet: { protect: boolean; size: number|null; saved: number } | null;
+  accounts: FixtureAccount[]; safetyNet: { protect: boolean; size: number|null; saved: number; /** D-61: absent = locked (the net up to its size is left out of the answer) */ locked?: boolean } | null;
   bills: FixtureBill[]; debts: FixtureDebt[]; userLine: number|null; factLines: boolean;
   check: FixtureCheck;
 }
@@ -100,6 +101,13 @@ export function validateCase(c: unknown): string[] {
   } else {
     if (!isDate(fx.asOf)) errs.push(`${id}: fixture.asOf is not a date`);
     if (fx.pay && !isDate(fx.pay.nextDate)) errs.push(`${id}: fixture.pay.nextDate is not a date`);
+    const irr = fx.pay?.irregular;
+    if (irr !== undefined) {
+      if (!Array.isArray(irr.amounts) || irr.amounts.length !== fx.historyMonths) errs.push(`${id}: pay.irregular.amounts needs one amount per history month`);
+      if (!Number.isInteger(irr.day) || irr.day < 1 || irr.day > 31) errs.push(`${id}: pay.irregular.day must be 1 to 31`);
+    }
+    const lk = fx.safetyNet?.locked;
+    if (lk !== undefined && typeof lk !== 'boolean') errs.push(`${id}: safetyNet.locked must be true or false`);
     moneyErrors(`${id}.fixture`, { ...fx, region: null, asOf: null }, errs);
     const price = fx.check?.price;
     if (typeof price === 'number' && price < 0) errs.push(`${id}: price cannot be negative`);

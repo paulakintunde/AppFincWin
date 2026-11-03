@@ -3,9 +3,12 @@
  * approved-changes.json enforcement are retired (BO-05); the reviewed diff in ../reviewed/ replaces them.
  * The generators stay: deterministic seeds, and no file-system or random source.
  */
+import * as fc from 'fast-check';
 import * as fs from 'fs';
 import * as path from 'path';
-import { generateHistories, SHADOW_SEED } from './generate';
+import { buildMonthModel } from '../../month/model';
+import { toV3Inputs } from '../golden/adapter';
+import { generateHistories, historyArb, SHADOW_SEED } from './generate';
 import { generateNearLineHistories, withoutRefundLinks, NEAR_LINE_SEED } from './generateNearLine';
 import { generateRefundHistories, REFUND_SEED } from './generateRefunds';
 
@@ -24,6 +27,37 @@ describe('generator', () => {
       expect(g.purchases.length).toBeLessThanOrEqual(4);
     }
     expect(new Set(a.map((g) => g.person.id)).size).toBe(300);
+  });
+});
+
+describe('05.4-48 (audit cause 4): generated people are possible people', () => {
+  it("every generated person's account follows from its records and is never below 0", () => {
+    const raws = fc.sample(historyArb, { seed: SHADOW_SEED, numRuns: 300 });
+    const gens = generateHistories();
+    gens.forEach((g, i) => {
+      const raw = raws[i];
+      if (raw === undefined) throw new RangeError(`no raw history ${i}`);
+      const p = g.person;
+      const fund = p.emergency ?? 0;
+      const pots = p.envelopes.reduce((s, e) => s + Number(e.saved), 0);
+      const oct = p.months.filter((m) => m.full === false).flatMap((m) => m.lines);
+      const octIn = oct.filter((l) => l.role === 'income').reduce((s, l) => s + l.amount, 0);
+      const octOut = oct.filter((l) => l.role === 'spending').reduce((s, l) => s + l.amount, 0);
+      const carried = Math.max(raw.balance, octOut - octIn - pots);
+      const main = p.balance - fund;
+      expect(main).toBe(pots + carried + octIn - octOut);
+      expect(main).toBeGreaterThanOrEqual(0);
+      expect(p.balance).toBeGreaterThanOrEqual(fund);
+      if (p.unspent !== null) {
+        const mm = buildMonthModel(toV3Inputs({ ...p, unspent: null }));
+        const toArrive = Math.max(0, mm.moneyIn - octIn);
+        expect(p.unspent.amount).toBeLessThanOrEqual(main - pots + toArrive);
+      }
+    });
+  });
+
+  it('no adapter clamp binds over the 200 reviewed-corpus histories (person.balance >= the fund)', () => {
+    for (const g of generateHistories(200)) expect(g.person.balance).toBeGreaterThanOrEqual(g.person.emergency ?? 0);
   });
 });
 

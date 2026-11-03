@@ -143,7 +143,8 @@ describe('05.4-48: VARIANTS and the decide_shadow_runs variant CHECK', () => {
       .map((sql) => /variant\s+in\s*\(([^)]*)\)/i.exec(sql))
       .filter((m): m is RegExpExecArray => m !== null);
     const last = sets[sets.length - 1];
-    const listed = [...last[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
+    if (last === undefined) throw new Error('no migration sets the decide_shadow_runs variant CHECK');
+    const listed = [...(last[1] ?? '').matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
     expect(listed).toEqual([...VARIANTS].sort());
   });
 });

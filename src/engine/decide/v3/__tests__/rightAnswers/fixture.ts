@@ -22,6 +22,13 @@ function monthBefore(ym: string, back: number): string {
   return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`;
 }
 
+const pad = (n: number): string => String(n).padStart(2, '0');
+
+/** Days in 'YYYY-MM'. */
+function daysIn(ym: string): number {
+  return new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)), 0)).getUTCDate();
+}
+
 function cadenceOf(c: RightAnswerFixture['pay']['cadence']): Cadence {
   if (c === 'monthly') return { unit: 'month', every: 1 };
   return { unit: 'week', every: c === 'fortnightly' ? 2 : 1 };
@@ -66,12 +73,17 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   const start = `${monthBefore(ym, f.historyMonths)}-01`;
   const pay = v3Series({ id: 'pay', role: 'pay', cadence: cadenceOf(f.pay.cadence), anchorDate: f.pay.cadence === 'monthly' ? start : f.pay.nextDate, amount: f.pay.amount });
   const bills = v3Series({ id: 'bills', role: 'bill', cadence: { unit: 'month', every: 1 }, anchorDate: start, amount: f.usualMonth.bills });
+  // 05.4 D-52: irregular pay has no pay series; each history month's income is one unlinked line on the stated day.
+  const irr = f.pay.irregular;
   const months: V3Month[] = [];
   for (let i = f.historyMonths; i >= 1; i--) {
     const m = monthBefore(ym, i);
+    const income = irr
+      ? v3Line({ id: `in-${m}`, date: `${m}-${pad(Math.min(irr.day, daysIn(m)))}`, amount: irr.amounts[f.historyMonths - i] ?? 0, role: 'income', seriesId: null })
+      : v3Line({ id: `in-${m}`, date: `${m}-01`, amount: monthlyPay(f.pay), role: 'income', seriesId: 'pay' });
     months.push(
       monthOf(m, [
-        v3Line({ id: `in-${m}`, date: `${m}-01`, amount: monthlyPay(f.pay), role: 'income', seriesId: 'pay' }),
+        income,
         v3Line({ id: `bill-${m}`, date: `${m}-02`, amount: f.usualMonth.bills, seriesId: 'bills' }),
         // 05.4 ARC-07: the essential part of everyday spending sits in a category marked essential (the starter safety net).
         ...(f.usualMonth.everyday - f.usualMonth.essentialEveryday > 0
@@ -88,7 +100,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     monthOf(
       ym,
       [
-        ...(t.received > 0 ? [v3Line({ id: `in-${ym}`, date: `${ym}-01`, amount: t.received, role: 'income' as const, seriesId: 'pay' })] : []),
+        ...(t.received > 0 ? [v3Line({ id: `in-${ym}`, date: `${ym}-01`, amount: t.received, role: 'income' as const, seriesId: irr ? null : 'pay' })] : []),
         ...(t.billsPaid > 0 ? [v3Line({ id: `bill-${ym}`, date: `${ym}-01`, amount: t.billsPaid, seriesId: 'bills' })] : []),
         ...(t.everydaySoFar > 0 ? [v3Line({ id: `day-${ym}`, date: `${ym}-01`, amount: t.everydaySoFar })] : []),
       ],
@@ -123,7 +135,8 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     currency: currencyCode(f.currency),
     region: f.region ? (f.region.subdivision ? `${f.region.country}-${f.region.subdivision}` : f.region.country) : null,
     months,
-    series: [pay, bills],
+    series: irr ? [bills] : [pay, bills],
+    ...(irr ? { profile: { types: ['freelance'], variable: 'steady', steady: mu(f.pay.amount), billsHorizonMonths: null } } : {}),
     balance: mu(spending),
     accounts,
     debts,
@@ -136,7 +149,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
         : { income: mu(f.quickEstimates.income), expenses: mu(f.quickEstimates.bills + f.quickEstimates.everyday), saving: mu(0), debt: mu(0), invest: mu(0), asOf: f.asOf },
     recordsAsOf: f.recordsAsOf,
     // 05.4 FIN-01 (D-35): the safety net as stated; null = no record (protection on, the starter size, nothing saved).
-    safetyNet: f.safetyNet === null ? null : { protect: f.safetyNet.protect, size: f.safetyNet.size === null ? null : mu(f.safetyNet.size), saved: mu(f.safetyNet.saved) },
+    safetyNet: f.safetyNet === null ? null : { protect: f.safetyNet.protect, size: f.safetyNet.size === null ? null : mu(f.safetyNet.size), saved: mu(f.safetyNet.saved), locked: f.safetyNet.locked },
     essentialCategoryIds: f.usualMonth.essentialEveryday > 0 ? [ESSENTIAL] : [],
   });
   // 05.4-18: the confirmed unspent figure is the app's own suggested sum (spending money less the bills still due and the

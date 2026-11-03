@@ -233,7 +233,8 @@
         "safetyNet": {
           "protect": true,
           "size": 100000,
-          "saved": 100000
+          "saved": 100000,
+          "locked": false
         },
         "bills": [],
         "debts": [],
@@ -702,7 +703,8 @@
         "safetyNet": {
           "protect": true,
           "size": null,
-          "saved": 170000
+          "saved": 170000,
+          "locked": false
         },
         "bills": [
           {
@@ -1090,7 +1092,7 @@
       },
       "expected": {
         "code": "fits_unspent",
-        "variant": null,
+        "variant": "extra_savings",
         "afterBuy": {
           "month": null,
           "usualMonth": null
@@ -1105,15 +1107,16 @@
           "net_used"
         ]
       },
-      "why": "Only the $1,000 size is protected, so the $500 above it is spare savings. $300 spare in November plus $200 of the extra $500 (moved from the safety-net account) pays for the $500 purchase, and the $1,000 safety net stays whole. That leaves $300 of free money ($300 of the extra), not under the tight floor of $270 (a tenth of $1,900 bills + $800 everyday spending), so it is not tight. The answer says \"Your $1,000 safety net stays whole\" and that $500 sits above its size.",
+      "why": "Only the $1,000 size is protected, so the $500 above it is spare savings. $300 spare in November plus $200 of the extra $500 (moved from the safety-net account) pays for the $500 purchase, and the $1,000 safety net stays whole. That leaves $300 of free money ($300 of the extra), not under the tight floor of $270 (a tenth of $1,900 bills + $800 everyday spending), so it is not tight. The answer says \"Your $1,000 safety net stays whole\" and that $500 sits above its size. 05.4 D-62: because the purchase uses money above the net's size, the headline is \"Fits from extra savings\" (variant extra_savings), with the byline \"From your extra savings: uses $200 of the $500 above your safety net's size.\"",
       "fixIds": [
         "FIN-01",
         "ENG-03"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
-      "ownerReason": null,
-      "expertNote": null
+      "ownerReason": "Owner, D-62 (2026-11-03): \"an answer paid from extra savings has its own headline \\\"Fits from extra savings\\\" (new variant extra_savings on the spare-money code ...) ... Approved case SN-13 changes accordingly (owner-approved change, recorded with changeApproved).\"",
+      "expertNote": null,
+      "changeApproved": "2026-11-03"
     },
     {
       "id": "SN-14",
@@ -1168,7 +1171,8 @@
         "safetyNet": {
           "protect": true,
           "size": 100000,
-          "saved": 100000
+          "saved": 100000,
+          "locked": false
         },
         "bills": [],
         "debts": [],
@@ -1263,7 +1267,8 @@
         "safetyNet": {
           "protect": true,
           "size": 100000,
-          "saved": 100000
+          "saved": 100000,
+          "locked": false
         },
         "bills": [],
         "debts": [],
@@ -1306,6 +1311,512 @@
       "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
+    },
+    {
+      "id": "SN-16",
+      "topic": "safety-net",
+      "persona": "Maya, freelancer, no pay series (invented, D-52)",
+      "situation": "Maya is a freelancer with no scheduled pay. Over the last six months (April to September) she was paid $3,100, $2,900, $3,000, $3,200, $2,800 and $3,000, always on the 5th; her lowest month was $2,800. $3,000 came in on 1 October. By 3 October she has paid rent $1,000, phone $200 and her $200 monthly transfer to savings (bills $1,400 in all) and spent $50; $2,050 is in her everyday account and $3,000 sits in her savings account marked as her safety net (locked, the default). She is looking at a $60 purchase. It is bought on 3 October 2026 (today), paid in one go. A usual month: pay $3,000 (her own steady figure), bills $1,400 and everyday spending $800 (all of it on essentials).",
+      "fixture": {
+        "asOf": "2026-10-03",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-05",
+          "setupAmount": null,
+          "lastThree": null,
+          "irregular": {
+            "amounts": [
+              310000,
+              290000,
+              300000,
+              320000,
+              280000,
+              300000
+            ],
+            "day": 5
+          }
+        },
+        "usualMonth": {
+          "bills": 140000,
+          "everyday": 80000,
+          "essentialEveryday": 80000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 140000,
+          "billsDue": 0,
+          "everydaySoFar": 5000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 205000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 300000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 300000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 6000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 74000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "move_money_by"
+        ],
+        "mustNotHaveFacts": [
+          "net_used"
+        ]
+      },
+      "why": "D-52: with no pay series but six full months of history, pay is expected on her usual payday (the 5th) at her lowest month ($2,800), so November and December each bring $2,800 on the 5th. October: $3,000 in - $1,400 bills - $50 spent - $750 everyday still to come = $800 left; $800 - $60 = $740, a plain \"Fits\" from this month's money. $740 is over the tight floor of $220 (a tenth of $1,400 bills + $800 everyday spending). The safety net's starter size is $2,200 ($1,400 bills + $800 essential spending), so $800 of her $3,000 is extra savings. Her everyday account alone would reach about $266.67 below $0 on 4 November ($2,050 - $60 - $750 in October, then $1,400 of bills on 1 November and about $26.67 a day of everyday spending until her pay on the 5th); with the $800 of extra savings the path stays at about $533 above $0, so the net is not needed and the answer adds, as a timing fact (D-58), \"Move $266.67 from your savings to your everyday account by 1 November.\"",
+      "fixIds": [
+        "FIN-01"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "From the plan-18 audit (Maya $60). The audit has the $200 saving due on 6 October and the bills on 1-2 November with a low of about +$1,133 on 4 November; this fixture has no saving line, so the saving is stated as a bill already paid (bills $1,400, everyday account $2,050), which gives the same $740. Engine (05.4-47 rules): fits_month, null, afterBuy.month 74000, facts move_money_by {26667, 2026-11-01}, net_above_size {80000}, emergency_untouched {220000}. Hand and engine agree."
+    },
+    {
+      "id": "SN-17",
+      "topic": "safety-net",
+      "persona": "Kai, extra savings while the net is locked (invented, D-56, D-58)",
+      "situation": "Kai set his safety net to $1,000, but $1,500 sits in the savings account marked as his safety net. November leaves him $300 spare, and his usual month leaves $300. He is looking at a $500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials). His safety net is locked (the default).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 190000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 190000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 70000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 150000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 150000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "extra_savings_used",
+          "move_money_by",
+          "net_two_months"
+        ],
+        "mustNotHaveFacts": [
+          "net_used"
+        ]
+      },
+      "why": "D-61 locks only the net up to its $1,000 size; the $500 above it is extra savings and can be used, named as such (D-56). $300 spare in November plus $200 of the extra savings pays for the $500, so the headline is \"Fits from extra savings\" (D-62) with the byline \"From your extra savings: uses $200 of the $500 above your safety net's size.\" The $200 is in the savings account, so the answer says how much to move to the everyday account and the date it must be moved by (D-58), before that account would go below $0. A fact line adds that 2 months in the safety net gives more cover.",
+      "fixIds": [
+        "FIN-01",
+        "ENG-03"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Engine (05.4-47 rules): fits_unspent, extra_savings, split [month $300, extra_savings $200], extra_savings_used {20000, 50000}, move_money_by {20000, 2026-11-23}, net_two_months {480000}. The plan drafted variant null; D-62 (owner, after the plan) gives the extra_savings headline, so the case states it."
+    },
+    {
+      "id": "SN-18",
+      "topic": "safety-net",
+      "persona": "Riley, a plan into a short month (invented, D-54, D-63)",
+      "situation": "Riley's usual month ends $300 short: pay $2,500, bills $1,500, everyday spending $1,300. November so far: $2,500 in, bills $1,500 paid, $650 spent; $1,000 is in her everyday account (money from earlier months) and her safety net holds $2,000, its full size, locked (the default). She looks at a $9,000 car over 48 months at 7.9%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $2,500, bills $1,500 and everyday spending $1,300 ($700 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 130000,
+          "essentialEveryday": 70000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 65000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 200000,
+          "saved": 200000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 900000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 48,
+            "apr": "7.9",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "depletion_payment",
+          "price_over_net",
+          "interest_is_a_cost",
+          "balanced_month_room",
+          "month_balance_gap"
+        ],
+        "mustNotHaveFacts": [
+          "net_lasts",
+          "net_lasts_without",
+          "net_used"
+        ]
+      },
+      "why": "Her usual month is already $300 short, so no new payment fits: \"Short each month\", with the D-63 headline \"No: your month is already short\" and no ready-by date. The depletion lines lead (D-54): the $219.30 payment takes the usual month from $300 short to $519.30 short; the $9,000 price is more than her $2,000 safety net; the plan costs $1,526.06 in interest ($10,526.06 in all), money that could stay with her; a usual month that balances leaves room for a new payment, and $300 a month in lower costs or higher income balances it. The net is locked (D-61), so no line says how long it would last.",
+      "fixIds": [
+        "FIN-01",
+        "FIN-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Engine (05.4-47 rules): needs_input (the volatile-income cover question, judge.ts D-48 gate), because the plan payment against a usual month already short is judged by FIN-06 / FIN-08 (05.4-21 / 05.4-23), as for BR-05, QE-11 and QE-12 (knownRed). Hand figures: payment $219.30 (47 x $219.30 and a last $218.96), shortfall $300 -> $519.30, interest $1,526.06 ($10,526.06 in all), price $9,000 over the $2,000 net, gap $300. Plan 47 pinned the same depletion figures on its own Riley input (depletion.test.ts)."
+    },
+    {
+      "id": "SN-19",
+      "topic": "safety-net",
+      "persona": "Kai, locked net, only the net could pay (invented, D-61)",
+      "situation": "Same Kai and the same $500 price as SN-14, but this time it is a games console, marked as a want. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials). His safety net is locked (the default).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 190000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 190000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 70000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 100000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "purpose": "nice_to_have"
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_locked"
+        ],
+        "mustNotHaveFacts": [
+          "net_used"
+        ]
+      },
+      "why": "D-61: the locked net is left out of the answer entirely. Without it, the $300 left from November does not cover the $500, so it is \"Not yet\", dated as if the locked money were not there: on 1 December, November's $300 plus December's $300 covers the $500. No \"Dips into your safety net\" line, and no locked amount is shown as usable. The ready-by date is a payday, so the answer reads \"Not yet: ready on payday\" (variant payday).",
+      "fixIds": [
+        "FIN-01",
+        "ENG-03"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Engine (05.4-47 rules): not_yet, payday, readyBy 2026-12-01, facts net_locked, no net_used. The plan drafted the variant as the engine's; it is payday."
+    },
+    {
+      "id": "SN-20",
+      "topic": "safety-net",
+      "persona": "Kai, the same, net unlocked (invented, D-61)",
+      "situation": "Same Kai and the same $500 price as SN-14, but this time it is a games console, marked as a want. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials). He has unlocked his safety net in Decide settings (\"Your safety net will count in answers\").",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 190000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 190000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 70000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 100000,
+          "locked": false
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "purpose": "nice_to_have"
+        }
+      },
+      "expected": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuy": {
+          "month": -20000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_used"
+        ],
+        "mustNotHaveFacts": [
+          "net_locked"
+        ]
+      },
+      "why": "Unlocked, the net counts (D-35, D-49): $300 from November and $200 from the net pays for the $500, so the answer is \"Dips into your safety net\", $200 below November's money. The same person locked is SN-19.",
+      "fixIds": [
+        "FIN-01",
+        "ENG-03"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Engine (05.4-47 rules): fits_uses_net, null, afterBuy.month -20000, facts net_used, wait_keeps_net. Same fixture as approved SN-15 (which now states locked: false)."
     }
   ]
 }
