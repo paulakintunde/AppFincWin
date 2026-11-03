@@ -152,13 +152,15 @@ describe('settled golden questions (05.1-25)', () => {
   it('02 laptop: judge subtracts the price from unspent; D-18 refund: rolled unspent is the pre-purchase 240,000', () => {
     const laptop = run(byId('02'));
     const after = laptop.result.facts.find((f) => f.code === 'unspent_before_after');
-    expect(after).toEqual({ code: 'unspent_before_after', values: { before: 240000, after: 120000 } });
+    // 05.4-51 D-67: the confirmed figure stays 240,000; spare money is capped at the October month-end balance after Sam's 30,000
+    // saving still to move (210,000), so the line reads 210,000 -> 90,000
+    expect(after).toEqual({ code: 'unspent_before_after', values: { before: 210000, after: 90000 } });
     const refund = run(byId('d18-return-refund'));
     expect(refund.funds.unspent?.value).toBe(240000);
     expect(refund.funds.unspent?.drifted).toBe(false);
     expect(refund.result.facts.find((f) => f.code === 'unspent_before_after')).toEqual({
       code: 'unspent_before_after',
-      values: { before: 240000, after: 235000 },
+      values: { before: 210000, after: 205000 }, // D-67, as above
     });
   });
 
@@ -199,7 +201,9 @@ describe('05.4 D-35 (supersedes D-43a / D-63): only money above the net size cus
     expect(ev.net).toMatchObject({ size: 327_500, floor: 327_500, aboveSize: 572_500 });
     expect(ev.cash.kind).toBe('ok');
     expect(ev.result.code).toBe('fits_unspent');
-    expect(ev.result.split.find((s) => s.source === 'extra_savings')?.amount).toBe(360_000); // D-56: extra savings, not the net
+    // D-56: extra savings, not the net. D-67 (05.4-51): Sam's 30,000 saving still to move caps spare money 30,000 lower, so extra
+    // savings pay 30,000 more (360,000 -> 390,000)
+    expect(ev.result.split.find((s) => s.source === 'extra_savings')?.amount).toBe(390_000);
   });
 
   it('D-35 the protected part is reached only through the ladder: 200,000 with unspent 10,000, marked or not, is the same answer', () => {

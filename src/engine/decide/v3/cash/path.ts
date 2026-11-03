@@ -4,9 +4,10 @@
  * amounts never drift. Pure: asOf is an input.
  *
  * Bills and debt payments sit on their real dates; only confirmed live pay lands (I3, I34). Debt payments are dated
- * money out that Erest does not contain (I19), so they are taken on their dates too. Saving and investing are
- * pausable and are not taken. A due that dueDrops says no longer counts (05.3-64; D-27, D-31, skips) is not taken, in
- * any month of the path; one already settled by a paid line is skipped first.
+ * money out that Erest does not contain (I19), so they are taken on their dates too. 05.4 D-67: the regular saving and
+ * investing transfers out of the everyday account (moneySource.savingTransfers) are taken on their dates too (savings);
+ * before D-67 they were left out as pausable. A due that dueDrops says no longer counts (05.3-64; D-27, D-31, skips) is not
+ * taken, in any month of the path; one already settled by a paid line is skipped first.
  */
 import { divideHalfUp } from '../../../money/rounding';
 import { minorUnits, type MinorUnits } from '../../../money/types';
@@ -82,6 +83,8 @@ export interface OpenCashPathInput {
   readonly drops?: DueDrops;
   /** 05.4 D-52: pay expected from history (historyPay) for an irregular earner with no pay series. Never in paidThisMonth. Absent = none. */
   readonly extraPays?: readonly { readonly date: string; readonly amount: MinorUnits }[];
+  /** 05.4 D-67: the regular saving / investing transfers still to leave the everyday account, on their dates. Absent = none. */
+  readonly savings?: readonly DatedFlow[];
 }
 
 function putFlow(net: bigint[], asOf: string, end: string, date: string, amount: bigint): void {
@@ -134,6 +137,7 @@ export function openCashPath(input: OpenCashPathInput): OpenCashPath {
       }
     }
   }
+  for (const f of input.savings ?? []) put(f.date, -BigInt(f.amount)); // D-67: saving leaves the everyday account everywhere
   const spread: bigint[] = [];
   for (let i = 0; i < days; i++) spread.push(spreadThrough(i, { erest: input.erest, e: input.e, asOf }));
   return { asOf, days, end, net, spread, capped };

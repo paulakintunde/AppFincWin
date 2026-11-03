@@ -7,8 +7,8 @@
  *   segment always equals the net_used fact (gen:68). Money above the net's size is extra savings, never 'emergency'.
  * - moveMoneyBy: when the everyday account alone would go below 0 within the 90 days with the purchase, and money in another account
  *   (extra savings, or an unlocked net) covers it, the amount to move and the first day it is needed (D-58).
- * - savingTransfers: the dated regular saving and investing transfers out of the everyday account, which the account-only path for
- *   the move-by amount takes (D-58, Plan-49 re-run).
+ * - savingTransfers: the dated regular saving and investing transfers out of the everyday account. D-67: the open cash path takes
+ *   them, so the main path, the month-end figure (spareInAccount) and the account-only move-by path (D-58) all do.
  */
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { applyPurchaseFlows, type CashPathV3, type DatedFlow, type OpenCashPath } from './cash/path';
@@ -92,8 +92,8 @@ export function moveMoneyBy(withPurchaseAccountOnly: CashPathV3, cap: MinorUnits
 }
 
 /**
- * D-58: money moved to savings leaves the everyday account on its date; the main cash path still leaves it out (pausable), the
- * account-only path for the move-by amount takes it. Every occurrence from asOf for `days` days of a confirmed live 'saving' or
+ * D-58, D-67: money moved to savings leaves the everyday account on its date, on every path (D-67: "taken out of it everywhere:
+ * the month-end figure, spare money (the D-56 cap), and the 90-day cash path"). Every occurrence from asOf for `days` days of a confirmed live 'saving' or
  * 'investing' series that is not flexible, less the occurrences already logged ("seriesId|date" in paidThisMonth).
  */
 export function savingTransfers(series: readonly V3Series[], paidThisMonth: ReadonlySet<string>, asOf: LocalDate, days: number): DatedFlow[] {

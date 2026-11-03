@@ -3,14 +3,14 @@
  * move-by fact. Every branch of moneySource.ts is pinned both ways.
  */
 import { minorUnits } from '../../../money/types';
-import { openCashPath, type CashPathV3 } from '../cash/path';
+import { applyPurchaseFlows, openCashPath, type CashPathV3 } from '../cash/path';
 import { evaluate } from '../evaluate';
 import { cappedSpare, confirmedUnspent, moveMoneyBy, savingTransfers, sourceSplit, spareInAccount } from '../moneySource';
 import { prepare } from '../prepare';
 import type { Result } from '../types';
 import { toEngineInputs } from './rightAnswers/fixture';
 import { loadCases } from './rightAnswers/loader';
-import { v3Series } from './helpers/fixtures';
+import { inputsOf, monthOf, v3Line, v3Series } from './helpers/fixtures';
 import { corpus } from './reviewed/corpus';
 
 const mu = minorUnits;
@@ -120,7 +120,7 @@ describe('Maya: the move-by amount counts her regular saving (D-58, Plan-49 re-r
     return c;
   };
 
-  it('$500 cash: move $506.67 by 2026-11-01; the answer and the cash check are unchanged', () => {
+  it('$500 cash: move $506.67 by 2026-11-01; still Fits, the main path takes the saving too (D-67)', () => {
     // by hand (audit): the account-only path's low point was -306.67 on 2026-11-01; the $200 saving on 2026-10-06 also leaves
     // the everyday account, so it is -506.67: 30,667 + 20,000 = 50,667.
     const { inputs, check } = caseOf('persona:maya:50000:cash');
@@ -128,8 +128,9 @@ describe('Maya: the move-by amount counts her regular saving (D-58, Plan-49 re-r
     expect(ev.result.code).toBe('fits_month');
     expect(ev.result.variant).toBeNull();
     expect(fact(ev.result, 'move_money_by')).toEqual({ amount: 50_667, date: '2026-11-01' });
-    // the main cash path still leaves saving out (pausable): low point $693.33 on 2026-11-04 (audit)
-    expect(ev.cash).toMatchObject({ kind: 'ok', lowest: { date: '2026-11-04', balance: 69_333 } });
+    // D-67 (05.4-51): the main cash path takes the saving too: the audit's low point $693.33 on 2026-11-04 less the $200 moved on
+    // 2026-10-06 = $493.33; still above 0, so the answer is still Fits and the move-by amount (account alone) does not move
+    expect(ev.cash).toMatchObject({ kind: 'ok', lowest: { date: '2026-11-04', balance: 49_333 } });
   });
 
   it('the 48-month plan: move $225.97 by 2026-11-03', () => {
@@ -195,5 +196,46 @@ describe('Evaluation.spare (D-56)', () => {
   it('null with no confirmed unspent figure', () => {
     const { inputs, check } = fixtureOf('SN-13');
     expect(evaluate({ ...inputs, unspent: null }, check).spare).toBeNull();
+  });
+});
+
+describe('D-67: the regular saving leaves the everyday account on every path, a logged transfer once', () => {
+  // asOf 2026-10-03, balance 100,000, no pay, no bills; a 20,000 saving due on the 2nd and the 20th of each month
+  const saving = (id: string, day: string, role: 'saving' | 'investing' = 'saving') =>
+    v3Series({ id, role, cadence: { unit: 'month', every: 1 }, anchorDate: `2026-08-${day}`, amount: 20_000, savingMode: 'fixed' });
+  const at = (lines: Parameters<typeof v3Line>[0][], over: Parameters<typeof inputsOf>[0] = {}) =>
+    prepare(inputsOf({ asOf: '2026-10-03', balance: mu(100_000), series: [saving('s2', '02'), saving('s20', '20', 'investing')], months: [monthOf('2026-10', lines.map(v3Line), { full: false })], ...over })).readings[0]!;
+
+  it('the month-end figure takes each saving still to move this month (by hand: 100,000 - 20,000 on the 20th; the 2nd is past)', () => {
+    expect(at([]).spareInAccount).toBe(80_000);
+    // with no record of this month at all the same figure (no logged line to read)
+    expect(prepare(inputsOf({ asOf: '2026-10-03', balance: mu(100_000), series: [saving('s20', '20', 'investing')] })).readings[0]!.spareInAccount).toBe(80_000);
+  });
+
+  it('a transfer already logged (linked, or an unlinked saved_invested line of the amount) is not taken a second time', () => {
+    const early = { id: 'l1', date: '2026-10-03', amount: 20_000, role: 'saved_invested' as const };
+    // a line 17 days before the 20th is outside the match window, so the 20th is still taken
+    expect(at([{ ...early, seriesId: 's20' }]).spareInAccount).toBe(80_000);
+    // the 2nd's transfer logged on the 3rd settles the 2nd (already past); the 20th is still taken
+    expect(at([{ ...early, seriesId: 's2' }]).spareInAccount).toBe(80_000);
+    // a saving due on the 4th, logged a day early on the 3rd, is settled: not taken again
+    const near = (lines: Parameters<typeof v3Line>[0][]) =>
+      prepare(inputsOf({ asOf: '2026-10-03', balance: mu(100_000), series: [saving('s4', '04')], months: [monthOf('2026-10', lines.map(v3Line), { full: false })] })).readings[0]!.spareInAccount;
+    expect(near([])).toBe(80_000);
+    expect(near([{ ...early, seriesId: 's4' }])).toBe(100_000);
+    expect(near([{ ...early, seriesId: null }])).toBe(100_000);
+    // an unlinked everyday line of the same amount is not a transfer; a pending line, a line linked elsewhere or last month's never settle
+    expect(near([{ ...early, seriesId: null, role: 'spending' }])).toBe(80_000);
+    expect(near([{ ...early, seriesId: 's4', status: 'pending' }])).toBe(80_000);
+    expect(near([{ ...early, seriesId: 'other' }])).toBe(80_000);
+    expect(near([{ ...early, date: '2026-09-30', seriesId: 's4' }])).toBe(80_000);
+  });
+
+  it('the 90-day path takes each transfer on its date, once', () => {
+    const r = at([]);
+    const main = applyPurchaseFlows(r.open, mu(100_000), []);
+    expect(main.points.find((p) => p.date === '2026-10-20')!.balance).toBe(80_000);
+    // 100,000 - 20,000 (Oct 20) - 20,000 (Nov 2) - 20,000 (Nov 20)
+    expect(main.points.find((p) => p.date === '2026-11-20')!.balance).toBe(40_000);
   });
 });

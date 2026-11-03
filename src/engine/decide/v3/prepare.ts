@@ -10,7 +10,7 @@
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { mergeConfidence } from './confidence/reasons';
-import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, withNet, type CashCheck, type DatedFlow, type OpenCashPath } from './cash/path';
+import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, withNet, type CashCheck, type OpenCashPath } from './cash/path';
 import { essentialCosts, essentialSpendingOf } from './essentialCosts';
 import { resolveSafetyNet, type ResolvedNet } from './safetyNet';
 import { overdraftFloor } from './overdraft';
@@ -94,6 +94,32 @@ function paidOccurrences(inputs: V3Inputs): ReadonlySet<string> {
 }
 
 /**
+ * 05.4 D-67: "seriesId|dueDate" of this month's regular saving / investing occurrences that a logged transfer already made, so the
+ * cash path does not take them a second time (the everyday balance already shows them). The candidates are this month's paid
+ * lines linked to a saving or investing series, or saved_invested lines with no link (matched by amount, D-56); bills never
+ * compete for them (a separate settle, so no bill pairing moves).
+ */
+function savedOccurrences(inputs: V3Inputs): ReadonlySet<string> {
+  const ym = yearMonthOf(inputs.asOf);
+  const current = inputs.months.find((m) => m.month === ym);
+  const start = `${ym}-01`;
+  const nextFirst = `${addYearMonths(ym, 1)}-01`;
+  const due: Due[] = [];
+  const cadenceOf = new Map<string, V3Inputs['series'][number]['cadence']>();
+  for (const role of ['saving', 'investing'] as const) {
+    for (const s of liveSeriesOf(inputs.series, inputs.asOf, role)) {
+      cadenceOf.set(s.id, s.cadence);
+      for (const d of seriesOccurrences(s, start, nextFirst, inputs.asOf)) due.push({ seriesId: s.id, date: d, amount: s.amount });
+    }
+  }
+  const lines: PaidLine[] = (current?.lines ?? [])
+    .filter((l) => l.status === 'paid' && yearMonthOf(l.date) === ym && (l.seriesId === null ? l.role === 'saved_invested' : cadenceOf.has(l.seriesId)))
+    .map(toPaidLine);
+  const { settled } = settle(due, lines, (id) => matchWindowDays(cadenceOf.get(id) as V3Inputs['series'][number]['cadence'], MATCH_DAYS));
+  return settled;
+}
+
+/**
  * D-35: for a variable or seasonal earner, the most pay that may land in each month of the cash path: the month's expected
  * income (a confirmed figure as given, else the records rule). This month's cap is what is still to arrive: expected minus
  * what has already arrived, never below 0. A month with no expected figure lands nothing (cautious; needsInput asks first).
@@ -138,10 +164,8 @@ interface Reading {
   readonly net: ResolvedNet;
   /** 05.4 D-52: pay expected from history (null when the rule does not apply). */
   readonly hp: HistoryPay | null;
-  /** 05.4 D-56: what the everyday accounts are expected to hold at month end with no purchase; spare money is capped at it. */
+  /** 05.4 D-56: what the everyday accounts are expected to hold at month end with no purchase (D-67: after the regular saving still to move); spare money is capped at it. */
   readonly spareInAccount: MinorUnits;
-  /** 05.4 D-58: the regular saving / investing transfers out of the everyday account; the account-only path takes them. */
-  readonly savingOut: readonly DatedFlow[];
 }
 
 export interface Prepared {
@@ -162,6 +186,9 @@ function readingOf(inputs: V3Inputs): Reading {
   const hp = historyPay(inputs);
   const histDates = hp?.dates ?? [];
   const paid = paidOccurrences(inputs);
+  // 05.4 D-67: the regular saving / investing transfers leave the everyday account everywhere: the open path takes them, so the
+  // main cash path, the month-end figure (spareInAccount, the D-56 cap) and the account-only move-by path (D-58) all do.
+  const savings = savingTransfers(inputs.series, savedOccurrences(inputs), inputs.asOf, CASH_PATH_DAYS_V3);
   const open = openCashPath({
     asOf: inputs.asOf,
     days: CASH_PATH_DAYS_V3,
@@ -172,6 +199,7 @@ function readingOf(inputs: V3Inputs): Reading {
     payCaps: payCapsOf(inputs, month),
     drops: dueDrops(inputs), // 05.3-64 (D-27, D-31, skips): the same rule as the month model and unspent
     extraPays: histDates.map((date) => ({ date, amount: (hp as HistoryPay).amount })),
+    savings,
   });
   // history pay exists only with no live pay series, so the two never both give a date: the first history date, else the series'.
   const payDate = histDates[0] ?? nextPayDate(inputs.series, inputs.asOf);
@@ -186,7 +214,6 @@ function readingOf(inputs: V3Inputs): Reading {
     net: resolveSafetyNet(inputs, essentialCosts(month, inputs.debts, essentialSpendingOf(inputs, month))),
     hp,
     spareInAccount: spareInAccount(open, funds.spending),
-    savingOut: savingTransfers(inputs.series, paid, inputs.asOf, CASH_PATH_DAYS_V3),
   };
 }
 
@@ -201,9 +228,9 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
   const opening = minorUnits(funds.spending + funds.ownEnvelope + net.aboveSize);
   const flows = pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3) : [];
   const path = applyPurchaseFlows(r.open, opening, flows);
-  // 05.4 D-56 / D-58: the everyday accounts alone (no money above the net's size), with the purchase and the regular saving
-  // transfers that leave them (D-58; the main path and the cash check leave saving out, it is pausable).
-  const account = { spareInAccount: r.spareInAccount, withPurchase: applyPurchaseFlows(r.open, minorUnits(funds.spending + funds.ownEnvelope), [...flows, ...r.savingOut]) };
+  // 05.4 D-56 / D-58: the everyday accounts alone (no money above the net's size), with the purchase; the regular saving transfers
+  // are already in the open path (D-67), so they are taken once here as on the main path.
+  const account = { spareInAccount: r.spareInAccount, withPurchase: applyPurchaseFlows(r.open, minorUnits(funds.spending + funds.ownEnvelope), flows) };
   const cash = withNet(cashCheck(path, r.payDate, r.floor), path, () => applyPurchaseFlows(r.open, opening, []), net.usable);
   // 05.4 FIN-03 (D-36): the same open path with no purchase flows gives the cost without it; only needed with an overdraft.
   const overdraft = { floor: r.floor, withPurchase: path, withoutPurchase: r.floor < 0 ? applyPurchaseFlows(r.open, opening, []) : null, paydays: r.paydays };

@@ -722,8 +722,10 @@ describe('judge: properties', () => {
         if (j.purchase === null || (r.code !== 'fits_month' && r.code !== 'fits_unspent')) return;
         const low = j.month.low;
         const M = j.purchase.monthly;
-        // 05.4 D-63: an already-short usual month heads every answer instead
-        if (j.month.typicalLeft !== null && j.month.typicalLeft < 0) expect(r.variant).toBe('month_already_short');
+        // 05.4 D-63, D-65 (05.4-50): an already-short usual month heads every answer instead, with one of the three tiers
+        if (j.month.typicalLeft !== null && j.month.typicalLeft < 0) {
+          expect(['month_already_short', 'month_short_small', 'month_short_moderate', 'month_short_moderate_extra']).toContain(r.variant);
+        }
         else if (M > 0 && low !== null && low.left - M < 0) expect(r.variant).toBe('low_month');
         else expect(r.variant).toBeNull();
       }),

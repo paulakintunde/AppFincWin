@@ -232,13 +232,13 @@
       "amount": 5000
      }
     ],
-    "unspentAfter": 235000,
+    "unspentAfter": 205000,
     "month": {
      "moneyIn": 400000,
      "moneyOut": 357500,
      "monthLeft": 42500
     },
-    "working": "Sam bought a 120,000 laptop on 2026-10-02 on a plan, cancelled on return (series ended 2026-10-03). The unspent anchor of 2026-10-02 was 120,000 (after the purchase). The 120,000 refund (other_in, no countsAs, so not income) lands 2026-10-03, after the anchor, so unspent is 120,000+120,000 = 240,000, the pre-purchase figure. breakdown.other nets the returned purchase out of the month: moneyOut stays 150,000+30,000+10,000+137,500+30,000 = 357,500, moneyIn 400,000, monthLeft 42,500. A 5,000 check <= 42,500 -> fits_month; the plan pins unspentAfter = 240,000 (the pre-purchase figure). Band 2 (5,000 is not < 5,000). CORRECTION (05.1-25): the rolled unspent (funds.unspent.value) is 240,000, the pre-purchase figure, and the golden pins that separately. The unspent_before_after fact is for the 5,000 check being asked now: 240,000-5,000 = 235,000 (the same subtraction as situation 02), so unspentAfter is 235,000, not 240,000."
+    "working": "Sam bought a 120,000 laptop on 2026-10-02 on a plan, cancelled on return (series ended 2026-10-03). The unspent anchor of 2026-10-02 was 120,000 (after the purchase). The 120,000 refund (other_in, no countsAs, so not income) lands 2026-10-03, after the anchor, so unspent is 120,000+120,000 = 240,000, the pre-purchase figure. breakdown.other nets the returned purchase out of the month: moneyOut stays 150,000+30,000+10,000+137,500+30,000 = 357,500, moneyIn 400,000, monthLeft 42,500. A 5,000 check <= 42,500 -> fits_month; the plan pins unspentAfter = 240,000 (the pre-purchase figure). Band 2 (5,000 is not < 5,000). CORRECTION (05.1-25): the rolled unspent (funds.unspent.value) is 240,000, the pre-purchase figure, and the golden pins that separately. The unspent_before_after fact is for the 5,000 check being asked now: 240,000-5,000 = 235,000 (the same subtraction as situation 02), so unspentAfter is 235,000, not 240,000. RE-BASELINED (05.4-51 D-67): Sam's regular saving of 30000 is still to move this month and D-67 takes it out of the everyday account everywhere (\"the month-end figure, spare money (the D-56 cap), and the 90-day cash path\"), so spare money is capped 30000 lower at the expected October month-end balance: unspentAfter 235000 -> 205000. The code and the split do not change."
    },
    "source": "D-18"
   },
@@ -325,8 +325,8 @@
      "at_todays_rate",
      "emergency_untouched"
     ],
-    "unspentAfter": 132000,
-    "working": "EUR 1,000 converts at today rate to 108,000 home minor units (the snapshot supplies the figure). monthLeft 42,500 < 108,000 <= unspent 240,000 -> fits_unspent: October covers 42,500, unspent earlier 65,500; unspent 240,000-108,000 = 132,000 stays. Band: edges 10,000, 50,000, 100,000 below -> 2+3 = 5. The conversion carries the at_todays_rate fact."
+    "unspentAfter": 102000,
+    "working": "EUR 1,000 converts at today rate to 108,000 home minor units (the snapshot supplies the figure). monthLeft 42,500 < 108,000 <= unspent 240,000 -> fits_unspent: October covers 42,500, unspent earlier 65,500; unspent 240,000-108,000 = 132,000 stays. Band: edges 10,000, 50,000, 100,000 below -> 2+3 = 5. The conversion carries the at_todays_rate fact. RE-BASELINED (05.4-51 D-67): Sam's regular saving of 30000 is still to move this month and D-67 takes it out of the everyday account everywhere (\"the month-end figure, spare money (the D-56 cap), and the 90-day cash path\"), so spare money is capped 30000 lower at the expected October month-end balance: unspentAfter 132000 -> 102000. The code and the split do not change."
    },
    "source": "D-18"
   },

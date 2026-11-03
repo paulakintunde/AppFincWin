@@ -71,8 +71,8 @@
     "facts": [
      "emergency_untouched"
     ],
-    "unspentAfter": 120000,
-    "working": "monthLeft 42,500 < P 120,000 <= unspent 240,000 -> fits_unspent. Of P, October covers 42,500, unspent earlier covers 77,500. Unspent includes October once (I19), so the whole P comes off it: 240,000 - 120,000 = 120,000 stays. Band: edges below 120,000 are 10,000, 50,000, 100,000 -> 2+3 = 5."
+    "unspentAfter": 90000,
+    "working": "monthLeft 42,500 < P 120,000 <= unspent 240,000 -> fits_unspent. Of P, October covers 42,500, unspent earlier covers 77,500. Unspent includes October once (I19), so the whole P comes off it: 240,000 - 120,000 = 120,000 stays. Band: edges below 120,000 are 10,000, 50,000, 100,000 -> 2+3 = 5. RE-BASELINED (05.4-51 D-67): Sam's regular saving of 30000 is still to move this month; D-67 takes it out of the everyday account everywhere, so spare money is capped at the expected October month-end balance, 210000, below the confirmed 240000: unspentAfter 120000 -> 90000. The code and the split do not change."
    },
    "source": "v3 §12 #02"
   },
@@ -156,8 +156,8 @@
      "monthLeft": -53226,
      "erest": 133226
     },
-    "unspentAfter": 239500,
-    "working": "Repair 100,000 on Oct 2 makes everyday logged 110,000. Erest = max(round(147,500*28/31)=133,226, max(0,147,500-110,000)=37,500) = 133,226. moneyOut = 150,000+30,000+110,000+133,226+30,000 = 453,226; monthLeft = 400,000-453,226 = -53,226 (heading short). P 500 > max(0,monthLeft)=0 and <= unspent 240,000 -> fits_unspent; 239,500 stays. Band 1 (500 < 5,000)."
+    "unspentAfter": 213774,
+    "working": "Repair 100,000 on Oct 2 makes everyday logged 110,000. Erest = max(round(147,500*28/31)=133,226, max(0,147,500-110,000)=37,500) = 133,226. moneyOut = 150,000+30,000+110,000+133,226+30,000 = 453,226; monthLeft = 400,000-453,226 = -53,226 (heading short). P 500 > max(0,monthLeft)=0 and <= unspent 240,000 -> fits_unspent; 239,500 stays. Band 1 (500 < 5,000). RE-BASELINED (05.4-51 D-67): Sam's regular saving of 30000 is still to move this month; D-67 takes it out of the everyday account everywhere, so spare money is capped at the expected October month-end balance, 214274, below the confirmed 240000: unspentAfter 239500 -> 213774. The code and the split do not change."
    },
    "source": "v3 §12 #04"
   },
@@ -441,14 +441,14 @@
      },
      {
       "source": "unspent_earlier",
-      "amount": 197500
+      "amount": 167500
      },
      {
       "source": "extra_savings",
-      "amount": 160000
+      "amount": 190000
      }
     ],
-    "working": "P 400,000 > unspent 240,000 -> not_yet. Months to cover = ceilDiv(400,000-240,000, 42,500) = ceilDiv(160,000, 42,500) = 4 -> Oct + 4 = February 2027. Emergency fund untouched. Band 5. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter size of 327500 (1 month of essential costs) with the emergency fund, 900000, as the money saved. Only money already saved is protected: floor 327500, and the 572500 above the size is spare. The answer is now fits_unspent, split month 42500 + unspent_earlier 197500 + emergency 160000; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-47 D-56, D-62): variant null -> extra_savings, split emergency 160000 -> extra_savings 160000: the money comes from savings above the safety net's size, named as extra savings (\"Fits from extra savings\"), never the safety net; the amounts do not change.",
+    "working": "P 400,000 > unspent 240,000 -> not_yet. Months to cover = ceilDiv(400,000-240,000, 42,500) = ceilDiv(160,000, 42,500) = 4 -> Oct + 4 = February 2027. Emergency fund untouched. Band 5. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter size of 327500 (1 month of essential costs) with the emergency fund, 900000, as the money saved. Only money already saved is protected: floor 327500, and the 572500 above the size is spare. The answer is now fits_unspent, split month 42500 + unspent_earlier 197500 + emergency 160000; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-47 D-56, D-62): variant null -> extra_savings, split emergency 160000 -> extra_savings 160000: the money comes from savings above the safety net's size, named as extra savings (\"Fits from extra savings\"), never the safety net; the amounts do not change. RE-BASELINED (05.4-51 D-67): Sam's regular saving of 30000 is still to move this month; D-67 takes it out of the everyday account everywhere, so spare money is capped at 210000 (month-end balance) instead of 240000: split unspent_earlier 197500 -> 167500 and extra_savings 160000 -> 190000. The code and variant do not change.",
     "variant": "extra_savings"
    },
    "source": "v3 §12 #10"
@@ -807,14 +807,14 @@
      },
      {
       "source": "unspent_earlier",
-      "amount": 197500
+      "amount": 167500
      },
      {
       "source": "extra_savings",
-      "amount": 60000
+      "amount": 90000
      }
     ],
-    "working": "P 300,000 > unspent 240,000 -> not_yet. ceilDiv(300,000-240,000, 42,500) = ceilDiv(60,000, 42,500) = 2 -> December 2026. Band 5 (10,000, 50,000, 100,000 below 300,000). RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter size of 327500 (1 month of essential costs) with the emergency fund, 900000, as the money saved. Only money already saved is protected: floor 327500, and the 572500 above the size is spare. The answer is now fits_unspent, split month 42500 + unspent_earlier 197500 + emergency 60000; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-47 D-56, D-62): variant null -> extra_savings, split emergency 60000 -> extra_savings 60000: the money comes from savings above the safety net's size, named as extra savings (\"Fits from extra savings\"), never the safety net; the amounts do not change.",
+    "working": "P 300,000 > unspent 240,000 -> not_yet. ceilDiv(300,000-240,000, 42,500) = ceilDiv(60,000, 42,500) = 2 -> December 2026. Band 5 (10,000, 50,000, 100,000 below 300,000). RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter size of 327500 (1 month of essential costs) with the emergency fund, 900000, as the money saved. Only money already saved is protected: floor 327500, and the 572500 above the size is spare. The answer is now fits_unspent, split month 42500 + unspent_earlier 197500 + emergency 60000; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-47 D-56, D-62): variant null -> extra_savings, split emergency 60000 -> extra_savings 60000: the money comes from savings above the safety net's size, named as extra savings (\"Fits from extra savings\"), never the safety net; the amounts do not change. RE-BASELINED (05.4-51 D-67): Sam's regular saving of 30000 is still to move this month; D-67 takes it out of the everyday account everywhere, so spare money is capped at 210000 (month-end balance) instead of 240000: split unspent_earlier 197500 -> 167500 and extra_savings 60000 -> 90000. The code and variant do not change.",
     "facts": [
      "net_above_size",
      "emergency_untouched"
@@ -913,13 +913,13 @@
     "facts": [
      "emergency_untouched"
     ],
-    "unspentAfter": 230000,
+    "unspentAfter": 210000,
     "month": {
      "moneyIn": 300000,
      "erest": 65000,
      "monthLeft": 90000
     },
-    "working": "The 80,000 refund is other_in with no countsAs: it lands in the balance, not in money in. moneyIn 300,000. Erest = max(round(70,000*28/31)=63,226, 70,000-5,000=65,000) = 65,000. out = 120,000+5,000+65,000+20,000 = 210,000; monthLeft 90,000. Suggested sum = 615,000-65,000-200,000 = 350,000, which she confirmed. P 120,000 > 90,000, <= 350,000 -> fits_unspent: month covers 90,000, unspent earlier 30,000; 350,000-120,000 = 230,000 stays. Band 5."
+    "working": "The 80,000 refund is other_in with no countsAs: it lands in the balance, not in money in. moneyIn 300,000. Erest = max(round(70,000*28/31)=63,226, 70,000-5,000=65,000) = 65,000. out = 120,000+5,000+65,000+20,000 = 210,000; monthLeft 90,000. Suggested sum = 615,000-65,000-200,000 = 350,000, which she confirmed. P 120,000 > 90,000, <= 350,000 -> fits_unspent: month covers 90,000, unspent earlier 30,000; 350,000-120,000 = 230,000 stays. Band 5. RE-BASELINED (05.4-51 D-67): Kim's regular saving of 20000 is still to move this month; D-67 takes it out of the everyday account everywhere, so spare money is capped at the expected October month-end balance, 330000, below the confirmed 350000: unspentAfter 230000 -> 210000. The code and the split do not change."
    },
    "source": "v3 §12 #18"
   },
@@ -1096,12 +1096,12 @@
       "amount": 37500
      }
     ],
-    "unspentAfter": 160000,
+    "unspentAfter": 130000,
     "month": {
      "typicalLeft": 42500,
      "lowLeft": 5000
     },
-    "working": "One-off: P 80,000 > monthLeft 42,500, <= unspent 240,000 -> fits_unspent (month 42,500 + unspent earlier 37,500; unspent after = 240,000-80,000 = 160,000). Monthly: M = 12,000; typicalLeft 42,500-12,000 = 30,500 >= 0 passes; lowLeft 5,000-12,000 = -7,000 < 0 -> low-month clause (variant low_month). Band 4."
+    "working": "One-off: P 80,000 > monthLeft 42,500, <= unspent 240,000 -> fits_unspent (month 42,500 + unspent earlier 37,500; unspent after = 240,000-80,000 = 160,000). Monthly: M = 12,000; typicalLeft 42,500-12,000 = 30,500 >= 0 passes; lowLeft 5,000-12,000 = -7,000 < 0 -> low-month clause (variant low_month). Band 4. RE-BASELINED (05.4-51 D-67): Sam's regular saving of 30000 is still to move this month; D-67 takes it out of the everyday account everywhere, so spare money is capped at the expected October month-end balance, 210000, below the confirmed 240000: unspentAfter 160000 -> 130000. The code and the split do not change."
    },
    "source": "v3 §12 #22"
   }
