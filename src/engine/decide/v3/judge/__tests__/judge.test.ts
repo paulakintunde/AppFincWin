@@ -163,7 +163,7 @@ describe('judge: one-off ladder (v3 §12)', () => {
       })
     );
     expect(r.code).toBe('not_yet');
-    expect(r.variant).toBe('not_covered');
+    expect(r.variant).toBe('month_already_short'); // 05.4 D-63: the usual month is already short
     expect(r.readyBy).toBeNull();
     expect(r.notices.map((n) => n.code)).toContain('typical_short');
     expect(r.facts.map((f) => f.code)).not.toContain('emergency_untouched'); // no net in these hand-built inputs (D-25)
@@ -722,7 +722,9 @@ describe('judge: properties', () => {
         if (j.purchase === null || (r.code !== 'fits_month' && r.code !== 'fits_unspent')) return;
         const low = j.month.low;
         const M = j.purchase.monthly;
-        if (M > 0 && low !== null && low.left - M < 0) expect(r.variant).toBe('low_month');
+        // 05.4 D-63: an already-short usual month heads every answer instead
+        if (j.month.typicalLeft !== null && j.month.typicalLeft < 0) expect(r.variant).toBe('month_already_short');
+        else if (M > 0 && low !== null && low.left - M < 0) expect(r.variant).toBe('low_month');
         else expect(r.variant).toBeNull();
       }),
       { numRuns: 200 }
@@ -1235,5 +1237,26 @@ describe('05.3-70 purchasePreview fallback', () => {
     const r = judge(input({ purchase: null, purchaseMissing: ['plan_rate_missing'] as MissingCode[], purchasePreview: { band: 4, layers: ['L1p', 'L2'] as never } }));
     expect(r.band).toBe(4);
     expect(r.layers).toEqual(['L1p', 'L2']);
+  });
+});
+
+describe('05.4 D-56: the overdraft split names extra savings and the safety net apart', () => {
+  it('money above the size is extra_savings; only the rest is emergency', () => {
+    const net: ResolvedNet = { ...FULL_NET, saved: minorUnits(320_000), aboveSize: minorUnits(20_000), state: 'above' };
+    const r = judge(
+      input({
+        month: month({ monthLeft: mu(0), typicalLeft: mu(50_000) }),
+        funds: funds(10_000),
+        net,
+        purchase: purchase({ dayOne: mu(100_000), whole: mu(100_000) }),
+        cash: { kind: 'overdraft', lowest: { date: '2026-10-20', balance: mu(-5_000) } },
+      })
+    );
+    expect(r.code).toBe('fits_uses_overdraft');
+    expect(r.split).toEqual([
+      { source: 'month', amount: 10_000 },
+      { source: 'extra_savings', amount: 20_000 },
+      { source: 'emergency', amount: 70_000 },
+    ]);
   });
 });

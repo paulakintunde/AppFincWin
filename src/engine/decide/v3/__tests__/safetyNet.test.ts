@@ -116,7 +116,7 @@ describe('the variant order on a fit (05.4-12 revision notes section 1)', () => 
   });
 
   it('low_month wins over no_net / small_net; the losers stay in order', () => {
-    expect(FIT_VARIANT_ORDER).toEqual(['low_month', 'extra_savings', 'no_net', 'small_net']);
+    expect(FIT_VARIANT_ORDER).toEqual(['month_already_short', 'low_month', 'extra_savings', 'no_net', 'small_net']); // D-63 first
     expect(fitVariant(['extra_savings', 'low_month'])).toEqual({ variant: 'low_month', losers: ['extra_savings'] });
     expect(fitVariant(['no_net', 'low_month'])).toEqual({ variant: 'low_month', losers: ['no_net'] });
     expect(fitVariant(['small_net'])).toEqual({ variant: 'small_net', losers: [] });

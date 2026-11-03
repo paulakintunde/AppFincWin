@@ -159,6 +159,8 @@ function buildCorpus(): Emitted[] {
   const unlockedNet = { ...sam, safetyNet: { protect: true, size: mu(900_000), saved: mu(900_000), locked: false } };
   collect(out, unlockedNet, checkOnce(600_000, { purpose: { kind: 'preset', value: 'necessity' } }));
   collect(out, { ...unlockedNet, safetyNet: { protect: true, size: mu(900_000), saved: mu(900_000) } }, checkOnce(600_000));
+  // 05.4 D-54 / D-63: an already-short usual month with an unlocked net says how long the net would last, with and without it
+  collect(out, { ...unlockedNet, everydayOverride: mu(900_000) }, checkPlan(600_000, { count: 12, apr: percent('9.9'), firstPayment: { kind: 'one_period' } }));
   // from_your_figures: rough figures only
   collect(out, inputsOf({ typedEstimates: { income: mu(400_000), expenses: mu(150_000), saving: mu(30_000), debt: mu(0), invest: mu(0), asOf: '2026-10-01' } }), checkOnce(10_000));
   // income_kind_unmarked: other income whose kind carries no counts-as

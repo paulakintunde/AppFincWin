@@ -11,7 +11,7 @@
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { applyPurchaseFlows, type CashPathV3, type OpenCashPath } from './cash/path';
 import { daysInYearMonth, dayOfMonth, yearMonthOf } from './dates';
-import type { FundingSegment, LocalDate } from './types';
+import type { FundingSegment, Funds, LocalDate } from './types';
 
 const FN = 'moneySource';
 
@@ -27,6 +27,11 @@ export function spareInAccount(open: OpenCashPath, spending: MinorUnits): MinorU
  * D-56: the spare money judged against: the confirmed (available) figure, capped at what the everyday accounts hold at month end,
  * never below 0 from the cap (an account below 0 is the cash check's and the overdraft's to judge, D-27, D-28). null stays null.
  */
+/** D-38: the confirmed unspent figure judged against (available, else the value); null with no confirmed figure. */
+export function confirmedUnspent(funds: Pick<Funds, 'unspent'>): MinorUnits | null {
+  return funds.unspent === null ? null : (funds.unspent.available ?? funds.unspent.value);
+}
+
 export function cappedSpare(confirmed: MinorUnits | null, inAccount: MinorUnits): MinorUnits | null {
   if (confirmed === null) return null;
   return minorUnits(Math.min(confirmed, inAccount > 0 ? inAccount : 0));

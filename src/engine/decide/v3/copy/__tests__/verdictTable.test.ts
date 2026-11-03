@@ -18,6 +18,8 @@ describe('verdict table (I22 one code one text)', () => {
         'fits_month', 'fits_month.low_month', 'fits_unspent', 'fits_unspent.low_month', 'not_yet.payday', 'not_yet.not_covered', 'monthly_short', 'emergency_use', 'needs_input', 'fits_uses_overdraft', 'fits_uses_overdraft.not_cleared',
         'fits_month.no_net', 'fits_month.small_net', 'fits_unspent.no_net', 'fits_unspent.small_net', 'fits_uses_net', 'fits_uses_net.protection_off',
         'fits_unspent.extra_savings',
+        'fits_month.month_already_short', 'fits_unspent.month_already_short', 'fits_uses_net.month_already_short', 'fits_uses_overdraft.month_already_short',
+        'monthly_short.month_already_short', 'not_yet.month_already_short', 'emergency_use.month_already_short',
       ].sort()
     );
     const rows = Object.values(VERDICT_TABLE);
@@ -33,6 +35,13 @@ describe('verdict table (I22 one code one text)', () => {
       ['fits_month.no_net', 'fits_unspent.no_net'],
       ['fits_month.small_net', 'fits_unspent.small_net'],
       ['fits_uses_net', 'emergency_use'],
+      // 05.4 D-63: "No: your month is already short" is one answer on any code but an ask.
+      ['fits_month.month_already_short', 'fits_unspent.month_already_short'],
+      ['fits_month.month_already_short', 'fits_uses_net.month_already_short'],
+      ['fits_month.month_already_short', 'fits_uses_overdraft.month_already_short'],
+      ['fits_month.month_already_short', 'monthly_short.month_already_short'],
+      ['fits_month.month_already_short', 'not_yet.month_already_short'],
+      ['fits_month.month_already_short', 'emergency_use.month_already_short'],
     ];
     for (const [a, b] of SHARED) expect(VERDICT_TABLE[a!]).toEqual(VERDICT_TABLE[b!]);
     const distinct = rows.length - SHARED.length;
@@ -56,6 +65,12 @@ describe('verdict table (I22 one code one text)', () => {
     expect(verdictRowFor('fits_unspent', 'no_net')).toBe(VERDICT_TABLE['fits_unspent.no_net']);
     expect(verdictRowFor('fits_unspent', 'small_net')).toBe(VERDICT_TABLE['fits_unspent.small_net']);
     expect(verdictRowFor('fits_month', 'protection_off')).toBe(VERDICT_TABLE.fits_month);
+    // 05.4 D-62, D-63
+    expect(verdictRowFor('fits_unspent', 'extra_savings')).toBe(VERDICT_TABLE['fits_unspent.extra_savings']);
+    expect(verdictRowFor('fits_month', 'extra_savings')).toBe(VERDICT_TABLE.fits_month);
+    expect(verdictRowFor('not_yet', 'month_already_short')).toBe(VERDICT_TABLE['not_yet.month_already_short']);
+    expect(verdictRowFor('monthly_short', 'month_already_short')).toBe(VERDICT_TABLE['monthly_short.month_already_short']);
+    expect(verdictRowFor('needs_input', 'month_already_short')).toBe(VERDICT_TABLE.needs_input);
     expect(verdictRowFor('fits_uses_net', null)).toBe(VERDICT_TABLE.fits_uses_net);
     expect(verdictRowFor('fits_uses_net', 'protection_off')).toBe(VERDICT_TABLE['fits_uses_net.protection_off']);
     for (const k of ['fits_month.no_net', 'fits_month.small_net', 'fits_unspent.no_net', 'fits_unspent.small_net', 'fits_uses_net', 'fits_uses_net.protection_off'] as const) {
@@ -100,6 +115,8 @@ describe('verdict table (I22 one code one text)', () => {
         'ready_without_interest', 'clearing_first', 'net_left', 'net_refill', 'net_zero_is_off', 'net_protection_off',
         'net_none_start', 'net_progress', 'net_above_size', 'wait_keeps_net', 'need_net_line',
         'bills_held_back', 'yearly_bill_ahead', 'net_locked', 'extra_savings_used', 'net_two_months', 'move_money_by',
+        'usual_month_short', 'depletion_payment', 'plan_makes_short', 'price_over_net', 'net_lasts', 'net_lasts_without', 'interest_is_a_cost',
+        'balanced_month_room', 'month_balance_gap',
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

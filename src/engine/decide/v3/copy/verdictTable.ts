@@ -33,6 +33,14 @@ export const VERDICT_TABLE = Object.freeze({
   'fits_unspent.small_net': row('fitsSmallNet', 'caution'),
   // 05.4 D-62: paid in part from money saved above the safety net's size.
   'fits_unspent.extra_savings': row('fitsUnspentExtraSavings', 'fits'),
+  // 05.4 D-63: the usual month is already short before the purchase: "No: your month is already short", on any answer but an ask.
+  'fits_month.month_already_short': row('monthAlreadyShort', 'short'),
+  'fits_unspent.month_already_short': row('monthAlreadyShort', 'short'),
+  'fits_uses_net.month_already_short': row('monthAlreadyShort', 'short'),
+  'fits_uses_overdraft.month_already_short': row('monthAlreadyShort', 'short'),
+  'monthly_short.month_already_short': row('monthAlreadyShort', 'short'),
+  'not_yet.month_already_short': row('monthAlreadyShort', 'short'),
+  'emergency_use.month_already_short': row('monthAlreadyShort', 'short'),
   'not_yet.payday': row('notYetPayday', 'caution'),
   'not_yet.not_covered': row('notYetNotCovered', 'short'),
   monthly_short: row('monthlyShort', 'short'),
@@ -63,6 +71,8 @@ const isUnspentVariant = (v: Variant | null): v is UnspentVariant => v !== null 
  * apply to fits codes, protection_off only to fits_uses_net.
  */
 export function verdictRowFor(code: Code, variant: Variant | null): VerdictRow {
+  // D-63: one row for every answer but an ask.
+  if (variant === 'month_already_short' && code !== 'needs_input') return VERDICT_TABLE[`${code}.month_already_short` as const];
   switch (code) {
     case 'fits_month':
       return isFitsVariant(variant) ? VERDICT_TABLE[`fits_month.${variant}` as const] : VERDICT_TABLE.fits_month;
@@ -152,6 +162,15 @@ export const FACT_KEYS = Object.freeze({
   extra_savings_used: 'decide.v3.fact.extra_savings_used',
   net_two_months: 'decide.v3.fact.net_two_months',
   move_money_by: 'decide.v3.fact.move_money_by',
+  usual_month_short: 'decide.v3.fact.usual_month_short',
+  depletion_payment: 'decide.v3.fact.depletion_payment',
+  plan_makes_short: 'decide.v3.fact.plan_makes_short',
+  price_over_net: 'decide.v3.fact.price_over_net',
+  net_lasts: 'decide.v3.fact.net_lasts',
+  net_lasts_without: 'decide.v3.fact.net_lasts_without',
+  interest_is_a_cost: 'decide.v3.fact.interest_is_a_cost',
+  balanced_month_room: 'decide.v3.fact.balanced_month_room',
+  month_balance_gap: 'decide.v3.fact.month_balance_gap',
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -279,6 +298,16 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   extra_savings_used: ['used', 'above'],
   net_two_months: ['twoMonths'],
   move_money_by: ['amount', 'date'],
+  // 05.4 D-54 / D-60 / D-63: the depletion lines.
+  usual_month_short: ['short'],
+  depletion_payment: ['monthly', 'shortBefore', 'shortAfter'],
+  plan_makes_short: ['short'],
+  price_over_net: ['price', 'net'],
+  net_lasts: ['shortfall', 'months'],
+  net_lasts_without: ['months'],
+  interest_is_a_cost: ['interest', 'total'],
+  balanced_month_room: ['pay', 'costs'],
+  month_balance_gap: ['gap'],
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({

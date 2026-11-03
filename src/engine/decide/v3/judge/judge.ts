@@ -39,7 +39,8 @@ import { ceilDivide, minorFromBigInt } from '../../../payoff/types';
 import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_MONTHS } from '../constants';
 import { addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck, CashPathV3 } from '../cash/path';
-import { cappedSpare, moveMoneyBy, sourceSplit } from '../moneySource';
+import { cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit } from '../moneySource';
+import { depletionFacts, monthAlreadyShort } from '../depletion';
 import { emergencyOf } from '../funds/emergency';
 import { NO_NET, fitVariant, netDip, type ResolvedNet } from '../safetyNet';
 import { noLimitFacts, otherOverdrawnFacts, overdraftUseFacts, type OverdraftCtx } from '../overdraft';
@@ -586,7 +587,7 @@ export function judge(j: JudgeInput): Result {
   // plans. Drift and staleness (judgeNotices, judgeConfidence) stay on the confirmed figure (D-30).
   // 05.4 D-56: spare money can be no more than the everyday accounts really hold at month end (never below 0 here: an account
   // below 0 is the cash check's and the overdraft's to judge, D-27, D-28). Absent account (hand-built tests): no cap.
-  const confirmed = funds.unspent === null ? null : (funds.unspent.available ?? funds.unspent.value);
+  const confirmed = confirmedUnspent(funds);
   const unspentValue = j.account == null ? confirmed : cappedSpare(confirmed, j.account.spareInAccount);
   const one = missing.length > 0 || p === null ? null : oneOffPart(j, { unspent: unspentValue, envelope: funds.ownEnvelope });
 
@@ -655,7 +656,22 @@ export function judge(j: JudgeInput): Result {
 
   // Facts (fixed order): overdraft or the no-limit question, month, unspent, held back, yearly bills, emergency, envelope, plan, low month,
   // why months, bridge, lines, other accounts below 0.
-  const facts: Fact[] = [...(od?.facts ?? [])];
+  // 05.4 D-54 / D-60 / D-63: the depletion lines lead the answer (computed after the code; they never change it).
+  const facts: Fact[] = [
+    ...depletionFacts({
+      code,
+      monthly: purchase.monthly,
+      whole: purchase.whole,
+      dayOne: purchase.dayOne,
+      schedule: purchase.schedule,
+      share: purchase.share,
+      typicalLeft: month.typicalLeft,
+      typicalIncome: month.typicalIncome,
+      net,
+      netTaken: one.netTaken,
+    }),
+    ...(od?.facts ?? []),
+  ];
   // D-28, D-38: below 0 with no overdraft limit recorded is Not yet, and the answer asks about it.
   if (code === 'not_yet' && (j.overdraft?.floor ?? 0) === 0 && (j.cash.kind === 'payday' || j.cash.kind === 'not_covered')) {
     facts.push(...noLimitFacts(j.inputs.accounts, j.cash.shortBy, readyBy));
@@ -712,16 +728,18 @@ export function judge(j: JudgeInput): Result {
   );
   facts.push(...otherOverdrawnFacts(j.inputs.accounts)); // OD-08: a fact only, never the code
 
+  // 05.4 D-63: a usual month already short before the purchase is "No: your month is already short", with no ready-by date.
+  const alreadyShort = monthAlreadyShort(month.typicalLeft);
   return {
     code,
-    variant: code === 'not_yet' ? notYetVariant : variant,
+    variant: alreadyShort ? 'month_already_short' : code === 'not_yet' ? notYetVariant : variant,
     legacyState: LEGACY_STATE_OF_CODE[code],
     split: keepSplit ? split : [],
     facts,
     notices: mon === null ? notices : [...notices, ...mon.notices],
     missing: [],
     reasons: mon === null ? reasons : unique([...reasons, ...mon.reasons]),
-    readyBy,
+    readyBy: alreadyShort ? null : readyBy,
     band,
     layers,
     confidence: mon !== null && mon.saidCover !== null ? withReason(confidence, 'user_said_cover', mon.saidCover) : confidence,

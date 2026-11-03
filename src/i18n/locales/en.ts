@@ -3550,6 +3550,12 @@ const en = {
           title: 'This fits, and nothing is saved in your safety net yet.',
           body: '{{month}} is on track to leave about {{left}}, including the everyday spending still to come.',
         },
+        // 05.4 D-63: the usual month is already short before the purchase, whatever the answer.
+        monthAlreadyShort: {
+          chip: 'No: your month is already short',
+          title: 'No: your month is already short.',
+          body: 'A usual month already costs more than comes in, before this. The lines below show by how much.',
+        },
         // 05.4 D-62: paid in part from money saved above the safety net's size.
         fitsUnspentExtraSavings: {
           chip: 'Fits from extra savings',
@@ -3608,6 +3614,16 @@ const en = {
         extra_savings_used: 'From your extra savings: uses {{used}} of the {{above}} above your safety net’s size.',
         net_two_months: '2\u00A0months of essential costs in your safety net, about {{twoMonths}}, gives more cover.',
         move_money_by: '{{amount}} from your savings would need to be in your everyday account by {{date}}.',
+        // 05.4 D-54 / D-60 / D-63: the depletion lines. Declarative only.
+        usual_month_short: 'Your usual month is already about {{short}} overspent.',
+        depletion_payment: 'This adds about {{monthly}} a month. Your usual month, already {{shortBefore}} overspent, would be about {{shortAfter}} overspent.',
+        plan_makes_short: 'This plan would make your usual month about {{short}} overspent.',
+        price_over_net: 'The whole price, {{price}}, is more than your safety net, {{net}}.',
+        net_lasts: 'Covering a {{shortfall}} shortfall each month, your safety net would last about {{months}} months.',
+        net_lasts_without: 'About {{months}} months without this.',
+        interest_is_a_cost: 'This plan costs {{interest}} in interest, {{total}} in all: money that could stay with you.',
+        balanced_month_room: 'A usual month that balances leaves room for a new payment. A usual month here is {{pay}} of pay against {{costs}} of bills, spending and debt minimums.',
+        month_balance_gap: '{{gap}} a month of lower costs or higher income would balance your usual month, and then a new payment has room.',
         wait_keeps_net: 'Waiting until {{date}} keeps your safety net whole.',
         wait_keeps_net_month: 'Waiting until {{month}} keeps your safety net whole.',
         need_net_line: 'Marked as a need. A safety net is money kept for needs like this.',

@@ -16,7 +16,7 @@ const COPY_TEST = join(ROOT, 'src/i18n/__tests__/decideCopy.test.ts');
 
 const TITLE = /(it|test|describe)(\.each\([^)]*\))?\(\s*['"`]I(\d+)\b/g;
 const IDS = Array.from({ length: 54 }, (_, i) => i + 1);
-const NAMED_IDS: readonly string[] = ['I-limit', 'I-saved', 'I-D41', 'I-D52', 'I-D61', 'I-D56'];
+const NAMED_IDS: readonly string[] = ['I-limit', 'I-saved', 'I-D41', 'I-D52', 'I-D61', 'I-D56', 'I-D54', 'I-D63'];
 const NAMED_TITLE = /(it|test|describe)(\.each\([^)]*\))?\(\s*['"`](I-[A-Za-z0-9]+)\b/g;
 
 /** Ids that may be absent only while the folder that will carry them does not exist yet. */

@@ -45,6 +45,8 @@ const ALLOWED: Record<string, string> = {
   'decide.settings.valueDetailShort': '"Short answers" is the answer length, not a month figure',
   'decide.setupPage.roughBody_one': '"step left" is a count of setup steps',
   'decide.setupPage.roughBody_other': '"steps left" is a count of setup steps',
+  'decide.v3.verdict.monthAlreadyShort.chip': 'owner headline D-63 (2026-11-03), "No: your month is already short"; the facts below it say overspent',
+  'decide.v3.verdict.monthAlreadyShort.title': 'owner headline D-63 (2026-11-03), "No: your month is already short"; the facts below it say overspent',
 };
 
 describe('D-106 wording', () => {

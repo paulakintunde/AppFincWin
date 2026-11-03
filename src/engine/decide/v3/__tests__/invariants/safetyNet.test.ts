@@ -13,7 +13,10 @@ const run = (inputs: V3Inputs, check: CheckV2): Result => evaluate(inputs, check
 const asking = (...rs: Result[]): boolean => rs.some((r) => r.code === 'needs_input');
 
 /** The facts that only describe the net; every other fact is the same answer told the same way. */
-const NET_FACTS = new Set<string>(['emergency_untouched', 'net_used', 'net_left', 'net_refill', 'net_zero_is_off', 'net_protection_off', 'net_none_start', 'net_progress', 'net_above_size', 'wait_keeps_net', 'need_net_line']);
+const NET_FACTS = new Set<string>(['emergency_untouched', 'net_used', 'net_left', 'net_refill', 'net_zero_is_off', 'net_protection_off', 'net_none_start', 'net_progress', 'net_above_size', 'wait_keeps_net', 'need_net_line', 'net_locked', 'extra_savings_used', 'net_two_months', 'move_money_by', 'price_over_net', 'net_lasts', 'net_lasts_without']);
+/** 05.4 D-54 / D-63: the depletion lines lead the answer; the net's own lines start after them. */
+const DEPLETION = new Set<string>(['usual_month_short', 'depletion_payment', 'plan_makes_short', 'price_over_net', 'net_lasts', 'net_lasts_without', 'interest_is_a_cost', 'balanced_month_room', 'month_balance_gap']);
+const afterDepletion = (facts: readonly Fact[]): readonly Fact[] => facts.filter((f) => !DEPLETION.has(f.code));
 const otherFacts = (facts: readonly Fact[]): readonly Fact[] => facts.filter((f) => !NET_FACTS.has(f.code));
 const answer = (r: Result): unknown => ({ code: r.code, variant: r.variant, split: r.split, readyBy: r.readyBy, missing: r.missing, parts: r.parts, facts: otherFacts(r.facts), notices: r.notices });
 
@@ -47,7 +50,8 @@ describe('safety-net invariants', () => {
         // The previous rules: the net's money never counted. Protection off with nothing in it is exactly that.
         const before = run(withSafetyNet(base, { ...n, protect: false, saved: 0 }), check);
         if (off.parts.oneOff === 'fits_uses_net') {
-          if (off.code === 'fits_uses_net') expect(off.variant).toBe('protection_off');
+          // 05.4 D-63: an already-short usual month heads the answer instead
+          if (off.code === 'fits_uses_net') expect(['protection_off', 'month_already_short']).toContain(off.variant);
           expect(codeRank(before.code)).toBeLessThanOrEqual(codeRank(off.code));
         } else {
           expect(answer(off)).toEqual(answer(before));
@@ -107,10 +111,10 @@ describe('safety-net invariants', () => {
         const need = run(inputs, checkOf(price, { plan: null, purpose: { kind: 'preset', value: 'necessity' }, emergency: false }));
         fc.pre(need.code === 'fits_uses_net');
         const want = run(inputs, checkOf(price, { plan: null, purpose: { kind: 'preset', value: 'treat' }, emergency: false }));
-        expect(need.facts[0]?.code).toBe('need_net_line');
+        expect(afterDepletion(need.facts)[0]?.code).toBe('need_net_line');
         expect(need.facts.some((f) => f.code === 'wait_keeps_net')).toBe(false);
         expect(want.facts.some((f) => f.code === 'need_net_line')).toBe(false);
-        if (want.facts.some((f) => f.code === 'wait_keeps_net')) expect(want.facts[0]?.code).toBe('wait_keeps_net');
+        if (want.facts.some((f) => f.code === 'wait_keeps_net')) expect(afterDepletion(want.facts)[0]?.code).toBe('wait_keeps_net');
       }),
       { numRuns: fcRuns(200), seed: 0x0555 }
     );

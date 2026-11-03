@@ -59,7 +59,9 @@ describe('historyPay (D-52)', () => {
       const c = caseOf(key);
       expect(historyPay(prepare(c.inputs).inputs)).toMatchObject({ amount: 0, months: 12, dates: [] });
       const e = evaluate(c.inputs, c.check);
-      expect([e.result.code, e.result.variant]).toEqual(['fits_unspent', 'no_net']);
+      // the code stays; 05.4 D-63: her usual month is already short, so the headline is month_already_short (no_net's fact stays)
+      expect([e.result.code, e.result.variant]).toEqual(['fits_unspent', 'month_already_short']);
+      expect(e.result.facts.map((f) => f.code)).toContain('net_none_start');
       expect(e.result.notices.map((n) => n.code)).not.toContain('pay_expected_from_history');
     }
   });

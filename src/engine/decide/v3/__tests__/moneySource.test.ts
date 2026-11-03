@@ -5,7 +5,7 @@
 import { minorUnits } from '../../../money/types';
 import { openCashPath, type CashPathV3 } from '../cash/path';
 import { evaluate } from '../evaluate';
-import { cappedSpare, moveMoneyBy, sourceSplit, spareInAccount } from '../moneySource';
+import { cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit, spareInAccount } from '../moneySource';
 import { prepare } from '../prepare';
 import type { Result } from '../types';
 import { toEngineInputs } from './rightAnswers/fixture';
@@ -25,6 +25,15 @@ describe('spareInAccount (D-56)', () => {
     const open = openCashPath({ asOf: '2026-11-15', days: 90, series: [], paidThisMonth: new Set(), erest: mu(16_000), e: mu(30_000) });
     expect(spareInAccount(open, mu(70_000))).toBe(54_000);
     expect(spareInAccount(open, mu(10_000))).toBe(-6_000);
+  });
+});
+
+describe('confirmedUnspent (D-38)', () => {
+  it('available, else the value; null with no figure', () => {
+    expect(confirmedUnspent({ unspent: null })).toBeNull();
+    const u = { value: mu(5_000), available: mu(4_000) } as unknown as NonNullable<Parameters<typeof confirmedUnspent>[0]['unspent']>;
+    expect(confirmedUnspent({ unspent: u })).toBe(4_000);
+    expect(confirmedUnspent({ unspent: { ...u, available: undefined } as typeof u })).toBe(5_000);
   });
 });
 
@@ -126,5 +135,12 @@ describe('the real source through evaluate (D-56, D-58, D-62)', () => {
     const { inputs, check } = fixtureOf('SN-13');
     const r = evaluate({ ...inputs, accounts: (inputs.accounts ?? []).map((a) => (a.id === 'a1' ? { ...a, balance: mu(500_000) } : a)) }, check).result;
     expect(fact(r, 'move_money_by')).toBeUndefined();
+  });
+});
+
+describe('Evaluation.spare (D-56)', () => {
+  it('null with no confirmed unspent figure', () => {
+    const { inputs, check } = fixtureOf('SN-13');
+    expect(evaluate({ ...inputs, unspent: null }, check).spare).toBeNull();
   });
 });
