@@ -107,6 +107,57 @@ export function sittingMoney(f: RightAnswerFixture): Cents {
   return f.accounts.filter((a) => a.kind === 'checking' || a.kind === 'current').reduce((s, a) => s + big(a.balance), 0n);
 }
 
+/**
+ * Pay still to arrive this month: each pay date later this month (or today, when nothing has been received yet). "Expected pay
+ * later this month counts on its date" (D-23).
+ */
+export function payToArrive(f: RightAnswerFixture): Cents {
+  const ym = f.asOf.slice(0, 7);
+  return payDates(f)
+    .filter((d) => d.slice(0, 7) === ym && (d > f.asOf || (d === f.asOf && f.thisMonth.received === 0)))
+    .reduce((t) => t + big(f.pay.amount), 0n);
+}
+
+/**
+ * Free money: what sits in the spending accounts, plus pay still to arrive this month, less the bills still due and the
+ * everyday spending still to come (SN-04: "Without touching the net he has $300 now"; SN-12: "£400 free after this month's
+ * plans"). This month's room is part of it, counted once.
+ */
+export function freeMoney(f: RightAnswerFixture): Cents {
+  return sittingMoney(f) + payToArrive(f) - big(f.thisMonth.billsDue) - everydayToCome(f);
+}
+
+// --- Safety net (05.4 FIN-01, FIN-02, ENG-03, ENG-04). Restated from the approved safety-net cases SN-01 .. SN-15, CONTEXT D-05,
+// D-06, D-35, D-41 and the 05.4-12 revision notes. Not read from the engine.
+
+export interface PlainNet { off: boolean; saved: Cents; size: Cents; starter: Cents; protectedPart: Cents; above: Cents; lend: Cents }
+
+/**
+ * "No record means the default: protection on, a starter size of one month of essential costs (bills + debt minimums + essential
+ * everyday spending, rounded up to a whole unit), and $0 saved" (SN-01). "Only money already in the net is protected, so
+ * nothing is held back" (D-35): the protected part is what is saved, up to the size; "the $500 above the $1,000 size is spare"
+ * (SN-13). "A $0 net is treated exactly like protection off" (D-06, SN-07); with protection off the net's money counts like
+ * any other (SN-05).
+ */
+export function plainNet(f: RightAnswerFixture): PlainNet {
+  const n = f.safetyNet ?? { protect: true, size: null, saved: 0 };
+  const essentials = big(f.usualMonth.bills) + f.debts.reduce((t, d) => t + big(d.minimum), 0n) + big(f.usualMonth.essentialEveryday);
+  const starter = ((essentials + 99n) / 100n) * 100n;
+  const size = n.size === null ? starter : big(n.size);
+  const saved = maxC(0n, big(n.saved));
+  const off = !n.protect || size === 0n;
+  const protectedPart = off ? 0n : saved < size ? saved : size;
+  const above = off ? 0n : saved - protectedPart;
+  return { off, saved, size, starter, protectedPart, above, lend: off ? saved : protectedPart };
+}
+
+/** D-35: a fit while protection is on and the net is empty or below its size is amber. */
+function netVariant(net: PlainNet): string | null {
+  if (net.off) return null;
+  if (net.saved === 0n) return 'no_net';
+  return net.saved < net.size ? 'small_net' : null;
+}
+
 /** Cash left at the worst point before payday if the cost is paid today; below zero means the cash does not hold. */
 export function cashMargin(f: RightAnswerFixture, cost: Cents, withDues: boolean): Cents {
   return sittingMoney(f) - (withDues ? big(f.thisMonth.billsDue) : 0n) - everydayToCome(f) - cost;
@@ -125,27 +176,33 @@ export function plainAnswer(f: RightAnswerFixture): PlainAnswer {
     return { code: usualLeft - pay < 0n ? 'monthly_short' : 'fits_month', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
   }
   const after = left - cost;
-  const sitting = sittingMoney(f);
+  const net = plainNet(f);
   // Cash check first: what is in the spending accounts has to carry the bills still due and the everyday spending
   // still to come until payday (the next pay lands after this month ends), as well as the cost itself. Balances keep their
-  // sign ("-$1,500 is treated as $1,500 worse, never rounded up to $0", OD-10). Below 0 is fine only inside the overdraft
-  // limit; past it, or below 0 with no limit set, it is Not yet (D-27, D-28).
-  const margin = cashMargin(f, cost, true);
-  if (margin < -overdraftRoom(f)) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
-  // Room next: this month's money left (a month already below zero funds nothing). What it cannot cover comes from money
-  // already sitting in the spending accounts, less the part of it this month's room already counted. Money below 0 there
-  // has to be made up first.
+  // sign ("-$1,500 is treated as $1,500 worse, never rounded up to $0", OD-10). Money saved above the net's size is spare
+  // and counts here (SN-13). Below 0 is fine only inside the overdraft limit; past it, the money in the net may carry it
+  // ("the path must stay above the net", FIN-02, SN-09: "Dips into your safety net"); past both it is Not yet (D-27, D-28).
+  const margin = cashMargin(f, cost, true) + net.above;
+  const pastLimit = margin < -overdraftRoom(f);
+  if (pastLimit && margin + net.lend < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
+  // Room next: this month's money left (a month already below zero funds nothing). What it cannot cover comes from free
+  // money from earlier months (free money less this month's room, counted once; below 0 has to be made up first), then
+  // money above the net's size, then the overdraft as far as the account really goes below 0 (OD-01), then the net.
   const room = maxC(0n, left);
   const fromMonth = cost < room ? cost : room;
   const rest = cost - fromMonth;
-  const earlier = sitting - fromMonth;
-  const dip = margin < 0n ? -margin : 0n;
-  // "Uses your overdraft": inside the limit, any fit is a caution (D-26, D-36); the overdraft also carries what earlier
-  // money cannot, but only as far as the account really goes below 0 (OD-01).
-  const fits = rest === 0n || rest <= earlier || (dip > 0n && rest <= earlier + dip);
-  if (!fits) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
+  const earlier = freeMoney(f) - fromMonth;
+  const dip = !pastLimit && margin < 0n ? -margin : 0n;
+  const offVariant = net.off ? 'protection_off' : null;
+  if (rest > 0n && rest > earlier + net.above && !(dip > 0n && rest <= earlier + net.above + dip)) {
+    // "$1,500 is more than spare money plus the whole net, so it is Not yet" (SN-04).
+    if (rest > earlier + net.above + net.lend) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
+    if (dip === 0n) return { code: 'fits_uses_net', variant: offVariant, afterBuy: Number(after) };
+  }
   if (dip > 0n) return { code: 'fits_uses_overdraft', variant: notCleared(f, cost) ? 'not_cleared' : null, afterBuy: Number(after) };
-  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: null, afterBuy: Number(after) };
+  // "Any purchase that uses money in the net is Dips into your safety net, whatever its purpose" (D-41): here the path.
+  if (pastLimit) return { code: 'fits_uses_net', variant: offVariant, afterBuy: Number(after) };
+  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: netVariant(net), afterBuy: Number(after) };
 }
 
 /** OD-11: "her next pay does not clear it": after the next pay (and that day's bills and spending) the account is still below 0. */
@@ -159,21 +216,23 @@ export function notCleared(f: RightAnswerFixture, cost: Cents): boolean {
 /**
  * QE-07: "December is expected to leave $1,000, like a usual month, and $1,000 - $500 = $500." With fresh records and
  * nothing recorded yet, this month is a usual month: the pay lands on the 1st, the usual bills and everyday spending go
- * out. The cash check counts that pay, then the same ladder as below: this month's room, then money already sitting
- * (less the part this month's room already counted).
+ * out. The cash check counts that pay, then the same ladder as below: this month's room, then free money (what sits in the
+ * accounts plus this month's room, less the part of it this month's room already counted).
  */
 function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday);
   const after = usualLeft - cost;
   const sitting = sittingMoney(f);
-  if (sitting + usualLeft - cost < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
+  const net = plainNet(f);
+  const margin = sitting + usualLeft - cost + net.above;
+  if (margin < 0n) return { code: margin + net.lend < 0n ? 'not_yet' : 'fits_uses_net', variant: net.off ? 'protection_off' : null, afterBuy: Number(after) };
   const room = maxC(0n, usualLeft);
   const fromMonth = cost < room ? cost : room;
   const rest = cost - fromMonth;
-  if (rest === 0n) return { code: 'fits_month', variant: null, afterBuy: Number(after) };
-  // As below: money already sitting, less the part of it this month's room already counted (signed).
-  const earlier = sitting - fromMonth;
-  return { code: rest <= earlier ? 'fits_unspent' : 'not_yet', variant: null, afterBuy: Number(after) };
+  if (rest === 0n) return { code: 'fits_month', variant: netVariant(net), afterBuy: Number(after) };
+  // Free money is what sits plus this month's room; less the room this purchase already took, it is the earlier money.
+  const earlier = sitting + usualLeft - fromMonth + net.above;
+  return { code: rest <= earlier ? 'fits_unspent' : 'not_yet', variant: netVariant(net), afterBuy: Number(after) };
 }
 
 // --- Overdraft (05.4 FIN-03 / ENG-02). Restated from the approved overdraft cases (OD-01 .. OD-12), CONTEXT D-26..D-28 and

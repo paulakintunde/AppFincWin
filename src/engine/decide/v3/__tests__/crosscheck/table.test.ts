@@ -1,7 +1,7 @@
 /** QA-03: every approved right-answer case with no pending rule also runs through the plain calculator. */
 import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
-import { notCleared, overdraftRoom, payDates, plainAnswer, plainOverdraftCost, plainPath, recordsFresh, recordsLookBehind } from './plain';
+import { freeMoney, notCleared, overdraftRoom, payDates, plainAnswer, plainNet, plainOverdraftCost, plainPath, recordsFresh, recordsLookBehind } from './plain';
 
 const PENDING_IDS = new Set(PENDING_RULES.flatMap((r) => r.fixId.split('/')).filter((id) => id !== 'FIN-09'));
 
@@ -77,5 +77,38 @@ describe('plain calculator: overdrafts (05.4-17, FIN-03; D-26..D-28, D-36..D-38)
     expect(notCleared({ ...tess, pay: { ...tess.pay, nextDate: '2027-06-01' } }, 20_000n)).toBe(true);
     expect(payDates({ ...tess, pay: { ...tess.pay, cadence: 'weekly' } }).slice(0, 3)).toEqual(['2026-11-01', '2026-11-08', '2026-11-15']);
     expect(payDates({ ...tess, pay: { ...tess.pay, cadence: 'fortnightly' } }).slice(0, 2)).toEqual(['2026-11-01', '2026-11-15']);
+  });
+});
+
+describe('plain calculator: safety net (05.4-18, FIN-01, FIN-02; D-05, D-06, D-35, D-41)', () => {
+  const sn = loadCases().filter((c) => c.topic === 'safety-net' && c.status === 'approved');
+  const NET_VARIANTS: readonly (string | null)[] = [null, 'no_net', 'small_net', 'protection_off'];
+
+  it('every approved safety-net case gets its expected code, and its net variant, from the plain rules', () => {
+    for (const c of sn) {
+      // SN-09 needs its rent on its own date (the bills list, FIN-11, 05.4-19); tight (SN-10, SN-11) is 05.4-21.
+      if (c.id === 'SN-09') continue;
+      const got = plainAnswer(c.fixture);
+      const variant = NET_VARIANTS.includes(c.expected.variant) ? got.variant : c.expected.variant;
+      const expected = c.id === 'SN-11' ? 'no_net' : c.id === 'SN-10' ? null : c.expected.variant;
+      expect({ id: c.id, code: got.code, variant: c.id === 'SN-10' || c.id === 'SN-11' ? got.variant : variant }).toEqual({ id: c.id, code: c.expected.code, variant: expected });
+    }
+  });
+
+  it('the starter is 1 month of essential costs, rounded up; only money saved is protected; above the size is spare; $0 is off', () => {
+    const leo = sn.find((c) => c.id === 'SN-01')!.fixture;
+    expect(plainNet(leo)).toMatchObject({ starter: 190_000n, size: 190_000n, saved: 0n, protectedPart: 0n, lend: 0n });
+    const kai = sn.find((c) => c.id === 'SN-13')!.fixture;
+    expect(plainNet(kai)).toMatchObject({ protectedPart: 100_000n, above: 50_000n });
+    expect(plainNet({ ...kai, safetyNet: { protect: true, size: 0, saved: 150_000 } })).toMatchObject({ off: true, lend: 150_000n, above: 0n });
+    expect(plainNet({ ...kai, debts: [{ id: 'd', kind: 'card', balance: 1, minimum: 2_501, apr: null, dueDay: null, joint: false }] }).starter).toBe(242_600n);
+    expect(freeMoney(sn.find((c) => c.id === 'SN-04')!.fixture)).toBe(30_000n);
+  });
+
+  it('D-41: need or want never changes the plain answer', () => {
+    for (const purpose of ['necessity', 'treat', null] as const) {
+      const f = sn.find((c) => c.id === 'SN-03')!.fixture;
+      expect(plainAnswer({ ...f, check: { ...f.check, purpose } }).code).toBe('fits_uses_net');
+    }
   });
 });

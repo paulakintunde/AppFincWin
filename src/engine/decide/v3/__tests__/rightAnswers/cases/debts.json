@@ -335,7 +335,7 @@
         ],
         "safetyNet": {
           "protect": true,
-          "size": null,
+          "size": 145000,
           "saved": 145000
         },
         "bills": [
@@ -450,7 +450,7 @@
         ],
         "safetyNet": {
           "protect": true,
-          "size": null,
+          "size": 170000,
           "saved": 170000
         },
         "bills": [
@@ -762,7 +762,7 @@
         ],
         "safetyNet": {
           "protect": true,
-          "size": null,
+          "size": 145000,
           "saved": 145000
         },
         "bills": [
@@ -885,7 +885,7 @@
         ],
         "safetyNet": {
           "protect": true,
-          "size": null,
+          "size": 170000,
           "saved": 170000
         },
         "bills": [],
@@ -989,7 +989,7 @@
         ],
         "safetyNet": {
           "protect": true,
-          "size": null,
+          "size": 145000,
           "saved": 145000
         },
         "bills": [
@@ -1103,7 +1103,7 @@
         ],
         "safetyNet": {
           "protect": true,
-          "size": null,
+          "size": 280000,
           "saved": 280000
         },
         "bills": [

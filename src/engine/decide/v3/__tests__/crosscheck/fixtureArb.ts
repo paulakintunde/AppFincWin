@@ -80,8 +80,22 @@ const overdraftArb: fc.Arbitrary<RightAnswerFixture> = fc
     accounts: f.accounts.map((a) => ({ ...a, balance: a.balance - drop, overdraftLimit: limit, overdraftRate: rate })),
   }));
 
+/**
+ * 05.4-18 (FIN-01, FIN-02): a safety-net record on any of the fixtures above, with its money in a savings account marked as the
+ * net: protection on or off, a size (null = the starter, 0 = off) and money saved, so no net, a small one, a full one and one
+ * above its size are all drawn.
+ */
+const netArb: fc.Arbitrary<RightAnswerFixture> = fc
+  .tuple(fc.oneof(midMonthArb, firstOfMonthArb, overdraftArb), fc.boolean(), fc.option(fc.oneof(fc.constant(0), money(1_500_000)), { nil: null }), money(2_000_000))
+  .map(([f, protect, size, saved]) => ({
+    ...f,
+    accounts: [...f.accounts, { id: 'n1', kind: 'savings' as const, name: 'Safety net', balance: saved, overdraftLimit: null, overdraftRate: null, use: 'emergency' as const }],
+    safetyNet: { protect, size, saved },
+  }));
+
 export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc.oneof(
   { weight: 5, arbitrary: midMonthArb },
   { weight: 1, arbitrary: firstOfMonthArb },
-  { weight: 3, arbitrary: overdraftArb }
+  { weight: 3, arbitrary: overdraftArb },
+  { weight: 3, arbitrary: netArb }
 );

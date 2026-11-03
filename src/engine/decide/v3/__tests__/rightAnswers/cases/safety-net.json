@@ -745,7 +745,8 @@
       "why": "Spare money says yes ($800 - $700 = $100), but the day-by-day path does not. The $400 of everyday spending still to come is spread evenly, $25 a day over the 16 days from 15 to 30 November. After rent on the 20th the account goes below $0, reaching $1,400 - $600 rent - $300 everyday spending (15 to 26 November) - $700 = -$200 on 26 November. So the answer says it \"needs $200 from your safety net until 27 Nov\", the next payday. The path must stay above the net (FIN-02), so this is \"Dips into your safety net\", not a plain \"Fits\". It adds \"Waiting until 27 Nov keeps your safety net whole.\"",
       "fixIds": [
         "FIN-02",
-        "ENG-04"
+        "ENG-04",
+        "FIN-11"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
@@ -841,7 +842,8 @@
       "why": "The size she typed is respected, however small (D-05): her $50 net is full, so there is no safety-net caution and nothing is held back. $1,000 - $980 = $20 left, which is under the tight floor of $200 (a tenth of $1,200 bills + $800 everyday spending), so the answer is \"Fits, but tight\": \"November would still leave about $20. That is under $200, a tenth of what you usually spend in a month.\" (D-40).",
       "fixIds": [
         "FIN-01",
-        "ENG-03"
+        "ENG-03",
+        "FIN-07"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
@@ -929,7 +931,8 @@
       "fixIds": [
         "FIN-01",
         "ENG-03",
-        "CMP-F13"
+        "CMP-F13",
+        "FIN-07"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",

@@ -2,24 +2,8 @@
   "topic": "overdraft",
   "red": [
     {
-      "id": "OD-01",
-      "fixId": "FIN-01"
-    },
-    {
-      "id": "OD-03",
-      "fixId": "FIN-01"
-    },
-    {
       "id": "OD-04",
       "fixId": "FIN-09"
-    },
-    {
-      "id": "OD-11",
-      "fixId": "FIN-01"
-    },
-    {
-      "id": "OD-12",
-      "fixId": "FIN-01"
     }
   ]
 }

@@ -2,60 +2,16 @@
   "topic": "safety-net",
   "red": [
     {
-      "id": "SN-01",
-      "fixId": "FIN-01"
-    },
-    {
-      "id": "SN-02",
-      "fixId": "FIN-01"
-    },
-    {
-      "id": "SN-03",
-      "fixId": "FIN-01"
-    },
-    {
-      "id": "SN-04",
-      "fixId": "FIN-01"
-    },
-    {
-      "id": "SN-05",
-      "fixId": "FIN-01"
-    },
-    {
-      "id": "SN-07",
-      "fixId": "FIN-01"
-    },
-    {
-      "id": "SN-08",
-      "fixId": "FIN-01"
-    },
-    {
       "id": "SN-09",
-      "fixId": "FIN-02"
+      "fixId": "FIN-11"
     },
     {
       "id": "SN-10",
-      "fixId": "FIN-01"
+      "fixId": "FIN-07"
     },
     {
       "id": "SN-11",
-      "fixId": "FIN-01"
-    },
-    {
-      "id": "SN-12",
-      "fixId": "FIN-01"
-    },
-    {
-      "id": "SN-13",
-      "fixId": "FIN-01"
-    },
-    {
-      "id": "SN-14",
-      "fixId": "FIN-01"
-    },
-    {
-      "id": "SN-15",
-      "fixId": "FIN-01"
+      "fixId": "FIN-07"
     }
   ]
 }

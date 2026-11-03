@@ -84,6 +84,805 @@
       "reason": "FIN-03/ENG-02 signed balances: the account is 1,500 below 0 with no overdraft limit, so the old \"unexplained money\" question (caused by rounding -1,500 up to 0) is gone; the account stays below 0 for the whole 90 days, so the answer is Not yet (D-28), ready about February 2027.",
       "approved": true,
       "approvedAt": "2026-11-02"
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:sam:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuyMonth": -87500
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:maya:6000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuyMonth": 74000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:maya:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuyMonth": 30000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:maya:900000:plan",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:riley:6000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuyMonth": -36000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:riley:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuyMonth": -80000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:riley:900000:plan",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:leo:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": -19484
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:leo:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuyMonth": -147484
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:leo:900000:plan",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:tia:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:dana:6000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 77710
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": 77710
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:dana:50000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 33710
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": 33710
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:dana:200000:cash",
+      "before": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "small_net",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:dana:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:priya:6000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 114000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": 114000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:priya:50000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 70000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": 70000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:priya:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuyMonth": -80000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:priya:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p1:6000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 2000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 2000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p2-rich:6000:cash",
+      "before": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": -100000
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "no_net",
+        "afterBuyMonth": -100000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p2-rich:50000:cash",
+      "before": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": -100000
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "no_net",
+        "afterBuyMonth": -100000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p3:6000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 54000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 54000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p3:50000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 10000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 10000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p3:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p6:6000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 69000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 69000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p6:50000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 25000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 25000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p6:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p6-lines:6000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 69000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 69000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p6-lines:50000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 25000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 25000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p6-lines:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p7:6000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 74000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 74000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p7:50000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 30000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 30000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p7:200000:cash",
+      "before": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "no_net",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p7:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p8:6000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 74000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 74000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p8:50000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 30000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 30000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p8:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p9:6000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 14000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 14000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p10:6000:cash",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 54000
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 54000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "persona:audit-p10:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:0",
+      "before": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:44",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 466194
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:68",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_uses_net",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:69",
+      "before": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 532125
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:123",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:126",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     }
   ]
 }

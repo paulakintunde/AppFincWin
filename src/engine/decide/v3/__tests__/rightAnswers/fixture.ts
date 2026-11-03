@@ -6,10 +6,15 @@
 import { currencyCode, minorUnits, type MinorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import type { AccountUse, Cadence, CheckV2, PayV2, V3Account, V3Debt, V3Inputs, V3Month } from '../../types';
+import { buildFunds } from '../../funds/build';
+import { buildMonthModel } from '../../month/model';
 import { checkOnce, inputsOf, monthOf, v3Line, v3Series } from '../helpers/fixtures';
 import type { RightAnswerFixture } from './schema';
 
 const mu = (n: number): MinorUnits => minorUnits(n);
+
+/** 05.4 ARC-07: the category the fixture's essential everyday spending is logged under, marked essential in the inputs. */
+const ESSENTIAL = 'essential';
 
 function monthBefore(ym: string, back: number): string {
   const [y, m] = ym.split('-').map(Number) as [number, number];
@@ -68,7 +73,13 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
       monthOf(m, [
         v3Line({ id: `in-${m}`, date: `${m}-01`, amount: monthlyPay(f.pay), role: 'income', seriesId: 'pay' }),
         v3Line({ id: `bill-${m}`, date: `${m}-02`, amount: f.usualMonth.bills, seriesId: 'bills' }),
-        v3Line({ id: `day-${m}`, date: `${m}-15`, amount: f.usualMonth.everyday }),
+        // 05.4 ARC-07: the essential part of everyday spending sits in a category marked essential (the starter safety net).
+        ...(f.usualMonth.everyday - f.usualMonth.essentialEveryday > 0
+          ? [v3Line({ id: `day-${m}`, date: `${m}-15`, amount: f.usualMonth.everyday - f.usualMonth.essentialEveryday })]
+          : []),
+        ...(f.usualMonth.essentialEveryday > 0
+          ? [v3Line({ id: `ess-${m}`, date: `${m}-15`, amount: f.usualMonth.essentialEveryday, categoryId: ESSENTIAL })]
+          : []),
       ])
     );
   }
@@ -84,7 +95,6 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
       { full: false }
     )
   );
-  // mapped when FIN-01 lands: safetyNet (protect, size, saved)
   // mapped when FIN-04 lands: debt dueDay and joint
   // mapped when BO-05 lands: plan first-payment choices beyond the engine's own
   // mapped when FIN-27 lands: region rules, check.taxIncluded
@@ -94,7 +104,6 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   // mapped when FIN-09 lands: bills list, pay.lastThree and pay.setupAmount
   // mapped when FIN-08 / plan 05.4-23 lands: pay.lean (low months stated explicitly)
   // mapped when FIN-04 lands: debt paidThisMonth (part of a minimum already paid)
-  // mapped when D-41 lands (05.4-18): check.purpose (need or want; words and order only)
   // mapped when FIN-05 / D-39c lands: check.pay.housing (a mortgage skips the 10% interest test)
   // 05.4 FIN-03: kind, overdraft limit and rate as stated (the engine reads a limit only on checking and current accounts).
   const accounts: V3Account[] = f.accounts.map((a) => ({
@@ -109,7 +118,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     id: d.id, kind: d.kind, balance: mu(d.balance), minimum: mu(d.minimum), apr: d.apr === null ? null : percent(d.apr), secured: false, isHousing: d.housing === true,
   }));
   const spending = f.accounts.filter((a) => a.kind === 'checking' || a.kind === 'current').reduce((s, a) => s + a.balance, 0);
-  const inputs = inputsOf({
+  const inputs0 = inputsOf({
     asOf: f.asOf,
     currency: currencyCode(f.currency),
     region: f.region ? (f.region.subdivision ? `${f.region.country}-${f.region.subdivision}` : f.region.country) : null,
@@ -118,7 +127,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     balance: mu(spending),
     accounts,
     debts,
-    unspent: { amount: mu(spending), at: f.asOf }, // 05.4 ENG-02: signed, never rounded up to 0
+    unspent: { amount: mu(spending), at: f.asOf }, // replaced below by the app's own suggested figure
     // 05.4-15 (ENG-11, ENG-14): quick estimates are the engine's typed estimates; their spending is bills plus everyday
     // (the same total the app stores as rough_spending). The records date is passed as given.
     typedEstimates:
@@ -126,13 +135,24 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
         ? null
         : { income: mu(f.quickEstimates.income), expenses: mu(f.quickEstimates.bills + f.quickEstimates.everyday), saving: mu(0), debt: mu(0), invest: mu(0), asOf: f.asOf },
     recordsAsOf: f.recordsAsOf,
+    // 05.4 FIN-01 (D-35): the safety net as stated; null = no record (protection on, the starter size, nothing saved).
+    safetyNet: f.safetyNet === null ? null : { protect: f.safetyNet.protect, size: f.safetyNet.size === null ? null : mu(f.safetyNet.size), saved: mu(f.safetyNet.saved) },
+    essentialCategoryIds: f.usualMonth.essentialEveryday > 0 ? [ESSENTIAL] : [],
   });
+  // 05.4-18: the confirmed unspent figure is the app's own suggested sum (spending money less the bills still due and the
+  // everyday spending still to come), as a user who confirms it would see it. A raw balance would count this month's spending
+  // still to come as money from earlier months (SN-04: "$300 now and $300 a month", not $700). Signed (05.4 ENG-02).
+  const mm = buildMonthModel(inputs0);
+  const toArrive = mm.moneyIn - t.received > 0 ? mm.moneyIn - t.received : 0;
+  const inputs: V3Inputs = { ...inputs0, unspent: { amount: mu(buildFunds(inputs0, mm, null).suggested + toArrive), at: f.asOf } };
   const c = f.check;
   const check = checkOnce(c.price ?? 0, {
     price: c.price === null ? null : mu(c.price),
     taxPercent: c.taxPercent === null ? null : percent(c.taxPercent),
     oneOffFees: mu(c.oneOffFees),
     pay: payOf(c.pay),
+    // 05.4 D-41: the need-or-want reading (words and the order of facts only).
+    purpose: c.purpose == null ? null : { kind: 'preset', value: c.purpose },
   });
   return { inputs, check };
 }

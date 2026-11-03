@@ -236,7 +236,7 @@
         ],
         "safetyNet": {
           "protect": true,
-          "size": null,
+          "size": 168000,
           "saved": 168000
         },
         "bills": [],
@@ -353,7 +353,7 @@
         ],
         "safetyNet": {
           "protect": true,
-          "size": null,
+          "size": 168000,
           "saved": 168000
         },
         "bills": [],

@@ -20,14 +20,24 @@ const CHANGES = path.join(DIR, 'changes.json');
 const LABEL: Record<string, string> = {
   fits_month: 'Fits',
   fits_unspent: 'Fits from spare money',
-  emergency_use: 'Uses your safety net',
+  emergency_use: 'Dips into your safety net',
+  fits_uses_net: 'Dips into your safety net',
   fits_uses_overdraft: 'Uses your overdraft',
   monthly_short: 'Short each month',
   not_yet: 'Not yet',
   needs_input: 'Needs a figure first',
 };
-const RANK: Record<string, number> = { fits_month: 0, fits_unspent: 1, emergency_use: 2, fits_uses_overdraft: 3, monthly_short: 4, not_yet: 5, needs_input: 6 };
-const VARIANT: Record<string, string> = { payday: 'payday', not_covered: 'not covered', low_month: 'low month', not_cleared: 'past payday' };
+// The CODE_PRECEDENCE order (05.4-18 adds fits_uses_net next to the stored-only emergency_use).
+const RANK: Record<string, number> = { fits_month: 0, fits_unspent: 1, fits_uses_net: 2, emergency_use: 3, fits_uses_overdraft: 4, monthly_short: 5, not_yet: 6, needs_input: 7 };
+const VARIANT: Record<string, string> = {
+  payday: 'payday',
+  not_covered: 'not covered',
+  low_month: 'low month',
+  not_cleared: 'past payday',
+  no_net: 'but no safety net',
+  small_net: 'but your safety net is small',
+  protection_off: 'protection off',
+};
 
 const words = (a: ReviewedAnswer): string => {
   const base = LABEL[a.code] ?? a.code;
