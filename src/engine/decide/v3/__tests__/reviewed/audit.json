@@ -1,0 +1,619 @@
+{
+  "persona:sam:900000:cash": {
+    "right": "Dips into your safety net; October would be $875 short after every spare dollar is used",
+    "rightCode": "fits_uses_net",
+    "verdict": "CORRECT",
+    "cause": "D-35 (money above the net size is spare) and D-49 (no purpose gate)",
+    "notes": [
+      "Spare money: $2,400 in the main account after October's bills and spending, plus $5,725 saved above the $3,275 starter = $8,125. The price is $9,000, so $875 comes from the protected net.",
+      "The 90-day low is -$875 on Oct 31 with the protected net left out. Pay on Nov 1 does not clear it, because the usual month leaves only $725 before saving ($425 after the $300 saving), so the net carries it about 2 months.",
+      "The -875 \"left that month\" is October's leftover after the purchase takes all spare money first (D-22, D-44), not $425 - $9,000."
+    ]
+  },
+  "persona:maya:6000:cash": {
+    "right": "Fits, $740 left in October",
+    "rightCode": "fits_month",
+    "verdict": "ENGINE WRONG",
+    "cause": "No future pay for irregular income (D-52)",
+    "notes": [
+      "D-52: steady-but-irregular income with 6 months of history and no pay series. The engine counts no pay at all in the 90 days. Under D-52 it expects pay on the usual payday (about the 5th; October came on the 1st) at the low-month amount, $2,800 (August).",
+      "With that pay the 90-day path never goes below $0 (lowest about $1,100 on Nov 4 for $60, about $690 for $500). The safety net is full ($3,000 saved, $2,000 starter), so there is no amber. The old answer (Not yet) was wrong for the same reason."
+    ]
+  },
+  "persona:maya:50000:cash": {
+    "right": "Fits, $300 left in October",
+    "rightCode": "fits_month",
+    "verdict": "ENGINE WRONG",
+    "cause": "No future pay for irregular income (D-52)",
+    "notes": [
+      "D-52: steady-but-irregular income with 6 months of history and no pay series. The engine counts no pay at all in the 90 days. Under D-52 it expects pay on the usual payday (about the 5th; October came on the 1st) at the low-month amount, $2,800 (August).",
+      "With that pay the 90-day path never goes below $0 (lowest about $1,100 on Nov 4 for $60, about $690 for $500). The safety net is full ($3,000 saved, $2,000 starter), so there is no amber. The old answer (Not yet) was wrong for the same reason."
+    ]
+  },
+  "persona:maya:900000:plan": {
+    "right": "Fits: $219.30 a month leaves $580.70 of her usual $800",
+    "rightCode": "fits_month",
+    "verdict": "ENGINE WRONG",
+    "cause": "No future pay for irregular income (D-52); rate shown wrong on the old page",
+    "notes": [
+      "D-52: steady-but-irregular income with 6 months of history and no pay series. The engine counts no pay at all in the 90 days. Under D-52 it expects pay on the usual payday (about the 5th; October came on the 1st) at the low-month amount, $2,800 (August).",
+      "Plan: $9,000, no deposit, 48 monthly payments at 7.9% a year: 47 x $219.30 and a last $218.96, total interest $1,526.06. First payment Nov 3. $219.30 is 27% of the usual $800 room and leaves $580.70, above the $200 floor, so not tight. Cash would not fit without the net, so \"borrowing costs more\" (D-39a) does not apply.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page."
+    ]
+  },
+  "persona:riley:6000:cash": {
+    "right": "Dips into your safety net (your safety net is small); October -$360",
+    "rightCode": "fits_uses_net",
+    "verdict": "CORRECT",
+    "cause": "D-35 / D-49: the net may lend",
+    "notes": [
+      "Her usual month is already short: pay $2,800 - rent $1,500 - utilities $500 - everyday $1,100 = -$300. Without any purchase the 90-day path is $600 below $0 by Dec 31; the safety net ($2,000 saved of a $3,100 starter) carries it.",
+      "The purchase adds $60 to the dip; the net names $60 (approved in plan 18). D-54 is worded for Short each month and Not yet, so it does not trigger here, though her month is short."
+    ]
+  },
+  "persona:riley:50000:cash": {
+    "right": "Dips into your safety net; October -$800",
+    "rightCode": "fits_uses_net",
+    "verdict": "CORRECT",
+    "cause": "D-35 / D-49: the net may lend",
+    "notes": [
+      "Her usual month is already short: pay $2,800 - rent $1,500 - utilities $500 - everyday $1,100 = -$300. Without any purchase the 90-day path is $600 below $0 by Dec 31; the safety net ($2,000 saved of a $3,100 starter) carries it.",
+      "The purchase adds $500 to the dip (90-day low -$1,100 on Dec 31); $2,000 usable covers it."
+    ]
+  },
+  "persona:riley:900000:plan": {
+    "right": "Short each month, with the D-54 depletion lines",
+    "rightCode": "monthly_short",
+    "verdict": "CORRECT",
+    "cause": "D-35: the net carries the one-off part, so the monthly part leads; D-54 lines missing (new rule)",
+    "notes": [
+      "Her usual month is already short: pay $2,800 - rent $1,500 - utilities $500 - everyday $1,100 = -$300. Without any purchase the 90-day path is $600 below $0 by Dec 31; the safety net ($2,000 saved of a $3,100 starter) carries it.",
+      "Plan: 48 x about $219.30 at 7.9% a year, interest $1,526.06. Usual month -$300 becomes -$519.30.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page."
+    ],
+    "d54": [
+      "The plan adds $219.30 a month; the usual month, already $300.00 short, would be $519.30 short.",
+      "The whole price, $9,000.00, is more than the safety net, $2,000.00.",
+      "Covering a $519.30 shortfall, the safety net would last about 3 months.",
+      "The plan costs $1,526.06 in interest.",
+      "A usual month that balances leaves room for a new payment: it is $300.00 short before this plan."
+    ]
+  },
+  "persona:leo:50000:cash": {
+    "right": "Fits from spare money ($100 earlier + $400 of the $620 above the net size)",
+    "rightCode": "fits_unspent",
+    "verdict": "CORRECT",
+    "cause": "D-35: money above the net size is spare",
+    "notes": [
+      "Leo: October is already over its leftover. Main account $894.84; the engine keeps $794.84 for the rest of October's everyday spending (28 of 31 days at $880 a month), so $100 is spare, matching his confirmed $100. His fund holds $3,000 against a $2,380 starter (bills $1,500 + everyday $880), so $620 is spare.",
+      "90-day low +$220 on Oct 31; Nov 1 pay keeps it above $0. The October figure stays -$194.84 because the purchase is paid from earlier money."
+    ]
+  },
+  "persona:leo:200000:cash": {
+    "right": "Dips into your safety net; October -$1,474.84",
+    "rightCode": "fits_uses_net",
+    "verdict": "CORRECT",
+    "cause": "D-35 / D-49: the net may lend",
+    "notes": [
+      "Leo: October is already over its leftover. Main account $894.84; the engine keeps $794.84 for the rest of October's everyday spending (28 of 31 days at $880 a month), so $100 is spare, matching his confirmed $100. His fund holds $3,000 against a $2,380 starter (bills $1,500 + everyday $880), so $620 is spare.",
+      "Spare $720; the purchase needs $1,280 from the protected net. His usual month leaves $120, so the dip stays through the 90 days (about -$1,040 on Dec 31); $2,380 usable covers it."
+    ]
+  },
+  "persona:leo:900000:plan": {
+    "right": "Short each month: $219.30 a month against a usual $120",
+    "rightCode": "monthly_short",
+    "verdict": "CORRECT",
+    "cause": "D-35: the net carries the one-off part, so the monthly part leads",
+    "notes": [
+      "Leo: October is already over its leftover. Main account $894.84; the engine keeps $794.84 for the rest of October's everyday spending (28 of 31 days at $880 a month), so $100 is spare, matching his confirmed $100. His fund holds $3,000 against a $2,380 starter (bills $1,500 + everyday $880), so $620 is spare.",
+      "$120 - $219.30 = -$99.30 a month. D-54 does not apply as worded: the usual month is not short before the plan.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page."
+    ]
+  },
+  "persona:tia:900000:plan": {
+    "right": "Fits, but no safety net (and tight each month once D-40 is built)",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net saved",
+    "notes": [
+      "Starter $2,280 = bills $1,480 + everyday $800; nothing saved.",
+      "Rule still to come (D-40, plan 21): $100.70 a month left is under $228, a tenth of a usual month's bills plus everyday spending, so the full answer adds \"tight\". Which amber wins when \"tight\" and the net caution both apply is not decided yet.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page."
+    ]
+  },
+  "persona:dana:6000:cash": {
+    "right": "Fits, but your safety net is small; $777.10 left",
+    "rightCode": "fits_month",
+    "rightVariant": "small_net",
+    "verdict": "CORRECT",
+    "cause": "D-35 / D-51: small net",
+    "notes": [
+      "Dana: starter $4,100 = rent $1,800 + everyday $900 + debt minimums $1,400 (D-51); $3,000 saved, so the net is small. Debts: card $6,000 at 21.9% a year (minimum $400), loan $15,000 at 6.5% a year (minimum $1,000).",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page."
+    ]
+  },
+  "persona:dana:50000:cash": {
+    "right": "Fits, but your safety net is small; $337.10 left",
+    "rightCode": "fits_month",
+    "rightVariant": "small_net",
+    "verdict": "CORRECT",
+    "cause": "D-35 / D-51: small net",
+    "notes": [
+      "Dana: starter $4,100 = rent $1,800 + everyday $900 + debt minimums $1,400 (D-51); $3,000 saved, so the net is small. Debts: card $6,000 at 21.9% a year (minimum $400), loan $15,000 at 6.5% a year (minimum $1,000).",
+      "$337.10 is above the $270 tight floor.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page."
+    ]
+  },
+  "persona:dana:200000:cash": {
+    "right": "Fits from spare money, amber (small net; also tight and costly debt once built)",
+    "rightCode": "fits_unspent",
+    "rightVariant": "small_net",
+    "verdict": "CORRECT",
+    "cause": "D-35 / D-51: small net",
+    "notes": [
+      "Dana: starter $4,100 = rent $1,800 + everyday $900 + debt minimums $1,400 (D-51); $3,000 saved, so the net is small. Debts: card $6,000 at 21.9% a year (minimum $400), loan $15,000 at 6.5% a year (minimum $1,000).",
+      "Rule still to come (D-40, plan 21): $0 left is under $270, a tenth of a usual month's bills plus everyday spending, so the full answer adds \"tight\". Which amber wins when \"tight\" and the net caution both apply is not decided yet.",
+      "Rule still to come (D-39b, plan 20): earlier money is spent while the 21.9% card remains, so a costly-debt amber and the card's monthly interest (about $109.50) apply.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page."
+    ]
+  },
+  "persona:dana:900000:plan": {
+    "right": "Fits, but your safety net is small",
+    "rightCode": "fits_month",
+    "rightVariant": "small_net",
+    "verdict": "CORRECT",
+    "cause": "D-35 / D-51: small net",
+    "notes": [
+      "Dana: starter $4,100 = rent $1,800 + everyday $900 + debt minimums $1,400 (D-51); $3,000 saved, so the net is small. Debts: card $6,000 at 21.9% a year (minimum $400), loan $15,000 at 6.5% a year (minimum $1,000).",
+      "$219.30 a month leaves $680.70 of her usual $900.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page."
+    ]
+  },
+  "persona:priya:6000:cash": {
+    "right": "Fits, but your safety net is small; $1,140 left",
+    "rightCode": "fits_month",
+    "rightVariant": "small_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: small net",
+    "notes": [
+      "Priya: starter $1,600 = rent $1,000 + everyday $600; $1,500 saved, so the net is small. Her own share of a 2-person household."
+    ]
+  },
+  "persona:priya:50000:cash": {
+    "right": "Fits, but your safety net is small; $700 left",
+    "rightCode": "fits_month",
+    "rightVariant": "small_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: small net",
+    "notes": [
+      "Priya: starter $1,600 = rent $1,000 + everyday $600; $1,500 saved, so the net is small. Her own share of a 2-person household."
+    ]
+  },
+  "persona:priya:200000:cash": {
+    "right": "Dips into your safety net; October -$800",
+    "rightCode": "fits_uses_net",
+    "verdict": "CORRECT",
+    "cause": "D-35 / D-49: the net may lend",
+    "notes": [
+      "Priya: starter $1,600 = rent $1,000 + everyday $600; $1,500 saved, so the net is small. Her own share of a 2-person household.",
+      "Spare $1,000 by Oct 31; $1,000 comes from the net. Nov 1 pay (usual month +$1,200) clears it in November."
+    ]
+  },
+  "persona:priya:900000:plan": {
+    "right": "Fits, but your safety net is small",
+    "rightCode": "fits_month",
+    "rightVariant": "small_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: small net",
+    "notes": [
+      "Priya: starter $1,600 = rent $1,000 + everyday $600; $1,500 saved, so the net is small. Her own share of a 2-person household.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page."
+    ]
+  },
+  "persona:audit-p1:6000:cash": {
+    "right": "Fits, but no safety net (and tight once D-40 is built); $20 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $1,120 = rent $700 + everyday $420.",
+      "Rule still to come (D-40, plan 21): $20 left is under $112, a tenth of a usual month's bills plus everyday spending, so the full answer adds \"tight\". Which amber wins when \"tight\" and the net caution both apply is not decided yet.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p2-rich:6000:cash": {
+    "right": "Fits from spare money, but no safety net",
+    "rightCode": "fits_unspent",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "Freelancer with 12 months of records (income $0 to $6,000) and $16,000 spare. No pay series, so the engine counts no pay in the 90 days. D-52 applies to this person too, but the low month is $0 (December), so the answer does not change. \"No safety net\" is true by the rules even with $16,000 spare: none of it is marked as the net.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p2-rich:50000:cash": {
+    "right": "Fits from spare money, but no safety net",
+    "rightCode": "fits_unspent",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "Freelancer with 12 months of records (income $0 to $6,000) and $16,000 spare. No pay series, so the engine counts no pay in the 90 days. D-52 applies to this person too, but the low month is $0 (December), so the answer does not change. \"No safety net\" is true by the rules even with $16,000 spare: none of it is marked as the net.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p3:6000:cash": {
+    "right": "Fits, but no safety net; $540 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,400 = rent $1,600 + everyday $800.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p3:50000:cash": {
+    "right": "Fits, but no safety net (and tight once D-40 is built); $100 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,400 = rent $1,600 + everyday $800.",
+      "Rule still to come (D-40, plan 21): $100 left is under $240, a tenth of a usual month's bills plus everyday spending, so the full answer adds \"tight\". Which amber wins when \"tight\" and the net caution both apply is not decided yet.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p3:900000:plan": {
+    "right": "Fits, but no safety net",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,400 = rent $1,600 + everyday $800.",
+      "$219.30 a month leaves $380.70 of the usual $600.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p6:6000:cash": {
+    "right": "Fits, but no safety net; $690 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,750 = rent $1,200 + everyday $1,400 + card minimum $150. Card $6,000 at 24.9% a year.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p6:50000:cash": {
+    "right": "Fits, but no safety net (and tight once D-40 is built); $250 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,750 = rent $1,200 + everyday $1,400 + card minimum $150. Card $6,000 at 24.9% a year.",
+      "Rule still to come (D-40, plan 21): $250 left is under $260, a tenth of a usual month's bills plus everyday spending, so the full answer adds \"tight\". Which amber wins when \"tight\" and the net caution both apply is not decided yet.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p6:900000:plan": {
+    "right": "Fits, but no safety net",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,750 = rent $1,200 + everyday $1,400 + card minimum $150. Card $6,000 at 24.9% a year.",
+      "$219.30 a month leaves $530.70 of the usual $750.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p6-lines:6000:cash": {
+    "right": "Fits, but no safety net; $690 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,750 = rent $1,200 + everyday $1,400 + card minimum $150. Card $6,000 at 24.9% a year.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p6-lines:50000:cash": {
+    "right": "Fits, but no safety net (and tight once D-40 is built); $250 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,750 = rent $1,200 + everyday $1,400 + card minimum $150. Card $6,000 at 24.9% a year.",
+      "Rule still to come (D-40, plan 21): $250 left is under $260, a tenth of a usual month's bills plus everyday spending, so the full answer adds \"tight\". Which amber wins when \"tight\" and the net caution both apply is not decided yet.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p6-lines:900000:plan": {
+    "right": "Fits, but no safety net",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,750 = rent $1,200 + everyday $1,400 + card minimum $150. Card $6,000 at 24.9% a year.",
+      "$219.30 a month leaves $530.70 of the usual $750.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p7:6000:cash": {
+    "right": "Fits, but no safety net; $740 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,400 = rent $1,500 + everyday $900.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p7:50000:cash": {
+    "right": "Fits, but no safety net; $300 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,400 = rent $1,500 + everyday $900.",
+      "$300 is above the $240 tight floor.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p7:200000:cash": {
+    "right": "Fits from spare money, but no safety net (and tight once D-40 is built); $0 left",
+    "rightCode": "fits_unspent",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,400 = rent $1,500 + everyday $900.",
+      "Rule still to come (D-40, plan 21): $0 left is under $240, a tenth of a usual month's bills plus everyday spending, so the full answer adds \"tight\". Which amber wins when \"tight\" and the net caution both apply is not decided yet.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p7:900000:plan": {
+    "right": "Fits, but no safety net",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,400 = rent $1,500 + everyday $900.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p8:6000:cash": {
+    "right": "Fits, but no safety net; $740 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,400 = rent $1,400 + yearly insurance $100 a month + everyday $900. The $1,200 insurance is due in March; under D-47 (plan 19) nothing is held back, since 4 months at $700 cover it.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p8:50000:cash": {
+    "right": "Fits, but no safety net; $300 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,400 = rent $1,400 + yearly insurance $100 a month + everyday $900. The $1,200 insurance is due in March; under D-47 (plan 19) nothing is held back, since 4 months at $700 cover it.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p8:900000:plan": {
+    "right": "Fits, but no safety net",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $2,400 = rent $1,400 + yearly insurance $100 a month + everyday $900. The $1,200 insurance is due in March; under D-47 (plan 19) nothing is held back, since 4 months at $700 cover it.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p9:6000:cash": {
+    "right": "Fits, but no safety net (and tight once D-40 is built); $140 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $1,800 = rent $1,100 + everyday $700.",
+      "Rule still to come (D-40, plan 21): $140 left is under $180, a tenth of a usual month's bills plus everyday spending, so the full answer adds \"tight\". Which amber wins when \"tight\" and the net caution both apply is not decided yet.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p10:6000:cash": {
+    "right": "Fits, but no safety net; $540 left",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $1,900 = rent $1,100 + everyday $800.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p10:900000:plan": {
+    "right": "Fits, but no safety net",
+    "rightCode": "fits_month",
+    "rightVariant": "no_net",
+    "verdict": "CORRECT",
+    "cause": "D-35: no net",
+    "notes": [
+      "No safety net saved; starter $1,900 = rent $1,100 + everyday $800.",
+      "$219.30 a month leaves $380.70 of the usual $600.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "gen:0": {
+    "right": "Fits (plain for this plan; \"Fits, but borrowing costs more\" once D-39a is built)",
+    "rightCode": "fits_month",
+    "verdict": "INPUT OR TEST-DATA WRONG",
+    "cause": "D-35: money above the net size is spare",
+    "notes": [
+      "Generated balance does not follow from the records: from the pay and spending this month the account was $2,664.11 below $0 on Oct 1, with no overdraft limit. All 6 generated changes share this. How the generator sets balances: it draws one total balance at random ($0 to $30,000), independent of the records, and the test adapter puts total minus the fund in the main account, never below $0.",
+      "$10.11 over 5 monthly payments at 4.9% a year: 4 x $2.05 + $2.03, interest $0.12. First payment Nov 3.",
+      "Even with no purchase, the main account ($9,100.55, of which $1,891.27 is a pot) is $995.34 short of October's bills ($5,491.77) and spending ($2,712.85) before the Nov 1 pay. The $3,514.76 saved above the $8,836 starter covers that, so the path stays above $0 (low $2,519.42 on Oct 31).",
+      "Rule still to come (D-39a, plan 20): cash would fit, so the full answer is \"Fits, but borrowing costs more\" with the $0.12 interest.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page."
+    ]
+  },
+  "gen:44": {
+    "right": "Fits (for the inputs as given)",
+    "rightCode": "fits_month",
+    "verdict": "INPUT OR TEST-DATA WRONG",
+    "cause": "Impossible generated person",
+    "notes": [
+      "Generated balance does not follow from the records: from the pay and spending this month the account was $11,884.33 below $0 on Oct 1, with no overdraft limit. All 6 generated changes share this. How the generator sets balances: it draws one total balance at random ($0 to $30,000), independent of the records, and the test adapter puts total minus the fund in the main account, never below $0.",
+      "Test data is impossible: the main account is $0.00 on Oct 3, two days after $11,999.97 pay and only $115.64 spent, while a confirmed spare figure of $2,810.55 and a $1,993.08 pot are said to sit in it.",
+      "How the generator sets balances: it draws one total balance at random ($0 to $30,000), independent of the records, and the test adapter puts total minus the fund in the main account, never below $0. Here the total drawn was below the $19,999.86 fund, so the main account was clamped to $0.00: a generator artefact.",
+      "On these inputs the $10.16 purchase is paid from the $12,671.86 saved above the $7,328 starter, so it fits."
+    ]
+  },
+  "gen:68": {
+    "right": "Dips into your safety net",
+    "rightCode": "fits_uses_net",
+    "verdict": "INPUT OR TEST-DATA WRONG",
+    "cause": "D-35 / D-49: the net may lend; drifted test data; split and net figure disagree",
+    "notes": [
+      "Generated balance does not follow from the records: from the pay and spending this month the account was $2,040.70 below $0 on Oct 1, with no overdraft limit. All 6 generated changes share this. How the generator sets balances: it draws one total balance at random ($0 to $30,000), independent of the records, and the test adapter puts total minus the fund in the main account, never below $0.",
+      "Test data: the confirmed spare figure ($4,726.80) does not match the account (-$3,161.70 after this month's bills and spending); the engine flags it as drifted. The 90-day path uses the account, the split uses the confirmed figure.",
+      "Even with no purchase the account is $2,016.09 below $0 on Oct 31 (after the $1,145.61 above the net size). The $5,654.81 purchase adds $5,654.81 to the dip (low -$7,670.90). The net can lend $8,655, so Dips is right.",
+      "Engine detail conflict: the split says $928.01 comes from the net, while the net fact says $5,654.81 (what the purchase adds) and the real dip is $7,670.90. The page should show one consistent figure."
+    ]
+  },
+  "gen:69": {
+    "right": "Fits",
+    "rightCode": "fits_month",
+    "verdict": "INPUT OR TEST-DATA WRONG",
+    "cause": "D-35: money above the net size is spare",
+    "notes": [
+      "Generated balance does not follow from the records: from the pay and spending this month the account was $2,280.97 below $0 on Oct 1, with no overdraft limit. All 6 generated changes share this. How the generator sets balances: it draws one total balance at random ($0 to $30,000), independent of the records, and the test adapter puts total minus the fund in the main account, never below $0.",
+      "Plan: $14,839.56, deposit $200 today, 18 payments every 3 months at 19.9% a year: 17 x $1,249.92 + $1,249.76 (about $416.64 a month), total interest $7,858.84 (54% of the $14,639.56 borrowed). First payment Jan 3, 2027.",
+      "Before: the main account after its two pots ($1,166.40) cannot cover October's bills ($1,295.03) and spending ($1,673.34) before payday, so the old engine said Not yet. The $12,872.30 above the $3,148 starter now covers it.",
+      "Cash would not fit without the net, so D-39a does not apply. The D-48 interest lines (plan 20 onward) show the $7,858.84 as a cost.",
+      "Test data: the confirmed spare figure ($1,683.29) does not match the account (-$1,801.97 after this month's bills and spending); the engine flags it as drifted. The 90-day path uses the account, the split uses the confirmed figure.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page."
+    ]
+  },
+  "gen:123": {
+    "right": "Fits from spare money, but the spare money is the savings above the safety net size (the everyday account alone would be $3,458.54 below $0 before the Nov 1 pay)",
+    "rightCode": "fits_unspent",
+    "verdict": "INPUT OR TEST-DATA WRONG",
+    "cause": "Generated balance does not follow from the records; split figures name the wrong source",
+    "notes": [
+      "Tax: the stored 80000000000 is 8% (scale 10^10); the old page printed the raw number. $3,548.52 + 8% = $3,832.40, paid today (Oct 3).",
+      "This month (engine): pay $11,999.89 received Oct 1 - bills $5,639.68 (Oct 2 $2,450.99 paid; Oct 11 $1,417.91, Oct 19 $512.13, Oct 25 $1,258.65 to come) - everyday $3,476.52 (median of May to Sep) - loan minimum $44.54 = $2,839.15 left before the purchase. The orchestrator figure $2,827.86 used the mean everyday ($3,487.81); the engine uses the median. The price is $993.25 more than this month leaves, so it is not a month fit.",
+      "Everyday account on Oct 3: $7,084.28, of which $285.87 is a pot. Still to come in October: bills $3,188.69 and everyday $3,235.86 (the engine keeps at least the usual $3,476.52 less $240.66 already spent). Expected at month end: $373.86. The loan minimum has no dated payment series, so the path does not take it; with it, $329.32. With the purchase the everyday account would be $3,458.54 below $0 on Oct 31, with no overdraft.",
+      "The engine adds the $4,149.17 saved above the $9,161 safety-net starter (fund $13,310.17) as spare money (D-35, plan 18). With it the 90-day low is +$690.63 on Oct 31, and the Nov 1 pay keeps it above $0. So by the rules the answer is Fits from spare money, not Dips and not Not yet. In real life $3,458.54 must move from the safety-net account before Oct 31.",
+      "The split and \"$0.00 left\" are misleading: they say $2,839.15 from this month and $993.25 from earlier unspent money (the confirmed figure $7,240.72, which is more than the whole account and is flagged as drifted). The money really comes from the savings above the net size. The answer should say so (D-44).",
+      "Generator at fault, not the engine: received $11,999.89 and spent $2,691.65 this month, yet the account holds $7,084.28, so it was $2,223.96 below $0 on Oct 1 with no overdraft limit. How the generator sets balances: it draws one total balance at random ($0 to $30,000), independent of the records, and the test adapter puts total minus the fund in the main account, never below $0."
+    ]
+  },
+  "gen:126": {
+    "right": "Short each month, with the D-54 depletion lines",
+    "rightCode": "monthly_short",
+    "verdict": "INPUT OR TEST-DATA WRONG",
+    "cause": "Impossible generated person; D-54 lines missing (new rule)",
+    "notes": [
+      "Generated balance does not follow from the records: from the pay and spending this month the account was $3,981.07 below $0 on Oct 1, with no overdraft limit. All 6 generated changes share this. How the generator sets balances: it draws one total balance at random ($0 to $30,000), independent of the records, and the test adapter puts total minus the fund in the main account, never below $0.",
+      "Usual month (May to September; April left out as under-logged): pay $4,217.87 - bills $1,852.31 (on the 4th and 26th) - everyday about $3,400.04 - loan minimum $100.17 = -$1,134.65. Already short before the plan.",
+      "Plan: $24,182.08, no deposit, 16 payments every 3 months at 19.9% a year: 15 x $2,227.31 + $2,227.29, about $742.44 a month; total interest $11,454.86; total $35,636.94. First payment Jan 3, 2027.",
+      "Owner's pasted figures checked: the payment is $2,227.31 every 3 months (about $742.44 a month), not about $1,735; usual costs are $5,352.52 a month ($6,094.96 with the plan), not $6,498.18; the shortfall with the plan is about $1,877.09 a month, not over $2,280. Safety net $17,676.93, main account $0.00 and loan $3,351.42 (minimum $100.17) are right.",
+      "\"Main account $0.00\" is the balance on the check date, Oct 3. It is not plausible: $4,217.87 pay arrived Oct 1 and only $236.80 was spent, yet the account is empty while a confirmed spare figure of $2,814.70 is said to be in it. How the generator sets balances: it draws one total balance at random ($0 to $30,000), independent of the records, and the test adapter puts total minus the fund in the main account, never below $0. Here the total drawn was below the $17,676.93 fund, so the main account was clamped to $0.00: a generator artefact, not a real situation.",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page."
+    ],
+    "d54": [
+      "The plan adds $2,227.31 every 3 months (about $742.44 a month); the usual month, already $1,134.65 short, would be about $1,877.09 short.",
+      "The whole price, $24,182.08, is more than the safety net, $17,676.93.",
+      "Covering a $1,877.09 shortfall, the safety net would last about 9 months (about 15 months without this plan).",
+      "The plan costs $11,454.86 in interest, $35,636.94 in all.",
+      "A usual month that balances leaves room for a new payment: it is $1,134.65 short before this plan, from $4,217.87 pay against $5,352.52 of bills, spending and the loan minimum."
+    ]
+  },
+  "persona:audit-p4-overdrawn:6000:cash": {
+    "right": "Not yet (not covered): the account is below $0 with no overdraft limit",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT",
+    "cause": "FIN-03 signed balances (D-28)",
+    "notes": [
+      "Account at -$1,500 with no overdraft limit recorded (D-28: treated as $0). Usual month +$400 (pay $2,000 on the 20th, rent $1,000, everyday $600), so D-54 does not apply. No safety net. The path does not climb back above $0 and stay there within 90 days for $60.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p4-overdrawn:50000:cash": {
+    "right": "Not yet (not covered): the account is below $0 with no overdraft limit",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT",
+    "cause": "FIN-03 signed balances (D-28)",
+    "notes": [
+      "Account at -$1,500 with no overdraft limit recorded (D-28: treated as $0). Usual month +$400 (pay $2,000 on the 20th, rent $1,000, everyday $600), so D-54 does not apply. No safety net. The path does not climb back above $0 and stay there within 90 days for $500.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p4-overdrawn:200000:cash": {
+    "right": "Not yet (not covered): the account is below $0 with no overdraft limit",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT",
+    "cause": "FIN-03 signed balances (D-28)",
+    "notes": [
+      "Account at -$1,500 with no overdraft limit recorded (D-28: treated as $0). Usual month +$400 (pay $2,000 on the 20th, rent $1,000, everyday $600), so D-54 does not apply. No safety net. The path does not climb back above $0 and stay there within 90 days for $2,000.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p4-overdrawn:900000:cash": {
+    "right": "Not yet (not covered): the account is below $0 with no overdraft limit",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT",
+    "cause": "FIN-03 signed balances (D-28)",
+    "notes": [
+      "Account at -$1,500 with no overdraft limit recorded (D-28: treated as $0). Usual month +$400 (pay $2,000 on the 20th, rent $1,000, everyday $600), so D-54 does not apply. No safety net. The path does not climb back above $0 and stay there within 90 days for $9,000.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  },
+  "persona:audit-p4-overdrawn:900000:plan": {
+    "right": "Not yet (not covered)",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT",
+    "cause": "FIN-03 signed balances (D-28)",
+    "notes": [
+      "Account at -$1,500 with no overdraft limit recorded (D-28: treated as $0). Usual month +$400 (pay $2,000 on the 20th, rent $1,000, everyday $600), so D-54 does not apply. No safety net. ",
+      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
+      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+    ]
+  }
+}

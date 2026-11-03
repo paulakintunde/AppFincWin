@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // 05.4-05 (D-01): one static review page per topic, built from the same JSON the engine tests read, so the page cannot
-// drift from the tests. Usage: node scripts/right-answers/build-page.mjs [--topic <topic>]
+// drift from the tests. Usage: node scripts/right-answers/build-page.mjs [--topic <topic>] [--out <dir>]
 // Output: reports/right-answers/<topic>.html (self-contained, no scripts).
 
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -54,6 +54,15 @@ function money(minor, currency) {
   return `${sign}${symbol}${whole}.${String(abs % 100).padStart(2, '0')}`;
 }
 
+// D-53: a rate as a real percent. Fixture rates are percent strings ("22.9"); a stored Percent (bigint scaled by 10^10) is
+// converted. Anything outside 0-100% stops the build, so a scale slip can never reach a page.
+export function rateText(v) {
+  if (v === null || v === undefined || v === '') return '';
+  const n = typeof v === 'bigint' ? Number(v) / 1e10 : Number(v);
+  if (!(n >= 0 && n <= 100)) throw new RangeError(`rateText: ${String(v)} is ${n}%, outside 0-100%`);
+  return `${String(Math.round(n * 100) / 100)}%`;
+}
+
 function numbersRows(f) {
   const m = (n) => money(n, f.currency);
   const rows = [
@@ -62,18 +71,18 @@ function numbersRows(f) {
     ['Usual everyday spending a month', m(f.usualMonth.everyday)],
   ];
   for (const a of f.accounts) {
-    const od = a.overdraftLimit === null ? '' : `, overdraft limit ${m(a.overdraftLimit)}${a.overdraftRate ? ` at ${a.overdraftRate}%` : ''}`;
+    const od = a.overdraftLimit === null ? '' : `, overdraft limit ${m(a.overdraftLimit)}${a.overdraftRate ? ` at ${rateText(a.overdraftRate)}` : ''}`;
     rows.push([`Account: ${a.name}`, `${m(a.balance)}${od}`]);
   }
   if (f.safetyNet) {
     rows.push(['Safety net', `${f.safetyNet.protect ? 'protected' : 'protection off'}, saved ${m(f.safetyNet.saved)}${f.safetyNet.size === null ? '' : `, size ${m(f.safetyNet.size)}`}`]);
   }
-  for (const d of f.debts) rows.push([`Debt (${d.kind})`, `${m(d.balance)}, minimum ${m(d.minimum)}${d.apr ? `, ${d.apr}%` : ''}`]);
+  for (const d of f.debts) rows.push([`Debt (${d.kind})`, `${m(d.balance)}, minimum ${m(d.minimum)}${d.apr ? `, ${rateText(d.apr)} a year` : ''}`]);
   const c = f.check;
   rows.push(['Price', c.price === null ? 'none' : m(c.price)]);
-  if (c.taxPercent) rows.push(['Tax', `${c.taxPercent}%`]);
+  if (c.taxPercent) rows.push(['Tax', rateText(c.taxPercent)]);
   if (c.oneOffFees) rows.push(['Fees', m(c.oneOffFees)]);
-  if (c.pay.mode === 'plan') rows.push(['Paid over', `${c.pay.months} months${c.pay.apr ? ` at ${c.pay.apr}%` : ''}`]);
+  if (c.pay.mode === 'plan') rows.push(['Paid over', `${c.pay.months} months${c.pay.apr ? ` at ${rateText(c.pay.apr)} a year` : ''}`]);
   return rows;
 }
 
@@ -128,18 +137,20 @@ function main() {
   const args = process.argv.slice(2);
   const i = args.indexOf('--topic');
   const only = i >= 0 ? args[i + 1] : null;
+  const o = args.indexOf('--out');
+  const outDir = o >= 0 ? args[o + 1] : OUT_DIR;
   const topics = loadTopics();
   if (only && !topics.has(only)) {
     console.error(`unknown topic: ${only}`);
     process.exit(1);
   }
   const approvedTopics = [...topics.values()].filter((cs) => cs.length > 0 && cs.every((c) => c.status === 'approved')).length;
-  mkdirSync(OUT_DIR, { recursive: true });
+  mkdirSync(outDir, { recursive: true });
   for (const [topic, cases] of topics) {
     if (only && topic !== only) continue;
-    writeFileSync(join(OUT_DIR, `${topic}.html`), buildPage(topic, cases, approvedTopics));
+    writeFileSync(join(outDir, `${topic}.html`), buildPage(topic, cases, approvedTopics));
     console.log(`wrote reports/right-answers/${topic}.html (${cases.length} cases)`);
   }
 }
 
-main();
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) main();
