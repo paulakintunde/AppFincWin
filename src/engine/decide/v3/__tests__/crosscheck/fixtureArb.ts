@@ -4,6 +4,35 @@ import type { RightAnswerFixture } from '../rightAnswers/schema';
 const money = (max: number): fc.Arbitrary<number> => fc.integer({ min: 0, max });
 
 /**
+ * 05.4-55 (D-69, owner 2026-11-03, from the 05.4-52 review of gen:143): "the shadow generator ties price and plan length to pay:
+ * most prices fall between 1% and 300% of monthly pay, with a few extremes kept; plans run 3 to 60 months." Shared by the shadow
+ * generator (shadow/generate.ts imports these two) and the crosscheck below, so both draw prices and plans the same way. They
+ * live here because this file may import nothing from the engine (QA-03), while generate.ts may import from here.
+ *
+ * pricePctBpArb: the price as a share of the usual month's money in, in basis points (1 bp = 0.01%). 18 of 20 draws (90%) are
+ * 1% to 300% of it: 1-9.99% (weight 2), 10-49.99% (6), 50-149.99% (6), 150-300% (4). The kept extremes are 1 of 20 (5%) at
+ * 0.1-0.99% and 1 of 20 (5%) above 300%, up to 1,500%. Draw it inside fc.noBias so the weights hold.
+ */
+export const pricePctBpArb: fc.Arbitrary<number> = fc.oneof(
+  { weight: 2, arbitrary: fc.integer({ min: 100, max: 999 }) },
+  { weight: 6, arbitrary: fc.integer({ min: 1000, max: 4999 }) },
+  { weight: 6, arbitrary: fc.integer({ min: 5000, max: 14999 }) },
+  { weight: 4, arbitrary: fc.integer({ min: 15000, max: 30000 }) },
+  { weight: 1, arbitrary: fc.integer({ min: 10, max: 99 }) },
+  { weight: 1, arbitrary: fc.integer({ min: 30001, max: 150000 }) }
+);
+
+/** 05.4-55 (D-69): a plan's term, 3 to 60 months. 3 in 4 draws take a usual term (3, 6, 12, 18, 24, 36, 48 or 60), 1 in 4 any month count. */
+export const termMonthsArb: fc.Arbitrary<number> = fc.oneof(
+  { weight: 3, arbitrary: fc.constantFrom(3, 6, 12, 18, 24, 36, 48, 60) },
+  { weight: 1, arbitrary: fc.integer({ min: 3, max: 60 }) }
+);
+
+/** 05.4-55 (D-69): the price for a share of pay in basis points, never below `floor`. */
+export const priceOfShare = (pay: number, bp: number, floor: number): number => Math.max(floor, Math.floor((pay * bp) / 10000));
+
+
+/**
  * 05.4-51 (Plan-49 re-run): what a usual month spends on bills + everyday spending, as a percent of pay, drawn as the shadow
  * generator draws it: 50..90 (75%), 91..105 (20%), 106..125 (5%). Nobody spends 2-3x their pay as a routine month.
  */

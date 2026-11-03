@@ -6,9 +6,10 @@
 import * as fc from 'fast-check';
 import * as fs from 'fs';
 import * as path from 'path';
+import { evaluate } from '../../evaluate';
 import { buildMonthModel } from '../../month/model';
-import { toV3Inputs } from '../golden/adapter';
-import { generateHistories, historyArb, SHADOW_SEED, steadyOf } from './generate';
+import { toCheckV2, toV3Inputs } from '../golden/adapter';
+import { generateHistories, historyArb, SHADOW_AS_OF, SHADOW_SEED, steadyOf } from './generate';
 import { generateNearLineHistories, withoutRefundLinks, NEAR_LINE_SEED } from './generateNearLine';
 import { generateRefundHistories, REFUND_SEED } from './generateRefunds';
 
@@ -86,6 +87,91 @@ describe('05.4-48 (audit cause 4): generated people are possible people', () => 
 
   it('no adapter clamp binds over the 200 reviewed-corpus histories (person.balance >= the fund)', () => {
     for (const g of generateHistories(200)) expect(g.person.balance).toBeGreaterThanOrEqual(g.person.emergency ?? 0);
+  });
+});
+
+/** Days from SHADOW_AS_OF to a date (UTC). */
+const DAY = 86_400_000;
+const asOfMs = Date.parse(`${SHADOW_AS_OF}T00:00:00Z`);
+/** The day (0 = SHADOW_AS_OF) of a plan's last payment: weeks step by 7 days, months by calendar month (the 3rd never clamps). */
+function lastPaymentDay(cadence: { unit: 'week' | 'month'; every: number }, count: number, today: boolean): number {
+  const steps = (today ? 0 : 1) + (count - 1);
+  if (cadence.unit === 'week') return steps * cadence.every * 7;
+  const d = new Date(asOfMs);
+  d.setUTCMonth(d.getUTCMonth() + steps * cadence.every);
+  return Math.round((d.getTime() - asOfMs) / DAY);
+}
+
+describe('05.4-55 (D-69): prices and plan lengths follow from pay', () => {
+  const raws = fc.sample(historyArb, { seed: SHADOW_SEED, numRuns: 300 });
+  const gens = generateHistories();
+
+  it('every price is at least $1.00 and 0.1%..1,500% of the usual month in; 80..97% are 1%..300%, with extremes on both sides', () => {
+    let within = 0;
+    let below = 0;
+    let above = 0;
+    let all = 0;
+    gens.forEach((g, i) => {
+      const raw = raws[i];
+      if (raw === undefined) throw new RangeError(`no raw history ${i}`);
+      const base = raw.freelance ? steadyOf(raw.pay) : raw.pay;
+      g.purchases.forEach((p) => {
+        const price = p.price ?? 0;
+        all += 1;
+        expect(price).toBeGreaterThanOrEqual(100);
+        expect(price).toBeGreaterThanOrEqual(Math.floor(base / 1000));
+        expect(price).toBeLessThanOrEqual(Math.max(100, base * 15 + 1));
+        if (price < Math.floor(base / 100)) below += 1;
+        else if (price > base * 3 + 1) above += 1;
+        else within += 1;
+      });
+    });
+    // Observed with seed 0x051d (05.4-55): 768 purchases, 681 (88.7%) within 1%..300%, 43 below 1%, 44 above 300%.
+    expect(within / all).toBeGreaterThanOrEqual(0.8);
+    expect(within / all).toBeLessThanOrEqual(0.97);
+    expect(below).toBeGreaterThanOrEqual(1);
+    expect(above).toBeGreaterThanOrEqual(1);
+  });
+
+  it("every plan runs 3..60 months and its count follows from the term and how often it is paid", () => {
+    gens.forEach((g, i) => {
+      const raw = raws[i];
+      if (raw === undefined) throw new RangeError(`no raw history ${i}`);
+      g.purchases.forEach((p, k) => {
+        const r = raw.purchases[k];
+        if (r === undefined) throw new RangeError(`no raw purchase ${i}/${k}`);
+        expect(r.termMonths).toBeGreaterThanOrEqual(3);
+        expect(r.termMonths).toBeLessThanOrEqual(60);
+        if (p.pay.mode !== 'plan') return;
+        const c = p.pay.cadence;
+        const want =
+          c.unit === 'week' && c.every === 1 ? Math.round((r.termMonths * 52) / 12)
+          : c.unit === 'week' ? Math.round((r.termMonths * 26) / 12)
+          : c.every === 1 ? r.termMonths
+          : Math.max(1, Math.floor(r.termMonths / 3));
+        expect(p.pay.count).toBe(want);
+      });
+    });
+  });
+
+  it('at least one of the 200 corpus people has a short plan paid inside the 90 days (a D-68 candidate), and D-68 judges one by cash', () => {
+    let candidates = 0;
+    let byCash = 0;
+    for (const g of generateHistories(200)) {
+      const p = g.purchases[0];
+      if (p === undefined || p.pay.mode !== 'plan' || p.pay.firstPayment === null || p.pay.count === null) continue;
+      const today = p.pay.firstPayment.kind === 'today';
+      if (lastPaymentDay(p.pay.cadence as { unit: 'week' | 'month'; every: number }, p.pay.count, today) >= 90) continue;
+      const r = evaluate(toV3Inputs(g.person), toCheckV2(p)).result;
+      if (r.parts.monthly !== 'monthly_short' && r.parts.monthly !== 'not_yet') continue;
+      candidates += 1;
+      if (r.facts.some((f) => f.code === 'short_plan_from_cash')) byCash += 1;
+    }
+    // Observed with seed 0x051d (05.4-55): 5 corpus plans paid inside the 90 days, 2 of them short each month (gen:70, gen:136);
+    // the engine judges 1 by cash (gen:70, D-68). So the owner's review sees D-68 at work.
+    expect(candidates).toBeGreaterThanOrEqual(1);
+    expect(byCash).toBeGreaterThanOrEqual(1);
+    expect(byCash).toBeLessThanOrEqual(candidates);
   });
 });
 

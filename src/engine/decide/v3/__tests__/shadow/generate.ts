@@ -17,9 +17,24 @@
  * - one-offs 0..2 of 10..60% of pay; September close 0..300% of pay; emergency fund 0..600% of pay or none; envelopes saving
  *   0..10% of pay a month
  * - a plan's deposit is 0, 5, 10 or 20% of the price, so always below it (gen:31 / gen:35 / gen:39 cannot be drawn)
+ *
+ * 05.4-55 (D-69, owner 2026-11-03, from the 05.4-52 review of gen:143, a $35,039 purchase on a 4-payment weekly plan for someone
+ * with $1,433 a month): "the shadow generator ties price and plan length to pay: most prices fall between 1% and 300% of monthly
+ * pay, with a few extremes kept; plans run 3 to 60 months." The distribution is binding:
+ * - every price is a share of the usual month's money in (the same base the costs use: pay, or a freelancer's steady amount),
+ *   drawn in basis points by `pricePctBpArb` (shared with the crosscheck, in ../crosscheck/fixtureArb.ts):
+ *   1% to 9.99% of it 10% of the time, 10% to 49.99% 30%, 50% to 149.99% 30%, 150% to 300% 20%. So 90% of prices are 1% to 300%
+ *   of a month's money in. The kept extremes: 5% are 0.1% to 0.99% of it, and 5% are above 300%, up to 1,500%.
+ *   price = max($1.00, base x share), rounded down to the cent.
+ * - every plan runs 3 to 60 months (`termMonthsArb`): 75% take a usual term (3, 6, 12, 18, 24, 36, 48 or 60 months), 25% any
+ *   whole number of months from 3 to 60. The number of payments follows from the term and how often it is paid (`planCount`):
+ *   every week term x 52 / 12, every 2 weeks term x 26 / 12 (both rounded), monthly the term, every 3 months term / 3 rounded
+ *   down (at least 1).
+ * - both draws sit inside the fc.noBias record, so the weights hold.
  */
 import * as fc from 'fast-check';
 import { buildFunds } from '../../funds/build';
+import { priceOfShare, pricePctBpArb, termMonthsArb } from '../crosscheck/fixtureArb';
 import { buildMonthModel } from '../../month/model';
 import type { Cadence, Envelope } from '../../types';
 import { toV3Inputs } from '../golden/adapter';
@@ -48,11 +63,31 @@ const PLAN_CADENCES: readonly Cadence[] = [
 
 const ITEM_TYPES = ['general', 'electronics', 'vehicle', 'subscription', 'general', 'electronics'] as const;
 
-interface RawPurchase {
+/** 05.4-55 (D-69): the purchase as drawn: its price a share of pay, its plan a term in months. `resolveShares` resolves it. */
+export interface SharePurchase {
+  /** The price as a share of the usual month's money in, in basis points (pricePctBpArb). */
+  pricePctBp: number;
+  plan: boolean;
+  cadence: number;
+  /** The plan's term, 3..60 months (termMonthsArb). */
+  termMonths: number;
+  apr: number;
+  today: boolean;
+  depositPct: number;
+  item: number;
+  tax: boolean;
+}
+
+/** The resolved purchase `purchaseOf` reads. 05.4-55 (D-69): price and count are resolved from the share and the term. */
+export interface RawPurchase {
   price: number;
   plan: boolean;
   cadence: number;
   count: number;
+  /** 05.4-55 (D-69): the term the count came from, kept for the tests. */
+  termMonths: number;
+  /** 05.4-55 (D-69): the share of the base the price came from, kept for the tests. */
+  pricePctBp: number;
   apr: number;
   today: boolean;
   /** 05.4-51: percent of the price (0..20), so the deposit is always below the price. */
@@ -99,14 +134,14 @@ export interface ShareHistory {
   emergencyPct: number | null;
   envelopes: { target: number; saved: number; monthlyPct: number }[];
   debts: { balance: number; minimumPct: number; apr: number; card: boolean }[];
-  purchases: RawPurchase[];
+  purchases: SharePurchase[];
 }
 
-const purchaseArb: fc.Arbitrary<RawPurchase> = fc.record({
-  price: fc.integer({ min: 1000, max: 5000000 }),
+const purchaseArb: fc.Arbitrary<SharePurchase> = fc.record({
+  pricePctBp: pricePctBpArb, // 05.4-55 (D-69): a share of the usual month's money in (header)
   plan: fc.boolean(),
   cadence: fc.integer({ min: 0, max: PLAN_CADENCES.length - 1 }),
-  count: fc.integer({ min: 2, max: 24 }),
+  termMonths: termMonthsArb, // 05.4-55 (D-69): 3..60 months; the count follows from it (planCount)
   apr: fc.constantFrom(0, 0, 4.9, 9.9, 19.9),
   today: fc.boolean(),
   depositPct: fc.constantFrom(0, 0, 0, 5, 10, 20),
@@ -162,12 +197,41 @@ export const shareHistoryArb: fc.Arbitrary<ShareHistory> = fc.noBias(fc.record({
 
 const pct = (amount: number, p: number): number => Math.floor((amount * p) / 100);
 
+/**
+ * 05.4-55 (D-69): the number of payments a `termMonths` plan makes at PLAN_CADENCES[cadence]: every week term x 52 / 12, every 2
+ * weeks term x 26 / 12 (both rounded), monthly the term, every 3 months term / 3 rounded down (at least 1).
+ */
+export function planCount(cadence: number, termMonths: number): number {
+  const c = PLAN_CADENCES[cadence];
+  if (c === undefined) throw new RangeError(`planCount: no cadence ${cadence}`);
+  if (c.unit === 'week') return Math.round((termMonths * (c.every === 1 ? 52 : 26)) / 12);
+  return c.every === 1 ? termMonths : Math.max(1, Math.floor(termMonths / 3));
+}
+
+/** 05.4-55 (D-69): a drawn purchase resolved against the base: price = max($1.00, base x share), count from the term. */
+export function resolvePurchase(p: SharePurchase, base: number): RawPurchase {
+  return {
+    price: priceOfShare(base, p.pricePctBp, 100),
+    plan: p.plan,
+    cadence: p.cadence,
+    count: planCount(p.cadence, p.termMonths),
+    termMonths: p.termMonths,
+    pricePctBp: p.pricePctBp,
+    apr: p.apr,
+    today: p.today,
+    depositPct: p.depositPct,
+    item: p.item,
+    tax: p.tax,
+  };
+}
+
 /** A freelancer states a steady amount of 70% of their average pay (05.1-28). */
 export const steadyOf = (pay: number): number => Math.round(pay * 0.7);
 
 /**
  * 05.4-51: costs = pay x costShare; debt minimums = pay x minimumPct each; bills = costs x billShare, split by the weights (the
  * last bill takes the remainder); everyday base = max(10% of pay, costs - bills - debt minimums), each month x everydayJitter.
+ * 05.4-55 (D-69): each purchase's price is the same base x its share, and its count follows from its term (resolvePurchase).
  */
 export function resolveShares(s: ShareHistory): RawHistory {
   // A freelancer's usual month is the steady amount they state (70% of their average pay), so their costs are a share of that.
@@ -199,7 +263,7 @@ export function resolveShares(s: ShareHistory): RawHistory {
     emergency: s.emergencyPct === null ? null : pct(s.pay, s.emergencyPct),
     envelopes: s.envelopes.map((e) => ({ target: e.target, saved: e.saved, monthly: pct(s.pay, e.monthlyPct) })),
     debts,
-    purchases: s.purchases,
+    purchases: s.purchases.map((p) => resolvePurchase(p, base)),
     everydayBase,
   };
 }
