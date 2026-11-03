@@ -1063,7 +1063,7 @@ Plans:
   7. Compliance gate: CMP-F01, F02, F03, F07, F08 and F11 merged; purge job deployed after the Supabase preflight; the owner signs off every changed answer string.
   8. Theme M: the owner-approved right-answer table (about 70 cases: the first 50 plus the Variant C cases from Themes N and O) is committed as tests before the first Theme A engine change, and every case passes; a separate plain calculator agrees with the engine on 1,000 random cases per change and 20,000 nightly; at least 90% of Stryker's breaking changes in `src/engine/decide/` are caught; after reading-test round 1 on Variant C, its findings are fixed and the screens are signed and frozen, with a v1.1 list for later ideas.
   9. Theme N: the 05.3 engine and plumbing changes are on main with their tests; Maestro flows for Back, saving offline and Record as bought are green; Variant C's inputs (running-cost lines, closing %, cash and installments from one input, what it replaces, purchase date, save-for-it ready date) exist as engine types with tests; a release check fails if any account outside the tester list has `profiles.decide_v3` on; the first shadow run on testers' records has been reviewed by the owner. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1: no account sees the 05.2 setup page or engine readout, and `profiles.decide_v3` is on only for accounts on the repo tester list (05.4 D-29, D-30), and stays off until 08.1; shadow runs use the separate server-only `profiles.decide_shadow` flag (05.4-30).
-**Plans:** 30/56 plans executed
+**Plans:** 31/56 plans executed
 
 Plans:
 **Wave 1**
@@ -1138,7 +1138,7 @@ Plans:
 - [ ] 05.4-45-PLAN.md — Collect the evidence that the nightly gates hold: three consecutive green nightly runs (20,000-case cross-check, full Stryker at break 90, 2,000-run properties) on main.
 **Gap closure: D-68 and D-69** *(after 05.4-52, one after another; 05.4-19 Task 2 waits for 05.4-56)*
 - [x] 05.4-53-PLAN.md — D-68 in the engine: a short plan that money on hand pays in full inside the 90 days is judged by cash like a one-off, with one caution line; I-D68 property and I44 named cause.
-- [ ] 05.4-54-PLAN.md — D-68 in the plain calculator and the right-answer table: hand-written drafts BR-17..BR-23, the approved-case scan, the narrowed FIN-06/FIN-07 skip.
+- [x] 05.4-54-PLAN.md — D-68 in the plain calculator and the right-answer table: hand-written drafts BR-17..BR-23, the approved-case scan, the narrowed FIN-06/FIN-07 skip.
 - [ ] 05.4-55-PLAN.md — D-69: generated prices are a share of monthly pay (90% between 1% and 300%, a few extremes) and plans run 3 to 60 months, in the shadow generator and the crosscheck arbitraries.
 - [ ] 05.4-56-PLAN.md — Re-run the reviewed diff once for D-68 and D-69 as FIN-01b, re-audit every change, and stop at one owner D-14 review.
 
@@ -1341,7 +1341,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
-| 05.4 Decide safety patch | 30/56 | In Progress|  |
+| 05.4 Decide safety patch | 31/56 | In Progress|  |
 | 05.5 One shared money model | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
