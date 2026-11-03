@@ -139,6 +139,8 @@ export const FACT_KEYS = Object.freeze({
   net_above_size: 'decide.v3.fact.net_above_size',
   wait_keeps_net: 'decide.v3.fact.wait_keeps_net',
   need_net_line: 'decide.v3.fact.need_net_line',
+  bills_held_back: 'decide.v3.fact.bills_held_back',
+  yearly_bill_ahead: 'decide.v3.fact.yearly_bill_ahead',
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -257,6 +259,9 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   net_above_size: ['above'],
   wait_keeps_net: ['date', 'month'],
   need_net_line: [],
+  // 05.4 FIN-11 (D-47): seriesId resolves to the bill's name.
+  bills_held_back: ['total'],
+  yearly_bill_ahead: ['seriesId', 'amount', 'dueDate'],
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({

@@ -540,6 +540,19 @@ function netStateFacts(net: ResolvedNet, code: Code, dips: boolean): Fact[] {
   return out;
 }
 
+/**
+ * 05.4 FIN-11 (D-47): the hold-back for yearly and every-3-month bills, then one line per such bill naming it, its amount and its
+ * due date, whatever the hold-back (RC-10: nothing held back, the insurance due in 4 months still shown).
+ */
+function billFacts(funds: Funds): Fact[] {
+  const held = funds.billsHeld;
+  if (held === undefined) return [];
+  const out: Fact[] = [];
+  if (held.total > 0) out.push({ code: 'bills_held_back', values: { total: held.total } });
+  for (const b of held.parts) out.push({ code: 'yearly_bill_ahead', values: { seriesId: b.seriesId, amount: b.amount, dueDate: b.dueDate } });
+  return out;
+}
+
 export function judge(j: JudgeInput): Result {
   const { month, funds } = j;
   const p = j.purchase;
@@ -610,7 +623,7 @@ export function judge(j: JudgeInput): Result {
     readyBy = monthlyLeads ? (mon as MonthlyPart).readyBy : one.readyBy;
   }
 
-  // Facts (fixed order): overdraft or the no-limit question, month, unspent, held back, emergency, envelope, plan, low month,
+  // Facts (fixed order): overdraft or the no-limit question, month, unspent, held back, yearly bills, emergency, envelope, plan, low month,
   // why months, bridge, lines, other accounts below 0.
   const facts: Fact[] = [...(od?.facts ?? [])];
   // D-28, D-38: below 0 with no overdraft limit recorded is Not yet, and the answer asks about it.
@@ -635,6 +648,7 @@ export function judge(j: JudgeInput): Result {
   // D-38, D-46: money held back for an earlier plan is said once, next to the unspent figure it reduced.
   const heldBack = funds.unspent?.breakdown.heldBack ?? 0;
   if (heldBack > 0) facts.push({ code: 'unspent_held_back', values: { amount: heldBack } });
+  facts.push(...billFacts(funds));
   facts.push(...netStateFacts(net, code, dips));
   if (fromEnvelope > 0) facts.push({ code: 'envelope_used', values: { used: fromEnvelope, envelopeId: purchase.envelopeId } });
   facts.push(...j.purchaseFacts);

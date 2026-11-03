@@ -98,6 +98,7 @@ describe('verdict table (I22 one code one text)', () => {
         'overdraft_cost_90d', 'wait_clears', 'overdraft_repeat', 'other_account_overdrawn', 'no_overdraft_limit',
         'ready_without_interest', 'clearing_first', 'net_left', 'net_refill', 'net_zero_is_off', 'net_protection_off',
         'net_none_start', 'net_progress', 'net_above_size', 'wait_keeps_net', 'need_net_line',
+        'bills_held_back', 'yearly_bill_ahead',
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

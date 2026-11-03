@@ -6,6 +6,7 @@
  * Two-date refunds (05.2): the month view dates a linked refund on its purchase, but rolled unspent counts it on the day it arrived.
  */
 import { minorUnits, type MinorUnits } from '../../../money/types';
+import { heldBackForBills } from '../heldBack';
 import { dueDrops } from '../month/dueDrops';
 import type { Funds, MonthModel, UnspentSum, V3Inputs } from '../types';
 import { emergencyOf, withLiveEmergency } from './emergency';
@@ -122,6 +123,7 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
   const env = envelopesOf(inputs.envelopes, inputs.asOf);
   const emergency = emergencyOf(inputs.emergency).amount;
   const sp = spendingOf(inputs);
+  const drops = dueDrops(inputs);
   const suggested = suggestedUnspent({
     asOf: inputs.asOf,
     spending: sp.spending,
@@ -129,8 +131,11 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
     erest: month.erest,
     profile: inputs.profile,
     series: inputs.series,
-    drops: dueDrops(inputs), // 05.3-64 (D-27, D-31): the same rule as the month model and the cash path
+    drops, // 05.3-64 (D-27, D-31): the same rule as the month model and the cash path
   });
+  // 05.4 FIN-11 / D-47: the part of yearly and every-3-month bills the months before they are due cannot cover is held back
+  // from spare money (never from the confirmed figure itself, like a bridge, D-38).
+  const billsHeld = heldBackForBills(inputs.series, inputs.months.flatMap((m) => m.lines), inputs.asOf, month.typicalLeft, drops.alwaysOther);
   const roll =
     inputs.unspent === null
       ? null
@@ -153,15 +158,18 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
   let ringFenced = sp.ringFenced;
   let shown = unspent;
   if (unspent !== null) {
+    let available = unspent.available as MinorUnits;
     const raw = Math.max(0, suggested - unspent.value);
     const covered = validAnswer === null ? 0 : Math.min(validAnswer.amount, raw);
     unexplained = minorUnits(raw - covered);
     if (validAnswer !== null && validAnswer.use === 'spare') {
       // only spare money counts toward a purchase (unspentState always sets available)
-      shown = { ...unspent, available: minorUnits((unspent.available as MinorUnits) + covered) };
+      available = minorUnits(available + covered);
     } else {
       ringFenced = minorUnits(ringFenced + covered);
     }
+    available = minorUnits(available - billsHeld.total);
+    if (available !== unspent.available) shown = { ...unspent, available };
   }
   return {
     balance: inputs.balance,
@@ -177,6 +185,7 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
     unstatedAccounts: sp.unstatedAccounts,
     fundUnlinked: sp.fundUnlinked,
     ...(unexplained === undefined ? {} : { unexplained }),
+    ...(billsHeld.parts.length === 0 ? {} : { billsHeld }),
   };
 }
 

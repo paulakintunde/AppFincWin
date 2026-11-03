@@ -132,6 +132,12 @@ function buildCorpus(): Emitted[] {
     { ...sam, series: [...sam.series, v3Series({ id: 'ins', role: 'bill', cadence: { unit: 'month', every: 12 }, anchorDate: '2026-03-01', amount: 120_000 })] },
     checkOnce(10_000)
   );
+  // 05.4 FIN-11 (D-47): bills_held_back and yearly_bill_ahead, a large yearly bill due inside the 90 days
+  collect(
+    out,
+    { ...sam, series: [...sam.series, v3Series({ id: 'tax', role: 'bill', cadence: { unit: 'month', every: 12 }, anchorDate: '2025-12-01', amount: 5_000_000, typicalChoice: 'excluded' })] },
+    checkOnce(10_000)
+  );
   // D-48: income_volatile (the ask), rests_on_your_answer (yes) and the declined case, from a hand-built volatile earner
   const vol = volatileInputs();
   const volPlan = { count: 6, apr: percent('0'), firstPayment: { kind: 'one_period' } } as const;

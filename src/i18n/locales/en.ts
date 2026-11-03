@@ -3614,6 +3614,8 @@ const en = {
         low_month_judged: 'Judged against a low month like {{month}}, which leaves about {{left}}.',
         rests_on_your_answer: 'This rests on what you said, that {{monthly}} a month for {{months}} months is covered, not on your records.',
         unspent_held_back: '{{amount}} of your unspent money is held back for an earlier plan.',
+        bills_held_back: '{{total}} is held back for yearly and every-3-month bills the months before they are due cannot cover.',
+        yearly_bill_ahead: '{{bill}} of {{amount}} is due on {{dueDate}}.',
         no_full_month: 'No full month of records yet.',
         // 05.4 FIN-03 (D-26..D-28, D-36..D-38). {{zero}} is the currency's zero, e.g. "$0".
         overdraft_use: 'Your {{account}} account would go {{below}} below {{zero}} for about {{days}} days. At {{rate}}%, that costs about {{cost}}. This is an estimate.',
