@@ -8,14 +8,17 @@
  * the rate as a real percent; the 90-day low point and its date) and the step-by-step sum that reaches the engine's answer, then
  * an Audit box (right answer, verdict, cause, notes, D-54 lines) read from audit.json.
  */
+import en from '../../../../../i18n/locales/en';
 import { PERCENT_SCALE } from '../../../../payoff/types';
 import { applyPurchaseFlows } from '../../cash/path';
 import { addDays, daysInYearMonth, yearMonthOf } from '../../dates';
 import { essentialCosts, essentialSpendingOf } from '../../essentialCosts';
 import { purchaseCashFlows } from '../../judge/purchase';
 import { liveSeriesOf, seriesOccurrences } from '../../month/series';
+import { FACT_KEYS, NOTICE_KEYS } from '../../copy/verdictTable';
+import { evaluate } from '../../evaluate';
 import { judgeCheck, prepare, type Evaluation } from '../../prepare';
-import type { CheckV2, LocalDate, V3Inputs, V3Series } from '../../types';
+import type { CheckV2, Fact, FundingSource, LocalDate, Notice, V3Inputs, V3Series } from '../../types';
 import auditFile from './audit.json';
 import type { CorpusCase, ReviewedAnswer, ReviewedChange } from './corpus';
 
@@ -42,8 +45,10 @@ const VARIANT: Record<string, string> = {
 };
 
 export const words = (a: ReviewedAnswer): string => {
-  const base = LABEL[a.code] ?? a.code;
-  const v = a.variant === null ? '' : ` (${VARIANT[a.variant] ?? a.variant})`;
+  const code = LABEL[a.code] ?? a.code;
+  // D-62 and D-63 headlines have their own words; the code the engine gives is kept in brackets for D-63.
+  const base = a.variant === 'month_already_short' ? `No: your month is already short (code: ${code})` : a.variant === 'extra_savings' ? 'Fits from extra savings' : code;
+  const v = a.variant === null || a.variant === 'month_already_short' || a.variant === 'extra_savings' ? '' : ` (${VARIANT[a.variant] ?? a.variant})`;
   const left = a.afterBuyMonth === null ? '' : `, ${(a.afterBuyMonth / 100).toFixed(2)} left that month`;
   return `${base}${v}${left}`;
 };
@@ -187,26 +192,79 @@ const factOf = (ev: Evaluation, code: string): Record<string, unknown> | null =>
   return f === undefined ? null : (f.values as Record<string, unknown>);
 };
 
-/**
- * D-52 check: steady-but-irregular income with history and no live pay series. Returns the usual payday (median day of the
- * income lines in full months) and the low-month amount (the smallest full-month income), or null when D-52 does not apply.
- */
-export function d52Pay(inputs: V3Inputs): { readonly day: number; readonly low: number; readonly months: number } | null {
-  const hasPay = liveSeriesOf(inputs.series, inputs.asOf, 'pay').length > 0;
-  const irregular = inputs.profile !== null && (inputs.profile.types.includes('freelance') || inputs.profile.variable !== null);
-  const full = inputs.months.filter((m) => m.full && m.month < yearMonthOf(inputs.asOf));
-  if (hasPay || !irregular || full.length < 3) return null;
-  const days: number[] = [];
-  const totals: number[] = [];
-  for (const m of full) {
-    const inc = m.lines.filter((l) => l.role === 'income' && l.status === 'paid');
-    totals.push(inc.reduce((a, l) => a + l.amount, 0));
-    for (const l of inc) days.push(Number(l.date.slice(8, 10)));
+// ---------------------------------------------------------------- the answer's facts and notices (en.ts wording)
+
+type Values = Record<string, unknown>;
+const PLAIN_NUMBER_KEYS = new Set(['months', 'day', 'count', 'everyMonths', 'days', 'of', 'periods', 'value', 'limit']);
+const DATE_KEYS = new Set(['date', 'dueDate']);
+/** COPY_RESOLVERS: the id a value carries and the placeholder the copy reads. */
+const RESOLVED: Record<string, string> = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account' };
+
+/** The en.ts string at a dotted path, or null. */
+function copyAt(path: string): string | null {
+  let cur: unknown = en;
+  for (const k of path.split('.')) {
+    if (cur === null || typeof cur !== 'object') return null;
+    cur = (cur as Record<string, unknown>)[k];
   }
-  if (days.length === 0) return null;
-  days.sort((a, b) => a - b);
-  return { day: days[Math.floor(days.length / 2)] as number, low: Math.min(...totals), months: full.length };
+  return typeof cur === 'string' ? cur : null;
 }
+
+/** The `_variant` copy a code's values pick (the UI's own choice, restated for the page). */
+function copyKeyFor(group: 'fact' | 'notice', code: string, v: Values): string {
+  const base = group === 'fact' ? (FACT_KEYS as Record<string, string>)[code] : (NOTICE_KEYS as Record<string, string>)[code];
+  if (base === undefined) return `decide.v3.${group}.${code}`;
+  const pick = (suffix: string): string => (copyAt(`${base}_${suffix}`) === null ? base : `${base}_${suffix}`);
+  if (group === 'fact') {
+    if (code === 'line_crossed' && typeof v['unit'] === 'string') return pick(v['unit']);
+    if (code === 'wait_keeps_net' && v['date'] === undefined) return pick('month');
+    if (code === 'overdraft_without_purchase' && v['days'] === 0) return pick('above');
+    if (code === 'overdraft_not_cleared' && v['date'] === undefined) return pick('no_pay');
+    if (['overdraft_use', 'overdraft_repeat', 'other_account_overdrawn'].includes(code) && v['rate'] === undefined) return pick('no_rate');
+  } else {
+    if (code === 'month_heading_short' && v['categoryId'] !== undefined) return pick('category');
+    if (code === 'income_from_expected' && typeof v['source'] === 'string') return pick(v['source']);
+  }
+  return base;
+}
+
+/** One fact or notice in the app's own words, every {{key}} filled. A missing copy key prints `code { json }`. */
+export function sayLine(group: 'fact' | 'notice', item: Fact | Notice, inputs: V3Inputs): string {
+  const v = item.values as Values;
+  const key = copyKeyFor(group, item.code, v);
+  const text = copyAt(key);
+  if (text === null) return `${item.code} ${JSON.stringify(v)}`;
+  const names = new Map(inputs.series.map((s) => [s.id, s.name ?? s.id]));
+  const filled: Values = {};
+  for (const [k, val] of Object.entries(v)) {
+    const placeholder = RESOLVED[k];
+    if (placeholder !== undefined) filled[placeholder] = k === 'seriesId' ? (names.get(String(val)) ?? String(val)) : String(val);
+    else filled[k] = val;
+  }
+  let missing = false;
+  const out = text.replace(/\{\{(\w+)\}\}/g, (_m, k: string) => {
+    const val = filled[k];
+    if (k === 'zero') return money(0, inputs.currency);
+    if (val === undefined || val === null) {
+      missing = true;
+      return `{${k}?}`;
+    }
+    const asMoney = !PLAIN_NUMBER_KEYS.has(k) || (item.code === 'line_crossed' && v['unit'] === 'money');
+    if (typeof val === 'number') return asMoney ? money(val, inputs.currency) : String(val);
+    if (DATE_KEYS.has(k)) return String(val);
+    return String(val);
+  });
+  return missing ? `${out} (${item.code} ${JSON.stringify(v)})` : out;
+}
+
+const SAYS = 'What the answer says';
+const SPLIT_LABEL: Record<FundingSource, string> = {
+  month: 'This month',
+  envelope: 'Its own envelope',
+  unspent_earlier: 'Spare money (everyday account, earlier months)',
+  extra_savings: "Extra savings (above the safety net's size)",
+  emergency: 'Safety net (protected part, unlocked)',
+};
 
 /** Every breakdown section for one check, from the inputs and the engine's own reading. */
 export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[] } {
@@ -236,8 +294,21 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   for (const s of liveSeriesOf(inputs.series, asOf, 'pay')) {
     for (const d of seriesOccurrences(s, addDays(asOf, 1), nextFirst)) if (!paidSeries.has(s.id)) payLater.push({ date: d, amount: s.amount });
   }
+  const hp = r.hp;
+  const histThisMonth = hp === null || hp.amount <= 0 ? [] : hp.dates.filter((d) => d > asOf && d < nextFirst);
   for (const x of payLater) inRows.push([`Pay expected ${x.date}`, m(x.amount)]);
-  if (liveSeriesOf(inputs.series, asOf, 'pay').length === 0) inRows.push(['Pay series', 'none: the engine expects no more pay']);
+  for (const d of histThisMonth) {
+    payLater.push({ date: d, amount: hp?.amount ?? 0 });
+    inRows.push([`Pay expected ${d} (from history, D-52)`, m(hp?.amount ?? 0)]);
+  }
+  if (liveSeriesOf(inputs.series, asOf, 'pay').length === 0) {
+    inRows.push([
+      'Pay series',
+      hp === null
+        ? 'none: the engine expects no more pay'
+        : `none scheduled; from ${hp.months} months of history the engine expects ${m(hp.amount)} (the lowest month) around day ${hp.day} of each month (D-52)`,
+    ]);
+  }
   inRows.push(['Engine: money in this month', m(mo.moneyIn)]);
   sections.push({ title: 'Money in this month', rows: inRows });
 
@@ -301,21 +372,23 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   const payToCome = payLater.reduce((a, x) => a + x.amount, 0);
   const spendBalance = accounts.length === 0 ? inputs.balance : spendingAccounts.reduce((a, x) => a + x.balance, 0);
   const unusedOd = spendingAccounts.reduce((a, x) => a + Math.max(0, (x.overdraftLimit ?? 0) - Math.max(0, -x.balance)), 0);
-  const availableNow = spendBalance - envelopesIn + unusedOd - promised;
+  const afterBills = spendBalance - envelopesIn - promised;
   const monthEndExpected = spendBalance - envelopesIn + payToCome - billsToCome - mo.erest - savingToCome;
   for (const a of accounts) {
     acctRows.push([`${a.id}: balance on ${asOf}`, `${m(a.balance)} (${accountUseWords(a.use)})`]);
     if (!isSpendingAccount(a.use) && a.use !== null && a.use.kind === 'dedicated' && a.use.purpose.kind === 'emergency') {
-      acctRows.push([`${a.id}: saved in it`, `${m(a.balance)}; kept apart from "available now"`]);
+      acctRows.push([`${a.id}: saved in it`, `${m(a.balance)}; kept apart from "after bills due before payday"`]);
     }
   }
   if (accounts.length === 0) acctRows.push([`Balance on ${asOf}`, m(inputs.balance)]);
   const which = spendingAccounts.length > 1 ? 'spending accounts together' : (spendingAccounts[0]?.id ?? 'the account');
   if (envelopesIn > 0) acctRows.push([`In pots inside ${which}`, `${m(envelopesIn)}; kept apart`]);
+  acctRows.push([`Balance on ${asOf} (${which})`, `${m(spendBalance)}: what is in the account that day`]);
   acctRows.push([
-    `Available now (${which})`,
-    `${m(availableNow)} = balance ${m(spendBalance)}${envelopesIn > 0 ? ` - pots ${m(envelopesIn)}` : ''} + unused overdraft ${m(unusedOd)} - bills due before the next pay${nextPay === null ? ' (no pay date)' : ` on ${nextPay}`} ${m(promised)}`,
+    `After bills due before payday (${which}, D-57)`,
+    `${m(afterBills)} = balance ${m(spendBalance)}${envelopesIn > 0 ? ` - pots ${m(envelopesIn)}` : ''} - bills due before the next pay${nextPay === null ? ' (no pay date)' : ` on ${nextPay}`} ${m(promised)}`,
   ]);
+  acctRows.push(['Unused overdraft (its own line, not counted above, D-57)', m(unusedOd)]);
   acctRows.push([
     `Expected at month end, ${monthEnd} (${which})`,
     `${m(monthEndExpected)} = ${m(spendBalance - envelopesIn)} + pay still to come ${m(payToCome)} - bills still to come ${m(billsToCome)} - everyday ${m(mo.erest)} - saving ${m(savingToCome)}`,
@@ -328,13 +401,26 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   const ec = essentialCosts(mo, inputs.debts, essentialSpendingOf(inputs, mo));
   netRows.push(['Starter (D-51)', `${m(ec.parts.bills)} bills + ${m(ec.parts.essentialSpending)} essential spending + ${m(ec.parts.debtMinimums)} debt minimums, rounded up = ${m(ec.total)}`]);
   if (net !== undefined) {
-    netRows.push(['Saved in it', `${m(net.saved)}; kept apart from available now`]);
+    netRows.push(['Saved in it', `${m(net.saved)}; kept apart from "after bills due before payday"`]);
     netRows.push(['Size', `${m(net.size)}${inputs.safetyNet?.size == null ? ' (the starter; no size set)' : ''}`]);
     netRows.push(['State', `${net.off ? 'protection off' : 'protected'}; ${net.state === 'none' ? 'nothing saved' : net.state === 'small' ? 'below its size' : net.state === 'full' ? 'at its size' : 'above its size'}`]);
     netRows.push(['Protected part', m(net.floor)]);
-    netRows.push(['Saved above the size (counts as spare)', m(net.aboveSize)]);
+    netRows.push(['Saved above the size (extra savings, D-56)', m(net.aboveSize)]);
+    netRows.push(['Locked', net.locked ? 'locked: left out of the answer (D-61)' : 'unlocked: may lend (D-61)']);
+    netRows.push(['May lend this purchase', `${m(net.usable)}${net.locked ? ' (0 while locked)' : ''}`]);
   }
   sections.push({ title: 'Safety net', rows: netRows });
+
+  // The answer as the app gives it: split and every fact and notice (en.ts wording)
+  const res = evaluate(inputs, c.check).result;
+  sections.push({
+    title: 'Split',
+    rows: res.split.length === 0 ? [['No split', 'the answer pays nothing from any source']] : res.split.map((x): [string, string] => [SPLIT_LABEL[x.source] ?? x.source, m(x.amount)]),
+  });
+  const says: [string, string][] = [['Headline', words({ code: res.code, variant: res.variant, afterBuyMonth: null })]];
+  for (const f of res.facts) says.push([`Fact ${f.code}`, sayLine('fact', f, inputs)]);
+  for (const n of res.notices) says.push([`Notice ${n.code}`, sayLine('notice', n, inputs)]);
+  sections.push({ title: SAYS, rows: says });
 
   // Debts
   if (inputs.debts.length > 0) {
@@ -366,6 +452,7 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
 
   // 90-day cash path
   const opening = ev.funds.spending + ev.funds.ownEnvelope + (net?.aboveSize ?? 0);
+  const usable = net?.usable ?? 0;
   const flows = ev.purchase ? purchaseCashFlows(ev.purchase, asOf, r.open.days) : [];
   const withP = applyPurchaseFlows(r.open, opening as never, flows);
   const without = applyPurchaseFlows(r.open, opening as never, []);
@@ -373,9 +460,15 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   const lw = low(withP.points);
   const lo = low(without.points);
   const pathRows: [string, string][] = [
-    ['Opening', `${m(opening)} = spending money ${m(ev.funds.spending)} + own envelope ${m(ev.funds.ownEnvelope)} + saved above the net size ${m(net?.aboveSize ?? 0)}`],
+    [
+      'Opening',
+      `${m(opening)} = spending money ${m(ev.funds.spending)} + own envelope ${m(ev.funds.ownEnvelope)} + extra savings ${m(net?.aboveSize ?? 0)}; the safety net may lend ${m(usable)} more${net?.locked === true ? ' (0: locked, D-61)' : ''}`,
+    ],
   ];
-  const pays = liveSeriesOf(inputs.series, asOf, 'pay').flatMap((s) => seriesOccurrences(s, addDays(asOf, 1), r.open.end).map((d) => `${d} ${m(s.amount)}`));
+  const pays = [
+    ...liveSeriesOf(inputs.series, asOf, 'pay').flatMap((s) => seriesOccurrences(s, addDays(asOf, 1), r.open.end).map((d) => `${d} ${m(s.amount)}`)),
+    ...(hp === null || hp.amount <= 0 ? [] : hp.dates.map((d) => `${d} ${m(hp.amount)} (from history, D-52)`)),
+  ];
   pathRows.push(['Pay counted', pays.length === 0 ? 'none' : pays.join('; ')]);
   const dated = r.open.net.map((n, i) => [i, n] as const).filter(([, n]) => n !== 0n).map(([i, n]) => `${(withP.points[i] as { date: string }).date} ${m(Number(n))}`);
   pathRows.push(['Dated money in and out (pay less bills and debt payments, by day)', dated.length === 0 ? 'none' : dated.join('; ')]);
@@ -383,12 +476,8 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   if (flows.length > 0) pathRows.push(['Purchase payments in the 90 days', flows.map((f) => `${f.date} ${m(f.amount)}`).join('; ')]);
   pathRows.push(['Lowest with the purchase', `${m(lw.balance)} on ${lw.date}`]);
   pathRows.push(['Lowest without the purchase', `${m(lo.balance)} on ${lo.date}`]);
-  pathRows.push(['Lowest with the purchase, counting the safety net money it may lend', `${m(lw.balance + (net?.usable ?? 0))} (lends up to ${m(net?.usable ?? 0)})`]);
+  pathRows.push(['Lowest with the purchase, counting the safety net money it may lend', `${m(lw.balance + usable)} (lends up to ${m(usable)}${net?.locked === true ? '; locked, so nothing' : ''})`]);
   pathRows.push(['Overdraft floor', m(r.floor)]);
-  const d52 = d52Pay(inputs);
-  if (d52 !== null) {
-    pathRows.push(['D-52 (not built yet)', `No pay series, so no pay is counted. D-52 expects pay on about day ${d52.day} of each month at the low-month amount ${m(d52.low)} (lowest of ${d52.months} full months).`]);
-  }
   sections.push({ title: '90-day cash path', rows: pathRows });
 
   // Step by step
@@ -402,13 +491,15 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   const cash = ev.cash;
   if (cash.kind === 'ok') steps.push(`It never goes below ${m(0)}, so the one-off part fits without the safety net.`);
   else if (cash.kind === 'overdraft') steps.push(`It goes below ${m(0)} but stays inside the overdraft floor ${m(r.floor)}.`);
-  else if (cash.kind === 'net') steps.push(`It goes ${m(-lw.balance)} below ${m(0)}. The safety net can lend ${m(net?.usable ?? 0)}, which covers it, so the purchase dips into the safety net. The purchase adds ${m(cash.added)} to that dip.`);
-  else steps.push(`It goes ${m(cash.shortBy)} below ${m(0)}, past the overdraft floor, and the safety net cannot cover it.`);
+  else if (cash.kind === 'net') steps.push(`It goes ${m(-lw.balance)} below ${m(0)}. The safety net can lend ${m(usable)}, which covers it, so the purchase dips into the safety net. The purchase adds ${m(cash.added)} to that dip.`);
+  else steps.push(`It goes ${m(cash.shortBy)} below ${m(0)}, past the overdraft floor, and the safety net cannot cover it${net?.locked === true && net.floor > 0 ? ` (it is locked, so its ${m(net.floor)} is left out, D-61)` : ''}.`);
   if (ev.result.parts.monthly !== null) steps.push(`One-off part: ${LABEL[ev.result.parts.oneOff] ?? ev.result.parts.oneOff}. Monthly part: ${LABEL[ev.result.parts.monthly] ?? ev.result.parts.monthly}. The stricter one leads.`);
   if (net !== undefined && (ev.result.code === 'fits_month' || ev.result.code === 'fits_unspent')) {
     steps.push(net.state === 'none' ? 'Nothing is saved in a safety net, so a fit carries "but no safety net" (D-35).' : net.state === 'small' ? `The safety net holds ${m(net.saved)} of its ${m(net.size)} size, so a fit carries "but your safety net is small" (D-35).` : 'The safety net is at or above its size, so no net caution.');
   }
-  steps.push(`Engine answer: ${words({ code: ev.result.code, variant: ev.result.variant, afterBuyMonth: left === null ? null : (left['left'] as number) })}.`);
+  if (res.variant === 'month_already_short') steps.push(`The usual month leaves ${mo.typicalLeft === null ? 'an unknown amount' : m(mo.typicalLeft)} before the purchase, so it is already short: the headline is "No: your month is already short" on the code ${res.code} (D-63).`);
+  if (res.variant === 'extra_savings') steps.push('Part of it is paid from money saved above the safety net\'s size, so the headline is "Fits from extra savings" (D-62).');
+  steps.push(`Engine answer: ${words({ code: res.code, variant: res.variant, afterBuyMonth: left === null ? null : (left['left'] as number) })}.`);
   return { sections, steps };
 }
 
@@ -419,7 +510,7 @@ function sectionsHtml(sections: readonly Section[]): string {
 function auditHtml(a: AuditEntry | null): string {
   if (a === null) return '<div class="audit"><h4>Audit</h4><p>Not audited yet.</p></div>';
   const notes = a.notes.length === 0 ? '' : `<ul>${a.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>`;
-  const d54 = a.d54 === undefined || a.d54.length === 0 ? '' : `<p><b>D-54 lines (drafted, not built yet):</b></p><ul>${a.d54.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>`;
+  const d54 = a.d54 === undefined || a.d54.length === 0 ? '' : `<p><b>Audit's drafted lines (compare with ${SAYS}):</b></p><ul>${a.d54.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>`;
   return `<div class="audit"><h4>Audit</h4><p><b>Right answer:</b> ${esc(a.right)}<br><b>Verdict:</b> ${esc(a.verdict)}<br><b>Cause:</b> ${esc(a.cause)}</p>${notes}${d54}</div>`;
 }
 
