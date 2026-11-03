@@ -23,6 +23,7 @@ import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series, volatileInpu
 import { toEngineInputs } from '../../__tests__/rightAnswers/fixture';
 import { loadCases } from '../../__tests__/rightAnswers/loader';
 import { TIER_CASES, rileyTier } from '../../__tests__/helpers/tierFixtures';
+import { SHORT_PLAN_CASES, shortPlan } from '../../__tests__/helpers/shortPlanFixtures';
 import {
   COPY_RESOLVERS,
   DISCRIMINATOR_KEYS,
@@ -246,6 +247,11 @@ function buildCorpus(): Emitted[] {
   // 05.4 D-65: the three tiers when the usual month is already short (month_short_fits, money_lasts_shorter).
   for (const t of Object.values(TIER_CASES)) {
     const { inputs, check } = rileyTier(t);
+    collect(out, inputs, check);
+  }
+  // 05.4 D-68: a short plan paid from money on hand (short_plan_from_cash), plain and from extra savings.
+  for (const t of [SHORT_PLAN_CASES.qualifies, SHORT_PLAN_CASES.extraSavings]) {
+    const { inputs, check } = shortPlan(t);
     collect(out, inputs, check);
   }
   return out;

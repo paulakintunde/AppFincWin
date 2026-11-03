@@ -132,7 +132,7 @@ describe('verdict table (I22 one code one text)', () => {
         'net_none_start', 'net_progress', 'net_above_size', 'wait_keeps_net', 'need_net_line',
         'bills_held_back', 'yearly_bill_ahead', 'net_locked', 'extra_savings_used', 'net_two_months', 'move_money_by',
         'usual_month_short', 'depletion_payment', 'plan_makes_short', 'price_over_net', 'net_lasts', 'net_lasts_without', 'interest_is_a_cost',
-        'balanced_month_room', 'month_balance_gap', 'month_short_fits', 'money_lasts_shorter',
+        'balanced_month_room', 'month_balance_gap', 'month_short_fits', 'money_lasts_shorter', 'short_plan_from_cash',
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

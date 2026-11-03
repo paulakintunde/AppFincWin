@@ -4,7 +4,9 @@
  * is the net_used figure. Golden persons, with and without a safety-net record (both sides of the lock).
  */
 import * as fc from 'fast-check';
+import { planTotal } from '../../depletion';
 import { evaluate } from '../../evaluate';
+import { firstPaymentsToday } from '../../judge/purchase';
 import type { CheckV2, V3Inputs } from '../../types';
 import { fcRuns } from '../helpers/fcRuns';
 import { checkArb, inputsArb, netInputsArb, withSafetyNet } from './arbitraries';
@@ -16,7 +18,13 @@ function holds(inputs: V3Inputs, check: CheckV2): void {
   const r = ev.result;
   const net = ev.net!;
   const amount = (s: string): number => r.split.filter((x) => x.source === s).reduce((t, x) => t + x.amount, 0);
-  if (r.split.length > 0) expect(r.split.reduce((t, x) => t + x.amount, 0)).toBe(ev.purchase!.dayOne);
+  // D-68 branch (owner, 2026-11-03: "judge by cash better by a slim margin, with caution"): a short plan judged by cash is the
+  // one-off of its whole cost, so its split sums to that cost, not to day one.
+  const p = ev.purchase!;
+  const paid = r.facts.some((f) => f.code === 'short_plan_from_cash') && p.schedule !== null
+    ? planTotal(p.dayOne, p.schedule, p.share, firstPaymentsToday(p.schedule, p.share, inputs.asOf))
+    : p.dayOne;
+  if (r.split.length > 0) expect(r.split.reduce((t, x) => t + x.amount, 0)).toBe(paid);
   expect(amount('extra_savings')).toBeLessThanOrEqual(net.aboveSize);
   if (r.code === 'fits_month' || r.code === 'fits_unspent') expect(amount('emergency')).toBe(0);
   if (r.code === 'fits_uses_net') {

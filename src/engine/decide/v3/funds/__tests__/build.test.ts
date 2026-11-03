@@ -107,6 +107,16 @@ describe('buildFunds', () => {
     expect(over.spending).toBe(0);
   });
 
+  it('05.4 ENG-02 an overdrawn mixed account fences nothing and keeps its balance signed: -30,000 with a 50,000 envelope', () => {
+    // 05.4-53: a seeded pin for the a.balance <= 0 branch, which only unseeded random draws reached before.
+    const f = fundsOf({
+      accounts: [acct('m', -30_000, { kind: 'mixed', extraSetAside: mu(20_000) })],
+      envelopes: [env('car', 50_000, 'm')],
+    });
+    expect(f.spending).toBe(-30_000);
+    expect(f.ringFenced).toBe(0);
+  });
+
   it('D-54 only everyday and mixed money counts; untouched and unstated accounts do not, and unstated ones are listed', () => {
     const f = fundsOf({
       accounts: [

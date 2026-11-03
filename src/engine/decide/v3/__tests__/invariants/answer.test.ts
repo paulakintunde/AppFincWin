@@ -5,7 +5,9 @@
  */
 import { codesOf, restsOn } from '../helpers/restsOn';
 import fc from 'fast-check';
+import { planTotal } from '../../depletion';
 import { evaluate } from '../../evaluate';
+import { firstPaymentsToday } from '../../judge/purchase';
 import type { CheckV2, Fact, Notice, Result, TypedEstimates, V3Inputs, V3Line } from '../../types';
 import { loadPersons, personById, toV3Inputs } from '../golden/adapter';
 import { checkOnce } from '../helpers/fixtures';
@@ -228,7 +230,11 @@ describe('end-to-end invariants through evaluate()', () => {
         }
         if (ev.result.split.length > 0 && ev.purchase !== null && ev.result.code !== 'emergency_use') {
           const total = ev.result.split.reduce((s, x) => s + x.amount, 0);
-          expect(total).toBe(ev.purchase.dayOne);
+          // D-68 branch (owner, 2026-11-03: "judge by cash better by a slim margin, with caution"): a short plan judged by cash
+          // is the one-off of its whole cost, so the split sums to that cost.
+          const p = ev.purchase;
+          const d68 = ev.result.facts.some((f) => f.code === 'short_plan_from_cash') && p.schedule !== null;
+          expect(total).toBe(d68 && p.schedule !== null ? planTotal(p.dayOne, p.schedule, p.share, firstPaymentsToday(p.schedule, p.share, inputs.asOf)) : p.dayOne);
         }
       }),
       RUNS
