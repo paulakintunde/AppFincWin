@@ -210,4 +210,34 @@ describe('reviewed page', () => {
     // Plans past the 90 days and cash buys carry no D-68 step.
     for (const c of [sp(SHORT_PLAN_CASES.longShort, 'sp:l'), cases.find((x) => x.key === 'persona:riley:900000:cash')!]) expect(breakdown(c).steps.some((s) => s.includes('(D-68)'))).toBe(false);
   });
+
+  it('05.4-19 (D-47): the page own hold-back sum for a yearly bill, with the built-up share as a real percent', () => {
+    const hana = cases.find((c) => c.key === 'persona:audit-p8:50000:cash')!;
+    const step = breakdown(hana).steps.find((x) => x.includes('(D-47)'))!;
+    expect(step).toContain('$1,200.00 every 12 months, last paid 2026-03-10, next due 2027-03-10.');
+    expect(step).toContain('Built up: 7 of 12 months (58.33%) = $700.00.');
+    expect(step).toContain('4 whole months before 2027-03-10 cover $700.00 x 4 = $2,800.00.');
+    expect(step).toContain('Not covered: the larger of $0.00 and $1,200.00 - $2,800.00 = $0.00.');
+    expect(step).toContain('Held back: the smaller of $700.00 and $0.00 = $0.00.');
+    expect(step).not.toContain('DISAGREE');
+    expect(breakdown(hana).steps).toContain('Held back from spare money for these bills: $0.00.');
+    // a thin leftover: the usual month counts this bill at a twelfth a month (no yearly-bill choice made), so a $10,000 bill leaves
+    // the month $33.33 short: nothing is covered, and the whole $5,833.33 built up is held back
+    const big = { ...hana, inputs: { ...hana.inputs, series: hana.inputs.series.map((x) => (x.id === 'audit-p8-ins' ? { ...x, amount: 1_000_000 as typeof x.amount } : x)) } };
+    const thin = breakdown(big).steps.find((x) => x.includes('(D-47)'))!;
+    expect(thin).toContain('Built up: 7 of 12 months (58.33%) = $5,833.33.');
+    expect(thin).toContain('The usual month leaves $0.00 (it is $33.33 short, so it covers nothing)');
+    expect(thin).toContain('Held back: the smaller of $5,833.33 and $10,000.00 = $5,833.33 (the whole built-up share).');
+    expect(thin).not.toContain('DISAGREE');
+    expect(breakdown(big).steps).toContain('Held back from spare money for these bills: $5,833.33 (taken off after the month-end cap, so the cap never cancels it).');
+    // a check with no yearly bill has no D-47 step
+    expect(breakdown(cases.find((c) => c.key === 'gen:3')!).steps.some((x) => x.includes('(D-47)'))).toBe(false);
+  });
+  it('05.4-19: the FIN-11 page lists the checks the rule reads whose answer stays the same; other pages do not', () => {
+    const html = buildPage('FIN-11', [], cases);
+    expect(html).toContain('<h2>Checks this rule reads, answer unchanged (5)</h2>');
+    expect(html).toContain('persona:audit-p8:900000:plan');
+    expect(html).not.toContain('DISAGREE');
+    expect(buildPage('T', [], cases)).not.toContain('Checks this rule reads');
+  });
 });

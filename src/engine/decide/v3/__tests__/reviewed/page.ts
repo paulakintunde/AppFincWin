@@ -540,6 +540,7 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   if (tierStep !== null) steps.push(tierStep);
   const shortStep = d68Step(c, ev, res, lw, m);
   if (shortStep !== null) steps.push(shortStep);
+  steps.push(...d47Steps(c, ev, m));
   if (res.variant === 'extra_savings') steps.push('Part of it is paid from money saved above the safety net\'s size, so the headline is "Fits from extra savings" (D-62).');
   steps.push(`Engine answer: ${words({ code: res.code, variant: res.variant, afterBuyMonth: left === null ? null : (left['left'] as number) })}.`);
   return { sections, steps };
@@ -615,6 +616,87 @@ function d68Step(c: CorpusCase, ev: Evaluation, res: Evaluation['result'], lw: {
                   : `PAGE AND ENGINE DISAGREE: every check the page makes passes (${handText}, path lowest ${m(lw.balance)} on ${lw.date}), yet the engine does not judge it by cash`;
   return `Not judged by cash (D-68): every payment is before the 90 days end on ${end} (last ${pc.endDate}, whole cost ${whole}), but ${why}.`;
 }
+
+/** Whole months from a to b (the largest n with a + n months, the day cut to the month's end, on or before b); 0 when b is not after a. */
+function wholeMonthsPage(a: LocalDate, b: LocalDate): number {
+  let n = 0;
+  while (fmt(addMonths(parse(a), n + 1)) <= b) n++;
+  return n;
+}
+
+/** A share as a real percent to 2 decimals (7 of 12 months is 58.33%). */
+const pct = (num: number, den: number): string => `${((num * 100) / den).toFixed(2)}%`;
+
+/** The yearly and every-3-month bills D-47 reads: live, monthly cadence every 3 or 12 months, with an amount. */
+export function longBillsOf(inputs: V3Inputs): V3Series[] {
+  return liveSeriesOf(inputs.series, inputs.asOf, 'bill').filter((s) => s.cadence.unit === 'month' && (s.cadence.every === 3 || s.cadence.every === 12) && s.amount > 0);
+}
+
+/**
+ * 05.4-19 (FIN-11 as changed by D-47): the page's own hold-back sum for each yearly or every-3-month bill, not read from the engine's
+ * hold-back: "hold-back = max(0, bill - usual leftover x whole months until due), capped at the built-up share"; built-up share =
+ * bill x whole months since last paid / months between payments (half up, never more than the bill; 0 again after each payment);
+ * last paid = the newest paid line or the newest due date on or before the check date; a bill due this month is in this month's
+ * bills, so nothing more is held back. The engine's figures sit beside it; a difference prints PAGE AND ENGINE DISAGREE.
+ */
+export function d47Steps(c: CorpusCase, ev: Evaluation, m: (n: number) => string): string[] {
+  const inputs = c.inputs;
+  const asOf = inputs.asOf;
+  const always = new Set((inputs.waivers ?? []).flatMap((w) => (w.kind === 'always_other' ? [w.seriesId] : [])));
+  const tl = ev.month.typicalLeft;
+  const leftover = tl === null || tl < 0 ? 0 : tl;
+  const out: string[] = [];
+  for (const s of longBillsOf(inputs)) {
+    const name = s.name ?? s.id;
+    const every = s.cadence.every;
+    const engine = ev.funds.billsHeld?.parts.find((x) => x.seriesId === s.id);
+    if (always.has(s.id)) {
+      out.push(`${name}: ${m(s.amount)} every ${every} months, always paid by someone else (D-31), so nothing is held back${engine === undefined ? '' : '. PAGE AND ENGINE DISAGREE: the engine reads it'}.`);
+      continue;
+    }
+    const paidLine = inputs.months.flatMap((x) => x.lines).filter((l) => l.seriesId === s.id && l.status === 'paid' && l.date <= asOf).map((l) => l.date).sort().pop() ?? null;
+    let lastDue: string | null = null;
+    for (let n = 0; ; n++) {
+      const d = fmt(addMonths(parse(s.anchorDate), every * n));
+      if (d > asOf) break;
+      lastDue = d;
+    }
+    const paid = paidLine !== null && (lastDue === null || paidLine > lastDue) ? paidLine : lastDue;
+    let due = s.anchorDate;
+    if (paid !== null) {
+      const past = fmt(addMonths(parse(paid), Math.floor(every / 2)));
+      for (let n = 0; ; n++) {
+        due = fmt(addMonths(parse(s.anchorDate), every * n));
+        if (due > past) break;
+      }
+    }
+    const since = paid === null ? 0 : wholeMonthsPage(paid, asOf);
+    const share = Math.min(s.amount, Math.floor((2 * s.amount * since + every) / (2 * every)));
+    const until = wholeMonthsPage(asOf, due);
+    const covered = leftover * until;
+    const uncovered = Math.max(0, s.amount - covered);
+    const thisMonth = due.slice(0, 7) === asOf.slice(0, 7);
+    const hold = thisMonth ? 0 : Math.min(share, uncovered);
+    const agree = engine !== undefined && engine.builtUp === share && engine.holdBack === hold && engine.dueDate === due;
+    out.push(
+      `${agree ? '' : 'PAGE AND ENGINE DISAGREE: '}Yearly bills (D-47): ${name} is ${m(s.amount)} every ${every} months, ` +
+        `${paid === null ? 'not paid yet (it starts on its first due date)' : `last paid ${paid}`}, next due ${due}. ` +
+        `Built up: ${since} of ${every} months (${pct(Math.min(since, every), every)}) = ${m(share)}. ` +
+        `The usual month leaves ${m(leftover)}${tl !== null && tl < 0 ? ` (it is ${m(-tl)} short, so it covers nothing)` : ''}; ${until} whole months before ${due} cover ${m(leftover)} x ${until} = ${m(covered)}. ` +
+        `Not covered: the larger of ${m(0)} and ${m(s.amount)} - ${m(covered)} = ${m(uncovered)}. ` +
+        (thisMonth ? `It is due this month, so it is already in this month's bills: nothing more is held back.` : `Held back: the smaller of ${m(share)} and ${m(uncovered)} = ${m(hold)}${hold === share && hold > 0 ? ' (the whole built-up share)' : ''}.`) +
+        (engine === undefined ? ' (engine: no hold-back figure)' : ` Engine: built up ${m(engine.builtUp)}, held back ${m(engine.holdBack)}, due ${engine.dueDate}.`)
+    );
+  }
+  const total = ev.funds.billsHeld?.total ?? 0;
+  if (out.length > 0) out.push(`Held back from spare money for these bills: ${m(total)}${total > 0 ? ' (taken off after the month-end cap, so the cap never cancels it)' : ''}.`);
+  return out;
+}
+
+/** Fix IDs whose page also lists the checks the rule reads but whose answer it leaves the same. */
+const READS: Readonly<Record<string, (c: CorpusCase) => boolean>> = {
+  'FIN-11': (c) => longBillsOf(c.inputs).length > 0,
+};
 
 /**
  * D-65: the page's own "how long your money lasts" sum, from the breakdown figures (not from the engine's tier line), so the owner
@@ -703,10 +785,24 @@ export function buildPage(fixId: string, changes: readonly ReviewedChange[], cas
   const section = (title: string, list: ReviewedChange[], open: boolean): string =>
     `<h2>${title} (${list.length})</h2>` + (list.length === 0 ? '<p>None.</p>' : `<ul>${list.map((c) => item(c, open)).join('')}</ul>`);
   const verdictLine = [...verdicts].map(([v, n]) => `${n} ${v}`).join(', ');
+  const reads = READS[fixId];
+  const changed = new Set(changes.map((x) => x.key));
+  const same = reads === undefined ? [] : cases.filter((c) => reads(c) && !changed.has(c.key));
+  const sameItem = (c: CorpusCase): string => {
+    const b = breakdown(c);
+    const ans = evaluate(c.inputs, c.check).result;
+    return (
+      `<li><b>${esc(who(c, c.key))}</b> <code>${esc(c.key)}</code><br>Answer (unchanged): ${esc(words({ code: ans.code, variant: ans.variant, afterBuyMonth: null }))}` +
+      auditHtml(auditOf(c.key)) +
+      `<details><summary>Situation and full breakdown</summary>${situationHtml(c)}${sectionsHtml(b.sections)}<h4>Step by step</h4><ol>${b.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol></details></li>`
+    );
+  };
+  const readsHtml = reads === undefined ? '' : `<h2>Checks this rule reads, answer unchanged (${same.length})</h2>` + (same.length === 0 ? '<p>None.</p>' : `<ul>${same.map(sameItem).join('')}</ul>`);
   return (
     `<!doctype html><meta charset="utf-8"><title>${esc(fixId)}: changed answers</title><style>${CSS}</style>` +
     `<h1>${esc(fixId)}: changed answers</h1><p>${changes.length} of ${cases.length} checks changed (${groups.stricter.length} stricter, ${groups.looser.length} looser, ${groups.detail.length} same answer with different detail). Invented people only.</p>` +
     `<p>Audit: ${esc(verdictLine)}. Each change shows its Audit box first, then the full breakdown.</p>` +
-    section('Stricter', groups.stricter, false) + section('Looser', groups.looser, false) + section('Same answer, detail changed', groups.detail, false)
+    section('Stricter', groups.stricter, false) + section('Looser', groups.looser, false) + section('Same answer, detail changed', groups.detail, false) +
+    readsHtml
   );
 }
