@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { buildMonthModel } from '../../month/model';
 import { toV3Inputs } from '../golden/adapter';
-import { generateHistories, historyArb, SHADOW_SEED } from './generate';
+import { generateHistories, historyArb, SHADOW_SEED, steadyOf } from './generate';
 import { generateNearLineHistories, withoutRefundLinks, NEAR_LINE_SEED } from './generateNearLine';
 import { generateRefundHistories, REFUND_SEED } from './generateRefunds';
 
@@ -54,6 +54,34 @@ describe('05.4-48 (audit cause 4): generated people are possible people', () => 
         expect(p.unspent.amount).toBeLessThanOrEqual(main - pots + toArrive);
       }
     });
+  });
+
+  it('05.4-51 (Plan-49 re-run): every plan deposit is below its price', () => {
+    for (const g of generateHistories()) {
+      for (const p of g.purchases) if (p.pay.mode === 'plan') expect(p.pay.deposit).toBeLessThan(p.price ?? 0);
+    }
+  });
+
+  it('05.4-51 (Plan-49 re-run): a usual month costs at most 125% of pay (bills + everyday base + debt minimums)', () => {
+    const raws = fc.sample(historyArb, { seed: SHADOW_SEED, numRuns: 300 });
+    for (const raw of raws) {
+      const bills = raw.bills.reduce((t, b) => t + b.amount, 0);
+      const mins = raw.debts.reduce((t, d) => t + d.minimum, 0);
+      expect(raw.everydayBase).toBeDefined();
+      expect(bills + (raw.everydayBase ?? 0) + mins).toBeLessThanOrEqual(Math.floor((raw.pay * 125) / 100) + raw.bills.length);
+      // and never under half of the usual month's money in (a freelancer's stated steady amount): nobody has almost no costs
+      const usualIn = raw.freelance ? steadyOf(raw.pay) : raw.pay;
+      expect(bills + (raw.everydayBase ?? 0) + mins).toBeGreaterThanOrEqual(Math.floor((usualIn * 50) / 100) - raw.bills.length);
+    }
+  });
+
+  it('05.4-51 (D-65): 10 to 60 of the 200 reviewed-corpus people have an already-short usual month', () => {
+    const short = generateHistories(200).filter((g) => {
+      const t = buildMonthModel(toV3Inputs(g.person)).typicalLeft;
+      return t !== null && t < 0;
+    }).length;
+    expect(short).toBeGreaterThanOrEqual(10);
+    expect(short).toBeLessThanOrEqual(60);
   });
 
   it('no adapter clamp binds over the 200 reviewed-corpus histories (person.balance >= the fund)', () => {

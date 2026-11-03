@@ -3,23 +3,41 @@ import type { RightAnswerFixture } from '../rightAnswers/schema';
 
 const money = (max: number): fc.Arbitrary<number> => fc.integer({ min: 0, max });
 
+/**
+ * 05.4-51 (Plan-49 re-run): what a usual month spends on bills + everyday spending, as a percent of pay, drawn as the shadow
+ * generator draws it: 50..90 (75%), 91..105 (20%), 106..125 (5%). Nobody spends 2-3x their pay as a routine month.
+ */
+const costShareArb: fc.Arbitrary<number> = fc.oneof(
+  { weight: 15, arbitrary: fc.integer({ min: 50, max: 90 }) },
+  { weight: 4, arbitrary: fc.integer({ min: 91, max: 105 }) },
+  { weight: 1, arbitrary: fc.integer({ min: 106, max: 125 }) }
+);
+/** 05.4-51: the share of those costs that is bills (the rest is everyday spending). */
+const billShareArb: fc.Arbitrary<number> = fc.integer({ min: 35, max: 60 });
+
+/** 05.4-51 (Plan-49 re-run): bills = pay x costShare x billShare; everyday = pay x costShare - bills. */
+function usualCosts(pay: number, costShare: number, billShare: number): { bills: number; everyday: number } {
+  const bills = Math.floor((pay * costShare * billShare) / 10000);
+  return { bills, everyday: Math.floor((pay * costShare) / 100) - bills };
+}
+
 interface MidMonthRaw {
-  pay: number; billsShare: number; everydayShare: number; paidShare: number; soFarShare: number; history: number;
+  pay: number; costShare: number; billShare: number; paidShare: number; soFarShare: number; history: number;
   price: number | null; fees: number;
-  plan: { months: number; apr: string | null; deposit: number; fees: number } | null;
+  plan: { months: number; apr: string | null; depositPct: number; fees: number } | null;
   cushion: number;
 }
 
 const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
   pay: fc.integer({ min: 100_000, max: 1_200_000 }),
-  billsShare: fc.integer({ min: 5, max: 60 }),
-  everydayShare: fc.integer({ min: 5, max: 50 }),
+  costShare: costShareArb,
+  billShare: billShareArb,
   paidShare: fc.constantFrom(0, 100, 100),
   soFarShare: fc.integer({ min: 20, max: 100 }),
   history: fc.integer({ min: 3, max: 6 }),
   price: fc.option(fc.integer({ min: 1, max: 2_000_000 }), { nil: null }),
   fees: fc.constantFrom(0, 0, 500, 2500),
-  plan: fc.oneof({ weight: 5, arbitrary: fc.constant(null) }, { weight: 1, arbitrary: fc.record({ months: fc.integer({ min: 2, max: 36 }), apr: fc.constantFrom(null, '0', '9.9', '19.99', '29.99'), deposit: money(50_000), fees: money(5_000) }) }),
+  plan: fc.oneof({ weight: 5, arbitrary: fc.constant(null) }, { weight: 1, arbitrary: fc.record({ months: fc.integer({ min: 2, max: 36 }), apr: fc.constantFrom(null, '0', '9.9', '19.99', '29.99'), depositPct: fc.constantFrom(0, 0, 5, 10, 20), fees: money(5_000) }) }), // 05.4-51 (Plan-49 re-run): the deposit is a share of the price
   cushion: money(1_500_000),
 });
 
@@ -28,8 +46,7 @@ const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
  * months; the balance is that plus this month's money received, less the bills paid and the everyday spending so far.
  */
 function midMonth(r: MidMonthRaw, received: number): RightAnswerFixture {
-  const bills = Math.floor((r.pay * r.billsShare) / 100);
-  const everyday = Math.floor((r.pay * r.everydayShare) / 100);
+  const { bills, everyday } = usualCosts(r.pay, r.costShare, r.billShare);
   const billsPaid = Math.floor((bills * r.paidShare) / 100);
   const everydaySoFar = Math.floor((everyday * r.soFarShare) / 100);
   const balance = r.cushion + received - billsPaid - everydaySoFar;
@@ -43,7 +60,8 @@ function midMonth(r: MidMonthRaw, received: number): RightAnswerFixture {
     safetyNet: null, bills: [], debts: [], userLine: null, factLines: false,
     check: {
       price: r.price, taxPercent: null, taxIncluded: null, oneOffFees: r.fees,
-      pay: r.plan === null ? { mode: 'once' } : { mode: 'plan', months: r.plan.months, apr: r.plan.apr, fees: r.plan.fees, deposit: r.plan.deposit, firstPaymentDate: '2026-11-15' },
+      // 05.4-51 (Plan-49 re-run): the deposit is always below the price (0 with no price)
+      pay: r.plan === null ? { mode: 'once' } : { mode: 'plan', months: r.plan.months, apr: r.plan.apr, fees: r.plan.fees, deposit: Math.floor(((r.price ?? 0) * r.plan.depositPct) / 100), firstPaymentDate: '2026-11-15' },
     },
   };
 }
@@ -77,8 +95,8 @@ const irregularArb: fc.Arbitrary<RightAnswerFixture> = fc
 const firstOfMonthArb: fc.Arbitrary<RightAnswerFixture> = fc
   .record({
     pay: fc.integer({ min: 100_000, max: 1_200_000 }),
-    billsShare: fc.integer({ min: 5, max: 50 }),
-    everydayShare: fc.integer({ min: 5, max: 45 }),
+    costShare: costShareArb, // 05.4-51 (Plan-49 re-run)
+    billShare: billShareArb,
     history: fc.integer({ min: 3, max: 6 }),
     price: fc.integer({ min: 1, max: 2_000_000 }),
     fees: fc.constantFrom(0, 0, 500, 2500),
@@ -86,8 +104,7 @@ const firstOfMonthArb: fc.Arbitrary<RightAnswerFixture> = fc
     syncedDaysAgo: fc.integer({ min: 0, max: 6 }),
   })
   .map((r): RightAnswerFixture => {
-    const bills = Math.floor((r.pay * r.billsShare) / 100);
-    const everyday = Math.floor((r.pay * r.everydayShare) / 100);
+    const { bills, everyday } = usualCosts(r.pay, r.costShare, r.billShare);
     const recordsAsOf = new Date(Date.UTC(2026, 10, 1 - r.syncedDaysAgo)).toISOString().slice(0, 10);
     const price = r.syncedDaysAgo > 3 ? Math.max(r.price, 100_001) : r.price;
     return {

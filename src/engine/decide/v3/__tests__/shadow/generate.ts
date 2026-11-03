@@ -3,6 +3,20 @@
  *
  * `historyArb` draws raw numbers; `buildPerson` turns them into a FixturePerson in the golden fixture shape, so both
  * engines read it through the same adapters. `fc.sample` with a fixed seed makes the 300 histories identical on every run.
+ *
+ * 05.4-51 (Plan-49 re-run, owner: "the generator's deposit-bigger-than-price plans, and tune the generator to realistic people
+ * (no routine 2-3x overspending)"). The draw is a share of pay (`shareHistoryArb`), resolved into amounts by `resolveShares`.
+ * The distribution is binding:
+ * - pay 150,000..1,200,000 a month; a freelancer's months swing 80..120% of it (the D-34 swing limit)
+ * - `costShare`: what a usual month spends on bills + everyday spending + debt minimums, as a percent of pay (for a freelancer, of
+ *   the steady amount they state, 70% of their average pay, which is their usual month's money in): 50..90 with
+ *   weight 15 (75%), 91..105 with weight 4 (20%), 106..125 with weight 1 (5%). Nobody spends 2-3x their pay as a routine month.
+ * - `billShare` 35..60% of those costs are bills, split by 2..6 weights (1..10) on days 1..28; the last bill takes the remainder
+ * - debts 0..2 with a minimum of 1..6% of pay; everyday = max(10% of pay, costs - bills - debt minimums), swinging 85..115% a month
+ *   (for a freelancer these shares are of the steady amount too)
+ * - one-offs 0..2 of 10..60% of pay; September close 0..300% of pay; emergency fund 0..600% of pay or none; envelopes saving
+ *   0..10% of pay a month
+ * - a plan's deposit is 0, 5, 10 or 20% of the price, so always below it (gen:31 / gen:35 / gen:39 cannot be drawn)
  */
 import * as fc from 'fast-check';
 import { buildFunds } from '../../funds/build';
@@ -41,7 +55,8 @@ interface RawPurchase {
   count: number;
   apr: number;
   today: boolean;
-  deposit: number;
+  /** 05.4-51: percent of the price (0..20), so the deposit is always below the price. */
+  depositPct: number;
   item: number;
   tax: boolean;
 }
@@ -62,6 +77,29 @@ interface RawHistory {
   envelopes: { target: number; saved: number; monthly: number }[];
   debts: { balance: number; minimum: number; apr: number; card: boolean }[];
   purchases: RawPurchase[];
+  /** 05.4-51: the usual month's everyday spending before the monthly swing (absent for hand-built raws). */
+  everydayBase?: number;
+}
+
+/** 05.4-51: the share-of-pay draw (see the header); `resolveShares` turns it into a RawHistory. All integers, minor units. */
+export interface ShareHistory {
+  freelance: boolean;
+  months: number;
+  pay: number;
+  payJitter: number[];
+  costShare: number;
+  billShare: number;
+  bills: { weight: number; day: number }[];
+  everydayJitter: number[];
+  everydaySpread: number;
+  oneOffs: { month: number; pctOfPay: number }[];
+  balancePct: number;
+  unspent: { amount: number } | null;
+  staleRecords: number;
+  emergencyPct: number | null;
+  envelopes: { target: number; saved: number; monthlyPct: number }[];
+  debts: { balance: number; minimumPct: number; apr: number; card: boolean }[];
+  purchases: RawPurchase[];
 }
 
 const purchaseArb: fc.Arbitrary<RawPurchase> = fc.record({
@@ -71,49 +109,103 @@ const purchaseArb: fc.Arbitrary<RawPurchase> = fc.record({
   count: fc.integer({ min: 2, max: 24 }),
   apr: fc.constantFrom(0, 0, 4.9, 9.9, 19.9),
   today: fc.boolean(),
-  deposit: fc.constantFrom(0, 0, 0, 5000, 20000),
+  depositPct: fc.constantFrom(0, 0, 0, 5, 10, 20),
   item: fc.integer({ min: 0, max: ITEM_TYPES.length - 1 }),
   tax: fc.boolean(),
 });
 
-export const historyArb: fc.Arbitrary<RawHistory> = fc.record({
+/** 05.4-51: the costs share of pay, weighted 75% / 20% / 5% (header). */
+export const costShareArb: fc.Arbitrary<number> = fc.oneof(
+  { weight: 15, arbitrary: fc.integer({ min: 50, max: 90 }) },
+  { weight: 4, arbitrary: fc.integer({ min: 91, max: 105 }) },
+  { weight: 1, arbitrary: fc.integer({ min: 106, max: 125 }) }
+);
+
+// fc.noBias: drawn as stated, without fast-check's lean towards the edges of each range, so the bands keep their weights
+export const shareHistoryArb: fc.Arbitrary<ShareHistory> = fc.noBias(fc.record({
   freelance: fc.boolean(),
   months: fc.integer({ min: 6, max: 8 }),
   pay: fc.integer({ min: 150000, max: 1200000 }),
-  payJitter: fc.array(fc.integer({ min: 60, max: 140 }), { minLength: 8, maxLength: 8 }),
-  bills: fc.array(
-    fc.record({ amount: fc.integer({ min: 2000, max: 250000 }), day: fc.integer({ min: 1, max: 28 }) }),
-    { minLength: 2, maxLength: 6 }
-  ),
-  everyday: fc.array(fc.integer({ min: 20000, max: 450000 }), { minLength: 8, maxLength: 8 }),
+  payJitter: fc.array(fc.integer({ min: 80, max: 120 }), { minLength: 8, maxLength: 8 }),
+  costShare: costShareArb,
+  billShare: fc.integer({ min: 35, max: 60 }),
+  bills: fc.array(fc.record({ weight: fc.integer({ min: 1, max: 10 }), day: fc.integer({ min: 1, max: 28 }) }), { minLength: 2, maxLength: 6 }),
+  everydayJitter: fc.array(fc.integer({ min: 85, max: 115 }), { minLength: 8, maxLength: 8 }),
   everydaySpread: fc.integer({ min: 4, max: 8 }),
-  oneOffs: fc.array(fc.record({ month: fc.integer({ min: 0, max: 7 }), amount: fc.integer({ min: 30000, max: 600000 }) }), {
+  oneOffs: fc.array(fc.record({ month: fc.integer({ min: 0, max: 7 }), pctOfPay: fc.integer({ min: 10, max: 60 }) }), {
     minLength: 0,
     maxLength: 2,
   }),
-  balance: fc.integer({ min: 0, max: 3000000 }),
+  balancePct: fc.integer({ min: 0, max: 300 }),
   unspent: fc.option(fc.record({ amount: fc.integer({ min: 0, max: 800000 }) }), { nil: null, freq: 7 }),
   staleRecords: fc.integer({ min: 0, max: 6 }),
-  emergency: fc.option(fc.integer({ min: 0, max: 2000000 }), { nil: null }),
+  emergencyPct: fc.option(fc.integer({ min: 0, max: 600 }), { nil: null }),
   envelopes: fc.array(
     fc.record({
       target: fc.integer({ min: 50000, max: 800000 }),
       saved: fc.integer({ min: 0, max: 300000 }),
-      monthly: fc.integer({ min: 0, max: 40000 }),
+      monthlyPct: fc.integer({ min: 0, max: 10 }),
     }),
     { minLength: 0, maxLength: 2 }
   ),
   debts: fc.array(
     fc.record({
       balance: fc.integer({ min: 20000, max: 2000000 }),
-      minimum: fc.integer({ min: 2000, max: 60000 }),
+      minimumPct: fc.integer({ min: 1, max: 6 }),
       apr: fc.constantFrom(0, 6.5, 12.9, 21.9),
       card: fc.boolean(),
     }),
     { minLength: 0, maxLength: 2 }
   ),
   purchases: fc.array(purchaseArb, { minLength: 1, maxLength: 4 }),
-});
+}));
+
+const pct = (amount: number, p: number): number => Math.floor((amount * p) / 100);
+
+/** A freelancer states a steady amount of 70% of their average pay (05.1-28). */
+export const steadyOf = (pay: number): number => Math.round(pay * 0.7);
+
+/**
+ * 05.4-51: costs = pay x costShare; debt minimums = pay x minimumPct each; bills = costs x billShare, split by the weights (the
+ * last bill takes the remainder); everyday base = max(10% of pay, costs - bills - debt minimums), each month x everydayJitter.
+ */
+export function resolveShares(s: ShareHistory): RawHistory {
+  // A freelancer's usual month is the steady amount they state (70% of their average pay), so their costs are a share of that.
+  const base = s.freelance ? steadyOf(s.pay) : s.pay;
+  const costs = pct(base, s.costShare);
+  const debts = s.debts.map((d) => ({ balance: d.balance, minimum: pct(base, d.minimumPct), apr: d.apr, card: d.card }));
+  const mins = debts.reduce((t, d) => t + d.minimum, 0);
+  const billsTotal = pct(costs, s.billShare);
+  const weightSum = s.bills.reduce((t, b) => t + b.weight, 0);
+  let given = 0;
+  const bills = s.bills.map((b, i) => {
+    const amount = i === s.bills.length - 1 ? billsTotal - given : Math.floor((billsTotal * b.weight) / weightSum);
+    given += amount;
+    return { amount, day: b.day };
+  });
+  const everydayBase = Math.max(pct(base, 10), costs - billsTotal - mins);
+  return {
+    freelance: s.freelance,
+    months: s.months,
+    pay: s.pay,
+    payJitter: s.payJitter,
+    bills,
+    everyday: s.everydayJitter.map((j) => pct(everydayBase, j)),
+    everydaySpread: s.everydaySpread,
+    oneOffs: s.oneOffs.map((o) => ({ month: o.month, amount: pct(s.pay, o.pctOfPay) })),
+    balance: pct(s.pay, s.balancePct),
+    unspent: s.unspent,
+    staleRecords: s.staleRecords,
+    emergency: s.emergencyPct === null ? null : pct(s.pay, s.emergencyPct),
+    envelopes: s.envelopes.map((e) => ({ target: e.target, saved: e.saved, monthly: pct(s.pay, e.monthlyPct) })),
+    debts,
+    purchases: s.purchases,
+    everydayBase,
+  };
+}
+
+/** The raw histories the generators read: the share-of-pay draw, resolved (05.4-51). */
+export const historyArb: fc.Arbitrary<RawHistory> = shareHistoryArb.map(resolveShares);
 
 const pad = (n: number): string => String(n).padStart(2, '0');
 
@@ -127,7 +219,7 @@ function purchaseOf(r: RawPurchase): FixturePurchase {
         termMonths: null,
         aprText: String(r.apr),
         fees: { setup: 0, perPeriod: 0, end: 0 },
-        deposit: r.deposit,
+        deposit: Math.floor((r.price * r.depositPct) / 100), // 05.4-51: always below the price (depositPct <= 20)
         tradeIn: 0,
         quotedPayment: null,
         firstPayment: r.today ? { kind: 'today' } : { kind: 'one_period' },
@@ -240,7 +332,7 @@ export function buildPerson(raw: RawHistory, index: number): GeneratedHistory {
     months,
     series,
     profile: raw.freelance
-      ? { types: ['freelance'], variable: 'steady', steady: Math.round(raw.pay * 0.7) as never, billsHorizonMonths: null }
+      ? { types: ['freelance'], variable: 'steady', steady: steadyOf(raw.pay) as never, billsHorizonMonths: null }
       : { types: ['salary'], variable: null, steady: null, billsHorizonMonths: null },
     rough: null,
     balance: main + (raw.emergency ?? 0),
