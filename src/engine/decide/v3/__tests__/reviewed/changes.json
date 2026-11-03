@@ -98,9 +98,9 @@
         "variant": null,
         "afterBuyMonth": -87500
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: Sam's 9,000 fund is his safety net; 5,725 above the 3,275 starter is spare and 875 more comes from the protected part, so Not yet becomes Dips into your safety net.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -115,9 +115,9 @@
         "variant": null,
         "afterBuyMonth": 74000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35/FIN-02: Maya's 90-day path goes below 0 with no pay recorded; her 3,000 net carries it, so Not yet becomes Dips into your safety net.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -132,9 +132,9 @@
         "variant": null,
         "afterBuyMonth": 30000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35/FIN-02: the 90-day path only stays above 0 with money from Maya's 3,000 net, so Not yet becomes Dips into your safety net.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -149,9 +149,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35/FIN-02: the plan's payments take the 90-day path below 0 and Maya's net carries it, so Not yet becomes Dips into your safety net.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -166,9 +166,9 @@
         "variant": null,
         "afterBuyMonth": -36000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35/FIN-02: Riley's typical month is short; her 2,000 net (below its 3,100 starter) carries the 60 shoes, so Not yet becomes Dips into your safety net.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -183,9 +183,9 @@
         "variant": null,
         "afterBuyMonth": -80000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35/FIN-02: the 500 purchase is more than Riley's spare money, and her 2,000 net covers it, so Not yet becomes Dips into your safety net.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -200,9 +200,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: the net now carries the one-off part, so the answer is led by the monthly payment, which her short month cannot carry: Not yet becomes Short each month.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -217,9 +217,9 @@
         "variant": null,
         "afterBuyMonth": -19484
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: Leo's 3,000 fund is 620 above his 2,380 starter, and money above the size is spare, so Not yet becomes Fits from spare money and the net stays whole.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -234,9 +234,9 @@
         "variant": null,
         "afterBuyMonth": -147484
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35/D-41: Leo's spare money and the 620 above his net's size do not cover 2,000, so the rest comes from his net: Not yet becomes Dips into your safety net.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -251,9 +251,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: the net now carries the one-off part, so the answer is led by the monthly payment, which his usual month cannot carry: Not yet becomes Short each month.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -268,9 +268,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: Tia has no safety net, so a plan that fits is the amber Fits, but no safety net, with the line that 1 month is a start; same code and figures.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -285,9 +285,9 @@
         "variant": "small_net",
         "afterBuyMonth": 77710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: Dana's 3,000 net is below its 4,100 starter (bills, debt minimums and everyday spending), so a fit is the amber Fits, but your safety net is small.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -302,9 +302,9 @@
         "variant": "small_net",
         "afterBuyMonth": 33710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: Dana's 3,000 net is below its 4,100 starter, so the fit is the amber Fits, but your safety net is small; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -319,9 +319,9 @@
         "variant": "small_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: Dana's 3,000 net is below its 4,100 starter, so the fit from earlier money is the amber Fits, but your safety net is small.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -336,9 +336,9 @@
         "variant": "small_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: Dana's 3,000 net is below its 4,100 starter, so the plan that fits is the amber Fits, but your safety net is small; same code.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -353,9 +353,9 @@
         "variant": "small_net",
         "afterBuyMonth": 114000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: Priya's 1,500 net is just below its 1,600 starter, so a fit is the amber Fits, but your safety net is small; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -370,9 +370,9 @@
         "variant": "small_net",
         "afterBuyMonth": 70000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: Priya's 1,500 net is just below its 1,600 starter, so a fit is the amber Fits, but your safety net is small; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -387,9 +387,9 @@
         "variant": null,
         "afterBuyMonth": -80000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35/D-41: 2,000 is more than Priya's spare money, and her 1,500 net covers the rest, so Not yet becomes Dips into your safety net.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -404,9 +404,9 @@
         "variant": "small_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: Priya's 1,500 net is just below its 1,600 starter, so the plan that fits is the amber Fits, but your safety net is small; same code.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -421,9 +421,9 @@
         "variant": "no_net",
         "afterBuyMonth": 2000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -438,9 +438,9 @@
         "variant": "no_net",
         "afterBuyMonth": -100000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so the fit from earlier money is the amber Fits, but no safety net; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -455,9 +455,9 @@
         "variant": "no_net",
         "afterBuyMonth": -100000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so the fit from earlier money is the amber Fits, but no safety net; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -472,9 +472,9 @@
         "variant": "no_net",
         "afterBuyMonth": 54000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -489,9 +489,9 @@
         "variant": "no_net",
         "afterBuyMonth": 10000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -506,9 +506,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so the plan that fits is the amber Fits, but no safety net; same code.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -523,9 +523,9 @@
         "variant": "no_net",
         "afterBuyMonth": 69000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -540,9 +540,9 @@
         "variant": "no_net",
         "afterBuyMonth": 25000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -557,9 +557,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so the plan that fits is the amber Fits, but no safety net; same code.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -574,9 +574,9 @@
         "variant": "no_net",
         "afterBuyMonth": 69000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -591,9 +591,9 @@
         "variant": "no_net",
         "afterBuyMonth": 25000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -608,9 +608,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so the plan that fits is the amber Fits, but no safety net; same code.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -625,9 +625,9 @@
         "variant": "no_net",
         "afterBuyMonth": 74000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -642,9 +642,9 @@
         "variant": "no_net",
         "afterBuyMonth": 30000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -659,9 +659,9 @@
         "variant": "no_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so the fit from earlier money is the amber Fits, but no safety net; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -676,9 +676,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so the plan that fits is the amber Fits, but no safety net; same code.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -693,9 +693,9 @@
         "variant": "no_net",
         "afterBuyMonth": 74000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -710,9 +710,9 @@
         "variant": "no_net",
         "afterBuyMonth": 30000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -727,9 +727,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so the plan that fits is the amber Fits, but no safety net; same code.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -744,9 +744,9 @@
         "variant": "no_net",
         "afterBuyMonth": 14000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -761,9 +761,9 @@
         "variant": "no_net",
         "afterBuyMonth": 54000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so a fit is the amber Fits, but no safety net, with the line that 1 month is a start; same code and month figure.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -778,9 +778,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: no safety net is saved, so the plan that fits is the amber Fits, but no safety net; same code.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -795,9 +795,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: this person's fund is well above its 1-month starter; the money above the size is spare and keeps the 90-day path above 0, so Not yet (payday) becomes Fits.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -812,9 +812,9 @@
         "variant": null,
         "afterBuyMonth": 466194
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: the fund is far above its 1-month starter; the money above the size is spare and keeps the 90-day path above 0, so Not yet becomes Fits.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -829,9 +829,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35/FIN-02: spare money (with the money above the net's size) pays the price, but the 90-day path only stays above 0 with the net's money, so Not yet becomes Dips into your safety net.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -846,9 +846,9 @@
         "variant": null,
         "afterBuyMonth": 532125
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: the fund is far above its 1-month starter; the money above the size is spare and keeps the 90-day path above 0, so Not yet (payday) becomes Fits.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -863,9 +863,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: the money saved above the net's 1-month size is spare and keeps the 90-day path above 0, so Not yet becomes Fits from spare money.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01",
@@ -880,9 +880,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-35: the money above the net's size now carries the one-off part, so the answer is led by the monthly payment, which the usual month cannot carry: Not yet becomes Short each month.",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     }
   ]
 }
