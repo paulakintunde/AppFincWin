@@ -22,6 +22,7 @@ import {
 import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series, volatileInputs } from '../../__tests__/helpers/fixtures';
 import { toEngineInputs } from '../../__tests__/rightAnswers/fixture';
 import { loadCases } from '../../__tests__/rightAnswers/loader';
+import { TIER_CASES, rileyTier } from '../../__tests__/helpers/tierFixtures';
 import {
   COPY_RESOLVERS,
   DISCRIMINATOR_KEYS,
@@ -240,6 +241,11 @@ function buildCorpus(): Emitted[] {
   // 05.4 FIN-01 / FIN-02: every safety-net case (each net fact: off, $0, need and want, above the size, empty and small).
   for (const c of loadCases().filter((x) => x.topic === 'safety-net')) {
     const { inputs, check } = toEngineInputs(c.fixture);
+    collect(out, inputs, check);
+  }
+  // 05.4 D-65: the three tiers when the usual month is already short (month_short_fits, money_lasts_shorter).
+  for (const t of Object.values(TIER_CASES)) {
+    const { inputs, check } = rileyTier(t);
     collect(out, inputs, check);
   }
   return out;

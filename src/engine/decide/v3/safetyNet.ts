@@ -120,8 +120,19 @@ export function netDip(need: MinorUnits, fromAbove: MinorUnits, net: ResolvedNet
  * variant. D-62: extra_savings ("Fits from extra savings") sits above the net cautions; it never meets them (extra savings means
  * the net is above its size). D-63: month_already_short ("No: your month is already short") outranks every other variant when the
  * usual month is already short; the judge applies it to any answer but an ask.
+ * D-65: the three tiers (month_short_moderate_extra, month_short_moderate, month_short_small) refine it on a cash fit. They are
+ * exclusive (the judge picks one with monthShortTier) and, like month_already_short, outrank every fit variant.
  */
-export const FIT_VARIANT_ORDER: readonly Variant[] = ['month_already_short', 'low_month', 'extra_savings', 'no_net', 'small_net'];
+export const FIT_VARIANT_ORDER: readonly Variant[] = [
+  'month_already_short',
+  'month_short_moderate_extra',
+  'month_short_moderate',
+  'month_short_small',
+  'low_month',
+  'extra_savings',
+  'no_net',
+  'small_net',
+];
 
 /** The winning variant and the losers, in order. A losing variant's fact still shows. */
 export function fitVariant(candidates: readonly Variant[]): { readonly variant: Variant | null; readonly losers: readonly Variant[] } {

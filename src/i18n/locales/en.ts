@@ -3556,6 +3556,23 @@ const en = {
           title: 'No: your month is already short.',
           body: 'A usual month already costs more than comes in, before this. The lines below show by how much.',
         },
+        // 05.4 D-65: the usual month is already short; a cash fit that eats less than (Small) / at least (Moderate) one month of the
+        // spare money and extra savings propping it up.
+        monthShortSmall: {
+          chip: 'Fits, but your month is already short',
+          title: 'This fits, but your month is already short.',
+          body: 'A usual month already costs more than comes in. The lines below show by how much.',
+        },
+        monthShortModerate: {
+          chip: 'Fits from spare money, but your month is already short',
+          title: 'This fits from spare money, but your month is already short.',
+          body: 'A usual month already costs more than comes in. The lines below show by how much.',
+        },
+        monthShortModerateExtra: {
+          chip: 'Fits from extra savings, but your month is already short',
+          title: 'This fits from extra savings, but your month is already short.',
+          body: 'A usual month already costs more than comes in. The lines below show by how much.',
+        },
         // 05.4 D-62: paid in part from money saved above the safety net's size.
         fitsUnspentExtraSavings: {
           chip: 'Fits from extra savings',
@@ -3624,6 +3641,9 @@ const en = {
         interest_is_a_cost: 'This plan costs {{interest}} in interest, {{total}} in all: money that could stay with you.',
         balanced_month_room: 'A usual month that balances leaves room for a new payment. A usual month here is {{pay}} of pay against {{costs}} of bills, spending and debt minimums.',
         month_balance_gap: '{{gap}} a month of lower costs or higher income would balance your usual month, and then a new payment has room.',
+        // 05.4 D-65 tier lines
+        month_short_fits: 'This {{price}} fits your {{money}} of spare money and extra savings. Your usual month is {{short}} short.',
+        money_lasts_shorter: 'This shortens how long your money lasts at this shortfall, from {{months}} months to {{monthsAfter}}.',
         wait_keeps_net: 'Waiting until {{date}} keeps your safety net whole.',
         wait_keeps_net_month: 'Waiting until {{month}} keeps your safety net whole.',
         need_net_line: 'Marked as a need. A safety net is money kept for needs like this.',

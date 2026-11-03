@@ -1,5 +1,5 @@
 /**
- * The depletion lines (05.4 D-54, D-60, D-63). Pure; integer minor units; facts only, never a code or a figure elsewhere.
+ * The depletion lines (05.4 D-54, D-60, D-63) and the D-65 tiers. Pure; integer minor units; facts only, never a code or a figure elsewhere.
  *
  * They apply when the usual month is known and either:
  * - it is already short before the purchase (D-63: any answer but an ask; D-54 Short each month and Not yet, D-60a Dips), or
@@ -9,11 +9,20 @@
  * interest; 05.4-22 widens it to every plan answer, D-48); balanced_month_room; month_balance_gap (already short, D-63).
  * The interest line's total is deposit and fees paid on day one plus every plan payment: a first payment dated asOf is inside both
  * dayOne and schedule.totalPaid, so it is taken out of dayOne once (Plan-49 re-run, 2026-11-03: it was counted twice).
+ *
+ * monthShortTier (D-65, owner 2026-11-03, replaces D-63's single headline): "when the usual month is already short before the
+ * purchase, the headline depends on how much the purchase eats into the money propping up the month. 'How long your money lasts'
+ * = months the spare money + extra savings (never locked safety-net money, D-61) can cover the usual monthly shortfall. Small (cuts
+ * it by less than 1 month): 'Fits, but your month is already short' ... Moderate (cuts it by 1 month or more): 'Fits from [spare
+ * money / extra savings], but your month is already short' ... Large (needs the locked safety net, takes the 90-day path below $0,
+ * or a plan payment makes the month more short): 'No: your month is already short' (D-63's variant)."
  */
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { myPart, type ResolvedShare } from '../share';
 import type { ResolvedNet } from './safetyNet';
 import type { Code, Fact, Schedule } from './types';
+
+const FN = 'depletion';
 
 export interface DepletionInput {
   readonly code: Code;
@@ -66,4 +75,46 @@ export function depletionFacts(d: DepletionInput): Fact[] {
   out.push({ code: 'balanced_month_room', values: { pay: d.typicalIncome, costs: minorUnits(d.typicalIncome - TL) } });
   if (already) out.push({ code: 'month_balance_gap', values: { gap: minorUnits(-TL) } });
   return out;
+}
+
+export type ShortTier = 'month_short_small' | 'month_short_moderate' | 'month_short_moderate_extra' | 'month_already_short';
+
+export interface TierInput {
+  readonly code: Code;
+  /** The purchase's monthly cost (my share). */
+  readonly monthly: MinorUnits;
+  /** The usual month's leftover; below 0 here. */
+  readonly typicalLeft: MinorUnits;
+  /** The spare money judged against (this month and earlier, D-56 capped); null with no confirmed figure. */
+  readonly spare: MinorUnits | null;
+  readonly monthLeft: MinorUnits;
+  /** Extra savings: money saved above the net's size (D-56). The protected net is never counted (D-61). */
+  readonly aboveSize: MinorUnits;
+  /** What the purchase takes from spare money and extra savings (day one less its own envelope). */
+  readonly used: MinorUnits;
+  /** The split's extra_savings amount. */
+  readonly fromExtra: MinorUnits;
+}
+
+/**
+ * D-65: the headline when the usual month is already short. Large ('month_already_short', no tier fact) on any code but a cash fit
+ * (fits_month / fits_unspent), or with a monthly cost. Otherwise R = spare money (else this month's left, never below 0) + extra
+ * savings, never below what the purchase uses; S = the usual shortfall. used < S: Small, with month_short_fits. Else Moderate (from
+ * extra savings when the split takes some), with money_lasts_shorter: floor(R / S) months before, floor((R - used) / S) after. The shortfall
+ * itself is the usual_month_short line below it; the owner's wording names no figure ("at this shortfall").
+ */
+export function monthShortTier(t: TierInput): { readonly variant: ShortTier; readonly fact: Fact | null } {
+  if (t.typicalLeft >= 0) throw new RangeError(`${FN}: the usual month is not short`);
+  const S = -t.typicalLeft;
+  if ((t.code !== 'fits_month' && t.code !== 'fits_unspent') || t.monthly > 0) return { variant: 'month_already_short', fact: null };
+  const own = t.spare ?? t.monthLeft;
+  const money = (own > 0 ? own : 0) + (t.aboveSize > 0 ? t.aboveSize : 0);
+  const R = money > t.used ? money : t.used;
+  if (t.used < S) return { variant: 'month_short_small', fact: { code: 'month_short_fits', values: { price: t.used, money: minorUnits(R), short: minorUnits(S) } } };
+  const months = Number(BigInt(R) / BigInt(S));
+  const monthsAfter = Number(BigInt(R - t.used) / BigInt(S));
+  return {
+    variant: t.fromExtra > 0 ? 'month_short_moderate_extra' : 'month_short_moderate',
+    fact: { code: 'money_lasts_shorter', values: { months, monthsAfter } },
+  };
 }

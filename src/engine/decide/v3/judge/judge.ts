@@ -40,7 +40,7 @@ import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_
 import { addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck, CashPathV3 } from '../cash/path';
 import { cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit } from '../moneySource';
-import { depletionFacts, monthAlreadyShort } from '../depletion';
+import { depletionFacts, monthAlreadyShort, monthShortTier } from '../depletion';
 import { emergencyOf } from '../funds/emergency';
 import { NO_NET, fitVariant, netDip, type ResolvedNet } from '../safetyNet';
 import { noLimitFacts, otherOverdrawnFacts, overdraftUseFacts, type OverdraftCtx } from '../overdraft';
@@ -730,14 +730,29 @@ export function judge(j: JudgeInput): Result {
   );
   facts.push(...otherOverdrawnFacts(j.inputs.accounts)); // OD-08: a fact only, never the code
 
-  // 05.4 D-63: a usual month already short before the purchase is "No: your month is already short", with no ready-by date.
+  // 05.4 D-63 / D-65: a usual month already short before the purchase has no ready-by date, and its headline is one of three tiers:
+  // a cash fit that eats less than one month of the spare money and extra savings propping the month up (Small), one that eats a
+  // month or more (Moderate, from spare money or extra savings), else "No: your month is already short" (Large). A tier's line
+  // leads the answer, before the depletion lines. D-66: net_lasts stays gated by !net.locked in depletionFacts (do not loosen it).
   const alreadyShort = monthAlreadyShort(month.typicalLeft);
+  const tier = alreadyShort
+    ? monthShortTier({
+        code,
+        monthly: purchase.monthly,
+        typicalLeft: month.typicalLeft as MinorUnits,
+        spare: unspentValue,
+        monthLeft: month.monthLeft,
+        aboveSize: net.aboveSize,
+        used: mu(purchase.dayOne - fromEnvelope),
+        fromExtra: mu(fromExtra),
+      })
+    : null;
   return {
     code,
-    variant: alreadyShort ? 'month_already_short' : code === 'not_yet' ? notYetVariant : variant,
+    variant: tier !== null ? tier.variant : code === 'not_yet' ? notYetVariant : variant,
     legacyState: LEGACY_STATE_OF_CODE[code],
     split: keepSplit ? split : [],
-    facts,
+    facts: tier !== null && tier.fact !== null ? [tier.fact, ...facts] : facts,
     notices: mon === null ? notices : [...notices, ...mon.notices],
     missing: [],
     reasons: mon === null ? reasons : unique([...reasons, ...mon.reasons]),

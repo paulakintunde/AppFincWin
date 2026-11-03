@@ -50,8 +50,10 @@ describe('safety-net invariants', () => {
         // The previous rules: the net's money never counted. Protection off with nothing in it is exactly that.
         const before = run(withSafetyNet(base, { ...n, protect: false, saved: 0 }), check);
         if (off.parts.oneOff === 'fits_uses_net') {
-          // 05.4 D-63: an already-short usual month heads the answer instead
-          if (off.code === 'fits_uses_net') expect(['protection_off', 'month_already_short']).toContain(off.variant);
+          // 05.4 D-63 / D-65: an already-short usual month heads the answer instead (on Dips it is always the Large tier)
+          if (off.code === 'fits_uses_net') {
+            expect(['protection_off', 'month_already_short', 'month_short_small', 'month_short_moderate', 'month_short_moderate_extra']).toContain(off.variant);
+          }
           expect(codeRank(before.code)).toBeLessThanOrEqual(codeRank(off.code));
         } else {
           expect(answer(off)).toEqual(answer(before));

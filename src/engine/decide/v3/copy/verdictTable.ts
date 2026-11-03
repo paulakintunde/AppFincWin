@@ -41,6 +41,13 @@ export const VERDICT_TABLE = Object.freeze({
   'monthly_short.month_already_short': row('monthAlreadyShort', 'short'),
   'not_yet.month_already_short': row('monthAlreadyShort', 'short'),
   'emergency_use.month_already_short': row('monthAlreadyShort', 'short'),
+  // 05.4 D-65: the usual month is already short and a cash fit eats less than (Small) / at least (Moderate) one month of the spare
+  // money and extra savings propping it up. No new tone (design restraint).
+  'fits_month.month_short_small': row('monthShortSmall', 'caution'),
+  'fits_unspent.month_short_small': row('monthShortSmall', 'caution'),
+  'fits_month.month_short_moderate': row('monthShortModerate', 'caution'),
+  'fits_unspent.month_short_moderate': row('monthShortModerate', 'caution'),
+  'fits_unspent.month_short_moderate_extra': row('monthShortModerateExtra', 'caution'),
   'not_yet.payday': row('notYetPayday', 'caution'),
   'not_yet.not_covered': row('notYetNotCovered', 'short'),
   monthly_short: row('monthlyShort', 'short'),
@@ -73,6 +80,11 @@ const isUnspentVariant = (v: Variant | null): v is UnspentVariant => v !== null 
 export function verdictRowFor(code: Code, variant: Variant | null): VerdictRow {
   // D-63: one row for every answer but an ask.
   if (variant === 'month_already_short' && code !== 'needs_input') return VERDICT_TABLE[`${code}.month_already_short` as const];
+  // D-65: the Small and Moderate tiers are on a cash fit only; Moderate from extra savings on fits_unspent only.
+  if ((variant === 'month_short_small' || variant === 'month_short_moderate') && (code === 'fits_month' || code === 'fits_unspent')) {
+    return VERDICT_TABLE[`${code}.${variant}` as const];
+  }
+  if (variant === 'month_short_moderate_extra' && code === 'fits_unspent') return VERDICT_TABLE['fits_unspent.month_short_moderate_extra'];
   switch (code) {
     case 'fits_month':
       return isFitsVariant(variant) ? VERDICT_TABLE[`fits_month.${variant}` as const] : VERDICT_TABLE.fits_month;
@@ -171,6 +183,8 @@ export const FACT_KEYS = Object.freeze({
   interest_is_a_cost: 'decide.v3.fact.interest_is_a_cost',
   balanced_month_room: 'decide.v3.fact.balanced_month_room',
   month_balance_gap: 'decide.v3.fact.month_balance_gap',
+  month_short_fits: 'decide.v3.fact.month_short_fits',
+  money_lasts_shorter: 'decide.v3.fact.money_lasts_shorter',
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -308,6 +322,8 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   interest_is_a_cost: ['interest', 'total'],
   balanced_month_room: ['pay', 'costs'],
   month_balance_gap: ['gap'],
+  month_short_fits: ['price', 'money', 'short'],
+  money_lasts_shorter: ['months', 'monthsAfter'],
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({
