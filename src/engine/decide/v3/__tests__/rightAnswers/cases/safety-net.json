@@ -1822,6 +1822,407 @@
       "ownerReason": null,
       "expertNote": null,
       "plannerNote": "Engine (05.4-47 rules): fits_uses_net, null, afterBuy.month -20000, facts net_used, wait_keeps_net. Same fixture as approved SN-15 (which now states locked: false)."
+    },
+    {
+      "id": "SN-21",
+      "topic": "safety-net",
+      "persona": "Riley, a small cash buy in a short month (invented, D-65 Small, D-61, D-66)",
+      "situation": "November so far: $2,500 in on the 1st, bills $1,500 paid, $650 spent. On 15 November 2026 Riley has $5,000 in her everyday account (money from earlier months) and her safety net holds $2,000, its full size, locked (the default). She is looking at a $60 purchase, bought today and paid in one go. A usual month: pay $2,500 on the 1st, bills $1,500 and everyday spending $1,300 ($700 of it on essentials), so it ends $300 short.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 130000,
+          "essentialEveryday": 70000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 65000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 500000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 200000,
+          "saved": 200000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 6000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_unspent",
+        "variant": "month_short_small",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "usual_month_short",
+          "balanced_month_room",
+          "month_balance_gap",
+          "month_short_fits"
+        ],
+        "mustNotHaveFacts": [
+          "net_lasts",
+          "net_lasts_without",
+          "net_used"
+        ]
+      },
+      "why": "November is already $300 short ($2,500 - $1,500 - $650 spent - $650 still to come), so the $60 comes from spare money: $5,000 - $650 of everyday spending still to come = $4,350, and no money is above the safety net's size. D-65 Small: the $60 is less than one month of the $300 shortfall, so the headline is \"Fits, but your month is already short\" with \"This $60 fits your $4,350 of spare money and extra savings. Your usual month is $300 short.\" How long your money lasts = spare money + extra savings, never the locked safety net, divided by the usual shortfall. $4,350 / $300 = 14 months; $60 does not take a whole month off. The depletion lines show (D-54): the usual month is $300 short and $300 a month in lower costs or higher income balances it. The net is locked (D-61), so no line says how long it would last (D-66).",
+      "fixIds": [
+        "FIN-01"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Engine (05.4-51 rules, plan 50 tier fixture 'small'): fits_unspent / month_short_small, month_short_fits {price 6000, money 435000, short 30000}; no net_lasts or net_lasts_without while locked. Hand, plain calculator (plainTier) and engine agree; table.test pins it."
+    },
+    {
+      "id": "SN-22",
+      "topic": "safety-net",
+      "persona": "Riley, a moderate cash buy from spare money (invented, D-65 Moderate, D-61, D-66)",
+      "situation": "November so far: $2,500 in on the 1st, bills $1,500 paid, $650 spent. On 15 November 2026 Riley has $5,000 in her everyday account (money from earlier months) and her safety net holds $2,000, its full size, locked (the default). She is looking at a $1,000 purchase, bought today and paid in one go. A usual month: pay $2,500 on the 1st, bills $1,500 and everyday spending $1,300 ($700 of it on essentials), so it ends $300 short.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 130000,
+          "essentialEveryday": 70000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 65000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 500000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 200000,
+          "saved": 200000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 100000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_unspent",
+        "variant": "month_short_moderate",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "usual_month_short",
+          "balanced_month_room",
+          "month_balance_gap",
+          "money_lasts_shorter"
+        ],
+        "mustNotHaveFacts": [
+          "net_lasts",
+          "net_lasts_without",
+          "net_used"
+        ]
+      },
+      "why": "November is already $300 short, so the $1,000 comes from spare money ($5,000 - $650 still to come = $4,350; nothing above the safety net's size). D-65 Moderate: $1,000 takes more than one month of the $300 shortfall, so the headline is \"Fits from spare money, but your month is already short\" with \"This shortens how long your money lasts at this shortfall, from 14 months to 11.\" How long your money lasts = spare money + extra savings, never the locked safety net, divided by the usual shortfall. N = $4,350 / $300 = 14 (whole months); M = ($4,350 - $1,000) / $300 = $3,350 / $300 = 11. The depletion lines show; the locked net is left out and no line says how long it would last (D-61, D-66).",
+      "fixIds": [
+        "FIN-01"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Engine (05.4-51 rules, plan 50 tier fixture 'moderate'): fits_unspent / month_short_moderate, money_lasts_shorter {months 14, monthsAfter 11}. Hand, plain calculator and engine agree; table.test pins it."
+    },
+    {
+      "id": "SN-23",
+      "topic": "safety-net",
+      "persona": "Riley, a moderate cash buy from extra savings (invented, D-65 Moderate, D-56, D-62, D-61, D-66)",
+      "situation": "November so far: $2,500 in on the 1st, bills $1,500 paid, $650 spent. On 15 November 2026 Riley has $1,000 in her everyday account and $6,000 in her safety-net savings account; the net's size is $2,000, locked (the default), so $4,000 is above its size. She is looking at a $2,000 purchase, bought today and paid in one go. A usual month: pay $2,500 on the 1st, bills $1,500 and everyday spending $1,300 ($700 of it on essentials), so it ends $300 short.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 130000,
+          "essentialEveryday": 70000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 65000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 600000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 200000,
+          "saved": 600000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_unspent",
+        "variant": "month_short_moderate_extra",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "usual_month_short",
+          "balanced_month_room",
+          "month_balance_gap",
+          "money_lasts_shorter",
+          "extra_savings_used"
+        ],
+        "mustNotHaveFacts": [
+          "net_lasts",
+          "net_lasts_without",
+          "net_used"
+        ]
+      },
+      "why": "November is already $300 short. Spare money is $1,000 - $650 still to come = $350, and $4,000 is extra savings (saved above the $2,000 size, D-56), so $4,350 props up the month. The $2,000 is more than the $350 of spare money, so extra savings pay $1,650 of it (D-62: \"From your extra savings: uses $1,650 of the $4,000 above your safety net's size\"). D-65 Moderate from extra savings: the headline is \"Fits from extra savings, but your month is already short\" with \"This shortens how long your money lasts at this shortfall, from 14 months to 7.\" How long your money lasts = spare money + extra savings, never the locked safety net, divided by the usual shortfall. N = $4,350 / $300 = 14; M = ($4,350 - $2,000) / $300 = $2,350 / $300 = 7. The locked $2,000 is never counted and no line says how long it would last (D-61, D-66).",
+      "fixIds": [
+        "FIN-01"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Engine (05.4-51 rules, plan 50 tier fixture 'moderateExtra'): fits_unspent / month_short_moderate_extra, split month 0 + unspent_earlier 35000 + extra_savings 165000, money_lasts_shorter {14, 7}, extra_savings_used {used 165000, above 400000}. Hand, plain calculator and engine agree; table.test pins it."
+    },
+    {
+      "id": "SN-24",
+      "topic": "safety-net",
+      "persona": "Riley, a cash buy only the locked net could pay (invented, D-65 Large, D-61, D-66)",
+      "situation": "November so far: $2,500 in on the 1st, bills $1,500 paid, $650 spent. On 15 November 2026 Riley has $1,000 in her everyday account and her safety net holds $2,000, its full size, locked (the default). She is looking at a $1,500 purchase, bought today and paid in one go. A usual month: pay $2,500 on the 1st, bills $1,500 and everyday spending $1,300 ($700 of it on essentials), so it ends $300 short.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 130000,
+          "essentialEveryday": 70000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 65000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 200000,
+          "saved": 200000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "usual_month_short",
+          "balanced_month_room",
+          "month_balance_gap",
+          "net_locked"
+        ],
+        "mustNotHaveFacts": [
+          "net_lasts",
+          "net_lasts_without",
+          "net_used"
+        ]
+      },
+      "why": "November is already $300 short. Spare money is $1,000 - $650 still to come = $350 and nothing is above the safety net's size, so only the locked net could pay the $1,500: \"Not yet\" (D-61). D-65 Large (it needs the locked safety net): the headline is \"No: your month is already short\", with no ready-by date. How long your money lasts = spare money + extra savings, never the locked safety net, divided by the usual shortfall. Here that is $350 / $300 = 1 month, and the purchase is more than it. The depletion lines show: the usual month is $300 short and $300 a month in lower costs or higher income balances it. The locked net is left out and no line says how long it would last (D-66).",
+      "fixIds": [
+        "FIN-01"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Engine (05.4-51 rules, plan 50 tier fixture 'large'): not_yet / month_already_short, net_locked, readyBy null, no net_lasts. Hand, plain calculator and engine agree; table.test pins it."
     }
   ]
 }

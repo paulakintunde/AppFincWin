@@ -1469,6 +1469,112 @@
       "approvedAt": "2026-11-02",
       "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
       "expertNote": null
+    },
+    {
+      "id": "BR-16",
+      "topic": "borrowing",
+      "persona": "Riley, a plan with a deposit and the first payment today, in a short month (invented, D-63, D-65, Plan-49 re-run)",
+      "situation": "November so far: $2,500 in on the 1st, bills $1,500 paid, $650 spent. On 15 November 2026 Riley has $5,000 in her everyday account (money from earlier months) and her safety net holds $2,000, its full size, locked (the default). She looks at a $9,000 car on a 48-month plan at 7.9% with a $500 deposit, the first payment due today, 15 November 2026. A usual month: pay $2,500 on the 1st, bills $1,500 and everyday spending $1,300 ($700 of it on essentials), so it ends $300 short.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 130000,
+          "essentialEveryday": 70000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 65000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 500000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 200000,
+          "saved": 200000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 900000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 48,
+            "apr": "7.9",
+            "fees": 0,
+            "deposit": 50000,
+            "firstPaymentDate": "2026-11-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "interest_is_a_cost",
+          "depletion_payment",
+          "balanced_month_room",
+          "month_balance_gap"
+        ],
+        "mustNotHaveFacts": [
+          "net_lasts",
+          "net_lasts_without",
+          "net_used"
+        ]
+      },
+      "why": "Her usual month is already $300 short, so a new monthly payment cannot fit: \"Short each month\", with the headline \"No: your month is already short\" (D-63; a plan payment makes the month more short, so it is D-65's Large tier) and no ready-by date. The $8,500 left after the deposit is paid off in 48 payments of $205.76 (the last $205.57), the first of them today. The plan's total is the deposit plus every payment, each counted once (Plan-49 re-run: the payment due today is one of the 48, not an extra one): $500 + 47 x $205.76 + $205.57 = $10,376.29, so it costs $1,376.29 in interest, money that could stay with her. The day-one cost ($500 + $205.76) comes from her $4,350 of spare money. The depletion lines show (D-54): the $205.76 payment takes the usual month from $300 short to $505.76 short, the $9,000 price is more than her $2,000 safety net, and $300 a month in lower costs or higher income balances the month; the net is locked, so no line says how long it would last (D-61, D-66).",
+      "fixIds": [
+        "FIN-01",
+        "FIN-05"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Hand total 1037629 (plainPlanTotal) equals the engine's interest_is_a_cost total when the first payment is read as today ({interest 137629, total 1037629}; table.test pins it). Through the right-answer fixture the engine asks first (needs_input, pause_interest_not_answered): toEngineInputs maps every plan's first payment as a deferral with the pause question unanswered, and mapping first-payment choices is FIN-05 / BO-05's (all BR cases are knownRed FIN-05). With the first payment as today the engine gives monthly_short / month_already_short with the listed facts."
     }
   ]
 }

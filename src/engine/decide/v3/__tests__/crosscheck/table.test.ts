@@ -215,3 +215,46 @@ describe('plain calculator: the interest total and the move-by saving (05.4-51, 
     expect(plainPlanTotal(f)).toBe(0n);
   });
 });
+
+describe('05.4-51 drafts: the D-65 tiers SN-21..SN-24 and the deposit-and-today plan BR-16 (hand, plain calculator and engine agree)', () => {
+  const byId = (id: string) => {
+    const c = loadCases().find((x) => x.id === id);
+    if (c === undefined) throw new RangeError(id);
+    return c;
+  };
+  it.each(['SN-21', 'SN-22', 'SN-23', 'SN-24'])('%s: the engine and the plain calculator give the expected tier and facts', (id) => {
+    const c = byId(id);
+    expect(c.status).toBe('draft');
+    const { inputs, check } = toEngineInputs(c.fixture);
+    const r = evaluate(inputs, check).result;
+    expect({ code: r.code, variant: r.variant, readyBy: r.readyBy }).toEqual({ code: c.expected.code, variant: c.expected.variant, readyBy: null });
+    const codes = r.facts.map((x) => x.code);
+    expect(codes).toEqual(expect.arrayContaining(c.expected.mustHaveFacts));
+    for (const no of c.expected.mustNotHaveFacts) expect(codes).not.toContain(no);
+    const plain = plainAnswer(c.fixture);
+    expect({ code: plain.code, variant: plain.variant }).toEqual({ code: c.expected.code, variant: c.expected.variant });
+  });
+  it('SN-22 / SN-23: N and M by hand (14 -> 11, 14 -> 7)', () => {
+    const lasts = (id: string) => {
+      const { inputs, check } = toEngineInputs(byId(id).fixture);
+      return evaluate(inputs, check).result.facts.find((x) => x.code === 'money_lasts_shorter')?.values;
+    };
+    expect(lasts('SN-22')).toEqual({ months: 14, monthsAfter: 11 });
+    expect(lasts('SN-23')).toEqual({ months: 14, monthsAfter: 7 });
+    expect(plainTier(byId('SN-23').fixture, 'fits_unspent')).toEqual({ variant: 'month_short_moderate_extra', months: 14, monthsAfter: 7 });
+  });
+  it('BR-16: deposit + every payment once ($10,376.29), the engine total when the first payment is today', () => {
+    const c = byId('BR-16');
+    expect(plainPlanTotal(c.fixture)).toBe(1_037_629n);
+    const { inputs, check } = toEngineInputs(c.fixture);
+    const today = check.pay.mode === 'plan' ? { ...check, pay: { ...check.pay, firstPayment: { kind: 'today' as const } } } : check;
+    const r = evaluate(inputs, today).result;
+    expect({ code: r.code, variant: r.variant }).toEqual({ code: c.expected.code, variant: c.expected.variant });
+    expect(r.facts.find((x) => x.code === 'interest_is_a_cost')?.values).toEqual({ interest: 137_629, total: 1_037_629 });
+    expect(r.facts.map((x) => x.code)).toEqual(expect.arrayContaining(c.expected.mustHaveFacts));
+    for (const no of c.expected.mustNotHaveFacts) expect(r.facts.map((x) => x.code)).not.toContain(no);
+    expect(plainAnswer(c.fixture)).toMatchObject({ code: 'monthly_short', variant: 'month_already_short' });
+    // through the fixture as written the engine asks the pause question first (first-payment mapping is FIN-05 / BO-05's)
+    expect(evaluate(inputs, check).result.missing).toContain('pause_interest_not_answered');
+  });
+});
