@@ -469,7 +469,7 @@
       },
       "after": {
         "code": "fits_unspent",
-        "variant": "month_already_short",
+        "variant": "month_short_small",
         "afterBuyMonth": -100000
       },
       "reason": "",
@@ -486,7 +486,7 @@
       },
       "after": {
         "code": "fits_unspent",
-        "variant": "month_already_short",
+        "variant": "month_short_moderate",
         "afterBuyMonth": -100000
       },
       "reason": "",
@@ -825,9 +825,145 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_month",
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:1",
+      "before": {
+        "code": "needs_input",
         "variant": null,
         "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:3",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuyMonth": 84211
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:4",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:7",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:9",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:10",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:11",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:12",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": -9314
       },
       "reason": "",
       "approved": false,
@@ -842,9 +978,26 @@
         "afterBuyMonth": null
       },
       "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:14",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
         "code": "fits_unspent",
-        "variant": "month_already_short",
-        "afterBuyMonth": -578983
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -859,9 +1012,9 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 200683
       },
       "reason": "",
       "approved": false,
@@ -869,16 +1022,33 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:16",
+      "key": "gen:17",
       "before": {
         "code": "needs_input",
         "variant": null,
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "not_covered",
+        "code": "fits_unspent",
+        "variant": "month_short_moderate",
+        "afterBuyMonth": -1605
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:18",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuyMonth": 214711
       },
       "reason": "",
       "approved": false,
@@ -894,7 +1064,7 @@
       },
       "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
+        "variant": "not_covered",
         "afterBuyMonth": null
       },
       "reason": "",
@@ -910,9 +1080,9 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -927,8 +1097,25 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_month",
-        "variant": "small_net",
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:22",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "reason": "",
@@ -937,16 +1124,16 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:26",
+      "key": "gen:23",
       "before": {
         "code": "needs_input",
         "variant": null,
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "not_covered",
-        "afterBuyMonth": null
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": 75749
       },
       "reason": "",
       "approved": false,
@@ -954,7 +1141,24 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:27",
+      "key": "gen:24",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuyMonth": 20808
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:25",
       "before": {
         "code": "needs_input",
         "variant": null,
@@ -962,8 +1166,8 @@
       },
       "after": {
         "code": "fits_unspent",
-        "variant": "month_already_short",
-        "afterBuyMonth": -650888
+        "variant": "no_net",
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -978,9 +1182,9 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "not_covered",
-        "afterBuyMonth": null
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": -106693
       },
       "reason": "",
       "approved": false,
@@ -997,7 +1201,7 @@
       "after": {
         "code": "monthly_short",
         "variant": "month_already_short",
-        "afterBuyMonth": -323512
+        "afterBuyMonth": -139730
       },
       "reason": "",
       "approved": false,
@@ -1012,9 +1216,43 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_month",
-        "variant": "small_net",
-        "afterBuyMonth": 422206
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:33",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:34",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 410776
       },
       "reason": "",
       "approved": false,
@@ -1030,7 +1268,7 @@
       },
       "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
+        "variant": "payday",
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1047,7 +1285,7 @@
       },
       "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
+        "variant": "not_covered",
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1063,8 +1301,8 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1080,8 +1318,8 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1090,16 +1328,33 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:41",
+      "key": "gen:40",
       "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
+        "variant": "not_covered",
         "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:42",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1114,9 +1369,9 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_month",
-        "variant": null,
-        "afterBuyMonth": 466194
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
       },
       "reason": "",
       "approved": false,
@@ -1132,8 +1387,25 @@
       },
       "after": {
         "code": "fits_unspent",
-        "variant": "month_already_short",
-        "afterBuyMonth": -120713
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:46",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1148,9 +1420,26 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_month",
+        "code": "fits_unspent",
+        "variant": "small_net",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:48",
+      "before": {
+        "code": "needs_input",
         "variant": null,
         "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": -63402
       },
       "reason": "",
       "approved": false,
@@ -1166,8 +1455,110 @@
       },
       "after": {
         "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:50",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:51",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": -11821
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:52",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
         "variant": "month_already_short",
         "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:53",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:54",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:55",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1182,9 +1573,43 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "monthly_short",
+        "variant": null,
         "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:58",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:59",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "low_month",
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1199,9 +1624,9 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1226,6 +1651,74 @@
     },
     {
       "fixId": "FIN-01",
+      "key": "gen:62",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:64",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:65",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:66",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 53993
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
       "key": "gen:67",
       "before": {
         "code": "needs_input",
@@ -1233,9 +1726,9 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "monthly_short",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1250,7 +1743,7 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_unspent",
+        "code": "monthly_short",
         "variant": null,
         "afterBuyMonth": 0
       },
@@ -1267,9 +1760,77 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_month",
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:70",
+      "before": {
+        "code": "needs_input",
         "variant": null,
-        "afterBuyMonth": 532125
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:71",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:72",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:73",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
       },
       "reason": "",
       "approved": false,
@@ -1285,8 +1846,93 @@
       },
       "after": {
         "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:76",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:77",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:79",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
         "variant": "month_already_short",
         "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:80",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:81",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1302,8 +1948,59 @@
       },
       "after": {
         "code": "fits_month",
-        "variant": "small_net",
-        "afterBuyMonth": 426919
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:83",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:84",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:85",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
       },
       "reason": "",
       "approved": false,
@@ -1318,9 +2015,26 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "fits_unspent",
+        "variant": "month_short_moderate",
+        "afterBuyMonth": -53492
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:87",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 33171
       },
       "reason": "",
       "approved": false,
@@ -1335,9 +2049,9 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1345,16 +2059,33 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:91",
+      "key": "gen:89",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": -86975
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:90",
       "before": {
         "code": "not_yet",
         "variant": "not_covered",
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1369,8 +2100,59 @@
         "afterBuyMonth": null
       },
       "after": {
+        "code": "fits_unspent",
+        "variant": "month_short_moderate_extra",
+        "afterBuyMonth": -11761
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:93",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:95",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:96",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1387,8 +2169,8 @@
       },
       "after": {
         "code": "fits_unspent",
-        "variant": "month_already_short",
-        "afterBuyMonth": -594327
+        "variant": null,
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1403,8 +2185,8 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1421,118 +2203,16 @@
       },
       "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
-      },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
-    },
-    {
-      "fixId": "FIN-01",
-      "key": "gen:101",
-      "before": {
-        "code": "needs_input",
-        "variant": null,
-        "afterBuyMonth": null
-      },
-      "after": {
-        "code": "fits_month",
-        "variant": null,
-        "afterBuyMonth": null
-      },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
-    },
-    {
-      "fixId": "FIN-01",
-      "key": "gen:102",
-      "before": {
-        "code": "not_yet",
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
-      },
       "reason": "",
       "approved": false,
       "approvedAt": null
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:103",
-      "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
-        "afterBuyMonth": null
-      },
-      "after": {
-        "code": "monthly_short",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
-      },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
-    },
-    {
-      "fixId": "FIN-01",
-      "key": "gen:105",
-      "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
-        "afterBuyMonth": null
-      },
-      "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
-      },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
-    },
-    {
-      "fixId": "FIN-01",
-      "key": "gen:111",
-      "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
-        "afterBuyMonth": null
-      },
-      "after": {
-        "code": "fits_month",
-        "variant": "low_month",
-        "afterBuyMonth": 111465
-      },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
-    },
-    {
-      "fixId": "FIN-01",
-      "key": "gen:112",
-      "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
-        "afterBuyMonth": null
-      },
-      "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
-      },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
-    },
-    {
-      "fixId": "FIN-01",
-      "key": "gen:113",
+      "key": "gen:100",
       "before": {
         "code": "not_yet",
         "variant": "not_covered",
@@ -1549,6 +2229,244 @@
     },
     {
       "fixId": "FIN-01",
+      "key": "gen:101",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:102",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:103",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:105",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 20515
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:106",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:107",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "low_month",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:109",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:110",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 234278
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:111",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:112",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": -49453
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:113",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:114",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "month_short_moderate",
+        "afterBuyMonth": -106079
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:115",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:116",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
       "key": "gen:117",
       "before": {
         "code": "not_yet",
@@ -1556,8 +2474,8 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1574,8 +2492,42 @@
       },
       "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
+        "variant": "not_covered",
         "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:119",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:120",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1590,25 +2542,8 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "not_covered",
-        "afterBuyMonth": null
-      },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
-    },
-    {
-      "fixId": "FIN-01",
-      "key": "gen:122",
-      "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
-        "afterBuyMonth": null
-      },
-      "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "monthly_short",
+        "variant": null,
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1625,7 +2560,7 @@
       },
       "after": {
         "code": "fits_unspent",
-        "variant": null,
+        "variant": "extra_savings",
         "afterBuyMonth": 0
       },
       "reason": "",
@@ -1634,15 +2569,15 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:125",
+      "key": "gen:124",
       "before": {
         "code": "not_yet",
         "variant": "not_covered",
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1660,6 +2595,74 @@
       "after": {
         "code": "monthly_short",
         "variant": "month_already_short",
+        "afterBuyMonth": -2386
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:127",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:128",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:129",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "no_net",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:130",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1675,9 +2678,9 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_month",
-        "variant": "small_net",
-        "afterBuyMonth": 150757
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1692,8 +2695,8 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1709,8 +2712,8 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1719,7 +2722,109 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:134",
+      "key": "gen:135",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:138",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:139",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:141",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:142",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:143",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:144",
       "before": {
         "code": "not_yet",
         "variant": "not_covered",
@@ -1736,40 +2841,6 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:135",
-      "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
-        "afterBuyMonth": null
-      },
-      "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
-      },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
-    },
-    {
-      "fixId": "FIN-01",
-      "key": "gen:144",
-      "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
-        "afterBuyMonth": null
-      },
-      "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
-      },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
-    },
-    {
-      "fixId": "FIN-01",
       "key": "gen:146",
       "before": {
         "code": "not_yet",
@@ -1777,8 +2848,25 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:147",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1787,15 +2875,32 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:149",
+      "key": "gen:148",
       "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:150",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
+        "variant": "not_covered",
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1828,9 +2933,9 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_unspent",
-        "variant": "no_net",
-        "afterBuyMonth": 0
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 87311
       },
       "reason": "",
       "approved": false,
@@ -1838,16 +2943,16 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:154",
+      "key": "gen:153",
       "before": {
         "code": "needs_input",
         "variant": null,
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_unspent",
-        "variant": "month_already_short",
-        "afterBuyMonth": -596186
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
       },
       "reason": "",
       "approved": false,
@@ -1862,9 +2967,60 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:158",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:159",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:160",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1879,8 +3035,59 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
+        "code": "monthly_short",
         "variant": "month_already_short",
+        "afterBuyMonth": -218233
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:163",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 21307
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:164",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:165",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1896,9 +3103,26 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:167",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 229109
       },
       "reason": "",
       "approved": false,
@@ -1913,9 +3137,9 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_month",
+        "code": "fits_unspent",
         "variant": null,
-        "afterBuyMonth": 538508
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -1930,8 +3154,25 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
+        "code": "monthly_short",
         "variant": "month_already_short",
+        "afterBuyMonth": -146870
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:170",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1940,15 +3181,15 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:171",
+      "key": "gen:172",
       "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
+        "variant": "not_covered",
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1964,9 +3205,9 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": 149144
       },
       "reason": "",
       "approved": false,
@@ -1981,8 +3222,25 @@
         "afterBuyMonth": null
       },
       "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 57482
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:176",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 345497
+      },
+      "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
+        "variant": "not_covered",
         "afterBuyMonth": null
       },
       "reason": "",
@@ -1991,15 +3249,32 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:175",
+      "key": "gen:177",
       "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:178",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
+        "variant": "not_covered",
         "afterBuyMonth": null
       },
       "reason": "",
@@ -2008,15 +3283,49 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:183",
+      "key": "gen:179",
       "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "no_net",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:182",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:186",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
+        "variant": "not_covered",
         "afterBuyMonth": null
       },
       "reason": "",
@@ -2032,7 +3341,24 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "fits_unspent",
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:188",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
         "variant": null,
         "afterBuyMonth": 0
       },
@@ -2059,16 +3385,16 @@
     },
     {
       "fixId": "FIN-01",
-      "key": "gen:191",
+      "key": "gen:190",
       "before": {
-        "code": "not_yet",
-        "variant": "not_covered",
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "after": {
-        "code": "not_yet",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -2083,8 +3409,8 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "monthly_short",
-        "variant": "month_already_short",
+        "code": "needs_input",
+        "variant": null,
         "afterBuyMonth": null
       },
       "reason": "",
@@ -2100,8 +3426,25 @@
         "afterBuyMonth": null
       },
       "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 90987
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:195",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
         "code": "not_yet",
-        "variant": "month_already_short",
+        "variant": "not_covered",
         "afterBuyMonth": null
       },
       "reason": "",
@@ -2117,9 +3460,26 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "monthly_short",
+        "code": "needs_input",
         "variant": null,
-        "afterBuyMonth": 25670
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-01",
+      "key": "gen:198",
+      "before": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
       },
       "reason": "",
       "approved": false,
@@ -2134,9 +3494,9 @@
         "afterBuyMonth": null
       },
       "after": {
-        "code": "monthly_short",
-        "variant": "month_already_short",
-        "afterBuyMonth": null
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuyMonth": 238
       },
       "reason": "",
       "approved": false,
