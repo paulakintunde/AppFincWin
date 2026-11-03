@@ -3644,6 +3644,8 @@ const en = {
         // 05.4 D-65 tier lines
         month_short_fits: 'This {{price}} fits your {{money}} of spare money and extra savings. Your usual month is {{short}} short.',
         money_lasts_shorter: 'This shortens how long your money lasts at this shortfall, from {{months}} months to {{monthsAfter}}.',
+        // 05.4 D-68: a short plan paid from money on hand. Declarative only.
+        short_plan_from_cash: 'This plan’s {{monthly}} a month is more than your usual month can cover, so it is paid from money on hand.',
         wait_keeps_net: 'Waiting until {{date}} keeps your safety net whole.',
         wait_keeps_net_month: 'Waiting until {{month}} keeps your safety net whole.',
         need_net_line: 'Marked as a need. A safety net is money kept for needs like this.',

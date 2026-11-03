@@ -185,6 +185,7 @@ export const FACT_KEYS = Object.freeze({
   month_balance_gap: 'decide.v3.fact.month_balance_gap',
   month_short_fits: 'decide.v3.fact.month_short_fits',
   money_lasts_shorter: 'decide.v3.fact.money_lasts_shorter',
+  short_plan_from_cash: 'decide.v3.fact.short_plan_from_cash', // 05.4 D-68
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -324,6 +325,7 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   month_balance_gap: ['gap'],
   month_short_fits: ['price', 'money', 'short'],
   money_lasts_shorter: ['months', 'monthsAfter'],
+  short_plan_from_cash: ['monthly'], // 05.4 D-68
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({

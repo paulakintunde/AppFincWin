@@ -22,6 +22,9 @@
  * Overdraft (05.4 FIN-03, D-26..D-28, D-36..D-38): a 90-day low point below 0 but not past the overdraft floor turns any fit
  * into fits_uses_overdraft (variant not_cleared when the next pay does not clear it); past the floor is not_yet (D-27).
  * Monthly part: typicalLeft - M < 0 -> monthly_short; lowLeft - M < 0 -> fits with the low-month clause (I23).
+ * D-68 (judge/shortPlan.ts): a plan whose payments all fall inside the 90 days, with no running cost, whose monthly part does not
+ * fit and whose whole cost the one-off ladder covers as a cash fit on the dated path, is judged as that one-off; the monthly part
+ * no longer leads, and the answer carries the short_plan_from_cash caution line.
  * The stricter part leads (CODE_PRECEDENCE). The funding split always sums to P (month, own envelope, earlier unspent, and
  * 'emergency' for money taken from the safety net's account). The user's confirmed (rolled) unspent figure is always the one judged against,
  * even when it has drifted (D-30); drift only adds a notice and the unspent_drifted reason.
@@ -71,6 +74,7 @@ import type {
 import { evaluateLines } from './lines';
 import { needsInput } from './needsInput';
 import { firstPaymentsToday } from './purchase';
+import { shortPlanByCash } from './shortPlan';
 
 export interface JudgeInput {
   readonly inputs: V3Inputs;
@@ -590,7 +594,7 @@ export function judge(j: JudgeInput): Result {
   // below 0 is the cash check's and the overdraft's to judge, D-27, D-28). Absent account (hand-built tests): no cap.
   const confirmed = confirmedUnspent(funds);
   const unspentValue = j.account == null ? confirmed : cappedSpare(confirmed, j.account.spareInAccount);
-  const one = missing.length > 0 || p === null ? null : oneOffPart(j, { unspent: unspentValue, envelope: funds.ownEnvelope });
+  const oneRaw = missing.length > 0 || p === null ? null : oneOffPart(j, { unspent: unspentValue, envelope: funds.ownEnvelope });
 
   const asking = (parts: Result['parts'], ask: readonly MissingCode[], extra: readonly Notice[] = []): Result => ({
     code: 'needs_input',
@@ -608,35 +612,45 @@ export function judge(j: JudgeInput): Result {
     parts,
   });
 
-  if (one === null || one.code === 'needs_input') return asking({ oneOff: 'needs_input', monthly: null }, missing);
+  if (oneRaw === null || oneRaw.code === 'needs_input') return asking({ oneOff: 'needs_input', monthly: null }, missing);
 
   const purchase = p as Purchase;
-  const fromMonth = one.split.find((s) => s.source === 'month')?.amount ?? 0;
-  const fromEarlier = one.split.find((s) => s.source === 'unspent_earlier')?.amount ?? 0;
-  const fromEnvelope = one.split.find((s) => s.source === 'envelope')?.amount ?? 0;
+  const segment = (part: OneOffPart, source: FundingSegment['source']): number => part.split.find((s) => s.source === source)?.amount ?? 0;
+  const available = unspentValue === null ? null : mu(unspentValue);
   const mon = monthlyPart(month, purchase.monthly, {
     asOf: j.inputs.asOf,
     purchase,
-    available: unspentValue === null ? null : mu(unspentValue),
-    takenByOneOff: mu(fromMonth + fromEarlier),
+    available,
+    takenByOneOff: mu(segment(oneRaw, 'month') + segment(oneRaw, 'unspent_earlier')),
     expected: j.inputs.expectedIncome ?? [],
   });
-  if (mon !== null && mon.code === 'needs_input') return asking({ oneOff: one.code, monthly: 'needs_input' }, mon.missing, mon.notices);
+  if (mon !== null && mon.code === 'needs_input') return asking({ oneOff: oneRaw.code, monthly: 'needs_input' }, mon.missing, mon.notices);
 
-  const code = mon === null ? one.code : stricter(one.code, mon.code);
+  // 05.4 D-68: a short plan that money on hand pays in full inside the 90 days is judged by cash, as a one-off of its whole cost.
+  // Everything below reads `one` and `dayOne`, so they are that one-off's; with no D-68 they are the plan's own (nothing moves).
+  const cashPlan = shortPlanByCash(j, purchase, mon, available, oneOffPart);
+  const one = cashPlan === null ? oneRaw : cashPlan.one;
+  const dayOne = cashPlan === null ? purchase.dayOne : cashPlan.total;
+  const fromMonth = segment(one, 'month');
+  const fromEarlier = segment(one, 'unspent_earlier');
+  const fromEnvelope = segment(one, 'envelope');
+  // The monthly part's bridge, why, rests, saidCover and reasons explain a monthly judgement that no longer decides; its notices
+  // stay (income_volatile is shown whatever the answer, D-48).
+  const said = cashPlan === null ? mon : null;
+  const code = mon === null || cashPlan !== null ? one.code : stricter(one.code, mon.code);
   const lowClause = mon !== null && mon.lowClause;
   const net = j.net ?? NO_NET;
   // 05.4 FIN-03 (D-26, D-36, D-37): the one-off part uses the overdraft. Its facts lead, the not-cleared warning first.
-  const od = one.code === 'fits_uses_overdraft' && j.overdraft != null ? overdraftUseFacts(j.inputs.accounts, j.overdraft, readyMonth(month, purchase.dayOne, unspentValue)) : null;
+  const od = one.code === 'fits_uses_overdraft' && j.overdraft != null ? overdraftUseFacts(j.inputs.accounts, j.overdraft, readyMonth(month, dayOne, unspentValue)) : null;
   // 05.4 D-35: a fit while the net is empty or below its size is amber; the variant order is fixed (fitVariant) and a losing
   // variant still shows its fact. Protection off (or a $0 net) has no net caution, only protection_off when its money is used.
   const netState: Variant | null = net.off ? null : net.state === 'none' ? 'no_net' : net.state === 'small' ? 'small_net' : null;
   // D-56: on Dips into your safety net, the protected figure is fixed once, and the split is rebuilt around it so its 'emergency'
   // segment equals net_used and the split sums to the price paid on day one.
-  const protectedUsed = mu(Math.min(Math.max(one.netUsed, one.cashNet), net.usable, purchase.dayOne - fromEnvelope));
+  const protectedUsed = mu(Math.min(Math.max(one.netUsed, one.cashNet), net.usable, dayOne - fromEnvelope));
   const split: readonly FundingSegment[] =
     one.code === 'fits_uses_net'
-      ? sourceSplit({ dayOne: purchase.dayOne, envelope: mu(fromEnvelope), month: mu(fromMonth), earlier: mu(fromEarlier), protectedUsed, aboveSize: net.aboveSize })
+      ? sourceSplit({ dayOne, envelope: mu(fromEnvelope), month: mu(fromMonth), earlier: mu(fromEarlier), protectedUsed, aboveSize: net.aboveSize })
       : one.split;
   const fromExtra = split.find((s) => s.source === 'extra_savings')?.amount ?? 0;
   // D-62: a fit paid in part from extra savings is "Fits from extra savings" (on fits_unspent only).
@@ -671,6 +685,7 @@ export function judge(j: JudgeInput): Result {
       net,
       netTaken: one.netTaken,
       firstNow: firstPaymentsToday(purchase.schedule, purchase.share, j.inputs.asOf),
+      shortPlanCash: cashPlan !== null,
     }),
     ...(od?.facts ?? []),
   ];
@@ -701,7 +716,7 @@ export function judge(j: JudgeInput): Result {
     facts.push({ code: 'month_left_after', values: { month: month.month, left: month.monthLeft - fromMonth - one.netUsed } });
   }
   // What would leave unspent if it were bought: this month and earlier money, never the envelope or the net.
-  const unspentAfter = unspentValue === null ? null : mu(unspentValue - (purchase.dayOne - fromEnvelope - one.netTaken));
+  const unspentAfter = unspentValue === null ? null : mu(unspentValue - (dayOne - fromEnvelope - one.netTaken));
   if (one.split.length > 0 && unspentValue !== null) {
     facts.push({ code: 'unspent_before_after', values: { before: unspentValue, after: mu(unspentValue - fromMonth - fromEarlier) } });
   }
@@ -716,9 +731,9 @@ export function judge(j: JudgeInput): Result {
     // The low-month clause as a fact (v3 §12 #7, #22): the tight month, its leftover, and the monthly cost it cannot carry.
     facts.push({ code: 'low_month', values: { month: month.low.month, left: month.low.left, monthly: purchase.monthly } });
   }
-  if (mon !== null && mon.why !== null) facts.push(mon.why); // D-46
-  if (mon !== null && mon.bridge !== null) facts.push(mon.bridge); // D-46
-  if (mon !== null && mon.rests !== null) facts.push(mon.rests); // D-48
+  if (said !== null && said.why !== null) facts.push(said.why); // D-46
+  if (said !== null && said.bridge !== null) facts.push(said.bridge); // D-46
+  if (said !== null && said.rests !== null) facts.push(said.rests); // D-48
   facts.push(
     ...evaluateLines(j.inputs.limits, {
       month,
@@ -738,28 +753,33 @@ export function judge(j: JudgeInput): Result {
   const tier = alreadyShort
     ? monthShortTier({
         code,
-        monthly: purchase.monthly,
+        // D-68 (refinement a): a short plan judged by cash gets the tier a cash buy of its whole cost gets.
+        monthly: cashPlan === null ? purchase.monthly : mu(0),
         typicalLeft: month.typicalLeft as MinorUnits,
         spare: unspentValue,
         monthLeft: month.monthLeft,
         aboveSize: net.aboveSize,
-        used: mu(purchase.dayOne - fromEnvelope),
+        used: mu(dayOne - fromEnvelope),
         fromExtra: mu(fromExtra),
       })
     : null;
+  // D-68: the caution line comes right after the tier line when there is one, otherwise first.
+  const lead: Fact[] = [];
+  if (tier !== null && tier.fact !== null) lead.push(tier.fact);
+  if (cashPlan !== null) lead.push({ code: 'short_plan_from_cash', values: { monthly: purchase.monthly } });
   return {
     code,
     variant: tier !== null ? tier.variant : code === 'not_yet' ? notYetVariant : variant,
     legacyState: LEGACY_STATE_OF_CODE[code],
     split: keepSplit ? split : [],
-    facts: tier !== null && tier.fact !== null ? [tier.fact, ...facts] : facts,
+    facts: [...lead, ...facts],
     notices: mon === null ? notices : [...notices, ...mon.notices],
     missing: [],
-    reasons: mon === null ? reasons : unique([...reasons, ...mon.reasons]),
+    reasons: said === null ? reasons : unique([...reasons, ...said.reasons]),
     readyBy: alreadyShort ? null : readyBy,
     band,
     layers,
-    confidence: mon !== null && mon.saidCover !== null ? withReason(confidence, 'user_said_cover', mon.saidCover) : confidence,
+    confidence: said !== null && said.saidCover !== null ? withReason(confidence, 'user_said_cover', said.saidCover) : confidence,
     parts: { oneOff: one.code, monthly: mon === null ? null : mon.code },
   };
 }

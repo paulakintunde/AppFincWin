@@ -16,6 +16,11 @@
  * it by less than 1 month): 'Fits, but your month is already short' ... Moderate (cuts it by 1 month or more): 'Fits from [spare
  * money / extra savings], but your month is already short' ... Large (needs the locked safety net, takes the 90-day path below $0,
  * or a plan payment makes the month more short): 'No: your month is already short' (D-63's variant)."
+ *
+ * D-68 (shortPlanCash): a short plan judged by cash reads as a one-off purchase of its whole cost. Its monthly figure does not make
+ * the usual month more short (the payments end inside the 90 days), so there is no depletion_payment and no plan_makes_short (the
+ * short_plan_from_cash caution line says it instead); an already-short month gets the lines a one-off gets, and the interest line
+ * still shows on a plan with interest (D-48).
  */
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { myPart, type ResolvedShare } from '../share';
@@ -40,6 +45,22 @@ export interface DepletionInput {
   readonly netTaken: MinorUnits;
   /** My share of the plan payments dated asOf; already inside dayOne and inside schedule.totalPaid. */
   readonly firstNow: MinorUnits;
+  /** 05.4 D-68: a short plan judged by cash, like a one-off purchase of its whole cost. */
+  readonly shortPlanCash?: boolean;
+}
+
+/**
+ * A plan's whole cost, my share: deposit and fees paid on day one plus every plan payment once. A first payment dated asOf is
+ * inside both dayOne and schedule.totalPaid (firstNow), so it is taken out of dayOne once (Plan-49 re-run). The interest line's
+ * total and D-68's whole cost (judge/shortPlan.ts) are this one figure.
+ */
+export function planTotal(dayOne: MinorUnits, schedule: Schedule, share: ResolvedShare, firstNow: MinorUnits): MinorUnits {
+  return minorUnits(dayOne - firstNow + myPart(schedule.totalPaid, share));
+}
+
+function interestFacts(d: DepletionInput): Fact[] {
+  if (d.schedule === null || d.schedule.totalInterest <= 0) return [];
+  return [{ code: 'interest_is_a_cost', values: { interest: myPart(d.schedule.totalInterest, d.share), total: planTotal(d.dayOne, d.schedule, d.share, d.firstNow) } }];
 }
 
 /** The usual month is already short before the purchase (D-63). */
@@ -50,10 +71,11 @@ export function monthAlreadyShort(typicalLeft: MinorUnits | null): boolean {
 export function depletionFacts(d: DepletionInput): Fact[] {
   const TL = d.typicalLeft;
   if (TL === null || d.code === 'needs_input') return [];
-  const M = d.monthly;
+  const cash = d.shortPlanCash === true;
+  const M = cash ? 0 : d.monthly;
   const already = TL < 0;
   const planMakesShort = !already && M > 0 && TL - M < 0 && (d.code === 'monthly_short' || d.code === 'not_yet');
-  if (!already && !planMakesShort) return [];
+  if (!already && !planMakesShort) return cash ? interestFacts(d) : [];
   const out: Fact[] = [];
   const shortAfter = M - TL;
   if (already && M > 0) out.push({ code: 'depletion_payment', values: { monthly: M, shortBefore: minorUnits(-TL), shortAfter: minorUnits(shortAfter) } });
@@ -66,12 +88,7 @@ export function depletionFacts(d: DepletionInput): Fact[] {
     out.push({ code: 'net_lasts', values: { shortfall: minorUnits(shortAfter), months: Number(BigInt(left) / BigInt(shortAfter)) } });
     if (already && (M > 0 || d.netTaken > 0)) out.push({ code: 'net_lasts_without', values: { months: Number(BigInt(net.saved) / BigInt(-TL)) } });
   }
-  if (d.schedule !== null && d.schedule.totalInterest > 0) {
-    out.push({
-      code: 'interest_is_a_cost',
-      values: { interest: myPart(d.schedule.totalInterest, d.share), total: minorUnits(d.dayOne - d.firstNow + myPart(d.schedule.totalPaid, d.share)) },
-    });
-  }
+  out.push(...interestFacts(d));
   out.push({ code: 'balanced_month_room', values: { pay: d.typicalIncome, costs: minorUnits(d.typicalIncome - TL) } });
   if (already) out.push({ code: 'month_balance_gap', values: { gap: minorUnits(-TL) } });
   return out;

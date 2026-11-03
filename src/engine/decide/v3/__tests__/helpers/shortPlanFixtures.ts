@@ -34,6 +34,8 @@ export interface ShortPlanCase {
   /** Usual bills and everyday spending, when not 1,500 and 1,000. */
   readonly bills?: number;
   readonly spend?: number;
+  /** The plan's APR as text; 0% when absent. */
+  readonly apr?: string;
   /** A monthly running cost (insurance), in minor units. */
   readonly running?: number;
 }
@@ -90,7 +92,7 @@ export function shortPlanFixture(o: ShortPlanCase): RightAnswerFixture {
       taxPercent: null,
       taxIncluded: null,
       oneOffFees: 0,
-      pay: { mode: 'plan', months: o.months, apr: '0', fees: 0, deposit: 0, firstPaymentDate: firstDate, ...(o.every === undefined ? {} : { every: o.every }) },
+      pay: { mode: 'plan', months: o.months, apr: o.apr ?? '0', fees: 0, deposit: 0, firstPaymentDate: firstDate, ...(o.every === undefined ? {} : { every: o.every }) },
     },
   } as unknown as RightAnswerFixture;
 }

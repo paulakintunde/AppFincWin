@@ -10,8 +10,10 @@
  *   spend this month = 3,500 (Evaluation.spare 350,000).
  * - "before D-68" is the same engine with shortPlanByCash mocked to "does not apply" (jest.isolateModules).
  */
+import { minorUnits } from '../../../money/types';
 import { evaluate } from '../evaluate';
-import type { CheckV2, Result, V3Inputs } from '../types';
+import { shortPlanByCash, type ShortPlanJudge } from '../judge/shortPlan';
+import type { CheckV2, Code, Purchase, Result, V3Inputs } from '../types';
 import { SHORT_PLAN_CASES, shortPlan, type ShortPlanCase } from './helpers/shortPlanFixtures';
 
 const codes = (r: Result) => r.facts.map((f) => f.code);
@@ -154,5 +156,59 @@ describe('D-68: a short plan paid from money on hand is judged by cash', () => {
   it('whole cost not covered by money on hand (BR-12): 3 x 1,500 = 4,500 against 3,500 of spare money reads as before', () => {
     // The path may stay above 0 with pay coming in, but a cash buy of 4,500 is not covered by room 500 + earlier 3,000.
     expect(unchanged({ ...SHORT_PLAN_CASES.qualifies, price: 450_000 }).code).not.toBe('fits_unspent');
+  });
+});
+
+describe('shortPlanByCash: each condition on its own (hand-built judge input, the ladder stubbed)', () => {
+  const ev = run(SHORT_PLAN_CASES.qualifies);
+  const p = ev.purchase as Purchase;
+  const j: ShortPlanJudge = { inputs: { asOf: '2026-11-15' }, month: { typicalLeft: minorUnits(50_000) }, funds: { ownEnvelope: minorUnits(0) }, purchase: p };
+  const short = { code: 'monthly_short' as Code };
+  const fits = (code: Code) => jest.fn((_j: ShortPlanJudge, _a: unknown) => ({ code }));
+
+  it('applies on monthly_short or not_yet with a cash fit, and runs the ladder for the whole cost 1,800 (not day one 600)', () => {
+    expect(p.dayOne).toBe(60_000);
+    for (const mon of [short, { code: 'not_yet' as Code }]) {
+      for (const code of ['fits_month', 'fits_unspent'] as Code[]) {
+        const oneOff = fits(code);
+        expect(shortPlanByCash(j, p, mon, minorUnits(350_000), oneOff)).toEqual({ total: 180_000, one: { code } });
+        expect(oneOff.mock.calls[0]?.[0].purchase?.dayOne).toBe(180_000);
+        expect(oneOff.mock.calls[0]?.[1]).toEqual({ unspent: 350_000, envelope: 0 });
+      }
+    }
+  });
+
+  it('never applies on any other one-off code (overdraft, the net, not yet, an ask)', () => {
+    for (const code of ['fits_uses_overdraft', 'fits_uses_net', 'not_yet', 'needs_input'] as Code[]) {
+      expect(shortPlanByCash(j, p, short, minorUnits(350_000), fits(code))).toBeNull();
+    }
+  });
+
+  it('never applies to a one-off, a running cost, a monthly part that fits or is missing, or an unknown usual month', () => {
+    const oneOff = fits('fits_unspent');
+    expect(shortPlanByCash(j, { ...p, schedule: null }, short, null, oneOff)).toBeNull();
+    expect(shortPlanByCash(j, { ...p, runningMonthly: minorUnits(1) }, short, null, oneOff)).toBeNull();
+    expect(shortPlanByCash(j, p, null, null, oneOff)).toBeNull();
+    for (const code of ['fits_month', 'fits_unspent'] as Code[]) expect(shortPlanByCash(j, p, { code }, null, oneOff)).toBeNull();
+    expect(shortPlanByCash({ ...j, month: { typicalLeft: null } }, p, short, null, oneOff)).toBeNull();
+    expect(oneOff).not.toHaveBeenCalled();
+  });
+
+  it('never applies when a payment is on or after day 90 (2027-02-13)', () => {
+    const oneOff = fits('fits_unspent');
+    expect(shortPlanByCash({ ...j, inputs: { asOf: '2026-10-17' } }, p, short, null, oneOff)).toBeNull(); // 15 Jan is day 90 from 17 Oct
+    expect(shortPlanByCash({ ...j, inputs: { asOf: '2026-10-18' } }, p, short, null, oneOff)).not.toBeNull(); // day 89
+  });
+});
+
+describe('D-68 with interest: the interest line still shows, and its total is the whole cost the ladder covers', () => {
+  it('3 payments at 20% APR from today: cash fit, interest_is_a_cost total = the split total', () => {
+    const r = run({ ...SHORT_PLAN_CASES.qualifies, apr: '20' }).result;
+    expect(r.code).toBe('fits_unspent');
+    expect(r.facts[0]?.code).toBe('short_plan_from_cash');
+    const interest = fact(r, 'interest_is_a_cost') as { interest: number; total: number };
+    expect(interest.interest).toBeGreaterThan(0);
+    expect(interest.total).toBe(180_000 + interest.interest);
+    expect(r.split.reduce((t, s) => t + s.amount, 0)).toBe(interest.total);
   });
 });
