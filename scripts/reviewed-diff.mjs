@@ -29,9 +29,14 @@ function runJest(env) {
 const args = process.argv.slice(2);
 const mode = args[0];
 const fix = args[1];
-if ((mode !== '--write' && mode !== '--approve') || !fix || fix.startsWith('--')) {
-  console.error('usage: reviewed-diff.mjs --write <FIX-ID> | --approve <FIX-ID> --reason-file <path>');
+if ((mode !== '--write' && mode !== '--page' && mode !== '--approve') || !fix || fix.startsWith('--')) {
+  console.error('usage: reviewed-diff.mjs --write <FIX-ID> | --page <FIX-ID> | --approve <FIX-ID> --reason-file <path>');
   process.exit(2);
+}
+
+// --page: read-only. Rebuilds reports/reviewed/<FIX-ID>.html from changes.json; answers.json and changes.json are not touched.
+if (mode === '--page') {
+  process.exit(runJest({ REVIEWED_PAGE: fix }));
 }
 
 if (mode === '--write') {

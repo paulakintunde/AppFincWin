@@ -1,8 +1,9 @@
 /**
- * 05.4-08: writer for the reviewed diff. Skipped unless REVIEWED_WRITE=<FIX-ID> is set (by scripts/reviewed-diff.mjs).
+ * 05.4-08: writer for the reviewed diff. Skipped unless REVIEWED_WRITE=<FIX-ID> (or REVIEWED_PAGE=<FIX-ID>) is set by scripts/reviewed-diff.mjs.
  *
  * - --write: appends one unapproved entry per changed key to changes.json and writes reports/reviewed/<FIX-ID>.html
- *   (the D-14 page: "Before -> After", grouped stricter / looser, with totals). answers.json is not touched.
+ *   (the D-14 page: "Before -> After" with each person's situation, grouped stricter / looser, with totals). answers.json is not touched.
+ * - --page: read-only. Rebuilds the page from changes.json's entries for that fix; touches no data file.
  * - --approve (REVIEWED_ACCEPT=1): refuses unless every changed key has an approved entry for this fix, then rewrites
  *   answers.json from the current outputs.
  * - First run with an empty answers.json records the baseline (no changes listed).
@@ -10,49 +11,29 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { corpus, currentAnswers, type ReviewedAnswer, type ReviewedChange } from './corpus';
+import { buildPage } from './page';
 
 const FIX = process.env.REVIEWED_WRITE;
+const PAGE = process.env.REVIEWED_PAGE;
 const ACCEPT = process.env.REVIEWED_ACCEPT === '1';
 const DIR = __dirname;
 const ANSWERS = path.join(DIR, 'answers.json');
 const CHANGES = path.join(DIR, 'changes.json');
 
-const LABEL: Record<string, string> = {
-  fits_month: 'Fits',
-  fits_unspent: 'Fits from spare money',
-  emergency_use: 'Dips into your safety net',
-  fits_uses_net: 'Dips into your safety net',
-  fits_uses_overdraft: 'Uses your overdraft',
-  monthly_short: 'Short each month',
-  not_yet: 'Not yet',
-  needs_input: 'Needs a figure first',
-};
-// The CODE_PRECEDENCE order (05.4-18 adds fits_uses_net next to the stored-only emergency_use).
-const RANK: Record<string, number> = { fits_month: 0, fits_unspent: 1, fits_uses_net: 2, emergency_use: 3, fits_uses_overdraft: 4, monthly_short: 5, not_yet: 6, needs_input: 7 };
-const VARIANT: Record<string, string> = {
-  payday: 'payday',
-  not_covered: 'not covered',
-  low_month: 'low month',
-  not_cleared: 'past payday',
-  no_net: 'but no safety net',
-  small_net: 'but your safety net is small',
-  protection_off: 'protection off',
-};
-
-const words = (a: ReviewedAnswer): string => {
-  const base = LABEL[a.code] ?? a.code;
-  const v = a.variant === null ? '' : ` (${VARIANT[a.variant] ?? a.variant})`;
-  const left = a.afterBuyMonth === null ? '' : `, ${(a.afterBuyMonth / 100).toFixed(2)} left that month`;
-  return `${base}${v}${left}`;
-};
-const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const group = (b: ReviewedAnswer, a: ReviewedAnswer): 'stricter' | 'looser' | 'detail' => {
-  const rb = RANK[b.code] ?? 99;
-  const ra = RANK[a.code] ?? 99;
-  return ra > rb ? 'stricter' : ra < rb ? 'looser' : 'detail';
-};
-
 const run = FIX === undefined || FIX === '' ? describe.skip : describe;
+const runPage = PAGE === undefined || PAGE === '' ? describe.skip : describe;
+
+runPage('reviewed diff page (read-only)', () => {
+  it('builds the page from changes.json for one fix', () => {
+    const file = JSON.parse(fs.readFileSync(CHANGES, 'utf8')) as { changes: ReviewedChange[] };
+    const mine = file.changes.filter((c) => c.fixId === PAGE);
+    expect(mine.length).toBeGreaterThan(0);
+    const out = path.join(process.cwd(), 'reports', 'reviewed');
+    fs.mkdirSync(out, { recursive: true });
+    fs.writeFileSync(path.join(out, `${PAGE}.html`), buildPage(PAGE as string, mine, corpus()));
+    process.stdout.write(`reviewed: page for ${PAGE} rebuilt from changes.json (${mine.length} changes); data files untouched\n`);
+  });
+});
 
 run('reviewed diff writer', () => {
   it('writes the list, the page or the new answers', () => {
@@ -66,7 +47,6 @@ run('reviewed diff writer', () => {
       return;
     }
     const keys = corpus().map((c) => c.key);
-    const labelOf = new Map(corpus().map((c) => [c.key, c.label]));
     const differing = keys.filter((k) => JSON.stringify(previous[k]) !== JSON.stringify(current[k]));
     if (ACCEPT) {
       const unapproved = differing.filter((k) => !file.changes.some((c) => c.fixId === fixId && c.key === k && c.approved));
@@ -84,20 +64,9 @@ run('reviewed diff writer', () => {
     fs.writeFileSync(CHANGES, JSON.stringify({ changes: merged }, null, 2) + '\n');
 
     const mine = fresh.filter((c) => !c.approved);
-    const groups = { stricter: [] as ReviewedChange[], looser: [] as ReviewedChange[], detail: [] as ReviewedChange[] };
-    for (const c of fresh) groups[group(c.before, c.after)].push(c);
-    const section = (title: string, list: ReviewedChange[]): string =>
-      `<h2>${title} (${list.length})</h2>` +
-      (list.length === 0
-        ? '<p>None.</p>'
-        : `<ul>${list.map((c) => `<li><b>${esc(labelOf.get(c.key) ?? c.key)}</b> <code>${esc(c.key)}</code><br>${esc(words(c.before))} &rarr; ${esc(words(c.after))}</li>`).join('')}</ul>`);
-    const html =
-      `<!doctype html><meta charset="utf-8"><title>${esc(fixId)}: changed answers</title>` +
-      `<h1>${esc(fixId)}: changed answers</h1><p>${fresh.length} of ${keys.length} checks changed (${groups.stricter.length} stricter, ${groups.looser.length} looser, ${groups.detail.length} same answer with different detail). Invented people only.</p>` +
-      section('Stricter', groups.stricter) + section('Looser', groups.looser) + section('Same answer, detail changed', groups.detail);
     const out = path.join(process.cwd(), 'reports', 'reviewed');
     fs.mkdirSync(out, { recursive: true });
-    fs.writeFileSync(path.join(out, `${fixId}.html`), html);
+    fs.writeFileSync(path.join(out, `${fixId}.html`), buildPage(fixId, fresh, corpus()));
     process.stdout.write(`reviewed: ${fresh.length} change(s) listed for ${fixId} (${mine.length} awaiting approval); page: reports/reviewed/${fixId}.html\n`);
   });
 });
