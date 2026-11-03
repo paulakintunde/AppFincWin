@@ -3,7 +3,9 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { freeMoney, notCleared, overdraftRoom, payDates, plainAnswer, plainNet, plainOverdraftCost, plainPath, plainTier, recordsFresh, recordsLookBehind } from './plain';
+import { freeMoney, monthEndBalance, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPlanTotal, plainTier, planPayments, recordsFresh, recordsLookBehind } from './plain';
+import { toEngineInputs } from '../rightAnswers/fixture';
+import type { RightAnswerFixture } from '../rightAnswers/schema';
 
 const PENDING_IDS = new Set(PENDING_RULES.flatMap((r) => r.fixId.split('/')).filter((id) => id !== 'FIN-09'));
 
@@ -148,5 +150,68 @@ describe('plain calculator: D-65 tiers agree with the engine (Riley-like, usual 
     const lasts = r.facts.find((x) => x.code === 'money_lasts_shorter')?.values;
     const t = plainTier(f, plain.code);
     expect(t.months === null ? undefined : { months: t.months, monthsAfter: t.monthsAfter }).toEqual(lasts);
+  });
+});
+
+describe('plain calculator: the interest total and the move-by saving (05.4-51, Plan-49 re-run, D-58, D-67)', () => {
+  const byId = (id: string): RightAnswerFixture => {
+    const c = loadCases().find((x) => x.id === id);
+    if (c === undefined) throw new RangeError(id);
+    return c.fixture;
+  };
+  const fact = (f: RightAnswerFixture, code: string, today = false) => {
+    const { inputs, check } = toEngineInputs(f);
+    const c = today && check.pay.mode === 'plan' ? { ...check, pay: { ...check.pay, firstPayment: { kind: 'today' as const } } } : check;
+    return evaluate(inputs, c).result.facts.find((x) => x.code === code)?.values;
+  };
+
+  it("SN-18's plan: 47 x $219.30 and a last $218.96, $10,526.06 in all (deposit 0, first payment a month out)", () => {
+    const f = byId('SN-18');
+    const pays = planPayments(900_000n, 48, '7.9', false);
+    expect(pays.slice(0, 47).every((p) => p === 21_930n)).toBe(true);
+    expect(pays[47]).toBe(21_896n);
+    expect(plainPlanTotal(f)).toBe(1_052_606n);
+  });
+
+  it('the same plan, first payment today and a $500 deposit: deposit + every payment once, as the engine', () => {
+    const sn18 = byId('SN-18');
+    const f: RightAnswerFixture = { ...sn18, check: { ...sn18.check, pay: { ...(sn18.check.pay as Extract<RightAnswerFixture['check']['pay'], { mode: 'plan' }>), deposit: 50_000, firstPaymentDate: sn18.asOf } } };
+    const total = plainPlanTotal(f);
+    // by hand: $500 + 48 payments on $8,500 with the first today (an annuity-due), never the first payment twice
+    expect(total).toBe(50_000n + planPayments(850_000n, 48, '7.9', true).reduce((t, p) => t + p, 0n));
+    expect(fact(f, 'interest_is_a_cost', true)).toEqual({ interest: Number(total) - 900_000, total: Number(total) });
+    // 0% splits evenly, the last payment the rest
+    expect(planPayments(100_000n, 3, '0', false)).toEqual([33_334n, 33_334n, 33_332n]);
+  });
+
+  it('SN-16 with its saving: the plain move-by equals the engine, and the saving adds its $200 when both go below $0', () => {
+    const f = byId('SN-16');
+    expect(f.usualMonth.saving).toEqual({ amount: 20_000, day: 6, movedThisMonth: false });
+    expect(plainMoveBy(f, 6_000n)).toEqual({ amount: 6_667, date: '2026-11-02' });
+    expect(fact(f, 'move_money_by')).toEqual(plainMoveBy(f, 6_000n));
+    expect(fact(f, 'net_above_size')).toEqual({ above: 100_000 });
+    const at500 = { ...f, check: { ...f.check, price: 50_000 } };
+    const { saving: _s, ...usual } = f.usualMonth;
+    const noSaving: RightAnswerFixture = { ...at500, usualMonth: usual };
+    expect(plainMoveBy(at500, 50_000n)).toEqual({ amount: 50_667, date: '2026-11-01' });
+    expect(plainMoveBy(noSaving, 50_000n)).toEqual({ amount: 30_667, date: '2026-11-01' });
+    expect(fact(at500, 'move_money_by')).toEqual(plainMoveBy(at500, 50_000n));
+    expect(fact(noSaving, 'move_money_by')).toEqual(plainMoveBy(noSaving, 50_000n));
+    // with no saving at $60 the account alone never goes below 0: no move-by line on either side
+    expect(plainMoveBy({ ...noSaving, check: f.check }, 6_000n)).toBeNull();
+    expect(fact({ ...noSaving, check: f.check }, 'move_money_by')).toBeUndefined();
+  });
+
+  it('D-67: the saving still to move comes off the month-end figure; once moved, it does not come off again', () => {
+    const f = byId('SN-16');
+    const moved: RightAnswerFixture = { ...f, asOf: '2026-10-07', usualMonth: { ...f.usualMonth, saving: { amount: 20_000, day: 6, movedThisMonth: true } } };
+    const before = { ...f, asOf: '2026-10-07' };
+    // asOf after its day and moved: nothing still to move; not moved and its day past: also nothing (it is not taken late)
+    expect(monthEndBalance(moved)).toBe(monthEndBalance(before));
+    expect(monthEndBalance(f) - monthEndBalance({ ...f, usualMonth: { ...f.usualMonth, saving: { amount: 20_000, day: 2, movedThisMonth: true } } })).toBe(-20_000n);
+    // no move-by line when nothing else can cover the gap
+    expect(plainMoveBy({ ...f, safetyNet: { protect: true, size: 300_000, saved: 300_000 } }, 6_000n)).toBeNull();
+    expect(plainMoveBy({ ...f, safetyNet: { protect: true, size: 300_000, saved: 300_000, locked: false } }, 6_000n, true)).toEqual({ amount: 6_667, date: '2026-11-02' });
+    expect(plainPlanTotal(f)).toBe(0n);
   });
 });

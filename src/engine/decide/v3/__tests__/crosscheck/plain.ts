@@ -83,6 +83,38 @@ function daysInMonthOf(date: string): bigint {
   return BigInt(new Date(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)), 0)).getUTCDate());
 }
 
+// --- Regular saving (05.4 D-58, D-67). "Regular saving/investing transfers out of the paying (main/everyday) account are taken out
+// of it everywhere: the month-end figure, spare money (the D-56 cap), and the 90-day cash path" (D-67); "the amount to move and the
+// date it must be moved by" (D-58). The usual month sets the saving aside (D-55: "expected at month end ... after savings").
+
+/** The regular saving set aside in a usual month; 0 when the fixture states none. */
+export function savingAmount(f: RightAnswerFixture): Cents {
+  return big(f.usualMonth.saving?.amount ?? 0);
+}
+
+/** The saving still to move this month: not moved yet, and its day is today or later (D-67). */
+export function savingToMove(f: RightAnswerFixture): Cents {
+  const sv = f.usualMonth.saving;
+  if (sv === undefined || sv.movedThisMonth || sv.day < Number(f.asOf.slice(8, 10))) return 0n;
+  return big(sv.amount);
+}
+
+/** The saving transfers inside the 90 days: this month's when still to move, then one on its day each later month (D-67). */
+function savingDates(f: RightAnswerFixture): string[] {
+  const sv = f.usualMonth.saving;
+  if (sv === undefined) return [];
+  const end = dayAfter(f.asOf, PATH_DAYS);
+  const y = Number(f.asOf.slice(0, 4));
+  const m = Number(f.asOf.slice(5, 7)) - 1;
+  const out: string[] = [];
+  for (let i = 0; ; i++) {
+    const date = new Date(Date.UTC(y, m + i, sv.day)).toISOString().slice(0, 10);
+    if (date >= end) return out;
+    if (i === 0 && savingToMove(f) === 0n) continue;
+    out.push(date);
+  }
+}
+
 /**
  * Everyday spending still to come: the usual pace over the days left, but never less than whatever of a usual
  * month is not yet logged. Nothing is still to come on the last day of the month.
@@ -104,7 +136,8 @@ export function everydayToCome(f: RightAnswerFixture): Cents {
 export function leftThisMonth(f: RightAnswerFixture): Cents {
   const t = f.thisMonth;
   const moneyIn = f.pay.irregular === undefined ? big(t.received) : big(f.pay.amount);
-  return moneyIn - big(t.billsPaid) - big(t.billsDue) - big(t.everydaySoFar) - everydayToCome(f);
+  // D-67 / D-55: the month sets the regular saving aside, moved yet or not.
+  return moneyIn - big(t.billsPaid) - big(t.billsDue) - big(t.everydaySoFar) - everydayToCome(f) - savingAmount(f);
 }
 
 /** Money in the checking and current accounts. */
@@ -137,9 +170,12 @@ export function freeMoney(f: RightAnswerFixture): Cents {
   return free < cap ? free : cap;
 }
 
-/** What the spending accounts hold at the end of this month: what sits now, plus pay still to arrive, less what is still to go out. */
+/**
+ * What the spending accounts hold at the end of this month: what sits now, plus pay still to arrive, less what is still to go out,
+ * the saving still to move included (D-67: "taken out of it everywhere: the month-end figure, spare money (the D-56 cap)").
+ */
 export function monthEndBalance(f: RightAnswerFixture): Cents {
-  return sittingMoney(f) + payToArrive(f) - big(f.thisMonth.billsDue) - everydayToCome(f);
+  return sittingMoney(f) + payToArrive(f) - big(f.thisMonth.billsDue) - everydayToCome(f) - savingToMove(f);
 }
 
 // --- Safety net (05.4 FIN-01, FIN-02, ENG-03, ENG-04). Restated from the approved safety-net cases SN-01 .. SN-15, CONTEXT D-05,
@@ -186,8 +222,7 @@ function netVariant(net: PlainNet): string | null {
  * D-52), less the usual bills, everyday spending and debt minimums.
  */
 export function usualMonthShort(f: RightAnswerFixture): boolean {
-  const mins = f.debts.reduce((t, d) => t + big(d.minimum), 0n);
-  return big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - mins < 0n;
+  return usualShortfall(f) > 0n;
 }
 
 /**
@@ -199,15 +234,21 @@ function fitVariant(net: PlainNet, usesExtra: boolean): string | null {
   return netVariant(net);
 }
 
-/** Cash left at the worst point before payday if the cost is paid today; below zero means the cash does not hold. */
+/**
+ * Cash left at the worst point before payday if the cost is paid today; below zero means the cash does not hold. D-67: the saving
+ * still to move this month leaves the account before the next pay too.
+ */
 export function cashMargin(f: RightAnswerFixture, cost: Cents, withDues: boolean): Cents {
-  return sittingMoney(f) - (withDues ? big(f.thisMonth.billsDue) : 0n) - everydayToCome(f) - cost;
+  return sittingMoney(f) - (withDues ? big(f.thisMonth.billsDue) : 0n) - everydayToCome(f) - savingToMove(f) - cost;
 }
 
-/** The usual month's shortfall (pay less usual bills, everyday spending and debt minimums), as a positive figure; 0 when it balances. */
+/**
+ * The usual month's shortfall (pay less usual bills, everyday spending, debt minimums and the regular saving, D-67), as a positive
+ * figure; 0 when it balances.
+ */
 export function usualShortfall(f: RightAnswerFixture): Cents {
   const mins = f.debts.reduce((t, d) => t + big(d.minimum), 0n);
-  const left = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - mins;
+  const left = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - mins - savingAmount(f);
   return left < 0n ? -left : 0n;
 }
 
@@ -254,7 +295,7 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
   const left = leftThisMonth(f);
   if (c.pay.mode === 'plan') {
     const pay = monthlyPayment(cost - big(c.pay.deposit) + big(c.pay.fees), c.pay.months, c.pay.apr);
-    const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday);
+    const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - savingAmount(f);
     return { code: usualLeft - pay < 0n ? 'monthly_short' : 'fits_month', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
   }
   const after = left - cost;
@@ -304,7 +345,7 @@ export function notCleared(f: RightAnswerFixture, cost: Cents): boolean {
  * accounts plus this month's room, less the part of it this month's room already counted).
  */
 function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
-  const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday);
+  const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - savingAmount(f);
   const after = usualLeft - cost;
   const sitting = sittingMoney(f);
   const net = plainNet(f);
@@ -407,9 +448,11 @@ export function plainPath(f: RightAnswerFixture, cost: Cents): { date: string; b
   const undated = big(f.thisMonth.billsDue) - dated.reduce((t, b) => t + big(b.amount), 0n);
   const out: { date: string; balance: Cents }[] = [];
   let money = sittingMoney(f) - cost;
+  const saves = new Set(savingDates(f)); // D-67: each saving transfer leaves the account on its date
   for (let i = 0; i < PATH_DAYS; i++) {
     const date = dayAfter(f.asOf, i);
     if (pays.has(date)) money += payAmount(f);
+    if (saves.has(date)) money -= savingAmount(f);
     // The usual bills land on payday; with irregular pay (D-52) there is no pay series, so on the 1st of each later month.
     const billsDay = f.pay.irregular === undefined ? pays.has(date) : date.slice(8, 10) === '01' && date.slice(0, 7) !== ym;
     if (billsDay && !billsMonths.has(date.slice(0, 7))) {
@@ -442,6 +485,70 @@ function halfUp(a: Cents, b: Cents): Cents {
 export function plainOverdraftCost(path: readonly { balance: Cents }[], rate: string): Cents {
   const below = path.reduce((s, p) => (p.balance < 0n ? s - p.balance : s), 0n);
   return halfUp(below * basisPoints(rate), 10_000n * 365n);
+}
+
+/**
+ * D-58 (owner, 2026-11-03): "when extra savings (or any money) in another account must cover a gap the paying account cannot, the
+ * answer states the amount to move and the date it must be moved by". The everyday account alone (no extra savings, no net) on the
+ * day-by-day path with the purchase, the saving transfers taken on their dates (D-67). The amount is how far it goes below $0 at
+ * its lowest, at most the money elsewhere that can cover it (money above the net's size, plus the net's own when the answer dips
+ * into it); the date is the first day below $0. null when it never goes below $0 or nothing else can cover it.
+ */
+export function plainMoveBy(f: RightAnswerFixture, cost: Cents, dipsIntoNet = false): { amount: number; date: string } | null {
+  const net = plainNet(f);
+  const cover = net.above + (dipsIntoNet ? net.lend : 0n);
+  if (cover <= 0n) return null;
+  const path = plainPath(f, cost);
+  const first = path.find((p) => p.balance < 0n);
+  if (first === undefined) return null;
+  const low = path.reduce((lo, p) => (p.balance < lo ? p.balance : lo), 0n);
+  return { amount: Number(-low < cover ? -low : cover), date: first.date };
+}
+
+/**
+ * Plan-49 re-run (the interest-total double count): a plan's total is the deposit plus every payment, each counted once, whatever
+ * the date of the first payment (a first payment today is one of the payments, not an extra one). Fees are part of the amount the
+ * payments repay, as in plainCode. The payments: a level payment (the exact annuity payment rounded up to the cent; with the first
+ * payment today, the annuity-due payment), interest each month on what is owed rounded half up, the last payment whatever is left;
+ * when that last payment would be more than the level one, the level payment goes up a cent (D-64, "the final payment never exceeds
+ * the level payment"). 0% splits the amount evenly, rounded up, the last payment taking the rest.
+ */
+export function plainPlanTotal(f: RightAnswerFixture): Cents {
+  const c = f.check;
+  if (c.pay.mode !== 'plan') return 0n;
+  const amount = big(c.price ?? 0) + big(c.oneOffFees) - big(c.pay.deposit) + big(c.pay.fees);
+  const today = c.pay.firstPaymentDate === f.asOf;
+  return big(c.pay.deposit) + planPayments(amount, c.pay.months, c.pay.apr, today).reduce((t, p) => t + p, 0n);
+}
+
+/** Every payment of a plan, in order (see plainPlanTotal). */
+export function planPayments(amount: Cents, months: number, apr: string | null, firstToday: boolean): Cents[] {
+  const bp = apr === null ? 0n : basisPoints(apr);
+  const D = 10_000n * 12n; // a monthly rate of bp / D
+  const ceil = (a: Cents, b: Cents): Cents => (a + b - 1n) / b;
+  const n = BigInt(months);
+  let level: Cents;
+  if (bp === 0n) level = ceil(amount, n);
+  else {
+    const An = (D + bp) ** n;
+    const Dn = D ** n;
+    level = ceil(amount * bp * An, (firstToday ? D + bp : D) * (An - Dn));
+  }
+  const walk = (pay: Cents): Cents[] => {
+    let owed = amount;
+    const out: Cents[] = [];
+    for (let k = 0; k < months; k++) {
+      const interest = k === 0 && firstToday ? 0n : (2n * owed * bp + D) / (2n * D);
+      const due = owed + interest;
+      const paid = k === months - 1 || pay >= due ? due : pay;
+      owed = due - paid;
+      if (paid > 0n) out.push(paid);
+    }
+    return out;
+  };
+  let payments = walk(level);
+  while ((payments[payments.length - 1] ?? 0n) > level) payments = walk(++level);
+  return payments;
 }
 
 /** Named so the table's thresholds have one reader; the Theme A plans use them. */

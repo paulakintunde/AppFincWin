@@ -22,7 +22,8 @@ export interface RightAnswerFixture {
   asOf: string; currency: 'USD'|'CAD'|'GBP'|'EUR'; region: { country: string; subdivision: string|null } | null;
   pay: { amount: number; cadence: 'monthly'|'fortnightly'|'weekly'; nextDate: string; setupAmount: number|null; lastThree: [number,number,number]|null; /** low months stated explicitly ('YYYY-MM', pay that month); absent = none beyond lastThree */ lean?: { month: string; amount: number }[];
     /** D-52: no pay is scheduled (freelance); amounts = full-month income oldest first, one per history month, paid on `day`; absent = scheduled pay */ irregular?: { amounts: number[]; day: number } };
-  usualMonth: { bills: number; everyday: number; essentialEveryday: number };
+  usualMonth: { bills: number; everyday: number; essentialEveryday: number;
+    /** D-58: a regular monthly transfer from the everyday account to savings; absent = none. movedThisMonth: this month's transfer is logged (on its day, on or before asOf) */ saving?: { amount: number; day: number; movedThisMonth: boolean } };
   thisMonth: { received: number; billsPaid: number; billsDue: number; everydaySoFar: number };
   historyMonths: number; quickEstimates: { income: number; bills: number; everyday: number } | null; recordsAsOf: string|null;
   accounts: FixtureAccount[]; safetyNet: { protect: boolean; size: number|null; saved: number; /** D-61: absent = locked (the net up to its size is left out of the answer) */ locked?: boolean } | null;
@@ -105,6 +106,13 @@ export function validateCase(c: unknown): string[] {
     if (irr !== undefined) {
       if (!Array.isArray(irr.amounts) || irr.amounts.length !== fx.historyMonths) errs.push(`${id}: pay.irregular.amounts needs one amount per history month`);
       if (!Number.isInteger(irr.day) || irr.day < 1 || irr.day > 31) errs.push(`${id}: pay.irregular.day must be 1 to 31`);
+    }
+    const sv = fx.usualMonth?.saving;
+    if (sv !== undefined) {
+      if (!Number.isInteger(sv.amount) || sv.amount <= 0) errs.push(`${id}: usualMonth.saving.amount must be a whole number above 0`);
+      if (!Number.isInteger(sv.day) || sv.day < 1 || sv.day > 28) errs.push(`${id}: usualMonth.saving.day must be 1 to 28`);
+      if (typeof sv.movedThisMonth !== 'boolean') errs.push(`${id}: usualMonth.saving.movedThisMonth must be true or false`);
+      else if (sv.movedThisMonth && isDate(fx.asOf) && sv.day > Number(fx.asOf.slice(8, 10))) errs.push(`${id}: usualMonth.saving cannot be moved this month before its day`);
     }
     const lk = fx.safetyNet?.locked;
     if (lk !== undefined && typeof lk !== 'boolean') errs.push(`${id}: safetyNet.locked must be true or false`);

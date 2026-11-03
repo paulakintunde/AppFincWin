@@ -48,7 +48,8 @@ function billsPartlyPaid(f: RightAnswerFixture): boolean {
 export const PENDING_RULES: PendingRule[] = [
   { fixId: 'FIN-11', applies: (f) => f.bills.some((b) => b.everyMonths === 3 || b.everyMonths === 12) || duesDecideCash(f) || everydayLooksLikeBill(f) || billsPartlyPaid(f), note: 'quarterly and yearly bills; bills still due need real due dates before they count in the cash check' },
   { fixId: 'FIN-04', applies: (f) => f.debts.length > 0, note: 'debt payments in the month' },
-  { fixId: 'FIN-06/FIN-07', applies: (f) => plan(f) || f.pay.amount < f.usualMonth.bills + f.usualMonth.everyday, note: 'plan payments against the usual month; a usual month already short makes the 90-day cash look-ahead decide' },
+  // 05.4-51 (D-67): the usual month sets the regular saving aside too, so a month short only by its saving is short here as well.
+  { fixId: 'FIN-06/FIN-07', applies: (f) => plan(f) || f.pay.amount < f.usualMonth.bills + f.usualMonth.everyday + (f.usualMonth.saving?.amount ?? 0), note: 'plan payments against the usual month; a usual month already short makes the 90-day cash look-ahead decide' },
   { fixId: 'FIN-05', applies: (f) => plan(f) && f.check.pay.mode === 'plan' && f.check.pay.apr !== null, note: 'expensive-borrowing warning' },
   { fixId: 'FIN-08', applies: (f) => f.check.yourAnswer != null, note: 'your answer versus the app' },
   { fixId: 'FIN-09', applies: () => true, note: 'afterBuy block: until it lands only the code is compared' },

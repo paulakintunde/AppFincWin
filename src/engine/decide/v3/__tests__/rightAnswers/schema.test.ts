@@ -91,6 +91,23 @@ describe('validateCase', () => {
       expect(validateCase(c)).toEqual([]);
     }
   });
+  it('D-58: accepts a regular saving and rejects each bad field', () => {
+    const withSaving = (saving: unknown, asOf = '2026-10-10') => {
+      const c = minimalCase();
+      (c.fixture.usualMonth as { saving?: unknown }).saving = saving;
+      c.fixture.asOf = asOf;
+      return validateCase(c).join();
+    };
+    expect(withSaving({ amount: 20000, day: 6, movedThisMonth: false })).toBe('');
+    expect(withSaving({ amount: 20000, day: 6, movedThisMonth: true })).toBe('');
+    expect(withSaving({ amount: 0, day: 6, movedThisMonth: false })).toMatch(/saving.amount must be a whole number above 0/);
+    expect(withSaving({ amount: 1.5, day: 6, movedThisMonth: false })).toMatch(/saving.amount must be a whole number above 0/);
+    expect(withSaving({ amount: 20000, day: 0, movedThisMonth: false })).toMatch(/saving.day must be 1 to 28/);
+    expect(withSaving({ amount: 20000, day: 29, movedThisMonth: false })).toMatch(/saving.day must be 1 to 28/);
+    expect(withSaving({ amount: 20000, day: 6, movedThisMonth: 'no' })).toMatch(/movedThisMonth must be true or false/);
+    expect(withSaving({ amount: 20000, day: 12, movedThisMonth: true })).toMatch(/cannot be moved this month before its day/);
+    expect(withSaving({ amount: 20000, day: 12, movedThisMonth: true }, 'bad')).not.toMatch(/before its day/);
+  });
   it('rejects a non-object', () => {
     expect(validateCase(null)).toEqual(['case must be an object']);
   });
@@ -131,6 +148,17 @@ describe('toEngineInputs and pick', () => {
     f.thisMonth = { received: 0, billsPaid: 0, billsDue: 0, everydaySoFar: 0 };
     const { inputs, check } = toEngineInputs(f);
     expect(() => evaluate(inputs, check)).not.toThrow();
+  });
+  it('D-58: a regular saving is a fixed saving series, logged on its day each full month and this month once moved', () => {
+    const f = minimalCase().fixture;
+    f.usualMonth.saving = { amount: 20000, day: 6, movedThisMonth: true };
+    const { inputs } = toEngineInputs(f);
+    expect(inputs.series.find((s) => s.id === 'saving')).toMatchObject({ role: 'saving', amount: 20000, savingMode: 'fixed', anchorDate: '2026-04-06' });
+    const lines = inputs.months.flatMap((m) => m.lines).filter((l) => l.seriesId === 'saving');
+    expect(lines.map((l) => l.date)).toEqual(['2026-04-06', '2026-05-06', '2026-06-06', '2026-07-06', '2026-08-06', '2026-09-06', '2026-10-06']);
+    expect(lines.every((l) => l.role === 'saved_invested')).toBe(true);
+    f.usualMonth.saving = { amount: 20000, day: 6, movedThisMonth: false };
+    expect(toEngineInputs(f).inputs.months.flatMap((m) => m.lines).filter((l) => l.seriesId === 'saving')).toHaveLength(6);
   });
 });
 

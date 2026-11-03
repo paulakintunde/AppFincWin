@@ -26,6 +26,8 @@ interface MidMonthRaw {
   price: number | null; fees: number;
   plan: { months: number; apr: string | null; depositPct: number; fees: number } | null;
   cushion: number;
+  /** 05.4-51 (D-58, D-67): a regular saving from the everyday account, as a percent of pay, on its day; null = none. */
+  saving: { pct: number; day: number } | null;
 }
 
 const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
@@ -39,6 +41,7 @@ const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
   fees: fc.constantFrom(0, 0, 500, 2500),
   plan: fc.oneof({ weight: 5, arbitrary: fc.constant(null) }, { weight: 1, arbitrary: fc.record({ months: fc.integer({ min: 2, max: 36 }), apr: fc.constantFrom(null, '0', '9.9', '19.99', '29.99'), depositPct: fc.constantFrom(0, 0, 5, 10, 20), fees: money(5_000) }) }), // 05.4-51 (Plan-49 re-run): the deposit is a share of the price
   cushion: money(1_500_000),
+  saving: fc.option(fc.record({ pct: fc.integer({ min: 1, max: 15 }), day: fc.integer({ min: 1, max: 28 }) }), { nil: null, freq: 3 }),
 });
 
 /**
@@ -49,11 +52,13 @@ function midMonth(r: MidMonthRaw, received: number): RightAnswerFixture {
   const { bills, everyday } = usualCosts(r.pay, r.costShare, r.billShare);
   const billsPaid = Math.floor((bills * r.paidShare) / 100);
   const everydaySoFar = Math.floor((everyday * r.soFarShare) / 100);
-  const balance = r.cushion + received - billsPaid - everydaySoFar;
+  // D-58 / D-67: this month's saving has left the account when its day is on or before the 15th (it is logged on its day).
+  const saving = r.saving === null ? undefined : { amount: Math.max(1, Math.floor((r.pay * r.saving.pct) / 100)), day: r.saving.day, movedThisMonth: r.saving.day <= 15 };
+  const balance = r.cushion + received - billsPaid - everydaySoFar - (saving?.movedThisMonth === true ? saving.amount : 0);
   return {
     asOf: '2026-10-15', currency: 'USD', region: null,
     pay: { amount: r.pay, cadence: 'monthly', nextDate: '2026-11-01', setupAmount: null, lastThree: null },
-    usualMonth: { bills, everyday, essentialEveryday: Math.floor(everyday / 2) },
+    usualMonth: { bills, everyday, essentialEveryday: Math.floor(everyday / 2), ...(saving === undefined ? {} : { saving }) },
     thisMonth: { received, billsPaid, billsDue: bills - billsPaid, everydaySoFar },
     historyMonths: r.history, quickEstimates: null, recordsAsOf: null,
     accounts: [{ id: 'a1', kind: 'checking', name: 'Main', balance, overdraftLimit: null, overdraftRate: null, use: 'everyday' }],

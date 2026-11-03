@@ -73,6 +73,11 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   const start = `${monthBefore(ym, f.historyMonths)}-01`;
   const pay = v3Series({ id: 'pay', role: 'pay', cadence: cadenceOf(f.pay.cadence), anchorDate: f.pay.cadence === 'monthly' ? start : f.pay.nextDate, amount: f.pay.amount });
   const bills = v3Series({ id: 'bills', role: 'bill', cadence: { unit: 'month', every: 1 }, anchorDate: start, amount: f.usualMonth.bills });
+  // 05.4 D-58: a regular saving is a fixed monthly 'saving' series from the everyday account, logged on its day each full month;
+  // the usual month reads it as set aside (as the persona Maya does).
+  const sv = f.usualMonth.saving;
+  const saving = sv === undefined ? null : v3Series({ id: 'saving', role: 'saving', cadence: { unit: 'month', every: 1 }, anchorDate: `${start.slice(0, 7)}-${pad(sv.day)}`, amount: sv.amount, savingMode: 'fixed' });
+  const savingLine = (m: string) => (sv === undefined ? [] : [v3Line({ id: `save-${m}`, date: `${m}-${pad(sv.day)}`, amount: sv.amount, role: 'saved_invested', seriesId: 'saving' })]);
   // 05.4 D-52: irregular pay has no pay series; each history month's income is one unlinked line on the stated day.
   const irr = f.pay.irregular;
   const months: V3Month[] = [];
@@ -92,6 +97,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
         ...(f.usualMonth.essentialEveryday > 0
           ? [v3Line({ id: `ess-${m}`, date: `${m}-15`, amount: f.usualMonth.essentialEveryday, categoryId: ESSENTIAL })]
           : []),
+        ...savingLine(m),
       ])
     );
   }
@@ -103,6 +109,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
         ...(t.received > 0 ? [v3Line({ id: `in-${ym}`, date: `${ym}-01`, amount: t.received, role: 'income' as const, seriesId: irr ? null : 'pay' })] : []),
         ...(t.billsPaid > 0 ? [v3Line({ id: `bill-${ym}`, date: `${ym}-01`, amount: t.billsPaid, seriesId: 'bills' })] : []),
         ...(t.everydaySoFar > 0 ? [v3Line({ id: `day-${ym}`, date: `${ym}-01`, amount: t.everydaySoFar })] : []),
+        ...(sv !== undefined && sv.movedThisMonth ? savingLine(ym) : []),
       ],
       { full: false }
     )
@@ -135,7 +142,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     currency: currencyCode(f.currency),
     region: f.region ? (f.region.subdivision ? `${f.region.country}-${f.region.subdivision}` : f.region.country) : null,
     months,
-    series: irr ? [bills] : [pay, bills],
+    series: [...(irr ? [bills] : [pay, bills]), ...(saving === null ? [] : [saving])],
     ...(irr ? { profile: { types: ['freelance'], variable: 'steady', steady: mu(f.pay.amount), billsHorizonMonths: null } } : {}),
     balance: mu(spending),
     accounts,
