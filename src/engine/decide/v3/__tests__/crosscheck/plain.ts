@@ -268,9 +268,12 @@ export interface PlainTier { variant: string; months: number | null; monthsAfter
  */
 export function plainTier(f: RightAnswerFixture, code: string): PlainTier {
   const c = f.check;
-  const oneOff = c.pay.mode === 'once' && (c.runningCosts ?? []).length === 0;
+  // D-68 refinement (a): "if the usual month is already short, a plan judged by cash gets the same D-65 tier a cash buy of the same
+  // total would get"; used = the plan's whole cost.
+  const short = plainShortPlan(f);
+  const oneOff = (c.pay.mode === 'once' || short) && (c.runningCosts ?? []).length === 0;
   if (!((code === 'fits_month' || code === 'fits_unspent') && oneOff)) return { variant: 'month_already_short', months: null, monthsAfter: null };
-  const used = big(c.price ?? 0) + big(c.oneOffFees);
+  const used = short ? plainPlanTotal(f) : big(c.price ?? 0) + big(c.oneOffFees);
   const S = usualShortfall(f);
   const free = maxC(0n, freeMoney(f));
   const money = free + plainNet(f).above;
@@ -294,9 +297,14 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
   if (recordsFresh(f)) return freshAnswer(f, cost);
   const left = leftThisMonth(f);
   if (c.pay.mode === 'plan') {
-    const pay = monthlyPayment(cost - big(c.pay.deposit) + big(c.pay.fees), c.pay.months, c.pay.apr);
-    const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - savingAmount(f);
-    return { code: usualLeft - pay < 0n ? 'monthly_short' : 'fits_month', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
+    // D-68: a short plan that money on hand pays in full inside the 90 days is judged by cash, as a one-off of its whole cost.
+    if (plainShortPlan(f)) return shortPlanAnswer(f);
+    // BR-12: "she would run out after the first payment ... Not yet"; BR-13: "A 0% plan cannot look fine while the account is
+    // ... overdrawn". A plan whose dated path goes below $0, past the money above the net's size and any net money it may use, is
+    // Not yet (no overdraft carries a plan). The ready-by month is not restated here.
+    const net = plainNet(f);
+    if (planPathLow(f) + net.above + net.lend < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
+    return { code: usualLeftOf(f) - plainPlanMonthly(f) < 0n ? 'monthly_short' : 'fits_month', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
   }
   const after = left - cost;
   const net = plainNet(f);
@@ -433,6 +441,14 @@ export function payDates(f: RightAnswerFixture): string[] {
  * bills list gives one this month (OD-03: "after the $500 bill on the 28th"); the rest land the day before the next pay.
  */
 export function plainPath(f: RightAnswerFixture, cost: Cents): { date: string; balance: Cents }[] {
+  return plainPathFlows(f, [{ date: f.asOf, amount: cost }]);
+}
+
+/**
+ * The same day-by-day path with the purchase as dated flows, each taken on its own date (05.4-54, D-68: "the 90-day cash path can
+ * pay" a plan whose "payments all fall inside the 90-day window"). plainPath is this with one flow, the cost, on day 0.
+ */
+export function plainPathFlows(f: RightAnswerFixture, flows: readonly { date: string; amount: Cents }[]): { date: string; balance: Cents }[] {
   const ym = f.asOf.slice(0, 7);
   const dim = daysInMonthOf(f.asOf);
   const left = dim - BigInt(Number(f.asOf.slice(8, 10))) + 1n; // days left in this month, day 0 included
@@ -447,10 +463,11 @@ export function plainPath(f: RightAnswerFixture, cost: Cents): { date: string; b
   const dated = f.bills.filter((b) => b.paidBy === 'me' && b.nextDue >= f.asOf && b.nextDue.slice(0, 7) === ym);
   const undated = big(f.thisMonth.billsDue) - dated.reduce((t, b) => t + big(b.amount), 0n);
   const out: { date: string; balance: Cents }[] = [];
-  let money = sittingMoney(f) - cost;
+  let money = sittingMoney(f);
   const saves = new Set(savingDates(f)); // D-67: each saving transfer leaves the account on its date
   for (let i = 0; i < PATH_DAYS; i++) {
     const date = dayAfter(f.asOf, i);
+    for (const fl of flows) if (fl.date === date) money -= fl.amount;
     if (pays.has(date)) money += payAmount(f);
     if (saves.has(date)) money -= savingAmount(f);
     // The usual bills land on payday; with irregular pay (D-52) there is no pay series, so on the 1st of each later month.
@@ -549,6 +566,118 @@ export function planPayments(amount: Cents, months: number, apr: string | null, 
   let payments = walk(level);
   while ((payments[payments.length - 1] ?? 0n) > level) payments = walk(++level);
   return payments;
+}
+
+// --- Short plans paid from money on hand (05.4-54, D-68). Restated from CONTEXT D-68 and its refinements (a)-(c), BR-12 and the
+// 05.4-53 SUMMARY's "How the rule works, in plain words". Not read from the engine.
+
+type PlanPay = Extract<RightAnswerFixture['check']['pay'], { mode: 'plan' }>;
+
+/**
+ * The payment dates of a plan: `months` of them from the first payment date, on the same day each month (clamped to the month's
+ * last day) or every 14 days when the plan says every fortnight (BR-12: "15 October, 29 October, 12 November and 26 November").
+ */
+export function planDates(f: RightAnswerFixture): string[] {
+  const c = f.check.pay;
+  if (c.mode !== 'plan') return [];
+  const first = c.firstPaymentDate;
+  const y = Number(first.slice(0, 4));
+  const m = Number(first.slice(5, 7)) - 1;
+  const d = Number(first.slice(8, 10));
+  const out: string[] = [];
+  for (let i = 0; i < c.months; i++) {
+    if (c.every === 'fortnight') {
+      out.push(dayAfter(first, 14 * i));
+      continue;
+    }
+    const monthStart = new Date(Date.UTC(y, m + i, 1)).toISOString().slice(0, 10);
+    out.push(monthStart.slice(0, 8) + String(Math.min(d, Number(daysInMonthOf(monthStart)))).padStart(2, '0'));
+  }
+  return out;
+}
+
+/**
+ * The plan's payments a month, as the monthly test reads them: the level payment (planPayments' first; with the first payment
+ * today the annuity-due payment, BR-16: "paid off in 48 payments of $205.76 (the last $205.57), the first of them today"), or for a
+ * plan paid every fortnight that payment x 26 / 12 (BR-12: "about £487.50 a month while it runs" for 4 x £225 every two
+ * weeks), rounded half up. The amount repaid is the one plainPlanTotal uses.
+ */
+export function plainPlanMonthly(f: RightAnswerFixture): Cents {
+  const c = f.check.pay;
+  if (c.mode !== 'plan') return 0n;
+  const amount = big(f.check.price ?? 0) + big(f.check.oneOffFees) - big(c.deposit) + big(c.fees);
+  const pay = planPayments(amount, c.months, c.apr, c.firstPaymentDate === f.asOf)[0] ?? 0n;
+  return c.every === 'fortnight' ? halfUp(pay * 26n, 12n) : pay;
+}
+
+/** The plan's dated flows on the cash path: the deposit and fees on day 0, then each payment on its own date (D-68). */
+function planFlows(f: RightAnswerFixture, c: PlanPay): { date: string; amount: Cents }[] {
+  const amount = big(f.check.price ?? 0) + big(f.check.oneOffFees) - big(c.deposit);
+  const pays = planPayments(amount, c.months, c.apr, c.firstPaymentDate === f.asOf);
+  const dates = planDates(f);
+  return [{ date: f.asOf, amount: big(c.deposit) + big(c.fees) }, ...pays.map((p, i) => ({ date: dates[i] ?? f.asOf, amount: p }))];
+}
+
+/** The lowest point of the day-by-day path with the plan's flows on their dates (D-68). */
+export function planPathLow(f: RightAnswerFixture): Cents {
+  const c = f.check.pay;
+  if (c.mode !== 'plan') return pathLow(f, 0n);
+  const flows = planFlows(f, c);
+  const day0 = flows.filter((x) => x.date === f.asOf).reduce((t, x) => t + x.amount, 0n);
+  return plainPathFlows(f, flows).reduce((lo, p) => (p.balance < lo ? p.balance : lo), sittingMoney(f) - day0);
+}
+
+/** The usual month's money left (pay less usual bills, everyday spending and the regular saving, D-67), before any plan. */
+function usualLeftOf(f: RightAnswerFixture): Cents {
+  return big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - savingAmount(f);
+}
+
+/**
+ * D-68 (owner, 2026-11-03): "a plan whose payments all fall inside the 90-day window, and which the 90-day cash path can pay
+ * without going below $0 and without the locked safety net, is judged by cash like a one-off purchase, not by the monthly 'Short
+ * each month' test." Refinements: "(b) money on hand must cover the plan's whole cost the way a cash buy would (matches BR-12),
+ * with no help from pay beyond what the 90-day path already counts; (c) D-68 stays narrow: it changes an answer only when the
+ * monthly test fails, and never applies when the plan needs the overdraft, any safety-net money (locked or not), or has a running
+ * cost." 05.4-53 SUMMARY: "Is every payment dated before day 90 (days 0..89, the same days the cash path reads)?" and "this month's
+ * room, spare money and extra savings above the net's size cover it, and the 90-day path with every payment on its own date never
+ * goes below $0".
+ *
+ * Restated, all five must hold:
+ *  1. a plan with no running monthly cost;
+ *  2. every payment date is before asOf + 90 days;
+ *  3. the monthly test fails: the plan's payments a month are more than the usual month leaves (the QE-12 test it replaces);
+ *  4. the dated path (deposit and fees on day 0, each payment on its date) plus the money above the net's size never goes below
+ *     $0: no overdraft, and no money in the net up to its size, locked or not;
+ *  5. the plan's whole cost (plainPlanTotal) is covered, as a one-off of that cost, by this month's room, earlier money and money
+ *     above the net's size.
+ */
+export function plainShortPlan(f: RightAnswerFixture): boolean {
+  const c = f.check.pay;
+  if (c.mode !== 'plan' || f.check.price === null || (f.check.runningCosts ?? []).length > 0) return false;
+  const end = dayAfter(f.asOf, PATH_DAYS);
+  if (!planDates(f).every((d) => d < end)) return false;
+  if (usualLeftOf(f) - plainPlanMonthly(f) >= 0n) return false;
+  return shortPlanCash(f) !== null;
+}
+
+/** Conditions 4 and 5 of plainShortPlan: the one-off ladder for the whole cost, the cash check read from the dated path. */
+function shortPlanCash(f: RightAnswerFixture): { total: Cents; rest: Cents; earlier: Cents } | null {
+  const net = plainNet(f);
+  if (planPathLow(f) + net.above < 0n) return null;
+  const total = plainPlanTotal(f);
+  const room = maxC(0n, leftThisMonth(f));
+  const fromMonth = total < room ? total : room;
+  const rest = total - fromMonth;
+  const earlier = freeMoney(f) - fromMonth;
+  if (rest > 0n && rest > earlier + net.above) return null;
+  return { total, rest, earlier };
+}
+
+/** D-68: the one-off answer for the plan's whole cost (Fits this month, or Fits from spare money / extra savings). */
+function shortPlanAnswer(f: RightAnswerFixture): PlainAnswer {
+  const s = shortPlanCash(f) as { total: Cents; rest: Cents; earlier: Cents };
+  const after = Number(leftThisMonth(f) - s.total);
+  return { code: s.rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(plainNet(f), s.rest > maxC(0n, s.earlier)), afterBuy: after };
 }
 
 /** Named so the table's thresholds have one reader; the Theme A plans use them. */

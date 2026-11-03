@@ -1,9 +1,11 @@
 /** QA-03: every approved right-answer case with no pending rule also runs through the plain calculator. */
+import * as fc from 'fast-check';
 import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { freeMoney, monthEndBalance, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPlanTotal, plainTier, planPayments, recordsFresh, recordsLookBehind } from './plain';
+import { freeMoney, monthEndBalance, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind } from './plain';
+import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs } from '../rightAnswers/fixture';
 import type { RightAnswerFixture } from '../rightAnswers/schema';
 
@@ -256,5 +258,138 @@ describe('05.4-51 drafts: the D-65 tiers SN-21..SN-24 and the deposit-and-today 
     expect(plainAnswer(c.fixture)).toMatchObject({ code: 'monthly_short', variant: 'month_already_short' });
     // through the fixture as written the engine asks the pause question first (first-payment mapping is FIN-05 / BO-05's)
     expect(evaluate(inputs, check).result.missing).toContain('pause_interest_not_answered');
+  });
+});
+
+describe('05.4-54 (D-68): the plain calculator restates short plans paid from money on hand, and agrees with the engine', () => {
+  /** The plain side of a 05.4-53 person: the same fixture, with its running cost stated as a running cost (the engine side adds it as an extra). */
+  const plainSide = (o: ShortPlanCase): RightAnswerFixture => {
+    const f = shortPlanFixture(o);
+    if (o.running === undefined) return f;
+    return { ...f, check: { ...f.check, runningCosts: [{ id: 'ins', amount: o.running, everyMonths: 1, start: f.asOf, end: null }] } };
+  };
+  const QUALIFY = new Set(['qualifies', 'extraSavings', 'alreadyShort', 'fortnight']);
+
+  it.each(Object.keys(SHORT_PLAN_CASES) as (keyof typeof SHORT_PLAN_CASES)[])('%s: the same code and variant, and D-68 on both sides or neither', (k) => {
+    const o: ShortPlanCase = SHORT_PLAN_CASES[k];
+    const { inputs, check } = shortPlan(o);
+    const r = evaluate(inputs, check).result;
+    const f = plainSide(o);
+    // not_yet's variant (not_covered, with its ready-by month) is not restated by the plain calculator; the code is.
+    expect(plainAnswer(f)).toMatchObject(r.code === 'not_yet' ? { code: r.code } : { code: r.code, variant: r.variant });
+    expect(plainShortPlan(f)).toBe(QUALIFY.has(k));
+    expect(r.facts.some((x) => x.code === 'short_plan_from_cash')).toBe(QUALIFY.has(k));
+    const monthly = r.facts.find((x) => x.code === 'short_plan_from_cash')?.values;
+    if (monthly !== undefined) expect(monthly).toEqual({ monthly: Number(plainPlanMonthly(f)) });
+  });
+
+  it('QUALIFIES by hand: $1,800 in all, the path lowest at $2,700 on 31 January, and the one-off ladder for $1,800', () => {
+    const f = shortPlanFixture(SHORT_PLAN_CASES.qualifies);
+    expect(planDates(f)).toEqual(['2026-11-15', '2026-12-15', '2027-01-15']);
+    expect(plainPlanTotal(f)).toBe(180_000n);
+    // $4,000 + two pays of $3,000 - two months of $1,500 bills - $1,800 of payments - $500 + $1,000 + $1,000 everyday = $2,700
+    expect(planPathLow(f)).toBe(270_000n);
+    const low = plainPathFlows(f, [
+      { date: '2026-11-15', amount: 60_000n },
+      { date: '2026-12-15', amount: 60_000n },
+      { date: '2027-01-15', amount: 60_000n },
+    ]).find((p) => p.balance === 270_000n);
+    expect(low?.date).toBe('2027-01-31');
+    // $500 of this month's room, then $1,300 of the $3,000 of earlier spare money: Fits from spare money
+    expect(plainAnswer(f)).toEqual({ code: 'fits_unspent', variant: null, afterBuy: -130_000 });
+  });
+
+  it('plainPath is plainPathFlows with the cost on day 0 (every existing caller gives the same numbers)', () => {
+    const f = shortPlanFixture(SHORT_PLAN_CASES.qualifies);
+    expect(plainPath(f, 12_345n)).toEqual(plainPathFlows(f, [{ date: f.asOf, amount: 12_345n }]));
+  });
+
+  it('ALREADY SHORT (D-65 with D-68): the tier of a $1,800 cash buy, N 32 and M 14, as the engine', () => {
+    const f = shortPlanFixture(SHORT_PLAN_CASES.alreadyShort);
+    const { inputs, check } = shortPlan(SHORT_PLAN_CASES.alreadyShort);
+    const r = evaluate(inputs, check).result;
+    const t = plainTier(f, plainAnswer(f).code);
+    expect(t).toEqual({ variant: 'month_short_moderate', months: 32, monthsAfter: 14 });
+    expect(r.variant).toBe(t.variant);
+    expect(r.facts.find((x) => x.code === 'money_lasts_shorter')?.values).toEqual({ months: t.months, monthsAfter: t.monthsAfter });
+  });
+
+  it('QE-12 (48 months), BR-12 and BR-13 (the path goes below $0) are not short plans paid from money on hand', () => {
+    const byId = (id: string) => loadCases().find((x) => x.id === id)!.fixture;
+    for (const id of ['QE-11', 'QE-12', 'BR-05', 'BR-12', 'BR-13']) expect({ id, short: plainShortPlan(byId(id)) }).toEqual({ id, short: false });
+    expect(planPathLow(byId('BR-12'))).toBeLessThan(0n);
+    expect(planPathLow(byId('BR-13'))).toBeLessThan(0n);
+  });
+
+  it('a payment on day 90 is outside; on day 89 it is inside (days 0..89)', () => {
+    const f = shortPlanFixture({ ...SHORT_PLAN_CASES.qualifies, firstOn: '2026-12-12' });
+    expect(planDates(f).at(-1)).toBe('2027-02-12');
+    expect(plainShortPlan(f)).toBe(true);
+    expect(plainShortPlan(shortPlanFixture({ ...SHORT_PLAN_CASES.qualifies, firstOn: '2026-12-13' }))).toBe(false);
+    const engine68 = (firstOn: string) => {
+      const { inputs, check } = shortPlan({ ...SHORT_PLAN_CASES.qualifies, firstOn });
+      return evaluate(inputs, check).result.facts.some((x) => x.code === 'short_plan_from_cash');
+    };
+    expect([engine68('2026-12-12'), engine68('2026-12-13')]).toEqual([true, false]);
+  });
+
+  it('the crosscheck skip: a D-68 plan leaves FIN-06/FIN-07 and stays out under BO-05, because through the fixture as written the engine asks first', () => {
+    const f = shortPlanFixture(SHORT_PLAN_CASES.qualifies);
+    expect(pendingFixIds(f)).toContain('BO-05');
+    expect(pendingFixIds(f)).not.toContain('FIN-06/FIN-07');
+    const { inputs, check } = toEngineInputs(f);
+    expect(evaluate(inputs, check).result.missing).toContain('pause_interest_not_answered');
+    // a plan D-68 leaves alone is still FIN-06/FIN-07's
+    expect(pendingFixIds(shortPlanFixture(SHORT_PLAN_CASES.longShort))).toContain('FIN-06/FIN-07');
+    expect(pendingFixIds(shortPlanFixture(SHORT_PLAN_CASES.longShort))).not.toContain('BO-05');
+  });
+});
+
+describe('05.4-54 (D-68) at scale: random short plans on the 05.4-53 person, the engine through the BR-16 first-payment mapping', () => {
+  const RUNS = Number(process.env.D68_RUNS ?? 1000);
+  const caseArb: fc.Arbitrary<ShortPlanCase> = fc
+    .record({
+      everyday: fc.integer({ min: 0, max: 800_000 }),
+      saved: fc.integer({ min: 0, max: 800_000 }),
+      price: fc.integer({ min: 1_000, max: 600_000 }),
+      months: fc.integer({ min: 1, max: 8 }),
+      fortnight: fc.boolean(),
+      onePeriod: fc.boolean(),
+      unlocked: fc.boolean(),
+      bills: fc.integer({ min: 100_000, max: 200_000 }),
+      spend: fc.integer({ min: 50_000, max: 200_000 }),
+      apr: fc.constantFrom('0', '0', '9.9', '29.99'),
+    })
+    .map((r) => ({
+      everyday: r.everyday,
+      saved: r.saved,
+      price: r.price,
+      months: r.months,
+      bills: r.bills,
+      spend: r.spend,
+      ...(r.fortnight ? { every: 'fortnight' as const } : { apr: r.apr }),
+      ...(r.onePeriod ? { first: 'one_period' as const } : {}),
+      ...(r.unlocked ? { locked: false as const } : {}),
+    }));
+
+  it(`agrees on ${RUNS} draws: D-68 on both sides or neither, and on a D-68 answer the same code and variant`, () => {
+    let short = 0;
+    fc.assert(
+      fc.property(caseArb, (o) => {
+        const { inputs, check } = shortPlan(o);
+        const r = evaluate(inputs, check).result;
+        const f = shortPlanFixture(o);
+        const p = plainAnswer(f);
+        const d68 = plainShortPlan(f);
+        if (d68) short++;
+        const e68 = r.facts.some((x) => x.code === 'short_plan_from_cash');
+        // A plan D-68 leaves alone is judged by the plan rules still pending on the plain side (FIN-06/FIN-07: the day-one part
+        // against the monthly part); only that it is left alone is compared.
+        if (!d68 && !e68) return;
+        expect({ code: p.code, variant: p.variant, d68 }).toEqual({ code: r.code, variant: r.variant, d68: e68 });
+      }),
+      { numRuns: RUNS, seed: 0x5454 }
+    );
+    expect(short).toBeGreaterThan(RUNS / 20);
   });
 });
