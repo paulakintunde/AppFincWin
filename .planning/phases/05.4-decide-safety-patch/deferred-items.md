@@ -6,3 +6,7 @@
 - 05.4-06: RESOLVED `src/db/decideOutcomes.ts` (4-arg record_decide_outcome overload) harvested with its test.
 
 - 05.4-15 (observation, pre-existing, not changed): before the month's pay has landed (e.g. the 1st), the one-off ladder still takes this month's room out of the money sitting in the account (`judge.ts` ladder: `earlierRoom = unspent - B`, "this month's room counted once"). On the 1st the balance holds only last month's money, so money left from earlier months plus this month's room is undercounted. Example: QE-07 Lucy at $1,500 on 1 December (records synced 29 Nov): cash path lowest $500 on 31 Dec, room $1,000, $1,000 from November still in the account, answer not_yet. The plain calculator mirrors the engine rule, so the cross-check agrees. For the planner of the earlier-months / unspent rules (D-44) to decide.
+
+## Test adapter ignores each person's currency (found 2026-11-03, orchestrator)
+- `golden/adapter.ts` `toV3Inputs(person)` builds on the USD base fixture and never passes `person.currency`, so the 13 GBP audit people run as USD. Amounts are the same minor units, but currency-dependent rules (band edges, tax region) use USD. The changed-answers pages therefore show "$" for them.
+- Fix in 05.4-40 (personas as goldens): pass `person.currency` through, re-run the reviewed diff, and bring any changed answers to the owner (D-14).
