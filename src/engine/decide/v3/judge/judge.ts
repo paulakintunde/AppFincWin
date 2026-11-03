@@ -42,7 +42,7 @@ import { ceilDivide, minorFromBigInt } from '../../../payoff/types';
 import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_MONTHS } from '../constants';
 import { addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck, CashPathV3 } from '../cash/path';
-import { cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit } from '../moneySource';
+import { billsHeldTotal, cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit } from '../moneySource';
 import { depletionFacts, monthAlreadyShort, monthShortTier } from '../depletion';
 import { emergencyOf } from '../funds/emergency';
 import { NO_NET, fitVariant, netDip, type ResolvedNet } from '../safetyNet';
@@ -593,7 +593,7 @@ export function judge(j: JudgeInput): Result {
   // 05.4 D-56: spare money can be no more than the everyday accounts really hold at month end (never below 0 here: an account
   // below 0 is the cash check's and the overdraft's to judge, D-27, D-28). Absent account (hand-built tests): no cap.
   const confirmed = confirmedUnspent(funds);
-  const unspentValue = j.account == null ? confirmed : cappedSpare(confirmed, j.account.spareInAccount);
+  const unspentValue = j.account == null ? confirmed : cappedSpare(confirmed, j.account.spareInAccount, billsHeldTotal(funds));
   const oneRaw = missing.length > 0 || p === null ? null : oneOffPart(j, { unspent: unspentValue, envelope: funds.ownEnvelope });
 
   const asking = (parts: Result['parts'], ask: readonly MissingCode[], extra: readonly Notice[] = []): Result => ({

@@ -35,9 +35,18 @@ export function confirmedUnspent(funds: Pick<Funds, 'unspent'>): MinorUnits | nu
   return funds.unspent === null ? null : (funds.unspent.available ?? funds.unspent.value);
 }
 
-export function cappedSpare(confirmed: MinorUnits | null, inAccount: MinorUnits): MinorUnits | null {
+/**
+ * 05.4-19 (D-47 with D-56): `held` is the yearly and every-3-month bill hold-back already taken off `confirmed`; it comes off after
+ * the cap, so a cap that binds never cancels it (spare = min(confirmed + held, in account) - held).
+ */
+export function cappedSpare(confirmed: MinorUnits | null, inAccount: MinorUnits, held: MinorUnits): MinorUnits | null {
   if (confirmed === null) return null;
-  return minorUnits(Math.min(confirmed, inAccount > 0 ? inAccount : 0));
+  return minorUnits(Math.min(confirmed + held, inAccount > 0 ? inAccount : 0) - held);
+}
+
+/** 05.4 FIN-11 (D-47): the total held back for yearly and every-3-month bills; 0 when there are none. */
+export function billsHeldTotal(funds: Pick<Funds, 'billsHeld'>): MinorUnits {
+  return funds.billsHeld?.total ?? minorUnits(0);
 }
 
 export interface SplitArgs {

@@ -5,7 +5,7 @@
 import { minorUnits } from '../../../money/types';
 import { applyPurchaseFlows, openCashPath, type CashPathV3 } from '../cash/path';
 import { evaluate } from '../evaluate';
-import { cappedSpare, confirmedUnspent, moveMoneyBy, savingTransfers, sourceSplit, spareInAccount } from '../moneySource';
+import { billsHeldTotal, cappedSpare, confirmedUnspent, moveMoneyBy, savingTransfers, sourceSplit, spareInAccount } from '../moneySource';
 import { prepare } from '../prepare';
 import type { Result } from '../types';
 import { toEngineInputs } from './rightAnswers/fixture';
@@ -40,12 +40,26 @@ describe('confirmedUnspent (D-38)', () => {
 });
 
 describe('cappedSpare (D-56)', () => {
+  const z = mu(0);
   it('the confirmed figure, no more than the account holds; an account below 0 caps at 0; null stays null', () => {
-    expect(cappedSpare(mu(50_000), mu(30_000))).toBe(30_000);
-    expect(cappedSpare(mu(20_000), mu(30_000))).toBe(20_000);
-    expect(cappedSpare(mu(20_000), mu(-5_000))).toBe(0);
-    expect(cappedSpare(mu(-7_000), mu(30_000))).toBe(-7_000);
-    expect(cappedSpare(null, mu(30_000))).toBeNull();
+    expect(cappedSpare(mu(50_000), mu(30_000), z)).toBe(30_000);
+    expect(cappedSpare(mu(20_000), mu(30_000), z)).toBe(20_000);
+    expect(cappedSpare(mu(20_000), mu(-5_000), z)).toBe(0);
+    expect(cappedSpare(mu(-7_000), mu(30_000), z)).toBe(-7_000);
+    expect(cappedSpare(null, mu(30_000), z)).toBeNull();
+  });
+  it('05.4-19 (D-47): the yearly-bill hold-back comes off after the cap, so a cap that binds never cancels it', () => {
+    // confirmed 64500 is 65500 less a 1000 hold-back; the account holds 52500 at month end: 52500 - 1000 = 51500, not 52500
+    expect(cappedSpare(mu(64_500), mu(52_500), mu(1_000))).toBe(51_500);
+    // the cap does not bind: the confirmed figure as it is
+    expect(cappedSpare(mu(40_000), mu(52_500), mu(1_000))).toBe(40_000);
+    // an account at 0 at month end leaves nothing, less the hold-back
+    expect(cappedSpare(mu(5_000), mu(-1), mu(1_000))).toBe(-1_000);
+    expect(cappedSpare(null, mu(30_000), mu(1_000))).toBeNull();
+  });
+  it('billsHeldTotal: the hold-back total, or 0 with no yearly bills', () => {
+    expect(billsHeldTotal({})).toBe(0);
+    expect(billsHeldTotal({ billsHeld: { total: mu(700), parts: [] } })).toBe(700);
   });
 });
 

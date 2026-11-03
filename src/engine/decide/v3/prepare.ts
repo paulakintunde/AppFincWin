@@ -28,7 +28,7 @@ import { recordsSynced } from './month/freshness';
 import { dueDrops } from './month/dueDrops';
 import { buildMonthModel } from './month/model';
 import { historyPay, type HistoryPay } from './month/historyPay';
-import { cappedSpare, confirmedUnspent, savingTransfers, spareInAccount } from './moneySource';
+import { billsHeldTotal, cappedSpare, confirmedUnspent, savingTransfers, spareInAccount } from './moneySource';
 import { incomeThisMonth, type IncomeInput } from './month/incomeProfile';
 import { expectedFor } from './month/incomePattern';
 import { liveSeriesOf, seriesOccurrences } from './month/series';
@@ -260,7 +260,7 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
     pb.purchase !== null && result.reasons.includes('volatile_cover_declined')
       ? insteadFutures({ result, month, funds, purchase: pb.purchase, userRate: null, years: 1 })
       : null;
-  return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash, futures, uncoveredIncome: uncoveredIncomeMonths(inputs, month, pb.purchase), net, spare: cappedSpare(confirmedUnspent(funds), r.spareInAccount) };
+  return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash, futures, uncoveredIncome: uncoveredIncomeMonths(inputs, month, pb.purchase), net, spare: cappedSpare(confirmedUnspent(funds), r.spareInAccount, billsHeldTotal(funds)) };
 }
 
 /** A comparable key: a date, or the first of a month; null (never) sorts last. */
