@@ -1669,12 +1669,13 @@
       },
       "why": "Money in this month: $3,000 (1 November). Already spent: $1,500 of bills and $500 of everyday spending. Still to come: $500 of everyday spending by 30 November. So this month has $500 left ($3,000 - $1,500 - $500 - $500), and the spare money is $4,000 - $500 still to come = $3,500, of which $3,000 is from earlier months. The next pay, $3,000 on 1 December, brings $1,500 of bills with it. The plan: $600 on 15 November, $600 on 15 December and $600 on 15 January, at 0% (a rate of 0%, so no interest line), $1,800 in all. $600 a month is more than the $500 a usual month leaves, so by the monthly test alone it would be \"Short each month\". But every payment falls before 13 February 2027 (day 90 of the 90-day look-ahead), so D-68 judges it by cash like a $1,800 purchase. The 90-day path: $4,000 - $600 - $500 = $2,900 on 30 November; + $3,000 - $1,500 - $600 - $1,000 = $2,800 on 31 December; + $1,500 - $600 - $1,000 = $2,700 on 31 January, its lowest point, never below $0, with no overdraft and no safety-net money. The $1,800 comes from this month's $500 and $1,300 of the $3,000 of earlier spare money: \"Fits from spare money\" ($500 + $1,300 = $1,800). This month ends at $500 - $500 = $0, and $3,500 - $1,800 = $1,700 of spare money is left. One caution line says the plan's $600 a month is more than the usual month can cover, so it is paid from money on hand (short_plan_from_cash); no \"makes your month short\" line.",
       "fixIds": [
+        "FIN-05",
         "FIN-06",
         "FIN-01b"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-03",
+      "ownerReason": "Owner, D-14 review of FIN-01b (2026-11-03): approved all seven D-68 drafts BR-17..BR-23 as right answers; \"choices 1 and 2 stay\" (an already-short month gets the D-65 tier a cash buy of the same total would get; money on hand must cover the plan's whole cost). (c) dropping volatile_cover_declined and the Instead options, (d) only the interest line on a not-already-short D-68 answer and (e) single-payment plans inside 90 days qualifying: all OK as built.",
       "expertNote": null,
       "plannerNote": "Engine (first payment read as today, as in BR-16; table.test pins it): fits_unspent, variant null, split month 50000 + unspent_earlier 130000, short_plan_from_cash {monthly 60000} first, month_left_after 0, no plan_makes_short or depletion_payment. Plain calculator: the same code and variant, plainPlanTotal 180000, planPathLow 270000. Hand, plain and engine agree. Through the fixture as written the engine asks the pause question first (needs_input), as every BR case does (FIN-05 / BO-05 first-payment mapping)."
     },
@@ -1770,12 +1771,13 @@
       },
       "why": "Money in this month: $3,000 (1 November). Already spent: $1,500 of bills and $500 of everyday spending. Still to come: $500 of everyday spending by 30 November. So this month has $500 left ($3,000 - $1,500 - $500 - $500), and the spare money is $4,000 - $500 still to come = $3,500, of which $3,000 is from earlier months. The next pay, $3,000 on 1 December, brings $1,500 of bills with it. The plan: $600 on the 15th of each month from 15 November 2026 to 15 April 2027, six payments, 0% (no interest line), $3,600 in all. The last payment, 15 April, is after 13 February 2027 (day 90), so D-68 does not apply and the monthly test decides, as before (QE-12): $600 a month against the $500 a usual month leaves is $100 short each month, \"Short each month\", with no ready-by date. Today's $600 comes from this month's $500 and $100 of earlier spare money, so this month ends at $0.",
       "fixIds": [
+        "FIN-05",
         "FIN-06",
         "FIN-01b"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-03",
+      "ownerReason": "Owner, D-14 review of FIN-01b (2026-11-03): approved all seven D-68 drafts BR-17..BR-23 as right answers; \"choices 1 and 2 stay\" (an already-short month gets the D-65 tier a cash buy of the same total would get; money on hand must cover the plan's whole cost). (c) dropping volatile_cover_declined and the Instead options, (d) only the interest line on a not-already-short D-68 answer and (e) single-payment plans inside 90 days qualifying: all OK as built.",
       "expertNote": null,
       "plannerNote": "Engine (first payment read as today, as in BR-16; table.test pins it): monthly_short, variant null, plan_makes_short {short 10000}, price_over_net, month_left_after 0, no short_plan_from_cash. Plain: monthly_short, plainShortPlan false. Hand, plain and engine agree. Through the fixture as written the engine asks the pause question first (needs_input), as every BR case does (FIN-05 / BO-05 first-payment mapping)."
     },
@@ -1871,12 +1873,13 @@
       },
       "why": "Money in this month: $3,000 (1 November). Already spent: $1,500 of bills and $500 of everyday spending. Still to come: $500 of everyday spending by 30 November. The account holds $500, so after the $500 still to come there is $0 of spare money. The plan: $600 on 15 November, 15 December and 15 January, 0% (no interest line), $1,800 in all. Today's $600 is more than the $500 in the account, so the account goes below $0 today ($500 - $600 = -$100), and the 90-day path is lowest on 31 January: $500 - $600 - $500 + $1,500 - $600 - $1,000 + $1,500 - $600 - $1,000 = -$800. There is no overdraft, and the $2,000 safety net is locked, so it is left out (D-61). D-68 needs the path to stay at or above $0, so it does not apply. All three payments land inside the 90 days, so this is judged like paying $1,800 at once (BR-12): $1,800 more at $500 a month is 3.6, so 4 months from November: Not yet, ready March 2027.",
       "fixIds": [
+        "FIN-05",
         "FIN-06",
         "FIN-01b"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-03",
+      "ownerReason": "Owner, D-14 review of FIN-01b (2026-11-03): approved all seven D-68 drafts BR-17..BR-23 as right answers; \"choices 1 and 2 stay\" (an already-short month gets the D-65 tier a cash buy of the same total would get; money on hand must cover the plan's whole cost). (c) dropping volatile_cover_declined and the Instead options, (d) only the interest line on a not-already-short D-68 answer and (e) single-payment plans inside 90 days qualifying: all OK as built. Ready-by (owner, 2026-11-03): use the hand date from BR-12's whole-cost rule; the case is knownRed FIN-05 until the engine reads the whole cost, as BR-12 is.",
       "expertNote": null,
       "plannerNote": "Engine (first payment read as today, as in BR-16; table.test pins it): not_yet / not_covered with net_locked {locked 200000} and plan_makes_short, no short_plan_from_cash: code, variant and facts agree with the hand answer. READY-BY DISAGREES: the engine gives 2027-01 (it reads the day-one $600: $600 at $500 a month = 2 months), the hand answer by BR-12's rule (\"judged like paying £900 at once ... £500 more at £80 a month = 7 months\") gives 2027-03 for the whole $1,800. The same split already shows on approved BR-12 (expected 2027-05; the engine with the first payment read as today gives 2026-11-01), which is knownRed FIN-05. Reported for the owner (05.4-56), not changed here. Plain: not_yet, plainShortPlan false, planPathLow -80000. Through the fixture as written the engine asks the pause question first (needs_input), as every BR case does (FIN-05 / BO-05 first-payment mapping)."
     },
@@ -1972,12 +1975,13 @@
       },
       "why": "Money in this month: $3,000 (1 November). Already spent: $1,500 of bills and $500 of everyday spending. Still to come: $500 of everyday spending by 30 November. The account holds $1,000, so the spare money is $1,000 - $500 = $500. The plan: $900 on 15 November, 15 December and 15 January, 0% (no interest line), $2,700 in all; $900 a month is more than the $500 a usual month leaves. The 90-day path: $1,000 - $900 - $500 = -$400 on 30 November; - $400 + $1,500 - $900 - $1,000 = -$800 on 31 December; -$800 + $1,500 - $900 - $1,000 = -$1,200 on 31 January, its lowest point. Only the $2,000 safety net could carry that, and it is locked, so it is left out (D-61: \"a purchase that could only be paid by using it is Not yet\"). D-68 never uses safety-net money, so it does not apply. All three payments land inside the 90 days, so this is judged like paying $2,700 at once (BR-12): $2,700 - $500 = $2,200 more at $500 a month is 4.4, so 5 months from November: Not yet, ready April 2027. A line says the locked safety net is left out (net_locked).",
       "fixIds": [
+        "FIN-05",
         "FIN-06",
         "FIN-01b"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-03",
+      "ownerReason": "Owner, D-14 review of FIN-01b (2026-11-03): approved all seven D-68 drafts BR-17..BR-23 as right answers; \"choices 1 and 2 stay\" (an already-short month gets the D-65 tier a cash buy of the same total would get; money on hand must cover the plan's whole cost). (c) dropping volatile_cover_declined and the Instead options, (d) only the interest line on a not-already-short D-68 answer and (e) single-payment plans inside 90 days qualifying: all OK as built. Ready-by (owner, 2026-11-03): use the hand date from BR-12's whole-cost rule; the case is knownRed FIN-05 until the engine reads the whole cost, as BR-12 is.",
       "expertNote": null,
       "plannerNote": "Engine (first payment read as today, as in BR-16; table.test pins it): not_yet / not_covered with net_locked {locked 200000}, plan_makes_short {short 40000} and price_over_net, no short_plan_from_cash: code, variant and facts agree with the hand answer. READY-BY DISAGREES: the engine gives 2026-12-01 (pay day, read from the day-one $900), the hand answer by BR-12's rule gives 2027-04 for the whole $2,700. Same split as BR-19 and approved BR-12. Reported for the owner (05.4-56), not changed here. Unlocked (the 05.4-53 unlockedNet person) the engine gives Short each month with a Dips one-off part, still no D-68. Plain: not_yet, plainShortPlan false, planPathLow -120000. Through the fixture as written the engine asks the pause question first (needs_input), as every BR case does (FIN-05 / BO-05 first-payment mapping)."
     },
@@ -2076,12 +2080,13 @@
       },
       "why": "Money in this month: $3,000 (1 November). Already spent: $1,500 of bills and $500 of everyday spending. Still to come: $500 of everyday spending by 30 November. So this month has $500 left, and the everyday account's spare money is $500 - $500 = $0. Savings hold $6,000 against a $2,000 safety net, so $4,000 is extra savings that can be used (D-56); the $2,000 net is locked and left out. The plan: $600 on 15 November, 15 December and 15 January, 0% (no interest line), $1,800 in all; $600 a month is more than the $500 a usual month leaves. The everyday account alone goes below $0 today ($500 - $600 = -$100) and is lowest on 31 January at -$800 ($500 - $600 - $500 + $1,500 - $600 - $1,000 + $1,500 - $600 - $1,000). With the $4,000 of extra savings the lowest point is $3,200, never below $0, with no overdraft and no net money, and every payment is before 13 February (day 90), so D-68 judges it by cash. The $1,800 comes from this month's $500 and $1,300 of extra savings: \"Fits from extra savings\" ($500 + $1,300 = $1,800; $4,000 - $1,300 = $2,700 of extra savings left). Because the everyday account goes below $0 today, $800 (its lowest point, less than the $4,000 of extra savings) has to move from savings by 15 November 2026 (D-58). The caution line says the plan's $600 a month is paid from money on hand.",
       "fixIds": [
+        "FIN-05",
         "FIN-06",
         "FIN-01b"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-03",
+      "ownerReason": "Owner, D-14 review of FIN-01b (2026-11-03): approved all seven D-68 drafts BR-17..BR-23 as right answers; \"choices 1 and 2 stay\" (an already-short month gets the D-65 tier a cash buy of the same total would get; money on hand must cover the plan's whole cost). (c) dropping volatile_cover_declined and the Instead options, (d) only the interest line on a not-already-short D-68 answer and (e) single-payment plans inside 90 days qualifying: all OK as built.",
       "expertNote": null,
       "plannerNote": "Engine (first payment read as today, as in BR-16; table.test pins it): fits_unspent / extra_savings, split month 50000 + extra_savings 130000, extra_savings_used {used 130000, above 400000}, move_money_by {amount 80000, date 2026-11-15}, short_plan_from_cash {monthly 60000}, month_left_after 0. Plain: the same code and variant. Hand, plain and engine agree. Through the fixture as written the engine asks the pause question first (needs_input), as every BR case does (FIN-05 / BO-05 first-payment mapping)."
     },
@@ -2180,12 +2185,13 @@
       },
       "why": "Money in this month: $3,000 (1 November). Already spent: $1,600 of bills and $750 of everyday spending. Still to come: $750 of everyday spending by 30 November. So this month is $100 short ($3,000 - $1,600 - $750 - $750 = -$100) and has no room; the spare money is $4,000 - $750 still to come = $3,250. The usual month is $3,000 - $1,600 - $1,500 = -$100: already short before any purchase. The plan: $600 on 15 November, 15 December and 15 January, 0% (no interest line), $1,800 in all. The 90-day path: $4,000 - $600 - $750 = $2,650 on 30 November; + $3,000 - $1,600 - $600 - $1,500 = $1,950 on 31 December; + $1,400 - $600 - $1,500 = $1,250 on 31 January, its lowest point, never below $0, with no overdraft and no net money, and every payment is before 13 February (day 90). So D-68 judges it like a $1,800 cash buy, and D-68 refinement (a) gives it the D-65 tier that cash buy would get: the $1,800 comes from the $3,250 of spare money. How long the money lasts at $100 short a month: $3,250 / $100 = 32 months now, ($3,250 - $1,800) / $100 = $1,450 / $100 = 14 months after. That cuts it by 1 month or more, and the spare money covers it, so the tier is Moderate: \"Fits from spare money, but your month is already short\", \"This shortens how long your money lasts at this shortfall, from 32 months to 14.\" The month stays $100 short (usual_month_short) and the caution line follows the tier line. This case shows the owner how D-68 meets D-65 (05.4-56 asks).",
       "fixIds": [
+        "FIN-05",
         "FIN-06",
         "FIN-01b"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-03",
+      "ownerReason": "Owner, D-14 review of FIN-01b (2026-11-03): approved all seven D-68 drafts BR-17..BR-23 as right answers; \"choices 1 and 2 stay\" (an already-short month gets the D-65 tier a cash buy of the same total would get; money on hand must cover the plan's whole cost). (c) dropping volatile_cover_declined and the Instead options, (d) only the interest line on a not-already-short D-68 answer and (e) single-payment plans inside 90 days qualifying: all OK as built.",
       "expertNote": null,
       "plannerNote": "Engine (first payment read as today, as in BR-16; table.test pins it): fits_unspent / month_short_moderate, money_lasts_shorter {months 32, monthsAfter 14} first, short_plan_from_cash {monthly 60000} second, usual_month_short {short 10000}, balanced_month_room, month_balance_gap {gap 10000}, month_left_after -10000, split unspent_earlier 180000. Plain: the same code and variant, plainTier N 32, M 14. Hand, plain and engine agree. Through the fixture as written the engine asks the pause question first (needs_input), as every BR case does (FIN-05 / BO-05 first-payment mapping)."
     },
@@ -2283,12 +2289,13 @@
       },
       "why": "Money in this month: $3,000 (1 November). Already spent: $1,500 of bills and $500 of everyday spending. Still to come: $500 of everyday spending by 30 November. So this month has $500 left ($3,000 - $1,500 - $500 - $500), and the spare money is $4,000 - $500 still to come = $3,500, of which $3,000 is from earlier months. The next pay, $3,000 on 1 December, brings $1,500 of bills with it. The plan: $450 on 15 November, 29 November, 13 December and 27 December, 0% (no interest line), $1,800 in all. While it runs that is $450 x 26 / 12 = $975 a month, more than the $500 a usual month leaves, so the monthly test alone says \"Short each month\". Every payment is before 13 February 2027 (day 90), so D-68 judges it by cash like a $1,800 purchase. The 90-day path: $4,000 - $900 - $500 = $2,600 on 30 November; + $3,000 - $1,500 - $900 - $1,000 = $2,200 on 31 December, its lowest point; + $1,500 - $1,000 = $2,700 on 31 January. It never goes below $0, with no overdraft and no net money. The $1,800 comes from this month's $500 and $1,300 of the $3,000 of earlier spare money: \"Fits from spare money\". The caution line says the plan's $975 a month is paid from money on hand.",
       "fixIds": [
+        "FIN-05",
         "FIN-06",
         "FIN-01b"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-03",
+      "ownerReason": "Owner, D-14 review of FIN-01b (2026-11-03): approved all seven D-68 drafts BR-17..BR-23 as right answers; \"choices 1 and 2 stay\" (an already-short month gets the D-65 tier a cash buy of the same total would get; money on hand must cover the plan's whole cost). (c) dropping volatile_cover_declined and the Instead options, (d) only the interest line on a not-already-short D-68 answer and (e) single-payment plans inside 90 days qualifying: all OK as built.",
       "expertNote": null,
       "plannerNote": "Engine (first payment read as today, as in BR-16; table.test pins it): fits_unspent, variant null, split month 50000 + unspent_earlier 130000, short_plan_from_cash {monthly 97500}, month_left_after 0. Plain: the same code and variant, plainPlanMonthly 97500, planPathLow 220000. Hand, plain and engine agree. Through the fixture as written the engine asks the pause question first (needs_input), as every BR case does (FIN-05 / BO-05 first-payment mapping)."
     }

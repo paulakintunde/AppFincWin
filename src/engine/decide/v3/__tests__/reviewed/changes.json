@@ -3515,9 +3515,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (43.93% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3532,9 +3532,9 @@
         "variant": "low_month",
         "afterBuyMonth": 155296
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (261.92% of monthly pay, plan 57 months); right answer Fits (low month), 1552.96 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3549,9 +3549,9 @@
         "variant": null,
         "afterBuyMonth": 47325
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (15.64% of monthly pay, plan 48 months); right answer Fits, 473.25 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3566,9 +3566,9 @@
         "variant": "low_month",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (56.82% of monthly pay, plan 24 months); right answer Fits (low month); fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3583,9 +3583,9 @@
         "variant": "low_month",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (190.70% of monthly pay, plan 56 months); right answer Fits (low month); fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3600,9 +3600,9 @@
         "variant": "no_net",
         "afterBuyMonth": 16374
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.30% of monthly pay, cash); right answer Fits (but no safety net), 163.74 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3617,9 +3617,9 @@
         "variant": "small_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (81.37% of monthly pay, cash); right answer Fits from spare money (but your safety net is small), 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3634,9 +3634,9 @@
         "variant": "month_short_moderate",
         "afterBuyMonth": -25422
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (299.09% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -254.22 left that month; D-65 Moderate; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3651,9 +3651,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (11.61% of monthly pay, plan 18 months); right answer No: your month is already short (code: Short each month); D-65 Large (plan payment); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3668,9 +3668,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (130.01% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3685,9 +3685,9 @@
         "variant": null,
         "afterBuyMonth": 123913
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (29.22% of monthly pay, plan 24 months); right answer Fits, 1239.13 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3702,9 +3702,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (98.47% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3719,9 +3719,9 @@
         "variant": null,
         "afterBuyMonth": 337073
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (9.95% of monthly pay, plan 18 months); right answer Fits, 3370.73 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3736,9 +3736,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (32.01% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3753,9 +3753,9 @@
         "variant": "low_month",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (38.22% of monthly pay, plan 12 months); right answer Fits from spare money (low month), 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3770,9 +3770,9 @@
         "variant": null,
         "afterBuyMonth": 242008
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.68% of monthly pay, plan 12 months); right answer Fits, 2420.08 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3787,9 +3787,9 @@
         "variant": "small_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (3.16% of monthly pay, plan 6 months); right answer Fits (but your safety net is small); fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3804,9 +3804,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (298.24% of monthly pay, cash); right answer Needs a figure first; asks for the spare-money figure first; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3821,9 +3821,9 @@
         "variant": null,
         "afterBuyMonth": 274566
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.61% of monthly pay, plan 20 months); right answer Fits, 2745.66 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3838,9 +3838,9 @@
         "variant": "month_short_moderate",
         "afterBuyMonth": -139730
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (43.83% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -1397.30 left that month; D-65 Moderate; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3855,9 +3855,9 @@
         "variant": null,
         "afterBuyMonth": 15200
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (9.53% of monthly pay, cash); right answer Fits, 152.00 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3872,9 +3872,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (70.79% of monthly pay, plan 48 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3889,9 +3889,9 @@
         "variant": "no_net",
         "afterBuyMonth": 85230
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (17.16% of monthly pay, cash); right answer Fits (but no safety net), 852.30 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3906,9 +3906,9 @@
         "variant": null,
         "afterBuyMonth": 46208
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (10.26% of monthly pay, cash); right answer Fits, 462.08 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3923,9 +3923,9 @@
         "variant": null,
         "afterBuyMonth": 14445
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (24.81% of monthly pay, cash); right answer Fits, 144.45 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3940,9 +3940,9 @@
         "variant": null,
         "afterBuyMonth": 105377
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (70.20% of monthly pay, plan 3 months); right answer Fits, 1053.77 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3957,9 +3957,9 @@
         "variant": null,
         "afterBuyMonth": 40918
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (150.46% of monthly pay, plan 36 months); right answer Fits, 409.18 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3974,9 +3974,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (45.19% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -3991,9 +3991,9 @@
         "variant": null,
         "afterBuyMonth": 135123
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (25.98% of monthly pay, plan 3 months); right answer Fits, 1351.23 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4008,9 +4008,9 @@
         "variant": "month_short_moderate_extra",
         "afterBuyMonth": -84653
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (49.36% of monthly pay, cash); right answer Fits from extra savings, but your month is already short (code: Fits from spare money), -846.53 left that month; D-65 Moderate, extra savings; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4025,9 +4025,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (63.56% of monthly pay, plan 53 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4042,9 +4042,9 @@
         "variant": null,
         "afterBuyMonth": 64131
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (70.05% of monthly pay, plan 36 months); right answer Fits, 641.31 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4059,9 +4059,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (1279.26% of monthly pay, plan 6 months); right answer Not yet (not covered); path below $0 (not covered); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4076,9 +4076,9 @@
         "variant": "month_short_moderate",
         "afterBuyMonth": -63402
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (168.01% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -634.02 left that month; D-65 Moderate; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4093,9 +4093,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (264.46% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4110,9 +4110,9 @@
         "variant": "month_short_moderate_extra",
         "afterBuyMonth": -11821
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (509.44% of monthly pay, cash); right answer Fits from extra savings, but your month is already short (code: Fits from spare money), -118.21 left that month; D-65 Moderate, extra savings; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4127,9 +4127,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -6706
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (100.20% of monthly pay, plan 34 months); right answer No: your month is already short (code: Short each month), -67.06 left that month; D-65 Large (plan payment); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4144,9 +4144,9 @@
         "variant": "no_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (92.60% of monthly pay, cash); right answer Fits from spare money (but no safety net), 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4161,9 +4161,9 @@
         "variant": null,
         "afterBuyMonth": 249317
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (192.25% of monthly pay, plan 24 months); right answer Fits, 2493.17 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4178,9 +4178,9 @@
         "variant": null,
         "afterBuyMonth": 106229
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (15.13% of monthly pay, plan 48 months); right answer Fits, 1062.29 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4195,9 +4195,9 @@
         "variant": "low_month",
         "afterBuyMonth": 177381
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (25.75% of monthly pay, plan 12 months); right answer Fits (low month), 1773.81 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4212,9 +4212,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (39.24% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4229,9 +4229,9 @@
         "variant": "small_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (20.60% of monthly pay, cash); right answer Fits from spare money (but your safety net is small), 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4246,9 +4246,9 @@
         "variant": null,
         "afterBuyMonth": 165667
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (12.78% of monthly pay, cash); right answer Fits, 1656.67 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4263,9 +4263,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (46.74% of monthly pay, plan 6 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4280,9 +4280,9 @@
         "variant": "no_net",
         "afterBuyMonth": 258849
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.75% of monthly pay, plan 22 months); right answer Fits (but no safety net), 2588.49 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4297,9 +4297,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (53.65% of monthly pay, plan 60 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4314,9 +4314,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (152.67% of monthly pay, cash); right answer Fits from extra savings, 0.00 left that month; one-off ladder, extra savings (D-62); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4331,9 +4331,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (1273.71% of monthly pay, cash); right answer Not yet (not covered); path below $0 (not covered); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4348,9 +4348,9 @@
         "variant": null,
         "afterBuyMonth": 392528
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (32.13% of monthly pay, plan 18 months); right answer Fits, 3925.28 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4365,9 +4365,9 @@
         "variant": null,
         "afterBuyMonth": 302497
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (89.84% of monthly pay, plan 60 months); right answer Fits, 3024.97 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4382,9 +4382,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (122.11% of monthly pay, plan 3 months) judged by cash (D-68); right answer Fits from spare money, 0.00 left that month; the whole cost as a one-off, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4399,9 +4399,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (25.95% of monthly pay, plan 6 months); right answer Short each month, 0.00 left that month; monthly part (QE-12 rule); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4416,9 +4416,9 @@
         "variant": "small_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (92.87% of monthly pay, plan 18 months); right answer Fits from spare money (but your safety net is small), 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4433,9 +4433,9 @@
         "variant": "no_net",
         "afterBuyMonth": 43676
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (5.08% of monthly pay, cash); right answer Fits (but no safety net), 436.76 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4450,9 +4450,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (13.93% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4467,9 +4467,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (55.81% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4484,9 +4484,9 @@
         "variant": null,
         "afterBuyMonth": 63877
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (124.39% of monthly pay, plan 16 months); right answer Fits, 638.77 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4501,9 +4501,9 @@
         "variant": "small_net",
         "afterBuyMonth": 296222
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (97.10% of monthly pay, plan 46 months); right answer Fits (but your safety net is small), 2962.22 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4518,9 +4518,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -6221
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (638.43% of monthly pay, plan 60 months); right answer No: your month is already short (code: Short each month), -62.21 left that month; D-65 Large (plan payment); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4535,9 +4535,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (136.25% of monthly pay, plan 16 months); right answer No: your month is already short (code: Short each month); D-65 Large (plan payment); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4552,9 +4552,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (43.00% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4569,9 +4569,9 @@
         "variant": null,
         "afterBuyMonth": 170391
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (5.47% of monthly pay, plan 7 months); right answer Fits, 1703.91 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4586,9 +4586,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (68.65% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4603,9 +4603,9 @@
         "variant": null,
         "afterBuyMonth": 174619
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (127.84% of monthly pay, plan 48 months); right answer Fits, 1746.19 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4620,9 +4620,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (292.83% of monthly pay, cash); right answer No: your month is already short (code: Not yet); D-65 Large; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4637,9 +4637,9 @@
         "variant": null,
         "afterBuyMonth": 35101
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (53.23% of monthly pay, plan 33 months); right answer Fits, 351.01 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4654,9 +4654,9 @@
         "variant": null,
         "afterBuyMonth": 162825
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (181.00% of monthly pay, plan 60 months); right answer Fits, 1628.25 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4671,9 +4671,9 @@
         "variant": "month_short_moderate",
         "afterBuyMonth": -86975
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (59.21% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -869.75 left that month; D-65 Moderate; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4688,9 +4688,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (106.02% of monthly pay, plan 20 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4705,9 +4705,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (54.08% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4722,9 +4722,9 @@
         "variant": "month_already_short",
         "afterBuyMonth": -11761
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.88% of monthly pay, plan 60 months); right answer No: your month is already short (code: Short each month), -117.61 left that month; D-65 Large (plan payment); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4739,9 +4739,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (47.31% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4756,9 +4756,9 @@
         "variant": null,
         "afterBuyMonth": 204360
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.40% of monthly pay, plan 3 months); right answer Fits, 2043.60 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4773,9 +4773,9 @@
         "variant": null,
         "afterBuyMonth": 89413
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (16.37% of monthly pay, plan 3 months); right answer Fits, 894.13 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4790,9 +4790,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (60.08% of monthly pay, cash); right answer Fits from extra savings, 0.00 left that month; one-off ladder, extra savings (D-62); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4807,9 +4807,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (251.83% of monthly pay, plan 60 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4824,9 +4824,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (13.98% of monthly pay, plan 48 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4841,9 +4841,9 @@
         "variant": null,
         "afterBuyMonth": 83465
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (243.11% of monthly pay, plan 24 months); right answer Fits, 834.65 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4858,9 +4858,9 @@
         "variant": "low_month",
         "afterBuyMonth": 212598
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (12.08% of monthly pay, plan 60 months); right answer Fits (low month), 2125.98 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4875,9 +4875,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (10.41% of monthly pay, plan 60 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4892,9 +4892,9 @@
         "variant": null,
         "afterBuyMonth": 77773
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.93% of monthly pay, plan 24 months); right answer Fits, 777.73 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4909,9 +4909,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (23.76% of monthly pay, plan 12 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4926,9 +4926,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (149.31% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4943,9 +4943,9 @@
         "variant": null,
         "afterBuyMonth": 188853
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (5.13% of monthly pay, plan 57 months); right answer Fits, 1888.53 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4960,9 +4960,9 @@
         "variant": "small_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (20.72% of monthly pay, cash); right answer Fits from spare money (but your safety net is small), 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4977,9 +4977,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (766.88% of monthly pay, cash); right answer Needs a figure first; asks for the spare-money figure first; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -4994,9 +4994,9 @@
         "variant": null,
         "afterBuyMonth": 297653
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.33% of monthly pay, plan 58 months); right answer Fits, 2976.53 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5011,9 +5011,9 @@
         "variant": "month_short_moderate",
         "afterBuyMonth": -49453
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (23.91% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -494.53 left that month; D-65 Moderate; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5028,9 +5028,9 @@
         "variant": "low_month",
         "afterBuyMonth": 9005
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (107.58% of monthly pay, plan 19 months); right answer Fits (low month), 90.05 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5045,9 +5045,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (176.00% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5062,9 +5062,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (110.56% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5079,9 +5079,9 @@
         "variant": "small_net",
         "afterBuyMonth": 163282
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (9.97% of monthly pay, cash); right answer Fits (but your safety net is small), 1632.82 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5096,9 +5096,9 @@
         "variant": "low_month",
         "afterBuyMonth": 10228
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (25.78% of monthly pay, plan 49 months); right answer Fits (low month), 102.28 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5113,9 +5113,9 @@
         "variant": "payday",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (277.66% of monthly pay, cash); right answer Not yet (payday); path below $0 until payday; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5130,9 +5130,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (64.91% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5147,9 +5147,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (21.78% of monthly pay, plan 18 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5164,9 +5164,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (52.50% of monthly pay, cash); right answer Fits from extra savings, 0.00 left that month; one-off ladder, extra savings (D-62); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5181,9 +5181,9 @@
         "variant": "month_short_moderate",
         "afterBuyMonth": -2386
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (9.01% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -23.86 left that month; D-65 Moderate; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5198,9 +5198,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (98.43% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5215,9 +5215,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (1180.72% of monthly pay, cash); right answer Not yet (not covered); path below $0 (not covered); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5232,9 +5232,9 @@
         "variant": "small_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (71.90% of monthly pay, cash); right answer Fits from spare money (but your safety net is small), 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5249,9 +5249,9 @@
         "variant": null,
         "afterBuyMonth": 247310
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.11% of monthly pay, cash); right answer Fits, 2473.10 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5266,9 +5266,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (116.14% of monthly pay, plan 24 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5283,9 +5283,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (175.66% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5300,9 +5300,9 @@
         "variant": null,
         "afterBuyMonth": 164551
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (259.00% of monthly pay, plan 3 months); right answer Short each month, 1645.51 left that month; monthly part (QE-12 rule); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5317,9 +5317,9 @@
         "variant": null,
         "afterBuyMonth": 9409
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (47.00% of monthly pay, cash); right answer Fits, 94.09 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5334,9 +5334,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (227.54% of monthly pay, plan 24 months); right answer Short each month; monthly part (QE-12 rule); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5351,9 +5351,9 @@
         "variant": "no_net",
         "afterBuyMonth": 37352
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (164.17% of monthly pay, plan 60 months); right answer Fits (but no safety net), 373.52 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5368,9 +5368,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (236.16% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5385,9 +5385,9 @@
         "variant": null,
         "afterBuyMonth": 56037
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (8.70% of monthly pay, cash); right answer Fits, 560.37 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5402,9 +5402,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (82.65% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5419,9 +5419,9 @@
         "variant": null,
         "afterBuyMonth": 45278
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (121.53% of monthly pay, plan 24 months); right answer Fits, 452.78 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5436,9 +5436,9 @@
         "variant": "no_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (42.18% of monthly pay, cash); right answer Fits from spare money (but no safety net), 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5453,9 +5453,9 @@
         "variant": null,
         "afterBuyMonth": 19962
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (32.63% of monthly pay, cash); right answer Fits, 199.62 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5470,9 +5470,9 @@
         "variant": null,
         "afterBuyMonth": 43726
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.71% of monthly pay, cash); right answer Fits, 437.26 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5487,9 +5487,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (30.72% of monthly pay, plan 8 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5504,9 +5504,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (46.00% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5521,9 +5521,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (58.78% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5538,9 +5538,9 @@
         "variant": "month_short_moderate",
         "afterBuyMonth": -7827
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (32.54% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -78.27 left that month; D-65 Moderate; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5555,9 +5555,9 @@
         "variant": null,
         "afterBuyMonth": 62794
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (36.05% of monthly pay, cash); right answer Fits, 627.94 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5572,9 +5572,9 @@
         "variant": null,
         "afterBuyMonth": 78780
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (21.93% of monthly pay, plan 39 months); right answer Fits, 787.80 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5589,9 +5589,9 @@
         "variant": "low_month",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (250.95% of monthly pay, plan 59 months); right answer Fits from spare money (low month), 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5606,9 +5606,9 @@
         "variant": "no_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (128.62% of monthly pay, cash); right answer Fits from spare money (but no safety net), 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5623,9 +5623,9 @@
         "variant": "month_short_small",
         "afterBuyMonth": -218233
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.51% of monthly pay, cash); right answer Fits, but your month is already short (code: Fits from spare money), -2182.33 left that month; D-65 Small; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5640,9 +5640,9 @@
         "variant": null,
         "afterBuyMonth": 220701
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (25.27% of monthly pay, cash); right answer Fits, 2207.01 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5657,9 +5657,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (132.95% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5674,9 +5674,9 @@
         "variant": "no_net",
         "afterBuyMonth": 252704
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (33.75% of monthly pay, plan 24 months); right answer Fits (but no safety net), 2527.04 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5691,9 +5691,9 @@
         "variant": null,
         "afterBuyMonth": 63535
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (9.32% of monthly pay, plan 36 months); right answer Fits, 635.35 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5708,9 +5708,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (267.27% of monthly pay, cash); right answer Fits from extra savings, 0.00 left that month; one-off ladder, extra savings (D-62); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5725,9 +5725,9 @@
         "variant": "month_short_moderate",
         "afterBuyMonth": -146870
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (38.89% of monthly pay, cash); right answer Fits from spare money, but your month is already short (code: Fits from spare money), -1468.70 left that month; D-65 Moderate; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5742,9 +5742,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (103.88% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5759,9 +5759,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (245.81% of monthly pay, cash); right answer Fits from extra savings, 0.00 left that month; one-off ladder, extra savings (D-62); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5776,9 +5776,9 @@
         "variant": "small_net",
         "afterBuyMonth": 53084
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (81.33% of monthly pay, plan 12 months); right answer Fits (but your safety net is small), 530.84 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5793,9 +5793,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (123.21% of monthly pay, cash); right answer Needs a figure first; asks for the spare-money figure first; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5810,9 +5810,9 @@
         "variant": null,
         "afterBuyMonth": 130706
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (45.38% of monthly pay, plan 18 months); right answer Fits, 1307.06 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5827,9 +5827,9 @@
         "variant": null,
         "afterBuyMonth": 4564
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (16.19% of monthly pay, plan 12 months); right answer Fits, 45.64 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5844,9 +5844,9 @@
         "variant": null,
         "afterBuyMonth": 128102
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (27.90% of monthly pay, plan 17 months); right answer Fits, 1281.02 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5861,9 +5861,9 @@
         "variant": "no_net",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.16% of monthly pay, plan 24 months); right answer Fits (but no safety net); fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5878,9 +5878,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (230.32% of monthly pay, plan 60 months); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5895,9 +5895,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (83.30% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5912,9 +5912,9 @@
         "variant": "small_net",
         "afterBuyMonth": 300819
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (49.10% of monthly pay, plan 54 months); right answer Fits (but your safety net is small), 3008.19 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5929,9 +5929,9 @@
         "variant": null,
         "afterBuyMonth": 134149
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (1.28% of monthly pay, cash); right answer Fits, 1341.49 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5946,9 +5946,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (75.47% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5963,9 +5963,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (292.49% of monthly pay, cash); right answer Not yet (not covered); path below $0 (not covered); audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5980,9 +5980,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (117.13% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -5997,9 +5997,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (26.73% of monthly pay, cash); right answer Needs a figure first; asks for the spare-money figure first; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -6014,9 +6014,9 @@
         "variant": null,
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (0.51% of monthly pay, plan 48 months); right answer Fits; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -6031,9 +6031,9 @@
         "variant": "no_net",
         "afterBuyMonth": 121367
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (62.91% of monthly pay, plan 48 months); right answer Fits (but no safety net), 1213.67 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -6048,9 +6048,9 @@
         "variant": null,
         "afterBuyMonth": 67976
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (15.78% of monthly pay, cash); right answer Fits, 679.76 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -6065,9 +6065,9 @@
         "variant": null,
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (45.73% of monthly pay, cash); right answer Fits from spare money, 0.00 left that month; one-off ladder, spare money; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -6082,9 +6082,9 @@
         "variant": null,
         "afterBuyMonth": 74989
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (45.72% of monthly pay, plan 6 months); right answer Fits, 749.89 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     },
     {
       "fixId": "FIN-01b",
@@ -6099,9 +6099,9 @@
         "variant": null,
         "afterBuyMonth": 189260
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-69 new purchase (6.77% of monthly pay, plan 12 months); right answer Fits, 1892.60 left that month; fits this month's room; audited by hand",
+      "approved": true,
+      "approvedAt": "2026-11-03"
     }
   ]
 }

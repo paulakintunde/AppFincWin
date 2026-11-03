@@ -409,13 +409,14 @@ describe('05.4-54 drafts BR-17..BR-23 (D-68): hand, plain calculator and engine 
   /**
    * BR-19 and BR-20: code, variant and facts agree, the ready-by month does not. The hand answer follows BR-12 ("judged like
    * paying £900 at once ... £500 more at £80 a month = 7 months"): the whole cost. The engine reads the day-one payment. Reported
-   * for the owner (05.4-56); these are the engine's figures today, not right answers.
+   * for the owner (05.4-56); these are the engine's figures today, not right answers. Owner, 2026-11-03: the hand dates stand (2027-03, 2027-04).
    */
   const ENGINE_READY: Record<string, string> = { 'BR-19': '2027-01', 'BR-20': '2026-12-01' };
 
   it.each(['BR-17', 'BR-18', 'BR-19', 'BR-20', 'BR-21', 'BR-22', 'BR-23'])('%s', (id) => {
     const c = byId(id);
-    expect({ status: c.status, fixIds: c.fixIds }).toEqual({ status: 'draft', fixIds: ['FIN-06', 'FIN-01b'] });
+    // 05.4-56: the owner approved all seven at the FIN-01b review (2026-11-03); knownRed FIN-05 (the fixture's first-payment mapping).
+    expect({ status: c.status, fixIds: c.fixIds }).toEqual({ status: 'approved', fixIds: ['FIN-05', 'FIN-06', 'FIN-01b'] });
     const got = engine(c.fixture);
     const e = c.expected;
     expect({ code: got.code, variant: got.variant, readyBy: got.readyBy }).toEqual({ code: e.code, variant: e.variant, readyBy: ENGINE_READY[id] ?? e.readyBy });
