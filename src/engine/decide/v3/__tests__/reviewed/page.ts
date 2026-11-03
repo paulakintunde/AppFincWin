@@ -13,7 +13,8 @@ import { PERCENT_SCALE } from '../../../../payoff/types';
 import { applyPurchaseFlows } from '../../cash/path';
 import { addDays, daysInYearMonth, yearMonthOf } from '../../dates';
 import { essentialCosts, essentialSpendingOf } from '../../essentialCosts';
-import { purchaseCashFlows } from '../../judge/purchase';
+import { firstPaymentsToday, purchaseCashFlows } from '../../judge/purchase';
+import { planTotal } from '../../depletion';
 import { liveSeriesOf, seriesOccurrences } from '../../month/series';
 import { FACT_KEYS, NOTICE_KEYS } from '../../copy/verdictTable';
 import { evaluate } from '../../evaluate';
@@ -157,16 +158,43 @@ export function situationRows(inputs: V3Inputs, check: CheckV2): [string, string
   for (const d of inputs.debts) rows.push([`Debt (${d.kind})`, `owes ${m(d.balance)}, minimum ${m(d.minimum)} a month${d.apr ? `, ${rateText(d.apr)} a year` : ''}`]);
   if (inputs.months.length > 0) rows.push(['Months of history', String(fullMonths.length)]);
   rows.push(['Buying', check.price === null ? 'no price yet' : m(check.price)]);
+  const share = priceShareOfPay(inputs, check);
+  if (share !== null) rows.push(['Price against pay (D-69)', share]);
   if (check.taxPercent) rows.push(['Tax', rateText(check.taxPercent)]);
   if (check.oneOffFees) rows.push(['Fees', m(check.oneOffFees)]);
   if (check.pay.mode === 'plan') {
     const p = check.pay;
     const n = p.count ?? p.termMonths;
-    rows.push(['Paying', `in a plan${n === null ? '' : `, ${n} payments ${every(p.cadence.unit, p.cadence.every)}`}${p.apr ? ` at ${rateText(p.apr)} a year` : ''}${p.deposit ? `, deposit ${m(p.deposit)}` : ''}`]);
+    rows.push(['Paying', `in a plan${n === null ? '' : `, ${n} payment${n === 1 ? '' : 's'} ${every(p.cadence.unit, p.cadence.every)}`}${p.apr ? ` at ${rateText(p.apr)} a year` : ''}${p.deposit ? `, deposit ${m(p.deposit)}` : ''}`]);
     if (p.firstPayment) rows.push(['First payment', p.firstPayment.kind === 'today' ? 'today' : p.firstPayment.kind === 'one_period' ? 'one period from today' : p.firstPayment.firstDate]);
   } else rows.push(['Paying', 'in cash, all at once']);
   rows.push(['Check date', inputs.asOf]);
   return rows;
+}
+
+/**
+ * 05.4-56 (D-69): the monthly pay the shadow generator ties the price to (the same base its costs use): the live pay series as a
+ * month, or a freelancer's stated steady amount. Null when neither is known.
+ */
+export function monthlyPayOf(inputs: V3Inputs): { amount: number; which: string } | null {
+  const pay = inputs.series.find((s) => s.role === 'pay' && s.status === 'live');
+  if (pay) return { amount: monthlyOf(pay.amount, pay.cadence.unit, pay.cadence.every), which: 'pay' };
+  const steady = inputs.profile?.steady ?? null;
+  if (steady !== null && steady > 0) return { amount: steady, which: "a freelancer's steady amount" };
+  return null;
+}
+
+/** "Price $X is Y% of monthly pay $Z (pay)": Y a real percent to 2 decimals (D-69). Null without a price or a pay base. */
+export function priceShareOfPay(inputs: V3Inputs, check: CheckV2): string | null {
+  const base = monthlyPayOf(inputs);
+  if (base === null || base.amount <= 0 || check.price === null) return null;
+  const pct = (check.price * 100) / base.amount;
+  return `Price ${money(check.price, inputs.currency)} is ${pct.toFixed(2)}% of monthly pay ${money(base.amount, inputs.currency)} (${base.which})`;
+}
+
+/** A plan's length in whole months from its payment count and how often it is paid. */
+export function termMonthsOf(count: number, unit: 'week' | 'month', every: number): number {
+  return unit === 'month' ? count * every : Math.round((count * every * 12) / 52);
 }
 
 export function situationHtml(c: CorpusCase): string {
@@ -447,6 +475,7 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
     sections.push({
       title: 'Plan',
       rows: [
+        ['In brief', planLine(pc, pay.apr)],
         ['Price', m(pc.price)],
         ['Deposit today', m(pay.deposit)],
         ['Rate', pay.apr === null ? 'not given' : `${rateText(pay.apr)} a year`],
@@ -509,9 +538,82 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   if (res.variant === 'month_already_short') steps.push(`The usual month leaves ${mo.typicalLeft === null ? 'an unknown amount' : m(mo.typicalLeft)} before the purchase, so it is already short: the headline is "No: your month is already short" on the code ${res.code} (D-63).`);
   const tierStep = d65Step(ev, res, m);
   if (tierStep !== null) steps.push(tierStep);
+  const shortStep = d68Step(c, ev, res, lw, m);
+  if (shortStep !== null) steps.push(shortStep);
   if (res.variant === 'extra_savings') steps.push('Part of it is paid from money saved above the safety net\'s size, so the headline is "Fits from extra savings" (D-62).');
   steps.push(`Engine answer: ${words({ code: res.code, variant: res.variant, afterBuyMonth: left === null ? null : (left['left'] as number) })}.`);
   return { sections, steps };
+}
+
+/** "N payments every <unit> over T months, at A% a year (APR), first payment <date>, last payment <date>" (05.4-56, D-53). */
+export function planLine(pc: NonNullable<Evaluation['planCard']>, apr: bigint | null): string {
+  const n = pc.lines.reduce((a, x) => a + x.count, 0);
+  const t = termMonthsOf(n, pc.cadence.unit, pc.cadence.every);
+  const rate = apr === null ? 'with no rate given' : `at ${rateText(apr)} a year (APR)`;
+  return `${n} payment${n === 1 ? '' : 's'} ${every(pc.cadence.unit, pc.cadence.every)} over ${t} month${t === 1 ? '' : 's'}, ${rate}, first payment ${pc.firstDate}, last payment ${pc.endDate}`;
+}
+
+/**
+ * 05.4-56 (D-68): the page's own "judged by cash" step for a plan whose every payment is dated before the 90 days end. Applied
+ * (the engine's short_plan_from_cash line is there): the last payment date against the 90-day end, the dated path's lowest point
+ * and date, the whole cost (deposit + every payment once, the page's own sum, with the engine's), the monthly cost against the
+ * usual month's left. Not applied: the first condition that fails, in one step. A disagreement between the page's own checks and
+ * the engine is said in capitals so the audit cannot miss it. Null for cash buys, plans past the 90 days and no purchase.
+ */
+function d68Step(c: CorpusCase, ev: Evaluation, res: Evaluation['result'], lw: { balance: number; date: string }, m: (n: number) => string): string | null {
+  const p = ev.purchase;
+  const pc = ev.planCard;
+  const pay = c.check.pay;
+  if (p === null || p.schedule === null || pc === null || pay.mode !== 'plan') return null;
+  const asOf = c.inputs.asOf;
+  const end = addDays(asOf, 90);
+  const inside = pc.endDate < end;
+  const applied = res.facts.some((f) => f.code === 'short_plan_from_cash');
+  if (!inside) return applied ? `PAGE AND ENGINE DISAGREE (D-68): the last payment is on ${pc.endDate}, not before the 90 days end on ${end}, yet the answer says it is paid from money on hand.` : null;
+  const own = pay.deposit + pc.lines.reduce((a, x) => a + x.count * x.amount, 0);
+  const engineTotal = planTotal(p.dayOne, p.schedule, p.share, firstPaymentsToday(p.schedule, p.share, asOf));
+  const whole = `${m(own)} (deposit ${m(pay.deposit)} + every payment once; engine ${m(engineTotal)})`;
+  const tl = ev.month.typicalLeft;
+  const usual = tl === null ? 'the usual month (not known)' : tl < 0 ? `the usual month, already ${m(-tl)} short` : `the usual month's ${m(tl)} left`;
+  const net = ev.net;
+  const roomNow = ev.month.monthLeft > 0 ? ev.month.monthLeft : 0;
+  const spare = ev.spare ?? null;
+  const above = net !== undefined && net.aboveSize > 0 ? net.aboveSize : 0;
+  // The one-off ladder: this month's room, its own envelope, then spare money (which holds this month's room) and extra savings.
+  // With no confirmed spare-money figure the ladder stops after this month's room and the envelope (it asks for the figure).
+  const mine = spare === null ? roomNow : Math.max(roomNow, spare);
+  const onHand = ev.funds.ownEnvelope + mine + (spare === null ? 0 : above);
+  const env = ev.funds.ownEnvelope > 0 ? ` + own envelope ${m(ev.funds.ownEnvelope)}` : '';
+  const handText =
+    spare === null
+      ? `money on hand ${m(onHand)} (this month's room ${m(mine)}${env}; there is no confirmed spare-money figure, so earlier money and extra savings are not counted)`
+      : `money on hand ${m(onHand)} (this month and spare money ${m(mine)}${env} + extra savings ${m(above)})`;
+  if (applied) {
+    const ok = lw.balance >= 0 && ev.cash.kind === 'ok' && onHand >= engineTotal && p.runningMonthly === 0;
+    return (
+      `${ok ? '' : 'PAGE AND ENGINE DISAGREE: '}Judged by cash (D-68): the last payment is on ${pc.endDate}, before the 90 days end on ${end}; ` +
+      `with every payment on its date the lowest point is ${m(lw.balance)} on ${lw.date}, ${lw.balance >= 0 ? `never below ${m(0)}` : `BELOW ${m(0)}`}, with no overdraft and no safety-net money; ` +
+      `the plan's whole cost ${whole}, covered by ${handText}; about ${m(p.monthly)} a month against ${usual}, so it is paid from money on hand.`
+    );
+  }
+  const mon = res.parts.monthly;
+  const why =
+    p.runningMonthly > 0
+      ? `it has a running cost of ${m(p.runningMonthly)} a month`
+      : mon !== 'monthly_short' && mon !== 'not_yet'
+        ? `the monthly part already fits (about ${m(p.monthly)} a month against ${usual})`
+        : tl === null
+          ? 'the usual month is not known'
+          : ev.cash.kind === 'not_covered'
+            ? `the path goes below ${m(0)} (lowest ${m(lw.balance)} on ${lw.date})`
+            : ev.cash.kind === 'net'
+              ? `it needs the safety net (the path is lowest at ${m(lw.balance)} on ${lw.date})`
+              : ev.cash.kind === 'overdraft'
+                ? `it needs the overdraft (the path is lowest at ${m(lw.balance)} on ${lw.date})`
+                : onHand < engineTotal
+                  ? `${handText} does not cover ${m(engineTotal)}`
+                  : `PAGE AND ENGINE DISAGREE: every check the page makes passes (${handText}, path lowest ${m(lw.balance)} on ${lw.date}), yet the engine does not judge it by cash`;
+  return `Not judged by cash (D-68): every payment is before the 90 days end on ${end} (last ${pc.endDate}, whole cost ${whole}), but ${why}.`;
 }
 
 /**

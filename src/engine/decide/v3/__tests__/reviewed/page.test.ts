@@ -1,7 +1,8 @@
 import { corpus, type ReviewedChange } from './corpus';
 import * as fs from 'fs';
 import * as path from 'path';
-import { auditOf, breakdown, buildPage, rateText, situationHtml, words } from './page';
+import { auditOf, breakdown, buildPage, priceShareOfPay, rateText, situationHtml, situationRows, words } from './page';
+import { SHORT_PLAN_CASES, shortPlan, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { TIER_CASES, rileyTier, type TierCase } from '../helpers/tierFixtures';
 
 const cases = corpus();
@@ -31,8 +32,12 @@ describe('reviewed page', () => {
     expect(rateText(null)).toBe('');
     expect(() => rateText(1010000000000n)).toThrow(RangeError);
     const file = JSON.parse(fs.readFileSync(path.join(__dirname, 'changes.json'), 'utf8')) as { changes: ReviewedChange[] };
-    for (const fix of ['FIN-01', 'FIN-03']) {
-      const html = buildPage(fix, file.changes.filter((c) => c.fixId === fix), cases);
+    for (const fix of ['FIN-01', 'FIN-03', 'FIN-01b']) {
+      const listed = file.changes.filter((c) => c.fixId === fix);
+      if (listed.length === 0) continue;
+      // 05.4-56 (D-69): a price's share of monthly pay is not a rate and may pass 100% (up to 1,500% by design); it is left out here
+      // and pinned by its own test below.
+      const html = buildPage(fix, listed, cases).replace(/is \d+\.\d{2}% of monthly pay/g, '');
       const rates = [...html.matchAll(/(-?\d[\d,]*(?:\.\d+)?)%/g)].map((m) => Number((m[1] as string).replace(/,/g, '')));
       expect(rates.length).toBeGreaterThan(0);
       for (const r of rates) expect(r >= 0 && r <= 100).toBe(true);
@@ -143,5 +148,66 @@ describe('reviewed page', () => {
       // D-66: the net is locked, so no "your safety net would last" line.
       expect(b.sections.find((s) => s.title === 'What the answer says')?.rows.some(([key]) => key === 'Fact net_lasts' || key === 'Fact net_lasts_without')).toBe(false);
     }
+  });
+
+  // 05.4-56 (D-68, D-69): price against pay, the plan in brief, and the D-68 step on the 05.4-53 hand-worked people
+  // (helpers/shortPlanFixtures.ts: pay $3,000, usual month leaves $500, $3,500 spare, asOf 2026-11-15, day 90 = 2027-02-13).
+  const sp = (o: ShortPlanCase, key: string): (typeof cases)[number] => ({ key, label: key, ...shortPlan(o) });
+  const all = (c: (typeof cases)[number]): { steps: string; plan: string; says: string } => {
+    const b = breakdown(c);
+    return {
+      steps: b.steps.join(' / '),
+      plan: text(b.sections.find((s) => s.title === 'Plan')?.rows ?? []),
+      says: text(b.sections.find((s) => s.title === 'What the answer says')?.rows ?? []),
+    };
+  };
+
+  it('shows the price as a real percent of monthly pay, to 2 decimals, and says which pay (D-69)', () => {
+    const q = sp(SHORT_PLAN_CASES.qualifies, 'sp:q');
+    expect(priceShareOfPay(q.inputs, q.check)).toBe('Price $1,800.00 is 60.00% of monthly pay $3,000.00 (pay)');
+    const g70 = cases.find((c) => c.key === 'gen:70')!;
+    expect(text(situationRows(g70.inputs, g70.check))).toContain("Price $4,773.74 is 122.11% of monthly pay $3,909.38 (a freelancer's steady amount)");
+    for (const c of cases.filter((x) => x.key.startsWith('gen:'))) {
+      const line = priceShareOfPay(c.inputs, c.check);
+      expect(line).not.toBeNull();
+      expect(line).toMatch(/^Price \$[\d,]+\.\d{2} is \d+\.\d{2}% of monthly pay \$[\d,]+\.\d{2} \((pay|a freelancer's steady amount)\)$/);
+    }
+  });
+
+  it('shows each plan in brief: payments, how often, term in months, APR as a real percent, first and last payment', () => {
+    expect(all(sp(SHORT_PLAN_CASES.qualifies, 'sp:q')).plan).toContain('In brief 3 payments every month over 3 months, at 0% a year (APR), first payment 2026-11-15, last payment 2027-01-15');
+    expect(all(sp(SHORT_PLAN_CASES.fortnight, 'sp:f')).plan).toContain('4 payments every 2 weeks over 2 months, at 0% a year (APR), first payment 2026-11-15, last payment 2026-12-27');
+    expect(all(sp({ ...SHORT_PLAN_CASES.qualifies, apr: '19.9' }, 'sp:apr')).plan).toContain('at 19.9% a year (APR)');
+    expect(all(cases.find((c) => c.key === 'gen:136')!).plan).toContain('In brief 13 payments every week over 3 months, at 0% a year (APR), first payment 2026-10-03, last payment 2026-12-26');
+  });
+
+  it('a D-68 answer shows the page\'s own judged-by-cash step and the caution line in the en.ts wording', () => {
+    const q = all(sp(SHORT_PLAN_CASES.qualifies, 'sp:q'));
+    expect(q.steps).toContain(
+      'Judged by cash (D-68): the last payment is on 2027-01-15, before the 90 days end on 2027-02-13; with every payment on its date the lowest point is $2,700.00 on 2027-01-31, never below $0.00, with no overdraft and no safety-net money; ' +
+        "the plan's whole cost $1,800.00 (deposit $0.00 + every payment once; engine $1,800.00), covered by money on hand $3,500.00 (this month and spare money $3,500.00 + extra savings $0.00); about $600.00 a month against the usual month's $500.00 left, so it is paid from money on hand."
+    );
+    expect(q.says).toContain('Fact short_plan_from_cash This plan’s $600.00 a month is more than your usual month can cover, so it is paid from money on hand.');
+    const x = all(sp(SHORT_PLAN_CASES.extraSavings, 'sp:x'));
+    expect(x.steps).toContain('covered by money on hand $4,500.00 (this month and spare money $500.00 + extra savings $4,000.00)');
+    expect(all(sp(SHORT_PLAN_CASES.alreadyShort, 'sp:s')).steps).toContain('about $600.00 a month against the usual month, already $100.00 short, so it is paid from money on hand.');
+    expect(all(cases.find((c) => c.key === 'gen:70')!).steps).toContain('Judged by cash (D-68): the last payment is on 2026-10-03, before the 90 days end on 2027-01-01');
+    for (const k of Object.keys(SHORT_PLAN_CASES) as (keyof typeof SHORT_PLAN_CASES)[]) {
+      const r = all(sp(SHORT_PLAN_CASES[k], k));
+      expect(`${r.steps} ${r.plan} ${r.says}`).not.toContain('{{');
+      expect(r.steps).not.toContain('DISAGREE');
+    }
+  });
+
+  it('a plan inside the 90 days that D-68 does not take says why in one step', () => {
+    const why = (c: (typeof cases)[number]): string => breakdown(c).steps.filter((s) => s.startsWith('Not judged by cash (D-68)')).join(' / ');
+    expect(why(sp(SHORT_PLAN_CASES.pathBelow, 'sp:b'))).toContain('but the path goes below $0.00 (lowest -$800.00 on 2027-01-31).');
+    expect(why(sp(SHORT_PLAN_CASES.unlockedNet, 'sp:u'))).toContain('but it needs the safety net');
+    expect(why(sp(SHORT_PLAN_CASES.running, 'sp:r'))).toContain('but it has a running cost of $20.00 a month.');
+    expect(why(sp({ everyday: 400_000, saved: 200_000, price: 90_000, months: 3 }, 'sp:fits'))).toContain('but the monthly part already fits (about $300.00 a month');
+    expect(why(sp({ everyday: 400_000, saved: 200_000, price: 450_000, months: 3 }, 'sp:big'))).toContain('money on hand $3,500.00 (this month and spare money $3,500.00 + extra savings $0.00) does not cover $4,500.00.');
+    expect(why(cases.find((c) => c.key === 'gen:136')!)).toContain('there is no confirmed spare-money figure, so earlier money and extra savings are not counted) does not cover $32,964.49.');
+    // Plans past the 90 days and cash buys carry no D-68 step.
+    for (const c of [sp(SHORT_PLAN_CASES.longShort, 'sp:l'), cases.find((x) => x.key === 'persona:riley:900000:cash')!]) expect(breakdown(c).steps.some((s) => s.includes('(D-68)'))).toBe(false);
   });
 });
