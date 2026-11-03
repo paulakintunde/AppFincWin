@@ -31,7 +31,6 @@ export const termMonthsArb: fc.Arbitrary<number> = fc.oneof(
 /** 05.4-55 (D-69): the price for a share of pay in basis points, never below `floor`. */
 export const priceOfShare = (pay: number, bp: number, floor: number): number => Math.max(floor, Math.floor((pay * bp) / 10000));
 
-
 /**
  * 05.4-51 (Plan-49 re-run): what a usual month spends on bills + everyday spending, as a percent of pay, drawn as the shadow
  * generator draws it: 50..90 (75%), 91..105 (20%), 106..125 (5%). Nobody spends 2-3x their pay as a routine month.
@@ -52,8 +51,9 @@ function usualCosts(pay: number, costShare: number, billShare: number): { bills:
 
 interface MidMonthRaw {
   pay: number; costShare: number; billShare: number; paidShare: number; soFarShare: number; history: number;
+  /** 05.4-55 (D-69): the price as a share of pay in basis points (pricePctBpArb); null = no price entered. */
   price: number | null; fees: number;
-  plan: { months: number; apr: string | null; depositPct: number; fees: number } | null;
+  plan: { months: number; apr: string | null; depositPct: number; fees: number; firstPaymentDate: string } | null;
   cushion: number;
   /** 05.4-51 (D-58, D-67): a regular saving from the everyday account, as a percent of pay, on its day; null = none. */
   saving: { pct: number; day: number } | null;
@@ -66,9 +66,9 @@ const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
   paidShare: fc.constantFrom(0, 100, 100),
   soFarShare: fc.integer({ min: 20, max: 100 }),
   history: fc.integer({ min: 3, max: 6 }),
-  price: fc.option(fc.integer({ min: 1, max: 2_000_000 }), { nil: null }),
+  price: fc.option(pricePctBpArb, { nil: null }), // 05.4-55 (D-69): a share of pay in basis points, resolved in midMonth
   fees: fc.constantFrom(0, 0, 500, 2500),
-  plan: fc.oneof({ weight: 5, arbitrary: fc.constant(null) }, { weight: 1, arbitrary: fc.record({ months: fc.integer({ min: 2, max: 36 }), apr: fc.constantFrom(null, '0', '9.9', '19.99', '29.99'), depositPct: fc.constantFrom(0, 0, 5, 10, 20), fees: money(5_000) }) }), // 05.4-51 (Plan-49 re-run): the deposit is a share of the price
+  plan: fc.oneof({ weight: 5, arbitrary: fc.constant(null) }, { weight: 1, arbitrary: fc.record({ months: termMonthsArb, apr: fc.constantFrom(null, '0', '9.9', '19.99', '29.99'), depositPct: fc.constantFrom(0, 0, 5, 10, 20), fees: money(5_000), firstPaymentDate: fc.constantFrom('2026-10-15', '2026-11-15') }) }), // 05.4-51 (Plan-49 re-run): the deposit is a share of the price. 05.4-55 (D-69): 3..60 months; the first payment today (asOf) or on 15 November, so a short plan can end inside the 90 days (D-68)
   cushion: money(1_500_000),
   saving: fc.option(fc.record({ pct: fc.integer({ min: 1, max: 15 }), day: fc.integer({ min: 1, max: 28 }) }), { nil: null, freq: 3 }),
 });
@@ -78,6 +78,7 @@ const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
  * months; the balance is that plus this month's money received, less the bills paid and the everyday spending so far.
  */
 function midMonth(r: MidMonthRaw, received: number): RightAnswerFixture {
+  const price = r.price === null ? null : priceOfShare(r.pay, r.price, 1); // 05.4-55 (D-69)
   const { bills, everyday } = usualCosts(r.pay, r.costShare, r.billShare);
   const billsPaid = Math.floor((bills * r.paidShare) / 100);
   const everydaySoFar = Math.floor((everyday * r.soFarShare) / 100);
@@ -93,9 +94,9 @@ function midMonth(r: MidMonthRaw, received: number): RightAnswerFixture {
     accounts: [{ id: 'a1', kind: 'checking', name: 'Main', balance, overdraftLimit: null, overdraftRate: null, use: 'everyday' }],
     safetyNet: null, bills: [], debts: [], userLine: null, factLines: false,
     check: {
-      price: r.price, taxPercent: null, taxIncluded: null, oneOffFees: r.fees,
+      price, taxPercent: null, taxIncluded: null, oneOffFees: r.fees,
       // 05.4-51 (Plan-49 re-run): the deposit is always below the price (0 with no price)
-      pay: r.plan === null ? { mode: 'once' } : { mode: 'plan', months: r.plan.months, apr: r.plan.apr, fees: r.plan.fees, deposit: Math.floor(((r.price ?? 0) * r.plan.depositPct) / 100), firstPaymentDate: '2026-11-15' },
+      pay: r.plan === null ? { mode: 'once' } : { mode: 'plan', months: r.plan.months, apr: r.plan.apr, fees: r.plan.fees, deposit: Math.floor(((price ?? 0) * r.plan.depositPct) / 100), firstPaymentDate: r.plan.firstPaymentDate },
     },
   };
 }
@@ -132,7 +133,7 @@ const firstOfMonthArb: fc.Arbitrary<RightAnswerFixture> = fc
     costShare: costShareArb, // 05.4-51 (Plan-49 re-run)
     billShare: billShareArb,
     history: fc.integer({ min: 3, max: 6 }),
-    price: fc.integer({ min: 1, max: 2_000_000 }),
+    price: pricePctBpArb, // 05.4-55 (D-69): a share of pay in basis points
     fees: fc.constantFrom(0, 0, 500, 2500),
     cushion: money(1_500_000),
     syncedDaysAgo: fc.integer({ min: 0, max: 6 }),
@@ -140,7 +141,8 @@ const firstOfMonthArb: fc.Arbitrary<RightAnswerFixture> = fc
   .map((r): RightAnswerFixture => {
     const { bills, everyday } = usualCosts(r.pay, r.costShare, r.billShare);
     const recordsAsOf = new Date(Date.UTC(2026, 10, 1 - r.syncedDaysAgo)).toISOString().slice(0, 10);
-    const price = r.syncedDaysAgo > 3 ? Math.max(r.price, 100_001) : r.price;
+    const share = priceOfShare(r.pay, r.price, 1); // 05.4-55 (D-69)
+    const price = r.syncedDaysAgo > 3 ? Math.max(share, 100_001) : share;
     return {
       asOf: '2026-11-01', currency: 'USD', region: null,
       pay: { amount: r.pay, cadence: 'monthly', nextDate: '2026-11-01', setupAmount: null, lastThree: null },
