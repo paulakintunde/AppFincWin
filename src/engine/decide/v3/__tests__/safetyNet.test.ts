@@ -109,8 +109,15 @@ describe('the dip (FIN-02, ENG-04)', () => {
 });
 
 describe('the variant order on a fit (05.4-12 revision notes section 1)', () => {
+  it('D-59 every safety-net caution sits last: tight and costly_debt are inserted above no_net / small_net', () => {
+    expect(FIT_VARIANT_ORDER.slice(-2)).toEqual(['no_net', 'small_net']);
+    const net = FIT_VARIANT_ORDER.indexOf('no_net');
+    for (const v of FIT_VARIANT_ORDER.slice(0, net)) expect(['no_net', 'small_net']).not.toContain(v);
+  });
+
   it('low_month wins over no_net / small_net; the losers stay in order', () => {
-    expect(FIT_VARIANT_ORDER).toEqual(['low_month', 'no_net', 'small_net']);
+    expect(FIT_VARIANT_ORDER).toEqual(['low_month', 'extra_savings', 'no_net', 'small_net']);
+    expect(fitVariant(['extra_savings', 'low_month'])).toEqual({ variant: 'low_month', losers: ['extra_savings'] });
     expect(fitVariant(['no_net', 'low_month'])).toEqual({ variant: 'low_month', losers: ['no_net'] });
     expect(fitVariant(['small_net'])).toEqual({ variant: 'small_net', losers: [] });
     expect(fitVariant([])).toEqual({ variant: null, losers: [] });

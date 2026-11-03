@@ -31,6 +31,8 @@ export const VERDICT_TABLE = Object.freeze({
   'fits_month.small_net': row('fitsSmallNet', 'caution'),
   'fits_unspent.no_net': row('fitsNoNet', 'caution'),
   'fits_unspent.small_net': row('fitsSmallNet', 'caution'),
+  // 05.4 D-62: paid in part from money saved above the safety net's size.
+  'fits_unspent.extra_savings': row('fitsUnspentExtraSavings', 'fits'),
   'not_yet.payday': row('notYetPayday', 'caution'),
   'not_yet.not_covered': row('notYetNotCovered', 'short'),
   monthly_short: row('monthlyShort', 'short'),
@@ -51,6 +53,10 @@ export type VerdictRowKey = keyof typeof VERDICT_TABLE;
 const FITS_VARIANTS = ['low_month', 'no_net', 'small_net'] as const;
 type FitsVariant = (typeof FITS_VARIANTS)[number];
 const isFitsVariant = (v: Variant | null): v is FitsVariant => v !== null && (FITS_VARIANTS as readonly string[]).includes(v);
+/** fits_unspent also has extra_savings (D-62). */
+const UNSPENT_VARIANTS = [...FITS_VARIANTS, 'extra_savings'] as const;
+type UnspentVariant = (typeof UNSPENT_VARIANTS)[number];
+const isUnspentVariant = (v: Variant | null): v is UnspentVariant => v !== null && (UNSPENT_VARIANTS as readonly string[]).includes(v);
 
 /**
  * Variant-aware lookup. A null variant gives the base row (not_yet defaults to not_covered); low_month, no_net and small_net only
@@ -61,7 +67,7 @@ export function verdictRowFor(code: Code, variant: Variant | null): VerdictRow {
     case 'fits_month':
       return isFitsVariant(variant) ? VERDICT_TABLE[`fits_month.${variant}` as const] : VERDICT_TABLE.fits_month;
     case 'fits_unspent':
-      return isFitsVariant(variant) ? VERDICT_TABLE[`fits_unspent.${variant}` as const] : VERDICT_TABLE.fits_unspent;
+      return isUnspentVariant(variant) ? VERDICT_TABLE[`fits_unspent.${variant}` as const] : VERDICT_TABLE.fits_unspent;
     case 'not_yet':
       return variant === 'payday' ? VERDICT_TABLE['not_yet.payday'] : VERDICT_TABLE['not_yet.not_covered'];
     case 'monthly_short':
@@ -143,6 +149,9 @@ export const FACT_KEYS = Object.freeze({
   bills_held_back: 'decide.v3.fact.bills_held_back',
   yearly_bill_ahead: 'decide.v3.fact.yearly_bill_ahead',
   net_locked: 'decide.v3.fact.net_locked',
+  extra_savings_used: 'decide.v3.fact.extra_savings_used',
+  net_two_months: 'decide.v3.fact.net_two_months',
+  move_money_by: 'decide.v3.fact.move_money_by',
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -266,6 +275,10 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   yearly_bill_ahead: ['seriesId', 'amount', 'dueDate'],
   // 05.4 D-61: the locked net up to its size.
   net_locked: ['locked'],
+  // 05.4 D-56 / D-62: the extra savings used, of the money above the net's size; 2 months of essential costs. D-58: amount and date.
+  extra_savings_used: ['used', 'above'],
+  net_two_months: ['twoMonths'],
+  move_money_by: ['amount', 'date'],
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({

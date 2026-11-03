@@ -38,7 +38,8 @@ import { SIMULATION_MONTH_CAP } from '../../../payoff/constants';
 import { ceilDivide, minorFromBigInt } from '../../../payoff/types';
 import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_MONTHS } from '../constants';
 import { addYearMonths, daysBetween, yearMonthOf } from '../dates';
-import type { CashCheck } from '../cash/path';
+import type { CashCheck, CashPathV3 } from '../cash/path';
+import { cappedSpare, moveMoneyBy, sourceSplit } from '../moneySource';
 import { emergencyOf } from '../funds/emergency';
 import { NO_NET, fitVariant, netDip, type ResolvedNet } from '../safetyNet';
 import { noLimitFacts, otherOverdrawnFacts, overdraftUseFacts, type OverdraftCtx } from '../overdraft';
@@ -84,6 +85,11 @@ export interface JudgeInput {
   readonly overdraft?: OverdraftCtx | null;
   /** 05.4 FIN-01 (D-35): the safety net in force; absent in hand-built judge tests (no net: the previous rules). */
   readonly net?: ResolvedNet;
+  /**
+   * 05.4 D-56 / D-58: the everyday accounts alone: what they hold at month end with no purchase (spare money is capped at it), and
+   * their 90-day path with the purchase (the move-by fact). Absent in hand-built judge tests: no cap and no move fact.
+   */
+  readonly account?: { readonly spareInAccount: MinorUnits; readonly withPurchase: CashPathV3 } | null;
 }
 
 export interface OneOffPart {
@@ -178,10 +184,10 @@ function ladder(
   const above = net.aboveSize;
   const withEarlier = (): FundingSegment[] => (fromEarlier > 0 ? [...split, { source: 'unspent_earlier', amount: mu(fromEarlier) }] : split);
 
-  // 05.4 D-35: money saved above the net's size is spare savings.
+  // 05.4 D-35: money saved above the net's size can be used; D-56: it is extra savings, never the safety net.
   if (rest <= earlierRoom + above) {
     const taken = rest - fromEarlier;
-    return fit('fits_unspent', [...withEarlier(), { source: 'emergency', amount: mu(taken) }], taken);
+    return fit('fits_unspent', [...withEarlier(), { source: 'extra_savings', amount: mu(taken) }], taken);
   }
 
   // 05.4 FIN-03 (D-26, D-36): what earlier money cannot cover, the overdraft does, up to how far the account really goes below 0.
@@ -190,7 +196,12 @@ function ladder(
   // 05.4 FIN-02 / ENG-04 (D-35, D-41, D-49): the protected part of the net (all of it when protection is off), any purpose.
   if (rest <= earlierRoom + above + net.usable) {
     const taken = rest - fromEarlier;
-    return fit('fits_uses_net', [...withEarlier(), { source: 'emergency', amount: mu(taken) }], taken, taken - above);
+    // D-56: the money above the size first, as extra savings; the protected part is the rest (never below 0).
+    const fromExtra = Math.min(above, taken);
+    const segs: FundingSegment[] = [...withEarlier()];
+    if (fromExtra > 0) segs.push({ source: 'extra_savings', amount: mu(fromExtra) });
+    if (taken - fromExtra > 0) segs.push({ source: 'emergency', amount: mu(taken - fromExtra) });
+    return fit('fits_uses_net', segs, taken, taken - fromExtra);
   }
 
   return notYet('not_covered', readyMonth(month, P, unspent + above));
@@ -227,7 +238,10 @@ export function oneOffPart(
     const split: FundingSegment[] = [];
     if (fromMonth > 0) split.push({ source: 'month', amount: mu(fromMonth) });
     if (fromEnvelope > 0) split.push({ source: 'envelope', amount: mu(fromEnvelope) });
-    if (part.netTaken > 0) split.push({ source: 'emergency', amount: part.netTaken });
+    // D-56: the money above the net's size is extra savings; only the rest is the safety net.
+    const fromExtra = Math.min(part.netTaken, net.aboveSize);
+    if (fromExtra > 0) split.push({ source: 'extra_savings', amount: mu(fromExtra) });
+    if (part.netTaken - fromExtra > 0) split.push({ source: 'emergency', amount: mu(part.netTaken - fromExtra) });
     return { ...part, code: 'fits_uses_overdraft', split };
   }
   const part = ladder(p, j.month, available, 0, net);
@@ -500,8 +514,9 @@ function readyKey(r: ReadyBy | null): string {
  * from the protected part and what the purchase adds to the 90-day dip the net carries; the wait date is the later of the payday that clears
  * the dip and the month spare money covers the price alone (a tie keeps the exact day).
  */
-function netDipFacts(j: JudgeInput, net: ResolvedNet, one: OneOffPart, p: Purchase, unspent: MinorUnits | null): Fact[] {
-  const dip = netDip(mu(Math.max(one.netUsed, one.cashNet)), mu(one.netTaken - one.netUsed), net, j.month.typicalLeft);
+function netDipFacts(j: JudgeInput, net: ResolvedNet, one: OneOffPart, p: Purchase, unspent: MinorUnits | null, protectedUsed: MinorUnits, fromExtra: MinorUnits): Fact[] {
+  // D-56: one protected figure feeds both the split's 'emergency' segment and net_used.
+  const dip = netDip(protectedUsed, fromExtra, net, j.month.typicalLeft);
   const waits: ReadyBy[] = [];
   if (j.cash.kind === 'net' && j.cash.until !== null) waits.push({ kind: 'date', date: j.cash.until });
   // The split takes protected net money only past known unspent money (ladder), so unspent is known here.
@@ -529,12 +544,14 @@ function netDipFacts(j: JudgeInput, net: ResolvedNet, one: OneOffPart, p: Purcha
  * line or the progress line, on any fit (a losing no_net / small_net variant keeps its fact) and on Uses your overdraft (round
  * 1b). Above its size: the spare money above it. Untouched only when something is saved (D-25). A $0 net says it counts as off.
  */
-function netStateFacts(net: ResolvedNet, code: Code, dips: boolean): Fact[] {
+function netStateFacts(net: ResolvedNet, code: Code, dips: boolean, extraUsed: boolean): Fact[] {
   const out: Fact[] = [];
   const fits = code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_overdraft';
   if (!dips && !net.off && fits && net.state === 'none') out.push({ code: 'net_none_start', values: { starter: net.starter } });
   if (!dips && !net.off && fits && net.state === 'small') out.push({ code: 'net_progress', values: { saved: net.saved, size: net.size } });
   if (net.aboveSize > 0) out.push({ code: 'net_above_size', values: { above: net.aboveSize } });
+  // D-56: extra savings used while the net's size is under 2 months of essential costs: 2 months gives more cover.
+  if (extraUsed && net.size < net.starter * 2) out.push({ code: 'net_two_months', values: { twoMonths: mu(net.starter * 2) } });
   if (!dips && net.saved > 0) out.push({ code: 'emergency_untouched', values: { amount: net.off ? net.saved : net.floor } });
   if (!dips && net.zeroIsOff) out.push({ code: 'net_zero_is_off', values: { zero: 0 } });
   return out;
@@ -567,7 +584,10 @@ export function judge(j: JudgeInput): Result {
 
   // D-38: every check judges against available unspent money, the confirmed figure less money held back for earlier
   // plans. Drift and staleness (judgeNotices, judgeConfidence) stay on the confirmed figure (D-30).
-  const unspentValue = funds.unspent === null ? null : (funds.unspent.available ?? funds.unspent.value);
+  // 05.4 D-56: spare money can be no more than the everyday accounts really hold at month end (never below 0 here: an account
+  // below 0 is the cash check's and the overdraft's to judge, D-27, D-28). Absent account (hand-built tests): no cap.
+  const confirmed = funds.unspent === null ? null : (funds.unspent.available ?? funds.unspent.value);
+  const unspentValue = j.account == null ? confirmed : cappedSpare(confirmed, j.account.spareInAccount);
   const one = missing.length > 0 || p === null ? null : oneOffPart(j, { unspent: unspentValue, envelope: funds.ownEnvelope });
 
   const asking = (parts: Result['parts'], ask: readonly MissingCode[], extra: readonly Notice[] = []): Result => ({
@@ -609,7 +629,17 @@ export function judge(j: JudgeInput): Result {
   // 05.4 D-35: a fit while the net is empty or below its size is amber; the variant order is fixed (fitVariant) and a losing
   // variant still shows its fact. Protection off (or a $0 net) has no net caution, only protection_off when its money is used.
   const netState: Variant | null = net.off ? null : net.state === 'none' ? 'no_net' : net.state === 'small' ? 'small_net' : null;
-  const fitV = fitVariant([...(lowClause ? (['low_month'] as const) : []), ...(netState === null ? [] : [netState])]).variant;
+  // D-56: on Dips into your safety net, the protected figure is fixed once, and the split is rebuilt around it so its 'emergency'
+  // segment equals net_used and the split sums to the price paid on day one.
+  const protectedUsed = mu(Math.min(Math.max(one.netUsed, one.cashNet), net.usable, purchase.dayOne - fromEnvelope));
+  const split: readonly FundingSegment[] =
+    one.code === 'fits_uses_net'
+      ? sourceSplit({ dayOne: purchase.dayOne, envelope: mu(fromEnvelope), month: mu(fromMonth), earlier: mu(fromEarlier), protectedUsed, aboveSize: net.aboveSize })
+      : one.split;
+  const fromExtra = split.find((s) => s.source === 'extra_savings')?.amount ?? 0;
+  // D-62: a fit paid in part from extra savings is "Fits from extra savings" (on fits_unspent only).
+  const extraV = code === 'fits_unspent' && fromExtra > 0 ? (['extra_savings'] as const) : [];
+  const fitV = fitVariant([...(lowClause ? (['low_month'] as const) : []), ...extraV, ...(netState === null ? [] : [netState])]).variant;
   let variant: Variant | null = null;
   if (code === 'fits_uses_overdraft') variant = od?.variant ?? null;
   else if (code === 'fits_uses_net') variant = net.off ? 'protection_off' : null;
@@ -636,7 +666,17 @@ export function judge(j: JudgeInput): Result {
   // drops the wait line; a want (or no purpose) leads with the date it fits without the net. Purpose changes facts and their
   // order only, never the code, the variant or a figure (I-D41).
   const dips = one.code === 'fits_uses_net' && code !== 'not_yet';
-  if (dips) facts.push(...netDipFacts(j, net, one, purchase, unspentValue));
+  if (dips) facts.push(...netDipFacts(j, net, one, purchase, unspentValue, protectedUsed, mu(fromExtra)));
+  const keepSplit =
+    code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_net' || code === 'fits_uses_overdraft' || (code === 'monthly_short' && one.code !== 'not_yet');
+  // D-56 / D-62: the extra savings a fit uses, by name.
+  const extraUsed = keepSplit && fromExtra > 0;
+  if (extraUsed) facts.push({ code: 'extra_savings_used', values: { used: mu(fromExtra), above: net.aboveSize } });
+  // D-58: the everyday account alone goes below 0 with the purchase, and money in another account covers it.
+  if (j.account != null && (code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_net')) {
+    const move = moveMoneyBy(j.account.withPurchase, mu(net.aboveSize + (code === 'fits_uses_net' ? net.usable : 0)));
+    if (move !== null) facts.push({ code: 'move_money_by', values: { amount: move.amount, date: move.date } });
+  }
   // The month figure counts the protected net money the split takes this month (D-22: this month after its plans less the
   // purchase); money above the size is spare savings, like earlier unspent money.
   if (one.split.length > 0) {
@@ -651,7 +691,7 @@ export function judge(j: JudgeInput): Result {
   const heldBack = funds.unspent?.breakdown.heldBack ?? 0;
   if (heldBack > 0) facts.push({ code: 'unspent_held_back', values: { amount: heldBack } });
   facts.push(...billFacts(funds));
-  facts.push(...netStateFacts(net, code, dips));
+  facts.push(...netStateFacts(net, code, dips, extraUsed));
   if (fromEnvelope > 0) facts.push({ code: 'envelope_used', values: { used: fromEnvelope, envelopeId: purchase.envelopeId } });
   facts.push(...j.purchaseFacts);
   if (variant === 'low_month' && month.low !== null) {
@@ -672,14 +712,11 @@ export function judge(j: JudgeInput): Result {
   );
   facts.push(...otherOverdrawnFacts(j.inputs.accounts)); // OD-08: a fact only, never the code
 
-  const keepSplit =
-    code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_net' || code === 'fits_uses_overdraft' || (code === 'monthly_short' && one.code !== 'not_yet');
-
   return {
     code,
     variant: code === 'not_yet' ? notYetVariant : variant,
     legacyState: LEGACY_STATE_OF_CODE[code],
-    split: keepSplit ? one.split : [],
+    split: keepSplit ? split : [],
     facts,
     notices: mon === null ? notices : [...notices, ...mon.notices],
     missing: [],

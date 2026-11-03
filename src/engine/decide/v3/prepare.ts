@@ -28,6 +28,7 @@ import { recordsSynced } from './month/freshness';
 import { dueDrops } from './month/dueDrops';
 import { buildMonthModel } from './month/model';
 import { historyPay, type HistoryPay } from './month/historyPay';
+import { cappedSpare, spareInAccount } from './moneySource';
 import { incomeThisMonth, type IncomeInput } from './month/incomeProfile';
 import { expectedFor } from './month/incomePattern';
 import { liveSeriesOf, seriesOccurrences } from './month/series';
@@ -50,6 +51,8 @@ export interface Evaluation {
   readonly uncoveredIncome?: readonly YearMonth[];
   /** 05.4 FIN-01 (D-35): the safety net in force: protection, size (the starter when none is set), saved, protected floor, state. */
   readonly net?: ResolvedNet;
+  /** 05.4 D-56: the spare money the answer was judged against (the confirmed figure capped at the everyday accounts at month end). */
+  readonly spare?: MinorUnits | null;
 }
 
 /**
@@ -135,6 +138,8 @@ interface Reading {
   readonly net: ResolvedNet;
   /** 05.4 D-52: pay expected from history (null when the rule does not apply). */
   readonly hp: HistoryPay | null;
+  /** 05.4 D-56: what the everyday accounts are expected to hold at month end with no purchase; spare money is capped at it. */
+  readonly spareInAccount: MinorUnits;
 }
 
 export interface Prepared {
@@ -177,6 +182,7 @@ function readingOf(inputs: V3Inputs): Reading {
     paydays: [...new Set([...payDatesIn(inputs.series, inputs.asOf, CASH_PATH_DAYS_V3), ...histDates])].sort(),
     net: resolveSafetyNet(inputs, essentialCosts(month, inputs.debts, essentialSpendingOf(inputs, month))),
     hp,
+    spareInAccount: spareInAccount(open, funds.spending),
   };
 }
 
@@ -189,7 +195,10 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
   // would otherwise fail (withNet), whatever the purchase's purpose (D-41, D-49).
   const net = r.net;
   const opening = minorUnits(funds.spending + funds.ownEnvelope + net.aboveSize);
-  const path = applyPurchaseFlows(r.open, opening, pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3) : []);
+  const flows = pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3) : [];
+  const path = applyPurchaseFlows(r.open, opening, flows);
+  // 05.4 D-56 / D-58: the everyday accounts alone (no money above the net's size), with the purchase.
+  const account = { spareInAccount: r.spareInAccount, withPurchase: applyPurchaseFlows(r.open, minorUnits(funds.spending + funds.ownEnvelope), flows) };
   const cash = withNet(cashCheck(path, r.payDate, r.floor), path, () => applyPurchaseFlows(r.open, opening, []), net.usable);
   // 05.4 FIN-03 (D-36): the same open path with no purchase flows gives the cost without it; only needed with an overdraft.
   const overdraft = { floor: r.floor, withPurchase: path, withoutPurchase: r.floor < 0 ? applyPurchaseFlows(r.open, opening, []) : null, paydays: r.paydays };
@@ -205,6 +214,7 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
     cash,
     overdraft,
     net,
+    account,
   });
   // D-52: pay expected from history says so, after the judge's notices. D-46: say so when the expected-income cap lowered the
   // pay in the 90-day path; last.
@@ -218,7 +228,7 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
     pb.purchase !== null && result.reasons.includes('volatile_cover_declined')
       ? insteadFutures({ result, month, funds, purchase: pb.purchase, userRate: null, years: 1 })
       : null;
-  return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash, futures, uncoveredIncome: uncoveredIncomeMonths(inputs, month, pb.purchase), net };
+  return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash, futures, uncoveredIncome: uncoveredIncomeMonths(inputs, month, pb.purchase), net, spare: cappedSpare(funds.unspent === null ? null : (funds.unspent.available ?? funds.unspent.value), r.spareInAccount) };
 }
 
 /** A comparable key: a date, or the first of a month; null (never) sorts last. */

@@ -3999,9 +3999,10 @@
        "amount": 193000
       }
      }
-    ]
+    ],
+    "variant": "extra_savings"
    },
-   "working": "Mixed checking: 400,000 - holiday envelope 60,000 - stated extra 20,000 = spending 320,000 (D-55); fund, savings and car money are in dedicated or untouched accounts and do not count. Suggested = 320,000 - Erest 33,000 = 287,000 = confirmed unspent. One-off 300,000: month room 97,250, earlier unspent room 287,000 - 97,250 = 189,750, rest 202,750 > 189,750, so not covered; gap = 300,000 - 287,000 = 13,000, ceil(13,000 / 107,000) = 1 month, 2026-11 (the cash dip before the 1 Nov pay does not push it later). It would fit only if the 80,000 put aside were spare (spending 400,000, unspent 367,000). Readiness: September fully recorded, October up to date, envelopes linked: ready. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 193000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 300000 fund as the money saved; only money already saved is protected, floor 193000, and the 107000 above the size is spare money. The answer is now fits_unspent, split month 97250 + unspent_earlier 189750 + emergency 13000; the purpose and the emergency mark no longer gate the net."
+   "working": "Mixed checking: 400,000 - holiday envelope 60,000 - stated extra 20,000 = spending 320,000 (D-55); fund, savings and car money are in dedicated or untouched accounts and do not count. Suggested = 320,000 - Erest 33,000 = 287,000 = confirmed unspent. One-off 300,000: month room 97,250, earlier unspent room 287,000 - 97,250 = 189,750, rest 202,750 > 189,750, so not covered; gap = 300,000 - 287,000 = 13,000, ceil(13,000 / 107,000) = 1 month, 2026-11 (the cash dip before the 1 Nov pay does not push it later). It would fit only if the 80,000 put aside were spare (spending 400,000, unspent 367,000). Readiness: September fully recorded, October up to date, envelopes linked: ready. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 193000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 300000 fund as the money saved; only money already saved is protected, floor 193000, and the 107000 above the size is spare money. The answer is now fits_unspent, split month 97250 + unspent_earlier 189750 + emergency 13000; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-47 D-62): variant null -> extra_savings; 13000 of the price comes from savings above the safety net's size (\"Fits from extra savings\"); the code and the figures do not change."
   },
   {
    "id": "dee-everyday",
@@ -4312,9 +4313,10 @@
        "amount": 193000
       }
      }
-    ]
+    ],
+    "variant": "extra_savings"
    },
-   "working": "The same 320,000 without envelopeId: the car money does not count. Cash dips to 320,000 - 320,000 - 33,000 = -33,000 before payday and recovers after the 1 Nov pay. Ladder: month 97,250, earlier room 189,750, rest 222,750 > 189,750: not covered, gap 320,000 - 287,000 = 33,000, 1 month: 2026-11. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 193000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 300000 fund as the money saved; only money already saved is protected, floor 193000, and the 107000 above the size is spare money. The answer is now fits_unspent, split month 97250 + unspent_earlier 189750 + emergency 33000; the purpose and the emergency mark no longer gate the net."
+   "working": "The same 320,000 without envelopeId: the car money does not count. Cash dips to 320,000 - 320,000 - 33,000 = -33,000 before payday and recovers after the 1 Nov pay. Ladder: month 97,250, earlier room 189,750, rest 222,750 > 189,750: not covered, gap 320,000 - 287,000 = 33,000, 1 month: 2026-11. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 193000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 300000 fund as the money saved; only money already saved is protected, floor 193000, and the 107000 above the size is spare money. The answer is now fits_unspent, split month 97250 + unspent_earlier 189750 + emergency 33000; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-47 D-62): variant null -> extra_savings; 33000 of the price comes from savings above the safety net's size (\"Fits from extra savings\"); the code and the figures do not change."
   },
   {
    "id": "dee-account-unstated",
@@ -4670,9 +4672,10 @@
        "amount": 193000
       }
      }
-    ]
+    ],
+    "variant": "extra_savings"
    },
-   "working": "The user says the 50,000 is someone else's money. It is ring-fenced: 80,000 + 50,000 = 130,000, and does not count. Available unspent stays 287,000: month 97,250, earlier room 189,750 < 232,750, not covered; gap 330,000 - 287,000 = 43,000, 1 month: 2026-11. Cash holds (370,000 - 330,000 - 33,000 = 7,000). RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 193000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 300000 fund as the money saved; only money already saved is protected, floor 193000, and the 107000 above the size is spare money. The answer is now fits_unspent, split month 97250 + unspent_earlier 189750 + emergency 43000; the purpose and the emergency mark no longer gate the net."
+   "working": "The user says the 50,000 is someone else's money. It is ring-fenced: 80,000 + 50,000 = 130,000, and does not count. Available unspent stays 287,000: month 97,250, earlier room 189,750 < 232,750, not covered; gap 330,000 - 287,000 = 43,000, 1 month: 2026-11. Cash holds (370,000 - 330,000 - 33,000 = 7,000). RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 193000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 300000 fund as the money saved; only money already saved is protected, floor 193000, and the 107000 above the size is spare money. The answer is now fits_unspent, split month 97250 + unspent_earlier 189750 + emergency 43000; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-47 D-62): variant null -> extra_savings; 43000 of the price comes from savings above the safety net's size (\"Fits from extra savings\"); the code and the figures do not change."
   },
   {
    "id": "dee-past-month-missing",

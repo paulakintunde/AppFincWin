@@ -17,6 +17,7 @@ describe('verdict table (I22 one code one text)', () => {
       [
         'fits_month', 'fits_month.low_month', 'fits_unspent', 'fits_unspent.low_month', 'not_yet.payday', 'not_yet.not_covered', 'monthly_short', 'emergency_use', 'needs_input', 'fits_uses_overdraft', 'fits_uses_overdraft.not_cleared',
         'fits_month.no_net', 'fits_month.small_net', 'fits_unspent.no_net', 'fits_unspent.small_net', 'fits_uses_net', 'fits_uses_net.protection_off',
+        'fits_unspent.extra_savings',
       ].sort()
     );
     const rows = Object.values(VERDICT_TABLE);
@@ -98,7 +99,7 @@ describe('verdict table (I22 one code one text)', () => {
         'overdraft_cost_90d', 'wait_clears', 'overdraft_repeat', 'other_account_overdrawn', 'no_overdraft_limit',
         'ready_without_interest', 'clearing_first', 'net_left', 'net_refill', 'net_zero_is_off', 'net_protection_off',
         'net_none_start', 'net_progress', 'net_above_size', 'wait_keeps_net', 'need_net_line',
-        'bills_held_back', 'yearly_bill_ahead', 'net_locked',
+        'bills_held_back', 'yearly_bill_ahead', 'net_locked', 'extra_savings_used', 'net_two_months', 'move_money_by',
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

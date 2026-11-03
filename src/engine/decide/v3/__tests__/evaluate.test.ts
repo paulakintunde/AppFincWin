@@ -285,7 +285,7 @@ describe('05.4 D-35 / D-41 / D-49 (retires D-63): the safety net counts for any 
     expect(ev.result.code).toBe('fits_unspent');
     expect(ev.result.split).toEqual([
       { source: 'unspent_earlier', amount: 10_000 },
-      { source: 'emergency', amount: 60_000 },
+      { source: 'extra_savings', amount: 60_000 },
     ]);
     expect(ev.result.facts).toContainEqual({ code: 'net_above_size', values: { above: 62_000 } });
     expect(ev.result.facts).toContainEqual({ code: 'emergency_untouched', values: { amount: 238_000 } });

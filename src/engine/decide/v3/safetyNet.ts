@@ -114,10 +114,13 @@ export function netDip(need: MinorUnits, fromAbove: MinorUnits, net: ResolvedNet
 }
 
 /**
- * The fixed order of the variants on a fit (05.4-12 revision notes section 1): low_month / tight > costly_debt > no_net /
- * small_net. tight (05.4-21) and costly_debt (05.4-20) are inserted here by their plans.
+ * The fixed order of the variants on a fit (05.4-12 revision notes section 1).
+ * D-59 (owner, 2026-11-03): tight (05.4-21) leads every safety-net caution: it is inserted at the top with low_month; costly_debt
+ * (05.4-20) goes below it; no_net and small_net stay last, and their fact (net_none_start / net_progress) shows below the winning
+ * variant. D-62: extra_savings ("Fits from extra savings") sits above the net cautions; it never meets them (extra savings means
+ * the net is above its size).
  */
-export const FIT_VARIANT_ORDER: readonly Variant[] = ['low_month', 'no_net', 'small_net'];
+export const FIT_VARIANT_ORDER: readonly Variant[] = ['low_month', 'extra_savings', 'no_net', 'small_net'];
 
 /** The winning variant and the losers, in order. A losing variant's fact still shows. */
 export function fitVariant(candidates: readonly Variant[]): { readonly variant: Variant | null; readonly losers: readonly Variant[] } {

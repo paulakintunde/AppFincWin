@@ -199,7 +199,7 @@ describe('05.4 D-35 (supersedes D-43a / D-63): only money above the net size cus
     expect(ev.net).toMatchObject({ size: 327_500, floor: 327_500, aboveSize: 572_500 });
     expect(ev.cash.kind).toBe('ok');
     expect(ev.result.code).toBe('fits_unspent');
-    expect(ev.result.split.find((s) => s.source === 'emergency')?.amount).toBe(360_000);
+    expect(ev.result.split.find((s) => s.source === 'extra_savings')?.amount).toBe(360_000); // D-56: extra savings, not the net
   });
 
   it('D-35 the protected part is reached only through the ladder: 200,000 with unspent 10,000, marked or not, is the same answer', () => {

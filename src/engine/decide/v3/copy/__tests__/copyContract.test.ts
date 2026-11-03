@@ -210,7 +210,8 @@ function buildCorpus(): Emitted[] {
     ],
     { full: false }
   );
-  const rich = { unspent: { amount: mu(5_000_000), at: '2026-12-10' }, months: [...gigMonths, decMonth] } as const;
+  // 05.4 D-56: spare money is capped at the everyday account, so the account holds the confirmed figure.
+  const rich = { unspent: { amount: mu(5_000_000), at: '2026-12-10' }, balance: mu(5_000_000), months: [...gigMonths, decMonth] } as const;
   const bigPlan = checkPlan(600_000, { count: 12, apr: percent('0'), firstPayment: { kind: 'one_period' } });
   collect(out, gig('seasonal', rich), bigPlan);
   collect(out, gig('variable', { ...rich, months: [...gigMonths.slice(2), decMonth] }), bigPlan);

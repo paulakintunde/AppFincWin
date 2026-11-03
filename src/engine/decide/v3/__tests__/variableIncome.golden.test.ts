@@ -148,7 +148,7 @@ describe('D-50: unexplained money asks, and only spare counts', () => {
     expect(ask.funds.unexplained).toBe(50000);
     expect(run(byId('dee-unexplained-spare')).result.code).toBe('fits_unspent');
     // 05.4 D-35: kept out of spare money, the someone-else's answer leaves the price to the money saved above the net's size.
-    const fromNet = (id: string): number => run(byId(id)).result.split.filter((s) => s.source === 'emergency').reduce((t, s) => t + s.amount, 0);
+    const fromNet = (id: string): number => run(byId(id)).result.split.filter((s) => s.source === 'extra_savings').reduce((t, s) => t + s.amount, 0); // D-56: extra savings by name
     expect(fromNet('dee-unexplained-spare')).toBe(0);
     expect(fromNet('dee-unexplained-someone')).toBe(43000);
     expect(run(byId('dee-unexplained-someone')).funds.ringFenced).toBe(130000);

@@ -295,7 +295,7 @@ describe('judge: one-off ladder (v3 §12)', () => {
     expect(r.code).toBe('fits_unspent');
     expect(r.split).toEqual([
       { source: 'unspent_earlier', amount: 10_000 },
-      { source: 'emergency', amount: 60_000 },
+      { source: 'extra_savings', amount: 60_000 },
     ]);
     const past = judge(input({ ...tight, net: { ...above, usable: minorUnits(0) }, purchase: purchase({ dayOne: mu(100_000), whole: mu(100_000) }) }));
     expect(past.code).toBe('not_yet');

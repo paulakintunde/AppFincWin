@@ -3550,6 +3550,12 @@ const en = {
           title: 'This fits, and nothing is saved in your safety net yet.',
           body: '{{month}} is on track to leave about {{left}}, including the everyday spending still to come.',
         },
+        // 05.4 D-62: paid in part from money saved above the safety net's size.
+        fitsUnspentExtraSavings: {
+          chip: 'Fits from extra savings',
+          title: 'This fits from your extra savings.',
+          body: 'From your extra savings: uses {{used}} of the {{above}} above your safety net’s size.',
+        },
         fitsSmallNet: {
           chip: 'Fits, but your safety net is small',
           title: 'This fits, and your safety net is below its size.',
@@ -3597,7 +3603,11 @@ const en = {
         net_protection_off: 'Protection is off, so this counts the money in your safety net.',
         net_none_start: 'Nothing is saved in your safety net yet. 1\u00A0month of essential costs, about {{starter}}, is a start; 3 to 6 months is common.',
         net_progress: 'Your safety net has {{saved}} of its {{size}}. 1\u00A0month is a start; 3 to 6 months is common.',
-        net_above_size: '{{above}} above your safety net’s size counts as spare money.',
+        net_above_size: '{{above}} saved above your safety net’s size is extra savings.',
+        // 05.4 D-56 / D-62 / D-58: money above the net's size is extra savings, named as such.
+        extra_savings_used: 'From your extra savings: uses {{used}} of the {{above}} above your safety net’s size.',
+        net_two_months: '2\u00A0months of essential costs in your safety net, about {{twoMonths}}, gives more cover.',
+        move_money_by: '{{amount}} from your savings would need to be in your everyday account by {{date}}.',
         wait_keeps_net: 'Waiting until {{date}} keeps your safety net whole.',
         wait_keeps_net_month: 'Waiting until {{month}} keeps your safety net whole.',
         need_net_line: 'Marked as a need. A safety net is money kept for needs like this.',

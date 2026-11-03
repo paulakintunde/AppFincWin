@@ -211,7 +211,9 @@ describe('end-to-end invariants through evaluate()', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
         const ev = evaluate(inputs, check);
-        const u = ev.funds.unspent?.value ?? null;
+        // 05.4 D-56: the judged figure is the confirmed one capped at the everyday account at month end, never above it.
+        const u = ev.spare ?? null;
+        if (u !== null) expect(u).toBeLessThanOrEqual(ev.funds.unspent?.available ?? (ev.funds.unspent?.value as number));
         const earlier = ev.result.split.find((s) => s.source === 'unspent_earlier')?.amount ?? 0;
         const fromMonth = ev.result.split.find((s) => s.source === 'month')?.amount ?? 0;
         if (earlier > 0) {

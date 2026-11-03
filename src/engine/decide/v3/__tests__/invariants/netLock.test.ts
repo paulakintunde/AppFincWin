@@ -16,6 +16,7 @@ describe('safety-net lock invariants', () => {
         const unlocked = evaluate(withSafetyNet(base, { ...n, locked: false }), check).result;
         expect(locked.code).not.toBe('fits_uses_net');
         expect(locked.facts.some((f) => f.code === 'net_used')).toBe(false);
+        expect(locked.split.some((s) => s.source === 'emergency')).toBe(false); // D-56: money above the size is extra_savings
         fc.pre(locked.code !== 'needs_input' && unlocked.code !== 'needs_input');
         expect(codeRank(unlocked.code)).toBeGreaterThanOrEqual(codeRank(locked.code));
       }),
