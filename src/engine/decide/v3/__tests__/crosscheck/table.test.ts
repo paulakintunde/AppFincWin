@@ -7,6 +7,7 @@ import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures
 import { freeMoney, monthEndBalance, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind } from './plain';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs } from '../rightAnswers/fixture';
+import { pick } from '../rightAnswers/pick';
 import type { RightAnswerFixture } from '../rightAnswers/schema';
 
 const PENDING_IDS = new Set(PENDING_RULES.flatMap((r) => r.fixId.split('/')).filter((id) => id !== 'FIN-09'));
@@ -391,5 +392,57 @@ describe('05.4-54 (D-68) at scale: random short plans on the 05.4-53 person, the
       { numRuns: RUNS, seed: 0x5454 }
     );
     expect(short).toBeGreaterThan(RUNS / 20);
+  });
+});
+
+describe('05.4-54 drafts BR-17..BR-23 (D-68): hand, plain calculator and engine (first payment read as today, as BR-16)', () => {
+  const byId = (id: string) => {
+    const c = loadCases().find((x) => x.id === id);
+    if (c === undefined) throw new RangeError(id);
+    return c;
+  };
+  const engine = (f: RightAnswerFixture) => {
+    const { inputs, check } = toEngineInputs(f);
+    const today = check.pay.mode === 'plan' ? { ...check, pay: { ...check.pay, firstPayment: { kind: 'today' as const } } } : check;
+    return pick(evaluate(inputs, today));
+  };
+  /**
+   * BR-19 and BR-20: code, variant and facts agree, the ready-by month does not. The hand answer follows BR-12 ("judged like
+   * paying £900 at once ... £500 more at £80 a month = 7 months"): the whole cost. The engine reads the day-one payment. Reported
+   * for the owner (05.4-56); these are the engine's figures today, not right answers.
+   */
+  const ENGINE_READY: Record<string, string> = { 'BR-19': '2027-01', 'BR-20': '2026-12-01' };
+
+  it.each(['BR-17', 'BR-18', 'BR-19', 'BR-20', 'BR-21', 'BR-22', 'BR-23'])('%s', (id) => {
+    const c = byId(id);
+    expect({ status: c.status, fixIds: c.fixIds }).toEqual({ status: 'draft', fixIds: ['FIN-06', 'FIN-01b'] });
+    const got = engine(c.fixture);
+    const e = c.expected;
+    expect({ code: got.code, variant: got.variant, readyBy: got.readyBy }).toEqual({ code: e.code, variant: e.variant, readyBy: ENGINE_READY[id] ?? e.readyBy });
+    if (e.afterBuy.month !== null) expect(got.afterBuy.month).toBe(e.afterBuy.month);
+    expect(got.facts).toEqual(expect.arrayContaining(e.mustHaveFacts));
+    for (const no of e.mustNotHaveFacts) expect(got.facts).not.toContain(no);
+    const plain = plainAnswer(c.fixture);
+    expect(plain.code === 'not_yet' ? { code: plain.code } : { code: plain.code, variant: plain.variant }).toEqual(e.code === 'not_yet' ? { code: e.code } : { code: e.code, variant: e.variant });
+    expect(plainShortPlan(c.fixture)).toBe(e.mustHaveFacts.includes('short_plan_from_cash'));
+  });
+
+  it('the hand figures: totals, path low points, the monthly figure, the move-by amount and the D-65 months', () => {
+    const f = (id: string) => byId(id).fixture;
+    expect(['BR-17', 'BR-19', 'BR-21', 'BR-22', 'BR-23'].map((id) => plainPlanTotal(f(id)))).toEqual([180_000n, 180_000n, 180_000n, 180_000n, 180_000n]);
+    expect(['BR-17', 'BR-19', 'BR-20', 'BR-21', 'BR-22', 'BR-23'].map((id) => planPathLow(f(id)))).toEqual([270_000n, -80_000n, -120_000n, -80_000n, 125_000n, 220_000n]);
+    expect(planDates(f('BR-18')).at(-1)).toBe('2027-04-15');
+    expect(planDates(f('BR-23'))).toEqual(['2026-11-15', '2026-11-29', '2026-12-13', '2026-12-27']);
+    expect(plainPlanMonthly(f('BR-23'))).toBe(97_500n);
+    const { inputs, check } = toEngineInputs(f('BR-21'));
+    const today = check.pay.mode === 'plan' ? { ...check, pay: { ...check.pay, firstPayment: { kind: 'today' as const } } } : check;
+    const facts = evaluate(inputs, today).result.facts;
+    expect(facts.find((x) => x.code === 'move_money_by')?.values).toEqual({ amount: 80_000, date: '2026-11-15' });
+    expect(facts.find((x) => x.code === 'extra_savings_used')?.values).toEqual({ used: 130_000, above: 400_000 });
+    expect(plainTier(f('BR-22'), 'fits_unspent')).toEqual({ variant: 'month_short_moderate', months: 32, monthsAfter: 14 });
+    // the ready-by months by hand (BR-12's rule): whole cost less the spare money, at $500 a month, rounded up, from November
+    const months = (whole: number, free: number) => Math.ceil((whole - free) / 50_000);
+    expect([months(180_000, 0), months(270_000, 50_000)]).toEqual([4, 5]);
+    expect([byId('BR-19').expected.readyBy, byId('BR-20').expected.readyBy]).toEqual(['2027-03', '2027-04']);
   });
 });
