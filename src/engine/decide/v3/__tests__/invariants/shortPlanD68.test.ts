@@ -19,7 +19,7 @@ import { addDays } from '../../dates';
 import { evaluate } from '../../evaluate';
 import { paymentDates } from '../../plan/schedule';
 import type { CheckV2, Code, PayV2, Result, V3Inputs } from '../../types';
-import { fcRuns } from '../helpers/fcRuns';
+import { fcRuns, isFullRun } from '../helpers/fcRuns';
 import { checkPlan } from '../helpers/fixtures';
 import { codeRank, inputsArb, withOverdraft } from './arbitraries';
 
@@ -104,7 +104,7 @@ describe('I-D68 a short plan paid from money on hand is judged by cash, and noth
     );
     // The arbitraries reach D-68 at all (else the checks above say nothing). Only on a full run: Stryker and
     // FC_RUNS=10 draw too few people to reach it; shortPlan.test.ts pins D-68 answers by hand either way.
-    if (fcRuns(400) >= 100) expect(seen).toBeGreaterThan(0);
+    if (isFullRun(400)) expect(seen).toBeGreaterThan(0);
   });
 
   it('I-D68 one more payment of the same amount, past day 90, never adds the caution line', () => {
