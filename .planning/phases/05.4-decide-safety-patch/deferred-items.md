@@ -72,3 +72,13 @@
 - **The app builder does not pass check.pay.housing yet.** PayV2.housing (D-39c) is set only by the fixtures; the check sheet does
   not ask "Is this a home loan?" (08.1) and src/features/decide/snapshot/** (not edited in 05.4) maps nothing. Until then every app
   mortgage takes the 10% interest test.
+
+## Found in 05.4-23 (FIN-08 / FIN-15 / D-46)
+- **The runway lines are for monthly plans only.** covered_from_savings / further_shortfall_runway count payments against a monthly
+  gap; a fortnightly or every-N-months plan on Short each month shows neither. For 08.1 / a later plan if the owner wants them.
+- **Seasonal earners are not term-scaled.** Their bridge is the run of lean months ahead (D-37), all from savings; the whole-term
+  count (QE-04) is for variable and steady low-pay earners.
+- **A plan paid less often than monthly counts its payment months as the term** for the low-month count (random I44 cases with
+  every-2-to-12-month cadences). No approved case has one.
+- **The app builder passes no pay arrivals beyond the records.** FIN-15 and the steady low-pay months read the pay lines linked to
+  the pay series; a pay logged without its series link is not read (05.5 builder).
