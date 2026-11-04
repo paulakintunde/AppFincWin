@@ -4,7 +4,7 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront } from './plain';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
@@ -68,6 +68,45 @@ describe('plain calculator: tax (FIN-27, TX-01..TX-09)', () => {
       const { inputs, check } = toEngineInputs(f);
       expect(pick(evaluate(inputs, check)).reasons.includes('tax_not_included')).toBe(plainTaxNotIncluded(f));
     }
+  });
+});
+
+// 05.4-26 (BO-05 part A): running costs, closing costs and the purchase date through the plain calculator. The RC cases name BO-05,
+// which stays pending for 05.4-27's part (what it replaces, save-for-it), so they are checked here by name instead of above.
+describe('plain calculator: running costs, closing costs and the purchase date (BO-05, RC-01..RC-10)', () => {
+  const rc = loadCases().filter((c) => c.status === 'approved' && c.topic === 'running-costs');
+  const fx = (id: string): RightAnswerFixture => rc.find((c) => c.id === id)!.fixture;
+  // RC-02: the approved block says "Fits, but tight each month"; the car is paid from $380 of this month and $5,620 of money from
+  // earlier months, which D-78 (owner, 2026-11-04) calls spare money: "Fits from spare money, but tight". Waits for the owner.
+  const WAITS: Readonly<Record<string, string>> = { 'RC-02': 'D-78 spare money (owner question, 05.4-26)' };
+
+  it('BO-05 the code, the month figure and the usual month of every approved running-cost case', () => {
+    const live = rc.filter((c) => WAITS[c.id] === undefined);
+    expect(live.length).toBe(9);
+    for (const c of live) {
+      const a = plainAnswer(c.fixture);
+      expect({ id: c.id, code: a.code, tight: a.variant === 'tight' }).toEqual({ id: c.id, code: c.expected.code, tight: c.expected.variant === 'tight' });
+      if (c.expected.afterBuy.month !== null) expect({ id: c.id, month: a.afterBuy }).toEqual({ id: c.id, month: c.expected.afterBuy.month });
+      if (c.expected.afterBuy.usualMonth !== null) expect({ id: c.id, usual: plainUsualAfter(c.fixture) }).toEqual({ id: c.id, usual: c.expected.afterBuy.usualMonth });
+    }
+  });
+
+  it('BO-05 the figures the cases state', () => {
+    expect(runningShare(fx('RC-01'))).toBe(32_300n); // "$150 + $120 + $30 + $23 ... = $323 a month"
+    expect(plainUsualAfter(fx('RC-01'))).toBe(-7_300); // "$250 - $323 = -$73"
+    expect(plainUsualAfter(fx('RC-02'))).toBe(5_700); // "$380, then $57"
+    expect(runningDates(fx('RC-03'))).toEqual([{ date: '2027-02-01', amount: 10_000n }]); // "only one $100 payment falls, on 1 February"
+    expect(runningShare(fx('RC-04'))).toBe(5_000n); // "The yearly $600 counts as $50 a month"
+    expect(runningDates(fx('RC-04'))).toEqual([{ date: '2027-01-15', amount: 60_000n }]); // "the full $600 falls on 15 January"
+    expect(runningDates(fx('RC-05')).map((d) => d.date)).toEqual(['2026-12-01', '2027-01-01', '2027-02-01']); // to 13 February
+    expect(plainClosing(fx('RC-06'))).toBe(100_000n); // "2.5% of $40,000 = $1,000"
+    expect(buyDay(fx('RC-08'))).toBe('2027-01-15');
+    expect(laterMoney(fx('RC-08'))).toBe(100_000n); // "plus December's $1,000"
+    expect(runningShare(fx('RC-09'))).toBe(0n); // "A switched-off line is not counted"
+    expect(plainUsualAfter(fx('RC-09'))).toBe(100_000); // "a usual month of $1,000"
+    expect(plainUsualAfter(fx('RC-10'))).toBeNull();
+    // RC-02 on the plain rule: Fits from spare money, but tight (D-78), the same as the engine
+    expect(plainAnswer(fx('RC-02'))).toMatchObject({ code: 'fits_unspent', variant: 'tight' });
   });
 });
 

@@ -320,6 +320,49 @@ const taxArb = fc.record({
   included: fc.constantFrom(null, null, false, true),
 });
 
+/** 'YYYY-MM-DD' plus n days. */
+function dayPlus(date: string, n: number): string {
+  return new Date(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)) + n)).toISOString().slice(0, 10);
+}
+
+/**
+ * 05.4-26 (BO-05 part A, RC-01..RC-09): a one-off's running costs, closing % and purchase date. About 1 check in 3 brings 1 to 3
+ * running costs (a monthly share of 0.1% to 15% of pay each, every 1, 3 or 12 months, started up to 60 days ago or starting up to
+ * 150 days ahead, some with an end date, 1 in 6 switched off); 1 in 6 has a closing % and 1 in 6 a purchase date up to 120 days
+ * ahead. Plans and irregular pay are left without them (plans stay out under BO-05; a running cost on low months is not restated).
+ */
+const runningArb = fc.record({
+  perMille: fc.integer({ min: 1, max: 150 }),
+  every: fc.constantFrom(1 as const, 3 as const, 12 as const),
+  startIn: fc.integer({ min: -60, max: 150 }),
+  endAfter: fc.option(fc.integer({ min: 30, max: 300 }), { nil: null, freq: 2 }),
+  off: fc.integer({ min: 1, max: 6 }).map((n) => n === 1),
+});
+const fullCostArb = fc.record({
+  running: fc.oneof({ weight: 2, arbitrary: fc.array(runningArb, { maxLength: 0 }) }, { weight: 1, arbitrary: fc.array(runningArb, { minLength: 1, maxLength: 3 }) }),
+  closing: fc.option(fc.constantFrom('0', '1', '2.5', '3.125', '5'), { nil: null, freq: 5 }),
+  buyIn: fc.option(fc.integer({ min: 1, max: 120 }), { nil: null, freq: 5 }),
+});
+
+type FullCost = typeof fullCostArb extends fc.Arbitrary<infer T> ? T : never;
+
+function withFullCost(f: RightAnswerFixture, x: FullCost): RightAnswerFixture {
+  if (f.check.pay.mode !== 'once' || f.pay.irregular !== undefined) return f;
+  const runningCosts = x.running.map((r, i) => {
+    const start = dayPlus(f.asOf, r.startIn);
+    return { id: `rc-${i}`, amount: Math.max(100, Math.floor((f.pay.amount * r.perMille) / 1000)) * r.every, everyMonths: r.every, start, end: r.endAfter === null ? null : dayPlus(start, r.endAfter), ...(r.off ? { off: true } : {}) };
+  });
+  return {
+    ...f,
+    check: {
+      ...f.check,
+      ...(runningCosts.length === 0 ? {} : { runningCosts }),
+      ...(x.closing === null ? {} : { closingPercent: x.closing }),
+      ...(x.buyIn === null ? {} : { purchaseDate: dayPlus(f.asOf, x.buyIn) }),
+    },
+  };
+}
+
 export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc
-  .tuple(peopleArb, taxArb)
-  .map(([f, t]) => ({ ...f, region: t.region, check: { ...f.check, taxPercent: t.typed, taxIncluded: t.included } }));
+  .tuple(peopleArb, taxArb, fullCostArb)
+  .map(([f, t, x]) => withFullCost({ ...f, region: t.region, check: { ...f.check, taxPercent: t.typed, taxIncluded: t.included } }, x));
