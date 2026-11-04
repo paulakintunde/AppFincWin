@@ -590,7 +590,10 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   const after = usualLeft - cost;
   const sitting = sittingMoney(f);
   const net = plainNet(f);
-  const margin = sitting + usualLeft - cost + net.above;
+  // 05.4-21 (D-65 Large, as in plainCode): with the usual month already short, every month on the 90-day path loses money, so the
+  // path's lowest point decides when it is lower than this month's end.
+  const monthEnd = sitting + usualLeft - cost;
+  const margin = (usualMonthShort(f) ? (pathLow(f, cost) < monthEnd ? pathLow(f, cost) : monthEnd) : monthEnd) + net.above;
   if (margin < 0n) return { code: margin + net.lend < 0n ? 'not_yet' : 'fits_uses_net', variant: net.off ? 'protection_off' : null, afterBuy: Number(after) };
   const room = maxC(0n, usualLeft);
   const fromMonth = cost < room ? cost : room;
