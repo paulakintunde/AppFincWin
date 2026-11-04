@@ -76,11 +76,20 @@ const onEstimates = (f: RightAnswerFixture): boolean => f.historyMonths === 0 &&
  * + everyday) less the usual bills she has, never below 0: her £1,300 less her £1,000 of bills is the £300 everyday estimate.
  * With no bills recorded, the whole £1,300 is everyday spending (counted once, as everyday); with more bills recorded than the
  * estimates spend, nothing is left for everyday spending.
+ * D-74 (owner, 2026-11-03): "money out" already includes the recorded bills, card and loan minimums and regular saving. The
+ * money out she enters is her stated bills + everyday + the minimums not paid as one of her bills + her regular saving; each
+ * recorded item is taken out of it once, and if they add up to more than the money out, nothing is left for everyday (so the
+ * usual month takes out the larger figure: pay - bills - everyday - minimums - saving below).
  */
+export function quickMoneyOut(f: RightAnswerFixture): Cents {
+  const q = f.quickEstimates as NonNullable<RightAnswerFixture['quickEstimates']>;
+  return big(q.bills) + big(q.everyday) + debtMinimums(f) + savingAmount(f);
+}
+
 export function usualEveryday(f: RightAnswerFixture): Cents {
   if (!onEstimates(f)) return big(f.usualMonth.everyday);
-  const q = f.quickEstimates as NonNullable<RightAnswerFixture['quickEstimates']>;
-  return maxC(0n, big(q.bills) + big(q.everyday) - big(f.usualMonth.bills));
+  const recorded = big(f.usualMonth.bills) + debtMinimums(f) + savingAmount(f);
+  return maxC(0n, quickMoneyOut(f) - recorded);
 }
 
 /** The essential part of everyday spending ("£200 of it on essentials"), for the D-51 starter safety net; part of the everyday figure, so never above it on estimates. */

@@ -830,13 +830,22 @@ export function quickEstimatesStep(c: CorpusCase, ev: Evaluation, m: (n: number)
     .map((s) => ({ s, monthly: s.cadence.unit === 'week' ? Math.round((s.amount * 52) / 12 / s.cadence.every) : Math.round(s.amount / s.cadence.every) }));
   const billTotal = bills.reduce((a, b) => a + b.monthly, 0);
   const out = q.expenses;
-  const everyday = Math.max(0, out - billTotal);
+  // D-74: the recorded card and loan minimums and regular saving are inside the money out too, each taken out once.
+  const mins = debtsInMonth(inputs.debts, inputs.series, asOf).reduce((a, d) => a + Math.max(0, d.minimum), 0);
+  const saved = (['saving', 'investing'] as const)
+    .flatMap((role) => liveSeriesOf(inputs.series, asOf, role))
+    .filter((s) => s.savingMode !== 'flexible')
+    .reduce((a, s) => a + (s.cadence.unit === 'week' ? Math.round((s.amount * 52) / 12 / s.cadence.every) : Math.round(s.amount / s.cadence.every)), 0);
+  const recorded = billTotal + mins + saved;
+  const everyday = Math.max(0, out - recorded);
   const lines: string[] = [];
   const used = mo.monthsUsed.length > 0 || inputs.everydayOverride !== null;
   lines.push(
-    `Quick estimates (ENG-11): money in ${m(q.income)} a month; money out ${m(out)} a month (bills included, as the app's "Money out each month"). ` +
-      `Usual bills she pays: ${bills.length === 0 ? 'none recorded' : bills.map((b) => `${seriesName(b.s)} ${m(b.monthly)}`).join(' + ')} = ${m(billTotal)}. ` +
-      `Everyday per month = ${m(out)} - ${m(billTotal)} = ${m(everyday)}${out - billTotal < 0 ? ' (never below 0)' : ''}.` +
+    `Quick estimates (ENG-11, D-74): money in ${m(q.income)} a month; money out ${m(out)} a month (bills, minimums and regular saving included, as the app's "Money out each month"). ` +
+      `Usual bills she pays: ${bills.length === 0 ? 'none recorded' : bills.map((b) => `${seriesName(b.s)} ${m(b.monthly)}`).join(' + ')} = ${m(billTotal)}; card and loan minimums ${m(mins)}; regular saving ${m(saved)}. ` +
+      `Everyday per month = ${m(out)} - ${m(billTotal)} - ${m(mins)} - ${m(saved)} = ${m(everyday)}${out - recorded < 0 ? ` (never below 0; the recorded ${m(recorded)} is more than the money out, so the usual month takes ${m(recorded)} out)` : ''}.` +
+      ` Usual month = ${m(q.income)} - ${m(Math.max(out, recorded))}${q.debt + q.saving + q.invest > 0 ? ` - typed debt, saving and invest ${m(q.debt + q.saving + q.invest)}` : ''} = ${m(q.income - Math.max(out, recorded) - q.debt - q.saving - q.invest)}.` +
+      (used || mo.typicalLeft === q.income - Math.max(out, recorded) - q.debt - q.saving - q.invest ? '' : ` PAGE AND ENGINE DISAGREE: the engine's usual month is ${m(mo.typicalLeft ?? 0)}.`) +
       (used
         ? ` The estimates are not read here: ${inputs.everydayOverride !== null ? 'an everyday figure set by hand' : `${mo.monthsUsed.length} full month(s) of records (${mo.monthsUsed.join(', ')})`} set the everyday spending at ${m(mo.e ?? 0)}.`
         : `${everyday === mo.e ? '' : ` PAGE AND ENGINE DISAGREE: the engine reads ${m(mo.e ?? 0)}.`}`)
@@ -853,7 +862,6 @@ export function quickEstimatesStep(c: CorpusCase, ev: Evaluation, m: (n: number)
         `${toCome === mo.erest ? '' : ` PAGE AND ENGINE DISAGREE: the engine reads ${m(mo.erest)}.`}`
     );
     if (q.essential != null) {
-      const mins = debtsInMonth(inputs.debts, inputs.series, asOf).reduce((a, d) => a + Math.max(0, d.minimum), 0);
       const ess = Math.min(Math.max(0, q.essential), everyday);
       const starter = Math.ceil((billTotal + mins + ess) / 100) * 100;
       const engine = ev.net?.starter ?? null;

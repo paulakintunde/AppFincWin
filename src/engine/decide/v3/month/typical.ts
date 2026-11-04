@@ -84,10 +84,12 @@ export interface TypicalResult {
 
 /**
  * ENG11-QE-BILLS (05.4-57): quick estimates' money out includes the bills (rough_spending, "Money out each month"); the bills
- * are counted as bills, so the everyday figure is the rest, never below 0.
+ * are counted as bills, so the everyday figure is the rest, never below 0. D-74 (owner, 05.4-57): the money out also includes
+ * the recorded card and loan minimums and regular saving (the month's set-asides), so `recorded` is bills + set-asides and each
+ * is counted once.
  */
-export function typedEverydayOf(expenses: MinorUnits, recurringBills: MinorUnits): MinorUnits {
-  const rest = BigInt(expenses) - BigInt(recurringBills);
+export function typedEverydayOf(expenses: MinorUnits, recorded: MinorUnits): MinorUnits {
+  const rest = BigInt(expenses) - BigInt(recorded);
   return minorFromBigInt(rest > 0n ? rest : 0n, 'typedEverydayOf');
 }
 
@@ -171,7 +173,8 @@ export function typicalOf(input: TypicalInput): TypicalResult {
   } else if (used.length > 0) {
     eBig = medianHalfUp(used.map((m) => BigInt(m.everyday)));
   } else if (input.typedEstimates !== null) {
-    eBig = BigInt(typedEverydayOf(input.typedEstimates.expenses, recurringBills)); // ENG11-QE-BILLS: the bills counted once
+    // ENG11-QE-BILLS, D-74: the bills and the recorded set-asides are inside the money out, counted once.
+    eBig = BigInt(typedEverydayOf(input.typedEstimates.expenses, minorFromBigInt(bills + BigInt(input.setAside), 'typicalOf')));
     typedOnly = true;
     reasons.add('quick_estimates_used');
     notices.push({ code: 'from_your_figures', values: {} });
@@ -180,7 +183,10 @@ export function typicalOf(input: TypicalInput): TypicalResult {
   let typicalLeftBig: bigint | null = null;
   if (typedOnly && input.typedEstimates !== null) {
     const r = input.typedEstimates;
-    typicalLeftBig = BigInt(r.income) - BigInt(r.expenses) - BigInt(r.debt) - BigInt(r.saving) - BigInt(r.invest);
+    // D-74: the money out holds the recorded bills and set-asides; when those add up to more, the larger figure goes out.
+    const recorded = bills + BigInt(input.setAside);
+    const out = BigInt(r.expenses) > recorded ? BigInt(r.expenses) : recorded;
+    typicalLeftBig = BigInt(r.income) - out - BigInt(r.debt) - BigInt(r.saving) - BigInt(r.invest);
   } else if (eBig !== null) {
     typicalLeftBig = typicalIncomeBig - bills - eBig - BigInt(input.setAside);
   }

@@ -185,6 +185,7 @@ describe('buildMonthModel', () => {
     expect(m.recurringBills).toBe(100000);
     expect(m.erest).toBe(8000);
     expect(m.monthLeft).toBe(left);
+    expect(m.typicalLeft).toBe(left); // D-74: £2,500 - max(money out, bills + set-asides); QE-01 £1,325 out holds the £25 minimum
     expect(m.reasons).toContain('quick_estimates_used');
     expect(m.confidence.reasons.map((r) => r.code)).not.toContain('under_logged');
   });

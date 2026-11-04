@@ -35,7 +35,7 @@
   by the right-answer fixtures. The quick-estimates sheet does not ask it (08.1 screen) and buildV3Inputs
   (src/features/decide/snapshot/**, not edited in 05.4) does not map it (05.5 builder). Until then app users keep the larger
   starter (all everyday spending counts as essential). Owner question 1 at the 05.4-57 D-14 review.
-- **The usual month from quick estimates leaves out recorded card and loan minimums and a regular saving (ENG11-QE-SETASIDE).**
+- **Closed by D-74 (05.4-57 Task 5):** the usual month from quick estimates leaves out recorded card and loan minimums and a regular saving (ENG11-QE-SETASIDE) was: 
   typicalOf's typed typicalLeft = income - money out - typed debt - typed saving - typed invest; recorded minimums and saving
   series are not taken out, so a quick-estimates person with a card or loan can miss the D-65 "month already short" tier (found
   by the crosscheck, seed 0). In the app a quick-estimates snapshot carries no series or debts today, so no user meets it yet;

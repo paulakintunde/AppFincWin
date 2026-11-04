@@ -4,7 +4,7 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall } from './plain';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
@@ -682,6 +682,45 @@ describe('plain calculator: quick estimates count the bills once (05.4-57, ENG-1
     expect(leftThisMonth(f)).toBe(88_000n); // £2,500 - £1,400 - £220
     const e = run(f);
     expect([e.month.e, e.month.erest, e.month.monthLeft]).toEqual([0, 0, 88_000]);
+    expect(e.month.typicalLeft).toBe(110_000); // D-74: the larger figure, £1,400 recorded, goes out of the usual month
     expect(e.picked.code).toBe(plainAnswer(f).code);
+  });
+
+  // D-74 (owner, 2026-11-03): money out already includes the recorded bills, card and loan minimums and regular saving.
+  it('D-74 QE-01 by hand: money out £1,000 + £300 + £25 = £1,325; everyday £1,325 - £1,000 - £25 = £300; usual month £1,175', () => {
+    const f = qe('QE-01');
+    expect(quickMoneyOut(f)).toBe(132_500n);
+    expect(usualEveryday(f)).toBe(30_000n);
+    expect(usualShortfall(f)).toBe(0n); // not short: £2,500 - £1,000 - £300 - £25 = £1,175 left
+    const e = run(f);
+    expect([e.month.e, e.month.typicalLeft, e.month.setAside]).toEqual([30_000, 117_500, 2_500]);
+  });
+
+  it('D-74 a quick-estimates person with two loans (crosscheck seed 0): the minimums are inside the money out, so the usual month is $0.01 short on both sides', () => {
+    const f: RightAnswerFixture = {
+      asOf: '2026-10-15', currency: 'USD', region: null,
+      pay: { amount: 100_000, cadence: 'monthly', nextDate: '2026-11-01', setupAmount: null, lastThree: null },
+      usualMonth: { bills: 31_850, everyday: 59_150, essentialEveryday: 29_575 },
+      thisMonth: { received: 100_000, billsPaid: 0, billsDue: 31_850, everydaySoFar: 11_830 },
+      historyMonths: 0, quickEstimates: { income: 100_000, bills: 31_850, everyday: 59_150 }, recordsAsOf: null,
+      accounts: [
+        { id: 'a1', kind: 'checking', name: 'Main', balance: 88_170, overdraftLimit: null, overdraftRate: null, use: 'everyday' },
+        { id: 'n1', kind: 'savings', name: 'Safety net', balance: 77_470, overdraftLimit: null, overdraftRate: null, use: 'emergency' },
+      ],
+      safetyNet: { protect: true, size: null, saved: 77_470, locked: false },
+      bills: [],
+      debts: [
+        { id: 'debt-0', kind: 'loan', balance: 0, minimum: 3_000, apr: null, dueDay: null, joint: false },
+        { id: 'debt-1', kind: 'loan', balance: 5_970, minimum: 6_001, apr: '20', dueDay: null, joint: false },
+      ],
+      userLine: null, factLines: false,
+      check: { price: 10_000, taxPercent: null, taxIncluded: null, oneOffFees: 0, pay: { mode: 'once' } },
+    };
+    expect(quickMoneyOut(f)).toBe(100_001n); // $318.50 + $591.50 + $30.00 + $60.01
+    expect(usualShortfall(f)).toBe(1n); // $1,000 - $1,000.01
+    const e = run(f);
+    expect(e.month.typicalLeft).toBe(-1);
+    expect({ code: e.picked.code, variant: e.picked.variant }).toEqual({ code: plainAnswer(f).code, variant: plainAnswer(f).variant });
+    expect(e.picked.variant).toBe('month_short_moderate_extra');
   });
 });

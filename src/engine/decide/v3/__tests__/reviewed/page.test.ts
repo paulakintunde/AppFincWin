@@ -288,9 +288,18 @@ describe('reviewed page', () => {
 
   it('05.4-57 (ENG-11): Zoe\'s step: £1,300 - £1,000 = £300 everyday; £80 still to come; starter £1,200; page and engine agree', () => {
     const steps = breakdown(zoe()).steps.join(' ');
-    expect(steps).toContain('Everyday per month = £1,300.00 - £1,000.00 = £300.00.');
+    expect(steps).toContain('Everyday per month = £1,300.00 - £1,000.00 - £0.00 - £0.00 = £300.00. Usual month = £2,500.00 - £1,300.00 = £1,200.00.');
     expect(steps).toContain('the larger of the pace £300.00 x 8 / 30 = £80.00 and the rest of the month\'s everyday £300.00 - £220.00 = £80.00, so £80.00.');
     expect(steps).toContain('= £1,200.00, rounded up to £1,200.00.');
+    expect(steps).not.toContain('PAGE AND ENGINE DISAGREE');
+  });
+
+  it('05.4-57 D-74: QE-01\'s £25 card minimum is inside her £1,325 money out, taken out once', () => {
+    const rc = loadCases().find((x) => x.id === 'QE-01')!;
+    const { inputs, check } = toEngineInputs(rc.fixture);
+    const steps = breakdown({ key: 'rc:QE-01', label: 'QE-01 Zoe', inputs, check }).steps.join(' ');
+    expect(steps).toContain('Everyday per month = £1,325.00 - £1,000.00 - £25.00 - £0.00 = £300.00. Usual month = £2,500.00 - £1,325.00 = £1,175.00.');
+    expect(steps).toContain('= £1,225.00, rounded up to £1,225.00.');
     expect(steps).not.toContain('PAGE AND ENGINE DISAGREE');
   });
 

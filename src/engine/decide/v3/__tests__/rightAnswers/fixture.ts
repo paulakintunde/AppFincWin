@@ -316,12 +316,20 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     // (the same total the app stores as rough_spending). The records date is passed as given.
     // 05.4-57 ENG11-QE-ESSENTIAL: the cases state the essential part of everyday spending ("everyday spending £300 (£200 of it
     // on essentials)", D-42, QE-13), so it is passed as the estimates' essential part.
+    // 05.4-57 D-74: the app's "Money out each month" includes the recorded card and loan minimums and the regular saving too, so
+    // the money out a person with these parts would enter is bills + everyday + each minimum not paid as one of the bills + the
+    // regular saving (QE-01: £1,000 + £300 + the £25 card minimum = £1,325, leaving the £300 everyday the case states).
     typedEstimates:
       f.quickEstimates === null
         ? null
         : {
             income: mu(f.quickEstimates.income),
-            expenses: mu(f.quickEstimates.bills + f.quickEstimates.everyday),
+            expenses: mu(
+              f.quickEstimates.bills +
+                f.quickEstimates.everyday +
+                debts.filter((d) => d.seriesId === undefined).reduce((s, d) => s + d.minimum, 0) +
+                (sv === undefined ? 0 : sv.amount)
+            ),
             saving: mu(0),
             debt: mu(0),
             invest: mu(0),

@@ -145,7 +145,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     series: inputs.series,
     income: incomeUsed,
     e: seasonE ?? typical.e,
-    typedEveryday: inputs.typedEstimates === null ? null : typedEverydayOf(inputs.typedEstimates.expenses, typical.recurringBills), // ENG11-QE-BILLS
+    typedEveryday: inputs.typedEstimates === null ? null : typedEverydayOf(inputs.typedEstimates.expenses, minorFromBigInt(BigInt(typical.recurringBills) + BigInt(setAside), 'buildMonthModel')), // ENG11-QE-BILLS, D-74
     setAside,
     drops,
   });

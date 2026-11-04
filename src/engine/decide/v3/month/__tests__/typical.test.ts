@@ -231,7 +231,7 @@ describe('typicalOf', () => {
   it('D-32 rough figures only', () => {
     const rough = { income: mu(300000), expenses: mu(150000), debt: mu(20000), saving: mu(10000), invest: mu(5000), asOf: ASOF };
     const r = typicalOf(input({ typedEstimates: rough }));
-    expect(r.e).toBe(150000);
+    expect(r.e).toBe(120000); // 05.4-57 D-74: the 30000 set aside is inside the 150000 money out, counted once
     expect(r.typicalLeft).toBe(115000);
     expect(r.low).toBeNull();
     expect(r.reasons).toContain('quick_estimates_used');
@@ -252,10 +252,10 @@ describe('typicalOf', () => {
   it('ENG11-QE-BILLS quick estimates with a monthly bill series: E is the everyday part, the money out counted once', () => {
     const rough = { income: mu(250000), expenses: mu(130000), debt: mu(0), saving: mu(0), invest: mu(0), asOf: ASOF };
     const bill = seriesBill({ id: 'b', amount: 100000 });
-    const r = typicalOf(input({ typedEstimates: rough, series: [bill] }));
+    const r = typicalOf(input({ typedEstimates: rough, series: [bill], setAside: mu(0) }));
     expect(r.e).toBe(30000);
     expect(r.recurringBills).toBe(100000);
-    expect(r.typicalLeft).toBe(120000); // income - expenses - debt - saving - invest, unchanged
+    expect(r.typicalLeft).toBe(120000); // income - max(money out, bills + set aside) - debt - saving - invest
     expect(r.reasons).toContain('quick_estimates_used');
     expect(r.notices).toEqual([{ code: 'from_your_figures', values: {} }]);
     // An override or a usable history month: the estimates are not read.
@@ -263,7 +263,22 @@ describe('typicalOf', () => {
     expect(typicalOf(input({ typedEstimates: rough, series: [bill], history: [everydayMonth('2026-09', 80000)] })).e).toBe(80000);
     // More bills than money out: the everyday figure is 0, never below.
     const more = seriesBill({ id: 'c', amount: 40000 });
-    expect(typicalOf(input({ typedEstimates: rough, series: [bill, more] })).e).toBe(0);
+    expect(typicalOf(input({ typedEstimates: rough, series: [bill, more], setAside: mu(0) })).e).toBe(0);
+  });
+
+  // 05.4-57 D-74 (owner): money out already includes the recorded bills, minimums and regular saving; each counted once, and
+  // when they add up to more than the money out the larger figure goes out of the usual month.
+  it('D-74 quick estimates: recorded set-asides are inside the money out; the larger of the two goes out', () => {
+    const rough = { income: mu(250000), expenses: mu(132500), debt: mu(0), saving: mu(0), invest: mu(0), asOf: ASOF };
+    const bill = seriesBill({ id: 'b', amount: 100000 });
+    // QE-01 by hand: £1,325 out = £1,000 bills + £25 card minimum + £300 everyday
+    const zoe = typicalOf(input({ typedEstimates: rough, series: [bill], setAside: mu(2500) }));
+    expect([zoe.e, zoe.typicalLeft]).toEqual([30000, 117500]); // £2,500 - £1,325
+    // recorded £1,000 + £400 saving = £1,400 against £1,325 out: everyday 0, the usual month takes £1,400 out
+    const more = typicalOf(input({ typedEstimates: rough, series: [bill], setAside: mu(40000) }));
+    expect([more.e, more.typicalLeft]).toEqual([0, 110000]);
+    // typed debt, saving and invest stay separate parts
+    expect(typicalOf(input({ typedEstimates: { ...rough, debt: mu(1000), saving: mu(2000), invest: mu(3000) }, series: [bill], setAside: mu(2500) })).typicalLeft).toBe(111500);
   });
 
   it('everyday override replaces E', () => {

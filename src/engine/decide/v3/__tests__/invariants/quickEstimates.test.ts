@@ -81,3 +81,39 @@ describe('I-ENG11 quick estimates count the bills once (05.4-57)', () => {
     );
   });
 });
+
+// D-74 (owner, 2026-11-03): the money out already includes the recorded bills, card and loan minimums and regular saving.
+const withSetAsidesArb: fc.Arbitrary<Drawn> = fc
+  .tuple(
+    drawnArb,
+    fc.array(fc.integer({ min: 0, max: 200_000 }), { maxLength: 2 }),
+    fc.option(fc.integer({ min: 1, max: 300_000 }), { nil: null })
+  )
+  .map(([d, mins, save]) => ({
+    ...d,
+    inputs: {
+      ...d.inputs,
+      debts: mins.map((m, i) => ({ id: `qe-debt-${i}`, kind: 'card' as const, balance: mu(1_000_000), minimum: mu(m), apr: null, secured: false, isHousing: false, dueDay: 28 })),
+      series: [
+        ...d.inputs.series,
+        ...(save === null ? [] : [v3Series({ id: 'qe-save', role: 'saving', cadence: MONTHLY, anchorDate: '2026-01-28', amount: save, savingMode: 'fixed' })]),
+      ],
+    },
+  }));
+
+describe('I-D74 quick estimates count recorded set-asides once (05.4-57)', () => {
+  it('I-D74 everyday + bills + set-asides = the larger of the money out and the recorded items; the usual month takes that out', () => {
+    fc.assert(
+      fc.property(withSetAsidesArb, ({ inputs, expenses }) => {
+        const m = buildMonthModel(inputs);
+        expect(onEstimates(m)).toBe(true);
+        const recorded = m.recurringBills + m.setAside;
+        const out = Math.max(expenses, recorded);
+        expect((m.e as number) + recorded).toBe(out);
+        const t = inputs.typedEstimates as NonNullable<V3Inputs['typedEstimates']>;
+        expect(m.typicalLeft).toBe(t.income - out);
+      }),
+      { numRuns: fcRuns(300), seed: 0x0d74 }
+    );
+  });
+});
