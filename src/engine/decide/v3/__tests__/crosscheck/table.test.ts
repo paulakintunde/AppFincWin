@@ -4,7 +4,7 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { freeMoney, longDueInWindow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind } from './plain';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
@@ -547,5 +547,70 @@ describe('05.4-19 regression: the D-47 hold-back survives the D-56 month-end cap
     expect(plainAnswer(f).code).toBe('not_yet');
     const { inputs, check } = toEngineInputs(f);
     expect(pick(evaluate(inputs, check)).code).toBe('not_yet');
+  });
+});
+
+describe('plain calculator: card and loan minimums (05.4-20, FIN-04, FIN-10, D-39b)', () => {
+  const db = (id: string): RightAnswerFixture => loadCases().find((c) => c.id === id)!.fixture;
+  const engine = (f: RightAnswerFixture) => {
+    const { inputs, check } = toEngineInputs(f);
+    return pick(evaluate(inputs, check));
+  };
+
+  it('every approved debts case but DB-09 (borrowing, FIN-05) gets its expected code from the plain rules, and the engine agrees', () => {
+    for (const c of loadCases().filter((x) => x.topic === 'debts' && x.status === 'approved' && x.id !== 'DB-09')) {
+      expect({ id: c.id, plain: plainAnswer(c.fixture).code, engine: engine(c.fixture).code }).toEqual({ id: c.id, plain: c.expected.code, engine: c.expected.code });
+    }
+  });
+
+  it('DB-01 by hand: $1,400 - $400 everyday - $300 minimum on 25 November - $800 = -$100 before pay on 1 December', () => {
+    const f = db('DB-01');
+    expect(debtDates(f)).toEqual([
+      { date: '2026-11-25', amount: 30_000n },
+      { date: '2026-12-25', amount: 30_000n },
+      { date: '2027-01-25', amount: 30_000n },
+    ]);
+    expect(pathLow(f, 80_000n)).toBe(-10_000n);
+    expect(leftThisMonth(f)).toBe(70_000n); // $3,000 - $1,200 - $400 - $400 - $300
+    expect(freeMoney(f)).toBe(70_000n); // $1,400 - $400 everyday still to come - $300 still due on the card
+  });
+
+  it('DB-02 by hand: no due day, so the $300 lands tomorrow (16 November), then on the 16th each month', () => {
+    expect(debtDates(db('DB-02')).map((x) => x.date)).toEqual(['2026-11-16', '2026-12-16', '2027-01-16']);
+    expect(pathLow(db('DB-02'), 60_000n)).toBe(10_000n);
+  });
+
+  it('DB-03 / DB-07 by hand: a minimum paid as one of the bills is counted once', () => {
+    expect([...paidAsBill(db('DB-03'))]).toEqual(['d-card']);
+    expect(debtMinimums(db('DB-03'))).toBe(0n);
+    expect(leftThisMonth(db('DB-03'))).toBe(70_000n); // $3,000 - $1,500 bills (the card inside) - $800 everyday
+    expect(leftThisMonth(db('DB-07'))).toBe(80_000n); // $4,000 - $2,200 bills (the mortgage inside) - $1,000 everyday
+    expect(engine(db('DB-07')).afterBuy.month).toBe(30_000);
+  });
+
+  it('DB-10 by hand: only the $200 still owed lands on 25 November; the month sets the whole $300 aside', () => {
+    const f = db('DB-10');
+    expect(debtDates(f)[0]).toEqual({ date: '2026-11-25', amount: 20_000n });
+    expect(debtToPay(f)).toBe(20_000n);
+    expect(leftThisMonth(f)).toBe(70_000n);
+    expect(plainAnswer(f)).toEqual({ code: 'fits_month', variant: null, afterBuy: 25_000 });
+  });
+
+  it('DB-04 / DB-11 (D-39b): money saved earlier on a fit with a 24.9% card is costly_debt; this month spare money alone is not', () => {
+    expect(carriesCostlyDebt(db('DB-04'))).toBe(true);
+    expect(plainAnswer(db('DB-04'))).toMatchObject({ code: 'fits_unspent', variant: 'costly_debt' });
+    expect(engine(db('DB-04'))).toMatchObject({ code: 'fits_unspent', variant: 'costly_debt' });
+    expect(plainAnswer(db('DB-11'))).toMatchObject({ code: 'fits_month', variant: null });
+    // 19.99% is under the line; 20% is on it
+    const at = (apr: string): RightAnswerFixture => ({ ...db('DB-04'), debts: db('DB-04').debts.map((d) => ({ ...d, apr })) });
+    expect(plainAnswer(at('19.99')).variant).toBe(null);
+    expect(engine(at('19.99')).variant).toBe(null);
+    expect(plainAnswer(at('20')).variant).toBe('costly_debt');
+    expect(engine(at('20')).variant).toBe('costly_debt');
+  });
+
+  it('DB-08 by hand: both minimums count, $1,400 - $400 - $300 (16 Nov) - $200 (20 Nov) - $600 = -$100', () => {
+    expect(debtToPay(db('DB-08'))).toBe(50_000n);
+    expect(pathLow(db('DB-08'), 60_000n)).toBe(-10_000n);
   });
 });

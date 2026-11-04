@@ -6102,6 +6102,176 @@
       "reason": "D-69 new purchase (6.77% of monthly pay, plan 12 months); right answer Fits, 1892.60 left that month; fits this month's room; audited by hand",
       "approved": true,
       "approvedAt": "2026-11-03"
+    },
+    {
+      "fixId": "FIN-10",
+      "key": "persona:dana:200000:cash",
+      "before": {
+        "code": "fits_unspent",
+        "variant": "small_net",
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "costly_debt",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-10",
+      "key": "gen:25",
+      "before": {
+        "code": "fits_unspent",
+        "variant": "no_net",
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "costly_debt",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-10",
+      "key": "gen:60",
+      "before": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-10",
+      "key": "gen:61",
+      "before": {
+        "code": "fits_unspent",
+        "variant": "small_net",
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "costly_debt",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-10",
+      "key": "gen:72",
+      "before": {
+        "code": "fits_unspent",
+        "variant": "small_net",
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "costly_debt",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-10",
+      "key": "gen:122",
+      "before": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "costly_debt",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-10",
+      "key": "gen:125",
+      "before": {
+        "code": "fits_unspent",
+        "variant": "extra_savings",
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "costly_debt",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-10",
+      "key": "gen:136",
+      "before": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 164551
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-10",
+      "key": "gen:145",
+      "before": {
+        "code": "fits_unspent",
+        "variant": "no_net",
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "costly_debt",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-10",
+      "key": "gen:182",
+      "before": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "costly_debt",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     }
   ]
 }

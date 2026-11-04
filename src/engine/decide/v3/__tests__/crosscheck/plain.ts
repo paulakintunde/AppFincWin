@@ -3,7 +3,7 @@
  * Own integer maths on bigint minor units; percentages are parsed from strings to basis points. No floats in money.
  */
 import type { RightAnswerFixture } from '../rightAnswers/schema';
-import { TIGHT_SHARE_BP, FLOOR_DIVISOR } from './rules';
+import { TIGHT_SHARE_BP, FLOOR_DIVISOR, EXPENSIVE_APR_BP } from './rules';
 
 type Cents = bigint;
 export interface PlainAnswer { code: string; variant: string | null; afterBuy: number | null }
@@ -94,6 +94,87 @@ function daysInMonthOf(date: string): bigint {
   return BigInt(new Date(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)), 0)).getUTCDate());
 }
 
+// --- Card and loan minimums (05.4 FIN-04, FIN-10, D-39b). Restated from the approved debt cases DB-01 .. DB-12 and CONTEXT D-08,
+// D-39b, D-51. Not read from the engine.
+
+type PlainDebt = RightAnswerFixture['debts'][number];
+
+/**
+ * DB-03: "Iris pays her $300 card minimum as a monthly bill ... it is part of this month's $1,500 of bills paid ... it is counted
+ * once"; DB-07: "the $1,500 monthly payment is one of her $2,200 of bills". A debt paid as a bill is the bills list's monthly bill,
+ * paid by this person, of the same amount on the same due day; each bill pays one debt, in the order the debts are listed.
+ */
+export function paidAsBill(f: RightAnswerFixture): ReadonlySet<string> {
+  const used = new Set<string>();
+  const out = new Set<string>();
+  for (const d of f.debts) {
+    const b = f.bills.find((x) => !used.has(x.id) && x.everyMonths === 1 && x.paidBy === 'me' && x.amount === d.minimum && d.dueDay !== null && Number(x.nextDue.slice(8, 10)) === d.dueDay);
+    if (b === undefined) continue;
+    used.add(b.id);
+    out.add(d.id);
+  }
+  return out;
+}
+
+/** The debts the usual month counts by their minimum: every one not already one of the usual bills (counted once, DB-07). */
+export function ownDebts(f: RightAnswerFixture): PlainDebt[] {
+  const asBill = paidAsBill(f);
+  return f.debts.filter((d) => !asBill.has(d.id));
+}
+
+/** The minimums a usual month sets aside besides its bills (DB-01: "November leaves $1,000 spare before his card"). */
+export function debtMinimums(f: RightAnswerFixture): Cents {
+  return ownDebts(f).reduce((t, d) => t + maxC(0n, big(d.minimum)), 0n);
+}
+
+/** Day `day` (cut to the month's last day) of the month `n` months after the month of `date`. */
+function onDayOf(date: string, n: number, day: number): string {
+  const first = new Date(Date.UTC(Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1 + n, 1)).toISOString().slice(0, 10);
+  return first.slice(0, 8) + String(Math.min(day, Number(daysInMonthOf(first)))).padStart(2, '0');
+}
+
+/**
+ * Each minimum on the day-by-day path: "The card minimum lands on the day-by-day path on its due date" (DB-01), every month; "With
+ * the due day unknown, the earliest likely day (tomorrow, 16 November) is used" (DB-02), then the same day each month; "Only the
+ * $200 still owed on the minimum is taken, on 25 November" (DB-10). A due day already past this month was paid (it is in the
+ * balance). A debt paid as a bill lands as that bill (DB-03).
+ */
+export function debtDates(f: RightAnswerFixture): { date: string; amount: Cents }[] {
+  const end = dayAfter(f.asOf, PATH_DAYS);
+  const ym = f.asOf.slice(0, 7);
+  const out: { date: string; amount: Cents }[] = [];
+  for (const d of ownDebts(f)) {
+    if (d.minimum <= 0) continue;
+    const first = d.dueDay === null ? dayAfter(f.asOf, 1) : onDayOf(f.asOf, 0, d.dueDay);
+    const day = d.dueDay ?? Number(first.slice(8, 10));
+    const owedNow = maxC(0n, big(d.minimum) - big(d.paidThisMonth ?? 0));
+    for (let i = 0; ; i++) {
+      const date = i === 0 ? first : onDayOf(first, i, day);
+      if (date >= end) break;
+      if (date < f.asOf) continue;
+      const amount = i === 0 && first.slice(0, 7) === ym ? owedNow : big(d.minimum);
+      if (amount > 0n) out.push({ date, amount });
+    }
+  }
+  return out;
+}
+
+/** What is still to pay on the minimums this month (they leave before the month ends). */
+export function debtToPay(f: RightAnswerFixture): Cents {
+  const ym = f.asOf.slice(0, 7);
+  return debtDates(f).filter((x) => x.date.slice(0, 7) === ym).reduce((t, x) => t + x.amount, 0n);
+}
+
+/**
+ * D-39b (owner round 1): "amber when money saved from earlier months is spent while a debt at 20% APR or more remains"; DB-04:
+ * "Because money saved from earlier months goes on the holiday while a card at 24.9% (20% or more) remains, the answer is the amber
+ * 'Fits, but you carry costly debt'"; DB-11: "The purchase comes from this month's spare money ... so the costly-debt caution does
+ * not apply". Money saved above the net's size is money saved in earlier months too (D-56).
+ */
+export function carriesCostlyDebt(f: RightAnswerFixture): boolean {
+  return f.debts.some((d) => d.balance > 0 && d.apr !== null && basisPoints(d.apr) >= big(EXPENSIVE_APR_BP));
+}
+
 // --- Regular saving (05.4 D-58, D-67). "Regular saving/investing transfers out of the paying (main/everyday) account are taken out
 // of it everywhere: the month-end figure, spare money (the D-56 cap), and the 90-day cash path" (D-67); "the amount to move and the
 // date it must be moved by" (D-58). The usual month sets the saving aside (D-55: "expected at month end ... after savings").
@@ -147,8 +228,9 @@ export function everydayToCome(f: RightAnswerFixture): Cents {
 export function leftThisMonth(f: RightAnswerFixture): Cents {
   const t = f.thisMonth;
   const moneyIn = f.pay.irregular === undefined ? big(t.received) : big(f.pay.amount);
-  // D-67 / D-55: the month sets the regular saving aside, moved yet or not.
-  return moneyIn - big(t.billsPaid) - big(t.billsDue) - big(t.everydaySoFar) - everydayToCome(f) - savingAmount(f);
+  // D-67 / D-55: the month sets the regular saving aside, moved yet or not. DB-10: "$3,000 pay - $1,200 bills - $800 everyday
+  // spending - $100 already paid - $200 still due = $700": the whole minimum, paid or not.
+  return moneyIn - big(t.billsPaid) - big(t.billsDue) - big(t.everydaySoFar) - everydayToCome(f) - savingAmount(f) - debtMinimums(f);
 }
 
 /** Money in the checking and current accounts. */
@@ -216,8 +298,7 @@ export interface PlainHeld { id: string; builtUp: Cents; uncovered: Cents; holdB
  * already (thisMonth.billsDue), so nothing more is held back for it.
  */
 export function plainHeld(f: RightAnswerFixture): PlainHeld[] {
-  const mins = f.debts.reduce((t, d) => t + big(d.minimum), 0n);
-  const usual = monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - mins - savingAmount(f);
+  const usual = monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - debtMinimums(f) - savingAmount(f);
   return longBills(f).map((b) => {
     const bill = big(b.amount);
     // D-70 (owner, 2026-11-04, "count it once"): "When the usual month already sets aside a twelfth of the bill ..., the cover check
@@ -260,7 +341,8 @@ export function plainHoldBack(f: RightAnswerFixture): Cents {
  * the saving still to move included (D-67: "taken out of it everywhere: the month-end figure, spare money (the D-56 cap)").
  */
 export function monthEndBalance(f: RightAnswerFixture): Cents {
-  return sittingMoney(f) + payToArrive(f) - big(f.thisMonth.billsDue) - everydayToCome(f) - savingToMove(f);
+  // DB-01: "November leaves $1,000 spare before his card": the minimum still to pay this month leaves the account too.
+  return sittingMoney(f) + payToArrive(f) - big(f.thisMonth.billsDue) - everydayToCome(f) - savingToMove(f) - debtToPay(f);
 }
 
 // --- Safety net (05.4 FIN-01, FIN-02, ENG-03, ENG-04). Restated from the approved safety-net cases SN-01 .. SN-15, CONTEXT D-05,
@@ -282,7 +364,8 @@ export interface PlainNet { off: boolean; locked: boolean; saved: Cents; size: C
  */
 export function plainNet(f: RightAnswerFixture): PlainNet {
   const n = f.safetyNet ?? { protect: true, size: null, saved: 0 };
-  const essentials = big(f.usualMonth.bills) + f.debts.reduce((t, d) => t + big(d.minimum), 0n) + big(f.usualMonth.essentialEveryday);
+  // D-51: "usual bills + essential spending + card and loan minimums"; a minimum paid as a bill is in the bills once (DB-07).
+  const essentials = big(f.usualMonth.bills) + debtMinimums(f) + big(f.usualMonth.essentialEveryday);
   const starter = ((essentials + 99n) / 100n) * 100n;
   const size = n.size === null ? starter : big(n.size);
   const saved = maxC(0n, big(n.saved));
@@ -314,7 +397,9 @@ export function usualMonthShort(f: RightAnswerFixture): boolean {
  * The variant on a fit (D-59, D-62): extra_savings ("Fits from extra savings": the purchase uses money above the net's size)
  * before the D-35 safety-net caution. month_already_short (D-63) leads both; plainAnswer sets it.
  */
-function fitVariant(net: PlainNet, usesExtra: boolean): string | null {
+function fitVariant(net: PlainNet, usesExtra: boolean, costly = false): string | null {
+  // D-39b: the costly-debt caution leads the money's source and the net caution (05.4-20).
+  if (costly) return 'costly_debt';
   if (usesExtra) return 'extra_savings';
   return netVariant(net);
 }
@@ -324,7 +409,7 @@ function fitVariant(net: PlainNet, usesExtra: boolean): string | null {
  * still to move this month leaves the account before the next pay too.
  */
 export function cashMargin(f: RightAnswerFixture, cost: Cents, withDues: boolean): Cents {
-  return sittingMoney(f) - (withDues ? big(f.thisMonth.billsDue) : 0n) - everydayToCome(f) - savingToMove(f) - cost;
+  return sittingMoney(f) - (withDues ? big(f.thisMonth.billsDue) + debtToPay(f) : 0n) - everydayToCome(f) - savingToMove(f) - cost;
 }
 
 /**
@@ -332,8 +417,7 @@ export function cashMargin(f: RightAnswerFixture, cost: Cents, withDues: boolean
  * figure; 0 when it balances.
  */
 export function usualShortfall(f: RightAnswerFixture): Cents {
-  const mins = f.debts.reduce((t, d) => t + big(d.minimum), 0n);
-  const left = monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - mins - savingAmount(f);
+  const left = monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - debtMinimums(f) - savingAmount(f);
   return left < 0n ? -left : 0n;
 }
 
@@ -403,7 +487,8 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
   // 05.4-19 (D-47, RC-10 "by 28 February she has £2,850 before the bill is taken"): a yearly or every-3-month bill inside the
   // 90 days can take a later month below 0, so with one on the path the lower of the two figures decides.
   const until = f.pay.irregular === undefined ? cashMargin(f, cost, true) : pathLow(f, cost);
-  const longLow = longDueInWindow(f) ? pathLow(f, cost) : until;
+  // DB-01: "The card minimum lands on the day-by-day path on its due date", so with a minimum on the path its lowest point decides too.
+  const longLow = longDueInWindow(f) || debtDates(f).length > 0 ? pathLow(f, cost) : until;
   const margin = (longLow < until ? longLow : until) + net.above;
   const pastLimit = margin < -overdraftRoom(f);
   if (pastLimit && margin + net.lend < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
@@ -424,7 +509,7 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
   if (dip > 0n) return { code: 'fits_uses_overdraft', variant: notCleared(f, cost) ? 'not_cleared' : null, afterBuy: Number(after) };
   // "Any purchase that uses money in the net is Dips into your safety net, whatever its purpose" (D-41): here the path.
   if (pastLimit) return { code: 'fits_uses_net', variant: offVariant, afterBuy: Number(after) };
-  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(net, rest > maxC(0n, earlier)), afterBuy: Number(after) };
+  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(net, rest > maxC(0n, earlier), rest > 0n && carriesCostlyDebt(f)), afterBuy: Number(after) };
 }
 
 /** OD-11: "her next pay does not clear it": after the next pay (and that day's bills and spending) the account is still below 0. */
@@ -442,7 +527,7 @@ export function notCleared(f: RightAnswerFixture, cost: Cents): boolean {
  * accounts plus this month's room, less the part of it this month's room already counted).
  */
 function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
-  const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - savingAmount(f);
+  const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - savingAmount(f) - debtMinimums(f);
   const after = usualLeft - cost;
   const sitting = sittingMoney(f);
   const net = plainNet(f);
@@ -455,7 +540,7 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   // Free money is what sits plus this month's room; less the room this purchase already took, it is the earlier money.
   const earlier = sitting + usualLeft - fromMonth + net.above;
   if (rest > earlier) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
-  return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above), afterBuy: Number(after) };
+  return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above, carriesCostlyDebt(f)), afterBuy: Number(after) };
 }
 
 // --- Overdraft (05.4 FIN-03 / ENG-02). Restated from the approved overdraft cases (OD-01 .. OD-12), CONTEXT D-26..D-28 and
@@ -566,6 +651,7 @@ export function plainPathFlows(f: RightAnswerFixture, flows: readonly { date: st
   const out: { date: string; balance: Cents }[] = [];
   let money = sittingMoney(f);
   const saves = new Set(savingDates(f)); // D-67: each saving transfer leaves the account on its date
+  const minimums = debtDates(f); // FIN-04: each minimum on its due date, once
   for (let i = 0; i < PATH_DAYS; i++) {
     const date = dayAfter(f.asOf, i);
     for (const fl of flows) if (fl.date === date) money -= fl.amount;
@@ -583,6 +669,7 @@ export function plainPathFlows(f: RightAnswerFixture, flows: readonly { date: st
     if (laterDue > 0n && date.slice(0, 7) !== ym && Number(date.slice(8, 10)) === Math.min(Number((dueDay as string).slice(8, 10)), Number(daysInMonthOf(date)))) money -= laterDue;
     for (const b of dated) if (b.nextDue === date) money -= big(b.amount);
     for (const b of longDues) if (b.date === date) money -= b.amount;
+    for (const x of minimums) if (x.date === date) money -= x.amount;
     if (date === (dueDay ?? '') || (dueDay === null && i === 0)) money -= undated > 0n ? undated : 0n;
     const m = date.slice(0, 7);
     const spent =
@@ -733,9 +820,9 @@ export function planPathLow(f: RightAnswerFixture): Cents {
   return plainPathFlows(f, flows).reduce((lo, p) => (p.balance < lo ? p.balance : lo), sittingMoney(f) - day0);
 }
 
-/** The usual month's money left (pay less usual bills, everyday spending and the regular saving, D-67), before any plan. */
+/** The usual month's money left (pay less usual bills, everyday spending, the regular saving, D-67, and debt minimums), before any plan. */
 function usualLeftOf(f: RightAnswerFixture): Cents {
-  return monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - savingAmount(f);
+  return monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - savingAmount(f) - debtMinimums(f);
 }
 
 /**
@@ -783,7 +870,7 @@ function shortPlanCash(f: RightAnswerFixture): { total: Cents; rest: Cents; earl
 function shortPlanAnswer(f: RightAnswerFixture): PlainAnswer {
   const s = shortPlanCash(f) as { total: Cents; rest: Cents; earlier: Cents };
   const after = Number(leftThisMonth(f) - s.total);
-  return { code: s.rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(plainNet(f), s.rest > maxC(0n, s.earlier)), afterBuy: after };
+  return { code: s.rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(plainNet(f), s.rest > maxC(0n, s.earlier), s.rest > 0n && carriesCostlyDebt(f)), afterBuy: after };
 }
 
 /** Named so the table's thresholds have one reader; the Theme A plans use them. */

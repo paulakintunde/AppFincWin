@@ -209,10 +209,71 @@ const netArb: fc.Arbitrary<RightAnswerFixture> = fc
     safetyNet: { protect, size, saved, locked },
   }));
 
+/**
+ * 05.4-20 (FIN-04, FIN-10, D-39b): one or two cards or loans on the mid-month fixture (asOf 15 October, pay on 1 November), each
+ * with a minimum of 1-6% of pay (each a different amount), a rate, a due day (or none set) and maybe a part already paid. A debt
+ * paid as a bill is one of the usual bills on its due day, already paid this month (due on the 1st to the 15th). Any other minimum
+ * due before today was paid this month; one due today or later, or with no due day, has only its part already paid gone. The
+ * balance follows from those payments.
+ */
+interface DebtRaw { card: boolean; pct: number; apr: string | null; dueDay: number | null; asBill: boolean; paidPct: number | null; balance: number }
+const debtRawArb: fc.Arbitrary<DebtRaw> = fc.record({
+  card: fc.boolean(),
+  pct: fc.integer({ min: 1, max: 6 }),
+  apr: fc.constantFrom(null, '0', '7.5', '19.99', '20', '24.9', '29.9'),
+  dueDay: fc.option(fc.integer({ min: 1, max: 31 }), { nil: null, freq: 3 }),
+  asBill: fc.boolean(),
+  paidPct: fc.option(fc.integer({ min: 0, max: 100 }), { nil: null, freq: 2 }),
+  balance: fc.integer({ min: 0, max: 3_000_000 }),
+});
+
+function withDebts(f: RightAnswerFixture, raws: readonly DebtRaw[]): RightAnswerFixture {
+  let balance = f.accounts[0]?.balance ?? 0;
+  let bills = f.usualMonth.bills;
+  let billsPaid = f.thisMonth.billsPaid;
+  const named = [...f.bills];
+  const debts = raws.map((r, i) => {
+    const minimum = Math.max(100, Math.floor((f.pay.amount * r.pct) / 100)) + i; // never two the same
+    const day = r.dueDay;
+    const id = `debt-${i}`;
+    const base = { id, kind: r.card ? ('card' as const) : ('loan' as const), balance: r.balance, minimum, apr: r.apr, dueDay: day, joint: false };
+    if (r.asBill && day !== null && day <= 15) {
+      const dd = String(day).padStart(2, '0');
+      named.push({ id: `pays-${id}`, amount: minimum, everyMonths: 1, nextDue: `2026-11-${dd}`, lastPaid: `2026-10-${dd}`, paidBy: 'me' });
+      bills += minimum;
+      billsPaid += minimum;
+      balance -= minimum;
+      return base;
+    }
+    if (day !== null && day < 15) {
+      balance -= minimum;
+      return base;
+    }
+    const paid = r.paidPct === null ? null : Math.floor((minimum * r.paidPct) / 100);
+    balance -= paid ?? 0;
+    return paid === null ? base : { ...base, paidThisMonth: paid };
+  });
+  return {
+    ...f,
+    usualMonth: { ...f.usualMonth, bills },
+    thisMonth: { ...f.thisMonth, billsPaid },
+    bills: named,
+    debts,
+    accounts: f.accounts.map((a, k) => (k === 0 ? { ...a, balance } : a)),
+  };
+}
+
+const debtArb: fc.Arbitrary<RightAnswerFixture> = fc
+  .tuple(fc.oneof(midMonthArb, overdraftArb, netArb.filter((f) => f.asOf === '2026-10-15')), fc.array(debtRawArb, { minLength: 1, maxLength: 2 }))
+  // a person whose account was at or above 0 is not taken below 0 by the payments drawn (05.4-48: balances follow from records)
+  .filter(([f, raws]) => (f.accounts[0]?.balance ?? 0) < 0 || (withDebts(f, raws).accounts[0]?.balance ?? 0) >= 0)
+  .map(([f, raws]) => withDebts(f, raws));
+
 export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc.oneof(
   { weight: 5, arbitrary: midMonthArb },
   { weight: 1, arbitrary: firstOfMonthArb },
   { weight: 3, arbitrary: overdraftArb },
   { weight: 3, arbitrary: netArb },
-  { weight: 1, arbitrary: irregularArb }
+  { weight: 1, arbitrary: irregularArb },
+  { weight: 3, arbitrary: debtArb }
 );

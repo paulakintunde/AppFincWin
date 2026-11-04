@@ -12,6 +12,7 @@ import en from '../../../../../i18n/locales/en';
 import { PERCENT_SCALE } from '../../../../payoff/types';
 import { applyPurchaseFlows } from '../../cash/path';
 import { addDays, daysInYearMonth, yearMonthOf } from '../../dates';
+import { debtOutflows, debtsInMonth } from '../../debts';
 import { essentialCosts, essentialSpendingOf } from '../../essentialCosts';
 import { firstPaymentsToday, purchaseCashFlows } from '../../judge/purchase';
 import { planTotal } from '../../depletion';
@@ -19,7 +20,9 @@ import { liveSeriesOf, seriesOccurrences } from '../../month/series';
 import { FACT_KEYS, NOTICE_KEYS } from '../../copy/verdictTable';
 import { evaluate } from '../../evaluate';
 import { judgeCheck, prepare, type Evaluation } from '../../prepare';
-import type { CheckV2, Fact, FundingSource, LocalDate, Notice, V3Inputs, V3Series } from '../../types';
+import type { CheckV2, Fact, FundingSource, LocalDate, Notice, V3Debt, V3Inputs, V3Series } from '../../types';
+import { loadCases } from '../rightAnswers/loader';
+import { toEngineInputs } from '../rightAnswers/fixture';
 import auditFile from './audit.json';
 import type { CorpusCase, ReviewedAnswer, ReviewedChange } from './corpus';
 
@@ -43,6 +46,7 @@ const VARIANT: Record<string, string> = {
   no_net: 'but no safety net',
   small_net: 'but your safety net is small',
   protection_off: 'protection off',
+  costly_debt: 'but you carry costly debt',
 };
 
 /** D-63 / D-65: the headline words when the usual month is already short (the owner's wording, en.ts decide.v3.verdict chips). */
@@ -57,8 +61,10 @@ export const words = (a: ReviewedAnswer): string => {
   const code = LABEL[a.code] ?? a.code;
   // D-62, D-63 and D-65 headlines have their own words; the code the engine gives is kept in brackets for D-63 and D-65.
   const tier = a.variant === null ? undefined : TIER_WORDS[a.variant];
-  const base = tier !== undefined ? `${tier} (code: ${code})` : a.variant === 'extra_savings' ? 'Fits from extra savings' : code;
-  const v = a.variant === null || tier !== undefined || a.variant === 'extra_savings' ? '' : ` (${VARIANT[a.variant] ?? a.variant})`;
+  // 05.4-20 (D-39b): "Fits, but you carry costly debt" on fits_unspent.
+  const own = a.variant === 'extra_savings' ? 'Fits from extra savings' : a.variant === 'costly_debt' ? 'Fits, but you carry costly debt' : null;
+  const base = tier !== undefined ? `${tier} (code: ${code})` : own !== null ? `${own} (code: ${code})` : code;
+  const v = a.variant === null || tier !== undefined || own !== null ? '' : ` (${VARIANT[a.variant] ?? a.variant})`;
   const left = a.afterBuyMonth === null ? '' : `, ${(a.afterBuyMonth / 100).toFixed(2)} left that month`;
   return `${base}${v}${left}`;
 };
@@ -385,6 +391,14 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
       }
     }
   }
+  // 05.4-20 (FIN-04): card and loan minimums still to come this month, on their dates (a minimum paid through a series is above).
+  let debtsToCome = 0;
+  const debtNow = debtOutflows(inputs, lines, 90).flows.filter((f) => f.date < nextFirst);
+  for (const f of debtNow) {
+    dueRows.push({ date: f.date, row: [`Debt minimum ${f.date}${inputs.debts.find((d) => d.id === f.debtId)?.dueDay == null ? ' (no due day set: tomorrow, DB-02)' : ''}`, `${f.debtId}: ${m(f.amount)}`] });
+    debtsToCome += f.amount;
+    if (nextPay === null || f.date < nextPay) promisedBeforePay.push(f.amount);
+  }
   const toCome: [string, string][] = dueRows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)).map((x) => x.row);
   toCome.push([`Everyday spending ${asOf} to ${monthEnd}`, `${m(mo.erest)} (engine estimate from the usual ${m(mo.e ?? 0)} a month)`]);
   sections.push({ title: 'Still to come this month', rows: toCome });
@@ -410,7 +424,7 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   const spendBalance = accounts.length === 0 ? inputs.balance : spendingAccounts.reduce((a, x) => a + x.balance, 0);
   const unusedOd = spendingAccounts.reduce((a, x) => a + Math.max(0, (x.overdraftLimit ?? 0) - Math.max(0, -x.balance)), 0);
   const afterBills = spendBalance - envelopesIn - promised;
-  const monthEndExpected = spendBalance - envelopesIn + payToCome - billsToCome - mo.erest - savingToCome;
+  const monthEndExpected = spendBalance - envelopesIn + payToCome - billsToCome - debtsToCome - mo.erest - savingToCome;
   for (const a of accounts) {
     acctRows.push([`${a.id}: balance on ${asOf}`, `${m(a.balance)} (${accountUseWords(a.use)})`]);
     if (!isSpendingAccount(a.use) && a.use !== null && a.use.kind === 'dedicated' && a.use.purpose.kind === 'emergency') {
@@ -423,19 +437,19 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   acctRows.push([`Balance on ${asOf} (${which})`, `${m(spendBalance)}: what is in the account that day`]);
   acctRows.push([
     `After bills due before payday (${which}, D-57)`,
-    `${m(afterBills)} = balance ${m(spendBalance)}${envelopesIn > 0 ? ` - pots ${m(envelopesIn)}` : ''} - bills due before the next pay${nextPay === null ? ' (no pay date)' : ` on ${nextPay}`} ${m(promised)}`,
+    `${m(afterBills)} = balance ${m(spendBalance)}${envelopesIn > 0 ? ` - pots ${m(envelopesIn)}` : ''} - bills${debtsToCome > 0 ? ' and debt minimums' : ''} due before the next pay${nextPay === null ? ' (no pay date)' : ` on ${nextPay}`} ${m(promised)}`,
   ]);
   acctRows.push(['Unused overdraft (its own line, not counted above, D-57)', m(unusedOd)]);
   acctRows.push([
     `Expected at month end, ${monthEnd} (${which})`,
-    `${m(monthEndExpected)} = ${m(spendBalance - envelopesIn)} + pay still to come ${m(payToCome)} - bills still to come ${m(billsToCome)} - everyday ${m(mo.erest)} - saving ${m(savingToCome)}`,
+    `${m(monthEndExpected)} = ${m(spendBalance - envelopesIn)} + pay still to come ${m(payToCome)} - bills still to come ${m(billsToCome)}${debtsToCome > 0 ? ` - debt minimums still to come ${m(debtsToCome)}` : ''} - everyday ${m(mo.erest)} - saving ${m(savingToCome)}`,
   ]);
   if (ev.funds.unspent !== null) acctRows.push(['Confirmed spare figure (unspent)', `${m(ev.funds.unspent.value)}${ev.funds.unspent.drifted ? ' (the engine flags it as drifted from the account)' : ''}`]);
   sections.push({ title: 'Accounts (D-55)', rows: acctRows });
 
   // Safety net
   const netRows: [string, string][] = [];
-  const ec = essentialCosts(mo, inputs.debts, essentialSpendingOf(inputs, mo));
+  const ec = essentialCosts(mo, debtsInMonth(inputs.debts, inputs.series, asOf), essentialSpendingOf(inputs, mo));
   netRows.push(['Starter (D-51)', `${m(ec.parts.bills)} bills + ${m(ec.parts.essentialSpending)} essential spending + ${m(ec.parts.debtMinimums)} debt minimums, rounded up = ${m(ec.total)}`]);
   if (net !== undefined) {
     netRows.push(['Saved in it', `${m(net.saved)}; kept apart from "after bills due before payday"`]);
@@ -459,13 +473,8 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   for (const n of res.notices) says.push([`Notice ${n.code}`, sayLine('notice', n, inputs)]);
   sections.push({ title: SAYS, rows: says });
 
-  // Debts
-  if (inputs.debts.length > 0) {
-    sections.push({
-      title: 'Debts',
-      rows: inputs.debts.map((d): [string, string] => [`${d.id} (${d.kind})`, `owes ${m(d.balance)}, minimum ${m(d.minimum)} a month, rate ${d.apr === null ? 'not given' : `${rateText(d.apr)} a year`}`]),
-    });
-  }
+  // Debts (05.4-20: FIN-04, FIN-10, FIN-14)
+  if (inputs.debts.length > 0) sections.push({ title: 'Debts', rows: debtRows(inputs, m) });
 
   // Plan terms
   if (c.check.pay.mode === 'plan' && ev.planCard !== null) {
@@ -541,6 +550,7 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   const shortStep = d68Step(c, ev, res, lw, m);
   if (shortStep !== null) steps.push(shortStep);
   steps.push(...d47Steps(c, ev, m));
+  steps.push(...debtSteps(c, ev, res, m));
   if (res.variant === 'extra_savings') steps.push('Part of it is paid from money saved above the safety net\'s size, so the headline is "Fits from extra savings" (D-62).');
   steps.push(`Engine answer: ${words({ code: res.code, variant: res.variant, afterBuyMonth: left === null ? null : (left['left'] as number) })}.`);
   return { sections, steps };
@@ -699,8 +709,118 @@ export function d47Steps(c: CorpusCase, ev: Evaluation, m: (n: number) => string
   return out;
 }
 
+/** The page's own day for a minimum: its due day cut to the month's last day, or (not set) tomorrow's day (DB-02). */
+function pageDueDates(d: V3Debt, asOf: LocalDate, days: number): { date: string; first: boolean }[] {
+  const end = fmt(parse(asOf) + days * MS_DAY);
+  const tomorrow = fmt(parse(asOf) + MS_DAY);
+  const day = d.dueDay != null && Number.isInteger(d.dueDay) && d.dueDay >= 1 && d.dueDay <= 31 ? d.dueDay : Number(tomorrow.slice(8, 10));
+  const start = d.dueDay != null && day === d.dueDay ? `${asOf.slice(0, 8)}01` : `${tomorrow.slice(0, 8)}01`;
+  const out: { date: string; first: boolean }[] = [];
+  for (let n = 0; n < 6; n++) {
+    const first = addMonths(parse(start), n);
+    const last = new Date(Date.UTC(new Date(first).getUTCFullYear(), new Date(first).getUTCMonth() + 1, 0)).getUTCDate();
+    const date = fmt(Date.UTC(new Date(first).getUTCFullYear(), new Date(first).getUTCMonth(), Math.min(day, last)));
+    if (date >= end) break;
+    const paidUp = n === 0 && date.slice(0, 7) === asOf.slice(0, 7) && (d.paidThisMonth ?? 0) >= d.minimum;
+    if (date >= asOf && !paidUp) out.push({ date, first: n === 0 });
+  }
+  return out;
+}
+
+/** The page's own monthly interest: balance x APR / 12, rounded half up (0 with no rate). */
+const pageInterest = (d: V3Debt): number => (d.apr === null || d.apr <= 0n || d.balance <= 0 ? 0 : Number((2n * BigInt(d.balance) * d.apr + 1200n * PERCENT_SCALE) / (2400n * PERCENT_SCALE)));
+
+/** D-53: each debt with its rate as a real percent, its minimum, its due day and what pays it. */
+function debtRows(inputs: V3Inputs, m: (n: number) => string): [string, string][] {
+  const counted = new Set(debtsInMonth(inputs.debts, inputs.series, inputs.asOf).map((d) => d.id));
+  const flows = debtOutflows(inputs, inputs.months.find((x) => x.month === yearMonthOf(inputs.asOf))?.lines ?? [], 90);
+  return inputs.debts.map((d): [string, string] => {
+    const own = flows.flows.filter((f) => f.debtId === d.id);
+    const due = own.length === 0 ? (d.dueDay == null ? 'due day not set' : `due on day ${d.dueDay}`) : d.dueDay == null ? `due day not set, so counted from tomorrow (${fmt(parse(inputs.asOf) + MS_DAY)})` : `due on day ${d.dueDay}`;
+    const pays = own.length === 0 ? (counted.has(d.id) ? 'paid through its own debt-payment series (that series is on the path; the minimum is set aside once)' : 'paid through one of the bills, so it is counted once, in the bills') : `lands on ${own.map((f) => `${f.date} ${m(f.amount)}`).join('; ')}`;
+    return [
+      `${d.id} (${d.kind}${d.isHousing ? ', housing' : ''}${d.joint === true ? ', in two names' : ''})`,
+      `owes ${m(d.balance)}, rate ${d.apr === null ? 'not given' : `${rateText(d.apr)} a year`}, minimum ${m(d.minimum)} a month, ${due}${d.paidThisMonth ? `, ${m(d.paidThisMonth)} already paid this month` : ''}; ${pays}`,
+    ];
+  });
+}
+
+/**
+ * 05.4-20 (FIN-04, FIN-10, D-39b): the page's own debt sums beside the engine's. Counted once (DB-07): a minimum paid through a bill
+ * is in the bills, so the usual month does not take it again (the figure before this fix is shown). Each other minimum on the path
+ * on its own day (the page's dates against the engine's). Monthly interest = balance x APR / 12. Costly debt: money saved in
+ * earlier months (spare money + extra savings) on a Fits from spare money while a debt at 20% or more remains.
+ */
+export function debtSteps(c: CorpusCase, ev: Evaluation, res: Evaluation['result'], m: (n: number) => string): string[] {
+  const inputs = c.inputs;
+  if (inputs.debts.length === 0) return [];
+  const out: string[] = [];
+  const counted = new Set(debtsInMonth(inputs.debts, inputs.series, inputs.asOf).map((d) => d.id));
+  const asBill = inputs.debts.filter((d) => !counted.has(d.id));
+  const setAside = inputs.debts.filter((d) => counted.has(d.id)).reduce((a, d) => a + d.minimum, 0);
+  const tl = ev.month.typicalLeft;
+  out.push(
+    `Debts in the usual month (counted once, DB-07): the minimums set aside besides the bills come to ${m(setAside)}` +
+      (asBill.length === 0
+        ? '; no minimum is also one of the bills, so nothing was counted twice before this fix either.'
+        : `; ${asBill.map((d) => `${d.id} (${m(d.minimum)})`).join(', ')} is paid through one of the bills and counted there once. The usual month leaves ${tl === null ? 'an unknown amount' : m(tl)}; before this fix it took it again and left ${tl === null ? 'an unknown amount' : m(tl - asBill.reduce((a, d) => a + d.minimum, 0))}.`)
+  );
+  const flows = debtOutflows(inputs, inputs.months.find((x) => x.month === yearMonthOf(inputs.asOf))?.lines ?? [], 90).flows;
+  for (const d of inputs.debts.filter((x) => counted.has(x.id))) {
+    const engine = flows.filter((f) => f.debtId === d.id).map((f) => f.date);
+    if (engine.length === 0) {
+      out.push(`${d.id}: paid through its own debt-payment series, which is on the path on its dates; the minimum is not added a second time.`);
+      continue;
+    }
+    const page = pageDueDates(d, inputs.asOf, 90).map((x) => x.date);
+    const agree = JSON.stringify(page) === JSON.stringify(engine);
+    out.push(
+      `${agree ? '' : 'PAGE AND ENGINE DISAGREE: '}${d.id} on the 90-day path (FIN-04): minimum ${m(d.minimum)} ${d.dueDay == null ? 'with no due day set, so from tomorrow and then the same day each month (DB-02)' : `on day ${d.dueDay} (cut to the month's last day)`}: ${page.join(', ')}` +
+        `${d.paidThisMonth ? `; this month only ${m(Math.max(0, d.minimum - d.paidThisMonth))} (${m(d.paidThisMonth)} already paid, DB-10)` : ''}. Engine: ${engine.join(', ')}.`
+    );
+  }
+  for (const d of inputs.debts.filter((x) => x.apr !== null && x.apr > 0n && x.balance > 0)) {
+    const mine = pageInterest(d);
+    out.push(`${d.id}: ${m(d.balance)} at ${rateText(d.apr)} a year costs ${m(d.balance)} x ${rateText(d.apr)} / 12 = about ${m(mine)} a month in interest.`);
+  }
+  const fromEarlier = res.split.filter((x) => x.source === 'unspent_earlier' || x.source === 'extra_savings').reduce((a, x) => a + x.amount, 0);
+  const costly = inputs.debts.filter((d) => d.balance > 0 && d.apr !== null && d.apr * 100n >= 2000n * PERCENT_SCALE);
+  const pageSays = res.code === 'fits_unspent' && fromEarlier > 0 && costly.length > 0;
+  // A higher variant (a D-63 / D-65 headline, or low_month) may lead; costly_debt never shows where the page says it does not apply.
+  const higher = res.variant !== null && ['month_already_short', 'month_short_moderate_extra', 'month_short_moderate', 'month_short_small', 'low_month'].includes(res.variant);
+  const agree = pageSays ? res.variant === 'costly_debt' || higher : res.variant !== 'costly_debt';
+  out.push(
+    `${agree ? '' : 'PAGE AND ENGINE DISAGREE: '}Costly debt (D-39b): ${costly.length === 0 ? 'no debt is at 20% a year or more' : `${costly.map((d) => `${d.id} at ${rateText(d.apr)}`).join(', ')} at 20% a year or more`}; ` +
+      `money saved in earlier months used: ${m(fromEarlier)} (spare money and extra savings in the split)` +
+      (res.code !== 'fits_unspent' ? `; the answer is ${LABEL[res.code] ?? res.code}, so the caution does not apply.` : pageSays ? `, so "Fits, but you carry costly debt" applies${res.variant === 'costly_debt' ? '' : ` (a higher caution leads: ${res.variant ?? 'none'})`}.` : ', so the caution does not apply.')
+  );
+  return out;
+}
+
+/** 05.4-20 (DB-07): the right-answer cases whose debt is one of the bills, with the usual month before (counted twice) and after. */
+function countedOnceHtml(): string {
+  const rows: string[] = [];
+  for (const rc of loadCases().filter((x) => x.topic === 'debts' && x.status === 'approved')) {
+    const { inputs, check } = toEngineInputs(rc.fixture);
+    const linked = inputs.debts.filter((d) => d.seriesId != null);
+    if (linked.length === 0) continue;
+    const m = (n: number): string => money(n, inputs.currency);
+    const after = evaluate(inputs, check);
+    const before = evaluate({ ...inputs, debts: inputs.debts.map((d) => ({ ...d, seriesId: null })) }, check);
+    const twice = linked.reduce((a, d) => a + d.minimum, 0);
+    rows.push(
+      `<li><b>${esc(rc.id)} ${esc(rc.persona)}</b>: ${esc(linked.map((d) => `${d.id} minimum ${m(d.minimum)}${d.apr === null ? '' : ` at ${rateText(d.apr)} a year`}, due day ${String(d.dueDay)}`).join('; '))}, one of the ${esc(m(rc.fixture.usualMonth.bills))} of bills.<br>` +
+        `Before (counted twice): usual month ${esc(m(before.month.typicalLeft ?? 0))}, this month ${esc(m(before.month.monthLeft))}; answer ${esc(words({ code: before.result.code, variant: before.result.variant, afterBuyMonth: null }))}.<br>` +
+        `After (counted once): usual month ${esc(m(after.month.typicalLeft ?? 0))}, this month ${esc(m(after.month.monthLeft))} (${esc(m(twice))} more); answer ${esc(words({ code: after.result.code, variant: after.result.variant, afterBuyMonth: null }))}.<br>` +
+        `Approved right answer: ${esc(words({ code: rc.expected.code, variant: rc.expected.variant, afterBuyMonth: rc.expected.afterBuy.month }))}.</li>`
+    );
+  }
+  return `<h2>Counted once (DB-07): right-answer cases whose debt is one of the bills (${rows.length})</h2><p>Before this fix the usual month took each of these minimums twice, once in the bills and once as a debt. "Before" is the same person with the debt not linked to its bill. The variant "tight" comes in 05.4-21.</p><ul>${rows.join('')}</ul>`;
+}
+
 /** Fix IDs whose page also lists the checks the rule reads but whose answer it leaves the same. */
 const READS: Readonly<Record<string, (c: CorpusCase) => boolean>> = {
+  'FIN-10': (c) => c.inputs.debts.length > 0, // 05.4-20
   'FIN-11': (c) => longBillsOf(c.inputs).length > 0,
   'FIN-11b': (c) => longBillsOf(c.inputs).length > 0, // D-70
 };
@@ -810,6 +930,7 @@ export function buildPage(fixId: string, changes: readonly ReviewedChange[], cas
     `<h1>${esc(fixId)}: changed answers</h1><p>${changes.length} of ${cases.length} checks changed (${groups.stricter.length} stricter, ${groups.looser.length} looser, ${groups.detail.length} same answer with different detail). Invented people only.</p>` +
     `<p>Audit: ${esc(verdictLine)}. Each change shows its Audit box first, then the full breakdown.</p>` +
     section('Stricter', groups.stricter, false) + section('Looser', groups.looser, false) + section('Same answer, detail changed', groups.detail, false) +
+    (fixId === 'FIN-10' ? countedOnceHtml() : '') +
     readsHtml
   );
 }

@@ -10,7 +10,6 @@ export interface PendingRule { fixId: string; applies: (f: RightAnswerFixture) =
 const plan = (f: RightAnswerFixture): boolean => f.check.pay.mode === 'plan';
 
 export const PENDING_RULES: PendingRule[] = [
-  { fixId: 'FIN-04', applies: (f) => f.debts.length > 0, note: 'debt payments in the month' },
   // 05.4-51 (D-67): the usual month sets the regular saving aside too, so a month short only by its saving is short here as well.
   // 05.4-54 (D-68): a plan the plain calculator judges by cash (plainShortPlan) is no longer this rule's; the usual-month test stays.
   { fixId: 'FIN-06/FIN-07', applies: (f) => (plan(f) && !plainShortPlan(f)) || f.pay.amount < f.usualMonth.bills + f.usualMonth.everyday + (f.usualMonth.saving?.amount ?? 0), note: 'plan payments against the usual month; a usual month already short makes the 90-day cash look-ahead decide' },

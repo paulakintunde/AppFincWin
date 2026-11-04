@@ -32,7 +32,7 @@ describe('reviewed page', () => {
     expect(rateText(null)).toBe('');
     expect(() => rateText(1010000000000n)).toThrow(RangeError);
     const file = JSON.parse(fs.readFileSync(path.join(__dirname, 'changes.json'), 'utf8')) as { changes: ReviewedChange[] };
-    for (const fix of ['FIN-01', 'FIN-03', 'FIN-01b']) {
+    for (const fix of ['FIN-01', 'FIN-03', 'FIN-01b', 'FIN-10']) {
       const listed = file.changes.filter((c) => c.fixId === fix);
       if (listed.length === 0) continue;
       // 05.4-56 (D-69): a price's share of monthly pay is not a rate and may pass 100% (up to 1,500% by design); it is left out here
@@ -48,7 +48,7 @@ describe('reviewed page', () => {
     const fin01 = file.changes.filter((c) => c.fixId === 'FIN-01');
     expect(file.changes.filter((c) => c.fixId === 'FIN-03').length).toBe(5);
     expect(fin01.length).toBeGreaterThan(0);
-    for (const c of file.changes.filter((x) => x.fixId === 'FIN-01' || x.fixId === 'FIN-03')) expect(auditOf(c.key)).not.toBeNull();
+    for (const c of file.changes.filter((x) => x.fixId === 'FIN-01' || x.fixId === 'FIN-03' || x.fixId === 'FIN-10')) expect(auditOf(c.key)).not.toBeNull();
     const html = buildPage('FIN-01', fin01, cases);
     for (const t of ['Money in this month', 'Already spent this month', 'Still to come this month', 'After bills due before payday', 'Unused overdraft', 'Expected at month end', 'Starter (D-51)', 'Locked', 'Split', 'What the answer says', '90-day cash path', 'Lowest with the purchase', 'Step by step', 'Right answer:']) expect(html).toContain(t);
     for (const w of ['advice', 'recommend', 'you should', 'suggestion', '<script', 'not built yet', '{{']) expect(html.toLowerCase()).not.toContain(w);
@@ -206,7 +206,8 @@ describe('reviewed page', () => {
     expect(why(sp(SHORT_PLAN_CASES.running, 'sp:r'))).toContain('but it has a running cost of $20.00 a month.');
     expect(why(sp({ everyday: 400_000, saved: 200_000, price: 90_000, months: 3 }, 'sp:fits'))).toContain('but the monthly part already fits (about $300.00 a month');
     expect(why(sp({ everyday: 400_000, saved: 200_000, price: 450_000, months: 3 }, 'sp:big'))).toContain('money on hand $3,500.00 (this month and spare money $3,500.00 + extra savings $0.00) does not cover $4,500.00.');
-    expect(why(cases.find((c) => c.key === 'gen:136')!)).toContain('there is no confirmed spare-money figure, so earlier money and extra savings are not counted) does not cover $32,964.49.');
+    // 05.4-20 (FIN-04): gen:136's two minimums ($1,178.47 on 4 October, November and December) now take its path below $0 first.
+    expect(why(cases.find((c) => c.key === 'gen:136')!)).toContain('but the path goes below $0.00 (lowest -$2,237.52 on 2026-12-31).');
     // Plans past the 90 days and cash buys carry no D-68 step.
     for (const c of [sp(SHORT_PLAN_CASES.longShort, 'sp:l'), cases.find((x) => x.key === 'persona:riley:900000:cash')!]) expect(breakdown(c).steps.some((s) => s.includes('(D-68)'))).toBe(false);
   });
@@ -242,5 +243,28 @@ describe('reviewed page', () => {
     expect(html).toContain('persona:audit-p8:900000:plan');
     expect(html).not.toContain('DISAGREE');
     expect(buildPage('T', [], cases)).not.toContain('Checks this rule reads');
+  });
+
+  it('05.4-20 (FIN-04, FIN-10, D-39b): each debt with its rate as a real percent, its dates on the path, its interest and the costly-debt step', () => {
+    const dana = cases.find((c) => c.key === 'persona:dana:200000:cash')!;
+    const b = breakdown(dana);
+    const debts = b.sections.find((x) => x.title === 'Debts')!.rows.map(([k, v]) => `${k}: ${v}`).join(' / ');
+    expect(debts).toContain('dana-card (card): owes $6,000.00, rate 21.9% a year, minimum $400.00 a month, due day not set; paid through its own debt-payment series');
+    expect(b.steps.join(' ')).toContain('dana-card: $6,000.00 at 21.9% a year costs $6,000.00 x 21.9% / 12 = about $109.50 a month in interest.');
+    expect(b.steps.join(' ')).toContain('Costly debt (D-39b): dana-card at 21.9% at 20% a year or more; money saved in earlier months used: $1,162.90');
+    const g = breakdown(cases.find((c) => c.key === 'gen:60')!);
+    expect(g.steps.join(' ')).toContain('gen-060-debt-0 on the 90-day path (FIN-04): minimum $548.29 with no due day set, so from tomorrow and then the same day each month (DB-02): 2026-10-04, 2026-11-04, 2026-12-04. Engine: 2026-10-04, 2026-11-04, 2026-12-04.');
+    expect(g.sections.find((x) => x.title === 'Accounts (D-55)')!.rows.find(([k]) => k.startsWith('Expected at month end'))![1]).toContain('- debt minimums still to come $548.29');
+    for (const c of cases.filter((x) => x.inputs.debts.length > 0)) expect(breakdown(c).steps.join(' ')).not.toContain('DISAGREE');
+  });
+
+  it('05.4-20 (DB-07): the FIN-10 page shows the counted-once cases, before (twice) and after (once)', () => {
+    const html = buildPage('FIN-10', [], cases);
+    expect(html).toContain('Counted once (DB-07): right-answer cases whose debt is one of the bills (7)');
+    expect(html).toContain('<b>DB-07 Pat (invented)</b>');
+    expect(html).toContain('Before (counted twice): usual month -$700.00, this month -$700.00');
+    expect(html).toContain('After (counted once): usual month $800.00, this month $800.00 ($1,500.00 more)');
+    expect(html).toContain('Checks this rule reads, answer unchanged');
+    expect(buildPage('FIN-11', [], cases)).not.toContain('Counted once (DB-07)');
   });
 });
