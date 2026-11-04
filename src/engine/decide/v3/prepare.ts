@@ -362,12 +362,12 @@ export function judgeCheck(p: Prepared, check: CheckV2): Evaluation {
   // result for inputs without it is unchanged); records_synced says the answer rests on recently synced records.
   const reasons: readonly ReasonCode[] = p.recordsSynced ? [...chosen.result.reasons, 'records_synced'] : chosen.result.reasons;
   const asOf = p.inputs.recordsAsOf;
-  // 05.4 FIN-25 (round 1, research section 6): thin records say so as a fact next to the quick_estimates or few_months reason,
-  // whatever the answer (an ask included: the fact is true either way).
   // 05.4 FIN-09 (D-24): the answer's month figure starts from Home's (the stricter reading's month, homeFigure), so the two differ by
   // exactly what the purchase takes this month; the month_left_after fact says the same figure.
   const afterBuy = rebased(chosen.result.afterBuy, homeFigure(p));
   const sameMonth = (f: Fact): Fact => (f.code === 'month_left_after' ? { ...f, values: { ...f.values, left: afterBuy.month } } : f);
+  // 05.4 FIN-25 (round 1, research section 6): thin records say so as a fact next to the quick_estimates or few_months reason,
+  // whatever the answer (an ask included: the fact is true either way).
   const noFull = p.noFullMonth ? [...chosen.result.facts, { code: 'no_full_month' as const, values: {} }] : chosen.result.facts;
   const facts = [...noFull, ...askDebts(p.inputs, chosen.result)].map(sameMonth);
   return { ...chosen, result: { ...chosen.result, reasons, facts, afterBuy, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) } };
