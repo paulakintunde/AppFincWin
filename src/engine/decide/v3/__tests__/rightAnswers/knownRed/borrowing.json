@@ -3,91 +3,55 @@
   "red": [
     {
       "id": "BR-01",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     },
     {
       "id": "BR-02",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     },
     {
       "id": "BR-03",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     },
     {
       "id": "BR-04",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     },
     {
       "id": "BR-05",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     },
     {
       "id": "BR-06",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     },
     {
       "id": "BR-07",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     },
     {
       "id": "BR-08",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     },
     {
       "id": "BR-09",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     },
     {
       "id": "BR-10",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     },
     {
       "id": "BR-11",
-      "fixId": "FIN-05"
-    },
-    {
-      "id": "BR-12",
-      "fixId": "FIN-05"
-    },
-    {
-      "id": "BR-13",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     },
     {
       "id": "BR-14",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     },
     {
       "id": "BR-15",
-      "fixId": "FIN-05"
-    },
-    {
-      "id": "BR-17",
-      "fixId": "FIN-05"
-    },
-    {
-      "id": "BR-18",
-      "fixId": "FIN-05"
-    },
-    {
-      "id": "BR-19",
-      "fixId": "FIN-05"
-    },
-    {
-      "id": "BR-20",
-      "fixId": "FIN-05"
-    },
-    {
-      "id": "BR-21",
-      "fixId": "FIN-05"
-    },
-    {
-      "id": "BR-22",
-      "fixId": "FIN-05"
-    },
-    {
-      "id": "BR-23",
-      "fixId": "FIN-05"
+      "fixId": "FIN-09"
     }
   ]
 }

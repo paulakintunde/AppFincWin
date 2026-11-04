@@ -5,8 +5,8 @@
  */
 import { currencyCode, minorUnits, type MinorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
-import type { AccountUse, Cadence, CheckV2, PayV2, ReadinessWaiver, V3Account, V3Debt, V3Inputs, V3Line, V3Month, V3Series } from '../../types';
-import { addMonthsClamped } from '../../dates';
+import type { AccountUse, Cadence, CheckV2, FirstPayment, PayV2, ReadinessWaiver, V3Account, V3Debt, V3Inputs, V3Line, V3Month, V3Series } from '../../types';
+import { addMonthsClamped, cadenceDate } from '../../dates';
 import { buildFunds } from '../../funds/build';
 import { buildMonthModel } from '../../month/model';
 import { checkOnce, inputsOf, monthOf, v3Line, v3Series } from '../helpers/fixtures';
@@ -52,11 +52,24 @@ function useOf(a: RightAnswerFixture['accounts'][number]): AccountUse | null {
   return null;
 }
 
-function payOf(p: RightAnswerFixture['check']['pay']): PayV2 {
+/**
+ * 05.4-22 (FIN-05, UX-13; 05.1 D-04): the first payment as the case states it, in the engine's own choices. On asOf it is 'today';
+ * one period after asOf it is 'one_period' (the usual plan: the first payment a month, or a fortnight, after buying); any other date
+ * is a deferral with no interest during the pause (no case says otherwise, and no approved case defers a whole period at a rate
+ * above 0%, so the answer is the same either way). First-payment choices beyond these stay BO-05's.
+ */
+function firstPaymentOf(asOf: string, cadence: Cadence, firstDate: string): FirstPayment {
+  if (firstDate === asOf) return { kind: 'today' };
+  if (firstDate === cadenceDate(asOf, cadence, 1)) return { kind: 'one_period' };
+  return { kind: 'deferred', firstDate, interestDuringPause: false };
+}
+
+function payOf(p: RightAnswerFixture['check']['pay'], asOf: string): PayV2 {
   if (p.mode === 'once') return { mode: 'once' };
+  const cadence: Cadence = p.every === 'fortnight' ? { unit: 'week', every: 2 } : { unit: 'month', every: 1 };
   return {
     mode: 'plan',
-    cadence: p.every === 'fortnight' ? { unit: 'week', every: 2 } : { unit: 'month', every: 1 },
+    cadence,
     count: p.months,
     termMonths: p.every === 'fortnight' ? null : p.months,
     apr: p.apr === null ? null : percent(p.apr),
@@ -64,8 +77,10 @@ function payOf(p: RightAnswerFixture['check']['pay']): PayV2 {
     deposit: mu(p.deposit),
     tradeIn: mu(0),
     quotedPayment: null,
-    firstPayment: { kind: 'deferred', firstDate: p.firstPaymentDate, interestDuringPause: null },
+    firstPayment: firstPaymentOf(asOf, cadence, p.firstPaymentDate),
     deferredInterestTerm: p.deferredInterest === true,
+    // 05.4-22 (D-39c): a mortgage or other home loan skips the 10%-of-amount interest test.
+    ...(p.housing === true ? { housing: true } : {}),
   };
 }
 
@@ -270,7 +285,6 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   // mapped when FIN-08 lands: check.yourAnswer, check.saveForIt (userLine is mapped below, 05.4-21)
   // mapped when FIN-09 lands: pay.lastThree and pay.setupAmount
   // mapped when FIN-08 / plan 05.4-23 lands: pay.lean (low months stated explicitly)
-  // mapped when FIN-05 / D-39c lands: check.pay.housing (a mortgage skips the 10% interest test)
   // 05.4 FIN-03: kind, overdraft limit and rate as stated (the engine reads a limit only on checking and current accounts).
   const accounts: V3Account[] = f.accounts.map((a) => ({
     id: a.id,
@@ -354,7 +368,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     price: c.price === null ? null : mu(c.price),
     taxPercent: c.taxPercent === null ? null : percent(c.taxPercent),
     oneOffFees: mu(c.oneOffFees),
-    pay: payOf(c.pay),
+    pay: payOf(c.pay, f.asOf),
     // 05.4 D-41: the need-or-want reading (words and the order of facts only).
     purpose: c.purpose == null ? null : { kind: 'preset', value: c.purpose },
   });

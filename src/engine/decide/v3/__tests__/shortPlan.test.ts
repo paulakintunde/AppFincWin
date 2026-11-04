@@ -204,7 +204,9 @@ describe('shortPlanByCash: each condition on its own (hand-built judge input, th
 describe('D-68 with interest: the interest line still shows, and its total is the whole cost the ladder covers', () => {
   it('3 payments at 20% APR from today: cash fit, interest_is_a_cost total = the split total', () => {
     const r = run({ ...SHORT_PLAN_CASES.qualifies, apr: '20' }).result;
-    expect(r.code).toBe('fits_unspent');
+    // 05.4-22 (FIN-05, D-07): 20% is expensive and paying the $1,800 in cash fits, so "Fits, but borrowing costs more"; the parts
+    // still read the D-68 cash fit
+    expect({ code: r.code, variant: r.variant, oneOff: r.parts.oneOff }).toEqual({ code: 'fits_by_borrowing', variant: 'borrowing_costs_more', oneOff: 'fits_unspent' });
     expect(r.facts[0]?.code).toBe('short_plan_from_cash');
     const interest = fact(r, 'interest_is_a_cost') as { interest: number; total: number };
     expect(interest.interest).toBeGreaterThan(0);

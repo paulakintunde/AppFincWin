@@ -3550,6 +3550,18 @@ const en = {
           title: 'This goes into your overdraft, and payday does not clear it.',
           body: 'After your pay on {{date}}, {{account}} would still be {{below}} below {{zero}}. At {{rate}}%, the next 90 days below {{zero}} cost about {{cost}}. This is an estimate.',
         },
+        // 05.4 FIN-05 (D-07, D-39a): cash would not fit yet, so the plan fits only because it is borrowed; or cash fits and the plan
+        // costs 20% APR or more, or interest of 10% or more of the amount borrowed (FincWin's thresholds, not law). Declarative only.
+        fitsByBorrowing: {
+          chip: 'Only by borrowing',
+          title: 'This fits only by borrowing.',
+          body: 'Borrowing costs {{interest}} in interest and fees, {{total}} in all.',
+        },
+        fitsByBorrowingCostsMore: {
+          chip: 'Fits, but borrowing costs more',
+          title: 'Paying in cash fits. This plan costs more.',
+          body: 'Paying in cash fits, leaving {{left}}. The plan costs about {{interest}} in interest over {{months}} months.',
+        },
         // 05.4 FIN-01 / FIN-02 (D-35, D-06, D-41): the condition first. Stored emergency_use answers read the fitsUsesNet copy.
         fitsUsesNet: {
           chip: 'Dips into your safety net',
@@ -3660,7 +3672,8 @@ const en = {
         price_over_net: 'The whole price, {{price}}, is more than your safety net, {{net}}.',
         net_lasts: 'Covering a {{shortfall}} shortfall each month, your safety net would last about {{months}} months.',
         net_lasts_without: 'About {{months}} months without this.',
-        interest_is_a_cost: 'This plan costs {{interest}} in interest, {{total}} in all: money that could stay with you.',
+        // 05.4 D-48: on every plan with interest (05.4-22), and in the depletion lines.
+        interest_is_a_cost: 'This plan costs about {{interest}} in interest, {{total}} in all. That is money that could stay with you.',
         balanced_month_room: 'A usual month that balances leaves room for a new payment. A usual month here is {{pay}} of pay against {{costs}} of bills, spending and debt minimums.',
         month_balance_gap: '{{gap}} a month of lower costs or higher income would balance your usual month, and then a new payment has room.',
         // 05.4 D-65 tier lines
@@ -3679,6 +3692,16 @@ const en = {
         // 05.4 FIN-07 / D-40: basis 'tenth' reads tight_floor, 'user_line' reads tight_floor_user_line.
         tight_floor: 'That is under {{floor}}, a tenth of what you usually spend in a month.',
         tight_floor_user_line: 'That is under the {{floor}} line you set.',
+        // 05.4 FIN-05 (D-07): saving for it next to borrowing for it. kind 'ready' reads save_vs_borrow, 'cash_fits' and 'no_date'
+        // their own copy. readyBy is a date or a month, formatted by the screen.
+        save_vs_borrow: 'Saving for it: ready {{readyBy}}. Borrowing: costs {{more}} more.',
+        save_vs_borrow_cash_fits: 'Paying in cash: fits now, leaving {{left}}. Borrowing: costs {{more}} more.',
+        save_vs_borrow_no_date: 'Saving for it: no ready date in the months ahead. Borrowing: costs {{more}} more.',
+        save_vs_borrow_with_net: 'Paying in cash now would dip into your safety net. Borrowing: costs {{more}} more.',
+        save_vs_borrow_with_overdraft: 'Paying in cash now would use your overdraft. Borrowing: costs {{more}} more.',
+        // 05.4 D-48: on every loan, plan or mortgage answer. Facts only; the fact-lines switch never hides them (D-50 (3)).
+        net_covers_surprises: 'A safety net covers surprises while you repay.',
+        income_or_costs_first: 'More income or lower costs makes repaying easier.',
         ask_debts_not_recorded_loan: 'No loan or other debt is recorded. Do you have one?',
         ask_debts_not_recorded_card: 'No card is recorded. Do you have one?',
         ask_debts_not_recorded_overdraft: 'No overdraft is recorded. Do you have one?',

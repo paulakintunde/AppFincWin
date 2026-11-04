@@ -22,22 +22,36 @@ describe('depletion invariants', () => {
         const ev = evaluate(inputs, check);
         const r = ev.result;
         const tl = ev.month.typicalLeft;
-        const dep = r.facts.filter((f) => DEPLETION.has(f.code));
+        // 05.4-22 (D-48): every plan with interest carries interest_is_a_cost, so outside the depletion block it is the borrowing line,
+        // never a twin; the other depletion lines are the core.
+        const core = r.facts.filter((f) => DEPLETION.has(f.code) && f.code !== 'interest_is_a_cost');
+        expect(r.facts.filter((f) => f.code === 'interest_is_a_cost').length).toBeLessThanOrEqual(1);
         // D-68 branch (owner, 2026-11-03: "judge by cash better by a slim margin, with caution"): a short plan judged by cash reads
         // as a one-off of its whole cost (monthly 0 here), with its caution line after any tier line; its interest line still shows.
         const d68 = r.facts.some((f) => f.code === 'short_plan_from_cash');
         const M = d68 ? 0 : (ev.purchase?.monthly ?? 0);
         const interest = d68 && (ev.purchase?.schedule?.totalInterest ?? 0) > 0;
         const applies = r.code !== 'needs_input' && tl !== null && (tl < 0 || interest || (M > 0 && tl - M < 0 && (r.code === 'monthly_short' || r.code === 'not_yet')));
-        expect(dep.length > 0).toBe(applies);
-        if (d68 && tl !== null && tl >= 0) expect(dep.map((f) => f.code)).toEqual(interest ? ['interest_is_a_cost'] : []);
-        if (d68) for (const c of ['depletion_payment', 'plan_makes_short']) expect(dep.some((f) => f.code === c)).toBe(false);
         let lead = r.facts.length > 0 && TIER_FACTS.has(r.facts[0]!.code) ? 1 : 0;
         if (d68) {
           expect(r.facts[lead]?.code).toBe('short_plan_from_cash');
           lead += 1;
         }
-        expect(r.facts.slice(lead, lead + dep.length)).toEqual(dep);
+        // the block of depletion lines right after the lead
+        let end = lead;
+        while (end < r.facts.length && DEPLETION.has(r.facts[end]!.code)) end += 1;
+        const block = r.facts.slice(lead, end);
+        if (applies) {
+          expect(block.length).toBeGreaterThan(0);
+          for (const f of core) expect(block).toContainEqual(f);
+        } else {
+          expect(core).toEqual([]);
+          // a lone D-48 interest line may happen to sit first on a plain plan answer
+          expect(block.every((f) => f.code === 'interest_is_a_cost')).toBe(true);
+        }
+        const dep = applies ? block : [];
+        if (d68 && tl !== null && tl >= 0) expect(dep.map((f) => f.code)).toEqual(interest ? ['interest_is_a_cost'] : []);
+        if (d68) for (const c of ['depletion_payment', 'plan_makes_short']) expect(dep.some((f) => f.code === c)).toBe(false);
         const pay = dep.find((f) => f.code === 'depletion_payment');
         if (pay !== undefined) expect(pay.values['shortAfter']).toBe((pay.values['shortBefore'] as number) + (pay.values['monthly'] as number));
         if (ev.net?.locked === true) expect(dep.some((f) => f.code === 'net_lasts' || f.code === 'net_lasts_without')).toBe(false);

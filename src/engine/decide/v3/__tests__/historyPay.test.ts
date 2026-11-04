@@ -46,7 +46,8 @@ describe('historyPay (D-52)', () => {
     const s500 = at('persona:maya:50000:cash');
     expect([s500.result.code, s500.result.variant, left(s500)]).toEqual(['fits_month', null, 30_000]);
     const plan = at('persona:maya:900000:plan');
-    expect(plan.result.code).toBe('fits_month');
+    // 05.4-22 (FIN-05): the plan is "Only by borrowing" (17% interest, cash Not yet); both its parts are plain fits from pay on her payday
+    expect([plan.result.code, plan.result.parts.oneOff, plan.result.parts.monthly]).toEqual(['fits_by_borrowing', 'fits_month', 'fits_month']);
     for (const e of [s60, s500, plan]) {
       expect(e.cash.kind).toBe('ok');
       if (e.cash.kind === 'ok') expect(e.cash.lowest.balance).toBeGreaterThanOrEqual(0);

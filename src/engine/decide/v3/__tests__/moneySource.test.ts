@@ -151,7 +151,9 @@ describe('Maya: the move-by amount counts her regular saving (D-58, Plan-49 re-r
     // by hand (audit): 2,597 + 20,000 = 22,597; with the saving the account first goes below 0 on 2026-11-03, a day earlier
     const { inputs, check } = caseOf('persona:maya:900000:plan');
     const r = evaluate(inputs, check).result;
-    expect(r.code).toBe('fits_month');
+    // 05.4-22 (FIN-05, D-07): $1,526.40 of interest on $9,000 is 17% of it and the $9,000 in cash is Not yet: "Only by borrowing";
+    // the plan itself fits this month, and the move-by line still shows
+    expect({ code: r.code, variant: r.variant, oneOff: r.parts.oneOff, monthly: r.parts.monthly }).toEqual({ code: 'fits_by_borrowing', variant: null, oneOff: 'fits_month', monthly: 'fits_month' });
     expect(fact(r, 'move_money_by')).toEqual({ amount: 22_597, date: '2026-11-03' });
   });
 });

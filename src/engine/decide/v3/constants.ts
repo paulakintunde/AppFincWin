@@ -56,7 +56,9 @@ export const BAND_EDGES_USD: readonly number[] = [
 // Cite: UP §5.3 (00-UPGRADE-PLAN): the codes, strictest first. The strictest part wins. 05.4 FIN-03 (D-26, D-36) inserts
 // fits_uses_overdraft after monthly_short, its place in the phase target order. FincWin choice.
 // 05.4: fits_uses_net sits after emergency_use, which keeps its slot only for answers stored before 05.4 (D-41).
-export const CODE_PRECEDENCE = ['needs_input', 'not_yet', 'monthly_short', 'fits_uses_overdraft', 'emergency_use', 'fits_uses_net', 'fits_unspent', 'fits_month'] as const; // UP §5.3
+// 05.4 FIN-05 (D-07, D-39a): fits_by_borrowing sits after monthly_short, before fits_uses_overdraft (the slot after
+// fits_on_your_answer's, which 05.4-23 inserts), so "Only by borrowing" is stricter than any other fit.
+export const CODE_PRECEDENCE = ['needs_input', 'not_yet', 'monthly_short', 'fits_by_borrowing', 'fits_uses_overdraft', 'emergency_use', 'fits_uses_net', 'fits_unspent', 'fits_month'] as const; // UP §5.3
 
 // Cite: D-23 (05.1-CONTEXT), overriding the research table: the old four-state verdict each code maps to. FincWin choice.
 export const LEGACY_STATE_OF_CODE = Object.freeze({
@@ -64,6 +66,7 @@ export const LEGACY_STATE_OF_CODE = Object.freeze({
   fits_unspent: 'fits',
   monthly_short: 'adjust',
   fits_uses_overdraft: 'adjust', // 05.4: every new caution code maps to adjust
+  fits_by_borrowing: 'adjust', // 05.4 FIN-05
   emergency_use: 'adjust',
   fits_uses_net: 'adjust',
   not_yet: 'no',
@@ -239,6 +242,10 @@ export const HISTORY_PAY_MIN_MONTHS = 3; // D-52
 // Cite: D-07, D-39b (05.4-CONTEXT, owner question 5 and round 1): borrowing at 20% APR or more is costly. D-07: FincWin's
 // thresholds, not law. In basis points of a yearly rate; 05.4-22 reuses it for the expensive-borrowing caution.
 export const EXPENSIVE_APR_BP = 2000; // D-07, D-39b
+
+// Cite: D-07 (05.4-CONTEXT, owner question 5): borrowing whose total interest is 10% or more of the amount borrowed is expensive.
+// D-07: FincWin's thresholds, not law; D-39c: home loans skip this one. In basis points of the amount borrowed.
+export const EXPENSIVE_INTEREST_SHARE_BP = 1000; // D-07, D-39c
 
 // Cite: D-08 (05.4-CONTEXT, owner question 5) and the 05.4-12 revision notes "Debts": at most 2 debt fact lines, then "and N more".
 // FincWin choice.

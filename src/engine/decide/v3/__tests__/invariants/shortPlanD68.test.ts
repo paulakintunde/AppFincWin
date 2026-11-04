@@ -58,6 +58,16 @@ function stricter(a: Code, b: Code | null): Code {
   return b === null || codeRank(a) <= codeRank(b) ? a : b;
 }
 
+const FITS: readonly Code[] = ['fits_month', 'fits_unspent', 'fits_uses_net', 'fits_uses_overdraft'];
+
+/** 05.4-22 (FIN-05): an expensive plan that fits is fits_by_borrowing; the parts still say it fits (the borrowing rule only tightens). */
+function asJudged(r: Result): Code {
+  if (r.code !== 'fits_by_borrowing') return r.code;
+  // a D-68 plan is judged by cash: its code is the one-off part's
+  const own = has(r, D68) ? r.parts.oneOff : stricter(r.parts.oneOff, r.parts.monthly);
+  return FITS.includes(own) ? own : r.code;
+}
+
 /** The everyday account and the unspent anchor lowered together, no overdraft (withOverdraft with no limit). */
 const lowered = (i: V3Inputs, drop: number): V3Inputs => withOverdraft(i, { overdraftLimit: null, overdraftRate: null, balanceDrop: drop });
 
@@ -69,7 +79,7 @@ describe('I-D68 a short plan paid from money on hand is judged by cash, and noth
         const ev = evaluate(inputs, checkOf(s));
         const r = ev.result;
         if (!has(r, D68)) {
-          if (r.code !== 'needs_input') expect(r.code).toBe(stricter(r.parts.oneOff, r.parts.monthly));
+          if (r.code !== 'needs_input') expect(asJudged(r)).toBe(stricter(r.parts.oneOff, r.parts.monthly));
           return;
         }
         seen += 1;
@@ -81,8 +91,8 @@ describe('I-D68 a short plan paid from money on hand is judged by cash, and noth
         const end = addDays(inputs.asOf, CASH_PATH_DAYS_V3);
         for (const d of paymentDates(p.schedule)) expect(d < end).toBe(true);
         expect(['monthly_short', 'not_yet']).toContain(r.parts.monthly);
-        expect(['fits_month', 'fits_unspent']).toContain(r.code);
-        expect(r.parts.oneOff).toBe(r.code);
+        expect(['fits_month', 'fits_unspent']).toContain(asJudged(r));
+        expect(r.parts.oneOff).toBe(asJudged(r));
         expect(r.readyBy).toBeNull();
         for (const c of ['net_used', 'overdraft_use', 'plan_makes_short', 'depletion_payment']) expect(has(r, c)).toBe(false);
         expect(r.split.some((x) => x.source === 'emergency')).toBe(false);

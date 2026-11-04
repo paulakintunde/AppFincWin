@@ -66,3 +66,21 @@ export function planCard(input: PlanCardInput): PlanCard {
     source: s.source,
   };
 }
+
+/** 05.4 UX-13 (engine side): the live plan tile. The payment each period (with its per-period fee), how many payments, and the interest. */
+export interface PlanTile {
+  readonly payment: MinorUnits;
+  readonly payments: number;
+  readonly cadence: Cadence;
+  readonly interest: MinorUnits;
+}
+
+/** The figures the live tile shows while the user types a plan, from the same schedule the answer reads (full lender amount). */
+export function planTile(s: Schedule): PlanTile {
+  return {
+    payment: minorFromBigInt(BigInt(s.payment) + BigInt(s.fees.perPeriod), FN),
+    payments: s.lastPaying,
+    cadence: s.cadence,
+    interest: s.totalInterest,
+  };
+}

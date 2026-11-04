@@ -50,12 +50,14 @@ import { minorUnits } from '../../../money/types';
 import { myPart } from '../../share';
 import { SIMULATION_MONTH_CAP } from '../../../payoff/constants';
 import { ceilDivide, minorFromBigInt } from '../../../payoff/types';
-import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_MONTHS } from '../constants';
-import { addYearMonths, daysBetween, yearMonthOf } from '../dates';
+import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_MONTHS } from '../constants';
+import { addDays, addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck, CashPathV3 } from '../cash/path';
 import { billsHeldTotal, cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit } from '../moneySource';
 import { costlyDebt, costlyFacts, debtFacts } from '../debts';
-import { depletionFacts, monthAlreadyShort, monthShortTier } from '../depletion';
+import { depletionFacts, monthAlreadyShort, monthShortTier, planTotal } from '../depletion';
+import { borrowingFacts, cashFits, isExpensive, saveVsBorrow, saveVsBorrowFact, type PlanRate } from '../borrowing';
+import { paymentsInRange } from '../plan/schedule';
 import { emergencyOf } from '../funds/emergency';
 import { NO_NET, fitVariant, netDip, type ResolvedNet } from '../safetyNet';
 import { isTight, isTightOneOff, monthlySpendingOf, tightFact, tightFloor } from '../tight';
@@ -109,6 +111,18 @@ export interface JudgeInput {
    * their 90-day path with the purchase (the move-by fact). Absent in hand-built judge tests: no cap and no move fact.
    */
   readonly account?: { readonly spareInAccount: MinorUnits; readonly withPurchase: CashPathV3 } | null;
+  /** 05.4 FIN-05: the plan's cash route, rate and home-loan flag (prepare.ts borrowingOf). Absent for a one-off and in hand-built tests. */
+  readonly borrowing?: BorrowingCtx | null;
+}
+
+/**
+ * 05.4 FIN-05 (05.4-22): cash is the same purchase judged as paid once on the same reading; apr is the plan's rate (typed, else what a
+ * quote implies, else null); housing is a mortgage or other home loan (D-39c).
+ */
+export interface BorrowingCtx {
+  readonly cash: Result;
+  readonly apr: PlanRate;
+  readonly housing: boolean;
 }
 
 export interface OneOffPart {
@@ -603,6 +617,25 @@ function billFacts(funds: Funds): Fact[] {
   return out;
 }
 
+/**
+ * 05.4 FIN-05 (05.4-22): when a Not yet plan could start. A plan whose payments all land inside the 90 days, with no running cost,
+ * is judged like paying its whole cost at once (BR-12: "judged like paying £900 at once ... £500 more at £80 a month = 7 months";
+ * BR-19, BR-20, owner 2026-11-03: "use the hand date from BR-12's whole-cost rule"). Any other plan needs what it takes on day one
+ * and its first payment (when that is not already in day one) before it starts (BR-13: "a plan started in March fits"). The later
+ * of this and the ready date as judged leads (never earlier); null (never) stays never.
+ */
+function planReadyBy(month: MonthModel, p: Purchase, asOf: string, spare: number | null, judged: ReadyBy | null): ReadyBy | null {
+  const s = p.schedule as NonNullable<Purchase['schedule']>;
+  const firstNow = firstPaymentsToday(s, p.share, asOf);
+  const inside = p.runningMonthly === 0 && paymentsInRange(s, asOf, addDays(asOf, CASH_PATH_DAYS_V3)).length === s.lastPaying;
+  const first = s.firstDate > asOf ? myPart(minorFromBigInt(BigInt(s.payment) + BigInt(s.fees.perPeriod), 'planReadyBy'), p.share) : 0;
+  const need = inside ? planTotal(p.dayOne, s, p.share, firstNow) : p.dayOne + first;
+  // Spare money that already covers it adds no wait of its own (a payday wait stays the payday).
+  if ((spare ?? 0) >= need) return judged;
+  const plan = readyMonth(month, need, spare);
+  return readyKey(plan) > readyKey(judged) ? plan : judged;
+}
+
 export function judge(j: JudgeInput): Result {
   const { month, funds } = j;
   const p = j.purchase;
@@ -710,6 +743,8 @@ export function judge(j: JudgeInput): Result {
     const monthlyLeads = mon !== null && mon.code === 'not_yet' && (one.code !== 'not_yet' || readyKey(mon.readyBy) > readyKey(one.readyBy));
     notYetVariant = monthlyLeads ? 'not_covered' : one.variant;
     readyBy = monthlyLeads ? (mon as MonthlyPart).readyBy : one.readyBy;
+    // 05.4 FIN-05: a Not yet plan waits until it could start (planReadyBy); spare money counts the extra savings above the net's size.
+    if (purchase.schedule !== null) readyBy = planReadyBy(month, purchase, j.inputs.asOf, unspentValue === null ? null : unspentValue + net.aboveSize, readyBy);
   }
 
   // Facts (fixed order): overdraft or the no-limit question, month, unspent, held back, yearly bills, emergency, envelope, plan, low month,
@@ -732,6 +767,8 @@ export function judge(j: JudgeInput): Result {
     }),
     ...(od?.facts ?? []),
   ];
+  // 05.4 FIN-05: the save-or-borrow line goes right after the depletion and overdraft lines (they lead, I-D54).
+  const compareAt = facts.length;
   // 05.4 FIN-07 / D-40: the floor a tight answer is under. Not under a D-63 / D-65 month-short headline (it reads after the tight body).
   if (variant === 'tight' && !monthAlreadyShort(month.typicalLeft)) facts.push(tightFact(tightFloor(spend, line)));
   // D-28, D-38: below 0 with no overdraft limit recorded is Not yet, and the answer asks about it.
@@ -775,7 +812,17 @@ export function judge(j: JudgeInput): Result {
   if (fromEnvelope > 0) facts.push({ code: 'envelope_used', values: { used: fromEnvelope, envelopeId: purchase.envelopeId } });
   facts.push(...j.purchaseFacts);
   // 05.4 D-08 (FIN-10, FIN-14): the debt and housing fact lines, on unless switched off; facts only, never the code or variant.
-  facts.push(...debtFacts(j.inputs.debts, month.typicalIncome, j.inputs.factLines !== false, costly?.id ?? null));
+  // 05.4-22 (BR-15): a home loan being judged adds its monthly payment to the housing line.
+  const borrow = j.borrowing ?? null;
+  const sched = purchase.schedule;
+  const newHousing = sched !== null && borrow !== null && borrow.housing ? purchase.monthly : 0;
+  facts.push(...debtFacts(j.inputs.debts, month.typicalIncome, j.inputs.factLines !== false, costly?.id ?? null, newHousing));
+  // 05.4 D-48 / D-50 (3): every plan answer carries the borrowing facts, whatever its code and even with the fact lines off; the
+  // interest line is not said twice when the depletion lines already state it.
+  if (sched !== null) {
+    const total = planTotal(purchase.dayOne, sched, purchase.share, firstPaymentsToday(sched, purchase.share, j.inputs.asOf));
+    facts.push(...borrowingFacts(sched, purchase.share, total, facts.some((f) => f.code === 'interest_is_a_cost')));
+  }
   // A losing low_month variant keeps its fact under tight (05.4-21).
   if ((variant === 'low_month' || (variant === 'tight' && lowClause)) && month.low !== null) {
     // The low-month clause as a fact (v3 §12 #7, #22): the tight month, its leftover, and the monthly cost it cannot carry.
@@ -813,14 +860,39 @@ export function judge(j: JudgeInput): Result {
         fromExtra: mu(fromExtra),
       })
     : null;
+  // 05.4 FIN-05 (D-07, D-39a, D-39c): expensive borrowing is 20% APR or more, or (not for a home loan) interest of 10% or more of the
+  // amount borrowed. An expensive plan is compared with paying cash for the same purchase (the cash route, judged once on the same
+  // reading): save_vs_borrow leads (QE-12: shown on Short each month too), except for a home loan cash cannot pay. An expensive plan
+  // that fits is fits_by_borrowing: "Fits, but borrowing costs more" (borrowing_costs_more) when cash fits, "Only by borrowing" when
+  // it does not (not yet, or only with the overdraft or the net). A cheap plan stays as judged (BR-03; 0% plans BR-07..BR-09, BR-11,
+  // BR-14; a home loan under 20% APR, BR-15). fits_by_borrowing outranks every other fit (CODE_PRECEDENCE), so a fit's own facts
+  // stay and a dearer plan, more bills or less money never look better (I59, I60, I10, I54, I55): the code does not depend on the
+  // cash route. When the cash route asks for a figure first it is not compared (no save_vs_borrow) and the variant is null. Under an
+  // already-short usual month the D-63 / D-65 tier keeps the headline (the variant) on fits_by_borrowing.
+  const fitsNow = code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_net' || code === 'fits_uses_overdraft';
+  let finalCode: Code = code;
+  let borrowVariant: Variant | null = null;
+  let compare: Fact | null = null;
+  if (sched !== null && borrow !== null && isExpensive(sched, borrow.apr, borrow.housing)) {
+    const asks = borrow.cash.code === 'needs_input';
+    const route = saveVsBorrow(borrow.cash, sched, purchase.share);
+    const fitsByCash = cashFits(route.cashCode);
+    if (!asks && (fitsByCash || !borrow.housing)) compare = saveVsBorrowFact(route);
+    if (fitsNow) {
+      finalCode = 'fits_by_borrowing';
+      borrowVariant = fitsByCash ? 'borrowing_costs_more' : null;
+    }
+  }
+  const borrowed = finalCode === 'fits_by_borrowing';
+  if (compare !== null) facts.splice(compareAt, 0, compare);
   // D-68: the caution line comes right after the tier line when there is one, otherwise first.
   const lead: Fact[] = [];
   if (tier !== null && tier.fact !== null) lead.push(tier.fact);
   if (cashPlan !== null) lead.push({ code: 'short_plan_from_cash', values: { monthly: purchase.monthly } });
   return {
-    code,
-    variant: tier !== null ? tier.variant : code === 'not_yet' ? notYetVariant : variant,
-    legacyState: LEGACY_STATE_OF_CODE[code],
+    code: finalCode,
+    variant: tier !== null ? tier.variant : borrowed ? borrowVariant : code === 'not_yet' ? notYetVariant : variant,
+    legacyState: LEGACY_STATE_OF_CODE[finalCode],
     split: keepSplit ? split : [],
     facts: [...lead, ...facts],
     notices: mon === null ? notices : [...notices, ...mon.notices],

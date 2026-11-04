@@ -348,6 +348,11 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       'decide.v3.fact.ask_debts_not_recorded_card_overdraft',
       // 05.4 FIN-07 / D-40 (05.4-21): the tight floor is the user's own line (basis 'user_line')
       'decide.v3.fact.tight_floor_user_line',
+      // 05.4 FIN-05: the save-or-borrow line, by kind (cash fits, net, overdraft, no date)
+      'decide.v3.fact.save_vs_borrow_cash_fits',
+      'decide.v3.fact.save_vs_borrow_with_net',
+      'decide.v3.fact.save_vs_borrow_with_overdraft',
+      'decide.v3.fact.save_vs_borrow_no_date',
       'decide.v3.fact.overdraft_repeat_no_rate',
       'decide.v3.fact.other_account_overdrawn_no_rate',
       ...Object.values(FACT_ACTION_KEYS).flatMap((a) => Object.values(a)),

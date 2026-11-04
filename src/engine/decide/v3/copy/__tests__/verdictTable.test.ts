@@ -24,6 +24,8 @@ describe('verdict table (I22 one code one text)', () => {
         'fits_month.month_short_small', 'fits_unspent.month_short_small', 'fits_month.month_short_moderate', 'fits_unspent.month_short_moderate',
         'fits_unspent.month_short_moderate_extra',
         'fits_month.tight', 'fits_unspent.tight_plan', 'fits_month.tight_once', 'fits_unspent.tight',
+        'fits_by_borrowing', 'fits_by_borrowing.borrowing_costs_more', 'fits_by_borrowing.month_already_short',
+        'fits_by_borrowing.month_short_small', 'fits_by_borrowing.month_short_moderate', 'fits_by_borrowing.month_short_moderate_extra',
       ].sort()
     );
     const rows = Object.values(VERDICT_TABLE);
@@ -46,9 +48,14 @@ describe('verdict table (I22 one code one text)', () => {
       ['fits_month.month_already_short', 'monthly_short.month_already_short'],
       ['fits_month.month_already_short', 'not_yet.month_already_short'],
       ['fits_month.month_already_short', 'emergency_use.month_already_short'],
+      ['fits_month.month_already_short', 'fits_by_borrowing.month_already_short'],
       // 05.4 D-65: Small and Moderate are one answer each on either cash-fit code.
       ['fits_month.month_short_small', 'fits_unspent.month_short_small'],
       ['fits_month.month_short_moderate', 'fits_unspent.month_short_moderate'],
+      // 05.4 FIN-05: the same D-65 headlines on an expensive plan judged by cash
+      ['fits_month.month_short_small', 'fits_by_borrowing.month_short_small'],
+      ['fits_month.month_short_moderate', 'fits_by_borrowing.month_short_moderate'],
+      ['fits_unspent.month_short_moderate_extra', 'fits_by_borrowing.month_short_moderate_extra'],
       // 05.4 FIN-07: "Fits, but tight each month" is one answer on either fit code of a plan.
       ['fits_month.tight', 'fits_unspent.tight_plan'],
     ];
@@ -59,6 +66,17 @@ describe('verdict table (I22 one code one text)', () => {
   });
 
   it('verdictRowFor resolves variants', () => {
+    // 05.4 FIN-05 (D-07, D-39a): Only by borrowing, and Fits, but borrowing costs more; a month-short headline keeps its row
+    expect(verdictRowFor('fits_by_borrowing', null)).toBe(VERDICT_TABLE.fits_by_borrowing);
+    expect(verdictRowFor('fits_by_borrowing', 'borrowing_costs_more')).toBe(VERDICT_TABLE['fits_by_borrowing.borrowing_costs_more']);
+    expect(verdictRowFor('fits_by_borrowing', 'tight')).toBe(VERDICT_TABLE.fits_by_borrowing);
+    expect(verdictRowFor('fits_by_borrowing', 'month_already_short')).toBe(VERDICT_TABLE['fits_by_borrowing.month_already_short']);
+    expect(verdictRowFor('fits_by_borrowing', 'month_short_small')).toBe(VERDICT_TABLE['fits_by_borrowing.month_short_small']);
+    expect(verdictRowFor('fits_by_borrowing', 'month_short_moderate')).toBe(VERDICT_TABLE['fits_by_borrowing.month_short_moderate']);
+    expect(verdictRowFor('fits_by_borrowing', 'month_short_moderate_extra')).toBe(VERDICT_TABLE['fits_by_borrowing.month_short_moderate_extra']);
+    expect(verdictRowFor('fits_month', 'month_short_moderate_extra')).toBe(VERDICT_TABLE.fits_month);
+    expect(VERDICT_TABLE.fits_by_borrowing.tone).toBe('caution');
+    expect(VERDICT_TABLE['fits_by_borrowing.borrowing_costs_more'].tone).toBe('caution');
     expect(verdictRowFor('fits_month', null)).toBe(VERDICT_TABLE.fits_month);
     expect(verdictRowFor('fits_unspent', null)).toBe(VERDICT_TABLE.fits_unspent);
     expect(verdictRowFor('fits_month', 'low_month')).toBe(VERDICT_TABLE['fits_month.low_month']);
@@ -146,10 +164,12 @@ describe('verdict table (I22 one code one text)', () => {
         'usual_month_short', 'depletion_payment', 'plan_makes_short', 'price_over_net', 'net_lasts', 'net_lasts_without', 'interest_is_a_cost',
         'balanced_month_room', 'month_balance_gap', 'month_short_fits', 'money_lasts_shorter', 'short_plan_from_cash',
         'debt_interest_cost', 'debt_more', 'housing_cost', 'joint_loan_risk', 'debt_due_day_assumed', 'card_instead', 'ask_debts_not_recorded',
-        'tight_floor',
+        'tight_floor', 'save_vs_borrow', 'net_covers_surprises', 'income_or_costs_first',
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');
+    // 05.4-22 (D-48): the retired name never comes back
+    expect(Object.keys(FACT_KEYS)).not.toContain('plan_interest_cost');
   });
 
   it('M-03 FACT_VALUE_KEYS and NOTICE_VALUE_KEYS have one entry per code', () => {

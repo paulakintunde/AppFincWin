@@ -49,6 +49,7 @@ export const VERDICT_TABLE = Object.freeze({
   'monthly_short.month_already_short': row('monthAlreadyShort', 'short'),
   'not_yet.month_already_short': row('monthAlreadyShort', 'short'),
   'emergency_use.month_already_short': row('monthAlreadyShort', 'short'),
+  'fits_by_borrowing.month_already_short': row('monthAlreadyShort', 'short'), // 05.4 FIN-05: the month-short headline keeps the lead
   // 05.4 D-65: the usual month is already short and a cash fit eats less than (Small) / at least (Moderate) one month of the spare
   // money and extra savings propping it up. No new tone (design restraint).
   'fits_month.month_short_small': row('monthShortSmall', 'caution'),
@@ -56,6 +57,10 @@ export const VERDICT_TABLE = Object.freeze({
   'fits_month.month_short_moderate': row('monthShortModerate', 'caution'),
   'fits_unspent.month_short_moderate': row('monthShortModerate', 'caution'),
   'fits_unspent.month_short_moderate_extra': row('monthShortModerateExtra', 'caution'),
+  // 05.4 FIN-05: an expensive plan judged by cash (D-68) in an already-short month keeps its D-65 headline on fits_by_borrowing.
+  'fits_by_borrowing.month_short_small': row('monthShortSmall', 'caution'),
+  'fits_by_borrowing.month_short_moderate': row('monthShortModerate', 'caution'),
+  'fits_by_borrowing.month_short_moderate_extra': row('monthShortModerateExtra', 'caution'),
   'not_yet.payday': row('notYetPayday', 'caution'),
   'not_yet.not_covered': row('notYetNotCovered', 'short'),
   monthly_short: row('monthlyShort', 'short'),
@@ -68,6 +73,10 @@ export const VERDICT_TABLE = Object.freeze({
   // 05.4 FIN-03 (D-26, D-36): no new tone (design restraint); the not-cleared warning leads its body.
   fits_uses_overdraft: row('fitsUsesOverdraft', 'caution'),
   'fits_uses_overdraft.not_cleared': row('fitsUsesOverdraftNotCleared', 'caution'),
+  // 05.4 FIN-05 (D-07, D-39a): a plan that fits only because it is borrowed (cash Not yet), and a plan chosen while cash fits that
+  // costs 20% APR or more, or interest of 10% or more of the amount borrowed. No new tone (design restraint).
+  fits_by_borrowing: row('fitsByBorrowing', 'caution'),
+  'fits_by_borrowing.borrowing_costs_more': row('fitsByBorrowingCostsMore', 'caution'),
 } as const satisfies Record<string, VerdictRow>);
 
 export type VerdictRowKey = keyof typeof VERDICT_TABLE;
@@ -92,10 +101,10 @@ export function verdictRowFor(code: Code, variant: Variant | null, once = false)
   // D-63: one row for every answer but an ask.
   if (variant === 'month_already_short' && code !== 'needs_input') return VERDICT_TABLE[`${code}.month_already_short` as const];
   // D-65: the Small and Moderate tiers are on a cash fit only; Moderate from extra savings on fits_unspent only.
-  if ((variant === 'month_short_small' || variant === 'month_short_moderate') && (code === 'fits_month' || code === 'fits_unspent')) {
+  if ((variant === 'month_short_small' || variant === 'month_short_moderate') && (code === 'fits_month' || code === 'fits_unspent' || code === 'fits_by_borrowing')) {
     return VERDICT_TABLE[`${code}.${variant}` as const];
   }
-  if (variant === 'month_short_moderate_extra' && code === 'fits_unspent') return VERDICT_TABLE['fits_unspent.month_short_moderate_extra'];
+  if (variant === 'month_short_moderate_extra' && (code === 'fits_unspent' || code === 'fits_by_borrowing')) return VERDICT_TABLE[`${code}.month_short_moderate_extra` as const];
   switch (code) {
     case 'fits_month':
       return isFitsVariant(variant) ? VERDICT_TABLE[`fits_month.${variant}` as const] : VERDICT_TABLE.fits_month;
@@ -111,6 +120,8 @@ export function verdictRowFor(code: Code, variant: Variant | null, once = false)
       return variant === 'protection_off' ? VERDICT_TABLE['fits_uses_net.protection_off'] : VERDICT_TABLE.fits_uses_net;
     case 'fits_uses_overdraft':
       return variant === 'not_cleared' ? VERDICT_TABLE['fits_uses_overdraft.not_cleared'] : VERDICT_TABLE.fits_uses_overdraft;
+    case 'fits_by_borrowing':
+      return variant === 'borrowing_costs_more' ? VERDICT_TABLE['fits_by_borrowing.borrowing_costs_more'] : VERDICT_TABLE.fits_by_borrowing;
     case 'needs_input':
       return VERDICT_TABLE.needs_input;
   }
@@ -206,6 +217,9 @@ export const FACT_KEYS = Object.freeze({
   card_instead: 'decide.v3.fact.card_instead',
   ask_debts_not_recorded: 'decide.v3.fact.ask_debts_not_recorded',
   tight_floor: 'decide.v3.fact.tight_floor', // 05.4 FIN-07 / D-40
+  save_vs_borrow: 'decide.v3.fact.save_vs_borrow', // 05.4 FIN-05
+  net_covers_surprises: 'decide.v3.fact.net_covers_surprises', // 05.4 D-48
+  income_or_costs_first: 'decide.v3.fact.income_or_costs_first', // 05.4 D-48 (shared with D-46)
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -360,6 +374,12 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   ask_debts_not_recorded: ['kind'],
   // 05.4 FIN-07 / D-40: basis picks the copy ('tenth', or 'user_line' for the _user_line copy).
   tight_floor: ['floor', 'basis'],
+  // 05.4 FIN-05 (D-07, D-39a): kind picks the copy ('cash_fits' { left, more }, 'ready' { readyBy, more }, 'with_net',
+  // 'with_overdraft' or 'no_date' { more });
+  // readyBy is a date ('YYYY-MM-DD') or a month ('YYYY-MM'). D-48: the two borrowing lines carry no values.
+  save_vs_borrow: ['kind', 'left', 'readyBy', 'more'],
+  net_covers_surprises: [],
+  income_or_costs_first: [],
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({

@@ -19,7 +19,7 @@ import { addDays, addYearMonths, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
 import { insteadFutures, type Futures } from './instead/futures';
 import { readinessOf } from './readiness';
-import { judge } from './judge/judge';
+import { judge, type BorrowingCtx } from './judge/judge';
 import { uncoveredIncomeMonths } from './judge/needsInput';
 import { withLiveEmergency } from './funds/emergency';
 import { ownEnvelope } from './funds/envelopes';
@@ -242,6 +242,7 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
   const cash = withNet(cashCheck(path, r.payDate, r.floor), path, () => applyPurchaseFlows(r.open, opening, []), net.usable);
   // 05.4 FIN-03 (D-36): the same open path with no purchase flows gives the cost without it; only needed with an overdraft.
   const overdraft = { floor: r.floor, withPurchase: path, withoutPurchase: r.floor < 0 ? applyPurchaseFlows(r.open, opening, []) : null, paydays: r.paydays };
+  const borrowing = borrowingOf(r, check, pb.purchase, pb.quoted);
   const judged = judge({
     inputs,
     month,
@@ -255,6 +256,7 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
     overdraft,
     net,
     account,
+    borrowing,
   });
   // D-52: pay expected from history says so, after the judge's notices. D-46: say so when the expected-income cap lowered the
   // pay in the 90-day path; last.
@@ -272,6 +274,18 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
       ? insteadFutures({ result, month, funds, purchase: pb.purchase, userRate: null, years: 1 })
       : null;
   return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash, futures, uncoveredIncome: uncoveredIncomeMonths(inputs, month, pb.purchase), net, spare: cappedSpare(confirmedUnspent(funds), r.spareInAccount, billsHeldTotal(funds)) };
+}
+
+/**
+ * 05.4 FIN-05 (05.4-22): what the plan rule needs of a plan: the same purchase judged as paid once on this same reading (the cash
+ * route; no second prepare), the plan's rate (typed, else implied by a quote, else unknown) and whether it is a home loan (D-39c).
+ * null for a one-off, or a plan with no schedule yet (it asks first).
+ */
+function borrowingOf(r: Reading, check: CheckV2, purchase: Purchase | null, quoted: QuotedCheck): BorrowingCtx | null {
+  if (check.pay.mode !== 'plan' || purchase === null || purchase.schedule === null) return null;
+  const implied = quoted.kind === 'from_quote' ? quoted.impliedApr : null;
+  const apr = check.pay.apr ?? implied;
+  return { cash: judgeReading(r, { ...check, pay: { mode: 'once' } }).result, apr, housing: check.pay.housing === true };
 }
 
 /** A comparable key: a date, or the first of a month; null (never) sorts last. */

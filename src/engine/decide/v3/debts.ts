@@ -169,16 +169,16 @@ export function costlyFacts(debt: V3Debt, price: MinorUnits): Fact[] {
 /**
  * D-08 (FIN-10, ENG-09, FIN-14): the debt and housing fact lines, none when they are switched off. Up to DEBT_FACT_LINES interest
  * lines (the largest monthly interest first) and "and N more"; a debt the costly-debt caution already states is not stated again.
- * housing_cost: the housing debts' minimums as a share of a usual month's pay (whole percent, half up). joint_loan_risk: once, for
- * a debt in two names.
+ * housing_cost: the housing debts' minimums as a share of a usual month's pay (whole percent, half up); 05.4-22 (BR-15): plus the
+ * monthly payment of a home loan being judged (newHousing, my share; 0 otherwise). joint_loan_risk: once, for a debt in two names.
  */
-export function debtFacts(debts: readonly V3Debt[], pay: MinorUnits, factLines: boolean, stated: string | null): Fact[] {
+export function debtFacts(debts: readonly V3Debt[], pay: MinorUnits, factLines: boolean, stated: string | null, newHousing = 0): Fact[] {
   if (!factLines) return [];
   const out: Fact[] = [];
   const withInterest = byInterest(debts);
   for (const d of withInterest.slice(0, DEBT_FACT_LINES)) if (d.id !== stated) out.push(interestFact(d));
   if (withInterest.length > DEBT_FACT_LINES) out.push({ code: 'debt_more', values: { count: withInterest.length - DEBT_FACT_LINES } });
-  const housing = debts.filter((d) => d.isHousing).reduce((t, d) => t + BigInt(d.minimum > 0 ? d.minimum : 0), 0n);
+  const housing = debts.filter((d) => d.isHousing).reduce((t, d) => t + BigInt(d.minimum > 0 ? d.minimum : 0), BigInt(newHousing));
   if (housing > 0n && pay > 0) {
     out.push({ code: 'housing_cost', values: { amount: minorFromBigInt(housing, FN), pay, share: Number(divideHalfUp(housing * 100n, BigInt(pay))) } });
   }
