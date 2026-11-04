@@ -69,6 +69,8 @@ interface MidMonthRaw {
    * their recorded bills, so the recorded items can add up to more than the money out.
    */
   quick: { essentialPct: number; billsPct: number } | null;
+  /** 05.4-21 (FIN-07): 1 person in 6 has set their own money-left-each-month line, 0 to 50% of pay (BR-09). */
+  linePct: number | null;
 }
 
 const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
@@ -93,6 +95,7 @@ const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
       ),
     }
   ),
+  linePct: fc.oneof({ weight: 5, arbitrary: fc.constant(null) }, { weight: 1, arbitrary: fc.integer({ min: 0, max: 50 }) }),
   quick: fc.oneof({ weight: 3, arbitrary: fc.constant(null) }, { weight: 1, arbitrary: fc.record({ essentialPct: fc.integer({ min: 50, max: 100 }), billsPct: fc.oneof({ weight: 3, arbitrary: fc.constant(100) }, { weight: 1, arbitrary: fc.integer({ min: 0, max: 99 }) }) }) }),
 });
 
@@ -131,7 +134,7 @@ function midMonth(r: MidMonthRaw, received: number): RightAnswerFixture {
     accounts: [{ id: 'a1', kind: 'checking', name: 'Main', balance, overdraftLimit: null, overdraftRate: null, use: 'everyday' }],
     safetyNet: null,
     bills: lb === null ? [] : [{ id: 'long', amount: longAmount, everyMonths: lb.every, nextDue: octPlus(lb.ahead, lb.day), lastPaid: lb.known ? octPlus(lb.ahead - lb.every, lb.day) : null, paidBy: 'me', ...(lb.inUsual ? { inUsualMonth: true } : {}) }],
-    debts: [], userLine: null, factLines: false,
+    debts: [], userLine: r.linePct === null ? null : Math.floor((r.pay * r.linePct) / 100), factLines: false,
     check: {
       price, taxPercent: null, taxIncluded: null, oneOffFees: r.fees,
       // 05.4-51 (Plan-49 re-run): the deposit is always below the price (0 with no price)

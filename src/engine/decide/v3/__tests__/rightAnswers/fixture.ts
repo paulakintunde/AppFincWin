@@ -267,7 +267,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   // mapped when FIN-27 lands: region rules, check.taxIncluded
   // mapped when ENG-14 lands: check.runningCosts and check.closingPercent
   // mapped when FIN-07 lands: check.replaces (stops and sale)
-  // mapped when FIN-08 lands: userLine, check.yourAnswer, check.saveForIt
+  // mapped when FIN-08 lands: check.yourAnswer, check.saveForIt (userLine is mapped below, 05.4-21)
   // mapped when FIN-09 lands: pay.lastThree and pay.setupAmount
   // mapped when FIN-08 / plan 05.4-23 lands: pay.lean (low months stated explicitly)
   // mapped when FIN-05 / D-39c lands: check.pay.housing (a mortgage skips the 10% interest test)
@@ -341,6 +341,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     safetyNet: f.safetyNet === null ? null : { protect: f.safetyNet.protect, size: f.safetyNet.size === null ? null : mu(f.safetyNet.size), saved: mu(f.safetyNet.saved), locked: f.safetyNet.locked },
     essentialCategoryIds: f.usualMonth.essentialEveryday > 0 ? [ESSENTIAL] : [],
     factLines: f.factLines, // D-08 (05.4-20)
+    tightLine: f.userLine === null ? null : mu(f.userLine), // 05.4-21 (FIN-07, BR-09): the money-left-each-month line the user set
   });
   // 05.4-18: the confirmed unspent figure is the app's own suggested sum (spending money less the bills still due and the
   // everyday spending still to come), as a user who confirms it would see it. A raw balance would count this month's spending

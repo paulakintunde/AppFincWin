@@ -1,6 +1,6 @@
 /**
- * QA-03: the engine and the plain calculator must agree on the code (and money left once FIN-09 lands), and, for a fixture
- * with a card or loan, on the costly-debt caution (05.4-20)
+ * QA-03: the engine and the plain calculator must agree on the code (and money left once FIN-09 lands), on the tight caution
+ * (05.4-21), and, for a fixture with a card or loan, on the costly-debt caution (05.4-20)
  * for random fixtures. Fixtures that trigger a rule still in PENDING_RULES are skipped and counted.
  */
 import * as fc from 'fast-check';
@@ -30,9 +30,10 @@ describe('cross-check calculator vs engine', () => {
           const { inputs, check } = toEngineInputs(f);
           const got = pick(evaluate(inputs, check));
           const plain = plainAnswer(f);
-          // 05.4-20 (D-39b): with a card or loan drawn, the costly-debt caution is compared too.
+          // 05.4-20 (D-39b): with a card or loan drawn, the costly-debt caution is compared too. 05.4-21 (FIN-07, D-40): and tight.
           const costly = (v: string | null): boolean | null => (f.debts.length === 0 ? null : v === 'costly_debt');
-          expect({ code: got.code, costly: costly(got.variant) }).toEqual({ code: plain.code, costly: costly(plain.variant) });
+          const tight = (v: string | null): boolean => v === 'tight';
+          expect({ code: got.code, costly: costly(got.variant), tight: tight(got.variant) }).toEqual({ code: plain.code, costly: costly(plain.variant), tight: tight(plain.variant) });
         }),
         { numRuns: RUNS, seed: SEED }
       );

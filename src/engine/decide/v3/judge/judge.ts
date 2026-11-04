@@ -32,7 +32,7 @@
  * that leaves under the floor, carries the variant tight and the tight_floor fact. It ranks at the top of the fit variants (below
  * the D-63 / D-65 month-short headlines) and is never put on Dips into your safety net or Uses your overdraft (D-50 (2)). The
  * one-off money left is the spare money after this month's plans plus the extra savings still above the net's size, less the
- * purchase (SN-11: £3,000 - £2,950 = £50); this month's own figure when spare money is unknown (I58).
+ * purchase (SN-11: £3,000 - £2,950 = £50); this month's own figure stands in for spare money when that is unknown (I58).
  * D-68 (judge/shortPlan.ts): a plan whose payments all fall inside the 90 days, with no running cost, whose monthly part does not
  * fit and whose whole cost the one-off ladder covers as a cash fit on the dated path, is judged as that one-off; the monthly part
  * no longer leads, and the answer carries the short_plan_from_cash caution line.
@@ -693,9 +693,9 @@ export function judge(j: JudgeInput): Result {
   const line = j.inputs.tightLine ?? null;
   const fitCode = code === 'fits_month' || code === 'fits_unspent';
   const planTight = fitCode && said !== null && said.code === 'fits_month' && month.typicalLeft !== null && isTight(month.typicalLeft, purchase.monthly, spend, line);
-  // The one-off money left (I58): spare money after this month's plans and the extra savings above the net's size, less what the
-  // purchase takes from them; this month's own figure when spare money is unknown (the envelope and the net are not spare money).
-  const oneOffLeft = mu(unspentValue === null ? month.monthLeft - fromMonth - one.netUsed : unspentValue + net.aboveSize - fromMonth - fromEarlier - fromExtra);
+  // The one-off money left (I58): spare money after this month's plans (this month's own figure when spare money is unknown) and the
+  // extra savings above the net's size, less what the purchase takes from them (the envelope and the net are not spare money).
+  const oneOffLeft = mu((unspentValue ?? month.monthLeft - one.netUsed) + net.aboveSize - fromMonth - fromEarlier - fromExtra);
   const onceTight = fitCode && (cashPlan !== null || purchase.schedule === null) && isTightOneOff(oneOffLeft, spend, line);
   const tightV = planTight || onceTight ? (['tight'] as const) : [];
   const fitV = fitVariant([...tightV, ...(lowClause ? (['low_month'] as const) : []), ...costlyV, ...extraV, ...(netState === null ? [] : [netState])]).variant;

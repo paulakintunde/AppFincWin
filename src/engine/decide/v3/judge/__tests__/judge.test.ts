@@ -1363,3 +1363,11 @@ describe('05.4-21 tight (FIN-07, D-40)', () => {
     expect(factOfCode(r, 'low_month')).toEqual({ month: '2026-09', left: 1_000, monthly: 35_000 });
   });
 });
+
+describe('05.4-21 tight: extra savings count in the money left even when spare money is unknown (gen:37)', () => {
+  const ABOVE: ResolvedNet = { ...FULL_NET, saved: minorUnits(400_000), aboveSize: minorUnits(100_000) };
+  it('this month leaves 2,500, but 100,000 of extra savings stays: not tight', () => {
+    const r = judge(input({ funds: funds(null), net: ABOVE, purchase: purchase({ dayOne: mu(40_000), whole: mu(40_000) }) }));
+    expect([r.code, r.variant]).toEqual(['fits_month', null]);
+  });
+});

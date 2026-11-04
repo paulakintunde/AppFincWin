@@ -450,7 +450,9 @@ export function usualMonthShort(f: RightAnswerFixture): boolean {
  * The variant on a fit (D-59, D-62): extra_savings ("Fits from extra savings": the purchase uses money above the net's size)
  * before the D-35 safety-net caution. month_already_short (D-63) leads both; plainAnswer sets it.
  */
-function fitVariant(net: PlainNet, usesExtra: boolean, costly = false): string | null {
+function fitVariant(net: PlainNet, usesExtra: boolean, costly = false, tight = false): string | null {
+  // D-59: "when 'tight' and a safety-net caution (no net / small net) both apply, 'tight' leads the answer" (05.4-21).
+  if (tight) return 'tight';
   // D-39b: the costly-debt caution leads the money's source and the net caution (05.4-20).
   if (costly) return 'costly_debt';
   if (usesExtra) return 'extra_savings';
@@ -526,7 +528,8 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
     // Not yet (no overdraft carries a plan). The ready-by month is not restated here.
     const net = plainNet(f);
     if (planPathLow(f) + net.above + net.lend < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
-    return { code: usualLeftOf(f) - plainPlanMonthly(f) < 0n ? 'monthly_short' : 'fits_month', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
+    if (plainMonthlyShort(f)) return { code: 'monthly_short', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
+    return { code: 'fits_month', variant: plainTightPlan(f) ? 'tight' : null, afterBuy: Number(left - big(c.pay.deposit)) };
   }
   const after = left - cost;
   const net = plainNet(f);
@@ -541,7 +544,9 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
   // 90 days can take a later month below 0, so with one on the path the lower of the two figures decides.
   const until = f.pay.irregular === undefined ? cashMargin(f, cost, true) : pathLow(f, cost);
   // DB-01: "The card minimum lands on the day-by-day path on its due date", so with a minimum on the path its lowest point decides too.
-  const longLow = longDueInWindow(f) || debtDates(f).length > 0 ? pathLow(f, cost) : until;
+  // 05.4-21: D-65 "Large (... takes the 90-day path below $0 ...)": with the usual month already short, every month on the path loses
+  // money, so its lowest point decides as well (this was the second half of the FIN-06/FIN-07 skip, now restated).
+  const longLow = longDueInWindow(f) || debtDates(f).length > 0 || usualMonthShort(f) ? pathLow(f, cost) : until;
   const margin = (longLow < until ? longLow : until) + net.above;
   const pastLimit = margin < -overdraftRoom(f);
   if (pastLimit && margin + net.lend < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
@@ -562,7 +567,8 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
   if (dip > 0n) return { code: 'fits_uses_overdraft', variant: notCleared(f, cost) ? 'not_cleared' : null, afterBuy: Number(after) };
   // "Any purchase that uses money in the net is Dips into your safety net, whatever its purpose" (D-41): here the path.
   if (pastLimit) return { code: 'fits_uses_net', variant: offVariant, afterBuy: Number(after) };
-  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(net, rest > maxC(0n, earlier), carriesCostlyDebt(f, rest)), afterBuy: Number(after) };
+  const tight = plainTightOnce(f, freeMoney(f) + net.above - cost);
+  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(net, rest > maxC(0n, earlier), carriesCostlyDebt(f, rest), tight), afterBuy: Number(after) };
 }
 
 /** OD-11: "her next pay does not clear it": after the next pay (and that day's bills and spending) the account is still below 0. */
@@ -589,11 +595,63 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   const room = maxC(0n, usualLeft);
   const fromMonth = cost < room ? cost : room;
   const rest = cost - fromMonth;
-  if (rest === 0n) return { code: 'fits_month', variant: fitVariant(net, false), afterBuy: Number(after) };
+  // D-40: free money is what sits plus this month's room; with the money above the net's size, less the purchase, it is what is left.
+  const tight = plainTightOnce(f, sitting + usualLeft + net.above - cost);
+  if (rest === 0n) return { code: 'fits_month', variant: fitVariant(net, false, false, tight), afterBuy: Number(after) };
   // Free money is what sits plus this month's room; less the room this purchase already took, it is the earlier money.
   const earlier = sitting + usualLeft - fromMonth + net.above;
   if (rest > earlier) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
-  return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above, carriesCostlyDebt(f, rest)), afterBuy: Number(after) };
+  return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above, carriesCostlyDebt(f, rest), tight), afterBuy: Number(after) };
+}
+
+// --- Short month and tight (05.4 FIN-06 / ENG-06, FIN-07, D-40). Restated from the owner's tight rule (2026-11-01), D-40, settled
+// disagreement 5 of the fix plan and the approved cases BR-05..BR-11, SN-10, SN-11, DB-02, DB-03, DB-07, DB-10, QE-01, QE-08,
+// QE-13, SO-06 and RC-10. Not read from the engine.
+
+/**
+ * The floor: "a line the user set, or less than a tenth of a month's spending" (owner), "a tenth of a usual month's bills plus
+ * everyday spending" (D-40). BR-09: "A line the user sets replaces the tenth-of-spending floor." QE-01: "with no full month of
+ * records, the floor comes from her estimates: a tenth of £1,000 bills + £300 everyday spending = £130". DB-02: "a tenth of $1,200
+ * bills + $800 everyday spending" (the $300 card minimum is not spending). Rounded up to the cent.
+ */
+export function plainFloor(f: RightAnswerFixture): Cents {
+  if (f.userLine !== null) return maxC(0n, big(f.userLine));
+  const spend = maxC(0n, big(f.usualMonth.bills) + usualEveryday(f));
+  const d = BigInt(FLOOR_DIVISOR);
+  return (spend + d - 1n) / d;
+}
+
+/**
+ * One-off tight (D-40): "money left after the purchase under a tenth of a usual month's bills plus everyday spending". The money
+ * left is the free money after this month's plans (this month's room and earlier money, counted once) plus the money above the
+ * net's size, less the purchase: SN-11 "£3,000 free - £2,950 = £50 left"; QE-08 "$1,000 - $975 = $25". The 80% part never applies.
+ */
+export function plainTightOnce(f: RightAnswerFixture, left: Cents): boolean {
+  return left < plainFloor(f);
+}
+
+/**
+ * Plan tight (owner): "the payment takes more than 80% of the usual monthly room, OR the money left each month falls below a floor".
+ * BR-07: "$1,870 is 85% of her $2,200 room, which is more than 80%"; BR-11: "100% of his £200 room ... leaves £0".
+ */
+export function plainTightPlan(f: RightAnswerFixture): boolean {
+  const room = usualLeftOf(f);
+  const M = plainPlanMonthly(f);
+  return M * 10_000n > room * BigInt(TIGHT_SHARE_BP) || room - M < plainFloor(f);
+}
+
+/**
+ * FIN-06 (settled disagreement 5): "A new payment cannot fit when the usual month is at or below zero, or when this month is heading
+ * below zero and the first payment falls this month." BR-06: "$400 - $600 means November is heading to -$200, and the first $100
+ * payment falls on 28 November, inside this month": the free money after this month's plans. BR-05: "the money left each month is
+ * below $0 before she buys anything". And the payment bigger than the room (QE-12, BR-11: "not Short each month, because the
+ * payment is not bigger than the room").
+ */
+export function plainMonthlyShort(f: RightAnswerFixture): boolean {
+  const room = usualLeftOf(f);
+  if (room <= 0n || room - plainPlanMonthly(f) < 0n) return true;
+  const first = planDates(f)[0];
+  return first !== undefined && first.slice(0, 7) === f.asOf.slice(0, 7) && freeMoney(f) < 0n;
 }
 
 // --- Overdraft (05.4 FIN-03 / ENG-02). Restated from the approved overdraft cases (OD-01 .. OD-12), CONTEXT D-26..D-28 and
@@ -902,7 +960,7 @@ export function plainShortPlan(f: RightAnswerFixture): boolean {
   if (c.mode !== 'plan' || f.check.price === null || (f.check.runningCosts ?? []).length > 0) return false;
   const end = dayAfter(f.asOf, PATH_DAYS);
   if (!planDates(f).every((d) => d < end)) return false;
-  if (usualLeftOf(f) - plainPlanMonthly(f) >= 0n) return false;
+  if (!plainMonthlyShort(f)) return false; // 05.4-21: the monthly test includes FIN-06's short-month rule
   return shortPlanCash(f) !== null;
 }
 
@@ -923,8 +981,11 @@ function shortPlanCash(f: RightAnswerFixture): { total: Cents; rest: Cents; earl
 function shortPlanAnswer(f: RightAnswerFixture): PlainAnswer {
   const s = shortPlanCash(f) as { total: Cents; rest: Cents; earlier: Cents };
   const after = Number(leftThisMonth(f) - s.total);
-  return { code: s.rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(plainNet(f), s.rest > maxC(0n, s.earlier), carriesCostlyDebt(f, s.rest)), afterBuy: after };
+  const net = plainNet(f);
+  // D-68: "judged by cash like a one-off purchase", so the one-off tight rule (D-40) reads the whole cost.
+  const tight = plainTightOnce(f, freeMoney(f) + net.above - s.total);
+  return { code: s.rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(net, s.rest > maxC(0n, s.earlier), carriesCostlyDebt(f, s.rest), tight), afterBuy: after };
 }
 
-/** Named so the table's thresholds have one reader; the Theme A plans use them. */
+/** Named so the table's thresholds have one reader (05.4-21 reads them in plainFloor and plainTightPlan). */
 export const RULE_NAMES = { TIGHT_SHARE_BP, FLOOR_DIVISOR };

@@ -4,7 +4,7 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall } from './plain';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
@@ -14,9 +14,12 @@ const PENDING_IDS = new Set(PENDING_RULES.flatMap((r) => r.fixId.split('/')).fil
 
 describe('plain calculator vs the approved table', () => {
   const cases = loadCases().filter((c) => c.status === 'approved');
+  // 05.4-21: RC-10 left FIN-07 (tight landed) but its code waits for FIN-09 (05.4-24: £1,500 free this month, so Fits this month,
+  // with the month figure for money saved earlier); both sides give fits_unspent until then. It stays in knownRed under FIN-09.
+  const WAITS: Readonly<Record<string, string>> = { 'RC-10': 'FIN-09' };
   const live = cases.filter((c) => {
     const pending = pendingFixIds(c.fixture).filter((id) => id !== 'FIN-09');
-    return pending.length === 0 && !c.fixIds.some((id) => PENDING_IDS.has(id));
+    return pending.length === 0 && !c.fixIds.some((id) => PENDING_IDS.has(id)) && WAITS[c.id] === undefined;
   });
   it(`checks ${live.length} approved cases`, () => {
     for (const c of live) expect({ id: c.id, code: plainAnswer(c.fixture).code }).toEqual({ id: c.id, code: c.expected.code });
@@ -93,11 +96,10 @@ describe('plain calculator: safety net (05.4-18, FIN-01, FIN-02; D-05, D-06, D-3
 
   it('every approved safety-net case gets its expected code, and its net variant, from the plain rules', () => {
     for (const c of sn) {
-      // tight (SN-10, SN-11) is 05.4-21.
+      // 05.4-21: tight (SN-10, SN-11) is compared too.
       const got = plainAnswer(c.fixture);
-      const variant = NET_VARIANTS.includes(c.expected.variant) ? got.variant : c.expected.variant;
-      const expected = c.id === 'SN-11' ? 'no_net' : c.id === 'SN-10' ? null : c.expected.variant;
-      expect({ id: c.id, code: got.code, variant: c.id === 'SN-10' || c.id === 'SN-11' ? got.variant : variant }).toEqual({ id: c.id, code: c.expected.code, variant: expected });
+      const variant = NET_VARIANTS.includes(c.expected.variant) || c.expected.variant === 'tight' ? got.variant : c.expected.variant;
+      expect({ id: c.id, code: got.code, variant }).toEqual({ id: c.id, code: c.expected.code, variant: c.expected.variant });
     }
   });
 
@@ -333,15 +335,13 @@ describe('05.4-54 (D-68): the plain calculator restates short plans paid from mo
     expect([engine68('2026-12-12'), engine68('2026-12-13')]).toEqual([true, false]);
   });
 
-  it('the crosscheck skip: a D-68 plan leaves FIN-06/FIN-07 and stays out under BO-05, because through the fixture as written the engine asks first', () => {
+  it('the crosscheck skip: every plan stays out under BO-05 (FIN-06/FIN-07 is gone, 05.4-21), because through the fixture as written the engine asks first', () => {
     const f = shortPlanFixture(SHORT_PLAN_CASES.qualifies);
     expect(pendingFixIds(f)).toContain('BO-05');
-    expect(pendingFixIds(f)).not.toContain('FIN-06/FIN-07');
     const { inputs, check } = toEngineInputs(f);
     expect(evaluate(inputs, check).result.missing).toContain('pause_interest_not_answered');
-    // a plan D-68 leaves alone is still FIN-06/FIN-07's
-    expect(pendingFixIds(shortPlanFixture(SHORT_PLAN_CASES.longShort))).toContain('FIN-06/FIN-07');
-    expect(pendingFixIds(shortPlanFixture(SHORT_PLAN_CASES.longShort))).not.toContain('BO-05');
+    expect(pendingFixIds(shortPlanFixture(SHORT_PLAN_CASES.longShort))).toContain('BO-05');
+    expect(PENDING_RULES.map((r) => r.fixId)).not.toContain('FIN-06/FIN-07');
   });
 });
 
@@ -383,8 +383,8 @@ describe('05.4-54 (D-68) at scale: random short plans on the 05.4-53 person, the
         const d68 = plainShortPlan(f);
         if (d68) short++;
         const e68 = r.facts.some((x) => x.code === 'short_plan_from_cash');
-        // A plan D-68 leaves alone is judged by the plan rules still pending on the plain side (FIN-06/FIN-07: the day-one part
-        // against the monthly part); only that it is left alone is compared.
+        // A plan D-68 leaves alone is pinned in 05.4-21's block below (the day-one part against the monthly part is not restated on
+        // the plain side); here only that it is left alone is compared.
         if (!d68 && !e68) return;
         expect({ code: p.code, variant: p.variant, d68 }).toEqual({ code: r.code, variant: r.variant, d68: e68 });
       }),
@@ -722,5 +722,90 @@ describe('plain calculator: quick estimates count the bills once (05.4-57, ENG-1
     expect(e.month.typicalLeft).toBe(-1);
     expect({ code: e.picked.code, variant: e.picked.variant }).toEqual({ code: plainAnswer(f).code, variant: plainAnswer(f).variant });
     expect(e.picked.variant).toBe('month_short_moderate_extra');
+  });
+});
+
+describe('05.4-21: short month and tight (FIN-06 / ENG-06, FIN-07, D-40): hand, plain calculator and engine', () => {
+  const byId = (id: string) => {
+    const c = loadCases().find((x) => x.id === id);
+    if (c === undefined) throw new RangeError(id);
+    return c;
+  };
+  /** The engine with the plan's pause question answered (no interest during the pause: every plan here is 0%). */
+  const engine = (f: RightAnswerFixture) => {
+    const { inputs, check } = toEngineInputs(f);
+    const fp = check.pay.mode === 'plan' ? check.pay.firstPayment : null;
+    const c = check.pay.mode === 'plan' && fp !== null && fp.kind === 'deferred' ? { ...check, pay: { ...check.pay, firstPayment: { ...fp, interestDuringPause: false } } } : check;
+    return evaluate(inputs, c);
+  };
+
+  it.each(['BR-05', 'BR-07', 'BR-08', 'BR-09', 'BR-11'])('%s: the approved code and variant from the engine and the plain calculator', (id) => {
+    const c = byId(id);
+    expect(c.status).toBe('approved');
+    const r = engine(c.fixture).result;
+    expect({ code: r.code, variant: r.variant }).toEqual({ code: c.expected.code, variant: c.expected.variant });
+    expect(plainAnswer(c.fixture)).toMatchObject({ code: c.expected.code, variant: c.expected.variant });
+    if (c.expected.variant === 'tight') expect(r.facts.map((x) => x.code)).toContain('tight_floor');
+  });
+
+  it('the plan figures by hand: payment and floor', () => {
+    const f = (id: string) => byId(id).fixture;
+    // BR-07: $1,870 of $2,200 = 85% (more than 80%); $330 left, floor $280 (a tenth of $1,800 + $1,000)
+    expect([plainPlanMonthly(f('BR-07')), plainFloor(f('BR-07'))]).toEqual([187_000n, 28_000n]);
+    // BR-08: $650 of $1,000 = 65%; $350 left, under the $400 floor (a tenth of $2,500 + $1,500)
+    expect([plainPlanMonthly(f('BR-08')), plainFloor(f('BR-08'))]).toEqual([65_000n, 40_000n]);
+    expect(engine(f('BR-08')).result.facts.find((x) => x.code === 'tight_floor')?.values).toEqual({ floor: 40_000, basis: 'tenth' });
+    // BR-09: $750 of $1,000 = 75%; $250 left, above the $200 tenth, under her $300 line
+    expect([plainPlanMonthly(f('BR-09')), plainFloor(f('BR-09'))]).toEqual([75_000n, 30_000n]);
+    expect(engine(f('BR-09')).result.facts.find((x) => x.code === 'tight_floor')?.values).toEqual({ floor: 30_000, basis: 'user_line' });
+    // BR-11: £200 of £200 = 100%; £0 left, under the £180 floor
+    expect([plainPlanMonthly(f('BR-11')), plainFloor(f('BR-11'))]).toEqual([20_000n, 18_000n]);
+    expect(plainTightPlan(f('BR-07'))).toBe(true);
+    // BR-05: the usual month is -$100 before the plan, so no plan fits it
+    expect(plainMonthlyShort(f('BR-05'))).toBe(true);
+  });
+
+  it('BR-06: this month heads to -$200 and the first payment is on 28 November, so the plain plan rule says Short each month (FIN-06)', () => {
+    const f = byId('BR-06').fixture;
+    expect(plainMonthlyShort(f)).toBe(true);
+    expect(freeMoney(f)).toBe(-20_000n);
+    // Engine and plain both see the account below $0 before payday with no overdraft limit, which is stricter (Not yet). BR-06
+    // stays in knownRed (FIN-05); its approved "Short each month" against this Not yet is an owner question (05.4-21 SUMMARY).
+    expect(engine(f).result.code).toBe('not_yet');
+    expect(plainAnswer(f).code).toBe('not_yet');
+  });
+
+  it.each([
+    ['SN-10', 2_000n, 20_000n],
+    ['SN-11', 5_000n, 17_000n],
+    ['DB-02', 10_000n, 20_000n],
+    ['DB-03', 10_000n, 23_000n],
+    ['DB-07', 30_000n, 32_000n],
+    ['QE-01', 2_500n, 13_000n],
+    ['QE-08', 2_500n, 20_000n],
+    ['SO-06', 10_000n, 20_000n],
+    ['RC-10', 3_710n, 18_000n],
+  ] as const)('%s one-off: left %s under the floor %s, tight on both sides', (id, left, floor) => {
+    const f = byId(id).fixture;
+    expect(freeMoney(f) + plainNet(f).above - BigInt(f.check.price ?? 0)).toBe(left);
+    expect(plainFloor(f)).toBe(floor);
+    expect(plainAnswer(f).variant).toBe('tight');
+    const r = engine(f).result;
+    expect(r.variant).toBe('tight');
+    expect(r.facts.find((x) => x.code === 'tight_floor')?.values).toEqual({ floor: Number(floor), basis: 'tenth' });
+  });
+
+  it.each([
+    ['DB-10', 25_000n, 20_000n],
+    ['DB-12', 120_000n, 32_000n],
+    ['QE-13', 60_000n, 13_000n],
+  ] as const)('%s one-off: left %s is not under the floor %s, no tight on either side', (id, left, floor) => {
+    const f = byId(id).fixture;
+    expect(freeMoney(f) + plainNet(f).above - BigInt(f.check.price ?? 0)).toBe(left);
+    expect(plainFloor(f)).toBe(floor);
+    expect(plainAnswer(f).variant).not.toBe('tight');
+    const r = engine(f).result;
+    expect(r.variant).not.toBe('tight');
+    expect(r.facts.map((x) => x.code)).not.toContain('tight_floor');
   });
 });
