@@ -9,7 +9,7 @@
  *   This month: only the part not yet paid (minimum - paidThisMonth, never below 0, DB-10); a due day already past this month is
  *   taken as paid (the month figure sets it aside and the balance shows it). With no paidThisMonth stated, an unlinked paid
  *   debt-payment line of exactly the minimum this month pays it. With no due day, the earliest likely day is used: tomorrow, then
- *   the same day each month, and the assumption is stated (DB-02).
+ *   the same day each month, and the assumption is stated (DB-02). D-73: the payments stop once the balance is paid off.
  * - Fact lines (D-08) are facts only, on by default; costlyDebt (D-39b) is a caution rule and the only part that can change the
  *   variant. Every value a fact carries is a key in FACT_VALUE_KEYS (copy/verdictTable.ts).
  */
@@ -17,7 +17,7 @@ import { divideHalfUp } from '../../money/rounding';
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { minorFromBigInt, PERCENT_SCALE } from '../../payoff/types';
 import { percentText } from './adapters/inputsV2';
-import { DEBT_FACT_LINES, EXPENSIVE_APR_BP } from './constants';
+import { COSTLY_SAVING_MIN, DEBT_FACT_LINES, EXPENSIVE_APR_BP } from './constants';
 import { addDays, addYearMonths, daysInYearMonth, dayOfMonth, yearMonthOf } from './dates';
 import { liveSeriesOf } from './month/series';
 import { monthlyEquivalentOf } from './plan/cadence';
@@ -99,13 +99,18 @@ export function debtOutflows(inputs: Pick<V3Inputs, 'asOf' | 'debts' | 'series'>
     const line = paid === null ? paidLines.find((l) => !usedLines.has(l.id) && Math.abs(l.amount) === d.minimum) : undefined;
     if (line !== undefined) usedLines.add(line.id);
     const owed = paid === null ? (line === undefined ? d.minimum : 0) : d.minimum - paid > 0 ? d.minimum - paid : 0;
-    const firstAmount = yearMonthOf(first) === ym ? owed : d.minimum;
-    if (given === null) assumed.push({ debtId: d.id, amount: minorUnits(firstAmount) });
+    // D-73: the payments never add up to more than the balance; the last is only what is left, then nothing more.
+    let left = d.balance > 0 ? d.balance : 0;
+    const firstAmount = Math.min(yearMonthOf(first) === ym ? owed : d.minimum, left);
+    if (given === null && firstAmount > 0) assumed.push({ debtId: d.id, amount: minorUnits(firstAmount) });
     for (let i = 0, m = yearMonthOf(first); ; i++, m = addYearMonths(yearMonthOf(first), i)) {
       const date = i === 0 ? first : onDay(m, day);
       if (date >= end) break;
-      const amount = i === 0 ? firstAmount : d.minimum;
-      if (date >= asOf && amount > 0) flows.push({ debtId: d.id, date, amount: minorUnits(amount) });
+      const amount = Math.min(i === 0 ? firstAmount : d.minimum, left);
+      if (date >= asOf && amount > 0) {
+        flows.push({ debtId: d.id, date, amount: minorUnits(amount) });
+        left -= amount;
+      }
     }
   }
   flows.sort((a, b) => cmp(a.date, b.date) || cmp(a.debtId, b.debtId));
@@ -137,13 +142,14 @@ function byInterest(debts: readonly V3Debt[]): V3Debt[] {
 }
 
 /**
- * D-39b: the costly debt a fit carries when part of the price is paid from money saved in earlier months (fromEarlier > 0): the one
- * with the largest monthly interest among debts at 20% APR or more. null otherwise (DB-11: this month's spare money alone).
+ * D-39b: the costly debt a fit carries when part of the price is paid from money saved in earlier months (fromEarlier): the one
+ * with the largest monthly interest among debts at 20% APR or more. D-72: only when putting that money toward the debt would cut
+ * its interest by at least COSTLY_SAVING_MIN a month (min(fromEarlier, balance) x APR / 12, half up). null otherwise (DB-11: this
+ * month's spare money alone, so nothing from earlier months).
  */
 export function costlyDebt(debts: readonly V3Debt[], fromEarlier: number): V3Debt | null {
-  if (fromEarlier <= 0) return null;
-  // Any balance left counts, however small its interest rounds (a debt at 20% or more "remains", D-39b).
-  return debts.filter((d) => d.balance > 0 && isCostly(d)).sort(largestFirst)[0] ?? null;
+  const saves = (d: V3Debt): number => monthlyInterest({ ...d, balance: minorUnits(Math.min(fromEarlier, d.balance)) });
+  return debts.filter((d) => isCostly(d) && saves(d) >= COSTLY_SAVING_MIN).sort(largestFirst)[0] ?? null;
 }
 
 /** D-39b, DB-04: for a card, how much putting the price toward it would cut its monthly interest. null for any other debt. */

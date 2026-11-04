@@ -105,6 +105,24 @@ describe('debtOutflows: each minimum on its due date (FIN-04)', () => {
     expect(out.map((f) => [f.debtId, f.date])).toEqual([['b', '2026-11-20']]);
   });
 
+  it('D-73 by hand: payments stop once the balance is paid off; the last is only what is left (gen:136)', () => {
+    // gen:136: a $587.32 card with a $707.08 minimum and no due day pays $587.32 tomorrow, then nothing more
+    const card = debt({ id: 'gen-136-debt-1', balance: mu(58_732), minimum: mu(70_708), apr: percent('0') });
+    const out = debtOutflows({ asOf: '2026-10-03', debts: [card], series: [] }, [], 90);
+    expect(out.flows.map((f) => [f.date, f.amount])).toEqual([['2026-10-04', 58_732]]);
+    expect(out.assumed).toEqual([{ debtId: 'gen-136-debt-1', amount: 58_732 }]);
+    // $650 owed at $300 a month on the 25th: $300, $300, then the last $50
+    const three = debtOutflows(inputs([debt({ balance: mu(65_000), minimum: mu(30_000), dueDay: 25 })]), [], 90).flows;
+    expect(three.map((f) => [f.date, f.amount])).toEqual([
+      ['2026-11-25', 30_000],
+      ['2026-12-25', 30_000],
+      ['2027-01-25', 5_000],
+    ]);
+    // nothing owed: nothing lands and nothing is assumed
+    const none = debtOutflows(inputs([debt({ balance: mu(0) }), debt({ id: 'd2', balance: mu(-100) })]), [], 90);
+    expect(none).toEqual({ flows: [], assumed: [] });
+  });
+
   it('a debt paid through a series, or with no minimum, lands nothing itself; tomorrow in a new month is a whole minimum', () => {
     const series = [monthly('d1', 'debt_payment', 15_000)];
     expect(debtOutflows(inputs([debt()], series), [], 90).flows).toEqual([]);
@@ -142,12 +160,28 @@ describe('interest, the costly-debt caution and the fact lines (D-08, D-39b)', (
     expect(isCostly(debt({ apr: null }))).toBe(false);
     const small = debt({ id: 'small', balance: mu(9) });
     const big = debt({ id: 'big', balance: mu(900_000), apr: percent('29.9') });
-    expect(costlyDebt([small, big, debt({ id: 'cheap', apr: percent('5') })], 1)?.id).toBe('big');
-    expect(costlyDebt([small], 1)?.id).toBe('small'); // any balance left counts, however small its interest rounds
+    expect(costlyDebt([small, big, debt({ id: 'cheap', apr: percent('5') })], 100_000)?.id).toBe('big');
     expect(costlyDebt([big], 0)).toBeNull();
-    expect(costlyDebt([debt({ balance: mu(0) })], 1)).toBeNull();
-    expect(costlyDebt([debt({ id: 'b' }), debt({ id: 'a' })], 1)?.id).toBe('a'); // ties by id
-    expect(costlyDebt([debt({ id: 'a', kind: 'loan' }), debt({ id: 'a' })], 1)?.kind).toBe('loan'); // the same id twice keeps the order given
+    expect(costlyDebt([big], -500)).toBeNull();
+    expect(costlyDebt([debt({ balance: mu(0) })], 100_000)).toBeNull();
+    expect(costlyDebt([debt({ id: 'b' }), debt({ id: 'a' })], 100_000)?.id).toBe('a'); // ties by id
+    expect(costlyDebt([debt({ id: 'a', kind: 'loan' }), debt({ id: 'a' })], 100_000)?.kind).toBe('loan'); // the same id twice keeps the order given
+  });
+
+  it('D-72 by hand: the caution needs the money from earlier months to cut the interest by at least 1.00 a month', () => {
+    // gen:145: $2.67 from earlier months toward a $15,237.85 loan at 21.9%: $2.67 x 21.9% / 12 = $0.05 a month, so no caution
+    const loan = debt({ id: 'gen-145-debt-0', kind: 'loan', balance: mu(1_523_785), apr: percent('21.9') });
+    expect(monthlyInterest({ ...loan, balance: mu(267) })).toBe(5);
+    expect(costlyDebt([loan], 267)).toBeNull();
+    // $54.80 x 21.9% / 12 = $1.0001 -> $1.00: the caution shows; $54.75 -> $0.9992, rounded half up $1.00 too; $54.52 -> $0.99: not
+    expect(costlyDebt([loan], 5_480)?.id).toBe('gen-145-debt-0');
+    expect(monthlyInterest({ ...loan, balance: mu(5_452) })).toBe(99);
+    expect(costlyDebt([loan], 5_452)).toBeNull();
+    // a balance smaller than the money from earlier months caps it: $9 at 29.9% saves nothing worth stating
+    expect(costlyDebt([debt({ id: 'small', balance: mu(9), apr: percent('29.9') })], 100_000)).toBeNull();
+    // DB-04: £1,050 from earlier months toward the £6,000 card at 24.9% saves £21.79 a month
+    expect(monthlyInterest({ ...debt(), balance: mu(105_000) })).toBe(2_179);
+    expect(costlyDebt([debt()], 105_000)?.id).toBe('d1');
   });
 
   it('fact lines: none when switched off; up to 2 interest lines then "and N more"; the stated costly debt is not repeated', () => {

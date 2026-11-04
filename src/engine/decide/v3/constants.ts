@@ -243,3 +243,7 @@ export const EXPENSIVE_APR_BP = 2000; // D-07, D-39b
 // Cite: D-08 (05.4-CONTEXT, owner question 5) and the 05.4-12 revision notes "Debts": at most 2 debt fact lines, then "and N more".
 // FincWin choice.
 export const DEBT_FACT_LINES = 2; // D-08
+
+// Cite: D-72 (05.4-CONTEXT, owner 2026-11-04): the costly-debt caution needs the money from earlier months to cut the debt's
+// interest by at least 1.00 a month (100 minor units of its currency). FincWin choice.
+export const COSTLY_SAVING_MIN = 100; // D-72

@@ -597,7 +597,7 @@ describe('plain calculator: card and loan minimums (05.4-20, FIN-04, FIN-10, D-3
   });
 
   it('DB-04 / DB-11 (D-39b): money saved earlier on a fit with a 24.9% card is costly_debt; this month spare money alone is not', () => {
-    expect(carriesCostlyDebt(db('DB-04'))).toBe(true);
+    expect(carriesCostlyDebt(db('DB-04'), 105_000n)).toBe(true); // £1,050 from earlier months: £21.79 a month
     expect(plainAnswer(db('DB-04'))).toMatchObject({ code: 'fits_unspent', variant: 'costly_debt' });
     expect(engine(db('DB-04'))).toMatchObject({ code: 'fits_unspent', variant: 'costly_debt' });
     expect(plainAnswer(db('DB-11'))).toMatchObject({ code: 'fits_month', variant: null });
@@ -612,5 +612,21 @@ describe('plain calculator: card and loan minimums (05.4-20, FIN-04, FIN-10, D-3
   it('DB-08 by hand: both minimums count, $1,400 - $400 - $300 (16 Nov) - $200 (20 Nov) - $600 = -$100', () => {
     expect(debtToPay(db('DB-08'))).toBe(50_000n);
     expect(pathLow(db('DB-08'), 60_000n)).toBe(-10_000n);
+  });
+
+  it('D-72 / D-73 (owner) in the plain rules: $2.67 at 21.9% is no caution, $54.80 is; a $587.32 card with a $707.08 minimum pays once', () => {
+    const f = db('DB-04');
+    const loan = (balance: number): RightAnswerFixture => ({ ...f, debts: [{ ...f.debts[0]!, balance, apr: '21.9' }] });
+    expect(carriesCostlyDebt(loan(1_523_785), 267n)).toBe(false); // gen:145: about $0.05 a month
+    expect(carriesCostlyDebt(loan(1_523_785), 5_480n)).toBe(true); // $1.00 a month
+    expect(carriesCostlyDebt(loan(1_523_785), 5_452n)).toBe(false); // $0.99
+    expect(carriesCostlyDebt(loan(9), 100_000n)).toBe(false); // the balance caps it
+    const card = { ...db('DB-02'), debts: [{ ...db('DB-02').debts[0]!, balance: 58_732, minimum: 70_708 }] };
+    expect(debtDates(card)).toEqual([{ date: '2026-11-16', amount: 58_732n }]);
+    const engine = (x: RightAnswerFixture) => {
+      const { inputs, check } = toEngineInputs(x);
+      return pick(evaluate(inputs, check)).code;
+    };
+    expect(engine(card)).toBe(plainAnswer(card).code);
   });
 });

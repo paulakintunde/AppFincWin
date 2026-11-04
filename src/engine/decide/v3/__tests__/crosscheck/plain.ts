@@ -148,12 +148,18 @@ export function debtDates(f: RightAnswerFixture): { date: string; amount: Cents 
     const first = d.dueDay === null ? dayAfter(f.asOf, 1) : onDayOf(f.asOf, 0, d.dueDay);
     const day = d.dueDay ?? Number(first.slice(8, 10));
     const owedNow = maxC(0n, big(d.minimum) - big(d.paidThisMonth ?? 0));
+    // D-73 (owner): "a minimum stops once the balance is paid off. The last payment is only what's left, then nothing more."
+    let left = maxC(0n, big(d.balance));
     for (let i = 0; ; i++) {
       const date = i === 0 ? first : onDayOf(first, i, day);
       if (date >= end) break;
       if (date < f.asOf) continue;
-      const amount = i === 0 && first.slice(0, 7) === ym ? owedNow : big(d.minimum);
-      if (amount > 0n) out.push({ date, amount });
+      const due = i === 0 && first.slice(0, 7) === ym ? owedNow : big(d.minimum);
+      const amount = due < left ? due : left;
+      if (amount > 0n) {
+        out.push({ date, amount });
+        left -= amount;
+      }
     }
   }
   return out;
@@ -171,9 +177,18 @@ export function debtToPay(f: RightAnswerFixture): Cents {
  * 'Fits, but you carry costly debt'"; DB-11: "The purchase comes from this month's spare money ... so the costly-debt caution does
  * not apply". Money saved above the net's size is money saved in earlier months too (D-56).
  */
-export function carriesCostlyDebt(f: RightAnswerFixture): boolean {
-  return f.debts.some((d) => d.balance > 0 && d.apr !== null && basisPoints(d.apr) >= big(EXPENSIVE_APR_BP));
+export function carriesCostlyDebt(f: RightAnswerFixture, fromEarlier: Cents): boolean {
+  // D-72 (owner): "the costly-debt warning shows only when putting the earlier-month money toward the debt would save at least
+  // $1.00 a month in interest": min(money from earlier months, balance) x APR / 12, rounded half up, at least 100 minor units.
+  return f.debts.some((d) => {
+    if (d.apr === null || basisPoints(d.apr) < big(EXPENSIVE_APR_BP)) return false;
+    const put = fromEarlier < big(d.balance) ? fromEarlier : big(d.balance);
+    return put > 0n && halfUp(put * basisPoints(d.apr), 120_000n) >= COSTLY_SAVING_MIN;
+  });
 }
+
+/** D-72: the least interest a month the money from earlier months must save for the costly-debt caution, in minor units. */
+const COSTLY_SAVING_MIN: Cents = 100n;
 
 // --- Regular saving (05.4 D-58, D-67). "Regular saving/investing transfers out of the paying (main/everyday) account are taken out
 // of it everywhere: the month-end figure, spare money (the D-56 cap), and the 90-day cash path" (D-67); "the amount to move and the
@@ -509,7 +524,7 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
   if (dip > 0n) return { code: 'fits_uses_overdraft', variant: notCleared(f, cost) ? 'not_cleared' : null, afterBuy: Number(after) };
   // "Any purchase that uses money in the net is Dips into your safety net, whatever its purpose" (D-41): here the path.
   if (pastLimit) return { code: 'fits_uses_net', variant: offVariant, afterBuy: Number(after) };
-  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(net, rest > maxC(0n, earlier), rest > 0n && carriesCostlyDebt(f)), afterBuy: Number(after) };
+  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(net, rest > maxC(0n, earlier), carriesCostlyDebt(f, rest)), afterBuy: Number(after) };
 }
 
 /** OD-11: "her next pay does not clear it": after the next pay (and that day's bills and spending) the account is still below 0. */
@@ -540,7 +555,7 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   // Free money is what sits plus this month's room; less the room this purchase already took, it is the earlier money.
   const earlier = sitting + usualLeft - fromMonth + net.above;
   if (rest > earlier) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
-  return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above, carriesCostlyDebt(f)), afterBuy: Number(after) };
+  return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above, carriesCostlyDebt(f, rest)), afterBuy: Number(after) };
 }
 
 // --- Overdraft (05.4 FIN-03 / ENG-02). Restated from the approved overdraft cases (OD-01 .. OD-12), CONTEXT D-26..D-28 and
@@ -870,7 +885,7 @@ function shortPlanCash(f: RightAnswerFixture): { total: Cents; rest: Cents; earl
 function shortPlanAnswer(f: RightAnswerFixture): PlainAnswer {
   const s = shortPlanCash(f) as { total: Cents; rest: Cents; earlier: Cents };
   const after = Number(leftThisMonth(f) - s.total);
-  return { code: s.rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(plainNet(f), s.rest > maxC(0n, s.earlier), s.rest > 0n && carriesCostlyDebt(f)), afterBuy: after };
+  return { code: s.rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(plainNet(f), s.rest > maxC(0n, s.earlier), carriesCostlyDebt(f, s.rest)), afterBuy: after };
 }
 
 /** Named so the table's thresholds have one reader; the Theme A plans use them. */
