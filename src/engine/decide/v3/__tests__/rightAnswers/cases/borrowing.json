@@ -1456,7 +1456,7 @@
         }
       },
       "expected": {
-        "code": "fits_month",
+        "code": "fits_unspent",
         "variant": null,
         "afterBuy": {
           "month": null,
@@ -1474,7 +1474,7 @@
           "save_vs_borrow"
         ]
       },
-      "why": "Payments are $1,658.04 a month (the last one $1,655.40). Over 25 years the interest is $227,409.36, 84.23% of the $270,000 borrowed, far over the 10% line that would make a car or a sofa \"Fits only by borrowing\". A mortgage skips that 10% test (D-39c), because almost every home is bought this way; the rate, 5.5%, is under 20%, and cash ($300,000) is not an option, so \"Fits, but borrowing costs more\" does not apply either. It is still costed and shown as a fact (below). The usual month leaves $8,000 - $1,000 - $2,000 = $5,000; after the payment it leaves $5,000 - $1,658.04 = $3,341.96, well above the $300 floor and the payment is 33% of the room, so it is not tight. Housing shows as a fact: the payment is 20.7% of her $8,000 pay. The $30,000 deposit is the money she saved earlier and kept in the account for it (D-44); after it and the rest of November's spending, November leaves $400. The answer is a plain \"Fits\". Every borrowing answer also shows, as facts (D-48): \"This mortgage costs $227,409.36 in interest: money that could stay with you.\" (interest_is_a_cost) \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
+      "why": "Payments are $1,658.04 a month (the last one $1,655.40). Over 25 years the interest is $227,409.36, 84.23% of the $270,000 borrowed, far over the 10% line that would make a car or a sofa \"Fits only by borrowing\". A mortgage skips that 10% test (D-39c), because almost every home is bought this way; the rate, 5.5%, is under 20%, and cash ($300,000) is not an option, so \"Fits, but borrowing costs more\" does not apply either. It is still costed and shown as a fact (below). The usual month leaves $8,000 - $1,000 - $2,000 = $5,000; after the payment it leaves $5,000 - $1,658.04 = $3,341.96, well above the $300 floor and the payment is 33% of the room, so it is not tight. Housing shows as a fact: the payment is 20.7% of her $8,000 pay. The $30,000 deposit is the money she saved earlier and kept in the account for it (D-44); after it and the rest of November's spending, November leaves $400. The answer is a plain \"Fits\". Every borrowing answer also shows, as facts (D-48): \"This mortgage costs $227,409.36 in interest: money that could stay with you.\" (interest_is_a_cost) \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first) 05.4 D-78 (owner, 2026-11-04): the $30,000 deposit is money saved in earlier months, so the answer is \"Fits from spare money\", the same rule as everywhere else.",
       "fixIds": [
         "FIN-05",
         "ENG-08",
@@ -1482,8 +1482,9 @@
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
-      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
-      "expertNote": null
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48). Owner, D-78 (2026-11-04): \"A deposit saved in earlier months is spare money, the same rule as everywhere else (owner, 2026-11-04)\".",
+      "expertNote": null,
+      "changeApproved": "2026-11-04"
     },
     {
       "id": "BR-16",

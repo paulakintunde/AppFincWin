@@ -20,8 +20,8 @@
     "afterBuyMonth": null
   },
   "persona:sam:900000:plan": {
-    "code": "fits_month",
-    "variant": "tight",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:maya:6000:cash": {
@@ -45,7 +45,7 @@
     "afterBuyMonth": null
   },
   "persona:maya:900000:plan": {
-    "code": "fits_month",
+    "code": "fits_by_borrowing",
     "variant": null,
     "afterBuyMonth": null
   },
@@ -120,8 +120,8 @@
     "afterBuyMonth": null
   },
   "persona:tia:900000:plan": {
-    "code": "fits_month",
-    "variant": "tight",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:dana:6000:cash": {
@@ -145,8 +145,8 @@
     "afterBuyMonth": null
   },
   "persona:dana:900000:plan": {
-    "code": "fits_month",
-    "variant": "small_net",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:kim:6000:cash": {
@@ -170,7 +170,7 @@
     "afterBuyMonth": null
   },
   "persona:kim:900000:plan": {
-    "code": "fits_month",
+    "code": "fits_by_borrowing",
     "variant": null,
     "afterBuyMonth": null
   },
@@ -195,8 +195,8 @@
     "afterBuyMonth": null
   },
   "persona:priya:900000:plan": {
-    "code": "fits_month",
-    "variant": "small_net",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:jordan:6000:cash": {
@@ -320,8 +320,8 @@
     "afterBuyMonth": null
   },
   "persona:audit-p3:900000:plan": {
-    "code": "fits_month",
-    "variant": "no_net",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:audit-p4:6000:cash": {
@@ -420,8 +420,8 @@
     "afterBuyMonth": null
   },
   "persona:audit-p6:900000:plan": {
-    "code": "fits_month",
-    "variant": "no_net",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:audit-p6-lines:6000:cash": {
@@ -445,8 +445,8 @@
     "afterBuyMonth": null
   },
   "persona:audit-p6-lines:900000:plan": {
-    "code": "fits_month",
-    "variant": "no_net",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:audit-p7:6000:cash": {
@@ -470,8 +470,8 @@
     "afterBuyMonth": null
   },
   "persona:audit-p7:900000:plan": {
-    "code": "fits_month",
-    "variant": "no_net",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:audit-p8:6000:cash": {
@@ -495,8 +495,8 @@
     "afterBuyMonth": null
   },
   "persona:audit-p8:900000:plan": {
-    "code": "fits_month",
-    "variant": "no_net",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": null
   },
   "persona:audit-p9:6000:cash": {
@@ -545,8 +545,8 @@
     "afterBuyMonth": null
   },
   "persona:audit-p10:900000:plan": {
-    "code": "fits_month",
-    "variant": "no_net",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": null
   },
   "gen:0": {
@@ -570,13 +570,13 @@
     "afterBuyMonth": 155296
   },
   "gen:4": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 47325
   },
   "gen:5": {
-    "code": "fits_month",
-    "variant": "low_month",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": null
   },
   "gen:6": {
@@ -585,8 +585,8 @@
     "afterBuyMonth": null
   },
   "gen:7": {
-    "code": "fits_month",
-    "variant": "low_month",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": null
   },
   "gen:8": {
@@ -640,8 +640,8 @@
     "afterBuyMonth": -1605
   },
   "gen:18": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 337073
   },
   "gen:19": {
@@ -750,8 +750,8 @@
     "afterBuyMonth": null
   },
   "gen:40": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 40918
   },
   "gen:41": {
@@ -780,8 +780,8 @@
     "afterBuyMonth": null
   },
   "gen:46": {
-    "code": "fits_month",
-    "variant": "tight",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": 64131
   },
   "gen:47": {
@@ -830,8 +830,8 @@
     "afterBuyMonth": 249317
   },
   "gen:56": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 106229
   },
   "gen:57": {
@@ -870,8 +870,8 @@
     "afterBuyMonth": null
   },
   "gen:64": {
-    "code": "fits_month",
-    "variant": "no_net",
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 258849
   },
   "gen:65": {
@@ -890,13 +890,13 @@
     "afterBuyMonth": null
   },
   "gen:68": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 392528
   },
   "gen:69": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 302497
   },
   "gen:70": {
@@ -970,8 +970,8 @@
     "afterBuyMonth": 0
   },
   "gen:84": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 174619
   },
   "gen:85": {
@@ -985,8 +985,8 @@
     "afterBuyMonth": null
   },
   "gen:87": {
-    "code": "fits_month",
-    "variant": "tight",
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 35101
   },
   "gen:88": {
@@ -1035,8 +1035,8 @@
     "afterBuyMonth": 0
   },
   "gen:97": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": null
   },
   "gen:98": {
@@ -1060,8 +1060,8 @@
     "afterBuyMonth": 212598
   },
   "gen:102": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": null
   },
   "gen:103": {
@@ -1215,7 +1215,7 @@
     "afterBuyMonth": null
   },
   "gen:133": {
-    "code": "fits_month",
+    "code": "fits_by_borrowing",
     "variant": null,
     "afterBuyMonth": null
   },
@@ -1250,8 +1250,8 @@
     "afterBuyMonth": null
   },
   "gen:140": {
-    "code": "fits_month",
-    "variant": "no_net",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": 37352
   },
   "gen:141": {
@@ -1270,8 +1270,8 @@
     "afterBuyMonth": 0
   },
   "gen:144": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 45278
   },
   "gen:145": {
@@ -1320,7 +1320,7 @@
     "afterBuyMonth": null
   },
   "gen:154": {
-    "code": "fits_month",
+    "code": "fits_by_borrowing",
     "variant": null,
     "afterBuyMonth": 78780
   },
@@ -1340,8 +1340,8 @@
     "afterBuyMonth": null
   },
   "gen:158": {
-    "code": "fits_unspent",
-    "variant": "tight",
+    "code": "fits_by_borrowing",
+    "variant": null,
     "afterBuyMonth": 0
   },
   "gen:159": {
@@ -1380,8 +1380,8 @@
     "afterBuyMonth": 252704
   },
   "gen:166": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 63535
   },
   "gen:167": {
@@ -1430,8 +1430,8 @@
     "afterBuyMonth": null
   },
   "gen:176": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 130706
   },
   "gen:177": {
@@ -1460,8 +1460,8 @@
     "afterBuyMonth": null
   },
   "gen:182": {
-    "code": "fits_unspent",
-    "variant": "costly_debt",
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 0
   },
   "gen:183": {
@@ -1480,8 +1480,8 @@
     "afterBuyMonth": null
   },
   "gen:186": {
-    "code": "fits_month",
-    "variant": "small_net",
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 300819
   },
   "gen:187": {
@@ -1545,8 +1545,8 @@
     "afterBuyMonth": 74989
   },
   "gen:199": {
-    "code": "fits_month",
-    "variant": null,
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
     "afterBuyMonth": 189260
   }
 }
