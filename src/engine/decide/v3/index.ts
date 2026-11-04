@@ -38,6 +38,8 @@ export { checkQuoted } from './plan/quoted';
 export type { QuotedCheck, QuotedInput } from './plan/quoted';
 export { evaluate } from './evaluate';
 export { prepare, judgeCheck } from './prepare';
+// 05.4 FIN-09 (05.4-24, D-22..D-24): Decide Home's month figure, the same one every answer's afterBuy starts from (screens in 08.1).
+export { homeFigure, monthAfterPlans } from './afterBuy';
 export type { Prepared } from './prepare';
 export { unspentSum } from './funds/build';
 export type { Evaluation } from './evaluate';
@@ -49,7 +51,7 @@ export type { SeenV3, ChangeReason } from './adapters/seen';
 export { insteadFutures, FUTURE_ORDER } from './instead/futures';
 export type { Futures } from './instead/futures';
 export { explore } from './instead/explorer';
-export { VERDICT_TABLE, verdictRowFor, NOTICE_KEYS, FACT_KEYS, MISSING_KEYS, READINESS_KEYS, FOOTER_KEY, FACT_VALUE_KEYS, NOTICE_VALUE_KEYS, COPY_RESOLVERS, DISCRIMINATOR_KEYS, MISSING_VALUE_SOURCE, BASIS_KEYS, BASIS_REASON_KEYS, BASIS_VALUE_KEYS, NEXT_STEP_KEYS, FACT_ACTION_KEYS } from './copy/verdictTable';
+export { VERDICT_TABLE, verdictRowFor, NOTICE_KEYS, FACT_KEYS, MISSING_KEYS, READINESS_KEYS, FOOTER_KEY, FACT_VALUE_KEYS, NOTICE_VALUE_KEYS, COPY_RESOLVERS, DISCRIMINATOR_KEYS, AFTER_BUY_KEYS, MISSING_VALUE_SOURCE, BASIS_KEYS, BASIS_REASON_KEYS, BASIS_VALUE_KEYS, NEXT_STEP_KEYS, FACT_ACTION_KEYS } from './copy/verdictTable';
 // 05.4 FIN-25 / ENG-18: the reason weights and audiences, so screens show every 'answer' reason in the engine's order.
 export { REASON_WEIGHT, REASON_AUDIENCE } from './confidence/reasons';
 export type { VerdictRow } from './copy/verdictTable';

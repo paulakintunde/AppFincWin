@@ -1,3 +1,4 @@
+import { minorUnits } from '../../../../money/types';
 import { CLEAN_CONFIDENCE } from '../../__tests__/helpers/restsOn';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -7,7 +8,8 @@ import { changeSinceLooked, seenOf } from '../seen';
 function result(over: Partial<Result> = {}): Result {
   return {
     code: 'fits_month', variant: null, legacyState: 'fits', split: [], facts: [], notices: [], missing: [], reasons: [], readyBy: null,
-    band: 5, layers: [], confidence: CLEAN_CONFIDENCE, parts: { oneOff: 'fits_month', monthly: null }, ...over,
+    band: 5, layers: [], confidence: CLEAN_CONFIDENCE, parts: { oneOff: 'fits_month', monthly: null },
+    afterBuy: { lead: 'month', month: minorUnits(0), usualMonth: null, before: minorUnits(0), monthName: '2026-11' }, ...over,
   };
 }
 const after = (n: number): Fact => ({ code: 'unspent_before_after', values: { before: 0, after: n } });

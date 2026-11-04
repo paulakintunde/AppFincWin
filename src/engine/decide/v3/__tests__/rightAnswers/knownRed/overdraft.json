@@ -1,9 +1,4 @@
 {
   "topic": "overdraft",
-  "red": [
-    {
-      "id": "OD-04",
-      "fixId": "FIN-09"
-    }
-  ]
+  "red": []
 }

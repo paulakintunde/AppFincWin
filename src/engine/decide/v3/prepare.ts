@@ -8,6 +8,7 @@
  * is already inside dayOne and would land twice.
  */
 import { minorUnits, type MinorUnits } from '../../money/types';
+import { homeFigure, rebased } from './afterBuy';
 import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { mergeConfidence } from './confidence/reasons';
 import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, withNet, type CashCheck, type OpenCashPath } from './cash/path';
@@ -363,7 +364,11 @@ export function judgeCheck(p: Prepared, check: CheckV2): Evaluation {
   const asOf = p.inputs.recordsAsOf;
   // 05.4 FIN-25 (round 1, research section 6): thin records say so as a fact next to the quick_estimates or few_months reason,
   // whatever the answer (an ask included: the fact is true either way).
+  // 05.4 FIN-09 (D-24): the answer's month figure starts from Home's (the stricter reading's month, homeFigure), so the two differ by
+  // exactly what the purchase takes this month; the month_left_after fact says the same figure.
+  const afterBuy = rebased(chosen.result.afterBuy, homeFigure(p));
+  const sameMonth = (f: Fact): Fact => (f.code === 'month_left_after' ? { ...f, values: { ...f.values, left: afterBuy.month } } : f);
   const noFull = p.noFullMonth ? [...chosen.result.facts, { code: 'no_full_month' as const, values: {} }] : chosen.result.facts;
-  const facts = [...noFull, ...askDebts(p.inputs, chosen.result)];
-  return { ...chosen, result: { ...chosen.result, reasons, facts, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) } };
+  const facts = [...noFull, ...askDebts(p.inputs, chosen.result)].map(sameMonth);
+  return { ...chosen, result: { ...chosen.result, reasons, facts, afterBuy, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) } };
 }

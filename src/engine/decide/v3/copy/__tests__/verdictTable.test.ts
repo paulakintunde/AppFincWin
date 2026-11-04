@@ -173,6 +173,7 @@ describe('verdict table (I22 one code one text)', () => {
         'debt_interest_cost', 'debt_more', 'housing_cost', 'joint_loan_risk', 'debt_due_day_assumed', 'card_instead', 'ask_debts_not_recorded',
         'tight_floor', 'save_vs_borrow', 'net_covers_surprises', 'income_or_costs_first',
         'covered_from_savings', 'further_shortfall_runway', // 05.4 D-46
+        'earlier_money_from', // 05.4 D-44 (05.4-24)
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

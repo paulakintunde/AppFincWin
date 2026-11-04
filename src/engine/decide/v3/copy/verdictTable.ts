@@ -228,7 +228,19 @@ export const FACT_KEYS = Object.freeze({
   income_or_costs_first: 'decide.v3.fact.income_or_costs_first', // 05.4 D-48 (shared with D-46)
   covered_from_savings: 'decide.v3.fact.covered_from_savings', // 05.4 D-46 (05.4-23)
   further_shortfall_runway: 'decide.v3.fact.further_shortfall_runway', // 05.4 D-46 (05.4-23)
+  earlier_money_from: 'decide.v3.fact.earlier_money_from', // 05.4 D-44 (05.4-24)
 } as const satisfies Record<FactCode, string>);
+
+/**
+ * 05.4 FIN-09 / UX-02 (05.4-24, D-22): the after-purchase lines. A figure below 0 reads the Over line (D-106: overspent); the
+ * answer's afterBuy.lead says whether this month or the usual month leads (screens in 08.1).
+ */
+export const AFTER_BUY_KEYS = Object.freeze({
+  month: 'decide.v3.afterBuy.month',
+  monthOver: 'decide.v3.afterBuy.monthOver',
+  usualMonth: 'decide.v3.afterBuy.usualMonth',
+  usualMonthOver: 'decide.v3.afterBuy.usualMonthOver',
+});
 
 /**
  * 05.4 FIN-03 (D-38): the answers a fact offers. no_overdraft_limit asks whether the account has an overdraft; both actions open
@@ -392,6 +404,7 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   income_or_costs_first: [],
   covered_from_savings: ['savings', 'gap', 'covered', 'of'], // 05.4 D-46
   further_shortfall_runway: ['extra', 'covered', 'of'], // 05.4 D-46
+  earlier_money_from: ['amount', 'where'], // 05.4 D-44: where 'account' | 'savings' picks the copy variant
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({
@@ -424,7 +437,7 @@ export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> 
 export const COPY_RESOLVERS = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account', debtId: 'debt', missing: 'figure' } as const; // missing: 05.4 D-79, a MissingCode named by its decide.v3.missing copy
 
 /** Keys that pick a copy variant or identify a line; they need no placeholder of their own. */
-export const DISCRIMINATOR_KEYS = ['lineId', 'kind', 'unit', 'source', 'basis'] as const;
+export const DISCRIMINATOR_KEYS = ['lineId', 'kind', 'unit', 'source', 'basis', 'where'] as const; // where: 05.4 D-44 earlier_money_from
 
 /** D-48, D-49, D-54, D-58: a missing code's copy reads its placeholder values from this notice. */
 export const MISSING_VALUE_SOURCE = {

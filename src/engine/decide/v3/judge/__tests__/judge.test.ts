@@ -1068,7 +1068,7 @@ describe('D-38 available unspent money', () => {
     expect(factOf(r, 'unspent_held_back')).toEqual({ amount: 50_000 });
   });
 
-  it('D-46 fact order: month, unspent, held back, emergency, purchase, low month, why months, bridge', () => {
+  it('D-46 fact order: month, where the earlier money is (D-44, 05.4-24), unspent, held back, emergency, purchase, low month, why months, bridge', () => {
     const r = judge(
       input({
         month: leanMonth(),
@@ -1079,6 +1079,7 @@ describe('D-38 available unspent money', () => {
     );
     expect(r.facts.map((f) => f.code)).toEqual([
       'month_left_after',
+      'earlier_money_from',
       'unspent_before_after',
       'unspent_held_back',
       'emergency_untouched',

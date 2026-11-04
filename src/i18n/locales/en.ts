@@ -3715,6 +3715,10 @@ const en = {
         // 05.4 D-46 (05.4-23, QE-12): how long savings carry a Short each month gap, and with a further shortfall. Facts, never a push.
         covered_from_savings: 'The {{savings}} still there at the end of this month would cover the {{gap}} monthly gap for about {{covered}} of the {{of}} payments.',
         further_shortfall_runway: 'If each month were {{extra}} more overspent, it would cover about {{covered}} of the {{of}}.',
+        // 05.4 D-44 (05.4-24): money from earlier months the purchase uses, and where it is. where 'account' reads earlier_money_from,
+        // 'savings' reads earlier_money_from_savings. Spent money is never counted. D-106: no "left" or "short" for a month figure.
+        earlier_money_from: 'This uses {{amount}} of spare money from earlier months, still in your account.',
+        earlier_money_from_savings: 'This uses {{amount}} of extra savings from earlier months, in your savings account.',
         ask_debts_not_recorded_loan: 'No loan or other debt is recorded. Do you have one?',
         ask_debts_not_recorded_card: 'No card is recorded. Do you have one?',
         ask_debts_not_recorded_overdraft: 'No overdraft is recorded. Do you have one?',
@@ -3763,6 +3767,14 @@ const en = {
         no_overdraft_limit: '{{account}} would go {{below}} below {{zero}}. No overdraft limit is set for it. Does {{account}} have an overdraft?',
         ready_without_interest: 'This date does not count overdraft interest, because no rate is set.',
         clearing_first: 'Money below {{zero}} costs interest every day it stays there. Clearing it first lowers that cost.',
+      },
+      // 05.4 FIN-09 / UX-02 (05.4-24, D-22): the big figure after buying. month / monthOver read afterBuy.month (at or above 0 / below
+      // 0), usualMonth / usualMonthOver read afterBuy.usualMonth; afterBuy.lead says which leads. D-106: "overspent", never "short".
+      afterBuy: {
+        month: '{{monthName}} would still leave about {{amount}}.',
+        monthOver: '{{monthName}} would be about {{amount}} overspent.',
+        usualMonth: 'A usual month would leave about {{amount}} once payments start.',
+        usualMonthOver: 'A usual month would be about {{amount}} overspent once payments start.',
       },
       // 05.4 FIN-03 (D-38): the two answers to the no-limit question; both open the account's settings.
       factAction: {

@@ -3,7 +3,7 @@ import en from '../locales/en';
 import { DRAFT_COPY_KEYS } from '../copyStatus';
 import { UNDO_LABEL_KEYS } from '../../engine/undo/types';
 import { undoLabelText } from '../undoLabel';
-import { BASIS_KEYS, BASIS_REASON_KEYS, FACT_ACTION_KEYS, FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, READINESS_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
+import { AFTER_BUY_KEYS, BASIS_KEYS, BASIS_REASON_KEYS, FACT_ACTION_KEYS, FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, READINESS_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
 
 interface Leaf {
   path: string;
@@ -357,6 +357,8 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       'decide.v3.fact.lean_bridge_net', // 05.4 FIN-08: the low months dip into the safety net (source 'net')
       'decide.v3.fact.overdraft_repeat_no_rate',
       'decide.v3.fact.other_account_overdrawn_no_rate',
+      'decide.v3.fact.earlier_money_from_savings', // 05.4 D-44 (05.4-24): where 'savings'
+      ...Object.values(AFTER_BUY_KEYS), // 05.4 FIN-09 (05.4-24)
       ...Object.values(FACT_ACTION_KEYS).flatMap((a) => Object.values(a)),
       FOOTER_KEY,
     ];

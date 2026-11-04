@@ -1,9 +1,4 @@
 {
   "topic": "debts",
-  "red": [
-    {
-      "id": "DB-09",
-      "fixId": "FIN-09"
-    }
-  ]
+  "red": []
 }

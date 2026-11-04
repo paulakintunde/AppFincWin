@@ -2,55 +2,7 @@
   "topic": "borrowing",
   "red": [
     {
-      "id": "BR-01",
-      "fixId": "FIN-09"
-    },
-    {
-      "id": "BR-02",
-      "fixId": "FIN-09"
-    },
-    {
-      "id": "BR-03",
-      "fixId": "FIN-09"
-    },
-    {
-      "id": "BR-04",
-      "fixId": "FIN-09"
-    },
-    {
-      "id": "BR-05",
-      "fixId": "FIN-09"
-    },
-    {
       "id": "BR-06",
-      "fixId": "FIN-09"
-    },
-    {
-      "id": "BR-07",
-      "fixId": "FIN-09"
-    },
-    {
-      "id": "BR-08",
-      "fixId": "FIN-09"
-    },
-    {
-      "id": "BR-09",
-      "fixId": "FIN-09"
-    },
-    {
-      "id": "BR-10",
-      "fixId": "FIN-09"
-    },
-    {
-      "id": "BR-11",
-      "fixId": "FIN-09"
-    },
-    {
-      "id": "BR-14",
-      "fixId": "FIN-09"
-    },
-    {
-      "id": "BR-15",
       "fixId": "FIN-09"
     }
   ]

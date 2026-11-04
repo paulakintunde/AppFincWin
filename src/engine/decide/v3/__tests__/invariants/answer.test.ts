@@ -5,6 +5,7 @@
  */
 import { codesOf, restsOn } from '../helpers/restsOn';
 import fc from 'fast-check';
+import { laterThisMonth } from '../../afterBuy';
 import { planTotal } from '../../depletion';
 import { evaluate } from '../../evaluate';
 import { firstPaymentsToday } from '../../judge/purchase';
@@ -132,11 +133,17 @@ describe('end-to-end invariants through evaluate()', () => {
         else expect(has(noticesOf(ev.result), 'typical_short')).toBe(false);
         if (ev.month.monthLeft < 0) expect(has(noticesOf(ev.result), 'month_heading_short')).toBe(true);
         else expect(has(noticesOf(ev.result), 'month_heading_short')).toBe(false);
-        // Purchase facts report only the purchase's change: month left after = month left minus what the month funds.
+        // Purchase facts report only the purchase's change: month left after = month left minus what the month funds. 05.4-24 (FIN-09,
+        // D-22): the fact says afterBuy.month, which also takes the protected net money the split uses this month and a plan's later
+        // payments this month (I64 pins the whole relation to Home).
         const fact = ev.result.facts.find((f: Fact) => f.code === 'month_left_after');
         if (fact !== undefined) {
-          const fromMonth = ev.result.split.find((s) => s.source === 'month')?.amount ?? 0;
-          expect(fact.values.left).toBe(ev.month.monthLeft - fromMonth);
+          expect(fact.values.left).toBe(ev.result.afterBuy.month);
+          if (ev.result.split.length > 0 && ev.purchase !== null) {
+            const fromMonth = ev.result.split.filter((s) => s.source === 'month' || s.source === 'emergency').reduce((t, s) => t + s.amount, 0);
+            const later = ev.result.facts.some((f) => f.code === 'short_plan_from_cash') ? 0 : laterThisMonth(ev.purchase, inputs.asOf, ev.month.month);
+            expect(fact.values.left).toBe(ev.month.monthLeft - fromMonth - later);
+          }
         }
       }),
       RUNS

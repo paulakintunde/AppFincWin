@@ -59,6 +59,7 @@ import { costlyDebt, costlyFacts, debtFacts } from '../debts';
 import { depletionFacts, monthAlreadyShort, monthShortTier, planTotal } from '../depletion';
 import { askFact, borrowingFacts, cashFits, cashSoon, isExpensive, saveVsBorrow, saveVsBorrowFact, type PlanRate } from '../borrowing';
 import { paymentsInRange } from '../plan/schedule';
+import { afterBuyBlock, firstPaymentLater } from '../afterBuy';
 import { emergencyOf } from '../funds/emergency';
 import { NO_NET, fitVariant, netDip, type ResolvedNet } from '../safetyNet';
 import { isTight, isTightOneOff, monthlySpendingOf, tightFact, tightFloor } from '../tight';
@@ -766,6 +767,7 @@ export function judge(j: JudgeInput): Result {
     layers,
     confidence,
     parts,
+    afterBuy: afterBuyBlock({ month, asOf: j.inputs.asOf, purchase: p, fromThisMonth: null, byCash: false }),
   });
 
   if (oneRaw === null || oneRaw.code === 'needs_input') return asking({ oneOff: 'needs_input', monthly: null }, missing);
@@ -909,10 +911,17 @@ export function judge(j: JudgeInput): Result {
     const move = moveMoneyBy(j.account.withPurchase, mu(net.aboveSize + (code === 'fits_uses_net' ? net.usable : 0)));
     if (move !== null) facts.push({ code: 'move_money_by', values: { amount: move.amount, date: move.date } });
   }
-  // The month figure counts the protected net money the split takes this month (D-22: this month after its plans less the
-  // purchase); money above the size is spare savings, like earlier unspent money.
-  if (one.split.length > 0) {
-    facts.push({ code: 'month_left_after', values: { month: month.month, left: month.monthLeft - fromMonth - one.netUsed } });
+  // 05.4 FIN-09 (afterBuy.ts, D-22): the month figure is this month after its plans less what the purchase takes from this month:
+  // the split's month and protected net parts when the answer keeps a split, else the day-one cost; a plan also loses its later
+  // payments this month. Money from earlier months is not this month's: it is named, with where it is (D-44).
+  const kept = keepSplit ? split : [];
+  const fromThisMonth = kept.length === 0 ? null : mu(kept.reduce((t, s) => t + (s.source === 'month' || s.source === 'emergency' ? s.amount : 0), 0));
+  const afterBuy = afterBuyBlock({ month, asOf: j.inputs.asOf, purchase, fromThisMonth, byCash: cashPlan !== null });
+  if (one.split.length > 0) facts.push({ code: 'month_left_after', values: { month: month.month, left: afterBuy.month } });
+  // every split segment is above 0 (the ladder and sourceSplit drop empty ones)
+  for (const s of kept) {
+    if (s.source === 'unspent_earlier') facts.push({ code: 'earlier_money_from', values: { amount: s.amount, where: 'account' } });
+    if (s.source === 'extra_savings') facts.push({ code: 'earlier_money_from', values: { amount: s.amount, where: 'savings' } });
   }
   // What would leave unspent if it were bought: this month and earlier money, never the envelope or the net.
   const unspentAfter = unspentValue === null ? null : mu(unspentValue - (dayOne - fromEnvelope - one.netTaken));
@@ -1019,11 +1028,12 @@ export function judge(j: JudgeInput): Result {
     facts: [...lead, ...facts],
     notices: mon === null ? notices : [...notices, ...mon.notices],
     missing: [],
-    reasons: said === null ? reasons : unique([...reasons, ...said.reasons]),
+    reasons: unique([...(said === null ? reasons : [...reasons, ...said.reasons]), ...(cashPlan === null && firstPaymentLater(purchase, month.month) ? (['first_payment_later'] as const) : [])]),
     readyBy: alreadyShort ? null : readyBy,
     band,
     layers,
     confidence: restsOn ? withReason(confidence, 'user_said_cover', (said as MonthlyPart).saidCover as { monthly: number; months: number }) : confidence,
     parts: { oneOff: one.code, monthly: mon === null ? null : mon.code },
+    afterBuy,
   };
 }

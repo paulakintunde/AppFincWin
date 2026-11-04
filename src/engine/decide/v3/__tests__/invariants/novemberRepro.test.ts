@@ -22,6 +22,7 @@
  * The fix (05.4-24 Task 2) is in the last block: Home and the answer read one month figure (afterBuy.ts).
  */
 import { minorUnits } from '../../../../money/types';
+import { homeFigure } from '../../afterBuy';
 import { judgeCheck, prepare } from '../../prepare';
 import type { CheckV2 } from '../../types';
 import { checkOnce, inputsOf, monthOf, v3Line, v3Series } from '../helpers/fixtures';
@@ -38,7 +39,7 @@ function novemberPerson(): ReturnType<typeof inputsOf> {
       m,
       [
         v3Line({ id: `p-${m}`, date: `${m}-25`, amount: 400_000, role: 'income', seriesId: 'pay' }),
-        v3Line({ id: `r-${m}`, date: `${m}-03`, amount: 150_000, role: 'bill', seriesId: 'rent' }),
+        v3Line({ id: `r-${m}`, date: `${m}-03`, amount: 150_000, seriesId: 'rent' }),
         v3Line({ id: `e-${m}`, date: `${m}-12`, amount: thin ? 450_000 : 180_000 }),
       ],
       { full: !thin }
@@ -46,7 +47,7 @@ function novemberPerson(): ReturnType<typeof inputsOf> {
   });
   const nov = monthOf(
     '2026-11',
-    [v3Line({ id: 'r-nov', date: '2026-11-03', amount: 150_000, role: 'bill', seriesId: 'rent' }), v3Line({ id: 'e-nov', date: '2026-11-08', amount: 60_000 })],
+    [v3Line({ id: 'r-nov', date: '2026-11-03', amount: 150_000, seriesId: 'rent' }), v3Line({ id: 'e-nov', date: '2026-11-08', amount: 60_000 })],
     { full: false }
   );
   return inputsOf({ asOf: '2026-11-15', series: [pay, rent], months: [...months, nov], balance: mu(300_000), unspent: { amount: mu(300_000), at: '2026-11-15' } });
@@ -88,5 +89,27 @@ describe('05.4-24 the November mismatch, reproduced (invented person)', () => {
     const heading = answer.result.notices.find((n) => n.code === 'month_heading_short');
     expect(heading?.values['short']).toBe(-answer.month.monthLeft);
     expect(home.month.monthLeft).toBe(p.readings[0]!.month.monthLeft);
+  });
+});
+
+describe('05.4-24 the November mismatch is gone (regression)', () => {
+  const p = prepare(novemberPerson());
+
+  it('Home reads the stricter month figure, and the $35 answer differs from it by exactly the price', () => {
+    const home = homeFigure(p);
+    expect(home).toBe(-200_000);
+    const answer = judgeCheck(p, checkOnce(PRICE)).result;
+    expect(answer.afterBuy.before).toBe(home);
+    expect(home - answer.afterBuy.month).toBe(PRICE);
+    expect(answer.facts.find((f) => f.code === 'month_left_after')?.values['left'] ?? answer.afterBuy.month).toBe(answer.afterBuy.month);
+  });
+
+  it('every price starts from the Home figure, and the no-price ask shows it', () => {
+    // Whichever reading decides the code for a price, the figure starts from Home's.
+    for (const price of [0, 100, PRICE, 60_000]) {
+      const r = judgeCheck(p, checkOnce(price)).result;
+      expect({ price, before: r.afterBuy.before }).toEqual({ price, before: homeFigure(p) });
+    }
+    expect(judgeCheck(p, NO_PRICE).result.afterBuy).toMatchObject({ before: -200_000, month: -200_000 });
   });
 });

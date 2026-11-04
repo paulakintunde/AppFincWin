@@ -17,6 +17,7 @@ import type {
 
 // Final surface (05.1-30). Extend here when the barrel grows.
 export const V3_RUNTIME_EXPORTS = [
+  'AFTER_BUY_KEYS', // 05.4-24 FIN-09
   'AMOUNT_TOLERANCE_DIVISOR',
   'BAND_EDGES_USD',
   'BASIS_KEYS',
@@ -125,6 +126,7 @@ export const V3_RUNTIME_EXPORTS = [
   'evaluate',
   'everydayByMonth',
   'explore',
+  'homeFigure', // 05.4-24 FIN-09 (D-24): Decide Home's month figure
   'homeThresholds',
   'insteadFutures',
   'insteadLinkFor',
@@ -135,6 +137,7 @@ export const V3_RUNTIME_EXPORTS = [
   'legacyLimits',
   'legacyStateOf',
   'liveEmergencyOf',
+  'monthAfterPlans', // 05.4-24 FIN-09 (D-22)
   'monthlyEquivalentOf',
   'myShareOf',
   'parseCheckV2',
