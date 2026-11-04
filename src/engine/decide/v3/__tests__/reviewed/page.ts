@@ -902,6 +902,7 @@ const READS: Readonly<Record<string, (c: CorpusCase) => boolean>> = {
   'FIN-11': (c) => longBillsOf(c.inputs).length > 0,
   'FIN-11b': (c) => longBillsOf(c.inputs).length > 0, // D-70
   'ENG-11': (c) => c.inputs.typedEstimates !== null, // 05.4-57: every check with quick estimates, changed or not
+  'ENG-11b': (c) => c.inputs.typedEstimates !== null, // 05.4-57 D-74
 };
 
 /**
@@ -1010,7 +1011,7 @@ export function buildPage(fixId: string, changes: readonly ReviewedChange[], cas
     `<p>Audit: ${esc(verdictLine)}. Each change shows its Audit box first, then the full breakdown.</p>` +
     section('Stricter', groups.stricter, false) + section('Looser', groups.looser, false) + section('Same answer, detail changed', groups.detail, false) +
     (fixId === 'FIN-10' ? countedOnceHtml() : '') +
-    (fixId === 'ENG-11' ? quickEstimateCasesHtml() : '') +
+    (fixId === 'ENG-11' || fixId === 'ENG-11b' ? quickEstimateCasesHtml() : '') +
     readsHtml
   );
 }
