@@ -10,6 +10,7 @@ import { yearMonthOf } from '../dates';
 import { monthlyEquivalentOf } from '../plan/cadence';
 import type { AlwaysOtherSeries, IncomePicture, MonthModel, Notice, NoticeCode, ReasonCode, V3Inputs } from '../types';
 import { confidenceOf } from '../confidence/reasons';
+import { debtsInMonth } from '../debts';
 import { dueDrops } from './dueDrops';
 import { incomeThisMonth, typicalIncome, type IncomeInput } from './incomeProfile';
 import {
@@ -29,11 +30,14 @@ import { liveSeriesOf } from './series';
 import { thisMonth } from './thisMonth';
 import { typicalOf } from './typical';
 
-/** Debt minimums + fixed saving/investing + envelope set-asides. Flexible saving is explorer-only (excluded). */
+/**
+ * Debt minimums + fixed saving/investing + envelope set-asides. Flexible saving is explorer-only (excluded). 05.4 FIN-10 (DB-07): a
+ * minimum paid through a bill series is in the usual bills already, so it is set aside once (debtsInMonth).
+ */
 export function setAsideOf(inputs: V3Inputs): MinorUnits {
   let total = 0n;
   let fixedSaving = 0n;
-  for (const d of inputs.debts) total += BigInt(d.minimum);
+  for (const d of debtsInMonth(inputs.debts, inputs.series, inputs.asOf)) total += BigInt(d.minimum);
   for (const role of ['saving', 'investing'] as const) {
     for (const s of liveSeriesOf(inputs.series, inputs.asOf, role)) {
       if (s.savingMode === 'flexible') continue;

@@ -33,6 +33,8 @@ export const VERDICT_TABLE = Object.freeze({
   'fits_unspent.small_net': row('fitsSmallNet', 'caution'),
   // 05.4 D-62: paid in part from money saved above the safety net's size.
   'fits_unspent.extra_savings': row('fitsUnspentExtraSavings', 'fits'),
+  // 05.4 D-39b: money saved in earlier months goes on this while a debt at 20% APR or more remains.
+  'fits_unspent.costly_debt': row('fitsUnspentCostlyDebt', 'caution'),
   // 05.4 D-63: the usual month is already short before the purchase: "No: your month is already short", on any answer but an ask.
   'fits_month.month_already_short': row('monthAlreadyShort', 'short'),
   'fits_unspent.month_already_short': row('monthAlreadyShort', 'short'),
@@ -68,8 +70,8 @@ export type VerdictRowKey = keyof typeof VERDICT_TABLE;
 const FITS_VARIANTS = ['low_month', 'no_net', 'small_net'] as const;
 type FitsVariant = (typeof FITS_VARIANTS)[number];
 const isFitsVariant = (v: Variant | null): v is FitsVariant => v !== null && (FITS_VARIANTS as readonly string[]).includes(v);
-/** fits_unspent also has extra_savings (D-62). */
-const UNSPENT_VARIANTS = [...FITS_VARIANTS, 'extra_savings'] as const;
+/** fits_unspent also has extra_savings (D-62) and costly_debt (D-39b). */
+const UNSPENT_VARIANTS = [...FITS_VARIANTS, 'extra_savings', 'costly_debt'] as const;
 type UnspentVariant = (typeof UNSPENT_VARIANTS)[number];
 const isUnspentVariant = (v: Variant | null): v is UnspentVariant => v !== null && (UNSPENT_VARIANTS as readonly string[]).includes(v);
 
@@ -186,6 +188,14 @@ export const FACT_KEYS = Object.freeze({
   month_short_fits: 'decide.v3.fact.month_short_fits',
   money_lasts_shorter: 'decide.v3.fact.money_lasts_shorter',
   short_plan_from_cash: 'decide.v3.fact.short_plan_from_cash', // 05.4 D-68
+  // 05.4 FIN-04 / FIN-10 / FIN-14 (05.4-20; D-08, D-39b, D-43)
+  debt_interest_cost: 'decide.v3.fact.debt_interest_cost',
+  debt_more: 'decide.v3.fact.debt_more',
+  housing_cost: 'decide.v3.fact.housing_cost',
+  joint_loan_risk: 'decide.v3.fact.joint_loan_risk',
+  debt_due_day_assumed: 'decide.v3.fact.debt_due_day_assumed',
+  card_instead: 'decide.v3.fact.card_instead',
+  ask_debts_not_recorded: 'decide.v3.fact.ask_debts_not_recorded',
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -194,6 +204,9 @@ export const FACT_KEYS = Object.freeze({
  */
 export const FACT_ACTION_KEYS = Object.freeze({
   no_overdraft_limit: { addLimit: 'decide.v3.factAction.addLimit', noOverdraft: 'decide.v3.factAction.noOverdraft' },
+  // 05.4 FIN-04 (DB-02): opens the debt's settings. D-43 (QE-01, QE-13): ask, don't block.
+  debt_due_day_assumed: { setDueDay: 'decide.v3.factAction.setDueDay' },
+  ask_debts_not_recorded: { addIt: 'decide.v3.factAction.addIt', none: 'decide.v3.factAction.none' },
 } as const satisfies Partial<Record<FactCode, Readonly<Record<string, string>>>>);
 
 export const MISSING_KEYS = Object.freeze({
@@ -326,6 +339,15 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   month_short_fits: ['price', 'money', 'short'],
   money_lasts_shorter: ['months', 'monthsAfter'],
   short_plan_from_cash: ['monthly'], // 05.4 D-68
+  // 05.4 FIN-04 / FIN-10 / FIN-14. apr is readable decimal text ("24.9"); share is a whole percent; debtId resolves to the debt's
+  // name; kind picks the ask's copy variant ('all', or the missing ones: 'loan', 'card', 'overdraft', joined by '_').
+  debt_interest_cost: ['balance', 'apr', 'monthlyInterest'],
+  debt_more: ['count'],
+  housing_cost: ['amount', 'pay', 'share'],
+  joint_loan_risk: [],
+  debt_due_day_assumed: ['debtId', 'amount'],
+  card_instead: ['price', 'saved'],
+  ask_debts_not_recorded: ['kind'],
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({
@@ -354,7 +376,7 @@ export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> 
 });
 
 /** An id the engine emits that the UI resolves to a name; the copy placeholder is the value. */
-export const COPY_RESOLVERS = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account' } as const;
+export const COPY_RESOLVERS = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account', debtId: 'debt' } as const;
 
 /** Keys that pick a copy variant or identify a line; they need no placeholder of their own. */
 export const DISCRIMINATOR_KEYS = ['lineId', 'kind', 'unit', 'source'] as const;

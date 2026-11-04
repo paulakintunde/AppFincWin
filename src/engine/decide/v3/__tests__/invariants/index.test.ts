@@ -1,6 +1,6 @@
 /**
- * SC-6 coverage index (05.1-27, T-05.1-55): every invariant I1..I54 has at least one test whose title starts with its id.
- * Named properties (05.4-12 revision notes section 4: I-limit, I-saved and I-D41 here; I-DB05 in a later plan) are listed
+ * SC-6 coverage index (05.1-27, T-05.1-55): every invariant I1..I56 has at least one test whose title starts with its id.
+ * Named properties (05.4-12 revision notes section 4: I-limit, I-saved and I-D41 here; I-DB05 from 05.4-20) are listed
  * apart in NAMED_IDS, so the numbered IDS lengths in later plans stay as written.
  * A missing id fails here by name. I24 is retired (CONTEXT: v2's I24 and protection months are superseded) and keeps its
  * number through a documented test below. I28 (the back-test) lives in 05.1-29; until its folder exists it is listed as
@@ -15,8 +15,8 @@ const SNAPSHOT_V3 = join(ROOT, 'src/features/decide/snapshot/v3');
 const COPY_TEST = join(ROOT, 'src/i18n/__tests__/decideCopy.test.ts');
 
 const TITLE = /(it|test|describe)(\.each\([^)]*\))?\(\s*['"`]I(\d+)\b/g;
-const IDS = Array.from({ length: 54 }, (_, i) => i + 1);
-const NAMED_IDS: readonly string[] = ['I-limit', 'I-saved', 'I-D41', 'I-D52', 'I-D61', 'I-D56', 'I-D54', 'I-D65', 'I-D68'];
+const IDS = Array.from({ length: 56 }, (_, i) => i + 1);
+const NAMED_IDS: readonly string[] = ['I-limit', 'I-saved', 'I-D41', 'I-D52', 'I-D61', 'I-D56', 'I-D54', 'I-D65', 'I-D68', 'I-DB05'];
 const NAMED_TITLE = /(it|test|describe)(\.each\([^)]*\))?\(\s*['"`](I-[A-Za-z0-9]+)\b/g;
 
 /** Ids that may be absent only while the folder that will carry them does not exist yet. */

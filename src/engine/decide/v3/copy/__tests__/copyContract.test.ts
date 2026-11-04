@@ -233,6 +233,16 @@ function buildCorpus(): Emitted[] {
   });
   collect(out, noPay(sam), checkOnce(10_000));
   collect(out, { ...noPay(sam), payArrivals: [{ seriesId: 'sam-pay', date: '2026-10-01', arrived: false }] }, checkOnce(10_000));
+  // 05.4-20 (FIN-04, FIN-10, FIN-14, D-43): every debts case and QE-01 / QE-13 (each debt fact and the ask), and DB-08 with a third
+  // costly debt (debt_more).
+  for (const c of loadCases().filter((x) => x.topic === 'debts' || x.id === 'QE-01' || x.id === 'QE-13')) {
+    const { inputs, check } = toEngineInputs(c.fixture);
+    collect(out, { ...inputs, factLines: true }, check);
+    if (c.id === 'DB-08') {
+      const extra = { id: 'd-extra', kind: 'other' as const, balance: mu(300_000), minimum: mu(5_000), apr: percent('39.9'), secured: false, isHousing: false, dueDay: 28 };
+      collect(out, { ...inputs, factLines: true, debts: [...inputs.debts, extra] }, check);
+    }
+  }
   // 05.4 FIN-03: every approved overdraft case (each overdraft fact), and each with no rates set (the _no_rate values).
   for (const c of loadCases().filter((x) => x.topic === 'overdraft')) {
     const { inputs, check } = toEngineInputs(c.fixture);

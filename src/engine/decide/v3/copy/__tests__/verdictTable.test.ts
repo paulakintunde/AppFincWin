@@ -18,6 +18,7 @@ describe('verdict table (I22 one code one text)', () => {
         'fits_month', 'fits_month.low_month', 'fits_unspent', 'fits_unspent.low_month', 'not_yet.payday', 'not_yet.not_covered', 'monthly_short', 'emergency_use', 'needs_input', 'fits_uses_overdraft', 'fits_uses_overdraft.not_cleared',
         'fits_month.no_net', 'fits_month.small_net', 'fits_unspent.no_net', 'fits_unspent.small_net', 'fits_uses_net', 'fits_uses_net.protection_off',
         'fits_unspent.extra_savings',
+        'fits_unspent.costly_debt',
         'fits_month.month_already_short', 'fits_unspent.month_already_short', 'fits_uses_net.month_already_short', 'fits_uses_overdraft.month_already_short',
         'monthly_short.month_already_short', 'not_yet.month_already_short', 'emergency_use.month_already_short',
         'fits_month.month_short_small', 'fits_unspent.month_short_small', 'fits_month.month_short_moderate', 'fits_unspent.month_short_moderate',
@@ -133,6 +134,7 @@ describe('verdict table (I22 one code one text)', () => {
         'bills_held_back', 'yearly_bill_ahead', 'net_locked', 'extra_savings_used', 'net_two_months', 'move_money_by',
         'usual_month_short', 'depletion_payment', 'plan_makes_short', 'price_over_net', 'net_lasts', 'net_lasts_without', 'interest_is_a_cost',
         'balanced_month_room', 'month_balance_gap', 'month_short_fits', 'money_lasts_shorter', 'short_plan_from_cash',
+        'debt_interest_cost', 'debt_more', 'housing_cost', 'joint_loan_risk', 'debt_due_day_assumed', 'card_instead', 'ask_debts_not_recorded',
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

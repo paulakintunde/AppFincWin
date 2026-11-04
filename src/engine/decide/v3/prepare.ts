@@ -11,6 +11,7 @@ import { minorUnits, type MinorUnits } from '../../money/types';
 import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { mergeConfidence } from './confidence/reasons';
 import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, withNet, type CashCheck, type OpenCashPath } from './cash/path';
+import { debtOutflows, debtsInMonth, debtsNotRecorded, dueDayFacts, type DebtOutflows } from './debts';
 import { essentialCosts, essentialSpendingOf } from './essentialCosts';
 import { resolveSafetyNet, type ResolvedNet } from './safetyNet';
 import { overdraftFloor } from './overdraft';
@@ -35,7 +36,7 @@ import { liveSeriesOf, seriesOccurrences } from './month/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './month/settle';
 import type { PlanCard } from './plan/planCard';
 import type { QuotedCheck } from './plan/quoted';
-import type { CheckV2, Funds, MonthModel, Notice, Purchase, ReadyBy, ReasonCode, Result, V3Inputs, YearMonth } from './types';
+import type { CheckV2, Fact, Funds, MonthModel, Notice, Purchase, ReadyBy, ReasonCode, Result, V3Inputs, YearMonth } from './types';
 
 export interface Evaluation {
   readonly result: Result;
@@ -166,6 +167,8 @@ interface Reading {
   readonly hp: HistoryPay | null;
   /** 05.4 D-56: what the everyday accounts are expected to hold at month end with no purchase (D-67: after the regular saving still to move); spare money is capped at it. */
   readonly spareInAccount: MinorUnits;
+  /** 05.4 FIN-04 (DB-02): the minimums counted as due tomorrow because no due day is set. */
+  readonly assumed: DebtOutflows['assumed'];
 }
 
 export interface Prepared {
@@ -189,6 +192,9 @@ function readingOf(inputs: V3Inputs): Reading {
   // 05.4 D-67: the regular saving / investing transfers leave the everyday account everywhere: the open path takes them, so the
   // main cash path, the month-end figure (spareInAccount, the D-56 cap) and the account-only move-by path (D-58) all do.
   const savings = savingTransfers(inputs.series, savedOccurrences(inputs), inputs.asOf, CASH_PATH_DAYS_V3);
+  // 05.4 FIN-04: card and loan minimums on their due dates, each once (a minimum paid through a series lands through it).
+  const ym = yearMonthOf(inputs.asOf);
+  const debts = debtOutflows(inputs, inputs.months.find((m) => m.month === ym)?.lines ?? [], CASH_PATH_DAYS_V3);
   const open = openCashPath({
     asOf: inputs.asOf,
     days: CASH_PATH_DAYS_V3,
@@ -200,6 +206,7 @@ function readingOf(inputs: V3Inputs): Reading {
     drops: dueDrops(inputs), // 05.3-64 (D-27, D-31, skips): the same rule as the month model and unspent
     extraPays: histDates.map((date) => ({ date, amount: (hp as HistoryPay).amount })),
     savings,
+    debts: debts.flows,
   });
   // history pay exists only with no live pay series, so the two never both give a date: the first history date, else the series'.
   const payDate = histDates[0] ?? nextPayDate(inputs.series, inputs.asOf);
@@ -211,9 +218,10 @@ function readingOf(inputs: V3Inputs): Reading {
     payDate,
     floor: overdraftFloor(inputs.accounts),
     paydays: [...new Set([...payDatesIn(inputs.series, inputs.asOf, CASH_PATH_DAYS_V3), ...histDates])].sort(),
-    net: resolveSafetyNet(inputs, essentialCosts(month, inputs.debts, essentialSpendingOf(inputs, month))),
+    net: resolveSafetyNet(inputs, essentialCosts(month, debtsInMonth(inputs.debts, inputs.series, inputs.asOf), essentialSpendingOf(inputs, month))), // D-51: a minimum counted once
     hp,
     spareInAccount: spareInAccount(open, funds.spending),
+    assumed: debts.assumed,
   };
 }
 
@@ -253,7 +261,10 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
   const extra: Notice[] = [];
   if (r.hp !== null && r.hp.amount > 0) extra.push({ code: 'pay_expected_from_history', values: { amount: r.hp.amount, day: r.hp.day, months: r.hp.months } });
   if (path.capped !== undefined) extra.push({ code: 'pay_capped_expected', values: { capped: path.capped } });
-  const result: Result = extra.length === 0 ? judged : { ...judged, notices: [...judged.notices, ...extra] };
+  // 05.4 FIN-04 (DB-02): a minimum with no due day is counted as due tomorrow; the answer says so, as a reason and as a fact.
+  const assumed = judged.code === 'needs_input' ? [] : r.assumed;
+  const dated: Result = assumed.length === 0 ? judged : { ...judged, reasons: [...judged.reasons, 'debt_due_day_assumed'], facts: [...judged.facts, ...dueDayFacts(assumed)] };
+  const result: Result = extra.length === 0 ? dated : { ...dated, notices: [...dated.notices, ...extra] };
   // D-48: a declined cover is not_yet with the Instead futures attached at once. The user's own deposit rate is a UI choice
   // (05.3); the payment-stream comparison does not need it.
   const futures =
@@ -306,6 +317,19 @@ export function prepare(raw: V3Inputs): Prepared {
   return { inputs, readings, readiness: readinessOf(inputs, first.month), recordsSynced: recordsSynced(inputs), noFullMonth };
 }
 
+/**
+ * 05.4 D-43 (QE-01, QE-13): an answer that rests on quick estimates or thin records asks about the loans, cards and overdraft that
+ * are not recorded: a fact, never the code (ask, don't block). An overdraft the answer already asks about (no_overdraft_limit, D-38)
+ * is not asked twice. Asks (needs_input) carry it not.
+ */
+function askDebts(inputs: V3Inputs, r: Result): Fact[] {
+  const thin = r.confidence.basis.kind === 'quick_estimates' || r.confidence.basis.kind === 'partial';
+  if (!thin || r.code === 'needs_input') return [];
+  const asked = r.facts.some((f) => f.code === 'no_overdraft_limit');
+  const kind = debtsNotRecorded(asked ? { debts: inputs.debts } : inputs);
+  return kind === null ? [] : [{ code: 'ask_debts_not_recorded', values: { kind } }];
+}
+
 /** Per key press: purchase -> cash -> judge on each prepared reading, the stricter kept (D-42). */
 export function judgeCheck(p: Prepared, check: CheckV2): Evaluation {
   const [first, second] = p.readings as readonly [Reading, Reading | undefined];
@@ -317,6 +341,7 @@ export function judgeCheck(p: Prepared, check: CheckV2): Evaluation {
   const asOf = p.inputs.recordsAsOf;
   // 05.4 FIN-25 (round 1, research section 6): thin records say so as a fact next to the quick_estimates or few_months reason,
   // whatever the answer (an ask included: the fact is true either way).
-  const facts = p.noFullMonth ? [...chosen.result.facts, { code: 'no_full_month' as const, values: {} }] : chosen.result.facts;
+  const noFull = p.noFullMonth ? [...chosen.result.facts, { code: 'no_full_month' as const, values: {} }] : chosen.result.facts;
+  const facts = [...noFull, ...askDebts(p.inputs, chosen.result)];
   return { ...chosen, result: { ...chosen.result, reasons, facts, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) } };
 }

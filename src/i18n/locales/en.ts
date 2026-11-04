@@ -3579,6 +3579,12 @@ const en = {
           title: 'This fits from your extra savings.',
           body: 'From your extra savings: uses {{used}} of the {{above}} above your safety net’s size.',
         },
+        // 05.4 D-39b: money saved in earlier months goes on this while a debt at 20% APR or more remains. Declarative only.
+        fitsUnspentCostlyDebt: {
+          chip: 'Fits, but you carry costly debt',
+          title: 'This fits, but you carry costly debt.',
+          body: 'You carry {{balance}} at {{apr}}%. That costs about {{monthly}} a month in interest.',
+        },
         fitsSmallNet: {
           chip: 'Fits, but your safety net is small',
           title: 'This fits, and your safety net is below its size.',
@@ -3646,6 +3652,20 @@ const en = {
         money_lasts_shorter: 'This shortens how long your money lasts at this shortfall, from {{months}} months to {{monthsAfter}}.',
         // 05.4 D-68: a short plan paid from money on hand. Declarative only.
         short_plan_from_cash: 'This plan’s {{monthly}} a month is more than your usual month can cover, so it is paid from money on hand.',
+        // 05.4 FIN-04 / FIN-10 / FIN-14 (D-08, D-39b, D-43). Facts only; declarative only.
+        debt_interest_cost: 'You carry {{balance}} at {{apr}}%. That costs about {{monthlyInterest}} a month in interest.',
+        debt_more: 'And {{count}} more.',
+        housing_cost: 'Housing takes {{amount}} of your {{pay}} pay, {{share}}%.',
+        joint_loan_risk: 'If this plan is in both names, each person named on it can be asked to pay all of it.',
+        debt_due_day_assumed: 'Your {{debt}} minimum of {{amount}} is counted as due tomorrow, because its due day is not set.',
+        card_instead: 'Putting this {{price}} toward the card instead would cut its interest by about {{saved}} a month.',
+        ask_debts_not_recorded: 'No loan, card, other debt or overdraft is recorded. Do you have any?',
+        ask_debts_not_recorded_loan: 'No loan or other debt is recorded. Do you have one?',
+        ask_debts_not_recorded_card: 'No card is recorded. Do you have one?',
+        ask_debts_not_recorded_overdraft: 'No overdraft is recorded. Do you have one?',
+        ask_debts_not_recorded_loan_card: 'No loan, card or other debt is recorded. Do you have any?',
+        ask_debts_not_recorded_loan_overdraft: 'No loan or overdraft is recorded. Do you have one?',
+        ask_debts_not_recorded_card_overdraft: 'No card or overdraft is recorded. Do you have one?',
         wait_keeps_net: 'Waiting until {{date}} keeps your safety net whole.',
         wait_keeps_net_month: 'Waiting until {{month}} keeps your safety net whole.',
         need_net_line: 'Marked as a need. A safety net is money kept for needs like this.',
@@ -3691,6 +3711,10 @@ const en = {
       factAction: {
         addLimit: 'Add limit',
         noOverdraft: 'No overdraft',
+        // 05.4 FIN-04 (DB-02) and D-43: set a debt's due day; say whether a loan, card or overdraft is missing.
+        setDueDay: 'Set due day',
+        addIt: 'Add it',
+        none: 'None',
       },
       // 05.4 UX-04 / CMP-F12: the one plain sentence under every answer, never more confident than the answer.
       basis: {

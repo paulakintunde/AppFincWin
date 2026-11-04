@@ -21,6 +21,8 @@
  * 05.4 ENG-02: unspent and month left are signed; a negative unspent figure needs that much more before it is ready.
  * Overdraft (05.4 FIN-03, D-26..D-28, D-36..D-38): a 90-day low point below 0 but not past the overdraft floor turns any fit
  * into fits_uses_overdraft (variant not_cleared when the next pay does not clear it); past the floor is not_yet (D-27).
+ * Debts (05.4 FIN-04, FIN-10, D-39b): minimums are on the cash path (debts.ts). A fits_unspent that uses money saved in earlier
+ * months while a debt at 20% APR or more remains is costly_debt; the debt and housing fact lines never change the answer.
  * Monthly part: typicalLeft - M < 0 -> monthly_short; lowLeft - M < 0 -> fits with the low-month clause (I23).
  * D-68 (judge/shortPlan.ts): a plan whose payments all fall inside the 90 days, with no running cost, whose monthly part does not
  * fit and whose whole cost the one-off ladder covers as a cash fit on the dated path, is judged as that one-off; the monthly part
@@ -43,6 +45,7 @@ import { CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_
 import { addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck, CashPathV3 } from '../cash/path';
 import { billsHeldTotal, cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit } from '../moneySource';
+import { costlyDebt, costlyFacts, debtFacts } from '../debts';
 import { depletionFacts, monthAlreadyShort, monthShortTier } from '../depletion';
 import { emergencyOf } from '../funds/emergency';
 import { NO_NET, fitVariant, netDip, type ResolvedNet } from '../safetyNet';
@@ -655,7 +658,12 @@ export function judge(j: JudgeInput): Result {
   const fromExtra = split.find((s) => s.source === 'extra_savings')?.amount ?? 0;
   // D-62: a fit paid in part from extra savings is "Fits from extra savings" (on fits_unspent only).
   const extraV = code === 'fits_unspent' && fromExtra > 0 ? (['extra_savings'] as const) : [];
-  const fitV = fitVariant([...(lowClause ? (['low_month'] as const) : []), ...extraV, ...(netState === null ? [] : [netState])]).variant;
+  // 05.4 D-39b: money saved in earlier months (spare money or extra savings, D-56) goes on a fit while a debt at 20% APR or more
+  // remains: amber "Fits, but you carry costly debt". This month's spare money alone stays green (DB-11). A caution rule, so the
+  // fact-lines switch never hides it or its own facts (I-DB05).
+  const costly = code === 'fits_unspent' ? costlyDebt(j.inputs.debts, fromEarlier + fromExtra) : null;
+  const costlyV = costly === null ? [] : (['costly_debt'] as const);
+  const fitV = fitVariant([...(lowClause ? (['low_month'] as const) : []), ...costlyV, ...extraV, ...(netState === null ? [] : [netState])]).variant;
   let variant: Variant | null = null;
   if (code === 'fits_uses_overdraft') variant = od?.variant ?? null;
   else if (code === 'fits_uses_net') variant = net.off ? 'protection_off' : null;
@@ -705,6 +713,8 @@ export function judge(j: JudgeInput): Result {
   // D-56 / D-62: the extra savings a fit uses, by name.
   const extraUsed = keepSplit && fromExtra > 0;
   if (extraUsed) facts.push({ code: 'extra_savings_used', values: { used: mu(fromExtra), above: net.aboveSize } });
+  // D-39b: the costly debt's monthly interest and, for a card, what the price would cut it by; shown whether or not costly_debt wins.
+  if (costly !== null) facts.push(...costlyFacts(costly, mu(dayOne)));
   // D-58: the everyday account alone goes below 0 with the purchase, and money in another account covers it.
   if (j.account != null && (code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_net')) {
     const move = moveMoneyBy(j.account.withPurchase, mu(net.aboveSize + (code === 'fits_uses_net' ? net.usable : 0)));
@@ -727,6 +737,8 @@ export function judge(j: JudgeInput): Result {
   facts.push(...netStateFacts(net, code, dips, extraUsed));
   if (fromEnvelope > 0) facts.push({ code: 'envelope_used', values: { used: fromEnvelope, envelopeId: purchase.envelopeId } });
   facts.push(...j.purchaseFacts);
+  // 05.4 D-08 (FIN-10, FIN-14): the debt and housing fact lines, on unless switched off; facts only, never the code or variant.
+  facts.push(...debtFacts(j.inputs.debts, month.typicalIncome, j.inputs.factLines !== false, costly?.id ?? null));
   if (variant === 'low_month' && month.low !== null) {
     // The low-month clause as a fact (v3 §12 #7, #22): the tight month, its leftover, and the monthly cost it cannot carry.
     facts.push({ code: 'low_month', values: { month: month.low.month, left: month.low.left, monthly: purchase.monthly } });

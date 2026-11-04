@@ -94,6 +94,7 @@ const CONTROL_LABELS = new Set([
   'decide.hint.foldTap', // reveal hint named in UI-SPEC as a control
   // 05-110 (R17.6): UI controls on the keyed list; none is a prescription about money
   'decide.v3.factAction.addLimit', // 05.4 FIN-03 (D-38): answer button to "Does Main have an overdraft?"
+  'decide.v3.factAction.addIt', // 05.4 D-43 (05.4-20): answer button to "No loan, card, other debt or overdraft is recorded. Do you have any?"
   'decide.home.field.check', // button: "Check it"
   'decide.home.field.full', // text link: "Full check"
   'decide.home.field.fullA11y', // the same link's accessibility label
@@ -338,6 +339,13 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       'decide.v3.fact.overdraft_use_no_rate',
       'decide.v3.fact.overdraft_without_purchase_above',
       'decide.v3.fact.overdraft_not_cleared_no_pay',
+      // 05.4 D-43 (05.4-20): the ask names only what is not recorded (the fact's kind picks the variant)
+      'decide.v3.fact.ask_debts_not_recorded_loan',
+      'decide.v3.fact.ask_debts_not_recorded_card',
+      'decide.v3.fact.ask_debts_not_recorded_overdraft',
+      'decide.v3.fact.ask_debts_not_recorded_loan_card',
+      'decide.v3.fact.ask_debts_not_recorded_loan_overdraft',
+      'decide.v3.fact.ask_debts_not_recorded_card_overdraft',
       'decide.v3.fact.overdraft_repeat_no_rate',
       'decide.v3.fact.other_account_overdrawn_no_rate',
       ...Object.values(FACT_ACTION_KEYS).flatMap((a) => Object.values(a)),

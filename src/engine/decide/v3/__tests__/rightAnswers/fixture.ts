@@ -263,7 +263,6 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
       { full: false }
     )
   );
-  // mapped when FIN-04 lands: debt dueDay and joint
   // mapped when BO-05 lands: plan first-payment choices beyond the engine's own
   // mapped when FIN-27 lands: region rules, check.taxIncluded
   // mapped when ENG-14 lands: check.runningCosts and check.closingPercent
@@ -271,7 +270,6 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   // mapped when FIN-08 lands: userLine, check.yourAnswer, check.saveForIt
   // mapped when FIN-09 lands: pay.lastThree and pay.setupAmount
   // mapped when FIN-08 / plan 05.4-23 lands: pay.lean (low months stated explicitly)
-  // mapped when FIN-04 lands: debt paidThisMonth (part of a minimum already paid)
   // mapped when FIN-05 / D-39c lands: check.pay.housing (a mortgage skips the 10% interest test)
   // 05.4 FIN-03: kind, overdraft limit and rate as stated (the engine reads a limit only on checking and current accounts).
   const accounts: V3Account[] = f.accounts.map((a) => ({
@@ -282,9 +280,25 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     overdraftLimit: a.overdraftLimit === null ? null : mu(a.overdraftLimit),
     overdraftRate: a.overdraftRate === null ? null : percent(a.overdraftRate),
   }));
-  const debts: V3Debt[] = f.debts.map((d) => ({
-    id: d.id, kind: d.kind, balance: mu(d.balance), minimum: mu(d.minimum), apr: d.apr === null ? null : percent(d.apr), secured: false, isHousing: d.housing === true,
-  }));
+  // 05.4-20 (FIN-04, FIN-10, FIN-14): due day, joint and the part already paid as stated. A debt the situation pays as one of its
+  // bills (DB-03, DB-04, DB-06, DB-07, DB-12: "pays her $300 card minimum as a monthly bill") is the bills list's monthly bill of
+  // the same amount on the same due day, paid by this person; the debt is linked to that bill's series, so it is counted once.
+  const debts: V3Debt[] = f.debts.map((d) => {
+    const bill = f.bills.find((b) => b.everyMonths === 1 && b.paidBy === 'me' && b.amount === d.minimum && d.dueDay !== null && Number(b.nextDue.slice(8, 10)) === d.dueDay);
+    return {
+      id: d.id,
+      kind: d.kind,
+      balance: mu(d.balance),
+      minimum: mu(d.minimum),
+      apr: d.apr === null ? null : percent(d.apr),
+      secured: false,
+      isHousing: d.housing === true,
+      dueDay: d.dueDay,
+      joint: d.joint,
+      ...(d.paidThisMonth === undefined ? {} : { paidThisMonth: mu(d.paidThisMonth) }),
+      ...(bill === undefined ? {} : { seriesId: `bill-${bill.id}` }),
+    };
+  });
   const spending = f.accounts.filter((a) => a.kind === 'checking' || a.kind === 'current').reduce((s, a) => s + a.balance, 0);
   const inputs0 = inputsOf({
     asOf: f.asOf,
@@ -308,6 +322,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     // 05.4 FIN-01 (D-35): the safety net as stated; null = no record (protection on, the starter size, nothing saved).
     safetyNet: f.safetyNet === null ? null : { protect: f.safetyNet.protect, size: f.safetyNet.size === null ? null : mu(f.safetyNet.size), saved: mu(f.safetyNet.saved), locked: f.safetyNet.locked },
     essentialCategoryIds: f.usualMonth.essentialEveryday > 0 ? [ESSENTIAL] : [],
+    factLines: f.factLines, // D-08 (05.4-20)
   });
   // 05.4-18: the confirmed unspent figure is the app's own suggested sum (spending money less the bills still due and the
   // everyday spending still to come), as a user who confirms it would see it. A raw balance would count this month's spending

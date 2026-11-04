@@ -6,7 +6,8 @@
  * Bills and debt payments sit on their real dates; only confirmed live pay lands (I3, I34). Debt payments are dated
  * money out that Erest does not contain (I19), so they are taken on their dates too. 05.4 D-67: the regular saving and
  * investing transfers out of the everyday account (moneySource.savingTransfers) are taken on their dates too (savings);
- * before D-67 they were left out as pausable. A due that dueDrops says no longer counts (05.3-64; D-27, D-31, skips) is not
+ * before D-67 they were left out as pausable. 05.4 FIN-04: card and loan minimums not paid through a series land on their due
+ * dates (debts.ts debtOutflows), each once. A due that dueDrops says no longer counts (05.3-64; D-27, D-31, skips) is not
  * taken, in any month of the path; one already settled by a paid line is skipped first.
  */
 import { divideHalfUp } from '../../../money/rounding';
@@ -85,6 +86,8 @@ export interface OpenCashPathInput {
   readonly extraPays?: readonly { readonly date: string; readonly amount: MinorUnits }[];
   /** 05.4 D-67: the regular saving / investing transfers still to leave the everyday account, on their dates. Absent = none. */
   readonly savings?: readonly DatedFlow[];
+  /** 05.4 FIN-04 (debts.ts debtOutflows): card and loan minimums not paid through a series, on their due dates. Absent = none. */
+  readonly debts?: readonly DatedFlow[];
 }
 
 function putFlow(net: bigint[], asOf: string, end: string, date: string, amount: bigint): void {
@@ -138,6 +141,7 @@ export function openCashPath(input: OpenCashPathInput): OpenCashPath {
     }
   }
   for (const f of input.savings ?? []) put(f.date, -BigInt(f.amount)); // D-67: saving leaves the everyday account everywhere
+  for (const f of input.debts ?? []) put(f.date, -BigInt(f.amount)); // FIN-04: each minimum on its due date, once
   const spread: bigint[] = [];
   for (let i = 0; i < days; i++) spread.push(spreadThrough(i, { erest: input.erest, e: input.e, asOf }));
   return { asOf, days, end, net, spread, capped };

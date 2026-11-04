@@ -2,44 +2,20 @@
   "topic": "debts",
   "red": [
     {
-      "id": "DB-01",
-      "fixId": "FIN-04"
-    },
-    {
       "id": "DB-02",
-      "fixId": "FIN-04"
+      "fixId": "FIN-07"
     },
     {
       "id": "DB-03",
-      "fixId": "FIN-04"
-    },
-    {
-      "id": "DB-04",
-      "fixId": "FIN-10"
-    },
-    {
-      "id": "DB-06",
-      "fixId": "FIN-14"
+      "fixId": "FIN-07"
     },
     {
       "id": "DB-07",
-      "fixId": "FIN-10"
-    },
-    {
-      "id": "DB-08",
-      "fixId": "FIN-04"
+      "fixId": "FIN-07"
     },
     {
       "id": "DB-09",
       "fixId": "FIN-05"
-    },
-    {
-      "id": "DB-11",
-      "fixId": "FIN-10"
-    },
-    {
-      "id": "DB-12",
-      "fixId": "FIN-10"
     }
   ]
 }

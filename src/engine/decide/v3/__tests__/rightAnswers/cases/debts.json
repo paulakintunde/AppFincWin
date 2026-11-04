@@ -176,7 +176,8 @@
       "why": "With the due day unknown, the earliest likely day (tomorrow, 16 November) is used, so the $300 counts this month and the timing cannot be too kind: $1,000 - $300 = $700 spare, and $700 - $600 = $100 left. The lowest point is $1,400 - $400 everyday spending - $300 - $600 = $100, above $0. But $100 is under the tight floor of $200 (a tenth of $1,200 bills + $800 everyday spending), so the answer is \"Fits, but tight\" (D-40). The assumption is a fact line, not only part of the confidence sentence: \"Your card minimum of $300 is counted as due tomorrow, because its due day is not set.\", with \"Set due day\". Nothing is saved in a safety net, so that line also shows as a fact.",
       "fixIds": [
         "FIN-04",
-        "ENG-01"
+        "ENG-01",
+        "FIN-07"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
@@ -276,7 +277,8 @@
       "why": "The card payment is already in this month's $1,500 of bills, so it is counted once: $700 - $600 = $100 left. $100 is under the tight floor of $230 (a tenth of $1,500 bills + $800 everyday spending), so the answer is \"Fits, but tight\" (D-40). Counting the card a second time as a debt would wrongly make this $400 spare and \"Not yet\"; that no-double-count test is the point of this case. Nothing is saved in a safety net, so that line shows as a fact.",
       "fixIds": [
         "FIN-04",
-        "ENG-01"
+        "ENG-01",
+        "FIN-07"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
@@ -604,7 +606,8 @@
       "why": "Spare money $800 - $500 = $300 left. The mortgage itself is not the problem: its $1,500 payment is one of her bills, paid on its date. But $300 is under the tight floor of $320 (a tenth of $2,200 bills + $1,000 everyday spending), so the answer is \"Fits, but tight\" (D-40). The housing fact reads \"Housing takes $1,500 of your $4,000 pay, 38%.\" (1,500 / 4,000 = 37.5%, rounded). Nothing is saved in a safety net, so that line shows as a fact. DB-12 shows that a mortgage with room stays a plain \"Fits\".",
       "fixIds": [
         "FIN-10",
-        "ENG-09"
+        "ENG-09",
+        "FIN-07"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",

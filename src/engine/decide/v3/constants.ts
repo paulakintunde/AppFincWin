@@ -235,3 +235,11 @@ export const ESSENTIAL_ROUND_MINOR = 100; // ARC-07
 
 // Cite: D-52 (05.4-CONTEXT, owner 2026-11-03): full months of recorded income before pay is expected from history. FincWin choice.
 export const HISTORY_PAY_MIN_MONTHS = 3; // D-52
+
+// Cite: D-07, D-39b (05.4-CONTEXT, owner question 5 and round 1): borrowing at 20% APR or more is costly. D-07: FincWin's
+// thresholds, not law. In basis points of a yearly rate; 05.4-22 reuses it for the expensive-borrowing caution.
+export const EXPENSIVE_APR_BP = 2000; // D-07, D-39b
+
+// Cite: D-08 (05.4-CONTEXT, owner question 5) and the 05.4-12 revision notes "Debts": at most 2 debt fact lines, then "and N more".
+// FincWin choice.
+export const DEBT_FACT_LINES = 2; // D-08
