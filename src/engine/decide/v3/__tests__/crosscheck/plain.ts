@@ -1077,13 +1077,16 @@ export function plainCashReady(f: RightAnswerFixture): { date: string } | { mont
   const pay = payDates(f).find((d) => d > f.asOf);
   // the next pay clears the dip for good: from that pay on, the 90-day path (with the money above the net's size) stays at or above $0
   const above = plainNet(f).above;
-  const clears = pay !== undefined && plainPath(f, cost).every((x) => x.date < pay || x.balance + above >= 0n);
+  const path = plainPath(f, cost);
+  const clears = pay !== undefined && path.every((x) => x.date < pay || x.balance + above >= 0n);
   if (short <= 0n && clears) return { date: pay as string };
   const usual = usualLeftOf(f);
   if (usual <= 0n) return null;
   const n = short <= 0n ? 1n : maxC(1n, (short + usual - 1n) / usual);
   const month = plusMonths(`${f.asOf.slice(0, 7)}-01`, Number(n)).slice(0, 7);
-  return pay !== undefined && pay >= `${month}-01` ? { date: pay } : { month };
+  // a path that never goes below $0 waits for the money alone: the month. One that dips waits for the pay too (the later of them).
+  const dips = path.some((x) => x.balance + above < 0n);
+  return dips && pay !== undefined && pay >= `${month}-01` ? { date: pay } : { month };
 }
 
 /** D-80, restated: paying at once is ready within 31 days of the check date (a ready month counts by its last day). */
