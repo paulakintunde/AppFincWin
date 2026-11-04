@@ -264,6 +264,13 @@ function buildCorpus(): Emitted[] {
     const { inputs, check } = shortPlan(t);
     collect(out, inputs, check);
   }
+  // 05.4 FIN-27 (05.4-25): the region's usual rate (tax_estimate) and an unknown region (tax_not_included): TX-06 with no rate typed,
+  // in Ontario and with no province.
+  const ben = loadCases().find((c) => c.id === 'TX-06')!.fixture;
+  for (const region of [{ country: 'CA', subdivision: 'ON' }, { country: 'CA', subdivision: null }]) {
+    const { inputs, check } = toEngineInputs({ ...ben, region, check: { ...ben.check, taxPercent: null, taxIncluded: null } });
+    collect(out, inputs, check);
+  }
   return out;
 }
 

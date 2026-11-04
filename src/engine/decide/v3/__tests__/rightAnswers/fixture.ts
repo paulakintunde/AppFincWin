@@ -292,7 +292,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     )
   );
   // mapped when BO-05 lands: plan first-payment choices beyond the engine's own
-  // mapped when FIN-27 lands: region rules, check.taxIncluded
+  // 05.4 FIN-27 (05.4-25): region is the country and regionSubdivision the state or province; check.taxIncluded is the switch.
   // mapped when ENG-14 lands: check.runningCosts and check.closingPercent
   // mapped when FIN-07 lands: check.replaces (stops and sale)
   // mapped when BO-05 lands: check.saveForIt. check.yourAnswer, pay.lastThree, pay.setupAmount and pay.lean are mapped (05.4-23).
@@ -328,7 +328,8 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   const inputs0 = inputsOf({
     asOf: f.asOf,
     currency: currencyCode(f.currency),
-    region: f.region ? (f.region.subdivision ? `${f.region.country}-${f.region.subdivision}` : f.region.country) : null,
+    region: f.region === null ? null : f.region.country,
+    regionSubdivision: f.region === null ? null : f.region.subdivision,
     months,
     series: [...(irr ? [] : [pay]), ...bills.series, ...(saving === null ? [] : [saving])],
     ...(bills.waivers.length === 0 ? {} : { waivers: bills.waivers }),
@@ -378,6 +379,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   const check = checkOnce(c.price ?? 0, {
     price: c.price === null ? null : mu(c.price),
     taxPercent: c.taxPercent === null ? null : percent(c.taxPercent),
+    taxIncluded: c.taxIncluded,
     oneOffFees: mu(c.oneOffFees),
     pay: payOf(c.pay, f.asOf),
     // 05.4 D-41: the need-or-want reading (words and the order of facts only).

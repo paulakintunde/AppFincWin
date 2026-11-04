@@ -156,6 +156,7 @@ export const NOTICE_KEYS = Object.freeze({
   fund_account_unknown: 'decide.v3.notice.fund_account_unknown',
   pay_expected_from_history: 'decide.v3.notice.pay_expected_from_history',
   pay_gap: 'decide.v3.notice.pay_gap', // 05.4 FIN-15
+  tax_not_included: 'decide.v3.notice.tax_not_included', // 05.4 FIN-27 (D-20)
 } as const satisfies Record<NoticeCode, string>);
 
 export const FACT_KEYS = Object.freeze({
@@ -230,7 +231,18 @@ export const FACT_KEYS = Object.freeze({
   further_shortfall_runway: 'decide.v3.fact.further_shortfall_runway', // 05.4 D-46 (05.4-23)
   earlier_money_from: 'decide.v3.fact.earlier_money_from', // 05.4 D-44 (05.4-24)
   overdraft_carried_in: 'decide.v3.fact.overdraft_carried_in', // 05.4 D-86 (05.4-24 FIN-09b)
+  tax_estimate: 'decide.v3.fact.tax_estimate', // 05.4 FIN-27 (D-19, CMP-F24)
 } as const satisfies Record<FactCode, string>);
+
+/**
+ * 05.4 FIN-27 (CMP-F24, D-21): fixed tax and example-rate lines the screens show (08.1). disclaimer is the one place the copy
+ * guard allows "advice" (a keyed exception); exampleRate labels an example loan or mortgage rate, which is never stored as the
+ * user's rate and never used in the sums (no default APR exists, 05.1 D-07, ARC-25).
+ */
+export const TAX_KEYS = Object.freeze({
+  disclaimer: 'decide.v3.tax.disclaimer',
+  exampleRate: 'decide.v3.tax.exampleRate',
+});
 
 /**
  * 05.4 FIN-09 / UX-02 (05.4-24, D-22): the after-purchase lines. A figure below 0 reads the Over line (D-106: overspent); the
@@ -407,6 +419,7 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   further_shortfall_runway: ['extra', 'covered', 'of'], // 05.4 D-46
   earlier_money_from: ['amount', 'where'], // 05.4 D-44: where 'account' | 'savings' picks the copy variant
   overdraft_carried_in: ['month', 'amount'], // 05.4 D-86: month is last month
+  tax_estimate: ['percent', 'amount', 'basis'], // 05.4 FIN-27: percent is readable decimal text ("9.03"); amount is the whole tax; basis names the source's kind of rate
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({
@@ -433,6 +446,7 @@ export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> 
   fund_account_unknown: ['amount'],
   pay_expected_from_history: ['amount', 'day', 'months'], // 05.4 D-52
   pay_gap: ['setup', 'middle', 'gap'], // 05.4 FIN-15: gap is a percent with one decimal
+  tax_not_included: [], // 05.4 FIN-27 (D-20); the screen links to the region setting (08.1)
 });
 
 /** An id the engine emits that the UI resolves to a name; the copy placeholder is the value. */

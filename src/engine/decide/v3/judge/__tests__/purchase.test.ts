@@ -483,3 +483,51 @@ describe('05.3-70 preview: band and layers while the plan is incomplete', () => 
     expect(r.layers).toEqual(layersFor(6, { periodic: true, hasExtras: true }));
   });
 });
+
+// 05.4-25 (FIN-27, D-19..D-21): the tax rule inside the purchase.
+describe('buildPurchase: sales tax by region (FIN-27)', () => {
+  const at = (country: string | null, subdivision: string | null) => ({ ...ctx, region: { country, subdivision } });
+  const tax = (b: ReturnType<typeof buildPurchase>) => b.facts.find((f) => f.code === 'tax_estimate') ?? null;
+
+  it('a typed rate is used as typed, with no estimate fact and no notice reason', () => {
+    const b = buildPurchase(checkOnce(90_000, { taxPercent: percent('8') }), at('US', 'TX'));
+    expect(b.purchase!.whole).toBe(97_200);
+    expect(tax(b)).toBeNull();
+    expect(b.reasons).not.toContain('tax_not_included');
+  });
+
+  it('no rate typed: a state or province adds its usual rate, named as an estimate (TX-06 Ontario: 13% of $900 is $117)', () => {
+    const b = buildPurchase(checkOnce(90_000), at('CA', 'ON'));
+    expect(b.purchase!.whole).toBe(101_700);
+    expect(tax(b)).toEqual({ code: 'tax_estimate', values: { percent: '13', amount: 11_700, basis: 'hst' } });
+    expect(buildPurchase(checkOnce(300_000), at('CA', 'QC')).facts.find((f) => f.code === 'tax_estimate')!.values).toEqual({ percent: '14.975', amount: 44_925, basis: 'gst_qst' });
+  });
+
+  it('TX-07: up-front cost = price + tax + one-off fees (900000 + 8% + 30000 = 1002000)', () => {
+    expect(buildPurchase(checkOnce(900_000, { taxPercent: percent('8'), oneOffFees: mu(30_000) }), at('US', 'TX')).purchase!.dayOne).toBe(1_002_000);
+  });
+
+  it('TX-08: on a plan the tax is financed', () => {
+    const b = buildPurchase(checkPlan(300_000, { count: 12, apr: percent('0'), firstPayment: { kind: 'one_period' } }), at('US', 'CA'));
+    expect(b.purchase!.schedule!.financed).toBe(327_090); // 9.03% of $3,000 is $270.90
+    expect(tax(b)!.values['amount']).toBe(27_090);
+  });
+
+  it('UK and EU: nothing added, nothing said; the switch: nothing added whatever the rate or region', () => {
+    for (const c of ['GB', 'DE']) {
+      const b = buildPurchase(checkOnce(60_000), at(c, null));
+      expect({ whole: b.purchase!.whole, reasons: b.reasons, facts: b.facts }).toEqual({ whole: 60_000, reasons: [], facts: [] });
+    }
+    const sw = buildPurchase(checkOnce(60_000, { taxPercent: percent('20'), taxIncluded: true }), at('US', 'CA'));
+    expect({ whole: sw.purchase!.whole, reasons: sw.reasons, facts: sw.facts }).toEqual({ whole: 60_000, reasons: [], facts: [] });
+  });
+
+  it('D-20: an unknown region (none, the US with no state, another country, or no region given) adds 0 and says so', () => {
+    for (const ctxt of [at(null, null), at('US', null), at('AU', 'NSW'), ctx]) {
+      const b = buildPurchase(checkOnce(60_000), ctxt);
+      expect({ whole: b.purchase!.whole, said: b.reasons.includes('tax_not_included'), fact: tax(b) }).toEqual({ whole: 60_000, said: true, fact: null });
+    }
+    // an ask before the purchase is built says nothing about tax
+    expect(buildPurchase(checkPlan(60_000, { count: 12, apr: null, firstPayment: today }), at(null, null)).reasons).toEqual([]);
+  });
+});

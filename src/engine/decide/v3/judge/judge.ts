@@ -562,6 +562,8 @@ function judgeNotices(j: JudgeInput, missing: readonly MissingCode[]): Notice[] 
   if (u !== null && u.stale) out.push({ code: 'unspent_stale', values: { days: daysBetween(u.anchor.at, j.inputs.asOf) } });
   if (u !== null && u.drifted) out.push({ code: 'unspent_drifted', values: { suggested: j.funds.suggested } });
   if (j.month.reasons.includes('quick_estimates_used')) out.push({ code: 'from_your_figures', values: {} });
+  // 05.4 FIN-27 (D-20): no tax was added because the region is not known; the answer says so.
+  if (j.purchaseReasons.includes('tax_not_included')) out.push({ code: 'tax_not_included', values: {} });
   const f = j.funds;
   // D-49, D-54: an envelope linked to no account is taken to sit inside the spending money.
   if ((f.envelopesAssumedInside ?? 0) > 0) out.push({ code: 'envelope_location_assumed', values: { count: f.envelopesAssumedInside as number } });

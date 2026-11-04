@@ -231,7 +231,12 @@ function readingOf(inputs: V3Inputs): Reading {
 
 function judgeReading(r: Reading, check: CheckV2): Evaluation {
   const { inputs, month } = r;
-  const pb = buildPurchase(check, { asOf: inputs.asOf, thresholds: inputs.thresholds, custom: inputs.custom });
+  const pb = buildPurchase(check, {
+    asOf: inputs.asOf,
+    thresholds: inputs.thresholds,
+    custom: inputs.custom,
+    region: { country: inputs.region, subdivision: inputs.regionSubdivision ?? null }, // 05.4 FIN-27
+  });
   const funds: Funds = { ...r.funds, ownEnvelope: ownEnvelope(inputs.envelopes, check.envelopeId) };
   // D-54: spending money plus the purchase's own envelope; other put-aside money never cushions the check. 05.4 D-35 (retires
   // D-63's purpose gate): money saved above the net's size is spare and counts; the protected part only lends when the path

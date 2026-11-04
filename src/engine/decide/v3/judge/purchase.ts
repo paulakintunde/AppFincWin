@@ -5,6 +5,9 @@
  *      keyed by library question id or OwnQuestion.id); a missing plan fact is a MissingCode, never a default.
  * I41: the scored payment is the larger of the worked-out and the quoted payment (scoredPayment).
  * D-04 first payment, D-09 foreign price at today's rate, D-18 household share, D-19 own questions, D-24 pause interest.
+ * 05.4 FIN-27 (D-19, D-20): the tax rate is the user's own when typed; else the region's usual rate (tax/lookup.ts, one owner),
+ * with a tax_estimate fact; UK and EU prices include tax; an unknown region adds none and says so (tax_not_included). The
+ * "Price already includes tax" switch adds none. Tax is part of the whole value, so a plan finances it (TX-08).
  *
  * SHARE CONVENTION (types.ts): the schedule is on the FULL lender amount; myPart is applied once to dayOne and once to
  * M = myPart(schedule.monthlyEquivalent + full running costs). The plan card is also on the full amount.
@@ -13,7 +16,7 @@
  */
 import { divideHalfUp } from '../../../money/rounding';
 import type { MinorUnits } from '../../../money/types';
-import { minorFromBigInt, rateDenominator, ZERO_PERCENT, type PeriodsPerYear } from '../../../payoff/types';
+import { minorFromBigInt, rateDenominator, ZERO_PERCENT, type PeriodsPerYear, type Percent } from '../../../payoff/types';
 import { myPart, resolveShare, type ResolvedShare } from '../../share';
 import { purchaseFlows } from '../cash/path';
 import type { DatedFlow } from '../cash/path';
@@ -39,6 +42,7 @@ import type {
 import { bandOf, layersFor } from './bands';
 import { isNeedPurpose, resolveItemType } from './options';
 import { questionSpec } from './presetQuestions';
+import { lookupTaxDefault, type TaxDefaultLookup } from '../tax/lookup';
 
 const FN = 'buildPurchase';
 
@@ -57,6 +61,37 @@ export interface PurchaseBuild {
 }
 
 const NONE: QuotedCheck = { kind: 'none' };
+
+/** 05.4 FIN-27: where the buyer is, for the tax default. country null = unknown (D-20). */
+export interface TaxRegion {
+  readonly country: string | null;
+  readonly subdivision: string | null;
+}
+
+export interface PurchaseContext {
+  readonly asOf: LocalDate;
+  readonly thresholds: HomeThresholds;
+  readonly custom: CustomOptions;
+  /** 05.4 FIN-27: absent = unknown region. */
+  readonly region?: TaxRegion;
+}
+
+/**
+ * 05.4 FIN-27 (D-19, D-20): the rate counted. The switch "Price already includes tax" adds none; a typed rate is used as typed;
+ * else the region's default: 'add' its usual rate (named as an estimate), 'included' none, 'unknown' none and says so.
+ */
+export function taxRuleOf(
+  check: Pick<CheckV2, 'taxPercent' | 'taxIncluded'>,
+  region: TaxRegion
+): { readonly percent: Percent | null; readonly estimate: Extract<TaxDefaultLookup, { kind: 'add' }> | null; readonly notIncluded: boolean } {
+  if (check.taxIncluded === true) return { percent: null, estimate: null, notIncluded: false };
+  if (check.taxPercent !== null) return { percent: check.taxPercent, estimate: null, notIncluded: false };
+  const d = lookupTaxDefault(region);
+  if (d.kind === 'add') return { percent: d.percent, estimate: d, notIncluded: false };
+  return { percent: null, estimate: null, notIncluded: d.kind === 'unknown' };
+}
+
+const UNKNOWN_REGION: TaxRegion = { country: null, subdivision: null };
 
 function nothing(missing: readonly MissingCode[], reasons: readonly ReasonCode[] = [], facts: readonly Fact[] = [],
   preview: PurchaseBuild['preview'] = null
@@ -134,10 +169,7 @@ function withPayment(s: Schedule, payment: bigint, source: Schedule['source'], w
   };
 }
 
-export function buildPurchase(
-  check: CheckV2,
-  ctx: { readonly asOf: LocalDate; readonly thresholds: HomeThresholds; readonly custom: CustomOptions }
-): PurchaseBuild {
+export function buildPurchase(check: CheckV2, ctx: PurchaseContext): PurchaseBuild {
   if (check.legacyKind === 'invest') return nothing(['legacy_invest_check']);
 
   let share: ResolvedShare;
@@ -159,11 +191,7 @@ export function buildPurchase(
   }
 }
 
-function buildResolved(
-  check: CheckV2,
-  ctx: { readonly asOf: LocalDate; readonly thresholds: HomeThresholds; readonly custom: CustomOptions },
-  share: ResolvedShare
-): PurchaseBuild {
+function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShare): PurchaseBuild {
   const { pay } = check;
   const missing: MissingCode[] = [];
   const reasons: ReasonCode[] = [];
@@ -193,8 +221,9 @@ function buildResolved(
   let bandResult: ReturnType<typeof bandOf>;
   let band: Band;
   let layers: readonly Layer[];
+  const taxRule = taxRuleOf(check, ctx.region ?? UNKNOWN_REGION);
   try {
-    tax = salesTaxOf(price, check.taxPercent);
+    tax = salesTaxOf(price, taxRule.percent);
     fullWhole = BigInt(price) + BigInt(tax) + BigInt(check.oneOffFees);
     whole = myPart(mb(fullWhole), share);
     // Typed amounts only (I36, D-19). Library questions and own questions are treated alike.
@@ -237,6 +266,11 @@ function buildResolved(
   }
 
   reasons.push(...bandResult.reasons);
+  // 05.4 FIN-27: the region's usual rate is named as an estimate (CMP-F24); no region, no tax, and the answer says so (D-20).
+  if (taxRule.estimate !== null) {
+    facts.push({ code: 'tax_estimate', values: { percent: percentText(taxRule.estimate.percent), amount: tax, basis: taxRule.estimate.basis } });
+  }
+  if (taxRule.notIncluded) reasons.push('tax_not_included');
 
   if (check.foreign !== null) facts.push({ code: 'at_todays_rate', values: { currency: check.foreign.currency } });
 

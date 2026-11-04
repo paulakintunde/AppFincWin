@@ -33,6 +33,10 @@ export { buildSchedule } from './plan/schedule';
 export type { ScheduleInput, ScheduleOutcome } from './plan/schedule';
 export { monthlyEquivalentOf } from './plan/cadence';
 export { planCard, salesTaxOf } from './plan/planCard';
+// 05.4 FIN-27 (D-19, ARC-25): the one owner of region tax defaults; the check sheet pre-fills the rate from it (screens in 08.1).
+export { lookupTaxDefault, INCLUDED_COUNTRIES } from './tax/lookup';
+export type { TaxDefaultLookup } from './tax/lookup';
+export type { TaxBasis } from './tax/defaults';
 export type { PlanCard, PlanCardInput } from './plan/planCard';
 export { checkQuoted } from './plan/quoted';
 export type { QuotedCheck, QuotedInput } from './plan/quoted';

@@ -3655,6 +3655,8 @@ const en = {
         // 05.4 FIN-15 (05.4-23): the pay itself is never changed; the usual month counts the lower figure.
         pay_gap: 'Your last 3 pays were about {{middle}} each, {{gap}}% below the {{setup}} set up. The usual month here counts the lower figure.',
         pay_expected_from_history: 'No pay is scheduled, so about {{amount}} is expected around day {{day}} of each month, the lowest month in your last {{months}} months of records.',
+        // 05.4 FIN-27 (D-20): no region, or the US or Canada with no state or province, so no tax is added.
+        tax_not_included: 'Tax not included. Set your region to add it.',
       },
       fact: {
         month_left_after: '{{month}} would have about {{left}} to spare after this.',
@@ -3721,6 +3723,8 @@ const en = {
         earlier_money_from_savings: 'This uses {{amount}} of extra savings from earlier months, in your savings account.',
         // 05.4 D-86 (FIN-09b): money owed from last month comes off this month's figure first.
         overdraft_carried_in: '{{month}} ended about {{amount}} overdrawn. That is paid back from this month first.',
+        // 05.4 FIN-27 (D-19, CMP-F24): the region's usual rate was used; always called an estimate.
+        tax_estimate: 'Includes about {{amount}} sales tax at {{percent}}%. This rate is an estimate and can be changed.',
         ask_debts_not_recorded_loan: 'No loan or other debt is recorded. Do you have one?',
         ask_debts_not_recorded_card: 'No card is recorded. Do you have one?',
         ask_debts_not_recorded_overdraft: 'No overdraft is recorded. Do you have one?',
@@ -3777,6 +3781,11 @@ const en = {
         monthOver: '{{monthName}} would be about {{amount}} overspent.',
         usualMonth: 'A usual month would leave about {{amount}} once payments start.',
         usualMonthOver: 'A usual month would be about {{amount}} overspent once payments start.',
+      },
+      // 05.4 FIN-27 (CMP-F24, D-21): tax is always an estimate; an example loan or mortgage rate is labelled and never stored.
+      tax: {
+        disclaimer: 'This is a planning estimate, not tax advice.', // CMP-F24: the only allowed use of the word (keyed exception)
+        exampleRate: 'Example rate only. It is not your rate and is not saved.',
       },
       // 05.4 FIN-03 (D-38): the two answers to the no-limit question; both open the account's settings.
       factAction: {

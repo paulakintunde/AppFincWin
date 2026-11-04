@@ -154,6 +154,7 @@ export function parseCheckV2(json: unknown): CheckV2 | null {
     foreign,
     layerAnswers: layerAnswersOf(json.layerAnswers),
     volatileCover: typeof json.volatileCover === 'boolean' ? json.volatileCover : null,
+    taxIncluded: typeof json.taxIncluded === 'boolean' ? json.taxIncluded : null, // 05.4 FIN-27 (D-19)
   };
 }
 

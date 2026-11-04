@@ -3,7 +3,7 @@ import en from '../locales/en';
 import { DRAFT_COPY_KEYS } from '../copyStatus';
 import { UNDO_LABEL_KEYS } from '../../engine/undo/types';
 import { undoLabelText } from '../undoLabel';
-import { AFTER_BUY_KEYS, BASIS_KEYS, BASIS_REASON_KEYS, FACT_ACTION_KEYS, FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, READINESS_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
+import { AFTER_BUY_KEYS, BASIS_KEYS, BASIS_REASON_KEYS, FACT_ACTION_KEYS, FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, READINESS_KEYS, TAX_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
 
 interface Leaf {
   path: string;
@@ -152,8 +152,18 @@ describe('decide copy (DCU-09)', () => {
     expect(leaves.length).toBeGreaterThan(300);
   });
 
-  it.each(copyLeaves)('uses no banned word: $path', ({ value }) => {
-    for (const re of BANNED) expect(value).not.toMatch(re);
+  it.each(copyLeaves)('uses no banned word: $path', ({ path, value }) => {
+    for (const re of BANNED) {
+      // CMP-F24 disclaimer: the only allowed use of 'advice' ("This is a planning estimate, not tax advice."). Every other banned
+      // word still applies to it.
+      if (path === 'decide.v3.tax.disclaimer' && re === BANNED[0]) continue; // BANNED[0] is the 'advice' word
+      expect(value).not.toMatch(re);
+    }
+  });
+
+  it('the CMP-F24 tax disclaimer is the one keyed exception, worded as fixed', () => {
+    expect(get('decide.v3.tax.disclaimer')).toBe('This is a planning estimate, not tax advice.');
+    expect(copyLeaves.filter((l) => /\badvice\b/i.test(l.value)).map((l) => l.path)).toEqual(['decide.v3.tax.disclaimer']);
   });
 
   it.each(copyLeaves)('does not reassure about the future: $path', ({ value }) => {
@@ -359,6 +369,7 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       'decide.v3.fact.other_account_overdrawn_no_rate',
       'decide.v3.fact.earlier_money_from_savings', // 05.4 D-44 (05.4-24): where 'savings'
       ...Object.values(AFTER_BUY_KEYS), // 05.4 FIN-09 (05.4-24)
+      ...Object.values(TAX_KEYS), // 05.4 FIN-27 (CMP-F24, D-21)
       ...Object.values(FACT_ACTION_KEYS).flatMap((a) => Object.values(a)),
       FOOTER_KEY,
     ];

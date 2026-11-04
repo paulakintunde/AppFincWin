@@ -43,6 +43,7 @@ export const V3_RUNTIME_EXPORTS = [
   'FURTHER_SHORTFALL_MAJOR',
   'FUTURE_ORDER',
   'HISTORY_PAY_MIN_MONTHS',
+  'INCLUDED_COUNTRIES', // 05.4-25 FIN-27 (D-19): UK and EU, prices include tax
   'INCOME_SWING_CV_PERCENT',
   'INCOME_SWING_MIN_MONTHS',
   'INCOME_VOLATILE_CV_PERCENT',
@@ -137,6 +138,7 @@ export const V3_RUNTIME_EXPORTS = [
   'legacyLimits',
   'legacyStateOf',
   'liveEmergencyOf',
+  'lookupTaxDefault', // 05.4-25 FIN-27 (D-19, ARC-25): the one owner of region tax defaults
   'monthAfterPlans', // 05.4-24 FIN-09 (D-22)
   'monthlyEquivalentOf',
   'myShareOf',
