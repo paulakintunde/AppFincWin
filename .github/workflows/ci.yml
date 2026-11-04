@@ -48,12 +48,19 @@ jobs:
       - name: Service-role key never referenced by client code (ENV-04)
         run: "! grep -rnE 'SERVICE_ROLE|service_role|sb_secret_' src app"
   mutation-changed:
-    name: mutation-changed
+    name: mutation-changed (${{ matrix.shard }}/8)
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     # Per-change mutation check. Static mutants re-run the whole suite, so they are
     # left to the nightly full run; the cap stops a large change from hanging CI.
+    # A big change is split over 8 runners by file size, so each part finishes inside
+    # the cap. Stryker writes its incremental file only when a run completes, so each
+    # part keeps its own cache and the next push re-tests only what changed.
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
         with: { fetch-depth: 0 }
@@ -63,15 +70,18 @@ jobs:
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0 (v4)
         with:
           path: .stryker-cache
-          key: stryker-${{ github.base_ref }}-${{ github.sha }}
-          restore-keys: stryker-${{ github.base_ref }}-
-      - name: Mutate only the engine files this change touches
+          key: stryker-${{ github.base_ref }}-shard${{ matrix.shard }}-${{ github.sha }}
+          restore-keys: stryker-${{ github.base_ref }}-shard${{ matrix.shard }}-
+      - name: Mutate this part of the engine files this change touches
+        env: { SHARD: "${{ matrix.shard }}", SHARDS: 8 }
         run: |
-          FILES=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD" -- 'src/engine/decide/**/*.ts' | grep -v __tests__ | paste -sd, - || true)
+          # Largest file first, each to the part with the fewest lines so far
+          FILES=$(git diff --name-only --diff-filter=d "origin/${{ github.base_ref }}...HEAD" -- 'src/engine/decide/**/*.ts' | grep -v __tests__             | xargs -r wc -l | grep -v ' total$' | sort -rn             | awk -v n="$SHARDS" -v me="$SHARD" '{ b=1; for (i=2;i<=n;i++) if (load[i]<load[b]) b=i; load[b]+=$1; if (b==me) print $2 }'             | paste -sd, - || true)
           if [ -n "$FILES" ]; then
-            FC_RUNS=10 npx stryker run --incremental --ignoreStatic --mutate "$FILES"
+            echo "Part $SHARD of $SHARDS mutates: $FILES"
+            FC_RUNS=10 npx stryker run --incremental --ignoreStatic --reporters clear-text,progress-append-only,json --mutate "$FILES"
           else
-            echo "No engine source changed; nothing to mutate."
+            echo "No engine source in part $SHARD; nothing to mutate."
           fi
   secret-scan:
     name: secret-scan
