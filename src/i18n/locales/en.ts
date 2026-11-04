@@ -3719,6 +3719,8 @@ const en = {
         // 'savings' reads earlier_money_from_savings. Spent money is never counted. D-106: no "left" or "short" for a month figure.
         earlier_money_from: 'This uses {{amount}} of spare money from earlier months, still in your account.',
         earlier_money_from_savings: 'This uses {{amount}} of extra savings from earlier months, in your savings account.',
+        // 05.4 D-86 (FIN-09b): money owed from last month comes off this month's figure first.
+        overdraft_carried_in: '{{month}} ended about {{amount}} overdrawn. That is paid back from this month first.',
         ask_debts_not_recorded_loan: 'No loan or other debt is recorded. Do you have one?',
         ask_debts_not_recorded_card: 'No card is recorded. Do you have one?',
         ask_debts_not_recorded_overdraft: 'No overdraft is recorded. Do you have one?',

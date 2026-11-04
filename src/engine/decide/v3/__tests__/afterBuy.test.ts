@@ -4,10 +4,11 @@
  */
 import { minorUnits } from '../../../money/types';
 import { SOLE_SHARE } from '../../share';
-import { afterBuyBlock, firstPaymentLater, homeFigure, laterThisMonth, monthAfterPlans, rebased } from '../afterBuy';
+import { afterBuyBlock, carriedOverdraft, firstPaymentLater, openingBalance, homeFigure, laterThisMonth, monthAfterPlans, rebased, withCarried } from '../afterBuy';
 import { evaluate } from '../evaluate';
 import { judgeCheck, prepare } from '../prepare';
-import type { AfterBuy, Purchase, Schedule } from '../types';
+import type { AfterBuy, MonthModel, Notice, Purchase, Schedule, V3Line } from '../types';
+import { v3Line } from './helpers/fixtures';
 import { toEngineInputs } from './rightAnswers/fixture';
 import { loadCases } from './rightAnswers/loader';
 
@@ -38,13 +39,25 @@ describe('FIN-09 the big figure on approved cases', () => {
     expect([ab.lead, ab.usualMonth]).toEqual(['usualMonth', 50_000]);
   });
 
-  it('OD-04 a Not yet one-off still shows the month figure: $750 - $600 = $150', () => {
-    expect(run('OD-04').result.afterBuy.month).toBe(15_000);
+  it('OD-04 a Not yet one-off still shows the month figure; Owen opened November $777 below $0, paid back first (D-86): $750 - $777 - $600 = -$627', () => {
+    const e = run('OD-04');
+    expect(e.result.afterBuy).toMatchObject({ month: -62_700, before: -2_700 });
+    expect(factsOf('OD-04', 'overdraft_carried_in')).toEqual([{ month: '2026-10', amount: 77_700 }]);
   });
 
-  it('BR-06 a plan loses its payment due later this month (28 November): $300 - $100 = $200 by the month figure', () => {
-    // The approved case states -$300, the account at month end (the October overdraft carried); that basis is an owner question.
-    expect(run('BR-06').result.afterBuy).toMatchObject({ month: 20_000, usualMonth: 20_000, before: 30_000 });
+  it('BR-06 the $500 owed from October comes off November first (D-86), then the 28 November payment: $300 - $500 - $100 = -$300', () => {
+    expect(run('BR-06').result.afterBuy).toMatchObject({ month: -30_000, usualMonth: 20_000, before: -20_000 });
+  });
+
+  it('BR-21 opened November $500 below $0: nothing of this month is left for the plan, so all $1,800 comes from extra savings (D-86)', () => {
+    const e = run('BR-21');
+    expect([e.result.code, e.result.variant, e.result.afterBuy.month]).toEqual(['fits_unspent', 'extra_savings', 0]);
+    expect(e.result.split).toEqual([{ source: 'extra_savings', amount: 180_000 }]);
+  });
+
+  it('QE-09 carries money in from October, not an overdraft: no line, and the figure is unchanged (D-86)', () => {
+    expect(factsOf('QE-09', 'overdraft_carried_in')).toEqual([]);
+    expect(run('QE-09').result.afterBuy.before).toBe(80_000);
   });
 
   it('SN-11 money from earlier months: this month gives its £800 and the £2,150 from earlier is named, still in the account (D-44)', () => {
@@ -139,5 +152,38 @@ describe('afterBuy.ts helpers', () => {
     const ab: AfterBuy = { lead: 'month', month: mu(66_500), usualMonth: null, before: mu(70_000), monthName: '2026-11' };
     expect(rebased(ab, mu(70_000))).toBe(ab);
     expect(rebased(ab, mu(-200_000))).toEqual({ ...ab, before: -200_000, month: -203_500 });
+  });
+
+  it('openingBalance: the everyday money now less this month in, plus this month out; other months, pending lines and own transfers skipped', () => {
+    const L = (id: string, date: string, amount: number, role: V3Line['role'], status: V3Line['status'] = 'paid') => v3Line({ id, date, amount, role, status });
+    const lines = [
+      L('pay', '2026-11-01', 300_000, 'income'),
+      L('rent', '2026-11-02', 150_000, 'spending'),
+      L('food', '2026-11-08', 60_000, 'spending'),
+      L('back', '2026-11-09', 5_000, 'refund'),
+      L('move', '2026-11-10', 20_000, 'own_transfer'),
+      L('soon', '2026-11-20', 9_000, 'spending', 'pending'),
+      L('old', '2026-10-30', 7_000, 'spending'),
+    ];
+    // BR-06's shape: $400 now = opening + $3,000 + $50 - $1,500 - $600, so it opened at -$500
+    expect(openingBalance(mu(45_000), lines, '2026-11')).toBe(-50_000);
+    // DB-10: a minimum already paid and recorded on the debt left the account too
+    expect(openingBalance(mu(45_000), lines, '2026-11', mu(10_000))).toBe(-40_000);
+    expect(carriedOverdraft(mu(-50_000))).toBe(50_000);
+    expect(carriedOverdraft(mu(100_000))).toBe(0);
+  });
+
+  it('withCarried: takes the overdraft off the month and keeps the overspent notice in step, in its place', () => {
+    const typical: Notice = { code: 'typical_short', values: { short: 1 } };
+    const other: Notice = { code: 'emergency_not_set', values: {} };
+    const base = { month: '2026-11', monthLeft: mu(30_000), notices: [typical, other] } as unknown as MonthModel;
+    expect(withCarried(base, mu(0))).toBe(base);
+    expect(withCarried(base, mu(10_000))).toMatchObject({ monthLeft: 20_000, carriedOverdraft: 10_000, notices: [typical, other] });
+    expect(withCarried(base, mu(50_000)).notices).toEqual([typical, { code: 'month_heading_short', values: { month: '2026-11', short: 20_000 } }, other]);
+    const onlyTypical = { ...base, notices: [typical] } as MonthModel;
+    expect(withCarried(onlyTypical, mu(50_000)).notices).toEqual([typical, { code: 'month_heading_short', values: { month: '2026-11', short: 20_000 } }]);
+    const heading: Notice = { code: 'month_heading_short', values: { month: '2026-11', short: 5_000, categoryId: 'food', largest: 900 } };
+    const already = { ...base, monthLeft: mu(-5_000), notices: [heading, other] } as MonthModel;
+    expect(withCarried(already, mu(1_000)).notices).toEqual([{ code: 'month_heading_short', values: { month: '2026-11', short: 6_000, categoryId: 'food', largest: 900 } }, other]);
   });
 });

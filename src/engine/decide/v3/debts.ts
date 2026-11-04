@@ -74,6 +74,12 @@ export interface DebtOutflows {
   readonly flows: readonly DebtFlow[];
   /** DB-02: the debts with no due day, each with the first minimum counted tomorrow. */
   readonly assumed: readonly { readonly debtId: string; readonly amount: MinorUnits }[];
+  /**
+   * 05.4 D-86 (FIN-09b): the part of this month's minimums already gone from the account with no payment line to show it (a stated
+   * paidThisMonth, DB-10; a due day already past, taken as paid; a minimum the balance no longer needs, D-73). Linked debts and
+   * matched payment lines are not in it (those lines are read as lines).
+   */
+  readonly paidUnrecorded: MinorUnits;
 }
 
 /**
@@ -89,6 +95,7 @@ export function debtOutflows(inputs: Pick<V3Inputs, 'asOf' | 'debts' | 'series'>
   const usedLines = new Set<string>();
   const flows: DebtFlow[] = [];
   const assumed: { debtId: string; amount: MinorUnits }[] = [];
+  let paidUnrecorded = 0;
   for (const d of [...inputs.debts].sort(byId)) {
     if (links.has(d.id) || d.minimum <= 0) continue;
     const given = dueDayOf(d);
@@ -103,6 +110,7 @@ export function debtOutflows(inputs: Pick<V3Inputs, 'asOf' | 'debts' | 'series'>
     let left = d.balance > 0 ? d.balance : 0;
     const firstAmount = Math.min(yearMonthOf(first) === ym ? owed : d.minimum, left);
     if (given === null && firstAmount > 0) assumed.push({ debtId: d.id, amount: minorUnits(firstAmount) });
+    let thisMonth = 0;
     for (let i = 0, m = yearMonthOf(first); ; i++, m = addYearMonths(yearMonthOf(first), i)) {
       const date = i === 0 ? first : onDay(m, day);
       if (date >= end) break;
@@ -110,11 +118,13 @@ export function debtOutflows(inputs: Pick<V3Inputs, 'asOf' | 'debts' | 'series'>
       if (date >= asOf && amount > 0) {
         flows.push({ debtId: d.id, date, amount: minorUnits(amount) });
         left -= amount;
+        if (yearMonthOf(date) === ym) thisMonth += amount;
       }
     }
+    if (line === undefined) paidUnrecorded += Math.max(0, d.minimum - thisMonth);
   }
   flows.sort((a, b) => cmp(a.date, b.date) || cmp(a.debtId, b.debtId));
-  return { flows, assumed };
+  return { flows, assumed, paidUnrecorded: minorUnits(paidUnrecorded) };
 }
 
 /** Balance x APR / 12, rounded half up once: the monthly interest of a debt (0 with no rate). */

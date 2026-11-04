@@ -8,7 +8,7 @@
  * is already inside dayOne and would land twice.
  */
 import { minorUnits, type MinorUnits } from '../../money/types';
-import { homeFigure, rebased } from './afterBuy';
+import { carriedOverdraft, homeFigure, openingBalance, rebased, withCarried } from './afterBuy';
 import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { mergeConfidence } from './confidence/reasons';
 import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, withNet, type CashCheck, type OpenCashPath } from './cash/path';
@@ -183,9 +183,9 @@ export interface Prepared {
 }
 
 function readingOf(inputs: V3Inputs): Reading {
-  const month = buildMonthModel(inputs);
+  const built = buildMonthModel(inputs);
   // the funds do not depend on the check except for the purchase's own envelope, which judgeReading swaps in
-  const funds = buildFunds(inputs, month, null);
+  const funds = buildFunds(inputs, built, null);
   // 05.4 D-52: an irregular earner with no pay series expects pay on the usual payday at the low-month amount.
   const hp = historyPay(inputs);
   const histDates = hp?.dates ?? [];
@@ -201,14 +201,17 @@ function readingOf(inputs: V3Inputs): Reading {
     days: CASH_PATH_DAYS_V3,
     series: inputs.series,
     paidThisMonth: paid,
-    erest: month.erest,
-    e: month.e ?? minorUnits(0),
-    payCaps: payCapsOf(inputs, month),
+    erest: built.erest,
+    e: built.e ?? minorUnits(0),
+    payCaps: payCapsOf(inputs, built),
     drops: dueDrops(inputs), // 05.3-64 (D-27, D-31, skips): the same rule as the month model and unspent
     extraPays: histDates.map((date) => ({ date, amount: (hp as HistoryPay).amount })),
     savings,
     debts: debts.flows,
   });
+  // 05.4 D-86 (FIN-09b): an overdraft carried into the month is paid back from this month first; every use of the month reads it.
+  const atMonthEnd = spareInAccount(open, funds.spending);
+  const month = withCarried(built, carriedOverdraft(openingBalance(funds.spending, inputs.months.find((m) => m.month === ym)?.lines ?? [], ym, debts.paidUnrecorded)));
   // history pay exists only with no live pay series, so the two never both give a date: the first history date, else the series'.
   const payDate = histDates[0] ?? nextPayDate(inputs.series, inputs.asOf);
   return {
@@ -221,7 +224,7 @@ function readingOf(inputs: V3Inputs): Reading {
     paydays: [...new Set([...payDatesIn(inputs.series, inputs.asOf, CASH_PATH_DAYS_V3), ...histDates])].sort(),
     net: resolveSafetyNet(inputs, essentialCosts(month, debtsInMonth(inputs.debts, inputs.series, inputs.asOf), essentialSpendingOf(inputs, month))), // D-51: a minimum counted once
     hp,
-    spareInAccount: spareInAccount(open, funds.spending),
+    spareInAccount: atMonthEnd,
     assumed: debts.assumed,
   };
 }

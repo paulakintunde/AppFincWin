@@ -914,6 +914,8 @@ export function judge(j: JudgeInput): Result {
   // 05.4 FIN-09 (afterBuy.ts, D-22): the month figure is this month after its plans less what the purchase takes from this month:
   // the split's month and protected net parts when the answer keeps a split, else the day-one cost; a plan also loses its later
   // payments this month. Money from earlier months is not this month's: it is named, with where it is (D-44).
+  // 05.4 D-86 (FIN-09b): an overdraft carried in from last month is paid back from this month first; the answer says so.
+  if ((month.carriedOverdraft ?? 0) > 0) facts.push({ code: 'overdraft_carried_in', values: { month: addYearMonths(month.month, -1), amount: month.carriedOverdraft as MinorUnits } });
   const kept = keepSplit ? split : [];
   const fromThisMonth = kept.length === 0 ? null : mu(kept.reduce((t, s) => t + (s.source === 'month' || s.source === 'emergency' ? s.amount : 0), 0));
   const afterBuy = afterBuyBlock({ month, asOf: j.inputs.asOf, purchase, fromThisMonth, byCash: cashPlan !== null });

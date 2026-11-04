@@ -95,16 +95,15 @@ describe('D-68: a short plan paid from money on hand is judged by cash', () => {
   it('EXTRA SAVINGS: Everyday 500 and 4,000 above the net: Fits from extra savings, with the move-by line and the caution line', () => {
     const ev = run(SHORT_PLAN_CASES.extraSavings);
     const r = ev.result;
-    // spare 500 - 500 still to spend = 0; extra savings 6,000 - 2,000 = 4,000. Ladder for 1,800: room 500, then 1,300 of extra savings.
+    // spare 500 - 500 still to spend = 0; extra savings 6,000 - 2,000 = 4,000. Ladder for 1,800: no room (D-86), all 1,800 of extra savings.
     expect(ev.spare).toBe(0);
     expect(ev.net?.aboveSize).toBe(400_000);
     expect(r.code).toBe('fits_unspent');
     expect(r.variant).toBe('extra_savings');
-    expect(r.split).toEqual([
-      { source: 'month', amount: 50_000 },
-      { source: 'extra_savings', amount: 130_000 },
-    ]);
-    expect(fact(r, 'extra_savings_used')).toEqual({ used: 130_000, above: 400_000 });
+    // 05.4-24 FIN-09b (D-86): the everyday account opened the month $500 below $0 ($500 now after $3,000 in and $2,000 out), so
+    // this month's $500 pays that back first and the whole $1,800 comes from the extra savings (BR-21)
+    expect(r.split).toEqual([{ source: 'extra_savings', amount: 180_000 }]);
+    expect(fact(r, 'extra_savings_used')).toEqual({ used: 180_000, above: 400_000 });
     // The Everyday account alone: 500 - 600 today is below 0, so money moves from savings today.
     expect(fact(r, 'move_money_by')).toEqual(expect.objectContaining({ date: '2026-11-15' }));
     expect(r.facts[0]).toEqual({ code: 'short_plan_from_cash', values: { monthly: 60_000 } });

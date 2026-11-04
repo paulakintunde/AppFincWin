@@ -174,6 +174,7 @@ describe('verdict table (I22 one code one text)', () => {
         'tight_floor', 'save_vs_borrow', 'net_covers_surprises', 'income_or_costs_first',
         'covered_from_savings', 'further_shortfall_runway', // 05.4 D-46
         'earlier_money_from', // 05.4 D-44 (05.4-24)
+        'overdraft_carried_in', // 05.4 D-86 (05.4-24 FIN-09b)
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

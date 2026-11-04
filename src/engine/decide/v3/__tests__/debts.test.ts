@@ -98,6 +98,18 @@ describe('debtOutflows: each minimum on its due date (FIN-04)', () => {
     expect(all.map((f) => f.date)).toEqual(['2026-12-25']);
   });
 
+  it('05.4 D-86 paidUnrecorded: what the minimums of this month already took from the account with no line to show it', () => {
+    // DB-10: $100 of $300 stated as paid
+    expect(debtOutflows(inputs([debt({ dueDay: 25, minimum: mu(30_000), paidThisMonth: mu(10_000) })]), [], 45).paidUnrecorded).toBe(10_000);
+    // a due day still to come this month: nothing paid yet
+    expect(debtOutflows(inputs([debt({ dueDay: 25, minimum: mu(30_000) })]), [], 45).paidUnrecorded).toBe(0);
+    // a due day already past this month is taken as paid
+    expect(debtOutflows(inputs([debt({ dueDay: 5, minimum: mu(30_000) })]), [], 45).paidUnrecorded).toBe(30_000);
+    // a payment line of the minimum is read as a line, not here
+    const line = v3Line({ id: 'l1', date: '2026-11-03', amount: 30_000, role: 'debt_payment', seriesId: null });
+    expect(debtOutflows(inputs([debt({ dueDay: 25, minimum: mu(30_000) })]), [line], 45).paidUnrecorded).toBe(0);
+  });
+
   it('an unlinked paid debt-payment line of exactly the minimum this month pays it; each line pays one debt', () => {
     const line = v3Line({ id: 'l1', date: '2026-11-03', amount: 15_000, role: 'debt_payment', seriesId: null });
     const other = v3Line({ id: 'l2', date: '2026-11-03', amount: 15_001, role: 'debt_payment', seriesId: null });
@@ -120,7 +132,9 @@ describe('debtOutflows: each minimum on its due date (FIN-04)', () => {
     ]);
     // nothing owed: nothing lands and nothing is assumed
     const none = debtOutflows(inputs([debt({ balance: mu(0) }), debt({ id: 'd2', balance: mu(-100) })]), [], 90);
-    expect(none).toEqual({ flows: [], assumed: [] });
+    // 05.4 D-86: the month figure still sets both $150 minimums aside (debtsInMonth does not read the balance), so the opening balance
+    // reads them as gone too and no overdraft appears from them
+    expect(none).toEqual({ flows: [], assumed: [], paidUnrecorded: 30_000 });
   });
 
   it('a debt paid through a series, or with no minimum, lands nothing itself; tomorrow in a new month is a whole minimum', () => {

@@ -27,11 +27,52 @@ import { minorFromBigInt } from '../../payoff/types';
 import { myPart } from '../share';
 import { addDays, addYearMonths } from './dates';
 import { paymentsInRange } from './plan/schedule';
-import type { AfterBuy, MonthModel, Purchase } from './types';
+import type { AfterBuy, MonthModel, Notice, Purchase, V3Line } from './types';
 
 /** THE "this month after its plans" figure (D-22): MonthModel.monthLeft, money in (received + still due) less every planned outflow. */
 export function monthAfterPlans(month: Pick<MonthModel, 'monthLeft'>): MinorUnits {
   return month.monthLeft;
+}
+
+/**
+ * 05.4 D-86 (FIN-09b, owner 2026-11-04): money owed from last month comes off this month's big number, for everyone. The everyday
+ * money now (the spending accounts less pots) is what they opened the month with plus this month's money in so far, less this
+ * month's money out so far (paid lines dated this month; transfers between own accounts are neither). An opening below 0 is an
+ * overdraft carried in, paid back from this month first: monthLeft drops by it, so only what is left of this month can go toward a
+ * purchase ("it uses this month up"). Money carried in that is not an overdraft changes nothing (QE-09). Pay this month counts only
+ * once it has arrived, so pay the month expects but has not received never looks like an overdraft (D-52).
+ * BR-06: $400 now after $3,000 in and $1,500 + $600 out, so November opened at -$500: $300 - $500 = -$200 before buying.
+ */
+const MONEY_IN: ReadonlySet<V3Line['role']> = new Set(['income', 'refund', 'other_in', 'envelope_withdrawal']);
+
+export function openingBalance(spendingNow: MinorUnits, lines: readonly V3Line[], month: string, debtPaidThisMonth: MinorUnits = minorUnits(0)): MinorUnits {
+  // DB-10: "She has already paid $100 of it this month": a minimum paid this month and recorded on the debt left the account too
+  let opening = BigInt(spendingNow) + BigInt(debtPaidThisMonth);
+  for (const l of lines) {
+    if (l.status !== 'paid' || l.date.slice(0, 7) !== month || l.role === 'own_transfer') continue;
+    const amount = BigInt(Math.abs(l.amount));
+    opening += MONEY_IN.has(l.role) ? -amount : amount;
+  }
+  return minorFromBigInt(opening, 'openingBalance');
+}
+
+/** The overdraft carried into the month: an opening below 0, else nothing. */
+export function carriedOverdraft(opening: MinorUnits): MinorUnits {
+  return minorUnits(opening < 0 ? -opening : 0);
+}
+
+/** The month with a carried overdraft taken off its figure; the month_heading_short notice follows the new figure. */
+export function withCarried(month: MonthModel, carried: MinorUnits): MonthModel {
+  if (carried <= 0) return month;
+  const left = minorFromBigInt(BigInt(month.monthLeft) - BigInt(carried), 'withCarried');
+  const heading = (n: Notice): boolean => n.code === 'month_heading_short';
+  const had = month.notices.find(heading);
+  const notice: Notice | null = left < 0 ? { code: 'month_heading_short', values: { ...(had?.values ?? {}), month: month.month, short: -left } } : null;
+  const rest = month.notices.filter((n) => !heading(n));
+  // the notice keeps its place: after typical_short when there is one, else first
+  const at = rest.findIndex((n) => n.code !== 'typical_short');
+  const notices = notice === null ? rest : at === -1 ? [...rest, notice] : [...rest.slice(0, at), notice, ...rest.slice(at)];
+  return { ...month, monthLeft: left, carriedOverdraft: carried, notices };
 }
 
 /** Decide Home's figure: the stricter (lower) of the readings' month figures, the same one every answer's afterBuy.before reads. */

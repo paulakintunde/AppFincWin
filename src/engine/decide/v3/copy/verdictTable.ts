@@ -229,6 +229,7 @@ export const FACT_KEYS = Object.freeze({
   covered_from_savings: 'decide.v3.fact.covered_from_savings', // 05.4 D-46 (05.4-23)
   further_shortfall_runway: 'decide.v3.fact.further_shortfall_runway', // 05.4 D-46 (05.4-23)
   earlier_money_from: 'decide.v3.fact.earlier_money_from', // 05.4 D-44 (05.4-24)
+  overdraft_carried_in: 'decide.v3.fact.overdraft_carried_in', // 05.4 D-86 (05.4-24 FIN-09b)
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -405,6 +406,7 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   covered_from_savings: ['savings', 'gap', 'covered', 'of'], // 05.4 D-46
   further_shortfall_runway: ['extra', 'covered', 'of'], // 05.4 D-46
   earlier_money_from: ['amount', 'where'], // 05.4 D-44: where 'account' | 'savings' picks the copy variant
+  overdraft_carried_in: ['month', 'amount'], // 05.4 D-86: month is last month
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({

@@ -34,6 +34,13 @@ function withLine(inputs: V3Inputs, line: V3Line): V3Inputs {
   return { ...inputs, months: inputs.months.map((m) => (m.month === ym ? { ...m, lines: [...m.lines, line] } : m)) };
 }
 
+/** The money is in the everyday account too: the balance and the first everyday (or mixed, or unstated) account rise by it. */
+function withPaidIn(inputs: V3Inputs, amount: number): V3Inputs {
+  const i = (inputs.accounts ?? []).findIndex((a) => a.use === null || a.use.kind === 'everyday' || a.use.kind === 'mixed');
+  const accounts = inputs.accounts?.map((a, k) => (k === i ? { ...a, balance: mu(a.balance + amount) } : a));
+  return { ...inputs, balance: mu(inputs.balance + amount), ...(accounts === undefined ? {} : { accounts }) };
+}
+
 function extraLine(inputs: V3Inputs, role: V3Line['role'], amount: number, day: number): V3Line {
   const d = Math.min(day, Number(inputs.asOf.slice(8, 10)));
   return v3Line({ id: 'arb-added', date: `${currentMonthOf(inputs)}-${String(d).padStart(2, '0')}`, amount, role });
@@ -98,7 +105,8 @@ describe('end-to-end monotonicity through evaluate()', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, fc.integer({ min: 100, max: 500_000 }), fc.integer({ min: 1, max: 28 }), (inputs, check, amount, day) => {
         const before = run(inputs, check);
-        const after = run(withLine(inputs, extraLine(inputs, 'income', amount, day)), check);
+        // 05.4 D-86 (FIN-09b): the pay lands in the account too; a pay line the balance does not show means the account opened lower
+        const after = run(withPaidIn(withLine(inputs, extraLine(inputs, 'income', amount, day)), amount), check);
         fc.pre(!asking(before, after));
         expect(codeRank(after.code)).toBeGreaterThanOrEqual(codeRank(before.code));
       }),
