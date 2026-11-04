@@ -136,7 +136,7 @@
   },
   "persona:dana:200000:cash": {
     "code": "fits_unspent",
-    "variant": "small_net",
+    "variant": "costly_debt",
     "afterBuyMonth": 0
   },
   "persona:dana:900000:cash": {
@@ -676,7 +676,7 @@
   },
   "gen:25": {
     "code": "fits_unspent",
-    "variant": "no_net",
+    "variant": "costly_debt",
     "afterBuyMonth": 0
   },
   "gen:26": {
@@ -851,12 +851,12 @@
   },
   "gen:60": {
     "code": "fits_unspent",
-    "variant": null,
+    "variant": "extra_savings",
     "afterBuyMonth": 0
   },
   "gen:61": {
     "code": "fits_unspent",
-    "variant": "small_net",
+    "variant": "costly_debt",
     "afterBuyMonth": 0
   },
   "gen:62": {
@@ -911,7 +911,7 @@
   },
   "gen:72": {
     "code": "fits_unspent",
-    "variant": "small_net",
+    "variant": "costly_debt",
     "afterBuyMonth": 0
   },
   "gen:73": {
@@ -1161,7 +1161,7 @@
   },
   "gen:122": {
     "code": "fits_unspent",
-    "variant": null,
+    "variant": "costly_debt",
     "afterBuyMonth": 0
   },
   "gen:123": {
@@ -1176,7 +1176,7 @@
   },
   "gen:125": {
     "code": "fits_unspent",
-    "variant": "extra_savings",
+    "variant": "costly_debt",
     "afterBuyMonth": 0
   },
   "gen:126": {
@@ -1230,9 +1230,9 @@
     "afterBuyMonth": null
   },
   "gen:136": {
-    "code": "monthly_short",
-    "variant": null,
-    "afterBuyMonth": 164551
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": null
   },
   "gen:137": {
     "code": "needs_input",
@@ -1276,7 +1276,7 @@
   },
   "gen:145": {
     "code": "fits_unspent",
-    "variant": "no_net",
+    "variant": "costly_debt",
     "afterBuyMonth": 0
   },
   "gen:146": {
@@ -1461,7 +1461,7 @@
   },
   "gen:182": {
     "code": "fits_unspent",
-    "variant": null,
+    "variant": "costly_debt",
     "afterBuyMonth": 0
   },
   "gen:183": {

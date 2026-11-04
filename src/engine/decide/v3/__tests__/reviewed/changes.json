@@ -6116,9 +6116,9 @@
         "variant": "costly_debt",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-39b: $1,162.90 of the $2,000 comes from spare money saved in earlier months while a $6,000 card at 21.9% remains, so \"Fits, but you carry costly debt\" (was \"but your safety net is small\", whose fact still shows); interest $109.50 a month, $36.50 less with $2,000 toward the card.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-10",
@@ -6133,9 +6133,9 @@
         "variant": "costly_debt",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-39b: $10,692.82 of the $12,763.65 comes from spare money saved in earlier months while a $18,248.68 loan at 21.9% remains, so \"Fits, but you carry costly debt\" (was \"but no safety net\", whose fact still shows); interest $333.04 a month.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-10",
@@ -6150,9 +6150,9 @@
         "variant": "extra_savings",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-04: the $548.29 card minimum (no due day, so tomorrow 4 October) now leaves the account, so October ends at $3,267.75 and spare money is capped there (D-56); $318.10 comes from extra savings: \"Fits from extra savings\" (was \"Fits from spare money\").",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-10",
@@ -6167,9 +6167,9 @@
         "variant": "costly_debt",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-39b: $104.65 of the $506.71 comes from spare money saved in earlier months while a $12,295.50 card at 21.9% remains, so \"Fits, but you carry costly debt\" (was \"but your safety net is small\"); interest $224.39 a month, $9.25 less with the price toward the card.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-10",
@@ -6184,9 +6184,9 @@
         "variant": "costly_debt",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-39b: $580.03 of the $1,034.04 comes from spare money saved in earlier months while a $2,681.10 loan at 21.9% remains, so \"Fits, but you carry costly debt\" (was \"but your safety net is small\"); interest $48.93 a month.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-10",
@@ -6201,9 +6201,9 @@
         "variant": "costly_debt",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-39b: $1,676.55 of the $2,330.91 comes from spare money saved in earlier months while a $7,026.70 loan at 21.9% remains, so \"Fits, but you carry costly debt\" (was a plain \"Fits from spare money\"); interest $128.24 a month.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-10",
@@ -6218,9 +6218,9 @@
         "variant": "costly_debt",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-39b: $1,946.27 of the $3,087.40 comes from spare money and extra savings saved in earlier months while a $15,828.07 loan at 21.9% remains, so \"Fits, but you carry costly debt\" (was \"Fits from extra savings\", whose fact still shows); interest $288.86 a month.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-10",
@@ -6235,9 +6235,9 @@
         "variant": "not_covered",
         "afterBuyMonth": null
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-04: the loan and card minimums ($1,178.47 on 4 October, 4 November and 4 December) now land on the 90-day path, which with the weekly plan goes $2,237.52 below $0 on 31 December, with no overdraft and the safety net locked: \"Not yet\" (was \"Short each month\").",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-10",
@@ -6252,9 +6252,9 @@
         "variant": "costly_debt",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-39b: $2.67 of the $1,647.85 comes from spare money saved in earlier months while a $15,237.85 loan at 21.9% remains, so \"Fits, but you carry costly debt\" (was \"but no safety net\", whose fact still shows); interest $278.09 a month.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-10",
@@ -6269,9 +6269,9 @@
         "variant": "costly_debt",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-39b: $291.45 of the $1,297.01 comes from spare money saved in earlier months while two cards at 21.9% remain, so \"Fits, but you carry costly debt\" (was a plain \"Fits from spare money\"); interest $186.04 a month on the larger card, $23.67 less with the price toward it.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     }
   ]
 }
