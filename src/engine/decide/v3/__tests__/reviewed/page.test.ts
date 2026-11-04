@@ -32,7 +32,7 @@ describe('reviewed page', () => {
     expect(rateText(null)).toBe('');
     expect(() => rateText(1010000000000n)).toThrow(RangeError);
     const file = JSON.parse(fs.readFileSync(path.join(__dirname, 'changes.json'), 'utf8')) as { changes: ReviewedChange[] };
-    for (const fix of ['FIN-01', 'FIN-03', 'FIN-01b', 'FIN-10']) {
+    for (const fix of ['FIN-01', 'FIN-03', 'FIN-01b', 'FIN-10', 'FIN-10b']) {
       const listed = file.changes.filter((c) => c.fixId === fix);
       if (listed.length === 0) continue;
       // 05.4-56 (D-69): a price's share of monthly pay is not a rate and may pass 100% (up to 1,500% by design); it is left out here
@@ -48,7 +48,7 @@ describe('reviewed page', () => {
     const fin01 = file.changes.filter((c) => c.fixId === 'FIN-01');
     expect(file.changes.filter((c) => c.fixId === 'FIN-03').length).toBe(5);
     expect(fin01.length).toBeGreaterThan(0);
-    for (const c of file.changes.filter((x) => x.fixId === 'FIN-01' || x.fixId === 'FIN-03' || x.fixId === 'FIN-10')) expect(auditOf(c.key)).not.toBeNull();
+    for (const c of file.changes.filter((x) => x.fixId === 'FIN-01' || x.fixId === 'FIN-03' || x.fixId === 'FIN-10' || x.fixId === 'FIN-10b')) expect(auditOf(c.key)).not.toBeNull();
     const html = buildPage('FIN-01', fin01, cases);
     for (const t of ['Money in this month', 'Already spent this month', 'Still to come this month', 'After bills due before payday', 'Unused overdraft', 'Expected at month end', 'Starter (D-51)', 'Locked', 'Split', 'What the answer says', '90-day cash path', 'Lowest with the purchase', 'Step by step', 'Right answer:']) expect(html).toContain(t);
     for (const w of ['advice', 'recommend', 'you should', 'suggestion', '<script', 'not built yet', '{{']) expect(html.toLowerCase()).not.toContain(w);
@@ -206,8 +206,8 @@ describe('reviewed page', () => {
     expect(why(sp(SHORT_PLAN_CASES.running, 'sp:r'))).toContain('but it has a running cost of $20.00 a month.');
     expect(why(sp({ everyday: 400_000, saved: 200_000, price: 90_000, months: 3 }, 'sp:fits'))).toContain('but the monthly part already fits (about $300.00 a month');
     expect(why(sp({ everyday: 400_000, saved: 200_000, price: 450_000, months: 3 }, 'sp:big'))).toContain('money on hand $3,500.00 (this month and spare money $3,500.00 + extra savings $0.00) does not cover $4,500.00.');
-    // 05.4-20 (FIN-04): gen:136's two minimums ($1,178.47 on 4 October, November and December) now take its path below $0 first.
-    expect(why(cases.find((c) => c.key === 'gen:136')!)).toContain('but the path goes below $0.00 (lowest -$2,237.52 on 2026-12-31).');
+    // 05.4-20 (FIN-04, D-73): gen:136's minimums ($1,058.71 on 4 October, then the loan's $471.39 on 4 November and December; the card is paid off) take its path below $0 first.
+    expect(why(cases.find((c) => c.key === 'gen:136')!)).toContain('but the path goes below $0.00 (lowest -$703.60 on 2026-12-31).');
     // Plans past the 90 days and cash buys carry no D-68 step.
     for (const c of [sp(SHORT_PLAN_CASES.longShort, 'sp:l'), cases.find((x) => x.key === 'persona:riley:900000:cash')!]) expect(breakdown(c).steps.some((s) => s.includes('(D-68)'))).toBe(false);
   });
@@ -266,5 +266,13 @@ describe('reviewed page', () => {
     expect(html).toContain('After (counted once): usual month $800.00, this month $800.00 ($1,500.00 more)');
     expect(html).toContain('Checks this rule reads, answer unchanged');
     expect(buildPage('FIN-11', [], cases)).not.toContain('Counted once (DB-07)');
+  });
+
+  it('05.4-20 D-72 / D-73 on the page: gen:145 is under the $1.00 line; gen:136 pays its $587.32 card once', () => {
+    const g145 = breakdown(cases.find((c) => c.key === 'gen:145')!).steps.join(' ');
+    expect(g145).toContain('put toward gen-145-debt-0 it would cut the interest by $0.05 a month (D-72: at least $1.00), so the caution does not apply.');
+    const g136 = breakdown(cases.find((c) => c.key === 'gen:136')!);
+    expect(g136.sections.find((x) => x.title === 'Debts')!.rows.map(([, v]) => v).join(' ')).toContain('minimum $707.08 a month, due day not set, so counted from tomorrow (2026-10-04); lands on 2026-10-04 $587.32');
+    expect(g136.steps.join(' ')).toContain('lowest -$703.60 on 2026-12-31');
   });
 });

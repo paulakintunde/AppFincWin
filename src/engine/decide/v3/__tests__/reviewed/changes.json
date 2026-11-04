@@ -6272,6 +6272,23 @@
       "reason": "D-39b: $291.45 of the $1,297.01 comes from spare money saved in earlier months while two cards at 21.9% remain, so \"Fits, but you carry costly debt\" (was a plain \"Fits from spare money\"); interest $186.04 a month on the larger card, $23.67 less with the price toward it.",
       "approved": true,
       "approvedAt": "2026-11-04"
+    },
+    {
+      "fixId": "FIN-10b",
+      "key": "gen:145",
+      "before": {
+        "code": "fits_unspent",
+        "variant": "costly_debt",
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_unspent",
+        "variant": "no_net",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     }
   ]
 }

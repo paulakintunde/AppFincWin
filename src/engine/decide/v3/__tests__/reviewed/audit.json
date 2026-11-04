@@ -3733,15 +3733,15 @@
     ]
   },
   "gen:145": {
-    "right": "Fits, but you carry costly debt (Fits from spare money)",
+    "right": "Fits from spare money, but no safety net, $0 left in October",
     "rightCode": "fits_unspent",
-    "rightVariant": "costly_debt",
+    "rightVariant": "no_net",
     "verdict": "CORRECT",
-    "cause": "FIN-10 / D-39b costly-debt caution (05.4-20)",
+    "cause": "D-72 no costly-debt warning for tiny amounts (05.4-20, FIN-10b)",
     "notes": [
-      "Loan $15,237.85 at 21.9%, minimum $195.33, no due day: 2026-10-04, then the 4th of each month.",
-      "$1,647.85 = $1,645.18 of October + $2.67 of spare money from earlier months. Any money from earlier months with a 20%+ debt is D-39b amber, however small (owner question 2). Interest $15,237.85 x 21.9% / 12 = $278.09 a month.",
-      "Before: \"but no safety net\". costly_debt leads; net_none_start still shows."
+      "Loan $15,237.85 at 21.9% a year, minimum $195.33, no due day: counted on 2026-10-04 (tomorrow), then 4 November and 4 December. Usual month leaves $1,645.18.",
+      "$1,647.85 = $1,645.18 of October + $2.67 of spare money from earlier months. Put toward the loan, $2.67 x 21.9% / 12 = $0.0487, about $0.05 a month: under the $1.00 D-72 line, so no costly-debt caution (FIN-10 had it, approved before D-72).",
+      "Nothing is saved in a safety net (starter $2,262), so the answer is \"Fits from spare money, but no safety net\" (D-35); the 90-day path stays above $0 (lowest $3,044.57 on 31 October). The interest line stays as a fact: about $278.09 a month."
     ]
   },
   "gen:149": {

@@ -716,13 +716,17 @@ function pageDueDates(d: V3Debt, asOf: LocalDate, days: number): { date: string;
   const day = d.dueDay != null && Number.isInteger(d.dueDay) && d.dueDay >= 1 && d.dueDay <= 31 ? d.dueDay : Number(tomorrow.slice(8, 10));
   const start = d.dueDay != null && day === d.dueDay ? `${asOf.slice(0, 8)}01` : `${tomorrow.slice(0, 8)}01`;
   const out: { date: string; first: boolean }[] = [];
+  let left = Math.max(0, d.balance); // D-73: the payments stop once the balance is paid off
   for (let n = 0; n < 6; n++) {
     const first = addMonths(parse(start), n);
     const last = new Date(Date.UTC(new Date(first).getUTCFullYear(), new Date(first).getUTCMonth() + 1, 0)).getUTCDate();
     const date = fmt(Date.UTC(new Date(first).getUTCFullYear(), new Date(first).getUTCMonth(), Math.min(day, last)));
     if (date >= end) break;
     const paidUp = n === 0 && date.slice(0, 7) === asOf.slice(0, 7) && (d.paidThisMonth ?? 0) >= d.minimum;
-    if (date >= asOf && !paidUp) out.push({ date, first: n === 0 });
+    if (date >= asOf && !paidUp && left > 0) {
+      out.push({ date, first: n === 0 });
+      left -= Math.min(left, n === 0 && date.slice(0, 7) === asOf.slice(0, 7) ? Math.max(0, d.minimum - (d.paidThisMonth ?? 0)) : d.minimum);
+    }
   }
   return out;
 }
@@ -785,13 +789,17 @@ export function debtSteps(c: CorpusCase, ev: Evaluation, res: Evaluation['result
   }
   const fromEarlier = res.split.filter((x) => x.source === 'unspent_earlier' || x.source === 'extra_savings').reduce((a, x) => a + x.amount, 0);
   const costly = inputs.debts.filter((d) => d.balance > 0 && d.apr !== null && d.apr * 100n >= 2000n * PERCENT_SCALE);
-  const pageSays = res.code === 'fits_unspent' && fromEarlier > 0 && costly.length > 0;
+  // D-72: only when that money put toward the debt would cut its interest by at least 1.00 a month.
+  const saving = (d: V3Debt): number => pageInterest({ ...d, balance: Math.min(fromEarlier, d.balance) as V3Debt['balance'] });
+  const worth = costly.filter((d) => saving(d) >= 100);
+  const pageSays = res.code === 'fits_unspent' && fromEarlier > 0 && worth.length > 0;
   // A higher variant (a D-63 / D-65 headline, or low_month) may lead; costly_debt never shows where the page says it does not apply.
   const higher = res.variant !== null && ['month_already_short', 'month_short_moderate_extra', 'month_short_moderate', 'month_short_small', 'low_month'].includes(res.variant);
   const agree = pageSays ? res.variant === 'costly_debt' || higher : res.variant !== 'costly_debt';
   out.push(
     `${agree ? '' : 'PAGE AND ENGINE DISAGREE: '}Costly debt (D-39b): ${costly.length === 0 ? 'no debt is at 20% a year or more' : `${costly.map((d) => `${d.id} at ${rateText(d.apr)}`).join(', ')} at 20% a year or more`}; ` +
       `money saved in earlier months used: ${m(fromEarlier)} (spare money and extra savings in the split)` +
+      (costly.length > 0 && fromEarlier > 0 ? `; put toward ${costly.map((d) => `${d.id} it would cut the interest by ${m(saving(d))} a month`).join(', ')} (D-72: at least ${m(100)})` : '') +
       (res.code !== 'fits_unspent' ? `; the answer is ${LABEL[res.code] ?? res.code}, so the caution does not apply.` : pageSays ? `, so "Fits, but you carry costly debt" applies${res.variant === 'costly_debt' ? '' : ` (a higher caution leads: ${res.variant ?? 'none'})`}.` : ', so the caution does not apply.')
   );
   return out;
@@ -821,6 +829,7 @@ function countedOnceHtml(): string {
 /** Fix IDs whose page also lists the checks the rule reads but whose answer it leaves the same. */
 const READS: Readonly<Record<string, (c: CorpusCase) => boolean>> = {
   'FIN-10': (c) => c.inputs.debts.length > 0, // 05.4-20
+  'FIN-10b': (c) => c.inputs.debts.length > 0, // 05.4-20 D-72, D-73
   'FIN-11': (c) => longBillsOf(c.inputs).length > 0,
   'FIN-11b': (c) => longBillsOf(c.inputs).length > 0, // D-70
 };
