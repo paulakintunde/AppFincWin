@@ -62,6 +62,11 @@ interface MidMonthRaw {
    * (every - 1) months after this month on `day`; lastPaid one period before (so already paid, never this month) or unknown.
    */
   longBill: { every: 3 | 12; pct: number; ahead: number; day: number; known: boolean; inUsual: boolean } | null;
+  /**
+   * 05.4-57 (ENG-11): 1 person in 4 has no full month of records and quick estimates instead (pay, the usual bills, the usual
+   * everyday spending), with 50-100% of the everyday part on essentials; the bills are still recorded as series, as QE-13's are.
+   */
+  quick: { essentialPct: number } | null;
 }
 
 const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
@@ -86,6 +91,7 @@ const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
       ),
     }
   ),
+  quick: fc.oneof({ weight: 3, arbitrary: fc.constant(null) }, { weight: 1, arbitrary: fc.record({ essentialPct: fc.integer({ min: 50, max: 100 }) }) }),
 });
 
 /** 'YYYY-MM' of 2026-10 plus n months, day `day`. */
@@ -104,7 +110,8 @@ function midMonth(r: MidMonthRaw, received: number): RightAnswerFixture {
   const billsPaid = Math.floor((bills * r.paidShare) / 100);
   const everydaySoFar = Math.floor((everyday * r.soFarShare) / 100);
   // D-58 / D-67: this month's saving has left the account when its day is on or before the 15th (it is logged on its day).
-  const saving = r.saving === null ? undefined : { amount: Math.max(1, Math.floor((r.pay * r.saving.pct) / 100)), day: r.saving.day, movedThisMonth: r.saving.day <= 15 };
+  // 05.4-57: no regular saving on quick estimates (ENG11-QE-SETASIDE, deferred: the estimates' usual month does not take it out)
+  const saving = r.saving === null || r.quick !== null ? undefined : { amount: Math.max(1, Math.floor((r.pay * r.saving.pct) / 100)), day: r.saving.day, movedThisMonth: r.saving.day <= 15 };
   const balance = r.cushion + received - billsPaid - everydaySoFar - (saving?.movedThisMonth === true ? saving.amount : 0);
   // 05.4-19 (D-70): half the people with a yearly bill have it counted in the usual month at its monthly share (inside the usual
   // bills, never in this month's paid or due figures).
@@ -114,9 +121,12 @@ function midMonth(r: MidMonthRaw, received: number): RightAnswerFixture {
   return {
     asOf: '2026-10-15', currency: 'USD', region: null,
     pay: { amount: r.pay, cadence: 'monthly', nextDate: '2026-11-01', setupAmount: null, lastThree: null },
-    usualMonth: { bills: bills + share, everyday, essentialEveryday: Math.floor(everyday / 2), ...(saving === undefined ? {} : { saving }) },
+    usualMonth: { bills: bills + share, everyday, essentialEveryday: Math.floor((everyday * (r.quick === null ? 50 : r.quick.essentialPct)) / 100), ...(saving === undefined ? {} : { saving }) },
     thisMonth: { received, billsPaid, billsDue: bills - billsPaid, everydaySoFar },
-    historyMonths: r.history, quickEstimates: null, recordsAsOf: null,
+    // 05.4-57 (ENG-11): quick estimates state the same bills and everyday spending as the usual month (as QE-01 / QE-13 do)
+    historyMonths: r.quick === null ? r.history : 0,
+    quickEstimates: r.quick === null ? null : { income: r.pay, bills: bills + share, everyday },
+    recordsAsOf: null,
     accounts: [{ id: 'a1', kind: 'checking', name: 'Main', balance, overdraftLimit: null, overdraftRate: null, use: 'everyday' }],
     safetyNet: null,
     bills: lb === null ? [] : [{ id: 'long', amount: longAmount, everyMonths: lb.every, nextDue: octPlus(lb.ahead, lb.day), lastPaid: lb.known ? octPlus(lb.ahead - lb.every, lb.day) : null, paidBy: 'me', ...(lb.inUsual ? { inUsualMonth: true } : {}) }],
@@ -144,7 +154,7 @@ const midMonthArb: fc.Arbitrary<RightAnswerFixture> = midMonthRawArb.map((r) => 
 const irregularArb: fc.Arbitrary<RightAnswerFixture> = fc
   .tuple(midMonthRawArb, fc.array(fc.integer({ min: 80, max: 120 }), { minLength: 6, maxLength: 6 }), fc.integer({ min: 1, max: 28 }), fc.boolean())
   .map(([r, shares, day, paid]) => {
-    const f = midMonth(r, paid ? r.pay : 0);
+    const f = midMonth({ ...r, quick: null }, paid ? r.pay : 0); // 05.4-57: irregular pay reads its history months
     const amounts = shares.slice(0, r.history).map((x) => Math.floor((r.pay * x) / 100));
     return { ...f, pay: { ...f.pay, irregular: { amounts, day } } };
   })
@@ -264,7 +274,8 @@ function withDebts(f: RightAnswerFixture, raws: readonly DebtRaw[]): RightAnswer
 }
 
 const debtArb: fc.Arbitrary<RightAnswerFixture> = fc
-  .tuple(fc.oneof(midMonthArb, overdraftArb, netArb.filter((f) => f.asOf === '2026-10-15')), fc.array(debtRawArb, { minLength: 1, maxLength: 2 }))
+  // 05.4-57: no card or loan on quick estimates (ENG11-QE-SETASIDE, deferred: the estimates' usual month does not take the minimums out)
+  .tuple(fc.oneof(midMonthArb, overdraftArb, netArb.filter((f) => f.asOf === '2026-10-15')).filter((f) => f.quickEstimates === null), fc.array(debtRawArb, { minLength: 1, maxLength: 2 }))
   // a person whose account was at or above 0 is not taken below 0 by the payments drawn (05.4-48: balances follow from records)
   .filter(([f, raws]) => (f.accounts[0]?.balance ?? 0) < 0 || (withDebts(f, raws).accounts[0]?.balance ?? 0) >= 0)
   .map(([f, raws]) => withDebts(f, raws));

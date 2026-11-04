@@ -62,6 +62,35 @@ function monthBefore(ym: string): string {
   return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`;
 }
 
+// --- Quick estimates (05.4-57, ENG-11). Restated from the QE-01 and QE-13 statements, not from the engine (QA-03).
+// QE-01: "quick estimates (pay £2,500, bills £1,000, everyday £300) ... The rest of her £300 everyday estimate is £80"; the
+// estimates' bills are her bills, counted once as bills and never again inside the everyday figure. QE-13: "her £1,200 safety
+// net (one month of £1,000 bills + £200 essential everyday spending)", the "£200 of it on essentials" the situation states.
+// Every approved fixture with quick estimates states a usual month equal to its estimates, so these give the same results as
+// reading usualMonth directly for all approved cases; they matter for drawn people (fixtureArb) and for the table pins.
+
+const onEstimates = (f: RightAnswerFixture): boolean => f.historyMonths === 0 && f.quickEstimates !== null;
+
+/**
+ * The usual everyday spending per month. With no full month of records, it is what the quick estimates spend in a month (bills
+ * + everyday) less the usual bills she has, never below 0: her £1,300 less her £1,000 of bills is the £300 everyday estimate.
+ * With no bills recorded, the whole £1,300 is everyday spending (counted once, as everyday); with more bills recorded than the
+ * estimates spend, nothing is left for everyday spending.
+ */
+export function usualEveryday(f: RightAnswerFixture): Cents {
+  if (!onEstimates(f)) return big(f.usualMonth.everyday);
+  const q = f.quickEstimates as NonNullable<RightAnswerFixture['quickEstimates']>;
+  return maxC(0n, big(q.bills) + big(q.everyday) - big(f.usualMonth.bills));
+}
+
+/** The essential part of everyday spending ("£200 of it on essentials"), for the D-51 starter safety net; part of the everyday figure, so never above it on estimates. */
+export function usualEssential(f: RightAnswerFixture): Cents {
+  const stated = big(f.usualMonth.essentialEveryday);
+  if (!onEstimates(f)) return stated;
+  const e = usualEveryday(f);
+  return stated < e ? stated : e;
+}
+
 /**
  * QE-07: "Last month's records are fresh (2 days old), so Decide answers from them instead of asking for more." In the
  * first 7 days of a month, with nothing recorded yet this month and last month complete, records synced at most 3 days
@@ -85,7 +114,7 @@ export function recordsLookBehind(f: RightAnswerFixture): boolean {
   const newest = f.thisMonth.everydaySoFar > 0 ? `${ym}-01` : f.historyMonths > 0 ? `${monthBefore(ym)}-15` : null;
   const old = newest === null || daysFrom(newest, f.asOf) > RECORD_AGE_DAYS;
   const day = BigInt(Number(f.asOf.slice(8, 10)));
-  const behind = big(f.thisMonth.everydaySoFar) * daysInMonthOf(f.asOf) * 100n < 50n * big(f.usualMonth.everyday) * day;
+  const behind = big(f.thisMonth.everydaySoFar) * daysInMonthOf(f.asOf) * 100n < 50n * usualEveryday(f) * day;
   return old && behind && !recordsFresh(f);
 }
 
@@ -230,7 +259,7 @@ export function everydayToCome(f: RightAnswerFixture): Cents {
   const days = daysInMonthOf(f.asOf);
   const day = BigInt(Number(f.asOf.slice(8, 10)));
   if (day >= days) return 0n;
-  const usual = big(f.usualMonth.everyday);
+  const usual = usualEveryday(f);
   const pace = (usual * (days - day) * 2n + days) / (days * 2n); // rounded half up
   return maxC(pace, maxC(0n, usual - big(f.thisMonth.everydaySoFar)));
 }
@@ -313,7 +342,7 @@ export interface PlainHeld { id: string; builtUp: Cents; uncovered: Cents; holdB
  * already (thisMonth.billsDue), so nothing more is held back for it.
  */
 export function plainHeld(f: RightAnswerFixture): PlainHeld[] {
-  const usual = monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - debtMinimums(f) - savingAmount(f);
+  const usual = monthPay(f) - big(f.usualMonth.bills) - usualEveryday(f) - debtMinimums(f) - savingAmount(f);
   return longBills(f).map((b) => {
     const bill = big(b.amount);
     // D-70 (owner, 2026-11-04, "count it once"): "When the usual month already sets aside a twelfth of the bill ..., the cover check
@@ -380,7 +409,7 @@ export interface PlainNet { off: boolean; locked: boolean; saved: Cents; size: C
 export function plainNet(f: RightAnswerFixture): PlainNet {
   const n = f.safetyNet ?? { protect: true, size: null, saved: 0 };
   // D-51: "usual bills + essential spending + card and loan minimums"; a minimum paid as a bill is in the bills once (DB-07).
-  const essentials = big(f.usualMonth.bills) + debtMinimums(f) + big(f.usualMonth.essentialEveryday);
+  const essentials = big(f.usualMonth.bills) + debtMinimums(f) + usualEssential(f);
   const starter = ((essentials + 99n) / 100n) * 100n;
   const size = n.size === null ? starter : big(n.size);
   const saved = maxC(0n, big(n.saved));
@@ -432,7 +461,7 @@ export function cashMargin(f: RightAnswerFixture, cost: Cents, withDues: boolean
  * figure; 0 when it balances.
  */
 export function usualShortfall(f: RightAnswerFixture): Cents {
-  const left = monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - debtMinimums(f) - savingAmount(f);
+  const left = monthPay(f) - big(f.usualMonth.bills) - usualEveryday(f) - debtMinimums(f) - savingAmount(f);
   return left < 0n ? -left : 0n;
 }
 
@@ -542,7 +571,7 @@ export function notCleared(f: RightAnswerFixture, cost: Cents): boolean {
  * accounts plus this month's room, less the part of it this month's room already counted).
  */
 function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
-  const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - savingAmount(f) - debtMinimums(f);
+  const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - usualEveryday(f) - savingAmount(f) - debtMinimums(f);
   const after = usualLeft - cost;
   const sitting = sittingMoney(f);
   const net = plainNet(f);
@@ -642,7 +671,7 @@ export function plainPathFlows(f: RightAnswerFixture, flows: readonly { date: st
   const dim = daysInMonthOf(f.asOf);
   const left = dim - BigInt(Number(f.asOf.slice(8, 10))) + 1n; // days left in this month, day 0 included
   const toCome = everydayToCome(f);
-  const usual = big(f.usualMonth.everyday);
+  const usual = usualEveryday(f);
   const pays = new Set(payDates(f));
   const billsMonths = new Set<string>();
   const firstPay = [...pays].find((d) => d > f.asOf) ?? null;
@@ -837,7 +866,7 @@ export function planPathLow(f: RightAnswerFixture): Cents {
 
 /** The usual month's money left (pay less usual bills, everyday spending, the regular saving, D-67, and debt minimums), before any plan. */
 function usualLeftOf(f: RightAnswerFixture): Cents {
-  return monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - savingAmount(f) - debtMinimums(f);
+  return monthPay(f) - big(f.usualMonth.bills) - usualEveryday(f) - savingAmount(f) - debtMinimums(f);
 }
 
 /**

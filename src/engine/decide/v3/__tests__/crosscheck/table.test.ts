@@ -4,7 +4,7 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday } from './plain';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
@@ -628,5 +628,60 @@ describe('plain calculator: card and loan minimums (05.4-20, FIN-04, FIN-10, D-3
       return pick(evaluate(inputs, check)).code;
     };
     expect(engine(card)).toBe(plainAnswer(card).code);
+  });
+});
+
+describe('plain calculator: quick estimates count the bills once (05.4-57, ENG-11)', () => {
+  const qe = (id: string): RightAnswerFixture => loadCases().find((c) => c.id === id)!.fixture;
+  const run = (f: RightAnswerFixture) => {
+    const { inputs, check } = toEngineInputs(f);
+    const ev = evaluate(inputs, check);
+    return { picked: pick(ev), month: ev.month, net: ev.net };
+  };
+
+  it('QE-13 by hand: £1,300 - £1,000 bills = £300 everyday; £80 still to come; £1,200 left; £600 leaves £600; starter £1,200', () => {
+    const f = qe('QE-13');
+    expect(usualEveryday(f)).toBe(30_000n);
+    expect(everydayToCome(f)).toBe(8_000n); // max(£300 x 8 / 30 = £80, £300 - £220 = £80)
+    expect(leftThisMonth(f)).toBe(120_000n); // £2,500 - £1,000 - £220 - £80
+    expect(plainNet(f).starter).toBe(120_000n); // £1,000 bills + £200 essential
+    expect(plainAnswer(f)).toEqual({ code: 'fits_month', variant: null, afterBuy: 60_000 });
+    const e = run(f);
+    expect([e.month.erest, e.month.monthLeft, e.net?.size, e.net?.state]).toEqual([8_000, 120_000, 120_000, 'full']);
+    expect([e.picked.code, e.picked.variant, e.picked.afterBuy.month]).toEqual(['fits_month', null, 60_000]);
+  });
+
+  it('QE-01 by hand: £80 still to come, records do not look behind, £1,175 - £1,150 = £25 left', () => {
+    const f = qe('QE-01');
+    expect(everydayToCome(f)).toBe(8_000n);
+    expect(recordsLookBehind(f)).toBe(false); // £220 x 30 x 100 = 660,000 >= 50 x £300 x 22 = 330,000 (in pounds)
+    expect(plainAnswer(f).code).toBe('fits_month');
+    expect(plainAnswer(f).afterBuy).toBe(2_500);
+    expect(plainNet(f).starter).toBe(122_500n); // D-51: £1,000 + £25 minimum + £200
+    const e = run(f);
+    expect([e.month.erest, e.picked.code, e.picked.afterBuy.month]).toEqual([8_000, 'fits_month', 2_500]);
+    expect(e.picked.reasons).not.toContain('under_logged');
+  });
+
+  it('no bill series recorded (estimates only): the whole £1,300 is everyday spending, counted once; still £1,200 left', () => {
+    const base = qe('QE-13');
+    const f: RightAnswerFixture = { ...base, usualMonth: { ...base.usualMonth, bills: 0 }, thisMonth: { ...base.thisMonth, billsPaid: 0 } };
+    expect(usualEveryday(f)).toBe(130_000n);
+    expect(everydayToCome(f)).toBe(108_000n); // max(£1,300 x 8 / 30 = £346.67, £1,300 - £220 = £1,080)
+    expect(leftThisMonth(f)).toBe(120_000n); // £2,500 - £220 - £1,080: the same money left, split differently
+    const e = run(f);
+    expect([e.month.e, e.month.recurringBills, e.month.erest, e.month.monthLeft]).toEqual([130_000, 0, 108_000, 120_000]);
+    expect([e.picked.code, e.picked.afterBuy.month]).toEqual([plainAnswer(f).code, plainAnswer(f).afterBuy]);
+  });
+
+  it('£1,400 of bill series against £1,300 of money out: everyday 0, never below 0', () => {
+    const base = qe('QE-13');
+    const f: RightAnswerFixture = { ...base, usualMonth: { ...base.usualMonth, bills: 140_000 }, thisMonth: { ...base.thisMonth, billsPaid: 140_000 } };
+    expect(usualEveryday(f)).toBe(0n);
+    expect(everydayToCome(f)).toBe(0n);
+    expect(leftThisMonth(f)).toBe(88_000n); // £2,500 - £1,400 - £220
+    const e = run(f);
+    expect([e.month.e, e.month.erest, e.month.monthLeft]).toEqual([0, 0, 88_000]);
+    expect(e.picked.code).toBe(plainAnswer(f).code);
   });
 });
