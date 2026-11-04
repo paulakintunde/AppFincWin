@@ -3,6 +3,9 @@ import { personById, toV3Inputs } from '../../__tests__/golden/adapter';
 import { inputsOf, v3Line, v3Series } from '../../__tests__/helpers/fixtures';
 import type { V3Inputs, V3Month } from '../../types';
 import { buildMonthModel, setAsideOf } from '../model';
+import { toEngineInputs } from '../../__tests__/rightAnswers/fixture';
+import { loadCases } from '../../__tests__/rightAnswers/loader';
+import type { RightAnswerCase } from '../../__tests__/rightAnswers/schema';
 
 const mu = minorUnits;
 const sam = (over: Partial<V3Inputs> = {}): V3Inputs => toV3Inputs(personById('sam'), over);
@@ -168,6 +171,22 @@ describe('buildMonthModel', () => {
     expect(m.confidence.reasons.map((r) => r.code)).toContain('quick_estimates');
     expect(m.confidence.basis).toEqual({ kind: 'quick_estimates' });
     expect(m.typicalLeft).toBe(220000);
+  });
+
+  // 05.4-57 ENG11-QE-BILLS: Zoe's quick estimates (money out £1,300 = £1,000 bills + £300 everyday) with the £1,000 of bills
+  // recorded as a monthly series. The bills are counted once: E is £300, £80 still to come on 22 of 30 November.
+  it.each([
+    ['QE-13', 120000],
+    ['QE-01', 117500],
+  ])('ENG11-QE-BILLS %s: e 30000, erest 8000, monthLeft %i, records not behind', (id, left) => {
+    const c = loadCases().find((x) => x.id === id) as RightAnswerCase;
+    const m = buildMonthModel(toEngineInputs(c.fixture).inputs);
+    expect(m.e).toBe(30000);
+    expect(m.recurringBills).toBe(100000);
+    expect(m.erest).toBe(8000);
+    expect(m.monthLeft).toBe(left);
+    expect(m.reasons).toContain('quick_estimates_used');
+    expect(m.confidence.reasons.map((r) => r.code)).not.toContain('under_logged');
   });
 
   it('no data at all: no current month, no E, nothing thrown', () => {

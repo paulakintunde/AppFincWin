@@ -82,6 +82,15 @@ export interface TypicalResult {
   readonly reasons: readonly ReasonCode[];
 }
 
+/**
+ * ENG11-QE-BILLS (05.4-57): quick estimates' money out includes the bills (rough_spending, "Money out each month"); the bills
+ * are counted as bills, so the everyday figure is the rest, never below 0.
+ */
+export function typedEverydayOf(expenses: MinorUnits, recurringBills: MinorUnits): MinorUnits {
+  const rest = BigInt(expenses) - BigInt(recurringBills);
+  return minorFromBigInt(rest > 0n ? rest : 0n, 'typedEverydayOf');
+}
+
 // Keys (ids, months) are unique, so equal never occurs.
 const cmp = (a: string, b: string): number => (a < b ? -1 : 1);
 
@@ -162,7 +171,7 @@ export function typicalOf(input: TypicalInput): TypicalResult {
   } else if (used.length > 0) {
     eBig = medianHalfUp(used.map((m) => BigInt(m.everyday)));
   } else if (input.typedEstimates !== null) {
-    eBig = BigInt(input.typedEstimates.expenses);
+    eBig = BigInt(typedEverydayOf(input.typedEstimates.expenses, recurringBills)); // ENG11-QE-BILLS: the bills counted once
     typedOnly = true;
     reasons.add('quick_estimates_used');
     notices.push({ code: 'from_your_figures', values: {} });

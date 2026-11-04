@@ -314,10 +314,20 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     unspent: { amount: mu(spending), at: f.asOf }, // replaced below by the app's own suggested figure
     // 05.4-15 (ENG-11, ENG-14): quick estimates are the engine's typed estimates; their spending is bills plus everyday
     // (the same total the app stores as rough_spending). The records date is passed as given.
+    // 05.4-57 ENG11-QE-ESSENTIAL: the cases state the essential part of everyday spending ("everyday spending £300 (£200 of it
+    // on essentials)", D-42, QE-13), so it is passed as the estimates' essential part.
     typedEstimates:
       f.quickEstimates === null
         ? null
-        : { income: mu(f.quickEstimates.income), expenses: mu(f.quickEstimates.bills + f.quickEstimates.everyday), saving: mu(0), debt: mu(0), invest: mu(0), asOf: f.asOf },
+        : {
+            income: mu(f.quickEstimates.income),
+            expenses: mu(f.quickEstimates.bills + f.quickEstimates.everyday),
+            saving: mu(0),
+            debt: mu(0),
+            invest: mu(0),
+            asOf: f.asOf,
+            essential: mu(f.usualMonth.essentialEveryday),
+          },
     recordsAsOf: f.recordsAsOf,
     // 05.4 FIN-01 (D-35): the safety net as stated; null = no record (protection on, the starter size, nothing saved).
     safetyNet: f.safetyNet === null ? null : { protect: f.safetyNet.protect, size: f.safetyNet.size === null ? null : mu(f.safetyNet.size), saved: mu(f.safetyNet.saved), locked: f.safetyNet.locked },

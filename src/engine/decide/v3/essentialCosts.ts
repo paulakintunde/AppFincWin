@@ -36,12 +36,16 @@ export function essentialCosts(month: MonthModel, debts: readonly V3Debt[], esse
 
 /**
  * Typical essential spending: the marked categories' median over the typical month's own months, capped at the typical figure.
- * From quick estimates alone the typical figure is all spending, bills included (D-32), so the bills are taken out of it once.
+ * From quick estimates alone the typical figure is already the everyday part (typicalOf takes the bills out once, ENG11-QE-BILLS,
+ * 05.4-57), so it is read as is. ENG11-QE-ESSENTIAL: when the estimates state the essential part of everyday spending, that part
+ * is used, never below 0 and never above the everyday part; absent or null, all of the everyday part counts as essential.
  */
 export function essentialSpendingOf(inputs: V3Inputs, month: MonthModel): MinorUnits {
   const typed = month.e !== null && month.monthsUsed.length === 0 && month.reasons.includes('quick_estimates_used');
-  const raw = month.e === null ? 0 : typed ? month.e - month.recurringBills : month.e;
+  const raw = month.e ?? 0;
   const e = raw > 0 ? raw : 0;
+  const stated = typed ? (inputs.typedEstimates?.essential ?? null) : null;
+  if (stated !== null) return minorUnits(stated < 0 ? 0 : stated < e ? stated : e);
   const ids = inputs.essentialCategoryIds ?? [];
   if (ids.length === 0) return minorUnits(e);
   const used = new Set(month.monthsUsed);

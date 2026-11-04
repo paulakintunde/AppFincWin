@@ -3,7 +3,7 @@ import { minorUnits as mu } from '../../../../money/types';
 import type { MonthMark, V3Month, V3Series } from '../../types';
 import { personById, toV3Inputs } from '../../__tests__/golden/adapter';
 import { monthOf, v3Line, v3Series } from '../../__tests__/helpers/fixtures';
-import { everydayByMonth, medianHalfUp, typicalOf, type TypicalInput } from '../typical';
+import { everydayByMonth, medianHalfUp, typedEverydayOf, typicalOf, type TypicalInput } from '../typical';
 
 const NUM_RUNS = 150;
 const ASOF = '2026-10-03';
@@ -240,6 +240,30 @@ describe('typicalOf', () => {
     expect(withHistory.e).toBe(80000);
     expect(withHistory.reasons).not.toContain('quick_estimates_used');
     expect(withHistory.notices).toEqual([]);
+  });
+
+  // 05.4-57 ENG11-QE-BILLS: quick estimates' money out includes the bills; the everyday figure is the rest, never below 0.
+  it('ENG11-QE-BILLS typedEverydayOf: money out less the usual bills, never below 0', () => {
+    expect(typedEverydayOf(mu(130000), mu(100000))).toBe(30000);
+    expect(typedEverydayOf(mu(130000), mu(0))).toBe(130000);
+    expect(typedEverydayOf(mu(80000), mu(100000))).toBe(0);
+  });
+
+  it('ENG11-QE-BILLS quick estimates with a monthly bill series: E is the everyday part, the money out counted once', () => {
+    const rough = { income: mu(250000), expenses: mu(130000), debt: mu(0), saving: mu(0), invest: mu(0), asOf: ASOF };
+    const bill = seriesBill({ id: 'b', amount: 100000 });
+    const r = typicalOf(input({ typedEstimates: rough, series: [bill] }));
+    expect(r.e).toBe(30000);
+    expect(r.recurringBills).toBe(100000);
+    expect(r.typicalLeft).toBe(120000); // income - expenses - debt - saving - invest, unchanged
+    expect(r.reasons).toContain('quick_estimates_used');
+    expect(r.notices).toEqual([{ code: 'from_your_figures', values: {} }]);
+    // An override or a usable history month: the estimates are not read.
+    expect(typicalOf(input({ typedEstimates: rough, series: [bill], everydayOverride: mu(45000) })).e).toBe(45000);
+    expect(typicalOf(input({ typedEstimates: rough, series: [bill], history: [everydayMonth('2026-09', 80000)] })).e).toBe(80000);
+    // More bills than money out: the everyday figure is 0, never below.
+    const more = seriesBill({ id: 'c', amount: 40000 });
+    expect(typicalOf(input({ typedEstimates: rough, series: [bill, more] })).e).toBe(0);
   });
 
   it('everyday override replaces E', () => {

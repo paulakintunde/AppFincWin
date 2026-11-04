@@ -9,6 +9,9 @@ import { buildMonthModel } from '../month/model';
 import { FIT_VARIANT_ORDER, NO_NET, fitVariant, netDip, resolveSafetyNet, type ResolvedNet } from '../safetyNet';
 import type { MonthModel, V3Debt, V3Inputs } from '../types';
 import { inputsOf, monthOf, v3Line, v3Series } from './helpers/fixtures';
+import { toEngineInputs } from './rightAnswers/fixture';
+import { loadCases } from './rightAnswers/loader';
+import type { RightAnswerCase } from './rightAnswers/schema';
 
 const mu = minorUnits;
 const essential = (total: number) => ({ total: mu(total), parts: { bills: mu(0), debtMinimums: mu(0), essentialSpending: mu(0) } });
@@ -50,14 +53,40 @@ describe('essential costs (ARC-07)', () => {
     expect(essentialSpendingOf(inputs, { ...m, e: null })).toBe(0);
   });
 
-  it('from quick estimates alone the typical figure holds the bills, so they are taken out once', () => {
+  // 05.4-57 ENG11-QE-BILLS: month.e from quick estimates is already the everyday part (bills taken out once in typicalOf), so it
+  // is read as is. ENG11-QE-ESSENTIAL: a stated essential part of it is used, capped at the everyday part; absent = all of it.
+  it('ENG11-QE-BILLS / ENG11-QE-ESSENTIAL from quick estimates alone: the everyday part as is, or the stated essential part', () => {
     const inputs = history();
     const m = buildMonthModel(inputs);
-    const typed: MonthModel = { ...m, e: mu(150_000), recurringBills: mu(100_000), monthsUsed: [], reasons: ['quick_estimates_used'] };
-    expect(essentialSpendingOf(inputs, typed)).toBe(50_000);
-    expect(essentialSpendingOf(inputs, { ...typed, e: mu(90_000) })).toBe(0);
+    const typed: MonthModel = { ...m, e: mu(30_000), recurringBills: mu(100_000), monthsUsed: [], reasons: ['quick_estimates_used'] };
+    const est = (essential?: number | null): V3Inputs => ({
+      ...inputs,
+      typedEstimates: {
+        income: mu(250_000), expenses: mu(130_000), saving: mu(0), debt: mu(0), invest: mu(0), asOf: '2026-10-01',
+        ...(essential === undefined ? {} : { essential: essential === null ? null : mu(essential) }),
+      },
+    });
+    // no essential part stated: the everyday part, not 30,000 - 100,000 again
+    expect(essentialSpendingOf(inputs, typed)).toBe(30_000);
+    expect(essentialSpendingOf(est(), typed)).toBe(30_000);
+    expect(essentialSpendingOf(est(null), typed)).toBe(30_000);
+    // stated: used; capped at the everyday part; below 0 counts as 0
+    expect(essentialSpendingOf(est(20_000), typed)).toBe(20_000);
+    expect(essentialSpendingOf(est(45_000), typed)).toBe(30_000);
+    expect(essentialSpendingOf(est(-5), typed)).toBe(0);
+    // with history months the stated part is ignored (the marked categories' median as before)
+    expect(essentialSpendingOf({ ...est(5_000), essentialCategoryIds: ['food'] }, m)).toBe(31_000);
     // an override with no months is not quick estimates
-    expect(essentialSpendingOf(inputs, { ...typed, reasons: ['everyday_override_used'] })).toBe(150_000);
+    expect(essentialSpendingOf(est(20_000), { ...typed, reasons: ['everyday_override_used'] })).toBe(30_000);
+  });
+
+  it('ENG11-QE-ESSENTIAL QE-13 starter: £1,000 bills + £200 essential = £1,200 (£1,300 without the stated part)', () => {
+    const c = loadCases().find((x) => x.id === 'QE-13') as RightAnswerCase;
+    const { inputs } = toEngineInputs(c.fixture);
+    const m = buildMonthModel(inputs);
+    expect(essentialCosts(m, inputs.debts, essentialSpendingOf(inputs, m)).total).toBe(120_000);
+    const none: V3Inputs = { ...inputs, typedEstimates: { ...(inputs.typedEstimates as NonNullable<V3Inputs['typedEstimates']>), essential: null } };
+    expect(essentialCosts(m, none.debts, essentialSpendingOf(none, m)).total).toBe(130_000);
   });
 });
 

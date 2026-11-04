@@ -52,7 +52,7 @@ export interface V3Account { readonly id: string; readonly balance: MinorUnits; 
 export type UnexplainedUse = 'spare' | 'envelope_or_goal' | 'set_aside_for_bill' | 'someone_elses';
 export interface UnexplainedAnswer { readonly amount: MinorUnits; readonly use: UnexplainedUse; readonly at: LocalDate } // D-50; stored and reused by 05.2
 export interface PayArrival { readonly seriesId: string; readonly date: LocalDate; readonly arrived: boolean } // D-58
-export interface TypedEstimates { readonly income: MinorUnits; readonly expenses: MinorUnits; readonly saving: MinorUnits; readonly debt: MinorUnits; readonly invest: MinorUnits; readonly asOf: LocalDate }
+export interface TypedEstimates { readonly income: MinorUnits; readonly expenses: MinorUnits; readonly saving: MinorUnits; readonly debt: MinorUnits; readonly invest: MinorUnits; readonly asOf: LocalDate; /* 05.4-57 ENG11-QE-ESSENTIAL: the part of the everyday estimate spent on essentials; absent/null = all of it (today's rule). The app's quick-estimates sheet does not ask it yet (08.1). */ readonly essential?: MinorUnits | null }
 /** 05.4 FIN-11 (D-47): one yearly or every-3-month bill: its built-up share and the part held back from spare money. */
 export interface BillHeldBack { readonly seriesId: string; readonly amount: MinorUnits; readonly builtUp: MinorUnits; readonly holdBack: MinorUnits; readonly dueDate: LocalDate }
 export interface BillsHeldBack { readonly total: MinorUnits; readonly parts: readonly BillHeldBack[] }

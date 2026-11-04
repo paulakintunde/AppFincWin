@@ -28,7 +28,7 @@ import {
 } from './incomePattern';
 import { liveSeriesOf } from './series';
 import { thisMonth } from './thisMonth';
-import { typicalOf } from './typical';
+import { typedEverydayOf, typicalOf } from './typical';
 
 /**
  * Debt minimums + fixed saving/investing + envelope set-asides. Flexible saving is explorer-only (excluded). 05.4 FIN-10 (DB-07): a
@@ -145,7 +145,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     series: inputs.series,
     income: incomeUsed,
     e: seasonE ?? typical.e,
-    typedExpenses: inputs.typedEstimates?.expenses ?? null,
+    typedEveryday: inputs.typedEstimates === null ? null : typedEverydayOf(inputs.typedEstimates.expenses, typical.recurringBills), // ENG11-QE-BILLS
     setAside,
     drops,
   });

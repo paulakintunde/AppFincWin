@@ -37,7 +37,7 @@ function modelWith(december: V3Line[]) {
 function directWith(december: V3Line[]) {
   const current = monthOf('2026-12', december, { full: false });
   const income = incomeThisMonth({ asOf: ASOF, current, history, series, profile: null, typedEstimates: null, custom: inputsOf().custom });
-  const month = thisMonth({ asOf: ASOF, current, series, income, e: minorUnits(80_000), typedExpenses: null, setAside: minorUnits(0) });
+  const month = thisMonth({ asOf: ASOF, current, series, income, e: minorUnits(80_000), typedEveryday: null, setAside: minorUnits(0) });
   return { income, month };
 }
 

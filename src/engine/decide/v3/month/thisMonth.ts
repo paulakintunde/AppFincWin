@@ -40,7 +40,8 @@ export interface ThisMonthInput {
   readonly series: readonly V3Series[];
   readonly income: IncomeThisMonth;
   readonly e: MinorUnits | null;
-  readonly typedExpenses: MinorUnits | null;
+  /** 05.4-57 ENG11-QE-BILLS: the everyday part of the quick estimates, bills already taken out; never the whole money out. */
+  readonly typedEveryday: MinorUnits | null;
   readonly setAside: MinorUnits;
   /** 05.3-63: dues that no longer count (D-27, D-31, skips); absent = none. */
   readonly drops?: DueDrops;
@@ -158,8 +159,8 @@ export function thisMonth(input: ThisMonthInput): ThisMonthResult {
   let everydayUnknown = false;
   if (input.e !== null) {
     erest = erestOf(input.e, logged, day, n);
-  } else if (input.typedExpenses !== null) {
-    const gap = BigInt(input.typedExpenses) - everyday;
+  } else if (input.typedEveryday !== null) {
+    const gap = BigInt(input.typedEveryday) - everyday;
     erest = day === n ? minorUnits(0) : minorFromBigInt(gap > 0n ? gap : 0n, FN);
   } else {
     erest = minorUnits(0);
