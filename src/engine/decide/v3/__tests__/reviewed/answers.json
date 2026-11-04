@@ -177,27 +177,27 @@
   "persona:priya:6000:cash": {
     "code": "fits_month",
     "variant": "small_net",
-    "afterBuyMonth": 114000
+    "afterBuyMonth": 74000
   },
   "persona:priya:50000:cash": {
     "code": "fits_month",
     "variant": "small_net",
-    "afterBuyMonth": 70000
+    "afterBuyMonth": 30000
   },
   "persona:priya:200000:cash": {
     "code": "not_yet",
     "variant": "payday",
-    "afterBuyMonth": -80000
+    "afterBuyMonth": -120000
   },
   "persona:priya:900000:cash": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": -780000
+    "afterBuyMonth": -820000
   },
   "persona:priya:900000:plan": {
     "code": "fits_by_borrowing",
     "variant": null,
-    "afterBuyMonth": 120000
+    "afterBuyMonth": 80000
   },
   "persona:jordan:6000:cash": {
     "code": "needs_input",
@@ -327,52 +327,52 @@
   "persona:audit-p4:6000:cash": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": 34000
+    "afterBuyMonth": -64710
   },
   "persona:audit-p4:50000:cash": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": -10000
+    "afterBuyMonth": -108710
   },
   "persona:audit-p4:200000:cash": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": -160000
+    "afterBuyMonth": -258710
   },
   "persona:audit-p4:900000:cash": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": -860000
+    "afterBuyMonth": -958710
   },
   "persona:audit-p4:900000:plan": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": 40000
+    "afterBuyMonth": -58710
   },
   "persona:audit-p4-overdrawn:6000:cash": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": 34000
+    "afterBuyMonth": -214710
   },
   "persona:audit-p4-overdrawn:50000:cash": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": -10000
+    "afterBuyMonth": -258710
   },
   "persona:audit-p4-overdrawn:200000:cash": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": -160000
+    "afterBuyMonth": -408710
   },
   "persona:audit-p4-overdrawn:900000:cash": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": -860000
+    "afterBuyMonth": -1108710
   },
   "persona:audit-p4-overdrawn:900000:plan": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": 40000
+    "afterBuyMonth": -208710
   },
   "persona:audit-p5:6000:cash": {
     "code": "not_yet",
@@ -527,27 +527,27 @@
   "persona:audit-p10:6000:cash": {
     "code": "fits_month",
     "variant": "tight",
-    "afterBuyMonth": 54000
+    "afterBuyMonth": 11904
   },
   "persona:audit-p10:50000:cash": {
     "code": "not_yet",
     "variant": "payday",
-    "afterBuyMonth": 10000
+    "afterBuyMonth": -32096
   },
   "persona:audit-p10:200000:cash": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": -140000
+    "afterBuyMonth": -182096
   },
   "persona:audit-p10:900000:cash": {
     "code": "not_yet",
     "variant": "not_covered",
-    "afterBuyMonth": -840000
+    "afterBuyMonth": -882096
   },
   "persona:audit-p10:900000:plan": {
     "code": "fits_by_borrowing",
     "variant": null,
-    "afterBuyMonth": 60000
+    "afterBuyMonth": 17904
   },
   "gen:0": {
     "code": "fits_unspent",

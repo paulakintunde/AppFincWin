@@ -9380,9 +9380,9 @@
         "variant": "small_net",
         "afterBuyMonth": 74000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Fits (small_net)); the everyday account opened October at -$400.00 ($1,550.00 now, after $3,000.00 in and $1,050.00 out), so $400.00 owed from September comes off this month first: $1,200.00 - $400.00 = $800.00, and $740.00 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9397,9 +9397,9 @@
         "variant": "small_net",
         "afterBuyMonth": 30000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Fits (small_net)); the everyday account opened October at -$400.00 ($1,550.00 now, after $3,000.00 in and $1,050.00 out), so $400.00 owed from September comes off this month first: $1,200.00 - $400.00 = $800.00, and $300.00 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9414,9 +9414,9 @@
         "variant": "payday",
         "afterBuyMonth": -120000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (payday)); the everyday account opened October at -$400.00 ($1,550.00 now, after $3,000.00 in and $1,050.00 out), so $400.00 owed from September comes off this month first: $1,200.00 - $400.00 = $800.00, and -$1,200.00 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9431,9 +9431,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -820000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$400.00 ($1,550.00 now, after $3,000.00 in and $1,050.00 out), so $400.00 owed from September comes off this month first: $1,200.00 - $400.00 = $800.00, and -$8,200.00 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9448,9 +9448,9 @@
         "variant": null,
         "afterBuyMonth": 80000
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Only by borrowing); the everyday account opened October at -$400.00 ($1,550.00 now, after $3,000.00 in and $1,050.00 out), so $400.00 owed from September comes off this month first: $1,200.00 - $400.00 = $800.00, and $800.00 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9465,9 +9465,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -64710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$987.10 ($0.00 now, after $2,000.00 in and $1,012.90 out), so $987.10 owed from September comes off this month first: $400.00 - $987.10 = -$587.10, and -$647.10 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9482,9 +9482,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -108710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$987.10 ($0.00 now, after $2,000.00 in and $1,012.90 out), so $987.10 owed from September comes off this month first: $400.00 - $987.10 = -$587.10, and -$1,087.10 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9499,9 +9499,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -258710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$987.10 ($0.00 now, after $2,000.00 in and $1,012.90 out), so $987.10 owed from September comes off this month first: $400.00 - $987.10 = -$587.10, and -$2,587.10 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9516,9 +9516,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -958710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$987.10 ($0.00 now, after $2,000.00 in and $1,012.90 out), so $987.10 owed from September comes off this month first: $400.00 - $987.10 = -$587.10, and -$9,587.10 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9533,9 +9533,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -58710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$987.10 ($0.00 now, after $2,000.00 in and $1,012.90 out), so $987.10 owed from September comes off this month first: $400.00 - $987.10 = -$587.10, and -$587.10 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9550,9 +9550,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -214710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$2,487.10 (-$1,500.00 now, after $2,000.00 in and $1,012.90 out), so $2,487.10 owed from September comes off this month first: $400.00 - $2,487.10 = -$2,087.10, and -$2,147.10 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9567,9 +9567,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -258710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$2,487.10 (-$1,500.00 now, after $2,000.00 in and $1,012.90 out), so $2,487.10 owed from September comes off this month first: $400.00 - $2,487.10 = -$2,087.10, and -$2,587.10 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9584,9 +9584,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -408710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$2,487.10 (-$1,500.00 now, after $2,000.00 in and $1,012.90 out), so $2,487.10 owed from September comes off this month first: $400.00 - $2,487.10 = -$2,087.10, and -$4,087.10 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9601,9 +9601,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -1108710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$2,487.10 (-$1,500.00 now, after $2,000.00 in and $1,012.90 out), so $2,487.10 owed from September comes off this month first: $400.00 - $2,487.10 = -$2,087.10, and -$11,087.10 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9618,9 +9618,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -208710
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$2,487.10 (-$1,500.00 now, after $2,000.00 in and $1,012.90 out), so $2,487.10 owed from September comes off this month first: $400.00 - $2,487.10 = -$2,087.10, and -$2,087.10 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9635,9 +9635,9 @@
         "variant": "tight",
         "afterBuyMonth": 11904
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Fits (tight)); the everyday account opened October at -$420.96 ($964.52 now, after $2,500.00 in and $1,114.52 out), so $420.96 owed from September comes off this month first: $600.00 - $420.96 = $179.04, and $119.04 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9652,9 +9652,9 @@
         "variant": "payday",
         "afterBuyMonth": -32096
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (payday)); the everyday account opened October at -$420.96 ($964.52 now, after $2,500.00 in and $1,114.52 out), so $420.96 owed from September comes off this month first: $600.00 - $420.96 = $179.04, and -$320.96 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9669,9 +9669,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -182096
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$420.96 ($964.52 now, after $2,500.00 in and $1,114.52 out), so $420.96 owed from September comes off this month first: $600.00 - $420.96 = $179.04, and -$1,820.96 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9686,9 +9686,9 @@
         "variant": "not_covered",
         "afterBuyMonth": -882096
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Not yet (not_covered)); the everyday account opened October at -$420.96 ($964.52 now, after $2,500.00 in and $1,114.52 out), so $420.96 owed from September comes off this month first: $600.00 - $420.96 = $179.04, and -$8,820.96 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     },
     {
       "fixId": "FIN-09b",
@@ -9703,9 +9703,9 @@
         "variant": null,
         "afterBuyMonth": 17904
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "FIN-09b (D-86): answer unchanged (Only by borrowing); the everyday account opened October at -$420.96 ($964.52 now, after $2,500.00 in and $1,114.52 out), so $420.96 owed from September comes off this month first: $600.00 - $420.96 = $179.04, and $179.04 after buying.",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     }
   ]
 }
