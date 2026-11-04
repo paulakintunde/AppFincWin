@@ -203,21 +203,25 @@
     ]
   },
   "persona:leo:50000:cash": {
-    "right": "Fits from extra savings; -$194.84 left that month",
+    "right": "Fits, but tight (code: Fits from spare money)",
     "rightCode": "fits_unspent",
-    "rightVariant": "extra_savings",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "D-56; D-62; D-58",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Usual month by hand: pay $2,500.00 - bills $1,500.00 - everyday $880.00 = $120.00. Engine: $120.00 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: -$194.84. Spare money judged against: $100.00.",
-      "Price $500.00, in cash; paid today $500.00.",
-      "90-day path: lowest with the purchase $220.00 on 2026-10-31; without it $720.00 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $3,000.00, size $2,380.00 (the starter, D-51), protected part $2,380.00, above the size (extra savings) $620.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits from extra savings.",
-      "Hand check: the one-off part: the path never goes below $0.00; split unspent_earlier $100.00 + extra_savings $400.00: more than this month's -$194.84, so it is paid partly from earlier money; it uses $400.00 of the $620.00 saved above the net's size, so \"Fits from extra savings\" (D-62).",
-      "D-58 move-by: $400.00 by 2026-10-17. The everyday account alone first goes below $0.00 on that date, and its lowest point in the 90 days is -$400.00 (within the $620.00 above the net's size).",
-      "Hand path: everyday account $894.84 - $500.00 today = $394.84; everyday $794.84 over the 29 days to 31 Oct ($27.41 a day); $394.84 / $27.41 = 14.4 days, so below $0 first on 17 Oct; lowest on 31 Oct $394.84 - $794.84 = -$400.00. Move $400.00 by 2026-10-17: matches, and $400.00 is inside the $620.00 above the net size."
+      "Check date 2026-10-03. $500 paid once. October on its own is $194.84 short (rent and phone paid, everyday spread over the rest of the month), so nothing comes from this month.",
+      "Money left by hand: spare money $100 + extra savings above the safety net $620 (saved $3,000, size $2,380, locked) - $100 - $400 = $220, under the floor $238 (a tenth of $1,500 + $880 = $2,380).",
+      "So \"Fits, but tight\". Before: Fits from extra savings; the extra-savings line ($400 of the $620) and the move-by line still show below tight (D-59).",
+      "The 90-day path with the purchase is lowest at $220.00 on 31 October, never below $0.",
+      "Earlier audit: Usual month by hand: pay $2,500.00 - bills $1,500.00 - everyday $880.00 = $120.00. Engine: $120.00 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: -$194.84. Spare money judged against: $100.00.",
+      "Earlier audit: Price $500.00, in cash; paid today $500.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $220.00 on 2026-10-31; without it $720.00 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $3,000.00, size $2,380.00 (the starter, D-51), protected part $2,380.00, above the size (extra savings) $620.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits from extra savings.",
+      "Earlier audit: Hand check: the one-off part: the path never goes below $0.00; split unspent_earlier $100.00 + extra_savings $400.00: more than this month's -$194.84, so it is paid partly from earlier money; it uses $400.00 of the $620.00 saved above the net's size, so \"Fits from extra savings\" (D-62).",
+      "Earlier audit: D-58 move-by: $400.00 by 2026-10-17. The everyday account alone first goes below $0.00 on that date, and its lowest point in the 90 days is -$400.00 (within the $620.00 above the net's size).",
+      "Earlier audit: Hand path: everyday account $894.84 - $500.00 today = $394.84; everyday $794.84 over the 29 days to 31 Oct ($27.41 a day); $394.84 / $27.41 = 14.4 days, so below $0 first on 17 Oct; lowest on 31 Oct $394.84 - $794.84 = -$400.00. Move $400.00 by 2026-10-17: matches, and $400.00 is inside the $620.00 above the net size."
     ]
   },
   "persona:leo:900000:plan": {
@@ -237,20 +241,24 @@
     ]
   },
   "persona:tia:900000:plan": {
-    "right": "Fits (but no safety net)",
+    "right": "Fits, but tight each month (code: Fits)",
     "rightCode": "fits_month",
-    "rightVariant": "no_net",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "D-35",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Usual month by hand: pay $2,600.00 - bills $1,480.00 - everyday $800.00 = $320.00. Engine: $320.00 (matches).",
-      "Check date 2026-10-20. This month left before the purchase: $236.13. Spare money judged against: $500.00.",
-      "Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $10.75 on 2026-10-27; without it $10.75 on 2026-10-27. Cash check: ok.",
-      "Safety net: saved $0.00, size $2,280.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but no safety net).",
-      "Hand check: monthly $219.30 against a usual leftover of $320.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
-      "The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
+      "Check date 2026-10-20. Plan: $9,000 in 48 payments of $219.30 every month over 48 months, at 7.9% a year (APR), first payment 2026-11-20.",
+      "Usual room by hand: pay $2,600 - bills $1,480 - everyday $800 = $320. $219.30 / $320 = 68.5% (not more than 80%).",
+      "Room left each month: $320 - $219.30 = $100.70, under the floor $228 (a tenth of $1,480 + $800 = $2,280). So \"Fits, but tight each month\".",
+      "Before: Fits, but no safety net. Nothing is saved in a safety net, so that line still shows below tight (D-59).",
+      "Earlier audit: Usual month by hand: pay $2,600.00 - bills $1,480.00 - everyday $800.00 = $320.00. Engine: $320.00 (matches).",
+      "Earlier audit: Check date 2026-10-20. This month left before the purchase: $236.13. Spare money judged against: $500.00.",
+      "Earlier audit: Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $10.75 on 2026-10-27; without it $10.75 on 2026-10-27. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $2,280.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (but no safety net).",
+      "Earlier audit: Hand check: monthly $219.30 against a usual leftover of $320.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
+      "Earlier audit: The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
     ]
   },
   "persona:dana:6000:cash": {
@@ -286,16 +294,20 @@
     ]
   },
   "persona:dana:200000:cash": {
-    "right": "Fits, but you carry costly debt (Fits from spare money), $0 left in October",
+    "right": "Fits, but tight (code: Fits from spare money)",
     "rightCode": "fits_unspent",
-    "rightVariant": "costly_debt",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "FIN-10 / D-39b costly-debt caution (05.4-20)",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Check date 2026-10-03. Usual month: pay $5,000 - rent $1,800 - everyday $900 - minimums $1,400 (card $400, loan $1,000) = $900 (matches the engine).",
-      "Card $6,000 at 21.9% a year, minimum $400; loan $15,000 at 6.5% a year, minimum $1,000. Both are paid through their own debt-payment series (paid 3 October, next 3 November and 3 December on the path), so neither minimum is added a second time. No DB-07 double count before or after: a debt-payment series is not one of the usual bills.",
-      "$2,000 = $837.10 of October + $1,162.90 of spare money from earlier months. The card is at 21.9% (20% or more), so D-39b: amber \"Fits, but you carry costly debt\". Interest $6,000 x 21.9% / 12 = $109.50 a month; $2,000 toward the card would cut it by $2,000 x 21.9% / 12 = $36.50.",
-      "Before: \"but your safety net is small\" ($3,000 of a $4,100 starter). costly_debt leads it; the net_progress fact still shows."
+      "Check date 2026-10-03. $2,000 paid once. October room $837.10 + $1,162.90 from earlier months = all $2,000 of her spare money; no extra savings (net $3,000 saved of its $4,100 size).",
+      "Money left by hand: $2,000 + $0 - $2,000 = $0, under the floor $270 (a tenth of $1,800 + $900 = $2,700). The 90-day path is lowest at $0.00 on 31 October.",
+      "So \"Fits, but tight\". Before: Fits, but you carry costly debt (her 21.9% card; $1,162.90 put toward it would cut the interest by $21.22 a month, D-72). Tight now leads (plan variant order: tight above costly_debt); the card lines still show.",
+      "OWNER QUESTION 3: D-71 put costly debt first among the earlier-money cautions; this plan puts tight above it, as the plan and D-59 say.",
+      "Earlier audit: Check date 2026-10-03. Usual month: pay $5,000 - rent $1,800 - everyday $900 - minimums $1,400 (card $400, loan $1,000) = $900 (matches the engine).",
+      "Earlier audit: Card $6,000 at 21.9% a year, minimum $400; loan $15,000 at 6.5% a year, minimum $1,000. Both are paid through their own debt-payment series (paid 3 October, next 3 November and 3 December on the path), so neither minimum is added a second time. No DB-07 double count before or after: a debt-payment series is not one of the usual bills.",
+      "Earlier audit: $2,000 = $837.10 of October + $1,162.90 of spare money from earlier months. The card is at 21.9% (20% or more), so D-39b: amber \"Fits, but you carry costly debt\". Interest $6,000 x 21.9% / 12 = $109.50 a month; $2,000 toward the card would cut it by $2,000 x 21.9% / 12 = $36.50.",
+      "Earlier audit: Before: \"but your safety net is small\" ($3,000 of a $4,100 starter). costly_debt leads it; the net_progress fact still shows."
     ]
   },
   "persona:dana:900000:plan": {
@@ -494,19 +506,23 @@
     ]
   },
   "persona:audit-p3:50000:cash": {
-    "right": "Fits (but no safety net); $100.00 left that month",
+    "right": "Fits, but tight (code: Fits)",
     "rightCode": "fits_month",
-    "rightVariant": "no_net",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "D-35",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Usual month by hand: pay $3,000.00 - bills $1,600.00 - everyday $800.00 = $600.00. Engine: $600.00 (matches).",
-      "Check date 2026-10-15. This month left before the purchase: $600.00. Spare money judged against: $679.04.",
-      "Price $500.00, in cash; paid today $500.00.",
-      "90-day path: lowest with the purchase $179.04 on 2026-10-31; without it $679.04 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $0.00, size $2,400.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but no safety net).",
-      "Hand check: the one-off part: the path never goes below $0.00; nothing is saved in a safety net, so a fit carries \"but no safety net\"."
+      "Check date 2026-10-15. $500 paid once, all from October ($600 left before, so $100 after).",
+      "Money left by hand: spare money $679.04 (capped at what the account holds at month end) - $500 = $179.04, under the floor $240 (a tenth of $1,600 + $800). October alone ($100) is under it too.",
+      "So \"Fits, but tight\". Before: Fits, but no safety net; that line still shows below tight.",
+      "Shown in $ but the person file says GBP: the audit people run as USD (known, plan 40). Figures and answer are not affected.",
+      "Earlier audit: Usual month by hand: pay $3,000.00 - bills $1,600.00 - everyday $800.00 = $600.00. Engine: $600.00 (matches).",
+      "Earlier audit: Check date 2026-10-15. This month left before the purchase: $600.00. Spare money judged against: $679.04.",
+      "Earlier audit: Price $500.00, in cash; paid today $500.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $179.04 on 2026-10-31; without it $679.04 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $2,400.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (but no safety net).",
+      "Earlier audit: Hand check: the one-off part: the path never goes below $0.00; nothing is saved in a safety net, so a fit carries \"but no safety net\"."
     ]
   },
   "persona:audit-p3:900000:plan": {
@@ -739,35 +755,43 @@
     ]
   },
   "persona:audit-p9:6000:cash": {
-    "right": "Fits (but no safety net); $140.00 left that month",
+    "right": "Fits, but tight (code: Fits)",
     "rightCode": "fits_month",
-    "rightVariant": "no_net",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "D-35",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Usual month by hand: pay $2,000.00 - bills $1,100.00 - everyday $700.00 = $200.00. Engine: $200.00 (matches).",
-      "Check date 2026-10-15. This month left before the purchase: $200.00. Spare money judged against: $225.80.",
-      "Price $60.00, in cash; paid today $60.00.",
-      "90-day path: lowest with the purchase $165.80 on 2026-10-31; without it $225.80 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $0.00, size $1,800.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but no safety net).",
-      "Hand check: the one-off part: the path never goes below $0.00; nothing is saved in a safety net, so a fit carries \"but no safety net\"."
+      "Check date 2026-10-15. $60 paid once from October ($200 left before, $140 after).",
+      "Money left by hand: spare money $225.80 - $60 = $165.80, under the floor $180 (a tenth of $1,100 + $700). October alone ($140) is under it too. Before the purchase she had $225.80, above it.",
+      "So \"Fits, but tight\". Before: Fits, but no safety net; that line still shows.",
+      "Shown in $ but the person file says GBP (known, plan 40).",
+      "Earlier audit: Usual month by hand: pay $2,000.00 - bills $1,100.00 - everyday $700.00 = $200.00. Engine: $200.00 (matches).",
+      "Earlier audit: Check date 2026-10-15. This month left before the purchase: $200.00. Spare money judged against: $225.80.",
+      "Earlier audit: Price $60.00, in cash; paid today $60.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $165.80 on 2026-10-31; without it $225.80 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $1,800.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (but no safety net).",
+      "Earlier audit: Hand check: the one-off part: the path never goes below $0.00; nothing is saved in a safety net, so a fit carries \"but no safety net\"."
     ]
   },
   "persona:audit-p10:6000:cash": {
-    "right": "Fits (but no safety net); $540.00 left that month",
+    "right": "Fits, but tight (code: Fits)",
     "rightCode": "fits_month",
-    "rightVariant": "no_net",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "D-35",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Usual month by hand: pay $2,500.00 - bills $1,100.00 - everyday $800.00 = $600.00. Engine: $600.00 (matches).",
-      "Check date 2026-10-15. This month left before the purchase: $600.00. Spare money judged against: $179.04.",
-      "Price $60.00, in cash; paid today $60.00.",
-      "90-day path: lowest with the purchase $119.04 on 2026-10-31; without it $179.04 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $0.00, size $1,900.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but no safety net).",
-      "Hand check: the one-off part: the path never goes below $0.00; nothing is saved in a safety net, so a fit carries \"but no safety net\"."
+      "Check date 2026-10-15. $60 paid once from October ($600 left before, $540 after).",
+      "Money left by hand: the account holds only $179.04 at month end, so spare money is capped there (D-56): $179.04 - $60 = $119.04, under the floor $190 (a tenth of $1,100 + $800). Even before the purchase it is under the floor.",
+      "October alone ($540) is NOT under the floor. The plan text reads \"fits_month = this month after its plans minus the purchase\"; the engine reads the money really left (spare money + extra savings - purchase), so it says tight. CORRECT under the engine reading; OWNER QUESTION 1.",
+      "Shown in $ but the person file says GBP (known, plan 40).",
+      "Earlier audit: Usual month by hand: pay $2,500.00 - bills $1,100.00 - everyday $800.00 = $600.00. Engine: $600.00 (matches).",
+      "Earlier audit: Check date 2026-10-15. This month left before the purchase: $600.00. Spare money judged against: $179.04.",
+      "Earlier audit: Price $60.00, in cash; paid today $60.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $119.04 on 2026-10-31; without it $179.04 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $1,900.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (but no safety net).",
+      "Earlier audit: Hand check: the one-off part: the path never goes below $0.00; nothing is saved in a safety net, so a fit carries \"but no safety net\"."
     ]
   },
   "persona:audit-p10:900000:plan": {
@@ -1052,21 +1076,25 @@
     ]
   },
   "gen:20": {
-    "right": "Fits from spare money (low month), 0.00 left that month",
+    "right": "Fits, but tight each month (code: Fits from spare money)",
     "rightCode": "fits_unspent",
-    "rightVariant": "low_month",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; one-off ladder, spare money",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $1,888.58 is 38.22% of monthly pay $4,941.36 (pay), plan 12 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (pay) $4,941.36 - bills $1,891.05 - everyday $2,531.07 (the engine's typical figure) - debt minimums $49.41 = $469.83. Engine: $469.83 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $469.83. Spare money judged against: $2,792.26.",
-      "Price $1,888.58, in a plan of 4 payments every 3 months over 12 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2027-07-03, deposit $377.71; about $135.22 a month; paid today $783.37.",
-      "90-day path: lowest with the purchase $16,264.64 on 2026-10-31; without it $17,048.01 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $18,727.75, size $4,472.00, protected part $4,472.00, above the size (extra savings) $14,255.75, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits from spare money (low_month).",
-      "Hand check: one-off part: this month $469.83 + spare money $313.54 (spare $2,792.26 in all) -> Fits from spare money; monthly $135.22 against a usual leftover of $469.83: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $469.83 - $469.83 paid from this month = $0.00 (matches)."
+      "Check date 2026-10-03. Plan: $1,888.58 in 4 payments of $405.66 every 3 months over 12 months, at 19.9% a year (APR), first payment today; deposit $377.71 + the first payment = $783.37 today ($469.83 from October, $313.54 from earlier months).",
+      "Monthly cost: $405.66 every 3 months = $135.22 a month. Usual room $469.83; $135.22 / $469.83 = 28.8% (not more than 80%).",
+      "Room left each month: $469.83 - $135.22 = $334.61, under the floor $442.22 (a tenth of $1,891.05 + $2,531.07 = $4,422.12, rounded up). So \"Fits, but tight each month\".",
+      "Before: Fits from spare money (low month: July left -$1,383.58). The low-month fact still shows; tight leads.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $1,888.58 is 38.22% of monthly pay $4,941.36 (pay), plan 12 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (pay) $4,941.36 - bills $1,891.05 - everyday $2,531.07 (the engine's typical figure) - debt minimums $49.41 = $469.83. Engine: $469.83 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $469.83. Spare money judged against: $2,792.26.",
+      "Earlier audit: Price $1,888.58, in a plan of 4 payments every 3 months over 12 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2027-07-03, deposit $377.71; about $135.22 a month; paid today $783.37.",
+      "Earlier audit: 90-day path: lowest with the purchase $16,264.64 on 2026-10-31; without it $17,048.01 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $18,727.75, size $4,472.00, protected part $4,472.00, above the size (extra savings) $14,255.75, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits from spare money (low_month).",
+      "Earlier audit: Hand check: one-off part: this month $469.83 + spare money $313.54 (spare $2,792.26 in all) -> Fits from spare money; monthly $135.22 against a usual leftover of $469.83: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $469.83 - $469.83 paid from this month = $0.00 (matches)."
     ]
   },
   "gen:21": {
@@ -1376,20 +1404,24 @@
     ]
   },
   "gen:46": {
-    "right": "Fits, 641.31 left that month",
+    "right": "Fits, but tight each month (code: Fits)",
     "rightCode": "fits_month",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $4,548.92 is 70.05% of monthly pay $6,493.82 (a freelancer's steady amount), plan 36 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $6,493.82 - bills $2,289.71 - everyday $3,456.14 (the engine's typical figure) - debt minimums $64.93 = $683.04. Engine: $683.04 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $683.04. Spare money judged against: $2,881.65.",
-      "Price $4,548.92 + 8% tax, in a plan of 156 payments every week over 36 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2029-09-22, deposit $0.00; about $180.83 a month; paid today $41.73.",
-      "90-day path: lowest with the purchase $4,240.52 on 2026-10-07; without it $4,282.25 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $8,813.03, size $5,811.00, protected part $5,811.00, above the size (extra savings) $3,002.03, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $41.73 <= this month's room $683.04 -> Fits; monthly $180.83 against a usual leftover of $683.04: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $683.04 - $41.73 paid from this month = $641.31 (matches)."
+      "Check date 2026-10-03. Plan: $4,548.92 in 156 payments of $41.73 every week over 36 months, at 19.9% a year (APR), first payment today ($41.73 today).",
+      "Monthly cost: $41.73 x 52 / 12 = about $180.83 a month. Usual room $683.04; $180.83 / $683.04 = 26.5% (not more than 80%).",
+      "Room left each month: $683.04 - $180.83 = $502.21, under the floor $574.59 (a tenth of $2,289.71 + $3,456.14 = $5,745.85, rounded up). So \"Fits, but tight each month\". Before: plain Fits.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $4,548.92 is 70.05% of monthly pay $6,493.82 (a freelancer's steady amount), plan 36 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $6,493.82 - bills $2,289.71 - everyday $3,456.14 (the engine's typical figure) - debt minimums $64.93 = $683.04. Engine: $683.04 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $683.04. Spare money judged against: $2,881.65.",
+      "Earlier audit: Price $4,548.92 + 8% tax, in a plan of 156 payments every week over 36 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2029-09-22, deposit $0.00; about $180.83 a month; paid today $41.73.",
+      "Earlier audit: 90-day path: lowest with the purchase $4,240.52 on 2026-10-07; without it $4,282.25 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $8,813.03, size $5,811.00, protected part $5,811.00, above the size (extra savings) $3,002.03, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $41.73 <= this month's room $683.04 -> Fits; monthly $180.83 against a usual leftover of $683.04: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $683.04 - $41.73 paid from this month = $641.31 (matches)."
     ]
   },
   "gen:47": {
@@ -2016,20 +2048,24 @@
     ]
   },
   "gen:87": {
-    "right": "Fits, 351.01 left that month",
+    "right": "Fits, but tight each month (code: Fits)",
     "rightCode": "fits_month",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $3,790.19 is 53.23% of monthly pay $7,120.42 (a freelancer's steady amount), plan 33 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $7,120.42 - bills $2,788.35 - everyday $3,602.05 (the engine's typical figure) - debt minimums $0.00 = $730.02. Engine: $730.02 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $730.02. Spare money judged against: $3,069.58.",
-      "Price $3,790.19 + 8% tax, in a plan of 33 payments every month over 33 months at 19.9% a year (APR), first payment one period from today (2026-11-03), last payment 2029-07-03, deposit $379.01; about $147.06 a month; paid today $379.01.",
-      "90-day path: lowest with the purchase $35,250.67 on 2026-10-08; without it $35,629.68 on 2026-10-08. Cash check: ok.",
-      "Safety net: saved $40,993.28, size $6,391.00, protected part $6,391.00, above the size (extra savings) $34,602.28, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $379.01 <= this month's room $730.02 -> Fits; monthly $147.06 against a usual leftover of $730.02: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $730.02 - $379.01 paid from this month = $351.01 (matches)."
+      "Check date 2026-10-03. Plan: $3,790.19 in 33 payments of $147.06 every month over 33 months, at 19.9% a year (APR), first payment 2026-11-03; deposit $379.01 today from October.",
+      "Usual room $730.02; $147.06 / $730.02 = 20.1% (not more than 80%). Room left each month: $730.02 - $147.06 = $582.96, under the floor $639.04 (a tenth of $2,788.35 + $3,602.05 = $6,390.40).",
+      "So \"Fits, but tight each month\". Before: plain Fits. The person also has $34,602.28 of extra savings above the safety net: the plan rule reads the usual month only, never savings (owner rule: \"money left each month\").",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $3,790.19 is 53.23% of monthly pay $7,120.42 (a freelancer's steady amount), plan 33 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $7,120.42 - bills $2,788.35 - everyday $3,602.05 (the engine's typical figure) - debt minimums $0.00 = $730.02. Engine: $730.02 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $730.02. Spare money judged against: $3,069.58.",
+      "Earlier audit: Price $3,790.19 + 8% tax, in a plan of 33 payments every month over 33 months at 19.9% a year (APR), first payment one period from today (2026-11-03), last payment 2029-07-03, deposit $379.01; about $147.06 a month; paid today $379.01.",
+      "Earlier audit: 90-day path: lowest with the purchase $35,250.67 on 2026-10-08; without it $35,629.68 on 2026-10-08. Cash check: ok.",
+      "Earlier audit: Safety net: saved $40,993.28, size $6,391.00, protected part $6,391.00, above the size (extra savings) $34,602.28, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $379.01 <= this month's room $730.02 -> Fits; monthly $147.06 against a usual leftover of $730.02: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $730.02 - $379.01 paid from this month = $351.01 (matches)."
     ]
   },
   "gen:88": {
@@ -2394,21 +2430,24 @@
     ]
   },
   "gen:113": {
-    "right": "Fits (low month), 90.05 left that month",
+    "right": "Fits, but tight each month (code: Fits)",
     "rightCode": "fits_month",
-    "rightVariant": "low_month",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $8,454.48 is 107.58% of monthly pay $7,858.79 (pay), plan 19 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (pay) $7,858.79 - bills $3,465.72 - everyday $3,386.52 (the engine's typical figure) - debt minimums $471.52 = $535.03. Engine: $535.03 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $535.03. Spare money judged against: $4,385.82.",
-      "Price $8,454.48, in a plan of 19 payments every month over 19 months at 0% a year (APR), first payment today (2026-10-03), last payment 2028-04-03, deposit $0.00; about $444.98 a month; paid today $444.98.",
-      "90-day path: lowest with the purchase $30,331.04 on 2026-10-31; without it $30,776.02 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $33,714.20, size $7,324.00, protected part $7,324.00, above the size (extra savings) $26,390.20, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (low_month).",
-      "Hand check: one-off part: $444.98 <= this month's room $535.03 -> Fits; monthly $444.98 against a usual leftover of $535.03: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $535.03 - $444.98 paid from this month = $90.05 (matches)."
+      "Check date 2026-10-03. Plan: $8,454.48 in 19 payments of $444.98 every month over 19 months, at 0% a year (APR), first payment today.",
+      "Usual room $535.03; $444.98 / $535.03 = 83.2%, more than 80%. Room left each month: $90.05, also under the floor $685.23 (a tenth of $3,465.72 + $3,386.52 = $6,852.24, rounded up).",
+      "So \"Fits, but tight each month\" on both parts of the rule. Before: Fits (low month: June left $378.25, under $444.98); the low-month fact still shows.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $8,454.48 is 107.58% of monthly pay $7,858.79 (pay), plan 19 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (pay) $7,858.79 - bills $3,465.72 - everyday $3,386.52 (the engine's typical figure) - debt minimums $471.52 = $535.03. Engine: $535.03 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $535.03. Spare money judged against: $4,385.82.",
+      "Earlier audit: Price $8,454.48, in a plan of 19 payments every month over 19 months at 0% a year (APR), first payment today (2026-10-03), last payment 2028-04-03, deposit $0.00; about $444.98 a month; paid today $444.98.",
+      "Earlier audit: 90-day path: lowest with the purchase $30,331.04 on 2026-10-31; without it $30,776.02 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $33,714.20, size $7,324.00, protected part $7,324.00, above the size (extra savings) $26,390.20, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (low_month).",
+      "Earlier audit: Hand check: one-off part: $444.98 <= this month's room $535.03 -> Fits; monthly $444.98 against a usual leftover of $535.03: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $535.03 - $444.98 paid from this month = $90.05 (matches)."
     ]
   },
   "gen:114": {
@@ -2521,21 +2560,24 @@
     ]
   },
   "gen:120": {
-    "right": "Fits (low month), 102.28 left that month",
+    "right": "Fits, but tight each month (code: Fits)",
     "rightCode": "fits_month",
-    "rightVariant": "low_month",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $1,706.95 is 25.78% of monthly pay $6,621.22 (a freelancer's steady amount), plan 49 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $6,621.22 - bills $3,472.16 - everyday $2,162.81 (the engine's typical figure) - debt minimums $529.69 = $456.56. Engine: $456.56 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $456.56. Spare money judged against: $11,296.42.",
-      "Price $1,706.95, in a plan of 106 payments every 2 weeks over 49 months at 0% a year (APR), first payment today (2026-10-03), last payment 2030-10-12, deposit $341.39; about $27.93 a month; paid today $354.28.",
-      "90-day path: lowest with the purchase $49,151.59 on 2026-10-07; without it $49,505.87 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $46,253.92, size $6,165.00, protected part $6,165.00, above the size (extra savings) $40,088.92, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (low_month).",
-      "Hand check: one-off part: $354.28 <= this month's room $456.56 -> Fits; monthly $27.93 against a usual leftover of $456.56: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $456.56 - $354.28 paid from this month = $102.28 (matches)."
+      "Check date 2026-10-03. Plan: $1,706.95 in 106 payments of $12.89 every 2 weeks over 49 months, at 0% a year (APR), first payment today; deposit $341.39 + $12.89 = $354.28 today.",
+      "Monthly cost: $12.89 x 26 / 12 = about $27.93 a month. Usual room $456.56; $27.93 / $456.56 = 6.1%. Room left: $428.63, under the floor $563.50 (a tenth of $3,472.16 + $2,162.81 = $5,634.97, rounded up).",
+      "So \"Fits, but tight each month\". Her usual room ($456.56) is already under the floor, so ANY new monthly payment is tight for her (the owner rule as worded). Before: Fits (low month: July left -$522.88).",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $1,706.95 is 25.78% of monthly pay $6,621.22 (a freelancer's steady amount), plan 49 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $6,621.22 - bills $3,472.16 - everyday $2,162.81 (the engine's typical figure) - debt minimums $529.69 = $456.56. Engine: $456.56 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $456.56. Spare money judged against: $11,296.42.",
+      "Earlier audit: Price $1,706.95, in a plan of 106 payments every 2 weeks over 49 months at 0% a year (APR), first payment today (2026-10-03), last payment 2030-10-12, deposit $341.39; about $27.93 a month; paid today $354.28.",
+      "Earlier audit: 90-day path: lowest with the purchase $49,151.59 on 2026-10-07; without it $49,505.87 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $46,253.92, size $6,165.00, protected part $6,165.00, above the size (extra savings) $40,088.92, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (low_month).",
+      "Earlier audit: Hand check: one-off part: $354.28 <= this month's room $456.56 -> Fits; monthly $27.93 against a usual leftover of $456.56: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $456.56 - $354.28 paid from this month = $102.28 (matches)."
     ]
   },
   "gen:121": {
@@ -2985,21 +3027,24 @@
     ]
   },
   "gen:158": {
-    "right": "Fits from spare money (low month), 0.00 left that month",
+    "right": "Fits, but tight each month (code: Fits from spare money)",
     "rightCode": "fits_unspent",
-    "rightVariant": "low_month",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; one-off ladder, spare money",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $5,884.47 is 250.95% of monthly pay $2,344.88 (a freelancer's steady amount), plan 59 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $2,344.88 - bills $1,228.24 - everyday $962.58 (the engine's typical figure) - debt minimums $0.00 = $154.06. Engine: $154.06 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $154.06. Spare money judged against: $5,111.80.",
-      "Price $5,884.47 + 8% tax, in a plan of 59 payments every month over 59 months at 4.9% a year (APR), first payment one period from today (2026-11-03), last payment 2031-09-03, deposit $294.22; about $115.81 a month; paid today $294.22.",
-      "90-day path: lowest with the purchase $4,157.53 on 2026-10-07; without it $4,451.75 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $0.00, size $2,191.00, protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits from spare money (low_month).",
-      "Hand check: one-off part: this month $154.06 + spare money $140.16 (spare $5,111.80 in all) -> Fits from spare money; monthly $115.81 against a usual leftover of $154.06: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $154.06 - $154.06 paid from this month = $0.00 (matches)."
+      "Check date 2026-10-03. Plan: $5,884.47 in 59 payments of $115.81 every month over 59 months, at 4.9% a year (APR), first payment 2026-11-03; deposit $294.22 today ($154.06 from October, $140.16 from earlier months).",
+      "Usual room $154.06; $115.81 / $154.06 = 75.2% (not more than 80%). Room left each month: $38.25, under the floor $219.09 (a tenth of $1,228.24 + $962.58 = $2,190.82, rounded up).",
+      "So \"Fits, but tight each month\". Before: Fits from spare money (low month: May left $49.43); nothing is saved in a safety net, and that line still shows.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $5,884.47 is 250.95% of monthly pay $2,344.88 (a freelancer's steady amount), plan 59 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $2,344.88 - bills $1,228.24 - everyday $962.58 (the engine's typical figure) - debt minimums $0.00 = $154.06. Engine: $154.06 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $154.06. Spare money judged against: $5,111.80.",
+      "Earlier audit: Price $5,884.47 + 8% tax, in a plan of 59 payments every month over 59 months at 4.9% a year (APR), first payment one period from today (2026-11-03), last payment 2031-09-03, deposit $294.22; about $115.81 a month; paid today $294.22.",
+      "Earlier audit: 90-day path: lowest with the purchase $4,157.53 on 2026-10-07; without it $4,451.75 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $2,191.00, protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits from spare money (low_month).",
+      "Earlier audit: Hand check: one-off part: this month $154.06 + spare money $140.16 (spare $5,111.80 in all) -> Fits from spare money; monthly $115.81 against a usual leftover of $154.06: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $154.06 - $154.06 paid from this month = $0.00 (matches)."
     ]
   },
   "gen:159": {
@@ -3270,20 +3315,24 @@
     ]
   },
   "gen:177": {
-    "right": "Fits, 45.64 left that month",
+    "right": "Fits, but tight each month (code: Fits)",
     "rightCode": "fits_month",
+    "rightVariant": "tight",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $338.56 is 16.19% of monthly pay $2,091.22 (a freelancer's steady amount), plan 12 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $2,091.22 - bills $972.41 - everyday $859.08 (the engine's typical figure) - debt minimums $146.38 = $113.35. Engine: $113.35 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $113.35. Spare money judged against: $5,906.02.",
-      "Price $338.56, in a plan of 4 payments every 3 months over 12 months at 0% a year (APR), first payment one period from today (2027-01-03), last payment 2027-10-03, deposit $67.71; about $22.57 a month; paid today $67.71.",
-      "90-day path: lowest with the purchase $13,801.78 on 2026-10-07; without it $13,869.49 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $10,695.10, size $1,978.00, protected part $1,978.00, above the size (extra savings) $8,717.10, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $67.71 <= this month's room $113.35 -> Fits; monthly $22.57 against a usual leftover of $113.35: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $113.35 - $67.71 paid from this month = $45.64 (matches)."
+      "Check date 2026-10-03. Plan: $338.56 in 4 payments of $67.72 every 3 months over 12 months, at 0% a year (APR), first payment 2027-01-03; deposit $67.71 today.",
+      "Monthly cost: $67.72 every 3 months = about $22.57 a month. Usual room $113.35; 19.9%. Room left: $90.78, under the floor $183.15 (a tenth of $972.41 + $859.08 = $1,831.49, rounded up).",
+      "So \"Fits, but tight each month\". His usual room ($113.35) is already under the floor, so any new monthly payment is tight. Before: plain Fits.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $338.56 is 16.19% of monthly pay $2,091.22 (a freelancer's steady amount), plan 12 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $2,091.22 - bills $972.41 - everyday $859.08 (the engine's typical figure) - debt minimums $146.38 = $113.35. Engine: $113.35 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $113.35. Spare money judged against: $5,906.02.",
+      "Earlier audit: Price $338.56, in a plan of 4 payments every 3 months over 12 months at 0% a year (APR), first payment one period from today (2027-01-03), last payment 2027-10-03, deposit $67.71; about $22.57 a month; paid today $67.71.",
+      "Earlier audit: 90-day path: lowest with the purchase $13,801.78 on 2026-10-07; without it $13,869.49 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $10,695.10, size $1,978.00, protected part $1,978.00, above the size (extra savings) $8,717.10, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $67.71 <= this month's room $113.35 -> Fits; monthly $22.57 against a usual leftover of $113.35: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $113.35 - $67.71 paid from this month = $45.64 (matches)."
     ]
   },
   "gen:178": {
@@ -3917,20 +3966,307 @@
     "verdict": "CORRECT (now matches the approved case)",
     "cause": "ENG11-QE-BILLS and ENG11-QE-ESSENTIAL (05.4-57), looser",
     "notes": [
+      "05.4-21: £1,200 - £600 = £600, well over the £130 floor: plain Fits, no tight_floor.",
       "Before: everyday from the estimates £1,300 (bills included), still to come max(£1,300 x 8 / 30 = £346.67, £1,300 - £220 = £1,080) = £1,080; November left £2,500 - £1,000 - £220 - £1,080 = £200; £600 did not fit: Not yet (not covered), ready 1 December. Starter £1,000 + £300 = £1,300, so her £1,200 net was small.",
       "After: everyday £1,300 - £1,000 bills = £300; still to come max(£80, £80) = £80; November left £2,500 - £1,000 - £220 - £80 = £1,200; £1,200 - £600 = £600 left. Starter £1,000 bills + £200 essential = £1,200, full: plain Fits."
     ]
   },
   "case:QE-01": {
-    "right": "Fits, but tight, £25 left in November (approved 2026-11-02)",
+    "right": "Fits, but tight; £25 left in November",
     "rightCode": "fits_month",
     "rightVariant": "tight",
-    "verdict": "CORRECT so far (code and £25 match; the variant waits for tight, FIN-07, 05.4-21)",
-    "cause": "ENG11-QE-BILLS (05.4-57), looser",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21); ENG-11 / D-74 (05.4-57)",
     "notes": [
+      "05.4-21: £1,175 free (£1,280 - £80 still to come - £25 card minimum) - £1,150 = £25, under the £130 floor from her estimates (a tenth of £1,000 + £300). Tight leads; the small-net line (£300 of £1,225) still shows. Out of knownRed.",
       "Before: everyday £1,300, still to come £1,080; under-logged check £220 x 30 x 100 = 660,000 < 50 x £1,300 x 22 = 1,430,000 (in pounds), so Needs a figure first (records look behind).",
       "After: everyday £300; 50 x £300 x 22 = 330,000 < 660,000, not behind. November left £2,500 - £1,000 - £220 - £80 - £25 card minimum on 28 November = £1,175; £1,175 - £1,150 = £25 left. Fits (but your safety net is small: £300 of £1,225). Tight (a tenth of £1,000 + £300 = £130 floor, £25 under it) comes in 05.4-21.",
       "Starter under D-51 = £1,000 bills + £25 card minimum + £200 essential = £1,225. The case prose says £1,200 (written a day before D-51); the case pins no size. Owner question 2."
+    ]
+  },
+  "persona:sam:900000:plan": {
+    "right": "Fits, but tight each month (code: Fits)",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "Check date 2026-10-03. Plan: $9,000 in 48 payments of $219.30 every month over 48 months, at 7.9% a year (APR), first payment 2026-11-03; nothing paid today.",
+      "Usual room by hand: pay $4,000 - bills $1,800 - everyday $1,475 - regular saving $300 = $425. $219.30 / $425 = 51.6% (not more than 80%).",
+      "Room left each month: $425 - $219.30 = $205.70, under the floor $327.50 (a tenth of $1,800 + $1,475 = $3,275). So \"Fits, but tight each month\".",
+      "Before: Fits (low month): September left $50, under $219.30. The low-month fact still shows; tight leads it (D-59, 05.4-21 variant order)."
+    ]
+  },
+  "case:SN-10": {
+    "right": "Fits, but tight; $20 left in November",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "$1,000 - $980 = $20 left, under the $200 floor (a tenth of $1,200 + $800). Her $50 net is full: no net caution, and it stays untouched.",
+      "Before 05.4-21: plain Fits."
+    ]
+  },
+  "case:SN-11": {
+    "right": "Fits, but tight (code: Fits from spare money)",
+    "rightCode": "fits_unspent",
+    "rightVariant": "tight",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "£3,000 free - £2,950 = £50 left, under the £170 floor (a tenth of £1,000 + £700). £800 from November, £2,150 from earlier months.",
+      "Before 05.4-21: Fits from spare money, but no safety net; that line still shows (net_none_start), never \"untouched\"."
+    ]
+  },
+  "case:DB-02": {
+    "right": "Fits, but tight; $100 left in November",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "$1,000 - $300 card minimum (counted tomorrow, no due day) = $700 spare; $700 - $600 = $100 left, under the $200 floor (a tenth of $1,200 + $800; the minimum is not spending).",
+      "Before 05.4-21: Fits, but no safety net."
+    ]
+  },
+  "case:DB-03": {
+    "right": "Fits, but tight; $100 left in November",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "Card minimum paid as one of the $1,500 bills (counted once): $700 - $600 = $100, under the $230 floor (a tenth of $1,500 + $800).",
+      "Before 05.4-21: Fits, but no safety net."
+    ]
+  },
+  "case:DB-07": {
+    "right": "Fits, but tight; $300 left in November",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "$800 - $500 = $300, under the $320 floor (a tenth of $2,200 bills, mortgage included, + $1,000). Housing line: $1,500 of $4,000 pay, 38%.",
+      "Before 05.4-21: Fits, but no safety net."
+    ]
+  },
+  "case:QE-08": {
+    "right": "Fits, but tight; $25 left in November",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "$1,000 - $975 = $25, under the $200 floor (a tenth of $1,200 + $800).",
+      "Before 05.4-21: Fits, but no safety net. The plan expected QE-08 to stay in knownRed under FIN-09; its expected block asserts the month figure ($25), which the engine already gives, so it passes and left knownRed."
+    ]
+  },
+  "case:SO-06": {
+    "right": "Fits, but tight; $100 left in November",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "$1,000 - $900 = $100, under the $200 floor (a tenth of $1,200 + $800). Code and variant now match; the case stays in knownRed under BO-05 for its usual month after the gym stops ($1,050)."
+    ]
+  },
+  "case:BR-05": {
+    "right": "No: your month is already short (code: Short each month)",
+    "rightCode": "monthly_short",
+    "rightVariant": "month_already_short",
+    "verdict": "CORRECT",
+    "cause": "FIN-06 / D-63",
+    "notes": [
+      "Usual month $3,000 - $1,500 - $1,600 = -$100, at or below $0, so no new monthly payment fits (FIN-06); D-63 headline. With the pause question answered the engine agrees; through the fixture as written it asks first (FIN-05 / BO-05)."
+    ]
+  },
+  "case:BR-06": {
+    "right": "Short each month (approved); the engine and the plain calculator say Not yet",
+    "rightCode": "monthly_short",
+    "verdict": "DIFFERENT",
+    "cause": "FIN-06 this-month rule vs the 90-day cash check",
+    "notes": [
+      "November: $400 in the account with $600 of everyday spending still to come, heading to -$200; first payment of $100 on 28 November, inside November, so FIN-06 says Short each month (the monthly part is monthly_short).",
+      "But the account goes below $0 before payday with no overdraft limit, so the one-off cash check says Not yet, which is stricter and leads (CODE_PRECEDENCE). Plain calculator: Not yet too.",
+      "OWNER QUESTION 2. Approved block not edited; BR-06 stays in knownRed under FIN-05."
+    ]
+  },
+  "case:BR-07": {
+    "right": "Fits, but tight each month (code: Fits)",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "$1,870 / $2,200 = 85%, more than 80%; $330 left each month is above the $280 floor. Pause question answered; through the fixture as written the engine asks it first (stays in knownRed under FIN-05)."
+    ]
+  },
+  "case:BR-08": {
+    "right": "Fits, but tight each month (code: Fits)",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "$650 / $1,000 = 65%; $350 left each month, under the $400 floor (a tenth of $2,500 + $1,500). Pause answered; knownRed FIN-05."
+    ]
+  },
+  "case:BR-09": {
+    "right": "Fits, but tight each month (code: Fits)",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "$750 / $1,000 = 75%; $250 left, above the $200 tenth but under the $300 line she set (the line replaces the tenth). Fact basis user_line. Pause answered; knownRed FIN-05."
+    ]
+  },
+  "case:BR-11": {
+    "right": "Fits, but tight each month (code: Fits)",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "£200 / £200 = 100%; £0 left, under the £180 floor (a tenth of £1,000 + £800). Not Short each month: the payment is not bigger than the room. Pause answered; knownRed FIN-05."
+    ]
+  },
+  "case:RC-10": {
+    "right": "Fits, but tight; £50 left in October (approved)",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "DIFFERENT (code only; waits for FIN-09)",
+    "cause": "FIN-07 landed; month figure is 05.4-24",
+    "notes": [
+      "Variant now tight on both sides: £1,487.10 free (the engine's October room is £687.10, so £762.90 comes from earlier money) - £1,450 = £37.10 left, under the £180 floor. The approved block says Fits this month with £50 (FIN-09, 05.4-24: the month figure). Stays in knownRed under FIN-09."
+    ]
+  },
+  "case:RC-02": {
+    "right": "Fits, but tight (approved)",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "WAITS (running costs, 05.4-26)",
+    "cause": "BO-05",
+    "notes": [
+      "Running costs are not mapped into the engine yet (BO-05 / 05.4-26), so the engine sees a plain cash buy. Stays in knownRed under BO-05."
+    ]
+  },
+  "case:DB-10": {
+    "right": "Fits; $250 left in November",
+    "rightCode": "fits_month",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "$700 - $450 = $250, not under the $200 floor: no tight, no tight_floor."
+    ]
+  },
+  "case:DB-12": {
+    "right": "Fits; $1,200 left in November",
+    "rightCode": "fits_month",
+    "verdict": "CORRECT",
+    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "notes": [
+      "$1,800 - $600 = $1,200, far over the $320 floor: no tight."
+    ]
+  },
+  "case:BR-12": {
+    "right": "Not yet (not covered)",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT",
+    "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
+    "notes": [
+      "The dated path goes below $0 after the first payment, so the plan is Not yet (BR-12: judged like paying the whole cost at once). The short-month and tight rules do not change it. Pause question answered; knownRed FIN-05."
+    ]
+  },
+  "case:BR-17": {
+    "right": "Fits from spare money",
+    "rightCode": "fits_unspent",
+    "verdict": "CORRECT",
+    "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
+    "notes": [
+      "D-68: judged by cash as a one-off of its $1,800 whole cost. Money left: $3,500 spare - $1,800 = $1,700, not under the $250 floor, so not tight. Matches the approved answer; knownRed FIN-05 (first-payment mapping)."
+    ]
+  },
+  "case:BR-18": {
+    "right": "Short each month",
+    "rightCode": "monthly_short",
+    "verdict": "CORRECT",
+    "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
+    "notes": [
+      "Payments run past the 90 days, so D-68 does not apply; the monthly payment is more than the usual room: Short each month. Not changed by the short-month or tight rules."
+    ]
+  },
+  "case:BR-19": {
+    "right": "Not yet (not covered)",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT",
+    "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
+    "notes": [
+      "The dated path goes below $0 ($500 in the account): Not yet. The ready-by month (2027-03 by hand) is the known FIN-05 gap (05.4-56). Not changed by 05.4-21."
+    ]
+  },
+  "case:BR-20": {
+    "right": "Not yet (not covered)",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT",
+    "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
+    "notes": [
+      "The path goes below $0 and the locked net is left out (D-61): Not yet. Ready-by 2027-04 by hand is the known FIN-05 gap. Not changed by 05.4-21."
+    ]
+  },
+  "case:BR-21": {
+    "right": "Fits from extra savings (code: Fits from spare money)",
+    "rightCode": "fits_unspent",
+    "rightVariant": "extra_savings",
+    "verdict": "CORRECT",
+    "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
+    "notes": [
+      "D-68 by cash: $0 spare + $4,000 extra savings - $1,800 = $2,200 left, not under the $250 floor, so not tight; Fits from extra savings. Not changed by 05.4-21."
+    ]
+  },
+  "case:BR-22": {
+    "right": "Fits from spare money, but your month is already short",
+    "rightCode": "fits_unspent",
+    "rightVariant": "month_short_moderate",
+    "verdict": "CORRECT",
+    "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
+    "notes": [
+      "Usual month -$100 (FIN-06 blocks the monthly part); D-68 by cash then the D-65 Moderate tier. $3,250 - $1,800 = $1,450 left, not under the $310 floor (and tight never shows under a month-short headline). Not changed by 05.4-21."
+    ]
+  },
+  "case:BR-23": {
+    "right": "Fits from spare money",
+    "rightCode": "fits_unspent",
+    "verdict": "CORRECT",
+    "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
+    "notes": [
+      "D-68 by cash: $3,500 - $1,800 = $1,700 left, not under the $250 floor. Not changed by 05.4-21."
+    ]
+  },
+  "case:QE-11": {
+    "right": "No: your month is already short (code: Short each month)",
+    "rightCode": "monthly_short",
+    "rightVariant": "month_already_short",
+    "verdict": "CORRECT",
+    "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
+    "notes": [
+      "Usual month -£150, at or below £0: no new monthly payment fits (FIN-06); D-63 headline. Not changed by 05.4-21."
+    ]
+  },
+  "case:QE-12": {
+    "right": "No: your month is already short (code: Short each month)",
+    "rightCode": "monthly_short",
+    "rightVariant": "month_already_short",
+    "verdict": "CORRECT",
+    "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
+    "notes": [
+      "Usual month -£150: Short each month (FIN-06), D-63 headline; the payments savings would cover are stated (D-46). Not changed by 05.4-21."
     ]
   }
 }

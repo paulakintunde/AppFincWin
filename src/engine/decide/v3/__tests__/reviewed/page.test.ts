@@ -1,7 +1,7 @@
 import { corpus, type ReviewedChange } from './corpus';
 import * as fs from 'fs';
 import * as path from 'path';
-import { auditOf, breakdown, buildPage, priceShareOfPay, quickEstimatesStep, rateText, situationHtml, situationRows, words } from './page';
+import { auditOf, breakdown, buildPage, priceShareOfPay, quickEstimatesStep, rateText, situationHtml, situationRows, tightSums, words } from './page';
 import { evaluate } from '../../evaluate';
 import { loadCases } from '../rightAnswers/loader';
 import { toEngineInputs } from '../rightAnswers/fixture';
@@ -51,7 +51,7 @@ describe('reviewed page', () => {
     const fin01 = file.changes.filter((c) => c.fixId === 'FIN-01');
     expect(file.changes.filter((c) => c.fixId === 'FIN-03').length).toBe(5);
     expect(fin01.length).toBeGreaterThan(0);
-    for (const c of file.changes.filter((x) => x.fixId === 'FIN-01' || x.fixId === 'FIN-03' || x.fixId === 'FIN-10' || x.fixId === 'FIN-10b')) expect(auditOf(c.key)).not.toBeNull();
+    for (const c of file.changes.filter((x) => x.fixId === 'FIN-01' || x.fixId === 'FIN-03' || x.fixId === 'FIN-10' || x.fixId === 'FIN-10b' || x.fixId === 'FIN-06')) expect(auditOf(c.key)).not.toBeNull();
     const html = buildPage('FIN-01', fin01, cases);
     for (const t of ['Money in this month', 'Already spent this month', 'Still to come this month', 'After bills due before payday', 'Unused overdraft', 'Expected at month end', 'Starter (D-51)', 'Locked', 'Split', 'What the answer says', '90-day cash path', 'Lowest with the purchase', 'Step by step', 'Right answer:']) expect(html).toContain(t);
     for (const w of ['advice', 'recommend', 'you should', 'suggestion', '<script', 'not built yet', '{{']) expect(html.toLowerCase()).not.toContain(w);
@@ -318,5 +318,23 @@ describe('reviewed page', () => {
     const bad = quickEstimatesStep(c, { ...ev, month: { ...ev.month, e: (c.inputs.typedEstimates!.expenses + 1) as typeof ev.month.e } }, m)!;
     expect(bad.lines.join(' ')).toContain('PAGE AND ENGINE DISAGREE');
     expect(buildPage('ENG-11', [], cases)).toContain('Checks this rule reads, answer unchanged');
+  });
+
+  it("05.4-21 (FIN-06, FIN-07, D-40): the tight headline and the page's own tight sums", () => {
+    expect(words({ code: 'fits_month', variant: 'tight', afterBuyMonth: 2_500 })).toBe('Fits, but tight (code: Fits), 25.00 left that month');
+    const m = (n: number): string => String(n);
+    // audit-p10, $60 cash: October alone leaves 54,000, but spare money is capped at 17,904, so 11,904 is left, under 19,000
+    const p10 = cases.find((c) => c.key === 'persona:audit-p10:6000:cash')!;
+    const t = tightSums(p10, evaluate(p10.inputs, p10.check), m)!;
+    expect({ floor: t.floor, once: t.once, plan: t.plan, tight: t.tight }).toEqual({ floor: 19_000, once: { base: 17_904, baseIsSpare: true, above: 0, used: 6_000, left: 11_904 }, plan: null, tight: true });
+    // sam's 48-month plan: 21,930 of the 42,500 room is 51.6%, leaving 20,570, under 32,750
+    const sam = cases.find((c) => c.key === 'persona:sam:900000:plan')!;
+    const ts = tightSums(sam, evaluate(sam.inputs, sam.check), m)!;
+    expect(ts.plan).toEqual({ room: 42_500, monthly: 21_930, sharePct: '51.6', over80: false, leftEach: 20_570 });
+    expect([ts.floor, ts.tight]).toEqual([32_750, true]);
+    const html = buildPage('FIN-06', [], cases);
+    expect(html).toContain('Right-answer cases for short months and tight');
+    expect(html).toContain('Checks this rule reads, answer unchanged');
+    expect(html).not.toContain('PAGE AND ENGINE DISAGREE');
   });
 });

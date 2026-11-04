@@ -41,3 +41,14 @@
   by the crosscheck, seed 0). In the app a quick-estimates snapshot carries no series or debts today, so no user meets it yet;
   it bites once records sit beside estimates (05.5, D-43). How typed and recorded figures combine is an owner choice (owner
   question 3). The crosscheck draws quick-estimates people without a card, loan or regular saving until then (fixtureArb.ts).
+
+## Found in 05.4-21 (FIN-06 / FIN-07)
+- **The app does not pass the user's own tight line yet.** V3Inputs.tightLine (the money-left-each-month line, BR-09) is set only by
+  the right-answer fixtures and the crosscheck. No existing limit line means "money left each month" (unspent_floor is about unspent
+  money), so buildV3Inputs (src/features/decide/snapshot/**, not edited in 05.4) maps nothing; the screen that sets it is 08.1.
+  Until then every app answer uses the tenth-of-spending floor.
+- **Which tight row a screen shows.** verdictRowFor(code, 'tight', once) reads the one-off rows ("Fits, but tight") when `once` is
+  true; the caller passes true for a check paid once or a D-68 plan judged by cash (short_plan_from_cash). A one-off with a running
+  cost that is tight on its monthly cost (golden #22) reads better with the plan row: 08.1 decides.
+- **BR-06 (owner question 2 at the 05.4-21 review):** approved Short each month; engine and plain give Not yet (the account goes
+  below $0 before payday, which is stricter). Stays in knownRed under FIN-05.

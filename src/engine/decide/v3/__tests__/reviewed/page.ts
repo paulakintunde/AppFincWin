@@ -62,7 +62,8 @@ export const words = (a: ReviewedAnswer): string => {
   // D-62, D-63 and D-65 headlines have their own words; the code the engine gives is kept in brackets for D-63 and D-65.
   const tier = a.variant === null ? undefined : TIER_WORDS[a.variant];
   // 05.4-20 (D-39b): "Fits, but you carry costly debt" on fits_unspent.
-  const own = a.variant === 'extra_savings' ? 'Fits from extra savings' : a.variant === 'costly_debt' ? 'Fits, but you carry costly debt' : null;
+  // 05.4-21 (FIN-07, D-40): "Fits, but tight" ("each month" on a plan; the page's tight step says which).
+  const own = a.variant === 'extra_savings' ? 'Fits from extra savings' : a.variant === 'costly_debt' ? 'Fits, but you carry costly debt' : a.variant === 'tight' ? 'Fits, but tight' : null;
   const base = tier !== undefined ? `${tier} (code: ${code})` : own !== null ? `${own} (code: ${code})` : code;
   const v = a.variant === null || tier !== undefined || own !== null ? '' : ` (${VARIANT[a.variant] ?? a.variant})`;
   const left = a.afterBuyMonth === null ? '' : `, ${(a.afterBuyMonth / 100).toFixed(2)} left that month`;
@@ -552,6 +553,7 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   steps.push(...d47Steps(c, ev, m));
   steps.push(...debtSteps(c, ev, res, m));
   steps.push(...(quickEstimatesStep(c, ev, m)?.lines ?? [])); // 05.4-57 (ENG-11)
+  steps.push(...tightSteps(c, ev, m)); // 05.4-21 (FIN-06, FIN-07, D-40)
   if (res.variant === 'extra_savings') steps.push('Part of it is paid from money saved above the safety net\'s size, so the headline is "Fits from extra savings" (D-62).');
   steps.push(`Engine answer: ${words({ code: res.code, variant: res.variant, afterBuyMonth: left === null ? null : (left['left'] as number) })}.`);
   return { sections, steps };
@@ -794,8 +796,8 @@ export function debtSteps(c: CorpusCase, ev: Evaluation, res: Evaluation['result
   const saving = (d: V3Debt): number => pageInterest({ ...d, balance: Math.min(fromEarlier, d.balance) as V3Debt['balance'] });
   const worth = costly.filter((d) => saving(d) >= 100);
   const pageSays = res.code === 'fits_unspent' && fromEarlier > 0 && worth.length > 0;
-  // A higher variant (a D-63 / D-65 headline, or low_month) may lead; costly_debt never shows where the page says it does not apply.
-  const higher = res.variant !== null && ['month_already_short', 'month_short_moderate_extra', 'month_short_moderate', 'month_short_small', 'low_month'].includes(res.variant);
+  // A higher variant (a D-63 / D-65 headline, tight (05.4-21) or low_month) may lead; costly_debt never shows where the page says it does not apply.
+  const higher = res.variant !== null && ['month_already_short', 'month_short_moderate_extra', 'month_short_moderate', 'month_short_small', 'tight', 'low_month'].includes(res.variant);
   const agree = pageSays ? res.variant === 'costly_debt' || higher : res.variant !== 'costly_debt';
   out.push(
     `${agree ? '' : 'PAGE AND ENGINE DISAGREE: '}Costly debt (D-39b): ${costly.length === 0 ? 'no debt is at 20% a year or more' : `${costly.map((d) => `${d.id} at ${rateText(d.apr)}`).join(', ')} at 20% a year or more`}; ` +
@@ -903,6 +905,7 @@ const READS: Readonly<Record<string, (c: CorpusCase) => boolean>> = {
   'FIN-11b': (c) => longBillsOf(c.inputs).length > 0, // D-70
   'ENG-11': (c) => c.inputs.typedEstimates !== null, // 05.4-57: every check with quick estimates, changed or not
   'ENG-11b': (c) => c.inputs.typedEstimates !== null, // 05.4-57 D-74
+  'FIN-06': tightCloseCall, // 05.4-21: fits within twice the floor, or a plan over 60% of the room
 };
 
 /**
@@ -1012,6 +1015,7 @@ export function buildPage(fixId: string, changes: readonly ReviewedChange[], cas
     section('Stricter', groups.stricter, false) + section('Looser', groups.looser, false) + section('Same answer, detail changed', groups.detail, false) +
     (fixId === 'FIN-10' ? countedOnceHtml() : '') +
     (fixId === 'ENG-11' || fixId === 'ENG-11b' ? quickEstimateCasesHtml() : '') +
+    (fixId === 'FIN-06' ? tightCasesHtml() : '') +
     readsHtml
   );
 }
@@ -1037,4 +1041,131 @@ function quickEstimateCasesHtml(): string {
     );
   }
   return `<h2>Right-answer cases with quick estimates (${rows.length})</h2><p>These approved cases are not in the corpus. The answers before this fix are in the audit file. "Tight" comes in 05.4-21.</p><ul>${rows.join('')}</ul>`;
+}
+
+/**
+ * 05.4-21 (FIN-06 / ENG-06, FIN-07, D-40, D-53): the page's own short-month and tight sums, from the breakdown figures (not the
+ * engine's tight_floor fact), so the owner sees both side by side. The floor: the user's line, else a tenth of the usual month's
+ * bills plus everyday spending, rounded up. A plan: its monthly cost as a real percentage of the usual room (more than 80% is tight)
+ * and the room left after it against the floor. A one-off (or a D-68 plan judged by cash): spare money (this month's own figure when
+ * spare money is unknown) plus extra savings above the safety net's size, less what the purchase takes from them, against the floor.
+ * A disagreement with the engine is said in capitals. Under a D-63 / D-65 month-short headline tight never shows, so nothing is
+ * compared there.
+ */
+export interface TightSums {
+  readonly floor: number;
+  readonly floorText: string;
+  readonly plan: { readonly room: number; readonly monthly: number; readonly sharePct: string; readonly over80: boolean; readonly leftEach: number } | null;
+  readonly once: { readonly base: number; readonly baseIsSpare: boolean; readonly above: number; readonly used: number; readonly left: number } | null;
+  readonly tight: boolean;
+}
+
+export function tightSums(c: CorpusCase, ev: Evaluation, m: (n: number) => string): TightSums | null {
+  const res = ev.result;
+  const p = ev.purchase;
+  const mo = ev.month;
+  if (p === null || (res.code !== 'fits_month' && res.code !== 'fits_unspent')) return null;
+  const spend = Math.max(0, mo.recurringBills + (mo.e ?? 0));
+  const line = c.inputs.tightLine ?? null;
+  const floor = line !== null ? Math.max(0, line) : Math.ceil(spend / 10);
+  const floorText =
+    line !== null
+      ? `the ${m(floor)} line the user set`
+      : `a tenth of ${m(mo.recurringBills)} bills + ${m(mo.e ?? 0)} everyday spending = ${m(spend)}, rounded up: ${m(floor)}`;
+  const byCash = res.facts.some((f) => f.code === 'short_plan_from_cash');
+  let plan: TightSums['plan'] = null;
+  if (p.monthly > 0 && !byCash && res.parts.monthly === 'fits_month' && mo.typicalLeft !== null) {
+    const room = mo.typicalLeft;
+    const pct = room > 0 ? ((p.monthly * 100) / room).toFixed(1) : 'more than 100';
+    plan = { room, monthly: p.monthly, sharePct: pct, over80: p.monthly * 10000 > room * 8000, leftEach: room - p.monthly };
+  }
+  let once: TightSums['once'] = null;
+  if (p.schedule === null || byCash) {
+    const spare = ev.spare ?? null;
+    const above = ev.net !== undefined && ev.net.aboveSize > 0 ? ev.net.aboveSize : 0;
+    const used = res.split.filter((s) => s.source === 'month' || s.source === 'unspent_earlier' || s.source === 'extra_savings').reduce((a, s) => a + s.amount, 0);
+    const base = spare ?? mo.monthLeft;
+    once = { base, baseIsSpare: spare !== null, above, used, left: base + above - used };
+  }
+  const tight = (plan !== null && (plan.over80 || plan.leftEach < floor)) || (once !== null && once.left < floor);
+  return { floor, floorText, plan, once, tight };
+}
+
+function tightSteps(c: CorpusCase, ev: Evaluation, m: (n: number) => string): string[] {
+  const res = ev.result;
+  const out: string[] = [];
+  const p = ev.purchase;
+  const mo = ev.month;
+  // FIN-06 / ENG-06: why a plan is Short each month when its payment is not bigger than the usual room.
+  if (p !== null && p.monthly > 0 && res.parts.monthly === 'monthly_short') {
+    const tl = mo.typicalLeft;
+    const first = p.schedule?.firstDate ?? null;
+    if (tl !== null && tl <= 0) out.push(`Short each month (FIN-06): the usual month leaves ${m(tl)}, at or below ${m(0)}, so no new monthly payment fits it.`);
+    else if (tl !== null && p.monthly <= tl && first !== null) {
+      const heading = ev.spare ?? mo.monthLeft;
+      out.push(`Short each month (FIN-06): the first payment is on ${first}, in ${mo.month}, and ${ev.spare == null ? "this month's own figure" : 'spare money after this month\'s plans'} is ${m(heading)}, below ${m(0)}: a new payment cannot start in a month heading below ${m(0)}.`);
+    }
+  }
+  const t = tightSums(c, ev, m);
+  if (t === null) return out;
+  const short = mo.typicalLeft !== null && mo.typicalLeft < 0;
+  const engineTight = res.variant === 'tight';
+  const flag = !short && t.tight !== engineTight ? 'PAGE AND ENGINE DISAGREE: ' : '';
+  if (t.plan !== null) {
+    const pl = t.plan;
+    out.push(
+      `${flag}Tight each month (FIN-07): about ${m(pl.monthly)} a month is ${pl.sharePct}% of the usual ${m(pl.room)} room (${pl.over80 ? 'more than' : 'not more than'} 80%) and leaves ${m(pl.leftEach)} a month, ` +
+        `${pl.leftEach < t.floor ? 'under' : 'not under'} the floor (${t.floorText}), so ${pl.over80 || pl.leftEach < t.floor ? 'it is "Fits, but tight each month"' : 'the plan part is not tight'}.`
+    );
+  }
+  if (t.once !== null) {
+    const o = t.once;
+    out.push(
+      `${flag}Tight (D-40): ${o.baseIsSpare ? 'spare money' : "this month's own figure (spare money is not known)"} ${m(o.base)} + extra savings above the safety net's size ${m(o.above)} - ${m(o.used)} paid from them = ${m(o.left)} left, ` +
+        `${o.left < t.floor ? 'under' : 'not under'} the floor (${t.floorText}), so ${o.left < t.floor ? 'it is "Fits, but tight"' : 'the one-off part is not tight'}.`
+    );
+  }
+  if (short && t.tight) out.push('The usual month is already short, so the month-short headline leads and tight is not shown (D-63 / D-65).');
+  if (engineTight) out.push('Tight leads every safety-net caution, costly debt, extra savings and a low month (D-59); their facts still show below it.');
+  return out;
+}
+
+/** 05.4-21: a check whose page-own tight sums fall within twice the floor, or a plan over 60% of the room (close calls). */
+function tightCloseCall(c: CorpusCase): boolean {
+  const ev = evaluate(c.inputs, c.check);
+  const t = tightSums(c, ev, (n) => String(n));
+  if (t === null || (ev.month.typicalLeft !== null && ev.month.typicalLeft < 0)) return false;
+  const plan = t.plan !== null && (t.plan.leftEach < 2 * t.floor || t.plan.monthly * 100 > t.plan.room * 60);
+  const once = t.once !== null && t.once.left < 2 * t.floor;
+  return plan || once;
+}
+
+/**
+ * 05.4-21: the approved right-answer cases for short months and tight (expected tight, or a case that pins "not tight"). They are
+ * not in the corpus, so they show here with the engine's answer now and the approved answer. A plan runs with its pause question
+ * answered (no interest during the pause: these plans are 0%), as the crosscheck's table pins do; through the fixture as written
+ * the engine asks that question first (BO-05 / FIN-05).
+ */
+function tightCasesHtml(): string {
+  const rows: string[] = [];
+  const picked = loadCases().filter(
+    (x) => x.status === 'approved' && (x.expected.variant === 'tight' || x.expected.mustNotHaveFacts.includes('tight_floor') || x.fixIds.includes('FIN-06'))
+  );
+  for (const rc of picked) {
+    const { inputs, check } = toEngineInputs(rc.fixture);
+    const fp = check.pay.mode === 'plan' ? check.pay.firstPayment : null;
+    const answered = check.pay.mode === 'plan' && fp !== null && fp.kind === 'deferred' ? { ...check, pay: { ...check.pay, firstPayment: { ...fp, interestDuringPause: false } } } : check;
+    const c: CorpusCase = { key: `case:${rc.id}`, label: `${rc.id} ${rc.persona}`, inputs, check: answered };
+    const p = evaluate(inputs, answered);
+    const left = p.result.facts.find((f) => f.code === 'month_left_after')?.values['left'];
+    const b = breakdown(c);
+    const same = p.result.code === rc.expected.code && p.result.variant === rc.expected.variant;
+    rows.push(
+      `<li><b>${esc(rc.id)} ${esc(rc.persona)}</b>${check.pay.mode === 'plan' ? ' (plan, pause question answered)' : ''}<br>Engine now: ${esc(words({ code: p.result.code, variant: p.result.variant, afterBuyMonth: typeof left === 'number' ? left : null }))}<br>` +
+        `Approved right answer: ${esc(words({ code: rc.expected.code, variant: rc.expected.variant, afterBuyMonth: rc.expected.afterBuy.month }))}${same ? ' (same code and variant)' : ' (DIFFERENT: see the audit box)'}` +
+        auditHtml(auditOf(c.key)) +
+        `<details><summary>Situation and full breakdown</summary>${situationHtml(c)}${sectionsHtml(b.sections)}<h4>Step by step</h4><ol>${b.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol></details></li>`
+    );
+  }
+  return `<h2>Right-answer cases for short months and tight (${rows.length})</h2><p>These approved cases are not in the corpus. Their answers before this fix are in 05.4-21-FIN-06-AUDIT.md.</p><ul>${rows.join('')}</ul>`;
 }
