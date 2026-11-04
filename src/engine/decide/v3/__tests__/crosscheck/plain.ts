@@ -1055,9 +1055,43 @@ export function plainExpensive(f: RightAnswerFixture): boolean {
  */
 function plainBorrowing(f: RightAnswerFixture, a: PlainAnswer): PlainAnswer {
   if ((a.code !== 'fits_month' && a.code !== 'fits_unspent') || !plainExpensive(f)) return a;
-  const cash = plainCode({ ...f, check: { ...f.check, pay: { mode: 'once' } } });
-  const fits = cash.code === 'fits_month' || cash.code === 'fits_unspent';
+  const once: RightAnswerFixture = { ...f, check: { ...f.check, pay: { mode: 'once' } } };
+  const cash = plainCode(once);
+  const fits = cash.code === 'fits_month' || cash.code === 'fits_unspent' || (cash.code === 'not_yet' && plainShortWait(once));
   return { code: 'fits_by_borrowing', variant: fits ? 'borrowing_costs_more' : null, afterBuy: a.afterBuy };
+}
+
+/** D-80 (owner, 2026-11-04): "if the cash route is ready within 31 days of the check date", it counts as cash fitting. */
+const SHORT_WAIT = 31;
+
+/**
+ * When paying at once (Not yet) is ready, restated from the ready-by rules the table states: the shortfall is the price less free
+ * money and money above the net's size (OD-10: below $0 is that much more to make up); it is made up at the usual month's money
+ * left, whole months from this month, at least the next month ("SN-12: £500 more at £80 a month = 7 months"). With nothing to make
+ * up and the next pay clearing the dip for good, it is ready on that pay (BR-06: "ready on 1 December when his pay lands"); otherwise on the
+ * next pay when it lands on or after the first of the ready month, else in that month. null: never (the usual month leaves nothing).
+ */
+export function plainCashReady(f: RightAnswerFixture): { date: string } | { month: string } | null {
+  const cost = big(f.check.price ?? 0) + big(f.check.oneOffFees);
+  const short = cost - freeMoney(f) - plainNet(f).above;
+  const pay = payDates(f).find((d) => d > f.asOf);
+  // the next pay clears the dip for good: from that pay on, the 90-day path (with the money above the net's size) stays at or above $0
+  const above = plainNet(f).above;
+  const clears = pay !== undefined && plainPath(f, cost).every((x) => x.date < pay || x.balance + above >= 0n);
+  if (short <= 0n && clears) return { date: pay as string };
+  const usual = usualLeftOf(f);
+  if (usual <= 0n) return null;
+  const n = short <= 0n ? 1n : maxC(1n, (short + usual - 1n) / usual);
+  const month = plusMonths(`${f.asOf.slice(0, 7)}-01`, Number(n)).slice(0, 7);
+  return pay !== undefined && pay >= `${month}-01` ? { date: pay } : { month };
+}
+
+/** D-80, restated: paying at once is ready within 31 days of the check date (a ready month counts by its last day). */
+export function plainShortWait(f: RightAnswerFixture): boolean {
+  const r = plainCashReady(f);
+  if (r === null) return false;
+  const day = 'date' in r ? r.date : `${r.month}-${String(daysInMonthOf(`${r.month}-01`)).padStart(2, '0')}`;
+  return day <= dayAfter(f.asOf, SHORT_WAIT);
 }
 
 /** Named so the table's thresholds have one reader (05.4-21 reads them in plainFloor and plainTightPlan). */

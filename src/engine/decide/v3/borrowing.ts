@@ -15,8 +15,9 @@
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { PERCENT_SCALE, minorFromBigInt, type Percent } from '../../payoff/types';
 import { myPart, type ResolvedShare } from '../share';
-import { EXPENSIVE_APR_BP, EXPENSIVE_INTEREST_SHARE_BP } from './constants';
-import type { Code, Fact, ReadyBy, Result, Schedule } from './types';
+import { EXPENSIVE_APR_BP, EXPENSIVE_INTEREST_SHARE_BP, SHORT_WAIT_DAYS } from './constants';
+import { daysBetween, daysInYearMonth } from './dates';
+import type { Code, Fact, LocalDate, MissingCode, ReadyBy, Result, Schedule } from './types';
 
 const FN = 'borrowing';
 
@@ -65,6 +66,25 @@ export function isExpensive(s: Schedule, apr: PlanRate, housing: boolean): boole
 /** The cash route counts as a fit only on the clean fit codes: no overdraft, no safety-net money (D-61). */
 export function cashFits(code: Code): boolean {
   return code === 'fits_month' || code === 'fits_unspent';
+}
+
+/**
+ * D-80 (owner, 2026-11-04): a short wait is not "Only by borrowing". A Not yet cash route that is ready within SHORT_WAIT_DAYS of the
+ * check date counts as cash fitting: a ready date, or the last day of a ready month (the latest it could mean, so never generous).
+ */
+export function cashSoon(cash: Result, asOf: LocalDate): boolean {
+  const r = cash.readyBy;
+  if (cash.code !== 'not_yet' || r === null) return false;
+  const day = r.kind === 'date' ? r.date : `${r.month}-${String(daysInYearMonth(r.month)).padStart(2, '0')}`;
+  return daysBetween(asOf, day) <= SHORT_WAIT_DAYS;
+}
+
+/**
+ * D-79 (owner, 2026-11-04): when paying cash cannot be judged yet, the save-or-borrow line says what to add: kind 'ask' with the
+ * cash route's first missing figure (an ask always names at least one, judge.ts asking).
+ */
+export function askFact(cash: Result): Fact {
+  return { code: 'save_vs_borrow', values: { kind: 'ask', missing: cash.missing[0] as MissingCode } };
 }
 
 export interface SaveVsBorrow {

@@ -254,7 +254,7 @@ type Values = Record<string, unknown>;
 const PLAIN_NUMBER_KEYS = new Set(['months', 'monthsAfter', 'day', 'count', 'everyMonths', 'days', 'of', 'periods', 'value', 'limit']);
 const DATE_KEYS = new Set(['date', 'dueDate']);
 /** COPY_RESOLVERS: the id a value carries and the placeholder the copy reads. */
-const RESOLVED: Record<string, string> = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account' };
+const RESOLVED: Record<string, string> = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account', missing: 'figure' };
 
 /** The en.ts string at a dotted path, or null. */
 function copyAt(path: string): string | null {
@@ -273,6 +273,8 @@ function copyKeyFor(group: 'fact' | 'notice', code: string, v: Values): string {
   const pick = (suffix: string): string => (copyAt(`${base}_${suffix}`) === null ? base : `${base}_${suffix}`);
   if (group === 'fact') {
     if (code === 'line_crossed' && typeof v['unit'] === 'string') return pick(v['unit']);
+    // 05.4-22 (FIN-05, D-79): the save-or-borrow line by kind ('ready' reads the base copy)
+    if (code === 'save_vs_borrow' && typeof v['kind'] === 'string' && v['kind'] !== 'ready') return pick(v['kind']);
     if (code === 'wait_keeps_net' && v['date'] === undefined) return pick('month');
     if (code === 'overdraft_without_purchase' && v['days'] === 0) return pick('above');
     if (code === 'overdraft_not_cleared' && v['date'] === undefined) return pick('no_pay');
@@ -920,6 +922,7 @@ const READS: Readonly<Record<string, (c: CorpusCase) => boolean>> = {
   'ENG-11b': (c) => c.inputs.typedEstimates !== null, // 05.4-57 D-74
   'FIN-06': tightCloseCall, // 05.4-21: fits within twice the floor, or a plan over 60% of the room
   'FIN-05': (c) => c.check.pay.mode === 'plan', // 05.4-22: every plan check, changed or not
+  'FIN-05b': (c) => c.check.pay.mode === 'plan', // 05.4-22 D-79 / D-80
 };
 
 /**
@@ -1030,7 +1033,7 @@ export function buildPage(fixId: string, changes: readonly ReviewedChange[], cas
     (fixId === 'FIN-10' ? countedOnceHtml() : '') +
     (fixId === 'ENG-11' || fixId === 'ENG-11b' ? quickEstimateCasesHtml() : '') +
     (fixId === 'FIN-06' ? tightCasesHtml() : '') +
-    (fixId === 'FIN-05' ? borrowingCasesHtml() : '') +
+    (fixId === 'FIN-05' || fixId === 'FIN-05b' ? borrowingCasesHtml() : '') +
     readsHtml
   );
 }
@@ -1270,8 +1273,18 @@ export function borrowSteps(c: CorpusCase, ev: Evaluation, m: (n: number) => str
   const flag = pageBorrowed !== (res.code === 'fits_by_borrowing') ? 'PAGE AND ENGINE DISAGREE: ' : '';
   if (!b.expensive) out.push(`${flag}Not expensive, so the plan keeps its own answer (${LABEL[ownCode] ?? ownCode}).`);
   else if (!fitsOwn) out.push(`${flag}Expensive, but the plan itself does not fit (${LABEL[ownCode] ?? ownCode}), so that stricter answer leads; the save-or-borrow line still shows.`);
-  else if (b.cash.code === 'needs_input') out.push(`${flag}Expensive and the plan fits, but paying at once asks for a figure first: "Only by borrowing", with no comparison.`);
-  else out.push(`${flag}Expensive and the plan fits (${LABEL[ownCode] ?? ownCode}): ${b.cashFits ? 'cash fits too, so "Fits, but borrowing costs more" (D-39a)' : 'cash does not fit yet, so "Only by borrowing"'}${short ? '; the usual month is already short, so its D-63 / D-65 headline leads' : ''}.`);
+  else if (b.cash.code === 'needs_input') out.push(`${flag}Expensive and the plan fits, but paying at once asks for a figure first (${b.cash.missing[0] ?? ''}): "Only by borrowing", and the line says what to add (D-79).`);
+  else {
+    // D-80: a cash route ready within 31 days of the check date counts as cash fitting (a ready month by its last day)
+    const r = b.cash.readyBy;
+    const day = r === null ? null : r.kind === 'date' ? r.date : `${r.month}-${String(daysInYearMonth(r.month)).padStart(2, '0')}`;
+    const days = day === null ? null : Math.round((Date.parse(day) - Date.parse(c.inputs.asOf)) / 86_400_000);
+    const soon = b.cash.code === 'not_yet' && days !== null && days <= 31;
+    const want = b.cashFits || soon ? 'borrowing_costs_more' : null;
+    const vflag = !short && res.code === 'fits_by_borrowing' && res.variant !== want ? 'PAGE AND ENGINE DISAGREE: ' : '';
+    const why = b.cashFits ? 'cash fits too, so "Fits, but borrowing costs more" (D-39a)' : soon ? `cash is ready in ${String(days)} days (${String(day)}), within 31 days, so "Fits, but borrowing costs more" (D-80)` : `cash does not fit yet${days === null ? '' : ` (ready in about ${String(days)} days)`}, so "Only by borrowing"`;
+    out.push(`${flag}${vflag}Expensive and the plan fits (${LABEL[ownCode] ?? ownCode}): ${why}${short ? '; the usual month is already short, so its D-63 / D-65 headline leads' : ''}.`);
+  }
   const d48 = ['interest_is_a_cost', 'net_covers_surprises', 'income_or_costs_first'].filter((k) => res.facts.some((f) => f.code === k));
   out.push(`The borrowing lines on every plan answer (D-48): ${d48.join(', ')}${b.interest > 0 ? '' : ' (0%: no interest line)'}.`);
   return out;

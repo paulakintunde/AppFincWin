@@ -377,7 +377,8 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   // 05.4 FIN-05 (D-07, D-39a): kind picks the copy ('cash_fits' { left, more }, 'ready' { readyBy, more }, 'with_net',
   // 'with_overdraft' or 'no_date' { more });
   // readyBy is a date ('YYYY-MM-DD') or a month ('YYYY-MM'). D-48: the two borrowing lines carry no values.
-  save_vs_borrow: ['kind', 'left', 'readyBy', 'more'],
+  // D-79: kind 'ask' { missing }: the missing figure's code, resolved to its name by the screen (COPY_RESOLVERS).
+  save_vs_borrow: ['kind', 'left', 'readyBy', 'more', 'missing'],
   net_covers_surprises: [],
   income_or_costs_first: [],
 });
@@ -408,7 +409,7 @@ export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> 
 });
 
 /** An id the engine emits that the UI resolves to a name; the copy placeholder is the value. */
-export const COPY_RESOLVERS = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account', debtId: 'debt' } as const;
+export const COPY_RESOLVERS = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account', debtId: 'debt', missing: 'figure' } as const; // missing: 05.4 D-79, a MissingCode named by its decide.v3.missing copy
 
 /** Keys that pick a copy variant or identify a line; they need no placeholder of their own. */
 export const DISCRIMINATOR_KEYS = ['lineId', 'kind', 'unit', 'source', 'basis'] as const;

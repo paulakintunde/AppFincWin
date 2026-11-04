@@ -353,6 +353,7 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       'decide.v3.fact.save_vs_borrow_with_net',
       'decide.v3.fact.save_vs_borrow_with_overdraft',
       'decide.v3.fact.save_vs_borrow_no_date',
+      'decide.v3.fact.save_vs_borrow_ask', // 05.4 D-79
       'decide.v3.fact.overdraft_repeat_no_rate',
       'decide.v3.fact.other_account_overdrawn_no_rate',
       ...Object.values(FACT_ACTION_KEYS).flatMap((a) => Object.values(a)),

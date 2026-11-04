@@ -56,7 +56,7 @@ import type { CashCheck, CashPathV3 } from '../cash/path';
 import { billsHeldTotal, cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit } from '../moneySource';
 import { costlyDebt, costlyFacts, debtFacts } from '../debts';
 import { depletionFacts, monthAlreadyShort, monthShortTier, planTotal } from '../depletion';
-import { borrowingFacts, cashFits, isExpensive, saveVsBorrow, saveVsBorrowFact, type PlanRate } from '../borrowing';
+import { askFact, borrowingFacts, cashFits, cashSoon, isExpensive, saveVsBorrow, saveVsBorrowFact, type PlanRate } from '../borrowing';
 import { paymentsInRange } from '../plan/schedule';
 import { emergencyOf } from '../funds/emergency';
 import { NO_NET, fitVariant, netDip, type ResolvedNet } from '../safetyNet';
@@ -867,8 +867,9 @@ export function judge(j: JudgeInput): Result {
   // it does not (not yet, or only with the overdraft or the net). A cheap plan stays as judged (BR-03; 0% plans BR-07..BR-09, BR-11,
   // BR-14; a home loan under 20% APR, BR-15). fits_by_borrowing outranks every other fit (CODE_PRECEDENCE), so a fit's own facts
   // stay and a dearer plan, more bills or less money never look better (I59, I60, I10, I54, I55): the code does not depend on the
-  // cash route. When the cash route asks for a figure first it is not compared (no save_vs_borrow) and the variant is null. Under an
-  // already-short usual month the D-63 / D-65 tier keeps the headline (the variant) on fits_by_borrowing.
+  // cash route. When the cash route asks for a figure first, the variant is null and the line says what to add (D-79, kind 'ask').
+  // D-80: a cash route ready within 31 days of the check date counts as cash fitting ("Fits, but borrowing costs more", with the
+  // ready date in the line). Under an already-short usual month the D-63 / D-65 tier keeps the headline (the variant).
   const fitsNow = code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_net' || code === 'fits_uses_overdraft';
   let finalCode: Code = code;
   let borrowVariant: Variant | null = null;
@@ -876,8 +877,9 @@ export function judge(j: JudgeInput): Result {
   if (sched !== null && borrow !== null && isExpensive(sched, borrow.apr, borrow.housing)) {
     const asks = borrow.cash.code === 'needs_input';
     const route = saveVsBorrow(borrow.cash, sched, purchase.share);
-    const fitsByCash = cashFits(route.cashCode);
-    if (!asks && (fitsByCash || !borrow.housing)) compare = saveVsBorrowFact(route);
+    const fitsByCash = cashFits(route.cashCode) || cashSoon(borrow.cash, j.inputs.asOf);
+    if (asks) compare = askFact(borrow.cash);
+    else if (fitsByCash || !borrow.housing) compare = saveVsBorrowFact(route);
     if (fitsNow) {
       finalCode = 'fits_by_borrowing';
       borrowVariant = fitsByCash ? 'borrowing_costs_more' : null;

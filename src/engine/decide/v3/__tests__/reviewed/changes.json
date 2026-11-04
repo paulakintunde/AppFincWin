@@ -7139,6 +7139,23 @@
       "reason": "FIN-05 (D-07, D-39a): $626.01 borrowed at 19.9% APR costs $66.73 in interest (10.66%); the interest is 10.66% of the amount borrowed, 10% or more and the plan fits on its own; paying the price at once fits too, so \"Fits, but borrowing costs more\". Borrowing costs $66.73 more than cash.",
       "approved": true,
       "approvedAt": "2026-11-04"
+    },
+    {
+      "fixId": "FIN-05b",
+      "key": "gen:46",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 64131
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 64131
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     }
   ]
 }

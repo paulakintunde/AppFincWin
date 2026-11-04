@@ -10,6 +10,7 @@ import { planTile } from '../plan/planCard';
 import type { CheckV2, Fact, PayV2, Result, V3Inputs } from '../types';
 import { toEngineInputs } from './rightAnswers/fixture';
 import { loadCases } from './rightAnswers/loader';
+import { corpus } from './reviewed/corpus';
 import type { RightAnswerFixture } from './rightAnswers/schema';
 
 const mu = minorUnits;
@@ -114,7 +115,7 @@ describe('05.4-22 borrowing through the engine', () => {
     expect(codes(r).filter((c) => c === 'interest_is_a_cost')).toHaveLength(1);
   });
 
-  it('a cash route that asks first: still fits_by_borrowing (the code never depends on the cash route), with no variant and no comparison', () => {
+  it('a cash route that asks first: still fits_by_borrowing (the code never depends on the cash route), with no variant and the D-79 ask line', () => {
     // with no confirmed spare money, paying the $6,000 at once asks (it is more than this month's room); the plan's day one is $0.
     // The plan is still expensive and fits, so it is fits_by_borrowing (the code never depends on the cash route), with no variant
     // and no comparison (cash cannot be judged yet)
@@ -122,7 +123,17 @@ describe('05.4-22 borrowing through the engine', () => {
     expect(evaluate({ ...once.inputs, unspent: null }, { ...once.check, pay: { mode: 'once' } }).result.code).toBe('needs_input');
     const r = run('BR-04', {}, { unspent: null });
     expect({ code: r.code, variant: r.variant }).toEqual({ code: 'fits_by_borrowing', variant: null });
-    expect(codes(r)).not.toContain('save_vs_borrow');
+    // D-79 (owner, 2026-11-04): the line says what to add before cash can be compared
+    expect(fact(r, 'save_vs_borrow')).toEqual({ kind: 'ask', missing: 'unspent_not_confirmed' });
+  });
+
+  it('D-80 gen:46 by hand: 156 weekly payments of $41.73 at 19.9% ($1,595.28 interest, 32.47%); cash on payday 8 October, 5 days after the 3 October check: Fits, but borrowing costs more', () => {
+    const c = corpus().find((x) => x.key === 'gen:46')!;
+    const r = evaluate(c.inputs, c.check).result;
+    const cash = evaluate(c.inputs, { ...c.check, pay: { mode: 'once' } }).result;
+    expect({ code: cash.code, variant: cash.variant, readyBy: cash.readyBy }).toEqual({ code: 'not_yet', variant: 'payday', readyBy: { kind: 'date', date: '2026-10-08' } });
+    expect({ asOf: c.inputs.asOf, code: r.code, variant: r.variant }).toEqual({ asOf: '2026-10-03', code: 'fits_by_borrowing', variant: 'borrowing_costs_more' });
+    expect(fact(r, 'save_vs_borrow')).toEqual({ kind: 'ready', readyBy: '2026-10-08', more: 159_528 });
   });
 
   it('BR-22 at 29.99%: an expensive plan judged by cash in an already-short month is fits_by_borrowing with its D-65 headline', () => {

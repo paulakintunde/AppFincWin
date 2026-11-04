@@ -247,6 +247,10 @@ export const EXPENSIVE_APR_BP = 2000; // D-07, D-39b
 // D-07: FincWin's thresholds, not law; D-39c: home loans skip this one. In basis points of the amount borrowed.
 export const EXPENSIVE_INTEREST_SHARE_BP = 1000; // D-07, D-39c
 
+// Cite: D-80 (05.4-CONTEXT, owner 2026-11-04): paying cash that is ready within 31 days of the check date counts as cash fitting, so
+// an expensive plan is "Fits, but borrowing costs more", not "Only by borrowing". FincWin choice.
+export const SHORT_WAIT_DAYS = 31; // D-80
+
 // Cite: D-08 (05.4-CONTEXT, owner question 5) and the 05.4-12 revision notes "Debts": at most 2 debt fact lines, then "and N more".
 // FincWin choice.
 export const DEBT_FACT_LINES = 2; // D-08

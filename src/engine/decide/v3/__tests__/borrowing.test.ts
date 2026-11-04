@@ -6,7 +6,8 @@ import { minorUnits } from '../../../money/types';
 import { percent } from '../../../payoff/types';
 import { SOLE_SHARE } from '../../share';
 import { EXPENSIVE_APR_BP, EXPENSIVE_INTEREST_SHARE_BP } from '../constants';
-import { borrowingFacts, cashFits, isExpensive, isExpensiveRate, planCost, saveVsBorrow, saveVsBorrowFact } from '../borrowing';
+import { askFact, borrowingFacts, cashFits, cashSoon, isExpensive, isExpensiveRate, planCost, saveVsBorrow, saveVsBorrowFact } from '../borrowing';
+import { SHORT_WAIT_DAYS } from '../constants';
 import type { Fact, Result, Schedule } from '../types';
 
 const mu = minorUnits;
@@ -139,6 +140,26 @@ describe('borrowing: the cost and the cash route', () => {
     const half = { weights: [1, 1], myIndex: 0 };
     const s = sched({ totalInterest: mu(3_548), fees: { setup: mu(452), perPeriod: mu(0), end: mu(0) } });
     expect(saveVsBorrow(cash('not_yet', [], { kind: 'month', month: '2027-01' }), s, half).costsMore).toBe(2_000);
+  });
+});
+
+describe('borrowing: D-79 and D-80 (owner, 2026-11-04)', () => {
+  it('D-80: a Not yet cash route ready within 31 days of the check date is a short wait; a ready month counts by its last day', () => {
+    expect(SHORT_WAIT_DAYS).toBe(31);
+    const at = (r: Result['readyBy'], code: Result['code'] = 'not_yet') => cashSoon(cash(code, [], r), '2026-10-03');
+    // gen:46: cash on payday, 8 October, 5 days after the 3 October check
+    expect(at({ kind: 'date', date: '2026-10-08' })).toBe(true);
+    expect(at({ kind: 'date', date: '2026-11-03' })).toBe(true); // day 31
+    expect(at({ kind: 'date', date: '2026-11-04' })).toBe(false); // day 32
+    expect(at({ kind: 'month', month: '2026-10' })).toBe(true); // by 31 October
+    expect(at({ kind: 'month', month: '2026-11' })).toBe(false); // by 30 November, day 58
+    expect(at(null)).toBe(false); // never
+    expect(at({ kind: 'date', date: '2026-10-08' }, 'fits_uses_net')).toBe(false);
+  });
+
+  it('D-79: the ask line names the first missing figure of the cash route', () => {
+    const ask = { ...cash('needs_input'), missing: ['unspent_not_confirmed', 'no_price'] } as unknown as Result;
+    expect(askFact(ask)).toEqual({ code: 'save_vs_borrow', values: { kind: 'ask', missing: 'unspent_not_confirmed' } });
   });
 });
 

@@ -3698,6 +3698,8 @@ const en = {
         save_vs_borrow_cash_fits: 'Paying in cash: fits now, leaving {{left}}. Borrowing: costs {{more}} more.',
         save_vs_borrow_no_date: 'Saving for it: no ready date in the months ahead. Borrowing: costs {{more}} more.',
         save_vs_borrow_with_net: 'Paying in cash now would dip into your safety net. Borrowing: costs {{more}} more.',
+        // 05.4 D-79: the cash route asks first; {{figure}} is the missing figure's name.
+        save_vs_borrow_ask: 'To compare with saving up, add {{figure}}.',
         save_vs_borrow_with_overdraft: 'Paying in cash now would use your overdraft. Borrowing: costs {{more}} more.',
         // 05.4 D-48: on every loan, plan or mortgage answer. Facts only; the fact-lines switch never hides them (D-50 (3)).
         net_covers_surprises: 'A safety net covers surprises while you repay.',
