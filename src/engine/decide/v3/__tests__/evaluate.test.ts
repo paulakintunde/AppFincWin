@@ -340,9 +340,12 @@ describe('D-48 futures on a declined volatile cover', () => {
     const ask = evaluate(volatileInputs(), plan());
     expect(ask.result.missing).toEqual(['volatile_cover_question']);
     expect(ask.futures).toBeNull();
+    // 05.4-23 (FIN-08, settled dispute 4): the plan's own first payments already make it Not yet on the records alone, so the yes does
+    // not decide it: no rests line and no user_said_cover reason (Only on your answer is QE-03's, yourWord.test.ts).
     const yes = evaluate(volatileInputs(), plan(true));
-    expect(yes.result.facts.map((f) => f.code)).toContain('rests_on_your_answer');
-    expect(codesOf(yes.result.confidence)).toContain('user_said_cover');
+    expect([yes.result.code, yes.result.parts.monthly]).toEqual(['not_yet', 'fits_on_your_answer']);
+    expect(yes.result.facts.map((f) => f.code)).not.toContain('rests_on_your_answer');
+    expect(codesOf(yes.result.confidence)).not.toContain('user_said_cover');
     expect(yes.futures).toBeNull();
     expect(evaluate(sam(), checkOnce(15000)).futures).toBeNull();
   });

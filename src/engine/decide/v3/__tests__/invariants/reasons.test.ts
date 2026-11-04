@@ -49,10 +49,17 @@ describe('I46 the basis is never more confident than the answer', () => {
   });
 
   it('I46 your own word (D-48 yes): the reason leads and the basis is not the clean sentence', () => {
-    const plan = checkPlan(150_000, { count: 6, apr: percent('0'), firstPayment: { kind: 'one_period' } }, { volatileCover: true });
-    const r = evaluate(volatileInputs(), plan).result;
+    // 05.4-23 (FIN-08): QE-03, Only on your answer. (volatileInputs' plan is Not yet on its records alone, so its yes no longer
+    // decides the answer and carries no user_said_cover reason.)
+    const qe03 = loadCases().find((c) => c.id === 'QE-03');
+    if (qe03 === undefined) throw new Error('no case QE-03');
+    const { inputs, check } = toEngineInputs(qe03.fixture);
+    const r = evaluate(inputs, check).result;
+    expect(r.code).toBe('fits_on_your_answer');
     expect(r.confidence.reasons[0]?.code).toBe('user_said_cover');
     expect(r.confidence.basis.kind).not.toBe('records');
+    const plan = checkPlan(150_000, { count: 6, apr: percent('0'), firstPayment: { kind: 'one_period' } }, { volatileCover: true });
+    expect(evaluate(volatileInputs(), plan).result.confidence.reasons.map((x) => x.code)).not.toContain('user_said_cover');
   });
 });
 

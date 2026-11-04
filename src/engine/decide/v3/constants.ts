@@ -57,8 +57,10 @@ export const BAND_EDGES_USD: readonly number[] = [
 // fits_uses_overdraft after monthly_short, its place in the phase target order. FincWin choice.
 // 05.4: fits_uses_net sits after emergency_use, which keeps its slot only for answers stored before 05.4 (D-41).
 // 05.4 FIN-05 (D-07, D-39a): fits_by_borrowing sits after monthly_short, before fits_uses_overdraft (the slot after
-// fits_on_your_answer's, which 05.4-23 inserts), so "Only by borrowing" is stricter than any other fit.
-export const CODE_PRECEDENCE = ['needs_input', 'not_yet', 'monthly_short', 'fits_by_borrowing', 'fits_uses_overdraft', 'emergency_use', 'fits_uses_net', 'fits_unspent', 'fits_month'] as const; // UP §5.3
+// fits_on_your_answer's), so "Only by borrowing" is stricter than any other fit.
+// 05.4 FIN-08 / CMP-F01 (05.4-23): fits_on_your_answer sits right after monthly_short, so an answer that rests on the user's yes is
+// stricter than every fit the records show (I61).
+export const CODE_PRECEDENCE = ['needs_input', 'not_yet', 'monthly_short', 'fits_on_your_answer', 'fits_by_borrowing', 'fits_uses_overdraft', 'emergency_use', 'fits_uses_net', 'fits_unspent', 'fits_month'] as const; // UP §5.3
 
 // Cite: D-23 (05.1-CONTEXT), overriding the research table: the old four-state verdict each code maps to. FincWin choice.
 export const LEGACY_STATE_OF_CODE = Object.freeze({
@@ -67,6 +69,7 @@ export const LEGACY_STATE_OF_CODE = Object.freeze({
   monthly_short: 'adjust',
   fits_uses_overdraft: 'adjust', // 05.4: every new caution code maps to adjust
   fits_by_borrowing: 'adjust', // 05.4 FIN-05
+  fits_on_your_answer: 'adjust', // 05.4 FIN-08
   emergency_use: 'adjust',
   fits_uses_net: 'adjust',
   not_yet: 'no',
@@ -266,3 +269,15 @@ export const TIGHT_SHARE_BP = 8000; // FIN-07
 // Cite: FIN-07, D-40 (05.4-CONTEXT, owner round 1): the tight floor is a tenth of a usual month's bills plus everyday spending,
 // rounded up, unless the user set their own line. FincWin choice.
 export const TIGHT_FLOOR_DIVISOR = 10; // FIN-07, D-40
+
+// Cite: FIN-15 (fix plan Theme A, 05.4-23; QE-06): a steady earner's last 3 pay arrivals are compared with the set-up pay, and a gap
+// of more than 5% (500 basis points of the set-up pay) is named. The lower of the two is judged either way. FincWin choice.
+export const PAY_GAP_BP = 500; // FIN-15
+
+// Cite: FIN-15 (05.4-23; QE-06 "his last three pay days"): the middle of the last 3 pay arrivals of each pay series. FincWin choice.
+export const PAY_GAP_ARRIVALS = 3; // FIN-15
+
+// Cite: D-46 (05.4-CONTEXT, owner round 1b; QE-12 "If each month from November came up another £1,000 short"): the further
+// shortfall the runway line is shown with is 1,000 major units of the check's currency (converted to minor units by its exponent).
+// FincWin choice, not a forecast.
+export const FURTHER_SHORTFALL_MAJOR = 1000; // D-46, QE-12

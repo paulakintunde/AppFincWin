@@ -1001,6 +1001,7 @@ describe("typicalIncome", () => {
       amount: 250000,
       hasConfirmedIncome: false,
       reasons: ["quick_estimates_used"],
+      payGap: null,
     });
     expect(typicalIncome(inp({})).amount).toBe(0);
   });

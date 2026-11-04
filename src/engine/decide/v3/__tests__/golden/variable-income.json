@@ -2748,7 +2748,7 @@
     "foreign": null
    },
    "expect": {
-    "code": "fits_unspent",
+    "code": "fits_month",
     "confidence": "fair",
     "facts": [
      {
@@ -2762,13 +2762,14 @@
      {
       "code": "lean_bridge",
       "values": {
-       "monthly": 40000,
-       "leanLeft": 25000,
+       "source": "savings",
+       "month": "2027-01",
        "shortfall": 15000,
-       "months": 3,
+       "times": 3,
+       "payments": 3,
        "until": "2027-03",
        "bridge": 45000,
-       "after": 259000
+       "savings": 655000
       }
      }
     ],
@@ -2802,9 +2803,10 @@
      "leanLeft": -35000,
      "lowLeft": 25000,
      "erest": 81000
-    }
+    },
+    "variant": "tight"
    },
-   "working": "Same plan shape, 120,000 over 3 from 2027-01-03: 40,000 a month. Lean left in Jan, Feb, Mar is 25,000 each, so step 1 fails by 15,000 a month. Lean run: Jan, Feb, Mar are all lean last year (3 months). Bridge = 15,000 x 3 = 45,000. Available unspent 304,000, day one 0 so nothing taken: 304,000 >= 45,000, fits on unspent with 304,000 - 45,000 = 259,000 left. The one-off part (day one 0) fits the month; fits_unspent is the stricter part."
+   "working": "Same plan shape, 120,000 over 3 from 2027-01-03: 40,000 a month. Lean left in Jan, Feb, Mar is 25,000 each, so step 1 fails by 15,000 a month. Lean run: Jan, Feb, Mar are all lean last year (3 months). Bridge = 15,000 x 3 = 45,000. Available unspent 304,000, day one 0 so nothing taken: 304,000 >= 45,000, fits on unspent with 304,000 - 45,000 = 259,000 left. The one-off part (day one 0) fits the month; fits_unspent is the stricter part. 05.4-23 (FIN-08, savings first; D-35 / D-56): the savings a low month draws on are the spare money from earlier months (spare money less this month's own room, QE-05) plus the money saved above the safety net's size, which since D-35 is extra savings and can be used; a bridge they carry is \"Fits, a low month is tight\" (fits_month, low_month, QE-04), and only when they cannot is the cover question asked. By hand: the starter net is 135,000 of bills + 90,000 of everyday spending = 225,000, so 600,000 - 225,000 = 375,000 of the fund is above its size. Savings = 304,000 - 24,000 (November's own room) + 375,000 = 655,000 >= the 45,000 bridge: fits_month. The 40,000 payment takes more than 80% of the usual month room (FIN-07), so \"Fits, but tight each month\" leads the low-month variant (D-59)."
   },
   {
    "id": "ines-bridge-short",
@@ -2852,12 +2854,9 @@
     "foreign": null
    },
    "expect": {
-    "code": "not_yet",
-    "variant": "not_covered",
-    "readyBy": {
-     "kind": "month",
-     "month": "2027-01"
-    },
+    "code": "fits_month",
+    "variant": "tight",
+    "readyBy": null,
     "confidence": "fair",
     "facts": [
      {
@@ -2866,6 +2865,19 @@
        "from": "2027-01",
        "to": "2027-03",
        "leanLeft": 25000
+      }
+     },
+     {
+      "code": "lean_bridge",
+      "values": {
+       "source": "savings",
+       "month": "2027-01",
+       "shortfall": 15000,
+       "times": 3,
+       "payments": 3,
+       "until": "2027-03",
+       "bridge": 45000,
+       "savings": 391000
       }
      }
     ],
@@ -2899,7 +2911,7 @@
      "spending": 136000
     }
    },
-   "working": "Same 40,000-a-month plan, but the balance is 264,000 lower (spending 136,000), so suggested = 136,000 - 15,000 - 81,000 = 40,000 and the confirmed unspent is 40,000. Bridge need is 45,000 (15,000 x 3), unspent only 40,000: step 3, not yet. Ready-by is the season walk (D-60) for a gap of 45,000 - 40,000 = 5,000: December saves 0 (last December left -35,000, never below zero), January saves 25,000 >= 5,000 so the month is 2027-01. The monthly leads, so the variant is not_covered. The cash check holds (spending 136,000 plus the 5 Nov pay)."
+   "working": "Same 40,000-a-month plan, but the balance is 264,000 lower (spending 136,000), so suggested = 136,000 - 15,000 - 81,000 = 40,000 and the confirmed unspent is 40,000. Bridge need is 45,000 (15,000 x 3), unspent only 40,000: step 3, not yet. Ready-by is the season walk (D-60) for a gap of 45,000 - 40,000 = 5,000: December saves 0 (last December left -35,000, never below zero), January saves 25,000 >= 5,000 so the month is 2027-01. The monthly leads, so the variant is not_covered. The cash check holds (spending 136,000 plus the 5 Nov pay). 05.4-23 (FIN-08, savings first; D-35 / D-56): the savings a low month draws on are the spare money from earlier months (spare money less this month's own room, QE-05) plus the money saved above the safety net's size, which since D-35 is extra savings and can be used; a bridge they carry is \"Fits, a low month is tight\" (fits_month, low_month, QE-04), and only when they cannot is the cover question asked. By hand: savings = 40,000 - 24,000 + 375,000 above the net's size = 391,000 >= 45,000, so the bridge holds (it was Not yet when only spare money counted). Tight leads as in ines-bridge."
   },
   {
    "id": "ines-held-back",
@@ -2948,12 +2960,9 @@
     "foreign": null
    },
    "expect": {
-    "code": "not_yet",
-    "variant": "not_covered",
-    "readyBy": {
-     "kind": "month",
-     "month": "2027-01"
-    },
+    "code": "fits_month",
+    "variant": "tight",
+    "readyBy": null,
     "facts": [
      {
       "code": "unspent_held_back",
@@ -2967,6 +2976,19 @@
        "from": "2027-01",
        "to": "2027-03",
        "leanLeft": 25000
+      }
+     },
+     {
+      "code": "lean_bridge",
+      "values": {
+       "source": "savings",
+       "month": "2027-01",
+       "shortfall": 15000,
+       "times": 3,
+       "payments": 3,
+       "until": "2027-03",
+       "bridge": 45000,
+       "savings": 385000
       }
      }
     ],
@@ -2995,7 +3017,7 @@
      }
     ]
    },
-   "working": "Case ines-bridge with 270,000 of unspent held back for an earlier plan (D-38). Available unspent = 304,000 - 270,000 = 34,000, below the 45,000 bridge, so the fit flips to not yet. Fact unspent_held_back 270,000. Drift and staleness still read the confirmed 304,000, so no drift notice. Ready-by: gap 45,000 - 34,000 = 11,000; December 0, January 25,000 >= 11,000, so 2027-01."
+   "working": "Case ines-bridge with 270,000 of unspent held back for an earlier plan (D-38). Available unspent = 304,000 - 270,000 = 34,000, below the 45,000 bridge, so the fit flips to not yet. Fact unspent_held_back 270,000. Drift and staleness still read the confirmed 304,000, so no drift notice. Ready-by: gap 45,000 - 34,000 = 11,000; December 0, January 25,000 >= 11,000, so 2027-01. 05.4-23 (FIN-08, savings first; D-35 / D-56): the savings a low month draws on are the spare money from earlier months (spare money less this month's own room, QE-05) plus the money saved above the safety net's size, which since D-35 is extra savings and can be used; a bridge they carry is \"Fits, a low month is tight\" (fits_month, low_month, QE-04), and only when they cannot is the cover question asked. By hand: savings = 34,000 available - 24,000 + 375,000 above the net's size = 385,000 >= 45,000: the bridge holds; the held-back 270,000 is still said."
   },
   {
    "id": "ines-few-months",
@@ -3118,18 +3140,19 @@
     "foreign": null
    },
    "expect": {
-    "code": "fits_unspent",
+    "code": "fits_month",
     "facts": [
      {
       "code": "lean_bridge",
       "values": {
-       "monthly": 40000,
-       "leanLeft": 25000,
+       "source": "savings",
+       "month": "2027-01",
        "shortfall": 15000,
-       "months": 3,
+       "times": 3,
+       "payments": 3,
        "until": "2027-03",
        "bridge": 45000,
-       "after": 259000
+       "savings": 655000
       }
      }
     ],
@@ -3155,9 +3178,10 @@
     "figures": {
      "monthLeft": 24000,
      "erest": 81000
-    }
+    },
+    "variant": "low_month"
    },
-   "working": "Eight months of records, but the user confirmed 260,000 for Nov 2026 and for Jan, Feb and Mar 2027 (D-35). Those are used as given. Nov: received 0 so far, confirmed 260,000 is used as money in (source confirmed): monthLeft = 260,000 - 236,000 = 24,000 as before (E 90,000, Erest 81,000). Plan months Jan to Mar: left = 260,000 - 135,000 - 90,000 - 10,000 = 25,000 each (eight months, so no same-month-last-year E). Under 12 months the lean months are those where left is below the payment: all 3; shortfall 15,000 x 3 = 45,000; unspent 304,000 covers it, 259,000 left. Cash path caps: December has no confirmed figure and only 8 months of records, so its cap is 0 and the 260,000 December pay is withheld: pay_capped_expected 260,000 (Nov, Jan and Feb caps are 260,000 and Feb 5 is outside the 90 days)."
+   "working": "Eight months of records, but the user confirmed 260,000 for Nov 2026 and for Jan, Feb and Mar 2027 (D-35). Those are used as given. Nov: received 0 so far, confirmed 260,000 is used as money in (source confirmed): monthLeft = 260,000 - 236,000 = 24,000 as before (E 90,000, Erest 81,000). Plan months Jan to Mar: left = 260,000 - 135,000 - 90,000 - 10,000 = 25,000 each (eight months, so no same-month-last-year E). Under 12 months the lean months are those where left is below the payment: all 3; shortfall 15,000 x 3 = 45,000; unspent 304,000 covers it, 259,000 left. Cash path caps: December has no confirmed figure and only 8 months of records, so its cap is 0 and the 260,000 December pay is withheld: pay_capped_expected 260,000 (Nov, Jan and Feb caps are 260,000 and Feb 5 is outside the 90 days). 05.4-23 (FIN-08, savings first; D-35 / D-56): the savings a low month draws on are the spare money from earlier months (spare money less this month's own room, QE-05) plus the money saved above the safety net's size, which since D-35 is extra savings and can be used; a bridge they carry is \"Fits, a low month is tight\" (fits_month, low_month, QE-04), and only when they cannot is the cover question asked. By hand: savings 304,000 - 24,000 + 375,000 = 655,000 >= 45,000: \"Fits, a low month is tight\"."
   },
   {
    "id": "ines-december",
@@ -3458,8 +3482,21 @@
      {
       "code": "low_month_judged",
       "values": {
-       "month": "2026-05",
-       "left": 13000
+       "month": "2025-12",
+       "left": -7000
+      }
+     },
+     {
+      "code": "lean_bridge",
+      "values": {
+       "source": "savings",
+       "month": "2025-12",
+       "shortfall": 17000,
+       "times": 1,
+       "payments": 6,
+       "until": "2027-04",
+       "bridge": 17000,
+       "savings": 574000
       }
      },
      {
@@ -3506,9 +3543,10 @@
     ],
     "reasons": [
      "long_history_window"
-    ]
+    ],
+    "variant": "low_month"
    },
-   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 rent - 62,000 everyday (000s): 263, 103, -7, 233, 123, 63, 193, 13, 143, 83, 173, 43. Second-lowest = 13,000 (2026-05); typical income = median of the window incomes = (260,000 + 280,000)/2 = 270,000, typicalLeft 113,000. Expected income for October = the second-lowest income, 170,000 (source low); received 80,000 so far, so 170,000 is used. Erest = max(round(62,000*28/31) = 56,000, 62,000 - 6,000 = 56,000) = 56,000; monthLeft = 170,000 - (95,000 + 6,000 + 56,000) = 13,000. Pay series 170,000 on the 20th: October room = 170,000 - 80,000 = 90,000, so 80,000 of the 20 Oct pay is withheld (pay_capped_expected 80,000); Nov and Dec are capped at 170,000, so nothing more. Plan: 60,000 at 0% over 6, first payment a month from today: 10,000 a month, day one 0. Step 1 for a gig earner: the low month leftover 13,000 - 10,000 >= 0, so the payment fits; why = low_month_judged (2026-05, 13,000). Cash holds with the capped pay. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 157000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 500000 fund as the money saved; only money already saved is protected, floor 157000, and the 343000 above the size is spare money. The answer is now fits_month; the purpose and the emergency mark no longer gate the net."
+   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 rent - 62,000 everyday (000s): 263, 103, -7, 233, 123, 63, 193, 13, 143, 83, 173, 43. Second-lowest = 13,000 (2026-05); typical income = median of the window incomes = (260,000 + 280,000)/2 = 270,000, typicalLeft 113,000. Expected income for October = the second-lowest income, 170,000 (source low); received 80,000 so far, so 170,000 is used. Erest = max(round(62,000*28/31) = 56,000, 62,000 - 6,000 = 56,000) = 56,000; monthLeft = 170,000 - (95,000 + 6,000 + 56,000) = 13,000. Pay series 170,000 on the 20th: October room = 170,000 - 80,000 = 90,000, so 80,000 of the 20 Oct pay is withheld (pay_capped_expected 80,000); Nov and Dec are capped at 170,000, so nothing more. Plan: 60,000 at 0% over 6, first payment a month from today: 10,000 a month, day one 0. Step 1 for a gig earner: the low month leftover 13,000 - 10,000 >= 0, so the payment fits; why = low_month_judged (2026-05, 13,000). Cash holds with the capped pay. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 157000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 500000 fund as the money saved; only money already saved is protected, floor 157000, and the 343000 above the size is spare money. The answer is now fits_month; the purpose and the emergency mark no longer gate the net. 05.4-23 (FIN-08, savings first; D-35 / D-56): the savings a low month draws on are the spare money from earlier months (spare money less this month's own room, QE-05) plus the money saved above the safety net's size, which since D-35 is extra savings and can be used; a bridge they carry is \"Fits, a low month is tight\" (fits_month, low_month, QE-04), and only when they cannot is the cover question asked. By hand (FIN-08, QE-04: the lowest month counts): December 2025 left -7,000 against the 10,000 payment, 1 of the 12 window months, so about 1 over the 6 payments (ceil(6 / 12)); shortfall 17,000. Savings 231,000 of spare money (this month's 13,000 left out) + 343,000 above the net's size = 574,000 carry it: \"Fits, a low month is tight\" (it was a plain Fits on the second-lowest month)."
   },
   {
    "id": "gabe-bridge",
@@ -3549,7 +3587,7 @@
     "foreign": null
    },
    "expect": {
-    "code": "fits_unspent",
+    "code": "fits_month",
     "figures": {
      "monthLeft": 13000,
      "typicalIncome": 270000,
@@ -3560,20 +3598,21 @@
      {
       "code": "low_month_judged",
       "values": {
-       "month": "2026-05",
-       "left": 13000
+       "month": "2025-12",
+       "left": -7000
       }
      },
      {
       "code": "lean_bridge",
       "values": {
-       "monthly": 25000,
-       "leanLeft": 13000,
-       "shortfall": 12000,
-       "months": 2,
-       "until": "2026-12",
-       "bridge": 24000,
-       "after": 220000
+       "source": "savings",
+       "month": "2025-12",
+       "shortfall": 32000,
+       "times": 1,
+       "payments": 6,
+       "until": "2027-04",
+       "bridge": 32000,
+       "savings": 574000
       }
      }
     ],
@@ -3605,9 +3644,10 @@
        "capped": 80000
       }
      }
-    ]
+    ],
+    "variant": "low_month"
    },
-   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 rent - 62,000 everyday (000s): 263, 103, -7, 233, 123, 63, 193, 13, 143, 83, 173, 43. Second-lowest = 13,000 (2026-05); typical income = median of the window incomes = (260,000 + 280,000)/2 = 270,000, typicalLeft 113,000. Expected income for October = the second-lowest income, 170,000 (source low); received 80,000 so far, so 170,000 is used. Erest = max(round(62,000*28/31) = 56,000, 62,000 - 6,000 = 56,000) = 56,000; monthLeft = 170,000 - (95,000 + 6,000 + 56,000) = 13,000. Pay series 170,000 on the 20th: October room = 170,000 - 80,000 = 90,000, so 80,000 of the 20 Oct pay is withheld (pay_capped_expected 80,000); Nov and Dec are capped at 170,000, so nothing more. Plan: 150,000 over 6 = 25,000 a month from 2026-11. Low leftover 13,000 < 25,000: shortfall 12,000. Months to carry = window months whose left is below the payment: -7 and 13 (thousands) = 2, capped at the plan length 6, so 2 months, Nov and Dec 2026. Bridge = 12,000 x 2 = 24,000; unspent 244,000 covers it with 220,000 left. Cash: 300,000 opening, pays of 90,000 (Oct), 170,000 (Nov), 170,000 (Dec), rent 95,000 and E 62,000 a month: the lowest point stays positive."
+   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 rent - 62,000 everyday (000s): 263, 103, -7, 233, 123, 63, 193, 13, 143, 83, 173, 43. Second-lowest = 13,000 (2026-05); typical income = median of the window incomes = (260,000 + 280,000)/2 = 270,000, typicalLeft 113,000. Expected income for October = the second-lowest income, 170,000 (source low); received 80,000 so far, so 170,000 is used. Erest = max(round(62,000*28/31) = 56,000, 62,000 - 6,000 = 56,000) = 56,000; monthLeft = 170,000 - (95,000 + 6,000 + 56,000) = 13,000. Pay series 170,000 on the 20th: October room = 170,000 - 80,000 = 90,000, so 80,000 of the 20 Oct pay is withheld (pay_capped_expected 80,000); Nov and Dec are capped at 170,000, so nothing more. Plan: 150,000 over 6 = 25,000 a month from 2026-11. Low leftover 13,000 < 25,000: shortfall 12,000. Months to carry = window months whose left is below the payment: -7 and 13 (thousands) = 2, capped at the plan length 6, so 2 months, Nov and Dec 2026. Bridge = 12,000 x 2 = 24,000; unspent 244,000 covers it with 220,000 left. Cash: 300,000 opening, pays of 90,000 (Oct), 170,000 (Nov), 170,000 (Dec), rent 95,000 and E 62,000 a month: the lowest point stays positive. 05.4-23 (FIN-08, savings first; D-35 / D-56): the savings a low month draws on are the spare money from earlier months (spare money less this month's own room, QE-05) plus the money saved above the safety net's size, which since D-35 is extra savings and can be used; a bridge they carry is \"Fits, a low month is tight\" (fits_month, low_month, QE-04), and only when they cannot is the cover question asked. By hand: 2 of the 12 window months (December -7,000 and May 13,000) are below the 25,000 payment, so about 1 over the 6 payments (ceil(2 x 6 / 12)); shortfall 25,000 + 7,000 = 32,000 from the lowest month; savings 574,000 carry it: fits_month, low_month."
   },
   {
    "id": "gabe-unstated",
@@ -3760,32 +3800,42 @@
     "foreign": null
    },
    "expect": {
-    "code": "needs_input",
-    "missing": [
-     "volatile_cover_question"
-    ],
-    "notices": [
-     {
-      "code": "income_volatile",
-      "values": {
-       "payment": 20000,
-       "periods": 6,
-       "monthly": 20000,
-       "months": 6,
-       "leanFrom": "2026-05",
-       "leanTo": "2026-05",
-       "leanLeft": -87000
-      }
-     }
-    ],
+    "code": "fits_month",
+    "missing": [],
     "figures": {
      "monthLeft": -77000,
      "typicalIncome": 280000,
      "lowLeft": -87000,
      "erest": 56000
-    }
+    },
+    "variant": "low_month",
+    "facts": [
+     {
+      "code": "low_month_judged",
+      "values": {
+       "month": "2025-11",
+       "left": -97000
+      }
+     },
+     {
+      "code": "lean_bridge",
+      "values": {
+       "source": "savings",
+       "month": "2025-11",
+       "shortfall": 117000,
+       "times": 3,
+       "payments": 6,
+       "until": "2027-04",
+       "bridge": 351000,
+       "savings": 687000
+      }
+     }
+    ],
+    "noticesAbsent": [
+     "income_volatile"
+    ]
    },
-   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 - 62,000 (000s): 223, -97, 143, 363, -47, 103, 253, -87, 183, -7, 323, -57. Second-lowest = -87,000 (2026-05). Typical income = median of the window incomes = (260,000 + 300,000)/2 = 280,000. CV about 59.4%, volatile. Expected October income = second-lowest income 70,000; the 80,000 received is already above it, so no raise: monthLeft = 80,000 - 157,000 = -77,000. Plan: 120,000 over 6 = 20,000 a month from 2026-11, day one 0. Step 1: -87,000 - 20,000 < 0, so the lean months do not cover it. Income is volatile, so no verdict from history: the engine asks \"can you cover 20,000 a month for 6 months, even in your low months?\" with the income_volatile notice (payment 20,000, periods 6, monthly 20,000, months 6, lean month 2026-05, leanLeft -87,000)."
+   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 - 62,000 (000s): 223, -97, 143, 363, -47, 103, 253, -87, 183, -7, 323, -57. Second-lowest = -87,000 (2026-05). Typical income = median of the window incomes = (260,000 + 300,000)/2 = 280,000. CV about 59.4%, volatile. Expected October income = second-lowest income 70,000; the 80,000 received is already above it, so no raise: monthLeft = 80,000 - 157,000 = -77,000. Plan: 120,000 over 6 = 20,000 a month from 2026-11, day one 0. Step 1: -87,000 - 20,000 < 0, so the lean months do not cover it. Income is volatile, so no verdict from history: the engine asks \"can you cover 20,000 a month for 6 months, even in your low months?\" with the income_volatile notice (payment 20,000, periods 6, monthly 20,000, months 6, lean month 2026-05, leanLeft -87,000). 05.4-23 (FIN-08, savings first; D-35 / D-56): the savings a low month draws on are the spare money from earlier months (spare money less this month's own room, QE-05) plus the money saved above the safety net's size, which since D-35 is extra savings and can be used; a bridge they carry is \"Fits, a low month is tight\" (fits_month, low_month, QE-04), and only when they cannot is the cover question asked. By hand (FIN-08: savings first, the question only when they cannot carry it): 5 of the 12 window months are below the 20,000 payment, so about 3 over the 6 payments (ceil(5 x 6 / 12)); the lowest, November 2025 at -97,000, is 117,000 short; 3 x 117,000 = 351,000. Savings need one low month now and the rest less what the 3 usual months leave (123,000 - 20,000 = 103,000 each): max(117,000, 351,000 - 309,000) = 117,000. Savings 344,000 of spare money + 343,000 above the net's size = 687,000 carry it, so she is not asked: fits_month, low_month."
   },
   {
    "id": "vic-yes",
@@ -3828,7 +3878,6 @@
    },
    "expect": {
     "code": "fits_month",
-    "confidence": "rough",
     "figures": {
      "monthLeft": -77000,
      "typicalIncome": 280000,
@@ -3839,34 +3888,30 @@
      {
       "code": "low_month_judged",
       "values": {
-       "month": "2026-05",
-       "left": -87000
+       "month": "2025-11",
+       "left": -97000
       }
      },
      {
-      "code": "rests_on_your_answer",
+      "code": "lean_bridge",
       "values": {
-       "monthly": 20000,
-       "months": 6
+       "source": "savings",
+       "month": "2025-11",
+       "shortfall": 117000,
+       "times": 3,
+       "payments": 6,
+       "until": "2027-04",
+       "bridge": 351000,
+       "savings": 687000
       }
      }
     ],
-    "notices": [
-     {
-      "code": "income_volatile",
-      "values": {
-       "payment": 20000,
-       "periods": 6,
-       "monthly": 20000,
-       "months": 6,
-       "leanFrom": "2026-05",
-       "leanTo": "2026-05",
-       "leanLeft": -87000
-      }
-     }
+    "variant": "low_month",
+    "noticesAbsent": [
+     "income_volatile"
     ]
    },
-   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 - 62,000 (000s): 223, -97, 143, 363, -47, 103, 253, -87, 183, -7, 323, -57. Second-lowest = -87,000 (2026-05). Typical income = median of the window incomes = (260,000 + 300,000)/2 = 280,000. CV about 59.4%, volatile. Expected October income = second-lowest income 70,000; the 80,000 received is already above it, so no raise: monthLeft = 80,000 - 157,000 = -77,000. Plan: 120,000 over 6 = 20,000 a month from 2026-11, day one 0. Step 1: -87,000 - 20,000 < 0, so the lean months do not cover it. The user answers yes: the monthly part fits on her word. Fact rests_on_your_answer (monthly 20,000, months 6), confidence capped at rough (user_said_cover), notice income_volatile still shown. Day one 0 fits the month, cash holds (opening 400,000, pay capped at 70,000 a month, lowest point about 84,000 on 19 Dec)."
+   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 - 62,000 (000s): 223, -97, 143, 363, -47, 103, 253, -87, 183, -7, 323, -57. Second-lowest = -87,000 (2026-05). Typical income = median of the window incomes = (260,000 + 300,000)/2 = 280,000. CV about 59.4%, volatile. Expected October income = second-lowest income 70,000; the 80,000 received is already above it, so no raise: monthLeft = 80,000 - 157,000 = -77,000. Plan: 120,000 over 6 = 20,000 a month from 2026-11, day one 0. Step 1: -87,000 - 20,000 < 0, so the lean months do not cover it. The user answers yes: the monthly part fits on her word. Fact rests_on_your_answer (monthly 20,000, months 6), confidence capped at rough (user_said_cover), notice income_volatile still shown. Day one 0 fits the month, cash holds (opening 400,000, pay capped at 70,000 a month, lowest point about 84,000 on 19 Dec). 05.4-23 (FIN-08, savings first; D-35 / D-56): the savings a low month draws on are the spare money from earlier months (spare money less this month's own room, QE-05) plus the money saved above the safety net's size, which since D-35 is extra savings and can be used; a bridge they carry is \"Fits, a low month is tight\" (fits_month, low_month, QE-04), and only when they cannot is the cover question asked. By hand: as vic-ask, her savings carry the low months, so her yes is not read (no rests line, no user_said_cover reason)."
   },
   {
    "id": "vic-no",
@@ -3908,36 +3953,29 @@
     "volatileCover": false
    },
    "expect": {
-    "code": "not_yet",
-    "variant": "not_covered",
-    "futures": true,
-    "readyBy": {
-     "kind": "month",
-     "month": "2026-12"
-    },
-    "reasons": [
-     "volatile_cover_declined"
-    ],
+    "code": "fits_month",
+    "variant": "low_month",
+    "futures": false,
+    "readyBy": null,
     "facts": [
      {
       "code": "low_month_judged",
       "values": {
-       "month": "2026-05",
-       "left": -87000
+       "month": "2025-11",
+       "left": -97000
       }
-     }
-    ],
-    "notices": [
+     },
      {
-      "code": "income_volatile",
+      "code": "lean_bridge",
       "values": {
-       "payment": 20000,
-       "periods": 6,
-       "monthly": 20000,
-       "months": 6,
-       "leanFrom": "2026-05",
-       "leanTo": "2026-05",
-       "leanLeft": -87000
+       "source": "savings",
+       "month": "2025-11",
+       "shortfall": 117000,
+       "times": 3,
+       "payments": 6,
+       "until": "2027-04",
+       "bridge": 351000,
+       "savings": 687000
       }
      }
     ],
@@ -3946,9 +3984,12 @@
      "typicalIncome": 280000,
      "lowLeft": -87000,
      "erest": 56000
-    }
+    },
+    "noticesAbsent": [
+     "income_volatile"
+    ]
    },
-   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 - 62,000 (000s): 223, -97, 143, 363, -47, 103, 253, -87, 183, -7, 323, -57. Second-lowest = -87,000 (2026-05). Typical income = median of the window incomes = (260,000 + 300,000)/2 = 280,000. CV about 59.4%, volatile. Expected October income = second-lowest income 70,000; the 80,000 received is already above it, so no raise: monthLeft = 80,000 - 157,000 = -77,000. Plan: 120,000 over 6 = 20,000 a month from 2026-11, day one 0. Step 1: -87,000 - 20,000 < 0, so the lean months do not cover it. The user answers no: not yet, with the futures attached (D-48). Ready-by as step 3: shortfall 20,000 + 87,000 = 107,000; months to carry = window months with left below 20,000: -97, -47, -87, -7, -57 = 5; bridge 107,000 x 5 = 535,000; gap over unspent 344,000 = 191,000; ceil(191,000 / typicalLeft 123,000) = 2 months from October = 2026-12."
+   "working": "Window 2025-10..2026-09. Left per window month = income - 95,000 - 62,000 (000s): 223, -97, 143, 363, -47, 103, 253, -87, 183, -7, 323, -57. Second-lowest = -87,000 (2026-05). Typical income = median of the window incomes = (260,000 + 300,000)/2 = 280,000. CV about 59.4%, volatile. Expected October income = second-lowest income 70,000; the 80,000 received is already above it, so no raise: monthLeft = 80,000 - 157,000 = -77,000. Plan: 120,000 over 6 = 20,000 a month from 2026-11, day one 0. Step 1: -87,000 - 20,000 < 0, so the lean months do not cover it. The user answers no: not yet, with the futures attached (D-48). Ready-by as step 3: shortfall 20,000 + 87,000 = 107,000; months to carry = window months with left below 20,000: -97, -47, -87, -7, -57 = 5; bridge 107,000 x 5 = 535,000; gap over unspent 344,000 = 191,000; ceil(191,000 / typicalLeft 123,000) = 2 months from October = 2026-12. 05.4-23 (FIN-08, savings first; D-35 / D-56): the savings a low month draws on are the spare money from earlier months (spare money less this month's own room, QE-05) plus the money saved above the safety net's size, which since D-35 is extra savings and can be used; a bridge they carry is \"Fits, a low month is tight\" (fits_month, low_month, QE-04), and only when they cannot is the cover question asked. By hand: as vic-ask, her savings carry the low months, so her no is not read (no Not yet, no futures)."
   },
   {
    "id": "dee-mixed",

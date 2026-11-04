@@ -235,7 +235,7 @@ function buildCorpus(): Emitted[] {
   collect(out, { ...noPay(sam), payArrivals: [{ seriesId: 'sam-pay', date: '2026-10-01', arrived: false }] }, checkOnce(10_000));
   // 05.4-20 (FIN-04, FIN-10, FIN-14, D-43): every debts case and QE-01 / QE-13 (each debt fact and the ask), and DB-08 with a third
   // costly debt (debt_more).
-  for (const c of loadCases().filter((x) => x.topic === 'debts' || x.id === 'QE-01' || x.id === 'QE-13')) {
+  for (const c of loadCases().filter((x) => x.topic === 'debts' || ['QE-01', 'QE-13', 'QE-03', 'QE-06', 'QE-12', 'QE-14'].includes(x.id))) {
     const { inputs, check } = toEngineInputs(c.fixture);
     collect(out, { ...inputs, factLines: true }, check);
     if (c.id === 'DB-08') {

@@ -32,13 +32,17 @@ describe('buildMonthModel', () => {
     expect(m.typicalLeft).toBe(32500);
   });
 
-  it('v3 §12 #20 a raise lifts typicalLeft at once', () => {
+  // 05.4 FIN-15 (05.4-23; later than v3 §12 #20 / D-18): the usual month reads the lower of the set-up pay and the middle of the last
+  // 3 pays that arrived, so a raise counts once it arrives (owner question at the 05.4-23 review); the gap is named, the pay not edited.
+  it('v3 §12 #20 / FIN-15 a raise to 4,300 counts once it arrives: the last 3 pays (middle 4,000) are judged, and the gap is named', () => {
     const base = sam();
     const m = buildMonthModel({
       ...base,
       series: base.series.map((s) => (s.id === 'sam-pay' ? { ...s, amount: mu(430000) } : s)),
     });
-    expect(m.typicalLeft).toBe(72500);
+    expect(m.typicalLeft).toBe(42500);
+    expect(m.reasons).toContain('pay_gap');
+    expect(m.notices.find((n) => n.code === 'pay_gap')?.values).toEqual({ setup: 430000, middle: 400000, gap: '6.9' });
   });
 
   it('I19 a debt minimum counts once, as set-aside', () => {
@@ -359,6 +363,8 @@ describe('buildMonthModel: variable and seasonal income (05.1-43)', () => {
       months: [],
       leanLeft: null,
       expectedThisMonth: null,
+      // 05.4 FIN-08: July's pay arrived at 3,700 of the 4,000 set up (7.5% low), so it is a low-pay month with what it left
+      lowPay: [{ month: '2026-07', income: 370000, everyday: 130000, left: 30000, lean: false }],
     });
     expect(m.notices.some((n) => ['history_window_12', 'income_from_expected', 'same_season_compared'].includes(n.code))).toBe(false);
     expect(m.reasons).not.toContain('long_history_window');

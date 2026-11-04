@@ -75,9 +75,10 @@ describe('D-46: every why code appears in a golden with exact values', () => {
 
   it('lean_months_judged, low_month_judged, lean_bridge (with until) and unspent_held_back', () => {
     expect(has('lean_months_judged', (v) => v.from === '2027-01' && v.to === '2027-03' && v.leanLeft === 25000)).toBe(true);
-    expect(has('low_month_judged', (v) => v.month === '2026-05' && v.left === 13000)).toBe(true);
-    expect(has('lean_bridge', (v) => v.until === '2027-03' && v.bridge === 45000 && v.after === 259000)).toBe(true);
-    expect(has('lean_bridge', (v) => v.until === '2026-12' && v.bridge === 24000 && v.after === 220000)).toBe(true);
+    // 05.4-23 (FIN-08): the lowest window month is judged, and the bridge names the savings that carry it
+    expect(has('low_month_judged', (v) => v.month === '2025-12' && v.left === -7000)).toBe(true);
+    expect(has('lean_bridge', (v) => v.until === '2027-03' && v.bridge === 45000 && v.savings === 655000)).toBe(true);
+    expect(has('lean_bridge', (v) => v.until === '2027-04' && v.bridge === 32000 && v.savings === 574000)).toBe(true);
     expect(has('unspent_held_back', (v) => v.amount === 270000)).toBe(true);
   });
 
@@ -95,27 +96,21 @@ describe('D-46: every why code appears in a golden with exact values', () => {
   });
 });
 
-describe('D-48: ask, yes and no each appear in a golden', () => {
-  it('vic asks with the income_volatile values', () => {
-    const r = run(byId('vic-ask')).result;
-    expect(r.code).toBe('needs_input');
-    expect(r.missing).toEqual(['volatile_cover_question']);
-    expect(r.notices).toContainEqual({
-      code: 'income_volatile',
-      values: { payment: 20000, periods: 6, monthly: 20000, months: 6, leanFrom: '2026-05', leanTo: '2026-05', leanLeft: -87000 },
-    });
-  });
-
-  it('a yes fits on her word at rough confidence; a no is not_yet with futures', () => {
-    const yes = run(byId('vic-yes'));
-    expect(yes.result.code).toBe('fits_month');
-    expect(yes.result.facts).toContainEqual({ code: 'rests_on_your_answer', values: { monthly: 20000, months: 6 } });
-    expect(goldenLevel(yes.result.confidence)).toBe('rough');
-    expect(codesOf(yes.result.confidence)).toContain('user_said_cover');
-    const no = run(byId('vic-no'));
-    expect(no.result.code).toBe('not_yet');
-    expect(no.result.reasons).toContain('volatile_cover_declined');
-    expect(no.futures).not.toBeNull();
+// 05.4-23 (FIN-08: savings first, the question only when they cannot carry it): vic's savings carry her low months, so she is never
+// asked and her answer is never read. The ask, a yes (Only on your answer) and a no (Not yet) are pinned by the approved QE-03 and QE-05
+// (yourWord.test.ts, rightAnswers) and the judge tests.
+describe('D-48 / FIN-08: savings come before the question', () => {
+  it('vic is not asked: her savings carry the low months, whatever she answered', () => {
+    for (const id of ['vic-ask', 'vic-yes', 'vic-no']) {
+      const ev = run(byId(id));
+      expect({ id, code: ev.result.code, variant: ev.result.variant, missing: ev.result.missing }).toEqual({ id, code: 'fits_month', variant: 'low_month', missing: [] });
+      expect(ev.result.notices.map((n) => n.code)).not.toContain('income_volatile');
+      expect(ev.result.facts.map((f) => f.code)).not.toContain('rests_on_your_answer');
+      expect(codesOf(ev.result.confidence)).not.toContain('user_said_cover');
+      expect(ev.result.reasons).not.toContain('volatile_cover_declined');
+      expect(ev.futures).toBeNull();
+      expect(goldenLevel(ev.result.confidence)).toBeDefined();
+    }
   });
 
   it('ines is seasonal at about 28% and never volatile; gabe about 30%; vic about 59% is volatile', () => {

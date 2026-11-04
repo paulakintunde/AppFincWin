@@ -50,6 +50,7 @@ export const VERDICT_TABLE = Object.freeze({
   'not_yet.month_already_short': row('monthAlreadyShort', 'short'),
   'emergency_use.month_already_short': row('monthAlreadyShort', 'short'),
   'fits_by_borrowing.month_already_short': row('monthAlreadyShort', 'short'), // 05.4 FIN-05: the month-short headline keeps the lead
+  'fits_on_your_answer.month_already_short': row('monthAlreadyShort', 'short'), // 05.4 FIN-08: the same row for every answer but an ask
   // 05.4 D-65: the usual month is already short and a cash fit eats less than (Small) / at least (Moderate) one month of the spare
   // money and extra savings propping it up. No new tone (design restraint).
   'fits_month.month_short_small': row('monthShortSmall', 'caution'),
@@ -77,6 +78,8 @@ export const VERDICT_TABLE = Object.freeze({
   // costs 20% APR or more, or interest of 10% or more of the amount borrowed. No new tone (design restraint).
   fits_by_borrowing: row('fitsByBorrowing', 'caution'),
   'fits_by_borrowing.borrowing_costs_more': row('fitsByBorrowingCostsMore', 'caution'),
+  // 05.4 FIN-08 / CMP-F01 (05.4-23): the records do not show it fits; it rests on the user's yes. Amber, never plain Fits (I61).
+  fits_on_your_answer: row('fitsOnYourAnswer', 'caution'),
 } as const satisfies Record<string, VerdictRow>);
 
 export type VerdictRowKey = keyof typeof VERDICT_TABLE;
@@ -120,6 +123,8 @@ export function verdictRowFor(code: Code, variant: Variant | null, once = false)
       return variant === 'protection_off' ? VERDICT_TABLE['fits_uses_net.protection_off'] : VERDICT_TABLE.fits_uses_net;
     case 'fits_uses_overdraft':
       return variant === 'not_cleared' ? VERDICT_TABLE['fits_uses_overdraft.not_cleared'] : VERDICT_TABLE.fits_uses_overdraft;
+    case 'fits_on_your_answer':
+      return VERDICT_TABLE.fits_on_your_answer;
     case 'fits_by_borrowing':
       return variant === 'borrowing_costs_more' ? VERDICT_TABLE['fits_by_borrowing.borrowing_costs_more'] : VERDICT_TABLE.fits_by_borrowing;
     case 'needs_input':
@@ -150,6 +155,7 @@ export const NOTICE_KEYS = Object.freeze({
   pay_counted_missed: 'decide.v3.notice.pay_counted_missed',
   fund_account_unknown: 'decide.v3.notice.fund_account_unknown',
   pay_expected_from_history: 'decide.v3.notice.pay_expected_from_history',
+  pay_gap: 'decide.v3.notice.pay_gap', // 05.4 FIN-15
 } as const satisfies Record<NoticeCode, string>);
 
 export const FACT_KEYS = Object.freeze({
@@ -220,6 +226,8 @@ export const FACT_KEYS = Object.freeze({
   save_vs_borrow: 'decide.v3.fact.save_vs_borrow', // 05.4 FIN-05
   net_covers_surprises: 'decide.v3.fact.net_covers_surprises', // 05.4 D-48
   income_or_costs_first: 'decide.v3.fact.income_or_costs_first', // 05.4 D-48 (shared with D-46)
+  covered_from_savings: 'decide.v3.fact.covered_from_savings', // 05.4 D-46 (05.4-23)
+  further_shortfall_runway: 'decide.v3.fact.further_shortfall_runway', // 05.4 D-46 (05.4-23)
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -312,7 +320,8 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   deferred_interest_term: [],
   at_todays_rate: ['currency'],
   low_month: ['month', 'left', 'monthly'],
-  lean_bridge: ['monthly', 'leanLeft', 'shortfall', 'months', 'until', 'bridge', 'after'],
+  // 05.4 FIN-08 (05.4-23): source 'savings' | 'net' picks the variant; times low months over the term's payments (QE-04).
+  lean_bridge: ['source', 'month', 'shortfall', 'times', 'payments', 'until', 'bridge', 'savings'],
   unspent_held_back: ['amount'],
   lean_months_judged: ['from', 'to', 'leanLeft'],
   low_month_judged: ['month', 'left'],
@@ -381,6 +390,8 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   save_vs_borrow: ['kind', 'left', 'readyBy', 'more', 'missing'],
   net_covers_surprises: [],
   income_or_costs_first: [],
+  covered_from_savings: ['savings', 'gap', 'covered', 'of'], // 05.4 D-46
+  further_shortfall_runway: ['extra', 'covered', 'of'], // 05.4 D-46
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({
@@ -406,6 +417,7 @@ export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> 
   pay_counted_missed: ['amount', 'date'],
   fund_account_unknown: ['amount'],
   pay_expected_from_history: ['amount', 'day', 'months'], // 05.4 D-52
+  pay_gap: ['setup', 'middle', 'gap'], // 05.4 FIN-15: gap is a percent with one decimal
 });
 
 /** An id the engine emits that the UI resolves to a name; the copy placeholder is the value. */

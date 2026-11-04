@@ -55,8 +55,9 @@ describe('variable-income persons: fixed-seed properties', () => {
     fc.assert(
       fc.property(inputsArb, shapeArb, priceArb, fc.integer({ min: 1, max: 99 }), (inputs, shape, price, pct) => {
         const cheaper = Math.max(100, Math.floor((price * pct) / 100));
-        const hi = run(inputs, checkOf(price, shape));
-        const lo = run(inputs, checkOf(cheaper, shape));
+        // 05.4 FIN-08: a low month savings cannot carry asks first; the answer no makes it Not yet, so both sides answer no here.
+        const hi = run(inputs, { ...checkOf(price, shape), volatileCover: false });
+        const lo = run(inputs, { ...checkOf(cheaper, shape), volatileCover: false });
         fc.pre(hi.code === 'not_yet' && lo.code === 'not_yet');
         expect(readyKey(hi.readyBy) >= readyKey(lo.readyBy)).toBe(true);
       }),
@@ -70,8 +71,13 @@ describe('variable-income persons: fixed-seed properties', () => {
       fc.property(inputsArb, checkArb, (inputs, check) => {
         const zero = run(withFund(inputs, 0), check);
         const million = run(withFund(inputs, 100_000_000), check);
-        expect(million.notices).toEqual(zero.notices);
-        expect(million.confidence).toEqual(zero.confidence);
+        // 05.4 FIN-08 (savings first): money above the net's size can carry the low months, so the cover question, its
+        // income_volatile notice and the user_said_cover reason of a yes come in only without it. Everything else is unchanged.
+        const notices = (r: Result) => r.notices.filter((n) => n.code !== 'income_volatile');
+        const reasons = (r: Result) => r.confidence.reasons.filter((x) => x.code !== 'user_said_cover');
+        expect(notices(million)).toEqual(notices(zero));
+        expect(reasons(million)).toEqual(reasons(zero));
+        if (zero.notices.length === notices(zero).length && million.notices.length === notices(million).length) expect(million.confidence).toEqual(zero.confidence);
         fc.pre(zero.code !== 'needs_input' && million.code !== 'needs_input');
         expect(codeRank(million.code)).toBeGreaterThanOrEqual(codeRank(zero.code));
         expect(million.code).not.toBe('emergency_use');

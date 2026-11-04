@@ -26,6 +26,7 @@ describe('verdict table (I22 one code one text)', () => {
         'fits_month.tight', 'fits_unspent.tight_plan', 'fits_month.tight_once', 'fits_unspent.tight',
         'fits_by_borrowing', 'fits_by_borrowing.borrowing_costs_more', 'fits_by_borrowing.month_already_short',
         'fits_by_borrowing.month_short_small', 'fits_by_borrowing.month_short_moderate', 'fits_by_borrowing.month_short_moderate_extra',
+        'fits_on_your_answer', 'fits_on_your_answer.month_already_short', // 05.4 FIN-08
       ].sort()
     );
     const rows = Object.values(VERDICT_TABLE);
@@ -49,6 +50,7 @@ describe('verdict table (I22 one code one text)', () => {
       ['fits_month.month_already_short', 'not_yet.month_already_short'],
       ['fits_month.month_already_short', 'emergency_use.month_already_short'],
       ['fits_month.month_already_short', 'fits_by_borrowing.month_already_short'],
+      ['fits_month.month_already_short', 'fits_on_your_answer.month_already_short'], // 05.4 FIN-08
       // 05.4 D-65: Small and Moderate are one answer each on either cash-fit code.
       ['fits_month.month_short_small', 'fits_unspent.month_short_small'],
       ['fits_month.month_short_moderate', 'fits_unspent.month_short_moderate'],
@@ -68,6 +70,11 @@ describe('verdict table (I22 one code one text)', () => {
   it('verdictRowFor resolves variants', () => {
     // 05.4 FIN-05 (D-07, D-39a): Only by borrowing, and Fits, but borrowing costs more; a month-short headline keeps its row
     expect(verdictRowFor('fits_by_borrowing', null)).toBe(VERDICT_TABLE.fits_by_borrowing);
+    // 05.4 FIN-08 / CMP-F01: Only on your answer, amber; the month-short headline keeps its row
+    expect(verdictRowFor('fits_on_your_answer', null)).toBe(VERDICT_TABLE.fits_on_your_answer);
+    expect(verdictRowFor('fits_on_your_answer', 'tight')).toBe(VERDICT_TABLE.fits_on_your_answer);
+    expect(VERDICT_TABLE.fits_on_your_answer.tone).toBe('caution');
+    expect(verdictRowFor('fits_on_your_answer', 'month_already_short')).toBe(VERDICT_TABLE['fits_on_your_answer.month_already_short']);
     expect(verdictRowFor('fits_by_borrowing', 'borrowing_costs_more')).toBe(VERDICT_TABLE['fits_by_borrowing.borrowing_costs_more']);
     expect(verdictRowFor('fits_by_borrowing', 'tight')).toBe(VERDICT_TABLE.fits_by_borrowing);
     expect(verdictRowFor('fits_by_borrowing', 'month_already_short')).toBe(VERDICT_TABLE['fits_by_borrowing.month_already_short']);
@@ -165,6 +172,7 @@ describe('verdict table (I22 one code one text)', () => {
         'balanced_month_room', 'month_balance_gap', 'month_short_fits', 'money_lasts_shorter', 'short_plan_from_cash',
         'debt_interest_cost', 'debt_more', 'housing_cost', 'joint_loan_risk', 'debt_due_day_assumed', 'card_instead', 'ask_debts_not_recorded',
         'tight_floor', 'save_vs_borrow', 'net_covers_surprises', 'income_or_costs_first',
+        'covered_from_savings', 'further_shortfall_runway', // 05.4 D-46
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

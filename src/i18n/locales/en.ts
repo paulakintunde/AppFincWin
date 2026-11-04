@@ -3573,6 +3573,12 @@ const en = {
           title: 'This uses money in your safety net.',
           body: 'Protection is off, so this counts the money in your safety net.',
         },
+        // 05.4 FIN-08 / CMP-F01 (05.4-23): the condition first; the records alone do not show it. Declarative only.
+        fitsOnYourAnswer: {
+          chip: 'Only on your answer',
+          title: 'This fits only on your answer.',
+          body: 'Your records do not show this. It rests on your answer that {{monthly}} a month is covered.',
+        },
         fitsNoNet: {
           chip: 'Fits, but no safety net',
           title: 'This fits, and nothing is saved in your safety net yet.',
@@ -3638,7 +3644,7 @@ const en = {
         pay_capped_expected: 'In the next 90 days, pay is counted at no more than the income expected each month, {{capped}} below the pay on record.',
         same_season_compared: 'Everyday spending still to come this month is compared with {{lastYear}}, when it came to {{everyday}}.',
         history_window_12: 'Your figures use the last {{months}} months, so a whole year of seasons is seen.',
-        income_volatile: 'This answer is less certain because your income varies a lot from month to month. The plan is {{periods}} payments of {{payment}}; your leanest months, {{leanFrom}} to {{leanTo}}, leave about {{leanLeft}}.',
+        income_volatile: 'This answer is less certain because your income changes from month to month. The plan is {{periods}} payments of {{payment}}; your leanest months, {{leanFrom}} to {{leanTo}}, leave about {{leanLeft}}.',
         envelope_location_assumed: '{{count}} envelopes aren’t linked to an account yet, so their money is kept out of spare money.',
         unexplained_money: 'Your everyday accounts hold about {{amount}} more than your records explain.',
         account_use_unknown: '{{count}} accounts don’t say what they’re for yet, so they aren’t counted.',
@@ -3646,6 +3652,8 @@ const en = {
         pay_counted_missed: 'Your pay of {{amount}} due on {{date}} hasn’t arrived, so it isn’t counted.',
         fund_account_unknown: 'Your emergency fund of {{amount}} isn’t linked to an account yet, so it is kept out of spare money.',
         // 05.4 D-52: pay expected from history for an irregular earner with no pay scheduled.
+        // 05.4 FIN-15 (05.4-23): the pay itself is never changed; the usual month counts the lower figure.
+        pay_gap: 'Your last 3 pays were about {{middle}} each, {{gap}}% below the {{setup}} set up. The usual month here counts the lower figure.',
         pay_expected_from_history: 'No pay is scheduled, so about {{amount}} is expected around day {{day}} of each month, the lowest month in your last {{months}} months of records.',
       },
       fact: {
@@ -3704,6 +3712,9 @@ const en = {
         // 05.4 D-48: on every loan, plan or mortgage answer. Facts only; the fact-lines switch never hides them (D-50 (3)).
         net_covers_surprises: 'A safety net covers surprises while you repay.',
         income_or_costs_first: 'More income or lower costs makes repaying easier.',
+        // 05.4 D-46 (05.4-23, QE-12): how long savings carry a Short each month gap, and with a further shortfall. Facts, never a push.
+        covered_from_savings: 'The {{savings}} left at the end of this month would cover the {{gap}} monthly gap for about {{covered}} of the {{of}} payments.',
+        further_shortfall_runway: 'If you were short another {{extra}} a month, it would cover about {{covered}} of the {{of}}.',
         ask_debts_not_recorded_loan: 'No loan or other debt is recorded. Do you have one?',
         ask_debts_not_recorded_card: 'No card is recorded. Do you have one?',
         ask_debts_not_recorded_overdraft: 'No overdraft is recorded. Do you have one?',
@@ -3725,7 +3736,9 @@ const en = {
         deferred_interest_term: 'If the balance isn’t cleared by the end of the pause, interest back to the start could apply.',
         at_todays_rate: 'Converted from {{currency}} at today’s rate.',
         low_month: 'In {{month}}, a low month, about {{left}} remains against {{monthly}} a month.',
-        lean_bridge: 'In lean months about {{leanLeft}} remains, {{shortfall}} under the {{monthly}} payment. Over the {{months}} lean months to {{until}} that comes to {{bridge}}, which your unspent money carries, leaving {{after}}.',
+        // 05.4 FIN-08 (05.4-23, QE-04 / QE-14): savings are tried first; the safety net only ever by name.
+        lean_bridge: 'In a month like {{month}}, about {{shortfall}} would come from savings. Over {{payments}} payments, to {{until}}, that could happen about {{times}} times: about {{bridge}} of your {{savings}}.',
+        lean_bridge_net: 'In a month like {{month}}, about {{shortfall}} would come from your safety net. Over {{payments}} payments, to {{until}}, that could happen about {{times}} times: about {{bridge}} of the {{savings}} it holds.',
         lean_months_judged: 'Judged against your leanest months, {{from}} to {{to}}, which leave about {{leanLeft}} each.',
         low_month_judged: 'Judged against a low month like {{month}}, which leaves about {{left}}.',
         rests_on_your_answer: 'This rests on what you said, that {{monthly}} a month for {{months}} months is covered, not on your records.',

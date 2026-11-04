@@ -1000,10 +1000,10 @@
     "legacyState": "fits",
     "band": 1,
     "month": {
-     "typicalLeft": 72500,
+     "typicalLeft": 42500,
      "monthLeft": 42500
     },
-    "working": "Today's pay amount 430,000 moves the typical month at once: 430,000-180,000-147,500-30,000 = 72,500. October's received pay is still the logged 400,000, so monthLeft stays 42,500. 500 <= 42,500 -> fits_month. Band 1."
+    "working": "Today's pay amount 430,000 moves the typical month at once: 430,000-180,000-147,500-30,000 = 72,500. October's received pay is still the logged 400,000, so monthLeft stays 42,500. 500 <= 42,500 -> fits_month. Band 1. 05.4-23 (FIN-15, later than D-18): the usual month reads the lower of the set-up pay (430,000) and the middle of the last 3 pays that arrived (400,000), so typicalLeft = 400,000 - 180,000 - 147,500 - 30,000 = 42,500 and the 6.9% gap is named (pay_gap); the raise counts in the usual month once it has arrived. Owner question at the 05.4-23 review."
    },
    "source": "v3 §12 #20"
   },

@@ -354,6 +354,7 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       'decide.v3.fact.save_vs_borrow_with_overdraft',
       'decide.v3.fact.save_vs_borrow_no_date',
       'decide.v3.fact.save_vs_borrow_ask', // 05.4 D-79
+      'decide.v3.fact.lean_bridge_net', // 05.4 FIN-08: the low months dip into the safety net (source 'net')
       'decide.v3.fact.overdraft_repeat_no_rate',
       'decide.v3.fact.other_account_overdrawn_no_rate',
       ...Object.values(FACT_ACTION_KEYS).flatMap((a) => Object.values(a)),
@@ -389,6 +390,14 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
     expect(drafts.has('legal.decideFooter')).toBe(true);
     expect(en.legal.decideFooter).toBe('Worked out from your own records and what you told us. FincWin is a record-keeping and planning tool.');
     expect(en.legal.decideFooter).not.toMatch(/\badvice\b|recommend|you should/i);
+  });
+
+  it('05.4-23 FIN-08 / CMP-F01: Only on your answer says the records do not show it; Not yet and the runway lines never say never', () => {
+    expect(get('decide.v3.verdict.fitsOnYourAnswer.chip')).toBe('Only on your answer');
+    expect(get('decide.v3.verdict.fitsOnYourAnswer.body')).toMatch(/records do not show this/);
+    const paths = ['notYetNotCovered', 'notYetPayday'].flatMap((n) => ['chip', 'title', 'body'].map((p) => `decide.v3.verdict.${n}.${p}`));
+    paths.push('decide.v3.fact.covered_from_savings', 'decide.v3.fact.further_shortfall_runway', 'decide.v3.notice.pay_gap');
+    for (const p of paths) expect({ p, never: /\bnever\b/i.test(get(p)) }).toEqual({ p, never: false });
   });
 
   it('D-30 and D-32 notices exist', () => {

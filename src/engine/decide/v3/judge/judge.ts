@@ -47,10 +47,11 @@
  */
 import type { MinorUnits } from '../../../money/types';
 import { minorUnits } from '../../../money/types';
+import { currencyExponent } from '../../../money/currencyExponents';
 import { myPart } from '../../share';
 import { SIMULATION_MONTH_CAP } from '../../../payoff/constants';
 import { ceilDivide, minorFromBigInt } from '../../../payoff/types';
-import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_MONTHS } from '../constants';
+import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, FURTHER_SHORTFALL_MAJOR, LEGACY_STATE_OF_CODE, MISSING_PRIORITY, RECONFIRM_MIN_MONTHS } from '../constants';
 import { addDays, addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck, CashPathV3 } from '../cash/path';
 import { billsHeldTotal, cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit } from '../moneySource';
@@ -69,9 +70,9 @@ import type {
   Band,
   Code,
   ExpectedMonthIncome,
+  IncomeMonth,
   IncomePicture,
   Layer,
-  LowMonth,
   Confidence,
   Fact,
   Funds,
@@ -299,20 +300,29 @@ export interface MonthlyCtx {
   readonly available: MinorUnits | null;
   readonly takenByOneOff: MinorUnits;
   readonly expected: readonly ExpectedMonthIncome[];
+  /**
+   * 05.4 FIN-08 / ENG-07 (05.4-23): the savings a low month draws on, after the one-off part: money left from earlier months (never
+   * this month's own room, QE-05: "she needs $1,100 and has $500, and a usual month adds $600, so ... December"), money saved above
+   * the safety net's size and money kept in savings accounts (QE-04: "$4,000 is in her savings account"). null when spare money is
+   * not known.
+   */
+  readonly savings: MinorUnits | null;
+  /** 05.4 FIN-08 (QE-14): what the safety net can lend a low month (ResolvedNet.usable: 0 while it is locked, D-61). */
+  readonly netUsable: MinorUnits;
 }
 
-export type MonthlyCode = 'monthly_short' | 'fits_month' | 'fits_unspent' | 'not_yet' | 'needs_input';
+export type MonthlyCode = 'monthly_short' | 'fits_on_your_answer' | 'fits_uses_net' | 'fits_month' | 'fits_unspent' | 'not_yet' | 'needs_input';
 
 export interface MonthlyPart {
   readonly code: MonthlyCode;
   readonly lowClause: boolean;
-  /** lean_bridge: set when unspent money carries the monthly gap (D-37, D-46). */
+  /** lean_bridge: set when savings (or the safety net) carry the low months (D-37, D-46, FIN-08). */
   readonly bridge: Fact | null;
   /** lean_months_judged (seasonal) or low_month_judged (gig): which months were judged (D-46). */
   readonly why: Fact | null;
   readonly readyBy: ReadyBy | null;
   readonly reasons: readonly ReasonCode[];
-  /** D-48: the income_volatile notice, shown whatever the answer. */
+  /** D-48: the income_volatile notice, shown whenever the cover question is in play. */
   readonly notices: readonly Notice[];
   /** D-48: rests_on_your_answer, set when the user said they can cover it. */
   readonly rests: Fact | null;
@@ -320,6 +330,8 @@ export interface MonthlyPart {
   readonly saidCover: { readonly monthly: number; readonly months: number } | null;
   /** D-48, D-59: what a needs_input monthly part asks for. */
   readonly missing: readonly MissingCode[];
+  /** 05.4 FIN-08 (QE-14): what the low months take from the safety net's protected money (fits_uses_net); 0 otherwise. */
+  readonly netUsed: MinorUnits;
 }
 
 const monthly = (code: MonthlyCode, over: Partial<MonthlyPart> = {}): MonthlyPart => ({
@@ -333,6 +345,7 @@ const monthly = (code: MonthlyCode, over: Partial<MonthlyPart> = {}): MonthlyPar
   rests: null,
   saidCover: null,
   missing: [],
+  netUsed: mu(0),
   ...over,
 });
 
@@ -353,11 +366,26 @@ function planMonthsOf(ctx: MonthlyCtx): readonly string[] {
 }
 
 /**
- * D-36, D-37. A seasonal earner's monthly part is judged against what is left in every lean month it touches; a gig or
- * other variable earner's against the low month. When that falls short, the shortfall for each lean month to carry is a
- * bridge: unspent money (after the one-off part and money held back) covers it, or the answer is not yet. The fund is
- * never used here (D-43a, D-63).
- * D-48 (the volatile income question, 05.1-50) sits between step 1 and step 2: see the block below.
+ * 05.4 FIN-08 (05.4-23): the months a plan's payments fall in over its whole term, and the last of them (QE-04: "about 2 over the 12
+ * payments", to November 2027); a running cost with no plan touches the months ahead (planMonthsOf).
+ */
+function termOf(ctx: MonthlyCtx, planMonths: readonly string[]): { readonly count: number; readonly last: string } {
+  const s = ctx.purchase.schedule;
+  if (s === null) return { count: planMonths.length, last: planMonths[planMonths.length - 1] as string };
+  const months = [...new Set(paymentsInRange(s, s.firstDate, '9999-12-31').map((p) => yearMonthOf(p.date)))];
+  return { count: months.length, last: months[months.length - 1] as string };
+}
+
+/**
+ * D-36, D-37, 05.4 FIN-08 / ENG-07 (05.4-23). A seasonal earner's monthly part is judged against what is left in every lean month it
+ * touches; a gig or other variable earner's against the lowest month of the window. When that falls short, savings are tried first
+ * (QE-04), then the safety net's money, never silently (QE-14: Dips into your safety net); only when neither carries the low months
+ * is the user asked whether they can cover them (volatile_cover_question). A yes is "Only on your answer" (fits_on_your_answer,
+ * QE-03); a no is Not yet, ready when savings could carry a low month (QE-05).
+ * Gig: every window month that cannot carry the payment is a low month; they are counted over the whole term at the rate the window
+ * shows (ceil(low months x term / window months), QE-04: 1 in 6 over 12 payments is 2). Savings must cover one low month now, and
+ * every low month over the term less what the usual months in between leave after the payment (the bridge need). Seasonal: the
+ * run of lean months the plan must outlast, all from savings.
  */
 function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: MonthlyCtx): MonthlyPart {
   const planMonths = planMonthsOf(ctx);
@@ -371,13 +399,19 @@ function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: 
       if (expected === null || everyday === null) return monthly('needs_input');
       leftBy.set(ym, BigInt(expected.amount) - BigInt(month.recurringBills) - BigInt(everyday) - BigInt(month.setAside));
     }
-  } else if (month.low === null) {
+  } else if (pic.treated !== 'steady' && (month.low === null || pic.months.length === 0)) {
     return steadyMonthly(month, M);
   }
+  // FIN-08: a steady earner reaches here only with a month whose pay arrived low (monthlyPart); those months are the low ones, out of
+  // the months of the usual-month window.
+  const gigMonths = pic.treated === 'steady' ? (pic.lowPay as readonly IncomeMonth[]) : pic.months;
+  const windowCount = pic.treated === 'steady' ? Math.max(gigMonths.length, month.monthsUsed.length) : gigMonths.length;
   const leftOf = (ym: string): bigint => leftBy.get(ym) as bigint;
+  const { count: term, last: termLast } = termOf(ctx, planMonths);
 
   let leanLeft: bigint;
-  let carried: readonly string[];
+  let toCarry: number;
+  let until: string;
   let why: Fact;
   let leanFrom: string;
   let leanTo: string;
@@ -386,6 +420,7 @@ function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: 
     const picked = planMonths.filter((ym) => (records ? isLeanMonth(pic, ym) : leftOf(ym) < Mb));
     const lean = picked.length > 0 ? picked : planMonths;
     leanLeft = lean.map(leftOf).reduce((a, b) => (b < a ? b : a));
+    let carried: readonly string[];
     if (records) {
       const run = leanRun(pic, planMonths);
       const start = planMonths.findIndex((ym) => isLeanMonth(pic, ym));
@@ -393,6 +428,8 @@ function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: 
     } else {
       carried = lean;
     }
+    toCarry = carried.length;
+    until = carried[toCarry - 1] as string;
     leanFrom = lean[0] as string;
     leanTo = lean[lean.length - 1] as string;
     why = {
@@ -400,77 +437,79 @@ function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: 
       values: { from: lean[0] as string, to: lean[lean.length - 1] as string, leanLeft: minorFromBigInt(leanLeft, 'monthlyPart') },
     };
   } else {
-    const low = month.low as LowMonth;
-    leanLeft = BigInt(low.left);
-    const count = pic.months.filter((m) => BigInt(m.left) < Mb).length;
-    const toCarry = Math.max(1, Math.min(planMonths.length, count));
-    carried = Array.from({ length: toCarry }, (_, i) => addYearMonths(planMonths[0] as string, i));
-    leanFrom = low.month;
-    leanTo = low.month;
-    why = { code: 'low_month_judged', values: { month: low.month, left: low.left } };
+    // FIN-08 (QE-04): the lowest window month, and how many window months cannot carry the payment.
+    const lowest = gigMonths.reduce((a, b) => (b.left < a.left ? b : a));
+    leanLeft = BigInt(lowest.left);
+    const lows = gigMonths.filter((m) => BigInt(m.left) < Mb).length;
+    toCarry = Math.min(term, Math.max(1, Number(ceilDivide(BigInt(lows * term), BigInt(windowCount)))));
+    until = termLast;
+    leanFrom = lowest.month;
+    leanTo = lowest.month;
+    why = { code: 'low_month_judged', values: { month: lowest.month, left: lowest.left } };
   }
 
   // Step 1 (D-36): what is left in the lean months covers the payment.
   if (leanLeft - Mb >= 0n) return monthly('fits_month', { why, reasons: seasonal ? ['lean_months_used'] : [] });
 
-  // Step 2 (D-37): the shortfall in every lean month to carry is a bridge paid from unspent money.
+  // Step 2 (D-37, FIN-08): the shortfall in every low month to carry is a bridge paid from savings, then the safety net.
   const shortfall = Mb - leanLeft;
-  const toCarry = carried.length;
   const bridge = shortfall * BigInt(toCarry);
-  const used = BigInt(ctx.takenByOneOff);
-
-  // D-48: income too volatile to judge the monthly payment from the records alone. The leanest months do not cover it, so
-  // the user is asked; what they say decides the monthly part, and a yes is labelled and carries the user_said_cover reason.
-  // The emergency fund plays no part (D-43a): the fund is not read here.
-  if (pic.volatile) {
-    const sched = ctx.purchase.schedule;
-    const notice: Notice = {
-      code: 'income_volatile',
-      values: {
-        payment: sched === null ? M : myPart(sched.payment, ctx.purchase.share),
-        periods: sched === null ? planMonths.length : sched.count,
-        monthly: M,
-        months: planMonths.length,
-        leanFrom,
-        leanTo,
-        leanLeft: minorFromBigInt(leanLeft, 'monthlyPart'),
-      },
-    };
-    const answer = ctx.purchase.volatileCover ?? null;
-    if (answer === null) return monthly('needs_input', { why, notices: [notice], missing: ['volatile_cover_question'] });
-    if (answer) {
-      const rests: Fact = { code: 'rests_on_your_answer', values: { monthly: M, months: planMonths.length } };
-      return monthly('fits_month', { why, notices: [notice], rests, saidCover: { monthly: M, months: planMonths.length } });
-    }
-    return monthly('not_yet', {
-      why,
-      notices: [notice],
-      reasons: ['volatile_cover_declined'],
-      readyBy: readyMonth(month, minorFromBigInt(used + bridge, 'monthlyPart'), ctx.available),
-    });
+  // Gig: the usual months between the low months leave typicalLeft - M each, so savings need one low month now and the rest less that.
+  const usualLeft = BigInt(month.typicalLeft ?? 0) - Mb;
+  const refill = seasonal || usualLeft <= 0n ? 0n : usualLeft * BigInt(term - toCarry);
+  const need = seasonal ? bridge : bridge - refill > shortfall ? bridge - refill : shortfall;
+  if (ctx.savings === null) return monthly('needs_input');
+  const savings = BigInt(ctx.savings);
+  const usable = BigInt(ctx.netUsable);
+  const leanBridge = (source: 'savings' | 'net'): Fact => ({
+    code: 'lean_bridge',
+    values: {
+      source,
+      month: leanFrom,
+      shortfall: minorFromBigInt(shortfall, 'monthlyPart'),
+      times: toCarry,
+      payments: term,
+      until,
+      bridge: minorFromBigInt(bridge, 'monthlyPart'),
+      savings: minorFromBigInt(source === 'savings' ? savings : usable, 'monthlyPart'),
+    },
+  });
+  // QE-04: savings carry it, so the records alone show it fits, with the low-month caution.
+  if (savings >= need) return monthly('fits_month', { why, lowClause: true, bridge: leanBridge('savings') });
+  // QE-14: the low months need money protected in the safety net: Dips into your safety net, never silently.
+  if (savings + usable >= need) {
+    const fromNet = bridge - savings < usable ? bridge - savings : usable;
+    return monthly('fits_uses_net', { why, bridge: leanBridge('net'), netUsed: minorFromBigInt(fromNet, 'monthlyPart') });
   }
 
-  if (ctx.available === null) return monthly('needs_input');
-  const afterOneOff = BigInt(ctx.available) - used;
-  if (afterOneOff >= bridge) {
-    return monthly('fits_unspent', {
-      why,
-      bridge: {
-        code: 'lean_bridge',
-        values: {
-          monthly: M,
-          leanLeft: minorFromBigInt(leanLeft, 'monthlyPart'),
-          shortfall: minorFromBigInt(shortfall, 'monthlyPart'),
-          months: toCarry,
-          until: carried[toCarry - 1] as string,
-          bridge: minorFromBigInt(bridge, 'monthlyPart'),
-          after: minorFromBigInt(afterOneOff - bridge, 'monthlyPart'),
-        },
-      },
-    });
+  // Step 3 (D-48, FIN-08): neither carries the low months, so the user is asked; what they say decides the monthly part. A yes is
+  // "Only on your answer" with the user_said_cover reason; a no waits until savings could carry a low month. The notice says which
+  // months were judged, whatever the answer.
+  const sched = ctx.purchase.schedule;
+  const notice: Notice = {
+    code: 'income_volatile',
+    values: {
+      payment: sched === null ? M : myPart(sched.payment, ctx.purchase.share),
+      periods: sched === null ? term : sched.count,
+      monthly: M,
+      months: term,
+      leanFrom,
+      leanTo,
+      leanLeft: minorFromBigInt(leanLeft, 'monthlyPart'),
+    },
+  };
+  const answer = ctx.purchase.volatileCover ?? null;
+  if (answer === null) return monthly('needs_input', { why, notices: [notice], missing: ['volatile_cover_question'] });
+  if (answer) {
+    const rests: Fact = { code: 'rests_on_your_answer', values: { monthly: M, months: term } };
+    return monthly('fits_on_your_answer', { why, notices: [notice], rests, saidCover: { monthly: M, months: term } });
   }
-  // Step 3: not covered. Ready when unspent plus the months ahead reach the one-off part and the bridge.
-  return monthly('not_yet', { why, readyBy: readyMonth(month, minorFromBigInt(used + bridge, 'monthlyPart'), ctx.available) });
+  return monthly('not_yet', {
+    why,
+    notices: [notice],
+    reasons: ['volatile_cover_declined'],
+    readyBy: readyMonth(month, minorFromBigInt(need, 'monthlyPart'), ctx.savings),
+  });
 }
 
 /**
@@ -494,7 +533,13 @@ export function monthlyPart(month: MonthModel, M: MinorUnits, ctx?: MonthlyCtx):
   if (month.typicalLeft !== null && month.typicalLeft <= 0) return monthly('monthly_short');
   if (ctx !== undefined && startsInShortMonth(month, ctx)) return monthly('monthly_short');
   const pic = month.incomePicture;
-  if (ctx === undefined || pic === undefined || pic.treated === 'steady') return steadyMonthly(month, M);
+  if (ctx === undefined || pic === undefined) return steadyMonthly(month, M);
+  // 05.4 FIN-08 (QE-04): a steady earner whose pay arrived low in a month that could not carry the payment is judged on those low
+  // months like a variable earner (savings first, then the net, then the question), once the usual month itself carries it.
+  if (pic.treated === 'steady') {
+    const lowPay = (pic.lowPay ?? []).some((m) => m.left < M);
+    if (!lowPay || month.typicalLeft === null || month.typicalLeft - M < 0) return steadyMonthly(month, M);
+  }
   return leanMonthly(month, M, pic, ctx);
 }
 
@@ -593,7 +638,7 @@ function netDipFacts(j: JudgeInput, net: ResolvedNet, one: OneOffPart, p: Purcha
  */
 function netStateFacts(net: ResolvedNet, code: Code, dips: boolean, extraUsed: boolean): Fact[] {
   const out: Fact[] = [];
-  const fits = code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_overdraft';
+  const fits = code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_overdraft' || code === 'fits_on_your_answer'; // FIN-08: Only on your answer too
   if (!dips && !net.off && fits && net.state === 'none') out.push({ code: 'net_none_start', values: { starter: net.starter } });
   if (!dips && !net.off && fits && net.state === 'small') out.push({ code: 'net_progress', values: { saved: net.saved, size: net.size } });
   if (net.aboveSize > 0) out.push({ code: 'net_above_size', values: { above: net.aboveSize } });
@@ -634,6 +679,57 @@ function planReadyBy(month: MonthModel, p: Purchase, asOf: string, spare: number
   if ((spare ?? 0) >= need) return judged;
   const plan = readyMonth(month, need, spare);
   return readyKey(plan) > readyKey(judged) ? plan : judged;
+}
+
+/**
+ * 05.4 FIN-08 (05.4-23; QE-04, D-44): money kept in savings accounts (a savings account whose use is "kept, not spent"). It never pays
+ * a purchase; it can carry a low month's shortfall and counts in the D-46 runway, as money saved in earlier months.
+ */
+export function keptSavings(accounts: V3Inputs['accounts']): number {
+  let total = 0;
+  for (const a of accounts ?? []) if (a.kind === 'savings' && a.use !== null && a.use.kind === 'untouched' && a.balance > 0) total += a.balance;
+  return total;
+}
+
+/** 05.4 FIN-08 (QE-14): the low months dip into the net: what they take, what stays, and how protection reads. */
+function lowMonthNetFacts(net: ResolvedNet, used: MinorUnits): Fact[] {
+  const out: Fact[] = [{ code: 'net_used', values: { used } }, { code: 'net_left', values: { left: mu(Math.max(0, net.saved - used)) } }];
+  if (net.zeroIsOff) out.push({ code: 'net_zero_is_off', values: { zero: 0 } });
+  else if (net.off) out.push({ code: 'net_protection_off', values: {} });
+  else if (net.state === 'small') out.push({ code: 'net_progress', values: { saved: net.saved, size: net.size } });
+  return out;
+}
+
+/** 05.4 D-46: the further shortfall the runway is shown with, FURTHER_SHORTFALL_MAJOR in the currency's minor units. */
+export function furtherStep(currency: string): MinorUnits {
+  return mu(FURTHER_SHORTFALL_MAJOR * 10 ** currencyExponent(currency));
+}
+
+/**
+ * 05.4 D-40 / D-46 (QE-12): how many of a monthly plan's payments the money on hand carries the usual month's gap for. money is what
+ * the month ends with before the plan (spare money after this month's plans, extra savings and kept savings); what the plan takes by
+ * month end (day one and this month's later payments) comes off first, and those payments count as covered. QE-12: £15,406.45 -
+ * £202.52 = £15,203.93; 1 + floor(15,203.93 / 352.52) = 44 of 48; with another £1,000 a month, 1 + floor(15,203.93 / 1,352.52) = 12.
+ * Nothing when the usual month is not short with the payment, the plan is not monthly, or the money covers no further month.
+ */
+export function runwayFacts(r: { readonly month: MonthModel; readonly purchase: Purchase; readonly asOf: string; readonly money: MinorUnits; readonly step: MinorUnits }): Fact[] {
+  const s = r.purchase.schedule as NonNullable<Purchase['schedule']>;
+  const tl = r.month.typicalLeft;
+  if (tl === null || s.cadence.unit !== 'month' || s.cadence.every !== 1) return [];
+  const gap = r.purchase.monthly - tl;
+  if (gap <= 0) return [];
+  const nextMonth = `${addYearMonths(r.month.month, 1)}-01`;
+  const later = paymentsInRange(s, addDays(r.asOf, 1), nextMonth);
+  // a payment today is in day one already; count it as one payment covered, never by its amount
+  const paid = paymentsInRange(s, r.asOf, addDays(r.asOf, 1)).length + later.length;
+  const left = BigInt(r.money) - BigInt(r.purchase.dayOne) - later.reduce((t, p) => t + BigInt(myPart(p.amount, r.purchase.share)), 0n);
+  const of = s.lastPaying;
+  const covered = (perMonth: number): number => Math.min(of, paid + Number(left / BigInt(perMonth)));
+  if (left < BigInt(gap)) return [];
+  const out: Fact[] = [{ code: 'covered_from_savings', values: { savings: minorFromBigInt(left, 'runwayFacts'), gap: mu(gap), covered: covered(gap), of } }];
+  const further = gap + r.step;
+  if (left >= BigInt(further)) out.push({ code: 'further_shortfall_runway', values: { extra: r.step, covered: covered(further), of } });
+  return out;
 }
 
 export function judge(j: JudgeInput): Result {
@@ -677,12 +773,21 @@ export function judge(j: JudgeInput): Result {
   const purchase = p as Purchase;
   const segment = (part: OneOffPart, source: FundingSegment['source']): number => part.split.find((s) => s.source === source)?.amount ?? 0;
   const available = unspentValue === null ? null : mu(unspentValue);
+  const net = j.net ?? NO_NET;
+  // 05.4 FIN-08 (05.4-23): what a low month draws on after the one-off part: money from earlier months (spare money less this month's
+  // own room), money above the net's size and money kept in savings accounts; the net lends only its usable part, never silently.
+  const lowSavings =
+    unspentValue === null
+      ? null
+      : mu(unspentValue - Math.max(0, month.monthLeft) - segment(oneRaw, 'unspent_earlier') + net.aboveSize - segment(oneRaw, 'extra_savings') + keptSavings(j.inputs.accounts));
   const mon = monthlyPart(month, purchase.monthly, {
     asOf: j.inputs.asOf,
     purchase,
     available,
     takenByOneOff: mu(segment(oneRaw, 'month') + segment(oneRaw, 'unspent_earlier')),
     expected: j.inputs.expectedIncome ?? [],
+    savings: lowSavings,
+    netUsable: mu(Math.max(0, net.usable - oneRaw.netUsed)),
   });
   if (mon !== null && mon.code === 'needs_input') return asking({ oneOff: oneRaw.code, monthly: 'needs_input' }, mon.missing, mon.notices);
 
@@ -699,7 +804,9 @@ export function judge(j: JudgeInput): Result {
   const said = cashPlan === null ? mon : null;
   const code = mon === null || cashPlan !== null ? one.code : stricter(one.code, mon.code);
   const lowClause = mon !== null && mon.lowClause;
-  const net = j.net ?? NO_NET;
+  // 05.4 FIN-08 / settled dispute 4: the user's word is part of the answer only when it decides it. When the one-off part is as strict
+  // or stricter, the records alone give the answer, so it does not rest on the yes (no rests line, no user_said_cover reason).
+  const restsOn = said !== null && said.rests !== null && code === 'fits_on_your_answer';
   // 05.4 FIN-03 (D-26, D-36, D-37): the one-off part uses the overdraft. Its facts lead, the not-cleared warning first.
   const od = one.code === 'fits_uses_overdraft' && j.overdraft != null ? overdraftUseFacts(j.inputs.accounts, j.overdraft, readyMonth(month, dayOne, unspentValue)) : null;
   // 05.4 D-35: a fit while the net is empty or below its size is amber; the variant order is fixed (fitVariant) and a losing
@@ -782,8 +889,16 @@ export function judge(j: JudgeInput): Result {
   // order only, never the code, the variant or a figure (I-D41).
   const dips = one.code === 'fits_uses_net' && code !== 'not_yet';
   if (dips) facts.push(...netDipFacts(j, net, one, purchase, unspentValue, protectedUsed, mu(fromExtra)));
+  // 05.4 FIN-08 (QE-14): the low months dip into the net; what they take is named (a one-off dip already names its own).
+  const lowDips = !dips && said !== null && said.code === 'fits_uses_net' && code === 'fits_uses_net';
+  if (lowDips) facts.push(...lowMonthNetFacts(net, (said as MonthlyPart).netUsed));
   const keepSplit =
-    code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_net' || code === 'fits_uses_overdraft' || (code === 'monthly_short' && one.code !== 'not_yet');
+    code === 'fits_month' ||
+    code === 'fits_unspent' ||
+    code === 'fits_uses_net' ||
+    code === 'fits_uses_overdraft' ||
+    code === 'fits_on_your_answer' ||
+    (code === 'monthly_short' && one.code !== 'not_yet');
   // D-56 / D-62: the extra savings a fit uses, by name.
   const extraUsed = keepSplit && fromExtra > 0;
   if (extraUsed) facts.push({ code: 'extra_savings_used', values: { used: mu(fromExtra), above: net.aboveSize } });
@@ -808,7 +923,7 @@ export function judge(j: JudgeInput): Result {
   const heldBack = funds.unspent?.breakdown.heldBack ?? 0;
   if (heldBack > 0) facts.push({ code: 'unspent_held_back', values: { amount: heldBack } });
   facts.push(...billFacts(funds));
-  facts.push(...netStateFacts(net, code, dips, extraUsed));
+  facts.push(...netStateFacts(net, code, dips || lowDips, extraUsed));
   if (fromEnvelope > 0) facts.push({ code: 'envelope_used', values: { used: fromEnvelope, envelopeId: purchase.envelopeId } });
   facts.push(...j.purchaseFacts);
   // 05.4 D-08 (FIN-10, FIN-14): the debt and housing fact lines, on unless switched off; facts only, never the code or variant.
@@ -819,18 +934,23 @@ export function judge(j: JudgeInput): Result {
   facts.push(...debtFacts(j.inputs.debts, month.typicalIncome, j.inputs.factLines !== false, costly?.id ?? null, newHousing));
   // 05.4 D-48 / D-50 (3): every plan answer carries the borrowing facts, whatever its code and even with the fact lines off; the
   // interest line is not said twice when the depletion lines already state it.
+  // 05.4 D-46 (QE-12): a Short each month answer that savings carry for a while says for how many payments, and with a further shortfall.
+  if (code === 'monthly_short' && sched !== null && unspentValue !== null) {
+    facts.push(...runwayFacts({ month, purchase, asOf: j.inputs.asOf, money: mu(unspentValue + net.aboveSize + keptSavings(j.inputs.accounts)), step: furtherStep(j.inputs.currency) }));
+  }
   if (sched !== null) {
     const total = planTotal(purchase.dayOne, sched, purchase.share, firstPaymentsToday(sched, purchase.share, j.inputs.asOf));
     facts.push(...borrowingFacts(sched, purchase.share, total, facts.some((f) => f.code === 'interest_is_a_cost')));
   }
-  // A losing low_month variant keeps its fact under tight (05.4-21).
-  if ((variant === 'low_month' || (variant === 'tight' && lowClause)) && month.low !== null) {
+  // A losing low_month variant keeps its fact under tight (05.4-21). FIN-08: only when that month really cannot carry the payment (a
+  // savings bridge on low pay names its own months in lean_bridge).
+  if ((variant === 'low_month' || (variant === 'tight' && lowClause)) && month.low !== null && month.low.left - purchase.monthly < 0) {
     // The low-month clause as a fact (v3 §12 #7, #22): the tight month, its leftover, and the monthly cost it cannot carry.
     facts.push({ code: 'low_month', values: { month: month.low.month, left: month.low.left, monthly: purchase.monthly } });
   }
   if (said !== null && said.why !== null) facts.push(said.why); // D-46
   if (said !== null && said.bridge !== null) facts.push(said.bridge); // D-46
-  if (said !== null && said.rests !== null) facts.push(said.rests); // D-48
+  if (restsOn) facts.push((said as MonthlyPart).rests as Fact); // D-48, FIN-08
   facts.push(
     ...evaluateLines(j.inputs.limits, {
       month,
@@ -903,7 +1023,7 @@ export function judge(j: JudgeInput): Result {
     readyBy: alreadyShort ? null : readyBy,
     band,
     layers,
-    confidence: said !== null && said.saidCover !== null ? withReason(confidence, 'user_said_cover', said.saidCover) : confidence,
+    confidence: restsOn ? withReason(confidence, 'user_said_cover', (said as MonthlyPart).saidCover as { monthly: number; months: number }) : confidence,
     parts: { oneOff: one.code, monthly: mon === null ? null : mon.code },
   };
 }

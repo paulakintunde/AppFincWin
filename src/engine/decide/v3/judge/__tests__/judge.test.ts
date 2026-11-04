@@ -815,20 +815,23 @@ describe('D-36 / D-37 seasonal earner, monthly part', () => {
     expect(r.facts.map((f) => f.code)).not.toContain('lean_bridge');
   });
 
-  it('D-37 and D-46 shortfall x lean months to carry is the bridge, paid from unspent money', () => {
-    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(120_000) }));
-    // Lean months Oct to Apr: 40,000 - 30,000 = 10,000 left. Shortfall 15,000 x 7 months = 105,000; unspent 120,000 leaves 15,000.
-    expect(r.code).toBe('fits_unspent');
-    expect(r.parts).toEqual({ oneOff: 'fits_month', monthly: 'fits_unspent' });
-    expect(factOf(r, 'lean_bridge')).toEqual({ monthly: 25_000, leanLeft: 10_000, shortfall: 15_000, months: 7, until: '2027-04', bridge: 105_000, after: 15_000 });
+  it('D-37 and D-46 shortfall x lean months to carry is the bridge, paid from savings (05.4 FIN-08: Fits, a low month is tight)', () => {
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(160_000) }));
+    // Lean months Oct to Apr: 40,000 - 30,000 = 10,000 left. Shortfall 15,000 x 7 months = 105,000. Savings: 160,000 of spare money
+    // less this month's own 42,500 = 117,500, which carries it (FIN-08, QE-05: this month's room is not savings yet).
+    expect([r.code, r.variant]).toEqual(['fits_month', 'low_month']);
+    expect(r.parts).toEqual({ oneOff: 'fits_month', monthly: 'fits_month' });
+    expect(factOf(r, 'lean_bridge')).toEqual({ source: 'savings', month: '2026-10', shortfall: 15_000, times: 7, payments: 12, until: '2027-04', bridge: 105_000, savings: 117_500 });
     expect(factOf(r, 'lean_months_judged')).toEqual({ from: '2026-10', to: '2027-04', leanLeft: 10_000 });
   });
 
-  it('D-37 unspent short of the bridge: not_yet, not_covered, ready in a month', () => {
-    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(100_000) }));
+  it('D-37 savings short of the bridge and a no to the question: not_yet, not_covered, ready when the season brings it', () => {
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000, { volatileCover: false }), funds: funds(100_000) }));
     expect(r.code).toBe('not_yet');
     expect(r.variant).toBe('not_covered');
-    expect(r.readyBy).toEqual({ kind: 'month', month: '2026-11' }); // 105,000 - 100,000 = 5,000 against a typical 42,500
+    // Savings 100,000 - 42,500 = 57,500; 105,000 - 57,500 = 47,500 to make up; the season walk adds 10,000 a month from November,
+    // 50,000 by March (D-60).
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-03' });
     expect(r.parts).toEqual({ oneOff: 'fits_month', monthly: 'not_yet' });
   });
 
@@ -841,38 +844,39 @@ describe('D-36 / D-37 seasonal earner, monthly part', () => {
 
   it('D-37 the one-off part is taken off the unspent money before the bridge', () => {
     // One-off 120,000: this month 42,500 and 77,500 from earlier unspent; 240,000 - 120,000 = 120,000 after, bridge 105,000.
+    // FIN-08: savings 240,000 - this month's 42,500 - the 77,500 the one-off part takes from earlier money = 120,000.
     const r = judge(input({ month: leanMonth(), purchase: purchase({ dayOne: mu(120_000), whole: mu(120_000), monthly: mu(25_000), runningMonthly: mu(25_000) }), funds: funds(240_000) }));
     expect(r.code).toBe('fits_unspent');
-    expect(factOf(r, 'lean_bridge')).toMatchObject({ bridge: 105_000, after: 15_000 });
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ bridge: 105_000, savings: 120_000 });
   });
 
   it('D-37 months with no lean flag at all: every month with less than the payment is carried', () => {
-    const r = judge(input({ month: leanMonth({}, { months: windowMonths(() => ({ lean: false, income: mu(40_000), left: mu(10_000) })) }), purchase: monthlyOnly(25_000), funds: funds(200_000) }));
-    expect(r.code).toBe('fits_unspent');
-    expect(factOf(r, 'lean_bridge')).toMatchObject({ months: 12, until: '2027-09', bridge: 180_000, after: 20_000 });
+    const r = judge(input({ month: leanMonth({}, { months: windowMonths(() => ({ lean: false, income: mu(40_000), left: mu(10_000) })) }), purchase: monthlyOnly(25_000), funds: funds(230_000) }));
+    expect(r.code).toBe('fits_month');
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ times: 12, until: '2027-09', bridge: 180_000, savings: 187_500 });
     expect(factOf(r, 'lean_months_judged')).toEqual({ from: '2026-10', to: '2027-09', leanLeft: 10_000 });
   });
 
   it('D-37 a schedule starts the walk at the first payment: Feb to Apr are the lean run', () => {
     const r = judge(input({ month: leanMonth(), purchase: purchase({ dayOne: mu(0), whole: mu(150_000), monthly: mu(25_000), schedule: sched('2027-02-05') }), funds: funds(120_000) }));
-    expect(r.code).toBe('fits_unspent');
-    expect(factOf(r, 'lean_bridge')).toMatchObject({ months: 3, until: '2027-04', bridge: 45_000 });
+    expect(r.code).toBe('fits_month');
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ times: 3, payments: 6, until: '2027-04', bridge: 45_000, savings: 77_500 });
     expect(factOf(r, 'lean_months_judged')).toEqual({ from: '2027-02', to: '2027-04', leanLeft: 10_000 });
   });
 
   it('D-37 a schedule that starts beyond the year ahead judges the current month', () => {
     const r = judge(input({ month: leanMonth(), purchase: purchase({ dayOne: mu(0), whole: mu(150_000), monthly: mu(25_000), schedule: sched('2029-01-01') }), funds: funds(120_000) }));
-    expect(factOf(r, 'lean_bridge')).toMatchObject({ months: 1, until: '2026-10', bridge: 15_000 });
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ times: 1, payments: 6, until: '2026-10', bridge: 15_000 });
   });
 
   it('D-37 confirmed expected income (under 12 months of records): months with less left than the payment are carried', () => {
     const expected = expectedAll((i) => (i < 6 ? 40_000 : 200_000)); // Oct to Mar lean
     const r = judge(
-      input({ month: leanMonth({}, { fullMonths: 6, months: [] }), purchase: monthlyOnly(25_000), funds: funds(100_000), inputsOver: { expectedIncome: expected } })
+      input({ month: leanMonth({}, { fullMonths: 6, months: [] }), purchase: monthlyOnly(25_000), funds: funds(140_000), inputsOver: { expectedIncome: expected } })
     );
-    // Everyday is the typical 30,000: 40,000 - 30,000 = 10,000 left; shortfall 15,000 x 6 = 90,000; 100,000 leaves 10,000.
-    expect(r.code).toBe('fits_unspent');
-    expect(factOf(r, 'lean_bridge')).toEqual({ monthly: 25_000, leanLeft: 10_000, shortfall: 15_000, months: 6, until: '2027-03', bridge: 90_000, after: 10_000 });
+    // Everyday is the typical 30,000: 40,000 - 30,000 = 10,000 left; shortfall 15,000 x 6 = 90,000; savings 140,000 - 42,500 = 97,500.
+    expect(r.code).toBe('fits_month');
+    expect(factOf(r, 'lean_bridge')).toEqual({ source: 'savings', month: '2026-10', shortfall: 15_000, times: 6, payments: 12, until: '2027-03', bridge: 90_000, savings: 97_500 });
     expect(factOf(r, 'lean_months_judged')).toEqual({ from: '2026-10', to: '2027-03', leanLeft: 10_000 });
   });
 
@@ -883,7 +887,7 @@ describe('D-36 / D-37 seasonal earner, monthly part', () => {
   });
 
   it('monthlyPart: no expected income for a month, or no everyday figure, asks for input', () => {
-    const ctx = { asOf: '2026-10-03', purchase: monthlyOnly(25_000), available: mu(100_000), takenByOneOff: mu(0), expected: [] as ExpectedMonthIncome[] };
+    const ctx = { asOf: '2026-10-03', purchase: monthlyOnly(25_000), available: mu(100_000), takenByOneOff: mu(0), expected: [] as ExpectedMonthIncome[], savings: mu(100_000), netUsable: mu(0) };
     expect(monthlyPart(leanMonth({}, { fullMonths: 6, months: [] }), mu(25_000), ctx)?.code).toBe('needs_input');
     expect(monthlyPart(leanMonth({ e: null }, { fullMonths: 6, months: [] }), mu(25_000), { ...ctx, expected: expectedAll(() => 40_000) })?.code).toBe('needs_input');
   });
@@ -905,24 +909,29 @@ describe('D-36 / D-37 gig and other variable earners', () => {
     picture({ stated: 'variable', treated: 'variable', fullMonths: 12, months: windowMonths((_, i) => ({ left: mu(i < 4 ? 20_000 : 60_000) })), ...over });
   const gig = (avail: number | null) => judge(input({ month: leanMonth({ low, incomePicture: gigPic() }), purchase: monthlyOnly(25_000), funds: funds(avail) }));
 
-  it('D-36 the low month covers the payment: fits_month, low month judged, no bridge', () => {
-    const r = judge(input({ month: leanMonth({ low: { ...low, left: mu(40_000) }, incomePicture: gigPic() }), purchase: monthlyOnly(25_000), funds: funds(50_000) }));
+  it('D-36 the lowest month covers the payment: fits_month, low month judged, no bridge', () => {
+    // 05.4 FIN-08: judged on the lowest window month (QE-04), here 40,000 in every month.
+    const r = judge(input({ month: leanMonth({ low: { ...low, left: mu(40_000) }, incomePicture: gigPic({ months: windowMonths(() => ({ left: mu(40_000) })) }) }), purchase: monthlyOnly(25_000), funds: funds(50_000) }));
     expect(r.code).toBe('fits_month');
     expect(r.reasons).not.toContain('lean_months_used');
-    expect(factOf(r, 'low_month_judged')).toEqual({ month: '2026-02', left: 40_000 });
+    expect(factOf(r, 'low_month_judged')).toEqual({ month: '2025-10', left: 40_000 });
+    expect(r.facts.map((f) => f.code)).not.toContain('lean_bridge');
   });
 
   it('D-37 the low month falls short: 4 months below the payment make the bridge; unspent covers it', () => {
     const r = gig(50_000);
-    // Shortfall 25,000 - 20,000 = 5,000 x 4 months below 25,000 = 20,000; 50,000 leaves 30,000.
-    expect(r.code).toBe('fits_unspent');
-    expect(factOf(r, 'lean_bridge')).toEqual({ monthly: 25_000, leanLeft: 20_000, shortfall: 5_000, months: 4, until: '2027-01', bridge: 20_000, after: 30_000 });
-    expect(factOf(r, 'low_month_judged')).toEqual({ month: '2026-02', left: 20_000 });
+    // 05.4 FIN-08: 4 of the 12 window months are below 25,000, so about 4 over the 12 months ahead: 5,000 x 4 = 20,000. Savings need one
+    // low month now and the rest less what the usual months between leave: max(5,000, 20,000 - (42,500 - 25,000) x 8) = 5,000; savings
+    // 50,000 - 42,500 = 7,500 carry it.
+    expect([r.code, r.variant]).toEqual(['fits_month', 'low_month']);
+    expect(factOf(r, 'lean_bridge')).toEqual({ source: 'savings', month: '2025-10', shortfall: 5_000, times: 4, payments: 12, until: '2027-09', bridge: 20_000, savings: 7_500 });
+    expect(factOf(r, 'low_month_judged')).toEqual({ month: '2025-10', left: 20_000 });
     expect(r.facts.map((f) => f.code)).not.toContain('lean_months_judged');
   });
 
-  it('D-37 not enough unspent: not_yet', () => {
-    const r = gig(15_000);
+  it('D-37 not enough savings and a no: not_yet', () => {
+    const r = judge(input({ month: leanMonth({ low, incomePicture: gigPic() }), purchase: monthlyOnly(25_000, { volatileCover: false }), funds: funds(15_000) }));
+    // savings 15,000 - 42,500 = -27,500 against 5,000: 32,500 at the typical 42,500 is one month
     expect(r.code).toBe('not_yet');
     expect(r.variant).toBe('not_covered');
     expect(r.readyBy).toEqual({ kind: 'month', month: '2026-11' });
@@ -938,15 +947,15 @@ describe('D-36 / D-37 gig and other variable earners', () => {
     expect(r.facts.map((f) => f.code)).not.toContain('low_month_judged');
   });
 
-  it('D-37 a plan shorter than the run of low months limits the months carried', () => {
+  it('D-37 / FIN-08 the low months are counted over the plan\'s own term: 4 in 12 over 6 payments is 2', () => {
     const r = judge(input({ month: leanMonth({ low, incomePicture: gigPic() }), purchase: purchase({ dayOne: mu(0), whole: mu(50_000), monthly: mu(25_000), schedule: sched('2029-01-01') }), funds: funds(50_000) }));
-    expect(factOf(r, 'lean_bridge')).toMatchObject({ months: 1, until: '2026-10', bridge: 5_000 });
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ times: 2, payments: 6, until: '2029-06', bridge: 10_000 });
   });
 });
 
 describe('D-36 / D-37 / D-46 monthly rules, together with the one-off part', () => {
   it('a not_yet monthly part leads over a one-off part that is covered', () => {
-    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(100_000) }));
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000, { volatileCover: false }), funds: funds(100_000) }));
     expect(r.parts.oneOff).toBe('fits_month');
     expect(r.parts.monthly).toBe('not_yet');
   });
@@ -954,7 +963,7 @@ describe('D-36 / D-37 / D-46 monthly rules, together with the one-off part', () 
   it('when both parts are not yet, the one-off part leads when its ready-by is the later', () => {
     // One-off 300,000 not covered by 100,000 unspent (typical 42,500): ready in 5 months. Plus bridge 105,000: ready later.
     const base = { month: leanMonth(), funds: funds(100_000) };
-    const both = judge(input({ ...base, purchase: purchase({ dayOne: mu(300_000), whole: mu(300_000), monthly: mu(25_000), runningMonthly: mu(25_000) }) }));
+    const both = judge(input({ ...base, purchase: purchase({ dayOne: mu(300_000), whole: mu(300_000), monthly: mu(25_000), runningMonthly: mu(25_000), volatileCover: false }) }));
     expect(both.code).toBe('not_yet');
     expect(both.parts).toEqual({ oneOff: 'not_yet', monthly: 'not_yet' });
     const oneOnly = judge(input({ month: month(), funds: funds(100_000), purchase: purchase({ dayOne: mu(300_000), whole: mu(300_000) }) }));
@@ -962,10 +971,11 @@ describe('D-36 / D-37 / D-46 monthly rules, together with the one-off part', () 
   });
 
   it("the monthly part leads when its ready-by is later than the one-off part's", () => {
-    const r = judge(input({ month: leanMonth(), funds: funds(0), purchase: purchase({ dayOne: mu(60_000), whole: mu(60_000), monthly: mu(25_000), runningMonthly: mu(25_000) }) }));
+    const r = judge(input({ month: leanMonth(), funds: funds(0), purchase: purchase({ dayOne: mu(60_000), whole: mu(60_000), monthly: mu(25_000), runningMonthly: mu(25_000), volatileCover: false }) }));
     expect(r.parts).toEqual({ oneOff: 'not_yet', monthly: 'not_yet' });
     expect(r.variant).toBe('not_covered');
-    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-05' }); // D-60: one-off 60,000 by April, bridge 105,000 only in May
+    // D-60: one-off 60,000 by April; the bridge 105,000 against savings of 0 - 42,500 (147,500 to make up) only in May
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-05' });
   });
 
   it('D-36 the lean leftover is the lowest of the lean months', () => {
@@ -973,20 +983,20 @@ describe('D-36 / D-37 / D-46 monthly rules, together with the one-off part', () 
     const months = windowMonths((_, i) => (i < 7 ? { income: mu(incomes[i] as number), left: mu((incomes[i] as number) - 30_000) } : {}));
     const r = judge(input({ month: leanMonth({}, { months }), purchase: monthlyOnly(25_000), funds: funds(200_000) }));
     expect(factOf(r, 'lean_months_judged')).toMatchObject({ leanLeft: 5_000 });
-    expect(factOf(r, 'lean_bridge')).toMatchObject({ shortfall: 20_000, months: 7, bridge: 140_000, after: 60_000 });
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ shortfall: 20_000, times: 7, bridge: 140_000, savings: 157_500 });
   });
 
   it('a payday one-off part and a monthly part: the later of the two leads', () => {
     const payday: CashCheck = { kind: 'payday', until: '2099-01-01', shortBy: mu(5_000) };
-    const far = judge(input({ cash: payday, month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(100_000) }));
+    const far = judge(input({ cash: payday, month: leanMonth(), purchase: monthlyOnly(25_000, { volatileCover: false }), funds: funds(100_000) }));
     expect(far.variant).toBe('payday');
     expect(far.readyBy).toEqual({ kind: 'date', date: '2099-01-01' });
     // The monthly part is never (a year that saves nothing): it leads, with no date.
-    const never = judge(input({ cash: payday, month: leanMonth({}, { months: windowMonths(() => ({ income: mu(30_000), left: mu(0), lean: true })) }), purchase: monthlyOnly(25_000), funds: funds(100_000) }));
+    const never = judge(input({ cash: payday, month: leanMonth({}, { months: windowMonths(() => ({ income: mu(30_000), left: mu(0), lean: true })) }), purchase: monthlyOnly(25_000, { volatileCover: false }), funds: funds(100_000) }));
     expect(never.variant).toBe('not_covered');
     expect(never.readyBy).toBeNull();
     // Both never: the one-off part leads, still no date.
-    const both = judge(input({ month: leanMonth({ monthLeft: mu(0) }, { months: windowMonths(() => ({ income: mu(30_000), left: mu(0), lean: true })) }), funds: funds(0), purchase: purchase({ dayOne: mu(60_000), whole: mu(60_000), monthly: mu(25_000), runningMonthly: mu(25_000) }) }));
+    const both = judge(input({ month: leanMonth({ monthLeft: mu(0) }, { months: windowMonths(() => ({ income: mu(30_000), left: mu(0), lean: true })) }), funds: funds(0), purchase: purchase({ dayOne: mu(60_000), whole: mu(60_000), monthly: mu(25_000), runningMonthly: mu(25_000), volatileCover: false }) }));
     expect(both.parts).toEqual({ oneOff: 'not_yet', monthly: 'not_yet' });
     expect(both.readyBy).toBeNull();
   });
@@ -994,13 +1004,13 @@ describe('D-36 / D-37 / D-46 monthly rules, together with the one-off part', () 
   it('D-60 a seasonal earner is ready in the month the season brings it, not after typical months', () => {
     // Bridge 105,000 against no unspent: lean months leave 10,000 each, busy months 170,000. From October the walk adds
     // Nov..Apr at 10,000 (60,000), then May at 170,000. The typical month (42,500) would say January.
-    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(0) }));
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000, { volatileCover: false }), funds: funds(0) }));
     expect(r.code).toBe('not_yet');
     expect(r.readyBy).toEqual({ kind: 'month', month: '2027-05' });
   });
 
   it('a monthly not_yet with the one-off part covered carries its own ready-by', () => {
-    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: funds(0) }));
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000, { volatileCover: false }), funds: funds(0) }));
     expect(r.readyBy).toEqual({ kind: 'month', month: '2027-05' }); // D-60: Nov to Apr save 10,000 each (60,000), May saves 170,000
   });
 
@@ -1053,8 +1063,8 @@ describe('D-38 available unspent money', () => {
   });
 
   it('D-46 the bridge is judged against available money, with held back money said', () => {
-    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000), funds: held(150_000, 100_000, 50_000) }));
-    expect(r.code).toBe('not_yet'); // 105,000 bridge against 100,000 available
+    const r = judge(input({ month: leanMonth(), purchase: monthlyOnly(25_000, { volatileCover: false }), funds: held(150_000, 100_000, 50_000) }));
+    expect(r.code).toBe('not_yet'); // 105,000 bridge against 100,000 available, less this month's 42,500
     expect(factOf(r, 'unspent_held_back')).toEqual({ amount: 50_000 });
   });
 
@@ -1172,14 +1182,14 @@ describe('D-48 volatile income', () => {
     }
   });
 
-  it('D-48 the ask is the same with no unspent figure (the question comes first)', () => {
-    expect(ask(null, volatileMonth(), null).missing).toEqual(['volatile_cover_question']);
+  it('D-48 / FIN-08 with no spare-money figure, savings are asked for first (the question comes only after savings)', () => {
+    expect(ask(null, volatileMonth(), null).missing).toEqual(['unspent_not_confirmed']);
   });
 
-  it('D-48 yes: the monthly part fits on the user word, rests_on_your_answer and the user_said_cover reason', () => {
+  it('D-48 / FIN-08 yes: Only on your answer, rests_on_your_answer and the user_said_cover reason', () => {
     const r = ask(true);
-    expect(r.code).toBe('fits_month');
-    expect(r.parts).toEqual({ oneOff: 'fits_month', monthly: 'fits_month' });
+    expect([r.code, r.variant, r.legacyState]).toEqual(['fits_on_your_answer', null, 'adjust']);
+    expect(r.parts).toEqual({ oneOff: 'fits_month', monthly: 'fits_on_your_answer' });
     expect(factOf(r, 'rests_on_your_answer')).toEqual({ monthly: 25_000, months: 12 });
     expect(r.confidence.reasons).toEqual([{ code: 'user_said_cover', numbers: { monthly: 25_000, months: 12 }, weight: 10, audience: 'answer' }]);
     expect(r.confidence.basis).toEqual({ kind: 'records_with_reason', months: 3, upTo: '2026-10-03', reason: 'user_said_cover' });
@@ -1193,14 +1203,16 @@ describe('D-48 volatile income', () => {
     expect(r.code).toBe('not_yet');
     expect(r.variant).toBe('not_covered');
     expect(r.reasons).toContain('volatile_cover_declined');
-    expect(r.readyBy).toEqual({ kind: 'month', month: '2026-11' }); // bridge 105,000 against 100,000, as D-37 step 3
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-03' }); // bridge 105,000 against savings 57,500: the season walk, as D-37
     expect(noticeOf(r)).toEqual(VALUES);
   });
 
-  it('D-48 no: declined even when unspent would have covered the bridge, and the fund plays no part', () => {
+  it('FIN-08 savings that carry the bridge come first: a no is never asked for or read, and the fund plays no part', () => {
     const r = judge(input({ month: volatileMonth(), purchase: { ...monthlyOnly(25_000), volatileCover: false }, funds: { ...funds(500_000), emergency: mu(900_000) } }));
-    expect(r.code).toBe('not_yet');
-    expect(r.reasons).toContain('volatile_cover_declined');
+    expect([r.code, r.variant]).toEqual(['fits_month', 'low_month']);
+    expect(r.reasons).not.toContain('volatile_cover_declined');
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ source: 'savings', bridge: 105_000, savings: 457_500 });
+    expect(r.notices.map((n) => n.code)).not.toContain('income_volatile');
     expect(r.facts.map((f) => f.code)).not.toContain('emergency_used');
   });
 
@@ -1213,8 +1225,9 @@ describe('D-48 volatile income', () => {
   it('D-48 gig earner: the low month is both ends of the span', () => {
     const low = { left: mu(20_000), month: '2026-02', reason: 'second_lowest' } as const;
     const m = leanMonth({ low }, { stated: 'variable', treated: 'variable', volatile: true, months: windowMonths((_, i) => ({ left: mu(i < 4 ? 20_000 : 60_000) })) });
-    const r = ask(null, m);
-    expect(noticeOf(r)).toMatchObject({ leanFrom: '2026-02', leanTo: '2026-02', leanLeft: 20_000 });
+    // FIN-08: savings 45,000 - 42,500 = 2,500 cannot carry the 5,000 low month, so the question; the lowest window month is October 2025
+    const r = ask(null, m, 45_000);
+    expect(noticeOf(r)).toMatchObject({ leanFrom: '2025-10', leanTo: '2025-10', leanLeft: 20_000 });
   });
 
   it('D-48 step 1 passes: no question, no notice, the 05.1-46 result', () => {
@@ -1225,10 +1238,12 @@ describe('D-48 volatile income', () => {
     expect(r.confidence.reasons).not.toContain('user_said_cover');
   });
 
-  it('D-48 not volatile: the answer is ignored and 05.1-46 runs', () => {
+  it('FIN-08 not volatile: the question is still asked when savings cannot carry the low months, and not when they can', () => {
+    const codes = [true, false, null].map((cover) => judge(input({ month: leanMonth(), purchase: { ...monthlyOnly(25_000), volatileCover: cover }, funds: funds(120_000) })).code);
+    expect(codes).toEqual(['fits_on_your_answer', 'not_yet', 'needs_input']);
     for (const cover of [true, false, null]) {
-      const r = judge(input({ month: leanMonth(), purchase: { ...monthlyOnly(25_000), volatileCover: cover }, funds: funds(120_000) }));
-      expect(r.code).toBe('fits_unspent');
+      const r = judge(input({ month: leanMonth(), purchase: { ...monthlyOnly(25_000), volatileCover: cover }, funds: funds(160_000) }));
+      expect([r.code, r.variant]).toEqual(['fits_month', 'low_month']);
       expect(r.notices.map((n) => n.code)).not.toContain('income_volatile');
     }
   });
@@ -1274,7 +1289,7 @@ describe('05.4 D-56: the overdraft split names extra savings and the safety net 
 // ---------------------------------------------------------------------------------------------------------------------
 
 describe('05.4-21 short month (FIN-06 / ENG-06)', () => {
-  const ctx = (p: Purchase, available: number | null) => ({ asOf: '2026-10-03', purchase: p, available: available === null ? null : mu(available), takenByOneOff: mu(0), expected: [] });
+  const ctx = (p: Purchase, available: number | null) => ({ asOf: '2026-10-03', purchase: p, available: available === null ? null : mu(available), takenByOneOff: mu(0), expected: [], savings: available === null ? null : mu(available), netUsable: mu(0) });
   const planIn = (first: string) => monthlyOnly(10_000, { schedule: sched(first), runningMonthly: mu(0) });
 
   it('a usual month at or below 0 is Short each month for any earner, before any other monthly rule', () => {
@@ -1369,5 +1384,44 @@ describe('05.4-21 tight: extra savings count in the money left even when spare m
   it('this month leaves 2,500, but 100,000 of extra savings stays: not tight', () => {
     const r = judge(input({ funds: funds(null), net: ABOVE, purchase: purchase({ dayOne: mu(40_000), whole: mu(40_000) }) }));
     expect([r.code, r.variant]).toEqual(['fits_month', null]);
+  });
+});
+
+// 05.4-23 (FIN-08 / ENG-07, D-46): the edges of the low-month rule and the runway lines, by hand.
+describe('05.4-23 low months: savings first, the safety net named, then the question', () => {
+  const low = { left: mu(20_000), month: '2026-02', reason: 'second_lowest' } as const;
+  const gigPic = (over: Partial<IncomePicture> = {}): IncomePicture =>
+    picture({ stated: 'variable', treated: 'variable', fullMonths: 12, months: windowMonths((_, i) => ({ left: mu(i < 4 ? 20_000 : 60_000) })), ...over });
+
+  it('a variable earner with no window months recorded takes the steady rule', () => {
+    // (with confirmed expected income, so the months ahead are known)
+    const r = judge(input({ month: leanMonth({ low, incomePicture: gigPic({ months: [] }) }), purchase: monthlyOnly(25_000), funds: funds(50_000), inputsOver: { expectedIncome: expectedAll(() => 100_000) } }));
+    expect([r.code, r.parts.monthly]).toEqual(['fits_month', 'fits_month']);
+    expect(r.facts.map((f) => f.code)).not.toContain('low_month_judged');
+  });
+
+  it('no usual month figure: nothing comes back between the low months, so savings must carry them all (4 x 5,000)', () => {
+    const r = judge(input({ month: leanMonth({ low, typicalLeft: null, incomePicture: gigPic() }), purchase: monthlyOnly(25_000), funds: funds(70_000) }));
+    // savings 70,000 - 42,500 = 27,500 >= the whole 20,000 (no refill when the usual month is unknown)
+    expect([r.code, r.variant]).toEqual(['fits_month', 'low_month']);
+    const short = judge(input({ month: leanMonth({ low, typicalLeft: null, incomePicture: gigPic() }), purchase: monthlyOnly(25_000, { volatileCover: false }), funds: funds(60_000) }));
+    // savings 17,500 < 20,000: Not yet
+    expect(short.code).toBe('not_yet');
+  });
+
+  it('the safety net lends what the low months take, never more than it can (QE-14 shape)', () => {
+    const net: ResolvedNet = { ...FULL_NET, usable: mu(3_000) };
+    // savings 45,000 - 42,500 = 2,500 < 5,000 needed; with the 3,000 the net can lend it is enough: Dips into your safety net, 3,000 used
+    const r = judge(input({ month: leanMonth({ low, incomePicture: gigPic() }), purchase: monthlyOnly(25_000), funds: funds(45_000), net }));
+    expect([r.code, r.parts.monthly]).toEqual(['fits_uses_net', 'fits_uses_net']);
+    expect(factOf(r, 'net_used')).toEqual({ used: 3_000 });
+    expect(factOf(r, 'lean_bridge')).toMatchObject({ source: 'net', bridge: 20_000, savings: 3_000 });
+    expect(r.facts.map((f) => f.code)).not.toContain('emergency_untouched');
+  });
+
+  it('D-46 with spare money unknown, a Short each month plan has no runway line', () => {
+    const r = judge(input({ month: month({ typicalLeft: mu(10_000) }), purchase: purchase({ dayOne: mu(0), whole: mu(150_000), monthly: mu(25_000), schedule: sched('2026-11-05') }), funds: funds(null) }));
+    expect(r.code).toBe('monthly_short');
+    expect(r.facts.map((f) => f.code)).not.toContain('covered_from_savings');
   });
 });

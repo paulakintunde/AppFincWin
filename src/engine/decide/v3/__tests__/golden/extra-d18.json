@@ -732,10 +732,10 @@
     "band": 2,
     "month": {
      "moneyIn": 430000,
-     "typicalLeft": 72500,
+     "typicalLeft": 42500,
      "monthLeft": 72500
     },
-    "working": "Pay series amount 430,000 effective this month, October pay logged at 430,000. moneyIn 430,000. Typical left = 430,000-180,000 bills-147,500 E-30,000 saving = 72,500. monthLeft = 430,000-357,500 = 72,500 >= 5,000 -> fits_month. Band 2."
+    "working": "Pay series amount 430,000 effective this month, October pay logged at 430,000. moneyIn 430,000. Typical left = 430,000-180,000 bills-147,500 E-30,000 saving = 72,500. monthLeft = 430,000-357,500 = 72,500 >= 5,000 -> fits_month. Band 2. 05.4-23 (FIN-15, later than D-18): the usual month reads the lower of the set-up pay (430,000) and the middle of the last 3 pays that arrived (400,000), so typicalLeft = 400,000 - 180,000 - 147,500 - 30,000 = 42,500 and the 6.9% gap is named (pay_gap); the raise counts in the usual month once it has arrived. Owner question at the 05.4-23 review."
    },
    "source": "D-18"
   },

@@ -298,10 +298,12 @@ function readyKey(r: ReadyBy | null): string {
  * D-42: partially thin history never improves on reading the thin months as full; the stricter reading wins (I1).
  * The code, the split and every figure come from the stricter reading, compared by CODE_PRECEDENCE only. The reasons are the
  * sorted union and the basis is built from the smaller reading (mergeConfidence), so a thin month can never make either surer.
+ * 05.4 FIN-08 (settled dispute 4, I62): when the two readings tie, the one that does not rest on the user's answer wins.
  */
 export function stricterOf(a: Evaluation, b: Evaluation): Evaluation {
   const ra = CODE_PRECEDENCE.indexOf(a.result.code);
   const rb = CODE_PRECEDENCE.indexOf(b.result.code);
+  const rests = (e: Evaluation): boolean => e.result.facts.some((f) => f.code === 'rests_on_your_answer');
   let pick = a;
   let bStricter = false;
   if (rb < ra) {
@@ -310,9 +312,15 @@ export function stricterOf(a: Evaluation, b: Evaluation): Evaluation {
   } else if (rb === ra && a.result.code === 'not_yet' && readyKey(b.result.readyBy) > readyKey(a.result.readyBy)) {
     pick = b;
     bStricter = true;
+  } else if (rb === ra && rests(a) && !rests(b)) {
+    pick = b;
   }
+  const other = pick === a ? b : a;
+  // The losing reading's yes does not follow the winner: its user_said_cover reason is not merged in (the winner does not rest on it).
+  const otherConf =
+    rests(other) && !rests(pick) ? { ...other.result.confidence, reasons: other.result.confidence.reasons.filter((r) => r.code !== 'user_said_cover') } : other.result.confidence;
   const reasons: ReasonCode[] = [...new Set([...a.result.reasons, ...b.result.reasons, ...(bStricter ? (['thin_history_stricter'] as const) : [])])].sort();
-  return { ...pick, result: { ...pick.result, reasons, confidence: mergeConfidence(pick.result.confidence, (bStricter ? a : b).result.confidence) } };
+  return { ...pick, result: { ...pick.result, reasons, confidence: mergeConfidence(pick.result.confidence, otherConf) } };
 }
 
 /**
