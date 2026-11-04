@@ -47,7 +47,7 @@ describe('plain calculator: tax (FIN-27, TX-01..TX-09)', () => {
     expect(plainTax(tx('TX-01'))).toBe(27_090n); // "9.03% sales tax ..., which brings it to $3,270.90" (D-93)
     expect(plainTax(tx('TX-06'))).toBe(11_700n); // "13% of $900 is $117"
     expect(upFront(tx('TX-07'))).toBe(1_002_000n); // "$9,000 + $720 (8%) + $300 = $10,020"
-    expect(plainTax(tx('TX-08'))).toBe(24_750n); // "The tax is $247.50"
+    expect(plainTax(tx('TX-08'))).toBe(27_090n); // "The tax is $270.90" (D-93)
     for (const id of ['TX-02', 'TX-03']) expect({ id, tax: plainTax(tx(id)), said: plainTaxNotIncluded(tx(id)) }).toEqual({ id, tax: 0n, said: false });
     for (const id of ['TX-04', 'TX-05']) expect({ id, tax: plainTax(tx(id)), said: plainTaxNotIncluded(tx(id)) }).toEqual({ id, tax: 0n, said: true });
   });

@@ -48,7 +48,7 @@ export function basisPoints(text: string): Cents {
 
 /**
  * FIN-27 (05.4-25), restated from the tax cases and D-19 / D-20. "Up-front cost = price + tax + fees" (TX-07: "$9,000 + $720 (8%) +
- * $300 = $10,020"); on a plan "the tax is added to the plan" (TX-08: "$3,247.50 is paid over the plan, not $3,000"). The rate:
+ * $300 = $10,020"); on a plan "the tax is added to the plan" (TX-08: "$3,270.90 is paid over the plan, not $3,000"). The rate:
  * - "Price already includes tax" on: nothing is added (TX-02: "Adding VAT again would make the TV look £120 dearer");
  * - a rate the person typed is used as typed (TX-07: "His own 8% is used, not the pre-filled rate");
  * - else the usual rate of their state or province, an estimate (TX-06: "Decide pre-filled the usual 13% HST");
