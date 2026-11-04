@@ -97,3 +97,10 @@
   (--page FIN-05) now shows the FIN-09 box. Earlier pages are in the scratchpad copies.
 - **Screens (08.1):** Decide Home shows homeFigure; the answer shows afterBuy with its lead (a plan leads with the usual month) and the
   Over lines below 0; earlier_money_from under the figure.
+- **D-86 (FIN-09b) reads the opening balance from this month's lines.** Spending that is not logged, or card spending logged as
+  spending but not yet out of the checking account, shifts the opening balance by that much. Under-logged spending can look like an
+  overdraft carried in (which errs toward caution); card spending not yet paid can hide one. The 05.5 month picture, which knows which
+  account each line hits, is the place to make it exact.
+- **The month figure sets aside a card or loan minimum even when the balance is already paid off** (debtsInMonth does not read the
+  balance; pre-existing). D-86's opening balance reads such a minimum as gone too, so no false overdraft appears; the month figure
+  itself is for the owner of the month picture (05.5).
