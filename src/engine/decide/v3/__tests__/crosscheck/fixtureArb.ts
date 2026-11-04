@@ -61,7 +61,7 @@ interface MidMonthRaw {
    * 05.4-19 (FIN-11, D-47): a yearly or every-3-month bill outside the usual month's bills, as a percent of pay, next due 1 to
    * (every - 1) months after this month on `day`; lastPaid one period before (so already paid, never this month) or unknown.
    */
-  longBill: { every: 3 | 12; pct: number; ahead: number; day: number; known: boolean } | null;
+  longBill: { every: 3 | 12; pct: number; ahead: number; day: number; known: boolean; inUsual: boolean } | null;
 }
 
 const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
@@ -82,7 +82,7 @@ const midMonthRawArb: fc.Arbitrary<MidMonthRaw> = fc.record({
     {
       weight: 1,
       arbitrary: fc.constantFrom<3 | 12>(3, 12).chain((every) =>
-        fc.record({ every: fc.constant(every), pct: fc.integer({ min: 5, max: 150 }), ahead: fc.integer({ min: 1, max: every - 1 }), day: fc.integer({ min: 1, max: 28 }), known: fc.boolean() })
+        fc.record({ every: fc.constant(every), pct: fc.integer({ min: 5, max: 150 }), ahead: fc.integer({ min: 1, max: every - 1 }), day: fc.integer({ min: 1, max: 28 }), known: fc.boolean(), inUsual: fc.boolean() })
       ),
     }
   ),
@@ -106,15 +106,20 @@ function midMonth(r: MidMonthRaw, received: number): RightAnswerFixture {
   // D-58 / D-67: this month's saving has left the account when its day is on or before the 15th (it is logged on its day).
   const saving = r.saving === null ? undefined : { amount: Math.max(1, Math.floor((r.pay * r.saving.pct) / 100)), day: r.saving.day, movedThisMonth: r.saving.day <= 15 };
   const balance = r.cushion + received - billsPaid - everydaySoFar - (saving?.movedThisMonth === true ? saving.amount : 0);
+  // 05.4-19 (D-70): half the people with a yearly bill have it counted in the usual month at its monthly share (inside the usual
+  // bills, never in this month's paid or due figures).
+  const lb = r.longBill;
+  const longAmount = lb === null ? 0 : Math.max(100, Math.floor((r.pay * lb.pct) / 100));
+  const share = lb !== null && lb.inUsual ? Math.round(longAmount / lb.every) : 0;
   return {
     asOf: '2026-10-15', currency: 'USD', region: null,
     pay: { amount: r.pay, cadence: 'monthly', nextDate: '2026-11-01', setupAmount: null, lastThree: null },
-    usualMonth: { bills, everyday, essentialEveryday: Math.floor(everyday / 2), ...(saving === undefined ? {} : { saving }) },
+    usualMonth: { bills: bills + share, everyday, essentialEveryday: Math.floor(everyday / 2), ...(saving === undefined ? {} : { saving }) },
     thisMonth: { received, billsPaid, billsDue: bills - billsPaid, everydaySoFar },
     historyMonths: r.history, quickEstimates: null, recordsAsOf: null,
     accounts: [{ id: 'a1', kind: 'checking', name: 'Main', balance, overdraftLimit: null, overdraftRate: null, use: 'everyday' }],
     safetyNet: null,
-    bills: r.longBill === null ? [] : [{ id: 'long', amount: Math.max(100, Math.floor((r.pay * r.longBill.pct) / 100)), everyMonths: r.longBill.every, nextDue: octPlus(r.longBill.ahead, r.longBill.day), lastPaid: r.longBill.known ? octPlus(r.longBill.ahead - r.longBill.every, r.longBill.day) : null, paidBy: 'me' }],
+    bills: lb === null ? [] : [{ id: 'long', amount: longAmount, everyMonths: lb.every, nextDue: octPlus(lb.ahead, lb.day), lastPaid: lb.known ? octPlus(lb.ahead - lb.every, lb.day) : null, paidBy: 'me', ...(lb.inUsual ? { inUsualMonth: true } : {}) }],
     debts: [], userLine: null, factLines: false,
     check: {
       price, taxPercent: null, taxIncluded: null, oneOffFees: r.fees,

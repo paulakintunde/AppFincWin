@@ -203,7 +203,7 @@ export function wholeMonths(a: string, b: string): number {
 /** A bill the bills list names that comes every 3 or 12 months and is paid by this person (someone else's is never held back, D-31). */
 const longBills = (f: RightAnswerFixture) => f.bills.filter((b) => b.paidBy === 'me' && (b.everyMonths === 3 || b.everyMonths === 12));
 
-export interface PlainHeld { id: string; builtUp: Cents; uncovered: Cents; holdBack: Cents; months: number }
+export interface PlainHeld { id: string; builtUp: Cents; uncovered: Cents; holdBack: Cents; months: number; perMonth: Cents }
 
 /**
  * D-47 (owner round 2): "for yearly or quarterly bills, hold back only the part the months before the due date cannot cover from
@@ -218,16 +218,18 @@ export interface PlainHeld { id: string; builtUp: Cents; uncovered: Cents; holdB
 export function plainHeld(f: RightAnswerFixture): PlainHeld[] {
   const mins = f.debts.reduce((t, d) => t + big(d.minimum), 0n);
   const usual = monthPay(f) - big(f.usualMonth.bills) - big(f.usualMonth.everyday) - mins - savingAmount(f);
-  const leftover = maxC(0n, usual);
   return longBills(f).map((b) => {
     const bill = big(b.amount);
+    // D-70 (owner, 2026-11-04, "count it once"): "When the usual month already sets aside a twelfth of the bill ..., the cover check
+    // uses leftover plus that twelfth for each month until the due date. Example: $800 a month, not $700."
+    const leftover = maxC(0n, usual + ownShare(b));
     const since = b.lastPaid === null || b.lastPaid > f.asOf ? 0 : wholeMonths(b.lastPaid, f.asOf);
     const share = (bill * BigInt(since) * 2n + BigInt(b.everyMonths)) / (BigInt(b.everyMonths) * 2n);
     const builtUp = share < bill ? share : bill;
     const months = wholeMonths(f.asOf, b.nextDue);
     const uncovered = maxC(0n, bill - leftover * BigInt(months));
     const thisMonth = b.nextDue.slice(0, 7) === f.asOf.slice(0, 7);
-    return { id: b.id, builtUp, uncovered, holdBack: thisMonth ? 0n : uncovered < builtUp ? uncovered : builtUp, months };
+    return { id: b.id, builtUp, uncovered, holdBack: thisMonth ? 0n : uncovered < builtUp ? uncovered : builtUp, months, perMonth: leftover };
   });
 }
 
@@ -235,6 +237,17 @@ export function plainHeld(f: RightAnswerFixture): PlainHeld[] {
 export function longDueInWindow(f: RightAnswerFixture): boolean {
   const end = dayAfter(f.asOf, PATH_DAYS);
   return longBills(f).some((b) => b.nextDue.slice(0, 7) !== f.asOf.slice(0, 7) ? b.nextDue < end : plusMonths(b.nextDue, b.everyMonths) < end);
+}
+
+/** D-70: the monthly share of a bill the usual month already sets aside (inUsualMonth), bill / months between payments, half up. */
+function ownShare(b: RightAnswerFixture['bills'][number]): Cents {
+  if (b.inUsualMonth !== true) return 0n;
+  return (big(b.amount) * 2n + BigInt(b.everyMonths)) / (BigInt(b.everyMonths) * 2n);
+}
+
+/** D-70: the part of usualMonth.bills that is yearly-bill shares; those bills land on their due dates, not on payday. */
+export function sharesInUsual(f: RightAnswerFixture): Cents {
+  return longBills(f).reduce((t, b) => t + ownShare(b), 0n);
 }
 
 /** The D-47 total held back from spare money. */
@@ -565,7 +578,7 @@ export function plainPathFlows(f: RightAnswerFixture, flows: readonly { date: st
     const laterDue = undated > 0n && dueDay !== null ? undated : 0n;
     if (billsDay && !billsMonths.has(date.slice(0, 7))) {
       billsMonths.add(date.slice(0, 7));
-      money -= big(f.usualMonth.bills) - laterDue;
+      money -= big(f.usualMonth.bills) - laterDue - sharesInUsual(f);
     }
     if (laterDue > 0n && date.slice(0, 7) !== ym && Number(date.slice(8, 10)) === Math.min(Number((dueDay as string).slice(8, 10)), Number(daysInMonthOf(date)))) money -= laterDue;
     for (const b of dated) if (b.nextDue === date) money -= big(b.amount);

@@ -6,7 +6,8 @@ export const TOPICS = ['safety-net','overdraft','debts','borrowing','tax','runni
 export type Topic = typeof TOPICS[number];
 export type CaseStatus = 'draft' | 'approved' | 'to_do' | 'disputed';
 export interface FixtureAccount { id: string; kind: 'checking'|'current'|'savings'|'card'; name: string; balance: number; overdraftLimit: number|null; overdraftRate: string|null; use: 'everyday'|'emergency'|'untouched'|null }
-export interface FixtureBill { id: string; amount: number; everyMonths: 1|3|12; nextDue: string; lastPaid: string|null; paidBy: 'me'|'other' }
+export interface FixtureBill { id: string; amount: number; everyMonths: 1|3|12; nextDue: string; lastPaid: string|null; paidBy: 'me'|'other';
+  /** D-70: a yearly or every-3-month bill the usual month already sets aside at amount / everyMonths a month (inside usualMonth.bills, never in thisMonth's figures); absent = false (left out of the usual month, as RC-10) */ inUsualMonth?: boolean }
 export interface FixtureDebt { id: string; kind: 'loan'|'card'|'other'; balance: number; minimum: number; apr: string|null; dueDay: number|null; joint: boolean; /** a mortgage or other housing debt (D-08 housing fact); absent = false */ housing?: boolean; /** already paid toward this month's minimum (DB-10); absent = 0 */ paidThisMonth?: number }
 export interface FixtureRunningCost { id: string; amount: number; everyMonths: 1|3|12; start: string; end: string|null; /** switched off by the user (FIN-28); absent = on */ off?: boolean }
 export interface FixtureCheck {

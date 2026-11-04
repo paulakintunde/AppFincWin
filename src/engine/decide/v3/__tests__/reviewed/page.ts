@@ -644,7 +644,6 @@ export function d47Steps(c: CorpusCase, ev: Evaluation, m: (n: number) => string
   const asOf = inputs.asOf;
   const always = new Set((inputs.waivers ?? []).flatMap((w) => (w.kind === 'always_other' ? [w.seriesId] : [])));
   const tl = ev.month.typicalLeft;
-  const leftover = tl === null || tl < 0 ? 0 : tl;
   const out: string[] = [];
   for (const s of longBillsOf(inputs)) {
     const name = s.name ?? s.id;
@@ -670,6 +669,10 @@ export function d47Steps(c: CorpusCase, ev: Evaluation, m: (n: number) => string
         if (due > past) break;
       }
     }
+    // D-70: a bill the usual month already sets aside (no yearly-bill choice, or 'monthly') counts its own monthly share once more
+    // in the cover: bill / months between payments, half up.
+    const own = s.typicalChoice === 'excluded' ? 0 : Math.floor((2 * s.amount + every) / (2 * every));
+    const leftover = tl === null ? 0 : Math.max(0, tl + own);
     const since = paid === null ? 0 : wholeMonthsPage(paid, asOf);
     const share = Math.min(s.amount, Math.floor((2 * s.amount * since + every) / (2 * every)));
     const until = wholeMonthsPage(asOf, due);
@@ -682,7 +685,10 @@ export function d47Steps(c: CorpusCase, ev: Evaluation, m: (n: number) => string
       `${agree ? '' : 'PAGE AND ENGINE DISAGREE: '}Yearly bills (D-47): ${name} is ${m(s.amount)} every ${every} months, ` +
         `${paid === null ? 'not paid yet (it starts on its first due date)' : `last paid ${paid}`}, next due ${due}. ` +
         `Built up: ${since} of ${every} months (${pct(Math.min(since, every), every)}) = ${m(share)}. ` +
-        `The usual month leaves ${m(leftover)}${tl !== null && tl < 0 ? ` (it is ${m(-tl)} short, so it covers nothing)` : ''}; ${until} whole months before ${due} cover ${m(leftover)} x ${until} = ${m(covered)}. ` +
+        (tl === null
+          ? 'The usual month is not known, so it covers nothing; '
+          : `The usual month leaves ${m(tl)}${own > 0 ? `, and it already sets aside ${m(own)} a month for this bill, counted once (D-70): ${m(tl)} + ${m(own)}` : ''} = ${m(leftover)} a month${tl + own < 0 ? ' (below 0, so it covers nothing)' : ''}; `) +
+        `${until} whole months before ${due} cover ${m(leftover)} x ${until} = ${m(covered)}. ` +
         `Not covered: the larger of ${m(0)} and ${m(s.amount)} - ${m(covered)} = ${m(uncovered)}. ` +
         (thisMonth ? `It is due this month, so it is already in this month's bills: nothing more is held back.` : `Held back: the smaller of ${m(share)} and ${m(uncovered)} = ${m(hold)}${hold === share && hold > 0 ? ' (the whole built-up share)' : ''}.`) +
         (engine === undefined ? ' (engine: no hold-back figure)' : ` Engine: built up ${m(engine.builtUp)}, held back ${m(engine.holdBack)}, due ${engine.dueDate}.`)
@@ -696,6 +702,7 @@ export function d47Steps(c: CorpusCase, ev: Evaluation, m: (n: number) => string
 /** Fix IDs whose page also lists the checks the rule reads but whose answer it leaves the same. */
 const READS: Readonly<Record<string, (c: CorpusCase) => boolean>> = {
   'FIN-11': (c) => longBillsOf(c.inputs).length > 0,
+  'FIN-11b': (c) => longBillsOf(c.inputs).length > 0, // D-70
 };
 
 /**

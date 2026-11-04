@@ -128,7 +128,8 @@ interface MappedBills {
  * - Yearly and every-3-month bills are not in the usual month's bills (RC-10: the usual month leaves £700 before the
  *   insurance): each is its own series, left out of the usual month (typicalChoice 'excluded'; D-47 holds back what the months
  *   before it cannot cover). Its due dates step back from nextDue; every due date inside the records up to asOf is paid on that
- *   date (the newest on lastPaid when given). With no lastPaid, the bill starts at nextDue, so nothing has built up. One paid or
+ *   date (the newest on lastPaid when given). D-70: one with inUsualMonth is counted in the usual month at its monthly share
+ *   (that share is inside usualMonth.bills, so the rest of the bills is that much less). With no lastPaid, the bill starts at nextDue, so nothing has built up. One paid or
  *   due this month is part of thisMonth.billsPaid / billsDue.
  * - A bill paid by someone else is a series with the always-paid-by-someone-else answer (D-31) and no lines; it is not in the
  *   usual month's bills.
@@ -146,6 +147,7 @@ function billsOf(f: RightAnswerFixture, start: string): MappedBills {
     hist.set(m, [...(hist.get(m) ?? []), l]);
   };
   let namedMonthly = 0;
+  let inUsual = 0;
   let paidNow = 0;
   let dueNow = 0;
   for (const b of f.bills) {
@@ -178,7 +180,9 @@ function billsOf(f: RightAnswerFixture, start: string): MappedBills {
       while (anchor > start) anchor = addMonthsClamped(b.nextDue, -b.everyMonths * ++k);
     }
     if (addMonthsClamped(anchor, b.everyMonths * k) !== b.nextDue) throw new Error(`fixture bill ${b.id}: due day ${day} does not repeat every ${b.everyMonths} months`);
-    series.push(v3Series({ id, role: 'bill', cadence: { unit: 'month', every: b.everyMonths }, anchorDate: anchor, amount: b.amount, name: b.id, typicalChoice: 'excluded' }));
+    // D-70: a bill the usual month already sets aside is counted there at its monthly share ('monthly'), not left out.
+    if (b.inUsualMonth === true) inUsual += Math.round(b.amount / b.everyMonths);
+    series.push(v3Series({ id, role: 'bill', cadence: { unit: 'month', every: b.everyMonths }, anchorDate: anchor, amount: b.amount, name: b.id, typicalChoice: b.inUsualMonth === true ? 'monthly' : 'excluded' }));
     if (b.nextDue.slice(0, 7) === ym && b.nextDue >= f.asOf) dueNow += b.amount;
     const dues: string[] = [];
     for (let n = 0; n < k; n++) {
@@ -195,7 +199,7 @@ function billsOf(f: RightAnswerFixture, start: string): MappedBills {
     });
   }
   const t = f.thisMonth;
-  const rest = f.usualMonth.bills - namedMonthly;
+  const rest = f.usualMonth.bills - namedMonthly - inUsual;
   const restPaid = t.billsPaid - paidNow;
   const restDue = t.billsDue - dueNow;
   if (rest < 0 || restPaid < 0 || restDue < 0 || restDue > rest) throw new Error('fixture bills list does not fit usualMonth.bills / thisMonth');

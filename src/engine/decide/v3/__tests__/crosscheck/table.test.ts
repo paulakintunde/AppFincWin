@@ -453,7 +453,7 @@ describe('plain calculator: yearly and every-3-month bills (05.4-19, FIN-11 as c
   it('RC-10 Hana: built up £700 over 7 months, 4 whole months x £700 cover the £1,200, so nothing is held back', () => {
     expect(wholeMonths('2026-03-01', '2026-10-15')).toBe(7);
     expect(wholeMonths('2026-10-15', '2027-03-01')).toBe(4);
-    expect(plainHeld(hana)).toEqual([{ id: 'b-ins', builtUp: 70_000n, uncovered: 0n, holdBack: 0n, months: 4 }]);
+    expect(plainHeld(hana)).toEqual([{ id: 'b-ins', builtUp: 70_000n, uncovered: 0n, holdBack: 0n, months: 4, perMonth: 70_000n }]);
     expect(plainHoldBack(hana)).toBe(0n);
   });
   it('a thin usual leftover holds back the whole built-up share; an ample one nothing', () => {
@@ -479,6 +479,24 @@ describe('plain calculator: yearly and every-3-month bills (05.4-19, FIN-11 as c
     const due = { ...q, bills: [{ ...q.bills[0]!, lastPaid: '2026-07-20', nextDue: '2026-10-20' }] };
     expect(plainHeld(due)[0]).toMatchObject({ holdBack: 0n });
   });
+  it('D-70 counted once: a bill the usual month already sets aside adds its share to each month of cover', () => {
+    // Hana's insurance counted in the usual month at $100 a month: bills $1,100, so the usual month leaves $600; a month covers
+    // $600 + $100 = $700; 4 x $700 = $2,800 covers the $1,200: nothing held back (the same as RC-10 with the bill left out).
+    const inside = { ...hana, usualMonth: { ...hana.usualMonth, bills: 110_000 }, bills: [{ ...bill, inUsualMonth: true }] };
+    expect(plainHeld(inside)[0]).toMatchObject({ perMonth: 70_000n, uncovered: 0n, holdBack: 0n });
+    // a $10,000 version: share $833.33, so bills $1,833.33 and the usual month -$133.33; a month covers -$133.33 + $833.33 = $700;
+    // 4 x $700 = $2,800; $7,200 not covered, capped at the $5,833.33 built up
+    const big = { ...hana, usualMonth: { ...hana.usualMonth, bills: 183_333 }, bills: [{ ...bill, amount: 1_000_000, inUsualMonth: true }] };
+    expect(plainHeld(big)[0]).toMatchObject({ perMonth: 70_000n, uncovered: 720_000n, builtUp: 583_333n, holdBack: 583_333n });
+    // where it bites: $50 left after a $100 share covers $150 a month: $1,200 - $600 = $600 held back, not the $700 built up
+    const thin = { ...inside, usualMonth: { ...inside.usualMonth, everyday: 135_000 } };
+    expect(plainHeld(thin)[0]).toMatchObject({ perMonth: 15_000n, uncovered: 60_000n, holdBack: 60_000n });
+    expect(plainHeld({ ...thin, bills: [{ ...bill }] })[0]).toMatchObject({ perMonth: 5_000n, holdBack: 70_000n });
+    // the engine gives the same hold-back through the fixture
+    const { inputs } = toEngineInputs(thin);
+    expect(evaluate(inputs, toEngineInputs(thin).check).funds.billsHeld?.parts[0]).toMatchObject({ builtUp: 70_000, holdBack: 60_000 });
+  });
+
   it('the hold-back comes off spare money, and a bill inside the 90 days lands on the path on its date', () => {
     const thin = { ...hana, usualMonth: { ...hana.usualMonth, everyday: 145_000 } };
     const none = { ...thin, bills: [] };

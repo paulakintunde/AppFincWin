@@ -216,18 +216,21 @@ describe('reviewed page', () => {
     const step = breakdown(hana).steps.find((x) => x.includes('(D-47)'))!;
     expect(step).toContain('$1,200.00 every 12 months, last paid 2026-03-10, next due 2027-03-10.');
     expect(step).toContain('Built up: 7 of 12 months (58.33%) = $700.00.');
-    expect(step).toContain('4 whole months before 2027-03-10 cover $700.00 x 4 = $2,800.00.');
-    expect(step).toContain('Not covered: the larger of $0.00 and $1,200.00 - $2,800.00 = $0.00.');
+    // D-70: the usual month's $700 is after the $100 a month it already sets aside for this bill, so a month covers $800
+    expect(step).toContain('The usual month leaves $700.00, and it already sets aside $100.00 a month for this bill, counted once (D-70): $700.00 + $100.00 = $800.00 a month;');
+    expect(step).toContain('4 whole months before 2027-03-10 cover $800.00 x 4 = $3,200.00.');
+    expect(step).toContain('Not covered: the larger of $0.00 and $1,200.00 - $3,200.00 = $0.00.');
     expect(step).toContain('Held back: the smaller of $700.00 and $0.00 = $0.00.');
     expect(step).not.toContain('DISAGREE');
     expect(breakdown(hana).steps).toContain('Held back from spare money for these bills: $0.00.');
-    // a thin leftover: the usual month counts this bill at a twelfth a month (no yearly-bill choice made), so a $10,000 bill leaves
-    // the month $33.33 short: nothing is covered, and the whole $5,833.33 built up is held back
+    // a thin leftover: the usual month counts this bill at a twelfth ($833.33) a month, so it leaves -$33.33; counted once (D-70)
+    // a month covers -$33.33 + $833.33 = $800; 4 x $800 = $3,200; not covered $6,800, more than the $5,833.33 built up
     const big = { ...hana, inputs: { ...hana.inputs, series: hana.inputs.series.map((x) => (x.id === 'audit-p8-ins' ? { ...x, amount: 1_000_000 as typeof x.amount } : x)) } };
     const thin = breakdown(big).steps.find((x) => x.includes('(D-47)'))!;
     expect(thin).toContain('Built up: 7 of 12 months (58.33%) = $5,833.33.');
-    expect(thin).toContain('The usual month leaves $0.00 (it is $33.33 short, so it covers nothing)');
-    expect(thin).toContain('Held back: the smaller of $5,833.33 and $10,000.00 = $5,833.33 (the whole built-up share).');
+    expect(thin).toContain('The usual month leaves -$33.33, and it already sets aside $833.33 a month for this bill, counted once (D-70): -$33.33 + $833.33 = $800.00 a month;');
+    expect(thin).toContain('Not covered: the larger of $0.00 and $10,000.00 - $3,200.00 = $6,800.00.');
+    expect(thin).toContain('Held back: the smaller of $5,833.33 and $6,800.00 = $5,833.33 (the whole built-up share).');
     expect(thin).not.toContain('DISAGREE');
     expect(breakdown(big).steps).toContain('Held back from spare money for these bills: $5,833.33 (taken off after the month-end cap, so the cap never cancels it).');
     // a check with no yearly bill has no D-47 step
