@@ -586,7 +586,8 @@
         "FIN-06",
         "ENG-06",
         "FIN-05",
-        "FIN-09"
+        "FIN-09",
+        "FIN-09b-pending"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",

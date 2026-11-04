@@ -14,11 +14,8 @@ const PENDING_IDS = new Set(PENDING_RULES.flatMap((r) => r.fixId.split('/')));
 
 describe('plain calculator vs the approved table', () => {
   const cases = loadCases().filter((c) => c.status === 'approved');
-  // 05.4-21: RC-10 left FIN-07 (tight landed) but its code waited for FIN-09. 05.4-24: FIN-09 does not move it. Its case counts the
-  // whole £1,500 free (the account) as this month's money (Fits, £50 left); both sides read this month after its plans as £687.10
-  // (£2,500 - £1,000 - £400 spent - £412.90 still to come over 16 of 31 days) and the rest as spare money from earlier months, so
-  // both give fits_unspent with a month figure of £0. Owner question at the 05.4-24 review; it stays in knownRed under FIN-09 until then.
-  const WAITS: Readonly<Record<string, string>> = { 'RC-10': 'FIN-09' };
+  // 05.4-24: RC-10 changed with the owner (D-78, 2026-11-04) to Fits from spare money, but tight; it runs here like every case.
+  const WAITS: Readonly<Record<string, string>> = {};
   const live = cases.filter((c) => {
     const pending = pendingFixIds(c.fixture);
     return pending.length === 0 && !c.fixIds.some((id) => PENDING_IDS.has(id)) && WAITS[c.id] === undefined;

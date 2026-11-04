@@ -1,13 +1,4 @@
 {
   "topic": "quick-estimates",
-  "red": [
-    {
-      "id": "QE-11",
-      "fixId": "FIN-09"
-    },
-    {
-      "id": "QE-12",
-      "fixId": "FIN-09"
-    }
-  ]
+  "red": []
 }
