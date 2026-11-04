@@ -25,6 +25,7 @@ import { uncoveredIncomeMonths } from './judge/needsInput';
 import { withLiveEmergency } from './funds/emergency';
 import { ownEnvelope } from './funds/envelopes';
 import { buildPurchase, purchaseCashFlows } from './judge/purchase';
+import { purchaseDateOf } from './fullCost/purchaseDate';
 import { withRedatedRefunds } from './month/refunds';
 import { recordsSynced } from './month/freshness';
 import { dueDrops } from './month/dueDrops';
@@ -243,7 +244,9 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
   // would otherwise fail (withNet), whatever the purchase's purpose (D-41, D-49).
   const net = r.net;
   const opening = minorUnits(funds.spending + funds.ownEnvelope + net.aboveSize);
-  const flows = pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3) : [];
+  // 05.4 BO-05 / D-42 (05.4-26): the up-front money leaves on the purchase date; running costs fall on their own dates.
+  const purchaseDate = purchaseDateOf(check, inputs.asOf);
+  const flows = pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3, purchaseDate) : [];
   const path = applyPurchaseFlows(r.open, opening, flows);
   // 05.4 D-56 / D-58: the everyday accounts alone (no money above the net's size), with the purchase; the regular saving transfers
   // are already in the open path (D-67), so they are taken once here as on the main path.
@@ -266,6 +269,7 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
     net,
     account,
     borrowing,
+    purchaseDate,
   });
   // D-52: pay expected from history says so, after the judge's notices. D-46: say so when the expected-income cap lowered the
   // pay in the 90-day path; last.

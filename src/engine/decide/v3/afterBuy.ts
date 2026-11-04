@@ -104,7 +104,7 @@ export interface AfterBuyInput {
   readonly month: Pick<MonthModel, 'month' | 'monthLeft' | 'typicalLeft'>;
   readonly asOf: string;
   /** null when the check has no price yet (an ask): the figure is the month as it stands. */
-  readonly purchase: Pick<Purchase, 'dayOne' | 'monthly' | 'runningMonthly' | 'schedule' | 'share'> | null;
+  readonly purchase: Pick<Purchase, 'dayOne' | 'monthly' | 'runningMonthly' | 'schedule' | 'share' | 'runningCosts'> | null;
   /** What the answer's funding split takes from this month (month + protected net money); null when the answer keeps no split. */
   readonly fromThisMonth: MinorUnits | null;
   /** 05.4 D-68: a short plan judged by cash; its split already holds every payment, and it leads with this month. */
@@ -119,7 +119,9 @@ export function afterBuyBlock(a: AfterBuyInput): AfterBuy {
   const taken = a.fromThisMonth ?? p.dayOne;
   const later = a.byCash ? 0 : laterThisMonth(p, a.asOf, a.month.month);
   const plan = p.schedule !== null;
-  const usual = a.month.typicalLeft === null || (!plan && p.runningMonthly <= 0) ? null : minorFromBigInt(BigInt(a.month.typicalLeft) - BigInt(p.monthly), 'afterBuyBlock');
+  // 05.4 BO-05 (RC-09): a one-off with running-cost lines states its usual month, even when every line is switched off.
+  const running = p.runningMonthly > 0 || (p.runningCosts?.length ?? 0) > 0;
+  const usual = a.month.typicalLeft === null || (!plan && !running) ? null : minorFromBigInt(BigInt(a.month.typicalLeft) - BigInt(p.monthly), 'afterBuyBlock');
   return {
     lead: plan && !a.byCash ? 'usualMonth' : 'month',
     month: minorFromBigInt(BigInt(before) - BigInt(taken) - BigInt(later), 'afterBuyBlock'),

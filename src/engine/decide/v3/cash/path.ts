@@ -235,14 +235,18 @@ function lowestOf(path: CashPathV3): CashPoint {
   return lowest;
 }
 
-/** Dated flows of the purchase: dayOne (already my share) on asOf; each schedule payment as myPart, applied once. */
+/**
+ * Dated flows of the purchase: dayOne (already my share) on asOf, or on dayOneOn (05.4 BO-05: the purchase date,
+ * fullCost/purchaseDate.ts); each schedule payment as myPart, applied once.
+ */
 export function purchaseFlows(
   purchase: { readonly dayOne: MinorUnits; readonly schedule: Schedule | null; readonly share: ResolvedShare },
   asOf: string,
-  days: number
+  days: number,
+  dayOneOn: string = asOf
 ): DatedFlow[] {
   const out: DatedFlow[] = [];
-  if (purchase.dayOne !== 0) out.push({ date: asOf, amount: purchase.dayOne });
+  if (purchase.dayOne !== 0) out.push({ date: dayOneOn, amount: purchase.dayOne });
   if (purchase.schedule !== null) {
     for (const p of paymentsInRange(purchase.schedule, asOf, addDays(asOf, days))) {
       out.push({ date: p.date, amount: myPart(p.amount, purchase.share) });

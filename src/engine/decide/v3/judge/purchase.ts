@@ -21,7 +21,7 @@ import { myPart, resolveShare, type ResolvedShare } from '../../share';
 import { purchaseFlows } from '../cash/path';
 import type { DatedFlow } from '../cash/path';
 import { percentText } from '../adapters/inputsV2';
-import { addDays } from '../dates';
+import { addDays, yearMonthOf } from '../dates';
 import { amortBase, countFromTerm, monthlyEquivalentOf, scaledApr } from '../plan/cadence';
 import { planCard, salesTaxOf, type PlanCard } from '../plan/planCard';
 import { checkQuoted, scoredPayment, type QuotedCheck } from '../plan/quoted';
@@ -43,6 +43,9 @@ import { bandOf, layersFor } from './bands';
 import { isNeedPurpose, resolveItemType } from './options';
 import { questionSpec } from './presetQuestions';
 import { lookupTaxDefault, type TaxDefaultLookup } from '../tax/lookup';
+import { closingCost } from '../fullCost/closingCosts';
+import { dayOneDate } from '../fullCost/purchaseDate';
+import { monthlyShare, runningCostOutflows } from '../fullCost/runningCosts';
 
 const FN = 'buildPurchase';
 
@@ -264,6 +267,11 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
     else if (s.cadence === 'yearly') runningFull += divideHalfUp(BigInt(amount), 12n);
     else oneOffExtras += BigInt(amount);
   }
+  // 05.4 BO-05 (05.4-26): the running-cost lines add their monthly share to the usual month (fullCost/runningCosts.ts; each line falls
+  // on its own dates on the cash path, purchaseCashFlows), and home closing costs (a % of the price) are paid up front (RC-06).
+  const lines = check.runningCosts ?? [];
+  runningFull += BigInt(monthlyShare(lines, yearMonthOf(ctx.asOf)));
+  oneOffExtras += BigInt(closingCost(price, check.closingPercent ?? null));
 
   reasons.push(...bandResult.reasons);
   // 05.4 FIN-27: the region's usual rate is named as an estimate (CMP-F24); no region, no tax, and the answer says so (D-20).
@@ -359,6 +367,7 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
     categoryId: check.categoryId,
     envelopeId: check.envelopeId,
     volatileCover: check.volatileCover ?? null, // D-48: the user's answer rides with the plan
+    ...(lines.length > 0 ? { runningCosts: lines } : {}), // 05.4 BO-05: absent when none, so a check without lines is unchanged
   };
   return { purchase, planCard: card, quoted, missing: [], reasons, facts, preview: { band, layers } };
 }
@@ -366,19 +375,26 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
 /**
  * Dated flows of the purchase for the cash path. Purchase.dayOne already contains a first payment dated today
  * (P, v3 §4.5), and purchaseFlows also emits every schedule payment from asOf on, so that payment would land twice.
- * This takes it out of the day-one flow once; the total on asOf is exactly dayOne plus nothing extra.
+ * This takes it out of the day-one flow once; the total on asOf is exactly dayOne plus nothing extra. 05.4 BO-05 (05.4-26): the
+ * day-one flow falls on the purchase date (buyDate, held inside the path: fullCost/purchaseDate.ts dayOneDate), and the running-cost
+ * lines add their own dated outflows (fullCost/runningCosts.ts). A plan's schedule keeps its own dates (its first payment is always
+ * asked, D-04).
  */
 export function purchaseCashFlows(
-  purchase: Pick<Purchase, 'dayOne' | 'schedule' | 'share'>,
+  purchase: Pick<Purchase, 'dayOne' | 'schedule' | 'share' | 'runningCosts'>,
   asOf: LocalDate,
-  days: number
+  days: number,
+  buyDate: LocalDate = asOf
 ): DatedFlow[] {
   const s = purchase.schedule;
   // L-03: the first payment due today is taken out of the day-one flow and put back by purchaseFlows, both as the same
   // myPart, so the two cancel and the total on asOf is exactly dayOne. There is no clamp: a clamp would hide a negative
   // remainder and make the cash path disagree with the ladder (buildPurchase already floors dayOne itself at 0).
   const dayOne = BigInt(purchase.dayOne) - BigInt(firstPaymentsToday(s, purchase.share, asOf));
-  return purchaseFlows({ dayOne: mb(dayOne), schedule: s, share: purchase.share }, asOf, days);
+  const flows = purchaseFlows({ dayOne: mb(dayOne), schedule: s, share: purchase.share }, asOf, days, dayOneDate(buyDate, asOf, days));
+  // 05.4 BO-05 (VC-02, I69): each running cost on its own dates from its start, my share of it, applied once.
+  for (const f of runningCostOutflows(purchase.runningCosts ?? [], asOf, days)) flows.push({ date: f.date, amount: myPart(f.amount, purchase.share) });
+  return flows;
 }
 
 /**

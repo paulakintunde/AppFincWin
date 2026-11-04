@@ -15,7 +15,7 @@ const SNAPSHOT_V3 = join(ROOT, 'src/features/decide/snapshot/v3');
 const COPY_TEST = join(ROOT, 'src/i18n/__tests__/decideCopy.test.ts');
 
 const TITLE = /(it|test|describe)(\.each\([^)]*\))?\(\s*['"`]I(\d+)\b/g;
-const IDS = Array.from({ length: 67 }, (_, i) => i + 1); // 05.4-25: I65..I67 (FIN-27 tax, invariants/tax.test.ts)
+const IDS = Array.from({ length: 69 }, (_, i) => i + 1); // 05.4-25: I65..I67 (FIN-27 tax, invariants/tax.test.ts); 05.4-26: I68, I69 (BO-05 running costs, invariants/runningCosts.test.ts)
 const NAMED_IDS: readonly string[] = ['I-limit', 'I-saved', 'I-D41', 'I-D52', 'I-D61', 'I-D56', 'I-D54', 'I-D65', 'I-D68', 'I-DB05', 'I-ENG11', 'I-D74'];
 const NAMED_TITLE = /(it|test|describe)(\.each\([^)]*\))?\(\s*['"`](I-[A-Za-z0-9]+)\b/g;
 

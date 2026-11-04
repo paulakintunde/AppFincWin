@@ -74,6 +74,7 @@ import type {
   IncomeMonth,
   IncomePicture,
   Layer,
+  LocalDate,
   Confidence,
   Fact,
   Funds,
@@ -92,6 +93,7 @@ import { evaluateLines } from './lines';
 import { needsInput } from './needsInput';
 import { firstPaymentsToday } from './purchase';
 import { shortPlanByCash } from './shortPlan';
+import { inLaterMonth, laterRoom } from '../fullCost/purchaseDate';
 
 export interface JudgeInput {
   readonly inputs: V3Inputs;
@@ -115,6 +117,8 @@ export interface JudgeInput {
   readonly account?: { readonly spareInAccount: MinorUnits; readonly withPurchase: CashPathV3 } | null;
   /** 05.4 FIN-05: the plan's cash route, rate and home-loan flag (prepare.ts borrowingOf). Absent for a one-off and in hand-built tests. */
   readonly borrowing?: BorrowingCtx | null;
+  /** 05.4 BO-05 / D-42 (05.4-26): the day it is to be bought (fullCost/purchaseDate.ts purchaseDateOf); absent = asOf (hand-built tests). */
+  readonly purchaseDate?: LocalDate;
 }
 
 /**
@@ -192,12 +196,16 @@ function ladder(
   month: MonthModel,
   available: { readonly unspent: MinorUnits | null; readonly envelope: MinorUnits },
   overdraft: number,
-  net: ResolvedNet
+  net: ResolvedNet,
+  later = 0
 ): OneOffPart {
   const P = p.dayOne;
   // A funding segment is never negative: a month already below 0 funds nothing, and its shortfall is inside unspent already
   // (this month's room is counted once), so it is not taken off twice.
-  const B = month.monthLeft > 0 ? Math.min(P, month.monthLeft) : 0;
+  const Bm = month.monthLeft > 0 ? Math.min(P, month.monthLeft) : 0;
+  // 05.4 BO-05 (RC-08): a purchase dated in a later month also has the usual leftover of the months before it (laterRoom); that
+  // money is not in unspent yet, so only this month's part comes off the earlier money below.
+  const B = Bm + Math.min(P - Bm, later);
   const A = Math.min(P - B, available.envelope);
   const rest = P - B - A;
 
@@ -210,7 +218,7 @@ function ladder(
   const unspent = available.unspent;
   if (unspent === null) return ASK;
   // 05.4 ENG-02: signed; earlier money below 0 has to be made up first.
-  const earlierRoom = unspent - B;
+  const earlierRoom = unspent - Bm;
   if (rest <= earlierRoom) {
     split.push({ source: 'unspent_earlier', amount: mu(rest) });
     return fit('fits_unspent', split);
@@ -255,6 +263,7 @@ export function oneOffPart(
   const p = j.purchase;
   if (p === null) return ASK;
   const net = j.net ?? NO_NET;
+  const later = laterRoom(j.month.typicalLeft, j.inputs.asOf, j.purchaseDate ?? j.inputs.asOf); // 05.4 BO-05 (RC-08)
   // 05.4 D-35: money above the net's size is spare, so it counts toward the ready date too; the net itself never does.
   const spare = available.unspent === null ? null : available.unspent + net.aboveSize;
   if (j.cash.kind === 'not_covered') {
@@ -264,7 +273,7 @@ export function oneOffPart(
     return notYet('not_covered', ready !== null && pay !== null && pay >= `${ready.month}-01` ? { kind: 'date', date: pay } : ready);
   }
   if (j.cash.kind === 'overdraft') {
-    const part = ladder(p, j.month, available, -j.cash.lowest.balance, net);
+    const part = ladder(p, j.month, available, -j.cash.lowest.balance, net, later);
     if (part.code === 'not_yet' || part.code === 'needs_input') return part;
     // D-22, D-36: the account pays now and goes below 0, so the purchase (less its own envelope and any net money) comes out
     // of this month; nothing is taken from earlier money, which is below 0 on the way.
@@ -279,7 +288,7 @@ export function oneOffPart(
     if (part.netTaken - fromExtra > 0) split.push({ source: 'emergency', amount: mu(part.netTaken - fromExtra) });
     return { ...part, code: 'fits_uses_overdraft', split };
   }
-  const part = ladder(p, j.month, available, 0, net);
+  const part = ladder(p, j.month, available, 0, net, later);
   if (j.cash.kind === 'ok') return part;
   if (j.cash.kind === 'net') {
     // 05.4 FIN-02 (D-35): the 90-day path stays above 0 only with the net's money, so any fit dips into it.
@@ -746,6 +755,10 @@ export function judge(j: JudgeInput): Result {
   const missing = [...needsInput({ inputs: j.inputs, month, funds, purchase: p, purchaseMissing: j.purchaseMissing })];
   if (p === null && missing.length === 0) missing.push('no_price');
   const notices = judgeNotices(j, missing);
+  // 05.4 BO-05 / D-42 (05.4-26): every answer states when it is to be bought; one dated in a later month takes nothing from this
+  // month's figure, and the months before it add their usual leftover to the money it can use (RC-08).
+  const buyDate = j.purchaseDate ?? j.inputs.asOf;
+  const laterMonth = inLaterMonth(j.inputs.asOf, buyDate);
 
   // D-38: every check judges against available unspent money, the confirmed figure less money held back for earlier
   // plans. Drift and staleness (judgeNotices, judgeConfidence) stay on the confirmed figure (D-30).
@@ -769,7 +782,8 @@ export function judge(j: JudgeInput): Result {
     layers,
     confidence,
     parts,
-    afterBuy: afterBuyBlock({ month, asOf: j.inputs.asOf, purchase: p, fromThisMonth: null, byCash: false }),
+    afterBuy: afterBuyBlock({ month, asOf: j.inputs.asOf, purchase: p, fromThisMonth: laterMonth ? mu(0) : null, byCash: false }),
+    purchaseDate: buyDate,
   });
 
   if (oneRaw === null || oneRaw.code === 'needs_input') return asking({ oneOff: 'needs_input', monthly: null }, missing);
@@ -839,7 +853,8 @@ export function judge(j: JudgeInput): Result {
   const planTight = fitCode && said !== null && said.code === 'fits_month' && month.typicalLeft !== null && isTight(month.typicalLeft, purchase.monthly, spend, line);
   // The one-off money left (I58): spare money after this month's plans (this month's own figure when spare money is unknown) and the
   // extra savings above the net's size, less what the purchase takes from them (the envelope and the net are not spare money).
-  const oneOffLeft = mu((unspentValue ?? month.monthLeft - one.netUsed) + net.aboveSize - fromMonth - fromEarlier - fromExtra);
+  // 05.4 BO-05 (RC-08): a purchase dated in a later month also has the usual leftover of the months before it (laterRoom).
+  const oneOffLeft = mu((unspentValue ?? month.monthLeft - one.netUsed) + net.aboveSize + laterRoom(month.typicalLeft, j.inputs.asOf, buyDate) - fromMonth - fromEarlier - fromExtra);
   const onceTight = fitCode && (cashPlan !== null || purchase.schedule === null) && isTightOneOff(oneOffLeft, spend, line);
   const tightV = planTight || onceTight ? (['tight'] as const) : [];
   const fitV = fitVariant([...tightV, ...(lowClause ? (['low_month'] as const) : []), ...costlyV, ...extraV, ...(netState === null ? [] : [netState])]).variant;
@@ -919,7 +934,7 @@ export function judge(j: JudgeInput): Result {
   // 05.4 D-86 (FIN-09b): an overdraft carried in from last month is paid back from this month first; the answer says so.
   if ((month.carriedOverdraft ?? 0) > 0) facts.push({ code: 'overdraft_carried_in', values: { month: addYearMonths(month.month, -1), amount: month.carriedOverdraft as MinorUnits } });
   const kept = keepSplit ? split : [];
-  const fromThisMonth = kept.length === 0 ? null : mu(kept.reduce((t, s) => t + (s.source === 'month' || s.source === 'emergency' ? s.amount : 0), 0));
+  const fromThisMonth = laterMonth ? mu(0) : kept.length === 0 ? null : mu(kept.reduce((t, s) => t + (s.source === 'month' || s.source === 'emergency' ? s.amount : 0), 0));
   const afterBuy = afterBuyBlock({ month, asOf: j.inputs.asOf, purchase, fromThisMonth, byCash: cashPlan !== null });
   if (one.split.length > 0) facts.push({ code: 'month_left_after', values: { month: month.month, left: afterBuy.month } });
   // every split segment is above 0 (the ladder and sourceSplit drop empty ones)
@@ -929,7 +944,7 @@ export function judge(j: JudgeInput): Result {
   }
   // What would leave unspent if it were bought: this month and earlier money, never the envelope or the net.
   const unspentAfter = unspentValue === null ? null : mu(unspentValue - (dayOne - fromEnvelope - one.netTaken));
-  if (one.split.length > 0 && unspentValue !== null) {
+  if (one.split.length > 0 && unspentValue !== null && !laterMonth) {
     facts.push({ code: 'unspent_before_after', values: { before: unspentValue, after: mu(unspentValue - fromMonth - fromEarlier) } });
   }
   // D-38, D-46: money held back for an earlier plan is said once, next to the unspent figure it reduced.
@@ -1039,5 +1054,6 @@ export function judge(j: JudgeInput): Result {
     confidence: restsOn ? withReason(confidence, 'user_said_cover', (said as MonthlyPart).saidCover as { monthly: number; months: number }) : confidence,
     parts: { oneOff: one.code, monthly: mon === null ? null : mon.code },
     afterBuy,
+    purchaseDate: buyDate,
   };
 }

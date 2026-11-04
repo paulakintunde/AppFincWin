@@ -253,6 +253,10 @@ export const AFTER_BUY_KEYS = Object.freeze({
   monthOver: 'decide.v3.afterBuy.monthOver',
   usualMonth: 'decide.v3.afterBuy.usualMonth',
   usualMonthOver: 'decide.v3.afterBuy.usualMonthOver',
+  // 05.4 D-42 (05.4-26): when it is to be bought (Result.purchaseDate): boughtToday when it equals the check date, else boughtOn
+  // {{date}}. The line's placement is 08.1.
+  boughtOn: 'decide.v3.afterBuy.boughtOn',
+  boughtToday: 'decide.v3.afterBuy.boughtToday',
 });
 
 /**

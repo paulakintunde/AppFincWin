@@ -3781,6 +3781,9 @@ const en = {
         monthOver: '{{monthName}} would be about {{amount}} overspent.',
         usualMonth: 'A usual month would leave about {{amount}} once payments start.',
         usualMonthOver: 'A usual month would be about {{amount}} overspent once payments start.',
+        // 05.4 D-42 (05.4-26): when it is to be bought, on every answer (Result.purchaseDate); placement is 08.1.
+        boughtOn: 'Bought on {{date}}.',
+        boughtToday: 'Bought today.',
       },
       // 05.4 FIN-27 (CMP-F24, D-21): tax is always an estimate; an example loan or mortgage rate is labelled and never stored.
       tax: {

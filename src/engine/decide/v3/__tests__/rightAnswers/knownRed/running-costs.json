@@ -2,39 +2,7 @@
   "topic": "running-costs",
   "red": [
     {
-      "id": "RC-01",
-      "fixId": "BO-05"
-    },
-    {
       "id": "RC-02",
-      "fixId": "BO-05"
-    },
-    {
-      "id": "RC-03",
-      "fixId": "BO-05"
-    },
-    {
-      "id": "RC-04",
-      "fixId": "BO-05"
-    },
-    {
-      "id": "RC-05",
-      "fixId": "BO-05"
-    },
-    {
-      "id": "RC-06",
-      "fixId": "BO-05"
-    },
-    {
-      "id": "RC-07",
-      "fixId": "BO-05"
-    },
-    {
-      "id": "RC-08",
-      "fixId": "BO-05"
-    },
-    {
-      "id": "RC-09",
       "fixId": "BO-05"
     }
   ]

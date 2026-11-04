@@ -293,9 +293,9 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   );
   // mapped when BO-05 lands: plan first-payment choices beyond the engine's own
   // 05.4 FIN-27 (05.4-25): region is the country and regionSubdivision the state or province; check.taxIncluded is the switch.
-  // mapped when ENG-14 lands: check.runningCosts and check.closingPercent
+  // 05.4 BO-05 (05.4-26): check.runningCosts (off: true = switched off), check.closingPercent and check.purchaseDate are mapped below.
   // mapped when FIN-07 lands: check.replaces (stops and sale)
-  // mapped when BO-05 lands: check.saveForIt. check.yourAnswer, pay.lastThree, pay.setupAmount and pay.lean are mapped (05.4-23).
+  // mapped when BO-05 lands (05.4-27): check.saveForIt. check.yourAnswer, pay.lastThree, pay.setupAmount and pay.lean are mapped (05.4-23).
   // 05.4 FIN-03: kind, overdraft limit and rate as stated (the engine reads a limit only on checking and current accounts).
   const accounts: V3Account[] = f.accounts.map((a) => ({
     id: a.id,
@@ -384,6 +384,11 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     pay: payOf(c.pay, f.asOf),
     // 05.4 D-41: the need-or-want reading (words and the order of facts only).
     purpose: c.purpose == null ? null : { kind: 'preset', value: c.purpose },
+    // 05.4 BO-05 (05.4-26): the running-cost lines as stated (a line marked off is switched off, FIN-28), the closing % and the
+    // purchase date (D-42; absent = today).
+    ...(c.runningCosts === undefined ? {} : { runningCosts: c.runningCosts.map((r) => ({ id: r.id, amount: mu(r.amount), everyMonths: r.everyMonths, start: r.start, end: r.end, on: r.off !== true })) }),
+    ...(c.closingPercent == null ? {} : { closingPercent: percent(c.closingPercent) }),
+    ...(c.purchaseDate == null ? {} : { purchaseDate: c.purchaseDate }),
   });
   // 05.4-23 (FIN-08): the answer to "Can you cover the low months?"; absent or null = not answered.
   if (c.yourAnswer === 'yes' || c.yourAnswer === 'no') return { inputs, check: { ...check, volatileCover: c.yourAnswer === 'yes' } };
