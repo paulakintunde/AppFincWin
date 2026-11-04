@@ -16,3 +16,15 @@
 - D-61 unlock in Decide settings only, with a confirm step ('Your safety net will count in answers'); stays unlocked until locked again; only then can 'Dips into your safety net' appear.
 
 05.4-35: map decide_settings.safety_net_locked into V3Inputs.safetyNet.locked (absent = locked).
+
+## Found in 05.4-20 (FIN-04 / FIN-10)
+- **Quick-estimates everyday still to come counts the bills again (engine, pre-existing).** With quick estimates the typical
+  everyday figure is the estimates' whole spending (bills + everyday, D-32), and thisMonth's Erest is worked out from it while the
+  bills are also counted: QE-13 Zoe (£1,000 bills + £300 everyday, £220 spent by 22 November) gets £1,080 still to come instead of
+  £80, so "Not yet" instead of "Fits, £600 left"; QE-01 asks for more records (records_look_behind) for the same reason.
+  essentialSpendingOf already takes the bills out once. No plan owns it: QE-13 re-tagged ENG-11 in knownRed. Needs a gap plan.
+- **A minimum is taken every month even past the balance.** debtOutflows lands the minimum on each due date inside the 90 days
+  whatever the balance (gen:136: $707.08 a month on $587.32). Not capped here (no right-answer case states it); owner question.
+- **The app builder does not pass the new debt fields yet.** buildV3Inputs (src/features/decide/snapshot/**, not edited in 05.4)
+  maps no dueDay, joint, paidThisMonth, seriesId or factLines, so in shadow runs every minimum is counted from tomorrow with
+  debt_due_day_assumed. debts.due_day exists (05.4-29). Map them with the snapshot work (05.5 / 08.1).
