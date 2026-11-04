@@ -52,3 +52,23 @@
   cost that is tight on its monthly cost (golden #22) reads better with the plan row: 08.1 decides.
 - **BR-06 (owner question 2 at the 05.4-21 review):** approved Short each month; engine and plain give Not yet (the account goes
   below $0 before payday, which is stricter). Stays in knownRed under FIN-05.
+
+## Found in 05.4-22 (FIN-05 / ENG-08 / UX-13)
+- **The random crosscheck still leaves plans out of the whole-code comparison (BO-05).** With the fixture's first payment mapped
+  (05.4-22), plans could be compared for the first time. At seed 0 (441 plans) 28 disagree, none about borrowing: the plain plan
+  branch has no fits_unspent (a deposit paid from earlier money: engine "Fits from spare money", plain "Fits"), no overdraft (a 0%
+  plan that dips inside a 1-cent limit: engine "Uses your overdraft", plain "Not yet", which is what BR-13 says: "A 0% plan cannot
+  look fine while the account is ... overdrawn"), and reads FIN-06's this-month rule differently (engine Short each month, plain Not
+  yet). The borrowing answer itself is compared on every random plan where both sides say it fits (crosscheck.test, 05.4-22). Needs
+  a gap plan to make the plain plan branch ladder-complete, and an owner answer on a plan that only fits inside the overdraft.
+- **A first payment less than one period away is paid before any interest.** buildSchedule reads a deferred first payment as an
+  annuity due with interest only for whole periods of pause (05.1 D-24). QE-11 / QE-12 (first payment 15 days after buying, 9.9%):
+  engine interest £1,641.24; the cases' hand figure £1,720.75 (interest from the day of buying). Both are over 10% of the £8,000, so
+  no answer changes; the interest line's figure does. For the schedule's owner.
+- **The fixture reads a deferred first payment with no interest during the pause.** No right-answer case defers a whole period at a
+  rate above 0%, so the answer is the same either way; a case that does should state the pause interest (BO-05).
+- **The cash route ignores a trade-in.** The save-or-borrow comparison judges the same check paid once, which has no trade-in, so a
+  plan with a trade-in is compared with paying the whole price in cash. No fixture or golden uses a trade-in; 08.1 / BO-05.
+- **The app builder does not pass check.pay.housing yet.** PayV2.housing (D-39c) is set only by the fixtures; the check sheet does
+  not ask "Is this a home loan?" (08.1) and src/features/decide/snapshot/** (not edited in 05.4) maps nothing. Until then every app
+  mortgage takes the 10% interest test.

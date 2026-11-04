@@ -258,8 +258,9 @@ describe('05.4-51 drafts: the D-65 tiers SN-21..SN-24 and the deposit-and-today 
     expect(r.facts.map((x) => x.code)).toEqual(expect.arrayContaining(c.expected.mustHaveFacts));
     for (const no of c.expected.mustNotHaveFacts) expect(r.facts.map((x) => x.code)).not.toContain(no);
     expect(plainAnswer(c.fixture)).toMatchObject({ code: 'monthly_short', variant: 'month_already_short' });
-    // through the fixture as written the engine asks the pause question first (first-payment mapping is FIN-05 / BO-05's)
-    expect(evaluate(inputs, check).result.missing).toContain('pause_interest_not_answered');
+    // 05.4-22: the fixture now maps a first payment on asOf as today, so the fixture as written gives the same answer
+    const asWritten = evaluate(inputs, check).result;
+    expect({ code: asWritten.code, variant: asWritten.variant, missing: asWritten.missing }).toEqual({ code: c.expected.code, variant: c.expected.variant, missing: [] });
   });
 });
 
@@ -335,11 +336,12 @@ describe('05.4-54 (D-68): the plain calculator restates short plans paid from mo
     expect([engine68('2026-12-12'), engine68('2026-12-13')]).toEqual([true, false]);
   });
 
-  it('the crosscheck skip: every plan stays out under BO-05 (FIN-06/FIN-07 is gone, 05.4-21), because through the fixture as written the engine asks first', () => {
+  it('the crosscheck skip: every plan stays out of the whole-code comparison under BO-05; the FIN-05 entry is gone (05.4-22) and the fixture no longer asks first', () => {
     const f = shortPlanFixture(SHORT_PLAN_CASES.qualifies);
     expect(pendingFixIds(f)).toContain('BO-05');
+    expect(pendingFixIds(f)).not.toContain('FIN-05');
     const { inputs, check } = toEngineInputs(f);
-    expect(evaluate(inputs, check).result.missing).toContain('pause_interest_not_answered');
+    expect(evaluate(inputs, check).result.missing).toEqual([]);
     expect(pendingFixIds(shortPlanFixture(SHORT_PLAN_CASES.longShort))).toContain('BO-05');
     expect(PENDING_RULES.map((r) => r.fixId)).not.toContain('FIN-06/FIN-07');
   });
@@ -406,15 +408,15 @@ describe('05.4-54 drafts BR-17..BR-23 (D-68): hand, plain calculator and engine 
     return pick(evaluate(inputs, today));
   };
   /**
-   * BR-19 and BR-20: code, variant and facts agree, the ready-by month does not. The hand answer follows BR-12 ("judged like
-   * paying £900 at once ... £500 more at £80 a month = 7 months"): the whole cost. The engine reads the day-one payment. Reported
-   * for the owner (05.4-56); these are the engine's figures today, not right answers. Owner, 2026-11-03: the hand dates stand (2027-03, 2027-04).
+   * BR-19 and BR-20: the ready-by month follows BR-12 ("judged like paying £900 at once ... £500 more at £80 a month = 7 months"):
+   * the whole cost. Owner, 2026-11-03: the hand dates stand (2027-03, 2027-04). 05.4-22 (FIN-05): the engine reads the whole cost of
+   * a Not yet plan inside the 90 days, so it gives them too (it read the day-one payment before: 2027-01, 2026-12-01).
    */
-  const ENGINE_READY: Record<string, string> = { 'BR-19': '2027-01', 'BR-20': '2026-12-01' };
+  const ENGINE_READY: Record<string, string> = {};
 
   it.each(['BR-17', 'BR-18', 'BR-19', 'BR-20', 'BR-21', 'BR-22', 'BR-23'])('%s', (id) => {
     const c = byId(id);
-    // 05.4-56: the owner approved all seven at the FIN-01b review (2026-11-03); knownRed FIN-05 (the fixture's first-payment mapping).
+    // 05.4-56: the owner approved all seven at the FIN-01b review (2026-11-03). 05.4-22: they pass through the fixture as written.
     expect({ status: c.status, fixIds: c.fixIds }).toEqual({ status: 'approved', fixIds: ['FIN-05', 'FIN-06', 'FIN-01b'] });
     const got = engine(c.fixture);
     const e = c.expected;
@@ -557,8 +559,8 @@ describe('plain calculator: card and loan minimums (05.4-20, FIN-04, FIN-10, D-3
     return pick(evaluate(inputs, check));
   };
 
-  it('every approved debts case but DB-09 (borrowing, FIN-05) gets its expected code from the plain rules, and the engine agrees', () => {
-    for (const c of loadCases().filter((x) => x.topic === 'debts' && x.status === 'approved' && x.id !== 'DB-09')) {
+  it('every approved debts case (DB-09 since 05.4-22: borrowing, FIN-05) gets its expected code from the plain rules, and the engine agrees', () => {
+    for (const c of loadCases().filter((x) => x.topic === 'debts' && x.status === 'approved')) {
       expect({ id: c.id, plain: plainAnswer(c.fixture).code, engine: engine(c.fixture).code }).toEqual({ id: c.id, plain: c.expected.code, engine: c.expected.code });
     }
   });

@@ -3,7 +3,7 @@
  * Own integer maths on bigint minor units; percentages are parsed from strings to basis points. No floats in money.
  */
 import type { RightAnswerFixture } from '../rightAnswers/schema';
-import { TIGHT_SHARE_BP, FLOOR_DIVISOR, EXPENSIVE_APR_BP } from './rules';
+import { TIGHT_SHARE_BP, FLOOR_DIVISOR, EXPENSIVE_APR_BP, EXPENSIVE_INTEREST_BP } from './rules';
 
 type Cents = bigint;
 export interface PlainAnswer { code: string; variant: string | null; afterBuy: number | null }
@@ -510,7 +510,9 @@ export function plainTier(f: RightAnswerFixture, code: string): PlainTier {
 export function plainAnswer(f: RightAnswerFixture): PlainAnswer {
   const a = plainCode(f);
   if (a.code === 'needs_input' || !usualMonthShort(f)) return a;
-  return { ...a, variant: plainTier(f, a.code).variant };
+  // 05.4-22: "Only by borrowing" keeps the headline the plan's own fit gets when the month is already short
+  const own = a.code === 'fits_by_borrowing' ? plainPlanCode(f).code : a.code;
+  return { ...a, variant: plainTier(f, own).variant };
 }
 
 function plainCode(f: RightAnswerFixture): PlainAnswer {
@@ -519,8 +521,17 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
   const cost = big(c.price) + big(c.oneOffFees);
   if (cost > ASK_FOR_RECORDS_ABOVE && recordsLookBehind(f)) return { code: 'needs_input', variant: null, afterBuy: null };
   if (recordsFresh(f)) return freshAnswer(f, cost);
+  if (c.pay.mode === 'plan') return plainBorrowing(f, plainPlanCode(f));
+  return plainOnce(f, cost);
+}
+
+/** A plan's own answer, before the borrowing rule (plainBorrowing). */
+function plainPlanCode(f: RightAnswerFixture): PlainAnswer {
+  const c = f.check;
   const left = leftThisMonth(f);
   if (c.pay.mode === 'plan') {
+    // The plan's rate is asked when it is not given (the needs-input rule: "plan_rate_missing", 05.1 D-07).
+    if (c.pay.apr === null) return { code: 'needs_input', variant: null, afterBuy: null };
     // D-68: a short plan that money on hand pays in full inside the 90 days is judged by cash, as a one-off of its whole cost.
     if (plainShortPlan(f)) return shortPlanAnswer(f);
     // BR-12: "she would run out after the first payment ... Not yet"; BR-13: "A 0% plan cannot look fine while the account is
@@ -531,6 +542,12 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
     if (plainMonthlyShort(f)) return { code: 'monthly_short', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
     return { code: 'fits_month', variant: plainTightPlan(f) ? 'tight' : null, afterBuy: Number(left - big(c.pay.deposit)) };
   }
+  return { code: 'needs_input', variant: null, afterBuy: null };
+}
+
+/** A purchase paid once: the cash check, then the ladder. */
+function plainOnce(f: RightAnswerFixture, cost: Cents): PlainAnswer {
+  const left = leftThisMonth(f);
   const after = left - cost;
   const net = plainNet(f);
   // Cash check first: what is in the spending accounts has to carry the bills still due and the everyday spending
@@ -846,9 +863,9 @@ export function plainPlanTotal(f: RightAnswerFixture): Cents {
 }
 
 /** Every payment of a plan, in order (see plainPlanTotal). */
-export function planPayments(amount: Cents, months: number, apr: string | null, firstToday: boolean): Cents[] {
+export function planPayments(amount: Cents, months: number, apr: string | null, firstToday: boolean, perYear = 12n): Cents[] {
   const bp = apr === null ? 0n : basisPoints(apr);
-  const D = 10_000n * 12n; // a monthly rate of bp / D
+  const D = 10_000n * perYear; // a rate per period of bp / D (a month by default; 05.4-22: 26 a year for a fortnight)
   const ceil = (a: Cents, b: Cents): Cents => (a + b - 1n) / b;
   const n = BigInt(months);
   let level: Cents;
@@ -988,6 +1005,59 @@ function shortPlanAnswer(f: RightAnswerFixture): PlainAnswer {
   // D-68: "judged by cash like a one-off purchase", so the one-off tight rule (D-40) reads the whole cost.
   const tight = plainTightOnce(f, freeMoney(f) + net.above - s.total);
   return { code: s.rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(net, s.rest > maxC(0n, s.earlier), carriesCostlyDebt(f, s.rest), tight), afterBuy: after };
+}
+
+// --- Borrowing costed and compared with saving (05.4-22, FIN-05 / ENG-08). Restated from D-07 ("When cash would fit but a loan or
+// plan is chosen, add a caution if the APR is 20% or more, OR the total interest is 10% or more of the amount borrowed"), D-39a ("the
+// answer is 'Fits, but borrowing costs more' with the total interest"), D-39c ("mortgages skip the 10%-of-amount interest test") and
+// the approved cases BR-01 ("Cash says Not yet ... and the rate is far above 20%, so this is 'Fits only by borrowing', never a plain
+// 'Fits'"), BR-02, BR-03, BR-04, BR-10, BR-15 and DB-09. A cheap plan stays as it is (BR-03; the 0% plans BR-07..BR-09, BR-11, BR-14).
+// Not read from the engine.
+
+/** One period after a date: a month (clamped to the month's last day), or 14 days for a plan paid every fortnight. */
+function onePeriodAfter(f: RightAnswerFixture): string {
+  const c = f.check.pay;
+  if (c.mode === 'plan' && c.every === 'fortnight') return dayAfter(f.asOf, 14);
+  const next = new Date(Date.UTC(Number(f.asOf.slice(0, 4)), Number(f.asOf.slice(5, 7)), 1)).toISOString().slice(0, 10);
+  return next.slice(0, 8) + String(Math.min(Number(f.asOf.slice(8, 10)), Number(daysInMonthOf(next)))).padStart(2, '0');
+}
+
+/**
+ * The amount borrowed and the interest on it. The amount borrowed is the price and one-off fees less the deposit (the plan's own
+ * fee is paid on day one, not borrowed). The payments are the level-payment walk (planPayments), at the rate per period: a twelfth
+ * of the yearly rate a month, a twenty-sixth a fortnight. Interest starts with the first period when the first payment is one
+ * period away (BR-01: "Payments are £43.25 a month"); a first payment today, or on any other date, pays before any interest.
+ */
+export function plainBorrowed(f: RightAnswerFixture): { amount: Cents; interest: Cents } {
+  const c = f.check.pay;
+  if (c.mode !== 'plan') return { amount: 0n, interest: 0n };
+  const raw = big(f.check.price ?? 0) + big(f.check.oneOffFees) - big(c.deposit);
+  const amount = maxC(0n, raw);
+  const due = c.firstPaymentDate !== onePeriodAfter(f);
+  const pays = planPayments(amount, c.months, c.apr, due, c.every === 'fortnight' ? 26n : 12n);
+  return { amount, interest: pays.reduce((t, x) => t + x, 0n) - amount };
+}
+
+/** D-07 / D-39c: 20% a year or more, or (not for a home loan) interest of 10% or more of the amount borrowed. Nothing borrowed is not. */
+export function plainExpensive(f: RightAnswerFixture): boolean {
+  const c = f.check.pay;
+  if (c.mode !== 'plan') return false;
+  const { amount, interest } = plainBorrowed(f);
+  if (amount <= 0n) return false;
+  if (c.apr !== null && basisPoints(c.apr) >= big(EXPENSIVE_APR_BP)) return true;
+  return c.housing !== true && interest * 10_000n >= amount * big(EXPENSIVE_INTEREST_BP);
+}
+
+/**
+ * The borrowing rule on a plan's own answer: an expensive plan that fits is "Fits, but borrowing costs more" when paying the same
+ * price once fits this month or from spare money, and "Only by borrowing" otherwise (including when paying once asks first). The
+ * usual month already short keeps its own headline (D-63 / D-65, plainAnswer).
+ */
+function plainBorrowing(f: RightAnswerFixture, a: PlainAnswer): PlainAnswer {
+  if ((a.code !== 'fits_month' && a.code !== 'fits_unspent') || !plainExpensive(f)) return a;
+  const cash = plainCode({ ...f, check: { ...f.check, pay: { mode: 'once' } } });
+  const fits = cash.code === 'fits_month' || cash.code === 'fits_unspent';
+  return { code: 'fits_by_borrowing', variant: fits ? 'borrowing_costs_more' : null, afterBuy: a.afterBuy };
 }
 
 /** Named so the table's thresholds have one reader (05.4-21 reads them in plainFloor and plainTightPlan). */

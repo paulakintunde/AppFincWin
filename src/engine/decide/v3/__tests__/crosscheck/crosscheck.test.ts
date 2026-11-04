@@ -45,3 +45,38 @@ describe('cross-check calculator vs engine', () => {
     expect(compared).toBeGreaterThan(0);
   });
 });
+
+/**
+ * 05.4-22 (FIN-05 / ENG-08, D-07, D-39a, D-39c): the borrowing rule on random plans. Plans stay out of the whole-code comparison
+ * above (pendingRules BO-05: the plain plan branch is not ladder-complete), so here they are compared on the borrowing answer alone:
+ * wherever both sides say the plan fits, they agree on "Only by borrowing", "Fits, but borrowing costs more" or neither.
+ */
+describe('cross-check calculator vs engine: borrowing on plans', () => {
+  const FITS = new Set(['fits_month', 'fits_unspent', 'fits_uses_net', 'fits_uses_overdraft', 'fits_by_borrowing']);
+  const borrowing = (code: string, variant: string | null): string => (code === 'fits_by_borrowing' ? `fits_by_borrowing/${String(variant)}` : 'no');
+  it(`agrees on the borrowing answer for the random plans among ${RUNS} fixtures`, () => {
+    let compared = 0;
+    let borrowed = 0;
+    try {
+      fc.assert(
+        fc.property(fixtureArb, (f) => {
+          if (f.check.pay.mode !== 'plan' || pendingFixIds(f).some((id) => id !== 'FIN-09' && id !== 'BO-05')) return;
+          if ((f.check.runningCosts?.length ?? 0) > 0 || f.check.replaces != null || f.check.closingPercent != null) return;
+          const { inputs, check } = toEngineInputs(f);
+          const got = pick(evaluate(inputs, check));
+          const plain = plainAnswer(f);
+          if (!FITS.has(got.code) || !FITS.has(plain.code)) return;
+          compared++;
+          if (got.code === 'fits_by_borrowing') borrowed++;
+          expect(borrowing(got.code, got.variant)).toBe(borrowing(plain.code, plain.variant));
+        }),
+        { numRuns: RUNS, seed: SEED }
+      );
+    } catch (e) {
+      console.log(`crosscheck (borrowing) seed ${SEED}`);
+      throw e;
+    }
+    console.log(`crosscheck (borrowing): compared ${compared} plans, ${borrowed} borrowed, seed ${SEED}`);
+    expect(compared).toBeGreaterThan(0);
+  });
+});

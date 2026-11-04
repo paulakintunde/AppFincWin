@@ -6527,6 +6527,618 @@
       "reason": "FIN-07: about $22.57 a month leaves $90.78 of the $113.35 usual room, under the $183.15 floor (the room is already under it)",
       "approved": true,
       "approvedAt": "2026-11-04"
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "persona:sam:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "persona:maya:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "persona:tia:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "persona:dana:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "persona:kim:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "persona:priya:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "persona:audit-p3:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "persona:audit-p6:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "persona:audit-p6-lines:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "persona:audit-p7:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "persona:audit-p8:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "persona:audit-p10:900000:plan",
+      "before": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:4",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 47325
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 47325
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:5",
+      "before": {
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:7",
+      "before": {
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:18",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 337073
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 337073
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:40",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 40918
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 40918
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:46",
+      "before": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuyMonth": 64131
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 64131
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:56",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 106229
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 106229
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:64",
+      "before": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 258849
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 258849
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:68",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 392528
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 392528
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:69",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 302497
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 302497
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:84",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 174619
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 174619
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:87",
+      "before": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuyMonth": 35101
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 35101
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:97",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:102",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:133",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:140",
+      "before": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 37352
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 37352
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:144",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 45278
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 45278
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:154",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 78780
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 78780
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:158",
+      "before": {
+        "code": "fits_unspent",
+        "variant": "tight",
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:166",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 63535
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 63535
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:176",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 130706
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 130706
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:182",
+      "before": {
+        "code": "fits_unspent",
+        "variant": "costly_debt",
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 0
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:186",
+      "before": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": 300819
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 300819
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-05",
+      "key": "gen:199",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 189260
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 189260
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     }
   ]
 }

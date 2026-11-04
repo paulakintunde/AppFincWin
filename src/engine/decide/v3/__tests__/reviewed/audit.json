@@ -44,15 +44,22 @@
     ]
   },
   "persona:audit-p4-overdrawn:900000:plan": {
-    "right": "Not yet (not covered)",
+    "right": "Not yet (not covered), ready 2027-03",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
     "verdict": "CORRECT",
-    "cause": "FIN-03 signed balances (D-28)",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Account at -$1,500 with no overdraft limit recorded (D-28: treated as $0). Usual month +$400 (pay $2,000 on the 20th, rent $1,000, everyday $600), so D-54 does not apply. No safety net. ",
-      "The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
-      "Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-15, last payment 2030-10-15; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2029-01. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2029-01\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money -$1,500.00 - extra savings above the net) / $400.00 a month, rounded up, from the che: 2029-01.",
+      "Ready date (FIN-05, planReadyBy, BR-13's rule): spare money -$1,500.00; the plan needs its first $219.30 payment before it starts: ($1,500.00 + $219.30) / $400.00 = 4.3, so 5 months from October: March 2027 (before: 4 months, February, which counted no payment). READY DATE MOVED; the reviewed answer key carries no ready date, so this is not in the 36.",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Account at -$1,500 with no overdraft limit recorded (D-28: treated as $0). Usual month +$400 (pay $2,000 on the 20th, rent $1,000, everyday $600), so D-54 does not apply. No safety net. ",
+      "Earlier audit: The old page printed the stored rate (a whole number scaled by 10,000,000,000) as a percent; fixed on this page.",
+      "Earlier audit: Shown in $ but the person file says GBP (£): the 13 audit people run as USD (known, plan 40). Figures and answer are not affected."
     ]
   },
   "persona:maya:6000:cash": {
@@ -92,23 +99,30 @@
     ]
   },
   "persona:maya:900000:plan": {
-    "right": "Fits",
-    "rightCode": "fits_month",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "D-67; D-52; D-58",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Usual month by hand: money in (no pay series; the usual month from history) $3,000.00 - bills $1,200.00 - everyday $800.00 - regular saving $200.00 (D-67) = $800.00. Engine: $800.00 (matches).",
-      "D-52: no pay series; the engine expects $2,800.00 (the lowest of 6 months) around day 5, on 2026-11-05 and 2026-12-05.",
-      "Check date 2026-10-03. This month left before the purchase: $800.00. Spare money judged against: $1,300.00.",
-      "Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $774.03 on 2026-11-04; without it $993.33 on 2026-11-04. Cash check: ok.",
-      "Safety net: saved $3,000.00, size $2,000.00 (the starter, D-51), protected part $2,000.00, above the size (extra savings) $1,000.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: monthly $219.30 against a usual leftover of $800.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads.",
-      "The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here.",
-      "D-58 move-by: $225.97 by 2026-11-03. The everyday account alone first goes below $0.00 on that date, and its lowest point in the 90 days is -$225.97 (within the $1,000.00 above the net's size); the regular saving transfer is taken on its date (D-58, D-67).",
-      "D-58 (owner pin): $225.97 by 2026-11-03. Hand path: $2,250.00 - $750.00 - $200.00 saving = $1,300.00 on 31 Oct; 1 Nov bills $1,200.00; first plan payment $219.30 on 3 Nov; everyday $26.67 a day. 3 Nov: $1,300.00 - $1,200.00 - $80.00 - $219.30 = -$199.30 (first below $0); 4 Nov: -$225.97. Matches the engine.",
-      "Monthly $219.30 against a usual $800.00 leftover: fits. The D-48 interest line ($1,526.06) is still to come (plans 22/23)."
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-03, last payment 2030-10-03; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2027-07. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2027-07\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money $1,300.00 - extra savings above the net) / $800.00 a month, rounded up, from the che: 2027-07.",
+      "The plan fits on its own (Fits), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the usual month from history) $3,000.00 - bills $1,200.00 - everyday $800.00 - regular saving $200.00 (D-67) = $800.00. Engine: $800.00 (matches).",
+      "Earlier audit: D-52: no pay series; the engine expects $2,800.00 (the lowest of 6 months) around day 5, on 2026-11-05 and 2026-12-05.",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $800.00. Spare money judged against: $1,300.00.",
+      "Earlier audit: Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $774.03 on 2026-11-04; without it $993.33 on 2026-11-04. Cash check: ok.",
+      "Earlier audit: Safety net: saved $3,000.00, size $2,000.00 (the starter, D-51), protected part $2,000.00, above the size (extra savings) $1,000.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: monthly $219.30 against a usual leftover of $800.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads.",
+      "Earlier audit: The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here.",
+      "Earlier audit: D-58 move-by: $225.97 by 2026-11-03. The everyday account alone first goes below $0.00 on that date, and its lowest point in the 90 days is -$225.97 (within the $1,000.00 above the net's size); the regular saving transfer is taken on its date (D-58, D-67).",
+      "Earlier audit: D-58 (owner pin): $225.97 by 2026-11-03. Hand path: $2,250.00 - $750.00 - $200.00 saving = $1,300.00 on 31 Oct; 1 Nov bills $1,200.00; first plan payment $219.30 on 3 Nov; everyday $26.67 a day. 3 Nov: $1,300.00 - $1,200.00 - $80.00 - $219.30 = -$199.30 (first below $0); 4 Nov: -$225.97. Matches the engine.",
+      "Earlier audit: Monthly $219.30 against a usual $800.00 leftover: fits. The D-48 interest line ($1,526.06) is still to come (plans 22/23)."
     ]
   },
   "persona:riley:6000:cash": {
@@ -241,16 +255,22 @@
     ]
   },
   "persona:tia:900000:plan": {
-    "right": "Fits, but tight each month (code: Fits)",
-    "rightCode": "fits_month",
-    "rightVariant": "tight",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Check date 2026-10-20. Plan: $9,000 in 48 payments of $219.30 every month over 48 months, at 7.9% a year (APR), first payment 2026-11-20.",
-      "Usual room by hand: pay $2,600 - bills $1,480 - everyday $800 = $320. $219.30 / $320 = 68.5% (not more than 80%).",
-      "Room left each month: $320 - $219.30 = $100.70, under the floor $228 (a tenth of $1,480 + $800 = $2,280). So \"Fits, but tight each month\".",
-      "Before: Fits, but no safety net. Nothing is saved in a safety net, so that line still shows below tight (D-59).",
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-20, last payment 2030-10-20; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2029-01. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2029-01\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money $500.00 - extra savings above the net) / $320.00 a month, rounded up, from the che: 2029-01.",
+      "The plan fits on its own (Fits (tight)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first. The tight floor still shows ($228.00), below the borrowing caution (BR-01).",
+      "Earlier audit: Check date 2026-10-20. Plan: $9,000 in 48 payments of $219.30 every month over 48 months, at 7.9% a year (APR), first payment 2026-11-20.",
+      "Earlier audit: Usual room by hand: pay $2,600 - bills $1,480 - everyday $800 = $320. $219.30 / $320 = 68.5% (not more than 80%).",
+      "Earlier audit: Room left each month: $320 - $219.30 = $100.70, under the floor $228 (a tenth of $1,480 + $800 = $2,280). So \"Fits, but tight each month\".",
+      "Earlier audit: Before: Fits, but no safety net. Nothing is saved in a safety net, so that line still shows below tight (D-59).",
       "Earlier audit: Usual month by hand: pay $2,600.00 - bills $1,480.00 - everyday $800.00 = $320.00. Engine: $320.00 (matches).",
       "Earlier audit: Check date 2026-10-20. This month left before the purchase: $236.13. Spare money judged against: $500.00.",
       "Earlier audit: Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
@@ -311,20 +331,26 @@
     ]
   },
   "persona:dana:900000:plan": {
-    "right": "Fits (but your safety net is small)",
-    "rightCode": "fits_month",
-    "rightVariant": "small_net",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "D-35; D-51",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Usual month by hand: pay $5,000.00 - bills $1,800.00 - everyday $900.00 - debt minimums $1,400.00 = $900.00. Engine: $900.00 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $837.10. Spare money judged against: $2,000.00.",
-      "Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $2,000.00 on 2026-10-31; without it $2,000.00 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $3,000.00, size $4,100.00 (the starter, D-51), protected part $3,000.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but your safety net is small).",
-      "Hand check: monthly $219.30 against a usual leftover of $900.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; the net holds $3,000.00 of its $4,100.00 size, so a fit carries \"but your safety net is small\".",
-      "The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-03, last payment 2030-10-03; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2027-06. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2027-06\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money $2,000.00 - extra savings above the net) / $900.00 a month, rounded up, from the che: 2027-06.",
+      "The plan fits on its own (Fits (but your safety net is small)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Usual month by hand: pay $5,000.00 - bills $1,800.00 - everyday $900.00 - debt minimums $1,400.00 = $900.00. Engine: $900.00 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $837.10. Spare money judged against: $2,000.00.",
+      "Earlier audit: Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $2,000.00 on 2026-10-31; without it $2,000.00 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $3,000.00, size $4,100.00 (the starter, D-51), protected part $3,000.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (but your safety net is small).",
+      "Earlier audit: Hand check: monthly $219.30 against a usual leftover of $900.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; the net holds $3,000.00 of its $4,100.00 size, so a fit carries \"but your safety net is small\".",
+      "Earlier audit: The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
     ]
   },
   "persona:priya:6000:cash": {
@@ -377,20 +403,26 @@
     ]
   },
   "persona:priya:900000:plan": {
-    "right": "Fits (but your safety net is small)",
-    "rightCode": "fits_month",
-    "rightVariant": "small_net",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "D-67; D-35; D-51",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Usual month by hand: pay $3,000.00 - bills $1,000.00 - everyday $600.00 - regular saving $200.00 (D-67) = $1,200.00. Engine: $1,200.00 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $1,200.00. Spare money judged against: $800.00.",
-      "Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $800.00 on 2026-10-31; without it $800.00 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $1,500.00, size $1,600.00 (the starter, D-51), protected part $1,500.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but your safety net is small).",
-      "Hand check: monthly $219.30 against a usual leftover of $1,200.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; the net holds $1,500.00 of its $1,600.00 size, so a fit carries \"but your safety net is small\".",
-      "The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-03, last payment 2030-10-03; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2027-05. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2027-05\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money $800.00 - extra savings above the net) / $1,200.00 a month, rounded up, from the che: 2027-05.",
+      "The plan fits on its own (Fits (but your safety net is small)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Usual month by hand: pay $3,000.00 - bills $1,000.00 - everyday $600.00 - regular saving $200.00 (D-67) = $1,200.00. Engine: $1,200.00 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $1,200.00. Spare money judged against: $800.00.",
+      "Earlier audit: Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $800.00 on 2026-10-31; without it $800.00 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $1,500.00, size $1,600.00 (the starter, D-51), protected part $1,500.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (but your safety net is small).",
+      "Earlier audit: Hand check: monthly $219.30 against a usual leftover of $1,200.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; the net holds $1,500.00 of its $1,600.00 size, so a fit carries \"but your safety net is small\".",
+      "Earlier audit: The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
     ]
   },
   "persona:audit-p1:6000:cash": {
@@ -526,20 +558,26 @@
     ]
   },
   "persona:audit-p3:900000:plan": {
-    "right": "Fits (but no safety net)",
-    "rightCode": "fits_month",
-    "rightVariant": "no_net",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "D-35",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Usual month by hand: pay $3,000.00 - bills $1,600.00 - everyday $800.00 = $600.00. Engine: $600.00 (matches).",
-      "Check date 2026-10-15. This month left before the purchase: $600.00. Spare money judged against: $679.04.",
-      "Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $679.04 on 2026-10-31; without it $679.04 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $0.00, size $2,400.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but no safety net).",
-      "Hand check: monthly $219.30 against a usual leftover of $600.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
-      "The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-15, last payment 2030-10-15; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2027-12. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2027-12\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money $679.04 - extra savings above the net) / $600.00 a month, rounded up, from the che: 2027-12.",
+      "The plan fits on its own (Fits (but no safety net)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Usual month by hand: pay $3,000.00 - bills $1,600.00 - everyday $800.00 = $600.00. Engine: $600.00 (matches).",
+      "Earlier audit: Check date 2026-10-15. This month left before the purchase: $600.00. Spare money judged against: $679.04.",
+      "Earlier audit: Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $679.04 on 2026-10-31; without it $679.04 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $2,400.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (but no safety net).",
+      "Earlier audit: Hand check: monthly $219.30 against a usual leftover of $600.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
+      "Earlier audit: The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
     ]
   },
   "persona:audit-p6:6000:cash": {
@@ -575,20 +613,26 @@
     ]
   },
   "persona:audit-p6:900000:plan": {
-    "right": "Fits (but no safety net)",
-    "rightCode": "fits_month",
-    "rightVariant": "no_net",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "D-35",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Usual month by hand: pay $3,500.00 - bills $1,200.00 - everyday $1,400.00 - debt minimums $150.00 = $750.00. Engine: $750.00 (matches).",
-      "Check date 2026-10-15. This month left before the purchase: $750.00. Spare money judged against: $1,025.80.",
-      "Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $1,025.80 on 2026-10-31; without it $1,025.80 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $0.00, size $2,750.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but no safety net).",
-      "Hand check: monthly $219.30 against a usual leftover of $750.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
-      "The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-15, last payment 2030-10-15; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2027-09. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2027-09\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money $1,025.80 - extra savings above the net) / $750.00 a month, rounded up, from the che: 2027-09.",
+      "The plan fits on its own (Fits (but no safety net)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Usual month by hand: pay $3,500.00 - bills $1,200.00 - everyday $1,400.00 - debt minimums $150.00 = $750.00. Engine: $750.00 (matches).",
+      "Earlier audit: Check date 2026-10-15. This month left before the purchase: $750.00. Spare money judged against: $1,025.80.",
+      "Earlier audit: Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $1,025.80 on 2026-10-31; without it $1,025.80 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $2,750.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (but no safety net).",
+      "Earlier audit: Hand check: monthly $219.30 against a usual leftover of $750.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
+      "Earlier audit: The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
     ]
   },
   "persona:audit-p6-lines:6000:cash": {
@@ -624,20 +668,26 @@
     ]
   },
   "persona:audit-p6-lines:900000:plan": {
-    "right": "Fits (but no safety net)",
-    "rightCode": "fits_month",
-    "rightVariant": "no_net",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "D-35",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Usual month by hand: pay $3,500.00 - bills $1,200.00 - everyday $1,400.00 - debt minimums $150.00 = $750.00. Engine: $750.00 (matches).",
-      "Check date 2026-10-15. This month left before the purchase: $750.00. Spare money judged against: $1,025.80.",
-      "Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $1,025.80 on 2026-10-31; without it $1,025.80 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $0.00, size $2,750.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but no safety net).",
-      "Hand check: monthly $219.30 against a usual leftover of $750.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
-      "The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-15, last payment 2030-10-15; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2027-09. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2027-09\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money $1,025.80 - extra savings above the net) / $750.00 a month, rounded up, from the che: 2027-09.",
+      "The plan fits on its own (Fits (but no safety net)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Usual month by hand: pay $3,500.00 - bills $1,200.00 - everyday $1,400.00 - debt minimums $150.00 = $750.00. Engine: $750.00 (matches).",
+      "Earlier audit: Check date 2026-10-15. This month left before the purchase: $750.00. Spare money judged against: $1,025.80.",
+      "Earlier audit: Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $1,025.80 on 2026-10-31; without it $1,025.80 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $2,750.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (but no safety net).",
+      "Earlier audit: Hand check: monthly $219.30 against a usual leftover of $750.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
+      "Earlier audit: The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
     ]
   },
   "persona:audit-p7:6000:cash": {
@@ -689,20 +739,26 @@
     ]
   },
   "persona:audit-p7:900000:plan": {
-    "right": "Fits (but no safety net)",
-    "rightCode": "fits_month",
-    "rightVariant": "no_net",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "D-35",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Usual month by hand: pay $3,200.00 - bills $1,500.00 - everyday $900.00 = $800.00. Engine: $800.00 (matches).",
-      "Check date 2026-10-15. This month left before the purchase: $800.00. Spare money judged against: $2,632.26.",
-      "Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $2,632.26 on 2026-10-31; without it $2,632.26 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $0.00, size $2,400.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but no safety net).",
-      "Hand check: monthly $219.30 against a usual leftover of $800.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
-      "The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-15, last payment 2030-10-15; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2027-06. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2027-06\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money $2,632.26 - extra savings above the net) / $800.00 a month, rounded up, from the che: 2027-06.",
+      "The plan fits on its own (Fits (but no safety net)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Usual month by hand: pay $3,200.00 - bills $1,500.00 - everyday $900.00 = $800.00. Engine: $800.00 (matches).",
+      "Earlier audit: Check date 2026-10-15. This month left before the purchase: $800.00. Spare money judged against: $2,632.26.",
+      "Earlier audit: Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $2,632.26 on 2026-10-31; without it $2,632.26 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $2,400.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (but no safety net).",
+      "Earlier audit: Hand check: monthly $219.30 against a usual leftover of $800.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
+      "Earlier audit: The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
     ]
   },
   "persona:audit-p8:6000:cash": {
@@ -738,20 +794,26 @@
     ]
   },
   "persona:audit-p8:900000:plan": {
-    "right": "Fits (but no safety net)",
-    "rightCode": "fits_month",
-    "rightVariant": "no_net",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "D-35",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Usual month by hand: pay $3,100.00 - bills $1,500.00 - everyday $900.00 = $700.00. Engine: $700.00 (matches).",
-      "Check date 2026-10-15. This month left before the purchase: $800.00. Spare money judged against: $1,132.26.",
-      "Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $1,132.26 on 2026-10-31; without it $1,132.26 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $0.00, size $2,400.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but no safety net).",
-      "Hand check: monthly $219.30 against a usual leftover of $700.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
-      "The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-15, last payment 2030-10-15; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2027-10. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2027-10\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money $1,132.26 - extra savings above the net) / $700.00 a month, rounded up, from the che: 2027-10.",
+      "The plan fits on its own (Fits (but no safety net)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Usual month by hand: pay $3,100.00 - bills $1,500.00 - everyday $900.00 = $700.00. Engine: $700.00 (matches).",
+      "Earlier audit: Check date 2026-10-15. This month left before the purchase: $800.00. Spare money judged against: $1,132.26.",
+      "Earlier audit: Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $1,132.26 on 2026-10-31; without it $1,132.26 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $2,400.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (but no safety net).",
+      "Earlier audit: Hand check: monthly $219.30 against a usual leftover of $700.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
+      "Earlier audit: The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
     ]
   },
   "persona:audit-p9:6000:cash": {
@@ -795,20 +857,26 @@
     ]
   },
   "persona:audit-p10:900000:plan": {
-    "right": "Fits (but no safety net)",
-    "rightCode": "fits_month",
-    "rightVariant": "no_net",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "D-35",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Usual month by hand: pay $2,500.00 - bills $1,100.00 - everyday $800.00 = $600.00. Engine: $600.00 (matches).",
-      "Check date 2026-10-15. This month left before the purchase: $600.00. Spare money judged against: $179.04.",
-      "Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $179.04 on 2026-10-31; without it $179.04 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $0.00, size $1,900.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but no safety net).",
-      "Hand check: monthly $219.30 against a usual leftover of $600.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
-      "The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-15, last payment 2030-10-15; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2028-01. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2028-01\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money $179.04 - extra savings above the net) / $600.00 a month, rounded up, from the che: 2028-01.",
+      "The plan fits on its own (Fits (but no safety net)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Usual month by hand: pay $2,500.00 - bills $1,100.00 - everyday $800.00 = $600.00. Engine: $600.00 (matches).",
+      "Earlier audit: Check date 2026-10-15. This month left before the purchase: $600.00. Spare money judged against: $179.04.",
+      "Earlier audit: Price $9,000.00, in a plan of 48 payments every month at 7.9% a year, first payment one period from today; about $219.30 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $179.04 on 2026-10-31; without it $179.04 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $1,900.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (but no safety net).",
+      "Earlier audit: Hand check: monthly $219.30 against a usual leftover of $600.00: it fits; the one-off part: the path never goes below $0.00; one-off Fits, monthly Fits: the stricter leads; nothing is saved in a safety net, so a fit carries \"but no safety net\".",
+      "Earlier audit: The plan costs $1,526.06 in interest; the D-48 interest line on every borrowing answer is still to come (plans 22/23), not an error here."
     ]
   },
   "gen:0": {
@@ -864,37 +932,50 @@
     ]
   },
   "gen:4": {
-    "right": "Fits, 473.25 left that month",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $289.08 is 15.64% of monthly pay $1,848.36 (a freelancer's steady amount), plan 48 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $1,848.36 - bills $551.17 - everyday $727.82 (the engine's typical figure) - debt minimums $36.96 = $532.41. Engine: $532.41 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $532.41. Spare money judged against: $4,028.43.",
-      "Price $289.08, in a plan of 208 payments every week over 48 months at 9.9% a year (APR), first payment today (2026-10-03), last payment 2030-09-21, deposit $57.81; about $5.85 a month; paid today $59.16.",
-      "90-day path: lowest with the purchase $8,771.74 on 2026-10-07; without it $8,830.90 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $6,891.73, size $1,316.00, protected part $1,316.00, above the size (extra savings) $5,575.73, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $59.16 <= this month's room $532.41 -> Fits; monthly $5.85 against a usual leftover of $532.41: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $532.41 - $59.16 paid from this month = $473.25 (matches)."
+      "Plan: $231.27 borrowed in 208 payments every week at 9.9% a year (APR), first payment 2026-10-03 (today), last payment 2030-09-21; payments 207 x $1.35 + 1 x $0.11 = $279.56; about $5.85 a month.",
+      "Interest: $279.56 - $231.27 = $48.29, 20.88% of the amount borrowed (independent annuity sum by hand: $48.49, 20.97%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $337.37.",
+      "Lines (D-07): 9.9% is under 20%; 20.88% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $231.27 price paid once): Fits. save_vs_borrow {\"kind\":\"cash_fits\",\"left\":931508,\"more\":4829}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $289.08 is 15.64% of monthly pay $1,848.36 (a freelancer's steady amount), plan 48 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $1,848.36 - bills $551.17 - everyday $727.82 (the engine's typical figure) - debt minimums $36.96 = $532.41. Engine: $532.41 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $532.41. Spare money judged against: $4,028.43.",
+      "Earlier audit: Price $289.08, in a plan of 208 payments every week over 48 months at 9.9% a year (APR), first payment today (2026-10-03), last payment 2030-09-21, deposit $57.81; about $5.85 a month; paid today $59.16.",
+      "Earlier audit: 90-day path: lowest with the purchase $8,771.74 on 2026-10-07; without it $8,830.90 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $6,891.73, size $1,316.00, protected part $1,316.00, above the size (extra savings) $5,575.73, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $59.16 <= this month's room $532.41 -> Fits; monthly $5.85 against a usual leftover of $532.41: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $532.41 - $59.16 paid from this month = $473.25 (matches)."
     ]
   },
   "gen:7": {
-    "right": "Fits (low month)",
-    "rightCode": "fits_month",
-    "rightVariant": "low_month",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $12,229.72 is 190.70% of monthly pay $6,413.07 (a freelancer's steady amount), plan 56 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $6,413.07 - bills $1,789.24 - everyday $2,074.25 (the engine's typical figure) - debt minimums $192.39 = $2,357.19. Engine: $2,357.19 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $2,357.19. Spare money judged against: $6,580.65.",
-      "Price $12,229.72, in a plan of 243 payments every week over 56 months at 9.9% a year (APR), first payment one period from today (2026-10-10), last payment 2031-05-31, deposit $0.00; about $272.65 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $3,513.02 on 2026-10-07; without it $3,513.02 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $0.00, size $4,056.00, protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (low_month).",
-      "Hand check: one-off part: $0.00 <= this month's room $2,357.19 -> Fits; monthly $272.65 against a usual leftover of $2,357.19: within it, so the monthly part fits; the stricter leads."
+      "Plan: $12,229.72 borrowed in 243 payments every week at 9.9% a year (APR), first payment 2026-10-10, last payment 2031-05-31; payments 242 x $62.92 + 1 x $60.21 = $15,286.85; about $272.65 a month.",
+      "Interest: $15,286.85 - $12,229.72 = $3,057.13, 25.00% of the amount borrowed (independent annuity sum by hand: $3057.73, 25.00%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $15,286.85.",
+      "Lines (D-07): 9.9% is under 20%; 25.00% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $12,229.72 price paid once): Not yet (not covered), ready 2027-01. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2027-01\",\"more\":305713}.",
+      "Cash ready month by hand: ($12,229.72 - spare money $6,580.65 - extra savings above the net) / $2,357.19 a month, rounded up, from 2026-10: 2027-01.",
+      "The plan fits on its own (Fits (low month)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $12,229.72 is 190.70% of monthly pay $6,413.07 (a freelancer's steady amount), plan 56 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $6,413.07 - bills $1,789.24 - everyday $2,074.25 (the engine's typical figure) - debt minimums $192.39 = $2,357.19. Engine: $2,357.19 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $2,357.19. Spare money judged against: $6,580.65.",
+      "Earlier audit: Price $12,229.72, in a plan of 243 payments every week over 56 months at 9.9% a year (APR), first payment one period from today (2026-10-10), last payment 2031-05-31, deposit $0.00; about $272.65 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $3,513.02 on 2026-10-07; without it $3,513.02 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $4,056.00, protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (low_month).",
+      "Earlier audit: Hand check: one-off part: $0.00 <= this month's room $2,357.19 -> Fits; monthly $272.65 against a usual leftover of $2,357.19: within it, so the monthly part fits; the stricter leads."
     ]
   },
   "gen:9": {
@@ -1042,20 +1123,27 @@
     ]
   },
   "gen:18": {
-    "right": "Fits, 3370.73 left that month",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $724.84 is 9.95% of monthly pay $7,284.87 (a freelancer's steady amount), plan 18 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $7,284.87 - bills $2,159.23 - everyday $1,026.80 (the engine's typical figure) - debt minimums $655.63 = $3,443.21. Engine: $3,443.21 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $3,443.21. Spare money judged against: $10,447.07.",
-      "Price $724.84 + 8% tax, in a plan of 6 payments every 3 months over 18 months at 19.9% a year (APR), first payment one period from today (2027-01-03), last payment 2028-04-03, deposit $72.48; about $46.61 a month; paid today $72.48.",
-      "90-day path: lowest with the purchase $62,200.75 on 2026-10-07; without it $62,273.23 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $59,944.03, size $3,842.00, protected part $3,842.00, above the size (extra savings) $56,102.03, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $72.48 <= this month's room $3,443.21 -> Fits; monthly $46.61 against a usual leftover of $3,443.21: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $3,443.21 - $72.48 paid from this month = $3,370.73 (matches)."
+      "Plan: $710.35 borrowed in 6 payments every 3 months at 19.9% a year (APR), first payment 2027-01-03, last payment 2028-04-03; payments 5 x $139.84 + 1 x $139.83 = $839.03; about $46.61 a month.",
+      "Interest: $839.03 - $710.35 = $128.68, 18.12% of the amount borrowed (independent annuity sum by hand: $128.69, 18.12%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $911.51.",
+      "Lines (D-07): 19.9% is under 20%; 18.12% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $710.35 price paid once): Fits. save_vs_borrow {\"kind\":\"cash_fits\",\"left\":6576627,\"more\":12868}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $724.84 is 9.95% of monthly pay $7,284.87 (a freelancer's steady amount), plan 18 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $7,284.87 - bills $2,159.23 - everyday $1,026.80 (the engine's typical figure) - debt minimums $655.63 = $3,443.21. Engine: $3,443.21 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $3,443.21. Spare money judged against: $10,447.07.",
+      "Earlier audit: Price $724.84 + 8% tax, in a plan of 6 payments every 3 months over 18 months at 19.9% a year (APR), first payment one period from today (2027-01-03), last payment 2028-04-03, deposit $72.48; about $46.61 a month; paid today $72.48.",
+      "Earlier audit: 90-day path: lowest with the purchase $62,200.75 on 2026-10-07; without it $62,273.23 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $59,944.03, size $3,842.00, protected part $3,842.00, above the size (extra savings) $56,102.03, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $72.48 <= this month's room $3,443.21 -> Fits; monthly $46.61 against a usual leftover of $3,443.21: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $3,443.21 - $72.48 paid from this month = $3,370.73 (matches)."
     ]
   },
   "gen:19": {
@@ -1333,20 +1421,27 @@
     ]
   },
   "gen:40": {
-    "right": "Fits, 409.18 left that month",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $3,157.98 is 150.46% of monthly pay $2,098.89 (a freelancer's steady amount), plan 36 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $2,098.89 - bills $596.08 - everyday $907.54 (the engine's typical figure) - debt minimums $0.00 = $595.27. Engine: $595.27 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $594.70. Spare money judged against: $7,041.30.",
-      "Price $3,157.98 + 8% tax, in a plan of 156 payments every week over 36 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2029-09-22, deposit $157.89; about $119.73 a month; paid today $185.52.",
-      "90-day path: lowest with the purchase $6,487.50 on 2026-10-07; without it $6,673.02 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $2,158.86, size $1,504.00, protected part $1,504.00, above the size (extra savings) $654.86, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $185.52 <= this month's room $594.70 -> Fits; monthly $119.73 against a usual leftover of $595.27: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $594.70 - $185.52 paid from this month = $409.18 (matches)."
+      "Plan: $3,252.73 borrowed in 156 payments every week at 19.9% a year (APR), first payment 2026-10-03 (today), last payment 2029-09-22; payments 155 x $27.63 + 1 x $26.27 = $4,308.92; about $119.73 a month.",
+      "Interest: $4,308.92 - $3,252.73 = $1,056.19, 32.47% of the amount borrowed (independent annuity sum by hand: $1056.53, 32.48%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $4,466.81.",
+      "Lines (D-07): 19.9% is under 20%; 32.47% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $3,252.73 price paid once): Fits from spare money. save_vs_borrow {\"kind\":\"cash_fits\",\"left\":428554,\"more\":105619}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $3,157.98 is 150.46% of monthly pay $2,098.89 (a freelancer's steady amount), plan 36 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $2,098.89 - bills $596.08 - everyday $907.54 (the engine's typical figure) - debt minimums $0.00 = $595.27. Engine: $595.27 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $594.70. Spare money judged against: $7,041.30.",
+      "Earlier audit: Price $3,157.98 + 8% tax, in a plan of 156 payments every week over 36 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2029-09-22, deposit $157.89; about $119.73 a month; paid today $185.52.",
+      "Earlier audit: 90-day path: lowest with the purchase $6,487.50 on 2026-10-07; without it $6,673.02 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $2,158.86, size $1,504.00, protected part $1,504.00, above the size (extra savings) $654.86, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $185.52 <= this month's room $594.70 -> Fits; monthly $119.73 against a usual leftover of $595.27: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $594.70 - $185.52 paid from this month = $409.18 (matches)."
     ]
   },
   "gen:42": {
@@ -1404,15 +1499,20 @@
     ]
   },
   "gen:46": {
-    "right": "Fits, but tight each month (code: Fits)",
-    "rightCode": "fits_month",
-    "rightVariant": "tight",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Check date 2026-10-03. Plan: $4,548.92 in 156 payments of $41.73 every week over 36 months, at 19.9% a year (APR), first payment today ($41.73 today).",
-      "Monthly cost: $41.73 x 52 / 12 = about $180.83 a month. Usual room $683.04; $180.83 / $683.04 = 26.5% (not more than 80%).",
-      "Room left each month: $683.04 - $180.83 = $502.21, under the floor $574.59 (a tenth of $2,289.71 + $3,456.14 = $5,745.85, rounded up). So \"Fits, but tight each month\". Before: plain Fits.",
+      "Plan: $4,912.83 borrowed in 156 payments every week at 19.9% a year (APR), first payment 2026-10-03 (today), last payment 2029-09-22; payments 155 x $41.73 + 1 x $39.96 = $6,508.11; about $180.83 a month.",
+      "Interest: $6,508.11 - $4,912.83 = $1,595.28, 32.47% of the amount borrowed (independent annuity sum by hand: $1595.75, 32.48%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $6,508.11.",
+      "Lines (D-07): 19.9% is under 20%; 32.47% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $4,912.83 price paid once): Not yet (payday), ready 2026-10-08. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2026-10-08\",\"more\":159528}.",
+      "The plan fits on its own (Fits (tight)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first. The tight floor still shows ($574.59), below the borrowing caution (BR-01).",
+      "Earlier audit: Check date 2026-10-03. Plan: $4,548.92 in 156 payments of $41.73 every week over 36 months, at 19.9% a year (APR), first payment today ($41.73 today).",
+      "Earlier audit: Monthly cost: $41.73 x 52 / 12 = about $180.83 a month. Usual room $683.04; $180.83 / $683.04 = 26.5% (not more than 80%).",
+      "Earlier audit: Room left each month: $683.04 - $180.83 = $502.21, under the floor $574.59 (a tenth of $2,289.71 + $3,456.14 = $5,745.85, rounded up). So \"Fits, but tight each month\". Before: plain Fits.",
       "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $4,548.92 is 70.05% of monthly pay $6,493.82 (a freelancer's steady amount), plan 36 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
       "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $6,493.82 - bills $2,289.71 - everyday $3,456.14 (the engine's typical figure) - debt minimums $64.93 = $683.04. Engine: $683.04 (matches).",
       "Earlier audit: Check date 2026-10-03. This month left before the purchase: $683.04. Spare money judged against: $2,881.65.",
@@ -1588,20 +1688,27 @@
     ]
   },
   "gen:56": {
-    "right": "Fits, 1062.29 left that month",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $1,127.86 is 15.13% of monthly pay $7,454.52 (pay), plan 48 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (pay) $7,454.52 - bills $2,536.02 - everyday $3,799.82 (the engine's typical figure) - debt minimums $0.00 = $1,118.68. Engine: $1,118.68 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $1,118.68. Spare money judged against: $23,333.14.",
-      "Price $1,127.86, in a plan of 208 payments every week over 48 months at 4.9% a year (APR), first payment one period from today (2026-10-10), last payment 2030-09-28, deposit $56.39; about $24.61 a month; paid today $56.39.",
-      "90-day path: lowest with the purchase $58,066.98 on 2026-10-31; without it $58,146.09 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $41,148.95, size $6,336.00, protected part $6,336.00, above the size (extra savings) $34,812.95, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $56.39 <= this month's room $1,118.68 -> Fits; monthly $24.61 against a usual leftover of $1,118.68: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $1,118.68 - $56.39 paid from this month = $1,062.29 (matches)."
+      "Plan: $1,071.47 borrowed in 208 payments every week at 4.9% a year (APR), first payment 2026-10-10, last payment 2030-09-28; payments 207 x $5.68 + 1 x $4.57 = $1,180.33; about $24.61 a month.",
+      "Interest: $1,180.33 - $1,071.47 = $108.86, 10.16% of the amount borrowed (independent annuity sum by hand: $108.94, 10.17%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $1,236.72.",
+      "Lines (D-07): 4.9% is under 20%; 10.16% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $1,071.47 price paid once): Fits from spare money. save_vs_borrow {\"kind\":\"cash_fits\",\"left\":5701823,\"more\":10886}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $1,127.86 is 15.13% of monthly pay $7,454.52 (pay), plan 48 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (pay) $7,454.52 - bills $2,536.02 - everyday $3,799.82 (the engine's typical figure) - debt minimums $0.00 = $1,118.68. Engine: $1,118.68 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $1,118.68. Spare money judged against: $23,333.14.",
+      "Earlier audit: Price $1,127.86, in a plan of 208 payments every week over 48 months at 4.9% a year (APR), first payment one period from today (2026-10-10), last payment 2030-09-28, deposit $56.39; about $24.61 a month; paid today $56.39.",
+      "Earlier audit: 90-day path: lowest with the purchase $58,066.98 on 2026-10-31; without it $58,146.09 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $41,148.95, size $6,336.00, protected part $6,336.00, above the size (extra savings) $34,812.95, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $56.39 <= this month's room $1,118.68 -> Fits; monthly $24.61 against a usual leftover of $1,118.68: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $1,118.68 - $56.39 paid from this month = $1,062.29 (matches)."
     ]
   },
   "gen:58": {
@@ -1682,21 +1789,27 @@
     ]
   },
   "gen:64": {
-    "right": "Fits (but no safety net), 2588.49 left that month",
-    "rightCode": "fits_month",
-    "rightVariant": "no_net",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $50.63 is 0.75% of monthly pay $6,751.98 (a freelancer's steady amount), plan 22 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $6,751.98 - bills $2,059.35 - everyday $1,626.40 (the engine's typical figure) - debt minimums $472.62 = $2,593.61. Engine: $2,593.61 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $2,593.61. Spare money judged against: $10,011.11.",
-      "Price $50.63, in a plan of 22 payments every month over 22 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2028-07-03, deposit $2.53; about $2.59 a month; paid today $5.12.",
-      "90-day path: lowest with the purchase $5,989.49 on 2026-10-07; without it $5,994.61 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $0.00, size $4,159.00, protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (no_net).",
-      "Hand check: one-off part: $5.12 <= this month's room $2,593.61 -> Fits; monthly $2.59 against a usual leftover of $2,593.61: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $2,593.61 - $5.12 paid from this month = $2,588.49 (matches)."
+      "Plan: $48.10 borrowed in 22 payments every month at 19.9% a year (APR), first payment 2026-10-03 (today), last payment 2028-07-03; payments 21 x $2.59 + 1 x $2.42 = $56.81; about $2.59 a month.",
+      "Interest: $56.81 - $48.10 = $8.71, 18.11% of the amount borrowed (independent annuity sum by hand: $8.76, 18.21%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $59.34.",
+      "Lines (D-07): 19.9% is under 20%; 18.11% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $48.10 price paid once): Fits (but no safety net). save_vs_borrow {\"kind\":\"cash_fits\",\"left\":996048,\"more\":871}.",
+      "The plan fits on its own (Fits (but no safety net)), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $50.63 is 0.75% of monthly pay $6,751.98 (a freelancer's steady amount), plan 22 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $6,751.98 - bills $2,059.35 - everyday $1,626.40 (the engine's typical figure) - debt minimums $472.62 = $2,593.61. Engine: $2,593.61 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $2,593.61. Spare money judged against: $10,011.11.",
+      "Earlier audit: Price $50.63, in a plan of 22 payments every month over 22 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2028-07-03, deposit $2.53; about $2.59 a month; paid today $5.12.",
+      "Earlier audit: 90-day path: lowest with the purchase $5,989.49 on 2026-10-07; without it $5,994.61 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $4,159.00, protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (no_net).",
+      "Earlier audit: Hand check: one-off part: $5.12 <= this month's room $2,593.61 -> Fits; monthly $2.59 against a usual leftover of $2,593.61: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $2,593.61 - $5.12 paid from this month = $2,588.49 (matches)."
     ]
   },
   "gen:65": {
@@ -1752,37 +1865,51 @@
     ]
   },
   "gen:68": {
-    "right": "Fits, 3925.28 left that month",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $3,445.52 is 32.13% of monthly pay $10,723.70 (pay), plan 18 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (pay) $10,723.70 - bills $3,074.48 - everyday $2,908.25 (the engine's typical figure) - debt minimums $643.42 = $4,097.55. Engine: $4,097.55 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $4,097.55. Spare money judged against: $24,150.86.",
-      "Price $3,445.52 + 8% tax, in a plan of 78 payments every week over 18 months at 19.9% a year (APR), first payment one period from today (2026-10-10), last payment 2028-04-01, deposit $172.27; about $228.45 a month; paid today $172.27.",
-      "90-day path: lowest with the purchase $45,129.56 on 2026-10-31; without it $45,512.71 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $27,988.85, size $6,627.00, protected part $6,627.00, above the size (extra savings) $21,361.85, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $172.27 <= this month's room $4,097.55 -> Fits; monthly $228.45 against a usual leftover of $4,097.55: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $4,097.55 - $172.27 paid from this month = $3,925.28 (matches)."
+      "Plan: $3,548.89 borrowed in 78 payments every week at 19.9% a year (APR), first payment 2026-10-10, last payment 2028-04-01; payments 77 x $52.72 + 1 x $52.05 = $4,111.49; about $228.45 a month.",
+      "Interest: $4,111.49 - $3,548.89 = $562.60, 15.85% of the amount borrowed (independent annuity sum by hand: $562.72, 15.86%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $4,283.76.",
+      "Lines (D-07): 19.9% is under 20%; 15.85% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $3,548.89 price paid once): Fits. save_vs_borrow {\"kind\":\"cash_fits\",\"left\":4114813,\"more\":56260}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $3,445.52 is 32.13% of monthly pay $10,723.70 (pay), plan 18 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (pay) $10,723.70 - bills $3,074.48 - everyday $2,908.25 (the engine's typical figure) - debt minimums $643.42 = $4,097.55. Engine: $4,097.55 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $4,097.55. Spare money judged against: $24,150.86.",
+      "Earlier audit: Price $3,445.52 + 8% tax, in a plan of 78 payments every week over 18 months at 19.9% a year (APR), first payment one period from today (2026-10-10), last payment 2028-04-01, deposit $172.27; about $228.45 a month; paid today $172.27.",
+      "Earlier audit: 90-day path: lowest with the purchase $45,129.56 on 2026-10-31; without it $45,512.71 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $27,988.85, size $6,627.00, protected part $6,627.00, above the size (extra savings) $21,361.85, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $172.27 <= this month's room $4,097.55 -> Fits; monthly $228.45 against a usual leftover of $4,097.55: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $4,097.55 - $172.27 paid from this month = $3,925.28 (matches)."
     ]
   },
   "gen:69": {
-    "right": "Fits, 3024.97 left that month",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $9,401.73 is 89.84% of monthly pay $10,464.98 (pay), plan 60 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (pay) $10,464.98 - bills $3,076.70 - everyday $3,340.02 (the engine's typical figure) - debt minimums $941.83 = $3,106.43. Engine: $3,106.43 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $3,106.43. Spare money judged against: $35,024.60.",
-      "Price $9,401.73, in a plan of 130 payments every 2 weeks over 60 months at 4.9% a year (APR), first payment today (2026-10-03), last payment 2031-09-13, deposit $0.00; about $176.50 a month; paid today $81.46.",
-      "90-day path: lowest with the purchase $56,409.21 on 2026-10-31; without it $56,653.59 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $28,987.99, size $7,359.00, protected part $7,359.00, above the size (extra savings) $21,628.99, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $81.46 <= this month's room $3,106.43 -> Fits; monthly $176.50 against a usual leftover of $3,106.43: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $3,106.43 - $81.46 paid from this month = $3,024.97 (matches)."
+      "Plan: $9,401.73 borrowed in 130 payments every 2 weeks at 4.9% a year (APR), first payment 2026-10-03 (today), last payment 2031-09-13; payments 129 x $81.46 + 1 x $80.92 = $10,589.26; about $176.50 a month.",
+      "Interest: $10,589.26 - $9,401.73 = $1,187.53, 12.63% of the amount borrowed (independent annuity sum by hand: $1187.55, 12.63%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,589.26.",
+      "Lines (D-07): 4.9% is under 20%; 12.63% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,401.73 price paid once): Fits from spare money (but you carry costly debt). save_vs_borrow {\"kind\":\"cash_fits\",\"left\":4631003,\"more\":118753}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $9,401.73 is 89.84% of monthly pay $10,464.98 (pay), plan 60 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (pay) $10,464.98 - bills $3,076.70 - everyday $3,340.02 (the engine's typical figure) - debt minimums $941.83 = $3,106.43. Engine: $3,106.43 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $3,106.43. Spare money judged against: $35,024.60.",
+      "Earlier audit: Price $9,401.73, in a plan of 130 payments every 2 weeks over 60 months at 4.9% a year (APR), first payment today (2026-10-03), last payment 2031-09-13, deposit $0.00; about $176.50 a month; paid today $81.46.",
+      "Earlier audit: 90-day path: lowest with the purchase $56,409.21 on 2026-10-31; without it $56,653.59 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $28,987.99, size $7,359.00, protected part $7,359.00, above the size (extra savings) $21,628.99, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $81.46 <= this month's room $3,106.43 -> Fits; monthly $176.50 against a usual leftover of $3,106.43: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $3,106.43 - $81.46 paid from this month = $3,024.97 (matches)."
     ]
   },
   "gen:70": {
@@ -1994,20 +2121,27 @@
     ]
   },
   "gen:84": {
-    "right": "Fits, 1746.19 left that month",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $6,400.71 is 127.84% of monthly pay $5,006.82 (a freelancer's steady amount), plan 48 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $5,006.82 - bills $1,373.86 - everyday $1,174.73 (the engine's typical figure) - debt minimums $300.40 = $2,157.83. Engine: $2,157.83 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $2,157.69. Spare money judged against: $20,196.53.",
-      "Price $6,400.71 + 8% tax, in a plan of 104 payments every 2 weeks over 48 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2030-09-14, deposit $320.03; about $198.19 a month; paid today $411.50.",
-      "90-day path: lowest with the purchase $32,097.61 on 2026-10-08; without it $32,509.11 on 2026-10-08. Cash check: ok.",
-      "Safety net: saved $17,953.02, size $2,849.00, protected part $2,849.00, above the size (extra savings) $15,104.02, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $411.50 <= this month's room $2,157.69 -> Fits; monthly $198.19 against a usual leftover of $2,157.83: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $2,157.69 - $411.50 paid from this month = $1,746.19 (matches)."
+      "Plan: $6,592.74 borrowed in 104 payments every 2 weeks at 19.9% a year (APR), first payment 2026-10-03 (today), last payment 2030-09-14; payments 103 x $91.47 + 1 x $90.52 = $9,511.93; about $198.19 a month.",
+      "Interest: $9,511.93 - $6,592.74 = $2,919.19, 44.28% of the amount borrowed (independent annuity sum by hand: $2919.50, 44.28%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $9,831.96.",
+      "Lines (D-07): 19.9% is under 20%; 44.28% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $6,592.74 price paid once): Fits from spare money (but you carry costly debt). save_vs_borrow {\"kind\":\"cash_fits\",\"left\":2838778,\"more\":291919}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $6,400.71 is 127.84% of monthly pay $5,006.82 (a freelancer's steady amount), plan 48 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $5,006.82 - bills $1,373.86 - everyday $1,174.73 (the engine's typical figure) - debt minimums $300.40 = $2,157.83. Engine: $2,157.83 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $2,157.69. Spare money judged against: $20,196.53.",
+      "Earlier audit: Price $6,400.71 + 8% tax, in a plan of 104 payments every 2 weeks over 48 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2030-09-14, deposit $320.03; about $198.19 a month; paid today $411.50.",
+      "Earlier audit: 90-day path: lowest with the purchase $32,097.61 on 2026-10-08; without it $32,509.11 on 2026-10-08. Cash check: ok.",
+      "Earlier audit: Safety net: saved $17,953.02, size $2,849.00, protected part $2,849.00, above the size (extra savings) $15,104.02, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $411.50 <= this month's room $2,157.69 -> Fits; monthly $198.19 against a usual leftover of $2,157.83: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $2,157.69 - $411.50 paid from this month = $1,746.19 (matches)."
     ]
   },
   "gen:85": {
@@ -2048,15 +2182,21 @@
     ]
   },
   "gen:87": {
-    "right": "Fits, but tight each month (code: Fits)",
-    "rightCode": "fits_month",
-    "rightVariant": "tight",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Check date 2026-10-03. Plan: $3,790.19 in 33 payments of $147.06 every month over 33 months, at 19.9% a year (APR), first payment 2026-11-03; deposit $379.01 today from October.",
-      "Usual room $730.02; $147.06 / $730.02 = 20.1% (not more than 80%). Room left each month: $730.02 - $147.06 = $582.96, under the floor $639.04 (a tenth of $2,788.35 + $3,602.05 = $6,390.40).",
-      "So \"Fits, but tight each month\". Before: plain Fits. The person also has $34,602.28 of extra savings above the safety net: the plan rule reads the usual month only, never savings (owner rule: \"money left each month\").",
+      "Plan: $3,714.40 borrowed in 33 payments every month at 19.9% a year (APR), first payment 2026-11-03, last payment 2029-07-03; payments 32 x $147.06 + 1 x $147.03 = $4,852.95; about $147.06 a month.",
+      "Interest: $4,852.95 - $3,714.40 = $1,138.55, 30.65% of the amount borrowed (independent annuity sum by hand: $1138.56, 30.65%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $5,231.96.",
+      "Lines (D-07): 19.9% is under 20%; 30.65% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $3,714.40 price paid once): Fits from spare money (Fits from extra savings). save_vs_borrow {\"kind\":\"cash_fits\",\"left\":3357845,\"more\":113855}.",
+      "The plan fits on its own (Fits (tight)), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first. The tight floor still shows ($639.04), below the borrowing caution (BR-01).",
+      "Earlier audit: Check date 2026-10-03. Plan: $3,790.19 in 33 payments of $147.06 every month over 33 months, at 19.9% a year (APR), first payment 2026-11-03; deposit $379.01 today from October.",
+      "Earlier audit: Usual room $730.02; $147.06 / $730.02 = 20.1% (not more than 80%). Room left each month: $730.02 - $147.06 = $582.96, under the floor $639.04 (a tenth of $2,788.35 + $3,602.05 = $6,390.40).",
+      "Earlier audit: So \"Fits, but tight each month\". Before: plain Fits. The person also has $34,602.28 of extra savings above the safety net: the plan rule reads the usual month only, never savings (owner rule: \"money left each month\").",
       "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $3,790.19 is 53.23% of monthly pay $7,120.42 (a freelancer's steady amount), plan 33 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
       "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $7,120.42 - bills $2,788.35 - everyday $3,602.05 (the engine's typical figure) - debt minimums $0.00 = $730.02. Engine: $730.02 (matches).",
       "Earlier audit: Check date 2026-10-03. This month left before the purchase: $730.02. Spare money judged against: $3,069.58.",
@@ -2194,19 +2334,26 @@
     ]
   },
   "gen:97": {
-    "right": "Fits",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $27,170.61 is 251.83% of monthly pay $10,789.27 (pay), plan 60 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (pay) $10,789.27 - bills $4,246.65 - everyday $4,210.61 (the engine's typical figure) - debt minimums $755.24 = $1,576.77. Engine: $1,576.77 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $1,576.77. Spare money judged against: $28,118.36.",
-      "Price $27,170.61, in a plan of 20 payments every 3 months over 60 months at 9.9% a year (APR), first payment one period from today (2027-01-03), last payment 2031-10-03, deposit $0.00; about $579.60 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $33,362.98 on 2026-10-31; without it $33,362.98 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $14,457.62, size $9,213.00, protected part $9,213.00, above the size (extra savings) $5,244.62, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $0.00 <= this month's room $1,576.77 -> Fits; monthly $579.60 against a usual leftover of $1,576.77: within it, so the monthly part fits; the stricter leads."
+      "Plan: $27,170.61 borrowed in 20 payments every 3 months at 9.9% a year (APR), first payment 2027-01-03, last payment 2031-10-03; payments 19 x $1,738.81 + 1 x $1,738.63 = $34,776.02; about $579.60 a month.",
+      "Interest: $34,776.02 - $27,170.61 = $7,605.41, 27.99% of the amount borrowed (independent annuity sum by hand: $7605.46, 27.99%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $34,776.02.",
+      "Lines (D-07): 9.9% is under 20%; 27.99% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $27,170.61 price paid once): Fits from spare money (but you carry costly debt). save_vs_borrow {\"kind\":\"cash_fits\",\"left\":543713,\"more\":760541}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $27,170.61 is 251.83% of monthly pay $10,789.27 (pay), plan 60 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (pay) $10,789.27 - bills $4,246.65 - everyday $4,210.61 (the engine's typical figure) - debt minimums $755.24 = $1,576.77. Engine: $1,576.77 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $1,576.77. Spare money judged against: $28,118.36.",
+      "Earlier audit: Price $27,170.61, in a plan of 20 payments every 3 months over 60 months at 9.9% a year (APR), first payment one period from today (2027-01-03), last payment 2031-10-03, deposit $0.00; about $579.60 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $33,362.98 on 2026-10-31; without it $33,362.98 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $14,457.62, size $9,213.00, protected part $9,213.00, above the size (extra savings) $5,244.62, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $0.00 <= this month's room $1,576.77 -> Fits; monthly $579.60 against a usual leftover of $1,576.77: within it, so the monthly part fits; the stricter leads."
     ]
   },
   "gen:98": {
@@ -2278,19 +2425,26 @@
     ]
   },
   "gen:102": {
-    "right": "Fits",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $631.32 is 10.41% of monthly pay $6,064.64 (pay), plan 60 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (pay) $6,064.64 - bills $2,443.44 - everyday $2,394.57 (the engine's typical figure) - debt minimums $0.00 = $1,226.63. Engine: $1,226.63 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $1,225.49. Spare money judged against: $2,620.35.",
-      "Price $631.32 + 8% tax, in a plan of 130 payments every 2 weeks over 60 months at 4.9% a year (APR), first payment one period from today (2026-10-17), last payment 2031-09-27, deposit $0.00; about $12.83 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $26,758.48 on 2026-10-31; without it $26,770.32 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $28,988.97, size $4,839.00, protected part $4,839.00, above the size (extra savings) $24,149.97, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $0.00 <= this month's room $1,225.49 -> Fits; monthly $12.83 against a usual leftover of $1,226.63: within it, so the monthly part fits; the stricter leads."
+      "Plan: $681.83 borrowed in 130 payments every 2 weeks at 4.9% a year (APR), first payment 2026-10-17, last payment 2031-09-27; payments 129 x $5.92 + 1 x $5.68 = $769.36; about $12.83 a month.",
+      "Interest: $769.36 - $681.83 = $87.53, 12.84% of the amount borrowed (independent annuity sum by hand: $87.57, 12.84%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $769.36.",
+      "Lines (D-07): 4.9% is under 20%; 12.84% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $681.83 price paid once): Fits. save_vs_borrow {\"kind\":\"cash_fits\",\"left\":2608849,\"more\":8753}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $631.32 is 10.41% of monthly pay $6,064.64 (pay), plan 60 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (pay) $6,064.64 - bills $2,443.44 - everyday $2,394.57 (the engine's typical figure) - debt minimums $0.00 = $1,226.63. Engine: $1,226.63 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $1,225.49. Spare money judged against: $2,620.35.",
+      "Earlier audit: Price $631.32 + 8% tax, in a plan of 130 payments every 2 weeks over 60 months at 4.9% a year (APR), first payment one period from today (2026-10-17), last payment 2031-09-27, deposit $0.00; about $12.83 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $26,758.48 on 2026-10-31; without it $26,770.32 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $28,988.97, size $4,839.00, protected part $4,839.00, above the size (extra savings) $24,149.97, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $0.00 <= this month's room $1,225.49 -> Fits; monthly $12.83 against a usual leftover of $1,226.63: within it, so the monthly part fits; the stricter leads."
     ]
   },
   "gen:103": {
@@ -2753,19 +2907,25 @@
     ]
   },
   "gen:133": {
-    "right": "Fits",
-    "rightCode": "fits_month",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $2,722.86 is 116.14% of monthly pay $2,344.47 (pay), plan 24 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (pay) $2,344.47 - bills $896.75 - everyday $779.40 (the engine's typical figure) - debt minimums $70.33 = $597.99. Engine: $597.99 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $597.74. Spare money judged against: none (no confirmed figure).",
-      "Price $2,722.86, in a plan of 24 payments every month over 24 months at 19.9% a year (APR), first payment one period from today (2026-11-03), last payment 2028-10-03, deposit $0.00; about $138.45 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $13,527.11 on 2026-10-31; without it $13,527.11 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $7,947.75, size $1,747.00, protected part $1,747.00, above the size (extra savings) $6,200.75, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $0.00 <= this month's room $597.74 -> Fits; monthly $138.45 against a usual leftover of $597.99: within it, so the monthly part fits; the stricter leads."
+      "Plan: $2,722.86 borrowed in 24 payments every month at 19.9% a year (APR), first payment 2026-11-03, last payment 2028-10-03; payments 24 x $138.45 = $3,322.80; about $138.45 a month.",
+      "Interest: $3,322.80 - $2,722.86 = $599.94, 22.03% of the amount borrowed (independent annuity sum by hand: $599.92, 22.03%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $3,322.80.",
+      "Lines (D-07): 19.9% is under 20%; 22.03% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $2,722.86 price paid once): asks for a figure first (Needs a figure first). No comparison line (the cash route asks first).",
+      "The plan fits on its own (Fits) and it is expensive; paying at once asks first, so cash cannot be judged: \"Only by borrowing\" with no comparison (owner question 2).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $2,722.86 is 116.14% of monthly pay $2,344.47 (pay), plan 24 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (pay) $2,344.47 - bills $896.75 - everyday $779.40 (the engine's typical figure) - debt minimums $70.33 = $597.99. Engine: $597.99 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $597.74. Spare money judged against: none (no confirmed figure).",
+      "Earlier audit: Price $2,722.86, in a plan of 24 payments every month over 24 months at 19.9% a year (APR), first payment one period from today (2026-11-03), last payment 2028-10-03, deposit $0.00; about $138.45 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $13,527.11 on 2026-10-31; without it $13,527.11 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $7,947.75, size $1,747.00, protected part $1,747.00, above the size (extra savings) $6,200.75, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $0.00 <= this month's room $597.74 -> Fits; monthly $138.45 against a usual leftover of $597.99: within it, so the monthly part fits; the stricter leads."
     ]
   },
   "gen:135": {
@@ -2871,20 +3031,27 @@
     ]
   },
   "gen:144": {
-    "right": "Fits, 452.78 left that month",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $3,045.09 is 121.53% of monthly pay $2,505.63 (pay), plan 24 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (pay) $2,505.63 - bills $1,142.56 - everyday $874.87 (the engine's typical figure) - debt minimums $0.00 = $488.20. Engine: $488.20 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $488.20. Spare money judged against: $5,599.68.",
-      "Price $3,045.09, in a plan of 104 payments every week over 24 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2028-09-23, deposit $0.00; about $153.49 a month; paid today $35.42.",
-      "90-day path: lowest with the purchase $17,536.33 on 2026-10-31; without it $17,713.43 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $14,131.75, size $2,018.00, protected part $2,018.00, above the size (extra savings) $12,113.75, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $35.42 <= this month's room $488.20 -> Fits; monthly $153.49 against a usual leftover of $488.20: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $488.20 - $35.42 paid from this month = $452.78 (matches)."
+      "Plan: $3,045.09 borrowed in 104 payments every week at 19.9% a year (APR), first payment 2026-10-03 (today), last payment 2028-09-23; payments 103 x $35.42 + 1 x $34.34 = $3,682.60; about $153.49 a month.",
+      "Interest: $3,682.60 - $3,045.09 = $637.51, 20.94% of the amount borrowed (independent annuity sum by hand: $637.72, 20.94%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $3,682.60.",
+      "Lines (D-07): 19.9% is under 20%; 20.94% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $3,045.09 price paid once): Fits from spare money. save_vs_borrow {\"kind\":\"cash_fits\",\"left\":1466834,\"more\":63751}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $3,045.09 is 121.53% of monthly pay $2,505.63 (pay), plan 24 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (pay) $2,505.63 - bills $1,142.56 - everyday $874.87 (the engine's typical figure) - debt minimums $0.00 = $488.20. Engine: $488.20 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $488.20. Spare money judged against: $5,599.68.",
+      "Earlier audit: Price $3,045.09, in a plan of 104 payments every week over 24 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2028-09-23, deposit $0.00; about $153.49 a month; paid today $35.42.",
+      "Earlier audit: 90-day path: lowest with the purchase $17,536.33 on 2026-10-31; without it $17,713.43 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $14,131.75, size $2,018.00, protected part $2,018.00, above the size (extra savings) $12,113.75, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $35.42 <= this month's room $488.20 -> Fits; monthly $153.49 against a usual leftover of $488.20: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $488.20 - $35.42 paid from this month = $452.78 (matches)."
     ]
   },
   "gen:146": {
@@ -3027,15 +3194,21 @@
     ]
   },
   "gen:158": {
-    "right": "Fits, but tight each month (code: Fits from spare money)",
-    "rightCode": "fits_unspent",
-    "rightVariant": "tight",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Check date 2026-10-03. Plan: $5,884.47 in 59 payments of $115.81 every month over 59 months, at 4.9% a year (APR), first payment 2026-11-03; deposit $294.22 today ($154.06 from October, $140.16 from earlier months).",
-      "Usual room $154.06; $115.81 / $154.06 = 75.2% (not more than 80%). Room left each month: $38.25, under the floor $219.09 (a tenth of $1,228.24 + $962.58 = $2,190.82, rounded up).",
-      "So \"Fits, but tight each month\". Before: Fits from spare money (low month: May left $49.43); nothing is saved in a safety net, and that line still shows.",
+      "Plan: $6,061.01 borrowed in 59 payments every month at 4.9% a year (APR), first payment 2026-11-03, last payment 2031-09-03; payments 58 x $115.81 + 1 x $115.73 = $6,832.71; about $115.81 a month.",
+      "Interest: $6,832.71 - $6,061.01 = $771.70, 12.73% of the amount borrowed (independent annuity sum by hand: $771.69, 12.73%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $7,126.93.",
+      "Lines (D-07): 4.9% is under 20%; 12.73% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $6,061.01 price paid once): Not yet (not covered), ready 2027-07. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2027-07\",\"more\":77170}.",
+      "Cash ready month by hand: ($6,061.01 - spare money $5,111.80 - extra savings above the net) / $154.06 a month, rounded up, from 2026-10: 2027-07.",
+      "The plan fits on its own (Fits from spare money (tight)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first. The tight floor still shows ($219.09), below the borrowing caution (BR-01).",
+      "Earlier audit: Check date 2026-10-03. Plan: $5,884.47 in 59 payments of $115.81 every month over 59 months, at 4.9% a year (APR), first payment 2026-11-03; deposit $294.22 today ($154.06 from October, $140.16 from earlier months).",
+      "Earlier audit: Usual room $154.06; $115.81 / $154.06 = 75.2% (not more than 80%). Room left each month: $38.25, under the floor $219.09 (a tenth of $1,228.24 + $962.58 = $2,190.82, rounded up).",
+      "Earlier audit: So \"Fits, but tight each month\". Before: Fits from spare money (low month: May left $49.43); nothing is saved in a safety net, and that line still shows.",
       "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $5,884.47 is 250.95% of monthly pay $2,344.88 (a freelancer's steady amount), plan 59 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
       "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $2,344.88 - bills $1,228.24 - everyday $962.58 (the engine's typical figure) - debt minimums $0.00 = $154.06. Engine: $154.06 (matches).",
       "Earlier audit: Check date 2026-10-03. This month left before the purchase: $154.06. Spare money judged against: $5,111.80.",
@@ -3156,20 +3329,27 @@
     ]
   },
   "gen:166": {
-    "right": "Fits, 635.35 left that month",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $550.80 is 9.32% of monthly pay $5,909.91 (a freelancer's steady amount), plan 36 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $5,909.91 - bills $2,642.91 - everyday $2,220.56 (the engine's typical figure) - debt minimums $354.58 = $691.86. Engine: $691.86 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $691.86. Spare money judged against: $16,243.35.",
-      "Price $550.80 + 8% tax, in a plan of 12 payments every 3 months over 36 months at 9.9% a year (APR), first payment today (2026-10-03), last payment 2029-07-03, deposit $0.00; about $18.84 a month; paid today $56.51.",
-      "90-day path: lowest with the purchase $47,606.86 on 2026-10-07; without it $47,663.37 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $38,245.56, size $5,219.00, protected part $5,219.00, above the size (extra savings) $33,026.56, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $56.51 <= this month's room $691.86 -> Fits; monthly $18.84 against a usual leftover of $691.86: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $691.86 - $56.51 paid from this month = $635.35 (matches)."
+      "Plan: $594.86 borrowed in 12 payments every 3 months at 9.9% a year (APR), first payment 2026-10-03 (today), last payment 2029-07-03; payments 11 x $56.51 + 1 x $56.44 = $678.05; about $18.84 a month.",
+      "Interest: $678.05 - $594.86 = $83.19, 13.98% of the amount borrowed (independent annuity sum by hand: $83.20, 13.99%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $678.05.",
+      "Lines (D-07): 9.9% is under 20%; 13.98% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $594.86 price paid once): Fits. save_vs_borrow {\"kind\":\"cash_fits\",\"left\":4867505,\"more\":8319}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $550.80 is 9.32% of monthly pay $5,909.91 (a freelancer's steady amount), plan 36 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $5,909.91 - bills $2,642.91 - everyday $2,220.56 (the engine's typical figure) - debt minimums $354.58 = $691.86. Engine: $691.86 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $691.86. Spare money judged against: $16,243.35.",
+      "Earlier audit: Price $550.80 + 8% tax, in a plan of 12 payments every 3 months over 36 months at 9.9% a year (APR), first payment today (2026-10-03), last payment 2029-07-03, deposit $0.00; about $18.84 a month; paid today $56.51.",
+      "Earlier audit: 90-day path: lowest with the purchase $47,606.86 on 2026-10-07; without it $47,663.37 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $38,245.56, size $5,219.00, protected part $5,219.00, above the size (extra savings) $33,026.56, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $56.51 <= this month's room $691.86 -> Fits; monthly $18.84 against a usual leftover of $691.86: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $691.86 - $56.51 paid from this month = $635.35 (matches)."
     ]
   },
   "gen:167": {
@@ -3298,20 +3478,27 @@
     ]
   },
   "gen:176": {
-    "right": "Fits, 1307.06 left that month",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $2,114.57 is 45.38% of monthly pay $4,659.70 (pay), plan 18 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (pay) $4,659.70 - bills $1,859.22 - everyday $1,145.46 (the engine's typical figure) - debt minimums $279.57 = $1,375.45. Engine: $1,375.45 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $1,374.50. Spare money judged against: $11,439.44.",
-      "Price $2,114.57 + 8% tax, in a plan of 39 payments every 2 weeks over 18 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2028-03-18, deposit $0.00; about $146.12 a month; paid today $67.44.",
-      "90-day path: lowest with the purchase $24,307.66 on 2026-10-31; without it $24,509.98 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $16,355.54, size $3,285.00, protected part $3,285.00, above the size (extra savings) $13,070.54, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $67.44 <= this month's room $1,374.50 -> Fits; monthly $146.12 against a usual leftover of $1,375.45: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $1,374.50 - $67.44 paid from this month = $1,307.06 (matches)."
+      "Plan: $2,283.74 borrowed in 39 payments every 2 weeks at 19.9% a year (APR), first payment 2026-10-03 (today), last payment 2028-03-18; payments 38 x $67.44 + 1 x $67.31 = $2,630.03; about $146.12 a month.",
+      "Interest: $2,630.03 - $2,283.74 = $346.29, 15.16% of the amount borrowed (independent annuity sum by hand: $346.31, 15.16%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $2,630.03.",
+      "Lines (D-07): 19.9% is under 20%; 15.16% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $2,283.74 price paid once): Fits from spare money. save_vs_borrow {\"kind\":\"cash_fits\",\"left\":2194667,\"more\":34629}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $2,114.57 is 45.38% of monthly pay $4,659.70 (pay), plan 18 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (pay) $4,659.70 - bills $1,859.22 - everyday $1,145.46 (the engine's typical figure) - debt minimums $279.57 = $1,375.45. Engine: $1,375.45 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $1,374.50. Spare money judged against: $11,439.44.",
+      "Earlier audit: Price $2,114.57 + 8% tax, in a plan of 39 payments every 2 weeks over 18 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2028-03-18, deposit $0.00; about $146.12 a month; paid today $67.44.",
+      "Earlier audit: 90-day path: lowest with the purchase $24,307.66 on 2026-10-31; without it $24,509.98 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $16,355.54, size $3,285.00, protected part $3,285.00, above the size (extra savings) $13,070.54, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $67.44 <= this month's room $1,374.50 -> Fits; monthly $146.12 against a usual leftover of $1,375.45: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $1,374.50 - $67.44 paid from this month = $1,307.06 (matches)."
     ]
   },
   "gen:177": {
@@ -3370,33 +3557,45 @@
     ]
   },
   "gen:182": {
-    "right": "Fits, but you carry costly debt (Fits from spare money)",
-    "rightCode": "fits_unspent",
-    "rightVariant": "costly_debt",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "FIN-10 / D-39b costly-debt caution (05.4-20)",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Freelancer. Cards $10,194.13 (minimum $168.94) and $9,286.34 (minimum $84.47), both 21.9%, no due days: from 2026-10-04.",
-      "$1,297.01 = $1,005.56 of October + $291.45 of spare money from earlier months: D-39b amber. The caution names the card with the larger interest: $10,194.13 x 21.9% / 12 = $186.04 a month; $1,297.01 toward it cuts it by $23.67.",
-      "Before: plain \"Fits from spare money\" (the net is above its size)."
+      "Plan: $5,706.89 borrowed in 60 payments every month at 4.9% a year (APR), first payment 2026-11-03, last payment 2031-10-03; payments 59 x $107.44 + 1 x $107.10 = $6,446.06; about $107.44 a month.",
+      "Interest: $6,446.06 - $5,706.89 = $739.17, 12.95% of the amount borrowed (independent annuity sum by hand: $739.20, 12.95%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $7,743.07.",
+      "Lines (D-07): 4.9% is under 20%; 12.95% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $5,706.89 price paid once): Fits from spare money (but you carry costly debt). save_vs_borrow {\"kind\":\"cash_fits\",\"left\":2176750,\"more\":73917}.",
+      "The plan fits on its own (Fits from spare money (but you carry costly debt)), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Freelancer. Cards $10,194.13 (minimum $168.94) and $9,286.34 (minimum $84.47), both 21.9%, no due days: from 2026-10-04.",
+      "Earlier audit: $1,297.01 = $1,005.56 of October + $291.45 of spare money from earlier months: D-39b amber. The caution names the card with the larger interest: $10,194.13 x 21.9% / 12 = $186.04 a month; $1,297.01 toward it cuts it by $23.67.",
+      "Earlier audit: Before: plain \"Fits from spare money\" (the net is above its size)."
     ]
   },
   "gen:186": {
-    "right": "Fits (but your safety net is small), 3008.19 left that month",
-    "rightCode": "fits_month",
-    "rightVariant": "small_net",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $3,966.88 is 49.10% of monthly pay $8,079.19 (a freelancer's steady amount), plan 54 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $8,079.19 - bills $2,035.95 - everyday $2,713.16 (the engine's typical figure) - debt minimums $0.00 = $3,330.08. Engine: $3,330.08 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $3,319.78. Spare money judged against: $27,211.09.",
-      "Price $3,966.88 + 8% tax, in a plan of 54 payments every month over 54 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2031-03-03, deposit $198.34; about $113.25 a month; paid today $311.59.",
-      "90-day path: lowest with the purchase $22,884.34 on 2026-10-07; without it $23,195.93 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $3,000.84, size $4,750.00, protected part $3,000.84, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (small_net).",
-      "Hand check: one-off part: $311.59 <= this month's room $3,319.78 -> Fits; monthly $113.25 against a usual leftover of $3,330.08: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $3,319.78 - $311.59 paid from this month = $3,008.19 (matches)."
+      "Plan: $4,085.89 borrowed in 54 payments every month at 19.9% a year (APR), first payment 2026-10-03 (today), last payment 2031-03-03; payments 53 x $113.25 + 1 x $112.53 = $6,114.78; about $113.25 a month.",
+      "Interest: $6,114.78 - $4,085.89 = $2,028.89, 49.66% of the amount borrowed (independent annuity sum by hand: $2029.15, 49.66%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $6,313.12.",
+      "Lines (D-07): 19.9% is under 20%; 49.66% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $4,085.89 price paid once): Fits from spare money (but your safety net is small). save_vs_borrow {\"kind\":\"cash_fits\",\"left\":2292686,\"more\":202889}.",
+      "The plan fits on its own (Fits (but your safety net is small)), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $3,966.88 is 49.10% of monthly pay $8,079.19 (a freelancer's steady amount), plan 54 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $8,079.19 - bills $2,035.95 - everyday $2,713.16 (the engine's typical figure) - debt minimums $0.00 = $3,330.08. Engine: $3,330.08 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $3,319.78. Spare money judged against: $27,211.09.",
+      "Earlier audit: Price $3,966.88 + 8% tax, in a plan of 54 payments every month over 54 months at 19.9% a year (APR), first payment today (2026-10-03), last payment 2031-03-03, deposit $198.34; about $113.25 a month; paid today $311.59.",
+      "Earlier audit: 90-day path: lowest with the purchase $22,884.34 on 2026-10-07; without it $23,195.93 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $3,000.84, size $4,750.00, protected part $3,000.84, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (small_net).",
+      "Earlier audit: Hand check: one-off part: $311.59 <= this month's room $3,319.78 -> Fits; monthly $113.25 against a usual leftover of $3,330.08: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $3,319.78 - $311.59 paid from this month = $3,008.19 (matches)."
     ]
   },
   "gen:187": {
@@ -3555,37 +3754,49 @@
     ]
   },
   "gen:199": {
-    "right": "Fits, 1892.60 left that month",
-    "rightCode": "fits_month",
+    "right": "Fits, but borrowing costs more (code: Only by borrowing)",
+    "rightCode": "fits_by_borrowing",
+    "rightVariant": "borrowing_costs_more",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $607.77 is 6.77% of monthly pay $8,977.45 (pay), plan 12 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (pay) $8,977.45 - bills $2,356.57 - everyday $4,338.81 (the engine's typical figure) - debt minimums $359.09 = $1,922.98. Engine: $1,922.98 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $1,922.98. Spare money judged against: $19,069.90.",
-      "Price $607.77 + 8% tax, in a plan of 26 payments every 2 weeks over 12 months at 19.9% a year (APR), first payment one period from today (2026-10-17), last payment 2027-10-02, deposit $30.38; about $57.74 a month; paid today $30.38.",
-      "90-day path: lowest with the purchase $36,708.98 on 2026-10-31; without it $36,792.66 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $24,777.76, size $7,055.00, protected part $7,055.00, above the size (extra savings) $17,722.76, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $30.38 <= this month's room $1,922.98 -> Fits; monthly $57.74 against a usual leftover of $1,922.98: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $1,922.98 - $30.38 paid from this month = $1,892.60 (matches)."
+      "Plan: $626.01 borrowed in 26 payments every 2 weeks at 19.9% a year (APR), first payment 2026-10-17, last payment 2027-10-02; payments 25 x $26.65 + 1 x $26.49 = $692.74; about $57.74 a month.",
+      "Interest: $692.74 - $626.01 = $66.73, 10.66% of the amount borrowed (independent annuity sum by hand: $66.74, 10.66%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $723.12.",
+      "Lines (D-07): 19.9% is under 20%; 10.66% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $626.01 price paid once): Fits. save_vs_borrow {\"kind\":\"cash_fits\",\"left\":3577718,\"more\":6673}.",
+      "The plan fits on its own (Fits), it is expensive and cash fits too: \"Fits, but borrowing costs more\" (D-39a).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $607.77 is 6.77% of monthly pay $8,977.45 (pay), plan 12 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). The person's records are the same as in the FIN-01 audit (the usual month matches it); only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (pay) $8,977.45 - bills $2,356.57 - everyday $4,338.81 (the engine's typical figure) - debt minimums $359.09 = $1,922.98. Engine: $1,922.98 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $1,922.98. Spare money judged against: $19,069.90.",
+      "Earlier audit: Price $607.77 + 8% tax, in a plan of 26 payments every 2 weeks over 12 months at 19.9% a year (APR), first payment one period from today (2026-10-17), last payment 2027-10-02, deposit $30.38; about $57.74 a month; paid today $30.38.",
+      "Earlier audit: 90-day path: lowest with the purchase $36,708.98 on 2026-10-31; without it $36,792.66 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $24,777.76, size $7,055.00, protected part $7,055.00, above the size (extra savings) $17,722.76, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $30.38 <= this month's room $1,922.98 -> Fits; monthly $57.74 against a usual leftover of $1,922.98: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $1,922.98 - $30.38 paid from this month = $1,892.60 (matches)."
     ]
   },
   "gen:5": {
-    "right": "Fits (low month)",
-    "rightCode": "fits_month",
-    "rightVariant": "low_month",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $1,582.80 is 56.82% of monthly pay $2,785.64 (a freelancer's steady amount), plan 24 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). This key was not in the FIN-01 list; the person is drawn as before (the 133 keys also in the FIN-01 audit keep their usual month to the cent), and only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $2,785.64 - bills $857.41 - everyday $759.62 (the engine's typical figure) - debt minimums $0.00 = $1,168.61. Engine: $1,168.61 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $1,168.61. Spare money judged against: none (no confirmed figure).",
-      "Price $1,582.80, in a plan of 104 payments every week over 24 months at 19.9% a year (APR), first payment one period from today (2026-10-10), last payment 2028-09-30, deposit $0.00; about $80.08 a month; paid today $0.00.",
-      "90-day path: lowest with the purchase $20,002.37 on 2026-10-07; without it $20,002.37 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $18,504.58, size $1,618.00, protected part $1,618.00, above the size (extra savings) $16,886.58, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (low_month).",
-      "Hand check: one-off part: $0.00 <= this month's room $1,168.61 -> Fits; monthly $80.08 against a usual leftover of $1,168.61: within it, so the monthly part fits; the stricter leads."
+      "Plan: $1,582.80 borrowed in 104 payments every week at 19.9% a year (APR), first payment 2026-10-10, last payment 2028-09-30; payments 103 x $18.48 + 1 x $18.07 = $1,921.51; about $80.08 a month.",
+      "Interest: $1,921.51 - $1,582.80 = $338.71, 21.40% of the amount borrowed (independent annuity sum by hand: $338.80, 21.41%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $1,921.51.",
+      "Lines (D-07): 19.9% is under 20%; 21.40% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $1,582.80 price paid once): asks for a figure first (Needs a figure first). No comparison line (the cash route asks first).",
+      "The plan fits on its own (Fits (low month)) and it is expensive; paying at once asks first, so cash cannot be judged: \"Only by borrowing\" with no comparison (owner question 2).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $1,582.80 is 56.82% of monthly pay $2,785.64 (a freelancer's steady amount), plan 24 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). This key was not in the FIN-01 list; the person is drawn as before (the 133 keys also in the FIN-01 audit keep their usual month to the cent), and only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $2,785.64 - bills $857.41 - everyday $759.62 (the engine's typical figure) - debt minimums $0.00 = $1,168.61. Engine: $1,168.61 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $1,168.61. Spare money judged against: none (no confirmed figure).",
+      "Earlier audit: Price $1,582.80, in a plan of 104 payments every week over 24 months at 19.9% a year (APR), first payment one period from today (2026-10-10), last payment 2028-09-30, deposit $0.00; about $80.08 a month; paid today $0.00.",
+      "Earlier audit: 90-day path: lowest with the purchase $20,002.37 on 2026-10-07; without it $20,002.37 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $18,504.58, size $1,618.00, protected part $1,618.00, above the size (extra savings) $16,886.58, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (low_month).",
+      "Earlier audit: Hand check: one-off part: $0.00 <= this month's room $1,168.61 -> Fits; monthly $80.08 against a usual leftover of $1,168.61: within it, so the monthly part fits; the stricter leads."
     ]
   },
   "gen:38": {
@@ -3751,34 +3962,45 @@
     ]
   },
   "gen:136": {
-    "right": "Not yet (not covered): the 90-day path goes $2,237.52 below $0 on 31 December",
+    "right": "Not yet (not covered), ready 2027-04",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
     "verdict": "CORRECT",
-    "cause": "FIN-04 card and loan minimums on the 90-day path (05.4-20)",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Loan $11,508.40 at 12.9% (minimum $471.39) and card $587.32 at 0% (minimum $707.08), no due days: each from 2026-10-04, then 4 November and 4 December: $1,178.47 three times = $3,535.41 inside the 90 days.",
-      "Plan: deposit $1,526.13 today, then 13 weekly payments of $2,418.34 (last $2,418.28) from 3 October to 26 December, 0%. With the minimums on the path the account is lowest at -$2,237.52 on 31 December; before this fix (no minimums on the path) the same day was at about $1,297.89 (-$2,237.52 + $3,535.41), above $0, so the one-off part fitted and the monthly part (\"Short each month\") led.",
-      "No overdraft; the $6,195 safety net is locked (D-61). The next pay after 31 December is 1 January, outside the 90 days, so \"not covered\". D-68 does not apply: the path goes below $0.",
-      "Test-data note: the generator gave the card a $707.08 minimum on a $587.32 balance, and the engine takes the minimum every month without stopping at the balance (owner question 3). Capping it would leave the path at about -$703.60: still Not yet."
+      "Plan: $31,438.36 borrowed in 13 payments every week at 0% a year (APR), first payment 2026-10-03 (today), last payment 2026-12-26; payments 12 x $2,418.34 + 1 x $2,418.28 = $31,438.36; about $10,479.47 a month.",
+      "Interest: $31,438.36 - $31,438.36 = $0.00, 0.00% of the amount borrowed (independent annuity sum by hand: $0.00, 0.00%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $32,964.49.",
+      "Lines (D-07): 0% is under 20%; 0.00% is under 10% of the amount borrowed. Not expensive.",
+      "Cash route (the same $31,438.36 price paid once): asks for a figure first (Needs a figure first). No comparison line (the cash route asks first).",
+      "Ready date (FIN-05, planReadyBy, BR-12's whole-cost rule): all 13 payments land inside the 90 days, so it waits for the whole $31,438.36; spare money is not known (0 counted): $31,438.36 / $5,589.98 = 5.6, so 6 months from October: April 2027 (before: payday, 1 November, which read the day-one payment). READY DATE MOVED; not in the 36 for the same reason.",
+      "D-48 lines on the answer: net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Loan $11,508.40 at 12.9% (minimum $471.39) and card $587.32 at 0% (minimum $707.08), no due days: each from 2026-10-04, then 4 November and 4 December: $1,178.47 three times = $3,535.41 inside the 90 days.",
+      "Earlier audit: Plan: deposit $1,526.13 today, then 13 weekly payments of $2,418.34 (last $2,418.28) from 3 October to 26 December, 0%. With the minimums on the path the account is lowest at -$2,237.52 on 31 December; before this fix (no minimums on the path) the same day was at about $1,297.89 (-$2,237.52 + $3,535.41), above $0, so the one-off part fitted and the monthly part (\"Short each month\") led.",
+      "Earlier audit: No overdraft; the $6,195 safety net is locked (D-61). The next pay after 31 December is 1 January, outside the 90 days, so \"not covered\". D-68 does not apply: the path goes below $0.",
+      "Earlier audit: Test-data note: the generator gave the card a $707.08 minimum on a $587.32 balance, and the engine takes the minimum every month without stopping at the balance (owner question 3). Capping it would leave the path at about -$703.60: still Not yet."
     ]
   },
   "gen:140": {
-    "right": "Fits (but no safety net), 373.52 left that month",
-    "rightCode": "fits_month",
-    "rightVariant": "no_net",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $2,014.74 is 164.17% of monthly pay $1,227.23 (a freelancer's steady amount), plan 60 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). This key was not in the FIN-01 list; the person is drawn as before (the 133 keys also in the FIN-01 audit keep their usual month to the cent), and only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (no pay series; the freelancer's steady amount) $1,227.23 - bills $286.80 - everyday $425.05 (the engine's typical figure) - debt minimums $24.54 = $490.84. Engine: $490.84 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $490.84. Spare money judged against: none (no confirmed figure).",
-      "Price $2,014.74, in a plan of 130 payments every 2 weeks over 60 months at 4.9% a year (APR), first payment today (2026-10-03), last payment 2031-09-13, deposit $100.73; about $35.95 a month; paid today $117.32.",
-      "90-day path: lowest with the purchase $2,059.19 on 2026-10-07; without it $2,176.51 on 2026-10-07. Cash check: ok.",
-      "Safety net: saved $0.00, size $737.00, protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (no_net).",
-      "Hand check: one-off part: $117.32 <= this month's room $490.84 -> Fits; monthly $35.95 against a usual leftover of $490.84: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $490.84 - $117.32 paid from this month = $373.52 (matches)."
+      "Plan: $1,914.01 borrowed in 130 payments every 2 weeks at 4.9% a year (APR), first payment 2026-10-03 (today), last payment 2031-09-13; payments 129 x $16.59 + 1 x $15.53 = $2,155.64; about $35.95 a month.",
+      "Interest: $2,155.64 - $1,914.01 = $241.63, 12.62% of the amount borrowed (independent annuity sum by hand: $241.76, 12.63%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $2,256.37.",
+      "Lines (D-07): 4.9% is under 20%; 12.62% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $1,914.01 price paid once): asks for a figure first (Needs a figure first). No comparison line (the cash route asks first).",
+      "The plan fits on its own (Fits (but no safety net)) and it is expensive; paying at once asks first, so cash cannot be judged: \"Only by borrowing\" with no comparison (owner question 2).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $2,014.74 is 164.17% of monthly pay $1,227.23 (a freelancer's steady amount), plan 60 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). This key was not in the FIN-01 list; the person is drawn as before (the 133 keys also in the FIN-01 audit keep their usual month to the cent), and only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (no pay series; the freelancer's steady amount) $1,227.23 - bills $286.80 - everyday $425.05 (the engine's typical figure) - debt minimums $24.54 = $490.84. Engine: $490.84 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $490.84. Spare money judged against: none (no confirmed figure).",
+      "Earlier audit: Price $2,014.74, in a plan of 130 payments every 2 weeks over 60 months at 4.9% a year (APR), first payment today (2026-10-03), last payment 2031-09-13, deposit $100.73; about $35.95 a month; paid today $117.32.",
+      "Earlier audit: 90-day path: lowest with the purchase $2,059.19 on 2026-10-07; without it $2,176.51 on 2026-10-07. Cash check: ok.",
+      "Earlier audit: Safety net: saved $0.00, size $737.00, protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits (no_net).",
+      "Earlier audit: Hand check: one-off part: $117.32 <= this month's room $490.84 -> Fits; monthly $35.95 against a usual leftover of $490.84: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $490.84 - $117.32 paid from this month = $373.52 (matches)."
     ]
   },
   "gen:145": {
@@ -3811,20 +4033,26 @@
     ]
   },
   "gen:154": {
-    "right": "Fits, 787.80 left that month",
-    "rightCode": "fits_month",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "05.4-55 D-69 new purchase; fits this month's room",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Inputs regenerated by 05.4-55 (D-69): price $1,408.56 is 21.93% of monthly pay $6,422.99 (pay), plan 39 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). This key was not in the FIN-01 list; the person is drawn as before (the 133 keys also in the FIN-01 audit keep their usual month to the cent), and only the purchase is new, so before and after are different purchases.",
-      "Usual month by hand: money in (pay) $6,422.99 - bills $2,716.92 - everyday $2,895.26 (the engine's typical figure) - debt minimums $0.00 = $810.81. Engine: $810.81 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $798.32. Spare money judged against: none (no confirmed figure).",
-      "Price $1,408.56 + 8% tax, in a plan of 169 payments every week over 39 months at 9.9% a year (APR), first payment today (2026-10-03), last payment 2029-12-22, deposit $0.00; about $45.59 a month; paid today $10.52.",
-      "90-day path: lowest with the purchase $37,460.21 on 2026-10-31; without it $37,512.81 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $33,784.92, size $5,613.00, protected part $5,613.00, above the size (extra savings) $28,171.92, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits.",
-      "Hand check: one-off part: $10.52 <= this month's room $798.32 -> Fits; monthly $45.59 against a usual leftover of $810.81: within it, so the monthly part fits; the stricter leads.",
-      "Month left after: $798.32 - $10.52 paid from this month = $787.80 (matches)."
+      "Plan: $1,521.24 borrowed in 169 payments every week at 9.9% a year (APR), first payment 2026-10-03 (today), last payment 2029-12-22; payments 168 x $10.52 + 1 x $9.58 = $1,776.94; about $45.59 a month.",
+      "Interest: $1,776.94 - $1,521.24 = $255.70, 16.81% of the amount borrowed (independent annuity sum by hand: $255.88, 16.82%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $1,776.94.",
+      "Lines (D-07): 9.9% is under 20%; 16.81% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $1,521.24 price paid once): asks for a figure first (Needs a figure first). No comparison line (the cash route asks first).",
+      "The plan fits on its own (Fits) and it is expensive; paying at once asks first, so cash cannot be judged: \"Only by borrowing\" with no comparison (owner question 2).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first.",
+      "Earlier audit: Inputs regenerated by 05.4-55 (D-69): price $1,408.56 is 21.93% of monthly pay $6,422.99 (pay), plan 39 months; inside the D-69 draw (0.1% to 1,500% of pay; 3 to 60 months). This key was not in the FIN-01 list; the person is drawn as before (the 133 keys also in the FIN-01 audit keep their usual month to the cent), and only the purchase is new, so before and after are different purchases.",
+      "Earlier audit: Usual month by hand: money in (pay) $6,422.99 - bills $2,716.92 - everyday $2,895.26 (the engine's typical figure) - debt minimums $0.00 = $810.81. Engine: $810.81 (matches).",
+      "Earlier audit: Check date 2026-10-03. This month left before the purchase: $798.32. Spare money judged against: none (no confirmed figure).",
+      "Earlier audit: Price $1,408.56 + 8% tax, in a plan of 169 payments every week over 39 months at 9.9% a year (APR), first payment today (2026-10-03), last payment 2029-12-22, deposit $0.00; about $45.59 a month; paid today $10.52.",
+      "Earlier audit: 90-day path: lowest with the purchase $37,460.21 on 2026-10-31; without it $37,512.81 on 2026-10-31. Cash check: ok.",
+      "Earlier audit: Safety net: saved $33,784.92, size $5,613.00, protected part $5,613.00, above the size (extra savings) $28,171.92, locked (default, D-61).",
+      "Earlier audit: Unlocked, the answer would be the same: Fits.",
+      "Earlier audit: Hand check: one-off part: $10.52 <= this month's room $798.32 -> Fits; monthly $45.59 against a usual leftover of $810.81: within it, so the monthly part fits; the stricter leads.",
+      "Earlier audit: Month left after: $798.32 - $10.52 paid from this month = $787.80 (matches)."
     ]
   },
   "gen:171": {
@@ -3985,16 +4213,22 @@
     ]
   },
   "persona:sam:900000:plan": {
-    "right": "Fits, but tight each month (code: Fits)",
-    "rightCode": "fits_month",
-    "rightVariant": "tight",
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
     "verdict": "CORRECT",
-    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
     "notes": [
-      "Check date 2026-10-03. Plan: $9,000 in 48 payments of $219.30 every month over 48 months, at 7.9% a year (APR), first payment 2026-11-03; nothing paid today.",
-      "Usual room by hand: pay $4,000 - bills $1,800 - everyday $1,475 - regular saving $300 = $425. $219.30 / $425 = 51.6% (not more than 80%).",
-      "Room left each month: $425 - $219.30 = $205.70, under the floor $327.50 (a tenth of $1,800 + $1,475 = $3,275). So \"Fits, but tight each month\".",
-      "Before: Fits (low month): September left $50, under $219.30. The low-month fact still shows; tight leads it (D-59, 05.4-21 variant order)."
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-03, last payment 2030-10-03; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2027-01. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2027-01\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money $2,100.00 - extra savings above the net) / $425.00 a month, rounded up, from the che: 2027-01.",
+      "The plan fits on its own (Fits (tight)), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first. The tight floor still shows ($327.50), below the borrowing caution (BR-01).",
+      "Earlier audit: Check date 2026-10-03. Plan: $9,000 in 48 payments of $219.30 every month over 48 months, at 7.9% a year (APR), first payment 2026-11-03; nothing paid today.",
+      "Earlier audit: Usual room by hand: pay $4,000 - bills $1,800 - everyday $1,475 - regular saving $300 = $425. $219.30 / $425 = 51.6% (not more than 80%).",
+      "Earlier audit: Room left each month: $425 - $219.30 = $205.70, under the floor $327.50 (a tenth of $1,800 + $1,475 = $3,275). So \"Fits, but tight each month\".",
+      "Earlier audit: Before: Fits (low month): September left $50, under $219.30. The low-month fact still shows; tight leads it (D-59, 05.4-21 variant order)."
     ]
   },
   "case:SN-10": {
@@ -4267,6 +4501,83 @@
     "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
     "notes": [
       "Usual month -£150: Short each month (FIN-06), D-63 headline; the payments savings would cover are stated (D-46). Not changed by 05.4-21."
+    ]
+  },
+  "persona:kim:900000:plan": {
+    "right": "Only by borrowing",
+    "rightCode": "fits_by_borrowing",
+    "verdict": "CORRECT",
+    "cause": "FIN-05 borrowing costed and compared (D-07, D-39a, D-39c, D-48; 05.4-22)",
+    "notes": [
+      "Plan: $9,000.00 borrowed in 48 payments every month at 7.9% a year (APR), first payment 2026-11-03, last payment 2030-10-03; payments 47 x $219.30 + 1 x $218.96 = $10,526.06; about $219.30 a month.",
+      "Interest: $10,526.06 - $9,000.00 = $1,526.06, 16.96% of the amount borrowed (independent annuity sum by hand: $1526.12, 16.96%; the cents differ only by the rounded level payment). Plan fees $0.00. Total paid $10,526.06.",
+      "Lines (D-07): 7.9% is under 20%; 16.96% is 10% or more of the amount borrowed. Expensive.",
+      "Cash route (the same $9,000.00 price paid once): Not yet (not covered), ready 2027-05. save_vs_borrow {\"kind\":\"ready\",\"readyBy\":\"2027-05\",\"more\":152606}.",
+      "Cash ready month by hand: ($9,000.00 - spare money $3,300.00 - extra savings above the net) / $900.00 a month, rounded up, from the che: 2027-05.",
+      "The plan fits on its own (Fits), it is expensive and cash is not yet: \"Only by borrowing\" (D-07, BR-01, BR-10).",
+      "D-48 lines on the answer: interest_is_a_cost, net_covers_surprises, income_or_costs_first."
+    ]
+  },
+  "case:BR-15": {
+    "right": "Fits (code: Fits), no comparison line",
+    "rightCode": "fits_month",
+    "verdict": "OWNER QUESTION 1",
+    "cause": "D-44 / the ladder names a deposit from earlier months \"Fits from spare money\" (not FIN-05)",
+    "notes": [
+      "FIN-05 part CORRECT: 70,000 at 5.5% over 300 months, 299 x ,658.04 + 1 x ,655.40; interest 27,409.36 (84.23%). A home loan skips the 10% line (D-39c) and 5.5% is under 20%, so not expensive: no borrowing caution and no save_vs_borrow. housing_cost {amount 165,804, pay 800,000, share 21}, interest_is_a_cost, net_covers_surprises and income_or_costs_first all show.",
+      "Still different: the engine says \"Fits from spare money\" (code fits_unspent) because the 0,000 deposit is more than November's ,000 room and comes from money saved in earlier months; the approved answer is a plain \"Fits\" (fits_month). The same rule gives fits_unspent everywhere else (SN-13, BR-17). Owner question 1. knownRed BR-15 re-tagged FIN-09 (its usual-month figure also waits for 05.4-24)."
+    ]
+  },
+  "case:QE-03": {
+    "right": "Fits on your answer",
+    "rightCode": "fits_on_your_answer",
+    "verdict": "WAITS FOR FIN-08 (05.4-23)",
+    "cause": "Not a borrowing rule (05.4-22)",
+    "notes": [
+      "A 0% plan: not expensive, so FIN-05 leaves its answer as judged; it now shows the two D-48 lines (net_covers_surprises, income_or_costs_first).",
+      "Its approved answer waits for FIN-08 (05.4-23) (knownRed, tag unchanged)."
+    ]
+  },
+  "case:QE-04": {
+    "right": "Fits (low month)",
+    "rightCode": "fits_month",
+    "rightVariant": "low_month",
+    "verdict": "WAITS FOR FIN-08 (05.4-23)",
+    "cause": "Not a borrowing rule (05.4-22)",
+    "notes": [
+      "A 0% plan: not expensive, so FIN-05 leaves its answer as judged; it now shows the two D-48 lines (net_covers_surprises, income_or_costs_first).",
+      "Its approved answer waits for FIN-08 (05.4-23) (knownRed, tag unchanged)."
+    ]
+  },
+  "case:QE-05": {
+    "right": "Not yet (not covered), ready 2026-12",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "WAITS FOR FIN-08 (05.4-23)",
+    "cause": "Not a borrowing rule (05.4-22)",
+    "notes": [
+      "A 0% plan: not expensive, so FIN-05 leaves its answer as judged; it now shows the two D-48 lines (net_covers_surprises, income_or_costs_first).",
+      "Its approved answer waits for FIN-08 (05.4-23) (knownRed, tag unchanged)."
+    ]
+  },
+  "case:QE-06": {
+    "right": "Short each month",
+    "rightCode": "monthly_short",
+    "verdict": "WAITS FOR FIN-15 (05.4-23)",
+    "cause": "Not a borrowing rule (05.4-22)",
+    "notes": [
+      "A 0% plan: not expensive, so FIN-05 leaves its answer as judged; it now shows the two D-48 lines (net_covers_surprises, income_or_costs_first).",
+      "Its approved answer waits for FIN-15 (05.4-23) (knownRed, tag unchanged)."
+    ]
+  },
+  "case:QE-14": {
+    "right": "Dips into your safety net",
+    "rightCode": "fits_uses_net",
+    "verdict": "WAITS FOR FIN-08 (05.4-23)",
+    "cause": "Not a borrowing rule (05.4-22)",
+    "notes": [
+      "A 0% plan: not expensive, so FIN-05 leaves its answer as judged; it now shows the two D-48 lines (net_covers_surprises, income_or_costs_first).",
+      "Its approved answer waits for FIN-08 (05.4-23) (knownRed, tag unchanged)."
     ]
   }
 }

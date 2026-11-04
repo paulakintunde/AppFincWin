@@ -32,12 +32,14 @@ const LABEL: Record<string, string> = {
   emergency_use: 'Dips into your safety net',
   fits_uses_net: 'Dips into your safety net',
   fits_uses_overdraft: 'Uses your overdraft',
+  fits_by_borrowing: 'Only by borrowing', // 05.4-22 (FIN-05)
   monthly_short: 'Short each month',
   not_yet: 'Not yet',
   needs_input: 'Needs a figure first',
 };
 // The CODE_PRECEDENCE order (05.4-18 adds fits_uses_net next to the stored-only emergency_use).
-const RANK: Record<string, number> = { fits_month: 0, fits_unspent: 1, fits_uses_net: 2, emergency_use: 3, fits_uses_overdraft: 4, monthly_short: 5, not_yet: 6, needs_input: 7 };
+// 05.4-22 (FIN-05): fits_by_borrowing sits between fits_uses_overdraft and monthly_short.
+const RANK: Record<string, number> = { fits_month: 0, fits_unspent: 1, fits_uses_net: 2, emergency_use: 3, fits_uses_overdraft: 4, fits_by_borrowing: 4.5, monthly_short: 5, not_yet: 6, needs_input: 7 };
 const VARIANT: Record<string, string> = {
   payday: 'payday',
   not_covered: 'not covered',
@@ -63,7 +65,17 @@ export const words = (a: ReviewedAnswer): string => {
   const tier = a.variant === null ? undefined : TIER_WORDS[a.variant];
   // 05.4-20 (D-39b): "Fits, but you carry costly debt" on fits_unspent.
   // 05.4-21 (FIN-07, D-40): "Fits, but tight" ("each month" on a plan; the page's tight step says which).
-  const own = a.variant === 'extra_savings' ? 'Fits from extra savings' : a.variant === 'costly_debt' ? 'Fits, but you carry costly debt' : a.variant === 'tight' ? 'Fits, but tight' : null;
+  // 05.4-22 (FIN-05, D-39a): "Fits, but borrowing costs more" on fits_by_borrowing.
+  const own =
+    a.variant === 'extra_savings'
+      ? 'Fits from extra savings'
+      : a.variant === 'costly_debt'
+        ? 'Fits, but you carry costly debt'
+        : a.variant === 'tight'
+          ? 'Fits, but tight'
+          : a.variant === 'borrowing_costs_more'
+            ? 'Fits, but borrowing costs more'
+            : null;
   const base = tier !== undefined ? `${tier} (code: ${code})` : own !== null ? `${own} (code: ${code})` : code;
   const v = a.variant === null || tier !== undefined || own !== null ? '' : ` (${VARIANT[a.variant] ?? a.variant})`;
   const left = a.afterBuyMonth === null ? '' : `, ${(a.afterBuyMonth / 100).toFixed(2)} left that month`;
@@ -554,6 +566,7 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   steps.push(...debtSteps(c, ev, res, m));
   steps.push(...(quickEstimatesStep(c, ev, m)?.lines ?? [])); // 05.4-57 (ENG-11)
   steps.push(...tightSteps(c, ev, m)); // 05.4-21 (FIN-06, FIN-07, D-40)
+  steps.push(...borrowSteps(c, ev, m)); // 05.4-22 (FIN-05, D-07, D-39a, D-39c, D-48)
   if (res.variant === 'extra_savings') steps.push('Part of it is paid from money saved above the safety net\'s size, so the headline is "Fits from extra savings" (D-62).');
   steps.push(`Engine answer: ${words({ code: res.code, variant: res.variant, afterBuyMonth: left === null ? null : (left['left'] as number) })}.`);
   return { sections, steps };
@@ -906,6 +919,7 @@ const READS: Readonly<Record<string, (c: CorpusCase) => boolean>> = {
   'ENG-11': (c) => c.inputs.typedEstimates !== null, // 05.4-57: every check with quick estimates, changed or not
   'ENG-11b': (c) => c.inputs.typedEstimates !== null, // 05.4-57 D-74
   'FIN-06': tightCloseCall, // 05.4-21: fits within twice the floor, or a plan over 60% of the room
+  'FIN-05': (c) => c.check.pay.mode === 'plan', // 05.4-22: every plan check, changed or not
 };
 
 /**
@@ -1016,6 +1030,7 @@ export function buildPage(fixId: string, changes: readonly ReviewedChange[], cas
     (fixId === 'FIN-10' ? countedOnceHtml() : '') +
     (fixId === 'ENG-11' || fixId === 'ENG-11b' ? quickEstimateCasesHtml() : '') +
     (fixId === 'FIN-06' ? tightCasesHtml() : '') +
+    (fixId === 'FIN-05' ? borrowingCasesHtml() : '') +
     readsHtml
   );
 }
@@ -1064,7 +1079,8 @@ export function tightSums(c: CorpusCase, ev: Evaluation, m: (n: number) => strin
   const res = ev.result;
   const p = ev.purchase;
   const mo = ev.month;
-  if (p === null || (res.code !== 'fits_month' && res.code !== 'fits_unspent')) return null;
+  // 05.4-22: an expensive plan's fit is fits_by_borrowing; its tight sums are the fit's own
+  if (p === null || (res.code !== 'fits_month' && res.code !== 'fits_unspent' && res.code !== 'fits_by_borrowing')) return null;
   const spend = Math.max(0, mo.recurringBills + (mo.e ?? 0));
   const line = c.inputs.tightLine ?? null;
   const floor = line !== null ? Math.max(0, line) : Math.ceil(spend / 10);
@@ -1109,7 +1125,8 @@ function tightSteps(c: CorpusCase, ev: Evaluation, m: (n: number) => string): st
   const t = tightSums(c, ev, m);
   if (t === null) return out;
   const short = mo.typicalLeft !== null && mo.typicalLeft < 0;
-  const engineTight = res.variant === 'tight';
+  // 05.4-22: under "Only by borrowing" the tight floor still shows as a fact (the borrowing caution comes first, BR-01)
+  const engineTight = res.variant === 'tight' || (res.code === 'fits_by_borrowing' && res.facts.some((f) => f.code === 'tight_floor'));
   const flag = !short && t.tight !== engineTight ? 'PAGE AND ENGINE DISAGREE: ' : '';
   if (t.plan !== null) {
     const pl = t.plan;
@@ -1168,4 +1185,119 @@ function tightCasesHtml(): string {
     );
   }
   return `<h2>Right-answer cases for short months and tight (${rows.length})</h2><p>These approved cases are not in the corpus. Their answers before this fix are in 05.4-21-FIN-06-AUDIT.md.</p><ul>${rows.join('')}</ul>`;
+}
+
+/** 05.4-22: the page's own borrowing figures for a plan (FIN-05, D-07, D-39a, D-39c), from the plan card's payment lines. */
+export interface BorrowSums {
+  readonly borrowed: number;
+  readonly paid: number;
+  readonly interest: number;
+  readonly fees: number;
+  readonly sharePct: string;
+  readonly rate: string;
+  readonly rateLine: boolean;
+  readonly shareLine: boolean;
+  readonly housing: boolean;
+  readonly expensive: boolean;
+  readonly cash: Evaluation['result'];
+  readonly cashFits: boolean;
+  readonly costsMore: number;
+}
+
+export function borrowSums(c: CorpusCase, ev: Evaluation): BorrowSums | null {
+  const pay = c.check.pay;
+  const pc = ev.planCard;
+  const s = ev.purchase?.schedule ?? null;
+  if (pay.mode !== 'plan' || pc === null || s === null) return null;
+  const borrowed = s.financed;
+  const paid = pc.lines.reduce((t, x) => t + x.count * x.amount, 0);
+  const interest = paid - borrowed;
+  const fees = pc.fees;
+  const housing = pay.housing === true;
+  const rateLine = pay.apr !== null && pay.apr * 100n >= 2000n * PERCENT_SCALE;
+  const shareLine = borrowed > 0 && interest * 10 >= borrowed;
+  const cash = evaluate(c.inputs, { ...c.check, pay: { mode: 'once' } }).result;
+  return {
+    borrowed,
+    paid,
+    interest,
+    fees,
+    sharePct: borrowed > 0 ? ((interest * 100) / borrowed).toFixed(2) : '0',
+    rate: pay.apr === null ? 'not given' : rateText(pay.apr),
+    rateLine,
+    shareLine,
+    housing,
+    expensive: borrowed > 0 && (rateLine || (!housing && shareLine)),
+    cash,
+    cashFits: cash.code === 'fits_month' || cash.code === 'fits_unspent',
+    costsMore: interest + fees,
+  };
+}
+
+/**
+ * 05.4-22 (FIN-05, D-07, D-39a, D-39c, D-48): the page's own borrowing steps: the amount borrowed, the payments added up, the
+ * interest and its share of the amount borrowed, the two lines (20% APR, 10% of the amount borrowed; a home loan skips the second),
+ * the cash route (the same price paid once: its answer, its ready date or what it leaves) and what borrowing costs on top, then the
+ * headline the rule gives. A disagreement with the engine is said in capitals.
+ */
+export function borrowSteps(c: CorpusCase, ev: Evaluation, m: (n: number) => string): string[] {
+  const b = borrowSums(c, ev);
+  const res = ev.result;
+  if (b === null || res.code === 'needs_input') return [];
+  const out: string[] = [];
+  const pc = ev.planCard as NonNullable<Evaluation['planCard']>;
+  const flagFig = b.interest !== pc.interest ? 'PAGE AND ENGINE DISAGREE: ' : '';
+  out.push(
+    `${flagFig}Borrowing (FIN-05): ${m(b.borrowed)} borrowed; the payments add up to ${pc.lines.map((x) => `${x.count} x ${m(x.amount)}`).join(' + ')} = ${m(b.paid)}, ` +
+      `so the interest is ${m(b.interest)} (${b.sharePct}% of the amount borrowed; engine ${m(pc.interest)}) and the plan's fees ${m(b.fees)}. All in, the plan costs ${m(pc.total)}.`
+  );
+  out.push(
+    `The rate is ${b.rate} a year: ${b.rateLine ? '20% or more' : 'under 20%'}. The interest is ${b.sharePct}% of the amount borrowed: ${b.shareLine ? '10% or more' : 'under 10%'}` +
+      `${b.housing ? ', but a home loan skips the 10% line (D-39c)' : ''}. So the plan is ${b.expensive ? 'expensive' : 'not expensive'} (D-07: FincWin's lines, not law).`
+  );
+  const left = b.cash.facts.find((f) => f.code === 'unspent_before_after')?.values['after'] ?? b.cash.facts.find((f) => f.code === 'month_left_after')?.values['left'];
+  const ready = b.cash.readyBy === null ? '' : `, ready ${b.cash.readyBy.kind === 'date' ? b.cash.readyBy.date : b.cash.readyBy.month}`;
+  out.push(
+    `Paying the ${m(c.check.price ?? 0)} at once instead: ${words({ code: b.cash.code, variant: b.cash.variant, afterBuyMonth: null })}${ready}` +
+      `${b.cashFits && typeof left === 'number' ? `, leaving ${m(left)}` : ''}. Borrowing costs ${m(b.costsMore)} more than paying cash (the interest and the plan's fees).`
+  );
+  const byCash = res.facts.some((f) => f.code === 'short_plan_from_cash');
+  const mon = res.parts.monthly;
+  const ownCode = mon === null || byCash ? res.parts.oneOff : (RANK[res.parts.oneOff] ?? 0) >= (RANK[mon] ?? 0) ? res.parts.oneOff : mon;
+  const fitsOwn = ['fits_month', 'fits_unspent', 'fits_uses_net', 'fits_uses_overdraft'].includes(ownCode);
+  const short = ev.month.typicalLeft !== null && ev.month.typicalLeft < 0;
+  const pageBorrowed = b.expensive && fitsOwn;
+  const flag = pageBorrowed !== (res.code === 'fits_by_borrowing') ? 'PAGE AND ENGINE DISAGREE: ' : '';
+  if (!b.expensive) out.push(`${flag}Not expensive, so the plan keeps its own answer (${LABEL[ownCode] ?? ownCode}).`);
+  else if (!fitsOwn) out.push(`${flag}Expensive, but the plan itself does not fit (${LABEL[ownCode] ?? ownCode}), so that stricter answer leads; the save-or-borrow line still shows.`);
+  else if (b.cash.code === 'needs_input') out.push(`${flag}Expensive and the plan fits, but paying at once asks for a figure first: "Only by borrowing", with no comparison.`);
+  else out.push(`${flag}Expensive and the plan fits (${LABEL[ownCode] ?? ownCode}): ${b.cashFits ? 'cash fits too, so "Fits, but borrowing costs more" (D-39a)' : 'cash does not fit yet, so "Only by borrowing"'}${short ? '; the usual month is already short, so its D-63 / D-65 headline leads' : ''}.`);
+  const d48 = ['interest_is_a_cost', 'net_covers_surprises', 'income_or_costs_first'].filter((k) => res.facts.some((f) => f.code === k));
+  out.push(`The borrowing lines on every plan answer (D-48): ${d48.join(', ')}${b.interest > 0 ? '' : ' (0%: no interest line)'}.`);
+  return out;
+}
+
+/**
+ * 05.4-22: the approved right-answer cases on a plan (borrowing, the debts and quick-estimates plans). They are not in the corpus,
+ * so they show here with the engine's answer now, the approved answer and the full breakdown (with the borrowing steps).
+ */
+function borrowingCasesHtml(): string {
+  const rows: string[] = [];
+  for (const rc of loadCases().filter((x) => x.status === 'approved' && x.fixture.check.pay.mode === 'plan')) {
+    const { inputs, check } = toEngineInputs(rc.fixture);
+    const c: CorpusCase = { key: `case:${rc.id}`, label: `${rc.id} ${rc.persona}`, inputs, check };
+    const r = evaluate(inputs, check).result;
+    const left = r.facts.find((f) => f.code === 'month_left_after')?.values['left'];
+    const b = breakdown(c);
+    const ready = (x: string | null): string => (x === null ? '' : `, ready ${x}`);
+    const got = r.readyBy === null ? null : r.readyBy.kind === 'date' ? r.readyBy.date : r.readyBy.month;
+    const same = r.code === rc.expected.code && r.variant === rc.expected.variant && got === rc.expected.readyBy;
+    rows.push(
+      `<li><b>${esc(rc.id)} ${esc(rc.persona)}</b><br>Engine now: ${esc(words({ code: r.code, variant: r.variant, afterBuyMonth: typeof left === 'number' ? left : null }))}${esc(ready(got))}<br>` +
+        `Approved right answer: ${esc(words({ code: rc.expected.code, variant: rc.expected.variant, afterBuyMonth: rc.expected.afterBuy.month }))}${esc(ready(rc.expected.readyBy))}${same ? ' (same code, variant and ready date)' : ' (DIFFERENT: see the audit box)'}` +
+        auditHtml(auditOf(c.key)) +
+        `<details><summary>Situation and full breakdown</summary>${situationHtml(c)}${sectionsHtml(b.sections)}<h4>Step by step</h4><ol>${b.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol></details></li>`
+    );
+  }
+  return `<h2>Right-answer cases on a plan (${rows.length})</h2><p>These approved cases are not in the corpus. Before this fix every one asked the pause question first (the fixture mapped no first payment); their answers now are above.</p><ul>${rows.join('')}</ul>`;
 }

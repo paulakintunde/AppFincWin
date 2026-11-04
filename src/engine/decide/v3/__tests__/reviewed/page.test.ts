@@ -68,7 +68,7 @@ describe('reviewed page', () => {
   it('says every line of the answer in the en.ts wording: the Riley plan shows the depletion lines (D-54, D-63)', () => {
     const says = text(rowsOf('persona:riley:900000:plan', 'What the answer says'));
     expect(says).toContain('Your usual month, already $300.00 overspent');
-    expect(says).toContain('This plan costs $1,526.06 in interest');
+    expect(says).toContain('This plan costs about $1,526.06 in interest');
     expect(says).toContain('No: your month is already short');
     expect(says).not.toContain('{{');
   });
