@@ -2,10 +2,6 @@
   "topic": "quick-estimates",
   "red": [
     {
-      "id": "QE-01",
-      "fixId": "FIN-07"
-    },
-    {
       "id": "QE-03",
       "fixId": "FIN-08"
     },
@@ -20,10 +16,6 @@
     {
       "id": "QE-06",
       "fixId": "FIN-15"
-    },
-    {
-      "id": "QE-08",
-      "fixId": "FIN-09"
     },
     {
       "id": "QE-09",

@@ -23,6 +23,7 @@ describe('verdict table (I22 one code one text)', () => {
         'monthly_short.month_already_short', 'not_yet.month_already_short', 'emergency_use.month_already_short',
         'fits_month.month_short_small', 'fits_unspent.month_short_small', 'fits_month.month_short_moderate', 'fits_unspent.month_short_moderate',
         'fits_unspent.month_short_moderate_extra',
+        'fits_month.tight', 'fits_unspent.tight_plan', 'fits_month.tight_once', 'fits_unspent.tight',
       ].sort()
     );
     const rows = Object.values(VERDICT_TABLE);
@@ -48,6 +49,8 @@ describe('verdict table (I22 one code one text)', () => {
       // 05.4 D-65: Small and Moderate are one answer each on either cash-fit code.
       ['fits_month.month_short_small', 'fits_unspent.month_short_small'],
       ['fits_month.month_short_moderate', 'fits_unspent.month_short_moderate'],
+      // 05.4 FIN-07: "Fits, but tight each month" is one answer on either fit code of a plan.
+      ['fits_month.tight', 'fits_unspent.tight_plan'],
     ];
     for (const [a, b] of SHARED) expect(VERDICT_TABLE[a!]).toEqual(VERDICT_TABLE[b!]);
     const distinct = rows.length - SHARED.length;
@@ -88,6 +91,14 @@ describe('verdict table (I22 one code one text)', () => {
     for (const k of ['fits_month.month_short_small', 'fits_month.month_short_moderate', 'fits_unspent.month_short_moderate_extra'] as const) {
       expect(VERDICT_TABLE[k].tone).toBe('caution');
     }
+    // 05.4 FIN-07 / D-40: tight, caution tone; the plan row unless the check is paid once (or judged by cash, D-68)
+    expect(verdictRowFor('fits_month', 'tight')).toBe(VERDICT_TABLE['fits_month.tight']);
+    expect(verdictRowFor('fits_unspent', 'tight')).toBe(VERDICT_TABLE['fits_unspent.tight_plan']);
+    expect(verdictRowFor('fits_month', 'tight', true)).toBe(VERDICT_TABLE['fits_month.tight_once']);
+    expect(verdictRowFor('fits_unspent', 'tight', true)).toBe(VERDICT_TABLE['fits_unspent.tight']);
+    expect(verdictRowFor('fits_uses_net', 'tight')).toBe(VERDICT_TABLE.fits_uses_net);
+    expect(verdictRowFor('monthly_short', 'tight', true)).toBe(VERDICT_TABLE.monthly_short);
+    for (const k of ['fits_month.tight', 'fits_unspent.tight_plan', 'fits_month.tight_once', 'fits_unspent.tight'] as const) expect(VERDICT_TABLE[k].tone).toBe('caution');
     expect(verdictRowFor('fits_uses_net', null)).toBe(VERDICT_TABLE.fits_uses_net);
     expect(verdictRowFor('fits_uses_net', 'protection_off')).toBe(VERDICT_TABLE['fits_uses_net.protection_off']);
     for (const k of ['fits_month.no_net', 'fits_month.small_net', 'fits_unspent.no_net', 'fits_unspent.small_net', 'fits_uses_net', 'fits_uses_net.protection_off'] as const) {
@@ -135,6 +146,7 @@ describe('verdict table (I22 one code one text)', () => {
         'usual_month_short', 'depletion_payment', 'plan_makes_short', 'price_over_net', 'net_lasts', 'net_lasts_without', 'interest_is_a_cost',
         'balanced_month_room', 'month_balance_gap', 'month_short_fits', 'money_lasts_shorter', 'short_plan_from_cash',
         'debt_interest_cost', 'debt_more', 'housing_cost', 'joint_loan_risk', 'debt_due_day_assumed', 'card_instead', 'ask_debts_not_recorded',
+        'tight_floor',
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

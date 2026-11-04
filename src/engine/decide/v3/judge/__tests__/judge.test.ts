@@ -726,6 +726,11 @@ describe('judge: properties', () => {
         if (j.month.typicalLeft !== null && j.month.typicalLeft < 0) {
           expect(['month_already_short', 'month_short_small', 'month_short_moderate', 'month_short_moderate_extra']).toContain(r.variant);
         }
+        // 05.4-21 (FIN-07, D-59): tight leads low_month; the low-month fact still shows under it
+        else if (r.variant === 'tight') {
+          expect(r.facts.map((f) => f.code)).toContain('tight_floor');
+          if (M > 0 && low !== null && low.left - M < 0) expect(r.facts.map((f) => f.code)).toContain('low_month');
+        }
         else if (M > 0 && low !== null && low.left - M < 0) expect(r.variant).toBe('low_month');
         else expect(r.variant).toBeNull();
       }),
@@ -1260,5 +1265,101 @@ describe('05.4 D-56: the overdraft split names extra savings and the safety net 
       { source: 'extra_savings', amount: 20_000 },
       { source: 'emergency', amount: 70_000 },
     ]);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// 05.4-21: no new monthly payment into a short month (FIN-06 / ENG-06) and the tight caution (FIN-07, D-40). The hand-built
+// month spends recurringBills 0 + e 100,000 a month, so the tenth floor is 10,000; its usual room is 42,500.
+// ---------------------------------------------------------------------------------------------------------------------
+
+describe('05.4-21 short month (FIN-06 / ENG-06)', () => {
+  const ctx = (p: Purchase, available: number | null) => ({ asOf: '2026-10-03', purchase: p, available: available === null ? null : mu(available), takenByOneOff: mu(0), expected: [] });
+  const planIn = (first: string) => monthlyOnly(10_000, { schedule: sched(first), runningMonthly: mu(0) });
+
+  it('a usual month at or below 0 is Short each month for any earner, before any other monthly rule', () => {
+    expect(monthlyPart(month({ typicalLeft: mu(0) }), mu(1))?.code).toBe('monthly_short');
+    expect(monthlyPart(month({ typicalLeft: mu(-5) }), mu(1))?.code).toBe('monthly_short');
+    // a seasonal earner whose lean months would carry it is still blocked by the usual month
+    const lean = leanMonth({ typicalLeft: mu(0) }, { treated: 'seasonal' });
+    expect(monthlyPart(lean, mu(1_000), ctx(planIn('2027-01-03'), 500_000))?.code).toBe('monthly_short');
+  });
+
+  it('BR-06: this month heading below 0 and the first payment this month is Short each month; next month is not blocked by it', () => {
+    expect(monthlyPart(month(), mu(10_000), ctx(planIn('2026-10-28'), -20_000))?.code).toBe('monthly_short');
+    expect(monthlyPart(month(), mu(10_000), ctx(planIn('2026-11-28'), -20_000))?.code).toBe('fits_month');
+    expect(monthlyPart(month(), mu(10_000), ctx(planIn('2026-10-28'), 0))?.code).toBe('fits_month');
+  });
+
+  it('spare money unknown: this month after its plans decides; a running cost with no schedule is not blocked by this rule', () => {
+    expect(monthlyPart(month({ monthLeft: mu(-1) }), mu(10_000), ctx(planIn('2026-10-28'), null))?.code).toBe('monthly_short');
+    expect(monthlyPart(month({ monthLeft: mu(0) }), mu(10_000), ctx(planIn('2026-10-28'), null))?.code).toBe('fits_month');
+    expect(monthlyPart(month(), mu(10_000), ctx(monthlyOnly(10_000), -20_000))?.code).toBe('fits_month');
+  });
+});
+
+describe('05.4-21 tight (FIN-07, D-40)', () => {
+  const plan = (m: number, over: Partial<Purchase> = {}) => monthlyOnly(m, { schedule: sched('2026-11-03'), runningMonthly: mu(0), ...over });
+  const factOfCode = (r: { facts: readonly { code: string; values: unknown }[] }, code: string) => r.facts.find((f) => f.code === code)?.values;
+
+  it('a plan over 80% of the usual room is tight (35,000 of 42,500 is 82%)', () => {
+    const r = judge(input({ purchase: plan(35_000) }));
+    expect([r.code, r.variant]).toEqual(['fits_month', 'tight']);
+    expect(factOfCode(r, 'tight_floor')).toEqual({ floor: 10_000, basis: 'tenth' });
+  });
+
+  it('a plan leaving under the floor is tight (33,000 leaves 9,500); leaving 10,500 at 75% is a plain fit', () => {
+    expect(judge(input({ purchase: plan(33_000) })).variant).toBe('tight');
+    const clean = judge(input({ purchase: plan(32_000) }));
+    expect([clean.code, clean.variant]).toEqual(['fits_month', null]);
+    expect(factOfCode(clean, 'tight_floor')).toBeUndefined();
+  });
+
+  it("the user's own line replaces the tenth (BR-09)", () => {
+    const r = judge(input({ purchase: plan(25_000), inputsOver: { tightLine: mu(20_000) } }));
+    expect(r.variant).toBe('tight');
+    expect(factOfCode(r, 'tight_floor')).toEqual({ floor: 20_000, basis: 'user_line' });
+    expect(judge(input({ purchase: plan(20_000), inputsOver: { tightLine: mu(20_000) } })).variant).toBeNull();
+  });
+
+  it('a plan whose deposit comes from earlier money keeps the monthly tight on fits_unspent', () => {
+    const r = judge(input({ purchase: plan(35_000, { dayOne: mu(100_000) }) }));
+    expect([r.code, r.variant]).toEqual(['fits_unspent', 'tight']);
+  });
+
+  it('a one-off leaving under the floor from spare money is tight: 240,000 - 235,000 = 5,000', () => {
+    const r = judge(input({ purchase: purchase({ dayOne: mu(235_000), whole: mu(235_000) }) }));
+    expect([r.code, r.variant]).toEqual(['fits_unspent', 'tight']);
+    expect(judge(input({ purchase: purchase({ dayOne: mu(120_000), whole: mu(120_000) }) })).variant).toBeNull();
+  });
+
+  it('spare money unknown: the one-off reads this month after its plans (42,500 - 40,000 = 2,500)', () => {
+    const r = judge(input({ funds: funds(null), purchase: purchase({ dayOne: mu(40_000), whole: mu(40_000) }) }));
+    expect([r.code, r.variant]).toEqual(['fits_month', 'tight']);
+    expect(judge(input({ funds: funds(null), purchase: purchase({ dayOne: mu(30_000), whole: mu(30_000) }) })).variant).toBeNull();
+  });
+
+  it('a one-off never reads the 80% share: all of the month with plenty of spare money left is a plain fit', () => {
+    const r = judge(input({ purchase: purchase({ dayOne: mu(42_500), whole: mu(42_500) }) }));
+    expect([r.code, r.variant]).toEqual(['fits_month', null]);
+  });
+
+  it('never on Dips into your safety net (D-50 (2))', () => {
+    const r = judge(input({ net: FULL_NET, purchase: purchase({ dayOne: mu(400_000), whole: mu(400_000) }) }));
+    expect(r.code).toBe('fits_uses_net');
+    expect(r.variant).toBeNull();
+    expect(factOfCode(r, 'tight_floor')).toBeUndefined();
+  });
+
+  it('a month-short headline leads, and the floor line is left out under it', () => {
+    const r = judge(input({ month: month({ typicalLeft: mu(-1_000) }), purchase: purchase({ dayOne: mu(40_000), whole: mu(40_000) }) }));
+    expect(r.variant).toBe('month_short_moderate'); // 40,000 eats more than a month of the 1,000 shortfall
+    expect(factOfCode(r, 'tight_floor')).toBeUndefined();
+  });
+
+  it('a losing low_month keeps its fact under tight', () => {
+    const r = judge(input({ month: month({ low: { month: '2026-09', left: mu(1_000), reason: 'lowest' } }), purchase: plan(35_000) }));
+    expect(r.variant).toBe('tight');
+    expect(factOfCode(r, 'low_month')).toEqual({ month: '2026-09', left: 1_000, monthly: 35_000 });
   });
 });

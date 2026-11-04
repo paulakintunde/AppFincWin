@@ -3498,6 +3498,22 @@ const en = {
           title: 'This fits from your unspent money.',
           body: '{{month}}’s money covers {{fromMonth}} of it. {{after}} of unspent money stays. Your emergency fund is untouched.',
         },
+        // 05.4 FIN-07 / D-40 (UX-03): tight. Plans lead with the usual month once payments start; one-offs with this month.
+        fitsMonthTight: {
+          chip: 'Fits, but tight each month',
+          title: 'This fits, but it is tight each month.',
+          body: 'This leaves {{left}} each month once payments start.',
+        },
+        fitsMonthTightOnce: {
+          chip: 'Fits, but tight',
+          title: 'This fits, but it is tight.',
+          body: '{{month}} would still leave about {{left}}.',
+        },
+        fitsUnspentTight: {
+          chip: 'Fits, but tight',
+          title: 'This fits from spare money, but it is tight.',
+          body: '{{month}} would still leave about {{left}}.',
+        },
         fitsUnspentLowMonth: {
           chip: 'Fits, a low month is tight',
           title: 'This fits from unspent money, though a low month could be tight.',
@@ -3660,6 +3676,9 @@ const en = {
         debt_due_day_assumed: 'Your {{debt}} minimum of {{amount}} is counted as due tomorrow, because its due day is not set.',
         card_instead: 'Putting this {{price}} toward the card instead would cut its interest by about {{saved}} a month.',
         ask_debts_not_recorded: 'No loan, card, other debt or overdraft is recorded. Do you have any?',
+        // 05.4 FIN-07 / D-40: basis 'tenth' reads tight_floor, 'user_line' reads tight_floor_user_line.
+        tight_floor: 'That is under {{floor}}, a tenth of what you usually spend in a month.',
+        tight_floor_user_line: 'That is under the {{floor}} line you set.',
         ask_debts_not_recorded_loan: 'No loan or other debt is recorded. Do you have one?',
         ask_debts_not_recorded_card: 'No card is recorded. Do you have one?',
         ask_debts_not_recorded_overdraft: 'No overdraft is recorded. Do you have one?',

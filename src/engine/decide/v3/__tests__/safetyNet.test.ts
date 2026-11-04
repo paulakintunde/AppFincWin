@@ -146,13 +146,16 @@ describe('the variant order on a fit (05.4-12 revision notes section 1)', () => 
 
   it('low_month wins over no_net / small_net; the losers stay in order', () => {
     // D-63 first; D-65's tiers next (exclusive, the judge picks one)
-    expect(FIT_VARIANT_ORDER).toEqual(['month_already_short', 'month_short_moderate_extra', 'month_short_moderate', 'month_short_small', 'low_month', 'costly_debt', 'extra_savings', 'no_net', 'small_net']);
+    expect(FIT_VARIANT_ORDER).toEqual(['month_already_short', 'month_short_moderate_extra', 'month_short_moderate', 'month_short_small', 'tight', 'low_month', 'costly_debt', 'extra_savings', 'no_net', 'small_net']);
     // 05.4-20 (D-39b): costly_debt leads the money's source and the net cautions; its fact still shows when it loses
     expect(fitVariant(['extra_savings', 'costly_debt', 'small_net'])).toEqual({ variant: 'costly_debt', losers: ['extra_savings', 'small_net'] });
     expect(fitVariant(['costly_debt', 'low_month'])).toEqual({ variant: 'low_month', losers: ['costly_debt'] });
     expect(fitVariant(['extra_savings', 'low_month'])).toEqual({ variant: 'low_month', losers: ['extra_savings'] });
     expect(fitVariant(['no_net', 'low_month'])).toEqual({ variant: 'low_month', losers: ['no_net'] });
     expect(fitVariant(['small_net'])).toEqual({ variant: 'small_net', losers: [] });
+    // 05.4-21 (FIN-07, D-59): tight leads low_month and every safety-net caution; a month-short headline leads tight
+    expect(fitVariant(['no_net', 'low_month', 'tight', 'costly_debt'])).toEqual({ variant: 'tight', losers: ['low_month', 'costly_debt', 'no_net'] });
+    expect(fitVariant(['tight', 'month_short_small'])).toEqual({ variant: 'month_short_small', losers: ['tight'] });
     expect(fitVariant([])).toEqual({ variant: null, losers: [] });
     expect(fitVariant(['payday'])).toEqual({ variant: null, losers: [] });
   });

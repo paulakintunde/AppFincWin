@@ -247,3 +247,11 @@ export const DEBT_FACT_LINES = 2; // D-08
 // Cite: D-72 (05.4-CONTEXT, owner 2026-11-04): the costly-debt caution needs the money from earlier months to cut the debt's
 // interest by at least 1.00 a month (100 minor units of its currency). FincWin choice.
 export const COSTLY_SAVING_MIN = 100; // D-72
+
+// Cite: FIN-07 (05.4 fix plan Theme A) and the owner's tight rule (05.4-CONTEXT, 2026-11-01): a new monthly payment that takes more
+// than 80% of the usual monthly room is "Fits, but tight each month". In basis points of the room. FincWin choice.
+export const TIGHT_SHARE_BP = 8000; // FIN-07
+
+// Cite: FIN-07, D-40 (05.4-CONTEXT, owner round 1): the tight floor is a tenth of a usual month's bills plus everyday spending,
+// rounded up, unless the user set their own line. FincWin choice.
+export const TIGHT_FLOOR_DIVISOR = 10; // FIN-07, D-40

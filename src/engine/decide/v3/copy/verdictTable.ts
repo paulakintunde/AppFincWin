@@ -26,6 +26,12 @@ export const VERDICT_TABLE = Object.freeze({
   'fits_month.low_month': row('fitsMonthLowMonth', 'caution'),
   fits_unspent: row('fitsUnspent', 'fits'),
   'fits_unspent.low_month': row('fitsUnspentLowMonth', 'caution'),
+  // 05.4 FIN-07 / D-40: "Fits, but tight each month" on a plan (either fit code), "Fits, but tight" on a one-off. Same tone (design
+  // restraint). verdictRowFor picks the one-off rows when the check is paid once (or is a D-68 plan judged by cash).
+  'fits_month.tight': row('fitsMonthTight', 'caution'),
+  'fits_unspent.tight_plan': row('fitsMonthTight', 'caution'),
+  'fits_month.tight_once': row('fitsMonthTightOnce', 'caution'),
+  'fits_unspent.tight': row('fitsUnspentTight', 'caution'),
   // 05.4 FIN-01 (D-35): a fit while the safety net is empty or small is amber.
   'fits_month.no_net': row('fitsNoNet', 'caution'),
   'fits_month.small_net': row('fitsSmallNet', 'caution'),
@@ -77,9 +83,12 @@ const isUnspentVariant = (v: Variant | null): v is UnspentVariant => v !== null 
 
 /**
  * Variant-aware lookup. A null variant gives the base row (not_yet defaults to not_covered); low_month, no_net and small_net only
- * apply to fits codes, protection_off only to fits_uses_net.
+ * apply to fits codes, protection_off only to fits_uses_net. tight (05.4 FIN-07 / D-40) reads the one-off rows when `once` is true:
+ * the check is paid once, or it is a D-68 plan judged by cash (its answer carries short_plan_from_cash); else the plan row.
  */
-export function verdictRowFor(code: Code, variant: Variant | null): VerdictRow {
+export function verdictRowFor(code: Code, variant: Variant | null, once = false): VerdictRow {
+  if (variant === 'tight' && code === 'fits_month') return once ? VERDICT_TABLE['fits_month.tight_once'] : VERDICT_TABLE['fits_month.tight'];
+  if (variant === 'tight' && code === 'fits_unspent') return once ? VERDICT_TABLE['fits_unspent.tight'] : VERDICT_TABLE['fits_unspent.tight_plan'];
   // D-63: one row for every answer but an ask.
   if (variant === 'month_already_short' && code !== 'needs_input') return VERDICT_TABLE[`${code}.month_already_short` as const];
   // D-65: the Small and Moderate tiers are on a cash fit only; Moderate from extra savings on fits_unspent only.
@@ -196,6 +205,7 @@ export const FACT_KEYS = Object.freeze({
   debt_due_day_assumed: 'decide.v3.fact.debt_due_day_assumed',
   card_instead: 'decide.v3.fact.card_instead',
   ask_debts_not_recorded: 'decide.v3.fact.ask_debts_not_recorded',
+  tight_floor: 'decide.v3.fact.tight_floor', // 05.4 FIN-07 / D-40
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -348,6 +358,8 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   debt_due_day_assumed: ['debtId', 'amount'],
   card_instead: ['price', 'saved'],
   ask_debts_not_recorded: ['kind'],
+  // 05.4 FIN-07 / D-40: basis picks the copy ('tenth', or 'user_line' for the _user_line copy).
+  tight_floor: ['floor', 'basis'],
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({
@@ -379,7 +391,7 @@ export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> 
 export const COPY_RESOLVERS = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account', debtId: 'debt' } as const;
 
 /** Keys that pick a copy variant or identify a line; they need no placeholder of their own. */
-export const DISCRIMINATOR_KEYS = ['lineId', 'kind', 'unit', 'source'] as const;
+export const DISCRIMINATOR_KEYS = ['lineId', 'kind', 'unit', 'source', 'basis'] as const;
 
 /** D-48, D-49, D-54, D-58: a missing code's copy reads its placeholder values from this notice. */
 export const MISSING_VALUE_SOURCE = {

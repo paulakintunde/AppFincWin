@@ -1,13 +1,4 @@
 {
   "topic": "safety-net",
-  "red": [
-    {
-      "id": "SN-10",
-      "fixId": "FIN-07"
-    },
-    {
-      "id": "SN-11",
-      "fixId": "FIN-07"
-    }
-  ]
+  "red": []
 }

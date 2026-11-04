@@ -41,14 +41,14 @@
    },
    "expect": {
     "code": "fits_month",
-    "variant": "low_month",
+    "variant": "tight",
     "legacyState": "fits",
     "band": 3,
     "month": {
      "typicalLeft": 42500,
      "lowLeft": 5000
     },
-    "working": "Price 40,000 in 4 payments of 10,000 every 2 weeks at 0%, first payment today: day one 10,000, schedule 4 x 10,000. Monthly equivalent = divideHalfUp(10,000*52, 24) = 21,667 (26 fortnights a year over 12 months). October monthLeft 42,500 >= 10,000 on day one. Typical left 42,500-21,667 >= 0, but the low month (September, 5,000) - 21,667 < 0 -> fits_month with variant low_month. Band: 10,000 is below 40,000 -> 2+1 = 3."
+    "working": "Price 40,000 in 4 payments of 10,000 every 2 weeks at 0%, first payment today: day one 10,000, schedule 4 x 10,000. Monthly equivalent = divideHalfUp(10,000*52, 24) = 21,667 (26 fortnights a year over 12 months). October monthLeft 42,500 >= 10,000 on day one. Typical left 42,500-21,667 >= 0, but the low month (September, 5,000) - 21,667 < 0 -> fits_month with variant low_month. Band: 10,000 is below 40,000 -> 2+1 = 3. RE-BASELINED (05.4-21, FIN-07): variant low_month -> tight. 21,667 a month is 51% of the 42,500 room, but leaves 20,833 a month, under the floor of 32,750 (a tenth of 327,500). The low-month fact still shows."
    },
    "source": "D-18"
   },
@@ -95,14 +95,14 @@
    },
    "expect": {
     "code": "fits_month",
-    "variant": "low_month",
+    "variant": "tight",
     "legacyState": "fits",
     "band": 5,
     "month": {
      "typicalLeft": 42500,
      "lowLeft": 5000
     },
-    "working": "Price 240,000 = 24 x 10,000 monthly at 0%, first payment 2027-04-03 (deferred, interest during the pause: no). Day one is 0 and nothing falls due before 2027-04-03, so October needs 0 (monthLeft 42,500 >= 0). Once running, typical left 42,500-10,000 = 32,500 >= 0, but the low month 5,000-10,000 < 0 -> fits_month, variant low_month. Band 5 per the plan."
+    "working": "Price 240,000 = 24 x 10,000 monthly at 0%, first payment 2027-04-03 (deferred, interest during the pause: no). Day one is 0 and nothing falls due before 2027-04-03, so October needs 0 (monthLeft 42,500 >= 0). Once running, typical left 42,500-10,000 = 32,500 >= 0, but the low month 5,000-10,000 < 0 -> fits_month, variant low_month. Band 5 per the plan. RE-BASELINED (05.4-21, FIN-07): variant low_month -> tight. 10,000 a month leaves 42,500 - 10,000 = 32,500 a month, under the floor of 32,750 (a tenth of 327,500) by 250. The low-month fact still shows."
    },
    "source": "D-18"
   },

@@ -24,6 +24,15 @@
  * Debts (05.4 FIN-04, FIN-10, D-39b): minimums are on the cash path (debts.ts). A fits_unspent that uses money saved in earlier
  * months while a debt at 20% APR or more remains is costly_debt; the debt and housing fact lines never change the answer.
  * Monthly part: typicalLeft - M < 0 -> monthly_short; lowLeft - M < 0 -> fits with the low-month clause (I23).
+ * Short month (05.4 FIN-06 / ENG-06, settled disagreement 5): before any other monthly rule, a usual month at or below 0, or a
+ * plan whose first payment falls this month while this month is heading below 0 (the spare money after this month's plans, signed;
+ * this month's own figure when spare money is unknown), is monthly_short for any earner (I57).
+ * Tight (05.4 FIN-07, D-40, tight.ts): a fit whose monthly part takes more than 80% of the usual room or leaves under the floor
+ * (the user's line, else a tenth of a usual month's bills plus everyday spending), or a one-off (or a D-68 plan judged by cash)
+ * that leaves under the floor, carries the variant tight and the tight_floor fact. It ranks at the top of the fit variants (below
+ * the D-63 / D-65 month-short headlines) and is never put on Dips into your safety net or Uses your overdraft (D-50 (2)). The
+ * one-off money left is the spare money after this month's plans plus the extra savings still above the net's size, less the
+ * purchase (SN-11: £3,000 - £2,950 = £50); this month's own figure when spare money is unknown (I58).
  * D-68 (judge/shortPlan.ts): a plan whose payments all fall inside the 90 days, with no running cost, whose monthly part does not
  * fit and whose whole cost the one-off ladder covers as a cash fit on the dated path, is judged as that one-off; the monthly part
  * no longer leads, and the answer carries the short_plan_from_cash caution line.
@@ -49,6 +58,7 @@ import { costlyDebt, costlyFacts, debtFacts } from '../debts';
 import { depletionFacts, monthAlreadyShort, monthShortTier } from '../depletion';
 import { emergencyOf } from '../funds/emergency';
 import { NO_NET, fitVariant, netDip, type ResolvedNet } from '../safetyNet';
+import { isTight, isTightOneOff, monthlySpendingOf, tightFact, tightFloor } from '../tight';
 import { noLimitFacts, otherOverdrawnFacts, overdraftUseFacts, type OverdraftCtx } from '../overdraft';
 import { withReason } from '../confidence/reasons';
 import { dependsOnMonths, expectedFor, isLeanMonth, leanRun, seasonEveryday } from '../month/incomePattern';
@@ -450,11 +460,25 @@ function leanMonthly(month: MonthModel, M: MinorUnits, pic: IncomePicture, ctx: 
 }
 
 /**
+ * 05.4 FIN-06 / ENG-06 (settled disagreement 5): the first payment falls in this month, and this month is heading below 0. "Heading"
+ * reads the spare money after this month's plans (signed, ENG-02; earlier money below 0 counts, BR-06: $400 - $600 = -$200), or
+ * this month's own figure when spare money is unknown.
+ */
+function startsInShortMonth(month: MonthModel, ctx: MonthlyCtx): boolean {
+  const s = ctx.purchase.schedule;
+  if (s === null || yearMonthOf(s.firstDate) !== month.month) return false;
+  return (ctx.available ?? month.monthLeft) < 0;
+}
+
+/**
  * The monthly part (I23, D-36, D-37). Without `ctx`, or for a steady earner, the typical month decides: typicalLeft - M < 0
  * is monthly_short; lowLeft - M < 0 fits with the low-month clause.
  */
 export function monthlyPart(month: MonthModel, M: MinorUnits, ctx?: MonthlyCtx): MonthlyPart | null {
   if (M === 0) return null;
+  // 05.4 FIN-06 / ENG-06: no new monthly payment fits a usual month at or below 0, or a month heading below 0 that it starts in.
+  if (month.typicalLeft !== null && month.typicalLeft <= 0) return monthly('monthly_short');
+  if (ctx !== undefined && startsInShortMonth(month, ctx)) return monthly('monthly_short');
   const pic = month.incomePicture;
   if (ctx === undefined || pic === undefined || pic.treated === 'steady') return steadyMonthly(month, M);
   return leanMonthly(month, M, pic, ctx);
@@ -663,7 +687,18 @@ export function judge(j: JudgeInput): Result {
   // fact-lines switch never hides it or its own facts (I-DB05).
   const costly = code === 'fits_unspent' ? costlyDebt(j.inputs.debts, fromEarlier + fromExtra) : null;
   const costlyV = costly === null ? [] : (['costly_debt'] as const);
-  const fitV = fitVariant([...(lowClause ? (['low_month'] as const) : []), ...costlyV, ...extraV, ...(netState === null ? [] : [netState])]).variant;
+  // 05.4 FIN-07 (owner's tight rule): the monthly part of a plan takes more than 80% of the usual room, or leaves under the floor.
+  // D-40: a one-off (and a D-68 plan judged by cash, a one-off of its whole cost) leaves under the floor. Floor only, no share.
+  const spend = monthlySpendingOf(month);
+  const line = j.inputs.tightLine ?? null;
+  const fitCode = code === 'fits_month' || code === 'fits_unspent';
+  const planTight = fitCode && said !== null && said.code === 'fits_month' && month.typicalLeft !== null && isTight(month.typicalLeft, purchase.monthly, spend, line);
+  // The one-off money left (I58): spare money after this month's plans and the extra savings above the net's size, less what the
+  // purchase takes from them; this month's own figure when spare money is unknown (the envelope and the net are not spare money).
+  const oneOffLeft = mu(unspentValue === null ? month.monthLeft - fromMonth - one.netUsed : unspentValue + net.aboveSize - fromMonth - fromEarlier - fromExtra);
+  const onceTight = fitCode && (cashPlan !== null || purchase.schedule === null) && isTightOneOff(oneOffLeft, spend, line);
+  const tightV = planTight || onceTight ? (['tight'] as const) : [];
+  const fitV = fitVariant([...tightV, ...(lowClause ? (['low_month'] as const) : []), ...costlyV, ...extraV, ...(netState === null ? [] : [netState])]).variant;
   let variant: Variant | null = null;
   if (code === 'fits_uses_overdraft') variant = od?.variant ?? null;
   else if (code === 'fits_uses_net') variant = net.off ? 'protection_off' : null;
@@ -697,6 +732,8 @@ export function judge(j: JudgeInput): Result {
     }),
     ...(od?.facts ?? []),
   ];
+  // 05.4 FIN-07 / D-40: the floor a tight answer is under. Not under a D-63 / D-65 month-short headline (it reads after the tight body).
+  if (variant === 'tight' && !monthAlreadyShort(month.typicalLeft)) facts.push(tightFact(tightFloor(spend, line)));
   // D-28, D-38: below 0 with no overdraft limit recorded is Not yet, and the answer asks about it.
   if (code === 'not_yet' && (j.overdraft?.floor ?? 0) === 0 && (j.cash.kind === 'payday' || j.cash.kind === 'not_covered')) {
     facts.push(...noLimitFacts(j.inputs.accounts, j.cash.shortBy, readyBy));
@@ -739,7 +776,8 @@ export function judge(j: JudgeInput): Result {
   facts.push(...j.purchaseFacts);
   // 05.4 D-08 (FIN-10, FIN-14): the debt and housing fact lines, on unless switched off; facts only, never the code or variant.
   facts.push(...debtFacts(j.inputs.debts, month.typicalIncome, j.inputs.factLines !== false, costly?.id ?? null));
-  if (variant === 'low_month' && month.low !== null) {
+  // A losing low_month variant keeps its fact under tight (05.4-21).
+  if ((variant === 'low_month' || (variant === 'tight' && lowClause)) && month.low !== null) {
     // The low-month clause as a fact (v3 §12 #7, #22): the tight month, its leftover, and the monthly cost it cannot carry.
     facts.push({ code: 'low_month', values: { month: month.low.month, left: month.low.left, monthly: purchase.monthly } });
   }

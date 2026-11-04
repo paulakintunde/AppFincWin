@@ -2702,9 +2702,10 @@
      "lean_months_used",
      "long_history_window",
      "same_season_spending"
-    ]
+    ],
+    "variant": "tight"
    },
-   "working": "Window 2025-11..2026-10. E = median everyday = 90,000 (11 months of 90,000 and one of 150,000). Nov 2025 was a 260,000 month, so expected income for 2026-11 = 260,000 (last year, source last_year), pay due on the 5th so nothing received yet and the expected figure is used. Erest = max(round(90,000*27/30) = 81,000, 90,000 - 10,000 = 80,000) = 81,000; out = rent 120,000 + utilities 15,000 + logged 10,000 + Erest 81,000 + saving 10,000 = 236,000; monthLeft = 260,000 - 236,000 = 24,000. Plan: 60,000 at 0% over 3, first payment 2027-01-03, so 20,000 a month and day one 0. It touches Jan, Feb and Mar 2027. Each is a lean month (260,000 last year) with left = 260,000 - 135,000 bills - 90,000 everyday - 10,000 saving = 25,000. Step 1: 25,000 - 20,000 >= 0, so the payment fits the lean months; why = lean_months_judged from 2027-01 to 2027-03, leanLeft 25,000. Day one 0 fits the month. Spending 400,000 so the cash check holds. Both parts fit_month, no bridge. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 225000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 600000 fund as the money saved; only money already saved is protected, floor 225000, and the 375000 above the size is spare money. The answer is now fits_month; the purpose and the emergency mark no longer gate the net."
+   "working": "Window 2025-11..2026-10. E = median everyday = 90,000 (11 months of 90,000 and one of 150,000). Nov 2025 was a 260,000 month, so expected income for 2026-11 = 260,000 (last year, source last_year), pay due on the 5th so nothing received yet and the expected figure is used. Erest = max(round(90,000*27/30) = 81,000, 90,000 - 10,000 = 80,000) = 81,000; out = rent 120,000 + utilities 15,000 + logged 10,000 + Erest 81,000 + saving 10,000 = 236,000; monthLeft = 260,000 - 236,000 = 24,000. Plan: 60,000 at 0% over 3, first payment 2027-01-03, so 20,000 a month and day one 0. It touches Jan, Feb and Mar 2027. Each is a lean month (260,000 last year) with left = 260,000 - 135,000 bills - 90,000 everyday - 10,000 saving = 25,000. Step 1: 25,000 - 20,000 >= 0, so the payment fits the lean months; why = lean_months_judged from 2027-01 to 2027-03, leanLeft 25,000. Day one 0 fits the month. Spending 400,000 so the cash check holds. Both parts fit_month, no bridge. RE-BASELINED (05.4-18, FIN-01/FIN-02, D-35, D-41, D-49): no safety-net record, so protection is on at the starter of 225000 (1 month of essential costs: bills + typical everyday spending, no category marked essential) with the 600000 fund as the money saved; only money already saved is protected, floor 225000, and the 375000 above the size is spare money. The answer is now fits_month; the purpose and the emergency mark no longer gate the net. RE-BASELINED (05.4-21, FIN-07): variant null -> tight. 20,000 is exactly 80% of the 25,000 usual room (not more than 80%), but it leaves 5,000 a month, under the floor of 22,500 (a tenth of bills 135,000 + everyday 90,000)."
   },
   {
    "id": "ines-bridge",
@@ -3715,9 +3716,10 @@
        "short": 77000
       }
      }
-    ]
+    ],
+    "variant": "tight"
    },
-   "working": "The user confirmed steady, so the steady rules apply (D-34): six-month window, typical income = the confirmed pay series 170,000, E = 62,000, typicalLeft = 170,000 - 95,000 - 62,000 = 13,000, low month 13,000. The October money in is just what has arrived, 80,000 (no expected-income raise for a steady earner): monthLeft = 80,000 - 95,000 - 6,000 - 56,000 = -77,000 (month_heading_short 77,000). The 10,000 plan: 13,000 - 10,000 >= 0 and the low month 13,000 - 10,000 >= 0, so fits_month; day one 0 fits the month. The pay lands in full on the cash path."
+   "working": "The user confirmed steady, so the steady rules apply (D-34): six-month window, typical income = the confirmed pay series 170,000, E = 62,000, typicalLeft = 170,000 - 95,000 - 62,000 = 13,000, low month 13,000. The October money in is just what has arrived, 80,000 (no expected-income raise for a steady earner): monthLeft = 80,000 - 95,000 - 6,000 - 56,000 = -77,000 (month_heading_short 77,000). The 10,000 plan: 13,000 - 10,000 >= 0 and the low month 13,000 - 10,000 >= 0, so fits_month; day one 0 fits the month. The pay lands in full on the cash path. RE-BASELINED (05.4-21, FIN-07): variant null -> tight. 10,000 is 77% of the 13,000 usual room, under 80%, but it leaves 3,000 a month, under the floor of 15,700 (a tenth of bills 95,000 + everyday 62,000)."
   },
   {
    "id": "vic-ask",
