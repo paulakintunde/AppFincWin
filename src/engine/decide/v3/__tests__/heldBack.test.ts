@@ -47,6 +47,28 @@ describe('heldBackForBills (D-47)', () => {
     expect(heldBackForBills([yearly({ anchorDate: '2026-03-01' })], [], '2026-10-01', null).total).toBe(70_000);
   });
 
+  it('D-70 counted once: a bill the usual month already sets aside adds its monthly share to each month of cover', () => {
+    // audit-p8: $1,200 a year, no yearly-bill choice, so the usual month counts $100 a month; the leftover after it is $700.
+    // Cover a month = $700 + $100 = $800; 4 whole months from 15 Oct to 10 Mar 2027 = $3,200; not covered: max(0, $1,200 - $3,200) = $0.
+    const p8 = yearly({ anchorDate: '2026-03-10', typicalChoice: null });
+    expect(heldBackForBills([p8], [], '2026-10-15', mu(70_000)).parts[0]).toMatchObject({ builtUp: 70_000, holdBack: 0, dueDate: '2027-03-10' });
+    // the thin $10,000 version: the share is $833.33, the leftover after it -$33.33, so a month covers $800; 4 x $800 = $3,200;
+    // not covered $10,000 - $3,200 = $6,800, more than the 7 months built up ($5,833.33): the whole built-up share is held back
+    const big = yearly({ anchorDate: '2026-03-10', typicalChoice: null, amount: 1_000_000 });
+    expect(heldBackForBills([big], [], '2026-10-15', mu(-3_333)).parts[0]).toMatchObject({ builtUp: 583_333, holdBack: 583_333 });
+    // where it bites: $1,200 due in 5 months, $5,000 left after a $100 share: (5,000 + 10,000) x 5 = 75,000 cover, 45,000 held back
+    // (120000 - 5000 x 5 = 95000 would cap at the 70000 built up without D-70)
+    expect(heldBackForBills([yearly({ anchorDate: '2026-03-01', typicalChoice: 'monthly' })], [], '2026-10-01', mu(5_000)).total).toBe(45_000);
+    expect(heldBackForBills([yearly({ anchorDate: '2026-03-01', typicalChoice: null })], [], '2026-10-01', mu(5_000)).total).toBe(45_000);
+    expect(heldBackForBills([yearly({ anchorDate: '2026-03-01' })], [], '2026-10-01', mu(5_000)).total).toBe(70_000);
+    // a usual month short even before the share covers nothing; an unknown usual month covers nothing either
+    expect(heldBackForBills([yearly({ anchorDate: '2026-03-01', typicalChoice: null })], [], '2026-10-01', mu(-10_001)).total).toBe(70_000);
+    expect(heldBackForBills([yearly({ anchorDate: '2026-03-01', typicalChoice: null })], [], '2026-10-01', null).total).toBe(70_000);
+    // every 3 months: a $300 bill counts $100 a month; due in 2 months with $50 left: (50 + 100) x 2 = 300 covers it
+    const q = yearly({ id: 'water', anchorDate: '2026-09-01', amount: 30_000, cadence: { unit: 'month', every: 3 }, typicalChoice: null });
+    expect(heldBackForBills([q], [], '2026-10-01', mu(5_000)).parts[0]).toMatchObject({ builtUp: 10_000, holdBack: 0 });
+  });
+
   it('resets after each payment: the newest paid line, or the newest due date, whichever is later', () => {
     const s = yearly({ anchorDate: '2025-11-01' });
     // paid early on 14 October for the bill due 1 November: nothing built up the day after, next due 1 November 2027

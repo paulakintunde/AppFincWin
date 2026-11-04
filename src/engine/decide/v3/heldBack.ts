@@ -9,12 +9,17 @@
  *   the whole built-up share held back.
  * - Last paid: the newest paid line of the bill on or before asOf, or the newest due date on or before asOf, whichever is
  *   later. A bill with neither builds up from its first due date (the anchor), so nothing has built up before it.
+ * - D-70 (owner, 2026-11-04: "count it once"): when the usual month already sets aside the bill's monthly share (no yearly-bill
+ *   choice, or 'monthly'; a bill marked 'excluded' is left out of the usual month), that share is part of what each month before
+ *   the due date has for it: cover a month = usual leftover + monthly share (never below 0). audit-p8: $700 + $100 = $800.
+ *   An unknown usual month (null) covers nothing.
  * - A bill due this month is already in this month's bills (the month model and the suggested unspent figure), so it is
  *   not held back a second time; it still names its due date.
  */
 import type { MinorUnits } from '../../money/types';
 import { divideHalfUp } from '../../money/rounding';
 import { minorFromBigInt } from '../../payoff/types';
+import { monthlyEquivalentOf } from './plan/cadence';
 import { addMonthsClamped, cadenceDate, yearMonthOf } from './dates';
 import { liveSeriesOf } from './month/series';
 import type { BillHeldBack, BillsHeldBack, LocalDate, V3Line, V3Series } from './types';
@@ -55,7 +60,7 @@ function dueAfter(s: V3Series, paid: LocalDate): LocalDate {
 
 /**
  * The hold-back for each yearly or every-3-month bill. `lines` are the recorded lines (any month); `usualLeftover` is what the
- * usual month leaves before the purchase (null or below 0 counts as 0); `skip` holds bills someone else always pays (D-31).
+ * usual month leaves before the purchase (null = unknown, covers nothing; with the bill's own monthly share added, D-70, below 0 counts as 0); `skip` holds bills someone else always pays (D-31).
  */
 export function heldBackForBills(
   series: readonly V3Series[],
@@ -64,7 +69,6 @@ export function heldBackForBills(
   usualLeftover: MinorUnits | null,
   skip: ReadonlySet<string> = new Set()
 ): BillsHeldBack {
-  const leftover = BigInt(usualLeftover !== null && usualLeftover > 0 ? usualLeftover : 0);
   const thisMonth = yearMonthOf(asOf);
   const parts: BillHeldBack[] = [];
   let total = 0n;
@@ -84,8 +88,11 @@ export function heldBackForBills(
     const since = BigInt(paid === null ? 0 : wholeMonthsBetween(paid, asOf));
     const share = divideHalfUp(bill * since, every);
     const builtUp = share < bill ? share : bill;
+    // D-70: the usual month already sets this bill's monthly share aside unless the bill is left out of it, so it counts once.
+    const own = s.typicalChoice === 'excluded' ? 0n : BigInt(monthlyEquivalentOf(s.amount, s.cadence));
+    const perMonth = usualLeftover === null ? 0n : BigInt(usualLeftover) + own;
     // D-47: what the whole months before the due date cannot cover from the usual leftover, capped at the built-up share.
-    const uncovered = bill - leftover * BigInt(wholeMonthsBetween(asOf, dueDate));
+    const uncovered = bill - (perMonth > 0n ? perMonth : 0n) * BigInt(wholeMonthsBetween(asOf, dueDate));
     let holdBack = uncovered > 0n ? uncovered : 0n;
     if (holdBack > builtUp) holdBack = builtUp;
     if (yearMonthOf(dueDate) === thisMonth) holdBack = 0n; // already in this month's bills
