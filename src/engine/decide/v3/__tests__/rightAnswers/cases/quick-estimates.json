@@ -106,7 +106,7 @@
           "net_none_start"
         ]
       },
-      "why": "Quick estimates never stand alone: what she has recorded is counted too (D-43). The rest of her £300 everyday estimate is £80, so her £1,280 leaves £1,200 free; the £25 card minimum on 28 November comes before payday, so £1,200 - £25 - £1,150 = £25 left. With no full month of records, the floor comes from her estimates: a tenth of £1,000 bills + £300 everyday spending = £130, and £25 is under it, so the answer is \"Fits, but tight\" (D-40). Tight leads; the safety-net line shows as a fact, because her £300 net is below its £1,200 starter size (£1,000 bills + £200 essential everyday spending): \"Your safety net has £300 of its £1,200. 1 month is a start; 3 to 6 months is common.\" The card shows as a fact (about £8.30 a month in interest at 24.9%). The sentence says it is based on her quick estimates, a fact says \"No full month of records yet.\", and because no overdraft limit or loan is recorded the answer asks, without blocking: \"No loan or overdraft is recorded. Do you have one?\" with \"Add it\" and \"None\" (ask, don't block).",
+      "why": "Quick estimates never stand alone: what she has recorded is counted too (D-43). The rest of her £300 everyday estimate is £80, so her £1,280 leaves £1,200 free; the £25 card minimum on 28 November comes before payday, so £1,200 - £25 - £1,150 = £25 left. With no full month of records, the floor comes from her estimates: a tenth of £1,000 bills + £300 everyday spending = £130, and £25 is under it, so the answer is \"Fits, but tight\" (D-40). Tight leads; the safety-net line shows as a fact, because her £300 net is below its £1,225 starter size (£1,000 bills + £25 card minimum + £200 essential everyday spending, D-51): \"Your safety net has £300 of its £1,225. 1 month is a start; 3 to 6 months is common.\" The card shows as a fact (about £8.30 a month in interest at 24.9%). The sentence says it is based on her quick estimates, a fact says \"No full month of records yet.\", and because no overdraft limit or loan is recorded the answer asks, without blocking: \"No loan or overdraft is recorded. Do you have one?\" with \"Add it\" and \"None\" (ask, don't block).",
       "fixIds": [
         "ENG-11",
         "FIN-25",
@@ -117,7 +117,7 @@
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
-      "ownerReason": null,
+      "ownerReason": "D-51 puts the £25 card minimum in the starter (owner, 2026-11-03)",
       "expertNote": null
     },
     {
