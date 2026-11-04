@@ -9,10 +9,10 @@ export interface PendingRule { fixId: string; applies: (f: RightAnswerFixture) =
 const plan = (f: RightAnswerFixture): boolean => f.check.pay.mode === 'plan';
 
 export const PENDING_RULES: PendingRule[] = [
-  { fixId: 'FIN-08', applies: (f) => f.check.yourAnswer != null, note: 'your answer versus the app' },
   { fixId: 'FIN-09', applies: () => true, note: 'afterBuy block: until it lands only the code is compared' },
-  { fixId: 'FIN-15', applies: (f) => f.pay.lastThree !== null, note: 'variable pay from the last three' },
   { fixId: 'FIN-27', applies: (f) => f.check.taxPercent !== null || f.region !== null, note: 'tax by region' },
+  // 05.4-23: the FIN-08 (your answer, low months) and FIN-15 (the lower of the set-up pay and the last three) entries are deleted;
+  // plain.ts restates both (plainLowMonths, lowerPay). FIN-08 only changes plans, which stay out under BO-05 below; table.test pins them.
   // 05.4-22 (FIN-05): toEngineInputs now maps a plan's first payment in the engine's own choices (today, one period away, else a
   // deferral with no interest during the pause), and the FIN-05 entry (the expensive-borrowing rule) is deleted: its rule landed on
   // both sides, and crosscheck.test compares it on every random plan where both sides say the plan fits. Plans still stay out of

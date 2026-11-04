@@ -1,0 +1,8 @@
+# 05.4-23 FIN-08: reasons for the reviewed diff (one line per key, `key: reason`).
+# The corpus has 0 changed answers for FIN-08 (code, variant and month figure unchanged on all 310), so no key needs a reason.
+# Detail-only changes (the D-46 runway lines, not part of the answer key), for the record:
+persona:leo:900000:plan: D-46 runway line added: savings 720 cover the 99.30 monthly gap for about 7 of the 48 payments; answer unchanged (Short each month).
+persona:audit-p9:900000:plan: D-46 runway line added: savings 225.80 cover the 19.30 gap for about 11 of the 48 payments; answer unchanged.
+gen:28: D-46 runway lines added: 34 of 34 at today's gap, 21 of 34 with another 1,000 a month; answer unchanged (month already short).
+gen:52: D-46 runway lines added: 33 of 34 at today's gap, 4 of 34 with another 1,000 a month; answer unchanged (month already short).
+gen:139: D-46 runway lines added: 24 of 24 at today's gap and with another 1,000 a month; answer unchanged (Short each month).

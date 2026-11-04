@@ -84,6 +84,18 @@ function payOf(p: RightAnswerFixture['check']['pay'], asOf: string): PayV2 {
   };
 }
 
+/**
+ * 05.4-23 (FIN-08, FIN-15): one history month's pay as the case states it. A low month named in pay.lean has its own amount; the last
+ * three history months take pay.lastThree (oldest first, QE-06: "his last three pay days brought $2,700, $2,750 and $2,720"); any
+ * other month is the usual pay. back = months before asOf's month (1 = last month).
+ */
+function historyPay(p: RightAnswerFixture['pay'], m: string, back: number): number {
+  const lean = p.lean?.find((l) => l.month === m);
+  if (lean !== undefined) return lean.amount;
+  if (p.lastThree !== null && back <= 3) return p.lastThree[3 - back] as number;
+  return monthlyPay(p);
+}
+
 /** The first pay date after asOf; null when none in sight (irregular pay has no pay series, D-52). */
 function firstPayAfter(f: RightAnswerFixture): string | null {
   if (f.pay.irregular !== undefined) return null;
@@ -235,7 +247,8 @@ function billsOf(f: RightAnswerFixture, start: string): MappedBills {
 export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check: CheckV2 } {
   const ym = f.asOf.slice(0, 7);
   const start = `${monthBefore(ym, f.historyMonths)}-01`;
-  const pay = v3Series({ id: 'pay', role: 'pay', cadence: cadenceOf(f.pay.cadence), anchorDate: f.pay.cadence === 'monthly' ? start : f.pay.nextDate, amount: f.pay.amount });
+  // 05.4-23 (FIN-15): the pay series is the set-up pay when the case states one (QE-06), else the usual pay.
+  const pay = v3Series({ id: 'pay', role: 'pay', cadence: cadenceOf(f.pay.cadence), anchorDate: f.pay.cadence === 'monthly' ? start : f.pay.nextDate, amount: f.pay.setupAmount ?? f.pay.amount });
   const bills = billsOf(f, start);
   // 05.4 D-58: a regular saving is a fixed monthly 'saving' series from the everyday account, logged on its day each full month;
   // the usual month reads it as set aside (as the persona Maya does).
@@ -249,7 +262,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     const m = monthBefore(ym, i);
     const income = irr
       ? v3Line({ id: `in-${m}`, date: `${m}-${pad(Math.min(irr.day, daysIn(m)))}`, amount: irr.amounts[f.historyMonths - i] ?? 0, role: 'income', seriesId: null })
-      : v3Line({ id: `in-${m}`, date: `${m}-01`, amount: monthlyPay(f.pay), role: 'income', seriesId: 'pay' });
+      : v3Line({ id: `in-${m}`, date: `${m}-01`, amount: historyPay(f.pay, m, i), role: 'income', seriesId: 'pay' });
     months.push(
       monthOf(m, [
         income,
@@ -282,9 +295,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   // mapped when FIN-27 lands: region rules, check.taxIncluded
   // mapped when ENG-14 lands: check.runningCosts and check.closingPercent
   // mapped when FIN-07 lands: check.replaces (stops and sale)
-  // mapped when FIN-08 lands: check.yourAnswer, check.saveForIt (userLine is mapped below, 05.4-21)
-  // mapped when FIN-09 lands: pay.lastThree and pay.setupAmount
-  // mapped when FIN-08 / plan 05.4-23 lands: pay.lean (low months stated explicitly)
+  // mapped when BO-05 lands: check.saveForIt. check.yourAnswer, pay.lastThree, pay.setupAmount and pay.lean are mapped (05.4-23).
   // 05.4 FIN-03: kind, overdraft limit and rate as stated (the engine reads a limit only on checking and current accounts).
   const accounts: V3Account[] = f.accounts.map((a) => ({
     id: a.id,
@@ -372,5 +383,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     // 05.4 D-41: the need-or-want reading (words and the order of facts only).
     purpose: c.purpose == null ? null : { kind: 'preset', value: c.purpose },
   });
+  // 05.4-23 (FIN-08): the answer to "Can you cover the low months?"; absent or null = not answered.
+  if (c.yourAnswer === 'yes' || c.yourAnswer === 'no') return { inputs, check: { ...check, volatileCover: c.yourAnswer === 'yes' } };
   return { inputs, check };
 }

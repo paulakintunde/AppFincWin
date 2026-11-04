@@ -4488,23 +4488,27 @@
     ]
   },
   "case:QE-11": {
-    "right": "No: your month is already short (code: Short each month)",
+    "right": "No: your month is already short",
     "rightCode": "monthly_short",
     "rightVariant": "month_already_short",
-    "verdict": "CORRECT",
-    "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
+    "verdict": "CORRECT (unchanged code; D-46 lines added)",
+    "cause": "D-46 (05.4-23)",
     "notes": [
-      "Usual month -£150, at or below £0: no new monthly payment fits (FIN-06); D-63 headline. Not changed by 05.4-21."
+      "Before: the same answer, without the runway lines.",
+      "By hand: £3,000 - £593.55 of October still to come = £2,406.45; less the first payment £200.86 on 30 October (engine schedule; the case states £202.52, deferred-items) = £2,205.59. Gap £150 + £200.86 = £350.86: 1 + floor(£2,205.59 / £350.86) = 1 + 6 = 7 of 48; another £1,000 a month: 1 + floor(£2,205.59 / £1,350.86) = 2 of 48. Her yes does not decide it (the usual month alone does), so no rests line.",
+      "Still red only on afterBuy.usualMonth (05.4-24, FIN-09): knownRed re-tagged FIN-09."
     ]
   },
   "case:QE-12": {
-    "right": "No: your month is already short (code: Short each month)",
+    "right": "No: your month is already short",
     "rightCode": "monthly_short",
     "rightVariant": "month_already_short",
-    "verdict": "CORRECT",
-    "cause": "unchanged by 05.4-21 (FIN-06 listed in its fixIds)",
+    "verdict": "CORRECT (covered 44 of 48, further 12 of 48)",
+    "cause": "D-40 / D-46 (05.4-23)",
     "notes": [
-      "Usual month -£150: Short each month (FIN-06), D-63 headline; the payments savings would cover are stated (D-46). Not changed by 05.4-21."
+      "Before: the same answer, without covered_from_savings and further_shortfall_runway (both required by the approved case).",
+      "By hand: £16,000 - £593.55 = £15,406.45; less £200.86 on 30 October = £15,205.59 (the case: £15,203.93 with its £202.52 payment). Gap £350.86 (case £352.52): 1 + floor(15,205.59 / 350.86 = 43.3) = 44 of 48 as the case pins; another £1,000: 1 + floor(15,205.59 / 1,350.86 = 11.3) = 12 of 48 as the case pins.",
+      "Still red only on afterBuy.usualMonth (05.4-24, FIN-09): knownRed re-tagged FIN-09."
     ]
   },
   "persona:kim:900000:plan": {
@@ -4533,55 +4537,61 @@
     ]
   },
   "case:QE-03": {
-    "right": "Fits on your answer",
+    "right": "Only on your answer",
     "rightCode": "fits_on_your_answer",
-    "verdict": "WAITS FOR FIN-08 (05.4-23)",
-    "cause": "Not a borrowing rule (05.4-22)",
+    "verdict": "CORRECT (code, variant, facts)",
+    "cause": "FIN-08 (05.4-23)",
     "notes": [
-      "A 0% plan: not expensive, so FIN-05 leaves its answer as judged; it now shows the two D-48 lines (net_covers_surprises, income_or_costs_first).",
-      "Its approved answer waits for FIN-08 (05.4-23) (knownRed, tag unchanged)."
+      "Before: Fits, but no safety net (fits_month, no_net): the low September pay was not in the records and the yes was not read.",
+      "By hand: 1 low month (September, $1,500 in) of 6 is about 2 over the 12 payments; September leaves $1,500 - $1,500 - $900 = -$900, $1,100 short of the $200 payment. Savings = spare money $600 - November's own $600 + the $500 savings account = $500 < max($1,100, $2,200 - 10 x $400) = $1,100, and no safety net to lend. So the question; her yes is \"Only on your answer\" with rests_on_your_answer {$200, 12} and the user_said_cover reason; net_none_start, net_covers_surprises, income_or_costs_first shown.",
+      "Still red only on afterBuy.usualMonth (05.4-24, FIN-09): knownRed re-tagged FIN-09."
     ]
   },
   "case:QE-04": {
-    "right": "Fits (low month)",
+    "right": "Fits, a low month is tight",
     "rightCode": "fits_month",
     "rightVariant": "low_month",
-    "verdict": "WAITS FOR FIN-08 (05.4-23)",
-    "cause": "Not a borrowing rule (05.4-22)",
+    "verdict": "CORRECT (code, variant, facts)",
+    "cause": "FIN-08 (05.4-23)",
     "notes": [
-      "A 0% plan: not expensive, so FIN-05 leaves its answer as judged; it now shows the two D-48 lines (net_covers_surprises, income_or_costs_first).",
-      "Its approved answer waits for FIN-08 (05.4-23) (knownRed, tag unchanged)."
+      "Before: Fits, but no safety net (fits_month, no_net).",
+      "By hand: as QE-03, about 2 low months over 12 payments, 2 x $1,100 = $2,200. Savings $0 of earlier spare money + the $4,000 savings account = $4,000 >= $1,100 needed now (and $2,200 - $4,000 of the usual months between is below $1,100): the records alone show it fits with the low-month caution. lean_bridge {September, $1,100, 2 times, 12 payments, to November 2027, $2,200 of $4,000}; no question asked.",
+      "Still red only on afterBuy.usualMonth (05.4-24, FIN-09): knownRed re-tagged FIN-09."
     ]
   },
   "case:QE-05": {
-    "right": "Not yet (not covered), ready 2026-12",
+    "right": "Not yet, ready December 2026",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "WAITS FOR FIN-08 (05.4-23)",
-    "cause": "Not a borrowing rule (05.4-22)",
+    "verdict": "CORRECT (code, variant, ready date, facts)",
+    "cause": "FIN-08 (05.4-23)",
     "notes": [
-      "A 0% plan: not expensive, so FIN-05 leaves its answer as judged; it now shows the two D-48 lines (net_covers_surprises, income_or_costs_first).",
-      "Its approved answer waits for FIN-08 (05.4-23) (knownRed, tag unchanged)."
+      "Before: Fits, but no safety net (fits_month, no_net).",
+      "By hand: as QE-03 (savings $500 against $1,100), her no: Not yet, volatile_cover_declined. Ready when $500 + $600 a usual month reaches $1,100: ceil($600 / $600) = 1 month, December 2026 (never a bare never).",
+      "Still red only on afterBuy.usualMonth (05.4-24, FIN-09): knownRed re-tagged FIN-09."
     ]
   },
   "case:QE-06": {
     "right": "Short each month",
     "rightCode": "monthly_short",
-    "verdict": "WAITS FOR FIN-15 (05.4-23)",
-    "cause": "Not a borrowing rule (05.4-22)",
+    "verdict": "CORRECT (code, variant, reason pay_gap, facts)",
+    "cause": "FIN-15 (05.4-23)",
     "notes": [
-      "A 0% plan: not expensive, so FIN-05 leaves its answer as judged; it now shows the two D-48 lines (net_covers_surprises, income_or_costs_first).",
-      "Its approved answer waits for FIN-15 (05.4-23) (knownRed, tag unchanged)."
+      "Before: Fits, but tight each month (fits_month, tight): judged on the $3,000 set-up pay.",
+      "By hand: last 3 pays $2,700, $2,750, $2,720, middle $2,720 < $3,000, 9.33% below (over 5%): judged on $2,720, the gap named (reason pay_gap, notice pay_gap {$3,000, $2,720, 9.3}), the pay not edited. $2,720 - $1,200 - $800 = $720 left; $720 - $850 = -$130: Short each month.",
+      "New D-46 line: spare money $720 covers the $130 gap for floor($720 / $130) = 5 of the 12 payments (covered_from_savings); $720 does not cover one month of $1,130, so no further-shortfall line.",
+      "Still red only on afterBuy.usualMonth (05.4-24, FIN-09): knownRed re-tagged FIN-09."
     ]
   },
   "case:QE-14": {
     "right": "Dips into your safety net",
     "rightCode": "fits_uses_net",
-    "verdict": "WAITS FOR FIN-08 (05.4-23)",
-    "cause": "Not a borrowing rule (05.4-22)",
+    "verdict": "CORRECT (code, variant, facts)",
+    "cause": "FIN-08 (05.4-23)",
     "notes": [
-      "A 0% plan: not expensive, so FIN-05 leaves its answer as judged; it now shows the two D-48 lines (net_covers_surprises, income_or_costs_first).",
-      "Its approved answer waits for FIN-08 (05.4-23) (knownRed, tag unchanged)."
+      "Before: Fits (fits_month), with the safety net untouched.",
+      "By hand: as QE-04, but the $4,000 is her protected, unlocked safety net of $4,000: savings $0 < $1,100; the net lends $4,000 >= $1,100, so the low months dip into it, named: net_used $2,200 (2 x $1,100), net_left $1,800, lean_bridge source net. Never silently.",
+      "Still red only on afterBuy.usualMonth (05.4-24, FIN-09): knownRed re-tagged FIN-09."
     ]
   }
 }

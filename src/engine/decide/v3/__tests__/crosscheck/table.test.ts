@@ -4,7 +4,7 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed } from './plain';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
@@ -814,5 +814,37 @@ describe('05.4-21: short month and tight (FIN-06 / ENG-06, FIN-07, D-40): hand, 
     const r = engine(f).result;
     expect(r.variant).not.toBe('tight');
     expect(r.facts.map((x) => x.code)).not.toContain('tight_floor');
+  });
+});
+
+describe('plain calculator: your word, low months and the pay cut (05.4-23, FIN-08, FIN-15)', () => {
+  const fx = (id: string): RightAnswerFixture => loadCases().find((c) => c.id === id)!.fixture;
+  it('QE-03, QE-04, QE-05 and QE-14 get their approved code and variant from the plain low-month rule', () => {
+    for (const id of ['QE-03', 'QE-04', 'QE-05', 'QE-14']) {
+      const c = loadCases().find((x) => x.id === id)!;
+      const got = plainAnswer(c.fixture);
+      expect({ id, code: got.code, variant: got.variant }).toEqual({ id, code: c.expected.code, variant: c.expected.variant });
+    }
+  });
+  it('QE-03 with no answer asks; savings that carry the low months never ask', () => {
+    const f = fx('QE-03');
+    expect(plainLowMonths({ ...f, check: { ...f.check, yourAnswer: null } })?.code).toBe('needs_input');
+    expect(plainLowMonths({ ...f, accounts: f.accounts.map((a) => (a.kind === 'savings' ? { ...a, balance: 400_000 } : a)) })).toEqual({ code: 'fits_month', variant: 'low_month' });
+    // a one-off, a fortnightly plan or no low month: the low-month rule does not apply
+    expect(plainLowMonths({ ...f, check: { ...f.check, pay: { mode: 'once' } } })).toBeNull();
+    expect(plainLowMonths({ ...f, pay: { ...f.pay, lastThree: [300_000, 300_000, 300_000] } })).toBeNull();
+  });
+  it('QE-14 with protection off reads protection_off', () => {
+    const f = fx('QE-14');
+    expect(plainLowMonths({ ...f, safetyNet: { ...f.safetyNet!, protect: false } })).toEqual({ code: 'fits_uses_net', variant: 'protection_off' });
+  });
+  it('QE-06 by hand: the lower of $3,000 and the middle $2,720 is $2,720, 9.3% below (named); $720 - $850 is Short each month', () => {
+    const f = fx('QE-06');
+    expect(lowerPay(f)).toBe(272_000n);
+    expect(payGapNamed(f)).toBe(true);
+    expect(plainAnswer(f).code).toBe('monthly_short');
+    expect(payGapNamed({ ...f, pay: { ...f.pay, lastThree: [290_000, 286_000, 285_000] } })).toBe(false);
+    expect(lowerPay({ ...f, pay: { ...f.pay, lastThree: [310_000, 320_000, 330_000] } })).toBe(300_000n);
+    expect(lowerPay({ ...f, pay: { ...f.pay, lastThree: null } })).toBe(300_000n);
   });
 });

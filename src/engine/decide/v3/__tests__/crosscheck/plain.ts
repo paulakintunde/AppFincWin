@@ -3,7 +3,7 @@
  * Own integer maths on bigint minor units; percentages are parsed from strings to basis points. No floats in money.
  */
 import type { RightAnswerFixture } from '../rightAnswers/schema';
-import { TIGHT_SHARE_BP, FLOOR_DIVISOR, EXPENSIVE_APR_BP, EXPENSIVE_INTEREST_BP } from './rules';
+import { TIGHT_SHARE_BP, FLOOR_DIVISOR, EXPENSIVE_APR_BP, EXPENSIVE_INTEREST_BP, PAY_GAP_LINE_BP } from './rules';
 
 type Cents = bigint;
 export interface PlainAnswer { code: string; variant: string | null; afterBuy: number | null }
@@ -17,9 +17,27 @@ const maxC = (a: Cents, b: Cents): Cents => (a > b ? a : b);
  * short). 05.4-19: the usual month was read as one fortnight's pay before SN-09 came into the comparison.
  */
 export function monthPay(f: RightAnswerFixture): Cents {
-  if (f.pay.cadence === 'monthly' || f.pay.irregular !== undefined) return big(f.pay.amount);
+  if (f.pay.irregular !== undefined) return big(f.pay.amount);
+  if (f.pay.cadence === 'monthly') return lowerPay(f);
   const year = big(f.pay.amount) * (f.pay.cadence === 'fortnightly' ? 26n : 52n);
   return (year * 2n + 12n) / 24n;
+}
+
+/**
+ * FIN-15 (QE-06): "He is judged on the lower figure, the middle of the last three: $2,720, which is 9.3% below the set-up pay". The
+ * set-up pay is the stated set-up amount, else the usual pay; with the last three pays stated, the lower of it and their middle.
+ */
+export function lowerPay(f: RightAnswerFixture): Cents {
+  const setup = big(f.pay.setupAmount ?? f.pay.amount);
+  if (f.pay.lastThree === null) return setup;
+  const middle = [...f.pay.lastThree].sort((a, b) => a - b)[1] as number;
+  return big(middle) < setup ? big(middle) : setup;
+}
+
+/** FIN-15: "over the 5% line, so the gap is named". */
+export function payGapNamed(f: RightAnswerFixture): boolean {
+  const setup = big(f.pay.setupAmount ?? f.pay.amount);
+  return (setup - lowerPay(f)) * 10_000n > BigInt(PAY_GAP_LINE_BP) * setup;
 }
 
 /** '12.5' -> 1250 basis points, digits only, no floats. */
@@ -540,6 +558,8 @@ function plainPlanCode(f: RightAnswerFixture): PlainAnswer {
     const net = plainNet(f);
     if (planPathLow(f) + net.above + net.lend < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
     if (plainMonthlyShort(f)) return { code: 'monthly_short', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
+    const low = plainLowMonths(f);
+    if (low !== null) return { ...low, afterBuy: Number(left - big(c.pay.deposit)) };
     return { code: 'fits_month', variant: plainTightPlan(f) ? 'tight' : null, afterBuy: Number(left - big(c.pay.deposit)) };
   }
   return { code: 'needs_input', variant: null, afterBuy: null };
@@ -952,6 +972,61 @@ export function planPathLow(f: RightAnswerFixture): Cents {
 }
 
 /** The usual month's money left (pay less usual bills, everyday spending, the regular saving, D-67, and debt minimums), before any plan. */
+// --- Low months (05.4 FIN-08 / ENG-07). Restated from QE-03, QE-04, QE-05 and QE-14 and the fix plan's FIN-08 line ("Savings are tried
+// first as a bridge for low months. The question is only asked if savings can't carry it"). Not read from the engine.
+
+/** One history month's pay as the case states it (pay.lean, then pay.lastThree for the last three months, else the usual pay). */
+function statedPay(f: RightAnswerFixture, back: number): Cents {
+  const ym = f.asOf.slice(0, 7);
+  let m = ym;
+  for (let i = 0; i < back; i++) m = monthBefore(m);
+  const lean = f.pay.lean?.find((l) => l.month === m);
+  if (lean !== undefined) return big(lean.amount);
+  if (f.pay.lastThree !== null && back <= 3) return big(f.pay.lastThree[3 - back] as number);
+  return big(f.pay.amount);
+}
+
+/**
+ * QE-04: "Her records show 1 low month in the last 6: September, when $1,500 came in" ... "1 low month in the last 6 means about 2
+ * over the 12 payments (12 / 6). Each one is $1,500 - $2,400 of bills and spending - $200 = -$1,100, so about 2 x $1,100 = $2,200 of
+ * her $4,000 would come from savings." QE-05: "she needs $1,100 and has $500, and a usual month adds $600": savings are money
+ * saved from earlier months ("Her everyday account holds only November's money") and money in a savings account; this month's room
+ * is not. QE-14: savings that are her protected safety net make it "Dips into your safety net". QE-03: her yes is "Only on your
+ * answer"; QE-05: her no is Not yet. A low month is a pay more than 5% under the set-up pay, in the last 6 months (the usual-month
+ * window). Returns null when no low month falls short of the payment (the usual rules decide).
+ */
+export function plainLowMonths(f: RightAnswerFixture): Omit<PlainAnswer, 'afterBuy'> | null {
+  const c = f.check.pay;
+  if (c.mode !== 'plan' || c.every === 'fortnight' || f.pay.cadence !== 'monthly' || f.pay.irregular !== undefined) return null;
+  const M = plainPlanMonthly(f);
+  const setup = big(f.pay.setupAmount ?? f.pay.amount);
+  const out = monthPay(f) - usualLeftOf(f);
+  const window = Math.min(6, f.historyMonths);
+  const lefts: Cents[] = [];
+  for (let back = 1; back <= window; back++) {
+    const p = statedPay(f, back);
+    if ((setup - p) * 10_000n > BigInt(PAY_GAP_LINE_BP) * setup) lefts.push(p - out);
+  }
+  const short = lefts.filter((l) => l < M).length;
+  if (short === 0) return null;
+  const lowest = lefts.reduce((a, b) => (b < a ? b : a));
+  const term = BigInt(c.months);
+  const times = minC(term, maxC(1n, (BigInt(short) * term + BigInt(window) - 1n) / BigInt(window)));
+  const shortfall = M - lowest;
+  const between = maxC(0n, usualLeftOf(f) - M) * (term - times);
+  const need = maxC(shortfall, shortfall * times - between);
+  const net = plainNet(f);
+  const kept = f.accounts.filter((a) => a.kind === 'savings' && (a.use === null || a.use === 'untouched')).reduce((s, a) => s + maxC(0n, big(a.balance)), 0n);
+  const savings = freeMoney(f) - maxC(0n, leftThisMonth(f)) - big(c.deposit) + net.above + kept;
+  if (savings >= need) return { code: 'fits_month', variant: 'low_month' };
+  if (savings + net.lend >= need) return { code: 'fits_uses_net', variant: net.off ? 'protection_off' : null };
+  const yes = f.check.yourAnswer ?? null;
+  if (yes === null) return { code: 'needs_input', variant: null };
+  return yes === 'yes' ? { code: 'fits_on_your_answer', variant: null } : { code: 'not_yet', variant: 'not_covered' };
+}
+
+const minC = (a: Cents, b: Cents): Cents => (a < b ? a : b);
+
 function usualLeftOf(f: RightAnswerFixture): Cents {
   return monthPay(f) - big(f.usualMonth.bills) - usualEveryday(f) - savingAmount(f) - debtMinimums(f);
 }

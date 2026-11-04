@@ -10,6 +10,7 @@
  */
 import en from '../../../../../i18n/locales/en';
 import { PERCENT_SCALE } from '../../../../payoff/types';
+import { currencyExponent } from '../../../../money/currencyExponents';
 import { applyPurchaseFlows } from '../../cash/path';
 import { addDays, daysInYearMonth, yearMonthOf } from '../../dates';
 import { debtOutflows, debtsInMonth } from '../../debts';
@@ -569,6 +570,7 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   steps.push(...(quickEstimatesStep(c, ev, m)?.lines ?? [])); // 05.4-57 (ENG-11)
   steps.push(...tightSteps(c, ev, m)); // 05.4-21 (FIN-06, FIN-07, D-40)
   steps.push(...borrowSteps(c, ev, m)); // 05.4-22 (FIN-05, D-07, D-39a, D-39c, D-48)
+  steps.push(...payGapSteps(c, ev, m), ...lowMonthSteps(c, ev, m), ...runwaySteps(c, ev, m)); // 05.4-23 (FIN-15, FIN-08, D-46)
   if (res.variant === 'extra_savings') steps.push('Part of it is paid from money saved above the safety net\'s size, so the headline is "Fits from extra savings" (D-62).');
   steps.push(`Engine answer: ${words({ code: res.code, variant: res.variant, afterBuyMonth: left === null ? null : (left['left'] as number) })}.`);
   return { sections, steps };
@@ -923,6 +925,13 @@ const READS: Readonly<Record<string, (c: CorpusCase) => boolean>> = {
   'FIN-06': tightCloseCall, // 05.4-21: fits within twice the floor, or a plan over 60% of the room
   'FIN-05': (c) => c.check.pay.mode === 'plan', // 05.4-22: every plan check, changed or not
   'FIN-05b': (c) => c.check.pay.mode === 'plan', // 05.4-22 D-79 / D-80
+  // 05.4-23: every check with a pay gap, and every plan judged on low months or Short each month
+  'FIN-08': (c) => {
+    const ev = evaluate(c.inputs, c.check);
+    const pic = ev.month.incomePicture;
+    const lean = pic !== undefined && (pic.treated !== 'steady' || (pic.lowPay?.length ?? 0) > 0);
+    return ev.result.reasons.includes('pay_gap') || (c.check.pay.mode === 'plan' && (lean || ev.result.code === 'monthly_short'));
+  },
 };
 
 /**
@@ -1034,6 +1043,7 @@ export function buildPage(fixId: string, changes: readonly ReviewedChange[], cas
     (fixId === 'ENG-11' || fixId === 'ENG-11b' ? quickEstimateCasesHtml() : '') +
     (fixId === 'FIN-06' ? tightCasesHtml() : '') +
     (fixId === 'FIN-05' || fixId === 'FIN-05b' ? borrowingCasesHtml() : '') +
+    (fixId === 'FIN-08' ? yourWordCasesHtml() : '') +
     readsHtml
   );
 }
@@ -1313,4 +1323,170 @@ function borrowingCasesHtml(): string {
     );
   }
   return `<h2>Right-answer cases on a plan (${rows.length})</h2><p>These approved cases are not in the corpus. Before this fix every one asked the pause question first (the fixture mapped no first payment); their answers now are above.</p><ul>${rows.join('')}</ul>`;
+}
+
+/**
+ * 05.4-23 (FIN-15, D-53): the page's own pay sum. For each pay series: the last 3 pays that arrived in full months before this one,
+ * their middle, and the lower of it and the set-up pay; a gap over 5% is named. A difference from the engine's notice prints
+ * PAGE AND ENGINE DISAGREE.
+ */
+export function payGapSteps(c: CorpusCase, ev: Evaluation, m: (n: number) => string): string[] {
+  const ym = yearMonthOf(c.inputs.asOf);
+  const out: string[] = [];
+  const named = ev.result.notices.some((n) => n.code === 'pay_gap');
+  let pageNamed = false;
+  for (const s of liveSeriesOf(c.inputs.series, c.inputs.asOf, 'pay')) {
+    const arrived = c.inputs.months
+      .filter((mo) => mo.full && mo.month < ym)
+      .flatMap((mo) => mo.lines.filter((l) => l.status === 'paid' && l.role === 'income' && l.seriesId === s.id))
+      .sort((a, b) => (a.date < b.date ? -1 : 1))
+      .slice(-3);
+    if (arrived.length < 3) continue;
+    const mid = [...arrived].map((l) => l.amount as number).sort((a, b) => a - b)[1] as number;
+    const setup = s.amount as number;
+    const gapBp = mid < setup ? Math.floor(((setup - mid) * 10_000) / setup) : 0;
+    const over = (setup - mid) * 10_000 > 500 * setup;
+    pageNamed = pageNamed || over;
+    out.push(
+      `Pay (FIN-15): ${s.name ?? s.id} is set up at ${m(setup)}; the last 3 pays were ${arrived.map((l) => `${m(l.amount)} on ${l.date}`).join(', ')}, middle ${m(mid)}. ` +
+        `The usual month counts the lower, ${m(Math.min(setup, mid))}${mid < setup ? `, ${(gapBp / 100).toFixed(2)}% below the set-up pay, ${over ? 'over the 5% line, so the gap is named' : 'not over the 5% line'}` : ''}. The pay itself is not changed.`
+    );
+  }
+  if (pageNamed !== named) out.push(`PAGE AND ENGINE DISAGREE: the page ${pageNamed ? 'names' : 'does not name'} a pay gap; the engine ${named ? 'does' : 'does not'}.`);
+  return out;
+}
+
+/**
+ * 05.4-23 (FIN-08 / ENG-07, D-53): the page's own low-month sums, when the engine judged the low months. The low months and what each
+ * left are the engine's month figures; the count over the term, the need and the savings are the page's own (QE-04, QE-05).
+ */
+export function lowMonthSteps(c: CorpusCase, ev: Evaluation, m: (n: number) => string): string[] {
+  const res = ev.result;
+  const p = ev.purchase;
+  const pic = ev.month.incomePicture;
+  const bridge = res.facts.find((f) => f.code === 'lean_bridge')?.values;
+  const asked = res.missing.includes('volatile_cover_question') || res.notices.some((n) => n.code === 'income_volatile');
+  if (p === null || pic === undefined || p.monthly === 0 || (bridge === undefined && !asked) || pic.treated === 'seasonal') return [];
+  const months = pic.treated === 'steady' ? (pic.lowPay ?? []) : pic.months;
+  const window = pic.treated === 'steady' ? Math.max(months.length, ev.month.monthsUsed.length) : months.length;
+  const M = p.monthly as number;
+  const lows = months.filter((x) => (x.left as number) < M);
+  if (lows.length === 0) return [];
+  const lowest = lows.reduce((a, b) => ((b.left as number) < (a.left as number) ? b : a));
+  const s = p.schedule;
+  const term = s === null ? 12 : new Set(paymentsOf(s).map((d) => d.slice(0, 7))).size;
+  const times = Math.min(term, Math.max(1, Math.ceil((lows.length * term) / window)));
+  const shortfall = M - (lowest.left as number);
+  const usual = Math.max(0, (ev.month.typicalLeft ?? 0) - M);
+  const need = Math.max(shortfall, shortfall * times - usual * (term - times));
+  const room = Math.max(0, ev.month.monthLeft as number);
+  const fromEarlier = res.split.find((x) => x.source === 'unspent_earlier')?.amount ?? 0;
+  const fromExtra = res.split.find((x) => x.source === 'extra_savings')?.amount ?? 0;
+  const above = ev.net?.aboveSize ?? 0;
+  const kept = (c.inputs.accounts ?? []).filter((a) => a.kind === 'savings' && a.use?.kind === 'untouched' && a.balance > 0).reduce((t, a) => t + a.balance, 0);
+  const spare = ev.spare ?? null;
+  const out: string[] = [
+    `Low months (FIN-08): ${lows.length} of the ${window} months judged left less than the ${m(M)} payment (${lows.map((x) => `${x.month} left ${m(x.left)}`).join(', ')}); over the ${term} months of payments that is about ${times} (${lows.length} x ${term} / ${window}, rounded up). ` +
+      `The lowest, ${lowest.month}, is ${m(shortfall)} short, so about ${m(shortfall * times)} in all.`,
+  ];
+  if (spare === null) return [...out, 'Spare money is not known, so the low months cannot be judged yet.'];
+  const savings = spare - room - fromEarlier + above - fromExtra + kept;
+  out.push(
+    `Savings for the low months: spare money ${m(spare)} - this month's own ${m(room)} (not saved yet, QE-05)${fromEarlier > 0 ? ` - ${m(fromEarlier)} the purchase takes from earlier money` : ''} + ${m(above)} above the safety net's size${fromExtra > 0 ? ` - ${m(fromExtra)} the purchase takes from it` : ''} + ${m(kept)} kept in savings accounts = ${m(savings)}. ` +
+      `They must cover one low month now and the rest less what the usual months between leave (${m(usual)} each): max(${m(shortfall)}, ${m(shortfall * times)} - ${m(usual * (term - times))}) = ${m(need)}.`
+  );
+  const net = ev.net;
+  const lend = net === undefined ? 0 : (net.usable as number);
+  const page = savings >= need ? 'savings' : savings + lend >= need ? 'net' : 'ask';
+  const engine = bridge === undefined ? 'ask' : bridge['source'] === 'net' ? 'net' : 'savings';
+  const flag = page !== engine ? 'PAGE AND ENGINE DISAGREE: ' : '';
+  if (page === 'savings') out.push(`${flag}${m(savings)} covers ${m(need)}: the records alone show it fits, with the low-month caution ("Fits, a low month is tight", QE-04).`);
+  else if (page === 'net') out.push(`${flag}Savings fall short; the safety net can lend ${m(lend)}, so it is "Dips into your safety net", named (QE-14).`);
+  else {
+    const said = p.volatileCover ?? null;
+    out.push(
+      `${flag}Neither savings nor the safety net carry it (${net === undefined || net.saved === 0 ? 'nothing is saved in a safety net' : net.locked ? 'the safety net is locked, D-61' : `the safety net can lend ${m(lend)}`}), so the question "Can you cover the low months?" is asked: ` +
+        (said === null ? 'not answered yet (Needs a figure first).' : said ? 'yes, so "Only on your answer": the records do not show it (QE-03).' : `no, so Not yet, ready when savings could carry a low month (QE-05)${res.readyBy === null ? '' : `: ${res.readyBy.kind === 'date' ? res.readyBy.date : res.readyBy.month}`}.`)
+    );
+  }
+  return out;
+}
+
+/** The payment dates of a schedule (every paying period). */
+function paymentsOf(s: NonNullable<Evaluation['purchase']>['schedule'] & object): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < s.lastPaying; i++) {
+    out.push(s.cadence.unit === 'month' ? addMonthsDate(s.firstDate, i * s.cadence.every) : addDays(s.firstDate, i * 7 * s.cadence.every));
+  }
+  return out;
+}
+
+function addMonthsDate(date: string, n: number): string {
+  const y = Number(date.slice(0, 4));
+  const mo = Number(date.slice(5, 7)) - 1 + n;
+  const yy = y + Math.floor(mo / 12);
+  const mm = ((mo % 12) + 12) % 12;
+  const ymo = `${yy}-${String(mm + 1).padStart(2, '0')}`;
+  const d = Math.min(Number(date.slice(8, 10)), daysInYearMonth(ymo));
+  return `${ymo}-${String(d).padStart(2, '0')}`;
+}
+
+/**
+ * 05.4-23 (D-40 / D-46, QE-12, D-53): the page's own runway sum on a Short each month plan: the money at the end of this month (spare
+ * money, extra savings, savings accounts) less what the plan takes by then, over the monthly gap; and with another 1,000 a month.
+ */
+export function runwaySteps(c: CorpusCase, ev: Evaluation, m: (n: number) => string): string[] {
+  const res = ev.result;
+  const p = ev.purchase;
+  const tl = ev.month.typicalLeft;
+  const engine = res.facts.find((f) => f.code === 'covered_from_savings')?.values;
+  if (p === null || p.schedule === null || res.code !== 'monthly_short' || tl === null || ev.spare == null) return [];
+  const s = p.schedule;
+  const gap = (p.monthly as number) - tl;
+  if (gap <= 0 || s.cadence.unit !== 'month' || s.cadence.every !== 1) return engine === undefined ? [] : ['PAGE AND ENGINE DISAGREE: the page says no runway line applies here.'];
+  const ym = yearMonthOf(c.inputs.asOf);
+  const dates = paymentsOf(s).filter((d) => d <= `${ym}-31`);
+  const later = dates.filter((d) => d > c.inputs.asOf);
+  const each = s.payment as number;
+  const kept = (c.inputs.accounts ?? []).filter((a) => a.kind === 'savings' && a.use?.kind === 'untouched' && a.balance > 0).reduce((t, a) => t + a.balance, 0);
+  const money = (ev.spare as number) + (ev.net?.aboveSize ?? 0) + kept;
+  const left = money - (p.dayOne as number) - later.length * each;
+  const of = s.lastPaying;
+  const covered = (per: number): number => Math.min(of, dates.length + Math.floor(left / per));
+  const step = 1000 * 10 ** currencyExponent(c.inputs.currency);
+  const out = [
+    `Runway (D-46): spare money ${m(ev.spare as number)} + extra savings ${m(ev.net?.aboveSize ?? 0)} + savings accounts ${m(kept)} - ${m((p.dayOne as number) + later.length * each)} the plan takes by the end of ${ym} = ${m(left)}; ` +
+      `the monthly gap is ${m(p.monthly)} - ${m(tl)} = ${m(gap)}. ${dates.length} payment(s) by month end + floor(${m(left)} / ${m(gap)}) = about ${covered(gap)} of the ${of} payments; ` +
+      `with another ${m(step)} a month, about ${covered(gap + step)} of the ${of}.`,
+  ];
+  const pageShows = left >= gap;
+  const further = res.facts.find((f) => f.code === 'further_shortfall_runway')?.values;
+  const furtherShows = left >= gap + step;
+  if (furtherShows !== (further !== undefined) || (further !== undefined && further['covered'] !== covered(gap + step))) out.push(`PAGE AND ENGINE DISAGREE: with another ${m(step)}, the engine says ${further === undefined ? 'no line' : `${String(further['covered'])} of ${String(further['of'])}`}.`);
+  if (pageShows !== (engine !== undefined) || (engine !== undefined && engine['covered'] !== covered(gap))) out.push(`PAGE AND ENGINE DISAGREE: the engine says ${engine === undefined ? 'no runway line' : `${String(engine['covered'])} of ${String(engine['of'])}`}.`);
+  return out;
+}
+
+/**
+ * 05.4-23: the approved right-answer cases for your word, low months and the pay cut (FIN-08, FIN-15). They are not in the corpus, so
+ * they show here with the engine's answer now and the approved answer. The answers before this fix are in 05.4-23-FIN-08-AUDIT.md.
+ */
+function yourWordCasesHtml(): string {
+  const rows: string[] = [];
+  for (const rc of loadCases().filter((x) => x.status === 'approved' && (x.fixIds.includes('FIN-08') || x.fixIds.includes('FIN-15')))) {
+    const { inputs, check } = toEngineInputs(rc.fixture);
+    const c: CorpusCase = { key: `case:${rc.id}`, label: `${rc.id} ${rc.persona}`, inputs, check };
+    const r = evaluate(inputs, check).result;
+    const b = breakdown(c);
+    const ready = (x: string | null): string => (x === null ? '' : `, ready ${x}`);
+    const got = r.readyBy === null ? null : r.readyBy.kind === 'date' ? r.readyBy.date : r.readyBy.month;
+    const same = r.code === rc.expected.code && r.variant === rc.expected.variant && got === rc.expected.readyBy;
+    rows.push(
+      `<li><b>${esc(rc.id)} ${esc(rc.persona)}</b><br>Engine now: ${esc(words({ code: r.code, variant: r.variant, afterBuyMonth: null }))}${esc(ready(got))}<br>` +
+        `Approved right answer: ${esc(words({ code: rc.expected.code, variant: rc.expected.variant, afterBuyMonth: null }))}${esc(ready(rc.expected.readyBy))}${same ? ' (same code, variant and ready date; the usual-month figure comes in 05.4-24)' : ' (DIFFERENT: see the audit box)'}` +
+        auditHtml(auditOf(c.key)) +
+        `<details><summary>Situation and full breakdown</summary>${situationHtml(c)}${sectionsHtml(b.sections)}<h4>Step by step</h4><ol>${b.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol></details></li>`
+    );
+  }
+  return `<h2>Right-answer cases for your word, low months and the pay cut (${rows.length})</h2><p>These approved cases are not in the corpus. Their answers before this fix are in 05.4-23-FIN-08-AUDIT.md.</p><ul>${rows.join('')}</ul>`;
 }

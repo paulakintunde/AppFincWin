@@ -309,7 +309,8 @@
         "FIN-08",
         "ENG-07",
         "FIN-05",
-        "FIN-01"
+        "FIN-01",
+        "FIN-09"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
@@ -418,7 +419,8 @@
       "fixIds": [
         "FIN-08",
         "ENG-07",
-        "FIN-05"
+        "FIN-05",
+        "FIN-09"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
@@ -519,7 +521,8 @@
       "fixIds": [
         "FIN-08",
         "ENG-07",
-        "FIN-05"
+        "FIN-05",
+        "FIN-09"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
@@ -611,7 +614,8 @@
       "why": "He is judged on the lower figure, the middle of the last three: $2,720, which is 9.3% below the set-up pay, over the 5% line, so the gap is named and he is asked about it; his pay is never edited for him. On $2,720 a usual month leaves $720, and $720 - $850 = -$130, so \"Short each month\" (on $3,000 it would have looked like a fit). Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
       "fixIds": [
         "FIN-15",
-        "FIN-05"
+        "FIN-05",
+        "FIN-09"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
@@ -1065,7 +1069,8 @@
         "FIN-08",
         "ENG-07",
         "FIN-06",
-        "FIN-05"
+        "FIN-05",
+        "FIN-09"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
@@ -1162,7 +1167,8 @@
         "FIN-08",
         "ENG-07",
         "FIN-06",
-        "FIN-05"
+        "FIN-05",
+        "FIN-09"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
@@ -1381,7 +1387,8 @@
       "fixIds": [
         "FIN-08",
         "ENG-07",
-        "FIN-05"
+        "FIN-05",
+        "FIN-09"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
