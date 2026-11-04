@@ -1,7 +1,10 @@
 import { corpus, type ReviewedChange } from './corpus';
 import * as fs from 'fs';
 import * as path from 'path';
-import { auditOf, breakdown, buildPage, priceShareOfPay, rateText, situationHtml, situationRows, words } from './page';
+import { auditOf, breakdown, buildPage, priceShareOfPay, quickEstimatesStep, rateText, situationHtml, situationRows, words } from './page';
+import { evaluate } from '../../evaluate';
+import { loadCases } from '../rightAnswers/loader';
+import { toEngineInputs } from '../rightAnswers/fixture';
 import { SHORT_PLAN_CASES, shortPlan, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { TIER_CASES, rileyTier, type TierCase } from '../helpers/tierFixtures';
 
@@ -274,5 +277,37 @@ describe('reviewed page', () => {
     const g136 = breakdown(cases.find((c) => c.key === 'gen:136')!);
     expect(g136.sections.find((x) => x.title === 'Debts')!.rows.map(([, v]) => v).join(' ')).toContain('minimum $707.08 a month, due day not set, so counted from tomorrow (2026-10-04); lands on 2026-10-04 $587.32');
     expect(g136.steps.join(' ')).toContain('lowest -$703.60 on 2026-12-31');
+  });
+
+  // 05.4-57 (ENG-11): the quick-estimates step with the page's own sums.
+  const zoe = (): (typeof cases)[number] => {
+    const rc = loadCases().find((x) => x.id === 'QE-13')!;
+    const { inputs, check } = toEngineInputs(rc.fixture);
+    return { key: 'rc:QE-13', label: 'QE-13 Zoe', inputs, check };
+  };
+
+  it('05.4-57 (ENG-11): Zoe\'s step: £1,300 - £1,000 = £300 everyday; £80 still to come; starter £1,200; page and engine agree', () => {
+    const steps = breakdown(zoe()).steps.join(' ');
+    expect(steps).toContain('Everyday per month = £1,300.00 - £1,000.00 = £300.00.');
+    expect(steps).toContain('the larger of the pace £300.00 x 8 / 30 = £80.00 and the rest of the month\'s everyday £300.00 - £220.00 = £80.00, so £80.00.');
+    expect(steps).toContain('= £1,200.00, rounded up to £1,200.00.');
+    expect(steps).not.toContain('PAGE AND ENGINE DISAGREE');
+  });
+
+  it('05.4-57 (ENG-11): on every check with quick estimates the step\'s everyday figure is never above the money out; the page check fails when it is', () => {
+    const withQe = [...cases.filter((c) => c.inputs.typedEstimates !== null), zoe()];
+    expect(withQe.length).toBeGreaterThan(1);
+    const m = (n: number): string => String(n);
+    for (const c of withQe) {
+      const s = quickEstimatesStep(c, evaluate(c.inputs, c.check), m)!;
+      expect(s.everyday).toBeLessThanOrEqual(s.out);
+      expect(s.lines.join(' ')).not.toContain('PAGE AND ENGINE DISAGREE');
+    }
+    // The page check itself: an engine figure above the money out is named as a disagreement.
+    const c = zoe();
+    const ev = evaluate(c.inputs, c.check);
+    const bad = quickEstimatesStep(c, { ...ev, month: { ...ev.month, e: (c.inputs.typedEstimates!.expenses + 1) as typeof ev.month.e } }, m)!;
+    expect(bad.lines.join(' ')).toContain('PAGE AND ENGINE DISAGREE');
+    expect(buildPage('ENG-11', [], cases)).toContain('Checks this rule reads, answer unchanged');
   });
 });

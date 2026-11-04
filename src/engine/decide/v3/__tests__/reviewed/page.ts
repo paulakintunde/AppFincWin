@@ -551,6 +551,7 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   if (shortStep !== null) steps.push(shortStep);
   steps.push(...d47Steps(c, ev, m));
   steps.push(...debtSteps(c, ev, res, m));
+  steps.push(...(quickEstimatesStep(c, ev, m)?.lines ?? [])); // 05.4-57 (ENG-11)
   if (res.variant === 'extra_savings') steps.push('Part of it is paid from money saved above the safety net\'s size, so the headline is "Fits from extra savings" (D-62).');
   steps.push(`Engine answer: ${words({ code: res.code, variant: res.variant, afterBuyMonth: left === null ? null : (left['left'] as number) })}.`);
   return { sections, steps };
@@ -805,6 +806,66 @@ export function debtSteps(c: CorpusCase, ev: Evaluation, res: Evaluation['result
   return out;
 }
 
+/**
+ * 05.4-57 (ENG-11, D-53): the quick-estimates step, with the page's own sums (not the engine's). Money out from the estimates,
+ * less the usual bills the person pays (live monthly bill series at their monthly figure; a yearly or every-3-month bill only
+ * when the person counts it monthly; bills someone else always pays left out), = everyday per month, never below 0. Then the
+ * everyday spending so far, the still to come over the days left (the larger of the pace and the rest of the month's everyday),
+ * and, when the estimates state an essential part, the starter safety net = bills + debt minimums + that part, rounded up to a
+ * whole unit. null when the inputs carry no quick estimates. `everyday` and `out` are returned for the page test.
+ */
+export function quickEstimatesStep(c: CorpusCase, ev: Evaluation, m: (n: number) => string): { lines: string[]; everyday: number; out: number } | null {
+  const inputs = c.inputs;
+  const q = inputs.typedEstimates;
+  if (q === null) return null;
+  const mo = ev.month;
+  const asOf = inputs.asOf;
+  const ym = yearMonthOf(asOf);
+  const n = daysInYearMonth(ym);
+  const day = Number(asOf.slice(8, 10));
+  const always = new Set((inputs.waivers ?? []).filter((w) => w.kind === 'always_other').map((w) => (w as { seriesId: string }).seriesId));
+  const bills = liveSeriesOf(inputs.series, asOf, 'bill')
+    .filter((s) => !always.has(s.id))
+    .filter((s) => !(s.cadence.unit === 'month' && s.cadence.every > 1 && s.typicalChoice === 'excluded'))
+    .map((s) => ({ s, monthly: s.cadence.unit === 'week' ? Math.round((s.amount * 52) / 12 / s.cadence.every) : Math.round(s.amount / s.cadence.every) }));
+  const billTotal = bills.reduce((a, b) => a + b.monthly, 0);
+  const out = q.expenses;
+  const everyday = Math.max(0, out - billTotal);
+  const lines: string[] = [];
+  const used = mo.monthsUsed.length > 0 || inputs.everydayOverride !== null;
+  lines.push(
+    `Quick estimates (ENG-11): money in ${m(q.income)} a month; money out ${m(out)} a month (bills included, as the app's "Money out each month"). ` +
+      `Usual bills she pays: ${bills.length === 0 ? 'none recorded' : bills.map((b) => `${seriesName(b.s)} ${m(b.monthly)}`).join(' + ')} = ${m(billTotal)}. ` +
+      `Everyday per month = ${m(out)} - ${m(billTotal)} = ${m(everyday)}${out - billTotal < 0 ? ' (never below 0)' : ''}.` +
+      (used
+        ? ` The estimates are not read here: ${inputs.everydayOverride !== null ? 'an everyday figure set by hand' : `${mo.monthsUsed.length} full month(s) of records (${mo.monthsUsed.join(', ')})`} set the everyday spending at ${m(mo.e ?? 0)}.`
+        : `${everyday === mo.e ? '' : ` PAGE AND ENGINE DISAGREE: the engine reads ${m(mo.e ?? 0)}.`}`)
+  );
+  if (!used) {
+    const logged = mo.everydayLogged;
+    const left = n - day;
+    const pace = left === 0 ? 0 : Math.floor((2 * everyday * left + n) / (2 * n));
+    const rest = Math.max(0, everyday - logged);
+    const toCome = left === 0 ? 0 : Math.max(pace, rest);
+    lines.push(
+      `Everyday so far (${ym}-01 to ${asOf}): ${m(logged)}. Still to come (${left === 0 ? 'none: the last day of the month' : `${addDays(asOf, 1)} to ${ym}-${String(n).padStart(2, '0')}, ${left} of ${n} days`}): ` +
+        `the larger of the pace ${m(everyday)} x ${left} / ${n} = ${m(pace)} and the rest of the month's everyday ${m(everyday)} - ${m(logged)} = ${m(rest)}, so ${m(toCome)}.` +
+        `${toCome === mo.erest ? '' : ` PAGE AND ENGINE DISAGREE: the engine reads ${m(mo.erest)}.`}`
+    );
+    if (q.essential != null) {
+      const mins = debtsInMonth(inputs.debts, inputs.series, asOf).reduce((a, d) => a + Math.max(0, d.minimum), 0);
+      const ess = Math.min(Math.max(0, q.essential), everyday);
+      const starter = Math.ceil((billTotal + mins + ess) / 100) * 100;
+      const engine = ev.net?.starter ?? null;
+      lines.push(
+        `Starter safety net (D-51, ENG11-QE-ESSENTIAL): bills ${m(billTotal)} + card and loan minimums ${m(mins)} + the essential part of everyday spending the estimates state ${m(ess)} = ${m(billTotal + mins + ess)}, rounded up to ${m(starter)}.` +
+          `${engine === null || engine === starter ? '' : ` PAGE AND ENGINE DISAGREE: the engine's starter is ${m(engine)}.`}`
+      );
+    }
+  }
+  return { lines, everyday, out };
+}
+
 /** 05.4-20 (DB-07): the right-answer cases whose debt is one of the bills, with the usual month before (counted twice) and after. */
 function countedOnceHtml(): string {
   const rows: string[] = [];
@@ -832,6 +893,7 @@ const READS: Readonly<Record<string, (c: CorpusCase) => boolean>> = {
   'FIN-10b': (c) => c.inputs.debts.length > 0, // 05.4-20 D-72, D-73
   'FIN-11': (c) => longBillsOf(c.inputs).length > 0,
   'FIN-11b': (c) => longBillsOf(c.inputs).length > 0, // D-70
+  'ENG-11': (c) => c.inputs.typedEstimates !== null, // 05.4-57: every check with quick estimates, changed or not
 };
 
 /**
@@ -940,6 +1002,30 @@ export function buildPage(fixId: string, changes: readonly ReviewedChange[], cas
     `<p>Audit: ${esc(verdictLine)}. Each change shows its Audit box first, then the full breakdown.</p>` +
     section('Stricter', groups.stricter, false) + section('Looser', groups.looser, false) + section('Same answer, detail changed', groups.detail, false) +
     (fixId === 'FIN-10' ? countedOnceHtml() : '') +
+    (fixId === 'ENG-11' ? quickEstimateCasesHtml() : '') +
     readsHtml
   );
+}
+
+/**
+ * 05.4-57 (ENG-11): the approved right-answer cases with quick estimates (QE-01, QE-13). They are not in the corpus, so they show
+ * here with the engine's answer now, the approved answer and the full breakdown (with the quick-estimates step). The answers
+ * before this fix are in 05.4-57-ENG-11-AUDIT.md (scratch run of the engine before the fix).
+ */
+function quickEstimateCasesHtml(): string {
+  const rows: string[] = [];
+  for (const rc of loadCases().filter((x) => x.status === 'approved' && x.fixture.quickEstimates !== null)) {
+    const { inputs, check } = toEngineInputs(rc.fixture);
+    const c: CorpusCase = { key: `case:${rc.id}`, label: `${rc.id} ${rc.persona}`, inputs, check };
+    const p = evaluate(inputs, check);
+    const left = p.result.facts.find((f) => f.code === 'month_left_after')?.values['left'];
+    const b = breakdown(c);
+    rows.push(
+      `<li><b>${esc(rc.id)} ${esc(rc.persona)}</b><br>Engine now: ${esc(words({ code: p.result.code, variant: p.result.variant, afterBuyMonth: typeof left === 'number' ? left : null }))}<br>` +
+        `Approved right answer: ${esc(words({ code: rc.expected.code, variant: rc.expected.variant, afterBuyMonth: rc.expected.afterBuy.month }))}` +
+        auditHtml(auditOf(c.key)) +
+        `<details><summary>Situation and full breakdown</summary>${situationHtml(c)}${sectionsHtml(b.sections)}<h4>Step by step</h4><ol>${b.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol></details></li>`
+    );
+  }
+  return `<h2>Right-answer cases with quick estimates (${rows.length})</h2><p>These approved cases are not in the corpus. The answers before this fix are in the audit file. "Tight" comes in 05.4-21.</p><ul>${rows.join('')}</ul>`;
 }

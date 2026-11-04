@@ -28,3 +28,16 @@
 - **The app builder does not pass the new debt fields yet.** buildV3Inputs (src/features/decide/snapshot/**, not edited in 05.4)
   maps no dueDay, joint, paidThisMonth, seriesId or factLines, so in shadow runs every minimum is counted from tomorrow with
   debt_due_day_assumed. debts.due_day exists (05.4-29). Map them with the snapshot work (05.5 / 08.1).
+
+## Found in 05.4-57 (ENG-11)
+- **Closed:** the quick-estimates bills double count above (QE-13, QE-01) is fixed in 05.4-57 (ENG11-QE-BILLS).
+- **The app does not carry an essential part of quick estimates yet.** TypedEstimates.essential (ENG11-QE-ESSENTIAL) is set only
+  by the right-answer fixtures. The quick-estimates sheet does not ask it (08.1 screen) and buildV3Inputs
+  (src/features/decide/snapshot/**, not edited in 05.4) does not map it (05.5 builder). Until then app users keep the larger
+  starter (all everyday spending counts as essential). Owner question 1 at the 05.4-57 D-14 review.
+- **The usual month from quick estimates leaves out recorded card and loan minimums and a regular saving (ENG11-QE-SETASIDE).**
+  typicalOf's typed typicalLeft = income - money out - typed debt - typed saving - typed invest; recorded minimums and saving
+  series are not taken out, so a quick-estimates person with a card or loan can miss the D-65 "month already short" tier (found
+  by the crosscheck, seed 0). In the app a quick-estimates snapshot carries no series or debts today, so no user meets it yet;
+  it bites once records sit beside estimates (05.5, D-43). How typed and recorded figures combine is an owner choice (owner
+  question 3). The crosscheck draws quick-estimates people without a card, loan or regular saving until then (fixtureArb.ts).

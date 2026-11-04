@@ -3844,5 +3844,93 @@
       "Hand check: one-off part: $799.91 <= this month's room $1,479.67 -> Fits.",
       "Month left after: $1,479.67 - $799.91 paid from this month = $679.76 (matches)."
     ]
+  },
+  "persona:audit-p5:6000:cash": {
+    "right": "Not yet (not covered), the same before and after this fix",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT (unchanged)",
+    "cause": "ENG-11 reads it but does not bite: no bill series is recorded (05.4-57)",
+    "notes": [
+      "Quick estimates: money in $3,000 a month, money out $2,000 a month. No bill series is recorded, so the usual bills she pays are $0 and the everyday figure is $2,000 - $0 = $2,000: the whole money out, counted once (as everyday). Before this fix it was $2,000 too.",
+      "Everyday so far (1 to 15 October) $1,000. Still to come (16 to 31 October, 16 of 31 days): the larger of $2,000 x 16 / 31 = $1,032.26 and $2,000 - $1,000 = $1,000, so $1,032.26 (the same before).",
+      "Starter safety net (D-51): $0 bills + $2,000 essential (no essential part stated, so all of the everyday figure counts) = $2,000, the same before (before: $2,000 - $0 bills = $2,000). Nothing saved in it.",
+      "No pay series and no pay in the history, so the 90-day path has no pay after this month: lowest -$3566.45 on 2027-01-12 with the $60.00 purchase. Past $0 with no overdraft and no safety net money, so Not yet (not covered). Unchanged by ENG-11."
+    ]
+  },
+  "persona:audit-p5:50000:cash": {
+    "right": "Not yet (not covered), the same before and after this fix",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT (unchanged)",
+    "cause": "ENG-11 reads it but does not bite: no bill series is recorded (05.4-57)",
+    "notes": [
+      "Quick estimates: money in $3,000 a month, money out $2,000 a month. No bill series is recorded, so the usual bills she pays are $0 and the everyday figure is $2,000 - $0 = $2,000: the whole money out, counted once (as everyday). Before this fix it was $2,000 too.",
+      "Everyday so far (1 to 15 October) $1,000. Still to come (16 to 31 October, 16 of 31 days): the larger of $2,000 x 16 / 31 = $1,032.26 and $2,000 - $1,000 = $1,000, so $1,032.26 (the same before).",
+      "Starter safety net (D-51): $0 bills + $2,000 essential (no essential part stated, so all of the everyday figure counts) = $2,000, the same before (before: $2,000 - $0 bills = $2,000). Nothing saved in it.",
+      "No pay series and no pay in the history, so the 90-day path has no pay after this month: lowest -$4006.45 on 2027-01-12 with the $500.00 purchase. Past $0 with no overdraft and no safety net money, so Not yet (not covered). Unchanged by ENG-11."
+    ]
+  },
+  "persona:audit-p5:200000:cash": {
+    "right": "Not yet (not covered), the same before and after this fix",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT (unchanged)",
+    "cause": "ENG-11 reads it but does not bite: no bill series is recorded (05.4-57)",
+    "notes": [
+      "Quick estimates: money in $3,000 a month, money out $2,000 a month. No bill series is recorded, so the usual bills she pays are $0 and the everyday figure is $2,000 - $0 = $2,000: the whole money out, counted once (as everyday). Before this fix it was $2,000 too.",
+      "Everyday so far (1 to 15 October) $1,000. Still to come (16 to 31 October, 16 of 31 days): the larger of $2,000 x 16 / 31 = $1,032.26 and $2,000 - $1,000 = $1,000, so $1,032.26 (the same before).",
+      "Starter safety net (D-51): $0 bills + $2,000 essential (no essential part stated, so all of the everyday figure counts) = $2,000, the same before (before: $2,000 - $0 bills = $2,000). Nothing saved in it.",
+      "No pay series and no pay in the history, so the 90-day path has no pay after this month: lowest -$5506.45 on 2027-01-12 with the $2000.00 purchase. Past $0 with no overdraft and no safety net money, so Not yet (not covered). Unchanged by ENG-11."
+    ]
+  },
+  "persona:audit-p5:900000:cash": {
+    "right": "Not yet (not covered), the same before and after this fix",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT (unchanged)",
+    "cause": "ENG-11 reads it but does not bite: no bill series is recorded (05.4-57)",
+    "notes": [
+      "Quick estimates: money in $3,000 a month, money out $2,000 a month. No bill series is recorded, so the usual bills she pays are $0 and the everyday figure is $2,000 - $0 = $2,000: the whole money out, counted once (as everyday). Before this fix it was $2,000 too.",
+      "Everyday so far (1 to 15 October) $1,000. Still to come (16 to 31 October, 16 of 31 days): the larger of $2,000 x 16 / 31 = $1,032.26 and $2,000 - $1,000 = $1,000, so $1,032.26 (the same before).",
+      "Starter safety net (D-51): $0 bills + $2,000 essential (no essential part stated, so all of the everyday figure counts) = $2,000, the same before (before: $2,000 - $0 bills = $2,000). Nothing saved in it.",
+      "No pay series and no pay in the history, so the 90-day path has no pay after this month: lowest -$12506.45 on 2027-01-12 with the $9000.00 purchase. Past $0 with no overdraft and no safety net money, so Not yet (not covered). Unchanged by ENG-11."
+    ]
+  },
+  "persona:audit-p5:900000:plan": {
+    "right": "Not yet (not covered), the same before and after this fix",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT (unchanged)",
+    "cause": "ENG-11 reads it but does not bite: no bill series is recorded (05.4-57)",
+    "notes": [
+      "Quick estimates: money in $3,000 a month, money out $2,000 a month. No bill series is recorded, so the usual bills she pays are $0 and the everyday figure is $2,000 - $0 = $2,000: the whole money out, counted once (as everyday). Before this fix it was $2,000 too.",
+      "Everyday so far (1 to 15 October) $1,000. Still to come (16 to 31 October, 16 of 31 days): the larger of $2,000 x 16 / 31 = $1,032.26 and $2,000 - $1,000 = $1,000, so $1,032.26 (the same before).",
+      "Starter safety net (D-51): $0 bills + $2,000 essential (no essential part stated, so all of the everyday figure counts) = $2,000, the same before (before: $2,000 - $0 bills = $2,000). Nothing saved in it.",
+      "No pay series and no pay in the history, so the 90-day path has no pay after this month: lowest -$3,945.05 on 2027-01-12 with the plan payments of the $9,000 over 48 months. Past $0 with no overdraft and no safety net money, so Not yet (not covered). Unchanged by ENG-11."
+    ]
+  },
+  "case:QE-13": {
+    "right": "Fits, £600 left in November (approved 2026-11-02)",
+    "rightCode": "fits_month",
+    "rightVariant": null,
+    "verdict": "CORRECT (now matches the approved case)",
+    "cause": "ENG11-QE-BILLS and ENG11-QE-ESSENTIAL (05.4-57), looser",
+    "notes": [
+      "Before: everyday from the estimates £1,300 (bills included), still to come max(£1,300 x 8 / 30 = £346.67, £1,300 - £220 = £1,080) = £1,080; November left £2,500 - £1,000 - £220 - £1,080 = £200; £600 did not fit: Not yet (not covered), ready 1 December. Starter £1,000 + £300 = £1,300, so her £1,200 net was small.",
+      "After: everyday £1,300 - £1,000 bills = £300; still to come max(£80, £80) = £80; November left £2,500 - £1,000 - £220 - £80 = £1,200; £1,200 - £600 = £600 left. Starter £1,000 bills + £200 essential = £1,200, full: plain Fits."
+    ]
+  },
+  "case:QE-01": {
+    "right": "Fits, but tight, £25 left in November (approved 2026-11-02)",
+    "rightCode": "fits_month",
+    "rightVariant": "tight",
+    "verdict": "CORRECT so far (code and £25 match; the variant waits for tight, FIN-07, 05.4-21)",
+    "cause": "ENG11-QE-BILLS (05.4-57), looser",
+    "notes": [
+      "Before: everyday £1,300, still to come £1,080; under-logged check £220 x 30 x 100 = 660,000 < 50 x £1,300 x 22 = 1,430,000 (in pounds), so Needs a figure first (records look behind).",
+      "After: everyday £300; 50 x £300 x 22 = 330,000 < 660,000, not behind. November left £2,500 - £1,000 - £220 - £80 - £25 card minimum on 28 November = £1,175; £1,175 - £1,150 = £25 left. Fits (but your safety net is small: £300 of £1,225). Tight (a tenth of £1,000 + £300 = £130 floor, £25 under it) comes in 05.4-21.",
+      "Starter under D-51 = £1,000 bills + £25 card minimum + £200 essential = £1,225. The case prose says £1,200 (written a day before D-51); the case pins no size. Owner question 2."
+    ]
   }
 }
