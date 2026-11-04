@@ -561,21 +561,22 @@
         }
       },
       "expected": {
-        "code": "monthly_short",
-        "variant": null,
+        "code": "not_yet",
+        "variant": "not_covered",
         "afterBuy": {
           "month": -30000,
           "usualMonth": 20000
         },
-        "readyBy": null,
+        "readyBy": "2026-12-01",
         "mustHaveReasons": [],
         "mustHaveFacts": [
+          "no_overdraft_limit",
           "net_covers_surprises",
           "income_or_costs_first"
         ],
         "mustNotHaveFacts": []
       },
-      "why": "$400 - $600 means November is heading to -$200, and the first $100 payment falls on 28 November, inside this month, so November would end at -$300. A new payment cannot start in a month that is already going below $0: \"Short each month\" (FIN-06, settled disagreement 5). His usual month after the payments would be $300 - $100 = $200, but this month rules it out. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
+      "why": "$400 - $600 means November is heading to -$200, and the first $100 payment falls on 28 November, inside this month, so November would end at -$300. A new payment cannot start in a month that is already going below $0: \"Short each month\" (FIN-06, settled disagreement 5). His usual month after the payments would be $300 - $100 = $200, but this month rules it out. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first) 05.4 D-76 (owner, 2026-11-04): his account itself goes below $0 before payday: $400 - $600 everyday spending still to come - the $100 first payment on 28 November = -$300 before his pay lands on 1 December, and no overdraft limit is recorded. So the answer is \"Not yet\" (not covered), ready on 1 December when his pay lands, the same as every case that goes below $0 with no overdraft (D-27, D-28); the answer says no overdraft limit is recorded (no_overdraft_limit, D-38). The monthly part is still Short each month (FIN-06); the stricter answer leads.",
       "fixIds": [
         "FIN-06",
         "ENG-06",
@@ -583,8 +584,9 @@
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
-      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
-      "expertNote": null
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48). Owner, D-76 (2026-11-04): \"His account goes below $0 before payday with no overdraft, so Not yet, the same as every case (owner, 2026-11-04)\".",
+      "expertNote": null,
+      "changeApproved": "2026-11-04"
     },
     {
       "id": "BR-07",

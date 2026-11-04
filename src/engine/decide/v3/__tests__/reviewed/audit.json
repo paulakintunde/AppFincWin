@@ -4084,14 +4084,14 @@
     ]
   },
   "case:BR-06": {
-    "right": "Short each month (approved); the engine and the plain calculator say Not yet",
-    "rightCode": "monthly_short",
-    "verdict": "DIFFERENT",
-    "cause": "FIN-06 this-month rule vs the 90-day cash check",
+    "right": "Not yet (not covered), ready 1 December",
+    "rightCode": "not_yet",
+    "rightVariant": "not_covered",
+    "verdict": "CORRECT",
+    "cause": "D-76 (owner, 2026-11-04)",
     "notes": [
-      "November: $400 in the account with $600 of everyday spending still to come, heading to -$200; first payment of $100 on 28 November, inside November, so FIN-06 says Short each month (the monthly part is monthly_short).",
-      "But the account goes below $0 before payday with no overdraft limit, so the one-off cash check says Not yet, which is stricter and leads (CODE_PRECEDENCE). Plain calculator: Not yet too.",
-      "OWNER QUESTION 2. Approved block not edited; BR-06 stays in knownRed under FIN-05."
+      "$400 - $600 everyday still to come - the $100 first payment on 28 November = -$300 before pay on 1 December, with no overdraft limit: Not yet, ready on payday. FIN-06 still makes the monthly part Short each month; the stricter answer leads.",
+      "Expected block changed with changeApproved (2026-11-04). Through the fixture as written the engine asks the pause question first, so it stays in knownRed under FIN-05."
     ]
   },
   "case:BR-07": {

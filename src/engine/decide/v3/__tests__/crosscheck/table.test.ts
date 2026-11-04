@@ -765,13 +765,18 @@ describe('05.4-21: short month and tight (FIN-06 / ENG-06, FIN-07, D-40): hand, 
     expect(plainMonthlyShort(f('BR-05'))).toBe(true);
   });
 
-  it('BR-06: this month heads to -$200 and the first payment is on 28 November, so the plain plan rule says Short each month (FIN-06)', () => {
-    const f = byId('BR-06').fixture;
+  it('BR-06 (D-76): this month heads to -$200 (FIN-06 makes the monthly part Short each month), but the account goes below $0 before payday with no overdraft, so Not yet leads', () => {
+    const c = byId('BR-06');
+    const f = c.fixture;
     expect(plainMonthlyShort(f)).toBe(true);
     expect(freeMoney(f)).toBe(-20_000n);
-    // Engine and plain both see the account below $0 before payday with no overdraft limit, which is stricter (Not yet). BR-06
-    // stays in knownRed (FIN-05); its approved "Short each month" against this Not yet is an owner question (05.4-21 SUMMARY).
-    expect(engine(f).result.code).toBe('not_yet');
+    // $400 - $600 everyday still to come - the $100 first payment on 28 November = -$300 before pay on 1 December
+    const r = engine(f);
+    expect(r.cash).toMatchObject({ kind: 'not_covered', shortBy: 30_000, payDate: '2026-12-01' });
+    expect(r.result.parts.monthly).toBe('monthly_short');
+    const got = pick(r);
+    expect({ code: got.code, variant: got.variant, readyBy: got.readyBy }).toEqual({ code: c.expected.code, variant: c.expected.variant, readyBy: c.expected.readyBy });
+    expect(got.facts).toContain('no_overdraft_limit');
     expect(plainAnswer(f).code).toBe('not_yet');
   });
 

@@ -21,7 +21,7 @@
   },
   "persona:sam:900000:plan": {
     "code": "fits_month",
-    "variant": "low_month",
+    "variant": "tight",
     "afterBuyMonth": null
   },
   "persona:maya:6000:cash": {
@@ -81,7 +81,7 @@
   },
   "persona:leo:50000:cash": {
     "code": "fits_unspent",
-    "variant": "extra_savings",
+    "variant": "tight",
     "afterBuyMonth": -19484
   },
   "persona:leo:200000:cash": {
@@ -121,7 +121,7 @@
   },
   "persona:tia:900000:plan": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": "tight",
     "afterBuyMonth": null
   },
   "persona:dana:6000:cash": {
@@ -136,7 +136,7 @@
   },
   "persona:dana:200000:cash": {
     "code": "fits_unspent",
-    "variant": "costly_debt",
+    "variant": "tight",
     "afterBuyMonth": 0
   },
   "persona:dana:900000:cash": {
@@ -306,7 +306,7 @@
   },
   "persona:audit-p3:50000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": "tight",
     "afterBuyMonth": 10000
   },
   "persona:audit-p3:200000:cash": {
@@ -501,7 +501,7 @@
   },
   "persona:audit-p9:6000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": "tight",
     "afterBuyMonth": 14000
   },
   "persona:audit-p9:50000:cash": {
@@ -526,7 +526,7 @@
   },
   "persona:audit-p10:6000:cash": {
     "code": "fits_month",
-    "variant": "no_net",
+    "variant": "tight",
     "afterBuyMonth": 54000
   },
   "persona:audit-p10:50000:cash": {
@@ -651,7 +651,7 @@
   },
   "gen:20": {
     "code": "fits_unspent",
-    "variant": "low_month",
+    "variant": "tight",
     "afterBuyMonth": 0
   },
   "gen:21": {
@@ -781,7 +781,7 @@
   },
   "gen:46": {
     "code": "fits_month",
-    "variant": null,
+    "variant": "tight",
     "afterBuyMonth": 64131
   },
   "gen:47": {
@@ -986,7 +986,7 @@
   },
   "gen:87": {
     "code": "fits_month",
-    "variant": null,
+    "variant": "tight",
     "afterBuyMonth": 35101
   },
   "gen:88": {
@@ -1116,7 +1116,7 @@
   },
   "gen:113": {
     "code": "fits_month",
-    "variant": "low_month",
+    "variant": "tight",
     "afterBuyMonth": 9005
   },
   "gen:114": {
@@ -1151,7 +1151,7 @@
   },
   "gen:120": {
     "code": "fits_month",
-    "variant": "low_month",
+    "variant": "tight",
     "afterBuyMonth": 10228
   },
   "gen:121": {
@@ -1341,7 +1341,7 @@
   },
   "gen:158": {
     "code": "fits_unspent",
-    "variant": "low_month",
+    "variant": "tight",
     "afterBuyMonth": 0
   },
   "gen:159": {
@@ -1436,7 +1436,7 @@
   },
   "gen:177": {
     "code": "fits_month",
-    "variant": null,
+    "variant": "tight",
     "afterBuyMonth": 4564
   },
   "gen:178": {
