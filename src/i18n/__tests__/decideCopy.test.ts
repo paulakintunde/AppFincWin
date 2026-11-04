@@ -152,18 +152,13 @@ describe('decide copy (DCU-09)', () => {
     expect(leaves.length).toBeGreaterThan(300);
   });
 
-  it.each(copyLeaves)('uses no banned word: $path', ({ path, value }) => {
-    for (const re of BANNED) {
-      // CMP-F24 disclaimer: the only allowed use of 'advice' ("This is a planning estimate, not tax advice."). Every other banned
-      // word still applies to it.
-      if (path === 'decide.v3.tax.disclaimer' && re === BANNED[0]) continue; // BANNED[0] is the 'advice' word
-      expect(value).not.toMatch(re);
-    }
+  it.each(copyLeaves)('uses no banned word: $path', ({ value }) => {
+    for (const re of BANNED) expect(value).not.toMatch(re);
   });
 
-  it('the CMP-F24 tax disclaimer is the one keyed exception, worded as fixed', () => {
-    expect(get('decide.v3.tax.disclaimer')).toBe('This is a planning estimate, not tax advice.');
-    expect(copyLeaves.filter((l) => /\badvice\b/i.test(l.value)).map((l) => l.path)).toEqual(['decide.v3.tax.disclaimer']);
+  // 05.4-25 (owner, 2026-11-04, D-92): the CMP-F24 tax disclaimer carries no "advice"; the copy guards keep no exception for it.
+  it('the CMP-F24 tax disclaimer is worded as the owner set it, with no keyed exception', () => {
+    expect(get('decide.v3.tax.disclaimer')).toBe('This is a planning estimate, not a tax figure.');
   });
 
   it.each(copyLeaves)('does not reassure about the future: $path', ({ value }) => {

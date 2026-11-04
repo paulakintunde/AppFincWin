@@ -3784,7 +3784,7 @@ const en = {
       },
       // 05.4 FIN-27 (CMP-F24, D-21): tax is always an estimate; an example loan or mortgage rate is labelled and never stored.
       tax: {
-        disclaimer: 'This is a planning estimate, not tax advice.', // CMP-F24: the only allowed use of the word (keyed exception)
+        disclaimer: 'This is a planning estimate, not a tax figure.', // CMP-F24 (owner, 2026-11-04, D-92): no "advice" word
         exampleRate: 'Example rate only. It is not your rate and is not saved.',
       },
       // 05.4 FIN-03 (D-38): the two answers to the no-limit question; both open the account's settings.

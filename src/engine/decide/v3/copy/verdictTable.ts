@@ -235,8 +235,8 @@ export const FACT_KEYS = Object.freeze({
 } as const satisfies Record<FactCode, string>);
 
 /**
- * 05.4 FIN-27 (CMP-F24, D-21): fixed tax and example-rate lines the screens show (08.1). disclaimer is the one place the copy
- * guard allows "advice" (a keyed exception); exampleRate labels an example loan or mortgage rate, which is never stored as the
+ * 05.4 FIN-27 (CMP-F24, D-21): fixed tax and example-rate lines the screens show (08.1). disclaimer: "a planning estimate, not a
+ * tax figure" (owner, D-92; no exception in the copy guards); exampleRate labels an example loan or mortgage rate, which is never stored as the
  * user's rate and never used in the sums (no default APR exists, 05.1 D-07, ARC-25).
  */
 export const TAX_KEYS = Object.freeze({

@@ -43,9 +43,8 @@ describe('en catalogue', () => {
     expect(value).not.toContain("'");
   });
 
-  it.each(leaves)('uses no forbidden compliance language: $path', ({ path, value }) => {
-    // 05.4 FIN-27 CMP-F24 disclaimer ("not tax advice"): the one keyed exception, for that word only (decideCopy.test pins it).
-    expect(path === 'decide.v3.tax.disclaimer' ? value.replace(/\badvice\b/, '') : value).not.toMatch(FORBIDDEN_VOICE);
+  it.each(leaves)('uses no forbidden compliance language: $path', ({ value }) => {
+    expect(value).not.toMatch(FORBIDDEN_VOICE);
   });
 });
 

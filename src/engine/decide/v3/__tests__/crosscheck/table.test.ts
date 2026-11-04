@@ -44,7 +44,7 @@ describe('plain calculator: tax (FIN-27, TX-01..TX-09)', () => {
   });
 
   it('FIN-27 the tax and the up-front cost the cases state', () => {
-    expect(plainTax(tx('TX-01'))).toBe(24_750n); // "8.25% sales tax, which brings it to $3,247.50"
+    expect(plainTax(tx('TX-01'))).toBe(27_090n); // "9.03% sales tax ..., which brings it to $3,270.90" (D-93)
     expect(plainTax(tx('TX-06'))).toBe(11_700n); // "13% of $900 is $117"
     expect(upFront(tx('TX-07'))).toBe(1_002_000n); // "$9,000 + $720 (8%) + $300 = $10,020"
     expect(plainTax(tx('TX-08'))).toBe(24_750n); // "The tax is $247.50"
