@@ -556,11 +556,14 @@ function plainPlanCode(f: RightAnswerFixture): PlainAnswer {
     // ... overdrawn". A plan whose dated path goes below $0, past the money above the net's size and any net money it may use, is
     // Not yet (no overdraft carries a plan). The ready-by month is not restated here.
     const net = plainNet(f);
-    if (planPathLow(f) + net.above + net.lend < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
-    if (plainMonthlyShort(f)) return { code: 'monthly_short', variant: null, afterBuy: Number(left - big(c.pay.deposit)) };
+    // 05.4-24 (FIN-09, BR-06: "the first $100 payment falls on 28 November, inside this month"): the month figure loses what the
+    // plan takes this month, the deposit and fees on the day and every payment dated before next month.
+    const month = Number(left - plainThisMonthPlan(f));
+    if (planPathLow(f) + net.above + net.lend < 0n) return { code: 'not_yet', variant: null, afterBuy: month };
+    if (plainMonthlyShort(f)) return { code: 'monthly_short', variant: null, afterBuy: month };
     const low = plainLowMonths(f);
-    if (low !== null) return { ...low, afterBuy: Number(left - big(c.pay.deposit)) };
-    return { code: 'fits_month', variant: plainTightPlan(f) ? 'tight' : null, afterBuy: Number(left - big(c.pay.deposit)) };
+    if (low !== null) return { ...low, afterBuy: month };
+    return { code: 'fits_month', variant: plainTightPlan(f) ? 'tight' : null, afterBuy: month };
   }
   return { code: 'needs_input', variant: null, afterBuy: null };
 }
@@ -568,7 +571,10 @@ function plainPlanCode(f: RightAnswerFixture): PlainAnswer {
 /** A purchase paid once: the cash check, then the ladder. */
 function plainOnce(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   const left = leftThisMonth(f);
-  const after = left - cost;
+  // 05.4-24 (FIN-09, D-23, QE-09): "The pay on the 27th counts in the month figure ($800 - $600 = $200 left)": the figure after
+  // buying counts pay still to arrive this month (irregular pay is already counted in full above).
+  const figure = left + (f.pay.irregular === undefined ? payToArrive(f) : 0n);
+  const after = figure - cost;
   const net = plainNet(f);
   // Cash check first: what is in the spending accounts has to carry the bills still due and the everyday spending
   // still to come until payday (the next pay lands after this month ends), as well as the cost itself. Balances keep their
@@ -599,13 +605,41 @@ function plainOnce(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   if (rest > 0n && rest > earlier + net.above && !(dip > 0n && rest <= earlier + net.above + dip)) {
     // "$1,500 is more than spare money plus the whole net, so it is Not yet" (SN-04).
     if (rest > earlier + net.above + net.lend) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
-    if (dip === 0n) return { code: 'fits_uses_net', variant: offVariant, afterBuy: Number(after) };
+    // 05.4-24: the spare money and extra savings it uses are named (D-44), so they do not come off the month; the net money does (SN-03).
+    // The net lends what the ladder still needs or, when the 90-day path dips further, the whole dip ("the path must stay above the
+    // net", FIN-02); what is left of the price after the month and the net is the named money.
+    if (dip === 0n) return { code: 'fits_uses_net', variant: offVariant, afterBuy: netDipFigure(figure, cost, rest - maxC(0n, earlier) - net.above, margin, net) };
   }
-  if (dip > 0n) return { code: 'fits_uses_overdraft', variant: notCleared(f, cost) ? 'not_cleared' : null, afterBuy: Number(after) };
+  // 05.4-24: on Uses your overdraft the price comes out of this month ("the account pays now and goes below 0"), except the part the
+  // money above the net's size pays after this month's room and the spare money (extra savings, named, D-44 / D-56).
+  // The ladder reads spare money with its sign (below 0 is made up first): the extra savings pay only when they close the gap; when
+  // the overdraft carries it they pay nothing; past the overdraft the net lends, the extra savings first.
+  if (dip > 0n) {
+    const short = rest - maxC(0n, earlier);
+    const extraUsed = rest <= earlier ? 0n : rest <= earlier + net.above ? short : rest <= earlier + net.above + dip ? 0n : net.above < short ? net.above : short;
+    return { code: 'fits_uses_overdraft', variant: notCleared(f, cost) ? 'not_cleared' : null, afterBuy: Number(after + extraUsed) };
+  }
   // "Any purchase that uses money in the net is Dips into your safety net, whatever its purpose" (D-41): here the path.
-  if (pastLimit) return { code: 'fits_uses_net', variant: offVariant, afterBuy: Number(after) };
+  if (pastLimit) return { code: 'fits_uses_net', variant: offVariant, afterBuy: netDipFigure(figure, cost, maxC(0n, rest - maxC(0n, earlier) - net.above), margin, net) };
   const tight = plainTightOnce(f, freeMoney(f) + net.above - cost);
-  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(net, rest > maxC(0n, earlier), carriesCostlyDebt(f, rest), tight), afterBuy: Number(after) };
+  // 05.4-24 (FIN-09): money from earlier months is not this month's, so the month figure drops only by what the month pays (BR-17).
+  return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(net, rest > maxC(0n, earlier), carriesCostlyDebt(f, rest), tight), afterBuy: Number(figure - fromMonth) };
+}
+
+/**
+ * 05.4-24 (FIN-09): the month figure on "Dips into your safety net". The net lends what the price still needs after this month, the
+ * spare money and the extra savings, or the whole dip when the 90-day path goes lower ("the path must stay above the net", FIN-02),
+ * never more than it may lend or the price. The rest of the price comes from the extra savings first, then this month, then spare
+ * money (SN-13: "$300 spare in November plus $200 of the extra"). The month figure loses this month's part and the net's (SN-03:
+ * "$300 - $500 = -$200"); the extra savings and spare money are named (D-44).
+ */
+function netDipFigure(figure: Cents, cost: Cents, need: Cents, margin: Cents, net: PlainNet): number {
+  const dip = margin < 0n ? -margin : 0n;
+  const fromNet = [need > dip ? need : dip, net.lend, cost].reduce((a, b) => (b < a ? b : a));
+  const extra = net.above < cost - fromNet ? net.above : cost - fromNet;
+  const room = maxC(0n, figure);
+  const month = room < cost - fromNet - extra ? room : cost - fromNet - extra;
+  return Number(figure - fromNet - month);
 }
 
 /** OD-11: "her next pay does not clear it": after the next pay (and that day's bills and spending) the account is still below 0. */
@@ -631,17 +665,24 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   // path's lowest point decides when it is lower than this month's end.
   const monthEnd = sitting + usualLeft - cost;
   const margin = (usualMonthShort(f) ? (pathLow(f, cost) < monthEnd ? pathLow(f, cost) : monthEnd) : monthEnd) + net.above;
-  if (margin < 0n) return { code: margin + net.lend < 0n ? 'not_yet' : 'fits_uses_net', variant: net.off ? 'protection_off' : null, afterBuy: Number(after) };
+  // 05.4-24: on Dips into your safety net the spare money still in the account and the extra savings it uses are named (D-44), so
+  // only the month's money and the net money come off the month figure.
   const room = maxC(0n, usualLeft);
   const fromMonth = cost < room ? cost : room;
   const rest = cost - fromMonth;
+  if (margin < 0n) {
+    // what really sits from earlier months (D-56: never below 0) and the extra savings, as far as the price needs them
+    const need = maxC(0n, rest - maxC(0n, sitting + usualLeft - fromMonth) - net.above);
+    const dips = margin + net.lend >= 0n;
+    return { code: dips ? 'fits_uses_net' : 'not_yet', variant: net.off ? 'protection_off' : null, afterBuy: dips ? netDipFigure(usualLeft, cost, need, margin, net) : Number(after) };
+  }
   // D-40: free money is what sits plus this month's room; with the money above the net's size, less the purchase, it is what is left.
   const tight = plainTightOnce(f, sitting + usualLeft + net.above - cost);
   if (rest === 0n) return { code: 'fits_month', variant: fitVariant(net, false, false, tight), afterBuy: Number(after) };
   // Free money is what sits plus this month's room; less the room this purchase already took, it is the earlier money.
   const earlier = sitting + usualLeft - fromMonth + net.above;
   if (rest > earlier) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
-  return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above, carriesCostlyDebt(f, rest), tight), afterBuy: Number(after) };
+  return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above, carriesCostlyDebt(f, rest), tight), afterBuy: Number(usualLeft - fromMonth) };
 }
 
 // --- Short month and tight (05.4 FIN-06 / ENG-06, FIN-07, D-40). Restated from the owner's tight rule (2026-11-01), D-40, settled
@@ -962,6 +1003,14 @@ function planFlows(f: RightAnswerFixture, c: PlanPay): { date: string; amount: C
   return [{ date: f.asOf, amount: big(c.deposit) + big(c.fees) }, ...pays.map((p, i) => ({ date: dates[i] ?? f.asOf, amount: p }))];
 }
 
+/** 05.4-24 (FIN-09): what a plan takes from this month: its day-0 flows and every payment dated before the first of next month. */
+export function plainThisMonthPlan(f: RightAnswerFixture): Cents {
+  const c = f.check.pay;
+  if (c.mode !== 'plan') return 0n;
+  const next = new Date(Date.UTC(Number(f.asOf.slice(0, 4)), Number(f.asOf.slice(5, 7)), 1)).toISOString().slice(0, 10);
+  return planFlows(f, c).filter((x) => x.date < next).reduce((t, x) => t + x.amount, 0n);
+}
+
 /** The lowest point of the day-by-day path with the plan's flows on their dates (D-68). */
 export function planPathLow(f: RightAnswerFixture): Cents {
   const c = f.check.pay;
@@ -1075,7 +1124,8 @@ function shortPlanCash(f: RightAnswerFixture): { total: Cents; rest: Cents; earl
 /** D-68: the one-off answer for the plan's whole cost (Fits this month, or Fits from spare money / extra savings). */
 function shortPlanAnswer(f: RightAnswerFixture): PlainAnswer {
   const s = shortPlanCash(f) as { total: Cents; rest: Cents; earlier: Cents };
-  const after = Number(leftThisMonth(f) - s.total);
+  // 05.4-24 (BR-17): "This month ends at $500 - $500 = $0": the month pays what it has; the rest is spare money, named.
+  const after = Number(leftThisMonth(f) - (s.total - s.rest));
   const net = plainNet(f);
   // D-68: "judged by cash like a one-off purchase", so the one-off tight rule (D-40) reads the whole cost.
   const tight = plainTightOnce(f, freeMoney(f) + net.above - s.total);

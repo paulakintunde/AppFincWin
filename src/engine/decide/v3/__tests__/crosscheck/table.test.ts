@@ -10,19 +10,27 @@ import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
 import type { RightAnswerFixture } from '../rightAnswers/schema';
 
-const PENDING_IDS = new Set(PENDING_RULES.flatMap((r) => r.fixId.split('/')).filter((id) => id !== 'FIN-09'));
+const PENDING_IDS = new Set(PENDING_RULES.flatMap((r) => r.fixId.split('/')));
 
 describe('plain calculator vs the approved table', () => {
   const cases = loadCases().filter((c) => c.status === 'approved');
-  // 05.4-21: RC-10 left FIN-07 (tight landed) but its code waits for FIN-09 (05.4-24: £1,500 free this month, so Fits this month,
-  // with the month figure for money saved earlier); both sides give fits_unspent until then. It stays in knownRed under FIN-09.
+  // 05.4-21: RC-10 left FIN-07 (tight landed) but its code waited for FIN-09. 05.4-24: FIN-09 does not move it. Its case counts the
+  // whole £1,500 free (the account) as this month's money (Fits, £50 left); both sides read this month after its plans as £687.10
+  // (£2,500 - £1,000 - £400 spent - £412.90 still to come over 16 of 31 days) and the rest as spare money from earlier months, so
+  // both give fits_unspent with a month figure of £0. Owner question at the 05.4-24 review; it stays in knownRed under FIN-09 until then.
   const WAITS: Readonly<Record<string, string>> = { 'RC-10': 'FIN-09' };
   const live = cases.filter((c) => {
-    const pending = pendingFixIds(c.fixture).filter((id) => id !== 'FIN-09');
+    const pending = pendingFixIds(c.fixture);
     return pending.length === 0 && !c.fixIds.some((id) => PENDING_IDS.has(id)) && WAITS[c.id] === undefined;
   });
   it(`checks ${live.length} approved cases`, () => {
     for (const c of live) expect({ id: c.id, code: plainAnswer(c.fixture).code }).toEqual({ id: c.id, code: c.expected.code });
+  });
+  // 05.4-24 (FIN-09): and the month figure after buying, where the case states it
+  it('the month figure after buying matches every approved case that states one', () => {
+    const stated = live.filter((c) => c.expected.afterBuy.month !== null);
+    expect(stated.length).toBeGreaterThan(20);
+    for (const c of stated) expect({ id: c.id, month: plainAnswer(c.fixture).afterBuy }).toEqual({ id: c.id, month: c.expected.afterBuy.month });
   });
 });
 
@@ -298,8 +306,8 @@ describe('05.4-54 (D-68): the plain calculator restates short plans paid from mo
       { date: '2027-01-15', amount: 60_000n },
     ]).find((p) => p.balance === 270_000n);
     expect(low?.date).toBe('2027-01-31');
-    // $500 of this month's room, then $1,300 of the $3,000 of earlier spare money: Fits from spare money
-    expect(plainAnswer(f)).toEqual({ code: 'fits_unspent', variant: null, afterBuy: -130_000 });
+    // $500 of this month's room, then $1,300 of the $3,000 of earlier spare money: Fits from spare money; the month ends at $0 (BR-17)
+    expect(plainAnswer(f)).toEqual({ code: 'fits_unspent', variant: null, afterBuy: 0 });
   });
 
   it('plainPath is plainPathFlows with the cost on day 0 (every existing caller gives the same numbers)', () => {

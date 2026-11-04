@@ -1,5 +1,5 @@
 /**
- * QA-03: the engine and the plain calculator must agree on the code (and money left once FIN-09 lands), on the tight caution
+ * QA-03: the engine and the plain calculator must agree on the code (and, since 05.4-24 FIN-09, on the month figure after buying), on the tight caution
  * (05.4-21), and, for a fixture with a card or loan, on the costly-debt caution (05.4-20)
  * for random fixtures. Fixtures that trigger a rule still in PENDING_RULES are skipped and counted.
  */
@@ -21,7 +21,7 @@ describe('cross-check calculator vs engine', () => {
     try {
       fc.assert(
         fc.property(fixtureArb, (f) => {
-          const blocking = pendingFixIds(f).filter((id) => id !== 'FIN-09');
+          const blocking = pendingFixIds(f);
           if (blocking.length > 0) {
             for (const id of blocking) skipped[id] = (skipped[id] ?? 0) + 1;
             return;
@@ -33,7 +33,14 @@ describe('cross-check calculator vs engine', () => {
           // 05.4-20 (D-39b): with a card or loan drawn, the costly-debt caution is compared too. 05.4-21 (FIN-07, D-40): and tight.
           const costly = (v: string | null): boolean | null => (f.debts.length === 0 ? null : v === 'costly_debt');
           const tight = (v: string | null): boolean => v === 'tight';
-          expect({ code: got.code, costly: costly(got.variant), tight: tight(got.variant) }).toEqual({ code: plain.code, costly: costly(plain.variant), tight: tight(plain.variant) });
+          // 05.4-24 (FIN-09): the month figure after buying; an ask has none.
+          const month = (code: string, m: number | null): number | null => (code === 'needs_input' ? null : m);
+          expect({ code: got.code, costly: costly(got.variant), tight: tight(got.variant), month: month(got.code, got.afterBuy.month) }).toEqual({
+            code: plain.code,
+            costly: costly(plain.variant),
+            tight: tight(plain.variant),
+            month: month(plain.code, plain.afterBuy),
+          });
         }),
         { numRuns: RUNS, seed: SEED }
       );
@@ -60,7 +67,7 @@ describe('cross-check calculator vs engine: borrowing on plans', () => {
     try {
       fc.assert(
         fc.property(fixtureArb, (f) => {
-          if (f.check.pay.mode !== 'plan' || pendingFixIds(f).some((id) => id !== 'FIN-09' && id !== 'BO-05')) return;
+          if (f.check.pay.mode !== 'plan' || pendingFixIds(f).some((id) => id !== 'BO-05')) return;
           if ((f.check.runningCosts?.length ?? 0) > 0 || f.check.replaces != null || f.check.closingPercent != null) return;
           const { inputs, check } = toEngineInputs(f);
           const got = pick(evaluate(inputs, check));

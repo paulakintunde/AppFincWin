@@ -9,7 +9,7 @@ export interface PendingRule { fixId: string; applies: (f: RightAnswerFixture) =
 const plan = (f: RightAnswerFixture): boolean => f.check.pay.mode === 'plan';
 
 export const PENDING_RULES: PendingRule[] = [
-  { fixId: 'FIN-09', applies: () => true, note: 'afterBuy block: until it lands only the code is compared' },
+  // 05.4-24: the FIN-09 entry (the afterBuy block) is deleted; plain.ts restates the month figure and crosscheck.test compares it.
   { fixId: 'FIN-27', applies: (f) => f.check.taxPercent !== null || f.region !== null, note: 'tax by region' },
   // 05.4-23: the FIN-08 (your answer, low months) and FIN-15 (the lower of the set-up pay and the last three) entries are deleted;
   // plain.ts restates both (plainLowMonths, lowerPay). FIN-08 only changes plans, which stay out under BO-05 below; table.test pins them.

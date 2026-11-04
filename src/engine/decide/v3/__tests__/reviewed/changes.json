@@ -7156,6 +7156,2216 @@
       "reason": "FIN-05b (D-80, owner approved 2026-11-04): 19.9% APR plan costs $1,595.28 in interest (32.47% of $4,912.83), so expensive; paying cash is ready on payday 2026-10-08, 5 days after the 2026-10-03 check, within 31 days, so \"Fits, but borrowing costs more\" instead of \"Only by borrowing\".",
       "approved": true,
       "approvedAt": "2026-11-04"
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:sam:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -857500
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:sam:900000:plan",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 42500
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:maya:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -120000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:maya:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -820000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:maya:900000:plan",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 80000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:riley:6000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": -36000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:riley:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": -80000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:riley:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": -230000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:riley:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": -930000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:riley:900000:plan",
+      "before": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": -30000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:leo:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -219484
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:leo:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -919484
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:leo:900000:plan",
+      "before": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": -19484
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:tia:6000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": 17613
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:tia:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -26387
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:tia:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -176387
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:tia:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -876387
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:tia:900000:plan",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 23613
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:dana:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -816290
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:dana:900000:plan",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 83710
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:kim:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -810000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:kim:900000:plan",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 90000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:priya:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": -80000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:priya:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -780000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:priya:900000:plan",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 120000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p1:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -42000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p1:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -192000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p1:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -892000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p1:900000:plan",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": 8000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p2:6000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": -106000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p2:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": -150000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p3:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -140000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p3:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -840000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p3:900000:plan",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 60000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p4:6000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": 34000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p4:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -10000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p4:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -160000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p4:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -860000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p4:900000:plan",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": 40000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p4-overdrawn:6000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": 34000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p4-overdrawn:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -10000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p4-overdrawn:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -160000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p4-overdrawn:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -860000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p4-overdrawn:900000:plan",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": 40000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p5:6000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": 90774
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p5:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": 46774
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p5:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -103226
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p5:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -803226
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p5:900000:plan",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": 96774
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p6:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -125000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p6:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -825000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p6:900000:plan",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 75000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p6-lines:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -125000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p6-lines:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -825000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p6-lines:900000:plan",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 75000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p7:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -820000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p7:900000:plan",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 80000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p8:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -120000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p8:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -820000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p8:900000:plan",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 80000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p9:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -30000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p9:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -180000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p9:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -880000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p9:900000:plan",
+      "before": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 20000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p10:50000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": 10000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p10:200000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -140000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p10:900000:cash",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -840000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "persona:audit-p10:900000:plan",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 60000
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:1",
+      "before": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": -86954
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:4",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 47325
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 46785
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:5",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 109469
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:7",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 210551
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:12",
+      "before": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": -12570
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:22",
+      "before": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "small_net",
+        "afterBuyMonth": 137729
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:24",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 274566
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 274394
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:34",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 482593
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:40",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 40918
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 29866
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:42",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 135123
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 85569
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:45",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 184809
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:46",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 64131
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 47439
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:47",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -2716555
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:55",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 249317
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 195871
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:56",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 106229
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 103957
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:58",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -782804
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:59",
+      "before": {
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuyMonth": 177381
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuyMonth": 161821
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:63",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 213016
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:65",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 114710
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:67",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -6321036
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:68",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 392528
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 371440
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:69",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 302497
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 286205
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:71",
+      "before": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 0
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": -5980
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:79",
+      "before": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": -6221
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": -88101
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:80",
+      "before": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": "month_already_short",
+        "afterBuyMonth": -150276
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:84",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 174619
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 156325
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:85",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -256170
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:86",
+      "before": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": -2300200
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:90",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 375651
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:94",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 204360
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 203832
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:95",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 89413
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 76565
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:97",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 157677
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:99",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 147919
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:101",
+      "before": {
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuyMonth": 212598
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuyMonth": 211350
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:102",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 121365
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:104",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 77773
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 77689
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:105",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 28760
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:111",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 297653
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 297625
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:116",
+      "before": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuyMonth": -1810436
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:120",
+      "before": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuyMonth": 10228
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuyMonth": 7650
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:121",
+      "before": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuyMonth": -1039663
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:123",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 131710
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:128",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -6427318
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:133",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 59774
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:136",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -802785
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:139",
+      "before": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "monthly_short",
+        "variant": null,
+        "afterBuyMonth": 59514
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:140",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 37352
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 34034
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:144",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 45278
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 31110
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:148",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 84944
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:153",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -3316011
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:154",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 78780
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuyMonth": 74572
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:165",
+      "before": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 252704
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 242524
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:170",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -3065726
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:175",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -360604
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:176",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 130706
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 117218
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:179",
+      "before": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 23839
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:189",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -1973586
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:193",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 157924
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:194",
+      "before": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 121367
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuyMonth": 108851
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:195",
+      "before": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": null
+      },
+      "after": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuyMonth": -7263847
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:198",
+      "before": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 74989
+      },
+      "after": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuyMonth": 35617
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
+    },
+    {
+      "fixId": "FIN-09",
+      "key": "gen:199",
+      "before": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 189260
+      },
+      "after": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuyMonth": 183930
+      },
+      "reason": "",
+      "approved": false,
+      "approvedAt": null
     }
   ]
 }

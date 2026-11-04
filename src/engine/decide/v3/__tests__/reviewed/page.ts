@@ -17,6 +17,8 @@ import { debtOutflows, debtsInMonth } from '../../debts';
 import { essentialCosts, essentialSpendingOf } from '../../essentialCosts';
 import { firstPaymentsToday, purchaseCashFlows } from '../../judge/purchase';
 import { planTotal } from '../../depletion';
+import { paymentsInRange } from '../../plan/schedule';
+import { myPart as myShareOf } from '../../../share';
 import { liveSeriesOf, seriesOccurrences } from '../../month/series';
 import { FACT_KEYS, NOTICE_KEYS } from '../../copy/verdictTable';
 import { evaluate } from '../../evaluate';
@@ -79,7 +81,8 @@ export const words = (a: ReviewedAnswer): string => {
             : null;
   const base = tier !== undefined ? `${tier} (code: ${code})` : own !== null ? `${own} (code: ${code})` : code;
   const v = a.variant === null || tier !== undefined || own !== null ? '' : ` (${VARIANT[a.variant] ?? a.variant})`;
-  const left = a.afterBuyMonth === null ? '' : `, ${(a.afterBuyMonth / 100).toFixed(2)} left that month`;
+  // 05.4-24 (D-106): a figure below 0 is overspent, never "-X left"
+  const left = a.afterBuyMonth === null ? '' : a.afterBuyMonth < 0 ? `, that month overspent by ${(-a.afterBuyMonth / 100).toFixed(2)}` : `, ${(a.afterBuyMonth / 100).toFixed(2)} left that month`;
   return `${base}${v}${left}`;
 };
 export const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -243,11 +246,6 @@ function isSpendingAccount(use: Use | null): boolean {
   return use === null || use.kind === 'everyday' || use.kind === 'mixed';
 }
 
-/** The facts of an evaluation by code (first one wins). */
-const factOf = (ev: Evaluation, code: string): Record<string, unknown> | null => {
-  const f = ev.result.facts.find((x) => x.code === code);
-  return f === undefined ? null : (f.values as Record<string, unknown>);
-};
 
 // ---------------------------------------------------------------- the answer's facts and notices (en.ts wording)
 
@@ -419,14 +417,14 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   toCome.push([`Everyday spending ${asOf} to ${monthEnd}`, `${m(mo.erest)} (engine estimate from the usual ${m(mo.e ?? 0)} a month)`]);
   sections.push({ title: 'Still to come this month', rows: toCome });
 
-  // This month, before and after
-  const left = factOf(ev, 'month_left_after');
+  // This month, before and after (05.4-24 FIN-09: the afterBuy block, D-22..D-24)
+  const ab = ev.result.afterBuy;
   const monthRows: [string, string][] = [
     ['Engine: money out this month (bills, everyday, set aside)', m(mo.moneyOut)],
-    ['Left this month before the purchase', m(mo.monthLeft)],
+    ['This month after its plans, before the purchase', `${m(mo.monthLeft)} = money in ${m(mo.moneyIn)} - money out ${m(mo.moneyOut)}`],
   ];
-  if (left !== null) monthRows.push(['Left this month after the purchase (engine)', m(left['left'] as number)]);
-  else if (c.check.pay.mode === 'plan' && ev.planCard !== null) monthRows.push(['Left this month after the purchase', `${m(mo.monthLeft)}: nothing is paid this month; the first payment is on ${ev.planCard.firstDate}`]);
+  if (ab.before !== mo.monthLeft) monthRows.push(['Decide Home figure (the stricter reading, D-42)', m(ab.before)]);
+  monthRows.push(...afterBuyRows(c, ev, m));
   monthRows.push(['Usual month leaves', mo.typicalLeft === null ? 'not known' : m(mo.typicalLeft)]);
   sections.push({ title: 'This month', rows: monthRows });
 
@@ -572,8 +570,88 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   steps.push(...borrowSteps(c, ev, m)); // 05.4-22 (FIN-05, D-07, D-39a, D-39c, D-48)
   steps.push(...payGapSteps(c, ev, m), ...lowMonthSteps(c, ev, m), ...runwaySteps(c, ev, m)); // 05.4-23 (FIN-15, FIN-08, D-46)
   if (res.variant === 'extra_savings') steps.push('Part of it is paid from money saved above the safety net\'s size, so the headline is "Fits from extra savings" (D-62).');
-  steps.push(`Engine answer: ${words({ code: res.code, variant: res.variant, afterBuyMonth: left === null ? null : (left['left'] as number) })}.`);
+  steps.push(...afterBuySteps(c, ev, m)); // 05.4-24 (FIN-09, D-22..D-24, D-44)
+  steps.push(`Engine answer: ${words({ code: res.code, variant: res.variant, afterBuyMonth: res.code === 'needs_input' ? null : res.afterBuy.month })}.`);
   return { sections, steps };
+}
+
+/** 05.4-24 (FIN-09): what the purchase takes from this month, piece by piece, as the engine counts it (afterBuy.ts). */
+export interface AfterBuySums {
+  readonly before: number;
+  readonly fromMonth: number;
+  readonly fromNet: number;
+  readonly earlier: number;
+  readonly extra: number;
+  readonly envelope: number;
+  readonly dayOne: number;
+  readonly later: readonly { readonly date: string; readonly amount: number }[];
+  readonly byCash: boolean;
+  readonly after: number;
+}
+
+export function afterBuySums(c: CorpusCase, ev: Evaluation): AfterBuySums | null {
+  const r = ev.result;
+  if (r.code === 'needs_input' || ev.purchase === null) return null;
+  const seg = (src: string): number => r.split.filter((x) => x.source === src).reduce((a, x) => a + x.amount, 0);
+  const byCash = r.facts.some((f) => f.code === 'short_plan_from_cash');
+  const sched = ev.purchase.schedule;
+  const ym = yearMonthOf(c.inputs.asOf);
+  const nextFirst = addDays(`${ym}-${String(daysInYearMonth(ym)).padStart(2, '0')}`, 1);
+  const later = byCash || sched === null ? [] : paymentsInRange(sched, addDays(c.inputs.asOf, 1), nextFirst).map((p) => ({ date: p.date, amount: myShareOf(p.amount, ev.purchase!.share) as number }));
+  return {
+    before: r.afterBuy.before,
+    fromMonth: seg('month'),
+    fromNet: seg('emergency'),
+    earlier: seg('unspent_earlier'),
+    extra: seg('extra_savings'),
+    envelope: seg('envelope'),
+    dayOne: ev.purchase.dayOne,
+    later,
+    byCash,
+    after: r.afterBuy.month,
+  };
+}
+
+function afterBuyRows(c: CorpusCase, ev: Evaluation, m: (n: number) => string): [string, string][] {
+  const s = afterBuySums(c, ev);
+  const ab = ev.result.afterBuy;
+  if (s === null) return [['After the purchase', 'an ask has no answer yet, so no figure']];
+  const rows: [string, string][] = [];
+  if (ev.result.split.length > 0) {
+    rows.push(['Taken from this month', `${m(s.fromMonth)} from this month${s.fromNet > 0 ? ` + ${m(s.fromNet)} from the safety net (counted in the month, D-22)` : ''}`]);
+    if (s.earlier > 0) rows.push(['Named, not this month (D-44)', `${m(s.earlier)} of spare money from earlier months, still in the account`]);
+    if (s.extra > 0) rows.push(['Named, not this month (D-44)', `${m(s.extra)} of extra savings above the safety net's size, in savings`]);
+    if (s.envelope > 0) rows.push(['Named, not this month', `${m(s.envelope)} from the purchase's own pot`]);
+  } else {
+    rows.push(['Taken from this month', `${m(s.dayOne)} on the day${s.dayOne === 0 ? ' (nothing on the day)' : ''}`]);
+  }
+  for (const p of s.later) rows.push([`Plan payment later this month, ${p.date}`, m(p.amount)]);
+  if (ev.result.reasons.includes('first_payment_later')) rows.push(['First payment', `after this month (first_payment_later), so this month holds ${m(s.dayOne)} of the plan`]);
+  rows.push(['This month after the purchase (afterBuy.month)', m(ab.month)]);
+  if (ab.usualMonth !== null) rows.push(['A usual month once payments start (afterBuy.usualMonth)', `${m(ab.usualMonth)} = usual month ${m(ev.month.typicalLeft ?? 0)} - ${m(ev.purchase?.monthly ?? 0)} a month`]);
+  rows.push(['The answer leads with', ab.lead === 'usualMonth' ? 'the usual month once payments start (a plan)' : 'this month']);
+  return rows;
+}
+
+function afterBuySteps(c: CorpusCase, ev: Evaluation, m: (n: number) => string): string[] {
+  const s = afterBuySums(c, ev);
+  if (s === null) return [];
+  const ab = ev.result.afterBuy;
+  const parts: string[] = [];
+  if (ev.result.split.length > 0) {
+    parts.push(`${m(s.fromMonth)} from this month`);
+    if (s.fromNet > 0) parts.push(`${m(s.fromNet)} from the safety net`);
+  } else parts.push(`${m(s.dayOne)} on the day`);
+  for (const p of s.later) parts.push(`${m(p.amount)} on ${p.date}`);
+  const taken = s.before - s.after;
+  const named = [s.earlier > 0 ? `${m(s.earlier)} of spare money from earlier months (still in the account)` : '', s.extra > 0 ? `${m(s.extra)} of extra savings (in savings)` : '', s.envelope > 0 ? `${m(s.envelope)} from its own pot` : ''].filter((x) => x !== '');
+  // the page's own sum, from the split and the dated plan payments; it must equal the engine's figure (D-53)
+  const pageSum = s.before - (ev.result.split.length > 0 ? s.fromMonth + s.fromNet : s.dayOne) - s.later.reduce((a, x) => a + x.amount, 0);
+  const out = [
+    `After buying (D-22): this month after its plans ${m(s.before)} - ${parts.join(' - ')} = ${m(pageSum)} (${m(taken)} taken from this month).${named.length > 0 ? ` The rest is named, not taken from this month: ${named.join(', ')} (D-44).` : ''}${pageSum === ab.month ? '' : ` PAGE AND ENGINE DISAGREE: the engine says ${m(ab.month)}.`}`,
+  ];
+  if (ab.usualMonth !== null) out.push(`A usual month once payments start: ${m(ev.month.typicalLeft ?? 0)} - ${m(ev.purchase?.monthly ?? 0)} = ${m(ab.usualMonth)}${ab.lead === 'usualMonth' ? '; a plan leads with it' : ''}.`);
+  return out;
 }
 
 /** "N payments every <unit> over T months, at A% a year (APR), first payment <date>, last payment <date>" (05.4-56, D-53). */
