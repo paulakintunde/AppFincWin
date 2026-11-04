@@ -192,7 +192,8 @@ describe('reviewed page', () => {
     );
     expect(q.says).toContain('Fact short_plan_from_cash This plan’s $600.00 a month is more than your usual month can cover, so it is paid from money on hand.');
     const x = all(sp(SHORT_PLAN_CASES.extraSavings, 'sp:x'));
-    expect(x.steps).toContain('covered by money on hand $4,500.00 (this month and spare money $500.00 + extra savings $4,000.00)');
+    // 05.4-24 FIN-09b (D-86): the everyday account opened the month $500 below $0, so November's $500 pays that back first
+    expect(x.steps).toContain('covered by money on hand $4,000.00 (this month and spare money $0.00 + extra savings $4,000.00)');
     expect(all(sp(SHORT_PLAN_CASES.alreadyShort, 'sp:s')).steps).toContain('about $600.00 a month against the usual month, already $100.00 short, so it is paid from money on hand.');
     expect(all(cases.find((c) => c.key === 'gen:70')!).steps).toContain('Judged by cash (D-68): the last payment is on 2026-10-03, before the 90 days end on 2027-01-01');
     for (const k of Object.keys(SHORT_PLAN_CASES) as (keyof typeof SHORT_PLAN_CASES)[]) {

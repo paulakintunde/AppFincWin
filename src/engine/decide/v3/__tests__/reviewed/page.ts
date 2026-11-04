@@ -421,8 +421,15 @@ export function breakdown(c: CorpusCase): { sections: Section[]; steps: string[]
   const ab = ev.result.afterBuy;
   const monthRows: [string, string][] = [
     ['Engine: money out this month (bills, everyday, set aside)', m(mo.moneyOut)],
-    ['This month after its plans, before the purchase', `${m(mo.monthLeft)} = money in ${m(mo.moneyIn)} - money out ${m(mo.moneyOut)}`],
+    [
+      'This month after its plans, before the purchase',
+      (mo.carriedOverdraft ?? 0) > 0
+        ? `${m(mo.monthLeft)} = money in ${m(mo.moneyIn)} - money out ${m(mo.moneyOut)} - ${m(mo.carriedOverdraft ?? 0)} owed from last month`
+        : `${m(mo.monthLeft)} = money in ${m(mo.moneyIn)} - money out ${m(mo.moneyOut)}`,
+    ],
   ];
+  // 05.4 D-86 (FIN-09b): the overdraft the account carried into the month, paid back from this month first
+  if ((mo.carriedOverdraft ?? 0) > 0) monthRows.push(['Owed from last month (D-86)', `${m(mo.carriedOverdraft ?? 0)}: the everyday money opened this month below ${m(0)}, so this is paid back from this month first`]);
   if (ab.before !== mo.monthLeft) monthRows.push(['Decide Home figure (the stricter reading, D-42)', m(ab.before)]);
   monthRows.push(...afterBuyRows(c, ev, m));
   monthRows.push(['Usual month leaves', mo.typicalLeft === null ? 'not known' : m(mo.typicalLeft)]);

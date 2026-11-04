@@ -1,68 +1,67 @@
 {
   "persona:audit-p4-overdrawn:6000:cash": {
-    "right": "Not yet (not_covered); October would still leave about $340.00",
+    "right": "Not yet (not_covered); October would be about $2,147.10 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: $340.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $2,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $12.90 + everyday still to come $587.10 + set aside $0.00) = $400.00. Decide Home shows the same figure ($400.00).",
-      "Taken this month: the day-one cost $60.00 comes off this month. By hand: $400.00 - $60.00 = $340.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure $340.00. After: -$2,147.10. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds -$1,500.00 now, after $2,000.00 in and $1,012.90 out this month, so it opened October at -$2,487.10: $2,487.10 owed from September (D-86).",
+      "October after its plans: $400.00 - $2,487.10 paid back first = -$2,087.10 (Decide Home shows -$2,087.10).",
+      "After buying: -$2,087.10 - $60.00 taken this month = -$2,147.10."
     ]
   },
   "persona:audit-p4-overdrawn:50000:cash": {
-    "right": "Not yet (not_covered); October would be about $100.00 overspent",
+    "right": "Not yet (not_covered); October would be about $2,587.10 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: -$100.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $2,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $12.90 + everyday still to come $587.10 + set aside $0.00) = $400.00. Decide Home shows the same figure ($400.00).",
-      "Taken this month: the day-one cost $500.00 comes off this month. By hand: $400.00 - $500.00 = -$100.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure -$100.00. After: -$2,587.10. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds -$1,500.00 now, after $2,000.00 in and $1,012.90 out this month, so it opened October at -$2,487.10: $2,487.10 owed from September (D-86).",
+      "October after its plans: $400.00 - $2,487.10 paid back first = -$2,087.10 (Decide Home shows -$2,087.10).",
+      "After buying: -$2,087.10 - $500.00 taken this month = -$2,587.10."
     ]
   },
   "persona:audit-p4-overdrawn:200000:cash": {
-    "right": "Not yet (not_covered); October would be about $1,600.00 overspent",
+    "right": "Not yet (not_covered); October would be about $4,087.10 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: -$1,600.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $2,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $12.90 + everyday still to come $587.10 + set aside $0.00) = $400.00. Decide Home shows the same figure ($400.00).",
-      "Taken this month: the day-one cost $2,000.00 comes off this month. By hand: $400.00 - $2,000.00 = -$1,600.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure -$1,600.00. After: -$4,087.10. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds -$1,500.00 now, after $2,000.00 in and $1,012.90 out this month, so it opened October at -$2,487.10: $2,487.10 owed from September (D-86).",
+      "October after its plans: $400.00 - $2,487.10 paid back first = -$2,087.10 (Decide Home shows -$2,087.10).",
+      "After buying: -$2,087.10 - $2,000.00 taken this month = -$4,087.10."
     ]
   },
   "persona:audit-p4-overdrawn:900000:cash": {
-    "right": "Not yet (not_covered); October would be about $8,600.00 overspent",
+    "right": "Not yet (not_covered); October would be about $11,087.10 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: -$8,600.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $2,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $12.90 + everyday still to come $587.10 + set aside $0.00) = $400.00. Decide Home shows the same figure ($400.00).",
-      "Taken this month: the day-one cost $9,000.00 comes off this month. By hand: $400.00 - $9,000.00 = -$8,600.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure -$8,600.00. After: -$11,087.10. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds -$1,500.00 now, after $2,000.00 in and $1,012.90 out this month, so it opened October at -$2,487.10: $2,487.10 owed from September (D-86).",
+      "October after its plans: $400.00 - $2,487.10 paid back first = -$2,087.10 (Decide Home shows -$2,087.10).",
+      "After buying: -$2,087.10 - $9,000.00 taken this month = -$11,087.10."
     ]
   },
   "persona:audit-p4-overdrawn:900000:plan": {
-    "right": "Not yet (not_covered); October would still leave about $400.00",
+    "right": "Not yet (not_covered); October would be about $2,087.10 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: $400.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $2,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $12.90 + everyday still to come $587.10 + set aside $0.00) = $400.00. Decide Home shows the same figure ($400.00).",
-      "Taken this month: the day-one cost $0.00 comes off this month; the first payment is on 2026-11-15, after this month (first_payment_later). By hand: $400.00 - $0.00 = $400.00.",
-      "A usual month once payments start: $400.00 - $219.30 = $180.70, and a plan leads with it.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure $400.00. After: -$2,087.10. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds -$1,500.00 now, after $2,000.00 in and $1,012.90 out this month, so it opened October at -$2,487.10: $2,487.10 owed from September (D-86).",
+      "October after its plans: $400.00 - $2,487.10 paid back first = -$2,087.10 (Decide Home shows -$2,087.10).",
+      "After buying: -$2,087.10 - $0.00 taken this month = -$2,087.10."
     ]
   },
   "persona:maya:6000:cash": {
@@ -291,61 +290,54 @@
     ]
   },
   "persona:priya:6000:cash": {
-    "right": "Fits (but your safety net is small); $1,140.00 left that month",
+    "right": "Fits (small_net); October would still leave about $740.00",
     "rightCode": "fits_month",
     "rightVariant": "small_net",
-    "verdict": "CORRECT",
-    "cause": "D-67; D-35; D-51",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Usual month by hand: pay $3,000.00 - bills $1,000.00 - everyday $600.00 - regular saving $200.00 (D-67) = $1,200.00. Engine: $1,200.00 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $1,200.00. Spare money judged against: $800.00.",
-      "Price $60.00, in cash; paid today $60.00.",
-      "90-day path: lowest with the purchase $740.00 on 2026-10-31; without it $800.00 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $1,500.00, size $1,600.00 (the starter, D-51), protected part $1,500.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but your safety net is small).",
-      "Hand check: the one-off part: the path never goes below $0.00; the net holds $1,500.00 of its $1,600.00 size, so a fit carries \"but your safety net is small\"."
+      "Before: month figure $1,140.00. After: $740.00. The answer (Fits (small_net)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $1,550.00 now, after $3,000.00 in and $1,050.00 out this month, so it opened October at -$400.00: $400.00 owed from September (D-86).",
+      "October after its plans: $1,200.00 - $400.00 paid back first = $800.00 (Decide Home shows $800.00).",
+      "After buying: $800.00 - $60.00 taken this month = $740.00."
     ]
   },
   "persona:priya:50000:cash": {
-    "right": "Fits (but your safety net is small); $700.00 left that month",
+    "right": "Fits (small_net); October would still leave about $300.00",
     "rightCode": "fits_month",
     "rightVariant": "small_net",
-    "verdict": "CORRECT",
-    "cause": "D-67; D-35; D-51",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Usual month by hand: pay $3,000.00 - bills $1,000.00 - everyday $600.00 - regular saving $200.00 (D-67) = $1,200.00. Engine: $1,200.00 (matches).",
-      "Check date 2026-10-03. This month left before the purchase: $1,200.00. Spare money judged against: $800.00.",
-      "Price $500.00, in cash; paid today $500.00.",
-      "90-day path: lowest with the purchase $300.00 on 2026-10-31; without it $800.00 on 2026-10-31. Cash check: ok.",
-      "Safety net: saved $1,500.00, size $1,600.00 (the starter, D-51), protected part $1,500.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Unlocked, the answer would be the same: Fits (but your safety net is small).",
-      "Hand check: the one-off part: the path never goes below $0.00; the net holds $1,500.00 of its $1,600.00 size, so a fit carries \"but your safety net is small\"."
+      "Before: month figure $700.00. After: $300.00. The answer (Fits (small_net)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $1,550.00 now, after $3,000.00 in and $1,050.00 out this month, so it opened October at -$400.00: $400.00 owed from September (D-86).",
+      "October after its plans: $1,200.00 - $400.00 paid back first = $800.00 (Decide Home shows $800.00).",
+      "After buying: $800.00 - $500.00 taken this month = $300.00."
     ]
   },
   "persona:priya:200000:cash": {
-    "right": "Not yet (payday); October would be about $800.00 overspent",
+    "right": "Not yet (payday); October would be about $1,200.00 overspent",
     "rightCode": "not_yet",
     "rightVariant": "payday",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: -$800.00. The answer (Not yet (payday)) is unchanged.",
-      "This month after its plans (D-22): $3,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $50.00 + everyday still to come $550.00 + set aside $200.00) = $1,200.00. Decide Home shows the same figure ($1,200.00).",
-      "Taken this month: the day-one cost $2,000.00 comes off this month. By hand: $1,200.00 - $2,000.00 = -$800.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure -$800.00. After: -$1,200.00. The answer (Not yet (payday)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $1,550.00 now, after $3,000.00 in and $1,050.00 out this month, so it opened October at -$400.00: $400.00 owed from September (D-86).",
+      "October after its plans: $1,200.00 - $400.00 paid back first = $800.00 (Decide Home shows $800.00).",
+      "After buying: $800.00 - $2,000.00 taken this month = -$1,200.00."
     ]
   },
   "persona:priya:900000:plan": {
-    "right": "Only by borrowing; October would still leave about $1,200.00",
+    "right": "Only by borrowing; October would still leave about $800.00",
     "rightCode": "fits_by_borrowing",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: $1,200.00. The answer (Only by borrowing) is unchanged.",
-      "This month after its plans (D-22): $3,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $50.00 + everyday still to come $550.00 + set aside $200.00) = $1,200.00. Decide Home shows the same figure ($1,200.00).",
-      "Taken this month: the day-one cost $0.00 comes off this month; the first payment is on 2026-11-03, after this month (first_payment_later). By hand: $1,200.00 - $0.00 = $1,200.00.",
-      "A usual month once payments start: $1,200.00 - $219.30 = $980.70, and a plan leads with it.",
-      "Before FIN-09 a plan with nothing paid on the day showed no month figure; now it does (D-22)."
+      "Before: month figure $1,200.00. After: $800.00. The answer (Only by borrowing) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $1,550.00 now, after $3,000.00 in and $1,050.00 out this month, so it opened October at -$400.00: $400.00 owed from September (D-86).",
+      "October after its plans: $1,200.00 - $400.00 paid back first = $800.00 (Decide Home shows $800.00).",
+      "After buying: $800.00 - $0.00 taken this month = $800.00."
     ]
   },
   "persona:audit-p1:6000:cash": {
@@ -696,36 +688,28 @@
     ]
   },
   "persona:audit-p10:6000:cash": {
-    "right": "Fits, but tight (code: Fits)",
+    "right": "Fits (tight); October would still leave about $119.04",
     "rightCode": "fits_month",
     "rightVariant": "tight",
-    "verdict": "CORRECT",
-    "cause": "FIN-07 tight (owner rule, 2026-11-01) / D-40 (05.4-21)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Check date 2026-10-15. $60 paid once from October ($600 left before, $540 after).",
-      "Money left by hand: the account holds only $179.04 at month end, so spare money is capped there (D-56): $179.04 - $60 = $119.04, under the floor $190 (a tenth of $1,100 + $800). Even before the purchase it is under the floor.",
-      "October alone ($540) is NOT under the floor. The plan text reads \"fits_month = this month after its plans minus the purchase\"; the engine reads the money really left (spare money + extra savings - purchase), so it says tight. CORRECT under the engine reading; OWNER QUESTION 1.",
-      "Shown in $ but the person file says GBP (known, plan 40).",
-      "Earlier audit: Usual month by hand: pay $2,500.00 - bills $1,100.00 - everyday $800.00 = $600.00. Engine: $600.00 (matches).",
-      "Earlier audit: Check date 2026-10-15. This month left before the purchase: $600.00. Spare money judged against: $179.04.",
-      "Earlier audit: Price $60.00, in cash; paid today $60.00.",
-      "Earlier audit: 90-day path: lowest with the purchase $119.04 on 2026-10-31; without it $179.04 on 2026-10-31. Cash check: ok.",
-      "Earlier audit: Safety net: saved $0.00, size $1,900.00 (the starter, D-51), protected part $0.00, above the size (extra savings) $0.00, locked (default, D-61).",
-      "Earlier audit: Unlocked, the answer would be the same: Fits (but no safety net).",
-      "Earlier audit: Hand check: the one-off part: the path never goes below $0.00; nothing is saved in a safety net, so a fit carries \"but no safety net\"."
+      "Before: month figure $540.00. After: $119.04. The answer (Fits (tight)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $964.52 now, after $2,500.00 in and $1,114.52 out this month, so it opened October at -$420.96: $420.96 owed from September (D-86).",
+      "October after its plans: $600.00 - $420.96 paid back first = $179.04 (Decide Home shows $179.04).",
+      "After buying: $179.04 - $60.00 taken this month = $119.04."
     ]
   },
   "persona:audit-p10:900000:plan": {
-    "right": "Only by borrowing; October would still leave about $600.00",
+    "right": "Only by borrowing; October would still leave about $179.04",
     "rightCode": "fits_by_borrowing",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: $600.00. The answer (Only by borrowing) is unchanged.",
-      "This month after its plans (D-22): $2,500.00 in - (bills paid $1,100.00 + bills due $0.00 + everyday so far $14.52 + everyday still to come $785.48 + set aside $0.00) = $600.00. Decide Home shows the same figure ($600.00).",
-      "Taken this month: the day-one cost $0.00 comes off this month; the first payment is on 2026-11-15, after this month (first_payment_later). By hand: $600.00 - $0.00 = $600.00.",
-      "A usual month once payments start: $600.00 - $219.30 = $380.70, and a plan leads with it.",
-      "Before FIN-09 a plan with nothing paid on the day showed no month figure; now it does (D-22)."
+      "Before: month figure $600.00. After: $179.04. The answer (Only by borrowing) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $964.52 now, after $2,500.00 in and $1,114.52 out this month, so it opened October at -$420.96: $420.96 owed from September (D-86).",
+      "October after its plans: $600.00 - $420.96 paid back first = $179.04 (Decide Home shows $179.04).",
+      "After buying: $179.04 - $0.00 taken this month = $179.04."
     ]
   },
   "gen:0": {
@@ -4225,16 +4209,16 @@
     ]
   },
   "persona:priya:900000:cash": {
-    "right": "Not yet (not_covered); October would be about $7,800.00 overspent",
+    "right": "Not yet (not_covered); October would be about $8,200.00 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: -$7,800.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $3,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $50.00 + everyday still to come $550.00 + set aside $200.00) = $1,200.00. Decide Home shows the same figure ($1,200.00).",
-      "Taken this month: the day-one cost $9,000.00 comes off this month. By hand: $1,200.00 - $9,000.00 = -$7,800.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure -$7,800.00. After: -$8,200.00. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $1,550.00 now, after $3,000.00 in and $1,050.00 out this month, so it opened October at -$400.00: $400.00 owed from September (D-86).",
+      "October after its plans: $1,200.00 - $400.00 paid back first = $800.00 (Decide Home shows $800.00).",
+      "After buying: $800.00 - $9,000.00 taken this month = -$8,200.00."
     ]
   },
   "persona:audit-p1:50000:cash": {
@@ -4317,69 +4301,68 @@
     ]
   },
   "persona:audit-p4:6000:cash": {
-    "right": "Not yet (not_covered); October would still leave about $340.00",
+    "right": "Not yet (not_covered); October would be about $647.10 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: $340.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $2,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $12.90 + everyday still to come $587.10 + set aside $0.00) = $400.00. Decide Home shows the same figure ($400.00).",
-      "Taken this month: the day-one cost $60.00 comes off this month. By hand: $400.00 - $60.00 = $340.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure $340.00. After: -$647.10. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $0.00 now, after $2,000.00 in and $1,012.90 out this month, so it opened October at -$987.10: $987.10 owed from September (D-86).",
+      "October after its plans: $400.00 - $987.10 paid back first = -$587.10 (Decide Home shows -$587.10).",
+      "After buying: -$587.10 - $60.00 taken this month = -$647.10."
     ]
   },
   "persona:audit-p4:50000:cash": {
-    "right": "Not yet (not_covered); October would be about $100.00 overspent",
+    "right": "Not yet (not_covered); October would be about $1,087.10 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: -$100.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $2,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $12.90 + everyday still to come $587.10 + set aside $0.00) = $400.00. Decide Home shows the same figure ($400.00).",
-      "Taken this month: the day-one cost $500.00 comes off this month. By hand: $400.00 - $500.00 = -$100.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure -$100.00. After: -$1,087.10. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $0.00 now, after $2,000.00 in and $1,012.90 out this month, so it opened October at -$987.10: $987.10 owed from September (D-86).",
+      "October after its plans: $400.00 - $987.10 paid back first = -$587.10 (Decide Home shows -$587.10).",
+      "After buying: -$587.10 - $500.00 taken this month = -$1,087.10."
     ]
   },
   "persona:audit-p4:200000:cash": {
-    "right": "Not yet (not_covered); October would be about $1,600.00 overspent",
+    "right": "Not yet (not_covered); October would be about $2,587.10 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: -$1,600.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $2,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $12.90 + everyday still to come $587.10 + set aside $0.00) = $400.00. Decide Home shows the same figure ($400.00).",
-      "Taken this month: the day-one cost $2,000.00 comes off this month. By hand: $400.00 - $2,000.00 = -$1,600.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure -$1,600.00. After: -$2,587.10. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $0.00 now, after $2,000.00 in and $1,012.90 out this month, so it opened October at -$987.10: $987.10 owed from September (D-86).",
+      "October after its plans: $400.00 - $987.10 paid back first = -$587.10 (Decide Home shows -$587.10).",
+      "After buying: -$587.10 - $2,000.00 taken this month = -$2,587.10."
     ]
   },
   "persona:audit-p4:900000:cash": {
-    "right": "Not yet (not_covered); October would be about $8,600.00 overspent",
+    "right": "Not yet (not_covered); October would be about $9,587.10 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: -$8,600.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $2,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $12.90 + everyday still to come $587.10 + set aside $0.00) = $400.00. Decide Home shows the same figure ($400.00).",
-      "Taken this month: the day-one cost $9,000.00 comes off this month. By hand: $400.00 - $9,000.00 = -$8,600.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure -$8,600.00. After: -$9,587.10. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $0.00 now, after $2,000.00 in and $1,012.90 out this month, so it opened October at -$987.10: $987.10 owed from September (D-86).",
+      "October after its plans: $400.00 - $987.10 paid back first = -$587.10 (Decide Home shows -$587.10).",
+      "After buying: -$587.10 - $9,000.00 taken this month = -$9,587.10."
     ]
   },
   "persona:audit-p4:900000:plan": {
-    "right": "Not yet (not_covered); October would still leave about $400.00",
+    "right": "Not yet (not_covered); October would be about $587.10 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: $400.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $2,000.00 in - (bills paid $1,000.00 + bills due $0.00 + everyday so far $12.90 + everyday still to come $587.10 + set aside $0.00) = $400.00. Decide Home shows the same figure ($400.00).",
-      "Taken this month: the day-one cost $0.00 comes off this month; the first payment is on 2026-11-15, after this month (first_payment_later). By hand: $400.00 - $0.00 = $400.00.",
-      "A usual month once payments start: $400.00 - $219.30 = $180.70, and a plan leads with it.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure $400.00. After: -$587.10. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $0.00 now, after $2,000.00 in and $1,012.90 out this month, so it opened October at -$987.10: $987.10 owed from September (D-86).",
+      "October after its plans: $400.00 - $987.10 paid back first = -$587.10 (Decide Home shows -$587.10).",
+      "After buying: -$587.10 - $0.00 taken this month = -$587.10."
     ]
   },
   "persona:audit-p6:200000:cash": {
@@ -4526,42 +4509,42 @@
     ]
   },
   "persona:audit-p10:50000:cash": {
-    "right": "Not yet (payday); October would still leave about $100.00",
+    "right": "Not yet (payday); October would be about $320.96 overspent",
     "rightCode": "not_yet",
     "rightVariant": "payday",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: $100.00. The answer (Not yet (payday)) is unchanged.",
-      "This month after its plans (D-22): $2,500.00 in - (bills paid $1,100.00 + bills due $0.00 + everyday so far $14.52 + everyday still to come $785.48 + set aside $0.00) = $600.00. Decide Home shows the same figure ($600.00).",
-      "Taken this month: the day-one cost $500.00 comes off this month. By hand: $600.00 - $500.00 = $100.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure $100.00. After: -$320.96. The answer (Not yet (payday)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $964.52 now, after $2,500.00 in and $1,114.52 out this month, so it opened October at -$420.96: $420.96 owed from September (D-86).",
+      "October after its plans: $600.00 - $420.96 paid back first = $179.04 (Decide Home shows $179.04).",
+      "After buying: $179.04 - $500.00 taken this month = -$320.96."
     ]
   },
   "persona:audit-p10:200000:cash": {
-    "right": "Not yet (not_covered); October would be about $1,400.00 overspent",
+    "right": "Not yet (not_covered); October would be about $1,820.96 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: -$1,400.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $2,500.00 in - (bills paid $1,100.00 + bills due $0.00 + everyday so far $14.52 + everyday still to come $785.48 + set aside $0.00) = $600.00. Decide Home shows the same figure ($600.00).",
-      "Taken this month: the day-one cost $2,000.00 comes off this month. By hand: $600.00 - $2,000.00 = -$1,400.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure -$1,400.00. After: -$1,820.96. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $964.52 now, after $2,500.00 in and $1,114.52 out this month, so it opened October at -$420.96: $420.96 owed from September (D-86).",
+      "October after its plans: $600.00 - $420.96 paid back first = $179.04 (Decide Home shows $179.04).",
+      "After buying: $179.04 - $2,000.00 taken this month = -$1,820.96."
     ]
   },
   "persona:audit-p10:900000:cash": {
-    "right": "Not yet (not_covered); October would be about $8,400.00 overspent",
+    "right": "Not yet (not_covered); October would be about $8,820.96 overspent",
     "rightCode": "not_yet",
     "rightVariant": "not_covered",
-    "verdict": "CORRECT (answer unchanged; month figure by hand)",
-    "cause": "FIN-09 (05.4-24)",
+    "verdict": "CORRECT (answer unchanged; carried overdraft and month figure by hand)",
+    "cause": "FIN-09b (05.4-24, D-86)",
     "notes": [
-      "Before: no month figure. After: -$8,400.00. The answer (Not yet (not_covered)) is unchanged.",
-      "This month after its plans (D-22): $2,500.00 in - (bills paid $1,100.00 + bills due $0.00 + everyday so far $14.52 + everyday still to come $785.48 + set aside $0.00) = $600.00. Decide Home shows the same figure ($600.00).",
-      "Taken this month: the day-one cost $9,000.00 comes off this month. By hand: $600.00 - $9,000.00 = -$8,400.00.",
-      "Before FIN-09 an answer with no funding split showed no month figure; now every answer does (D-22)."
+      "Before: month figure -$8,400.00. After: -$8,820.96. The answer (Not yet (not_covered)) is unchanged.",
+      "Opening balance this month by hand: the everyday account holds $964.52 now, after $2,500.00 in and $1,114.52 out this month, so it opened October at -$420.96: $420.96 owed from September (D-86).",
+      "October after its plans: $600.00 - $420.96 paid back first = $179.04 (Decide Home shows $179.04).",
+      "After buying: $179.04 - $9,000.00 taken this month = -$8,820.96."
     ]
   },
   "gen:175": {

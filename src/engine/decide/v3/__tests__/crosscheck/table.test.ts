@@ -422,7 +422,8 @@ describe('05.4-54 drafts BR-17..BR-23 (D-68): hand, plain calculator and engine 
   it.each(['BR-17', 'BR-18', 'BR-19', 'BR-20', 'BR-21', 'BR-22', 'BR-23'])('%s', (id) => {
     const c = byId(id);
     // 05.4-56: the owner approved all seven at the FIN-01b review (2026-11-03). 05.4-22: they pass through the fixture as written.
-    expect({ status: c.status, fixIds: c.fixIds }).toEqual({ status: 'approved', fixIds: ['FIN-05', 'FIN-06', 'FIN-01b'] });
+    // 05.4-24: BR-21 also carries FIN-09b (D-86, its overdraft carried into November)
+    expect({ status: c.status, fixIds: c.fixIds }).toEqual({ status: 'approved', fixIds: id === 'BR-21' ? ['FIN-05', 'FIN-06', 'FIN-01b', 'FIN-09b'] : ['FIN-05', 'FIN-06', 'FIN-01b'] });
     const got = engine(c.fixture);
     const e = c.expected;
     expect({ code: got.code, variant: got.variant, readyBy: got.readyBy }).toEqual({ code: e.code, variant: e.variant, readyBy: ENGINE_READY[id] ?? e.readyBy });
@@ -445,7 +446,9 @@ describe('05.4-54 drafts BR-17..BR-23 (D-68): hand, plain calculator and engine 
     const today = check.pay.mode === 'plan' ? { ...check, pay: { ...check.pay, firstPayment: { kind: 'today' as const } } } : check;
     const facts = evaluate(inputs, today).result.facts;
     expect(facts.find((x) => x.code === 'move_money_by')?.values).toEqual({ amount: 80_000, date: '2026-11-15' });
-    expect(facts.find((x) => x.code === 'extra_savings_used')?.values).toEqual({ used: 130_000, above: 400_000 });
+    // 05.4-24 FIN-09b (D-86, owner: "He was $500 overdrawn"; "it uses this month up"): November's $500 pays back October's $500 first,
+    // so all $1,800 comes from the extra savings (was $500 of November and $1,300 of extra savings)
+    expect(facts.find((x) => x.code === 'extra_savings_used')?.values).toEqual({ used: 180_000, above: 400_000 });
     expect(plainTier(f('BR-22'), 'fits_unspent')).toEqual({ variant: 'month_short_moderate', months: 32, monthsAfter: 14 });
     // the ready-by months by hand (BR-12's rule): whole cost less the spare money, at $500 a month, rounded up, from November
     const months = (whole: number, free: number) => Math.ceil((whole - free) / 50_000);
@@ -672,7 +675,8 @@ describe('plain calculator: quick estimates count the bills once (05.4-57, ENG-1
 
   it('no bill series recorded (estimates only): the whole £1,300 is everyday spending, counted once; still £1,200 left', () => {
     const base = qe('QE-13');
-    const f: RightAnswerFixture = { ...base, usualMonth: { ...base.usualMonth, bills: 0 }, thisMonth: { ...base.thisMonth, billsPaid: 0 } };
+    // 05.4-24 (D-86): the £1,000 of bills not paid stays in the account, so it still opens the month at the same balance
+    const f: RightAnswerFixture = { ...base, usualMonth: { ...base.usualMonth, bills: 0 }, thisMonth: { ...base.thisMonth, billsPaid: 0 }, accounts: base.accounts.map((a, i) => (i === 0 ? { ...a, balance: a.balance + 100_000 } : a)) };
     expect(usualEveryday(f)).toBe(130_000n);
     expect(everydayToCome(f)).toBe(108_000n); // max(£1,300 x 8 / 30 = £346.67, £1,300 - £220 = £1,080)
     expect(leftThisMonth(f)).toBe(120_000n); // £2,500 - £220 - £1,080: the same money left, split differently

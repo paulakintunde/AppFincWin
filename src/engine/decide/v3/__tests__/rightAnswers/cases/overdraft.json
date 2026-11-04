@@ -157,7 +157,7 @@
         "code": "fits_uses_overdraft",
         "variant": null,
         "afterBuy": {
-          "month": 15000,
+          "month": -62700,
           "usualMonth": null
         },
         "readyBy": null,
@@ -172,16 +172,18 @@
           "overdraft_repeat"
         ]
       },
-      "why": "Spare money $750 - price $600 = $150 left in November, but the timing does not work. The $200 of everyday spending still to come is spread evenly over the 9 days from 22 to 30 November. The account goes below $0 on 25 November, and after the $500 bill on the 28th it reaches $673 - $500 - $200 - $600 = -$627 on 30 November, inside the $1,000 limit, until pay arrives on 1 December. That is 6 days below $0 (25 to 30 November), not 9. On those 6 days the amounts below $0 add up to $1,928.67, and $1,928.67 x 22% / 365 = about $1.16. Without the purchase the account would still go $27 below $0 for 2 days (about $0.02), so this purchase adds about $1.14. So the answer is \"Uses your overdraft\", never a plain \"Fits\" (D-26, D-36). Nothing is saved in a safety net, so the no-safety-net line also shows as a fact under this answer: \"Nothing is saved for emergencies yet. One month of essential costs is about $2,000. 1 month is a start; 3 to 6 months is common.\" (round 1b).",
+      "why": "Spare money $750 - price $600 = $150 left in November, but the timing does not work. The $200 of everyday spending still to come is spread evenly over the 9 days from 22 to 30 November. The account goes below $0 on 25 November, and after the $500 bill on the 28th it reaches $673 - $500 - $200 - $600 = -$627 on 30 November, inside the $1,000 limit, until pay arrives on 1 December. That is 6 days below $0 (25 to 30 November), not 9. On those 6 days the amounts below $0 add up to $1,928.67, and $1,928.67 x 22% / 365 = about $1.16. Without the purchase the account would still go $27 below $0 for 2 days (about $0.02), so this purchase adds about $1.14. So the answer is \"Uses your overdraft\", never a plain \"Fits\" (D-26, D-36). Nothing is saved in a safety net, so the no-safety-net line also shows as a fact under this answer: \"Nothing is saved for emergencies yet. One month of essential costs is about $2,000. 1 month is a start; 3 to 6 months is common.\" (round 1b). 05.4-24 FIN-09b (D-86): Elena opened November $777 below $0 ($673 now, after $3,000 in, $1,000 of bills and $550 of everyday spending), so November after its plans is $750 - $777 = -$27, and with the $600 purchase it is -$627, the account's own month end.",
       "fixIds": [
         "FIN-03",
         "ENG-02",
-        "FIN-01"
+        "FIN-01",
+        "FIN-09b"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
-      "ownerReason": null,
-      "expertNote": null
+      "ownerReason": "Owner 2026-11-04: money owed from last month comes off this month's big number, for everyone (D-86).",
+      "expertNote": null,
+      "changeApproved": "2026-11-04"
     },
     {
       "id": "OD-04",
@@ -252,7 +254,7 @@
         "code": "not_yet",
         "variant": "payday",
         "afterBuy": {
-          "month": 15000,
+          "month": -62700,
           "usualMonth": null
         },
         "readyBy": "2026-12-01",
@@ -260,17 +262,19 @@
         "mustHaveFacts": [],
         "mustNotHaveFacts": []
       },
-      "why": "The lowest point would be -$627, which is $127 past his $500 limit, so this is \"Not yet\" (D-27). On 1 December pay of $3,000 arrives and December leaves $750 after its plans, so the $600 fits from payday.",
+      "why": "The lowest point would be -$627, which is $127 past his $500 limit, so this is \"Not yet\" (D-27). On 1 December pay of $3,000 arrives and December leaves $750 after its plans, so the $600 fits from payday. 05.4-24 FIN-09b (D-86): the same month as Elena: $750 - $777 carried in = -$27, and -$627 with the $600 purchase. Still \"Not yet\" (past the $500 limit).",
       "fixIds": [
         "FIN-03",
         "ENG-02",
         "FIN-11",
-        "FIN-09"
+        "FIN-09",
+        "FIN-09b"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
-      "ownerReason": null,
-      "expertNote": null
+      "ownerReason": "Owner 2026-11-04: money owed from last month comes off this month's big number, for everyone (D-86).",
+      "expertNote": null,
+      "changeApproved": "2026-11-04"
     },
     {
       "id": "OD-05",
@@ -782,7 +786,7 @@
         "code": "fits_uses_overdraft",
         "variant": "not_cleared",
         "afterBuy": {
-          "month": 20000,
+          "month": -177742,
           "usualMonth": null
         },
         "readyBy": null,
@@ -801,16 +805,18 @@
           "no_overdraft_limit"
         ]
       },
-      "why": "The lowest point is -£1,500 - £77.42 of October spending still to come - £200 = -£1,777.42 on 31 October. That is inside the £2,000 limit, so the answer is \"Uses your overdraft\", never \"Not yet\" (D-36). But her next pay does not clear it: after pay and bills on 1 November the account is still £797.42 below £0, and it ends November £1,377.42 below. Her usual month adds only £400 (£2,000 pay - £1,000 bills - £600 everyday spending), so the strong warning reads as facts: \"Uses your overdraft past payday\", and \"Waiting until March 2027 keeps the account above £0.\" Cost over the next 90 days (27 October to 24 January): the amounts below £0 on each day add up to £67,922.63, and £67,922.63 x 39.9% / 365 = about £74.25. Without the purchase it is about £55.85, so this purchase adds about £18.40. Even without the purchase the account is below £0 before each of her next 3 paydays (1 November, 1 December, 1 January), so the repeat-use line shows (D-37). October after its plans still leaves £400 - £200 = £200. Nothing is saved in a safety net, so the no-safety-net line also shows as a fact under this answer: \"Nothing is saved for emergencies yet. One month of essential costs is about £1,400. 1 month is a start; 3 to 6 months is common.\" (round 1b).",
+      "why": "The lowest point is -£1,500 - £77.42 of October spending still to come - £200 = -£1,777.42 on 31 October. That is inside the £2,000 limit, so the answer is \"Uses your overdraft\", never \"Not yet\" (D-36). But her next pay does not clear it: after pay and bills on 1 November the account is still £797.42 below £0, and it ends November £1,377.42 below. Her usual month adds only £400 (£2,000 pay - £1,000 bills - £600 everyday spending), so the strong warning reads as facts: \"Uses your overdraft past payday\", and \"Waiting until March 2027 keeps the account above £0.\" Cost over the next 90 days (27 October to 24 January): the amounts below £0 on each day add up to £67,922.63, and £67,922.63 x 39.9% / 365 = about £74.25. Without the purchase it is about £55.85, so this purchase adds about £18.40. Even without the purchase the account is below £0 before each of her next 3 paydays (1 November, 1 December, 1 January), so the repeat-use line shows (D-37). October after its plans still leaves £400 - £200 = £200. Nothing is saved in a safety net, so the no-safety-net line also shows as a fact under this answer: \"Nothing is saved for emergencies yet. One month of essential costs is about £1,400. 1 month is a start; 3 to 6 months is common.\" (round 1b). 05.4-24 FIN-09b (D-86): October's figure after its plans is £400 but £1,977.42 was owed from earlier months (£1,500 below £0 now after £2,000 in, £1,000 of bills and £522.58 of spending), so October is -£1,577.42 before buying and -£1,777.42 with the £200 purchase.",
       "fixIds": [
         "FIN-03",
         "ENG-02",
-        "FIN-01"
+        "FIN-01",
+        "FIN-09b"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
-      "ownerReason": null,
-      "expertNote": null
+      "ownerReason": "Owner 2026-11-04: money owed from last month comes off this month's big number, for everyone (D-86).",
+      "expertNote": null,
+      "changeApproved": "2026-11-04"
     },
     {
       "id": "OD-12",
@@ -872,7 +878,7 @@
         "code": "fits_uses_overdraft",
         "variant": null,
         "afterBuy": {
-          "month": -5000,
+          "month": -40000,
           "usualMonth": null
         },
         "readyBy": null,
@@ -889,16 +895,18 @@
           "no_overdraft_limit"
         ]
       },
-      "why": "$450 - $750 of everyday spending still to come (spread evenly, about $46.88 a day over the 16 days from 15 to 30 November) - $100 = -$400 on 30 November, inside the $1,000 limit. Pay on 1 December brings it back to $1,101.61 above $0, so the next pay clears it: \"Uses your overdraft\", with no past-payday warning. But even without this purchase the account goes below $0 before each of her next 3 paydays: -$300 on 30 November, -$250 on 31 December and -$200 on 31 January, because her usual month leaves only $50 ($2,750 - $1,200 - $1,500). That is 3 of 3, over the line of 2 of the next 3 paydays (D-37), so the answer adds: \"Without this purchase, your Everyday account still goes below $0 before each of your next 3 paydays. At 22%, that costs about $1.45 over the next 90 days.\" With the purchase the 90-day cost is about $2.68, so the purchase adds about $1.23. November after its plans would be $50 - $100 = -$50. Nothing is saved in a safety net, so the no-safety-net line also shows as a fact under this answer: \"Nothing is saved for emergencies yet. One month of essential costs is about $2,100. 1 month is a start; 3 to 6 months is common.\" (round 1b).",
+      "why": "$450 - $750 of everyday spending still to come (spread evenly, about $46.88 a day over the 16 days from 15 to 30 November) - $100 = -$400 on 30 November, inside the $1,000 limit. Pay on 1 December brings it back to $1,101.61 above $0, so the next pay clears it: \"Uses your overdraft\", with no past-payday warning. But even without this purchase the account goes below $0 before each of her next 3 paydays: -$300 on 30 November, -$250 on 31 December and -$200 on 31 January, because her usual month leaves only $50 ($2,750 - $1,200 - $1,500). That is 3 of 3, over the line of 2 of the next 3 paydays (D-37), so the answer adds: \"Without this purchase, your Everyday account still goes below $0 before each of your next 3 paydays. At 22%, that costs about $1.45 over the next 90 days.\" With the purchase the 90-day cost is about $2.68, so the purchase adds about $1.23. November after its plans would be $50 - $100 = -$50. Nothing is saved in a safety net, so the no-safety-net line also shows as a fact under this answer: \"Nothing is saved for emergencies yet. One month of essential costs is about $2,100. 1 month is a start; 3 to 6 months is common.\" (round 1b). 05.4-24 FIN-09b (D-86): she ended October $350 below $0, so November is $50 - $350 = -$300 before buying and -$400 with the $100 purchase.",
       "fixIds": [
         "FIN-03",
         "ENG-02",
-        "FIN-01"
+        "FIN-01",
+        "FIN-09b"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
-      "ownerReason": null,
-      "expertNote": null
+      "ownerReason": "Owner 2026-11-04: money owed from last month comes off this month's big number, for everyone (D-86).",
+      "expertNote": null,
+      "changeApproved": "2026-11-04"
     }
   ]
 }

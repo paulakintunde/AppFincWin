@@ -1,9 +1,4 @@
 {
   "topic": "borrowing",
-  "red": [
-    {
-      "id": "BR-06",
-      "fixId": "FIN-09b-pending"
-    }
-  ]
+  "red": []
 }

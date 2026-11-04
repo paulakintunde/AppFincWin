@@ -301,7 +301,23 @@ export function leftThisMonth(f: RightAnswerFixture): Cents {
   const moneyIn = f.pay.irregular === undefined ? big(t.received) : big(f.pay.amount);
   // D-67 / D-55: the month sets the regular saving aside, moved yet or not. DB-10: "$3,000 pay - $1,200 bills - $800 everyday
   // spending - $100 already paid - $200 still due = $700": the whole minimum, paid or not.
-  return moneyIn - big(t.billsPaid) - big(t.billsDue) - big(t.everydaySoFar) - everydayToCome(f) - savingAmount(f) - debtMinimums(f);
+  // 05.4-24 FIN-09b (D-86, owner): "money owed from last month comes off this month's big number, for everyone", and "it uses this
+  // month up" (BR-06: "October ended $500 overdrawn ... November would end at -$300").
+  return moneyIn - big(t.billsPaid) - big(t.billsDue) - big(t.everydaySoFar) - everydayToCome(f) - savingAmount(f) - debtMinimums(f) - carriedIn(f);
+}
+
+/**
+ * 05.4-24 FIN-09b (D-86): the overdraft carried into this month. The everyday account now holds what it opened the month with plus
+ * this month's money so far (BR-06: "October ended $500 overdrawn, so on 15 November he has $400" after $3,000 in, $1,500 of bills
+ * and $600 of spending); an opening below 0 is owed from last month. Money carried in above 0 changes nothing (QE-09).
+ */
+export function carriedIn(f: RightAnswerFixture): Cents {
+  const t = f.thisMonth;
+  const moved = f.usualMonth.saving?.movedThisMonth === true ? big(f.usualMonth.saving.amount) : 0n;
+  // DB-10: "$100 already paid - $200 still due": the part of a card or loan minimum already paid this month left the account too
+  const debtPaid = maxC(0n, debtMinimums(f) - debtToPay(f));
+  const opening = sittingMoney(f) - big(t.received) + big(t.billsPaid) + big(t.everydaySoFar) + moved + debtPaid;
+  return opening < 0n ? -opening : 0n;
 }
 
 /** Money in the checking and current accounts. */
@@ -657,13 +673,16 @@ export function notCleared(f: RightAnswerFixture, cost: Cents): boolean {
  * accounts plus this month's room, less the part of it this month's room already counted).
  */
 function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
-  const usualLeft = big(f.pay.amount) - big(f.usualMonth.bills) - usualEveryday(f) - savingAmount(f) - debtMinimums(f);
+  const usualRaw = big(f.pay.amount) - big(f.usualMonth.bills) - usualEveryday(f) - savingAmount(f) - debtMinimums(f);
+  // 05.4-24 FIN-09b (D-86): an account that opens the month below 0 pays that back from this month first: this month's room and its
+  // figure shrink; what sits in the account already shows the overdraft, so the month-end and spare-money sums keep the raw month.
+  const usualLeft = usualRaw - carriedIn(f);
   const after = usualLeft - cost;
   const sitting = sittingMoney(f);
   const net = plainNet(f);
   // 05.4-21 (D-65 Large, as in plainCode): with the usual month already short, every month on the 90-day path loses money, so the
   // path's lowest point decides when it is lower than this month's end.
-  const monthEnd = sitting + usualLeft - cost;
+  const monthEnd = sitting + usualRaw - cost;
   const margin = (usualMonthShort(f) ? (pathLow(f, cost) < monthEnd ? pathLow(f, cost) : monthEnd) : monthEnd) + net.above;
   // 05.4-24: on Dips into your safety net the spare money still in the account and the extra savings it uses are named (D-44), so
   // only the month's money and the net money come off the month figure.
@@ -672,15 +691,15 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   const rest = cost - fromMonth;
   if (margin < 0n) {
     // what really sits from earlier months (D-56: never below 0) and the extra savings, as far as the price needs them
-    const need = maxC(0n, rest - maxC(0n, sitting + usualLeft - fromMonth) - net.above);
+    const need = maxC(0n, rest - maxC(0n, sitting + usualRaw - fromMonth) - net.above);
     const dips = margin + net.lend >= 0n;
     return { code: dips ? 'fits_uses_net' : 'not_yet', variant: net.off ? 'protection_off' : null, afterBuy: dips ? netDipFigure(usualLeft, cost, need, margin, net) : Number(after) };
   }
   // D-40: free money is what sits plus this month's room; with the money above the net's size, less the purchase, it is what is left.
-  const tight = plainTightOnce(f, sitting + usualLeft + net.above - cost);
+  const tight = plainTightOnce(f, sitting + usualRaw + net.above - cost);
   if (rest === 0n) return { code: 'fits_month', variant: fitVariant(net, false, false, tight), afterBuy: Number(after) };
   // Free money is what sits plus this month's room; less the room this purchase already took, it is the earlier money.
-  const earlier = sitting + usualLeft - fromMonth + net.above;
+  const earlier = sitting + usualRaw - fromMonth + net.above;
   if (rest > earlier) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
   return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above, carriesCostlyDebt(f, rest), tight), afterBuy: Number(usualLeft - fromMonth) };
 }
