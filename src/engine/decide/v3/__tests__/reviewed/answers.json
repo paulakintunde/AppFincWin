@@ -1276,7 +1276,7 @@
   },
   "gen:145": {
     "code": "fits_unspent",
-    "variant": "costly_debt",
+    "variant": "no_net",
     "afterBuyMonth": 0
   },
   "gen:146": {

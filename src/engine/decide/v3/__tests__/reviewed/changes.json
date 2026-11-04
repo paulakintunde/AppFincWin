@@ -6286,9 +6286,9 @@
         "variant": "no_net",
         "afterBuyMonth": 0
       },
-      "reason": "",
-      "approved": false,
-      "approvedAt": null
+      "reason": "D-72 (owner): only $2.67 of the $1,647.85 comes from earlier months; put toward the 21.9% loan it would cut the interest by about $0.05 a month, under the $1.00 line, so no costly-debt caution: \"Fits from spare money, but no safety net\".",
+      "approved": true,
+      "approvedAt": "2026-11-04"
     }
   ]
 }
