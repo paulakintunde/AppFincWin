@@ -82,3 +82,18 @@
   every-2-to-12-month cadences). No approved case has one.
 - **The app builder passes no pay arrivals beyond the records.** FIN-15 and the steady low-pay months read the pay lines linked to
   the pay series; a pay logged without its series link is not read (05.5 builder).
+
+## Found in 05.4-24 (FIN-09 / ENG-05 / UX-02)
+- **Two bases for the month figure in the approved cases.** BR-06 (approved -$300) reads the account at month end (October's
+  overdraft carried); OD-04, QE-09 and QE-11 read this month after its plans (D-22). The engine reads D-22, so BR-06 stays in
+  knownRed under FIN-09 until the owner answers (05.4-24 owner question 2).
+- **QE-11 / QE-12 usual month:** the cases' payment £202.52 (interest from the day of buying) against the schedule's £200.86 (a first
+  payment less than one period away is paid before any interest). Same item as 05.4-22's schedule note; no plan owns it. knownRed FIN-09.
+- **RC-10's code and figure:** the case counts the whole £1,500 free as this month's money (Fits, £50 left); the engine reads this
+  month after its plans as £687.10 and the rest as spare money (Fits from spare money, £0 this month). knownRed FIN-09, owner question 4.
+- **Plans' month figure in the random crosscheck:** plans stay out of the whole-code comparison (BO-05), so the plain plan figure
+  (deposit, fees and payments dated this month) is checked only by the approved cases and I64. Compare it when BO-05 lifts.
+- **audit.json is keyed by corpus key:** the 130 FIN-09 boxes replace 92 boxes from earlier fixes, so rebuilding an older fix's page
+  (--page FIN-05) now shows the FIN-09 box. Earlier pages are in the scratchpad copies.
+- **Screens (08.1):** Decide Home shows homeFigure; the answer shows afterBuy with its lead (a plan leads with the usual month) and the
+  Over lines below 0; earlier_money_from under the figure.
