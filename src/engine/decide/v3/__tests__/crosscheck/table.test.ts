@@ -76,13 +76,12 @@ describe('plain calculator: tax (FIN-27, TX-01..TX-09)', () => {
 describe('plain calculator: running costs, closing costs and the purchase date (BO-05, RC-01..RC-10)', () => {
   const rc = loadCases().filter((c) => c.status === 'approved' && c.topic === 'running-costs');
   const fx = (id: string): RightAnswerFixture => rc.find((c) => c.id === id)!.fixture;
-  // RC-02: the approved block says "Fits, but tight each month"; the car is paid from $380 of this month and $5,620 of money from
-  // earlier months, which D-78 (owner, 2026-11-04) calls spare money: "Fits from spare money, but tight". Waits for the owner.
-  const WAITS: Readonly<Record<string, string>> = { 'RC-02': 'D-78 spare money (owner question, 05.4-26)' };
+  // RC-02 (owner 2026-11-04, D-94): $380 of this month and $5,620 of spare money from earlier months: "Fits from spare money, but tight".
+  const WAITS: Readonly<Record<string, string>> = {};
 
   it('BO-05 the code, the month figure and the usual month of every approved running-cost case', () => {
     const live = rc.filter((c) => WAITS[c.id] === undefined);
-    expect(live.length).toBe(9);
+    expect(live.length).toBe(10);
     for (const c of live) {
       const a = plainAnswer(c.fixture);
       expect({ id: c.id, code: a.code, tight: a.variant === 'tight' }).toEqual({ id: c.id, code: c.expected.code, tight: c.expected.variant === 'tight' });
@@ -105,7 +104,7 @@ describe('plain calculator: running costs, closing costs and the purchase date (
     expect(runningShare(fx('RC-09'))).toBe(0n); // "A switched-off line is not counted"
     expect(plainUsualAfter(fx('RC-09'))).toBe(100_000); // "a usual month of $1,000"
     expect(plainUsualAfter(fx('RC-10'))).toBeNull();
-    // RC-02 on the plain rule: Fits from spare money, but tight (D-78), the same as the engine
+    // RC-02 on the plain rule: Fits from spare money, but tight (D-78, D-94)
     expect(plainAnswer(fx('RC-02'))).toMatchObject({ code: 'fits_unspent', variant: 'tight' });
   });
 });

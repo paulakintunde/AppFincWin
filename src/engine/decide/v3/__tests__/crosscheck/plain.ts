@@ -613,7 +613,8 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
   const c = f.check;
   if (c.price === null) return { code: 'needs_input', variant: null, afterBuy: null };
   const cost = upFront(f) + plainClosing(f);
-  if (cost > ASK_FOR_RECORDS_ABOVE && recordsLookBehind(f)) return { code: 'needs_input', variant: null, afterBuy: null };
+  // 05.4-26 (D-100): the closing % is paid up front but is not part of the price the records rule reads (price, tax and fees).
+  if (upFront(f) > ASK_FOR_RECORDS_ABOVE && recordsLookBehind(f)) return { code: 'needs_input', variant: null, afterBuy: null };
   if (recordsFresh(f)) return withRunning(f, laterFigure(f, freshAnswer(f, cost)));
   if (c.pay.mode === 'plan') return plainBorrowing(f, plainPlanCode(f));
   return withRunning(f, laterFigure(f, plainOnce(f, cost)));
@@ -747,23 +748,31 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   // 05.4-21 (D-65 Large, as in plainCode): with the usual month already short, every month on the 90-day path loses money, so the
   // path's lowest point decides when it is lower than this month's end.
   const monthEnd = sitting + usualRaw - cost;
-  const margin = (usualMonthShort(f) ? (pathLow(f, cost) < monthEnd ? pathLow(f, cost) : monthEnd) : monthEnd) + net.above;
+  // 05.4-26 (RC-08, D-95): bought on a later date, the cost leaves on that date, so the day-by-day path decides alone. With a running
+  // cost on the path (RC-04: "On the cash path the full $600 falls on 15 January") its lowest point decides too, as when the usual
+  // month is already short.
+  // D-95: the money test counts this month and the whole months before the purchase month, never the purchase month's own pay.
+  const money = monthEnd + laterMoney(f);
+  const low = buyDay(f) !== f.asOf || usualMonthShort(f) || runningDates(f).length > 0 ? pathLowest(f, cost) : money;
+  const margin = (low < money ? low : money) + net.above;
   // 05.4-24: on Dips into your safety net the spare money still in the account and the extra savings it uses are named (D-44), so
   // only the month's money and the net money come off the month figure.
   const room = maxC(0n, usualLeft);
-  const fromMonth = cost < room ? cost : room;
+  const thisMonth = cost < room ? cost : room;
+  // D-95: the whole months before a later purchase month add their usual leftover.
+  const fromMonth = thisMonth + minC(cost - thisMonth, laterMoney(f));
   const rest = cost - fromMonth;
   if (margin < 0n) {
     // what really sits from earlier months (D-56: never below 0) and the extra savings, as far as the price needs them
-    const need = maxC(0n, rest - maxC(0n, sitting + usualRaw - fromMonth) - net.above);
+    const need = maxC(0n, rest - maxC(0n, sitting + usualRaw - thisMonth) - net.above);
     const dips = margin + net.lend >= 0n;
     return { code: dips ? 'fits_uses_net' : 'not_yet', variant: net.off ? 'protection_off' : null, afterBuy: dips ? netDipFigure(usualLeft, cost, need, margin, net) : Number(after) };
   }
   // D-40: free money is what sits plus this month's room; with the money above the net's size, less the purchase, it is what is left.
-  const tight = plainTightOnce(f, sitting + usualRaw + net.above - cost);
+  const tight = plainTightOnce(f, sitting + usualRaw + net.above + laterMoney(f) - cost);
   if (rest === 0n) return { code: 'fits_month', variant: fitVariant(net, false, false, tight), afterBuy: Number(after) };
   // Free money is what sits plus this month's room; less the room this purchase already took, it is the earlier money.
-  const earlier = sitting + usualRaw - fromMonth + net.above;
+  const earlier = sitting + usualRaw - thisMonth + net.above;
   if (rest > earlier) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
   return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above, carriesCostlyDebt(f, rest), tight), afterBuy: Number(usualLeft - fromMonth) };
 }
@@ -962,6 +971,11 @@ export function plainPathFlows(f: RightAnswerFixture, flows: readonly { date: st
 /** The lowest point of the day-by-day path with the cost paid today. */
 export function pathLow(f: RightAnswerFixture, cost: Cents): Cents {
   return plainPath(f, cost).reduce((lo, p) => (p.balance < lo ? p.balance : lo), sittingMoney(f) - (buyDay(f) === f.asOf ? cost : 0n));
+}
+
+/** The lowest day of the day-by-day path itself (fresh records: the pay landing today is on the path, not in the account yet). */
+function pathLowest(f: RightAnswerFixture, cost: Cents): Cents {
+  return plainPath(f, cost).reduce((lo, p) => (p.balance < lo ? p.balance : lo), sittingMoney(f) + payAmount(f));
 }
 
 /** Non-negative a / b, rounded half up. */

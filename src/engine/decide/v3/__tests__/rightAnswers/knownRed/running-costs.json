@@ -1,9 +1,4 @@
 {
   "topic": "running-costs",
-  "red": [
-    {
-      "id": "RC-02",
-      "fixId": "BO-05"
-    }
-  ]
+  "red": []
 }

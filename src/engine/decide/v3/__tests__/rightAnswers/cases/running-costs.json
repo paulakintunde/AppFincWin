@@ -209,7 +209,7 @@
         }
       },
       "expected": {
-        "code": "fits_month",
+        "code": "fits_unspent",
         "variant": "tight",
         "afterBuy": {
           "month": null,
@@ -220,15 +220,16 @@
         "mustHaveFacts": [],
         "mustNotHaveFacts": []
       },
-      "why": "$323 is 85% of his $380 room, more than 80%, and the $57 left is below a tenth of a month's spending ($2,620 / 10 = $262). So it is \"Fits, but tight each month\". The usual month is shown before and after: $380, then $57.",
+      "why": "$323 is 85% of his $380 room, more than 80%, and the $57 left is below a tenth of a month's spending ($2,620 / 10 = $262). The car takes $380 of this month and $5,620 of money from earlier months, which is spare money (D-78), so it is \"Fits from spare money, but tight\". The usual month is shown before and after: $380, then $57.",
       "fixIds": [
         "BO-05",
         "ENG-29"
       ],
       "status": "approved",
       "approvedAt": "2026-11-02",
-      "ownerReason": null,
-      "expertNote": null
+      "ownerReason": "Owner 2026-11-04: money from earlier months is spare money (D-78), same as RC-10/BR-15.",
+      "expertNote": null,
+      "changeApproved": "2026-11-04"
     },
     {
       "id": "RC-03",

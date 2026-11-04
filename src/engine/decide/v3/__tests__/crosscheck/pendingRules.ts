@@ -19,7 +19,10 @@ export const PENDING_RULES: PendingRule[] = [
   // both sides, and crosscheck.test compares it on every random plan where both sides say the plan fits. Plans still stay out of
   // the whole-code comparison here: with them in (seed 0, 441 plans) the plain plan branch has no fits_unspent (a deposit paid from
   // earlier money), no overdraft and no FIN-06 this-month reading, which are not borrowing rules (deferred-items, 05.4-22).
-  { fixId: 'BO-05', applies: (f) => (f.check.runningCosts?.length ?? 0) > 0 || f.check.closingPercent != null || f.check.replaces != null || f.check.saveForIt === true || f.check.purchaseDate != null || plan(f), note: 'running costs, selling the old one, save-for-it; plans (the plain plan branch is borrowing-complete, not ladder-complete)' },
+  // 05.4-26 (BO-05 part A): running costs, closing costs and the purchase date landed on both sides (plain.ts runningShare,
+  // runningDates, plainClosing, buyDay, laterMoney), and fixtureArb draws them on one-off checks, so the entry is narrowed to what
+  // 05.4-27 owns (what a purchase replaces, selling the old one, save-for-it) and to plans (not ladder-complete, as before; D-98).
+  { fixId: 'BO-05', applies: (f) => f.check.replaces != null || f.check.saveForIt === true || plan(f), note: 'selling the old one, what it replaces, save-for-it (05.4-27); plans (the plain plan branch is borrowing-complete, not ladder-complete)' },
 ];
 
 export function pendingFixIds(f: RightAnswerFixture): string[] {
