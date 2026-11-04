@@ -56,8 +56,8 @@ describe('heldBackForBills (D-47)', () => {
     // not covered $10,000 - $3,200 = $6,800, more than the 7 months built up ($5,833.33): the whole built-up share is held back
     const big = yearly({ anchorDate: '2026-03-10', typicalChoice: null, amount: 1_000_000 });
     expect(heldBackForBills([big], [], '2026-10-15', mu(-3_333)).parts[0]).toMatchObject({ builtUp: 583_333, holdBack: 583_333 });
-    // where it bites: $1,200 due in 5 months, $5,000 left after a $100 share: (5,000 + 10,000) x 5 = 75,000 cover, 45,000 held back
-    // (120000 - 5000 x 5 = 95000 would cap at the 70000 built up without D-70)
+    // where it bites: $1,200 due in 5 months, $50 left after a $100 share: ($50 + $100) x 5 = $750 cover, $450 held back
+    // (without D-70, $1,200 - $50 x 5 = $950 would cap at the $700 built up)
     expect(heldBackForBills([yearly({ anchorDate: '2026-03-01', typicalChoice: 'monthly' })], [], '2026-10-01', mu(5_000)).total).toBe(45_000);
     expect(heldBackForBills([yearly({ anchorDate: '2026-03-01', typicalChoice: null })], [], '2026-10-01', mu(5_000)).total).toBe(45_000);
     expect(heldBackForBills([yearly({ anchorDate: '2026-03-01' })], [], '2026-10-01', mu(5_000)).total).toBe(70_000);

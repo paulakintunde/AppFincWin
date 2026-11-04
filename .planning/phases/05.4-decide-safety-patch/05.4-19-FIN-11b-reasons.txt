@@ -1,0 +1,4 @@
+# 05.4-19 FIN-11b (D-70, a yearly bill counted once) reason file for --approve (key: reason, colon then a space).
+# The FIN-11b re-run from the FIN-11 baseline lists no changed answer, so there is no key line. The owner asked for D-70, so a
+# no-change approval is fine (coordinator, 2026-11-04). audit-p8: a month now covers $700 + $100 = $800, 4 x $800 = $3,200 against
+# the $1,200 insurance, held back $0 as before.
