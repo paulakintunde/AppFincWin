@@ -283,7 +283,7 @@ const debtArb: fc.Arbitrary<RightAnswerFixture> = fc
   .filter(([f, raws]) => (f.accounts[0]?.balance ?? 0) < 0 || (withDebts(f, raws).accounts[0]?.balance ?? 0) >= 0)
   .map(([f, raws]) => withDebts(f, raws));
 
-export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc.oneof(
+const peopleArb: fc.Arbitrary<RightAnswerFixture> = fc.oneof(
   { weight: 5, arbitrary: midMonthArb },
   { weight: 1, arbitrary: firstOfMonthArb },
   { weight: 3, arbitrary: overdraftArb },
@@ -291,3 +291,35 @@ export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc.oneof(
   { weight: 1, arbitrary: irregularArb },
   { weight: 3, arbitrary: debtArb }
 );
+
+/**
+ * 05.4-25 (FIN-27, D-18..D-20): where the person is and the check's tax. Regions: none, the US or Canada with no state or province,
+ * six states and provinces with a usual rate (Oregon's is 0%), the UK and three EU countries (prices include VAT) and one other
+ * country (no rate known). A typed rate is drawn 1 time in 4 (up to 3 decimals, as the plain calculator reads it); the "Price
+ * already includes tax" switch is on 1 time in 4.
+ */
+const TAX_REGIONS: readonly RightAnswerFixture['region'][] = [
+  null,
+  { country: 'US', subdivision: null },
+  { country: 'CA', subdivision: null },
+  { country: 'US', subdivision: 'CA' },
+  { country: 'US', subdivision: 'TX' },
+  { country: 'US', subdivision: 'OR' },
+  { country: 'CA', subdivision: 'ON' },
+  { country: 'CA', subdivision: 'QC' },
+  { country: 'CA', subdivision: 'AB' },
+  { country: 'GB', subdivision: null },
+  { country: 'DE', subdivision: null },
+  { country: 'FR', subdivision: null },
+  { country: 'IE', subdivision: null },
+  { country: 'AU', subdivision: null },
+];
+const taxArb = fc.record({
+  region: fc.constantFrom(...TAX_REGIONS),
+  typed: fc.option(fc.constantFrom('0', '5', '7.5', '8.25', '13', '14.975', '20'), { nil: null, freq: 3 }),
+  included: fc.constantFrom(null, null, false, true),
+});
+
+export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc
+  .tuple(peopleArb, taxArb)
+  .map(([f, t]) => ({ ...f, region: t.region, check: { ...f.check, taxPercent: t.typed, taxIncluded: t.included } }));

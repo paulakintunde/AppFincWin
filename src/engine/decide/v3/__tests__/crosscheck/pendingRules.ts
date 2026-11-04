@@ -10,7 +10,8 @@ const plan = (f: RightAnswerFixture): boolean => f.check.pay.mode === 'plan';
 
 export const PENDING_RULES: PendingRule[] = [
   // 05.4-24: the FIN-09 entry (the afterBuy block) is deleted; plain.ts restates the month figure and crosscheck.test compares it.
-  { fixId: 'FIN-27', applies: (f) => f.check.taxPercent !== null || f.region !== null, note: 'tax by region' },
+  // 05.4-25: the FIN-27 entry (tax by region) is deleted; plain.ts restates the tax rule (plainTax, upFront) and fixtureArb draws
+  // regions, typed rates and the "Price already includes tax" switch.
   // 05.4-23: the FIN-08 (your answer, low months) and FIN-15 (the lower of the set-up pay and the last three) entries are deleted;
   // plain.ts restates both (plainLowMonths, lowerPay). FIN-08 only changes plans, which stay out under BO-05 below; table.test pins them.
   // 05.4-22 (FIN-05): toEngineInputs now maps a plan's first payment in the engine's own choices (today, one period away, else a

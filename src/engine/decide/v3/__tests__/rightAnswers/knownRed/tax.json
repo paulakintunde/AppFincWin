@@ -1,17 +1,4 @@
 {
   "topic": "tax",
-  "red": [
-    {
-      "id": "TX-04",
-      "fixId": "FIN-27"
-    },
-    {
-      "id": "TX-05",
-      "fixId": "FIN-27"
-    },
-    {
-      "id": "TX-09",
-      "fixId": "FIN-27"
-    }
-  ]
+  "red": []
 }

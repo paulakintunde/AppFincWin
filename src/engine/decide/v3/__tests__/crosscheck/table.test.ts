@@ -4,11 +4,14 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront } from './plain';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
 import type { RightAnswerFixture } from '../rightAnswers/schema';
+import { TAX_DEFAULTS } from '../../tax/defaults';
+import { lookupTaxDefault } from '../../tax/lookup';
+import { percent } from '../../../../payoff/types';
 
 const PENDING_IDS = new Set(PENDING_RULES.flatMap((r) => r.fixId.split('/')));
 
@@ -28,6 +31,43 @@ describe('plain calculator vs the approved table', () => {
     const stated = live.filter((c) => c.expected.afterBuy.month !== null);
     expect(stated.length).toBeGreaterThan(20);
     for (const c of stated) expect({ id: c.id, month: plainAnswer(c.fixture).afterBuy }).toEqual({ id: c.id, month: c.expected.afterBuy.month });
+  });
+});
+
+// 05.4-25 (FIN-27): the plain calculator's own tax table and rule against the tax cases and the engine's table.
+describe('plain calculator: tax (FIN-27, TX-01..TX-09)', () => {
+  const tx = (id: string): RightAnswerFixture => loadCases().find((c) => c.id === id)!.fixture;
+
+  it('FIN-27 its small table matches the engine table for every place it lists (the calculator imports neither)', () => {
+    for (const [key, rate] of Object.entries(PLAIN_TAX_RATES)) expect({ key, percent: TAX_DEFAULTS[key]?.percent }).toEqual({ key, percent: percent(rate) });
+    for (const country of PLAIN_VAT_INCLUDED) expect({ country, kind: lookupTaxDefault({ country, subdivision: null }).kind }).toEqual({ country, kind: 'included' });
+  });
+
+  it('FIN-27 the tax and the up-front cost the cases state', () => {
+    expect(plainTax(tx('TX-01'))).toBe(24_750n); // "8.25% sales tax, which brings it to $3,247.50"
+    expect(plainTax(tx('TX-06'))).toBe(11_700n); // "13% of $900 is $117"
+    expect(upFront(tx('TX-07'))).toBe(1_002_000n); // "$9,000 + $720 (8%) + $300 = $10,020"
+    expect(plainTax(tx('TX-08'))).toBe(24_750n); // "The tax is $247.50"
+    for (const id of ['TX-02', 'TX-03']) expect({ id, tax: plainTax(tx(id)), said: plainTaxNotIncluded(tx(id)) }).toEqual({ id, tax: 0n, said: false });
+    for (const id of ['TX-04', 'TX-05']) expect({ id, tax: plainTax(tx(id)), said: plainTaxNotIncluded(tx(id)) }).toEqual({ id, tax: 0n, said: true });
+  });
+
+  it('FIN-27 a region default, the switch and an unknown region, by the plain rule', () => {
+    const ben = tx('TX-06');
+    const dflt = { ...ben, check: { ...ben.check, taxPercent: null, taxIncluded: null } };
+    expect(plainTax(dflt)).toBe(11_700n); // Ontario's usual 13% HST, pre-filled
+    expect(plainTax({ ...dflt, check: { ...dflt.check, taxIncluded: true } })).toBe(0n);
+    expect(plainTax({ ...ben, check: { ...ben.check, taxIncluded: true } })).toBe(0n); // the switch wins over a typed rate
+    expect(plainTaxNotIncluded({ ...dflt, region: { country: 'CA', subdivision: null } })).toBe(true);
+    expect(plainTaxNotIncluded({ ...dflt, region: { country: 'AU', subdivision: null } })).toBe(true);
+    expect(plainTaxNotIncluded({ ...dflt, region: { country: 'GB', subdivision: null } })).toBe(false);
+    expect(plainTax({ ...dflt, region: { country: 'US', subdivision: 'OR' } })).toBe(0n); // Oregon: no sales tax
+    expect(plainTaxNotIncluded({ ...dflt, region: { country: 'US', subdivision: 'OR' } })).toBe(false);
+    // and the engine says the same on each: the reason when the plain rule says nothing is added for want of a region
+    for (const f of [dflt, { ...dflt, region: { country: 'CA', subdivision: null } }, { ...dflt, region: { country: 'GB', subdivision: null } }, { ...dflt, region: null }]) {
+      const { inputs, check } = toEngineInputs(f);
+      expect(pick(evaluate(inputs, check)).reasons.includes('tax_not_included')).toBe(plainTaxNotIncluded(f));
+    }
   });
 });
 

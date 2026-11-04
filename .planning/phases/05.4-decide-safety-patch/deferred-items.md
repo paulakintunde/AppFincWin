@@ -104,3 +104,17 @@
 - **The month figure sets aside a card or loan minimum even when the balance is already paid off** (debtsInMonth does not read the
   balance; pre-existing). D-86's opening balance reads such a minimum as gone too, so no false overdraft appears; the month figure
   itself is for the owner of the month picture (05.5).
+
+## From 05.4-25 (FIN-27)
+
+- **A guard regex holds backspace characters (pre-existing, not fixed):** src/i18n/__tests__/decideCopy.test.ts, the "no advice,
+  recommend or you should" check near the investing copy, is `/<BS>advice<BS>|recommend|you should/i` with two raw 0x08 bytes
+  instead of `\b`, so its "advice" part never matches anything. The broader BANNED and catalogue guards still catch the word. A
+  one-line fix for the D-15 copy review.
+- **App users in the US and Canada see "Tax not included" until 05.4-35 wires the state or province.** The snapshot builder passes
+  only the country (V3Inputs.region); V3Inputs.regionSubdivision is new and nothing sets it yet (profiles.region_subdivision,
+  CONTEXT Claude's discretion). The engine is ready; src/features/decide/snapshot is not touched here (plan rule).
+- **Countries outside D-18 (US, Canada, UK, EU) read as unknown** and get "Tax not included. Set your region to add it.", including
+  places whose shop prices already include tax (Australia, Norway, Switzerland). Adding them is a new row in tax/lookup.ts.
+- **The CMP-F24 disclaimer and the example-rate label are copy keys only** (decide.v3.tax.disclaimer, decide.v3.tax.exampleRate);
+  where they show is 08.1.

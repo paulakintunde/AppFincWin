@@ -46,6 +46,66 @@ export function basisPoints(text: string): Cents {
   return BigInt(whole) * 100n + BigInt((frac + '00').slice(0, 2));
 }
 
+/**
+ * FIN-27 (05.4-25), restated from the tax cases and D-19 / D-20. "Up-front cost = price + tax + fees" (TX-07: "$9,000 + $720 (8%) +
+ * $300 = $10,020"); on a plan "the tax is added to the plan" (TX-08: "$3,247.50 is paid over the plan, not $3,000"). The rate:
+ * - "Price already includes tax" on: nothing is added (TX-02: "Adding VAT again would make the TV look £120 dearer");
+ * - a rate the person typed is used as typed (TX-07: "His own 8% is used, not the pre-filled rate");
+ * - else the usual rate of their state or province, an estimate (TX-06: "Decide pre-filled the usual 13% HST");
+ * - UK and EU prices already include VAT (TX-02, TX-03); anywhere else, or the US or Canada with no state or province, adds
+ *   nothing (TX-04, TX-05: "no tax is added and no rate is made up").
+ * Tax = price x rate / 100, rounded half up to the cent. PLAIN_TAX_RATES is this calculator's own small table: only the places the
+ * random fixtures and the table cases use, typed from the published sources (Tax Foundation, 1 July 2026; canada.ca, from 1 April
+ * 2025). table.test checks each one against the engine's table.
+ */
+export const PLAIN_TAX_RATES: Readonly<Record<string, string>> = {
+  'US-CA': '9.03',
+  'US-TX': '8.2',
+  'US-OR': '0',
+  'CA-ON': '13',
+  'CA-QC': '14.975',
+  'CA-AB': '5',
+};
+/** The UK and the EU countries the random fixtures use (prices include VAT). */
+export const PLAIN_VAT_INCLUDED: readonly string[] = ['GB', 'DE', 'FR', 'IE'];
+
+/** '14.975' -> 14975 thousandths of a percent, digits only, no floats. */
+function milliPercent(text: string): Cents {
+  const [whole = '0', frac = ''] = text.trim().split('.');
+  return BigInt(whole) * 1000n + BigInt((frac + '000').slice(0, 3));
+}
+
+/** The rate counted, as text; null = none added. */
+export function plainTaxRate(f: RightAnswerFixture): string | null {
+  const c = f.check;
+  if (c.taxIncluded === true) return null;
+  if (c.taxPercent !== null) return c.taxPercent;
+  const r = f.region;
+  if (r === null || PLAIN_VAT_INCLUDED.includes(r.country) || r.subdivision === null) return null;
+  return PLAIN_TAX_RATES[`${r.country}-${r.subdivision}`] ?? null;
+}
+
+/** D-20: no rate typed, the switch not on, and no usual rate for where the person is (and not the UK or EU). */
+export function plainTaxNotIncluded(f: RightAnswerFixture): boolean {
+  const c = f.check;
+  if (c.taxIncluded === true || c.taxPercent !== null) return false;
+  if (f.region !== null && PLAIN_VAT_INCLUDED.includes(f.region.country)) return false;
+  return plainTaxRate(f) === null;
+}
+
+/** The sales tax on the price, rounded half up. */
+export function plainTax(f: RightAnswerFixture): Cents {
+  const rate = plainTaxRate(f);
+  if (rate === null || f.check.price === null) return 0n;
+  const m = milliPercent(rate);
+  return (2n * big(f.check.price) * m + 100_000n) / 200_000n;
+}
+
+/** The up-front cost before any plan: price + tax + one-off fees (TX-07). */
+export function upFront(f: RightAnswerFixture): Cents {
+  return big(f.check.price ?? 0) + plainTax(f) + big(f.check.oneOffFees);
+}
+
 /** Monthly payment on a plan: level payment with a monthly rate of apr/12, in scaled integers. */
 export function monthlyPayment(amount: Cents, months: number, apr: string | null): Cents {
   if (months <= 0) return amount;
@@ -531,7 +591,7 @@ export function plainTier(f: RightAnswerFixture, code: string): PlainTier {
   const short = plainShortPlan(f);
   const oneOff = (c.pay.mode === 'once' || short) && (c.runningCosts ?? []).length === 0;
   if (!((code === 'fits_month' || code === 'fits_unspent') && oneOff)) return { variant: 'month_already_short', months: null, monthsAfter: null };
-  const used = short ? plainPlanTotal(f) : big(c.price ?? 0) + big(c.oneOffFees);
+  const used = short ? plainPlanTotal(f) : upFront(f);
   const S = usualShortfall(f);
   const free = maxC(0n, freeMoney(f));
   const money = free + plainNet(f).above;
@@ -552,7 +612,7 @@ export function plainAnswer(f: RightAnswerFixture): PlainAnswer {
 function plainCode(f: RightAnswerFixture): PlainAnswer {
   const c = f.check;
   if (c.price === null) return { code: 'needs_input', variant: null, afterBuy: null };
-  const cost = big(c.price) + big(c.oneOffFees);
+  const cost = upFront(f);
   if (cost > ASK_FOR_RECORDS_ABOVE && recordsLookBehind(f)) return { code: 'needs_input', variant: null, afterBuy: null };
   if (recordsFresh(f)) return freshAnswer(f, cost);
   if (c.pay.mode === 'plan') return plainBorrowing(f, plainPlanCode(f));
@@ -937,7 +997,7 @@ export function plainMoveBy(f: RightAnswerFixture, cost: Cents, dipsIntoNet = fa
 export function plainPlanTotal(f: RightAnswerFixture): Cents {
   const c = f.check;
   if (c.pay.mode !== 'plan') return 0n;
-  const amount = big(c.price ?? 0) + big(c.oneOffFees) - big(c.pay.deposit) + big(c.pay.fees);
+  const amount = upFront(f) - big(c.pay.deposit) + big(c.pay.fees);
   const today = c.pay.firstPaymentDate === f.asOf;
   return big(c.pay.deposit) + planPayments(amount, c.pay.months, c.pay.apr, today).reduce((t, p) => t + p, 0n);
 }
@@ -1009,14 +1069,14 @@ export function planDates(f: RightAnswerFixture): string[] {
 export function plainPlanMonthly(f: RightAnswerFixture): Cents {
   const c = f.check.pay;
   if (c.mode !== 'plan') return 0n;
-  const amount = big(f.check.price ?? 0) + big(f.check.oneOffFees) - big(c.deposit) + big(c.fees);
+  const amount = upFront(f) - big(c.deposit) + big(c.fees);
   const pay = planPayments(amount, c.months, c.apr, c.firstPaymentDate === f.asOf)[0] ?? 0n;
   return c.every === 'fortnight' ? halfUp(pay * 26n, 12n) : pay;
 }
 
 /** The plan's dated flows on the cash path: the deposit and fees on day 0, then each payment on its own date (D-68). */
 function planFlows(f: RightAnswerFixture, c: PlanPay): { date: string; amount: Cents }[] {
-  const amount = big(f.check.price ?? 0) + big(f.check.oneOffFees) - big(c.deposit);
+  const amount = upFront(f) - big(c.deposit);
   const pays = planPayments(amount, c.months, c.apr, c.firstPaymentDate === f.asOf);
   const dates = planDates(f);
   return [{ date: f.asOf, amount: big(c.deposit) + big(c.fees) }, ...pays.map((p, i) => ({ date: dates[i] ?? f.asOf, amount: p }))];
@@ -1175,7 +1235,7 @@ function onePeriodAfter(f: RightAnswerFixture): string {
 export function plainBorrowed(f: RightAnswerFixture): { amount: Cents; interest: Cents } {
   const c = f.check.pay;
   if (c.mode !== 'plan') return { amount: 0n, interest: 0n };
-  const raw = big(f.check.price ?? 0) + big(f.check.oneOffFees) - big(c.deposit);
+  const raw = upFront(f) - big(c.deposit);
   const amount = maxC(0n, raw);
   const due = c.firstPaymentDate !== onePeriodAfter(f);
   const pays = planPayments(amount, c.months, c.apr, due, c.every === 'fortnight' ? 26n : 12n);
@@ -1216,7 +1276,7 @@ const SHORT_WAIT = 31;
  * next pay when it lands on or after the first of the ready month, else in that month. null: never (the usual month leaves nothing).
  */
 export function plainCashReady(f: RightAnswerFixture): { date: string } | { month: string } | null {
-  const cost = big(f.check.price ?? 0) + big(f.check.oneOffFees);
+  const cost = upFront(f);
   const short = cost - freeMoney(f) - plainNet(f).above;
   const pay = payDates(f).find((d) => d > f.asOf);
   // the next pay clears the dip for good: from that pay on, the 90-day path (with the money above the net's size) stays at or above $0
