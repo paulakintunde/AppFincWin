@@ -3713,8 +3713,8 @@ const en = {
         net_covers_surprises: 'A safety net covers surprises while you repay.',
         income_or_costs_first: 'More income or lower costs makes repaying easier.',
         // 05.4 D-46 (05.4-23, QE-12): how long savings carry a Short each month gap, and with a further shortfall. Facts, never a push.
-        covered_from_savings: 'The {{savings}} left at the end of this month would cover the {{gap}} monthly gap for about {{covered}} of the {{of}} payments.',
-        further_shortfall_runway: 'If you were short another {{extra}} a month, it would cover about {{covered}} of the {{of}}.',
+        covered_from_savings: 'The {{savings}} still there at the end of this month would cover the {{gap}} monthly gap for about {{covered}} of the {{of}} payments.',
+        further_shortfall_runway: 'If each month were {{extra}} more overspent, it would cover about {{covered}} of the {{of}}.',
         ask_debts_not_recorded_loan: 'No loan or other debt is recorded. Do you have one?',
         ask_debts_not_recorded_card: 'No card is recorded. Do you have one?',
         ask_debts_not_recorded_overdraft: 'No overdraft is recorded. Do you have one?',
