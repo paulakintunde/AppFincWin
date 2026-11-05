@@ -1,0 +1,38 @@
+# 05.4-34 BO-03 / APP-11: sheets close on Back, a double tap opens one screen, and Back returns through a short history.
+# Read-only: opens screens and sheets, saves nothing. Starts anywhere in the signed-in app.
+appId: com.fincwin.app
+name: Back stays short
+---
+- runFlow: common/to-tabs.yaml
+- tapOn: "Activity, tab, 2 of 3"
+- assertVisible:
+    id: "activity-summary-card"
+# A row's detail sheet, then its edit sheet; Back closes the sheet and stays on Activity.
+- tapOn:
+    id: "activity-row-.*"
+    index: 0
+- assertVisible: "Edit transaction"
+- tapOn: "Edit transaction"
+- waitForAnimationToEnd
+- back
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "sheet-container"
+- assertVisible:
+    id: "activity-summary-card"
+# The same control twice (Profile > Accounts, opened, closed and opened again): each Back leaves one screen.
+- tapOn: "Profile"
+- assertVisible: "MONEY"
+- tapOn: "Accounts"
+- assertVisible: "Add account"
+- back
+- assertVisible: "MONEY"
+- tapOn: "Accounts"
+- assertVisible: "Add account"
+- back
+- assertVisible: "MONEY"
+# Back from Profile returns to Activity: visiting Accounts twice did not stack history.
+- back
+- assertVisible:
+    id: "activity-summary-card"
+- assertNotVisible: "MONEY"

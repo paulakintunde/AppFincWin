@@ -1,0 +1,8 @@
+# Shared: the sample account asks "Clear the sample figures?" after a first own line; keep them.
+appId: com.fincwin.app
+---
+- runFlow:
+    when:
+      visible: "Clear the sample figures?"
+    commands:
+      - tapOn: "Keep for now"

@@ -1,0 +1,13 @@
+# Shared: Back until the tab bar shows (closes sheets and pushed screens). Never leaves the app: at most 4 Backs.
+appId: com.fincwin.app
+---
+- repeat:
+    times: 4
+    while:
+      notVisible:
+        id: "tab-bar"
+    commands:
+      - back
+      - waitForAnimationToEnd
+- assertVisible:
+    id: "tab-bar"

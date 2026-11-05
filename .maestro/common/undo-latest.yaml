@@ -1,0 +1,17 @@
+# Shared: undo the most recent change through History (Profile > History > Undo to here on the newest row).
+# The newest row must be the change this flow made (the flows check its name first).
+appId: com.fincwin.app
+---
+- runFlow: to-tabs.yaml
+- tapOn: "Profile"
+- scrollUntilVisible:
+    element: "History"
+    direction: DOWN
+- tapOn: "History"
+- assertVisible: ${UNDO_NAME}
+- tapOn:
+    text: "Undo to here"
+    index: 0
+- tapOn: "Undo 1 change"
+- assertNotVisible: "Undoing…"
+- runFlow: to-tabs.yaml
