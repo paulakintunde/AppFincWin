@@ -3,7 +3,7 @@
  *
  * One code, one sentence: every code and variant maps to exactly one chip key, one title key and one body key.
  */
-import type { Basis, Code, ConfidenceReason, FactCode, MissingCode, NextStepCode, NoticeCode, ReadinessCode, Variant } from '../types';
+import type { Basis, CaveatCode, Code, ConfidenceReason, FactCode, MissingCode, NextStepCode, NoticeCode, ReadinessCode, Variant } from '../types';
 
 export interface VerdictRow<K extends string = string> {
   readonly chipKey: K;
@@ -513,7 +513,7 @@ export const ABOUT_KEYS = Object.freeze({
   howFarTitle: 'legal.decideAbout.howFarTitle',
   howFar: ['legal.decideAbout.howFar.everyday', 'legal.decideAbout.howFar.wrongFigures'],
   whatTitle: 'legal.decideAbout.whatTitle',
-  what: ['legal.decideAbout.what.tool', 'legal.decideAbout.what.notAdvice', 'legal.decideAbout.what.yours'],
+  what: ['legal.decideAbout.what.tool', 'legal.decideAbout.what.planningInfo', 'legal.decideAbout.what.yours'],
   termsLink: 'legal.decideAbout.termsLink',
 } as const);
 
@@ -523,3 +523,49 @@ export const INTRO_KEYS = Object.freeze({
   lines: ['legal.decideIntro.works', 'legal.decideIntro.figures', 'legal.decideIntro.facts'],
   gotIt: 'legal.decideIntro.gotIt',
 } as const);
+
+
+/**
+ * 05.4 D-64 (4), (5), D-118, D-119 (05.4-37): one key per caveat code. tax_not_included reads the notice of the same name (no twin).
+ * large_for_month is followed by its figure lines (CAVEAT_FIGURE_KEYS, one per value it carries) and CAVEAT_WRONG_FIGURE_KEY.
+ */
+export const CAVEAT_KEYS = Object.freeze({
+  large_for_month: 'decide.v3.caveat.large_for_month',
+  your_word: 'decide.v3.caveat.your_word',
+  quick_estimates: 'decide.v3.caveat.quick_estimates',
+  records_out_of_date: 'decide.v3.caveat.records_out_of_date',
+  no_debts_recorded: 'decide.v3.caveat.no_debts_recorded',
+  few_months: 'decide.v3.caveat.few_months',
+  irregular_income: 'decide.v3.caveat.irregular_income',
+  close_to_line: 'decide.v3.caveat.close_to_line',
+  expected_bills: 'decide.v3.caveat.expected_bills',
+  shared_money: 'decide.v3.caveat.shared_money',
+  rate_estimated: 'decide.v3.caveat.rate_estimated',
+  tax_not_included: 'decide.v3.notice.tax_not_included',
+  long_plan: 'decide.v3.caveat.long_plan',
+} as const satisfies Record<CaveatCode, string>);
+
+/** The value keys each caveat carries (costs is absent when the usual month is not known). */
+export const CAVEAT_VALUE_KEYS: Readonly<Record<CaveatCode, readonly string[]>> = Object.freeze({
+  large_for_month: ['moneyIn', 'costs', 'used', 'price'],
+  your_word: [],
+  quick_estimates: [],
+  records_out_of_date: ['date'],
+  no_debts_recorded: [],
+  few_months: ['months', 'lookedFor'],
+  irregular_income: [],
+  close_to_line: [],
+  expected_bills: [],
+  shared_money: ['account'],
+  rate_estimated: [],
+  tax_not_included: [],
+  long_plan: ['months'],
+});
+
+export const CAVEAT_FIGURE_KEYS = Object.freeze({
+  moneyIn: 'decide.v3.caveat.figure.moneyIn',
+  costs: 'decide.v3.caveat.figure.costs',
+  used: 'decide.v3.caveat.figure.used',
+  price: 'decide.v3.caveat.figure.price',
+} as const);
+export const CAVEAT_WRONG_FIGURE_KEY = 'decide.v3.caveat.wrongFigure';

@@ -3,7 +3,7 @@ import en from '../locales/en';
 import { DRAFT_COPY_KEYS } from '../copyStatus';
 import { UNDO_LABEL_KEYS } from '../../engine/undo/types';
 import { undoLabelText } from '../undoLabel';
-import { ABOUT_KEYS, AFTER_BUY_KEYS, BASIS_KEYS, BASIS_REASON_KEYS, DISCLAIMER_KEYS, FACT_ACTION_KEYS, FACT_KEYS, FOOTER_KEY, INTRO_KEYS, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, READINESS_KEYS, TAX_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
+import { ABOUT_KEYS, AFTER_BUY_KEYS, BASIS_KEYS, BASIS_REASON_KEYS, CAVEAT_FIGURE_KEYS, CAVEAT_KEYS, CAVEAT_WRONG_FIGURE_KEY, DISCLAIMER_KEYS, FACT_ACTION_KEYS, FACT_KEYS, FOOTER_KEY, INTRO_KEYS, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, READINESS_KEYS, TAX_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
 
 interface Leaf {
   path: string;
@@ -139,7 +139,7 @@ const V3_COMPLIANCE: readonly RegExp[] = [
   /\brecommend/i, // D-92 and the copy rule
   /\bbest to\b/i,
   /\byou should\b/i,
-  /\badvice\b/i, // D-92: the one exception is D-64's About-sheet sentence (legal.decideAbout.notAdvice), outside decide.v3
+  /\badvice\b/i, // D-92: the one exception is D-64's About-sheet sentence (legal.decideAbout.what.planningInfo), outside decide.v3
   /\bemergency fund\b/i, // D-35: one name, "safety net"
   /\bliab(le|ility)\b/i, // D-64 (2): the liability sentence is in the Terms of Use only
   /\bnot responsible\b/i, // D-64 (2)
@@ -392,6 +392,9 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       ...Object.values(TAX_KEYS), // 05.4 FIN-27 (CMP-F24, D-21)
       ...Object.values(FACT_ACTION_KEYS).flatMap((a) => Object.values(a)),
       FOOTER_KEY,
+      ...Object.values(CAVEAT_KEYS), // 05.4-37 D-64 (4)
+      ...Object.values(CAVEAT_FIGURE_KEYS), // D-64 (5)
+      CAVEAT_WRONG_FIGURE_KEY,
     ];
     expect(keys.filter((k) => resolve(k) === undefined)).toEqual([]);
     // and the other way: every v3 leaf is reachable from a table
@@ -449,7 +452,7 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
     expect(en.legal.decideAnswer.caveat).toBe('Worked out only from what’s recorded here. The choice is yours.');
     expect(en.legal.decideAnswer.cantSeeLink).toBe('What this can’t see');
     expect(en.legal.decideAnswer.footer).toBe('FincWin is a planning tool, not a lender.');
-    expect(en.legal.decideAbout.what.notAdvice).toBe('This is information to help you plan, not financial advice.');
+    expect(en.legal.decideAbout.what.planningInfo).toBe('This is information to help you plan, not financial advice.');
     expect(FOOTER_KEY).toBe('legal.decideAnswer.footer');
     expect('decideFooter' in en.legal).toBe(false); // retired by D-64
   });
@@ -475,7 +478,7 @@ describe('Decide legal keys (D-64, D-120, D-92)', () => {
   // Exactly two keyed exceptions, each with its decision.
   const EXCEPTIONS: Readonly<Record<string, RegExp>> = {
     'legal.decideAnswer.footer': /\blender\b/i, // D-64 (1): "FincWin is a planning tool, not a lender."
-    'legal.decideAbout.what.notAdvice': /\badvice\b/i, // D-64 (3), D-92: the one "advice" exception in the guard
+    'legal.decideAbout.what.planningInfo': /\badvice\b/i, // D-64 (3), D-92: the one "advice" exception in the guard
   };
   const allowed = (path: string, re: RegExp): boolean => EXCEPTIONS[path]?.source === re.source;
 
@@ -487,13 +490,13 @@ describe('Decide legal keys (D-64, D-120, D-92)', () => {
     const bad: string[] = [];
     for (const l of legalLeaves) for (const re of [...BANNED, ...V3_VOICE]) if (re.test(l.value) && !allowed(l.path, re)) bad.push(`${l.path}: ${re.source}`);
     expect(bad).toEqual([]);
-    expect(Object.keys(EXCEPTIONS).sort()).toEqual(['legal.decideAbout.what.notAdvice', 'legal.decideAnswer.footer']);
+    expect(Object.keys(EXCEPTIONS).sort()).toEqual(['legal.decideAbout.what.planningInfo', 'legal.decideAnswer.footer']);
     for (const [path, re] of Object.entries(EXCEPTIONS)) expect({ path, hit: re.test(String(path.split('.').reduce<unknown>((n, p) => (n as Record<string, unknown>)[p], en))) }).toEqual({ path, hit: true });
   });
 
   it('"advice" appears in exactly one string across Decide copy (D-92)', () => {
     const all = [...copyLeaves, ...legalLeaves];
-    expect(all.filter((l) => /\badvice\b/i.test(l.value)).map((l) => l.path)).toEqual(['legal.decideAbout.what.notAdvice']);
+    expect(all.filter((l) => /\badvice\b/i.test(l.value)).map((l) => l.path)).toEqual(['legal.decideAbout.what.planningInfo']);
   });
 
   it('does not reassure, order or instruct, and uses typographic apostrophes', () => {

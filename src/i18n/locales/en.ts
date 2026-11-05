@@ -3850,6 +3850,30 @@ const en = {
         activity_not_current: 'This month’s spending and bills aren’t recorded up to the last few days.',
         envelopes_unconfirmed: 'Some envelopes or goals aren’t linked to an account yet.',
       },
+      // 05.4 D-64 (4), (5), D-118, D-119 (05.4-37; research 6c): what this answer cannot see. The screen shows the first caveat under
+      // the basis sentence; the About sheet lists them all. tax_not_included reads notice.tax_not_included (no twin). Placement 08.1.
+      caveat: {
+        large_for_month: 'This costs at least a usual month’s money in. The answer rests on these figures:',
+        your_word: 'Part of this rests on what you said, not on your records.',
+        quick_estimates: 'This uses your quick estimates. Your real records may move the answer either way.',
+        records_out_of_date: 'Your records were last updated {{date}}. Anything since then isn’t counted.',
+        no_debts_recorded: 'No debts are recorded. A card balance, loan or pay-later plan not added here isn’t counted.',
+        few_months: 'This uses {{months}} of the {{lookedFor}} months of records Decide looks for. One unusual month moves it a lot.',
+        irregular_income: 'Your income changes from month to month. This counts your lower months.',
+        close_to_line: 'This is close to the line. A small change in any figure can change the answer.',
+        expected_bills: 'Some bills this month are expected, not yet confirmed paid.',
+        shared_money: 'Money in {{account}} may be planned by someone else too.', // UX-21 interim couples note; emitted from Phase 8
+        rate_estimated: 'This rate is FincWin’s estimate from the payment, not the rate on your agreement.',
+        long_plan: 'Over {{months}} months, a change in income or costs matters more than it does today.',
+        // D-64 (5): the figures a big purchase rests on, then the one line under them.
+        figure: {
+          moneyIn: 'Usual money in: {{moneyIn}} a month.',
+          costs: 'Usual bills and spending: {{costs}} a month.',
+          used: 'Spare money and extra savings used: {{used}}.',
+          price: 'What this costs in all: {{price}}.',
+        },
+        wrongFigure: 'A wrong figure here changes the answer.',
+      },
     },
   },
   // 05.4 D-64 (owner, 2026-11-03; 05.4-DISCLAIMER-RESEARCH.md 6a, 6b, 7.3). Top-level so it sits outside en.decide. The Decide
@@ -3892,7 +3916,7 @@ const en = {
       whatTitle: 'What FincWin is',
       what: {
         tool: 'FincWin is a planning and record-keeping tool. It does not lend money, arrange credit or hold your funds.',
-        notAdvice: 'This is information to help you plan, not financial advice.', // D-64 (3), D-92: the guard's one "advice" exception
+        planningInfo: 'This is information to help you plan, not financial advice.', // D-64 (3), D-92: the guard's one "advice" exception
         yours: 'The decision is yours, and so is when you make it.',
       },
       termsLink: 'Terms of Use',

@@ -8,7 +8,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import fc from 'fast-check';
 import { evaluate } from '../../evaluate';
-import { judgeCheck, prepare } from '../../prepare';
+import { judgeCheck, prepare, type Evaluation } from '../../prepare';
 import { fcRuns } from '../helpers/fcRuns';
 import { checkArb, inputsArb } from './arbitraries';
 
@@ -24,12 +24,17 @@ function stable(v: unknown): string {
   );
 }
 const digest = (v: unknown): string => createHash('sha256').update(stable(v)).digest('hex').slice(0, 16);
+/** 05.4-37 (D-64 (4), I75): caveats are read from the finished answer, so the digest leaves them out; the rest must not move. */
+const withoutCaveats = (e: Evaluation): unknown => {
+  const { caveats: _caveats, ...result } = e.result;
+  return { ...e, result };
+};
 
 const cases = fc.sample(fc.tuple(inputsArb, checkArb), { numRuns: RUNS, seed: SEED });
 
 describe('I44 prepare once, judge per check equals evaluate', () => {
   it('I44 evaluate matches the pre-refactor digests on 2,000 cases', () => {
-    const now = cases.map(([i, c]) => digest(evaluate(i, c)));
+    const now = cases.map(([i, c]) => digest(withoutCaveats(evaluate(i, c))));
     if (process.env['PREPARE_CAPTURE'] === '1') {
       writeFileSync(FILE, `${JSON.stringify(now)}\n`);
       return;

@@ -23,6 +23,7 @@ const strip = (r: Result): Result => ({
   ...r,
   reasons: r.reasons.filter((x) => x !== 'tax_not_included'),
   notices: r.notices.filter((n) => n.code !== 'tax_not_included'),
+  caveats: r.caveats?.filter((c) => c.code !== 'tax_not_included'), // 05.4-37 D-64 (4): the caveat of the same name
 });
 
 const ADD: readonly Region[] = [

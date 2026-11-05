@@ -3,12 +3,15 @@
  * directions. A mismatch would show a user "{{worked}}" or an internal number, so the engine's emitted keys are
  * collected from a corpus of real evaluations and held against the declared key table and the copy.
  */
+import fc from 'fast-check';
 import en from '../../../../../i18n/locales/en';
+import { addDays } from '../../dates';
+import { checkArb, inputsArb } from '../../__tests__/invariants/arbitraries';
 import { minorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import { MISSING_PRIORITY } from '../../constants';
 import { evaluate } from '../../evaluate';
-import type { CheckV2, CustomOptions, FactCode, LimitLine, MissingCode, NoticeCode, V3Inputs, V3Month } from '../../types';
+import type { CaveatCode, CheckV2, CustomOptions, FactCode, LimitLine, MissingCode, NoticeCode, V3Inputs, V3Month } from '../../types';
 import extraFile from '../../__tests__/golden/extra-d18.json';
 import scenariosFile from '../../__tests__/golden/scenarios22.json';
 import {
@@ -25,6 +28,9 @@ import { loadCases } from '../../__tests__/rightAnswers/loader';
 import { TIER_CASES, rileyTier } from '../../__tests__/helpers/tierFixtures';
 import { SHORT_PLAN_CASES, shortPlan } from '../../__tests__/helpers/shortPlanFixtures';
 import {
+  CAVEAT_FIGURE_KEYS,
+  CAVEAT_KEYS,
+  CAVEAT_VALUE_KEYS,
   COPY_RESOLVERS,
   DISCRIMINATOR_KEYS,
   FACT_KEYS,
@@ -63,7 +69,13 @@ function collect(into: Emitted[], inputs: V3Inputs, check: CheckV2): void {
   const ev = evaluate(inputs, check);
   for (const f of ev.result.facts) into.push({ group: 'fact', code: f.code, values: f.values });
   for (const n of ev.result.notices) into.push({ group: 'notice', code: n.code, values: n.values });
+  for (const c of ev.result.caveats ?? []) CAVEATS.push({ code: c.code, values: c.values });
 }
+
+/** 05.4-37 D-64 (4): the caveats the same corpus emits. */
+const CAVEATS: { code: CaveatCode; values: Readonly<Record<string, number | string | null>> }[] = [];
+/** Caveats no input can raise yet: expected_bills waits for the D-45 planner (05.5), shared_money for the household (Phase 8). */
+const CAVEATS_NOT_YET: readonly CaveatCode[] = ['expected_bills', 'shared_money'];
 
 function withOctLines(base: V3Inputs, lines: ReturnType<typeof v3Line>[]): V3Inputs {
   return { ...base, months: base.months.map((m): V3Month => (m.month === '2026-10' ? { ...m, lines: [...m.lines, ...lines] } : m)) };
@@ -459,5 +471,47 @@ describe('M-03 copy contract: engine keys and en.ts placeholders agree', () => {
     }
     expect(MISSING_PRIORITY).toContain('account_use_question');
     expect(MISSING_PRIORITY).toContain('pay_arrival_question');
+  });
+});
+
+describe('05.4-37 D-64 caveat contract', () => {
+  const text = (key: string): string => key.split('.').reduce<unknown>((n, p) => (n as Record<string, unknown>)[p], en) as string;
+  const codes = Object.keys(CAVEAT_KEYS) as CaveatCode[];
+
+  it('every emitted caveat carries only its declared keys, never null', () => {
+    const bad = CAVEATS.filter((c) => Object.entries(c.values).some(([k, v]) => !CAVEAT_VALUE_KEYS[c.code].includes(k) || v === null)).map((c) => c.code);
+    expect([...new Set(bad)]).toEqual([]);
+  });
+
+  it('each caveat line reads only its own keys, and the figure lines read the large_for_month keys', () => {
+    for (const code of codes) {
+      for (const p of placeholders(text(CAVEAT_KEYS[code]))) expect({ code, p, ok: CAVEAT_VALUE_KEYS[code].includes(p) }).toEqual({ code, p, ok: true });
+    }
+    for (const [k, key] of Object.entries(CAVEAT_FIGURE_KEYS)) {
+      expect(placeholders(text(key))).toEqual([k]);
+      expect(CAVEAT_VALUE_KEYS.large_for_month).toContain(k);
+    }
+    // every non-figure value is read by its line
+    for (const code of codes.filter((c) => c !== 'large_for_month')) {
+      const read = new Set(placeholders(text(CAVEAT_KEYS[code])));
+      for (const k of CAVEAT_VALUE_KEYS[code]) expect({ code, k, read: read.has(k) }).toEqual({ code, k, read: true });
+    }
+  });
+
+  it('the corpus, with generated cases, emits every caveat but the two waiting for their phase', () => {
+    // records out of date, few months and close to the line need inputs the saved corpus does not hold: add generated cases
+    // (the invariant arbitraries), each also with records last synced 30 days before the check
+    const extra = fc.sample(fc.tuple(inputsArb, checkArb), { numRuns: 300, seed: 0x0575 });
+    for (const [inputs, check] of extra) {
+      // and with only the last two months of records kept (few_months)
+      for (const i of [inputs, { ...inputs, recordsAsOf: addDays(inputs.asOf, -30) }, { ...inputs, months: inputs.months.slice(-2) }]) {
+        for (const c of evaluate(i, check).result.caveats ?? []) CAVEATS.push({ code: c.code, values: c.values });
+      }
+    }
+    const emitted = new Set(CAVEATS.map((c) => c.code));
+    const bad = CAVEATS.filter((c) => Object.entries(c.values).some(([k, v]) => !CAVEAT_VALUE_KEYS[c.code].includes(k) || v === null)).map((c) => c.code);
+    expect([...new Set(bad)]).toEqual([]);
+    expect(codes.filter((c) => !emitted.has(c) && !CAVEATS_NOT_YET.includes(c))).toEqual([]);
+    expect(CAVEATS_NOT_YET.filter((c) => emitted.has(c))).toEqual([]);
   });
 });

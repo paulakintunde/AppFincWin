@@ -6,6 +6,9 @@ import type {
   AFTER_BUY_KEYS,
   BASIS_KEYS,
   BASIS_REASON_KEYS,
+  CAVEAT_FIGURE_KEYS,
+  CAVEAT_KEYS,
+  CAVEAT_WRONG_FIGURE_KEY,
   DISCLAIMER_KEYS,
   FACT_ACTION_KEYS,
   FACT_KEYS,
@@ -38,6 +41,9 @@ export type DecideV3KeyChecks = [
   Is<Flat<typeof DISCLAIMER_KEYS>>,
   Is<Flat<typeof ABOUT_KEYS>>,
   Is<Flat<typeof INTRO_KEYS>>,
+  Is<Values<typeof CAVEAT_KEYS>>,
+  Is<Values<typeof CAVEAT_FIGURE_KEYS>>,
+  Is<typeof CAVEAT_WRONG_FIGURE_KEY>,
 ];
 
 // The check bites: a misspelt key is rejected.

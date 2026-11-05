@@ -38,6 +38,7 @@ import { incomeThisMonth, type IncomeInput } from './month/incomeProfile';
 import { expectedFor } from './month/incomePattern';
 import { liveSeriesOf, seriesOccurrences } from './month/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './month/settle';
+import { caveatsFor } from './caveats';
 import type { PlanCard } from './plan/planCard';
 import type { QuotedCheck } from './plan/quoted';
 import type { CheckV2, Fact, Funds, MonthModel, Notice, Purchase, ReadyBy, ReasonCode, Result, V3Account, V3Inputs, YearMonth } from './types';
@@ -477,5 +478,8 @@ export function judgeCheckWith(p: Prepared, check: CheckV2, opts: JudgeOpts): Ev
   const noFull = p.noFullMonth ? [...chosen.result.facts, { code: 'no_full_month' as const, values: {} }] : chosen.result.facts;
   const facts = [...noFull, ...askDebts(p.inputs, chosen.result)].map(sameMonth);
   const notices = [...leadNotes(p), ...chosen.result.notices];
-  return { ...chosen, result: { ...chosen.result, reasons, facts, notices, afterBuy, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) } };
+  const result: Result = { ...chosen.result, reasons, facts, notices, afterBuy, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) };
+  // 05.4 D-64 (4), D-119 (05.4-37): read from the finished answer; it never changes it (I75).
+  const caveats = caveatsFor({ result, month: chosen.month, purchase: chosen.purchase }, p.inputs, check);
+  return { ...chosen, result: { ...result, caveats } };
 }

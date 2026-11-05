@@ -45,7 +45,7 @@ describe('en catalogue', () => {
 
   // 05.4 D-64 (3) / D-92 (owner, 2026-11-03 / 2026-11-04): the About sheet says once "This is information to help you plan, not
   // financial advice." It is the only exception, it denies advice, and it is never verdict copy.
-  const NOT_ADVICE_KEY = 'legal.decideAbout.what.notAdvice';
+  const NOT_ADVICE_KEY = 'legal.decideAbout.what.planningInfo';
 
   it.each(leaves.filter((l) => l.path !== NOT_ADVICE_KEY))('uses no forbidden compliance language: $path', ({ value }) => {
     expect(value).not.toMatch(FORBIDDEN_VOICE);
