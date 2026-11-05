@@ -139,7 +139,10 @@ export const DRAFT_COPY_KEYS = [
   ...leafPaths('income', en.income),
   // 05.1: v3 verdict copy drafted from v3 §4.6; 05.3 rewrites
   ...leafPaths('decide.v3', en.decide.v3),
-  'legal.decideFooter',
+  // 05.4 D-64 / D-120 (05.4-37): the answer's caveat line, link and footer, the About sheet and the intro card; reviewed at D-15
+  ...leafPaths('legal.decideAnswer', en.legal.decideAnswer),
+  ...leafPaths('legal.decideAbout', en.legal.decideAbout),
+  ...leafPaths('legal.decideIntro', en.legal.decideIntro),
   'a11y.toastUndo',
   'a11y.selectRow',
   'a11y.swatch',

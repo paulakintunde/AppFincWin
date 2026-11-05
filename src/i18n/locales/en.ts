@@ -3852,9 +3852,59 @@ const en = {
       },
     },
   },
-  // Owner wording, 2026-10-26. Top-level so it sits outside en.decide; it contains none of the banned voice words.
+  // 05.4 D-64 (owner, 2026-11-03; 05.4-DISCLAIMER-RESEARCH.md 6a, 6b, 7.3). Top-level so it sits outside en.decide. The Decide
+  // guards cover it (decideCopy.test.ts) with two keyed exceptions: the footer's "lender" and the About sheet's "advice" (D-92).
+  // Placement is 08.1. Replaces the old Decide footer (owner wording, 2026-10-26).
   legal: {
-    decideFooter: 'Worked out from your own records and what you told us. FincWin is a record-keeping and planning tool.',
+    // Under every answer: the caveat line, the link to the About sheet, then the footer.
+    decideAnswer: {
+      caveat: 'Worked out only from what’s recorded here. The choice is yours.',
+      cantSeeLink: 'What this can’t see',
+      footer: 'FincWin is a planning tool, not a lender.',
+    },
+    // The "About this answer" sheet. "For this answer" lists the answer's caveats (decide.v3.caveat). Free help is 05.4-38's.
+    decideAbout: {
+      title: 'About this answer',
+      forThisTitle: 'For this answer',
+      usesTitle: 'What it uses',
+      uses: {
+        records: 'Your records up to {{date}}: money in, bills, spending, savings, and debts you’ve added.',
+        answers: 'Your answers to Decide’s questions, and the price and date you typed.',
+      },
+      cantSeeTitle: 'What it can’t see',
+      cantSee: {
+        notAdded: 'Accounts, bills, debts, income or subscriptions that aren’t added to FincWin.',
+        owed: 'Money you owe or are owed by someone else, unless it’s recorded.',
+        changesAhead: 'Changes ahead, like a new job, a move, a pay cut or a rent rise, unless you’ve added them.',
+        oneOffs: 'One-off costs that haven’t happened yet, like repairs, medical bills or gifts.',
+        household: 'How your household shares money outside the app.',
+        timing: 'Timing: when a payment really leaves or lands, bank delays, and payments still pending.',
+        outOfDate: 'Records that are out of date, or imports and files that are incomplete.',
+        estimates: 'Estimates: quick estimates, example rates, and fees or tax you haven’t entered.',
+        mistakes: 'Typing mistakes, wrong dates, wrong categories, or something entered twice.',
+        beyondMoney: 'Things money can’t show, like job security, health, or what this purchase is worth to you.',
+      },
+      howFarTitle: 'How far it goes',
+      howFar: {
+        everyday: 'Decide is made for everyday situations, not every one. It can’t tell when a situation is outside what it sees.',
+        wrongFigures: 'Missing or wrong figures can move an answer either way.',
+      },
+      whatTitle: 'What FincWin is',
+      what: {
+        tool: 'FincWin is a planning and record-keeping tool. It does not lend money, arrange credit or hold your funds.',
+        notAdvice: 'This is information to help you plan, not financial advice.', // D-64 (3), D-92: the guard's one "advice" exception
+        yours: 'The decision is yours, and so is when you make it.',
+      },
+      termsLink: 'Terms of Use',
+    },
+    // D-120: the one-time card before the first Decide answer. The screen and its stored acknowledgement are 08.1.
+    decideIntro: {
+      title: 'How Decide answers',
+      works: 'Decide works from what you record in FincWin. It can’t see what isn’t recorded.',
+      figures: 'Missing or wrong figures can move an answer either way.',
+      facts: 'It gives you the facts. The decision is yours.',
+      gotIt: 'Got it',
+    },
   },
   a11y: {
     close: 'Close',

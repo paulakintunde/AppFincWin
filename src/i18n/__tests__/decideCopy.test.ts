@@ -3,7 +3,7 @@ import en from '../locales/en';
 import { DRAFT_COPY_KEYS } from '../copyStatus';
 import { UNDO_LABEL_KEYS } from '../../engine/undo/types';
 import { undoLabelText } from '../undoLabel';
-import { AFTER_BUY_KEYS, BASIS_KEYS, BASIS_REASON_KEYS, FACT_ACTION_KEYS, FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, READINESS_KEYS, TAX_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
+import { ABOUT_KEYS, AFTER_BUY_KEYS, BASIS_KEYS, BASIS_REASON_KEYS, DISCLAIMER_KEYS, FACT_ACTION_KEYS, FACT_KEYS, FOOTER_KEY, INTRO_KEYS, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, READINESS_KEYS, TAX_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
 
 interface Leaf {
   path: string;
@@ -443,12 +443,15 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
     }
   });
 
-  it('v3 leaves are draft copy and the footer reads as the owner worded it', () => {
+  it('v3 leaves are draft copy and the D-64 lines read as the owner worded them', () => {
     const drafts = new Set<string>(DRAFT_COPY_KEYS);
     expect(v3.filter((l) => !drafts.has(l.path)).map((l) => l.path)).toEqual([]);
-    expect(drafts.has('legal.decideFooter')).toBe(true);
-    expect(en.legal.decideFooter).toBe('Worked out from your own records and what you told us. FincWin is a record-keeping and planning tool.');
-    expect(en.legal.decideFooter).not.toMatch(/\badvice\b|recommend|you should/i);
+    expect(en.legal.decideAnswer.caveat).toBe('Worked out only from what’s recorded here. The choice is yours.');
+    expect(en.legal.decideAnswer.cantSeeLink).toBe('What this can’t see');
+    expect(en.legal.decideAnswer.footer).toBe('FincWin is a planning tool, not a lender.');
+    expect(en.legal.decideAbout.what.notAdvice).toBe('This is information to help you plan, not financial advice.');
+    expect(FOOTER_KEY).toBe('legal.decideAnswer.footer');
+    expect('decideFooter' in en.legal).toBe(false); // retired by D-64
   });
 
   it('05.4-23 FIN-08 / CMP-F01: Only on your answer says the records do not show it; Not yet and the runway lines never say never', () => {
@@ -462,6 +465,63 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
   it('D-30 and D-32 notices exist', () => {
     expect(get('decide.v3.notice.unspent_drifted')).toContain('{{suggested}}');
     expect(get('decide.v3.notice.from_your_figures')).toBe('Worked out from the figures you gave.');
+  });
+});
+
+// 05.4-37 D-64 / D-120: the disclaimer, the About sheet and the intro card sit outside en.decide but follow every Decide guard.
+describe('Decide legal keys (D-64, D-120, D-92)', () => {
+  const legalLeaves = collectLeaves(en.legal, 'legal').filter((l) => l.path.startsWith('legal.decide'));
+  const V3_VOICE = [/\bshould\b/i, /\bapprove/i, /\bdecline/i, /\bgo ahead\b/i, /\byou can\b/i, /\bsafe\b/i, /\bfree\b/i, /\bbest\b/i, /\bbetter\b/i, /\bworth it\b/i, /\bwill run out\b/i, ...V3_COMPLIANCE];
+  // Exactly two keyed exceptions, each with its decision.
+  const EXCEPTIONS: Readonly<Record<string, RegExp>> = {
+    'legal.decideAnswer.footer': /\blender\b/i, // D-64 (1): "FincWin is a planning tool, not a lender."
+    'legal.decideAbout.what.notAdvice': /\badvice\b/i, // D-64 (3), D-92: the one "advice" exception in the guard
+  };
+  const allowed = (path: string, re: RegExp): boolean => EXCEPTIONS[path]?.source === re.source;
+
+  it('has the D-64 and D-120 leaves', () => {
+    expect(legalLeaves.length).toBe(3 + 24 + 5);
+  });
+
+  it('every leaf passes BANNED and the v3 voice list, apart from the two named exceptions', () => {
+    const bad: string[] = [];
+    for (const l of legalLeaves) for (const re of [...BANNED, ...V3_VOICE]) if (re.test(l.value) && !allowed(l.path, re)) bad.push(`${l.path}: ${re.source}`);
+    expect(bad).toEqual([]);
+    expect(Object.keys(EXCEPTIONS).sort()).toEqual(['legal.decideAbout.what.notAdvice', 'legal.decideAnswer.footer']);
+    for (const [path, re] of Object.entries(EXCEPTIONS)) expect({ path, hit: re.test(String(path.split('.').reduce<unknown>((n, p) => (n as Record<string, unknown>)[p], en))) }).toEqual({ path, hit: true });
+  });
+
+  it('"advice" appears in exactly one string across Decide copy (D-92)', () => {
+    const all = [...copyLeaves, ...legalLeaves];
+    expect(all.filter((l) => /\badvice\b/i.test(l.value)).map((l) => l.path)).toEqual(['legal.decideAbout.what.notAdvice']);
+  });
+
+  it('does not reassure, order or instruct, and uses typographic apostrophes', () => {
+    const bad = legalLeaves.filter(
+      (l) =>
+        REASSURING.some((re) => re.test(l.value)) ||
+        (!ACTION_LABELS.has(l.path) && IMPERATIVE_LEAD.test(l.value)) ||
+        (!CONTROL_LABELS.has(l.path) && INSTRUCTION_LEAD.test(l.value)) ||
+        l.value.includes("'")
+    );
+    expect(bad.map((l) => l.path)).toEqual([]);
+  });
+
+  it('uses the word lend only in the footer and the What FincWin is line', () => {
+    expect(legalLeaves.filter((l) => /lend/i.test(l.value)).map((l) => l.path).sort()).toEqual(['legal.decideAbout.what.tool', 'legal.decideAnswer.footer']);
+  });
+
+  it('every legal leaf is draft copy and every table key resolves', () => {
+    const drafts = new Set<string>(DRAFT_COPY_KEYS);
+    expect(legalLeaves.filter((l) => !drafts.has(l.path)).map((l) => l.path)).toEqual([]);
+    const keys = [
+      ...Object.values(DISCLAIMER_KEYS),
+      ...Object.values(ABOUT_KEYS).flat(),
+      ...Object.values(INTRO_KEYS).flat(),
+    ];
+    const paths = new Set(legalLeaves.map((l) => l.path));
+    expect(keys.filter((k) => !paths.has(k))).toEqual([]);
+    expect([...paths].filter((p) => !keys.includes(p as never))).toEqual([]);
   });
 });
 

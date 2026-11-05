@@ -43,8 +43,18 @@ describe('en catalogue', () => {
     expect(value).not.toContain("'");
   });
 
-  it.each(leaves)('uses no forbidden compliance language: $path', ({ value }) => {
+  // 05.4 D-64 (3) / D-92 (owner, 2026-11-03 / 2026-11-04): the About sheet says once "This is information to help you plan, not
+  // financial advice." It is the only exception, it denies advice, and it is never verdict copy.
+  const NOT_ADVICE_KEY = 'legal.decideAbout.what.notAdvice';
+
+  it.each(leaves.filter((l) => l.path !== NOT_ADVICE_KEY))('uses no forbidden compliance language: $path', ({ value }) => {
     expect(value).not.toMatch(FORBIDDEN_VOICE);
+  });
+
+  it('D-64 the one advice exception says "not financial advice" and nothing more', () => {
+    const v = leaves.find((l) => l.path === NOT_ADVICE_KEY)?.value;
+    expect(v).toBe('This is information to help you plan, not financial advice.');
+    expect((v ?? '').replace(/not financial advice/, '')).not.toMatch(FORBIDDEN_VOICE);
   });
 });
 

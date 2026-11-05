@@ -137,7 +137,7 @@ describe('verdict table (I22 one code one text)', () => {
     expect(VERDICT_TABLE['fits_uses_overdraft.not_cleared'].tone).toBe('caution');
   });
 
-  it('every key starts with decide.v3. except the footer', () => {
+  it('every key starts with decide.v3. except the D-64 footer', () => {
     const keys = [
       ...Object.values(VERDICT_TABLE).flatMap((r) => [r.chipKey, r.titleKey, r.bodyKey]),
       ...Object.values(NOTICE_KEYS),
@@ -145,7 +145,7 @@ describe('verdict table (I22 one code one text)', () => {
       ...Object.values(MISSING_KEYS),
     ];
     for (const k of keys) expect(k.startsWith('decide.v3.')).toBe(true);
-    expect(FOOTER_KEY).toBe('legal.decideFooter');
+    expect(FOOTER_KEY).toBe('legal.decideAnswer.footer');
   });
 
   it('one key per missing and fact code, plan_total gone', () => {

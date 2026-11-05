@@ -5,18 +5,25 @@
  */
 import type { Basis, Code, ConfidenceReason, FactCode, MissingCode, NextStepCode, NoticeCode, ReadinessCode, Variant } from '../types';
 
-export interface VerdictRow {
-  readonly chipKey: string;
-  readonly titleKey: string;
-  readonly bodyKey: string;
+export interface VerdictRow<K extends string = string> {
+  readonly chipKey: K;
+  readonly titleKey: K;
+  readonly bodyKey: K;
   readonly tone: 'fits' | 'caution' | 'short' | 'input';
 }
 
-function row(name: string, tone: VerdictRow['tone']): VerdictRow {
+/** 05.4-37 APP-20: the keys are literal types, so src/i18n/__tests__/decideV3Keys.typecheck.ts can hold every one against en.ts. */
+export interface VerdictRowOf<N extends string> extends VerdictRow {
+  readonly chipKey: `decide.v3.verdict.${N}.chip`;
+  readonly titleKey: `decide.v3.verdict.${N}.title`;
+  readonly bodyKey: `decide.v3.verdict.${N}.body`;
+}
+
+function row<N extends string>(name: N, tone: VerdictRow['tone']): VerdictRowOf<N> {
   return Object.freeze({
-    chipKey: `decide.v3.verdict.${name}.chip`,
-    titleKey: `decide.v3.verdict.${name}.title`,
-    bodyKey: `decide.v3.verdict.${name}.body`,
+    chipKey: `decide.v3.verdict.${name}.chip` as const,
+    titleKey: `decide.v3.verdict.${name}.title` as const,
+    bodyKey: `decide.v3.verdict.${name}.body` as const,
     tone,
   });
 }
@@ -473,5 +480,46 @@ export const MISSING_VALUE_SOURCE = {
   pay_arrival_question: 'pay_not_seen',
 } as const satisfies Partial<Record<MissingCode, NoticeCode>>;
 
-/** The footer sits outside en.decide on purpose (owner wording, 2026-10-26). */
-export const FOOTER_KEY = 'legal.decideFooter';
+/**
+ * 05.4 D-64 (05.4-37): under every answer, the caveat line, the link to the About sheet and the footer. They sit outside en.decide
+ * (legal.*), like the footer they replace (legal.decideFooter, owner wording 2026-10-26). Placement is 08.1.
+ */
+export const DISCLAIMER_KEYS = Object.freeze({
+  caveat: 'legal.decideAnswer.caveat',
+  cantSeeLink: 'legal.decideAnswer.cantSeeLink',
+  footer: 'legal.decideAnswer.footer',
+} as const);
+export const FOOTER_KEY = DISCLAIMER_KEYS.footer;
+
+/** 05.4 D-64 (3): the "About this answer" sheet, in reading order. Its "For this answer" list reads Result.caveats (CAVEAT_KEYS). */
+export const ABOUT_KEYS = Object.freeze({
+  title: 'legal.decideAbout.title',
+  forThisTitle: 'legal.decideAbout.forThisTitle',
+  usesTitle: 'legal.decideAbout.usesTitle',
+  uses: ['legal.decideAbout.uses.records', 'legal.decideAbout.uses.answers'],
+  cantSeeTitle: 'legal.decideAbout.cantSeeTitle',
+  cantSee: [
+    'legal.decideAbout.cantSee.notAdded',
+    'legal.decideAbout.cantSee.owed',
+    'legal.decideAbout.cantSee.changesAhead',
+    'legal.decideAbout.cantSee.oneOffs',
+    'legal.decideAbout.cantSee.household',
+    'legal.decideAbout.cantSee.timing',
+    'legal.decideAbout.cantSee.outOfDate',
+    'legal.decideAbout.cantSee.estimates',
+    'legal.decideAbout.cantSee.mistakes',
+    'legal.decideAbout.cantSee.beyondMoney',
+  ],
+  howFarTitle: 'legal.decideAbout.howFarTitle',
+  howFar: ['legal.decideAbout.howFar.everyday', 'legal.decideAbout.howFar.wrongFigures'],
+  whatTitle: 'legal.decideAbout.whatTitle',
+  what: ['legal.decideAbout.what.tool', 'legal.decideAbout.what.notAdvice', 'legal.decideAbout.what.yours'],
+  termsLink: 'legal.decideAbout.termsLink',
+} as const);
+
+/** 05.4 D-120: the one-time "How Decide answers" card before the first answer (screen and stored acknowledgement 08.1). */
+export const INTRO_KEYS = Object.freeze({
+  title: 'legal.decideIntro.title',
+  lines: ['legal.decideIntro.works', 'legal.decideIntro.figures', 'legal.decideIntro.facts'],
+  gotIt: 'legal.decideIntro.gotIt',
+} as const);
