@@ -3729,6 +3729,7 @@ const en = {
         // 05.4 BO-05 (05.4-27, D-106): selling the old one. Wording goes to the D-15 copy review.
         debt_left_after_sale: '{{amount}} is still owed on this debt after the sale.',
         sale_counted: 'This counts {{amount}} from the sale on {{date}}.',
+        free_help: '{{name}} gives money help at no cost.', // 05.4 CMP-F04 (D-122, D-123): every answer whose usual month is short
         ask_debts_not_recorded_loan: 'No loan or other debt is recorded. Do you have one?',
         ask_debts_not_recorded_card: 'No card is recorded. Do you have one?',
         ask_debts_not_recorded_overdraft: 'No overdraft is recorded. Do you have one?',
@@ -3874,6 +3875,11 @@ const en = {
         },
         wrongFigure: 'A wrong figure here changes the answer.',
       },
+      // 05.4-38: screen labels for the plan step (placement 08.1). CMP-F07: beside a deposit or plan. CMP-F11: beside any rate FincWin works out.
+      plan: {
+        feesVary: 'Fees vary by provider.',
+        estimatedRate: 'This is FincWin’s estimate, not the APR on your agreement.',
+      },
     },
   },
   // 05.4 D-64 (owner, 2026-11-03; 05.4-DISCLAIMER-RESEARCH.md 6a, 6b, 7.3). Top-level so it sits outside en.decide. The Decide
@@ -3886,7 +3892,7 @@ const en = {
       cantSeeLink: 'What this can’t see',
       footer: 'FincWin is a planning tool, not a lender.',
     },
-    // The "About this answer" sheet. "For this answer" lists the answer's caveats (decide.v3.caveat). Free help is 05.4-38's.
+    // The "About this answer" sheet. "For this answer" lists the answer's caveats (decide.v3.caveat). Free help reads FREE_HELP (05.4-38).
     decideAbout: {
       title: 'About this answer',
       forThisTitle: 'For this answer',
@@ -3919,6 +3925,9 @@ const en = {
         planningInfo: 'This is information to help you plan, not financial advice.', // D-64 (3), D-92: the guard's one "advice" exception
         yours: 'The decision is yours, and so is when you make it.',
       },
+      // 05.4 CMP-F04 (D-122): from the FREE_HELP table by country; hidden when there is no row (08.1).
+      freeHelpTitle: 'Money help at no cost',
+      freeHelp: '{{name}} gives money help at no cost.',
       termsLink: 'Terms of Use',
     },
     // D-120: the one-time card before the first Decide answer. The screen and its stored acknowledgement are 08.1.

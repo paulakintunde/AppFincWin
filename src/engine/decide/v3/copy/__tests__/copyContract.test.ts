@@ -272,6 +272,8 @@ function buildCorpus(): Emitted[] {
   for (const t of Object.values(TIER_CASES)) {
     const { inputs, check } = rileyTier(t);
     collect(out, inputs, check);
+    // 05.4 CMP-F04 (05.4-38, D-123): the same answers in the UK carry the money-help pointer (free_help).
+    collect(out, { ...inputs, region: 'GB' }, check);
   }
   // 05.4 D-68: a short plan paid from money on hand (short_plan_from_cash), plain and from extra savings.
   for (const t of [SHORT_PLAN_CASES.qualifies, SHORT_PLAN_CASES.extraSavings]) {

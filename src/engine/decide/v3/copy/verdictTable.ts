@@ -242,6 +242,7 @@ export const FACT_KEYS = Object.freeze({
   tax_estimate: 'decide.v3.fact.tax_estimate', // 05.4 FIN-27 (D-19, CMP-F24)
   debt_left_after_sale: 'decide.v3.fact.debt_left_after_sale', // 05.4 BO-05 (05.4-27, D-106)
   sale_counted: 'decide.v3.fact.sale_counted', // 05.4 BO-05 (05.4-27, D-106)
+  free_help: 'decide.v3.fact.free_help', // 05.4 CMP-F04 (05.4-38, D-122, D-123)
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -436,6 +437,7 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   debt_left_after_sale: ['amount'], // 05.4 BO-05 (05.4-27): what is still owed on the debt after the sale pays part of it
   sale_counted: ['amount', 'date'], // 05.4 BO-05 (05.4-27): the sale the answer counts, and the day it arrives
   tax_estimate: ['percent', 'amount', 'basis'], // 05.4 FIN-27: percent is readable decimal text ("9.03"); amount is the whole tax; basis names the source's kind of rate
+  free_help: ['country', 'name'], // 05.4 CMP-F04 (D-122): country picks the FREE_HELP row; name is the organisation's name
 });
 
 export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> = Object.freeze({
@@ -470,7 +472,7 @@ export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> 
 export const COPY_RESOLVERS = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account', debtId: 'debt', missing: 'figure' } as const; // missing: 05.4 D-79, a MissingCode named by its decide.v3.missing copy
 
 /** Keys that pick a copy variant or identify a line; they need no placeholder of their own. */
-export const DISCRIMINATOR_KEYS = ['lineId', 'kind', 'unit', 'source', 'basis', 'where'] as const; // where: 05.4 D-44 earlier_money_from
+export const DISCRIMINATOR_KEYS = ['lineId', 'kind', 'unit', 'source', 'basis', 'where', 'country'] as const; // where: 05.4 D-44 earlier_money_from; country: 05.4 CMP-F04 free_help (the FREE_HELP row)
 
 /** D-48, D-49, D-54, D-58: a missing code's copy reads its placeholder values from this notice. */
 export const MISSING_VALUE_SOURCE = {
@@ -514,7 +516,15 @@ export const ABOUT_KEYS = Object.freeze({
   howFar: ['legal.decideAbout.howFar.everyday', 'legal.decideAbout.howFar.wrongFigures'],
   whatTitle: 'legal.decideAbout.whatTitle',
   what: ['legal.decideAbout.what.tool', 'legal.decideAbout.what.planningInfo', 'legal.decideAbout.what.yours'],
+  freeHelpTitle: 'legal.decideAbout.freeHelpTitle', // 05.4 CMP-F04 (D-122): hidden when the country has no FREE_HELP row (08.1)
+  freeHelp: 'legal.decideAbout.freeHelp', // { name }, from the same FREE_HELP table
   termsLink: 'legal.decideAbout.termsLink',
+} as const);
+
+/** 05.4-38: screen labels for the plan step (placement 08.1). CMP-F07 beside a deposit or plan; CMP-F11 beside any rate FincWin works out. */
+export const PLAN_LABEL_KEYS = Object.freeze({
+  feesVary: 'decide.v3.plan.feesVary',
+  estimatedRate: 'decide.v3.plan.estimatedRate',
 } as const);
 
 /** 05.4 D-120: the one-time "How Decide answers" card before the first answer (screen and stored acknowledgement 08.1). */

@@ -16,6 +16,7 @@ import type {
   MISSING_KEYS,
   NEXT_STEP_KEYS,
   NOTICE_KEYS,
+  PLAN_LABEL_KEYS,
   READINESS_KEYS,
   TAX_KEYS,
   VERDICT_TABLE,
@@ -44,6 +45,7 @@ export type DecideV3KeyChecks = [
   Is<Values<typeof CAVEAT_KEYS>>,
   Is<Values<typeof CAVEAT_FIGURE_KEYS>>,
   Is<typeof CAVEAT_WRONG_FIGURE_KEY>,
+  Is<Values<typeof PLAN_LABEL_KEYS>>, // 05.4-38 CMP-F07, CMP-F11
 ];
 
 // The check bites: a misspelt key is rejected.

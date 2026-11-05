@@ -39,6 +39,7 @@ import { expectedFor } from './month/incomePattern';
 import { liveSeriesOf, seriesOccurrences } from './month/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './month/settle';
 import { caveatsFor } from './caveats';
+import { freeHelpFacts } from './help/freeHelp';
 import type { PlanCard } from './plan/planCard';
 import type { QuotedCheck } from './plan/quoted';
 import type { CheckV2, Fact, Funds, MonthModel, Notice, Purchase, ReadyBy, ReasonCode, Result, V3Account, V3Inputs, YearMonth } from './types';
@@ -481,5 +482,7 @@ export function judgeCheckWith(p: Prepared, check: CheckV2, opts: JudgeOpts): Ev
   const result: Result = { ...chosen.result, reasons, facts, notices, afterBuy, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) };
   // 05.4 D-64 (4), D-119 (05.4-37): read from the finished answer; it never changes it (I75).
   const caveats = caveatsFor({ result, month: chosen.month, purchase: chosen.purchase }, p.inputs, check);
-  return { ...chosen, result: { ...result, caveats } };
+  // 05.4 CMP-F04 (D-123, 05.4-38): the money-help pointer goes last, read from the finished answer; it never changes it (I76).
+  const help = freeHelpFacts(result, p.inputs.region);
+  return { ...chosen, result: { ...result, facts: [...result.facts, ...help], caveats } };
 }

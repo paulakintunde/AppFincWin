@@ -47,6 +47,7 @@ export const V3_RUNTIME_EXPORTS = [
   'FACT_KEYS',
   'FACT_VALUE_KEYS',
   'FOOTER_KEY',
+  'FREE_HELP', // 05.4-38 CMP-F04
   'FURTHER_SHORTFALL_MAJOR',
   'FUTURE_ORDER',
   'HISTORY_PAY_MIN_MONTHS',
@@ -83,6 +84,7 @@ export const V3_RUNTIME_EXPORTS = [
   'PAY_GAP_ARRIVALS',
   'PAY_GAP_BP',
   'PAY_MATCH_DAYS',
+  'PLAN_LABEL_KEYS', // 05.4-38 CMP-F07, CMP-F11
   'PRESET_QUESTIONS',
   'QUESTION_LIBRARY',
   'QUOTED_TOLERANCE_USD',
@@ -140,6 +142,7 @@ export const V3_RUNTIME_EXPORTS = [
   'evaluate',
   'everydayByMonth',
   'explore',
+  'freeHelpFor', // 05.4-38 CMP-F04
   'homeFigure', // 05.4-24 FIN-09 (D-24): Decide Home's month figure
   'homeThresholds',
   'insteadFutures',

@@ -14,6 +14,7 @@ export interface MarketDefaultsRow {
   readonly minimumPercent: Percent | null;
   readonly interestAdded: boolean | null;
   readonly floor: MinorUnits | null;
+  /** Unsourced (CMP-F08); old engine only (plan.ts); the v3 engine never reads it (scan test, 05.4-38); deleted in 05.5. */
   readonly dealerCap: MinorUnits | null;
 }
 

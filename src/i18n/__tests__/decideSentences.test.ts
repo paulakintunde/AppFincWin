@@ -39,6 +39,7 @@ const NOT_A_NUMBER: Readonly<Record<string, string>> = {
   bill: 'a bill name',
   debt: 'a debt name',
   envelope: 'an envelope name',
+  name: 'a money-help organisation name (free_help, 05.4-38 D-122)',
 };
 
 function sentences(value: string): string[] {

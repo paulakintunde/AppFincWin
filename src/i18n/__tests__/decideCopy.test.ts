@@ -3,7 +3,7 @@ import en from '../locales/en';
 import { DRAFT_COPY_KEYS } from '../copyStatus';
 import { UNDO_LABEL_KEYS } from '../../engine/undo/types';
 import { undoLabelText } from '../undoLabel';
-import { ABOUT_KEYS, AFTER_BUY_KEYS, BASIS_KEYS, BASIS_REASON_KEYS, CAVEAT_FIGURE_KEYS, CAVEAT_KEYS, CAVEAT_WRONG_FIGURE_KEY, DISCLAIMER_KEYS, FACT_ACTION_KEYS, FACT_KEYS, FOOTER_KEY, INTRO_KEYS, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, READINESS_KEYS, TAX_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
+import { ABOUT_KEYS, AFTER_BUY_KEYS, BASIS_KEYS, BASIS_REASON_KEYS, CAVEAT_FIGURE_KEYS, CAVEAT_KEYS, CAVEAT_WRONG_FIGURE_KEY, DISCLAIMER_KEYS, FACT_ACTION_KEYS, FACT_KEYS, FOOTER_KEY, INTRO_KEYS, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, PLAN_LABEL_KEYS, READINESS_KEYS, TAX_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
 
 interface Leaf {
   path: string;
@@ -395,6 +395,7 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       ...Object.values(CAVEAT_KEYS), // 05.4-37 D-64 (4)
       ...Object.values(CAVEAT_FIGURE_KEYS), // D-64 (5)
       CAVEAT_WRONG_FIGURE_KEY,
+      ...Object.values(PLAN_LABEL_KEYS), // 05.4-38 CMP-F07, CMP-F11
     ];
     expect(keys.filter((k) => resolve(k) === undefined)).toEqual([]);
     // and the other way: every v3 leaf is reachable from a table
@@ -483,7 +484,7 @@ describe('Decide legal keys (D-64, D-120, D-92)', () => {
   const allowed = (path: string, re: RegExp): boolean => EXCEPTIONS[path]?.source === re.source;
 
   it('has the D-64 and D-120 leaves', () => {
-    expect(legalLeaves.length).toBe(3 + 24 + 5);
+    expect(legalLeaves.length).toBe(3 + 24 + 2 + 5); // + 2: the About sheet's money-help heading and line (05.4-38, D-122)
   });
 
   it('every leaf passes BANNED and the v3 voice list, apart from the two named exceptions', () => {
