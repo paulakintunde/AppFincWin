@@ -25,6 +25,9 @@ export const PENDING_RULES: PendingRule[] = [
   // 05.4-27 (BO-05 part B, D-107): what a purchase replaces (stops and a sale) and save-for-it landed on both sides (plain.ts replacesDates,
   // saleNow, plainFreed; fixtureArb draws them on one-off checks), so the BO-05 entry is deleted. Plans stay out of the whole-answer
   // comparison under their own fix ID until the plain plan branch is ladder-complete; a later plan closes it before 05.4-43.
+  // 05.4-28 (ENG-15, ENG-17; D-109, D-114): no pending entry. The price limits (plain.ts priceAsks, PLAIN_PRICE_LIMIT) and accounts
+  // with no exchange rate (withoutUnrated) landed on both sides; crosscheck.test compares both on every random fixture (price 0 and
+  // over the limit, plus an unrated account added). The unsaved-changes note and The cheaper one change no code or figure.
   { fixId: 'PLAIN-PLANS', applies: (f) => plan(f), note: 'plans (the plain plan branch is borrowing-complete, not ladder-complete; D-98, D-107); closed before 05.4-43' },
 ];
 

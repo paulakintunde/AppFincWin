@@ -608,8 +608,32 @@ export function plainTier(f: RightAnswerFixture, code: string): PlainTier {
   return { variant: used > free ? 'month_short_moderate_extra' : 'month_short_moderate', months: Number(R / S), monthsAfter: Number((R - used) / S) };
 }
 
+/**
+ * ENG-15 (05.4-28, D-109): "That price is too large to check" above about US$100,000,000 in every currency, the US$ figure taken
+ * at the fixed reference rate and tidied to one significant figure: $100,000,000; C$137,000,000 to C$100,000,000; £79,000,000 to
+ * £80,000,000; €92,000,000 to €90,000,000. This calculator's own table, in cents, for the currencies the fixtures use.
+ */
+export const PLAIN_PRICE_LIMIT: Readonly<Record<RightAnswerFixture['currency'], Cents>> = {
+  USD: 10_000_000_000n,
+  CAD: 10_000_000_000n,
+  GBP: 8_000_000_000n,
+  EUR: 9_000_000_000n,
+};
+
+/** ENG-15: no price or 0 asks for a price; above the limit is too large to check (both asks), in both pay modes. */
+export function priceAsks(f: RightAnswerFixture): boolean {
+  const p = f.check.price;
+  return p === null || p <= 0 || big(p) > PLAIN_PRICE_LIMIT[f.currency];
+}
+
+/** ENG-17 (D-114): "No exchange rate for {account}, so it is left out." An account with no rate is not counted anywhere. */
+export function withoutUnrated(f: RightAnswerFixture): RightAnswerFixture {
+  return f.accounts.some((a) => a.noRate === true) ? { ...f, accounts: f.accounts.filter((a) => a.noRate !== true) } : f;
+}
+
 /** The answer, with D-65's headline (D-63's on the Large tier) on every answer but an ask when the usual month is already short. */
-export function plainAnswer(f: RightAnswerFixture): PlainAnswer {
+export function plainAnswer(f0: RightAnswerFixture): PlainAnswer {
+  const f = withoutUnrated(f0);
   const a = plainCode(f);
   if (a.code === 'needs_input' || !usualMonthShort(f)) return a;
   // 05.4-22: "Only by borrowing" keeps the headline the plan's own fit gets when the month is already short
@@ -619,7 +643,7 @@ export function plainAnswer(f: RightAnswerFixture): PlainAnswer {
 
 function plainCode(f: RightAnswerFixture): PlainAnswer {
   const c = f.check;
-  if (c.price === null) return { code: 'needs_input', variant: null, afterBuy: null };
+  if (priceAsks(f)) return { code: 'needs_input', variant: null, afterBuy: null };
   const cost = upFront(f) + plainClosing(f);
   // 05.4-26 (D-100): the closing % is paid up front but is not part of the price the records rule reads (price, tax and fees).
   if (upFront(f) > ASK_FOR_RECORDS_ABOVE && recordsLookBehind(f)) return { code: 'needs_input', variant: null, afterBuy: null };

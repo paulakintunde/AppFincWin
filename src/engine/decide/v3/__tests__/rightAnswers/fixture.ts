@@ -318,6 +318,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     kind: a.kind,
     overdraftLimit: a.overdraftLimit === null ? null : mu(a.overdraftLimit),
     overdraftRate: a.overdraftRate === null ? null : percent(a.overdraftRate),
+    ...(a.noRate === true ? { noRate: true } : {}), // 05.4 ENG-17 (D-114)
   }));
   // 05.4-20 (FIN-04, FIN-10, FIN-14): due day, joint and the part already paid as stated. A debt the situation pays as one of its
   // bills (DB-03, DB-04, DB-06, DB-07, DB-12: "pays her $300 card minimum as a monthly bill") is the bills list's monthly bill of
@@ -338,7 +339,8 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
       ...(bill === undefined ? {} : { seriesId: `bill-${bill.id}` }),
     };
   });
-  const spending = f.accounts.filter((a) => a.kind === 'checking' || a.kind === 'current').reduce((s, a) => s + a.balance, 0);
+  // 05.4 ENG-17 (D-114): the app cannot convert an account with no rate, so its balance is not in the spending balance it passes.
+  const spending = f.accounts.filter((a) => (a.kind === 'checking' || a.kind === 'current') && a.noRate !== true).reduce((s, a) => s + a.balance, 0);
   const inputs0 = inputsOf({
     asOf: f.asOf,
     currency: currencyCode(f.currency),
@@ -388,7 +390,9 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   // still to come as money from earlier months (SN-04: "$300 now and $300 a month", not $700). Signed (05.4 ENG-02).
   const mm = buildMonthModel(inputs0);
   const toArrive = mm.moneyIn - t.received > 0 ? mm.moneyIn - t.received : 0;
-  const inputs: V3Inputs = { ...inputs0, unspent: { amount: mu(buildFunds(inputs0, mm, null).suggested + toArrive), at: f.asOf } };
+  // 05.4 ENG-17 (D-114): the app cannot convert an account with no rate, so its suggested figure leaves that account out too.
+  const rated: V3Inputs = { ...inputs0, accounts: accounts.filter((a) => a.noRate !== true) };
+  const inputs: V3Inputs = { ...inputs0, unspent: { amount: mu(buildFunds(rated, mm, null).suggested + toArrive), at: f.asOf } };
   const c = f.check;
   const check = checkOnce(c.price ?? 0, {
     price: c.price === null ? null : mu(c.price),

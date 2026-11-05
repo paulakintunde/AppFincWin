@@ -10,7 +10,7 @@ import { toEngineInputs } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
 import { fixtureArb } from './fixtureArb';
 import { pendingFixIds } from './pendingRules';
-import { plainAnswer } from './plain';
+import { PLAIN_PRICE_LIMIT, plainAnswer } from './plain';
 
 const RUNS = Number(process.env.CROSSCHECK_RUNS ?? 1000);
 const SEED = process.env.CROSSCHECK_SEED ? Number(process.env.CROSSCHECK_SEED) : Date.now() % 2_000_000_000;
@@ -85,6 +85,52 @@ describe('cross-check calculator vs engine: borrowing on plans', () => {
       throw e;
     }
     console.log(`crosscheck (borrowing): compared ${compared} plans, ${borrowed} borrowed, seed ${SEED}`);
+    expect(compared).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * 05.4-28 (ENG-15, ENG-17; D-109, D-114): the two new rules on the same random fixtures, drawn apart so the main stream above is
+ * unchanged. Each fixture is compared (1) with its price set to 0 and to just over the limit (both sides ask), and (2) with an
+ * account no exchange rate converts added (both sides leave it out), on the same terms as the main comparison.
+ */
+describe('cross-check calculator vs engine: price limits and accounts with no rate', () => {
+  const unratedArb = fc.record({
+    kind: fc.constantFrom('checking' as const, 'current' as const, 'savings' as const),
+    balance: fc.integer({ min: -200_000, max: 5_000_000 }),
+    use: fc.constantFrom('everyday' as const, 'untouched' as const, null),
+  });
+  it(`agrees on ${RUNS} random fixtures with their price at 0 or over the limit, and with an unrated account`, () => {
+    let compared = 0;
+    try {
+      fc.assert(
+        fc.property(fixtureArb, fc.constantFrom(0, 1), unratedArb, (f, which, u) => {
+          const limit = Number(PLAIN_PRICE_LIMIT[f.currency]);
+          const priced = { ...f, check: { ...f.check, price: which === 0 ? 0 : limit + 1 } };
+          const pe = toEngineInputs(priced);
+          expect(pick(evaluate(pe.inputs, pe.check)).code).toBe('needs_input');
+          expect(plainAnswer(priced).code).toBe('needs_input');
+          const g = { ...f, accounts: [...f.accounts, { id: 'norate', kind: u.kind, name: 'Yen account', balance: u.balance, overdraftLimit: null, overdraftRate: null, use: u.use, noRate: true }] };
+          if (pendingFixIds(g).length > 0) return;
+          compared++;
+          const { inputs, check } = toEngineInputs(g);
+          const got = pick(evaluate(inputs, check));
+          const plain = plainAnswer(g);
+          const tight = (v: string | null): boolean => v === 'tight';
+          const month = (code: string, m: number | null): number | null => (code === 'needs_input' ? null : m);
+          expect({ code: got.code, tight: tight(got.variant), month: month(got.code, got.afterBuy.month) }).toEqual({
+            code: plain.code,
+            tight: tight(plain.variant),
+            month: month(plain.code, plain.afterBuy),
+          });
+        }),
+        { numRuns: RUNS, seed: SEED, endOnFailure: true }
+      );
+    } catch (e) {
+      console.log(`crosscheck (limits, no rate) seed ${SEED}`);
+      throw e;
+    }
+    console.log(`crosscheck (limits, no rate): compared ${compared}, seed ${SEED}`);
     expect(compared).toBeGreaterThan(0);
   });
 });
