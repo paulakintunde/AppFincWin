@@ -3,6 +3,7 @@
  * A fixed-seed property over evaluate, plus hand-built cases that make several questions fire at once.
  */
 import fc from 'fast-check';
+import { fcRuns } from '../helpers/fcRuns';
 import { minorUnits } from '../../../../money/types';
 import { MISSING_PRIORITY } from '../../constants';
 import { evaluate } from '../../evaluate';
@@ -25,7 +26,7 @@ describe('D-59 the missing list is in priority order', () => {
       fc.property(inputsArb, checkArb, (inputs, check) => {
         expect(isInPriorityOrder(evaluate(inputs, check).result.missing)).toBe(true);
       }),
-      { numRuns: 200, seed: 0x0559 }
+      { numRuns: fcRuns(200), seed: 0x0559 }
     );
   });
 

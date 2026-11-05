@@ -5,6 +5,7 @@
  */
 import { codesOf, restsOn } from '../helpers/restsOn';
 import fc from 'fast-check';
+import { fcRuns } from '../helpers/fcRuns';
 import { laterThisMonth } from '../../afterBuy';
 import { planTotal } from '../../depletion';
 import { evaluate } from '../../evaluate';
@@ -26,7 +27,7 @@ import {
   shapeArb,
 } from './arbitraries';
 
-const RUNS = { numRuns: 60 };
+const RUNS = { numRuns: fcRuns(200) };
 
 /** D-54: the fund sits in its own dedicated emergency account, so its amount never touches the spending balance (I31, D-43). */
 function withFund(inputs: V3Inputs, amount: number | null): V3Inputs {
@@ -93,7 +94,7 @@ describe('end-to-end invariants through evaluate()', () => {
   });
 
   it('I1 thin data is never better: PARTIAL thinning, any mask (D-42)', () => {
-    fc.assert(fc.property(inputsArb, checkArb, fc.array(fc.boolean(), { minLength: 7, maxLength: 7 }), partialThinning), { numRuns: 100, seed: 0x0542 });
+    fc.assert(fc.property(inputsArb, checkArb, fc.array(fc.boolean(), { minLength: 7, maxLength: 7 }), partialThinning), { numRuns: fcRuns(200), seed: 0x0542 });
   });
 
   it('I3 uncertain income is not cash: removing pending income never improves the code', () => {
@@ -350,7 +351,7 @@ describe('end-to-end invariants through evaluate()', () => {
         expect(codeRank(million.result.code)).toBeGreaterThanOrEqual(codeRank(zero.result.code));
         expect(million.result.code).not.toBe('emergency_use');
       }),
-      { numRuns: 60, seed: 0x0543 }
+      { numRuns: fcRuns(200), seed: 0x0543 }
     );
   });
 
@@ -365,7 +366,7 @@ describe('end-to-end invariants through evaluate()', () => {
         fc.pre(none.code !== 'needs_input' && set.code !== 'needs_input');
         expect(codeRank(set.code)).toBeGreaterThanOrEqual(codeRank(none.code));
       }),
-      { numRuns: 60, seed: 0x0544 }
+      { numRuns: fcRuns(200), seed: 0x0544 }
     );
   });
 

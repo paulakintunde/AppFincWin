@@ -97,7 +97,7 @@ describe('I71 save-for-it has no double count', () => {
         const pk = prepare(kept);
         expect(saveForItReadyDate(pk, check, saved + 1_000_000)).toBe(saveForItReadyDate(pk, check, saved));
       }),
-      { numRuns: fcRuns(150), seed: 0x0571 }
+      { numRuns: fcRuns(200), seed: 0x0571 }
     );
   });
 
@@ -110,7 +110,7 @@ describe('I71 save-for-it has no double count', () => {
         const more = saveForItReadyDate(p, check, Math.max(a, b));
         if (less !== null && more !== null) expect(more <= less).toBe(true);
       }),
-      { numRuns: fcRuns(150), seed: 0x0571 }
+      { numRuns: fcRuns(200), seed: 0x0571 }
     );
   });
 });
@@ -124,7 +124,7 @@ describe('I72 judgeBoth equals two separate checks', () => {
         if (check.pay.mode === 'plan') expect(both.plan).toEqual(evaluate(inputs, check));
         else expect(both.plan).toBeNull();
       }),
-      { numRuns: fcRuns(150), seed: 0x0572 }
+      { numRuns: fcRuns(200), seed: 0x0572 }
     );
   });
 });

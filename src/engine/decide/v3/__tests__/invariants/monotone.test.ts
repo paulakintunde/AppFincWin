@@ -5,12 +5,13 @@
  * disappears legitimately when the extra spending line makes the records look current again.
  */
 import fc from 'fast-check';
+import { fcRuns } from '../helpers/fcRuns';
 import { evaluate } from '../../evaluate';
 import type { CheckV2, ReadyBy, Result, V3Inputs, V3Line } from '../../types';
 import { checkOf, codeRank, checkArb, inputsArb, latePayInputsArb, mu, priceArb, shapeArb } from './arbitraries';
 import { v3Line } from '../helpers/fixtures';
 
-const RUNS = { numRuns: 60 };
+const RUNS = { numRuns: fcRuns(200) };
 
 const run = (inputs: V3Inputs, check: CheckV2): Result => evaluate(inputs, check).result;
 
@@ -140,7 +141,7 @@ describe('end-to-end monotonicity through evaluate()', () => {
         fc.pre(hi.code === 'not_yet' && lo.code === 'not_yet');
         expect(readyKey(hi.readyBy) >= readyKey(lo.readyBy)).toBe(true);
       }),
-      { numRuns: 60, seed: 0x0413 }
+      { numRuns: fcRuns(200), seed: 0x0413 }
     );
   });
 
@@ -153,7 +154,7 @@ describe('end-to-end monotonicity through evaluate()', () => {
         fc.pre(hi.code === 'not_yet' && lo.code === 'not_yet');
         expect(readyKey(hi.readyBy) >= readyKey(lo.readyBy)).toBe(true);
       }),
-      { numRuns: 200, seed: 0x0513 }
+      { numRuns: fcRuns(200), seed: 0x0513 }
     );
   });
 

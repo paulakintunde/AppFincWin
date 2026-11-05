@@ -59,7 +59,7 @@ describe('I44 prepare once, judge per check equals evaluate', () => {
         const p = prepare(inputs);
         for (const c of checks) expect(judgeCheck(p, c)).toEqual(evaluate(inputs, c));
       }),
-      { numRuns: fcRuns(100), seed: SEED }
+      { numRuns: fcRuns(200), seed: SEED }
     );
   });
 });

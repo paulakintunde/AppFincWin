@@ -84,7 +84,7 @@ describe('I66 price included means no tax added', () => {
         expect(switched.result.reasons).not.toContain('tax_not_included');
         expect(switched.result.facts.map((f) => f.code)).not.toContain('tax_estimate');
       }),
-      { numRuns: fcRuns(100), seed: 0x0566 }
+      { numRuns: fcRuns(200), seed: 0x0566 }
     );
   });
 
@@ -94,7 +94,7 @@ describe('I66 price included means no tax added', () => {
         const inputs = withRegion(inputs0, r);
         expect(evaluate(inputs, { ...check, taxPercent: null, taxIncluded: inc })).toEqual(evaluate(inputs, { ...check, taxPercent: null, taxIncluded: true }));
       }),
-      { numRuns: fcRuns(100), seed: 0x0566 }
+      { numRuns: fcRuns(200), seed: 0x0566 }
     );
   });
 });
@@ -126,7 +126,7 @@ describe('I67 unknown region adds 0 and emits tax_not_included', () => {
         expect(res.reasons).not.toContain('tax_not_included');
         expect(res.notices.map((n) => n.code)).not.toContain('tax_not_included');
       }),
-      { numRuns: fcRuns(60), seed: 0x0567 }
+      { numRuns: fcRuns(200), seed: 0x0567 }
     );
   });
 });
@@ -151,7 +151,7 @@ describe('FIN-27 a region default is the same as typing its rate, and is named a
         expect(est[0]!.values['basis']).toBe(row.basis);
         expect(percent(String(est[0]!.values['percent']))).toBe(row.percent);
       }),
-      { numRuns: fcRuns(100), seed: 0x0568 }
+      { numRuns: fcRuns(200), seed: 0x0568 }
     );
   });
 });
