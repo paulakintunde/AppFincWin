@@ -42,6 +42,11 @@ export { checkQuoted } from './plan/quoted';
 export type { QuotedCheck, QuotedInput } from './plan/quoted';
 export { evaluate } from './evaluate';
 export { prepare, judgeCheck } from './prepare';
+// 05.4 BO-05 (05.4-27, Variant C): what a purchase replaces, cash and installments from one input, and the save-for-it ready date.
+export { judgeBoth } from './fullCost/cashAndPlan';
+export type { BothResults } from './fullCost/cashAndPlan';
+export { saveForItReadyDate } from './fullCost/saveForIt';
+export { stoppedCostFlows, saleFlows } from './fullCost/replaces';
 // 05.4 FIN-09 (05.4-24, D-22..D-24): Decide Home's month figure, the same one every answer's afterBuy starts from (screens in 08.1).
 export { homeFigure, monthAfterPlans } from './afterBuy';
 export type { Prepared } from './prepare';

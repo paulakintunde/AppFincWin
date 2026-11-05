@@ -239,7 +239,16 @@
           "size": 168000,
           "saved": 168000
         },
-        "bills": [],
+        "bills": [
+          {
+            "id": "b-oldloan",
+            "amount": 25000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-05",
+            "lastPaid": "2026-11-05",
+            "paidBy": "me"
+          }
+        ],
         "debts": [
           {
             "id": "d-old",
@@ -356,7 +365,16 @@
           "size": 168000,
           "saved": 168000
         },
-        "bills": [],
+        "bills": [
+          {
+            "id": "b-oldloan",
+            "amount": 25000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-05",
+            "lastPaid": "2026-11-05",
+            "paidBy": "me"
+          }
+        ],
         "debts": [
           {
             "id": "d-old",

@@ -119,6 +119,20 @@ export interface JudgeInput {
   readonly borrowing?: BorrowingCtx | null;
   /** 05.4 BO-05 / D-42 (05.4-26): the day it is to be bought (fullCost/purchaseDate.ts purchaseDateOf); absent = asOf (hand-built tests). */
   readonly purchaseDate?: LocalDate;
+  /**
+   * 05.4 BO-05 (05.4-27, fullCost/replaces.ts): what the purchase replaces. freed: what the usual month gets back after buying; showsUsual:
+   * a one-off states its usual month; saleLater: the sale's account part arriving after the purchase date, which only the ready date
+   * counts (SO-02). Absent = nothing replaced.
+   */
+  readonly replaces?: { readonly freed: MinorUnits; readonly showsUsual: boolean; readonly saleLater: SaleLater | null } | null;
+  /** 05.4 BO-05 (D-108, fullCost/saveForIt.ts): money set aside for the item in kept savings; it counts toward the ready date too. Absent = 0. */
+  readonly savedFor?: number;
+}
+
+/** 05.4 BO-05 (05.4-27): a sale's account part that arrives after the purchase date. */
+export interface SaleLater {
+  readonly amount: MinorUnits;
+  readonly date: LocalDate;
 }
 
 /**
@@ -186,6 +200,31 @@ function readyMonth(month: MonthModel, price: number, unspent: number | null): E
 }
 
 /**
+ * 05.4 BO-05 (05.4-27, SO-02): the ready month when a sale's money arrives later. The sale counts from its own month on, once; the usual
+ * leftover counts each month as in readyMonth. waits is the sale's date when the month is reached only with the sale, so a payday
+ * before it is not the ready date. A seasonal earner, or no usual month, keeps readyMonth (the sale is not counted: never looser).
+ */
+export function readyWithSale(
+  month: MonthModel,
+  price: number,
+  unspent: number | null,
+  sale: SaleLater | null | undefined
+): { readonly ready: Extract<ReadyBy, { kind: 'month' }> | null; readonly waits: LocalDate | null } {
+  const base = readyMonth(month, price, unspent);
+  const tl = month.typicalLeft;
+  if (sale == null || tl === null || (month.incomePicture !== undefined && month.incomePicture.treated === 'seasonal')) return { ready: base, waits: null };
+  const saleYm = yearMonthOf(sale.date);
+  const have0 = BigInt(unspent ?? 0);
+  for (let n = 1; n <= SIMULATION_MONTH_CAP; n++) {
+    const ym = addYearMonths(month.month, n);
+    if (base !== null && ym >= base.month) break;
+    const own = have0 + BigInt(tl) * BigInt(n);
+    if (own >= BigInt(price) || (ym >= saleYm && own + BigInt(sale.amount) >= BigInt(price))) return { ready: { kind: 'month', month: ym }, waits: own >= BigInt(price) ? null : sale.date };
+  }
+  return { ready: base, waits: null };
+}
+
+/**
  * The one-off ladder on its own: month, own envelope, earlier unspent, money above the net's size, overdraft, the net, else not
  * covered. `overdraft` is how far the cash path goes below 0 inside the limit (0 when it never does): only money the account
  * really borrows can carry what unspent money cannot, so money spoken for never counts as overdraft (I47). The net lends after
@@ -197,7 +236,9 @@ function ladder(
   available: { readonly unspent: MinorUnits | null; readonly envelope: MinorUnits },
   overdraft: number,
   net: ResolvedNet,
-  later = 0
+  later: number,
+  sale: SaleLater | null,
+  savedFor: number
 ): OneOffPart {
   const P = p.dayOne;
   // A funding segment is never negative: a month already below 0 funds nothing, and its shortfall is inside unspent already
@@ -247,7 +288,7 @@ function ladder(
     return fit('fits_uses_net', segs, taken, taken - fromExtra);
   }
 
-  return notYet('not_covered', readyMonth(month, P, unspent + above));
+  return notYet('not_covered', readyWithSale(month, P, unspent + above + savedFor, sale).ready);
 }
 
 /**
@@ -265,15 +306,20 @@ export function oneOffPart(
   const net = j.net ?? NO_NET;
   const later = laterRoom(j.month.typicalLeft, j.inputs.asOf, j.purchaseDate ?? j.inputs.asOf); // 05.4 BO-05 (RC-08)
   // 05.4 D-35: money above the net's size is spare, so it counts toward the ready date too; the net itself never does.
-  const spare = available.unspent === null ? null : available.unspent + net.aboveSize;
+  // 05.4 BO-05 (D-108): money set aside for it in kept savings counts toward the ready date (it is in the envelope for the ladder).
+  const savedFor = j.savedFor ?? 0;
+  const spare = available.unspent === null ? null : available.unspent + net.aboveSize + savedFor;
+  // 05.4 BO-05 (SO-02): a sale arriving after the purchase date counts toward the ready date only, from its month.
+  const sale = j.replaces?.saleLater ?? null;
   if (j.cash.kind === 'not_covered') {
-    // The later of the ladder month and the next payday (I13 residual): never dated before the pay that would help.
-    const ready = readyMonth(j.month, p.dayOne, spare);
+    // The later of the ladder month and the next payday (I13 residual): never dated before the pay that would help, nor before the
+    // sale the month waits for.
+    const { ready, waits } = readyWithSale(j.month, p.dayOne, spare, sale);
     const pay = j.cash.payDate ?? null;
-    return notYet('not_covered', ready !== null && pay !== null && pay >= `${ready.month}-01` ? { kind: 'date', date: pay } : ready);
+    return notYet('not_covered', ready !== null && pay !== null && pay >= `${ready.month}-01` && (waits === null || waits <= pay) ? { kind: 'date', date: pay } : ready);
   }
   if (j.cash.kind === 'overdraft') {
-    const part = ladder(p, j.month, available, -j.cash.lowest.balance, net, later);
+    const part = ladder(p, j.month, available, -j.cash.lowest.balance, net, later, sale, savedFor);
     if (part.code === 'not_yet' || part.code === 'needs_input') return part;
     // D-22, D-36: the account pays now and goes below 0, so the purchase (less its own envelope and any net money) comes out
     // of this month; nothing is taken from earlier money, which is below 0 on the way.
@@ -288,7 +334,7 @@ export function oneOffPart(
     if (part.netTaken - fromExtra > 0) split.push({ source: 'emergency', amount: mu(part.netTaken - fromExtra) });
     return { ...part, code: 'fits_uses_overdraft', split };
   }
-  const part = ladder(p, j.month, available, 0, net, later);
+  const part = ladder(p, j.month, available, 0, net, later, sale, savedFor);
   if (j.cash.kind === 'ok') return part;
   if (j.cash.kind === 'net') {
     // 05.4 FIN-02 (D-35): the 90-day path stays above 0 only with the net's money, so any fit dips into it.
@@ -299,8 +345,8 @@ export function oneOffPart(
   const until = j.cash.until;
   const onPayday = notYet('payday', { kind: 'date', date: until });
   if (part.code !== 'not_yet') return onPayday; // the ladder passes (or cannot tell): payday is the only wait
-  const ready = readyMonth(j.month, p.dayOne, spare);
-  return ready !== null && until >= `${ready.month}-01` ? onPayday : part;
+  const { ready, waits } = readyWithSale(j.month, p.dayOne, spare, sale);
+  return ready !== null && until >= `${ready.month}-01` && (waits === null || waits <= until) ? onPayday : part;
 }
 
 /** What the monthly part of a purchase needs beyond the month model (D-36, D-37). */
@@ -759,6 +805,15 @@ export function judge(j: JudgeInput): Result {
   // month's figure, and the months before it add their usual leftover to the money it can use (RC-08).
   const buyDate = j.purchaseDate ?? j.inputs.asOf;
   const laterMonth = inLaterMonth(j.inputs.asOf, buyDate);
+  // 05.4 BO-05 (05.4-27): the usual month after buying gets back what the purchase replaces (SO-03, SO-05, SO-06). A usual month already
+  // short before the purchase is judged as it is (D-63 / D-65 read the month before the purchase; never looser).
+  const freed = j.replaces?.freed ?? 0;
+  // The low month gets it back too (it is a month after the purchase like any other; crosscheck seed 39).
+  const usualMonth: MonthModel =
+    freed > 0 && month.typicalLeft !== null && !monthAlreadyShort(month.typicalLeft)
+      ? { ...month, typicalLeft: mu(month.typicalLeft + freed), low: month.low === null ? null : { ...month.low, left: mu(month.low.left + freed) } }
+      : month;
+  const afterReplaces = j.replaces == null ? null : { freed: mu(usualMonth === month ? 0 : freed), shows: j.replaces.showsUsual };
 
   // D-38: every check judges against available unspent money, the confirmed figure less money held back for earlier
   // plans. Drift and staleness (judgeNotices, judgeConfidence) stay on the confirmed figure (D-30).
@@ -782,7 +837,7 @@ export function judge(j: JudgeInput): Result {
     layers,
     confidence,
     parts,
-    afterBuy: afterBuyBlock({ month, asOf: j.inputs.asOf, purchase: p, fromThisMonth: laterMonth ? mu(0) : null, byCash: false }),
+    afterBuy: afterBuyBlock({ month, asOf: j.inputs.asOf, purchase: p, fromThisMonth: laterMonth ? mu(0) : null, byCash: false, replaces: afterReplaces }),
     purchaseDate: buyDate,
   });
 
@@ -798,7 +853,7 @@ export function judge(j: JudgeInput): Result {
     unspentValue === null
       ? null
       : mu(unspentValue - Math.max(0, month.monthLeft) - segment(oneRaw, 'unspent_earlier') + net.aboveSize - segment(oneRaw, 'extra_savings') + keptSavings(j.inputs.accounts));
-  const mon = monthlyPart(month, purchase.monthly, {
+  const mon = monthlyPart(usualMonth, purchase.monthly, {
     asOf: j.inputs.asOf,
     purchase,
     available,
@@ -850,7 +905,7 @@ export function judge(j: JudgeInput): Result {
   const spend = monthlySpendingOf(month);
   const line = j.inputs.tightLine ?? null;
   const fitCode = code === 'fits_month' || code === 'fits_unspent';
-  const planTight = fitCode && said !== null && said.code === 'fits_month' && month.typicalLeft !== null && isTight(month.typicalLeft, purchase.monthly, spend, line);
+  const planTight = fitCode && said !== null && said.code === 'fits_month' && usualMonth.typicalLeft !== null && isTight(usualMonth.typicalLeft, purchase.monthly, spend, line);
   // The one-off money left (I58): spare money after this month's plans (this month's own figure when spare money is unknown) and the
   // extra savings above the net's size, less what the purchase takes from them (the envelope and the net are not spare money).
   // 05.4 BO-05 (RC-08): a purchase dated in a later month also has the usual leftover of the months before it (laterRoom).
@@ -935,7 +990,7 @@ export function judge(j: JudgeInput): Result {
   if ((month.carriedOverdraft ?? 0) > 0) facts.push({ code: 'overdraft_carried_in', values: { month: addYearMonths(month.month, -1), amount: month.carriedOverdraft as MinorUnits } });
   const kept = keepSplit ? split : [];
   const fromThisMonth = laterMonth ? mu(0) : kept.length === 0 ? null : mu(kept.reduce((t, s) => t + (s.source === 'month' || s.source === 'emergency' ? s.amount : 0), 0));
-  const afterBuy = afterBuyBlock({ month, asOf: j.inputs.asOf, purchase, fromThisMonth, byCash: cashPlan !== null });
+  const afterBuy = afterBuyBlock({ month, asOf: j.inputs.asOf, purchase, fromThisMonth, byCash: cashPlan !== null, replaces: afterReplaces });
   if (one.split.length > 0) facts.push({ code: 'month_left_after', values: { month: month.month, left: afterBuy.month } });
   // every split segment is above 0 (the ladder and sourceSplit drop empty ones)
   for (const s of kept) {

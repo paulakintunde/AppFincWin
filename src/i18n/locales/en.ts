@@ -3725,6 +3725,9 @@ const en = {
         overdraft_carried_in: '{{month}} ended about {{amount}} overdrawn. That is paid back from this month first.',
         // 05.4 FIN-27 (D-19, CMP-F24): the region's usual rate was used; always called an estimate.
         tax_estimate: 'Includes about {{amount}} sales tax at {{percent}}%. This rate is an estimate and can be changed.',
+        // 05.4 BO-05 (05.4-27, D-106): selling the old one. Wording goes to the D-15 copy review.
+        debt_left_after_sale: '{{amount}} is still owed on this debt after the sale.',
+        sale_counted: 'This counts {{amount}} from the sale on {{date}}.',
         ask_debts_not_recorded_loan: 'No loan or other debt is recorded. Do you have one?',
         ask_debts_not_recorded_card: 'No card is recorded. Do you have one?',
         ask_debts_not_recorded_overdraft: 'No overdraft is recorded. Do you have one?',

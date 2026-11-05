@@ -5,7 +5,7 @@
  */
 import { currencyCode, minorUnits, type MinorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
-import type { AccountUse, Cadence, CheckV2, FirstPayment, PayV2, ReadinessWaiver, V3Account, V3Debt, V3Inputs, V3Line, V3Month, V3Series } from '../../types';
+import type { AccountUse, Cadence, CheckV2, FirstPayment, PayV2, ReadinessWaiver, Replaces, V3Account, V3Debt, V3Inputs, V3Line, V3Month, V3Series } from '../../types';
 import { addMonthsClamped, cadenceDate } from '../../dates';
 import { buildFunds } from '../../funds/build';
 import { buildMonthModel } from '../../month/model';
@@ -244,6 +244,20 @@ function billsOf(f: RightAnswerFixture, start: string): MappedBills {
   return { series, history: (m) => hist.get(m) ?? [], now, waivers };
 }
 
+/** 05.4 BO-05 (05.4-27): what the purchase replaces, in the engine's own shape. */
+function replacesOf(r: NonNullable<RightAnswerFixture['check']['replaces']>): Replaces {
+  return {
+    stops: r.stops.map((s) => ({
+      id: s.id,
+      amount: mu(s.amount),
+      everyMonths: s.everyMonths,
+      stopDate: s.stopDate,
+      source: s.source === 'bill' ? { kind: 'bill' as const, seriesId: `bill-${s.id}` } : { kind: 'everyday' as const, categoryId: null },
+    })),
+    sale: r.sale === null ? null : { amount: mu(r.sale.amount), arrives: r.sale.arrives, paysDebtId: r.sale.paysDebtId },
+  };
+}
+
 export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check: CheckV2 } {
   const ym = f.asOf.slice(0, 7);
   const start = `${monthBefore(ym, f.historyMonths)}-01`;
@@ -294,8 +308,8 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   // mapped when BO-05 lands: plan first-payment choices beyond the engine's own
   // 05.4 FIN-27 (05.4-25): region is the country and regionSubdivision the state or province; check.taxIncluded is the switch.
   // 05.4 BO-05 (05.4-26): check.runningCosts (off: true = switched off), check.closingPercent and check.purchaseDate are mapped below.
-  // mapped when FIN-07 lands: check.replaces (stops and sale)
-  // mapped when BO-05 lands (05.4-27): check.saveForIt. check.yourAnswer, pay.lastThree, pay.setupAmount and pay.lean are mapped (05.4-23).
+  // 05.4 BO-05 (05.4-27): check.replaces is mapped below (a bill stop names the bills list's bill, so its series is bill-<id>); check.saveForIt
+  // is read by the runner (saveForItReadyDate), never by the engine's answer. check.yourAnswer, pay.lastThree, pay.setupAmount and pay.lean are mapped (05.4-23).
   // 05.4 FIN-03: kind, overdraft limit and rate as stated (the engine reads a limit only on checking and current accounts).
   const accounts: V3Account[] = f.accounts.map((a) => ({
     id: a.id,
@@ -389,6 +403,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     ...(c.runningCosts === undefined ? {} : { runningCosts: c.runningCosts.map((r) => ({ id: r.id, amount: mu(r.amount), everyMonths: r.everyMonths, start: r.start, end: r.end, on: r.off !== true })) }),
     ...(c.closingPercent == null ? {} : { closingPercent: percent(c.closingPercent) }),
     ...(c.purchaseDate == null ? {} : { purchaseDate: c.purchaseDate }),
+    ...(c.replaces == null ? {} : { replaces: replacesOf(c.replaces) }),
   });
   // 05.4-23 (FIN-08): the answer to "Can you cover the low months?"; absent or null = not answered.
   if (c.yourAnswer === 'yes' || c.yourAnswer === 'no') return { inputs, check: { ...check, volatileCover: c.yourAnswer === 'yes' } };

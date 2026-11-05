@@ -232,6 +232,8 @@ export const FACT_KEYS = Object.freeze({
   earlier_money_from: 'decide.v3.fact.earlier_money_from', // 05.4 D-44 (05.4-24)
   overdraft_carried_in: 'decide.v3.fact.overdraft_carried_in', // 05.4 D-86 (05.4-24 FIN-09b)
   tax_estimate: 'decide.v3.fact.tax_estimate', // 05.4 FIN-27 (D-19, CMP-F24)
+  debt_left_after_sale: 'decide.v3.fact.debt_left_after_sale', // 05.4 BO-05 (05.4-27, D-106)
+  sale_counted: 'decide.v3.fact.sale_counted', // 05.4 BO-05 (05.4-27, D-106)
 } as const satisfies Record<FactCode, string>);
 
 /**
@@ -423,6 +425,8 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   further_shortfall_runway: ['extra', 'covered', 'of'], // 05.4 D-46
   earlier_money_from: ['amount', 'where'], // 05.4 D-44: where 'account' | 'savings' picks the copy variant
   overdraft_carried_in: ['month', 'amount'], // 05.4 D-86: month is last month
+  debt_left_after_sale: ['amount'], // 05.4 BO-05 (05.4-27): what is still owed on the debt after the sale pays part of it
+  sale_counted: ['amount', 'date'], // 05.4 BO-05 (05.4-27): the sale the answer counts, and the day it arrives
   tax_estimate: ['percent', 'amount', 'basis'], // 05.4 FIN-27: percent is readable decimal text ("9.03"); amount is the whole tax; basis names the source's kind of rate
 });
 

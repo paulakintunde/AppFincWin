@@ -132,6 +132,7 @@ export const V3_RUNTIME_EXPORTS = [
   'insteadFutures',
   'insteadLinkFor',
   'isNeedPurpose',
+  'judgeBoth', // 05.4-27 BO-05: cash and installments from one input
   'judgeCheck',
   'layerOfAnswerKey',
   'layersFor',
@@ -149,10 +150,13 @@ export const V3_RUNTIME_EXPORTS = [
   'readStoredCheck',
   'refine',
   'refineNoise',
+  'saleFlows', // 05.4-27 BO-05
   'salesTaxOf',
+  'saveForItReadyDate', // 05.4-27 BO-05 (D-108)
   'seenOf',
   'seriesDrift',
   'stagedRequired',
+  'stoppedCostFlows', // 05.4-27 BO-05
   'toStoredV2',
   'unspentSum',
   'upgradeInputs',

@@ -176,6 +176,7 @@ describe('verdict table (I22 one code one text)', () => {
         'earlier_money_from', // 05.4 D-44 (05.4-24)
         'overdraft_carried_in', // 05.4 D-86 (05.4-24 FIN-09b)
         'tax_estimate', // 05.4 FIN-27 (05.4-25)
+        'debt_left_after_sale', 'sale_counted', // 05.4 BO-05 (05.4-27, D-106)
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

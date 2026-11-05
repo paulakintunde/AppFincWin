@@ -271,6 +271,11 @@ function buildCorpus(): Emitted[] {
     const { inputs, check } = toEngineInputs({ ...ben, region, check: { ...ben.check, taxPercent: null, taxIncluded: null } });
     collect(out, inputs, check);
   }
+  // 05.4 BO-05 (05.4-27): a sale the answer counts (SO-01, sale_counted) and a debt the sale pays only in part (SO-04, debt_left_after_sale).
+  for (const id of ['SO-01', 'SO-04']) {
+    const { inputs, check } = toEngineInputs(loadCases().find((c) => c.id === id)!.fixture);
+    collect(out, inputs, check);
+  }
   return out;
 }
 

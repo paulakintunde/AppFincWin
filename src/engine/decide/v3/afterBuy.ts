@@ -109,6 +109,11 @@ export interface AfterBuyInput {
   readonly fromThisMonth: MinorUnits | null;
   /** 05.4 D-68: a short plan judged by cash; its split already holds every payment, and it leads with this month. */
   readonly byCash: boolean;
+  /**
+   * 05.4 BO-05 (05.4-27): what the purchase replaces. freed is what the usual month gets back after buying (costs that stop, a debt the
+   * sale pays off); shows states the usual month for a one-off too (SO-06). Absent = nothing replaced.
+   */
+  readonly replaces?: { readonly freed: MinorUnits; readonly shows: boolean } | null;
 }
 
 /** The block for one reading; prepare.ts re-bases it on homeFigure so every answer and Home share one month figure. */
@@ -120,8 +125,9 @@ export function afterBuyBlock(a: AfterBuyInput): AfterBuy {
   const later = a.byCash ? 0 : laterThisMonth(p, a.asOf, a.month.month);
   const plan = p.schedule !== null;
   // 05.4 BO-05 (RC-09): a one-off with running-cost lines states its usual month, even when every line is switched off.
-  const running = p.runningMonthly > 0 || (p.runningCosts?.length ?? 0) > 0;
-  const usual = a.month.typicalLeft === null || (!plan && !running) ? null : minorFromBigInt(BigInt(a.month.typicalLeft) - BigInt(p.monthly), 'afterBuyBlock');
+  const running = p.runningMonthly > 0 || (p.runningCosts?.length ?? 0) > 0 || a.replaces?.shows === true;
+  const freed = BigInt(a.replaces?.freed ?? 0);
+  const usual = a.month.typicalLeft === null || (!plan && !running) ? null : minorFromBigInt(BigInt(a.month.typicalLeft) + freed - BigInt(p.monthly), 'afterBuyBlock');
   return {
     lead: plan && !a.byCash ? 'usualMonth' : 'month',
     month: minorFromBigInt(BigInt(before) - BigInt(taken) - BigInt(later), 'afterBuyBlock'),

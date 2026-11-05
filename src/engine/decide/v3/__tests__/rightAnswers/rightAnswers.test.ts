@@ -10,6 +10,8 @@
  * In expected.afterBuy a null figure means "not asserted". readyBy is compared exactly (null = no ready-by date).
  */
 import { evaluate } from '../../evaluate';
+import { saveForItReadyDate } from '../../fullCost/saveForIt';
+import { prepare } from '../../prepare';
 import { toEngineInputs } from './fixture';
 import { loadCases, loadKnownRed } from './loader';
 import { pick, type Picked } from './pick';
@@ -73,6 +75,27 @@ describe.each(TOPICS)('right answers: %s', (topic) => {
     it(`${c.id} ${c.persona} (${c.status}) converts and evaluates`, () => {
       const { inputs, check } = toEngineInputs(c.fixture);
       expect(() => evaluate(inputs, check)).not.toThrow();
+    });
+  }
+});
+
+/**
+ * 05.4 BO-05 (05.4-27, D-108): a save-for-it case's ready date is the same date the Not-yet answer gives (SO-07, SO-08): a date as it
+ * is, a month as any day in it. Nothing saved is typed in the cases, so saved = 0.
+ */
+describe('right answers: save-for-it ready date', () => {
+  const cases = ALL.filter((c) => c.status === 'approved' && c.fixture.check.saveForIt === true);
+  it('there are save-for-it cases', () => {
+    expect(cases.length).toBeGreaterThan(0);
+  });
+  for (const c of cases) {
+    it(`${c.id} ${c.persona}`, () => {
+      const { inputs, check } = toEngineInputs(c.fixture);
+      const got = saveForItReadyDate(prepare(inputs), check, 0);
+      const want = c.expected.readyBy;
+      if (want === null) expect(got).toBeNull();
+      else if (want.length === 10) expect(got).toBe(want);
+      else expect(got?.slice(0, 7)).toBe(want);
     });
   }
 });

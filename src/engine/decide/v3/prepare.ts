@@ -11,8 +11,8 @@ import { minorUnits, type MinorUnits } from '../../money/types';
 import { carriedOverdraft, homeFigure, openingBalance, rebased, withCarried } from './afterBuy';
 import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { mergeConfidence } from './confidence/reasons';
-import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, withNet, type CashCheck, type OpenCashPath } from './cash/path';
-import { debtOutflows, debtsInMonth, debtsNotRecorded, dueDayFacts, type DebtOutflows } from './debts';
+import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, withNet, type CashCheck, type DatedFlow, type OpenCashPath } from './cash/path';
+import { debtOutflows, debtsInMonth, debtsNotRecorded, dueDayFacts, type DebtFlow, type DebtOutflows } from './debts';
 import { essentialCosts, essentialSpendingOf } from './essentialCosts';
 import { resolveSafetyNet, type ResolvedNet } from './safetyNet';
 import { overdraftFloor } from './overdraft';
@@ -26,6 +26,7 @@ import { withLiveEmergency } from './funds/emergency';
 import { ownEnvelope } from './funds/envelopes';
 import { buildPurchase, purchaseCashFlows } from './judge/purchase';
 import { purchaseDateOf } from './fullCost/purchaseDate';
+import { replacesEffect, replacesOutflows, type ReplacesEffect } from './fullCost/replaces';
 import { withRedatedRefunds } from './month/refunds';
 import { recordsSynced } from './month/freshness';
 import { dueDrops } from './month/dueDrops';
@@ -171,6 +172,9 @@ interface Reading {
   readonly spareInAccount: MinorUnits;
   /** 05.4 FIN-04 (DB-02): the minimums counted as due tomorrow because no due day is set. */
   readonly assumed: DebtOutflows['assumed'];
+  /** 05.4 BO-05 (05.4-27): what the open path settled and took for each debt, so what a purchase replaces gives back only what was taken (drops are read again from the inputs: a function is never kept in a Reading). */
+  readonly paid: ReadonlySet<string>;
+  readonly debtFlows: readonly DebtFlow[];
 }
 
 export interface Prepared {
@@ -197,6 +201,7 @@ function readingOf(inputs: V3Inputs): Reading {
   // 05.4 FIN-04: card and loan minimums on their due dates, each once (a minimum paid through a series lands through it).
   const ym = yearMonthOf(inputs.asOf);
   const debts = debtOutflows(inputs, inputs.months.find((m) => m.month === ym)?.lines ?? [], CASH_PATH_DAYS_V3);
+  const drops = dueDrops(inputs);
   const open = openCashPath({
     asOf: inputs.asOf,
     days: CASH_PATH_DAYS_V3,
@@ -205,7 +210,7 @@ function readingOf(inputs: V3Inputs): Reading {
     erest: built.erest,
     e: built.e ?? minorUnits(0),
     payCaps: payCapsOf(inputs, built),
-    drops: dueDrops(inputs), // 05.3-64 (D-27, D-31, skips): the same rule as the month model and unspent
+    drops, // 05.3-64 (D-27, D-31, skips): the same rule as the month model and unspent
     extraPays: histDates.map((date) => ({ date, amount: (hp as HistoryPay).amount })),
     savings,
     debts: debts.flows,
@@ -227,18 +232,68 @@ function readingOf(inputs: V3Inputs): Reading {
     hp,
     spareInAccount: atMonthEnd,
     assumed: debts.assumed,
+    paid,
+    debtFlows: debts.flows,
   };
 }
 
-function judgeReading(r: Reading, check: CheckV2): Evaluation {
-  const { inputs, month } = r;
-  const pb = buildPurchase(check, {
-    asOf: inputs.asOf,
-    thresholds: inputs.thresholds,
-    custom: inputs.custom,
-    region: { country: inputs.region, subdivision: inputs.regionSubdivision ?? null }, // 05.4 FIN-27
+/** 05.4 BO-05 (05.4-27): what the reading gives what a purchase replaces. */
+function replacesOf(r: Reading, check: CheckV2, buyDate: string): ReplacesEffect | null {
+  return replacesEffect(
+    check.replaces,
+    { asOf: r.inputs.asOf, days: CASH_PATH_DAYS_V3, series: r.inputs.series, paid: r.paid, drops: dueDrops(r.inputs), debts: r.inputs.debts, debtFlows: r.debtFlows, month: r.month },
+    buyDate
+  );
+}
+
+/**
+ * 05.4 BO-05 (D-104 rule accepted 2026-11-04): a yearly or every-3-month bill that stops before its due date is not held back any more,
+ * so its hold-back returns to the spare money it came off.
+ */
+function withoutStoppedHolds(funds: Funds, stops: ReadonlyMap<string, string>): Funds {
+  const held = funds.billsHeld;
+  if (held === undefined || stops.size === 0) return funds;
+  const gone = held.parts.filter((b) => {
+    const stop = stops.get(b.seriesId);
+    return stop !== undefined && stop < b.dueDate;
   });
-  const funds: Funds = { ...r.funds, ownEnvelope: ownEnvelope(inputs.envelopes, check.envelopeId) };
+  if (gone.length === 0) return funds;
+  const back = gone.reduce((t, b) => t + b.holdBack, 0);
+  const parts = held.parts.filter((b) => !gone.includes(b));
+  const unspent = funds.unspent === null ? null : { ...funds.unspent, available: minorUnits((confirmedUnspent(funds) as MinorUnits) + back) };
+  return { ...funds, unspent, billsHeld: { total: minorUnits(held.total - back), parts } };
+}
+
+/** Options a caller inside the engine can give one judgement (05.4 BO-05 save-for-it). */
+export interface JudgeOpts {
+  /** D-108: money set aside for the item in kept savings, already capped at what those accounts hold; counted like the item's own envelope. */
+  readonly savedFor?: number;
+}
+
+function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
+  const { inputs: inputs0, month } = r;
+  const pb0 = buildPurchase(check, {
+    asOf: inputs0.asOf,
+    thresholds: inputs0.thresholds,
+    custom: inputs0.custom,
+    region: { country: inputs0.region, subdivision: inputs0.regionSubdivision ?? null }, // 05.4 FIN-27
+  });
+  // 05.4 BO-05 (05.4-27): what the purchase replaces. A sale arriving by the purchase date lowers the day-one need (SO-01; any part
+  // above it arrives on the path); a later sale counts only toward the ready date and on the path from its date (SO-02); the costs
+  // that stop and the debt payments the sale ends come back on their dates; the debts after the sale are the ones judged (D-102).
+  const buyDate0 = purchaseDateOf(check, inputs0.asOf);
+  const rep = replacesOf(r, check, buyDate0);
+  const inputs: V3Inputs = rep === null || rep.debts === inputs0.debts ? inputs0 : { ...inputs0, debts: rep.debts };
+  const p0 = pb0.purchase;
+  const netted = rep === null || p0 === null ? 0 : Math.min(p0.dayOne, rep.saleNow);
+  const pb =
+    rep === null
+      ? pb0
+      : { ...pb0, purchase: p0 === null || netted === 0 ? p0 : { ...p0, dayOne: minorUnits(p0.dayOne - netted) }, facts: [...pb0.facts, ...rep.facts] };
+  const repFlows: DatedFlow[] = rep === null ? [] : replacesOutflows(rep, netted);
+  const funds1 = rep === null ? r.funds : withoutStoppedHolds(r.funds, rep.heldStops);
+  const savedFor = opts.savedFor ?? 0;
+  const funds: Funds = { ...funds1, ownEnvelope: minorUnits(ownEnvelope(inputs.envelopes, check.envelopeId) + savedFor) };
   // D-54: spending money plus the purchase's own envelope; other put-aside money never cushions the check. 05.4 D-35 (retires
   // D-63's purpose gate): money saved above the net's size is spare and counts; the protected part only lends when the path
   // would otherwise fail (withNet), whatever the purchase's purpose (D-41, D-49).
@@ -246,7 +301,7 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
   const opening = minorUnits(funds.spending + funds.ownEnvelope + net.aboveSize);
   // 05.4 BO-05 / D-42 (05.4-26): the up-front money leaves on the purchase date; running costs fall on their own dates.
   const purchaseDate = purchaseDateOf(check, inputs.asOf);
-  const flows = pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3, purchaseDate) : [];
+  const flows = [...(pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3, purchaseDate) : []), ...repFlows];
   const path = applyPurchaseFlows(r.open, opening, flows);
   // 05.4 D-56 / D-58: the everyday accounts alone (no money above the net's size), with the purchase; the regular saving transfers
   // are already in the open path (D-67), so they are taken once here as on the main path.
@@ -254,7 +309,7 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
   const cash = withNet(cashCheck(path, r.payDate, r.floor), path, () => applyPurchaseFlows(r.open, opening, []), net.usable);
   // 05.4 FIN-03 (D-36): the same open path with no purchase flows gives the cost without it; only needed with an overdraft.
   const overdraft = { floor: r.floor, withPurchase: path, withoutPurchase: r.floor < 0 ? applyPurchaseFlows(r.open, opening, []) : null, paydays: r.paydays };
-  const borrowing = borrowingOf(r, check, pb.purchase, pb.quoted);
+  const borrowing = borrowingOf(r, check, pb.purchase, pb.quoted, opts);
   const judged = judge({
     inputs,
     month,
@@ -270,6 +325,8 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
     account,
     borrowing,
     purchaseDate,
+    ...(rep === null ? {} : { replaces: { freed: rep.freed, showsUsual: rep.showsUsual, saleLater: rep.saleLater } }),
+    ...(savedFor > 0 ? { savedFor } : {}),
   });
   // D-52: pay expected from history says so, after the judge's notices. D-46: say so when the expected-income cap lowered the
   // pay in the 90-day path; last.
@@ -294,11 +351,11 @@ function judgeReading(r: Reading, check: CheckV2): Evaluation {
  * route; no second prepare), the plan's rate (typed, else implied by a quote, else unknown) and whether it is a home loan (D-39c).
  * null for a one-off, or a plan with no schedule yet (it asks first).
  */
-function borrowingOf(r: Reading, check: CheckV2, purchase: Purchase | null, quoted: QuotedCheck): BorrowingCtx | null {
+function borrowingOf(r: Reading, check: CheckV2, purchase: Purchase | null, quoted: QuotedCheck, opts: JudgeOpts): BorrowingCtx | null {
   if (check.pay.mode !== 'plan' || purchase === null || purchase.schedule === null) return null;
   const implied = quoted.kind === 'from_quote' ? quoted.impliedApr : null;
   const apr = check.pay.apr ?? implied;
-  return { cash: judgeReading(r, { ...check, pay: { mode: 'once' } }).result, apr, housing: check.pay.housing === true };
+  return { cash: judgeReading(r, { ...check, pay: { mode: 'once' } }, opts).result, apr, housing: check.pay.housing === true };
 }
 
 /** A comparable key: a date, or the first of a month; null (never) sorts last. */
@@ -367,9 +424,14 @@ function askDebts(inputs: V3Inputs, r: Result): Fact[] {
 
 /** Per key press: purchase -> cash -> judge on each prepared reading, the stricter kept (D-42). */
 export function judgeCheck(p: Prepared, check: CheckV2): Evaluation {
+  return judgeCheckWith(p, check, {});
+}
+
+/** judgeCheck with engine-internal options (05.4 BO-05: the money set aside for save-for-it, fullCost/saveForIt.ts). */
+export function judgeCheckWith(p: Prepared, check: CheckV2, opts: JudgeOpts): Evaluation {
   const [first, second] = p.readings as readonly [Reading, Reading | undefined];
-  const a = judgeReading(first, check);
-  const chosen = second === undefined ? a : stricterOf(a, judgeReading(second, check));
+  const a = judgeReading(first, check, opts);
+  const chosen = second === undefined ? a : stricterOf(a, judgeReading(second, check, opts));
   // 05.4 ENG-14, UX-29: the records date travels with the result when the caller gave one (absent stays absent, so a
   // result for inputs without it is unchanged); records_synced says the answer rests on recently synced records.
   const reasons: readonly ReasonCode[] = p.recordsSynced ? [...chosen.result.reasons, 'records_synced'] : chosen.result.reasons;
