@@ -45,20 +45,12 @@ const ALLOWED: Record<string, string> = {
   'decide.settings.valueDetailShort': '"Short answers" is the answer length, not a month figure',
   'decide.setupPage.roughBody_one': '"step left" is a count of setup steps',
   'decide.setupPage.roughBody_other': '"steps left" is a count of setup steps',
-  'decide.v3.verdict.monthAlreadyShort.chip': 'owner headline D-63 (2026-11-03), "No: your month is already short"; the facts below it say overspent',
-  'decide.v3.verdict.monthAlreadyShort.title': 'owner headline D-63 (2026-11-03), "No: your month is already short"; the facts below it say overspent',
-  'decide.v3.verdict.monthShortSmall.chip': 'owner headline D-65 (2026-11-03), "Fits, but your month is already short"; the facts below it say overspent',
-  'decide.v3.verdict.monthShortSmall.title': 'owner headline D-65 (2026-11-03), "Fits, but your month is already short"; the facts below it say overspent',
-  'decide.v3.verdict.monthShortModerate.chip': 'owner headline D-65 (2026-11-03), "Fits from spare money, but your month is already short"; the facts below it say overspent',
-  'decide.v3.verdict.monthShortModerate.title': 'owner headline D-65 (2026-11-03), "Fits from spare money, but your month is already short"; the facts below it say overspent',
-  'decide.v3.verdict.monthShortModerateExtra.chip': 'owner headline D-65 (2026-11-03), "Fits from extra savings, but your month is already short"; the facts below it say overspent',
-  'decide.v3.verdict.monthShortModerateExtra.title': 'owner headline D-65 (2026-11-03), "Fits from extra savings, but your month is already short"; the facts below it say overspent',
-  'decide.v3.notice.account_no_rate': 'owner wording D-114 (2026-11-05), "No exchange rate for {account}, so it is left out.": an account left out of the sums, not a month figure',
-  'decide.v3.fact.month_short_fits': 'owner wording D-65 (2026-11-03), "This $X fits your $Y of spare money and extra savings. Your usual month is $Z short."',
 };
 
 describe('D-106 wording', () => {
-  const all = leaves(en.decide, 'decide');
+  // 05.4 D-116 (owner, 2026-11-05; UX-08 and the 05.4 answer names): Decide v3 says "short", never "overspent", so decide.v3 is out
+  // of this guard. The old decide.* keys keep D-106 until 05.5 deletes them; decideCopy.test.ts bans "overspent" in decide.v3.
+  const all = leaves(en.decide, 'decide').filter((l) => !l.path.startsWith('decide.v3.'));
 
   it('D-106 no month figure under decide.* is worded short or left', () => {
     const stray = all.filter(({ path, value }) => MATCH.test(words(value)) && !(path in ALLOWED)).map(({ path, value }) => `${path}: ${value}`);

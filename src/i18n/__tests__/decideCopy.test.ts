@@ -124,7 +124,32 @@ const CONTROL_LABELS = new Set([
   'income.method.intro', // step intro: "Pick the one that fits you. Nothing is chosen for you."
   'income.other.intro', // step intro: "Choose all that apply, or None."
 ]);
-const BANNED = [/\badvice\b/i, /\badvis/i, /recommend/i, /you should/i, /we suggest/i, /best option/i, /guaranteed/i, /\bapproved\b/i, /pre-approved/i, /\boffer/i, /apply for/i, /\blender\b/i, /loan offer/i, /interest-free/i];
+// 05.4-37: the 05.4 copy rules for decide.v3 (and the D-64 legal keys). Each entry names its rule.
+const V3_COMPLIANCE: readonly RegExp[] = [
+  /\bsuggestion/i, // CMP-F25
+  /\b(rough|fair|firm)\b/i, // D-31: no Rough / Fair / Firm
+  /\bmost dealers\b/i, // CMP-F08: an unsourced claim
+  /\boverspent\b/i, // UX-08, D-116: "short"
+  /\bunspent\b/i, // UX-17, D-56: "spare money"
+  /\broom\b/i, // UX-17, D-117: no exception
+  /\bband \d+\b/i, // UX-18
+  /\bB\d\b/, // UX-18
+  /\basks about\b/i, // UX-18
+  /\b(sure|certain|accurate)\b/i, // CMP-F12: never more confident than the answer
+  /\brecommend/i, // D-92 and the copy rule
+  /\bbest to\b/i,
+  /\byou should\b/i,
+  /\badvice\b/i, // D-92: the one exception is D-64's About-sheet sentence (legal.decideAbout.notAdvice), outside decide.v3
+  /\bemergency fund\b/i, // D-35: one name, "safety net"
+  /\bliab(le|ility)\b/i, // D-64 (2): the liability sentence is in the Terms of Use only
+  /\bnot responsible\b/i, // D-64 (2)
+  /\bworks for (most|nearly|almost)\b/i, // D-64: never a success rate
+  /\b\d+ ?% of (people|users|the time)\b/i, // D-64: never a success rate
+];
+// D-35 / round 1b (owner override of Theme G UX-37 / CMP-F13): the months line sits only inside these two net facts.
+const MONTHS_LINE = /\b\d+(\s+to\s+\d+)?\s+months?\s+is\s+(a start|common)\b/i;
+const MONTHS_LINE_KEYS: ReadonlySet<string> = new Set(['decide.v3.fact.net_none_start', 'decide.v3.fact.net_progress']);
+const BANNED = [/\badvice\b/i,/\badvis/i, /recommend/i, /you should/i, /we suggest/i, /best option/i, /guaranteed/i, /\bapproved\b/i, /pre-approved/i, /\boffer/i, /apply for/i, /\blender\b/i, /loan offer/i, /interest-free/i];
 
 // Demo-scale values (05-18 demo: income $4,400 a month, car loan over 48 months). Four-digit amounts are the widest a
 // demo month shows; `already` < `short` by meaning ("already X short. This makes it Y"); 'average' is the longer basis
@@ -305,7 +330,7 @@ describe('decide depth copy (05-31, DCU-09)', () => {
 
 describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
   const v3 = leaves.filter((l) => l.path.startsWith('decide.v3.'));
-  const V3_BANNED = [/\bshould\b/i, /\bapprove/i, /\bdecline/i, /\bgo ahead\b/i, /\byou can\b/i, /\bsafe\b/i, /\bfree\b/i, /\bbest\b/i, /\bbetter\b/i, /\bworth it\b/i, /\bwill run out\b/i];
+  const V3_BANNED = [/\bshould\b/i, /\bapprove/i, /\bdecline/i, /\bgo ahead\b/i, /\byou can\b/i, /\bsafe\b/i, /\bfree\b/i, /\bbest\b/i, /\bbetter\b/i, /\bworth it\b/i, /\bwill run out\b/i, ...V3_COMPLIANCE];
   // Demo-scale values for the v3 placeholders, kept apart from DEMO_VALUES so the existing length checks are unchanged.
   const V3_DEMO: Record<string, string> = { month: 'September', lowMonth: 'February', fromMonth: '$1,234', after: '$1,234', date: '12 Sep', months: '14', readyMonth: 'March 2027', monthly: '$1,234', used: '$1,234', suggested: '$1,234', days: '45', line: 'housing' };
 
@@ -377,6 +402,32 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
   it('I26 v3 banned words', () => {
     expect(v3.length).toBeGreaterThan(40);
     for (const l of v3) for (const re of V3_BANNED) expect({ path: l.path, hit: re.test(l.value) }).toEqual({ path: l.path, hit: false });
+  });
+
+  it('05.4-37 the months line sits only inside the two net facts (D-35, round 1b)', () => {
+    expect(v3.filter((l) => MONTHS_LINE.test(l.value) && !MONTHS_LINE_KEYS.has(l.path)).map((l) => l.path)).toEqual([]);
+    for (const k of MONTHS_LINE_KEYS) expect({ k, line: MONTHS_LINE.test(get(k)) }).toEqual({ k, line: true });
+  });
+
+  it('05.4-37 the guard catches the words 05.4 replaced', () => {
+    const old = [
+      'Overspent each month', 'Fits from unspent money', 'Your emergency fund is untouched.', 'This answer is less certain because',
+      'leaves room for a new payment', 'Band 7', 'B7 applies', 'Asks about debts', 'a suggestion', 'Rough', 'most dealers cap card payments',
+      'FincWin accepts no liability', 'We are not responsible for', 'Works for most people.', '90% of users', 'We recommend this', 'best to wait',
+    ];
+    for (const o of old) expect({ o, hit: V3_COMPLIANCE.some((re) => re.test(o)) }).toEqual({ o, hit: true });
+    expect(MONTHS_LINE.test('1 month is a start; 3 to 6 months is common.')).toBe(true);
+  });
+
+  it('D-116 / D-56 / D-35 v3 says short, spare money and safety net', () => {
+    expect(get('decide.v3.verdict.monthlyShort.chip')).toBe('Short each month');
+    expect(get('decide.v3.verdict.fitsUnspent.chip')).toBe('Fits from spare money');
+    expect(v3.filter((l) => /overspent|unspent|emergency fund/i.test(l.value)).map((l) => l.path)).toEqual([]);
+  });
+
+  it('D-117 the two balancing lines read as the owner set them', () => {
+    expect(get('decide.v3.fact.balanced_month_room')).toMatch(/^A usual month that balances leaves money for a new payment\./);
+    expect(get('decide.v3.fact.month_balance_gap')).toMatch(/and then a new payment would fit\.$/);
   });
 
   it('v3 4.6 forecasts say could, based on your records or on track', () => {
