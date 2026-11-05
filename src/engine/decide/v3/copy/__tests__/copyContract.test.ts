@@ -146,8 +146,10 @@ function buildCorpus(): Emitted[] {
   collect(out, vol, checkPlan(150_000, volPlan));
   collect(out, vol, checkPlan(150_000, volPlan, { volatileCover: true }));
   collect(out, vol, checkPlan(150_000, volPlan, { volatileCover: false }));
-  // unsaved_changes
+  // unsaved_changes (05.4 APP-02, D-113: the first notice, no count)
   collect(out, { ...sam, unsavedWrites: 2 }, checkOnce(10_000));
+  // 05.4 ENG-17 (D-114): account_no_rate, an account no exchange rate converts
+  collect(out, { ...sam, accounts: [...(sam.accounts ?? []), { id: 'acc-yen', balance: mu(0), use: null, noRate: true }] }, checkOnce(10_000));
   // unspent_stale and unspent_drifted
   collect(out, { ...sam, unspent: { amount: mu(240_000), at: '2026-08-01' } }, checkOnce(10_000));
   collect(out, { ...sam, unspent: { amount: mu(9_999_999), at: '2026-10-03' } }, checkOnce(10_000));

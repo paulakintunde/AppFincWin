@@ -1,5 +1,5 @@
 import { assert as fcAssert, integer, property, constantFrom } from 'fast-check';
-import { CODE_PRECEDENCE } from '../../constants';
+import { CODE_PRECEDENCE, MAX_CHECK_PRICE } from '../../constants';
 import { evaluate } from '../../evaluate';
 import { currencyCode, minorUnits as mu } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
@@ -9,7 +9,7 @@ import { layersFor } from '../bands';
 import { buildPurchase, purchaseCashFlows } from '../purchase';
 
 const inputs = inputsOf();
-const ctx = { asOf: ASOF, thresholds: inputs.thresholds, custom: inputs.custom };
+const ctx = { asOf: ASOF, thresholds: inputs.thresholds, custom: inputs.custom, maxPrice: mu(MAX_CHECK_PRICE) };
 const build = (c: CheckV2, custom: CustomOptions = inputs.custom) => buildPurchase(c, { ...ctx, custom });
 const must = (c: CheckV2, custom?: CustomOptions) => {
   const b = build(c, custom);
@@ -265,7 +265,7 @@ describe('buildPurchase', () => {
   });
 
   it('overflow gives exceeds_range, not a throw', () => {
-    const b = build(checkOnce(Number.MAX_SAFE_INTEGER, { oneOffFees: mu(Number.MAX_SAFE_INTEGER) }));
+    const b = build(checkOnce(100_000, { oneOffFees: mu(Number.MAX_SAFE_INTEGER) })); // 05.4 ENG-15: a price inside the limit, fees past the safe range
     expect(b.purchase).toBeNull();
     expect(b.reasons).toContain('exceeds_range');
   });
@@ -452,17 +452,17 @@ describe('05.3-70 preview: band and layers while the plan is incomplete', () => 
     expect(b.preview).not.toBeNull();
   });
   it('keeps the passed-date missing when the price is out of range', () => {
-    const b = build(checkPlan(Number.MAX_SAFE_INTEGER, { count: 12, apr: percent('9.9'), firstPayment: { kind: 'deferred', firstDate: '2026-09-01', interestDuringPause: false } }, { taxPercent: percent('50') }));
+    const b = build(checkPlan(100_000, { count: 12, apr: percent('9.9'), firstPayment: { kind: 'deferred', firstDate: '2026-09-01', interestDuringPause: false } }, { oneOffFees: mu(Number.MAX_SAFE_INTEGER) }));
     expect(b.missing).toEqual(['first_payment_passed']);
     expect(b.preview).toBeNull();
   });
   it('keeps the plan missing list when the price is out of range', () => {
-    const b = build(checkPlan(Number.MAX_SAFE_INTEGER, {}, { taxPercent: percent('50') }));
+    const b = build(checkPlan(100_000, {}, { oneOffFees: mu(Number.MAX_SAFE_INTEGER) }));
     expect(b.missing).toEqual(['plan_count_missing', 'plan_rate_missing', 'first_payment_not_chosen']);
     expect(b.preview).toBeNull();
   });
   it('a complete check out of range is exceeds_range with no preview', () => {
-    const b = build(checkPlan(Number.MAX_SAFE_INTEGER, { count: 12, apr: percent('9.9'), firstPayment: today }, { taxPercent: percent('50') }));
+    const b = build(checkPlan(100_000, { count: 12, apr: percent('9.9'), firstPayment: today }, { oneOffFees: mu(Number.MAX_SAFE_INTEGER) }));
     expect(b.reasons).toContain('exceeds_range');
     expect(b.preview).toBeNull();
   });
@@ -529,5 +529,38 @@ describe('buildPurchase: sales tax by region (FIN-27)', () => {
     }
     // an ask before the purchase is built says nothing about tax
     expect(buildPurchase(checkPlan(60_000, { count: 12, apr: null, firstPayment: today }), at(null, null)).reasons).toEqual([]);
+  });
+});
+
+describe('05.4 ENG-15 (D-109): price limits in both pay modes', () => {
+  const plan = { count: 12, apr: percent('0'), firstPayment: { kind: 'one_period' } } as const;
+  it('no price or 0 asks for a price, paying at once or by plan', () => {
+    for (const c of [checkOnce(0), checkPlan(0, plan), { ...checkOnce(1), price: null }, { ...checkPlan(1, plan), price: null }]) {
+      const b = build(c);
+      expect(b.purchase).toBeNull();
+      expect(b.missing).toContain('no_price');
+      expect(b.missing).not.toContain('price_too_large');
+    }
+    expect(build({ ...checkOnce(1), price: mu(-5) }).missing).toEqual(['no_price']);
+  });
+  it('a price over the limit is too large to check; the limit itself is checked', () => {
+    for (const c of [checkOnce(MAX_CHECK_PRICE + 1), checkPlan(MAX_CHECK_PRICE + 1, plan)]) {
+      const b = build(c);
+      expect(b.purchase).toBeNull();
+      expect(b.missing).toEqual(['price_too_large']);
+      expect(b.reasons).not.toContain('exceeds_range');
+    }
+    expect(build(checkOnce(MAX_CHECK_PRICE)).missing).toEqual([]);
+    expect(build(checkPlan(MAX_CHECK_PRICE, plan)).missing).toEqual([]);
+  });
+  it('the limit reads the typed price, before tax and fees', () => {
+    expect(build(checkOnce(MAX_CHECK_PRICE, { taxPercent: percent('10'), oneOffFees: mu(5_000) })).missing).toEqual([]);
+  });
+  it('an incomplete plan over the limit keeps its own missing list too', () => {
+    expect(build(checkPlan(MAX_CHECK_PRICE + 1, {})).missing).toEqual(['price_too_large', 'plan_count_missing', 'plan_rate_missing', 'first_payment_not_chosen']);
+  });
+  it('the limit follows the context (another currency)', () => {
+    expect(buildPurchase(checkOnce(500), { ...ctx, maxPrice: mu(499) }).missing).toEqual(['price_too_large']);
+    expect(buildPurchase(checkOnce(499), { ...ctx, maxPrice: mu(499) }).missing).toEqual([]);
   });
 });

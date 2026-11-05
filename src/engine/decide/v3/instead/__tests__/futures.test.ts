@@ -5,7 +5,7 @@ import { percent, ZERO_PERCENT } from '../../../../payoff/types';
 import { SOLE_SHARE } from '../../../share';
 import { addYearMonths } from '../../dates';
 import type { Funds, IncomeMonth, MonthModel, Purchase, Result, Schedule } from '../../types';
-import { buyLater, depositOfStream, FUTURE_ORDER, insteadFutures } from '../futures';
+import { buyLater, cheaperOption, depositOfStream, FUTURE_ORDER, insteadFutures, OPTION_ORDER, orderOptions } from '../futures';
 
 const mu = minorUnits;
 
@@ -31,6 +31,8 @@ function schedule(over: Partial<Schedule> = {}): Schedule {
 const month = { month: '2026-10', typicalLeft: mu(42500) } as unknown as MonthModel;
 const funds = { unspent: { value: mu(240000) } } as unknown as Funds;
 const result = { code: 'fits_month', facts: [] } as unknown as Result;
+// 05.4 UX-28: no cheaper price and no years of use (the four futures only)
+const NOCHECK = { price: mu(300000), value: { cheaperPrice: null, useYears: null } };
 
 function purchase(over: Partial<Purchase> = {}): Purchase {
   return {
@@ -39,26 +41,27 @@ function purchase(over: Partial<Purchase> = {}): Purchase {
     monthly: mu(0),
     schedule: null,
     share: SOLE_SHARE,
+    purpose: null,
     ...over,
   } as unknown as Purchase;
 }
 
 describe('insteadFutures', () => {
   test('I26 fixed order, no rank or score', () => {
-    const f = insteadFutures({ result, month, funds, purchase: purchase(), userRate: null, years: 5 });
+    const f = insteadFutures({ check: NOCHECK, result, month, funds, purchase: purchase(), userRate: null, years: 5 });
     expect(FUTURE_ORDER).toEqual(['buy_now', 'keep', 'deposit', 'buy_later']);
     expect(f.order).toEqual(FUTURE_ORDER);
     expect(JSON.stringify(f, (_k, v) => (typeof v === 'bigint' ? v.toString() : v))).not.toMatch(/rank|score/i);
   });
 
   test('C11 rate is the user own: null shows only 0%', () => {
-    const f = insteadFutures({ result, month, funds, purchase: purchase(), userRate: null, years: 5 });
+    const f = insteadFutures({ check: NOCHECK, result, month, funds, purchase: purchase(), userRate: null, years: 5 });
     expect(f.deposit.views.map((v) => v.rate)).toEqual([ZERO_PERCENT]);
   });
 
   test('C11 rate is the user own: 4.5% shows 0% and 4.5% only', () => {
     const rate = percent('4.5');
-    const f = insteadFutures({ result, month, funds, purchase: purchase(), userRate: rate, years: 5 });
+    const f = insteadFutures({ check: NOCHECK, result, month, funds, purchase: purchase(), userRate: rate, years: 5 });
     expect(f.deposit.views.map((v) => v.rate)).toEqual([ZERO_PERCENT, rate]);
     expect(f.deposit.months).toBe(60);
     expect(f.deposit.views[1]!.value).toBe(Number(futureValueExact(mu(0), rate, 60, mu(300000))));
@@ -77,7 +80,7 @@ describe('insteadFutures', () => {
   });
 
   test('financed purchase uses the schedule span and my part', () => {
-    const f = insteadFutures({
+    const f = insteadFutures({ check: NOCHECK,
       result,
       month,
       funds,
@@ -91,7 +94,7 @@ describe('insteadFutures', () => {
   });
 
   test('weekly stream converts to months', () => {
-    const f = insteadFutures({
+    const f = insteadFutures({ check: NOCHECK,
       result,
       month,
       funds,
@@ -107,11 +110,11 @@ describe('insteadFutures', () => {
   });
 
   test('buy now shows unspent after and emergency fund state', () => {
-    const f = insteadFutures({ result, month, funds, purchase: purchase({ dayOne: mu(100000) }), userRate: null, years: 1 });
+    const f = insteadFutures({ check: NOCHECK, result, month, funds, purchase: purchase({ dayOne: mu(100000) }), userRate: null, years: 1 });
     expect(f.buyNow.unspentAfter).toBe(140000);
     expect(f.buyNow.emergencyUntouched).toBe(true);
     expect(f.keep.unspentKept).toBe(240000);
-    const e = insteadFutures({
+    const e = insteadFutures({ check: NOCHECK,
       result: { code: 'fits_uses_net', facts: [{ code: 'net_used', values: { used: 1 } }] } as unknown as Result,
       month,
       funds,
@@ -127,14 +130,14 @@ describe('insteadFutures edge cases', () => {
   const noUnspent = { unspent: null } as unknown as Funds;
 
   test('no confirmed unspent figure leaves unspent-based futures null', () => {
-    const f = insteadFutures({ result, month, funds: noUnspent, purchase: purchase(), userRate: null, years: 1 });
+    const f = insteadFutures({ check: NOCHECK, result, month, funds: noUnspent, purchase: purchase(), userRate: null, years: 1 });
     expect(f.buyNow.unspentAfter).toBeNull();
     expect(f.keep.unspentKept).toBeNull();
     expect(f.buyLater).toEqual({ months: null, readyBy: null, monthlyAmount: null });
   });
 
   test('a deposit figure past the safe range is left out, never shown wrong', () => {
-    const f = insteadFutures({
+    const f = insteadFutures({ check: NOCHECK,
       result, month, funds,
       purchase: purchase({ dayOne: mu(9_000_000_000_000) }),
       userRate: percent('9000'),
@@ -145,7 +148,7 @@ describe('insteadFutures edge cases', () => {
 
   test('an error that is not a range error is rethrown', () => {
     expect(() =>
-      insteadFutures({
+      insteadFutures({ check: NOCHECK,
         result, month, funds,
         purchase: purchase({ dayOne: undefined as unknown as ReturnType<typeof mu> }),
         userRate: null,
@@ -203,31 +206,31 @@ describe('buyLater', () => {
 describe('H-03 one figure per screen', () => {
   test('H-03 monthly_short with an emergency segment: the fund is not untouched', () => {
     const r = { code: 'monthly_short', facts: [{ code: 'net_used', values: { used: 5000 } }] } as unknown as Result;
-    const f = insteadFutures({ result: r, month, funds, purchase: purchase(), userRate: null, years: 1 });
+    const f = insteadFutures({ check: NOCHECK, result: r, month, funds, purchase: purchase(), userRate: null, years: 1 });
     expect(f.buyNow.emergencyUntouched).toBe(false);
   });
 
   test('H-03 unspent after is the judge fact when emitted', () => {
     const r = { code: 'fits_unspent', facts: [{ code: 'unspent_before_after', values: { before: 240000, after: 123456 } }] } as unknown as Result;
-    const f = insteadFutures({ result: r, month, funds, purchase: purchase({ dayOne: mu(100000) }), userRate: null, years: 1 });
+    const f = insteadFutures({ check: NOCHECK, result: r, month, funds, purchase: purchase({ dayOne: mu(100000) }), userRate: null, years: 1 });
     expect(f.buyNow.unspentAfter).toBe(123456);
   });
 
   test('H-03 a non-numeric fact value falls back to unspent minus day one', () => {
     const r = { code: 'not_yet', facts: [{ code: 'unspent_before_after', values: { before: 1 } }] } as unknown as Result;
-    const f = insteadFutures({ result: r, month, funds, purchase: purchase({ dayOne: mu(100000) }), userRate: null, years: 1 });
+    const f = insteadFutures({ check: NOCHECK, result: r, month, funds, purchase: purchase({ dayOne: mu(100000) }), userRate: null, years: 1 });
     expect(f.buyNow.unspentAfter).toBe(140000);
   });
 
   test('D-38 available unspent is read when present', () => {
     const fa = { unspent: { value: mu(240000), available: mu(200000) } } as unknown as Funds;
-    const f = insteadFutures({ result, month, funds: fa, purchase: purchase({ dayOne: mu(100000) }), userRate: null, years: 1 });
+    const f = insteadFutures({ check: NOCHECK, result, month, funds: fa, purchase: purchase({ dayOne: mu(100000) }), userRate: null, years: 1 });
     expect(f.buyNow.unspentAfter).toBe(100000);
     expect(f.keep.unspentKept).toBe(200000);
   });
 
   test('L-07 deposit horizon is integer months with no years field', () => {
-    const f = insteadFutures({ result, month, funds, purchase: purchase(), userRate: null, years: 3 });
+    const f = insteadFutures({ check: NOCHECK, result, month, funds, purchase: purchase(), userRate: null, years: 3 });
     expect(Number.isInteger(f.deposit.months)).toBe(true);
     expect('years' in f.deposit).toBe(false);
   });
@@ -302,7 +305,7 @@ describe('buyLater: a seasonal earner (D-60)', () => {
 
   test('insteadFutures passes the month\'s income picture to buy later', () => {
     const seasonalMonth = { month: '2026-11', typicalLeft: mu(42_500), incomePicture: picture } as unknown as MonthModel;
-    const f = insteadFutures({
+    const f = insteadFutures({ check: NOCHECK,
       result,
       month: seasonalMonth,
       funds: { unspent: { value: mu(0) } } as unknown as Funds,
@@ -311,5 +314,79 @@ describe('buyLater: a seasonal earner (D-60)', () => {
       years: 1,
     });
     expect(f.buyLater).toEqual({ months: 7, readyBy: '2027-06', monthlyAmount: 42_500 });
+  });
+});
+
+describe('05.4 UX-28 / D-110..D-112: The cheaper one and the need / want order', () => {
+  const need = { kind: 'preset', value: 'necessity' } as const;
+  const work = { kind: 'preset', value: 'for_work' } as const;
+  const treat = { kind: 'preset', value: 'treat' } as const;
+  const investInMe = { kind: 'preset', value: 'invest_in_me' } as const;
+  const custom = { kind: 'custom', id: 'c1' } as const;
+  const withCheaper = { price: mu(300000), value: { cheaperPrice: mu(120000), useYears: 3 } };
+
+  test('D-111: cheaper price and both costs per year, rounded half up to the cent', () => {
+    expect(cheaperOption(mu(300000), { cheaperPrice: mu(120000), useYears: 3 })).toEqual({ price: 120000, perYear: 40000, pickedPerYear: 100000 });
+    // 100.00 / 3 = 33.333 -> 33.33; 1.00 / 2.5 = 0.40; half up: 0.05 / 2 = 0.025 -> 0.03
+    expect(cheaperOption(mu(20000), { cheaperPrice: mu(10000), useYears: 3 })).toEqual({ price: 10000, perYear: 3333, pickedPerYear: 6667 });
+    expect(cheaperOption(mu(200), { cheaperPrice: mu(100), useYears: 2.5 })).toEqual({ price: 100, perYear: 40, pickedPerYear: 80 });
+    expect(cheaperOption(mu(10), { cheaperPrice: mu(5), useYears: 2 })).toEqual({ price: 5, perYear: 3, pickedPerYear: 5 });
+    // years read to 2 decimals: 1.234 -> 1.23
+    expect(cheaperOption(mu(12300), { cheaperPrice: mu(1230), useYears: 1.234 })).toEqual({ price: 1230, perYear: 1000, pickedPerYear: 10000 });
+  });
+
+  test('D-111: no per-year figure with no years of use, or years that round to 0', () => {
+    expect(cheaperOption(mu(300000), { cheaperPrice: mu(120000), useYears: null })).toEqual({ price: 120000, perYear: null, pickedPerYear: null });
+    expect(cheaperOption(mu(300000), { cheaperPrice: mu(120000), useYears: 0 })).toEqual({ price: 120000, perYear: null, pickedPerYear: null });
+    expect(cheaperOption(mu(300000), { cheaperPrice: mu(120000), useYears: 0.004 })).toEqual({ price: 120000, perYear: null, pickedPerYear: null });
+  });
+
+  test('D-111: shown only when the cheaper price is above 0 and below the price', () => {
+    expect(cheaperOption(null, { cheaperPrice: mu(1), useYears: 1 })).toBeNull();
+    expect(cheaperOption(mu(300000), { cheaperPrice: null, useYears: 1 })).toBeNull();
+    expect(cheaperOption(mu(300000), { cheaperPrice: mu(0), useYears: 1 })).toBeNull();
+    expect(cheaperOption(mu(300000), { cheaperPrice: mu(300000), useYears: 1 })).toBeNull();
+    expect(cheaperOption(mu(300000), { cheaperPrice: mu(300001), useYears: 1 })).toBeNull();
+    expect(cheaperOption(mu(300000), { cheaperPrice: mu(299999), useYears: null })).not.toBeNull();
+  });
+
+  test('D-110: the orders, need / want / none, as the owner chose them', () => {
+    expect(OPTION_ORDER.need).toEqual(['cheaper', 'buy_now', 'buy_later', 'keep', 'deposit']);
+    expect(OPTION_ORDER.want).toEqual(['buy_later', 'keep', 'deposit', 'cheaper', 'buy_now']);
+    expect(OPTION_ORDER.none).toEqual(['buy_now', 'keep', 'deposit', 'buy_later', 'cheaper']);
+    const all = OPTION_ORDER.none;
+    expect(orderOptions(all, null)).toEqual(OPTION_ORDER.none);
+    expect(orderOptions(all, need)).toEqual(OPTION_ORDER.need);
+    expect(orderOptions(all, work)).toEqual(OPTION_ORDER.need);
+    for (const want of [treat, investInMe, custom]) expect(orderOptions(all, want)).toEqual(OPTION_ORDER.want);
+    // order only: an option not present is never added
+    expect(orderOptions(FUTURE_ORDER, need)).toEqual(['buy_now', 'buy_later', 'keep', 'deposit']);
+    expect(orderOptions(FUTURE_ORDER, null)).toEqual(FUTURE_ORDER);
+  });
+
+  test('UX-28: insteadFutures offers the fifth option with its figures, ordered by the purpose', () => {
+    const none = insteadFutures({ check: withCheaper, result, month, funds, purchase: purchase(), userRate: null, years: 1 });
+    expect(none.cheaper).toEqual({ price: 120000, perYear: 40000, pickedPerYear: 100000 });
+    expect(none.order).toEqual(['buy_now', 'keep', 'deposit', 'buy_later', 'cheaper']);
+    const asNeed = insteadFutures({ check: withCheaper, result, month, funds, purchase: purchase({ purpose: need }), userRate: null, years: 1 });
+    expect(asNeed.order).toEqual(OPTION_ORDER.need);
+    expect({ ...asNeed, order: null }).toEqual({ ...none, order: null });
+    const plain = insteadFutures({ check: NOCHECK, result, month, funds, purchase: purchase(), userRate: null, years: 1 });
+    expect('cheaper' in plain).toBe(false);
+  });
+
+  test('I-D41 (explorer clause, D-41 / D-110): any two purposes give the same options and figures, in their own order', () => {
+    const purposeArb = fc.constantFrom(null, need, work, treat, investInMe, custom, { kind: 'preset', value: 'luxury' } as const, { kind: 'preset', value: 'nice_to_have' } as const);
+    fc.assert(
+      fc.property(purposeArb, purposeArb, fc.option(fc.integer({ min: 0, max: 400000 }), { nil: null }), fc.option(fc.integer({ min: 0, max: 2000 }), { nil: null }), (a, b, cheap, years) => {
+        const check = { price: mu(300000), value: { cheaperPrice: cheap === null ? null : mu(cheap), useYears: years === null ? null : years / 100 } };
+        const fa = insteadFutures({ check, result, month, funds, purchase: purchase({ purpose: a }), userRate: null, years: 1 });
+        const fb = insteadFutures({ check, result, month, funds, purchase: purchase({ purpose: b }), userRate: null, years: 1 });
+        expect([...fa.order].sort()).toEqual([...fb.order].sort());
+        expect({ ...fa, order: [] }).toEqual({ ...fb, order: [] });
+        expect(fa.order).toEqual(orderOptions(fa.order, a));
+      }),
+      { numRuns: 200, seed: 0x0541 }
+    );
   });
 });

@@ -18,7 +18,6 @@ const ALL: Readonly<Record<ConfidenceReason, true>> = {
   few_months: true,
   early_in_month: true,
   under_logged: true,
-  unsaved_changes: true,
   unspent_stale: true,
   unspent_drifted: true,
   quick_estimates: true,
@@ -35,7 +34,6 @@ const clean: ConfidenceInput = {
   day: 20,
   everydayLogged: mu(100000),
   e: mu(150000),
-  unsavedWrites: 0,
   typedEstimatesUsed: false,
   provisionalRates: false,
   upTo: '2026-10-29',
@@ -79,9 +77,9 @@ describe('confidenceOf', () => {
     expect(confidenceOf({ ...clean, monthsUsed: 3 }).basis).toEqual({ kind: 'records', months: 3, upTo: '2026-10-29' });
   });
 
-  it('I7 unsaved writes carry their count', () => {
-    expect(confidenceOf({ ...clean, unsavedWrites: 2 }).reasons).toEqual([reasonItem('unsaved_changes', { count: 2 })]);
-    expect(confidenceOf({ ...clean, unsavedWrites: 2 }).nextStep).toEqual({ reason: 'unsaved_changes', step: 'save_changes' });
+  it('I7 (05.4 APP-02, D-113): unsaved writes are not a reason; they are a note on top of the answer only (prepare.ts leadNotes)', () => {
+    expect(Object.keys(REASON_WEIGHT)).not.toContain('unsaved_changes');
+    expect(Object.values(NEXT_STEP_OF)).not.toContain('save_changes');
   });
 
   it('I8 early in the month and under-logged carry their numbers; at the edges they are absent', () => {
@@ -104,8 +102,8 @@ describe('confidenceOf', () => {
   });
 
   it('reasons are sorted by weight', () => {
-    const c = confidenceOf({ ...clean, monthsUsed: 1, day: 3, unsavedWrites: 2, provisionalRates: true });
-    expect(codes(c)).toEqual(['few_months', 'early_in_month', 'unsaved_changes', 'provisional_rates']);
+    const c = confidenceOf({ ...clean, monthsUsed: 1, day: 3, everydayLogged: mu(1), provisionalRates: true });
+    expect(codes(c)).toEqual(['few_months', 'early_in_month', 'under_logged', 'provisional_rates']);
   });
 });
 
@@ -135,9 +133,9 @@ describe('pickNextStep', () => {
     expect(pickNextStep([reasonItem('no_setup'), reasonItem('user_said_cover'), reasonItem('under_logged')])).toEqual({ reason: 'under_logged', step: 'log_spending' });
   });
 
-  it('every step a reason names is one of the six steps', () => {
+  it('every step a reason names is one of the five steps (05.4 D-113: save_changes gone)', () => {
     const steps = new Set(Object.values(NEXT_STEP_OF));
-    expect([...steps].sort()).toEqual(['add_records', 'confirm_unspent', 'finish_setup', 'log_spending', 'record_pay', 'save_changes']);
+    expect([...steps].sort()).toEqual(['add_records', 'confirm_unspent', 'finish_setup', 'log_spending', 'record_pay']);
   });
 });
 
@@ -166,10 +164,10 @@ describe('withReason (I35: add, never remove)', () => {
 
 describe('mergeConfidence (D-42)', () => {
   it('the union of reasons, the first numbers kept, the smaller basis', () => {
-    const a = confidenceOf({ ...clean, monthsUsed: 4, unsavedWrites: 1 });
-    const b = confidenceOf({ ...clean, monthsUsed: 2, unsavedWrites: 3 });
+    const a = confidenceOf({ ...clean, monthsUsed: 4, everydayLogged: mu(1) });
+    const b = confidenceOf({ ...clean, monthsUsed: 2, everydayLogged: mu(2) });
     const m = mergeConfidence(a, b);
-    expect(m.reasons).toEqual([reasonItem('few_months', { used: 2, lookedFor: 3 }), reasonItem('unsaved_changes', { count: 1 })]);
+    expect(m.reasons).toEqual([reasonItem('few_months', { used: 2, lookedFor: 3 }), reasonItem('under_logged', { logged: 1, usual: 150000 })]);
     expect(m.basis).toEqual({ kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-10-29' });
     expect(mergeConfidence(b, a).basis).toEqual(m.basis);
   });

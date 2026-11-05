@@ -77,6 +77,8 @@ export interface PurchaseContext {
   readonly custom: CustomOptions;
   /** 05.4 FIN-27: absent = unknown region. */
   readonly region?: TaxRegion;
+  /** 05.4 ENG-15 (D-109): the largest price checked in the home currency (bandEdges.ts maxCheckPrice). */
+  readonly maxPrice: MinorUnits;
 }
 
 /**
@@ -200,7 +202,11 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
   const reasons: ReasonCode[] = [];
   const facts: Fact[] = [];
 
-  if (check.price === null) missing.push('no_price');
+  // 05.4 ENG-15 (D-109), in both pay modes: no price or 0 asks for a price; a price over the limit is too large to check. The typed
+  // price is read, before tax and fees; anything else past the safe range still reports exceeds_range below.
+  const priceAsk: MissingCode | null =
+    check.price === null || check.price <= 0 ? 'no_price' : check.price > ctx.maxPrice ? 'price_too_large' : null;
+  if (priceAsk !== null) missing.push(priceAsk);
   let count: number | null = null;
   if (pay.mode === 'plan') {
     count = pay.count ?? (pay.termMonths === null ? null : countFromTerm(pay.cadence, pay.termMonths));
@@ -211,7 +217,7 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
       missing.push('pause_interest_not_answered');
     }
   }
-  if (check.price === null) return nothing(missing);
+  if (check.price === null || priceAsk !== null) return nothing(missing);
   const price = check.price;
   const passed = pay.mode === 'plan' && pay.firstPayment?.kind === 'deferred' && pay.firstPayment.firstDate < ctx.asOf;
 

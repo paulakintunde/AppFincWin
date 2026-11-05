@@ -9,6 +9,7 @@
  */
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { carriedOverdraft, homeFigure, openingBalance, rebased, withCarried } from './afterBuy';
+import { maxCheckPrice } from './bandEdges';
 import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { mergeConfidence } from './confidence/reasons';
 import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, withNet, type CashCheck, type DatedFlow, type OpenCashPath } from './cash/path';
@@ -39,7 +40,7 @@ import { liveSeriesOf, seriesOccurrences } from './month/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './month/settle';
 import type { PlanCard } from './plan/planCard';
 import type { QuotedCheck } from './plan/quoted';
-import type { CheckV2, Fact, Funds, MonthModel, Notice, Purchase, ReadyBy, ReasonCode, Result, V3Inputs, YearMonth } from './types';
+import type { CheckV2, Fact, Funds, MonthModel, Notice, Purchase, ReadyBy, ReasonCode, Result, V3Account, V3Inputs, YearMonth } from './types';
 
 export interface Evaluation {
   readonly result: Result;
@@ -185,6 +186,8 @@ export interface Prepared {
   readonly recordsSynced: boolean;
   /** 05.4 FIN-25: the months as given hold no complete month before this one. */
   readonly noFullMonth: boolean;
+  /** 05.4 ENG-17 (D-114): the ids of the accounts with no exchange rate, in input order; counted as 0 and named by notices. */
+  readonly unrated: readonly string[];
 }
 
 function readingOf(inputs: V3Inputs): Reading {
@@ -277,6 +280,7 @@ function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
     thresholds: inputs0.thresholds,
     custom: inputs0.custom,
     region: { country: inputs0.region, subdivision: inputs0.regionSubdivision ?? null }, // 05.4 FIN-27
+    maxPrice: maxCheckPrice(inputs0.currency), // 05.4 ENG-15 (D-109)
   });
   // 05.4 BO-05 (05.4-27): what the purchase replaces. A sale arriving by the purchase date lowers the day-one need (SO-01; any part
   // above it arrives on the path); a later sale counts only toward the ready date and on the path from its date (SO-02); the costs
@@ -341,7 +345,7 @@ function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
   // (05.3); the payment-stream comparison does not need it.
   const futures =
     pb.purchase !== null && result.reasons.includes('volatile_cover_declined')
-      ? insteadFutures({ result, month, funds, purchase: pb.purchase, userRate: null, years: 1 })
+      ? insteadFutures({ result, month, funds, purchase: pb.purchase, userRate: null, years: 1, check })
       : null;
   return { result, month, funds, purchase: pb.purchase, planCard: pb.planCard, quoted: pb.quoted, cash, futures, uncoveredIncome: uncoveredIncomeMonths(inputs, month, pb.purchase), net, spare: cappedSpare(confirmedUnspent(funds), r.spareInAccount, billsHeldTotal(funds)) };
 }
@@ -397,16 +401,34 @@ export function stricterOf(a: Evaluation, b: Evaluation): Evaluation {
  * The check-independent work, once. D-52: a not-ready result is not a verdict; consumers check readiness first.
  * Readiness is read from the inputs as given (never from the all-full reading) and never changes the code, the split or any figure.
  */
+/** D-114: each account with no rate as an untouched account holding 0, and the envelopes in it with nothing saved. */
+function withoutUnrated(raw: V3Inputs, all: readonly V3Account[], unrated: ReadonlySet<string>): V3Inputs {
+  const zero = minorUnits(0);
+  return {
+    ...raw,
+    accounts: all.map((a): V3Account => (a.noRate === true ? { id: a.id, balance: zero, use: { kind: 'untouched' } } : a)),
+    envelopes: raw.envelopes.map((e) => (e.accountId != null && unrated.has(e.accountId) ? { ...e, saved: zero } : e)),
+  };
+}
+
 export function prepare(raw: V3Inputs): Prepared {
+  // 05.4 ENG-17 (D-114): an account no exchange rate converts counts nowhere (not spare money, extra savings, the net or the cash
+  // path), and each answer names it (account_no_rate). It stays listed, so its id is known (a fund or an envelope linked to it is
+  // not read as linked to no account, which would ask), but as an untouched account holding 0: a fund in it follows its live 0, an
+  // envelope in it has nothing saved, it has no overdraft. The caller's balance already leaves it out (the builder cannot convert
+  // it). Inputs with none stay as given.
+  const all: readonly V3Account[] = raw.accounts ?? [];
+  const unrated = all.filter((a) => a.noRate === true).map((a) => a.id);
+  const rated = unrated.length === 0 ? raw : withoutUnrated(raw, all, new Set(unrated));
   // 05.2 D-11: one pre-pass so typical, thisMonth, incomePattern and unspent read the same months, and the fund is at its live balance
-  const inputs = withLiveEmergency(withRedatedRefunds(raw));
+  const inputs = withLiveEmergency(withRedatedRefunds(rated));
   const ym = yearMonthOf(inputs.asOf);
   const thin = inputs.months.some((m) => m.month < ym && !m.full);
   const first = readingOf(inputs);
   const readings = thin ? [first, readingOf({ ...inputs, months: inputs.months.map((m) => (m.month < ym ? { ...m, full: true } : m)) })] : [first];
   // 05.4 FIN-25: no complete month of records before this one, read from the months as given (never the all-full reading).
   const noFullMonth = !inputs.months.some((m) => m.month < ym && m.full);
-  return { inputs, readings, readiness: readinessOf(inputs, first.month), recordsSynced: recordsSynced(inputs), noFullMonth };
+  return { inputs, readings, readiness: readinessOf(inputs, first.month), recordsSynced: recordsSynced(inputs), noFullMonth, unrated };
 }
 
 /**
@@ -420,6 +442,16 @@ function askDebts(inputs: V3Inputs, r: Result): Fact[] {
   const asked = r.facts.some((f) => f.code === 'no_overdraft_limit');
   const kind = debtsNotRecorded(asked ? { debts: inputs.debts } : inputs);
   return kind === null ? [] : [{ code: 'ask_debts_not_recorded', values: { kind } }];
+}
+
+/**
+ * 05.4 APP-02 (D-113) and ENG-17 (D-114): the notes on top of every answer, notes only (never an input to the sums): changes not
+ * saved yet come first, then each account with no exchange rate.
+ */
+function leadNotes(p: Prepared): Notice[] {
+  const out: Notice[] = p.inputs.unsavedWrites > 0 ? [{ code: 'unsaved_changes', values: {} }] : [];
+  for (const id of p.unrated) out.push({ code: 'account_no_rate', values: { account: id } });
+  return out;
 }
 
 /** Per key press: purchase -> cash -> judge on each prepared reading, the stricter kept (D-42). */
@@ -444,5 +476,6 @@ export function judgeCheckWith(p: Prepared, check: CheckV2, opts: JudgeOpts): Ev
   // whatever the answer (an ask included: the fact is true either way).
   const noFull = p.noFullMonth ? [...chosen.result.facts, { code: 'no_full_month' as const, values: {} }] : chosen.result.facts;
   const facts = [...noFull, ...askDebts(p.inputs, chosen.result)].map(sameMonth);
-  return { ...chosen, result: { ...chosen.result, reasons, facts, afterBuy, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) } };
+  const notices = [...leadNotes(p), ...chosen.result.notices];
+  return { ...chosen, result: { ...chosen.result, reasons, facts, notices, afterBuy, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) } };
 }

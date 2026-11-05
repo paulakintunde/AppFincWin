@@ -111,6 +111,7 @@ describe('v3 constants.ts citations', () => {
       unspent_not_confirmed: true,
       records_look_behind: true,
       no_price: true,
+      price_too_large: true,
       plan_count_missing: true,
       first_payment_not_chosen: true,
       pause_interest_not_answered: true,

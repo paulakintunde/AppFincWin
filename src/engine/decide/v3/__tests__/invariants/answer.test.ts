@@ -203,14 +203,14 @@ describe('end-to-end invariants through evaluate()', () => {
     );
   });
 
-  it('I7 unsaved writes always carry the unsaved_changes reason and the freshness notice shows', () => {
+  it('I7 (05.4 APP-02, D-113) unsaved writes are a note on top of the answer, with no count, and nothing else changes', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, fc.integer({ min: 1, max: 9 }), (inputs, check, n) => {
+        const saved = evaluate({ ...inputs, unsavedWrites: 0 }, check).result;
         const r = evaluate({ ...inputs, unsavedWrites: n }, check).result;
-        expect(codesOf(r.confidence)).toContain('unsaved_changes');
-        expect(r.confidence.reasons.find((x) => x.code === 'unsaved_changes')?.numbers).toEqual({ count: n });
-        const note = r.notices.find((x) => x.code === 'unsaved_changes');
-        expect(note?.values.count).toBe(n);
+        expect(r.notices[0]).toEqual({ code: 'unsaved_changes', values: {} });
+        expect(saved.notices.some((x) => x.code === 'unsaved_changes')).toBe(false);
+        expect({ ...r, notices: r.notices.slice(1) }).toEqual(saved);
       }),
       RUNS
     );

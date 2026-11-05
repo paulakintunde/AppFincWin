@@ -36,7 +36,7 @@ describe('basis copy', () => {
   });
 
   it('every next step has its sentence, with no placeholders', () => {
-    const steps: readonly NextStepCode[] = ['add_records', 'log_spending', 'confirm_unspent', 'save_changes', 'record_pay', 'finish_setup'];
+    const steps: readonly NextStepCode[] = ['add_records', 'log_spending', 'confirm_unspent', 'record_pay', 'finish_setup'];
     expect(Object.keys(NEXT_STEP_KEYS).sort()).toEqual([...steps].sort());
     for (const key of Object.values(NEXT_STEP_KEYS)) expect(placeholders(resolve(key))).toEqual([]);
   });

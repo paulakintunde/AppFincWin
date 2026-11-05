@@ -21,7 +21,6 @@ export const REASON_WEIGHT: Readonly<Record<ConfidenceReason, number>> = Object.
   early_in_month: 70,
   under_logged: 80,
   unspent_stale: 90,
-  unsaved_changes: 100,
   provisional_rates: 110,
   no_setup: 120,
 });
@@ -37,7 +36,6 @@ export const REASON_AUDIENCE: Readonly<Record<ConfidenceReason, ReasonAudience>>
   early_in_month: 'detail',
   under_logged: 'detail',
   unspent_stale: 'detail',
-  unsaved_changes: 'detail',
   provisional_rates: 'detail',
   no_setup: 'detail',
 });
@@ -50,7 +48,6 @@ export const NEXT_STEP_OF: Readonly<Partial<Record<ConfidenceReason, NextStepCod
   pay_missed: 'record_pay',
   under_logged: 'log_spending',
   unspent_stale: 'confirm_unspent',
-  unsaved_changes: 'save_changes',
   no_setup: 'finish_setup',
 });
 
@@ -66,7 +63,6 @@ export interface ConfidenceInput {
   readonly day: number;
   readonly everydayLogged: MinorUnits;
   readonly e: MinorUnits | null;
-  readonly unsavedWrites: number;
   readonly typedEstimatesUsed: boolean;
   readonly provisionalRates: boolean;
   /** The records date when known, otherwise the day of the answer (ENG-14). */
@@ -120,7 +116,6 @@ export function confidenceOf(input: ConfidenceInput): Confidence {
   if (input.typedEstimatesUsed) items.push(reasonItem('quick_estimates'));
   if (input.day < CONFIDENCE_FIRM_MIN_DAY) items.push(reasonItem('early_in_month', { day: input.day, from: CONFIDENCE_FIRM_MIN_DAY }));
   if (input.e !== null && 2 * input.everydayLogged < input.e) items.push(reasonItem('under_logged', { logged: input.everydayLogged, usual: input.e }));
-  if (input.unsavedWrites > 0) items.push(reasonItem('unsaved_changes', { count: input.unsavedWrites }));
   if (input.provisionalRates) items.push(reasonItem('provisional_rates'));
   return assemble({ typedOnly: input.typedEstimatesUsed, monthsUsed: input.monthsUsed, upTo: input.upTo }, items);
 }

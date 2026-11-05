@@ -155,7 +155,7 @@ describe('verdict table (I22 one code one text)', () => {
         'first_payment_not_chosen', 'pause_interest_not_answered', 'plan_rate_missing', 'everyday_unknown',
         'legacy_invest_check', 'share_invalid', 'income_pattern_unconfirmed', 'expected_income_needed',
         'first_payment_passed', 'volatile_cover_question', 'unexplained_money_question', 'account_use_question',
-        'pay_arrival_question',
+        'pay_arrival_question', 'price_too_large',
       ].sort()
     );
     expect(Object.keys(FACT_KEYS).sort()).toEqual(

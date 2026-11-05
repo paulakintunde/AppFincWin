@@ -3632,7 +3632,7 @@ const en = {
         unspent_stale: 'Your unspent money was confirmed {{days}} days ago.',
         unspent_drifted: 'Your unspent money may be out of date. The app’s sum is {{suggested}}.',
         emergency_not_set: 'An emergency fund goal isn’t set yet.',
-        unsaved_changes: '{{count}} changes not saved yet.',
+        unsaved_changes: 'Some changes are not saved yet. This answer counts them once they save.', // 05.4 APP-02 (D-113)
         yearly_bill_choice_needed: 'A yearly bill, {{bill}}, is waiting on a choice about how it’s counted.',
         month_looks_under_logged: '{{month}} looks lightly logged, so its figures could be low.',
         income_kind_unmarked: 'Some income isn’t marked as regular or one-off yet.',
@@ -3657,6 +3657,7 @@ const en = {
         pay_expected_from_history: 'No pay is scheduled, so about {{amount}} is expected around day {{day}} of each month, the lowest month in your last {{months}} months of records.',
         // 05.4 FIN-27 (D-20): no region, or the US or Canada with no state or province, so no tax is added.
         tax_not_included: 'Tax not included. Set your region to add it.',
+        account_no_rate: 'No exchange rate for {{account}}, so it is left out.', // 05.4 ENG-17 (D-114)
       },
       fact: {
         month_left_after: '{{month}} would have about {{left}} to spare after this.',
@@ -3819,7 +3820,6 @@ const en = {
         add_records: 'More months of records give this more to go on.',
         log_spending: 'Logging this month’s spending gives this more to go on.',
         confirm_unspent: 'Confirming your unspent money gives this more to go on.',
-        save_changes: 'Changes not saved yet are counted once they save.',
         record_pay: 'Recording your pay when it arrives gives this more to go on.',
         finish_setup: 'Finishing setup gives this more to go on.',
       },
@@ -3828,6 +3828,7 @@ const en = {
         unspent_not_confirmed: 'Your unspent money hasn’t been confirmed yet.',
         records_look_behind: 'Your records look behind this month.',
         no_price: 'A price is needed first.',
+        price_too_large: 'That price is too large to check.', // 05.4 ENG-15 (D-109)
         plan_count_missing: 'The number of payments isn’t set yet.',
         first_payment_not_chosen: 'The first payment date isn’t chosen yet.',
         pause_interest_not_answered: 'Whether interest builds during a pause isn’t answered yet.',

@@ -70,7 +70,6 @@ const NOTICE_ORDER: readonly NoticeCode[] = [
   'history_window_12',
   'income_from_expected',
   'same_season_compared',
-  'unsaved_changes',
 ];
 
 export function buildMonthModel(inputs: V3Inputs): MonthModel {
@@ -172,7 +171,6 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     day: tm.day,
     everydayLogged: tm.everydayLogged,
     e: typical.e,
-    unsavedWrites: inputs.unsavedWrites,
     typedEstimatesUsed: reasonSet.has('quick_estimates_used'),
     provisionalRates: inputs.provisionalRates,
     upTo: inputs.recordsAsOf ?? inputs.asOf, // ENG-14: the records date when known
@@ -207,7 +205,6 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
   }
   if (reasonSet.has('income_kind_unmarked')) raw.push({ code: 'income_kind_unmarked', values: {} });
   if (payGap !== null) raw.push({ code: 'pay_gap', values: { setup: payGap.setup, middle: payGap.middle, gap: percentText(payGap.gapBp) } });
-  if (inputs.unsavedWrites > 0) raw.push({ code: 'unsaved_changes', values: { count: inputs.unsavedWrites } });
   const notices = NOTICE_ORDER.flatMap((code) => raw.filter((n) => n.code === code));
 
   return {

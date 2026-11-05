@@ -122,6 +122,9 @@ export const CADENCE_EVERY_MAX = 12; // D-19
 // Cite: payoff MAX_TERM_MONTHS cap (600 months, 50 years) in ../../payoff/types. A plan never has more periods than the payoff engine can simulate.
 export const MAX_PLAN_PERIODS = 600; // payoff MAX_TERM_MONTHS
 
+// Cite: ENG-15, D-109 (05.4-28): larger is 'too large to check'. US$100,000,000 in US cents; other currencies convert it with the fixed reference rates (bandEdges.ts maxCheckPrice), capped at MAX_ABS_AMOUNT_MINOR. FincWin choice.
+export const MAX_CHECK_PRICE = 100_000_000_00; // ENG-15, D-109
+
 // Cite: D-33 (05.1-CONTEXT): variable or seasonal earners use up to 12 months so a whole year of seasons is seen. FincWin choice.
 export const V3_VARIABLE_HISTORY_MONTHS = 12; // D-33
 
@@ -159,6 +162,7 @@ export const MISSING_PRIORITY = [
   'everyday_unknown',
   'records_look_behind',
   'no_price',
+  'price_too_large',
   'share_invalid',
   'legacy_invest_check',
   'plan_count_missing',

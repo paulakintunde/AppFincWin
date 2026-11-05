@@ -157,6 +157,7 @@ export const NOTICE_KEYS = Object.freeze({
   pay_expected_from_history: 'decide.v3.notice.pay_expected_from_history',
   pay_gap: 'decide.v3.notice.pay_gap', // 05.4 FIN-15
   tax_not_included: 'decide.v3.notice.tax_not_included', // 05.4 FIN-27 (D-20)
+  account_no_rate: 'decide.v3.notice.account_no_rate', // 05.4 ENG-17 (D-114)
 } as const satisfies Record<NoticeCode, string>);
 
 export const FACT_KEYS = Object.freeze({
@@ -277,6 +278,7 @@ export const MISSING_KEYS = Object.freeze({
   unspent_not_confirmed: 'decide.v3.missing.unspent_not_confirmed',
   records_look_behind: 'decide.v3.missing.records_look_behind',
   no_price: 'decide.v3.missing.no_price',
+  price_too_large: 'decide.v3.missing.price_too_large', // 05.4 ENG-15 (D-109)
   plan_count_missing: 'decide.v3.missing.plan_count_missing',
   first_payment_not_chosen: 'decide.v3.missing.first_payment_not_chosen',
   pause_interest_not_answered: 'decide.v3.missing.pause_interest_not_answered',
@@ -323,7 +325,6 @@ export const NEXT_STEP_KEYS = Object.freeze({
   add_records: 'decide.v3.nextStep.add_records',
   log_spending: 'decide.v3.nextStep.log_spending',
   confirm_unspent: 'decide.v3.nextStep.confirm_unspent',
-  save_changes: 'decide.v3.nextStep.save_changes',
   record_pay: 'decide.v3.nextStep.record_pay',
   finish_setup: 'decide.v3.nextStep.finish_setup',
 } as const satisfies Record<NextStepCode, string>);
@@ -436,7 +437,7 @@ export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> 
   unspent_stale: ['days'],
   unspent_drifted: ['suggested'],
   emergency_not_set: [],
-  unsaved_changes: ['count'],
+  unsaved_changes: [], // 05.4 APP-02 (D-113): no count; always the first notice
   yearly_bill_choice_needed: ['seriesId'],
   month_looks_under_logged: ['month'],
   income_kind_unmarked: [],
@@ -455,6 +456,7 @@ export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> 
   pay_expected_from_history: ['amount', 'day', 'months'], // 05.4 D-52
   pay_gap: ['setup', 'middle', 'gap'], // 05.4 FIN-15: gap is a percent with one decimal
   tax_not_included: [], // 05.4 FIN-27 (D-20); the screen links to the region setting (08.1)
+  account_no_rate: ['account'], // 05.4 ENG-17 (D-114): the account's id; the screen shows its name
 });
 
 /** An id the engine emits that the UI resolves to a name; the copy placeholder is the value. */

@@ -51,6 +51,7 @@ export const V3_RUNTIME_EXPORTS = [
   'LOW_MONTH_RANK',
   'MATCH_DAYS',
   'MAX_BUILTIN_LINES',
+  'MAX_CHECK_PRICE', // 05.4-28 ENG-15 (D-109): US$100,000,000 in US cents
   'MAX_CUSTOM_OPTIONS',
   'MAX_OWN_LINES',
   'MAX_OWN_QUESTIONS',
@@ -66,6 +67,7 @@ export const V3_RUNTIME_EXPORTS = [
   'NEXT_STEP_KEYS',
   'NOTICE_KEYS',
   'NOTICE_VALUE_KEYS',
+  'OPTION_ORDER', // 05.4-28 D-110: need / want / no-purpose order of the options
   'OVERDRAFT_DAYS_PER_YEAR',
   'OVERDRAFT_REPEAT_MIN',
   'OVERDRAFT_REPEAT_PAYDAYS',
@@ -122,6 +124,7 @@ export const V3_RUNTIME_EXPORTS = [
   'cardEligibility', // 05.3-44: shared card rule, so v3 screens never import the old barrel (P-01)
   'cardPaidInFullHistory', // 05.3-80
   'changeSinceLooked',
+  'cheaperOption', // 05.4-28 UX-28 (D-111): The cheaper one, figures only
   'checkQuoted',
   'detectCandidates',
   'evaluate',
@@ -140,9 +143,11 @@ export const V3_RUNTIME_EXPORTS = [
   'legacyStateOf',
   'liveEmergencyOf',
   'lookupTaxDefault', // 05.4-25 FIN-27 (D-19, ARC-25): the one owner of region tax defaults
+  'maxCheckPrice', // 05.4-28 ENG-15 (D-109): the price limit in a currency
   'monthAfterPlans', // 05.4-24 FIN-09 (D-22)
   'monthlyEquivalentOf',
   'myShareOf',
+  'orderOptions', // 05.4-28 D-110
   'parseCheckV2',
   'planCard',
   'prepare',

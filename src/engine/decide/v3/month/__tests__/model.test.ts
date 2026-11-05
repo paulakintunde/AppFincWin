@@ -118,10 +118,10 @@ describe('buildMonthModel', () => {
     );
     expect(m.typicalLeft).toBeLessThan(0);
     expect(m.monthLeft).toBeLessThan(0);
-    expect(m.notices.map((n) => n.code)).toEqual(['typical_short', 'month_heading_short', 'unsaved_changes']);
+    expect(m.notices.map((n) => n.code)).toEqual(['typical_short', 'month_heading_short']); // 05.4 APP-02 (D-113): the note is on top of the answer (prepare.ts)
     expect(m.notices[1]?.values).toMatchObject({ categoryId: 'food', largest: 20000 });
     expect(m.reasons).toContain('everyday_override_used');
-    expect(m.confidence.reasons.map((r) => r.code)).toContain('unsaved_changes');
+    expect(m.confidence.reasons.map((r) => r.code as string)).not.toContain('unsaved_changes');
   });
 
   it('month_heading_short carries nulls when nothing is categorised', () => {

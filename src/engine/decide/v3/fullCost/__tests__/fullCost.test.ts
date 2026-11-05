@@ -2,6 +2,7 @@
  * 05.4 BO-05 (05.4-26): running-cost lines, closing costs and the purchase date, as pure functions (RC-01..RC-09).
  */
 import { minorUnits as mu } from '../../../../money/types';
+import { MAX_CHECK_PRICE } from '../../constants';
 import { percent } from '../../../../payoff/types';
 import type { ResolvedShare } from '../../../share';
 import { buildPurchase, purchaseCashFlows } from '../../judge/purchase';
@@ -160,7 +161,7 @@ describe('purchase date (D-42)', () => {
 
 describe('buildPurchase and purchaseCashFlows with running costs, closing costs and a purchase date', () => {
   const thresholds: HomeThresholds = { bandEdges: [], unspentDrift: mu(0), quotedTolerance: mu(0), source: 'missing' };
-  const ctx = { asOf: '2026-11-15', thresholds, custom: { itemTypes: [], purposes: [], cadences: [], incomeKinds: [] } };
+  const ctx = { asOf: '2026-11-15', thresholds, custom: { itemTypes: [], purposes: [], cadences: [], incomeKinds: [] }, maxPrice: mu(MAX_CHECK_PRICE) };
 
   it('RC-06 the closing % is part of day one, paid once and on a plan, never financed', () => {
     const once = buildPurchase(checkOnce(4_000_000, { closingPercent: percent('2.5') }), ctx).purchase!;
