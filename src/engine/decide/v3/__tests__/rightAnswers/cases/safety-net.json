@@ -2223,6 +2223,178 @@
       "ownerReason": null,
       "expertNote": null,
       "plannerNote": "Engine (05.4-51 rules, plan 50 tier fixture 'large'): not_yet / month_already_short, net_locked, readyBy null, no net_lasts. Hand, plain calculator and engine agree; table.test pins it."
+    },
+    {
+      "id": "SN-25",
+      "topic": "safety-net",
+      "persona": "A8 Robin, his own share only (audit, invented)",
+      "situation": "Robin checks only his own share of a sofa he is buying with Kim; how the cost is split is Household work (phase 8, HH-01). His share is $800. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000 on the 1st, bills $1,200 and everyday spending $800 ($500 of it on essentials), so $1,000 is left. This month he has received $3,000, paid $1,200 of bills and spent $400 so far; $400 of everyday spending is still to come. His Everyday account holds $1,400, all of it this month's money, so $1,000 is spare this month. He has no safety net and no debts.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 80000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuy": {
+          "month": 20000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_none_start"
+        ],
+        "mustNotHaveFacts": [
+          "tight_floor",
+          "emergency_untouched",
+          "net_used"
+        ]
+      },
+      "why": "Only Robin's $800 is judged. $1,000 spare this month - $800 = $200 left, and the account never goes below $0 before pay on 1 December. The tight floor is a tenth of $1,200 bills + $800 everyday = $200; $200 left is not under $200, so it is not tight (D-40: \"under\"). He has no safety net, so the answer is the amber \"Fits, but no safety net\" (D-35), with the line that one month of essential costs is about $1,700 ($1,200 bills + $500 essential everyday, no card or loan minimums, D-51) and \"1 month is a start; 3 to 6 months is common.\" This is the caution the audit asked for (\"leaves only £200\").",
+      "fixIds": [
+        "FIN-01",
+        "FIN-07",
+        "CMP-F13"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "05.4-40 (D-132): the one-person version of audit case A8. HH-01 stays the household follow-up for phase 8 (FIN-19)."
+    },
+    {
+      "id": "SN-26",
+      "topic": "safety-net",
+      "persona": "A8 Robin, a dearer sofa share (audit, invented)",
+      "situation": "Robin checks only his own share of a sofa he is buying with Kim; how the cost is split is Household work (phase 8, HH-01). His share is $850. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000 on the 1st, bills $1,200 and everyday spending $800 ($500 of it on essentials), so $1,000 is left. This month he has received $3,000, paid $1,200 of bills and spent $400 so far; $400 of everyday spending is still to come. His Everyday account holds $1,400, all of it this month's money, so $1,000 is spare this month. He has no safety net and no debts. The only change from SN-25 is a share $50 higher.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 85000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuy": {
+          "month": 15000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "tight_floor",
+          "net_none_start"
+        ],
+        "mustNotHaveFacts": [
+          "emergency_untouched",
+          "net_used"
+        ]
+      },
+      "why": "$1,000 spare this month - $850 = $150 left, under the $200 tight floor (a tenth of $1,200 + $800), so it is \"Fits, but tight\" (D-40, D-75). The no-safety-net caution also applies; tight leads and the safety-net line sits below it (D-59). The account never goes below $0 before pay on 1 December.",
+      "fixIds": [
+        "FIN-01",
+        "FIN-07",
+        "CMP-F13"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "05.4-40 (D-132): the one-person version of audit case A8. HH-01 stays the household follow-up for phase 8 (FIN-19)."
     }
   ]
 }
