@@ -5,6 +5,7 @@
 // row label itself is plain ink (00-UI-SPEC.md Color).
 import { useCallback, useRef } from 'react';
 import { router, useLocalSearchParams, useNavigation, type Href } from 'expo-router';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, View, type HostInstance, type LayoutChangeEvent } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
@@ -177,7 +178,7 @@ export function YouScreen() {
 
       <SettingsGroup title={t('you.record.section')}>
         {MONEY_ROWS.map((row) => (
-          <Pressable key={row.label} accessibilityRole="button" onPress={() => (row.href === ACTIVITY_HREF ? router.dismissTo(ACTIVITY_HREF) : router.push(row.href))} style={styles.moneyRow}>
+          <Pressable key={row.label} accessibilityRole="button" onPress={() => (row.href === ACTIVITY_HREF ? router.dismissTo(ACTIVITY_HREF) : pushOnce(row.href))} style={styles.moneyRow}>
             <Text style={[styles.rowLabel, { fontFamily: fonts.body[500], color: colors.ink }]}>{t(row.label)}</Text>
           </Pressable>
         ))}
