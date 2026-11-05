@@ -2227,8 +2227,8 @@
     {
       "id": "SN-25",
       "topic": "safety-net",
-      "persona": "A8 Robin, his own share only (audit, invented)",
-      "situation": "Robin checks only his own share of a sofa he is buying with Kim; how the cost is split is Household work (phase 8, HH-01). His share is $800. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000 on the 1st, bills $1,200 and everyday spending $800 ($500 of it on essentials), so $1,000 is left. This month he has received $3,000, paid $1,200 of bills and spent $400 so far; $400 of everyday spending is still to come. His Everyday account holds $1,400, all of it this month's money, so $1,000 is spare this month. He has no safety net and no debts.",
+      "persona": "A8 Robin, own share only (audit, invented)",
+      "situation": "Robin checks only their own share of a sofa bought together with Kim; how the cost is split is Household work (phase 8, HH-01). Robin's share is $800. It is bought on 15 November 2026 (today), paid in one go. Robin's usual month: pay $3,000 on the 1st, bills $1,200 and everyday spending $800 ($500 of it on essentials), so $1,000 is left. This month Robin has received $3,000, paid $1,200 of bills and spent $400 so far; $400 of everyday spending is still to come. Robin's Everyday account holds $1,400, all of it this month's money, so $1,000 is spare this month. Robin has no safety net and no debts.",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -2298,15 +2298,15 @@
           "net_used"
         ]
       },
-      "why": "Only Robin's $800 is judged. $1,000 spare this month - $800 = $200 left, and the account never goes below $0 before pay on 1 December. The tight floor is a tenth of $1,200 bills + $800 everyday = $200; $200 left is not under $200, so it is not tight (D-40: \"under\"). He has no safety net, so the answer is the amber \"Fits, but no safety net\" (D-35), with the line that one month of essential costs is about $1,700 ($1,200 bills + $500 essential everyday, no card or loan minimums, D-51) and \"1 month is a start; 3 to 6 months is common.\" This is the caution the audit asked for (\"leaves only £200\").",
+      "why": "Only Robin's $800 is judged. $1,000 spare this month - $800 = $200 left, and the account never goes below $0 before pay on 1 December. The tight floor is a tenth of $1,200 bills + $800 everyday = $200; $200 left is not under $200, so it is not tight (D-40: \"under\"). Robin has no safety net, so the answer is the amber \"Fits, but no safety net\" (D-35), with the line that one month of essential costs is about $1,700 ($1,200 bills + $500 essential everyday, no card or loan minimums, D-51) and \"1 month is a start; 3 to 6 months is common.\" This is the caution the audit asked for (\"leaves only £200\").",
       "fixIds": [
         "FIN-01",
         "FIN-07",
         "CMP-F13"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-05",
+      "ownerReason": "The owner approved the one-person version of audit case A8 per D-132 (2026-11-05), shown the figures, the $200 tight line and both answers.",
       "expertNote": null,
       "plannerNote": "05.4-40 (D-132): the one-person version of audit case A8. HH-01 stays the household follow-up for phase 8 (FIN-19)."
     },
@@ -2314,7 +2314,7 @@
       "id": "SN-26",
       "topic": "safety-net",
       "persona": "A8 Robin, a dearer sofa share (audit, invented)",
-      "situation": "Robin checks only his own share of a sofa he is buying with Kim; how the cost is split is Household work (phase 8, HH-01). His share is $850. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000 on the 1st, bills $1,200 and everyday spending $800 ($500 of it on essentials), so $1,000 is left. This month he has received $3,000, paid $1,200 of bills and spent $400 so far; $400 of everyday spending is still to come. His Everyday account holds $1,400, all of it this month's money, so $1,000 is spare this month. He has no safety net and no debts. The only change from SN-25 is a share $50 higher.",
+      "situation": "Robin checks only their own share of a sofa bought together with Kim; how the cost is split is Household work (phase 8, HH-01). Robin's share is $850. It is bought on 15 November 2026 (today), paid in one go. Robin's usual month: pay $3,000 on the 1st, bills $1,200 and everyday spending $800 ($500 of it on essentials), so $1,000 is left. This month Robin has received $3,000, paid $1,200 of bills and spent $400 so far; $400 of everyday spending is still to come. Robin's Everyday account holds $1,400, all of it this month's money, so $1,000 is spare this month. Robin has no safety net and no debts. The only change from SN-25 is a share $50 higher.",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -2390,9 +2390,9 @@
         "FIN-07",
         "CMP-F13"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-05",
+      "ownerReason": "The owner approved the one-person version of audit case A8 per D-132 (2026-11-05), shown the figures, the $200 tight line and both answers.",
       "expertNote": null,
       "plannerNote": "05.4-40 (D-132): the one-person version of audit case A8. HH-01 stays the household follow-up for phase 8 (FIN-19)."
     }
