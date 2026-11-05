@@ -953,6 +953,8 @@ export function plainPathFlows(f: RightAnswerFixture, flows: readonly { date: st
   const before = firstPay === null ? null : dayAfter(firstPay, -1);
   const dueDay = f.pay.irregular !== undefined ? monthEnd : before === null ? null : before < monthEnd ? before : monthEnd;
   const dated = f.bills.filter((b) => b.paidBy === 'me' && b.nextDue >= f.asOf && b.nextDue.slice(0, 7) === ym);
+  const named = f.bills.filter((b) => b.paidBy === 'me' && b.everyMonths === 1);
+  const namedMonthly = named.reduce((t, b) => t + big(b.amount), 0n);
   const undated = big(f.thisMonth.billsDue) - dated.reduce((t, b) => t + big(b.amount), 0n);
   // 05.4-19 (D-47): a yearly or every-3-month bill lands on each due date inside the 90 days (this month's is in `dated`).
   const endDay = dayAfter(f.asOf, PATH_DAYS);
@@ -980,8 +982,11 @@ export function plainPathFlows(f: RightAnswerFixture, flows: readonly { date: st
     const laterDue = undated > 0n && dueDay !== null ? undated : 0n;
     if (billsDay && !billsMonths.has(date.slice(0, 7))) {
       billsMonths.add(date.slice(0, 7));
-      money -= big(f.usualMonth.bills) - laterDue - sharesInUsual(f);
+      // 05.4-27 (CI seed 1859689569): a named monthly bill (DB-03: "a debt paid as a bill lands as that bill") falls on its own due day in
+      // each later month, as this month's does; only the rest of the usual bills lands on payday.
+      money -= big(f.usualMonth.bills) - laterDue - sharesInUsual(f) - (date.slice(0, 7) === ym ? 0n : namedMonthly);
     }
+    if (date.slice(0, 7) !== ym) for (const b of named) if (date >= b.nextDue && Number(date.slice(8, 10)) === Math.min(Number(b.nextDue.slice(8, 10)), Number(daysInMonthOf(date)))) money -= big(b.amount);
     if (laterDue > 0n && date.slice(0, 7) !== ym && Number(date.slice(8, 10)) === Math.min(Number((dueDay as string).slice(8, 10)), Number(daysInMonthOf(date)))) money -= laterDue;
     for (const b of dated) if (b.nextDue === date) money -= big(b.amount);
     for (const b of longDues) if (b.date === date) money -= b.amount;

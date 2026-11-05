@@ -293,6 +293,19 @@ describe('through the engine: the SO cases (D-101..D-108)', () => {
     expect(r.readyBy).toEqual({ kind: 'month', month: '2026-12' });
   });
 
+  it('SO-02 shape, $2,500 dipping until payday: a sale on 20 November makes payday (1 December) the ready date; one on 10 December waits for it (December)', () => {
+    const { inputs, check } = inputsOfCase('SO-02');
+    const at = (arrives: string) => evaluate(inputs, { ...check, price: mu(250_000), replaces: { stops: [], sale: sale({ arrives, amount: mu(100_000) }) } });
+    const without = evaluate(inputs, { ...check, price: mu(250_000), replaces: null }).result;
+    expect(without.readyBy).toEqual({ kind: 'month', month: '2027-01' });
+    const early = at('2026-11-20');
+    expect(early.cash.kind).toBe('payday');
+    expect(early.result).toMatchObject({ code: 'not_yet', variant: 'payday', readyBy: { kind: 'date', date: '2026-12-01' } });
+    const late = at('2026-12-10');
+    expect(late.cash.kind).toBe('payday');
+    expect(late.result).toMatchObject({ code: 'not_yet', variant: 'not_covered', readyBy: { kind: 'month', month: '2026-12' } });
+  });
+
   it('a later sale that is not needed leaves the ready date as it was', () => {
     const { inputs, check } = inputsOfCase('SO-02');
     const without = evaluate(inputs, { ...check, replaces: null }).result;
