@@ -1063,7 +1063,7 @@ Plans:
   7. Compliance gate: CMP-F01, F02, F03, F07, F08 and F11 merged; purge job deployed after the Supabase preflight; the owner signs off every changed answer string.
   8. Theme M: the owner-approved right-answer table (about 70 cases: the first 50 plus the Variant C cases from Themes N and O) is committed as tests before the first Theme A engine change, and every case passes; a separate plain calculator agrees with the engine on 1,000 random cases per change and 20,000 nightly; at least 90% of Stryker's breaking changes in `src/engine/decide/` are caught; after reading-test round 1 on Variant C, its findings are fixed and the screens are signed and frozen, with a v1.1 list for later ideas.
   9. Theme N: the 05.3 engine and plumbing changes are on main with their tests; Maestro flows for Back, saving offline and Record as bought are green; Variant C's inputs (running-cost lines, closing %, cash and installments from one input, what it replaces, purchase date, save-for-it ready date) exist as engine types with tests; a release check fails if any account outside the tester list has `profiles.decide_v3` on; the first shadow run on testers' records has been reviewed by the owner. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1: no account sees the 05.2 setup page or engine readout, and `profiles.decide_v3` is on only for accounts on the repo tester list (05.4 D-29, D-30), and stays off until 08.1; shadow runs use the separate server-only `profiles.decide_shadow` flag (05.4-30).
-**Plans:** 46/57 plans executed
+**Plans:** 47/57 plans executed
 
 Plans:
 **Wave 1**
@@ -1118,7 +1118,7 @@ Plans:
 **Wave 19** *(blocked on Wave 18 completion)*
 - [x] 05.4-28-PLAN.md — Land the small engine items: price limits in both modes, naming accounts with no exchange rate, unsaved writes as a note, the no-contradiction invariant and the "cheaper one" option.
 **Wave 20** *(blocked on Wave 19 completion)*
-- [ ] 05.4-33-PLAN.md — Make Decide's data layer work offline on the 1st with an honest records-as-of date, typed errors, build-once inputs, and a cache version bump guarded by CI.
+- [x] 05.4-33-PLAN.md — Make Decide's data layer work offline on the 1st with an honest records-as-of date, typed errors, build-once inputs, and a cache version bump guarded by CI.
 - [ ] 05.4-34-PLAN.md — Add the dev-only harness screens, write the three Maestro flows, and measure the engine on the Pixel 6.
 - [x] 05.4-37-PLAN.md — Finish the engine-side copy work: extend the copy guard, add the sentence rule, rename the decoded words, add the footer and couples-note keys, type the copy keys, and record the screen-side items for 08.1.
 - [ ] 05.4-40-PLAN.md — Lock the audit personas as goldens with corrected answers, add synthetic people so Fits answers are well sampled, and write the full rule list that ties each Theme A rule to its properties and cases.
@@ -1342,7 +1342,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
-| 05.4 Decide safety patch | 46/57 | In Progress|  |
+| 05.4 Decide safety patch | 47/57 | In Progress|  |
 | 05.5 One shared money model | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
