@@ -44,6 +44,14 @@ export function lastServerFetchAt(q: Query): number {
   return serverFetchedAt.get(q.queryHash) ?? q.state.dataUpdatedAt;
 }
 
+/**
+ * 05.4-33 APP-06 (D-126): the last real server fetch for a query hash, with NO dataUpdatedAt fallback (an optimistic write
+ * moves that), so Decide's "records up to" date is never made fresher than the server read. Null when none is known.
+ */
+export function serverFetchTimeOf(queryHash: string): number | null {
+  return serverFetchedAt.get(queryHash) ?? null;
+}
+
 /** Records real fetches (never manual setQueryData updates). Returns an unsubscribe function. */
 export function trackServerFetches(queryClient: QueryClient): () => void {
   return queryClient.getQueryCache().subscribe((event) => {

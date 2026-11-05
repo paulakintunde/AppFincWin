@@ -6,6 +6,7 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { TransactionRow } from '@/db/rows';
 import { resetJudgeOnStoreForTest } from '@/features/decide/judgeOn/judgeOnStore';
 import * as buildModule from '@/features/decide/snapshot/buildSnapshot';
+import { clearServerFetchTimes, trackServerFetches } from '../../cache/persister';
 import { queryKeys } from '../../keys';
 import {
   useDecideChecks,
@@ -65,6 +66,7 @@ const mockCtx = {
   homeCurrency: 'USD',
   region: null as string | null,
   today: '2026-10-15',
+  timeZone: 'UTC',
 };
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => mockCtx }));
 
@@ -134,6 +136,8 @@ function resetMocks(): void {
   mockCtx.userId = 'u1';
   mockCtx.householdId = 'h1';
   mockCtx.region = null;
+  mockCtx.today = '2026-10-15';
+  clearServerFetchTimes();
   mockRegion = undefined;
   mockAccounts.data = [
     { id: 'chk', name: 'Checking', kind: 'checking', currency: 'USD', archived_at: null, deleted_at: null },
@@ -492,5 +496,109 @@ describe('D-101 pots selector', () => {
     await waitFor(() => expect(hook.result.current.data?.live.map((r) => r.id)).toEqual(['p1']));
     expect(hook.result.current.data?.done.map((r) => r.id)).toEqual(['p2']);
     expect(client.getQueryData(queryKeys.savingsGoals('u1', 'h1'))).toHaveLength(2);
+  });
+});
+
+// 05.4-33 APP-01 / APP-06 / APP-10 / D-126 / D-127: Decide's data layer offline on the 1st.
+describe('offline on the 1st (05.4-33)', () => {
+  const OLD = Date.UTC(2020, 0, 15, 12); // a fetch time older than any real one
+  const NOV_HISTORY = queryKeys.decideHistory('h1', '2025-11-01', '2026-11-30');
+  const NOV_UPCOMING = queryKeys.decideUpcoming('h1', '2026-12-01');
+  const DEC_HISTORY = queryKeys.decideHistory('h1', '2025-12-01', '2026-12-31');
+  const novHistory = (): TransactionRow[] => [
+    txRow({ id: 'gone', local_date: '2025-11-03' }), // falls out of December's window
+    ...history(),
+  ];
+  const novUpcoming = (): TransactionRow[] => [
+    txRow({ id: 'dec-bill', local_date: '2026-12-05', status: 'pending' }),
+    txRow({ id: 'jan-bill', local_date: '2027-01-05', status: 'pending' }),
+  ];
+
+  /** November's reads fetched from the server at OLD; December's reads never answer (offline). */
+  async function primed(serverFetch: boolean): Promise<QueryClient> {
+    mockCtx.today = '2026-12-01';
+    const client = newClient();
+    if (serverFetch) {
+      const stop = trackServerFetches(client);
+      const now = jest.spyOn(Date, 'now').mockReturnValue(OLD);
+      await client.prefetchQuery({ queryKey: NOV_HISTORY, queryFn: async () => novHistory() });
+      await client.prefetchQuery({ queryKey: NOV_UPCOMING, queryFn: async () => novUpcoming() });
+      now.mockRestore();
+      // balances and the rest load now; keep tracking for them
+      void stop;
+    } else {
+      client.setQueryData(NOV_HISTORY, novHistory());
+      client.setQueryData(NOV_UPCOMING, novUpcoming());
+    }
+    mockFetch.range.mockImplementation(() => new Promise(() => undefined));
+    return client;
+  }
+
+  it('builds from last month rolled forward, never writing it to the cache', async () => {
+    const client = await primed(true);
+    const { result } = await ready(client);
+    const rows = result.current.source!.rows.map((r) => r.id);
+    expect(rows).not.toContain('gone');
+    expect(rows).toContain('dec-bill');
+    expect(result.current.source!.upcomingRows.map((r) => r.id)).toEqual(['jan-bill']);
+    expect(client.getQueryData(DEC_HISTORY)).toBeUndefined();
+    expect(client.getQueryCache().find({ queryKey: DEC_HISTORY })!.state.status).toBe('pending');
+  });
+
+  it('D-126: records up to the oldest real server fetch of the reads used', async () => {
+    const { result } = await ready(await primed(true));
+    expect(result.current.source!.recordsAsOf).toBe('2020-01-15');
+  });
+
+  it('D-126: unknown when a read used has no known server fetch (a manual cache write is not one)', async () => {
+    const { result } = await ready(await primed(false));
+    expect(result.current.source!.recordsAsOf).toBeNull();
+  });
+
+  it("this month's own read replaces the fallback when it lands", async () => {
+    const client = await primed(true);
+    const { result } = await ready(client);
+    await act(async () => {
+      client.setQueryData(DEC_HISTORY, [txRow({ id: 'dec-own', local_date: '2026-12-01' })]);
+    });
+    await waitFor(() => expect(result.current.source!.rows.map((r) => r.id)).toEqual(['dec-own']));
+    // December's history has no server fetch on record yet, so the date is unknown, not today
+    expect(result.current.source!.recordsAsOf).toBeNull();
+  });
+
+  it('with no month cached at all it waits and names the missing reads', async () => {
+    mockCtx.today = '2026-12-01';
+    mockFetch.range.mockImplementation(() => new Promise(() => undefined));
+    const hook = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(newClient()) });
+    await waitFor(() => expect(mockFetch.written).toHaveBeenCalled());
+    expect(hook.result.current.status).toBe('loading');
+    expect(hook.result.current.missingReads).toEqual(expect.arrayContaining(['history', 'upcoming']));
+    expect(hook.result.current.errorKind).toBeNull();
+  });
+});
+
+describe('read error kinds and waiting writes (05.4-33)', () => {
+  it('APP-10: a network failure with nothing cached is an error of kind network, never not found', async () => {
+    mockFetch.debts.mockRejectedValue(new TypeError('Network request failed'));
+    const hook = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(newClient()) });
+    await waitFor(() => expect(hook.result.current.status).toBe('error'));
+    expect(hook.result.current.errorKind).toBe('network');
+    expect(hook.result.current.missingReads).toEqual(['debts']);
+  });
+
+  it('a ready snapshot has no error kind and nothing missing', async () => {
+    const { result } = await ready();
+    expect(result.current.errorKind).toBeNull();
+    expect(result.current.missingReads).toEqual([]);
+    expect(result.current.source!.unsavedWrites).toBe(0);
+  });
+
+  it('D-127: a write still waiting to send is counted on the source', async () => {
+    const client = newClient();
+    const { result } = await ready(client);
+    await act(async () => {
+      void client.getMutationCache().build(client, { mutationFn: () => new Promise(() => undefined) }).execute(undefined);
+    });
+    await waitFor(() => expect(result.current.source!.unsavedWrites).toBe(1));
   });
 });

@@ -97,3 +97,33 @@ export class SessionUnavailableError extends Error {
 export function toDbError(error: { message: string; code?: string | null }, status: number | null = null): DbError {
   return new DbError(error.message, error.code ?? '', status);
 }
+
+/**
+ * 05.4 APP-10 (05.4-33): what kind of failure a read hit, for the shared error / offline card (08.1). A network failure is
+ * never 'not_found': only the server saying so (HTTP 404 or PostgREST PGRST116) is.
+ */
+export type DbErrorKind = 'network' | 'not_found' | 'server' | 'forbidden' | 'conflict';
+
+const FORBIDDEN_CODES = new Set(['42501', 'PGRST301', 'PGRST302', 'PGRST303']);
+
+/**
+ * Classifies any thrown read error. Network: a fetch TypeError (RequestTimeoutError, the 15 s read timeout, is one), an
+ * AbortError, or a DbError with no HTTP answer (postgrest-js resolves a fetch failure as status 0). Not found: 404 or
+ * PGRST116. Forbidden: 401, 403, 42501 or PostgREST's JWT codes. Conflict: 409 or a version conflict. Everything else,
+ * unknown errors included, is 'server' (never 'not_found').
+ */
+export function classifyReadError(err: unknown): DbErrorKind {
+  if (err instanceof VersionConflictError) return 'conflict';
+  if (err instanceof NotFoundError) return 'not_found';
+  if (err instanceof SessionUnavailableError) return 'forbidden';
+  if (err instanceof DbError) {
+    if (err.status === 0 || (err.code === '' && err.status === null)) return 'network';
+    if (err.status === 404 || err.code === 'PGRST116') return 'not_found';
+    if (err.status === 401 || err.status === 403 || FORBIDDEN_CODES.has(err.code)) return 'forbidden';
+    if (err.status === 409) return 'conflict';
+    return 'server';
+  }
+  if (err instanceof TypeError) return 'network';
+  if (typeof err === 'object' && err !== null && (err as { name?: unknown }).name === 'AbortError') return 'network';
+  return 'server';
+}

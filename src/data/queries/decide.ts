@@ -1,7 +1,8 @@
 // 05-12: Decide reads. Row-derived reads nest under ['transactions', hh] (D-15). The snapshot is built in
 // memory with useMemo, never stored in the cache (it carries bigints, Pitfall 8). Stored rates only.
 import { useCallback, useMemo } from 'react';
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { hashKey, useMutationState, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
+import { serverFetchTimeOf } from '@/data/cache/persister';
 import { fetchDebts, type DebtRow } from '@/db/debts';
 import { fetchDecideChanges } from '@/db/decideChanges';
 import { fetchDecideChecks, type DecideCheckRow } from '@/db/decideChecks';
@@ -13,6 +14,7 @@ import {
   type DecideLinkRow,
 } from '@/db/decideLinks';
 import { fetchDecideSettings, type DecideSettingsRow } from '@/db/decideSettings';
+import { classifyReadError, type DbErrorKind } from '@/db/errors';
 import { fetchAccountBalances } from '@/db/recordReads';
 import type { TransactionRow } from '@/db/rows';
 import { fetchGoalLines, fetchSavingsGoals, type SavingsGoalRow } from '@/db/savingsGoals';
@@ -20,6 +22,7 @@ import { fetchStatementPeriods, type StatementPeriodRow } from '@/db/statementPe
 import { fetchTransactionsInRange } from '@/db/transactions';
 import { monthOf, monthRange } from '@/engine/time';
 import { buildDecideSnapshot, type SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
+import { recordsAsOfOf, rollForward } from '@/features/decide/snapshot/offlineFallback';
 import { selectOtherChecks } from '@/features/decide/snapshot/stacking';
 import { EMPTY_STACK, type SnapshotResult, type StackSelection } from '@/features/decide/snapshot/types';
 import { useJudgeOn } from '@/features/decide/judgeOn/judgeOnStore';
@@ -201,7 +204,33 @@ export interface DecideSnapshotState {
   result: SnapshotResult | null;
   source: SnapshotSource | null; // the assembled builder input (memoised with result); 05-52 rebuilds a bought check's position from it without the check's own writes
   retry: () => void;
+  /** APP-10 (05.4-33): the kind of the first failed read with nothing cached; null unless status is 'error'. Optional for test stand-ins. */
+  errorKind?: DbErrorKind | null;
+  /** APP-01 (05.4-33): the reads with nothing cached (not even last month's), by name, for the 08.1 offline card. */
+  missingReads?: readonly string[];
 }
+
+/** The snapshot's reads, by name, in the order of `reads` in useDecideSnapshot (APP-01 offline card). */
+const SNAPSHOT_READ_NAMES = [
+  'history',
+  'upcoming',
+  'accounts',
+  'balances',
+  'series',
+  'rates',
+  'categories',
+  'customCurrencies',
+  'settings',
+  'debts',
+  'goals',
+  'statementPeriods',
+  'changes',
+  'checks',
+  'paymentLinks',
+  'writtenRowLinks',
+] as const;
+
+const countWrite = (): 1 => 1;
 
 // D-88 (R16.4 item 1): one snapshot per source key. Every consumer (quick check, open-checks chips, the flow) builds its own
 // `source` from the same cached reads; this memo hands them all the first one built, so the engine runs once per key.
@@ -249,15 +278,38 @@ export function useDecideSnapshot(): DecideSnapshotState {
   const upcomingTo = lastDayOf(addMonths(currentMonth, DECIDE_UPCOMING_MONTHS));
   const enabled = Boolean(hh);
 
+  // 05.4 APP-01 (05.4-33): the history and upcoming keys carry the month, so on the 1st this month's keys have nothing cached
+  // and, offline, Decide would wait forever. Until this month's read lands, last month's cached reads are shown rolled
+  // forward into this month's windows. Placeholder data only: never written to the cache, never persisted.
+  const qc = useQueryClient();
+  const lastMonth = addMonths(currentMonth, -1);
+  const prevHistoryKey = queryKeys.decideHistory(hh ?? '', monthRange(addMonths(lastMonth, -DECIDE_LOOKBACK_MONTHS)).start, lastDayOf(lastMonth));
+  const prevUpcomingKey = queryKeys.decideUpcoming(hh ?? '', monthRange(lastMonth).endExclusive);
+  const prevHistoryHash = hashKey(prevHistoryKey);
+  const prevUpcomingHash = hashKey(prevUpcomingKey);
+  const rolled = useCallback(() => {
+    const h = qc.getQueryData<TransactionRow[]>(prevHistoryKey);
+    const u = qc.getQueryData<TransactionRow[]>(prevUpcomingKey);
+    return h === undefined || u === undefined ? undefined : rollForward(h, u, { from, to, upcomingFrom });
+    // the keys are rebuilt each render; their hashes say when they changed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qc, prevHistoryHash, prevUpcomingHash, from, to, upcomingFrom]);
+  const historyFallback = useCallback(() => rolled()?.history, [rolled]);
+  const upcomingFallback = useCallback(() => rolled()?.upcoming, [rolled]);
+
+  const historyKey = queryKeys.decideHistory(hh ?? '', from, to);
+  const upcomingKey = queryKeys.decideUpcoming(hh ?? '', upcomingFrom);
   const history = useQuery({
-    queryKey: queryKeys.decideHistory(hh ?? '', from, to),
+    queryKey: historyKey,
     queryFn: () => fetchTransactionsInRange(supabase, hh as string, { from, toInclusive: to }),
     enabled,
+    placeholderData: historyFallback,
   });
   const upcoming = useQuery({
-    queryKey: queryKeys.decideUpcoming(hh ?? '', upcomingFrom),
+    queryKey: upcomingKey,
     queryFn: () => fetchTransactionsInRange(supabase, hh as string, { from: upcomingFrom, toInclusive: upcomingTo }),
     enabled,
+    placeholderData: upcomingFallback,
   });
   const accountsQuery = useAccounts(hhId);
   const allAccounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
@@ -310,6 +362,23 @@ export function useDecideSnapshot(): DecideSnapshotState {
   const missing = reads.some((q) => q.data === undefined);
   // 'error' only when a required read failed with nothing cached; a cached copy (offline) is 'ready'.
   const failed = reads.some((q) => q.data === undefined && q.isError);
+  const missingReads = SNAPSHOT_READ_NAMES.filter((_, i) => reads[i]?.data === undefined);
+  const errorKind: DbErrorKind | null = failed ? classifyReadError(reads.find((q) => q.data === undefined && q.isError)?.error) : null;
+
+  // 05.4 APP-06 (D-126): "records up to" = the local day of the oldest real server fetch among the record reads used (last
+  // month's reads while their placeholder shows); null when any is unknown. dataUpdatedAt keys the memo so a refetch that
+  // returned equal data still moves the date; it is never the date itself (optimistic writes move it).
+  const historyHash = history.isPlaceholderData ? prevHistoryHash : hashKey(historyKey);
+  const upcomingHash = upcoming.isPlaceholderData ? prevUpcomingHash : hashKey(upcomingKey);
+  const balancesHash = hashKey(queryKeys.accountBalances(hh ?? ''));
+  const recordsAsOf = useMemo(
+    () => recordsAsOfOf([serverFetchTimeOf(historyHash), serverFetchTimeOf(upcomingHash), serverFetchTimeOf(balancesHash)], rc.timeZone),
+    // the fetch times live outside React; each successful fetch moves dataUpdatedAt.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [historyHash, upcomingHash, balancesHash, rc.timeZone, history.dataUpdatedAt, upcoming.dataUpdatedAt, balanceRead.dataUpdatedAt]
+  );
+  // 05.4 D-127: writes still waiting to send (in flight, queued or paused offline). The D-113 note only, never the sums.
+  const unsavedWrites = useMutationState({ filters: { status: 'pending' }, select: countWrite }).length;
 
   const checkRows = checksQuery.data;
   const paymentLinks = useMemo(() => {
@@ -365,6 +434,8 @@ export function useDecideSnapshot(): DecideSnapshotState {
       paymentLinks,
       writtenRowLinks: writtenQuery.data ?? [],
       judgeOn,
+      recordsAsOf,
+      unsavedWrites,
     };
   }, [
     rc.ready,
@@ -389,10 +460,12 @@ export function useDecideSnapshot(): DecideSnapshotState {
     writtenQuery.data,
     judgeOn,
     waitingForChoice,
+    recordsAsOf,
+    unsavedWrites,
   ]);
 
   const sourceKey = [hh ?? '', rc.today, rc.homeCurrency, region ?? '', judgeOn ?? ''].join('|');
-  const sourceDeps = reads.map((q) => q.data);
+  const sourceDeps = [...reads.map((q) => q.data), recordsAsOf, unsavedWrites];
   const shared = useMemo(
     () => (source === null ? null : sharedSnapshot(sourceKey, sourceDeps, source)),
     // sourceDeps is rebuilt each render from the same references; `source` and the key say when they changed.
@@ -414,7 +487,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
   }, [failedFlags]);
 
   const status: DecideSnapshotState['status'] = failed ? 'error' : result === null ? 'loading' : 'ready';
-  return { status, result, source: sharedSource, retry };
+  return { status, result, source: sharedSource, retry, errorKind, missingReads };
 }
 
 /** D-24 (part 2): the other open checks a check is judged with, counted and memoised. */

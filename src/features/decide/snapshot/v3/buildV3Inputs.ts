@@ -77,6 +77,8 @@ const LEGACY_LINE_IDS: readonly string[] = ['debt_share', 'housing_share', 'unse
 const USD_PROBE_MINOR = 1_000_000; // US$10,000 in minor units: the rate probe for a currency the band table lacks
 const USD_PROBE_EXPONENT = 4; // 10,000 US$ = 10^4 major units
 
+/** D-127: a whole count of writes waiting to send; anything else reads as none. */
+const unsavedOf = (n: number | undefined): number => (n !== undefined && Number.isSafeInteger(n) && n > 0 ? n : 0);
 const isRec = (x: unknown): x is Obj => typeof x === 'object' && x !== null && !Array.isArray(x);
 const list = (x: unknown): unknown[] => (Array.isArray(x) ? x : []);
 const str = (x: unknown): string | null => (typeof x === 'string' && x !== '' ? x : null);
@@ -561,7 +563,8 @@ export function buildV3Inputs(
     payArrivals: payArrivalsOf(answers),
     expectedIncome: expectedIncomeOf(answers),
     heldBridges: heldBridgesOf(answers, new Set(v3?.live_bridge_check_ids ?? [])),
-    unsavedWrites: 0,
+    unsavedWrites: unsavedOf(source.unsavedWrites), // D-127: the D-113 note only, never the sums
     provisionalRates,
+    recordsAsOf: source.recordsAsOf ?? null, // ENG-14, D-126: the oldest real server fetch, null when unknown
   };
 }

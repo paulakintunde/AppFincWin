@@ -1,17 +1,21 @@
 // PURE. The single v3 compute function (S9: one Result). Home, the check screen and saved plans all call computeV3 through the
-// three one-line delegates below; there is no second path. Nothing in the app calls this in 05.1: DECIDE_OPEN and DECIDE_V3
+// three one-line delegates below; there is no second path. Since 05.4-33 the inputs are prepared once per data change
+// (preparedV3) and each check is judged on the held Prepared. Nothing in the app calls this in 05.1: DECIDE_OPEN and DECIDE_V3
 // stay false and the switch is read only in decideEngine() (D-15). Barrel imports only (the v3 engine barrel).
 import {
   changeSinceLooked,
   type AccountUse,
-  evaluate,
+  judgeCheck,
+  prepare,
   readStoredCheck,
   type ChangeReason,
   type CheckV2,
   type Evaluation,
   type LegacyState,
+  type Prepared,
   type Result,
   type SeenV3,
+  type V3Inputs,
 } from '@/engine/decide/v3';
 import { currencyCode } from '@/engine/money';
 import { buildDecideSnapshot, type SnapshotSource } from '../buildSnapshot';
@@ -46,6 +50,36 @@ function volatileCoverOf(v3: V3SettingsSource | null, checkId: string | null | u
   return hit === undefined ? null : hit.bool_value;
 }
 
+/** One build of the v3 inputs: the old snapshot it parses through, the inputs and the check-independent engine work. */
+export interface PreparedV3 {
+  readonly built: SnapshotResult;
+  readonly inputs: V3Inputs;
+  readonly prepared: Prepared;
+}
+
+interface PreparedEntry extends PreparedV3 {
+  readonly v3: V3SettingsSource | null;
+  readonly uses: Readonly<Record<string, AccountUse>> | undefined;
+}
+
+// 05.4 ENG-13 / APP-03 (05.4-33): build and prepare once per data change. The read hooks memoise `source` and the settings
+// source on the query data references, so the same identities mean the same data. Keyed weakly on the source (a dropped
+// source frees its entries); a few settings / uses variants are kept per source.
+const PREPARED_PER_SOURCE = 4;
+const preparedBySource = new WeakMap<SnapshotSource, PreparedEntry[]>();
+
+export function preparedV3(source: SnapshotSource, v3: V3SettingsSource | null, uses?: Readonly<Record<string, AccountUse>>): PreparedV3 {
+  const list = preparedBySource.get(source) ?? [];
+  const hit = list.find((e) => e.v3 === v3 && e.uses === uses);
+  if (hit !== undefined) return hit;
+  const built = buildDecideSnapshot(source);
+  const inputs = buildV3Inputs(source, v3, built, uses);
+  const entry: PreparedEntry = { v3, uses, built, inputs, prepared: prepare(inputs) };
+  preparedBySource.set(source, [entry, ...list].slice(0, PREPARED_PER_SOURCE));
+  return entry;
+}
+
+/** Judges one stored check on the held Prepared (per key press: only the check-dependent part runs). */
 export function computeV3(
   source: SnapshotSource,
   v3: V3SettingsSource | null,
@@ -53,10 +87,10 @@ export function computeV3(
   uses?: Readonly<Record<string, AccountUse>>,
   checkId?: string | null
 ): Evaluation {
-  const built = buildDecideSnapshot(source);
+  const { built, prepared } = preparedV3(source, v3, uses);
   const check = checkOf(storedInputs, source, built);
   const cover = volatileCoverOf(v3, checkId);
-  return evaluate(buildV3Inputs(source, v3, built, uses), cover === null ? check : { ...check, volatileCover: cover });
+  return judgeCheck(prepared, cover === null ? check : { ...check, volatileCover: cover });
 }
 
 // S9: three thin names for 05.3 to call; each is the same function, so the same check gives the same Result everywhere.
