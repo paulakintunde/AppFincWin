@@ -15,6 +15,11 @@ function makeFakeClient() {
   };
 }
 
+// 05.4 D-124: the second factory call builds the Decide client; these tests watch only the identified one.
+function withDecideClient(client: ReturnType<typeof makeFakeClient>) {
+  return jest.fn().mockReturnValueOnce(client).mockReturnValueOnce(makeFakeClient());
+}
+
 function makeEnv(overrides: Partial<{ posthogKey?: string; posthogHost: string }> = {}) {
   return {
     posthogKey: 'phc_test_key',
@@ -26,24 +31,32 @@ function makeEnv(overrides: Partial<{ posthogKey?: string; posthogHost: string }
 describe('createAnalytics consent gate', () => {
   it('constructs PostHog with the EU host, defaultOptIn false and enableSessionReplay false, and opts out at init', () => {
     const client = makeFakeClient();
-    const factory = jest.fn().mockReturnValue(client);
+    const anon = makeFakeClient();
+    const factory = jest.fn().mockReturnValueOnce(client).mockReturnValueOnce(anon);
 
     createAnalytics(factory, makeEnv());
 
-    expect(factory).toHaveBeenCalledWith(
-      'phc_test_key',
-      expect.objectContaining({
-        host: 'https://eu.i.posthog.com',
-        defaultOptIn: false,
-        enableSessionReplay: false,
-      })
-    );
+    expect(factory).toHaveBeenCalledTimes(2);
+    for (const call of factory.mock.calls) {
+      expect(call).toEqual([
+        'phc_test_key',
+        expect.objectContaining({
+          host: 'https://eu.i.posthog.com',
+          defaultOptIn: false,
+          enableSessionReplay: false,
+        }),
+      ]);
+    }
+    // 05.4 D-124: the Decide client keeps its id in memory only and makes no person profile.
+    expect(factory.mock.calls[0][1]).not.toHaveProperty('persistence');
+    expect(factory.mock.calls[1][1]).toEqual(expect.objectContaining({ persistence: 'memory', personProfiles: 'never', preloadFeatureFlags: false }));
     expect(client.optOut).toHaveBeenCalledTimes(1);
+    expect(anon.optOut).toHaveBeenCalledTimes(1);
   });
 
   it('never calls capture before enable()', () => {
     const client = makeFakeClient();
-    const analytics = createAnalytics(() => client, makeEnv());
+    const analytics = createAnalytics(withDecideClient(client), makeEnv());
 
     analytics.track('app_opened', {});
 
@@ -52,7 +65,7 @@ describe('createAnalytics consent gate', () => {
 
   it('enable(uuid) calls optIn() then identify(uuid) with exactly one argument, and later track calls capture', () => {
     const client = makeFakeClient();
-    const analytics = createAnalytics(() => client, makeEnv());
+    const analytics = createAnalytics(withDecideClient(client), makeEnv());
 
     analytics.enable(UUID);
 
@@ -66,7 +79,7 @@ describe('createAnalytics consent gate', () => {
 
   it('enable("not-a-uuid") throws and does not opt in', () => {
     const client = makeFakeClient();
-    const analytics = createAnalytics(() => client, makeEnv());
+    const analytics = createAnalytics(withDecideClient(client), makeEnv());
 
     expect(() => analytics.enable('not-a-uuid')).toThrow();
     expect(client.optIn).not.toHaveBeenCalled();
@@ -76,7 +89,7 @@ describe('createAnalytics consent gate', () => {
 
   it('disable() calls optOut() and reset(), and subsequent track calls do not capture', async () => {
     const client = makeFakeClient();
-    const analytics = createAnalytics(() => client, makeEnv());
+    const analytics = createAnalytics(withDecideClient(client), makeEnv());
     analytics.enable(UUID);
     client.capture.mockClear();
     client.optOut.mockClear();
@@ -99,5 +112,49 @@ describe('createAnalytics consent gate', () => {
 
     expect(factory).not.toHaveBeenCalled();
     expect(analytics.isEnabled()).toBe(false);
+  });
+});
+
+// 05.4 CMP-F03 / APP-19 (05.4-38, D-124): Decide events are never linked to the person.
+describe('Decide events go through the unidentified client', () => {
+  function pair() {
+    const client = makeFakeClient();
+    const anon = makeFakeClient();
+    const factory = jest.fn().mockReturnValueOnce(client).mockReturnValueOnce(anon);
+    return { client, anon, analytics: createAnalytics(factory, makeEnv()) };
+  }
+
+  it('sends Decide events only on the client that is never identified, and other events on the identified one', () => {
+    const { client, anon, analytics } = pair();
+    analytics.enable(UUID);
+
+    expect(client.identify).toHaveBeenCalledWith(UUID);
+    expect(anon.identify).not.toHaveBeenCalled();
+    expect(anon.optIn).toHaveBeenCalledTimes(1);
+
+    analytics.track('decide_answer_shown', { code: 'monthly_short', variant: 'none' });
+    analytics.track('decision_recorded', { decision: 'wait' });
+    analytics.track('app_opened', {});
+
+    expect(anon.capture.mock.calls).toEqual([
+      ['decide_answer_shown', { code: 'monthly_short', variant: 'none' }],
+      ['decision_recorded', { decision: 'wait' }],
+    ]);
+    expect(client.capture.mock.calls).toEqual([['app_opened', {}]]);
+    for (const call of anon.capture.mock.calls) expect(JSON.stringify(call)).not.toContain(UUID);
+  });
+
+  it('consent gates the Decide client: nothing before enable, nothing after disable, and its id is reset', async () => {
+    const { anon, analytics } = pair();
+    analytics.track('decide_check_started', {});
+    expect(anon.capture).not.toHaveBeenCalled();
+
+    analytics.enable(UUID);
+    await analytics.disable();
+    expect(anon.optOut).toHaveBeenCalledTimes(2);
+    expect(anon.reset).toHaveBeenCalledTimes(1);
+
+    analytics.track('decide_check_started', {});
+    expect(anon.capture).not.toHaveBeenCalled();
   });
 });

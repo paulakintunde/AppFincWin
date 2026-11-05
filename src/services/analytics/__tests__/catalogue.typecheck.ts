@@ -80,7 +80,11 @@ track('decide_setup_left', { step: 'pay', amount: 4000 });
 
 // 05.3: v3 Decide events.
 track('decide_check_started', {});
-track('decide_answer_shown', { code: 'fits_month', variant: 'none', band: '3' });
+track('decide_answer_shown', { code: 'fits_month', variant: 'none' });
+track('decide_answer_shown', { code: 'not_yet', variant: 'payday' });
+
+// Invalid: 05.4 CMP-F03 (05.4-38), no price band on an answer.
+// @ts-expect-error
 track('decide_answer_shown', { code: 'not_yet', variant: 'payday', band: '15' });
 track('decide_question_answered', { missing: 'pay_arrival_question' });
 track('decide_recorded', { outcome: 'planned' });
