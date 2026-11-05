@@ -3,15 +3,19 @@
 appId: com.fincwin.app
 ---
 - runFlow: to-tabs.yaml
+- tapOn: "Home, tab, 1 of 3"
+- scrollUntilVisible:
+    element: "Profile"
+    direction: UP
 - tapOn: "Profile"
 - scrollUntilVisible:
     element: "History"
     direction: DOWN
+    centerElement: true
 - tapOn: "History"
-- assertVisible: ${UNDO_NAME}
-- tapOn:
-    text: "Undo to here"
-    index: 0
+- assertVisible: "Undo to here, ${UNDO_NAME}"
+- tapOn: "Undo to here, ${UNDO_NAME}"
+- assertVisible: "Undo 1 change"
 - tapOn: "Undo 1 change"
 - assertNotVisible: "Undoing…"
 - runFlow: to-tabs.yaml

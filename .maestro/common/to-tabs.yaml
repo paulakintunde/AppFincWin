@@ -1,6 +1,12 @@
 # Shared: Back until the tab bar shows (closes sheets and pushed screens). Never leaves the app: at most 4 Backs.
 appId: com.fincwin.app
 ---
+# Dev builds only: a full-screen LogBox (e.g. PostHog offline flush errors) is dismissed first.
+- runFlow:
+    when:
+      visible: "Log [0-9]+ of [0-9]+"
+    commands:
+      - tapOn: "Dismiss"
 - repeat:
     times: 4
     while:
