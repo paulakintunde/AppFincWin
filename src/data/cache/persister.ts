@@ -28,7 +28,10 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // (add fields as optional; never rename or remove one a queued write may still carry).
 // Phase 2 added transaction fields (including import provenance and transfer links) and new
 // query shapes -- bumped 1 -> 2 (D-15 buster).
-export const CACHE_SCHEMA_VERSION = '2';
+// 05.4: cached row shapes changed (accounts.overdraft_rate, debts.due_day, decide_settings safety_net_* and custom_options)
+// -- bumped 2 -> 3 (APP-07). scripts/check-cache-version.mjs fails CI when a persisted shape changes without a bump; after
+// a bump run `npm run check:cache-version -- --update`.
+export const CACHE_SCHEMA_VERSION = '3';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's

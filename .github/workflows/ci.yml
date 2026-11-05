@@ -45,6 +45,8 @@ jobs:
         run: npm run check:decide-demo-mirror
       - name: Decide switch list check (static)
         run: npm run check:decide-switch -- --static
+      - name: Cache version check (APP-07)
+        run: npm run check:cache-version && node --test scripts/__tests__/check-cache-version.test.mjs
       - name: Service-role key never referenced by client code (ENV-04)
         run: "! grep -rnE 'SERVICE_ROLE|service_role|sb_secret_' src app"
   mutation-changed:

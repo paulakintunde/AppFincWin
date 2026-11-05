@@ -20,6 +20,7 @@ import {
   lastServerFetchAt,
   persistOptions,
   QUERY_CACHE_KEY,
+  carryQueuedWrites,
   serverFetchTimeOf,
   trackServerFetches,
 } from '../cache/persister';
@@ -242,6 +243,17 @@ describe('encrypted query cache persister', () => {
     later.mockRestore();
     expect(serverFetchTimeOf(hash)).toBe(fetchedAt);
     untrack();
+  });
+
+  it('05.4-33 APP-07: the cache version is 3, and a version 2 blob keeps its queued writes and drops its queries', () => {
+    expect(CACHE_SCHEMA_VERSION).toBe('3');
+    const mutation = { mutationKey: ['w'], state: { status: 'pending' } } as never;
+    const query = { queryKey: ['q'], queryHash: '["q"]', state: { status: 'success', data: 1 } } as never;
+    const old = { timestamp: Date.now(), buster: '2', clientState: { queries: [query], mutations: [mutation] } };
+    const carried = carryQueuedWrites(old, CACHE_SCHEMA_VERSION, CACHE_MAX_AGE_MS)!;
+    expect(carried.buster).toBe('3');
+    expect(carried.clientState.queries).toEqual([]);
+    expect(carried.clientState.mutations).toEqual([mutation]);
   });
 
   it('IN-A05: an old blob without fetch times still deserializes', () => {
