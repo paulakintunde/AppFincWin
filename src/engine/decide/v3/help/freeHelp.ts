@@ -15,9 +15,9 @@ export interface FreeHelpEntry {
 
 /** Keyed by ISO 3166-1 alpha-2 country (V3Inputs.region). */
 export const FREE_HELP: Readonly<Record<string, FreeHelpEntry>> = Object.freeze({
-  GB: Object.freeze({ name: 'MoneyHelper', url: 'https://www.moneyhelper.org.uk', checkedOn: null }),
-  US: Object.freeze({ name: 'NFCC', url: 'https://www.nfcc.org', checkedOn: null }),
-  CA: Object.freeze({ name: 'Credit Counselling Canada', url: 'https://creditcounsellingcanada.ca', checkedOn: null }),
+  GB: Object.freeze({ name: 'MoneyHelper', url: 'https://www.moneyhelper.org.uk', checkedOn: '2026-11-05' }),
+  US: Object.freeze({ name: 'NFCC', url: 'https://www.nfcc.org', checkedOn: '2026-11-05' }),
+  CA: Object.freeze({ name: 'Credit Counselling Canada', url: 'https://creditcounsellingcanada.ca', checkedOn: '2026-11-05' }),
 });
 
 export function freeHelpFor(country: string | null): FreeHelpEntry | null {
