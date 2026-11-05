@@ -22,7 +22,10 @@ export const PENDING_RULES: PendingRule[] = [
   // 05.4-26 (BO-05 part A): running costs, closing costs and the purchase date landed on both sides (plain.ts runningShare,
   // runningDates, plainClosing, buyDay, laterMoney), and fixtureArb draws them on one-off checks, so the entry is narrowed to what
   // 05.4-27 owns (what a purchase replaces, selling the old one, save-for-it) and to plans (not ladder-complete, as before; D-98).
-  { fixId: 'BO-05', applies: (f) => f.check.replaces != null || f.check.saveForIt === true || plan(f), note: 'selling the old one, what it replaces, save-for-it (05.4-27); plans (the plain plan branch is borrowing-complete, not ladder-complete)' },
+  // 05.4-27 (BO-05 part B, D-107): what a purchase replaces (stops and a sale) and save-for-it landed on both sides (plain.ts replacesDates,
+  // saleNow, plainFreed; fixtureArb draws them on one-off checks), so the BO-05 entry is deleted. Plans stay out of the whole-answer
+  // comparison under their own fix ID until the plain plan branch is ladder-complete; a later plan closes it before 05.4-43.
+  { fixId: 'PLAIN-PLANS', applies: (f) => plan(f), note: 'plans (the plain plan branch is borrowing-complete, not ladder-complete; D-98, D-107); closed before 05.4-43' },
 ];
 
 export function pendingFixIds(f: RightAnswerFixture): string[] {

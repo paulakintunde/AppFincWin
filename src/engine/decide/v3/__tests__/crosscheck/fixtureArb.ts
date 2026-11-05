@@ -363,6 +363,36 @@ function withFullCost(f: RightAnswerFixture, x: FullCost): RightAnswerFixture {
   };
 }
 
+/**
+ * 05.4-27 (BO-05 part B, SO-01..SO-09): what a one-off replaces and save-for-it. About 1 check in 3 sells the old one (1% to 300% of
+ * pay, arriving from 10 days before the check date, which is not counted, D-105, to 120 days after it; 1 in 3 of those pays one of
+ * the person's own debts first, when there is one at the drawn place; never one paid as a bill); about 1 in 3 stops 1 or 2 everyday costs (0.5% to 10% of pay, every 1, 3
+ * or 12 months, stopping from 20 days before to 100 days after) and, when the person has a yearly or every-3-month bill, 1 in 2 of
+ * those stop it too (from 20 days before to 200 days after); 1 in 4 asks to save for it (the answer is the same). Plans and
+ * irregular pay are left without them (plans stay out under PLAIN-PLANS; irregular pay keeps its own path).
+ */
+const replacesArb = fc.record({
+  sale: fc.option(fc.record({ pct: fc.integer({ min: 1, max: 300 }), arrivesIn: fc.integer({ min: -10, max: 120 }), debt: fc.integer({ min: 0, max: 2 }) }), { nil: null, freq: 2 }),
+  everyday: fc.oneof({ weight: 2, arbitrary: fc.array(fc.record({ perMille: fc.integer({ min: 5, max: 100 }), every: fc.constantFrom(1 as const, 3 as const, 12 as const), stopIn: fc.integer({ min: -20, max: 100 }) }), { maxLength: 0 }) }, { weight: 1, arbitrary: fc.array(fc.record({ perMille: fc.integer({ min: 5, max: 100 }), every: fc.constantFrom(1 as const, 3 as const, 12 as const), stopIn: fc.integer({ min: -20, max: 100 }) }), { minLength: 1, maxLength: 2 }) }),
+  long: fc.option(fc.integer({ min: -20, max: 200 }), { nil: null, freq: 2 }),
+  saveForIt: fc.integer({ min: 1, max: 4 }).map((n) => n === 1),
+});
+
+type ReplacesRaw = typeof replacesArb extends fc.Arbitrary<infer T> ? T : never;
+
+function withReplaces(f: RightAnswerFixture, x: ReplacesRaw): RightAnswerFixture {
+  if (f.check.pay.mode !== 'once' || f.pay.irregular !== undefined) return f;
+  const own = f.debts.filter((d) => !f.bills.some((b) => b.id === `pays-${d.id}`));
+  const debt = x.sale === null ? undefined : own[x.sale.debt];
+  const sale = x.sale === null ? null : { amount: Math.max(100, Math.floor((f.pay.amount * x.sale.pct) / 100)), arrives: dayPlus(f.asOf, x.sale.arrivesIn), paysDebtId: debt === undefined ? null : debt.id };
+  type Stop = NonNullable<RightAnswerFixture['check']['replaces']>['stops'][number];
+  const stops: Stop[] = x.everyday.map((s, i) => ({ id: `stop-${i}`, amount: Math.max(100, Math.floor((f.pay.amount * s.perMille) / 1000)) * s.every, everyMonths: s.every, stopDate: dayPlus(f.asOf, s.stopIn), source: 'everyday' }));
+  const long = f.bills.find((b) => b.id === 'long');
+  if (long !== undefined && x.long !== null) stops.push({ id: 'long', amount: long.amount, everyMonths: long.everyMonths as 1 | 3 | 12, stopDate: dayPlus(f.asOf, x.long), source: 'bill' });
+  const replaces = sale === null && stops.length === 0 ? null : { stops, sale };
+  return { ...f, check: { ...f.check, ...(replaces === null ? {} : { replaces }), ...(x.saveForIt ? { saveForIt: true } : {}) } };
+}
+
 export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc
-  .tuple(peopleArb, taxArb, fullCostArb)
-  .map(([f, t, x]) => withFullCost({ ...f, region: t.region, check: { ...f.check, taxPercent: t.typed, taxIncluded: t.included } }, x));
+  .tuple(peopleArb, taxArb, fullCostArb, replacesArb)
+  .map(([f, t, x, r]) => withReplaces(withFullCost({ ...f, region: t.region, check: { ...f.check, taxPercent: t.typed, taxIncluded: t.included } }, x), r));

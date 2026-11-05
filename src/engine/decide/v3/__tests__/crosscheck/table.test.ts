@@ -4,7 +4,7 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront, saleNow, replacesDates, plainFreed } from './plain';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
@@ -71,8 +71,8 @@ describe('plain calculator: tax (FIN-27, TX-01..TX-09)', () => {
   });
 });
 
-// 05.4-26 (BO-05 part A): running costs, closing costs and the purchase date through the plain calculator. The RC cases name BO-05,
-// which stays pending for 05.4-27's part (what it replaces, save-for-it), so they are checked here by name instead of above.
+// 05.4-26 (BO-05 part A): running costs, closing costs and the purchase date through the plain calculator. Since 05.4-27 the RC cases
+// also run in the whole-table check above (BO-05 is no longer pending); this block keeps their stated figures pinned.
 describe('plain calculator: running costs, closing costs and the purchase date (BO-05, RC-01..RC-10)', () => {
   const rc = loadCases().filter((c) => c.status === 'approved' && c.topic === 'running-costs');
   const fx = (id: string): RightAnswerFixture => rc.find((c) => c.id === id)!.fixture;
@@ -419,14 +419,15 @@ describe('05.4-54 (D-68): the plain calculator restates short plans paid from mo
     expect([engine68('2026-12-12'), engine68('2026-12-13')]).toEqual([true, false]);
   });
 
-  it('the crosscheck skip: every plan stays out of the whole-code comparison under BO-05; the FIN-05 entry is gone (05.4-22) and the fixture no longer asks first', () => {
+  it('the crosscheck skip: every plan stays out of the whole-code comparison under PLAIN-PLANS (05.4-27, D-107); the FIN-05 entry is gone (05.4-22) and the fixture no longer asks first', () => {
     const f = shortPlanFixture(SHORT_PLAN_CASES.qualifies);
-    expect(pendingFixIds(f)).toContain('BO-05');
+    expect(pendingFixIds(f)).toEqual(['PLAIN-PLANS']);
     expect(pendingFixIds(f)).not.toContain('FIN-05');
     const { inputs, check } = toEngineInputs(f);
     expect(evaluate(inputs, check).result.missing).toEqual([]);
-    expect(pendingFixIds(shortPlanFixture(SHORT_PLAN_CASES.longShort))).toContain('BO-05');
+    expect(pendingFixIds(shortPlanFixture(SHORT_PLAN_CASES.longShort))).toContain('PLAIN-PLANS');
     expect(PENDING_RULES.map((r) => r.fixId)).not.toContain('FIN-06/FIN-07');
+    expect(PENDING_RULES.map((r) => r.fixId)).not.toContain('BO-05');
   });
 });
 
@@ -935,3 +936,32 @@ describe('plain calculator: your word, low months and the pay cut (05.4-23, FIN-
     expect(lowerPay({ ...f, pay: { ...f.pay, lastThree: null } })).toBe(300_000n);
   });
 });
+
+// 05.4-27 (BO-05 part B): what a purchase replaces and save-for-it through the plain calculator, on the figures the SO cases state.
+describe('plain calculator: selling the old one and what it replaces (BO-05, SO-01..SO-09)', () => {
+  const so = loadCases().filter((c) => c.status === 'approved' && c.topic === 'selling-the-old-one');
+  const fx = (id: string): RightAnswerFixture => so.find((c) => c.id === id)!.fixture;
+
+  it('BO-05 the code and the month figure of every one-off SO case (plans stay out under PLAIN-PLANS)', () => {
+    const once = so.filter((c) => c.fixture.check.pay.mode === 'once');
+    expect(once.map((c) => c.id)).toEqual(['SO-01', 'SO-02', 'SO-06', 'SO-07', 'SO-09']);
+    for (const c of once) {
+      const a = plainAnswer(c.fixture);
+      expect({ id: c.id, code: a.code, tight: a.variant === 'tight' }).toEqual({ id: c.id, code: c.expected.code, tight: c.expected.variant === 'tight' });
+      if (c.expected.afterBuy.month !== null) expect({ id: c.id, month: a.afterBuy }).toEqual({ id: c.id, month: c.expected.afterBuy.month });
+    }
+  });
+
+  it('BO-05 the figures the cases state', () => {
+    expect(saleNow(fx('SO-01'), 600_000n)).toBe(550_000n); // "she needs only $6,000 - $5,500 = $500 of her own money"
+    expect(replacesDates(fx('SO-01'))).toEqual([]); // the sale is not on the path twice
+    expect(saleNow(fx('SO-02'), 600_000n)).toBe(0n); // "Money that arrives later does not help today's cash path"
+    expect(replacesDates(fx('SO-02'))).toEqual([{ date: '2026-12-20', amount: -550_000n }]); // "until 20 December"
+    expect(plainFreed(fx('SO-06'))).toBe(5_000n); // "the usual month becomes $1,000 + $50 = $1,050"
+    expect(replacesDates(fx('SO-06'))).toEqual([{ date: '2026-12-31', amount: -5_000n }, { date: '2027-01-31', amount: -5_000n }]); // never in November
+    expect(plainFreed(fx('SO-05'))).toBe(8_000n); // "$1,000 + $80 - $50 - $60 = $970" (D-104: the recorded $80)
+    expect(plainFreed(fx('SO-03'))).toBe(25_000n); // "$1,000 + $250 (old minimum gone)" (D-101: the payment is one of the bills)
+    expect(plainFreed(fx('SO-04'))).toBe(0n); // "the $250 minimum keeps coming" (D-102)
+  });
+});
+

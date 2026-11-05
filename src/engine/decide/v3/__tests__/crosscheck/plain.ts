@@ -256,26 +256,31 @@ function onDayOf(date: string, n: number, day: number): string {
  * balance). A debt paid as a bill lands as that bill (DB-03).
  */
 export function debtDates(f: RightAnswerFixture): { date: string; amount: Cents }[] {
+  const out: { date: string; amount: Cents }[] = [];
+  for (const d of ownDebts(f)) out.push(...datesOfDebt(f, d));
+  return out;
+}
+
+/** One debt's minimums on the path (debtDates). */
+function datesOfDebt(f: RightAnswerFixture, d: PlainDebt): { date: string; amount: Cents }[] {
   const end = dayAfter(f.asOf, PATH_DAYS);
   const ym = f.asOf.slice(0, 7);
   const out: { date: string; amount: Cents }[] = [];
-  for (const d of ownDebts(f)) {
-    if (d.minimum <= 0) continue;
-    const first = d.dueDay === null ? dayAfter(f.asOf, 1) : onDayOf(f.asOf, 0, d.dueDay);
-    const day = d.dueDay ?? Number(first.slice(8, 10));
-    const owedNow = maxC(0n, big(d.minimum) - big(d.paidThisMonth ?? 0));
-    // D-73 (owner): "a minimum stops once the balance is paid off. The last payment is only what's left, then nothing more."
-    let left = maxC(0n, big(d.balance));
-    for (let i = 0; ; i++) {
-      const date = i === 0 ? first : onDayOf(first, i, day);
-      if (date >= end) break;
-      if (date < f.asOf) continue;
-      const due = i === 0 && first.slice(0, 7) === ym ? owedNow : big(d.minimum);
-      const amount = due < left ? due : left;
-      if (amount > 0n) {
-        out.push({ date, amount });
-        left -= amount;
-      }
+  if (d.minimum <= 0) return out;
+  const first = d.dueDay === null ? dayAfter(f.asOf, 1) : onDayOf(f.asOf, 0, d.dueDay);
+  const day = d.dueDay ?? Number(first.slice(8, 10));
+  const owedNow = maxC(0n, big(d.minimum) - big(d.paidThisMonth ?? 0));
+  // D-73 (owner): "a minimum stops once the balance is paid off. The last payment is only what's left, then nothing more."
+  let left = maxC(0n, big(d.balance));
+  for (let i = 0; ; i++) {
+    const date = i === 0 ? first : onDayOf(first, i, day);
+    if (date >= end) break;
+    if (date < f.asOf) continue;
+    const due = i === 0 && first.slice(0, 7) === ym ? owedNow : big(d.minimum);
+    const amount = due < left ? due : left;
+    if (amount > 0n) {
+      out.push({ date, amount });
+      left -= amount;
     }
   }
   return out;
@@ -296,7 +301,8 @@ export function debtToPay(f: RightAnswerFixture): Cents {
 export function carriesCostlyDebt(f: RightAnswerFixture, fromEarlier: Cents): boolean {
   // D-72 (owner): "the costly-debt warning shows only when putting the earlier-month money toward the debt would save at least
   // $1.00 a month in interest": min(money from earlier months, balance) x APR / 12, rounded half up, at least 100 minor units.
-  return f.debts.some((d) => {
+  // 05.4-27 (SO-03): "The sale clears the $4,000 loan": a debt the sale pays off is gone, one paid in part owes the rest (D-102).
+  return debtsAfterSale(f).some((d) => {
     if (d.apr === null || basisPoints(d.apr) < big(EXPENSIVE_APR_BP)) return false;
     const put = fromEarlier < big(d.balance) ? fromEarlier : big(d.balance);
     return put > 0n && halfUp(put * basisPoints(d.apr), 120_000n) >= COSTLY_SAVING_MIN;
@@ -457,7 +463,9 @@ export function plainHeld(f: RightAnswerFixture): PlainHeld[] {
     const months = wholeMonths(f.asOf, b.nextDue);
     const uncovered = maxC(0n, bill - leftover * BigInt(months));
     const thisMonth = b.nextDue.slice(0, 7) === f.asOf.slice(0, 7);
-    return { id: b.id, builtUp, uncovered, holdBack: thisMonth ? 0n : uncovered < builtUp ? uncovered : builtUp, months, perMonth: leftover };
+    // 05.4-27 (rule accepted 2026-11-04): "a stopped bill leaves ... the yearly-bill hold-back after its stop date".
+    const stopped = stopsOf(f).some((s) => s.source === 'bill' && s.id === b.id && s.stopDate < b.nextDue);
+    return { id: b.id, builtUp, uncovered, holdBack: thisMonth || stopped ? 0n : uncovered < builtUp ? uncovered : builtUp, months, perMonth: leftover };
   });
 }
 
@@ -615,9 +623,12 @@ function plainCode(f: RightAnswerFixture): PlainAnswer {
   const cost = upFront(f) + plainClosing(f);
   // 05.4-26 (D-100): the closing % is paid up front but is not part of the price the records rule reads (price, tax and fees).
   if (upFront(f) > ASK_FOR_RECORDS_ABOVE && recordsLookBehind(f)) return { code: 'needs_input', variant: null, afterBuy: null };
-  if (recordsFresh(f)) return withRunning(f, laterFigure(f, freshAnswer(f, cost)));
+  // 05.4-27 (SO-01): "she needs only $6,000 - $5,500 = $500 of her own money": a sale arriving by the purchase date lowers what it
+  // needs on day one (the records rule above still reads the price).
+  const need = cost - saleNow(f, cost);
+  if (recordsFresh(f)) return withRunning(f, laterFigure(f, freshAnswer(f, need)));
   if (c.pay.mode === 'plan') return plainBorrowing(f, plainPlanCode(f));
-  return withRunning(f, laterFigure(f, plainOnce(f, cost)));
+  return withRunning(f, laterFigure(f, plainOnce(f, need)));
 }
 
 /** A plan's own answer, before the borrowing rule (plainBorrowing). */
@@ -663,12 +674,13 @@ function plainOnce(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   // 05.4-19 (D-47, RC-10 "by 28 February she has £2,850 before the bill is taken"): a yearly or every-3-month bill inside the
   // 90 days can take a later month below 0, so with one on the path the lower of the two figures decides.
   // 05.4-26 (RC-08): bought on a later date, the cost leaves on that date, so the day-by-day path decides.
-  const until = f.pay.irregular === undefined && buyDay(f) === f.asOf ? cashMargin(f, cost, true) : pathLow(f, cost);
+  // 05.4-27: what a purchase replaces lands on its own dates (SO-02: "on 20 December"), so the day-by-day path decides.
+  const until = f.pay.irregular === undefined && buyDay(f) === f.asOf && replacesDates(f).length === 0 ? cashMargin(f, cost, true) : pathLow(f, cost);
   // DB-01: "The card minimum lands on the day-by-day path on its due date", so with a minimum on the path its lowest point decides too.
   // 05.4-21: D-65 "Large (... takes the 90-day path below $0 ...)": with the usual month already short, every month on the path loses
   // money, so its lowest point decides as well (this was the second half of the FIN-06/FIN-07 skip, now restated).
   // 05.4-26 (RC-04): "On the cash path the full $600 falls on 15 January": with a running cost on the path its lowest point decides too.
-  const longLow = longDueInWindow(f) || debtDates(f).length > 0 || usualMonthShort(f) || runningDates(f).length > 0 ? pathLow(f, cost) : until;
+  const longLow = longDueInWindow(f) || debtDates(f).length > 0 || usualMonthShort(f) || runningDates(f).length > 0 || replacesDates(f).length > 0 ? pathLow(f, cost) : until;
   const margin = (longLow < until ? longLow : until) + net.above;
   const pastLimit = margin < -overdraftRoom(f);
   if (pastLimit && margin + net.lend < 0n) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
@@ -689,7 +701,7 @@ function plainOnce(f: RightAnswerFixture, cost: Cents): PlainAnswer {
     // 05.4-24: the spare money and extra savings it uses are named (D-44), so they do not come off the month; the net money does (SN-03).
     // The net lends what the ladder still needs or, when the 90-day path dips further, the whole dip ("the path must stay above the
     // net", FIN-02); what is left of the price after the month and the net is the named money.
-    if (dip === 0n) return { code: 'fits_uses_net', variant: offVariant, afterBuy: netDipFigure(figure, cost, rest - maxC(0n, earlier) - net.above, margin, net) };
+    if (dip === 0n) return { code: 'fits_uses_net', variant: offVariant, afterBuy: netDipFigure(figure, cost, rest - maxC(0n, earlier) - net.above, purchaseMargin(f, margin, pathLow), net) };
   }
   // 05.4-24: on Uses your overdraft the price comes out of this month ("the account pays now and goes below 0"), except the part the
   // money above the net's size pays after this month's room and the spare money (extra savings, named, D-44 / D-56).
@@ -701,7 +713,7 @@ function plainOnce(f: RightAnswerFixture, cost: Cents): PlainAnswer {
     return { code: 'fits_uses_overdraft', variant: notCleared(f, cost) ? 'not_cleared' : null, afterBuy: Number(after + extraUsed) };
   }
   // "Any purchase that uses money in the net is Dips into your safety net, whatever its purpose" (D-41): here the path.
-  if (pastLimit) return { code: 'fits_uses_net', variant: offVariant, afterBuy: netDipFigure(figure, cost, maxC(0n, rest - maxC(0n, earlier) - net.above), margin, net) };
+  if (pastLimit) return { code: 'fits_uses_net', variant: offVariant, afterBuy: netDipFigure(figure, cost, maxC(0n, rest - maxC(0n, earlier) - net.above), purchaseMargin(f, margin, pathLow), net) };
   const tight = plainTightOnce(f, freeMoney(f) + net.above + laterMoney(f) - cost);
   // 05.4-24 (FIN-09): money from earlier months is not this month's, so the month figure drops only by what the month pays (BR-17).
   return { code: rest === 0n ? 'fits_month' : 'fits_unspent', variant: fitVariant(net, rest > maxC(0n, earlier), carriesCostlyDebt(f, rest), tight), afterBuy: Number(figure - fromMonth) };
@@ -714,6 +726,18 @@ function plainOnce(f: RightAnswerFixture, cost: Cents): PlainAnswer {
  * money (SN-13: "$300 spare in November plus $200 of the extra"). The month figure loses this month's part and the net's (SN-03:
  * "$300 - $500 = -$200"); the extra savings and spare money are named (D-44).
  */
+/**
+ * 05.4-27 (D-35: a dip that is there without the purchase is not the purchase's): with what a purchase replaces on the path, the net
+ * lends what the purchase and its replacement add to the dip, the dip with them less the dip with neither (crosscheck: a stopped
+ * every-3-month bill gives $1,319.99 back on 16 December, so the purchase adds $10,298.58, not the whole $11,283.74 dip).
+ */
+function purchaseMargin(f: RightAnswerFixture, margin: Cents, low: (g: RightAnswerFixture, cost: Cents) => Cents): Cents {
+  if (replacesDates(f).length === 0) return margin;
+  // the path with neither the purchase nor anything that comes with it (its running costs, what it replaces)
+  const before = low({ ...f, check: { ...f.check, replaces: null, runningCosts: [] } }, 0n) + plainNet(f).above;
+  return before < 0n ? margin - before : margin;
+}
+
 function netDipFigure(figure: Cents, cost: Cents, need: Cents, margin: Cents, net: PlainNet): number {
   const dip = margin < 0n ? -margin : 0n;
   const fromNet = [need > dip ? need : dip, net.lend, cost].reduce((a, b) => (b < a ? b : a));
@@ -752,8 +776,11 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   // cost on the path (RC-04: "On the cash path the full $600 falls on 15 January") its lowest point decides too, as when the usual
   // month is already short.
   // D-95: the money test counts this month and the whole months before the purchase month, never the purchase month's own pay.
-  const money = monthEnd + laterMoney(f);
-  const low = buyDay(f) !== f.asOf || usualMonthShort(f) || runningDates(f).length > 0 ? pathLowest(f, cost) : money;
+  // 05.4-27 (SO-02: "On 20 December she has $1,000 + December's $1,000 + $5,500"): money a purchase's replacement brings in by the
+  // purchase date (a sale, costs that stop) is there by then too (crosscheck seed 17: a $2,024.60 sale on 18 November, bought in February).
+  const brought = replacesDates(f).filter((d) => d.date <= buyDay(f)).reduce((t, d) => t - d.amount, 0n);
+  const money = monthEnd + laterMoney(f) + brought;
+  const low = buyDay(f) !== f.asOf || usualMonthShort(f) || runningDates(f).length > 0 || replacesDates(f).length > 0 ? pathLowest(f, cost) : money;
   const margin = (low < money ? low : money) + net.above;
   // 05.4-24: on Dips into your safety net the spare money still in the account and the extra savings it uses are named (D-44), so
   // only the month's money and the net money come off the month figure.
@@ -765,8 +792,10 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   if (margin < 0n) {
     // what really sits from earlier months (D-56: never below 0) and the extra savings, as far as the price needs them
     const need = maxC(0n, rest - maxC(0n, sitting + usualRaw - thisMonth) - net.above);
-    const dips = margin + net.lend >= 0n;
-    return { code: dips ? 'fits_uses_net' : 'not_yet', variant: net.off ? 'protection_off' : null, afterBuy: dips ? netDipFigure(usualLeft, cost, need, margin, net) : Number(after) };
+    // 05.4-27 (crosscheck seed 37): the net lends only what the money ladder still needs: this month's room, the earlier money (with its
+    // sign) and the extra savings come first, and a price past all of them and the net is Not yet, as on a day with records.
+    const dips = margin + net.lend >= 0n && rest <= sitting + usualRaw - thisMonth + net.above + net.lend;
+    return { code: dips ? 'fits_uses_net' : 'not_yet', variant: net.off ? 'protection_off' : null, afterBuy: dips ? netDipFigure(usualLeft, cost, need, purchaseMargin(f, margin, pathLowest), net) : Number(after) };
   }
   // D-40: free money is what sits plus this month's room; with the money above the net's size, less the purchase, it is what is left.
   const tight = plainTightOnce(f, sitting + usualRaw + net.above + laterMoney(f) - cost);
@@ -902,7 +931,7 @@ export function plainPath(f: RightAnswerFixture, cost: Cents): { date: string; b
   // 05.4-26: the cost on the day it is bought (RC-08), held to the path's last day, and each running cost on its own dates (RC-03).
   const last = dayAfter(f.asOf, PATH_DAYS - 1);
   const day = buyDay(f) < last ? buyDay(f) : last;
-  return plainPathFlows(f, [{ date: day, amount: cost }, ...runningDates(f)]);
+  return plainPathFlows(f, [{ date: day, amount: cost }, ...runningDates(f), ...replacesDates(f)]);
 }
 
 /**
@@ -970,7 +999,10 @@ export function plainPathFlows(f: RightAnswerFixture, flows: readonly { date: st
 
 /** The lowest point of the day-by-day path with the cost paid today. */
 export function pathLow(f: RightAnswerFixture, cost: Cents): Cents {
-  return plainPath(f, cost).reduce((lo, p) => (p.balance < lo ? p.balance : lo), sittingMoney(f) - (buyDay(f) === f.asOf ? cost : 0n));
+  // 05.4-27 (SO-01: "The sale money arrives the same day"): sale money that lands today is in the account today, so the start of
+  // the path counts it (crosscheck seed 14: an account $2,644 overdrawn, with a sale's $14,760 landing today, is not below $0 today).
+  const today = replacesDates(f).filter((d) => d.date === f.asOf).reduce((t, d) => t - d.amount, 0n);
+  return plainPath(f, cost).reduce((lo, p) => (p.balance < lo ? p.balance : lo), sittingMoney(f) + today - (buyDay(f) === f.asOf ? cost : 0n));
 }
 
 /** The lowest day of the day-by-day path itself (fresh records: the pay landing today is on the path, not in the account yet). */
@@ -1401,7 +1433,10 @@ function laterFigure(f: RightAnswerFixture, a: PlainAnswer): PlainAnswer {
 function withRunning(f: RightAnswerFixture, a: PlainAnswer): PlainAnswer {
   const share = runningShare(f);
   if (share === 0n || a.code === 'needs_input' || a.code === 'not_yet') return a;
-  const room = usualLeftOf(f);
+  // 05.4-27 (SO-05: "From January the usual month is $1,000 + $80 - $50 - $60"): what stops comes back to a usual month that is not
+  // already short.
+  const raw = usualLeftOf(f);
+  const room = raw >= 0n ? raw + plainFreed(f) : raw;
   if (room <= 0n || room - share < 0n) return { code: 'monthly_short', variant: null, afterBuy: a.afterBuy };
   const tight = share * 10_000n > room * BigInt(TIGHT_SHARE_BP) || room - share < plainFloor(f);
   return tight && (a.code === 'fits_month' || a.code === 'fits_unspent') ? { ...a, variant: 'tight' } : a;
@@ -1415,3 +1450,153 @@ export function plainUsualAfter(f: RightAnswerFixture): number | null {
 
 /** Named so the table's thresholds have one reader (05.4-21 reads them in plainFloor and plainTightPlan). */
 export const RULE_NAMES = { TIGHT_SHARE_BP, FLOOR_DIVISOR };
+
+// --- What a purchase replaces (05.4-27, BO-05 part B). Restated from SO-01..SO-06, CONTEXT D-101..D-105 and the rules the owner
+// accepted on 2026-11-04. Not read from the engine. Paid once only: plans stay out of the whole-answer comparison (PLAIN-PLANS).
+
+type PlainStop = NonNullable<RightAnswerFixture['check']['replaces']>['stops'][number];
+
+/** The stops that can count: a real stop date, an amount above 0 and every 1, 3 or 12 months. */
+function stopsOf(f: RightAnswerFixture): PlainStop[] {
+  return (f.check.replaces?.stops ?? []).filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s.stopDate) && s.amount > 0 && [1, 3, 12].includes(s.everyMonths));
+}
+
+/** "Money that arrives later does not help today's cash path" (SO-02); a sale dated before today is not counted (D-105). */
+function saleOf(f: RightAnswerFixture): NonNullable<NonNullable<RightAnswerFixture['check']['replaces']>['sale']> | null {
+  const s = f.check.replaces?.sale ?? null;
+  return s !== null && s.amount > 0 && s.arrives >= f.asOf ? s : null;
+}
+
+interface PlainSale { toAccount: Cents; debtId: string | null; left: Cents; ended: { date: string; amount: Cents }[] }
+
+/**
+ * SO-03: "The sale clears the $4,000 loan, so its $250 minimum stops after 20 November ... The other $1,000 of the sale goes to his
+ * account." SO-04: "The sale pays $5,000 of the $7,000, so $2,000 is still owed and the $250 minimum keeps coming" (D-102), until
+ * what is left is paid (D-73). What the debt's minimums paid before the sale comes off what is owed first.
+ */
+function plainSale(f: RightAnswerFixture): PlainSale | null {
+  const s = saleOf(f);
+  if (s === null) return null;
+  const d = s.paysDebtId === null ? undefined : f.debts.find((x) => x.id === s.paysDebtId);
+  if (d === undefined) return { toAccount: big(s.amount), debtId: null, left: 0n, ended: [] };
+  const dues = ownDebts(f).includes(d) ? datesOfDebt(f, d) : [];
+  let owed = maxC(0n, big(d.balance));
+  for (const p of dues) if (p.date < s.arrives) owed -= p.amount < owed ? p.amount : owed;
+  const toDebt = big(s.amount) < owed ? big(s.amount) : owed;
+  let left = owed - toDebt;
+  const ended: { date: string; amount: Cents }[] = [];
+  for (const p of dues) {
+    if (p.date < s.arrives) continue;
+    const kept = p.amount < left ? p.amount : left;
+    left -= kept;
+    if (p.amount - kept > 0n) ended.push({ date: p.date, amount: p.amount - kept });
+  }
+  return { toAccount: big(s.amount) - toDebt, debtId: d.id, left: owed - toDebt, ended };
+}
+
+/** The debts after the sale: one paid off is gone; one paid in part owes the rest. */
+function debtsAfterSale(f: RightAnswerFixture): RightAnswerFixture['debts'] {
+  const s = plainSale(f);
+  if (s === null || s.debtId === null) return f.debts;
+  return f.debts.flatMap((d) => (d.id !== s.debtId ? [d] : s.left === 0n ? [] : [{ ...d, balance: Number(s.left) }]));
+}
+
+/** SO-01: the sale's account part that arrives by the purchase date, as far as the cost needs it. */
+export function saleNow(f: RightAnswerFixture, cost: Cents): Cents {
+  const s = saleOf(f);
+  const p = plainSale(f);
+  if (s === null || p === null || s.arrives > buyDay(f)) return 0n;
+  return p.toAccount < cost ? p.toAccount : cost;
+}
+
+/** The last day of 'YYYY-MM'. */
+function lastDayOf(ym: string): string {
+  return `${ym}-${String(daysInMonthOf(`${ym}-01`)).padStart(2, '0')}`;
+}
+
+/**
+ * What a purchase replaces on the day-by-day path, as money coming back (negative amounts: the path takes each flow away).
+ * - The sale's account part on its date (SO-02), less what lowered the day-one cost (SO-01: the part above the cost arrives on the day).
+ * - The minimums the sale ends (SO-03).
+ * - SO-05: "The old $80 is due on 1 December, before the 20 December stop, so it is counted once more and then never again": each due
+ *   of a stopped bill after its stop date comes back on that due date (a yearly or every-3-month bill lands on its due dates here).
+ * - SO-06 / D-103: "After 30 November the gym is never counted again": an everyday stop's share (its amount over its months, half up,
+ *   never more than the usual everyday spending) comes back at the end of each month that starts after its stop date; never this month.
+ */
+export function replacesDates(f: RightAnswerFixture): { date: string; amount: Cents }[] {
+  const out: { date: string; amount: Cents }[] = [];
+  const end = dayAfter(f.asOf, PATH_DAYS);
+  const s = saleOf(f);
+  const p = plainSale(f);
+  if (s !== null && p !== null) {
+    const before = s.arrives <= buyDay(f);
+    const used = before ? (p.toAccount < upFrontAll(f) ? p.toAccount : upFrontAll(f)) : 0n;
+    const lands = p.toAccount - used;
+    if (lands > 0n && s.arrives < end) out.push({ date: s.arrives, amount: -lands });
+    for (const e of p.ended) out.push({ date: e.date, amount: -e.amount });
+  }
+  const ym = f.asOf.slice(0, 7);
+  for (const st of stopsOf(f)) {
+    if (st.source !== 'bill') continue;
+    const b = longBills(f).find((x) => x.id === st.id);
+    if (b === undefined) continue;
+    for (let n = 0; ; n++) {
+      const d = plusMonths(b.nextDue, b.everyMonths * n);
+      if (d >= end) break;
+      if (d >= f.asOf && d > st.stopDate) out.push({ date: d, amount: -big(b.amount) });
+    }
+  }
+  let room = usualEveryday(f);
+  for (const st of stopsOf(f)) {
+    if (st.source !== 'everyday') continue;
+    const want = (2n * big(st.amount) + BigInt(st.everyMonths)) / (2n * BigInt(st.everyMonths));
+    const share = want < room ? want : maxC(0n, room);
+    room -= share;
+    if (share === 0n) continue;
+    const after = monthAfter(st.stopDate.slice(0, 7));
+    for (let m = after > ym ? after : monthAfter(ym); lastDayOf(m) < end; m = monthAfter(m)) out.push({ date: lastDayOf(m), amount: -share });
+  }
+  return out;
+}
+
+/** The whole up-front cost of a one-off (price, tax, fees and closing costs), before any sale. */
+function upFrontAll(f: RightAnswerFixture): Cents {
+  return upFront(f) + plainClosing(f);
+}
+
+/** The month after 'YYYY-MM'. */
+function monthAfter(ym: string): string {
+  const t = Number(ym.slice(0, 4)) * 12 + Number(ym.slice(5, 7));
+  return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`;
+}
+
+/**
+ * What a usual month gets back after buying: a stopped monthly bill its amount, a yearly bill only the share the usual month counted
+ * (D-104: "The usual month gets back only what it was counting"), an everyday stop its share (SO-06: "$1,000 + $50 = $1,050"), and a
+ * debt the sale pays off its minimum (SO-03: "$1,000 + $250 (old minimum gone)").
+ */
+export function plainFreed(f: RightAnswerFixture): Cents {
+  let sum = 0n;
+  const seen = new Set<string>();
+  for (const st of stopsOf(f)) {
+    if (st.source !== 'bill' || seen.has(st.id)) continue;
+    const b = f.bills.find((x) => x.id === st.id && x.paidBy === 'me');
+    if (b === undefined) continue;
+    seen.add(st.id);
+    sum += b.everyMonths === 1 ? big(b.amount) : ownShare(b);
+  }
+  let room = usualEveryday(f);
+  for (const st of stopsOf(f)) {
+    if (st.source !== 'everyday') continue;
+    const want = (2n * big(st.amount) + BigInt(st.everyMonths)) / (2n * BigInt(st.everyMonths));
+    const share = want < room ? want : maxC(0n, room);
+    room -= share;
+    sum += share;
+  }
+  const p = plainSale(f);
+  if (p !== null && p.debtId !== null && p.left === 0n) {
+    const d = f.debts.find((x) => x.id === p.debtId) as PlainDebt;
+    sum += maxC(0n, big(d.minimum));
+  }
+  return sum;
+}

@@ -1,7 +1,8 @@
 /**
  * QA-03: the engine and the plain calculator must agree on the code (and, since 05.4-24 FIN-09, on the month figure after buying), on the tight caution
  * (05.4-21), and, for a fixture with a card or loan, on the costly-debt caution (05.4-20)
- * for random fixtures. Fixtures that trigger a rule still in PENDING_RULES are skipped and counted.
+ * for random fixtures. Fixtures that trigger a rule still in PENDING_RULES are skipped and counted. 05.4-27: endOnFailure, so a
+ * counterexample prints as drawn instead of shrinking for hours (each fixture runs the whole engine; seed 14 shrank for 5+ hours).
  */
 import * as fc from 'fast-check';
 import { evaluate } from '../../evaluate';
@@ -42,7 +43,7 @@ describe('cross-check calculator vs engine', () => {
             month: month(plain.code, plain.afterBuy),
           });
         }),
-        { numRuns: RUNS, seed: SEED }
+        { numRuns: RUNS, seed: SEED, endOnFailure: true }
       );
     } catch (e) {
       console.log(`crosscheck seed ${SEED}`);
@@ -55,7 +56,7 @@ describe('cross-check calculator vs engine', () => {
 
 /**
  * 05.4-22 (FIN-05 / ENG-08, D-07, D-39a, D-39c): the borrowing rule on random plans. Plans stay out of the whole-code comparison
- * above (pendingRules BO-05: the plain plan branch is not ladder-complete), so here they are compared on the borrowing answer alone:
+ * above (pendingRules PLAIN-PLANS: the plain plan branch is not ladder-complete), so here they are compared on the borrowing answer alone:
  * wherever both sides say the plan fits, they agree on "Only by borrowing", "Fits, but borrowing costs more" or neither.
  */
 describe('cross-check calculator vs engine: borrowing on plans', () => {
@@ -67,7 +68,7 @@ describe('cross-check calculator vs engine: borrowing on plans', () => {
     try {
       fc.assert(
         fc.property(fixtureArb, (f) => {
-          if (f.check.pay.mode !== 'plan' || pendingFixIds(f).some((id) => id !== 'BO-05')) return;
+          if (f.check.pay.mode !== 'plan' || pendingFixIds(f).some((id) => id !== 'PLAIN-PLANS')) return;
           if ((f.check.runningCosts?.length ?? 0) > 0 || f.check.replaces != null || f.check.closingPercent != null) return;
           const { inputs, check } = toEngineInputs(f);
           const got = pick(evaluate(inputs, check));
@@ -77,7 +78,7 @@ describe('cross-check calculator vs engine: borrowing on plans', () => {
           if (got.code === 'fits_by_borrowing') borrowed++;
           expect(borrowing(got.code, got.variant)).toBe(borrowing(plain.code, plain.variant));
         }),
-        { numRuns: RUNS, seed: SEED }
+        { numRuns: RUNS, seed: SEED, endOnFailure: true }
       );
     } catch (e) {
       console.log(`crosscheck (borrowing) seed ${SEED}`);
