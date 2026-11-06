@@ -8,7 +8,8 @@ import fc from 'fast-check';
 import { fcRuns } from '../helpers/fcRuns';
 import { evaluate } from '../../evaluate';
 import type { CheckV2, ReadyBy, Result, V3Inputs, V3Line } from '../../types';
-import { checkOf, codeRank, checkArb, inputsArb, latePayInputsArb, mu, priceArb, shapeArb } from './arbitraries';
+import { percent } from '../../../../payoff/types';
+import { checkOf, codeRank, checkArb, inputsArb, inputsOfPerson, latePayInputsArb, mu, priceArb, shapeArb } from './arbitraries';
 import { v3Line } from '../helpers/fixtures';
 
 const RUNS = { numRuns: fcRuns(200) };
@@ -42,6 +43,15 @@ function withPaidIn(inputs: V3Inputs, amount: number): V3Inputs {
   return { ...inputs, balance: mu(inputs.balance + amount), ...(accounts === undefined ? {} : { accounts }) };
 }
 
+/**
+ * The money spent has left the everyday account too: the balance and that account fall by it. A paid spending line the balance does
+ * not show means the account opened higher by the same amount (the mirror of withPaidIn, D-86): the rest of this month's everyday
+ * spending (Erest = usual everyday less what is spent so far) shrinks by the line, so the line alone would add it back to the cash path.
+ */
+function withPaidOut(inputs: V3Inputs, amount: number): V3Inputs {
+  return withPaidIn(inputs, -amount);
+}
+
 function extraLine(inputs: V3Inputs, role: V3Line['role'], amount: number, day: number): V3Line {
   const d = Math.min(day, Number(inputs.asOf.slice(8, 10)));
   return v3Line({ id: 'arb-added', date: `${currentMonthOf(inputs)}-${String(d).padStart(2, '0')}`, amount, role });
@@ -65,12 +75,32 @@ describe('end-to-end monotonicity through evaluate()', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, fc.integer({ min: 100, max: 500_000 }), fc.integer({ min: 1, max: 28 }), (inputs, check, amount, day) => {
         const before = run(inputs, check);
-        const after = run(withLine(inputs, extraLine(inputs, 'spending', amount, day)), check);
+        // The spending leaves the account too (withPaidOut); without it the case is an account that opened higher by the amount.
+        const after = run(withPaidOut(withLine(inputs, extraLine(inputs, 'spending', amount, day)), amount), check);
         fc.pre(!asking(before, after));
         expect(codeRank(after.code)).toBeLessThanOrEqual(codeRank(before.code));
       }),
       RUNS
     );
+  });
+
+  // CI run 42216986391 (seed -1072770010): kim, everyday x1.31, balance x1.03, no unspent anchor, no net; a $98,960.18 plan every
+  // 11 weeks x 47 at 30% APR. The cash path ends 2026-12-31 at -$0.01, so Not yet. A $1 spending line on October 1 with the balance
+  // left as it was lowers Erest by $1 and ends the path at +$0.99: the cash check passes and the plan is Monthly short (a looser code).
+  // That input is an account that opened $1 higher, not an extra expense; with the $1 out of the account too, nothing moves.
+  it('I10 pinned: a $1 expense that leaves the account does not lift a Not yet on a -$0.01 cash path (seed -1072770010)', () => {
+    const inputs = inputsOfPerson('kim', { everydayPct: 131, balancePct: 103, unspentMode: 'none', unspentPct: 0, emergency: null, extras: [] });
+    const check = checkOf(9_896_018, {
+      plan: { cadence: { unit: 'week', every: 11 }, count: 47, apr: percent('30'), firstPayment: { kind: 'one_period' } },
+      purpose: null,
+      emergency: false,
+    });
+    const line = extraLine(inputs, 'spending', 100, 1);
+    const before = run(inputs, check);
+    expect(before.code).toBe('not_yet');
+    expect(run(withPaidOut(withLine(inputs, line), 100), check).code).toBe('not_yet');
+    // The impossible input (the line without the money leaving): the path gains the $1 back, by design of Erest.
+    expect(run(withLine(inputs, line), check).code).toBe('monthly_short');
   });
 
   it('I10 a new monthly bill never helps', () => {
