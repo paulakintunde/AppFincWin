@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
-- [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
+- [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide, reading test round 2, public switch-on. Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
 - [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
 - [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
@@ -1181,8 +1181,8 @@ Plans:
 
 ### Phase 06.1: Decide screens from the prototype (INSERTED)
 
-**Goal:** Testers use the new Decide screens, built from the owner's clickable prototype (https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR, the design standard, as in Phase 6 D-04), on the v3 engine and the connection points that exist on main. Scope against 08.1 is settled in /gsd-discuss-phase 06.1.
-**Requirements**: TBD (from discuss-phase; drawn from 08.1's list)
+**Goal:** Testers use the new Decide screens, built from the owner's clickable prototype (https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR, the design standard, as in Phase 6 D-04), on the v3 engine and the connection points that exist on main. Every prototype Decide screen (D01-D53, answers N02-N26) replaces today's tester screens in one release with Grow; old 05.x Decide screens deleted; home buying hidden; household left to 08.1 (06.1-CONTEXT D-01..D-06).
+**Requirements**: The 08.1 fix IDs and 08.1-CARRY-OVER rows that need neither household data nor reading-test round 2 (06.1-CONTEXT D-04; the first plan lists the split)
 **Depends on:** Phase 6 wave 1 (safety net, goal and debt connection points). Planning starts now (owner 2026-11-06); building starts after Grow wave 1 merges. Household parts stay hidden until Phase 8.
 **Plans:** 0 plans
 
@@ -1221,6 +1221,8 @@ Plans:
 **Research flag**: The Realtime reconciliation state machine (no pending write / write still queued / own-write echo / genuine version conflict) is a synthesized design, not a documented Supabase recipe. Budget a dedicated spike — two simulated clients, one taken offline mid-edit — before trusting it in production. Also resolve explicitly what happens when a settlement's expiry window lapses unresolved; the prototype specifies the window but not the outcome.
 
 ### Phase 08.1: Decide rebuild on real data (INSERTED)
+
+**Amended 2026-11-06 (06.1-CONTEXT D-04):** the Variant C / prototype screens are built in Phase 06.1. 08.1 keeps household data in Decide, reading test round 2 and its fixes, and the public switch-on after 08.2. The text below is kept as the record; criteria already met by 06.1 are checked there.
 
 **Goal:** Decide reaches 10/10 on every auditor's checklist using real goals, debts and household data, with the full cost of a purchase (tax, fees and running costs) and the Variant C screens the owner signs off at the design freeze (QA-01). Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 4, 6 (Theme L) and 8. Design: Variant C, chosen by the owner on 2026-11-01 ("Decide redesign: three variants" canvas, 40 screens); Variants A and B are retired. Reading-test round 1 runs on Variant C alone (about 5 people) to find what confuses people; its findings are fixed and the screens are then frozen (QA-01).
 **Requirements**: Fix IDs FIN-12, FIN-20..24, FIN-28, FIN-29, FIN-31; ENG-26, ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-21, APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-26 round 2, UX-38, UX-41; CMP-F12 (layout), F14, F15, F19; ARC-11 (moved setup steps removed); QA-01 (freeze held), QA-02 and QA-03 (extended); BO-09 and the screen side of the 05.4 copy and app items (Theme N); UX-20 (decision record, version 1), UX-42, UX-43, the rest of ARC-24 and ARC-25 (Theme O). Home buying (FIN-30) is its own phase after 08.2; its screens stay hidden
