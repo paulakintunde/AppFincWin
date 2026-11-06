@@ -41,7 +41,7 @@ jobs:
         run: |
           echo "::warning::No full-run mutation baseline yet. Add the mutation-full label to this PR (or run mutation-full.yml) first; a whole-engine run does not fit this job's 120 minutes."
           echo "No baseline: skipped. Add the \`mutation-full\` label to start a full run." >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4.4.0 (v4)
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v4.4.0 (v4)
         if: steps.baseline.outputs.cache-matched-key != ''
         with: { node-version: 24, cache: npm }
       - if: steps.baseline.outputs.cache-matched-key != ''
