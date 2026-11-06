@@ -7,6 +7,7 @@ import { AccessibilityInfo, Alert, AppState, Linking } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { QUICK_ACTION_ORDER } from '@/shell/fab/quickActions';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import { resetPushOnceForTests } from '@/shell/navigation/pushOnce';
 import { YouScreen } from '../YouScreen';
 
 const mockSetAccent = jest.fn();
@@ -163,6 +164,7 @@ let appStateCallback: ((state: string) => void) | undefined;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  resetPushOnceForTests(); // the double-tap guard keeps module state between tests (05.4-34 made the Money rows use pushOnce)
   mockHistory = [{ area: 'tab', tab: 'home', href: '/home' }];
   mockQuickIds = ['addExpense', 'addIncome', 'transfer', 'importStatement', 'newCheck'];
   for (const id of mockQuickIds) mockRuns[id] = jest.fn();

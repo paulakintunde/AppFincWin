@@ -944,7 +944,7 @@ describe('plain calculator: selling the old one and what it replaces (BO-05, SO-
 
   it('BO-05 the code and the month figure of every one-off SO case (plans stay out under PLAIN-PLANS)', () => {
     const once = so.filter((c) => c.fixture.check.pay.mode === 'once');
-    expect(once.map((c) => c.id)).toEqual(['SO-01', 'SO-02', 'SO-06', 'SO-07', 'SO-09']);
+    expect(once.map((c) => c.id)).toEqual(['SO-01', 'SO-02', 'SO-06', 'SO-07', 'SO-09', 'SO-10', 'SO-11']); // SO-10/SO-11: D-137 (plan 40)
     for (const c of once) {
       const a = plainAnswer(c.fixture);
       expect({ id: c.id, code: a.code, tight: a.variant === 'tight' }).toEqual({ id: c.id, code: c.expected.code, tight: c.expected.variant === 'tight' });
