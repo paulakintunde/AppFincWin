@@ -1178,27 +1178,44 @@ Plans:
 **Plans**: 22 plans
 
 Plans:
+**Wave 1**
 - [ ] 06-01-PLAN.md — Payoff maths: fixed payment, both payoff orders, month-by-month growth, card minimum estimate (W1)
 - [ ] 06-02-PLAN.md — Grow maths: two-way goal plan, average-cost lots, gain/loss, 30-day as-of rule (W1)
 - [ ] 06-03-PLAN.md — Decide engine: locked goals kept out, unlocked goals counted, safety net and goals named (W1)
 - [ ] 06-04-PLAN.md — Schema: goals, APY, debt fields, holdings and lots, apply_patches re-issue, pgTAP (W1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 06-05-PLAN.md — Connection points (BO-07 goal, safety net, debt) with contract and parity tests (W2)
 - [ ] 06-08-PLAN.md — Typed db access, keys, export manifest, cache version (W2)
 - [ ] 06-09-PLAN.md — Grow copy, copy lint, feature flags, glyphs, base primitives and the Grow undo label keys (W2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 06-06-PLAN.md — Schema: goal contributions, materialiser, goal-plan RPCs, set_safety_net swap (D-29), safety-net move D-07 (W3)
 - [ ] 06-07-PLAN.md — Schema: debt plan and sale-closes-loan RPCs (W3)
 - [ ] 06-10-PLAN.md — Decide reads Grow through the connection points; contribution counted once; goals right-answer cases (W3)
 - [ ] 06-21-PLAN.md — Calculator blocks and Grow charts (split from 06-09) (W3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 06-11-PLAN.md — [BLOCKING] production schema push, owner-gated with hard stops (W4)
 - [ ] 06-12-PLAN.md — Goal and safety-net data hooks, incl. use-as-safety-net (D-29) (W4)
 - [ ] 06-13-PLAN.md — Calculators page with four typed calculators, D-21 (W4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 06-14-PLAN.md — Debt, holding, lot and net-worth data hooks (W5)
 - [ ] 06-15-PLAN.md — Grow tab shell, Goals segment and home cards (W5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 06-17-PLAN.md — Debt screens: payoff plan side by side, add debt, sale sheet (W6)
 - [ ] 06-18-PLAN.md — Investing screens and account APY (W6)
 - [ ] 06-22-PLAN.md — Goal detail, money moves, new goal sheet, and "Use as my safety net" (D-29) (split from 06-15) (W6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
 - [ ] 06-16-PLAN.md — Safety net screens (create, size, monthly), first-open sheet, Lines you will not cross (W7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
 - [ ] 06-19-PLAN.md — Record calculators and Make this the plan (W8)
+
+**Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 06-20-PLAN.md — Setup links, Create from Decide, Grow tab on, phase gate, owner device check (W9)
 **UI hint**: yes
 
