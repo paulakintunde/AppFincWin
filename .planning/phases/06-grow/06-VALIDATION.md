@@ -58,7 +58,7 @@ Task IDs are filled in by the planner (each plan's tasks reference the row they 
 | D-16 | Sale closes debt in one save (atomic, one undo) | unit (mutation) + pgTAP | `npx jest src/data/mutations/__tests__/growSale` | ❌ W0 | ⬜ pending |
 | D-21 | Typed calculators reproduce GC10/20/30/40 | unit | `npx jest src/features/grow/calculators` | ❌ W0 | ⬜ pending |
 | D-26 | Net worth uses holdings, skips investment-account balance once a holding exists | unit | `npx jest src/features/grow/netWorth` | ❌ W0 | ⬜ pending |
-| D-27 | G10 "Lines you will not cross" reads/writes existing lines store | RNTL | `npx jest src/features/grow/lines` | ❌ W0 | ⬜ pending |
+| D-27 | G10 "Your money rules" reads/writes existing lines store | RNTL | `npx jest src/features/grow/lines` | ❌ W0 | ⬜ pending |
 | Criterion 8 | Adding a debt never raises the lowest point | property over `evaluate` | `npx jest src/engine/decide/v3/__tests__/invariants` | partial (extend) | ⬜ pending |
 | Compliance | No forbidden words in Grow copy (recommend, advice, should, best, better, optimal) | unit string scan | `npx jest src/features/grow/__tests__/copyLint` | ❌ W0 | ⬜ pending |
 | Integer money | Engine results are safe integers | property | in each engine test | ❌ W0 | ⬜ pending |
