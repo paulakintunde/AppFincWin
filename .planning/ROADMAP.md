@@ -1061,9 +1061,9 @@ Plans:
   5. The 16 audit personas are golden tests. Every changed answer is listed in a reviewed diff and approved by the owner.
   6. Decide opens offline on the 1st of the month with an honest "Records up to" date, and Android speed is measured on the Pixel 6.
   7. Compliance gate: CMP-F01, F02, F03, F07, F08 and F11 merged; purge job deployed after the Supabase preflight; the owner signs off every changed answer string.
-  8. Theme M: the owner-approved right-answer table (about 70 cases: the first 50 plus the Variant C cases from Themes N and O) is committed as tests before the first Theme A engine change, and every case passes; a separate plain calculator agrees with the engine on 1,000 random cases per change and 20,000 nightly; at least 90% of Stryker's breaking changes in `src/engine/decide/` are caught; after reading-test round 1 on Variant C, its findings are fixed and the screens are signed and frozen, with a v1.1 list for later ideas.
-  9. Theme N: the 05.3 engine and plumbing changes are on main with their tests; Maestro flows for Back, saving offline and Record as bought are green; Variant C's inputs (running-cost lines, closing %, cash and installments from one input, what it replaces, purchase date, save-for-it ready date) exist as engine types with tests; a release check fails if any account outside the tester list has `profiles.decide_v3` on; the first shadow run on testers' records has been reviewed by the owner. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1: no account sees the 05.2 setup page or engine readout, and `profiles.decide_v3` is on only for accounts on the repo tester list (05.4 D-29, D-30), and stays off until 08.1; shadow runs use the separate server-only `profiles.decide_shadow` flag (05.4-30).
-**Plans:** 53/57 plans executed
+  8. Theme M: the owner-approved right-answer table (about 70 cases: the first 50 plus the Variant C cases from Themes N and O) is committed as tests before the first Theme A engine change, and every case passes; a separate plain calculator agrees with the engine on 1,000 random cases per change and 20,000 nightly; at least 90% of Stryker's breaking changes in `src/engine/decide/` are caught; the round-8 reading-test boards are owner-approved; reading-test round 1, its fixes and the signed freeze with the v1.1 list are pending, before Grow (D-166).
+  9. Theme N: the 05.3 engine and plumbing changes are on main with their tests; Maestro flows for Back, saving offline and Record as bought are green; Variant C's inputs (running-cost lines, closing %, cash and installments from one input, what it replaces, purchase date, save-for-it ready date) exist as engine types with tests; a release check fails if any account outside the tester list has `profiles.decide_v3` on; the shadow-run tools are built and migrations 000800-001000 are live; the first shadow run (owner accounts) is pending until after the merge (D-171). Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1: no account sees the 05.2 setup page or engine readout, and `profiles.decide_v3` is on only for accounts on the repo tester list (05.4 D-29, D-30), and stays off until 08.1; shadow runs use the separate server-only `profiles.decide_shadow` flag (05.4-30).
+**Plans:** 54/57 plans executed
 
 Plans:
 **Wave 1**
@@ -1130,7 +1130,7 @@ Plans:
 - [x] 05.4-41-PLAN.md — Generate the D-15 wording review page and the signed-copy lock; the owner sign-off moved to before Grow (D-150).
 **Wave 23** *(blocked on Wave 22 completion)*
 - [x] 05.4-39-PLAN.md — Move the eight shared Decide UI parts to src/ui with their tests, harvest the MoneyInput change, rewrite imports, and document the "What gets written" pattern.
-- [ ] 05.4-42-PLAN.md — Ask testers for consent, switch on shadow runs for those who said yes, ship the runner to their phones, and give the owner the first shadow summary to review.
+- [x] 05.4-42-PLAN.md — Build the shadow report tools and push migrations 000800-001000 (Push 2); the first shadow run on the owner accounts moves to after the merge (D-160, D-171).
 - [ ] 05.4-44-PLAN.md — Record the design side of Theme M/O: confirm mockup rounds 4-7 (canvas 1793593885-664c), the owner's real reading test round 1, the signed freeze with the VC-02 note, and the v1.1 list.
 **Wave 24** *(blocked on Wave 23 completion)*
 - [ ] 05.4-43-PLAN.md — Close the Theme M gates: raise the mutation score to 90% and lock it, prove the pending and knownRed lists are empty, and wire the nightly property runs.
@@ -1342,7 +1342,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
-| 05.4 Decide safety patch | 53/57 | In Progress|  |
+| 05.4 Decide safety patch | 54/57 | In Progress|  |
 | 05.5 One shared money model | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |
