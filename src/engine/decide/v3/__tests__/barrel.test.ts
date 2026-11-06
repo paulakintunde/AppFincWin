@@ -38,6 +38,7 @@ export const V3_RUNTIME_EXPORTS = [
   'COPY_RESOLVERS',
   'COSTLY_SAVING_MIN',
   'DEBT_FACT_LINES',
+  'DECIDE_ENGINE_REVISION', // 05.4-36 BO-08 (D-13, D-146)
   'DISCLAIMER_KEYS', // 05.4-37 D-64 (1)
   'DISCRIMINATOR_KEYS',
   'ESSENTIAL_ROUND_MINOR',
@@ -115,6 +116,8 @@ export const V3_RUNTIME_EXPORTS = [
   'SEASON_CYCLE_MONTHS',
   'SERIES_DRIFT_DIVISOR',
   'SERIES_DRIFT_LAST',
+  'SHADOW_CODES_MAX', // 05.4-36 BO-08
+  'SHADOW_SAMPLE_IDS', // 05.4-36 BO-08 (D-12)
   'SHORT_WAIT_DAYS',
   'TAX_KEYS', // 05.4-37 APP-20 typecheck
   'TIGHT_FLOOR_DIVISOR',
@@ -168,11 +171,15 @@ export const V3_RUNTIME_EXPORTS = [
   'readStoredCheck',
   'refine',
   'refineNoise',
+  'roundForShadow', // 05.4-36 BO-08 (D-10)
+  'roundSig2', // 05.4-36 BO-08
   'saleFlows', // 05.4-27 BO-05
   'salesTaxOf',
   'saveForItReadyDate', // 05.4-27 BO-05 (D-108)
   'seenOf',
   'seriesDrift',
+  'shadowRun', // 05.4-36 BO-08 (D-11)
+  'shadowSamples', // 05.4-36 BO-08 (D-147)
   'stagedRequired',
   'stoppedCostFlows', // 05.4-27 BO-05
   'toStoredV2',

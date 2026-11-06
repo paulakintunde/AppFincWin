@@ -71,3 +71,11 @@ export { builtinLines } from './judge/lines';
 export { cadenceOfFreq } from './plan/cadence';
 // 05.3-13 (DSV-13): the same share rounding the ladder uses, so a recorded amount equals Purchase.dayOne exactly.
 export { myPart as myShareOf } from '../share';
+// 05.4 BO-08 (05.4-36; D-10..D-13, D-145..D-147): the quiet shadow run's revision, fixed samples and rounding.
+export { DECIDE_ENGINE_REVISION } from './shadow/revision';
+export { SHADOW_SAMPLE_IDS, shadowSamples } from './shadow/samples';
+export type { ShadowSample, ShadowSampleId } from './shadow/samples';
+export { roundForShadow, roundSig2, SHADOW_CODES_MAX } from './shadow/round';
+export type { ShadowRound } from './shadow/round';
+export { shadowRun } from './shadow/run';
+export type { ShadowAnswer, ShadowRun } from './shadow/run';
