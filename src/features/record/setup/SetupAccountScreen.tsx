@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { router } from 'expo-router';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 import { AccountSheet } from '@/features/record/accounts/AccountSheet';
 import { DECIDE_OPEN } from '@/features/decide/availability';
 import { useT } from '@/i18n';
@@ -34,7 +35,7 @@ export function SetupAccountScreen() {
       {sheetOpen ? null : (
         <View style={styles.block}>
           <Pill label={t('setup.addAccount')} variant="primary" onPress={() => setSheetOpen(true)} />
-          <Pill label={t('setup.toYou')} variant="secondary" onPress={() => router.push('/you')} />
+          <Pill label={t('setup.toYou')} variant="secondary" onPress={() => pushOnce('/you')} />
         </View>
       )}
       <AccountSheet

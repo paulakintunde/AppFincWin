@@ -3,7 +3,8 @@
 // standalone mode (the income steps only); "Not now" is a device-local preference, not a data write, so it has no Undo.
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { router, type Href } from 'expo-router';
+import { type Href } from 'expo-router';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 import { useDecideSettings } from '@/data/queries/decide';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { useShouldStack } from '@/features/decide/ui/textFit';
@@ -63,7 +64,7 @@ function IncomeCard({ userId }: { userId: string }) {
           <Pill
             label={t('activity.incomeCard.cta')}
             variant="primary"
-            onPress={() => router.push(SETUP_STANDALONE_HREF)}
+            onPress={() => pushOnce(SETUP_STANDALONE_HREF)}
           />
         </View>
         <View style={stacked ? null : styles.secondary}>

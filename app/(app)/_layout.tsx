@@ -9,6 +9,7 @@ import { SwipeBack } from '@/features/navigation/SwipeBack';
 import { isSwipeBackRoute } from '@/features/navigation/swipeBackGesture';
 import { useReduceMotion } from '@/theme/motion';
 import { DECIDE_OPEN } from '@/features/decide/availability';
+import { harnessEnabled } from '@/features/decide/dev/harnessEnabled';
 import { useNotificationObserver } from '@/features/decide/notifications/useNotificationObserver';
 import { useConsent } from '@/features/consent/useConsent';
 import { consentAnswered } from '@/features/consent/consentAnswered';
@@ -86,6 +87,10 @@ export default function AppLayout() {
                   <Stack.Screen name="decide/changes" />
                   <Stack.Screen name="decide/lines" />
                   <Stack.Screen name="decide/pots" />
+                </Stack.Protected>
+                {/* 05.4-34 (BO-03, APP-04): the dev harness, only in a dev build or a build made with EXPO_PUBLIC_PERF=1. Linked from nowhere. */}
+                <Stack.Protected guard={harnessEnabled()}>
+                  <Stack.Screen name="decide/dev-harness" />
                 </Stack.Protected>
                 <Stack.Screen name="you" />
                 <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
