@@ -178,6 +178,9 @@ const OWNER_RULES: Readonly<Record<string, OwnerRule>> = {
   'D-123': { properties: ['I-D123', 'I76'] },
   'D-125': { properties: ['I-D123', 'I76'] },
   'D-127': { properties: ['I7'] },
+  // 05.4-40 findings, decided and approved by the owner 2026-11-05
+  'D-137': { properties: ['I-D96'], units: [unit('fullCost/__tests__/replaces.test.ts', 'D-137')], cases: ['SO-10', 'SO-11'] },
+  'D-138': { properties: ['I9'], units: [unit('plan/__tests__/schedule.test.ts', 'I9-ROUNDING'), unit('__tests__/borrowing.test.ts', 'a computed schedule reads its exact share')] },
 };
 
 /** Owner decisions from D-35 to D-127 that are not engine rules, each with why. */
