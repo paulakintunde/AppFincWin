@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { fireEvent, screen } from '@testing-library/react-native';
 import type { Assessment, Verdict } from '@/engine/decide';
-import * as textFit from '../../ui/textFit';
+import * as textFit from '@/ui/textFit';
 import { WarningList, WarningRows, warnCardsOf } from '../WarningList';
 import { WhatBreaksBody } from '../sections/WhatBreaksSection';
 import type { SectionProps } from '../sections/sectionUi';

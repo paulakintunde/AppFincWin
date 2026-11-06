@@ -29,8 +29,8 @@ import { accountUseOfRow, emergencyLinkUse } from '@/data/mutations/accountUseMo
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
 import { InfoGlyph } from '@/features/decide/ui/InfoButton';
-import { MoneyInput } from '@/features/decide/ui/MoneyInput';
-import { SegmentedToggle } from '@/features/decide/ui/SegmentedToggle';
+import { MoneyInput } from '@/ui/MoneyInput';
+import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { Meta, useCopy, useNoWrapMoney } from '@/features/income/steps/shared';
 import { holdsMoney } from './accountUseSuggest';

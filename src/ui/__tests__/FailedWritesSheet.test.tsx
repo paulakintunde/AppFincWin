@@ -23,9 +23,9 @@ jest.mock('@/services/locale/deviceLocale', () => ({
 }));
 let mockWidth = 402;
 let mockScale = 1;
-jest.mock('@/features/decide/ui/textFit', () => ({
+jest.mock('@/ui/textFit', () => ({
   useShouldStack: () =>
-    (jest.requireActual('@/features/decide/ui/textFit') as typeof import('@/features/decide/ui/textFit')).shouldStack({
+    (jest.requireActual('@/ui/textFit') as typeof import('@/ui/textFit')).shouldStack({
       width: mockWidth,
       fontScale: mockScale,
     }),

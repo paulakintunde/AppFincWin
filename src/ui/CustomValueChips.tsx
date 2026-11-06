@@ -19,7 +19,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { DURATION, useReduceMotion } from '@/theme/motion';
 import { radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
-import { acceptsMonthsKeystroke, parseWholeInRange, presetFor } from '../snapshot/customValues';
+import { acceptsMonthsKeystroke, parseWholeInRange, presetFor } from './wholeNumberField';
 
 const FIELD_WIDTH = 96;
 const FOCUS_RING = 2; // D-95: a surface ring, not the accent (every accent fails 3:1 on ink)

@@ -30,7 +30,7 @@ import type { DebtRow } from '@/db/debts';
 import { DateField } from '@/features/record/entry/pickers/DateField';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { Label, Meta } from '@/features/decide/check/steps/stepUi';
-import { MoneyInput } from '@/features/decide/ui/MoneyInput';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { ChipRow } from '@/features/income/steps/shared';
 import { useDecideAccess } from '../useDecideAccess';

@@ -12,7 +12,7 @@ import { useSaveSetupStep } from '@/data/mutations/decideSetup';
 import { useDecideSettings } from '@/data/queries/decide';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
-import { CustomValueChips } from '@/features/decide/ui/CustomValueChips';
+import { CustomValueChips } from '@/ui/CustomValueChips';
 import { Caption, Why, useCopy, useReportReady } from '@/features/income/steps/shared';
 import type { SetupStepBodyProps, SetupStepHandle } from './types';
 

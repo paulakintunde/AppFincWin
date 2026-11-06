@@ -14,7 +14,7 @@ import { CloseGlyph } from '@/ui/CloseGlyph';
 import { Text } from '@/ui/Text';
 import { isValidProjectionRateText, isValidRateText } from '../../../snapshot/checkInputs';
 import { DURATION_MIN, HORIZON_MAX } from '../../../snapshot/customValues';
-import { CustomValueChips } from '../../../ui/CustomValueChips';
+import { CustomValueChips } from '@/ui/CustomValueChips';
 import { RateInput } from '../../../ui/RateInput';
 import { Meta } from '../stepUi';
 

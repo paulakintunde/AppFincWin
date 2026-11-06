@@ -7,7 +7,7 @@ import { type Href } from 'expo-router';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { useDecideSettings } from '@/data/queries/decide';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
-import { useShouldStack } from '@/features/decide/ui/textFit';
+import { useShouldStack } from '@/ui/textFit';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';

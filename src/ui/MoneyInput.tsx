@@ -31,6 +31,8 @@ export interface MoneyInputProps {
   large?: boolean;
   /** 05-44: a hint in the empty field (e.g. 'Add amount'). */
   placeholder?: string;
+  /** 05.3-52 (F8): with no `placeholder`, the empty field hints a zero amount in the currency's own digits and the region's decimal mark ('0.00', '0,00', '0'). It is a hint, never a value: the field still reports null. */
+  zeroHint?: boolean;
   /** 05-44: a decided check cannot be edited. */
   readOnly?: boolean;
   /** 05-61: the compact field beside a slider (pill, fill1, 128 wide, currency prefix). The label is not drawn; the caller shows it once. */
@@ -43,7 +45,7 @@ export interface MoneyInputProps {
   amountField?: { width?: number };
   /** 05-101: the input instance, so a row press can focus it. */
   inputRef?: React.Ref<TextInputInstance>;
-  /** D-95: 'dark' sits on the ink card -- surface at .12 fill, surface text, inkSoft2 placeholder, inkSoft1 labels, a 2px surface focus ring, the parser error in surface text (never danger on ink). */
+  /** D-95: 'dark' sits on the ink card -- surface at .12 fill, surface text, inkSoft2 placeholder (light: inkMuted, 05.3-52), inkSoft1 labels, a 2px surface focus ring, the parser error in surface text (never danger on ink). */
   tone?: 'light' | 'dark';
   /** D-105: sit like a sheet text Box -- fill6, the card radius and padding, body type -- and lead the text with the currency symbol or marker. */
   boxed?: boolean;
@@ -53,7 +55,7 @@ const COMPACT_MIN_WIDTH = 128;
 const AMOUNT_BORDER = 1.5; // R16.3
 const FOCUS_RING = 2; // D-95
 
-export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef, tone = 'light', boxed = false }: MoneyInputProps) {
+export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, zeroHint = false, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef, tone = 'light', boxed = false }: MoneyInputProps) {
   const { colors, pairing } = useTheme();
   const dark = tone === 'dark' && !amountField;
   const [focused, setFocused] = useState(false);
@@ -118,6 +120,9 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
     commit();
     onBlur?.();
   };
+
+  // 05.3-52 (F8): the zero hint goes through the same formatter the typed text does, so it matches the region's marks.
+  const hint = placeholder ?? (zeroHint ? parser.toInputText(0, currency) : undefined);
 
   // D-94: a screen reader speaks the committed figure by currency name, not as a bare number. A custom code Intl
   // cannot read leaves the plain text to be spoken.
@@ -195,9 +200,10 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
           inputMode="decimal"
           accessibilityLabel={accessibilityLabel}
           accessibilityValue={spoken === undefined ? undefined : { text: spoken }}
-          placeholder={placeholder}
+          placeholder={hint}
           editable={!readOnly}
-          placeholderTextColor={dark ? colors.inkSoft2 : colors.inkFaint}
+          // 05.3-44/52: inkFaint fails 4.5:1 on fill1 and fill6; inkMuted passes on every light ground the field sits on.
+          placeholderTextColor={dark ? colors.inkSoft2 : colors.inkMuted}
           style={[styles.input, (compact || boxed) && styles.compactInput, { ...textRole(pairing, large || compact || boxed ? 'body' : 'label'), color: dark ? colors.surface : colors.ink }]}
         />
       </View>

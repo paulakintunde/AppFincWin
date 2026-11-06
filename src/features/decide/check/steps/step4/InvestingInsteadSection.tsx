@@ -16,7 +16,7 @@ import { investViewCopy } from '../../../copy/depthInputsCopy';
 import { percentText } from '../../../copy/percentText';
 import { NetWorthChart } from '../../../charts/NetWorthChart';
 import { DetailsToggle } from '../../../ui/DetailsToggle';
-import { SegmentedToggle } from '../../../ui/SegmentedToggle';
+import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { refText, type Translate } from '../../refText';
 import type { StepProps } from '../../stepTypes';
 import { Meta, moneyFn } from '../stepUi';

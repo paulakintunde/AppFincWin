@@ -11,7 +11,7 @@ import { useT } from '@/i18n';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
-import { useShouldStack } from '../ui/textFit';
+import { useShouldStack } from '@/ui/textFit';
 
 export interface ReadoutDisplayRow {
   id: string;

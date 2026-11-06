@@ -21,7 +21,7 @@ import { useSettledLabel } from '../check/useSettledLabel';
 import type { QuickComputation } from '../snapshot/types';
 import { DarkPill } from '../ui/DarkPill';
 import { CombineToggle } from '../ui/CombineToggle';
-import { StateChip, type StateChipTone } from '../ui/StateChip';
+import { StateChip, type StateChipTone } from '@/ui/StateChip';
 import { InfoLabel } from '../ui/InfoLabel';
 import { useInfoSheet } from '../ui/useInfoSheet';
 

@@ -11,7 +11,7 @@ import { useT } from '@/i18n';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
-import { StateChip } from '../ui/StateChip';
+import { StateChip } from '@/ui/StateChip';
 import type { SetupStepKey } from './setupFlow';
 import { SuccessCircle } from './SuccessCircle';
 

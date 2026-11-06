@@ -20,7 +20,7 @@ import {
   subscribeFailedWrites,
   type FailedWrite,
 } from "@/data/sync/failedWrites";
-import { useShouldStack } from "@/features/decide/ui/textFit";
+import { useShouldStack } from "./textFit";
 import { useT } from "@/i18n";
 import { useDeviceLocale } from "@/services/locale/deviceLocale";
 import { clockText } from "./clockText";

@@ -17,8 +17,8 @@ import { isOverspent, monthFigure } from '../copy/monthFigure';
 import type { Fmt } from '../copy/types';
 import { stateChip } from '../copy/verdictCopy';
 import type { BasisOutcome, BasisOutcomes } from '../snapshot/types';
-import { StateChip, type StateChipTone } from '../ui/StateChip';
-import { useShouldStack } from '../ui/textFit';
+import { StateChip, type StateChipTone } from '@/ui/StateChip';
+import { useShouldStack } from '@/ui/textFit';
 import { basisRowsStack } from './basisOutcomeFit';
 import { refText, type Translate } from './refText';
 

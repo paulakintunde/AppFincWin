@@ -1,6 +1,6 @@
 /**
  * D-76 static text-fit guards (UI-SPEC R6 "Required layout checks" 1 and 4).
- * Walks src/features/decide/**\/*.tsx (not __tests__), strips comments, and fails on
+ * Walks src/features/decide/**\/*.tsx (not __tests__) plus the shared parts moved to src/ui in 05.4-39, strips comments, and fails on
  * numberOfLines (rules T, N), fixed heights (rule F) and absolute text or negative margins (rule O)
  * outside per-file allowlists with exact counts. A new violation fails with file and line.
  */
@@ -27,10 +27,14 @@ function strip(src: string): string {
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
 }
 
-const FILES = walk(ROOT).map((full) => {
-  const path = relative(ROOT, full).split('\\').join('/');
-  return { path, lines: strip(readFileSync(full, 'utf8')).split('\n') };
-});
+// 05.4-39 (D-156): the parts that moved from decide/ui to src/ui stay under these guards, listed as '@/ui/<Name>.tsx'.
+const SHARED_UI = ['MoneyInput', 'SegmentedToggle', 'StateChip', 'LabelValueRow', 'CheckRow', 'WarningCard', 'WrittenList', 'CustomValueChips'];
+const UI_DIR = join(__dirname, '..', '..', '..', 'ui');
+
+const FILES = [
+  ...walk(ROOT).map((full) => ({ path: relative(ROOT, full).split('\\').join('/'), full })),
+  ...SHARED_UI.map((name) => ({ path: `@/ui/${name}.tsx`, full: join(UI_DIR, `${name}.tsx`) })),
+].map(({ path, full }) => ({ path, lines: strip(readFileSync(full, 'utf8')).split('\n') }));
 
 interface Hit {
   path: string;
@@ -87,7 +91,7 @@ const NUMBER_ALLOW: { path: string; kind: NumberKind; count: number; reason: str
   { path: 'pots/PotRow.tsx', kind: 'user-name', count: 1, reason: 'user-typed pot name (rule T two lines; full name in a11y label)' },
   { path: 'past/DecisionDetailSheet.tsx', kind: 'user-name', count: 1, reason: 'user-typed line name' },
   { path: 'quick/QuickResult.tsx', kind: 'user-name', count: 1, reason: 'user-typed item name (full name in a11y label)' },
-  { path: 'ui/LabelValueRow.tsx', kind: 'user-name', count: 1, reason: 'valueLines is passed only for user-typed values' },
+  { path: '@/ui/LabelValueRow.tsx', kind: 'user-name', count: 1, reason: 'valueLines is passed only for user-typed values' },
   { path: 'check/steps/Step1Item.tsx', kind: 'forwarded', count: 1, reason: 'Chip prop for the user-typed custom type; Chip applies ellipsizeMode tail' },
   { path: 'check/steps/stepUi.tsx', kind: 'input', count: 1, reason: 'TextInput line count' },
   { path: 'check/BasisOutcomeCard.tsx', kind: 'figure', count: 1, reason: 'rule N, D-107 basis figure shrinks to its line, never breaks mid-number' },
@@ -127,7 +131,7 @@ const GEOMETRY_HEIGHT: { path: string; count: number; reason: string }[] = [
   { path: 'setup/UnspentSumCard.tsx', count: 1, reason: '1px divider rule (no text)' },
   { path: 'setup/steps/EnvelopesStep.tsx', count: 1, reason: '12px colour dot (no text)' },
   { path: 'setup/steps/SavingStep.tsx', count: 1, reason: '12px colour dot (no text)' },
-  { path: 'ui/CheckRow.tsx', count: 4, reason: 'checkbox and remove glyphs (no text)' },
+  { path: '@/ui/CheckRow.tsx', count: 4, reason: 'checkbox and remove glyphs (no text)' },
   { path: 'ui/CollapsibleSection.tsx', count: 1, reason: 'chevron glyph' },
   { path: 'ui/CombineToggle.tsx', count: 1, reason: 'dot glyph' },
   { path: 'ui/FoldHint.tsx', count: 1, reason: 'chevron glyph' },
@@ -213,7 +217,7 @@ describe('D-76 static text-fit', () => {
       'check/steps/step2/UserCostRow.tsx',
       'check/steps/step2/RunningCostPrompts.tsx',
       'check/steps/step2/MethodPanels.tsx',
-      'ui/MoneyInput.tsx',
+      '@/ui/MoneyInput.tsx',
     ];
     const walked = FILES.map((f) => f.path);
     for (const path of r16) expect(walked).toContain(path);

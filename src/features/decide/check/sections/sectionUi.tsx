@@ -12,7 +12,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import type { CheckComputation, CheckInputs } from '../../snapshot/types';
-import { useShouldStack } from '../../ui/textFit';
+import { useShouldStack } from '@/ui/textFit';
 
 /** The props every step 3 fold body takes (05-78: the collapsible wrappers are gone). */
 export interface SectionProps {
