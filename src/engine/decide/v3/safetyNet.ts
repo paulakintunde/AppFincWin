@@ -41,6 +41,12 @@ export interface ResolvedNet {
   readonly state: NetState;
 }
 
+/** 06 D-22: the money saved in unlocked goals that sit in dedicated or untouched accounts (which never count as spending money). */
+function unlockedOutside(inputs: V3Inputs): number {
+  const outside = new Set((inputs.accounts ?? []).filter((a) => a.use !== null && (a.use.kind === 'dedicated' || a.use.kind === 'untouched')).map((a) => a.id));
+  return inputs.envelopes.reduce((t, e) => t + (e.locked === false && e.accountId != null && outside.has(e.accountId) && e.saved > 0 ? e.saved : 0), 0);
+}
+
 /** The net in force for these inputs. A size or saved figure below 0 counts as 0. */
 export function resolveSafetyNet(inputs: V3Inputs, essential: EssentialCosts): ResolvedNet {
   const sn = inputs.safetyNet ?? null;
@@ -53,7 +59,8 @@ export function resolveSafetyNet(inputs: V3Inputs, essential: EssentialCosts): R
   const zeroIsOff = protect && size === 0;
   const off = !protect || zeroIsOff;
   const floor = off ? 0 : Math.min(saved, size);
-  const aboveSize = off ? 0 : saved - floor;
+  // 06 D-22: an unlocked goal in a dedicated or untouched account is spare money above the net, like savings above its size.
+  const aboveSize = (off ? 0 : saved - floor) + unlockedOutside(inputs);
   const locked = !off && (sn === null ? true : sn.locked !== false);
   let state: NetState = 'full';
   if (saved === 0) state = 'none';

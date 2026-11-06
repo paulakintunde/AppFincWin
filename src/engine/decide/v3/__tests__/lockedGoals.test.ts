@@ -56,8 +56,8 @@ describe('locked goals (D-05)', () => {
 
   it('two locked goals name their combined saved money', () => {
     const { inputs, check } = fixtureOf('SN-13');
-    const ev = evaluate(withGoals(inputs, goal(40_000, true, 'a1', 'g1'), goal(24_000, true, null, 'g2')), check);
-    expect(factOf(ev.result.facts, 'locked_goals_kept')).toEqual({ code: 'locked_goals_kept', values: { amount: 64_000 } });
+    const ev = evaluate(withGoals(inputs, goal(6_000, true, 'a1', 'g1'), goal(4_000, true, null, 'g2')), check);
+    expect(factOf(ev.result.facts, 'locked_goals_kept')).toEqual({ code: 'locked_goals_kept', values: { amount: 10_000 } });
   });
 
   it('a locked goal with nothing saved produces no fact', () => {
@@ -114,7 +114,7 @@ describe('unlocked goals (D-06, D-22)', () => {
     const base = evaluate(inputs, check);
     const ev = evaluate(withGoals(inputs, goal(30_000, false, null)), check);
     expect(ev.funds.spending).toBe(base.funds.spending);
-    expect(ev.funds.envelopesAssumedInside).toBeUndefined();
+    expect(ev.funds.envelopesAssumedInside).toBe(0);
     expect(factOf(ev.result.facts, 'unlocked_goals_counted')).toEqual({ code: 'unlocked_goals_counted', values: { amount: 30_000 } });
   });
 

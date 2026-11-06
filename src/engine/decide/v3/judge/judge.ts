@@ -957,7 +957,15 @@ export function judge(j: JudgeInput): Result {
     facts.push(...noLimitFacts(j.inputs.accounts, j.cash.shortBy, readyBy));
   }
   // 05.4 D-61: a locked net is left out of the answer, and a Not yet says so.
-  if (code === 'not_yet' && net.locked && net.floor > 0) facts.push({ code: 'net_locked', values: { locked: net.floor } });
+  const goalsKept = j.funds.lockedNamedSaved ?? 0;
+  if (code === 'not_yet' && net.locked && net.floor > 0) {
+    // 06 D-06: a locked net and locked goals are named together
+    facts.push(goalsKept > 0 ? { code: 'net_and_goals_kept', values: { net: net.floor, goals: goalsKept } } : { code: 'net_locked', values: { locked: net.floor } });
+  } else if (goalsKept > 0) {
+    facts.push({ code: 'locked_goals_kept', values: { amount: goalsKept } });
+  }
+  // 06 D-22: money in unlocked goals counts as spare money, and the answer says so.
+  if ((j.funds.unlockedSaved ?? 0) > 0) facts.push({ code: 'unlocked_goals_counted', values: { amount: j.funds.unlockedSaved as MinorUnits } });
   // 05.4 FIN-02 (D-35, D-41): "Dips into your safety net" leads with its own facts. A need reads "Marked as a need" first and
   // drops the wait line; a want (or no purpose) leads with the date it fits without the net. Purpose changes facts and their
   // order only, never the code, the variant or a figure (I-D41).

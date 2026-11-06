@@ -3741,6 +3741,10 @@ const en = {
         need_net_line: 'Marked as a need. A safety net is money kept for needs like this.',
         // 05.4 D-61: the safety net is locked by default and left out of the answer.
         net_locked: 'Your safety net of {{locked}} is locked, so this answer leaves it out.',
+        // 06 D-05, D-06, D-22: saved money in locked goals is kept out; unlocked goals count as spare money.
+        locked_goals_kept: 'Locked goals {{amount}} kept out of this answer.',
+        net_and_goals_kept: 'Safety net {{net}} and locked goals {{goals}} kept out.',
+        unlocked_goals_counted: 'Unlocked goals {{amount}} counted as spare money.',
         envelope_used: '{{used}} comes from the {{envelope}} envelope.',
         line_crossed: 'This goes past one of your lines.',
         line_crossed_percent: 'This brings it to {{value}}% of your income; your line is {{limit}}%.',
