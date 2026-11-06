@@ -1,4 +1,5 @@
 // quick-261025-f46: the DECIDE_OPEN switch keeps the Decide tab but shows only the coming-soon screen.
+// quick-261106-bf2 (owner 2026-11-06): DECIDE_OPEN is now true, so the route shows Decide home; the screen itself stays tested.
 import React from 'react';
 import { screen } from '@testing-library/react-native';
 import en from '@/i18n/locales/en';
@@ -10,7 +11,7 @@ import DecideRoute from '../../../../../app/(app)/(tabs)/decide';
 jest.mock('@/features/decide/home/DecideHomeScreen', () => {
   const R = jest.requireActual('react');
   const { Text: RNText } = jest.requireActual('react-native');
-  return { DecideHomeScreen: () => R.createElement(RNText, null, 'old-decide') };
+  return { DecideHomeScreen: () => R.createElement(RNText, null, 'decide-home') };
 });
 // 05.2-35: the route also imports the test-account setup page (and its data hooks, which need Supabase env). It is not drawn
 // here: the switch is off for this account, so the Decide tab shows Coming soon.
@@ -35,8 +36,8 @@ jest.mock('@/shell/screen/TabRootScreen', () => {
 const BANNED = [/\badvice\b/i, /\badvis/i, /recommend/i, /you should/i, /we suggest/i, /best option/i, /guaranteed/i, /\bapproved\b/i, /pre-approved/i, /\boffer/i, /apply for/i, /\blender\b/i, /loan offer/i, /interest-free/i];
 
 describe('Decide coming-soon switch', () => {
-  it('ships closed', () => {
-    expect(DECIDE_OPEN).toBe(false);
+  it('owner 2026-11-06: ships open', () => {
+    expect(DECIDE_OPEN).toBe(true);
   });
 
   it('shows the header, heading and body', async () => {
@@ -47,10 +48,10 @@ describe('Decide coming-soon switch', () => {
     expect(screen.getByText(en.decide.home.comingSoon.body)).toBeTruthy();
   });
 
-  it('the Decide route renders the coming-soon screen, not today’s Decide', async () => {
+  it('the Decide route renders Decide home, not the coming-soon screen', async () => {
     await wrap(<DecideRoute />);
-    expect(screen.getByText('A better Decide is on its way')).toBeTruthy();
-    expect(screen.queryByText('old-decide')).toBeNull();
+    expect(screen.getByText('decide-home')).toBeTruthy();
+    expect(screen.queryByText('A better Decide is on its way')).toBeNull();
   });
 
   it('uses no banned word', () => {
