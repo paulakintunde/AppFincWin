@@ -912,6 +912,184 @@
       "approvedAt": "2026-11-02",
       "ownerReason": null,
       "expertNote": null
+    },
+    {
+      "id": "SO-10",
+      "topic": "selling-the-old-one",
+      "persona": "Noor, buying on 18 January, sale on 19 January (invented)",
+      "situation": "Noor (invented) is checking a $1,500 purchase on 15 October 2026, to be bought on 18 January 2027, paid in one go. Noor will sell the old one for $1,230; the buyer pays on 19 January 2027. A usual month: pay $1,000 on the 1st, bills $318.50 and everyday spending $591.50 ($295.75 of it on essentials), so $90 is left. This month Noor has received $1,000, has $318.50 of bills still to pay and has spent $147.87 so far; $443.63 of everyday spending is still to come. The Main account holds $852.13, so $90 is left at the end of October. No safety net, no debts.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 100000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 31850,
+          "everyday": 59150,
+          "essentialEveryday": 29575
+        },
+        "thisMonth": {
+          "received": 100000,
+          "billsPaid": 0,
+          "billsDue": 31850,
+          "everydaySoFar": 14787
+        },
+        "historyMonths": 3,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Main",
+            "balance": 85213,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": false,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "purchaseDate": "2027-01-18",
+          "replaces": {
+            "stops": [],
+            "sale": {
+              "amount": 123000,
+              "arrives": "2027-01-19",
+              "paysDebtId": null
+            }
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2027-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "sale_counted"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "The purchase date is more than 90 days ahead, so it is checked on day 90, 12 January 2027 (D-96). The sale arrives on 19 January, after day 90, so it does not count toward the purchase (D-137), even though it arrives the day after the purchase date. Without it Noor has $90 left in October plus the usual $90 from each of November and December = $270, well short of $1,500 (D-95), so Not yet. The sale counts only toward the ready date, from its month.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-05",
+      "ownerReason": "The owner approved this case as written per D-137 (2026-11-05): a sale arriving after day 90 never counts toward a purchase held to day 90.",
+      "expertNote": null,
+      "plannerNote": "05.4-40 (D-137): from the I-D96 property's failing input (the D96-SALE finding). Before D-137, the 19 January date answered \"Fits, but tight\"."
+    },
+    {
+      "id": "SO-11",
+      "topic": "selling-the-old-one",
+      "persona": "Noor, buying on 19 January, the sale's day (invented)",
+      "situation": "Noor (invented) is checking a $1,500 purchase on 15 October 2026, to be bought on 19 January 2027, paid in one go. Noor will sell the old one for $1,230; the buyer pays on 19 January 2027. A usual month: pay $1,000 on the 1st, bills $318.50 and everyday spending $591.50 ($295.75 of it on essentials), so $90 is left. This month Noor has received $1,000, has $318.50 of bills still to pay and has spent $147.87 so far; $443.63 of everyday spending is still to come. The Main account holds $852.13, so $90 is left at the end of October. No safety net, no debts.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 100000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 31850,
+          "everyday": 59150,
+          "essentialEveryday": 29575
+        },
+        "thisMonth": {
+          "received": 100000,
+          "billsPaid": 0,
+          "billsDue": 31850,
+          "everydaySoFar": 14787
+        },
+        "historyMonths": 3,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Main",
+            "balance": 85213,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": false,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "purchaseDate": "2027-01-19",
+          "replaces": {
+            "stops": [],
+            "sale": {
+              "amount": 123000,
+              "arrives": "2027-01-19",
+              "paysDebtId": null
+            }
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2027-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "sale_counted"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "The purchase date is more than 90 days ahead, so it is checked on day 90, 12 January 2027 (D-96). The sale arrives on 19 January, after day 90, so it does not count toward the purchase (D-137), even though it arrives on the purchase date. Without it Noor has $90 left in October plus the usual $90 from each of November and December = $270, well short of $1,500 (D-95), so Not yet. The sale counts only toward the ready date, from its month.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-05",
+      "ownerReason": "The owner approved this case as written per D-137 (2026-11-05): a sale arriving after day 90 never counts toward a purchase held to day 90.",
+      "expertNote": null,
+      "plannerNote": "05.4-40 (D-137): from the I-D96 property's failing input (the D96-SALE finding). Before D-137, the 19 January date answered \"Fits, but tight\"."
     }
   ]
 }

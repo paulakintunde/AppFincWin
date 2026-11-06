@@ -80,6 +80,25 @@ describe('borrowing: thresholds', () => {
   });
 });
 
+describe('borrowing: D-138 the 10% line reads the interest before rounding (owner, 2026-11-05)', () => {
+  it('a computed schedule reads its exact share: 9.32% is not expensive even when the rounded interest is exactly 10%', () => {
+    // I9-ROUNDING: $1.00 over 11 payments every 2 months at 11%, first payment today; the rounded interest is $0.10 (10%).
+    expect(isExpensive(sched({ financed: mu(100), totalInterest: mu(10), exactInterestBp: 932 }), percent('11'), false)).toBe(false);
+    expect(isExpensive(sched({ financed: mu(100), totalInterest: mu(8), exactInterestBp: 1000 }), percent('11'), false)).toBe(true);
+    expect(isExpensive(sched({ financed: mu(100), totalInterest: mu(10), exactInterestBp: 999 }), percent('11'), false)).toBe(false);
+  });
+
+  it('a home loan skips the line whatever the exact share; the rate line still holds', () => {
+    expect(isExpensive(sched({ exactInterestBp: 5000 }), percent('7'), true)).toBe(false);
+    expect(isExpensive(sched({ exactInterestBp: 0 }), percent('20'), true)).toBe(true);
+  });
+
+  it('a quoted schedule (no exact share) reads the interest the quote gives', () => {
+    expect(isExpensive(sched({ financed: mu(600_000), totalInterest: mu(60_000), source: 'quoted' }), percent('7.9'), false)).toBe(true);
+    expect(isExpensive(sched({ financed: mu(600_000), totalInterest: mu(59_999), source: 'quoted' }), percent('7.9'), false)).toBe(false);
+  });
+});
+
 describe('borrowing: the cost and the cash route', () => {
   it('planCost counts every fee: setup, per payment and at the end', () => {
     const s = sched({ fees: { setup: mu(1_000), perPeriod: mu(100), end: mu(500) } });

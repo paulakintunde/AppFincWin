@@ -149,7 +149,7 @@ describe('ENG-17 (D-114): an account with no exchange rate counts nowhere and is
         expect(named).toEqual([{ code: 'account_no_rate', values: { account: 'acc-norate' } }]);
         expect({ ...got, notices: got.notices.filter((n) => n.code !== 'account_no_rate') }).toEqual(want);
       }),
-      { numRuns: fcRuns(150), seed: 0x0517 }
+      { numRuns: fcRuns(200), seed: 0x0517 }
     );
   });
 
@@ -187,7 +187,7 @@ describe('UX-14 the careful path never breaks (engine side)', () => {
         expect(evaluate(inputs, check)).toEqual(before);
         expect(evaluate(inputs, { ...check, price: null }).result.code).toBe('needs_input');
       }),
-      { numRuns: fcRuns(100), seed: 0x0514 }
+      { numRuns: fcRuns(200), seed: 0x0514 }
     );
   });
 });

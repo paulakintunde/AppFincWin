@@ -1328,10 +1328,21 @@ export function plainBorrowed(f: RightAnswerFixture): { amount: Cents; interest:
 export function plainExpensive(f: RightAnswerFixture): boolean {
   const c = f.check.pay;
   if (c.mode !== 'plan') return false;
-  const { amount, interest } = plainBorrowed(f);
+  const { amount } = plainBorrowed(f); // the rounded interest is what the answer shows, not what the 10% line reads (D-138)
   if (amount <= 0n) return false;
   if (c.apr !== null && basisPoints(c.apr) >= big(EXPENSIVE_APR_BP)) return true;
-  return c.housing !== true && interest * 10_000n >= amount * big(EXPENSIVE_INTEREST_BP);
+  if (c.housing === true) return false;
+  // D-138 (owner, 2026-11-05): "the 10% test reads the exact interest before rounding to the cent". With no rounding the level
+  // payment is amount x bp x A^n / (B x (A^n - D^n)) (A = D + bp; B = A when the first payment is today, else D), so the interest
+  // is at least 10% of the amount exactly when n x bp x A^n x 10,000 >= (10,000 + 1,000) x B x (A^n - D^n); the amount cancels.
+  const bp = c.apr === null ? 0n : basisPoints(c.apr);
+  if (bp === 0n) return false;
+  const D = 10_000n * (c.every === 'fortnight' ? 26n : 12n);
+  const n = BigInt(c.months);
+  const An = (D + bp) ** n;
+  const Dn = D ** n;
+  const B = c.firstPaymentDate !== onePeriodAfter(f) ? D + bp : D;
+  return n * bp * An * 10_000n >= (10_000n + big(EXPENSIVE_INTEREST_BP)) * B * (An - Dn);
 }
 
 /**
@@ -1531,10 +1542,20 @@ function debtsAfterSale(f: RightAnswerFixture): RightAnswerFixture['debts'] {
 }
 
 /** SO-01: the sale's account part that arrives by the purchase date, as far as the cost needs it. */
+/**
+ * D-137 (owner, 2026-11-05): "when a purchase date is more than 90 days ahead and is held to day 90, a sale counts toward it only if
+ * the sale arrives on or before day 90." The last day a sale can arrive and still count: the purchase date, or day 90 (asOf + 89, the
+ * path's last day) when the purchase is later.
+ */
+export function saleCutoff(f: RightAnswerFixture): string {
+  const day90 = dayAfter(f.asOf, PATH_DAYS - 1);
+  return buyDay(f) > day90 ? day90 : buyDay(f);
+}
+
 export function saleNow(f: RightAnswerFixture, cost: Cents): Cents {
   const s = saleOf(f);
   const p = plainSale(f);
-  if (s === null || p === null || s.arrives > buyDay(f)) return 0n;
+  if (s === null || p === null || s.arrives > saleCutoff(f)) return 0n;
   return p.toAccount < cost ? p.toAccount : cost;
 }
 
@@ -1558,7 +1579,7 @@ export function replacesDates(f: RightAnswerFixture): { date: string; amount: Ce
   const s = saleOf(f);
   const p = plainSale(f);
   if (s !== null && p !== null) {
-    const before = s.arrives <= buyDay(f);
+    const before = s.arrives <= saleCutoff(f);
     const used = before ? (p.toAccount < upFrontAll(f) ? p.toAccount : upFrontAll(f)) : 0n;
     const lands = p.toAccount - used;
     if (lands > 0n && s.arrives < end) out.push({ date: s.arrives, amount: -lands });

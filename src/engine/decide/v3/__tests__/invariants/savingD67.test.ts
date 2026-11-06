@@ -77,7 +77,7 @@ describe('I-D67 regular saving leaves the everyday account everywhere', () => {
         const b = evaluate(withSaving(inputs, t), check).spare ?? null;
         if (a !== null && b !== null) expect(b).toBeLessThanOrEqual(a);
       }),
-      { numRuns: fcRuns(150), seed: 0x5467 }
+      { numRuns: fcRuns(200), seed: 0x5467 }
     );
   });
 
@@ -92,7 +92,7 @@ describe('I-D67 regular saving leaves the everyday account everywhere', () => {
         // a logged transfer is in the balance already, so this month's occurrence is not taken again
         if (date <= inputs.asOf) expect(readingFigures(logged).monthEnd).toBe(base.monthEnd);
       }),
-      { numRuns: fcRuns(100), seed: 0x5468 }
+      { numRuns: fcRuns(200), seed: 0x5468 }
     );
   });
 });

@@ -234,6 +234,15 @@ describe('replacesEffect', () => {
     expect(e?.showsUsual).toBe(false);
   });
 
+  it('D-137 a purchase past day 90 is held to day 90 (12 Feb): a sale after that day helps only the ready date, one by it counts', () => {
+    const late = replacesEffect({ stops: [], sale: sale({ arrives: '2027-02-18', amount: mu(550_000) }) }, ctx(), '2027-02-20');
+    expect(late?.saleNow).toBe(0);
+    expect(late?.saleLater).toEqual({ amount: 550_000, date: '2027-02-18' });
+    const onDay90 = replacesEffect({ stops: [], sale: sale({ arrives: '2027-02-12', amount: mu(550_000) }) }, ctx(), '2027-02-20');
+    expect(onDay90?.saleNow).toBe(550_000);
+    expect(onDay90?.saleLater).toBeNull();
+  });
+
   it('SO-02 a later sale is a ready-date sale and on the path from its date', () => {
     const e = replacesEffect({ stops: [], sale: sale({ arrives: '2026-12-20', amount: mu(550_000) }) }, ctx(), ASOF);
     expect(e?.saleNow).toBe(0);

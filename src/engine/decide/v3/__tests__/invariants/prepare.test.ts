@@ -24,10 +24,15 @@ function stable(v: unknown): string {
   );
 }
 const digest = (v: unknown): string => createHash('sha256').update(stable(v)).digest('hex').slice(0, 16);
-/** 05.4-37 (D-64 (4), I75): caveats are read from the finished answer, so the digest leaves them out; the rest must not move. */
+/**
+ * 05.4-37 (D-64 (4), I75): caveats are read from the finished answer, so the digest leaves them out. 05.4-40 (D-138): so is the
+ * schedule's exactInterestBp, a new field that only the 10% line reads; the rest must not move.
+ */
 const withoutCaveats = (e: Evaluation): unknown => {
   const { caveats: _caveats, ...result } = e.result;
-  return { ...e, result };
+  if (e.purchase?.schedule == null) return { ...e, result };
+  const { exactInterestBp: _exact, ...schedule } = e.purchase.schedule;
+  return { ...e, result, purchase: { ...e.purchase, schedule } };
 };
 
 const cases = fc.sample(fc.tuple(inputsArb, checkArb), { numRuns: RUNS, seed: SEED });
@@ -59,7 +64,7 @@ describe('I44 prepare once, judge per check equals evaluate', () => {
         const p = prepare(inputs);
         for (const c of checks) expect(judgeCheck(p, c)).toEqual(evaluate(inputs, c));
       }),
-      { numRuns: fcRuns(100), seed: SEED }
+      { numRuns: fcRuns(200), seed: SEED }
     );
   });
 });

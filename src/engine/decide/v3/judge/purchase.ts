@@ -162,8 +162,10 @@ function withPayment(s: Schedule, payment: bigint, source: Schedule['source'], w
   const feeTotal = BigInt(s.fees.perPeriod) * BigInt(lastPaying) + BigInt(s.fees.end);
   const totalPaid = principalPaid + feeTotal;
   const interest = totalPaid - feeTotal - BigInt(s.financed);
+  // D-138: the exact interest share belongs to the computed payment; a quote sets its own, so it is dropped here.
+  const { exactInterestBp: _computedOnly, ...rest } = s;
   return {
-    ...s,
+    ...rest,
     payment: pay,
     finalPayment,
     lastPaying,

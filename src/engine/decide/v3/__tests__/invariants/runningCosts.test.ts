@@ -60,7 +60,7 @@ describe('I68 adding a running cost never raises the money left', () => {
         const off = run(inputs, { ...check, runningCosts: [{ ...line, on: false }] });
         expect({ ...off, afterBuy: { ...off.afterBuy, usualMonth: without.afterBuy.usualMonth } }).toEqual(without);
       }),
-      { numRuns: fcRuns(100), seed: 0x0568 }
+      { numRuns: fcRuns(200), seed: 0x0568 }
     );
   });
 });
@@ -82,7 +82,7 @@ describe('I69 a running cost is counted only from its start date', () => {
           { numRuns: 20, seed: 0x0569 }
         )
       ),
-      { numRuns: fcRuns(20), seed: 0x0569 }
+      { numRuns: fcRuns(200), seed: 0x0569 }
     );
   });
 
@@ -96,9 +96,9 @@ describe('I69 a running cost is counted only from its start date', () => {
         expect(late.cash).toEqual(without.cash);
         if (late.purchase !== null) reached += 1;
       }),
-      { numRuns: fcRuns(100), seed: 0x0569 }
+      { numRuns: fcRuns(200), seed: 0x0569 }
     );
-    if (isFullRun(100)) expect(reached).toBeGreaterThan(0);
+    if (isFullRun(200)) expect(reached).toBeGreaterThan(0);
   });
 });
 

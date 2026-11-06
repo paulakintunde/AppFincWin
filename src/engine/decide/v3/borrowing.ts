@@ -60,7 +60,11 @@ export function isExpensiveRate(apr: PlanRate): boolean {
 export function isExpensive(s: Schedule, apr: PlanRate, housing: boolean): boolean {
   if (s.financed <= 0) return false;
   if (isExpensiveRate(apr)) return true;
-  return !housing && BigInt(s.totalInterest) * 10_000n >= BigInt(s.financed) * BigInt(EXPENSIVE_INTEREST_SHARE_BP);
+  if (housing) return false;
+  // D-138 (owner, 2026-11-05): the 10% line reads the interest before rounding, so a 1-cent rounding step never flips it. A quoted
+  // payment has no exact figure but its own (exactInterestBp absent), so it reads the interest the quote gives.
+  if (s.exactInterestBp !== undefined) return s.exactInterestBp >= EXPENSIVE_INTEREST_SHARE_BP;
+  return BigInt(s.totalInterest) * 10_000n >= BigInt(s.financed) * BigInt(EXPENSIVE_INTEREST_SHARE_BP);
 }
 
 /** The cash route counts as a fit only on the clean fit codes: no overdraft, no safety-net money (D-61). */
