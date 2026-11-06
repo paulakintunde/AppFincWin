@@ -172,7 +172,10 @@ async function main(argv) {
   const g = gate(report, { bar, plan, duplicates });
   if (flags.has('--out')) write(flags.get('--out'), `${JSON.stringify(report)}\n`);
   if (flags.has('--html')) write(flags.get('--html'), html(report));
-  if (flags.has('--incremental-out')) {
+  // The baseline is kept whenever every part arrived, even below the bar: the per-push check needs it to re-test only
+  // changed code. A short run would leave mutants with no result, and the per-push check would re-test them all.
+  const whole = (!plan || completeness(report, plan).length === 0) && duplicates === 0;
+  if (flags.has('--incremental-out') && whole) {
     const baselines = collect(inputs, 'incremental.json');
     if (baselines.length > 0) write(flags.get('--incremental-out'), `${JSON.stringify(mergeReports(baselines.map(readJson)).report)}\n`);
   }

@@ -21,11 +21,13 @@ export default {
   reporters: ['clear-text', 'html', 'json'],
   htmlReporter: { fileName: 'reports/mutation/index.html' },
   jsonReporter: { fileName: 'reports/mutation/mutation.json' },
-  thresholds: { high: 95, low: 90, break: 0 },
+  // D-174: 90% must pass, 95% is the target. The full run applies it to the merged score of all parts
+  // (scripts/mutation-merge.mjs); stryker.part.config.mjs turns break off for a single part.
+  thresholds: { high: 95, low: 90, break: 90 },
   // 05.4-08: the whole engine suite (backtest alone ~2 min) takes longer than the 5-minute default for the first run
   dryRunTimeoutMinutes: 45,
   // Keep the sandbox small: build output, reports and caches are not source
-  ignorePatterns: ['coverage', 'reports', '.stryker-cache', '.stryker-tmp', '.planning', 'android', 'ios', '.expo', 'scratch-jest.txt'],
+  ignorePatterns: ['coverage', 'reports', '.stryker-cache', '.stryker-tmp', '.planning', 'android', 'ios', '.expo', 'scratch-jest.txt', 'FincWin United.dc.html'],
   timeoutMS: 60000,
   timeoutFactor: 3,
   concurrency: 4,

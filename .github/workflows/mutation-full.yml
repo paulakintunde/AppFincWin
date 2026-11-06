@@ -1,0 +1,109 @@
+name: Mutation (full)
+# 05.4-43 (QA-04, D-172..D-178): the whole D-32 scope (v3 engine and its 5 shared files), split into about 20 parts
+# with the same number of mutants each (scripts/mutation-shards.mjs; big files are cut into line ranges), then merged
+# into one report, one score and one gate at 90% (scripts/mutation-merge.mjs, D-174). Static mutants stay out
+# (--ignoreStatic, D-173); property tests run 10 cases (FC_RUNS=10, D-176).
+# Starts: the `mutation-full` label on a PR (works before the merge, D-178), by hand, or nightly once on main.
+# Never cancelled by a new push: its own concurrency group per commit. The merged incremental file is saved as the
+# baseline that mutation-changed.yml re-uses, so a push then re-tests only mutants in changed code (D-175).
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch: {}
+  schedule:
+    - cron: '41 4 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: mutation-full-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+jobs:
+  plan:
+    name: plan
+    if: github.event_name != 'pull_request' || github.event.label.name == 'mutation-full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4.4.0 (v4)
+        with: { node-version: 24, cache: npm }
+      - run: npm ci --legacy-peer-deps
+      - name: Split the mutants into parts
+        id: plan
+        run: node scripts/mutation-shards.mjs --parts 20 --out reports/mutation-plan.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mutation-plan
+          path: reports/mutation-plan.json
+  part:
+    name: part ${{ matrix.part }}
+    needs: plan
+    runs-on: ubuntu-latest
+    # A part is about 700 mutants: about 2 hours at 6 a minute, plus 5-10 minutes of first test run
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4.4.0 (v4)
+        with: { node-version: 24, cache: npm }
+      - run: npm ci --legacy-peer-deps
+      - name: Mutate this part
+        env:
+          FC_RUNS: 10
+          MUTATE: ${{ matrix.mutate }}
+        run: |
+          echo "Part ${{ matrix.part }} mutates: $MUTATE"
+          npx stryker run stryker.part.config.mjs --force --ignoreStatic --mutate "$MUTATE"
+      - name: Keep this part's report and baseline
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mutation-part-${{ matrix.part }}
+          path: |
+            reports/mutation/mutation.json
+            .stryker-cache/incremental.json
+          include-hidden-files: true
+          if-no-files-found: warn
+  merge:
+    name: merge
+    needs: [plan, part]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4.4.0 (v4)
+        with: { node-version: 24, cache: npm }
+      - run: npm ci --legacy-peer-deps
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: mutation-part-*
+          path: parts
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: mutation-plan
+          path: plan
+      - name: Merge the parts and apply the 90% bar (D-174)
+        run: >-
+          node scripts/mutation-merge.mjs --bar 90 --plan plan/mutation-plan.json
+          --out reports/mutation/mutation.json --html reports/mutation/index.html
+          --incremental-out .stryker-cache/incremental.json --label "Full mutation run" parts
+      - name: Keep the merged report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mutation-report
+          path: reports/mutation/
+          if-no-files-found: warn
+      # Written by the merge only when every part arrived (below the bar too), so the per-push check can start
+      - name: Save the baseline for the per-push check
+        if: always() && hashFiles('.stryker-cache/incremental.json') != ''
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0 (v4)
+        with:
+          path: .stryker-cache/incremental.json
+          key: stryker-baseline-${{ github.event.pull_request.head.sha || github.sha }}
