@@ -1,4 +1,4 @@
-import { DevHarnessScreen } from '@/features/decide/dev/DevHarnessScreen';
+import { DevHarnessScreen } from '@/features/devHarness/DevHarnessScreen';
 
 export default function DevHarnessRoute() {
   return <DevHarnessScreen />;

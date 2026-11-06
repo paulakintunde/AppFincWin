@@ -86,7 +86,7 @@ describe('harness gates', () => {
   });
 
   it('the layout registers the route only inside a Stack.Protected guarded by harnessEnabled()', () => {
-    const src = readFileSync(join(__dirname, '../../../../../app/(app)/_layout.tsx'), 'utf8');
+    const src = readFileSync(join(__dirname, '../../../../app/(app)/_layout.tsx'), 'utf8');
     expect(src).toMatch(/<Stack\.Protected guard=\{harnessEnabled\(\)\}>\s*<Stack\.Screen name="decide\/dev-harness" \/>\s*<\/Stack\.Protected>/);
   });
 });

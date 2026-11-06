@@ -9,7 +9,7 @@ import { SwipeBack } from '@/features/navigation/SwipeBack';
 import { isSwipeBackRoute } from '@/features/navigation/swipeBackGesture';
 import { useReduceMotion } from '@/theme/motion';
 import { DECIDE_OPEN } from '@/features/decide/availability';
-import { harnessEnabled } from '@/features/decide/dev/harnessEnabled';
+import { harnessEnabled } from '@/features/devHarness/harnessEnabled';
 import { useNotificationObserver } from '@/features/decide/notifications/useNotificationObserver';
 import { useConsent } from '@/features/consent/useConsent';
 import { consentAnswered } from '@/features/consent/consentAnswered';

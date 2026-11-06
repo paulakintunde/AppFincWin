@@ -5,7 +5,7 @@
 import { BAND_EDGES_USD } from '@/engine/decide/v3';
 import type { CheckV2, PayV2, V3Inputs, V3Line, V3Month, V3Series } from '@/engine/decide/v3';
 import { currencyCode, minorUnits, type MinorUnits } from '@/engine/money/types';
-import { percent } from '@/engine/payoff/types';
+import { percent } from '@/engine/decide';
 
 const mu = (n: number): MinorUnits => minorUnits(n);
 
