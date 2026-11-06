@@ -60,7 +60,7 @@ Quick estimates added in More details (D02) are carried into step 3 as switched-
 4. "Try an example" chips: Headphones $180 · Laptop $3,500 · Used car $9,000.
 5. Your month card: month switcher (November, with arrows back to Sep and Oct), "$425 left in November · Expected", stacked bar, COMES IN $3,200 / GOES OUT $2,775 / LEFT $425, a Usual month / Worst month switch ($425 left / $380 left), an explainer sentence, then the row "Records up to Oct 21 · 2 of 3 months · One more month, on Nov 21, makes every answer surer."
 6. Open checks, with "+ Purchase" and "+ Investment" links: Headphones (Fits · $180 · Dec 15 · leaves $231), Laptop (Tight · $3,500 · Jan 15 · leaves $320), Studio camera body (Draft · $4,200 · how to pay not chosen).
-7. Lines you will not cross ("Every answer keeps to these. Tap one to change it."): Safety net $1,300 (Locked · no answer spends it), Debt payments at most 36%, Investing at least $200, Saving at least $150.
+7. Your money rules ("Every answer keeps to these. Tap one to change it."): Safety net $1,300 (Locked · no answer spends it), Debt payments at most 36%, Investing at least $200, Saving at least $150.
 8. Row "Something changed? · Pay, a bill or a one-off cost". **L08's "Finish setup · 4 short steps" row is removed**: the D30 banner replaces it.
 9. Footnote: "Answers use 2 months of pay, 14 spending lines, 1 debt and 4 accounts. Change any of them in Activity or Grow and every answer updates. FincWin is a planning tool, not a lender or adviser."
 
@@ -77,7 +77,7 @@ Quick estimates added in More details (D02) are carried into step 3 as switched-
 - Month arrows → Sep / Oct (past months). The Usual / Worst switch changes the card.
 - Records row → D37 (the setup records step, also reachable after setup is complete).
 - Open check row → D46. "+ Purchase" → focuses What is it?. "+ Investment" → see open question 6.
-- Safety net line → D51. Other lines → D49 (one variant per line).
+- Safety net rule → D51. Other rules → D49 (one variant per rule).
 - Something changed? → D53.
 
 **States:** offline (N22 card above the check card: "Offline. Using records up to Oct 21. Retry"), error (N23 card), not ready (no full month yet: Check it still works and lands on N24).
@@ -201,7 +201,7 @@ Icons use our set: `headphones`, `laptop`, `transport`, `housing`, `checkbuy`; `
 |---|---|---|
 | fits_month / fits_unspent, clean | **N02 Fits** (N02L at large text) | Headphones $180, Dec 15: $231 left in December |
 | fits, payment over 80% of room or under a floor | **N04 Fits, but tight** | Laptop $3,500, Jan 15 |
-| under a line the user set | **N15 Fits, but tight each month: under your line** | Laptop, installments |
+| under a rule the user set | **N15 Fits, but tight each month: under your rule** | Laptop, installments |
 | fits from savings above the net | **N25 Fits from extra savings** | Laptop, Nov 1 |
 | not_yet, safety net locked | **N05 Not yet: safety net locked** | Laptop, today |
 | emergency_use, net unlocked | **N06 Dips into your safety net** | Laptop, today |
@@ -218,7 +218,7 @@ Icons use our set: `headphones`, `laptop`, `transport`, `housing`, `checkbuy`; `
 Secondary screens from any answer: N03 Make it surer (sheet), N14 Your month after buying, N16 Cash and installments side by side, N17 Costs that stop when you buy, N18 Save for it in Grow → N18S Goal made, N19 I bought it → N19S Added to records, N20 Your decisions (D47).
 **Added to every answer:** a More detail row **"Running costs · none counted · Add"** (small buys) or **"Running costs · $323 a month · Change"** (big buys). It opens D13.
 **Taps:** Back → D13 if the user came through the stepper, otherwise D01. New check → D01, cleared. "Buy later" / "Cheaper one" / "Installments" chips → C14 / C15 / C16 option views, with "Use Nov 15" etc. writing the change back. I bought it → N19. Save for it → N18. I'm not buying it → toast "Marked as not buying." with Undo, and the check moves to D47 "Not bought".
-**Motion:** the verdict card rises 0.24 s once; no count-up. Haptics: none for Fits; the warning haptic for a crossed line (N15) only.
+**Motion:** the verdict card rises 0.24 s once; no count-up. Haptics: none for Fits; the warning haptic for N15 (under a rule you set) only.
 
 ### D21 Answer after the stepper (screen additions to D20)
 **Reached from:** D13 See the answer, or See the answer now on D11 or D12.
@@ -244,7 +244,7 @@ When steps were skipped: the line "Running costs use Decide's quick estimates fo
 | 2 | Regular bills | confirmed series with role bill / debt_payment / saving / investing; dismissed keys | Activity |
 | 3 | Debts | `V3Debt` (kind, balance, minimum, APR, due day) | Grow |
 | 4 | Safety net | `EmergencyFund` (amount, account), protection on/off and size (05.4 D-33) | Grow |
-| 5 | Lines you will not cross | `Limits.lines` (up to 3 built-in, up to 5 own) | Decide |
+| 5 | Your money rules | `Limits.lines` (up to 3 built-in, up to 5 own) | Decide |
 | 6 | Records | readiness: last month fully recorded, this month up to date (newest entry within 10 days), every account says what it is for (`AccountUse`), every goal says which account holds it | Activity and Accounts |
 
 **Done rules.** An item is ticked when its engine input is present and confirmed, wherever it was set (Grow, Activity or here). That is the real head start. For AM today: 1, 2, 4 and 5 are done. 3 is open: the Visa card has no due day. 6 is open: the newest entry is Oct 21, 15 days ago. **4 of 6 done.** Item 6 does not wait for 3 months: the "2 of 3 months" progress stays on the Your month card and never holds the banner open.
@@ -273,7 +273,7 @@ When steps were skipped: the line "Running costs use Decide's quick estimates fo
    - Regular bills · "Done · 7 bills, $1,850 a month"
    - Debts · **"1 to finish · Visa card has no due day"**
    - Safety net · "Done · $1,300, set in Grow"
-   - Lines you will not cross · "Done · 3 lines"
+   - Your money rules · "Done · 3 rules"
    - Records · **"Up to Oct 21 · add what you spent since"**
 4. Note: "Nothing here moves money. You can change any of it later."
 5. Button **Continue: Debts** (the next open item).
@@ -306,16 +306,16 @@ When steps were skipped: the line "Running costs use Decide's quick estimates fo
 **Content:** "$1,300 in it now · Goal $2,300, set in Grow" with a navy bar (safety net colour). "Which account holds it?": Everyday account (checking) · Savings account. A switch "Safety net locked: answers never spend it" (on). The size line: "The starter size is about 1 month of essential costs: $2,300. Any size works, even a small one." with "Change the size in Grow".
 **Button:** **Save**. No net yet: "Set an amount" field with "Not set yet" as a choice. That choice ticks the item and says answers hold nothing back (05.4 D-25: no answer then says "untouched").
 
-### D36 Setup: Lines you will not cross (screen)
-**Why we ask:** "Every answer checks these, and says so when a purchase would cross one."
+### D36 Setup: Your money rules (screen)
+**Why we ask:** "Every answer checks these, and says so when a purchase would go against one."
 **Content:** switch rows, each with a value chip that opens D49:
 - Debt payments at most · 36% of pay (on)
 - Keep at least · $___ left each month (off; this is the floor behind N15)
 - Largest single purchase · $___ (off)
-- "+ Add your own line" → D50 (up to 5)
+- "+ Add your own rule" → D50 (up to 5)
 
-A note row: "Saving at least $150 and Investing at least $200 are your regular saving and investing. Change them in Grow." This is shown because those two are regular saving series, not engine lines.
-**Button:** **Save**. Saving with all lines off still ticks the item, with the line "No lines. Answers still keep your safety net."
+A note row: "Saving at least $150 and Investing at least $200 are your regular saving and investing. Change them in Grow." This is shown because those two are regular saving series, not engine rules.
+**Button:** **Save**. Saving with all rules off still ticks the item, with the line "No rules. Answers still keep your safety net."
 
 ### D37 Setup: Records (screen)
 **Why we ask:** "Answers come from your real months. Decide needs last month complete and this month up to date."
@@ -412,21 +412,21 @@ All sheets: grab bar, title on the left, "Close" link on the right (44 px), slid
 **Layout:** title "Used car". Lines: "Checked Nov 5 · Not yet with cash; Short each month on a 24-month plan" · "Bought Nov 15 · cash $10,020". A card "What Decide counted": Up front $10,020 · Running costs $323 a month. A card "What your records show so far": Up front $10,180 (Nov 15) · Running costs: "look back in February, after 3 months". Actions: **See the check as it was** (read-only D20 with the banner "As checked on Nov 5") · **Remove from decisions** (red text, Undo).
 **Accessibility:** the comparison table is read as label-value pairs.
 
-### D49 Edit a line you will not cross (sheet, per line)
-**Reached from:** a line row on D01 (not Safety net); value chips on D36.
+### D49 Edit a money rule (sheet, per rule)
+**Reached from:** a rule row on D01 (not Safety net); value chips on D36.
 **Variants:**
 - **Debt payments at most:** "Share of pay, all debts counted". Stepper field 36 % (− / +, step 1, range 5 to 60). Line: "Today your debt payments are 5% of pay ($150 of $3,200)."
 - **Investing at least / Saving at least:** "These are regular amounts in Grow." The amount is shown read-only, with **Open in Grow**.
 - **Keep at least … left each month:** amount field $300. Line: "A usual month leaves $425 today."
 
-Common: a switch "Answers check this line" · primary **Save** · "Remove this line" for own lines. A Save that would make a current open check cross the line adds: "This changes 1 open check: Laptop now crosses it." No haptic except the warning when that happens.
+Common: a switch "Answers check this rule" · primary **Save** · "Remove this rule" for own rules. A Save that would make a current open check go against the rule adds: "This changes 1 open check: Laptop now goes against it." No haptic except the warning when that happens.
 
-### D50 Add your own line (sheet)
-**Reached from:** "+ Add your own line" on D36 and D01.
-**Layout:** title "Add a line". Radio list: Spending in one category at most $ a month (category picker) · One category at most % of pay · Largest single purchase $ · Keep at least $ left each month. Value field. **Add line**. "Up to 5 of your own lines."
+### D50 Add your own rule (sheet)
+**Reached from:** "+ Add your own rule" on D36 and D01.
+**Layout:** title "Add a rule". Radio list: Spending in one category at most $ a month (category picker) · One category at most % of pay · Largest single purchase $ · Keep at least $ left each month. Value field. **Add rule**. "Up to 5 of your own rules."
 
 ### D51 Safety net settings (screen)
-**Reached from:** the Safety net line on D01; N05 / N06; D35.
+**Reached from:** the Safety net rule on D01; N05 / N06; D35.
 **Layout:** board **N07** (locked) / **N07U** (unlocked). Navy 48 px lock tile; "Safety net · Money kept for emergencies. Set in Grow." Card: "$1,300 in it now", bar, legend "$1,300 in it · Goal: $2,300, set in Grow". Card: switch "Safety net locked · Answers never spend it. Answers that would need it say Not yet." Card "Before you unlock it": "Answers will be allowed to use your safety net. Every answer that uses it says so at the top, with how much it uses and what stays in it. You can lock it again at any time." Button **Unlock for answers**. Link "Change the size in Grow".
 **Taps:** Unlock → D52. When unlocked, the switch on → locks it at once: toast "Safety net locked." and the padlock closes (0.22 s; Reduce Motion: no motion).
 
