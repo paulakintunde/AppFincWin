@@ -54,7 +54,7 @@ describe('buildV3Inputs: the demo (S9)', () => {
   });
 
   it('has the student loan with its minimum and the cash balance of the snapshot', () => {
-    expect(inputs.debts).toEqual([{ id: 'demo-debt-0', kind: 'loan', balance: 620000, minimum: 19000, apr: expect.anything(), secured: false, isHousing: false }]);
+    expect(inputs.debts).toEqual([{ id: 'demo-debt-0', kind: 'loan', balance: 620000, minimum: 19000, apr: expect.anything(), secured: false, isHousing: false, dueDay: null }]);
     expect(snap.kind).toBe('logged');
     expect(inputs.balance).toBe(snap.cash);
   });
