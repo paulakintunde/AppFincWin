@@ -207,6 +207,7 @@ Recent decisions affecting current work:
 | 261101-jee | Variant C chosen as the Decide design (A and B retired, blend dropped); reading-test round 1 on Variant C alone before the QA-01 freeze; Grow out of the Decide reading test | 2026-11-01 | 862f3ba6 | [261101-jee-record-variant-c-as-the-chosen-decide-de](./quick/261101-jee-record-variant-c-as-the-chosen-decide-de/) |
 | 261101-mxs | Decide Stage 0: PR #90 rebased on #91; docs follow BO-08 (Decide off for everyone, testers included, until 08.1; closed beta retired; test-flag gap closed in 05.4); STATE, ROADMAP and REQUIREMENTS refreshed for Variant C; 05.4 handoff note copied to main | 2026-11-02 | 59de1a80 | [261101-mxs-decide-stage-0-housekeeping](./quick/261101-mxs-decide-stage-0-housekeeping/) |
 | 261101-vmi | Engine test pins the unspent roll-forward clamp (unspent.ts:104); fixes the flaky 100% engine coverage gate that failed main and PR #90 | 2026-11-02 | 3416e419 | [261101-vmi-pin-unspent-clamp-coverage](./quick/261101-vmi-pin-unspent-clamp-coverage/) |
+| 261106-bf2 | Switch Decide on for testers: DECIDE_OPEN and DECIDE_V3 true, v3 for every account (owner 2026-11-06) | 2026-11-06 | 8096e25a | [261106-bf2-switch-decide-on-for-testers-decide-open](./quick/261106-bf2-switch-decide-on-for-testers-decide-open/) |
 
 ## Deferred Items
 

@@ -20,9 +20,9 @@ function walk(dir: string, out: string[]): void {
 }
 
 describe('Decide availability switches', () => {
-  it('D-15 the switch is off', () => {
-    expect(DECIDE_V3).toBe(false);
-    expect(decideEngine()).toBe('v2');
+  it('owner 2026-11-06: the switch is on for every account', () => {
+    expect(DECIDE_V3).toBe(true);
+    expect(decideEngine()).toBe('v3');
   });
 
   it('D-15 one reader: only availability.ts mentions DECIDE_V3, exactly twice', () => {
@@ -39,9 +39,9 @@ describe('Decide availability switches', () => {
     expect(own.match(/\bDECIDE_V3\b/g)).toHaveLength(2);
   });
 
-  it('05.2 D-02 the per-account flag selects v3', () => {
-    expect(decideEngine({})).toBe('v2');
-    expect(decideEngine({ decideV3: false })).toBe('v2');
+  it('owner 2026-11-06: v3 whatever the per-account flag says', () => {
+    expect(decideEngine({})).toBe('v3');
+    expect(decideEngine({ decideV3: false })).toBe('v3');
     expect(decideEngine({ decideV3: true })).toBe('v3');
   });
 
@@ -49,7 +49,7 @@ describe('Decide availability switches', () => {
     expect(DECIDE_SETUP_VISIBLE).toBe(false);
   });
 
-  it('DECIDE_OPEN unchanged', () => {
-    expect(DECIDE_OPEN).toBe(false);
+  it('owner 2026-11-06: Decide is open', () => {
+    expect(DECIDE_OPEN).toBe(true);
   });
 });
