@@ -28,6 +28,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 05.4: Decide safety patch** (INSERTED) - Decide never says "Fits" when a careful person would say "careful": safety net, overdraft, debt minimums, tax, after-purchase figure; plain confidence sentence replaces Rough/Fair/Firm
 - [ ] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
 - [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
+- [ ] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
@@ -1177,6 +1178,16 @@ Plans:
   9. (Decide fix plan) A goal contribution counts exactly once; the Loans, Saving, Emergency and Envelopes setup steps live in Grow; the safety-net and debt contract tests are on (ARC-15, ARC-16).
 **Plans**: TBD
 **UI hint**: yes
+
+### Phase 06.1: Decide screens from the prototype (INSERTED)
+
+**Goal:** Testers use the new Decide screens, built from the owner's clickable prototype (https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR, the design standard, as in Phase 6 D-04), on the v3 engine and the connection points that exist on main. Scope against 08.1 is settled in /gsd-discuss-phase 06.1.
+**Requirements**: TBD (from discuss-phase; drawn from 08.1's list)
+**Depends on:** Phase 6 wave 1 (safety net, goal and debt connection points). Planning starts now (owner 2026-11-06); building starts after Grow wave 1 merges. Household parts stay hidden until Phase 8.
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 06.1 to break down)
 
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
