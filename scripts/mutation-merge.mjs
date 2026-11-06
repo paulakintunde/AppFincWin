@@ -9,7 +9,7 @@
 // Inputs are files or folders; folders are searched for mutation.json (reports) and incremental.json (baselines).
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const DETECTED = new Set(['Killed', 'Timeout']);
@@ -116,7 +116,7 @@ function collect(inputs, base) {
   const out = [];
   const walk = (p) => {
     if (statSync(p).isDirectory()) for (const e of readdirSync(p)) walk(join(p, e));
-    else if (p.endsWith(base)) out.push(p);
+    else if (basename(p) === base) out.push(p);
   };
   for (const i of inputs) if (existsSync(i)) walk(i);
   return out.sort();
