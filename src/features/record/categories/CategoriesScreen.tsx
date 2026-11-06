@@ -2,7 +2,7 @@
 // open the edit sheet; Transfer and Settlement are listed as system categories with no edit
 // action; archived categories can be restored (a single undoable step).
 import React, { useState } from 'react';
-import { router } from 'expo-router';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import type { CategoryRow } from '@/db/rows';
@@ -66,7 +66,7 @@ export function CategoriesScreen() {
           label={t('categories.rules.title')}
           sublabel={ruleCount > 0 ? t('categories.rules.count', { count: ruleCount }) : t('categories.rules.entrySub')}
           chevron
-          onPress={() => router.push('/category-rules')}
+          onPress={() => pushOnce('/category-rules')}
         />
         {lookup.active.map((c) => {
           const u = usage.get(c.id);

@@ -3,7 +3,7 @@ import { minorUnits as mu } from '../../../../money/types';
 import type { MonthMark, V3Month, V3Series } from '../../types';
 import { personById, toV3Inputs } from '../../__tests__/golden/adapter';
 import { monthOf, v3Line, v3Series } from '../../__tests__/helpers/fixtures';
-import { everydayByMonth, medianHalfUp, typicalOf, type TypicalInput } from '../typical';
+import { everydayByMonth, medianHalfUp, typedEverydayOf, typicalOf, type TypicalInput } from '../typical';
 
 const NUM_RUNS = 150;
 const ASOF = '2026-10-03';
@@ -21,7 +21,7 @@ function input(over: Partial<TypicalInput> = {}): TypicalInput {
     typicalIncome: mu(400000),
     setAside: mu(30000),
     everydayOverride: null,
-    rough: null,
+    typedEstimates: null,
     ...over,
   };
 }
@@ -230,16 +230,55 @@ describe('typicalOf', () => {
 
   it('D-32 rough figures only', () => {
     const rough = { income: mu(300000), expenses: mu(150000), debt: mu(20000), saving: mu(10000), invest: mu(5000), asOf: ASOF };
-    const r = typicalOf(input({ rough }));
-    expect(r.e).toBe(150000);
+    const r = typicalOf(input({ typedEstimates: rough }));
+    expect(r.e).toBe(120000); // 05.4-57 D-74: the 30000 set aside is inside the 150000 money out, counted once
     expect(r.typicalLeft).toBe(115000);
     expect(r.low).toBeNull();
-    expect(r.reasons).toContain('rough_figures_used');
+    expect(r.reasons).toContain('quick_estimates_used');
     expect(r.notices).toEqual([{ code: 'from_your_figures', values: {} }]);
-    const withHistory = typicalOf(input({ rough, history: [everydayMonth('2026-09', 80000)] }));
+    const withHistory = typicalOf(input({ typedEstimates: rough, history: [everydayMonth('2026-09', 80000)] }));
     expect(withHistory.e).toBe(80000);
-    expect(withHistory.reasons).not.toContain('rough_figures_used');
+    expect(withHistory.reasons).not.toContain('quick_estimates_used');
     expect(withHistory.notices).toEqual([]);
+  });
+
+  // 05.4-57 ENG11-QE-BILLS: quick estimates' money out includes the bills; the everyday figure is the rest, never below 0.
+  it('ENG11-QE-BILLS typedEverydayOf: money out less the usual bills, never below 0', () => {
+    expect(typedEverydayOf(mu(130000), mu(100000))).toBe(30000);
+    expect(typedEverydayOf(mu(130000), mu(0))).toBe(130000);
+    expect(typedEverydayOf(mu(80000), mu(100000))).toBe(0);
+  });
+
+  it('ENG11-QE-BILLS quick estimates with a monthly bill series: E is the everyday part, the money out counted once', () => {
+    const rough = { income: mu(250000), expenses: mu(130000), debt: mu(0), saving: mu(0), invest: mu(0), asOf: ASOF };
+    const bill = seriesBill({ id: 'b', amount: 100000 });
+    const r = typicalOf(input({ typedEstimates: rough, series: [bill], setAside: mu(0) }));
+    expect(r.e).toBe(30000);
+    expect(r.recurringBills).toBe(100000);
+    expect(r.typicalLeft).toBe(120000); // income - max(money out, bills + set aside) - debt - saving - invest
+    expect(r.reasons).toContain('quick_estimates_used');
+    expect(r.notices).toEqual([{ code: 'from_your_figures', values: {} }]);
+    // An override or a usable history month: the estimates are not read.
+    expect(typicalOf(input({ typedEstimates: rough, series: [bill], everydayOverride: mu(45000) })).e).toBe(45000);
+    expect(typicalOf(input({ typedEstimates: rough, series: [bill], history: [everydayMonth('2026-09', 80000)] })).e).toBe(80000);
+    // More bills than money out: the everyday figure is 0, never below.
+    const more = seriesBill({ id: 'c', amount: 40000 });
+    expect(typicalOf(input({ typedEstimates: rough, series: [bill, more], setAside: mu(0) })).e).toBe(0);
+  });
+
+  // 05.4-57 D-74 (owner): money out already includes the recorded bills, minimums and regular saving; each counted once, and
+  // when they add up to more than the money out the larger figure goes out of the usual month.
+  it('D-74 quick estimates: recorded set-asides are inside the money out; the larger of the two goes out', () => {
+    const rough = { income: mu(250000), expenses: mu(132500), debt: mu(0), saving: mu(0), invest: mu(0), asOf: ASOF };
+    const bill = seriesBill({ id: 'b', amount: 100000 });
+    // QE-01 by hand: £1,325 out = £1,000 bills + £25 card minimum + £300 everyday
+    const zoe = typicalOf(input({ typedEstimates: rough, series: [bill], setAside: mu(2500) }));
+    expect([zoe.e, zoe.typicalLeft]).toEqual([30000, 117500]); // £2,500 - £1,325
+    // recorded £1,000 + £400 saving = £1,400 against £1,325 out: everyday 0, the usual month takes £1,400 out
+    const more = typicalOf(input({ typedEstimates: rough, series: [bill], setAside: mu(40000) }));
+    expect([more.e, more.typicalLeft]).toEqual([0, 110000]);
+    // typed debt, saving and invest stay separate parts
+    expect(typicalOf(input({ typedEstimates: { ...rough, debt: mu(1000), saving: mu(2000), invest: mu(3000) }, series: [bill], setAside: mu(2500) })).typicalLeft).toBe(111500);
   });
 
   it('everyday override replaces E', () => {
@@ -328,5 +367,45 @@ describe('typicalOf: window and recorded income (05.1-43)', () => {
     const r = typicalOf(input({ incomeByMonth: new Map(), windowMonths: 12 }));
     expect(r.typicalIncome).toBe(400000);
     expect(r.low).toBeNull();
+  });
+});
+
+describe('typicalOf: D-31 series someone else always pays (05.3-65)', () => {
+  const rent = seriesBill({ id: 'rent', amount: 150000, isHousing: true, categoryId: 'housing' });
+  const netflix = seriesBill({ id: 'netflix', amount: 1199, categoryId: 'fun' });
+  const ins = v3Series({ id: 'ins', role: 'bill', cadence: { unit: 'month', every: 3 }, anchorDate: '2026-01-05', amount: 30000 });
+  const history = MONTHS6.map((m) => everydayMonth(m, 50000));
+  const base = (over: Partial<TypicalInput> = {}): TypicalInput => input({ history, series: [rent, netflix, ins], ...over });
+
+  it('an always-other series leaves recurringBills and its category, and typicalLeft rises by its monthly figure', () => {
+    const before = typicalOf(base());
+    const after = typicalOf(base({ excludedSeries: new Set(['netflix']) }));
+    expect(before.recurringBills - after.recurringBills).toBe(1199);
+    expect((after.typicalLeft as number) - (before.typicalLeft as number)).toBe(1199);
+    expect(before.categoryMonthly.find((c) => c.categoryId === 'fun')?.amount).toBe(1199);
+    expect(after.categoryMonthly.find((c) => c.categoryId === 'fun')).toBeUndefined();
+    expect(after.housingMonthly).toBe(before.housingMonthly);
+    expect(after.e).toBe(before.e);
+  });
+
+  it('an always-other housing series leaves housingMonthly and the housing category', () => {
+    const before = typicalOf(base());
+    const after = typicalOf(base({ excludedSeries: new Set(['rent']) }));
+    expect(after.housingMonthly).toBe(0);
+    expect(after.categoryMonthly.find((c) => c.categoryId === 'housing')).toBeUndefined();
+    expect(before.recurringBills - after.recurringBills).toBe(150000);
+  });
+
+  it('an always-other quarterly series raises no yearly_bill_choice_needed notice', () => {
+    expect(typicalOf(base()).notices).toEqual([{ code: 'yearly_bill_choice_needed', values: { seriesId: 'ins' } }]);
+    const after = typicalOf(base({ excludedSeries: new Set(['ins']) }));
+    expect(after.notices).toEqual([]);
+    expect(after.reasons).not.toContain('typical_choice_defaulted');
+  });
+
+  it('no excluded series (absent, empty or unknown id) is byte-identical', () => {
+    const before = JSON.stringify(typicalOf(base()));
+    expect(JSON.stringify(typicalOf(base({ excludedSeries: new Set() })))).toBe(before);
+    expect(JSON.stringify(typicalOf(base({ excludedSeries: new Set(['nope']) })))).toBe(before);
   });
 });

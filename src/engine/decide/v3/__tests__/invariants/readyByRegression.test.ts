@@ -24,7 +24,9 @@ const shape: CheckShape = {
 
 describe('I13 regression: payday never hides a ladder that still fails', () => {
   const hi = evaluate(inputs, checkOf(3_727_926, shape));
-  const lo = evaluate(inputs, checkOf(3_541_529, shape));
+  // 05.4-51 D-67: Priya's regular saving now leaves the everyday account on the main path too, so 3,541,529 also dips before
+  // payday; 3,200,000 is the cheaper price that still passes the cash check (low point 4,158 on 2026-10-31) and fails the ladder.
+  const lo = evaluate(inputs, checkOf(3_200_000, shape));
 
   it('the case still reaches the two branches (dearer dips before payday, cheaper passes the cash check)', () => {
     expect(hi.cash.kind).toBe('payday');
@@ -36,7 +38,7 @@ describe('I13 regression: payday never hides a ladder that still fails', () => {
     expect(lo.result.code).toBe('not_yet');
     expect(hi.result.variant).toBe('not_covered');
     expect(lo.result.variant).toBe('not_covered');
-    expect(lo.result.readyBy).toEqual({ kind: 'month', month: '2026-12' });
+    expect(lo.result.readyBy).toEqual({ kind: 'month', month: '2026-11' });
     expect(hi.result.readyBy).toEqual({ kind: 'month', month: '2026-12' });
   });
 });

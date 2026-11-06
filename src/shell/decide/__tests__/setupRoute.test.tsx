@@ -27,6 +27,8 @@ jest.mock('expo-router', () => {
     useLocalSearchParams: () => mockParams,
   };
 });
+// The body is tested with the build gate open; the real (closed) gate is proved in decideHiddenForEveryone.test.tsx.
+jest.mock('@/features/decide/availability', () => ({ DECIDE_SETUP_VISIBLE: true }));
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockV3 }) }));
 jest.mock('../SetupSheetHost', () => ({ useSetupSheetHost: jest.fn() }));
 jest.mock('@/data/mutations/recurringSeries', () => ({ useEditSeriesFrom: () => ({ editFrom: (i: Record<string, unknown>) => mockEditFrom(i) }) }));

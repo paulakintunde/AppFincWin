@@ -1,0 +1,2 @@
+# BO-05-A (05.4-26): 0 corpus answers changed, so there are no per-key reasons.
+# Owner 2026-11-04: approve BO-05-A, 0 corpus changes; RC-02 per D-94.

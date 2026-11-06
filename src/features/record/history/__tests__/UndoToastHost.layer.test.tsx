@@ -130,7 +130,7 @@ describe('UndoToastHost layers (D-16)', () => {
       host.props.onLayout({ nativeEvent: { layout: { height: 56 } } });
     });
     expect(screen.getByTestId('toast-height').children.join('')).toBe('56');
-    await advance(6000); // 05.2 F-12: Undo toasts 6 s
+    await advance(10000); // 05.3-101: Undo toasts 10 s
     expect(getToast()).toBeNull();
     expect(screen.getByTestId('toast-height').children.join('')).toBe('0');
 
@@ -139,24 +139,24 @@ describe('UndoToastHost layers (D-16)', () => {
     expect(screen.getByTestId('toast-height').children.join('')).toBe('0');
   });
 
-  it('does not restart the timer when the sheet closes (6000ms total for an Undo toast)', async () => {
-    // 05.2 F-12: Undo toasts 6 s
+  it('does not restart the timer when the sheet closes (10000ms total for an Undo toast)', async () => {
+    // 05.2 F-12: Undo toasts 10 s (05.3-101)
     const m = await mount(true);
     await show(ORDINARY);
-    await advance(2000);
+    await advance(4000);
     await m.set(false);
-    await advance(3900);
+    await advance(5900);
     expect(getToast()).not.toBeNull();
     await advance(200);
     expect(getToast()).toBeNull();
   });
 
-  it('a destructive toast keeps its 6000ms across layers', async () => {
+  it('a destructive toast keeps its 10000ms across layers', async () => {
     const m = await mount(true);
     await show({ ...ORDINARY, kind: 'destructive' });
-    await advance(4000);
+    await advance(6000);
     await m.set(false);
-    await advance(1900);
+    await advance(3900);
     expect(getToast()).not.toBeNull();
     await advance(200);
     expect(getToast()).toBeNull();

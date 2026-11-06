@@ -12,6 +12,7 @@
  * I/O-free boundary.
  */
 import { currencyExponent } from './currencyExponents';
+import { isoCurrency } from './isoCurrencies';
 import { minorUnits, type Money, type MinorUnits } from './types';
 
 export interface FormatAmountOptions {
@@ -129,7 +130,9 @@ export function formatAmount(money: Money, opts: FormatAmountOptions): string {
  * name, never by symbol, so "CA$1,500" reads "1,500 Canadian dollars". USD reads "dollars"
  * when `homeCurrency` is USD and "US dollars" otherwise. A custom currency reads its own
  * name (`customName`, falling back to its symbol). The true minus and the D-23 fraction
- * rules match `formatAmount`.
+ * rules match `formatAmount`. The phrase is always "<number> <currency word>" (05.3-51):
+ * the currency word comes from this module, not from the host's ICU, and is singular only
+ * when the number reads exactly "1".
  */
 export function formatMoneyA11y(money: Money, opts: FormatAmountA11yOptions): string {
   const exponent = opts.exponent ?? currencyExponent(money.currency);
@@ -146,15 +149,52 @@ export function formatMoneyA11y(money: Money, opts: FormatAmountA11yOptions): st
     return money.amount < 0 ? `−${spoken}` : spoken;
   }
 
-  const stripUs = money.currency === 'USD' && opts.homeCurrency === 'USD';
-  return new Intl.NumberFormat(opts.locale, {
-    style: 'currency',
-    currency: money.currency,
-    currencyDisplay: 'name',
-    ...fractionOpts,
-  })
-    .formatToParts(toDecimalString(money.amount, exponent) as unknown as number)
-    .map((part) => (stripUs && part.type === 'currency' ? part.value.replace(/^US\s+/, '') : part.value))
-    .join('')
-    .replace(/-/g, '−');
+  // 05.3-51 (F7): the phrase is built here, never from ICU's `currencyDisplay: 'name'` parts.
+  // Hermes on Android put the name first and in the singular ("Dollar 4,865.09"); Node puts
+  // it last ("4,865.09 US dollars"). Only the plain number comes from Intl, so every host
+  // speaks "<number> <currency word>" the same way.
+  const absDecimalString = toDecimalString(minorUnits(Math.abs(money.amount)), exponent);
+  const plain = new Intl.NumberFormat(opts.locale, fractionOpts).format(
+    absDecimalString as unknown as number
+  );
+  const spoken = `${plain} ${currencyWord(money.currency, opts.homeCurrency, plain === '1')}`;
+  return money.amount < 0 ? `−${spoken}` : spoken;
+}
+
+/** [singular, plural] spoken names for the common currencies; the rest read their ISO name. */
+const SPOKEN_NAMES: Record<string, readonly [string, string]> = {
+  USD: ['US dollar', 'US dollars'],
+  CAD: ['Canadian dollar', 'Canadian dollars'],
+  AUD: ['Australian dollar', 'Australian dollars'],
+  NZD: ['New Zealand dollar', 'New Zealand dollars'],
+  HKD: ['Hong Kong dollar', 'Hong Kong dollars'],
+  SGD: ['Singapore dollar', 'Singapore dollars'],
+  TWD: ['New Taiwan dollar', 'New Taiwan dollars'],
+  GBP: ['British pound', 'British pounds'],
+  EUR: ['euro', 'euros'],
+  CHF: ['Swiss franc', 'Swiss francs'],
+  JPY: ['Japanese yen', 'Japanese yen'],
+  CNY: ['Chinese yuan', 'Chinese yuan'],
+  KRW: ['South Korean won', 'South Korean won'],
+  INR: ['Indian rupee', 'Indian rupees'],
+  MXN: ['Mexican peso', 'Mexican pesos'],
+  BRL: ['Brazilian real', 'Brazilian reals'],
+  ZAR: ['South African rand', 'South African rand'],
+  SEK: ['Swedish krona', 'Swedish kronor'],
+  NOK: ['Norwegian krone', 'Norwegian kroner'],
+  DKK: ['Danish krone', 'Danish kroner'],
+  PLN: ['Polish zloty', 'Polish zlotys'],
+  NGN: ['Nigerian naira', 'Nigerian naira'],
+  PHP: ['Philippine peso', 'Philippine pesos'],
+};
+
+/**
+ * The currency word a screen reader says after the number. USD at a USD home is plain
+ * "dollar(s)". A currency outside the table reads its built-in ISO name, then its code.
+ */
+function currencyWord(code: string, homeCurrency: string | undefined, singular: boolean): string {
+  const names = SPOKEN_NAMES[code];
+  if (names === undefined) return isoCurrency(code)?.name ?? code;
+  const word = singular ? names[0] : names[1];
+  return code === 'USD' && homeCurrency === 'USD' ? word.replace(/^US /, '') : word;
 }

@@ -2,7 +2,8 @@
 // (two FABs, two entry hosts, two TransactionSheets on one draft). Pop back to the existing one;
 // replace only when (tabs) is absent (onboarding). An import started on Home finishes on Home.
 import { router, type Href } from 'expo-router';
-import { OUTER_GROUP, TABS_GROUP, type NavStateLike } from '@/shell/backHistory/navLocation';
+import type { NavStateLike } from '@/shell/backHistory/navLocation';
+import { hasTabsInStack } from '@/shell/navigation/returnToTab';
 import { ACTIVITY_HREF, APP_HOME_HREF } from '@/features/auth/appHome';
 
 export type ImportReturn = 'home' | 'activity';
@@ -16,17 +17,8 @@ export function importReturnHref(r: ImportReturn): Href {
   return r === 'home' ? APP_HOME_HREF : ACTIVITY_HREF;
 }
 
-/** WR-04: true when the outer (app) stack holds a (tabs) route to pop back to. */
-export function hasTabsInStack(state: NavStateLike | undefined | null): boolean {
-  let cursor: NavStateLike | undefined | null = state;
-  while (cursor) {
-    const outer: NavStateLike['routes'][number] | undefined = cursor.routes.find((r) => r.name === OUTER_GROUP);
-    if (outer) return (outer.state?.routes ?? []).some((r) => r.name === TABS_GROUP);
-    const idx = cursor.index ?? cursor.routes.length - 1;
-    cursor = cursor.routes[idx]?.state;
-  }
-  return false;
-}
+// WR-04's hasTabsInStack moved to the shell (05.3-114) so every return-to-tab site shares it.
+export { hasTabsInStack } from '@/shell/navigation/returnToTab';
 
 // G3 locked shape: dismissTo when there is a (tabs) beneath, else replace. canDismiss() alone is
 // true for any stack of two or more screens, and dismissTo then pushes (WR-04), so (tabs) must be

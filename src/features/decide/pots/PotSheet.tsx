@@ -37,7 +37,7 @@ import { AttachLineSheet } from '../past/AttachLineSheet';
 import { useGoalTagEdit } from '../past/goalTagEdit';
 import { usePastContext } from '../past/usePastDecisions';
 import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
-import { MoneyInput } from '../ui/MoneyInput';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { MonthField } from './MonthField';
 import { checkPotMonth, lastDayOfMonth, maxPotMonth, potLineFor, validatePot } from './potsModel';
 

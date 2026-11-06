@@ -1,0 +1,1139 @@
+{
+ "note": "05.4-47: corpus gen:126 (generator at 05.4-19), frozen so the D-54 figures do not move with the generator fix in 05.4-48",
+ "inputs": {
+  "asOf": "2026-10-03",
+  "currency": "USD",
+  "region": null,
+  "months": [
+   {
+    "month": "2026-04",
+    "full": true,
+    "mark": null,
+    "lines": [
+     {
+      "status": "paid",
+      "role": "income",
+      "seriesId": "gen-126-pay",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-pay-0",
+      "date": "2026-04-01",
+      "amount": 421787,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": "gen-126-bill-0",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-bill-0-0",
+      "date": "2026-04-04",
+      "amount": 137927,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": "gen-126-bill-1",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-bill-1-0",
+      "date": "2026-04-26",
+      "amount": 47304,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-0-0",
+      "date": "2026-04-02",
+      "amount": 6487,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-0-1",
+      "date": "2026-04-05",
+      "amount": 6487,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-0-2",
+      "date": "2026-04-08",
+      "amount": 6487,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-0-3",
+      "date": "2026-04-11",
+      "amount": 6487,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-0-4",
+      "date": "2026-04-14",
+      "amount": 6487,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-0-5",
+      "date": "2026-04-17",
+      "amount": 6487,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-0-6",
+      "date": "2026-04-20",
+      "amount": 6493,
+      "refundOf": null
+     }
+    ]
+   },
+   {
+    "month": "2026-05",
+    "full": true,
+    "mark": null,
+    "lines": [
+     {
+      "status": "paid",
+      "role": "income",
+      "seriesId": "gen-126-pay",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-pay-1",
+      "date": "2026-05-01",
+      "amount": 421787,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": "gen-126-bill-0",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-bill-0-1",
+      "date": "2026-05-04",
+      "amount": 137927,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": "gen-126-bill-1",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-bill-1-1",
+      "date": "2026-05-26",
+      "amount": 47304,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-1-0",
+      "date": "2026-05-02",
+      "amount": 8805,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-1-1",
+      "date": "2026-05-05",
+      "amount": 8805,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-1-2",
+      "date": "2026-05-08",
+      "amount": 8805,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-1-3",
+      "date": "2026-05-11",
+      "amount": 8805,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-1-4",
+      "date": "2026-05-14",
+      "amount": 8805,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-1-5",
+      "date": "2026-05-17",
+      "amount": 8805,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-1-6",
+      "date": "2026-05-20",
+      "amount": 8808,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-big-1-0",
+      "date": "2026-05-20",
+      "amount": 278366,
+      "refundOf": null
+     }
+    ]
+   },
+   {
+    "month": "2026-06",
+    "full": true,
+    "mark": null,
+    "lines": [
+     {
+      "status": "paid",
+      "role": "income",
+      "seriesId": "gen-126-pay",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-pay-2",
+      "date": "2026-06-01",
+      "amount": 421787,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": "gen-126-bill-0",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-bill-0-2",
+      "date": "2026-06-04",
+      "amount": 137927,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": "gen-126-bill-1",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-bill-1-2",
+      "date": "2026-06-26",
+      "amount": 47304,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-2-0",
+      "date": "2026-06-02",
+      "amount": 64285,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-2-1",
+      "date": "2026-06-05",
+      "amount": 64285,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-2-2",
+      "date": "2026-06-08",
+      "amount": 64285,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-2-3",
+      "date": "2026-06-11",
+      "amount": 64285,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-2-4",
+      "date": "2026-06-14",
+      "amount": 64285,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-2-5",
+      "date": "2026-06-17",
+      "amount": 64285,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-2-6",
+      "date": "2026-06-20",
+      "amount": 64286,
+      "refundOf": null
+     }
+    ]
+   },
+   {
+    "month": "2026-07",
+    "full": true,
+    "mark": null,
+    "lines": [
+     {
+      "status": "paid",
+      "role": "income",
+      "seriesId": "gen-126-pay",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-pay-3",
+      "date": "2026-07-01",
+      "amount": 421787,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": "gen-126-bill-0",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-bill-0-3",
+      "date": "2026-07-04",
+      "amount": 137927,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": "gen-126-bill-1",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-bill-1-3",
+      "date": "2026-07-26",
+      "amount": 47304,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-3-0",
+      "date": "2026-07-02",
+      "amount": 60250,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-3-1",
+      "date": "2026-07-05",
+      "amount": 60250,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-3-2",
+      "date": "2026-07-08",
+      "amount": 60250,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-3-3",
+      "date": "2026-07-11",
+      "amount": 60250,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-3-4",
+      "date": "2026-07-14",
+      "amount": 60250,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-3-5",
+      "date": "2026-07-17",
+      "amount": 60250,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-3-6",
+      "date": "2026-07-20",
+      "amount": 60254,
+      "refundOf": null
+     }
+    ]
+   },
+   {
+    "month": "2026-08",
+    "full": true,
+    "mark": null,
+    "lines": [
+     {
+      "status": "paid",
+      "role": "income",
+      "seriesId": "gen-126-pay",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-pay-4",
+      "date": "2026-08-01",
+      "amount": 421787,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": "gen-126-bill-0",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-bill-0-4",
+      "date": "2026-08-04",
+      "amount": 137927,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": "gen-126-bill-1",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-bill-1-4",
+      "date": "2026-08-26",
+      "amount": 47304,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-4-0",
+      "date": "2026-08-02",
+      "amount": 44628,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-4-1",
+      "date": "2026-08-05",
+      "amount": 44628,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-4-2",
+      "date": "2026-08-08",
+      "amount": 44628,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-4-3",
+      "date": "2026-08-11",
+      "amount": 44628,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-4-4",
+      "date": "2026-08-14",
+      "amount": 44628,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-4-5",
+      "date": "2026-08-17",
+      "amount": 44628,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-4-6",
+      "date": "2026-08-20",
+      "amount": 44632,
+      "refundOf": null
+     }
+    ]
+   },
+   {
+    "month": "2026-09",
+    "full": true,
+    "mark": null,
+    "lines": [
+     {
+      "status": "paid",
+      "role": "income",
+      "seriesId": "gen-126-pay",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-pay-5",
+      "date": "2026-09-01",
+      "amount": 421787,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": "gen-126-bill-0",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-bill-0-5",
+      "date": "2026-09-04",
+      "amount": 137927,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": "gen-126-bill-1",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-bill-1-5",
+      "date": "2026-09-26",
+      "amount": 47304,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-5-0",
+      "date": "2026-09-02",
+      "amount": 25279,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-5-1",
+      "date": "2026-09-05",
+      "amount": 25279,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-5-2",
+      "date": "2026-09-08",
+      "amount": 25279,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-5-3",
+      "date": "2026-09-11",
+      "amount": 25279,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-5-4",
+      "date": "2026-09-14",
+      "amount": 25279,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-5-5",
+      "date": "2026-09-17",
+      "amount": 25279,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-5-6",
+      "date": "2026-09-20",
+      "amount": 25280,
+      "refundOf": null
+     }
+    ]
+   },
+   {
+    "month": "2026-10",
+    "full": false,
+    "mark": null,
+    "lines": [
+     {
+      "status": "paid",
+      "role": "spending",
+      "seriesId": null,
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-e-cur",
+      "date": "2026-10-02",
+      "amount": 23680,
+      "refundOf": null
+     },
+     {
+      "status": "paid",
+      "role": "income",
+      "seriesId": "gen-126-pay",
+      "categoryId": null,
+      "coversMonths": null,
+      "expected": false,
+      "incomeKind": null,
+      "countsAs": null,
+      "id": "gen-126-pay-cur",
+      "date": "2026-10-01",
+      "amount": 421787,
+      "refundOf": null
+     }
+    ]
+   }
+  ],
+  "series": [
+   {
+    "endDate": null,
+    "status": "live",
+    "confirmed": true,
+    "payGroup": null,
+    "countsAs": null,
+    "incomeKind": null,
+    "typicalChoice": null,
+    "categoryId": null,
+    "isHousing": false,
+    "savingMode": null,
+    "id": "gen-126-pay",
+    "role": "pay",
+    "cadence": {
+     "unit": "month",
+     "every": 1
+    },
+    "anchorDate": "2026-04-01",
+    "amount": 421787
+   },
+   {
+    "endDate": null,
+    "status": "live",
+    "confirmed": true,
+    "payGroup": null,
+    "countsAs": null,
+    "incomeKind": null,
+    "typicalChoice": null,
+    "categoryId": null,
+    "isHousing": true,
+    "savingMode": null,
+    "id": "gen-126-bill-0",
+    "role": "bill",
+    "cadence": {
+     "unit": "month",
+     "every": 1
+    },
+    "anchorDate": "2026-04-04",
+    "amount": 137927
+   },
+   {
+    "endDate": null,
+    "status": "live",
+    "confirmed": true,
+    "payGroup": null,
+    "countsAs": null,
+    "incomeKind": null,
+    "typicalChoice": null,
+    "categoryId": null,
+    "isHousing": false,
+    "savingMode": null,
+    "id": "gen-126-bill-1",
+    "role": "bill",
+    "cadence": {
+     "unit": "month",
+     "every": 1
+    },
+    "anchorDate": "2026-04-26",
+    "amount": 47304
+   }
+  ],
+  "dismissedKeys": [],
+  "profile": {
+   "types": [
+    "salary"
+   ],
+   "variable": null,
+   "steady": null,
+   "billsHorizonMonths": null
+  },
+  "typedEstimates": null,
+  "balance": 0,
+  "unspent": {
+   "amount": 281470,
+   "at": "2026-10-03"
+  },
+  "emergency": {
+   "amount": 1767693,
+   "accountId": "gen-126-fund"
+  },
+  "envelopes": [],
+  "debts": [
+   {
+    "id": "gen-126-debt-0",
+    "kind": "loan",
+    "balance": 335142,
+    "minimum": 10017,
+    "apr": {
+     "$bigint": "0"
+    },
+    "secured": true,
+    "isHousing": false
+   }
+  ],
+  "everydayOverride": null,
+  "limits": {
+   "lines": []
+  },
+  "custom": {
+   "itemTypes": [],
+   "purposes": [],
+   "cadences": [],
+   "incomeKinds": []
+  },
+  "thresholds": {
+   "bandEdges": [
+    5000,
+    10000,
+    50000,
+    100000,
+    500000,
+    1000000,
+    2000000,
+    5000000,
+    10000000,
+    20000000,
+    50000000,
+    100000000,
+    200000000,
+    500000000
+   ],
+   "unspentDrift": 20000,
+   "quotedTolerance": 100,
+   "source": "table"
+  },
+  "unsavedWrites": 0,
+  "provisionalRates": false,
+  "accounts": [
+   {
+    "id": "gen-126-main",
+    "balance": 0,
+    "use": {
+     "kind": "everyday"
+    }
+   },
+   {
+    "id": "gen-126-fund",
+    "balance": 1767693,
+    "use": {
+     "kind": "dedicated",
+     "purpose": {
+      "kind": "emergency"
+     }
+    }
+   }
+  ]
+ },
+ "check": {
+  "v": 2,
+  "legacyKind": "buy",
+  "price": 2418208,
+  "taxPercent": null,
+  "oneOffFees": 0,
+  "itemType": {
+   "kind": "preset",
+   "value": "general"
+  },
+  "categoryId": null,
+  "purpose": null,
+  "emergency": false,
+  "envelopeId": null,
+  "pay": {
+   "mode": "plan",
+   "cadence": {
+    "unit": "month",
+    "every": 3
+   },
+   "count": 16,
+   "termMonths": null,
+   "apr": {
+    "$bigint": "199000000000"
+   },
+   "fees": {
+    "setup": 0,
+    "perPeriod": 0,
+    "end": 0
+   },
+   "deposit": 0,
+   "tradeIn": 0,
+   "quotedPayment": null,
+   "firstPayment": {
+    "kind": "one_period"
+   },
+   "deferredInterestTerm": false
+  },
+  "extras": {},
+  "value": {
+   "earnsMonthly": null,
+   "savesMonthly": null,
+   "useYears": null,
+   "cheaperPrice": null
+  },
+  "share": {
+   "kind": "personal"
+  },
+  "foreign": null,
+  "layerAnswers": {}
+ }
+}

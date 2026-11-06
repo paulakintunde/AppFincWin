@@ -1,8 +1,11 @@
+import { CLEAN_CONFIDENCE } from '../../__tests__/helpers/restsOn';
 import { minorUnits, type MinorUnits } from '../../../../money/types';
 import { SOLE_SHARE } from '../../../share';
-import type { Funds, IncomeMonth, IncomePicture, MonthModel, Purchase, UnspentState, V3Inputs } from '../../types';
+import type { Funds, IncomeMonth, IncomePicture, MonthModel, Purchase, ReadinessWaiver, UnspentState, V3Inputs } from '../../types';
+import { addDays } from '../../dates';
+import { NEEDS_INPUT_ENTRY_AGE_DAYS } from '../../constants';
 import { ASOF, inputsOf, monthOf, v3Line, v3Series } from '../../__tests__/helpers/fixtures';
-import { needsInput } from '../needsInput';
+import { needsInput, uncoveredIncomeMonths } from '../needsInput';
 
 const mu = (n: number): MinorUnits => minorUnits(n);
 
@@ -11,7 +14,7 @@ function month(over: Partial<MonthModel> = {}): MonthModel {
     month: '2026-10', day: 20, daysInMonth: 31, moneyIn: mu(0), moneyOut: mu(0), billsPaid: mu(0), billsDue: mu(0),
     everydayLogged: mu(100_000), erest: mu(0), setAside: mu(0), monthLeft: mu(50_000), e: mu(100_000),
     typicalIncome: mu(500_000), recurringBills: mu(0), typicalLeft: null, low: null, monthsUsed: [], categoryMonthly: [],
-    housingMonthly: mu(0), largestLine: null, confidence: { level: 'fair', reasons: [] }, notices: [], reasons: [], ...over,
+    housingMonthly: mu(0), largestLine: null, confidence: CLEAN_CONFIDENCE, notices: [], reasons: [], ...over,
   };
 }
 
@@ -48,7 +51,7 @@ describe('needsInput', () => {
   it('5.4.1 no income figures', () => {
     expect(run(inputsOf())).toContain('no_income_figures');
     expect(run(inputsOf({ series: [pay] }))).not.toContain('no_income_figures');
-    expect(run(inputsOf({ rough }))).not.toContain('no_income_figures');
+    expect(run(inputsOf({ typedEstimates: rough }))).not.toContain('no_income_figures');
     expect(run(inputsOf({ profile: { types: ['salary'], variable: null, steady: null, billsHorizonMonths: null } }))).not.toContain('no_income_figures');
     expect(run(inputsOf({ series: [{ ...pay, confirmed: false }] }))).toContain('no_income_figures');
     expect(run(inputsOf({ series: [{ ...pay, status: 'dismissed' }] }))).toContain('no_income_figures');
@@ -102,12 +105,63 @@ describe('needsInput', () => {
     expect(run(none, { month: behindMonth, purchase: purchase({ band: 5 }) })).toEqual(['records_look_behind']);
   });
 
+  it('05.4 ENG-14 (QE-07) records synced in the last 3 days of a new month with no records yet: no records_look_behind', () => {
+    const behindMonth = month({ everydayLogged: mu(0) });
+    const nov = monthOf('2026-11', [v3Line({ id: 'n', date: '2026-11-15', amount: 100 })]); // 16 days before 1 December
+    const at = (recordsAsOf: string | null | undefined) =>
+      run(inputsOf({ asOf: '2026-12-01', series: [pay], months: [nov], ...(recordsAsOf === undefined ? {} : { recordsAsOf }) }), {
+        month: behindMonth,
+        purchase: purchase({ band: 5 }),
+      });
+    expect(at('2026-11-29')).toEqual([]);
+    // older than the freshness limit, or no records date: the records still look behind
+    expect(at('2026-11-27')).toEqual(['records_look_behind']);
+    expect(at(null)).toEqual(['records_look_behind']);
+    expect(at(undefined)).toEqual(['records_look_behind']);
+  });
+
+  it('05.3-119 (UAT gap 36) a fresh current-month "up to date" or "nothing to add" answer skips records_look_behind', () => {
+    const behindMonth = month({ everydayLogged: mu(10_000) });
+    const old = [monthOf('2026-10', [v3Line({ id: 'a', date: '2026-09-18', amount: 100 })])]; // 15 days before ASOF
+    const withW = (waivers: ReadinessWaiver[]) => inputsOf({ series: [pay], months: old, waivers });
+    const at = (w: ReadinessWaiver[]) => run(withW(w), { month: behindMonth, purchase: purchase({ band: 5 }) });
+    expect(at([])).toEqual(['records_look_behind']);
+    expect(at([{ kind: 'month_complete', month: '2026-10', at: ASOF }])).toEqual([]);
+    expect(at([{ kind: 'nothing_to_add', month: '2026-10', at: ASOF }])).toEqual([]);
+    // only the current month counts
+    expect(at([{ kind: 'month_complete', month: '2026-09', at: ASOF }])).toEqual(['records_look_behind']);
+    expect(at([{ kind: 'nothing_to_add', month: '2026-09', at: ASOF }])).toEqual(['records_look_behind']);
+    // the same staleness clock readiness uses: at the limit still counts, one day past does not
+    expect(at([{ kind: 'month_complete', month: '2026-10', at: addDays(ASOF, -NEEDS_INPUT_ENTRY_AGE_DAYS) }])).toEqual([]);
+    expect(at([{ kind: 'month_complete', month: '2026-10', at: addDays(ASOF, -(NEEDS_INPUT_ENTRY_AGE_DAYS + 1)) }])).toEqual(['records_look_behind']);
+    // an answer given after asOf does not exist yet
+    expect(at([{ kind: 'month_complete', month: '2026-10', at: addDays(ASOF, 1) }])).toEqual(['records_look_behind']);
+    // other answers do not speak to the spending clock
+    expect(
+      at([
+        { kind: 'paid_by_other', seriesId: 'p', date: ASOF },
+        { kind: 'didnt_happen', seriesId: 'p', date: ASOF },
+        { kind: 'no_pay', seriesId: 'p', date: ASOF },
+        { kind: 'always_other', seriesId: 'p' },
+        { kind: 'income_elsewhere' },
+        { kind: 'start_from', month: '2026-10' },
+      ]),
+    ).toEqual(['records_look_behind']);
+    // a stale answer next to a fresh one: the fresh one counts
+    expect(
+      at([
+        { kind: 'month_complete', month: '2026-10', at: addDays(ASOF, -30) },
+        { kind: 'nothing_to_add', month: '2026-10', at: ASOF },
+      ]),
+    ).toEqual([]);
+  });
+
   it('everyday unknown', () => {
     expect(run(inputsOf({ series: [pay] }), { month: month({ e: null }) })).toEqual(['everyday_unknown']);
   });
 
   it('D-32 rough only answers', () => {
-    const r = run(inputsOf({ rough }), { month: month({ e: null }) });
+    const r = run(inputsOf({ typedEstimates: rough }), { month: month({ e: null }) });
     expect(r).not.toContain('no_income_figures');
     expect(r).not.toContain('everyday_unknown');
   });
@@ -154,16 +208,25 @@ describe('needsInput', () => {
     expect(run(base, { month: withPic(pic()) })).not.toContain('expected_income_needed');
   });
 
-  it('D-35 fewer than 12 full months asks, unless every depended-on month is confirmed', () => {
+  const sched = (firstDate: string, count = 3) =>
+    ({
+      cadence: { unit: 'month', every: 1 }, count, payment: mu(1_000), finalPayment: mu(1_000), lastPaying: count, firstDate,
+      fees: { perPeriod: mu(0), end: mu(0) },
+    }) as unknown as Purchase['schedule'];
+
+  it('D-35 fewer than 12 full months asks about a future month, unless it is confirmed; this month is never asked (05.3-106)', () => {
     const short = pic({ fullMonths: 8, months: twelve().slice(4) });
-    expect(run(base, { month: withPic(short) })).toContain('expected_income_needed');
-    const confirmed = inputsOf({ series: [pay], expectedIncome: [exp('2026-10')] });
-    expect(run(confirmed, { month: withPic(short) })).not.toContain('expected_income_needed');
+    // 05.3-106: a purchase that only touches this month asks nothing about income
+    expect(run(base, { month: withPic(short) })).not.toContain('expected_income_needed');
+    const later = purchase({ schedule: sched('2026-11-15'), monthly: mu(1_000) });
+    expect(run(base, { month: withPic(short), purchase: later })).toContain('expected_income_needed');
+    const confirmed = inputsOf({ series: [pay], expectedIncome: [exp('2026-11'), exp('2026-12'), exp('2027-01')] });
+    expect(run(confirmed, { month: withPic(short), purchase: later })).not.toContain('expected_income_needed');
   });
 
   it('D-35 b: a payment in a calendar month with no kept window month asks', () => {
     const noOct = pic({ months: twelve().filter((m) => m.month !== '2025-10') });
-    expect(run(base, { month: withPic(noOct) })).toContain('expected_income_needed');
+    expect(run(base, { month: withPic(noOct) })).not.toContain('expected_income_needed'); // 05.3-106: this month is never asked
     const schedule = {
       cadence: { unit: 'month', every: 1 }, count: 3, payment: mu(1_000), finalPayment: mu(1_000), lastPaying: 3, firstDate: '2026-11-15',
       fees: { perPeriod: mu(0), end: mu(0) },
@@ -176,7 +239,8 @@ describe('needsInput', () => {
   it('D-35 variable: 12 months not asked, 6 months asked; steady and absent picture never', () => {
     const v = (n: number) => pic({ treated: 'variable', stated: 'variable', fullMonths: n, months: twelve().slice(12 - n) });
     expect(run(base, { month: withPic(v(12)) })).not.toContain('expected_income_needed');
-    expect(run(base, { month: withPic(v(6)) })).toContain('expected_income_needed');
+    expect(run(base, { month: withPic(v(6)), purchase: purchase({ schedule: sched('2026-11-15'), monthly: mu(1_000) }) })).toContain('expected_income_needed');
+    expect(run(base, { month: withPic(v(6)) })).not.toContain('expected_income_needed');
     expect(run(base, { month: withPic(pic({ treated: 'steady', stated: 'steady', months: [], fullMonths: 3 })) })).not.toContain('expected_income_needed');
     expect(run(base)).not.toContain('expected_income_needed');
   });
@@ -219,5 +283,19 @@ describe('needsInput', () => {
       funds: { ...funds(), unstatedAccounts: ['a1'], unexplained: mu(base.thresholds.unspentDrift + 1) },
     });
     expect(r).toEqual(['account_use_question', 'pay_arrival_question', 'unexplained_money_question', 'everyday_unknown']);
+  });
+
+  it('05.3-106 uncoveredIncomeMonths lists the future months with no expected income, never this month', () => {
+    const short = pic({ fullMonths: 8, months: twelve().slice(4) });
+    const p = purchase({ schedule: sched('2026-11-30', 36), monthly: mu(1_000) });
+    const list = uncoveredIncomeMonths(base, withPic(short), p);
+    expect(list[0]).toBe('2026-11');
+    expect(list).not.toContain('2026-10');
+    expect(list.length).toBeGreaterThan(3);
+    const some = inputsOf({ series: [pay], expectedIncome: [exp('2026-11')] });
+    expect(uncoveredIncomeMonths(some, withPic(short), p)[0]).toBe('2026-12');
+    expect(uncoveredIncomeMonths(base, withPic(short), null)).toEqual([]);
+    expect(uncoveredIncomeMonths(base, withPic(pic({ treated: 'steady', stated: 'steady' })), p)).toEqual([]);
+    expect(uncoveredIncomeMonths(base, month(), p)).toEqual([]);
   });
 });

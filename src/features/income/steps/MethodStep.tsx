@@ -7,7 +7,7 @@ import { View } from 'react-native';
 import { Chip } from '@/ui/Chip';
 import { Text } from '@/ui/Text';
 import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
-import { MoneyInput } from '@/features/decide/ui/MoneyInput';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { useSaveSetupStep } from '@/data/mutations/decideSetup';

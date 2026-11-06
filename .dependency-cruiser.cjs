@@ -2,6 +2,13 @@
 module.exports = {
   forbidden: [
     {
+      name: 'crosscheck-independent',
+      severity: 'error',
+      comment: 'QA-03: the plain cross-check calculator imports nothing from src/ except the right-answer schema types and its own folder.',
+      from: { path: '^src/engine/decide/v3/__tests__/crosscheck/(plain|rules|fixtureArb|pendingRules|__gate_probe__)\.ts$' },
+      to: { path: '^src/', pathNot: '^src/engine/decide/v3/__tests__/(crosscheck/|rightAnswers/schema\.ts$)' },
+    },
+    {
       name: 'engine-only-internal-src',
       severity: 'error',
       comment: 'FND-04: engine/ may import only from engine/ inside src.',
@@ -54,6 +61,7 @@ module.exports = {
     doNotFollow: { path: 'node_modules' },
     tsPreCompilationDeps: true,
     tsConfig: { fileName: 'tsconfig.json' },
-    exclude: { path: '__tests__|\\.test\\.tsx?$' },
+    // QA-03: the cross-check folder is cruised so crosscheck-independent can see it; every other test file stays out.
+    exclude: { path: '^(?!src/engine/decide/v3/__tests__(/crosscheck(/|$)|$))(.*__tests__|.*\\.test\\.tsx?$)' },
   },
 };

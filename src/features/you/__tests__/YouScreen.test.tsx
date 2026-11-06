@@ -7,6 +7,7 @@ import { AccessibilityInfo, Alert, AppState, Linking } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { QUICK_ACTION_ORDER } from '@/shell/fab/quickActions';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import { resetPushOnceForTests } from '@/shell/navigation/pushOnce';
 import { YouScreen } from '../YouScreen';
 
 const mockSetAccent = jest.fn();
@@ -163,6 +164,7 @@ let appStateCallback: ((state: string) => void) | undefined;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  resetPushOnceForTests(); // the double-tap guard keeps module state between tests (05.4-34 made the Money rows use pushOnce)
   mockHistory = [{ area: 'tab', tab: 'home', href: '/home' }];
   mockQuickIds = ['addExpense', 'addIncome', 'transfer', 'importStatement', 'newCheck'];
   for (const id of mockQuickIds) mockRuns[id] = jest.fn();
@@ -196,6 +198,17 @@ describe('YouScreen identity', () => {
     const { getAllByText } = await renderScreen();
     // Title falls back to the email; the email sub-label is still shown too.
     expect(getAllByText('ada@example.com').length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('YouScreen money rows (05.4-34 APP-11)', () => {
+  it('a fast double tap on Accounts pushes one screen (pushOnce)', async () => {
+    const { getByText } = await renderScreen();
+    await act(async () => {
+      fireEvent.press(getByText('Accounts'));
+      fireEvent.press(getByText('Accounts'));
+    });
+    expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/accounts')).toHaveLength(1);
   });
 });
 

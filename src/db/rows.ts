@@ -117,6 +117,8 @@ export interface AccountRow {
   use_purpose?: 'emergency' | 'envelope' | null;
   use_envelope_id?: string | null;
   use_extra_set_aside?: number | null;
+  // 05.4 FIN-03: the overdraft interest rate as a percent string; null = not given (20261103000200)
+  overdraft_rate?: string | null;
   // Record polish: soft delete (D-24, client-patchable) and server-written is_sample (read-only).
   deleted_at: string | null;
   is_sample: boolean;
@@ -223,6 +225,7 @@ export interface NewAccount {
   use_purpose?: AccountRow['use_purpose'];
   use_envelope_id?: string | null;
   use_extra_set_aside?: number | null;
+  overdraft_rate?: string | null;
 }
 
 export type AccountPatch = Partial<
@@ -239,6 +242,7 @@ export type AccountPatch = Partial<
     | 'use_purpose'
     | 'use_envelope_id'
     | 'use_extra_set_aside'
+    | 'overdraft_rate'
   >
 >;
 

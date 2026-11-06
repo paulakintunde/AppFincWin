@@ -15,7 +15,8 @@ type Series = SnapshotSource['series'][number];
 const seen: CheckV2[] = [];
 jest.mock('@/engine/decide/v3', () => {
   const actual = jest.requireActual('@/engine/decide/v3');
-  return { ...actual, evaluate: (i: unknown, c: CheckV2) => (seen.push(c), actual.evaluate(i, c)) };
+  // 05.4-33: computeV3 judges on a held Prepared, so the check is read at judgeCheck.
+  return { ...actual, judgeCheck: (p: unknown, c: CheckV2) => (seen.push(c), actual.judgeCheck(p, c)) };
 });
 
 const EVERYDAY = 'demo-acct-everyday';

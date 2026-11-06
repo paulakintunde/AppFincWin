@@ -22,7 +22,7 @@ import { showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
-import { StateChip } from '../ui/StateChip';
+import { StateChip } from '@/ui/StateChip';
 import { EmergencyFundSheet } from '../setup/EmergencyFundSheet';
 import { SettingsRow } from '../setup/SettingsRow';
 import { firstUnansweredNeeded, isNeeded, setupStatus, type SetupSection, type SetupStepKey } from '../setup/setupFlow';

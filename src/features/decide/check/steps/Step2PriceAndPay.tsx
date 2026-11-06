@@ -16,7 +16,7 @@ import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { isValidRateText } from '../../snapshot/checkInputs';
 import type { AdjustmentLine, CheckInputs, InputLine } from '../../snapshot/types';
-import { CheckRow } from '../../ui/CheckRow';
+import { CheckRow } from '@/ui/CheckRow';
 import { useInfoSheet } from '../../ui/useInfoSheet';
 import { InfoTitle } from '../InfoTitle';
 import { LineEditorSheet, type LineEditorValue } from '../LineEditorSheet';

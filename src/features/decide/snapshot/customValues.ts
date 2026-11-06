@@ -13,34 +13,8 @@ export const HORIZON_MAX = 600;
 /** D-83: the cheaper price runs from this share of the advertised price up to the price. */
 export const CHEAPER_MIN_PERCENT = 30;
 
-export type WholeParse =
-  | { kind: 'empty' }
-  | { kind: 'invalid' }
-  | { kind: 'out_of_range' }
-  | { kind: 'ok'; value: number };
-
-const DIGITS = /^\d+$/;
-const DIGITS_OR_EMPTY = /^\d*$/;
-
-/** Whole digits only, within [min, max]. A decimal mark or any other character is invalid. */
-export function parseWholeInRange(text: string, min: number, max: number): WholeParse {
-  if (text === '') return { kind: 'empty' };
-  if (!DIGITS.test(text)) return { kind: 'invalid' };
-  const value = Number(text);
-  if (!Number.isSafeInteger(value) || value < min || value > max) return { kind: 'out_of_range' };
-  return { kind: 'ok', value };
-}
-
-/** The months field refuses anything but digits at the keystroke (a decimal mark never lands). */
-export function acceptsMonthsKeystroke(text: string): boolean {
-  return DIGITS_OR_EMPTY.test(text);
-}
-
-/** The preset equal to `value`, else null. */
-export function presetFor<T extends number>(value: number | null, presets: readonly T[]): T | null {
-  if (value === null) return null;
-  return presets.find((p) => p === value) ?? null;
-}
+// 05.4-39 (D-155): the whole-number parsing moved to src/ui with CustomValueChips; re-exported so callers do not change.
+export { acceptsMonthsKeystroke, parseWholeInRange, presetFor, type WholeParse } from '@/ui/wholeNumberField';
 
 /** Target over `months`, rounded up to the cent. */
 export function waitAmountForMonths(target: number, months: number): MinorUnits {

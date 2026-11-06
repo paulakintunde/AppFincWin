@@ -4,8 +4,11 @@
  * amounts never drift. Pure: asOf is an input.
  *
  * Bills and debt payments sit on their real dates; only confirmed live pay lands (I3, I34). Debt payments are dated
- * money out that Erest does not contain (I19), so they are taken on their dates too. Saving and investing are
- * pausable and are not taken.
+ * money out that Erest does not contain (I19), so they are taken on their dates too. 05.4 D-67: the regular saving and
+ * investing transfers out of the everyday account (moneySource.savingTransfers) are taken on their dates too (savings);
+ * before D-67 they were left out as pausable. 05.4 FIN-04: card and loan minimums not paid through a series land on their due
+ * dates (debts.ts debtOutflows), each once. A due that dueDrops says no longer counts (05.3-64; D-27, D-31, skips) is not
+ * taken, in any month of the path; one already settled by a paid line is skipped first.
  */
 import { divideHalfUp } from '../../../money/rounding';
 import { minorUnits, type MinorUnits } from '../../../money/types';
@@ -13,6 +16,7 @@ import { minorFromBigInt } from '../../../payoff/types';
 import { myPart, type ResolvedShare } from '../../share';
 import { CASH_PATH_DAYS_V3 } from '../constants';
 import { addDays, daysBetween, daysInYearMonth, dayOfMonth, yearMonthOf } from '../dates';
+import type { DueDrops } from '../month/dueDrops';
 import { liveSeriesOf, seriesOccurrences } from '../month/series';
 import { paymentsInRange } from '../plan/schedule';
 import type { Schedule, V3Series } from '../types';
@@ -57,29 +61,50 @@ export function spreadThrough(
   return erest + e * BigInt(full) + partial;
 }
 
-export function buildCashPathV3(input: {
+/** The price-independent part of the path: net flows per day, the cumulative spread per day, and the pay withheld by caps. */
+export interface OpenCashPath {
   readonly asOf: string;
   readonly days: number;
-  readonly opening: MinorUnits;
+  readonly end: string;
+  readonly net: readonly bigint[];
+  readonly spread: readonly bigint[];
+  readonly capped: bigint;
+}
+
+export interface OpenCashPathInput {
+  readonly asOf: string;
+  readonly days: number;
   readonly series: readonly V3Series[];
   readonly paidThisMonth: ReadonlySet<string>;
   readonly erest: MinorUnits;
   readonly e: MinorUnits;
-  readonly extraOut: readonly DatedFlow[];
   /** D-35: per month (YYYY-MM), the most pay that may land. null = steady, every pay lands at its amount. */
   readonly payCaps?: ReadonlyMap<string, MinorUnits> | null;
-}): CashPathV3 {
+  /** 05.3-64 (D-27, D-31): bill and debt dues that no longer count (paid by someone else, always paid by someone else, skipped). Absent = none. */
+  readonly drops?: DueDrops;
+  /** 05.4 D-52: pay expected from history (historyPay) for an irregular earner with no pay series. Never in paidThisMonth. Absent = none. */
+  readonly extraPays?: readonly { readonly date: string; readonly amount: MinorUnits }[];
+  /** 05.4 D-67: the regular saving / investing transfers still to leave the everyday account, on their dates. Absent = none. */
+  readonly savings?: readonly DatedFlow[];
+  /** 05.4 FIN-04 (debts.ts debtOutflows): card and loan minimums not paid through a series, on their due dates. Absent = none. */
+  readonly debts?: readonly DatedFlow[];
+}
+
+function putFlow(net: bigint[], asOf: string, end: string, date: string, amount: bigint): void {
+  if (date >= end) return;
+  const idx = date <= asOf ? 0 : daysBetween(asOf, date);
+  net[idx] = (net[idx] as bigint) + amount;
+}
+
+/** Everything about the path that does not depend on the opening balance or the purchase (05.4-13: runs once per prepare). */
+export function openCashPath(input: OpenCashPathInput): OpenCashPath {
   const { asOf, days } = input;
   if (!Number.isInteger(days) || days < 1 || days > CASH_PATH_DAYS_V3) {
     throw new RangeError(`${FN}: days must be 1..${CASH_PATH_DAYS_V3}`);
   }
   const end = addDays(asOf, days);
   const net = new Array<bigint>(days).fill(0n);
-  const put = (date: string, amount: bigint): void => {
-    if (date >= end) return;
-    const idx = date <= asOf ? 0 : daysBetween(asOf, date);
-    net[idx] = (net[idx] as bigint) + amount;
-  };
+  const put = (date: string, amount: bigint): void => putFlow(net, asOf, end, date, amount);
   const pays: { readonly id: string; readonly date: string; readonly amount: bigint }[] = [];
   for (const s of liveSeriesOf(input.series, asOf, 'pay')) {
     for (const d of seriesOccurrences(s, asOf, end)) {
@@ -87,8 +112,9 @@ export function buildCashPathV3(input: {
       pays.push({ id: s.id, date: d, amount: BigInt(s.amount) });
     }
   }
+  for (const x of input.extraPays ?? []) pays.push({ id: 'history', date: x.date, amount: BigInt(x.amount) }); // before the caps
   // D-35: a variable or seasonal earner's pay in a month never exceeds that month's expected income, so a high-season pay
-  // figure cannot cushion a lean month. A profile with no pay series lands no income at all (cautious, unchanged; review note).
+  // figure cannot cushion a lean month. D-52: a steady-but-irregular earner with no pay series gets history pays (historyPay).
   let capped = 0n;
   if (input.payCaps == null) {
     for (const p of pays) put(p.date, p.amount);
@@ -108,20 +134,38 @@ export function buildCashPathV3(input: {
   for (const role of ['bill', 'debt_payment'] as const) {
     for (const s of liveSeriesOf(input.series, asOf, role)) {
       for (const d of seriesOccurrences(s, asOf, end)) {
-        if (input.paidThisMonth.has(`${s.id}|${d}`)) continue;
+        if (input.paidThisMonth.has(`${s.id}|${d}`)) continue; // a recorded payment wins: settled before any drop
+        if ((input.drops?.has(s.id, d) ?? null) !== null) continue; // D-27, D-31, skips: one rule (month/dueDrops.ts)
         put(d, -BigInt(s.amount));
       }
     }
   }
-  for (const f of input.extraOut) put(f.date, -BigInt(f.amount));
+  for (const f of input.savings ?? []) put(f.date, -BigInt(f.amount)); // D-67: saving leaves the everyday account everywhere
+  for (const f of input.debts ?? []) put(f.date, -BigInt(f.amount)); // FIN-04: each minimum on its due date, once
+  const spread: bigint[] = [];
+  for (let i = 0; i < days; i++) spread.push(spreadThrough(i, { erest: input.erest, e: input.e, asOf }));
+  return { asOf, days, end, net, spread, capped };
+}
+
+/** Adds the opening balance and the purchase's dated flows to an open path. The open path is not changed. */
+export function applyPurchaseFlows(open: OpenCashPath, opening: MinorUnits, extraOut: readonly DatedFlow[]): CashPathV3 {
+  const { asOf, days, end } = open;
+  const net = open.net.slice();
+  for (const f of extraOut) putFlow(net, asOf, end, f.date, -BigInt(f.amount));
   const points: CashPoint[] = [];
-  let running = BigInt(input.opening);
+  let running = BigInt(opening);
   for (let i = 0; i < days; i++) {
     running += net[i] as bigint;
-    const balance = running - spreadThrough(i, { erest: input.erest, e: input.e, asOf });
+    const balance = running - (open.spread[i] as bigint);
     points.push({ date: addDays(asOf, i), balance: minorFromBigInt(balance, FN) });
   }
-  return capped > 0n ? { asOf, points, capped: minorFromBigInt(capped, FN) } : { asOf, points };
+  return open.capped > 0n ? { asOf, points, capped: minorFromBigInt(open.capped, FN) } : { asOf, points };
+}
+
+export function buildCashPathV3(
+  input: OpenCashPathInput & { readonly opening: MinorUnits; readonly extraOut: readonly DatedFlow[] }
+): CashPathV3 {
+  return applyPurchaseFlows(openCashPath(input), input.opening, input.extraOut);
 }
 
 /** First confirmed live pay occurrence on or after asOf (a missed pay before asOf never counts: I3). */
@@ -135,15 +179,34 @@ export function nextPayDate(series: readonly V3Series[], asOf: string): string |
   return best;
 }
 
+/** Pay dates strictly after asOf and inside a path of `days` days, in order, one per date (D-36 next pay, D-37 next 3). */
+export function payDatesIn(series: readonly V3Series[], asOf: string, days: number): readonly string[] {
+  const end = addDays(asOf, days);
+  const out = new Set<string>();
+  for (const s of liveSeriesOf(series, asOf, 'pay')) for (const d of seriesOccurrences(s, addDays(asOf, 1), end)) out.add(d);
+  return [...out].sort();
+}
+
+/**
+ * ok: never below 0. overdraft (05.4 FIN-03, D-26, D-36): below 0 but never past the overdraft floor; exactly at the floor is
+ * inside it (I-limit). payday / not_covered: past the floor (D-27; with no limit recorded the floor is 0, D-28).
+ * net (05.4 FIN-02, ENG-04, D-35): past the floor, but the money the safety net can lend carries the low point back to 0 or above;
+ * used is how far the path goes below 0; added is the part the purchase adds (the dip with it less the dip without it); until is the
+ * payday that clears it (null when no payday inside the 90 days does).
+ */
 export type CashCheck =
   | { readonly kind: 'ok'; readonly lowest: CashPoint }
+  | { readonly kind: 'overdraft'; readonly lowest: CashPoint }
+  | { readonly kind: 'net'; readonly lowest: CashPoint; readonly used: MinorUnits; readonly added: MinorUnits; readonly until: string | null }
   | { readonly kind: 'payday'; readonly until: string; readonly shortBy: MinorUnits }
   | { readonly kind: 'not_covered'; readonly shortBy: MinorUnits; readonly payDate?: string | null };
 
-export function cashCheck(withPurchase: CashPathV3, payDate: string | null): CashCheck {
+/** floor: minus the overdraft limits (overdraft.ts overdraftFloor); 0 = no overdraft. */
+export function cashCheck(withPurchase: CashPathV3, payDate: string | null, floor: MinorUnits = minorUnits(0)): CashCheck {
   let lowest = withPurchase.points[0] as CashPoint;
   for (const p of withPurchase.points) if (p.balance < lowest.balance) lowest = p;
   if (lowest.balance >= 0) return { kind: 'ok', lowest };
+  if (lowest.balance >= floor) return { kind: 'overdraft', lowest };
   const shortBy = minorUnits(-lowest.balance);
   if (payDate !== null) {
     const after = withPurchase.points.filter((p) => p.date >= payDate);
@@ -152,14 +215,38 @@ export function cashCheck(withPurchase: CashPathV3, payDate: string | null): Cas
   return { kind: 'not_covered', shortBy, payDate };
 }
 
-/** Dated flows of the purchase: dayOne (already my share) on asOf; each schedule payment as myPart, applied once. */
+/**
+ * 05.4 FIN-02 (D-35): a cash check that failed past the floor, read again with the money the safety net can lend (usable). The
+ * net only ever lends to bring the account back to 0, never into an overdraft. Any other check is returned as it is. until is the
+ * payday that clears the dip; a not_covered dip has none (the net carries it through the 90 days).
+ */
+export function withNet(check: CashCheck, withPurchase: CashPathV3, withoutPurchase: () => CashPathV3, usable: MinorUnits): CashCheck {
+  if (check.kind !== 'payday' && check.kind !== 'not_covered') return check;
+  const lowest = lowestOf(withPurchase);
+  if (lowest.balance + usable < 0) return check;
+  const before = lowestOf(withoutPurchase()).balance;
+  const added = before < 0 ? before - lowest.balance : -lowest.balance;
+  return { kind: 'net', lowest, used: minorUnits(-lowest.balance), added: minorUnits(added > 0 ? added : 0), until: check.kind === 'payday' ? check.until : null };
+}
+
+function lowestOf(path: CashPathV3): CashPoint {
+  let lowest = path.points[0] as CashPoint;
+  for (const p of path.points) if (p.balance < lowest.balance) lowest = p;
+  return lowest;
+}
+
+/**
+ * Dated flows of the purchase: dayOne (already my share) on asOf, or on dayOneOn (05.4 BO-05: the purchase date,
+ * fullCost/purchaseDate.ts); each schedule payment as myPart, applied once.
+ */
 export function purchaseFlows(
   purchase: { readonly dayOne: MinorUnits; readonly schedule: Schedule | null; readonly share: ResolvedShare },
   asOf: string,
-  days: number
+  days: number,
+  dayOneOn: string = asOf
 ): DatedFlow[] {
   const out: DatedFlow[] = [];
-  if (purchase.dayOne !== 0) out.push({ date: asOf, amount: purchase.dayOne });
+  if (purchase.dayOne !== 0) out.push({ date: dayOneOn, amount: purchase.dayOne });
   if (purchase.schedule !== null) {
     for (const p of paymentsInRange(purchase.schedule, asOf, addDays(asOf, days))) {
       out.push({ date: p.date, amount: myPart(p.amount, purchase.share) });

@@ -154,7 +154,7 @@ describe('readoutRows', () => {
       });
       expect(byId(readoutRows(inputsOf(), named, answers, fmt)).next).toContain('What is High-interest savings for');
       const fund = evalOf({ missing: ['account_use_question'], funds: { fundUnlinked: true } });
-      expect(byId(readoutRows(inputsOf(), fund, answers, fmt)).next).toBe('Which account holds your emergency fund?');
+      expect(byId(readoutRows(inputsOf(), fund, answers, fmt)).next).toBe('Which account holds your safety net?');
     });
 
     it('is left out when the engine asks only about one purchase, or nothing', () => {

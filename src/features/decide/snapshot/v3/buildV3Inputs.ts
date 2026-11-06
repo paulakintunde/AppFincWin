@@ -5,7 +5,7 @@
 // Known limits of that shared parse path (recorded for 05.3):
 //  - a Savings-category outflow and a line of a debt-covered or Savings series never reach a month (the old builder folds them
 //    into monthlySaving / minimums), so they are absent from the v3 lines;
-//  - a 'rough' or 'none' snapshot carries no bills, series or debts, so those are empty for such a user.
+//  - a 'rough' or 'none' snapshot carries no bills or series, so those are empty for such a user (its debts do reach the engine, D-43).
 import {
   cadenceOfFreq,
   homeThresholds,
@@ -14,6 +14,7 @@ import {
   V3_ITEM_TYPES,
   MAX_OWN_LINES,
   MAX_CUSTOM_OPTIONS,
+  type AccountKind,
   type AccountUse,
   type Cadence,
   type CountsAs,
@@ -31,7 +32,8 @@ import {
   type Limits,
   type MonthMark,
   type PayArrival,
-  type RoughFigures,
+  type SafetyNet,
+  type TypedEstimates,
   type SeriesRole,
   type UnexplainedAnswer,
   type UnexplainedUse,
@@ -76,7 +78,19 @@ const DEBT_KINDS: readonly string[] = ['credit', 'loan'];
 const LEGACY_LINE_IDS: readonly string[] = ['debt_share', 'housing_share', 'unsecured_multiple'];
 const USD_PROBE_MINOR = 1_000_000; // US$10,000 in minor units: the rate probe for a currency the band table lacks
 const USD_PROBE_EXPONENT = 4; // 10,000 US$ = 10^4 major units
+/**
+ * 05.4-35 (FIN-03, D-144): the stored account kinds (20260924000300_accounts.sql) as engine kinds. credit and loan never get here
+ * (they are debts). cash and other have no overdraft; an investment account is never kept savings for low-month cover (D-144), so
+ * it is 'other' too. An unknown kind reads as 'other'. 'current' and 'card' are never produced (no such stored kind).
+ */
+const ACCOUNT_KIND: Readonly<Record<string, AccountKind>> = { checking: 'checking', savings: 'savings', cash: 'other', investment: 'other', other: 'other' };
+/** The overdraft_rate column check (20261103000200), the same shape percent() reads. */
+const RATE_PATTERN = /^\d{1,4}(\.\d{1,10})?$/;
+/** profiles.region_subdivision, as updateRegionSubdivision writes it (D-19). */
+const SUBDIVISION_PATTERN = /^[A-Z0-9]{1,3}$/;
 
+/** D-127: a whole count of writes waiting to send; anything else reads as none. */
+const unsavedOf = (n: number | undefined): number => (n !== undefined && Number.isSafeInteger(n) && n > 0 ? n : 0);
 const isRec = (x: unknown): x is Obj => typeof x === 'object' && x !== null && !Array.isArray(x);
 const list = (x: unknown): unknown[] => (Array.isArray(x) ? x : []);
 const str = (x: unknown): string | null => (typeof x === 'string' && x !== '' ? x : null);
@@ -86,6 +100,10 @@ const signedMoneyOf = (x: unknown): number | null => (typeof x === 'number' && N
 const dateOf = (x: unknown): string | null => (typeof x === 'string' && DATE_PATTERN.test(x) ? x : null);
 const pctOf = (x: unknown) => (typeof x === 'string' && DSR_PATTERN.test(x) && Number(x) <= MAX_LINE_PERCENT ? percent(x) : null);
 const inList = (xs: readonly string[], x: unknown): x is string => typeof x === 'string' && xs.includes(x);
+/** ARC-25: a stored rate as typed, or null; never a default. */
+const rateOf = (x: unknown) => (typeof x === 'string' && RATE_PATTERN.test(x) ? percent(x) : null);
+/** FIN-04: a due day 1..31, or null. */
+const dueDayOf = (x: unknown): number | null => (typeof x === 'number' && Number.isInteger(x) && x >= 1 && x <= 31 ? x : null);
 
 function lineSpecOf(s: unknown): LineSpec | null {
   if (!isRec(s)) return null;
@@ -202,6 +220,7 @@ function withoutMoney(v3: V3SettingsSource | null): V3SettingsSource | null {
     rough_debt: null,
     rough_invest: null,
     unexplained_amount: null,
+    safety_net_size: null, // 05.4 D-33: the size is settings money too (the starter applies)
   };
 }
 
@@ -390,7 +409,6 @@ export function buildV3Inputs(
   };
 
   let months: V3Month[] = [];
-  let debts: V3Debt[] = [];
   // D-54: the account an envelope's latest goal-tagged leg lands in; null when it has none.
   const landing = new Map<string, Row>();
   for (const r of source.rows) {
@@ -410,9 +428,23 @@ export function buildV3Inputs(
     // step and the unspent step count the same accounts. Cards and loans are debts, handled on the Loans step.
     if (a.kind === 'credit' || a.kind === 'loan') return [];
     const balance = toHome(source.balances[a.id] ?? 0, a.currency);
-    return balance === null ? [] : [{ id: a.id, balance: minorUnits(balance), use: effectiveUses[a.id] ?? null }];
+    if (balance === null) return [];
+    // 05.4-35 (FIN-03): the limit is in the account's currency; converted at the latest stored rate, rounded DOWN (D-91) so it never
+    // overstates the room. No rate converts it -> no limit (cautious). The rate is passed as stored; null stays null (ARC-25).
+    const limit = moneyOf(a.overdraft_limit);
+    const converted = limit === null ? null : convertFloored(limit, a.currency, home, source.rates, source.customCurrencies, today);
+    return [
+      {
+        id: a.id,
+        balance: minorUnits(balance),
+        use: effectiveUses[a.id] ?? null,
+        kind: ACCOUNT_KIND[a.kind] ?? 'other',
+        overdraftLimit: converted === null ? null : minorUnits(converted.amount),
+        overdraftRate: rateOf(a.overdraft_rate),
+      },
+    ];
   });
-  let rough: RoughFigures | null = null;
+  let rough: TypedEstimates | null = null;
   let provisionalRates = (built.provisional ?? null) !== null;
 
   if (built.kind === 'logged') {
@@ -503,20 +535,6 @@ export function buildV3Inputs(
       };
     });
 
-    // ── debts ──
-    const debtRow = new Map(source.debts.map((d) => [d.id, d]));
-    debts = snap.debts.map((d) => {
-      const row = debtRow.get(d.id);
-      return {
-        id: d.id,
-        kind: row !== undefined ? row.kind : kindOf(d.id) === 'credit' ? 'card' : 'loan',
-        balance: d.balance,
-        minimum: d.minimumPayment,
-        apr: d.apr,
-        secured: d.secured,
-        isHousing: row !== undefined && row.is_housing,
-      };
-    });
   } else if (built.kind === 'rough' && moneyUsable) {
     const f = built.figures;
     const part = (x: unknown): ReturnType<typeof minorUnits> => minorUnits(moneyOf(x) ?? 0);
@@ -530,6 +548,25 @@ export function buildV3Inputs(
     };
   }
 
+  // ── debts ── D-43: whatever the records basis (logged, quick estimates or none), the builder's debt list reaches the engine.
+  const debtList = built.kind === 'logged' ? built.snapshot.debts : (built.debtRecords ?? []);
+  const debtRow = new Map(source.debts.map((d) => [d.id, d]));
+  // A card's debt carries the card account's id; its debts row (due day) is the live card row on that account.
+  const cardRowOn = (accountId: string) => source.debts.find((d) => d.deleted_at === null && d.kind === 'card' && d.account_id === accountId);
+  const debts: V3Debt[] = debtList.map((d) => {
+    const row = debtRow.get(d.id);
+    return {
+      id: d.id,
+      kind: row !== undefined ? row.kind : kindOf(d.id) === 'credit' ? 'card' : 'loan',
+      balance: d.balance,
+      minimum: d.minimumPayment,
+      apr: d.apr,
+      secured: d.secured,
+      isHousing: row !== undefined && row.is_housing,
+      dueDay: dueDayOf((row ?? cardRowOn(d.id))?.due_day), // FIN-04: null = not set (the engine assumes tomorrow and says so)
+    };
+  });
+
   const answers = v3?.answers ?? [];
 
   // ── funds ──
@@ -537,6 +574,19 @@ export function buildV3Inputs(
   const anchorAmount = signedMoneyOf(v3?.unspent_anchor);
   const anchorAt = dateOf(v3?.unspent_anchor_at);
   const everyday = moneyOf(v3?.everyday_override);
+  // 05.4 FIN-01 (D-33, D-35, D-61): the interim columns. No settings row = null (the engine's defaults: on, starter, locked, saved =
+  // the emergency fund). saved is the money in the net (the emergency fund), never the size; size null = the starter.
+  const netSize = moneyOf(v3?.safety_net_size);
+  const safetyNet: SafetyNet | null =
+    v3 === null
+      ? null
+      : {
+          protect: v3.safety_net_protect !== false,
+          size: netSize === null ? null : minorUnits(netSize),
+          saved: minorUnits(reserve ?? 0),
+          locked: v3.safety_net_locked !== false,
+        };
+  const subdivision = source.regionSubdivision;
 
   return {
     asOf: today,
@@ -546,7 +596,7 @@ export function buildV3Inputs(
     series,
     dismissedKeys: (v3?.dismissals ?? []).filter((k): k is string => typeof k === 'string'),
     profile: profileOf(v3),
-    rough,
+    typedEstimates: rough,
     balance: built.cash,
     unspent: anchorAmount === null || anchorAt === null ? null : { amount: minorUnits(anchorAmount), at: anchorAt },
     emergency: reserve === null ? null : { amount: minorUnits(reserve), accountId: v3?.reserve_account_id ?? null },
@@ -561,7 +611,13 @@ export function buildV3Inputs(
     payArrivals: payArrivalsOf(answers),
     expectedIncome: expectedIncomeOf(answers),
     heldBridges: heldBridgesOf(answers, new Set(v3?.live_bridge_check_ids ?? [])),
-    unsavedWrites: 0,
+    unsavedWrites: unsavedOf(source.unsavedWrites), // D-127: the D-113 note only, never the sums
     provisionalRates,
+    recordsAsOf: source.recordsAsOf ?? null, // ENG-14, D-126: the oldest real server fetch, null when unknown
+    safetyNet,
+    factLines: true, // D-08: on by default; the switch's storage and screen are 08.1
+    // D-142: the stored state or province passes with whatever country `region` resolved to (even from the device); the engine's
+    // tax table knows only real country-and-state pairs, so a mismatch adds no tax and says so. No country -> null.
+    regionSubdivision: source.region !== null && typeof subdivision === 'string' && SUBDIVISION_PATTERN.test(subdivision) ? subdivision : null,
   };
 }

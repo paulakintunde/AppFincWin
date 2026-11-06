@@ -1,0 +1,495 @@
+{
+  "topic": "household",
+  "cases": [
+    {
+      "id": "HH-01",
+      "topic": "household",
+      "persona": "A8 Robin and Kim (audit, invented)",
+      "situation": "Robin and Kim are buying a $1,600 sofa and split it evenly, so Robin pays $800. Robin has $1,000 spare in November. (Amounts in dollars; the audit used pounds.)",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 80000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 20000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Only Robin's share is judged: $1,000 - $800 = $200 left. The split itself is right (the audit agreed); whether $200 left needs a caution is decided by the safety-net rules once Household lands.",
+      "fixIds": [
+        "FIN-19"
+      ],
+      "status": "to_do",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "HH-02",
+      "topic": "household",
+      "persona": "Jo and Sam (invented)",
+      "situation": "Jo has $1,000 spare in November. Jo's partner Sam has $5,000 in an account of their own, but has not agreed to share it with Decide. Jo is looking at a $2,000 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Sam's money is not counted without Sam's opt-in, so Jo's $1,000 is all there is: not enough for $2,000. On 1 December, $1,000 left from November plus $1,000 spare in December covers it.",
+      "fixIds": [
+        "FIN-19",
+        "UX-21"
+      ],
+      "status": "to_do",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "HH-03",
+      "topic": "household",
+      "persona": "Ali and Noa (invented)",
+      "situation": "Ali and Noa share a joint credit card with $3,000 on it; Ali pays the $90 minimum as one of his bills. Ali has $1,000 spare in November and is looking at a $500 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "b-joint",
+            "amount": 9000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-10",
+            "lastPaid": "2026-11-10",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [
+          {
+            "id": "d-joint",
+            "kind": "card",
+            "balance": 300000,
+            "minimum": 9000,
+            "apr": "21.9",
+            "dueDay": 10,
+            "joint": true
+          }
+        ],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "joint_loan_risk"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "$1,000 - $500 = $500 left, so it fits. Because the card is in both names, the answer states that each of them can be asked to pay all of it.",
+      "fixIds": [
+        "FIN-19"
+      ],
+      "status": "to_do",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "HH-04",
+      "topic": "household",
+      "persona": "Max and Lee (invented)",
+      "situation": "Max and Lee split $2,000 rent evenly. Max's $1,200 of bills includes only his $1,000 half. Max has $1,000 spare in November and is looking at a $500 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Only Max's share of the rent counts as his bill: $1,000 - $500 = $500 left. Counting the whole $2,000 rent would wrongly add $1,000 to his bills and leave nothing spare.",
+      "fixIds": [
+        "FIN-19"
+      ],
+      "status": "to_do",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "HH-05",
+      "topic": "household",
+      "persona": "Eve and Dan (invented)",
+      "situation": "Eve paid Dan $300 this month to settle up their shared costs. That transfer is marked as settling up, not as spending. Eve has $1,000 spare in November and is looking at a $500 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Settling up moves money between partners for costs already counted, so it is not new spending: $1,000 - $500 = $500 left. Counting the $300 as spending would count those costs twice.",
+      "fixIds": [
+        "FIN-19",
+        "UX-21"
+      ],
+      "status": "to_do",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "HH-06",
+      "topic": "household",
+      "persona": "Ivy and Ray (invented)",
+      "situation": "Ivy has no safety net of her own. Her partner Ray has a full $3,000 safety net in his own name. Ivy has $1,000 spare in November and is looking at a $500 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [
+          "emergency_untouched",
+          "net_used",
+          "net_left"
+        ]
+      },
+      "why": "Ray's safety net is his and is never shown or counted in Ivy's answer: $1,000 - $500 = $500 left, and no line about a safety net appears.",
+      "fixIds": [
+        "FIN-19",
+        "UX-21"
+      ],
+      "status": "to_do",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    }
+  ]
+}

@@ -26,7 +26,7 @@ import { monthFigure } from '../copy/monthFigure';
 import { refText, type Translate } from '../check/refText';
 import { InfoLabel } from '../ui/InfoLabel';
 import { useInfoSheet } from '../ui/useInfoSheet';
-import { StateChip, type StateChipTone } from '../ui/StateChip';
+import { StateChip, type StateChipTone } from '@/ui/StateChip';
 import type { Money } from '../check/steps/stepUi';
 import type { SnapshotResult } from '../snapshot/types';
 

@@ -1,0 +1,201 @@
+persona:maya:6000:cash: Fits; $740.00 left that month. Cause: D-67; D-52; D-58. Audited CORRECT (05.4-52).
+persona:maya:50000:cash: Fits; $300.00 left that month. Cause: D-67; D-52; D-58. Audited CORRECT (05.4-52).
+persona:maya:900000:plan: Fits. Cause: D-67; D-52; D-58. Audited CORRECT (05.4-52).
+persona:riley:6000:cash: No: your month is already short (on Not yet). Cause: D-61 locked by default; D-65; D-63; D-54. Audited CORRECT (05.4-52).
+persona:riley:50000:cash: No: your month is already short (on Not yet). Cause: D-61 locked by default; D-65; D-63; D-54. Audited CORRECT (05.4-52).
+persona:riley:200000:cash: No: your month is already short (on Not yet). Cause: D-65; D-63; D-54. Audited CORRECT (05.4-52).
+persona:riley:900000:cash: No: your month is already short (on Not yet). Cause: D-65; D-63; D-54. Audited CORRECT (05.4-52).
+persona:riley:900000:plan: No: your month is already short (on Not yet). Cause: D-61 locked by default; D-65; D-63; D-54. Audited CORRECT (05.4-52).
+persona:leo:50000:cash: Fits from extra savings; -$194.84 left that month. Cause: D-56; D-62; D-58. Audited CORRECT (05.4-52).
+persona:leo:900000:plan: Short each month. Cause: monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+persona:tia:900000:plan: Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).
+persona:dana:6000:cash: Fits (but your safety net is small); $777.10 left that month. Cause: D-35; D-51. Audited CORRECT (05.4-52).
+persona:dana:50000:cash: Fits (but your safety net is small); $337.10 left that month. Cause: D-35; D-51. Audited CORRECT (05.4-52).
+persona:dana:200000:cash: Fits from spare money (but your safety net is small); $0.00 left that month. Cause: D-35; D-51. Audited CORRECT (05.4-52).
+persona:dana:900000:plan: Fits (but your safety net is small). Cause: D-35; D-51. Audited CORRECT (05.4-52).
+persona:priya:6000:cash: Fits (but your safety net is small); $1,140.00 left that month. Cause: D-67; D-35; D-51. Audited CORRECT (05.4-52).
+persona:priya:50000:cash: Fits (but your safety net is small); $700.00 left that month. Cause: D-67; D-35; D-51. Audited CORRECT (05.4-52).
+persona:priya:200000:cash: Not yet (payday). Cause: D-67; D-61 locked by default. Audited CORRECT (05.4-52).
+persona:priya:900000:plan: Fits (but your safety net is small). Cause: D-67; D-35; D-51. Audited CORRECT (05.4-52).
+persona:audit-p1:6000:cash: Fits (but no safety net); $20.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p2:6000:cash: No: your month is already short (on Not yet). Cause: D-52 (lowest month $0); D-65; D-63; D-54. Audited CORRECT (05.4-52).
+persona:audit-p2:50000:cash: No: your month is already short (on Not yet). Cause: D-52 (lowest month $0); D-65; D-63; D-54. Audited CORRECT (05.4-52).
+persona:audit-p2-rich:6000:cash: Fits, but your month is already short (on Fits from spare money); -$1,000.00 left that month. Cause: D-52 (lowest month $0); D-65; D-54. Audited CORRECT (05.4-52).
+persona:audit-p2-rich:50000:cash: Fits from spare money, but your month is already short (on Fits from spare money); -$1,000.00 left that month. Cause: D-52 (lowest month $0); D-65; D-54. Audited CORRECT (05.4-52).
+persona:audit-p3:6000:cash: Fits (but no safety net); $540.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p3:50000:cash: Fits (but no safety net); $100.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p3:900000:plan: Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p6:6000:cash: Fits (but no safety net); $690.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p6:50000:cash: Fits (but no safety net); $250.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p6:900000:plan: Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p6-lines:6000:cash: Fits (but no safety net); $690.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p6-lines:50000:cash: Fits (but no safety net); $250.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p6-lines:900000:plan: Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p7:6000:cash: Fits (but no safety net); $740.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p7:50000:cash: Fits (but no safety net); $300.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p7:200000:cash: Fits from spare money (but no safety net); $0.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p7:900000:plan: Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p8:6000:cash: Fits (but no safety net); $740.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p8:50000:cash: Fits (but no safety net); $300.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p8:900000:plan: Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p9:6000:cash: Fits (but no safety net); $140.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p10:6000:cash: Fits (but no safety net); $540.00 left that month. Cause: D-35. Audited CORRECT (05.4-52).
+persona:audit-p10:900000:plan: Fits (but no safety net). Cause: D-35. Audited CORRECT (05.4-52).
+gen:0: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:1: Short each month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:3: Fits (low month); $842.11 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:4: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:7: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:9: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:10: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-61 locked by default. Audited CORRECT (05.4-52).
+gen:11: No: your month is already short (on Short each month). Cause: 05.4-51 generator retune (new person); D-52; D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:12: No: your month is already short (on Short each month); -$93.14 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:13: Not yet (not covered). Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:14: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:15: Fits; $2,006.83 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:17: Fits from spare money, but your month is already short (on Fits from spare money); -$16.05 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-65; D-54. Audited CORRECT (05.4-52).
+gen:18: Fits (low month); $2,147.11 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:19: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52; D-61 locked by default. Audited CORRECT (05.4-52).
+gen:20: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:21: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:22: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:23: Fits (but your safety net is small); $757.49 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-35; D-51. Audited CORRECT (05.4-52).
+gen:24: Fits (low month); $208.08 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:25: Fits from spare money (but no safety net); $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-35. Audited CORRECT (05.4-52).
+gen:28: No: your month is already short (on Short each month); -$1,066.93 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:30: No: your month is already short (on Short each month); -$1,397.30 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:31: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:33: Short each month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:34: Short each month; $4,107.76 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:35: Not yet (payday). Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:36: Not yet (not covered). Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:37: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:39: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:40: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:42: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:44: No: your month is already short (on Not yet). Cause: 05.4-51 generator retune (new person); D-61 locked by default; D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:45: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:46: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:47: Fits from spare money (but your safety net is small); $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-35; D-51. Audited CORRECT (05.4-52).
+gen:48: No: your month is already short (on Short each month); -$634.02 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:49: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:50: Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:51: No: your month is already short (on Short each month); -$118.21 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:52: No: your month is already short (on Not yet). Cause: 05.4-51 generator retune (new person); D-52; D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:53: Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-58. Audited CORRECT (05.4-52).
+gen:54: Not yet (payday). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:55: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:56: Short each month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:58: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:59: Fits from spare money (low month); $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:60: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:61: Not yet (not covered). Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:62: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:64: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:65: Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:66: Fits; $539.93 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:67: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:68: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:69: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:70: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:71: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52; D-61 locked by default. Audited CORRECT (05.4-52).
+gen:72: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52; D-61 locked by default. Audited CORRECT (05.4-52).
+gen:73: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:75: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52; D-61 locked by default. Audited CORRECT (05.4-52).
+gen:76: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:77: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:79: No: your month is already short (on Not yet). Cause: 05.4-51 generator retune (new person); D-52; D-61 locked by default; D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:80: No: your month is already short (on Not yet). Cause: 05.4-51 generator retune (new person); D-52; D-61 locked by default; D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:81: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:82: Fits. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:83: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:84: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:85: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:86: Fits from spare money, but your month is already short (on Fits from spare money); -$534.92 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-54. Audited CORRECT (05.4-52).
+gen:87: Fits; $331.71 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:88: Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:89: No: your month is already short (on Short each month); -$869.75 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:90: Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:92: Fits from extra savings, but your month is already short (on Fits from spare money); -$117.61 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-54; D-58. Audited CORRECT (05.4-52).
+gen:93: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:95: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:96: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:97: Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:98: Needs a figure first. Cause: 05.4-51 generator retune (new person); D-52; readiness / missing figure. Audited CORRECT (05.4-52).
+gen:99: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:100: Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:101: Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:102: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:103: Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:105: Fits; $205.15 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:106: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:107: Fits from spare money (low month); $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:109: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:110: Short each month; $2,342.78 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:111: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:112: No: your month is already short (on Short each month); -$494.53 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:113: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:114: Fits from spare money, but your month is already short (on Fits from spare money); -$1,060.79 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-65; D-54. Audited CORRECT (05.4-52).
+gen:115: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:116: No: your month is already short (on Not yet). Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:117: Needs a figure first. Cause: 05.4-51 generator retune (new person); D-52; readiness / missing figure. Audited CORRECT (05.4-52).
+gen:118: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:119: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:120: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:121: Short each month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:123: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:124: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:126: No: your month is already short (on Short each month); -$23.86 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:127: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:128: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:129: Fits from spare money (but no safety net); $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-35. Audited CORRECT (05.4-52).
+gen:130: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:131: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:132: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:133: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:135: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:138: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:139: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:141: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:142: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:143: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:144: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:146: Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:147: Short each month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:148: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:150: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:151: No: your month is already short (on Not yet). Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:152: Fits; $873.11 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:153: Not yet (not covered). Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:156: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:158: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:159: Not yet (payday). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:160: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:162: No: your month is already short (on Short each month); -$2,182.33 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:163: Short each month; $213.07 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:164: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:165: Short each month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:166: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:167: Fits; $2,291.09 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:168: Fits from spare money; $0.00 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:169: No: your month is already short (on Short each month); -$1,468.70 left that month. Cause: 05.4-51 generator retune (new person); D-65; D-63; D-54. Audited CORRECT (05.4-52).
+gen:170: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-61 locked by default. Audited CORRECT (05.4-52).
+gen:172: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:173: Fits (but your safety net is small); $1,491.44 left that month. Cause: 05.4-51 generator retune (new person); D-35; D-51. Audited CORRECT (05.4-52).
+gen:174: Fits; $574.82 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:176: Not yet (not covered). Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).
+gen:177: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:178: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:179: Fits from spare money (but no safety net); $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-35. Audited CORRECT (05.4-52).
+gen:182: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:186: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:187: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:188: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:189: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:190: Short each month; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; monthly part (QE-12 rule). Audited CORRECT (05.4-52).
+gen:193: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:194: Fits (but no safety net); $909.87 left that month. Cause: 05.4-51 generator retune (new person); D-35. Audited CORRECT (05.4-52).
+gen:195: Not yet (not covered). Cause: 05.4-51 generator retune (new person); D-52. Audited CORRECT (05.4-52).
+gen:197: Needs a figure first. Cause: 05.4-51 generator retune (new person); readiness / missing figure. Audited CORRECT (05.4-52).
+gen:198: Fits from extra savings; $0.00 left that month. Cause: 05.4-51 generator retune (new person); D-52; D-56; D-62; D-58. Audited CORRECT (05.4-52).
+gen:199: Fits (low month); $2.38 left that month. Cause: 05.4-51 generator retune (new person). Audited CORRECT (05.4-52).

@@ -3,12 +3,15 @@
  * directions. A mismatch would show a user "{{worked}}" or an internal number, so the engine's emitted keys are
  * collected from a corpus of real evaluations and held against the declared key table and the copy.
  */
+import fc from 'fast-check';
 import en from '../../../../../i18n/locales/en';
+import { addDays } from '../../dates';
+import { checkArb, inputsArb } from '../../__tests__/invariants/arbitraries';
 import { minorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import { MISSING_PRIORITY } from '../../constants';
 import { evaluate } from '../../evaluate';
-import type { CheckV2, CustomOptions, FactCode, LimitLine, MissingCode, NoticeCode, V3Inputs, V3Month } from '../../types';
+import type { CaveatCode, CheckV2, CustomOptions, FactCode, LimitLine, MissingCode, NoticeCode, V3Inputs, V3Month } from '../../types';
 import extraFile from '../../__tests__/golden/extra-d18.json';
 import scenariosFile from '../../__tests__/golden/scenarios22.json';
 import {
@@ -20,7 +23,14 @@ import {
   type FixtureScenario,
 } from '../../__tests__/golden/adapter';
 import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series, volatileInputs } from '../../__tests__/helpers/fixtures';
+import { toEngineInputs } from '../../__tests__/rightAnswers/fixture';
+import { loadCases } from '../../__tests__/rightAnswers/loader';
+import { TIER_CASES, rileyTier } from '../../__tests__/helpers/tierFixtures';
+import { SHORT_PLAN_CASES, shortPlan } from '../../__tests__/helpers/shortPlanFixtures';
 import {
+  CAVEAT_FIGURE_KEYS,
+  CAVEAT_KEYS,
+  CAVEAT_VALUE_KEYS,
   COPY_RESOLVERS,
   DISCRIMINATOR_KEYS,
   FACT_KEYS,
@@ -59,7 +69,13 @@ function collect(into: Emitted[], inputs: V3Inputs, check: CheckV2): void {
   const ev = evaluate(inputs, check);
   for (const f of ev.result.facts) into.push({ group: 'fact', code: f.code, values: f.values });
   for (const n of ev.result.notices) into.push({ group: 'notice', code: n.code, values: n.values });
+  for (const c of ev.result.caveats ?? []) CAVEATS.push({ code: c.code, values: c.values });
 }
+
+/** 05.4-37 D-64 (4): the caveats the same corpus emits. */
+const CAVEATS: { code: CaveatCode; values: Readonly<Record<string, number | string | null>> }[] = [];
+/** Caveats no input can raise yet: expected_bills waits for the D-45 planner (05.5), shared_money for the household (Phase 8). */
+const CAVEATS_NOT_YET: readonly CaveatCode[] = ['expected_bills', 'shared_money'];
 
 function withOctLines(base: V3Inputs, lines: ReturnType<typeof v3Line>[]): V3Inputs {
   return { ...base, months: base.months.map((m): V3Month => (m.month === '2026-10' ? { ...m, lines: [...m.lines, ...lines] } : m)) };
@@ -130,14 +146,22 @@ function buildCorpus(): Emitted[] {
     { ...sam, series: [...sam.series, v3Series({ id: 'ins', role: 'bill', cadence: { unit: 'month', every: 12 }, anchorDate: '2026-03-01', amount: 120_000 })] },
     checkOnce(10_000)
   );
+  // 05.4 FIN-11 (D-47): bills_held_back and yearly_bill_ahead, a large yearly bill due inside the 90 days
+  collect(
+    out,
+    { ...sam, series: [...sam.series, v3Series({ id: 'tax', role: 'bill', cadence: { unit: 'month', every: 12 }, anchorDate: '2025-12-01', amount: 5_000_000, typicalChoice: 'excluded' })] },
+    checkOnce(10_000)
+  );
   // D-48: income_volatile (the ask), rests_on_your_answer (yes) and the declined case, from a hand-built volatile earner
   const vol = volatileInputs();
   const volPlan = { count: 6, apr: percent('0'), firstPayment: { kind: 'one_period' } } as const;
   collect(out, vol, checkPlan(150_000, volPlan));
   collect(out, vol, checkPlan(150_000, volPlan, { volatileCover: true }));
   collect(out, vol, checkPlan(150_000, volPlan, { volatileCover: false }));
-  // unsaved_changes
+  // unsaved_changes (05.4 APP-02, D-113: the first notice, no count)
   collect(out, { ...sam, unsavedWrites: 2 }, checkOnce(10_000));
+  // 05.4 ENG-17 (D-114): account_no_rate, an account no exchange rate converts
+  collect(out, { ...sam, accounts: [...(sam.accounts ?? []), { id: 'acc-yen', balance: mu(0), use: null, noRate: true }] }, checkOnce(10_000));
   // unspent_stale and unspent_drifted
   collect(out, { ...sam, unspent: { amount: mu(240_000), at: '2026-08-01' } }, checkOnce(10_000));
   collect(out, { ...sam, unspent: { amount: mu(9_999_999), at: '2026-10-03' } }, checkOnce(10_000));
@@ -147,8 +171,14 @@ function buildCorpus(): Emitted[] {
     { ...sam, envelopes: [{ id: 'e1', kind: 'pot', target: null, monthlyAmount: null, readyBy: null, saved: mu(60_000), purposeId: null }] },
     checkOnce(90_000, { envelopeId: 'e1' })
   );
+  // 05.4 D-61: an unlocked net lends, and a need reads need_net_line first; the same net locked is left out (net_locked)
+  const unlockedNet = { ...sam, safetyNet: { protect: true, size: mu(900_000), saved: mu(900_000), locked: false } };
+  collect(out, unlockedNet, checkOnce(600_000, { purpose: { kind: 'preset', value: 'necessity' } }));
+  collect(out, { ...unlockedNet, safetyNet: { protect: true, size: mu(900_000), saved: mu(900_000) } }, checkOnce(600_000));
+  // 05.4 D-54 / D-63: an already-short usual month with an unlocked net says how long the net would last, with and without it
+  collect(out, { ...unlockedNet, everydayOverride: mu(900_000) }, checkPlan(600_000, { count: 12, apr: percent('9.9'), firstPayment: { kind: 'one_period' } }));
   // from_your_figures: rough figures only
-  collect(out, inputsOf({ rough: { income: mu(400_000), expenses: mu(150_000), saving: mu(30_000), debt: mu(0), invest: mu(0), asOf: '2026-10-01' } }), checkOnce(10_000));
+  collect(out, inputsOf({ typedEstimates: { income: mu(400_000), expenses: mu(150_000), saving: mu(30_000), debt: mu(0), invest: mu(0), asOf: '2026-10-01' } }), checkOnce(10_000));
   // income_kind_unmarked: other income whose kind carries no counts-as
   collect(
     out,
@@ -198,7 +228,8 @@ function buildCorpus(): Emitted[] {
     ],
     { full: false }
   );
-  const rich = { unspent: { amount: mu(5_000_000), at: '2026-12-10' }, months: [...gigMonths, decMonth] } as const;
+  // 05.4 D-56: spare money is capped at the everyday account, so the account holds the confirmed figure.
+  const rich = { unspent: { amount: mu(5_000_000), at: '2026-12-10' }, balance: mu(5_000_000), months: [...gigMonths, decMonth] } as const;
   const bigPlan = checkPlan(600_000, { count: 12, apr: percent('0'), firstPayment: { kind: 'one_period' } });
   collect(out, gig('seasonal', rich), bigPlan);
   collect(out, gig('variable', { ...rich, months: [...gigMonths.slice(2), decMonth] }), bigPlan);
@@ -216,6 +247,51 @@ function buildCorpus(): Emitted[] {
   });
   collect(out, noPay(sam), checkOnce(10_000));
   collect(out, { ...noPay(sam), payArrivals: [{ seriesId: 'sam-pay', date: '2026-10-01', arrived: false }] }, checkOnce(10_000));
+  // 05.4-20 (FIN-04, FIN-10, FIN-14, D-43): every debts case and QE-01 / QE-13 (each debt fact and the ask), and DB-08 with a third
+  // costly debt (debt_more).
+  for (const c of loadCases().filter((x) => x.topic === 'debts' || ['QE-01', 'QE-13', 'QE-03', 'QE-06', 'QE-12', 'QE-14'].includes(x.id))) {
+    const { inputs, check } = toEngineInputs(c.fixture);
+    collect(out, { ...inputs, factLines: true }, check);
+    if (c.id === 'DB-08') {
+      const extra = { id: 'd-extra', kind: 'other' as const, balance: mu(300_000), minimum: mu(5_000), apr: percent('39.9'), secured: false, isHousing: false, dueDay: 28 };
+      collect(out, { ...inputs, factLines: true, debts: [...inputs.debts, extra] }, check);
+    }
+  }
+  // 05.4 FIN-03: every approved overdraft case (each overdraft fact), and each with no rates set (the _no_rate values).
+  for (const c of loadCases().filter((x) => x.topic === 'overdraft')) {
+    const { inputs, check } = toEngineInputs(c.fixture);
+    collect(out, inputs, check);
+    collect(out, { ...inputs, accounts: (inputs.accounts ?? []).map((a) => ({ ...a, overdraftRate: null })) }, check);
+  }
+  // 05.4 FIN-01 / FIN-02: every safety-net case (each net fact: off, $0, need and want, above the size, empty and small).
+  for (const c of loadCases().filter((x) => x.topic === 'safety-net')) {
+    const { inputs, check } = toEngineInputs(c.fixture);
+    collect(out, inputs, check);
+  }
+  // 05.4 D-65: the three tiers when the usual month is already short (month_short_fits, money_lasts_shorter).
+  for (const t of Object.values(TIER_CASES)) {
+    const { inputs, check } = rileyTier(t);
+    collect(out, inputs, check);
+    // 05.4 CMP-F04 (05.4-38, D-123): the same answers in the UK carry the money-help pointer (free_help).
+    collect(out, { ...inputs, region: 'GB' }, check);
+  }
+  // 05.4 D-68: a short plan paid from money on hand (short_plan_from_cash), plain and from extra savings.
+  for (const t of [SHORT_PLAN_CASES.qualifies, SHORT_PLAN_CASES.extraSavings]) {
+    const { inputs, check } = shortPlan(t);
+    collect(out, inputs, check);
+  }
+  // 05.4 FIN-27 (05.4-25): the region's usual rate (tax_estimate) and an unknown region (tax_not_included): TX-06 with no rate typed,
+  // in Ontario and with no province.
+  const ben = loadCases().find((c) => c.id === 'TX-06')!.fixture;
+  for (const region of [{ country: 'CA', subdivision: 'ON' }, { country: 'CA', subdivision: null }]) {
+    const { inputs, check } = toEngineInputs({ ...ben, region, check: { ...ben.check, taxPercent: null, taxIncluded: null } });
+    collect(out, inputs, check);
+  }
+  // 05.4 BO-05 (05.4-27): a sale the answer counts (SO-01, sale_counted) and a debt the sale pays only in part (SO-04, debt_left_after_sale).
+  for (const id of ['SO-01', 'SO-04']) {
+    const { inputs, check } = toEngineInputs(loadCases().find((c) => c.id === id)!.fixture);
+    collect(out, inputs, check);
+  }
   return out;
 }
 
@@ -397,5 +473,47 @@ describe('M-03 copy contract: engine keys and en.ts placeholders agree', () => {
     }
     expect(MISSING_PRIORITY).toContain('account_use_question');
     expect(MISSING_PRIORITY).toContain('pay_arrival_question');
+  });
+});
+
+describe('05.4-37 D-64 caveat contract', () => {
+  const text = (key: string): string => key.split('.').reduce<unknown>((n, p) => (n as Record<string, unknown>)[p], en) as string;
+  const codes = Object.keys(CAVEAT_KEYS) as CaveatCode[];
+
+  it('every emitted caveat carries only its declared keys, never null', () => {
+    const bad = CAVEATS.filter((c) => Object.entries(c.values).some(([k, v]) => !CAVEAT_VALUE_KEYS[c.code].includes(k) || v === null)).map((c) => c.code);
+    expect([...new Set(bad)]).toEqual([]);
+  });
+
+  it('each caveat line reads only its own keys, and the figure lines read the large_for_month keys', () => {
+    for (const code of codes) {
+      for (const p of placeholders(text(CAVEAT_KEYS[code]))) expect({ code, p, ok: CAVEAT_VALUE_KEYS[code].includes(p) }).toEqual({ code, p, ok: true });
+    }
+    for (const [k, key] of Object.entries(CAVEAT_FIGURE_KEYS)) {
+      expect(placeholders(text(key))).toEqual([k]);
+      expect(CAVEAT_VALUE_KEYS.large_for_month).toContain(k);
+    }
+    // every non-figure value is read by its line
+    for (const code of codes.filter((c) => c !== 'large_for_month')) {
+      const read = new Set(placeholders(text(CAVEAT_KEYS[code])));
+      for (const k of CAVEAT_VALUE_KEYS[code]) expect({ code, k, read: read.has(k) }).toEqual({ code, k, read: true });
+    }
+  });
+
+  it('the corpus, with generated cases, emits every caveat but the two waiting for their phase', () => {
+    // records out of date, few months and close to the line need inputs the saved corpus does not hold: add generated cases
+    // (the invariant arbitraries), each also with records last synced 30 days before the check
+    const extra = fc.sample(fc.tuple(inputsArb, checkArb), { numRuns: 300, seed: 0x0575 });
+    for (const [inputs, check] of extra) {
+      // and with only the last two months of records kept (few_months)
+      for (const i of [inputs, { ...inputs, recordsAsOf: addDays(inputs.asOf, -30) }, { ...inputs, months: inputs.months.slice(-2) }]) {
+        for (const c of evaluate(i, check).result.caveats ?? []) CAVEATS.push({ code: c.code, values: c.values });
+      }
+    }
+    const emitted = new Set(CAVEATS.map((c) => c.code));
+    const bad = CAVEATS.filter((c) => Object.entries(c.values).some(([k, v]) => !CAVEAT_VALUE_KEYS[c.code].includes(k) || v === null)).map((c) => c.code);
+    expect([...new Set(bad)]).toEqual([]);
+    expect(codes.filter((c) => !emitted.has(c) && !CAVEATS_NOT_YET.includes(c))).toEqual([]);
+    expect(CAVEATS_NOT_YET.filter((c) => emitted.has(c))).toEqual([]);
   });
 });

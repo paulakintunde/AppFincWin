@@ -1,8 +1,9 @@
 import { array, assert as fcAssert, constantFrom, integer, property } from 'fast-check';
 import { minorUnits as mu } from '../../../../money/types';
 import { erestOf } from '../../month/thisMonth';
-import type { LineRole, V3Line, V3Month, V3Series } from '../../types';
-import { rollForward, suggestedUnspent, unspentState } from '../unspent';
+import { dueDrops } from '../../month/dueDrops';
+import type { LineRole, ReadinessWaiver, SkippedOccurrence, V3Line, V3Month, V3Series } from '../../types';
+import { billsAndErest, rollForward, suggestedUnspent, unspentState } from '../unspent';
 
 function ser(over: Partial<V3Series> & { id: string }): V3Series {
   return {
@@ -70,6 +71,42 @@ describe('suggestedUnspent', () => {
     const profile = { types: ['mix' as const], variable: 'balance' as const, steady: null, billsHorizonMonths: 2 as const };
     // rent 10th, util 20th: window [Oct 3, Dec 3) holds Oct 10/20, Nov 10/20 = 2 x 180000
     expect(suggestedUnspent({ ...base, profile, series: [rent, util] })).toBe(450000 - 360000);
+  });
+
+  describe('dropped dues (05.3-64; D-27, D-31, skips)', () => {
+    const profile = { types: ['mix' as const], variable: 'balance' as const, steady: null, billsHorizonMonths: 2 as const };
+    const series = [rent, util];
+    const drops = (waivers: ReadinessWaiver[], skipped: SkippedOccurrence[] = []) => dueDrops({ asOf: base.asOf, series, waivers, skipped });
+
+    test('profile (d): always_other leaves every occurrence of the series out of the horizon bills', () => {
+      const b = billsAndErest({ ...base, profile, series, drops: drops([{ kind: 'always_other', seriesId: 'util' }]) });
+      expect(b.bills).toBe(2 * 150000);
+      expect(b.erest).toBe(0);
+      expect(suggestedUnspent({ ...base, profile, series, drops: drops([{ kind: 'always_other', seriesId: 'util' }]) })).toBe(450000 - 300000);
+    });
+
+    test('profile (d): a skip leaves only its occurrence out', () => {
+      const b = billsAndErest({ ...base, profile, series, drops: drops([], [{ seriesId: 'rent', date: '2026-11-10' }]) });
+      expect(b.bills).toBe(360000 - 150000);
+    });
+
+    test('profile (d): a paid_by_other dated on asOf drops that occurrence; one after asOf drops nothing', () => {
+      const rentOnAsOf = ser({ id: 'rent', anchorDate: '2026-01-03', amount: mu(150000) });
+      const s = [rentOnAsOf, util];
+      const on = dueDrops({ asOf: base.asOf, series: s, waivers: [{ kind: 'paid_by_other', seriesId: 'rent', date: '2026-10-03' }] });
+      const later = dueDrops({ asOf: base.asOf, series: s, waivers: [{ kind: 'paid_by_other', seriesId: 'util', date: '2026-10-20' }] });
+      expect(billsAndErest({ ...base, profile, series: s }).bills).toBe(360000);
+      expect(billsAndErest({ ...base, profile, series: s, drops: on }).bills).toBe(360000 - 150000);
+      expect(billsAndErest({ ...base, profile, series: s, drops: later }).bills).toBe(360000);
+    });
+
+    test('no drops: the same figures as without the field', () => {
+      expect(billsAndErest({ ...base, profile, series, drops: drops([]) })).toEqual(billsAndErest({ ...base, profile, series }));
+    });
+
+    test('other profiles take billsDue as given (the month model already left the drops out)', () => {
+      expect(billsAndErest({ ...base, series, drops: drops([{ kind: 'always_other', seriesId: 'util' }]) })).toEqual({ bills: 30000, erest: 137500 });
+    });
   });
 });
 
@@ -168,6 +205,14 @@ describe('rollForward', () => {
     expect(over.value).toBe(233000);
   });
 
+  test('05.3-75 an anchor on a month last day plans no everyday for that month', () => {
+    const e = mu(300000);
+    expect(erestOf(e, mu(0), 31, 31)).toBe(0);
+    const r = roll({ e, anchor: anchor(240000, '2026-10-31'), asOf: '2026-11-05', lines: [line({ id: 'n', date: '2026-11-02', amount: mu(5000) })] });
+    expect(r.breakdown.everyday).toBe(5000);
+    expect(r.value).toBe(235000);
+  });
+
   test('D-22 later months: Sam November', () => {
     const lines = [
       line({ id: 'pay', date: '2026-11-28', role: 'income', seriesId: 'pay', amount: mu(400000) }),
@@ -211,6 +256,15 @@ describe('rollForward', () => {
     const lines = [line({ id: 'buy', date: '2026-10-06', amount: mu(120000) }), line({ id: 'ref', date: '2026-10-07', role: 'refund', amount: mu(120000) })];
     expect(roll({ lines }).value).toBe(240000);
     expect(roll({ lines, e: mu(0) }).value).toBe(240000);
+  });
+
+  test('refunds above spending before the anchor clamp the held-back base at zero', () => {
+    // Anchor 2026-10-03: a refund larger than the everyday spend logged by then would make the base negative.
+    const before = [line({ id: 'buy', date: '2026-10-02', amount: mu(10000) }), line({ id: 'ref', date: '2026-10-01', role: 'refund', amount: mu(50000) })];
+    const none = [line({ id: 'buy', date: '2026-10-02', amount: mu(0) }), line({ id: 'ref', date: '2026-10-01', role: 'refund', amount: mu(0) })];
+    const clamped = roll({ lines: before, e: mu(90000) }).value;
+    // Lines before the anchor add no cash, so a clamped base gives the same figure as nothing logged by then.
+    expect(clamped).toBe(roll({ lines: none, e: mu(90000) }).value);
   });
 
   test('refunds before the anchor never take the anchor-month everyday base below zero', () => {

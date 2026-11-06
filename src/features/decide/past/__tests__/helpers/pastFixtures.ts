@@ -30,6 +30,7 @@ export function decision(id: string, over: Partial<DecideCheckRow> = {}): Decide
     furthest_step: 5,
     last_seen_state: null,
     last_seen_basis: null,
+    answer_v3: null,
     reopened_from: null,
     decided_at: '2026-08-01T12:00:00Z',
     verdict_at_decision: 'fits',

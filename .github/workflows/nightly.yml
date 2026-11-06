@@ -1,0 +1,31 @@
+name: Nightly
+# QA-03 at full strength: 20,000 cross-check cases and the engine properties at 2,000 cases each.
+# The whole-engine mutation run (QA-04) is mutation-full.yml. Schedules fire only from main (Pitfall 8).
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+jobs:
+  engine-deep-checks:
+    name: engine-deep-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4.4.0 (v4)
+        with: { node-version: 24, cache: npm }
+      - run: npm ci --legacy-peer-deps
+      - name: Cross-check calculator vs engine (20,000 cases)
+        run: npm run test:crosscheck
+        env:
+          CROSSCHECK_RUNS: 20000
+      # 05.4-43: the end-to-end properties at full strength (2,000 cases each). The nightly mutation run is
+      # mutation-full.yml's schedule (sharded; a single job cannot finish 13,949 mutants).
+      - name: Engine properties (2,000 cases each)
+        env: { FC_RUNS: 2000 }
+        run: npx jest -c jest.engine.config.js src/engine/decide/v3/__tests__/invariants

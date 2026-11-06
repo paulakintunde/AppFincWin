@@ -1,4 +1,4 @@
-import { clearSampleData, fetchSampleDataExists, seedSampleData } from '../samples';
+import { clearSampleData, fetchSampleDataExists, redateSampleDataIfStale, seedSampleData } from '../samples';
 import { createFakeSupabase } from './fakeSupabase';
 
 describe('sample data wrappers', () => {
@@ -35,6 +35,18 @@ describe('sample data wrappers', () => {
       kept: 0,
     });
     await expect(clearSampleData(client, 'hh')).rejects.toMatchObject({ code: 'bad-response' });
+  });
+
+  it('redateSampleDataIfStale requires a boolean', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: true, error: null, status: 200 });
+    client.respondWith({ data: null, error: null, status: 200 });
+    await expect(redateSampleDataIfStale(client, 'hh', '2026-11-02')).resolves.toBe(true);
+    expect(client.calls.find((c) => c.method === 'rpc')?.args).toEqual([
+      'redate_sample_data_if_stale',
+      { p_household_id: 'hh', p_today: '2026-11-02' },
+    ]);
+    await expect(redateSampleDataIfStale(client, 'hh', '2026-11-02')).rejects.toMatchObject({ code: 'bad-response' });
   });
 
   it('fetchSampleDataExists requires a boolean', async () => {

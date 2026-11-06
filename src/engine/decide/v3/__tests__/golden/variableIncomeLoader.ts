@@ -5,12 +5,12 @@
  * must exist and every patch and field name must be one this loader knows, otherwise it throws. Expectations are written
  * by hand with their working (D-28 style); nothing here derives an expectation from the engine.
  */
+import type { GoldenLevel } from '../helpers/restsOn';
 import { minorUnits } from '../../../../money/types';
 import type {
   AccountUse,
   CheckV2,
   Code,
-  ConfidenceLevel,
   ExpectedMonthIncome,
   IncomeProfile,
   MissingCode,
@@ -47,7 +47,7 @@ export interface VariableExpect {
   notices?: Pair[];
   noticesAbsent?: NoticeCode[];
   reasons?: ReasonCode[];
-  confidence?: ConfidenceLevel;
+  confidence?: GoldenLevel;
   futures?: boolean;
   readyBy?: ReadyBy;
   split?: { source: string; amount: number }[];
@@ -84,6 +84,8 @@ export interface VariableCase {
   heldBridges?: { id: string; amount: number }[];
   unspentPatch?: { amount?: number; at?: string };
   fundAccountId?: string | null;
+  /** 05.4 FIN-01: a safety-net record for the case; absent = no record (protection on, the starter, the fund as the money saved). */
+  safetyNet?: { protect: boolean; size: number | null; saved: number };
   purchase: FixturePurchase & { volatileCover?: boolean | null };
   expect: VariableExpect;
   working: string;
@@ -101,7 +103,7 @@ export interface LoadedCase {
 const CASE_KEYS: readonly string[] = [
   'id', 'person', 'asOf', 'dropMonthsBefore', 'profilePatch', 'seriesPatch', 'envelopesPatch', 'accountsPatch', 'payArrivals',
   'monthsPatch', 'extraMonths', 'removeLines', 'balanceDelta', 'unexplainedAnswer', 'expectedIncome', 'heldBridges', 'unspentPatch',
-  'fundAccountId', 'purchase', 'expect', 'working',
+  'fundAccountId', 'safetyNet', 'purchase', 'expect', 'working',
 ];
 const EXPECT_KEYS: readonly string[] = [
   'code', 'variant', 'missing', 'facts', 'notices', 'noticesAbsent', 'reasons', 'confidence', 'futures', 'readyBy', 'split', 'readiness',
@@ -209,6 +211,9 @@ export function loadVariableCase(c: VariableCase): LoadedCase {
   // names the fund's account here (D-62: null or a removed account means unlinked).
   if (person.accounts !== undefined && inputs.emergency !== null) {
     inputs = { ...inputs, emergency: { amount: inputs.emergency.amount, accountId: person.fundAccountId ?? null } };
+  }
+  if (c.safetyNet) {
+    inputs = { ...inputs, safetyNet: { protect: c.safetyNet.protect, size: c.safetyNet.size === null ? null : minorUnits(c.safetyNet.size), saved: minorUnits(c.safetyNet.saved) } };
   }
   if (c.unexplainedAnswer) {
     inputs = { ...inputs, unexplainedAnswer: { amount: minorUnits(c.unexplainedAnswer.amount), use: c.unexplainedAnswer.use, at: person.asOf } };

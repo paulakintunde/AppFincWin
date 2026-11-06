@@ -13,8 +13,8 @@ describe('C15 Sam month (golden)', () => {
     expect(m.typicalLeft).toBe(42500);
     expect(m.low).toEqual({ left: 5000, month: '2026-09', reason: 'second_lowest' });
     expect(m.setAside).toBe(30000);
-    expect(m.confidence.level).toBe('fair');
-    expect(m.confidence.reasons).toContain('early_in_month');
+    expect(m.confidence.reasons.map((r) => r.code)).toEqual(['early_in_month', 'under_logged']);
+    expect(m.confidence.basis.kind).toBe('records');
     expect(m.notices).toEqual([]);
   });
 });

@@ -20,7 +20,7 @@ describe('undoToast', () => {
 
   it('exposes the D-31 timing constants', () => {
     expect(TOAST_MS_ORDINARY).toBe(3200);
-    expect(TOAST_MS_DESTRUCTIVE).toBe(6000);
+    expect(TOAST_MS_DESTRUCTIVE).toBe(10000);
   });
 
   // C-CR-02 / D-31: with a screen reader running there is no auto-dismiss.
@@ -35,13 +35,13 @@ describe('undoToast', () => {
     }
   });
 
-  // 05.2 F-12: Undo toasts 6 s
-  it('toastDurationMs gives a toast with Undo 6 s and keeps 3.2 s without', () => {
-    expect(TOAST_MS_UNDO).toBe(6000);
-    expect(toastDurationMs('ordinary', false, true)).toBe(6000);
+  // 05.2 F-12: Undo toasts 10 s (05.3-101)
+  it('toastDurationMs gives a toast with Undo 10 s and keeps 3.2 s without', () => {
+    expect(TOAST_MS_UNDO).toBe(10000);
+    expect(toastDurationMs('ordinary', false, true)).toBe(10000);
     expect(toastDurationMs('ordinary', false, false)).toBe(3200);
-    expect(toastDurationMs('destructive', false, false)).toBe(6000);
-    expect(toastDurationMs('refusal', false, false)).toBe(6000);
+    expect(toastDurationMs('destructive', false, false)).toBe(10000);
+    expect(toastDurationMs('refusal', false, false)).toBe(10000);
   });
 
   it('showToast replaces any current toast with a new id', () => {

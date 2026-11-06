@@ -28,6 +28,7 @@ import {
   updateDecideCheck,
   type DecideCheckPatch,
   type DecideCheckRow,
+  type StoredSeenV3,
   type SeenBasis,
   type SeenState,
 } from '@/db/decideChecks';
@@ -151,6 +152,17 @@ function subscribeRedirects(listener: () => void): () => void {
     redirectListeners.delete(listener);
   };
 }
+// A reopen copy the server refused: the screen opened on its id says so instead of "This check isn't here".
+const reopenFailures = new Set<string>();
+function markReopenFailed(id: string): void {
+  reopenFailures.add(id);
+  for (const listener of redirectListeners) listener();
+}
+/** True once a reopen copy with this id could not be saved. */
+export function useReopenFailed(id: string): boolean {
+  return useSyncExternalStore(subscribeRedirects, () => reopenFailures.has(id));
+}
+
 /** IN-B05: the live check a reopen of `id` resolved to, when it found the decision already reopened; otherwise null. */
 export function useReopenRedirect(id: string): string | null {
   return useSyncExternalStore(subscribeRedirects, () => reopenRedirects.get(id) ?? null);
@@ -170,6 +182,7 @@ export function optimisticCheckRow(vars: CreateCheckVars): WithPending<DecideChe
     furthest_step: vars.furthestStep,
     last_seen_state: null,
     last_seen_basis: null,
+    answer_v3: null,
     reopened_from: vars.reopenedFrom ?? null,
     decided_at: null,
     verdict_at_decision: null,
@@ -250,7 +263,12 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
           ...(vars.reopenedFrom ? { reopenedFrom: vars.reopenedFrom } : {}),
         },
       });
-      showToast({ kind: 'refusal', tone: 'warning', text: { key: 'sync.checkNotSaved' } });
+      if (vars.reopenedFrom) markReopenFailed(vars.id);
+      showToast({
+        kind: 'refusal',
+        tone: 'warning',
+        text: { key: vars.reopenedFrom ? 'sync.checkCopyNotSaved' : 'sync.checkNotSaved' },
+      });
     },
   });
 
@@ -422,6 +440,10 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
       }
     },
   });
+
+  // 05.3 D-16: the stored-answer write runs the same pipeline as editCheck (version check, serial scope, conflict and
+  // failed-write handling), under its own key so a paused write resumes by key after a restart.
+  qc.setMutationDefaults(mutationKeys.saveCheckAnswer, qc.getMutationDefaults(mutationKeys.editCheck) ?? {});
 }
 
 export function useCreateCheck(): {
@@ -573,6 +595,39 @@ export function useMarkCheckSeen(): { markSeen(row: DecideCheckRow, state: SeenS
   };
 }
 
+// 05.3 D-16: the only writer of answer_v3. Called on "Check it" and by the record flow; never from a recompute or a refund link (D-13).
+export function useSaveCheckAnswer(): { save(row: DecideCheckRow, seen: StoredSeenV3): boolean } {
+  const mutation = useMutation<EditCheckResult, unknown, EditCheckVars>({
+    mutationKey: mutationKeys.saveCheckAnswer,
+    scope: WRITE_SCOPE,
+  });
+  return {
+    save(row, seen) {
+      if (row.answer_v3 !== null && sameStoredAnswer(row.answer_v3, seen)) return false;
+      mutation.mutate({
+        id: row.id,
+        ownerId: row.created_by,
+        cache: cacheOf(row),
+        expectedVersion: row.version,
+        patch: { answer_v3: seen },
+      });
+      return true;
+    },
+  };
+}
+
+function sameStoredAnswer(a: StoredSeenV3, b: StoredSeenV3): boolean {
+  return (
+    a.v === b.v &&
+    a.code === b.code &&
+    a.variant === b.variant &&
+    a.unspentAfter === b.unspentAfter &&
+    JSON.stringify(a.readyBy) === JSON.stringify(b.readyBy) &&
+    a.lineFacts.length === b.lineFacts.length &&
+    a.lineFacts.every((f, i) => f === b.lineFacts[i])
+  );
+}
+
 /**
  * D-11: removing a decision is an undoable soft delete. It never touches the lines the decision wrote.
  * Part 2 (D-34): a live goal of this check is soft-deleted in the same step.
@@ -604,9 +659,9 @@ function reopenedInputs(inputs: Record<string, unknown>): Record<string, unknown
 
 /**
  * A waiting or passed decision reopens as a NEW open check from its inputs; the old decision and its goal stay.
- * `_today` is kept in the signature so callers pass the same context they use elsewhere; dates are not rewritten.
+ * Dates are not rewritten.
  */
-export function useReopenCheck(): { reopen(row: DecideCheckRow, _today: string): string } {
+export function useReopenCheck(): { reopen(row: DecideCheckRow, _today?: string): string } {
   const mutation = useMutation<DecideCheckRow, unknown, CreateCheckVars>({
     mutationKey: mutationKeys.createCheck,
     scope: WRITE_SCOPE,

@@ -12,11 +12,13 @@ describe('rowTag', () => {
     ['future income', { original_amount: 100, local_date: '2026-10-10', status: 'pending' }, 'scheduled', 'scheduled'],
     ['overdue expense', { status: 'pending', local_date: '2026-10-01' }, 'overdue', 'unpaid'],
     ['due expense', { status: 'pending' }, 'due', 'unpaid'],
-    ['pending refund today', { status: 'pending', original_amount: 50, is_refund: true }, 'due', 'unpaid'],
+    ['pending refund today', { status: 'pending', original_amount: 50, is_refund: true }, 'expected', 'unpaid'],
     ['expected income', { status: 'pending', original_amount: 100 }, 'expected', 'unpaid'],
     ['paid expense', {}, 'paid', 'paid'],
     ['paid income', { original_amount: 100 }, 'received', 'paid'],
-    ['paid refund', { original_amount: 100, is_refund: true }, 'paid', 'paid'],
+    ['paid refund', { original_amount: 100, is_refund: true }, 'received', 'paid'],
+    ['legacy negative refund paid', { original_amount: -100, is_refund: true }, 'paid', 'paid'],
+    ['legacy negative refund pending today', { status: 'pending', original_amount: -50, is_refund: true }, 'due', 'unpaid'],
     ['skipped', { status: 'skipped' }, 'skipped', 'neutral'],
   ];
   it.each(cases)('%s', (_n, over, kind, tone) => {

@@ -9,7 +9,7 @@ import type { MonthPosition } from '@/engine/activity';
 import { money } from '@/engine/money';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { useShouldStack } from '@/features/decide/ui/textFit';
+import { useShouldStack } from '@/ui/textFit';
 import { radii, space } from '@/theme/layout';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';

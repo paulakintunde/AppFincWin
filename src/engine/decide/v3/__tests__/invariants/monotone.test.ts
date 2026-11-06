@@ -5,12 +5,14 @@
  * disappears legitimately when the extra spending line makes the records look current again.
  */
 import fc from 'fast-check';
+import { fcRuns } from '../helpers/fcRuns';
 import { evaluate } from '../../evaluate';
 import type { CheckV2, ReadyBy, Result, V3Inputs, V3Line } from '../../types';
-import { checkOf, codeRank, checkArb, inputsArb, latePayInputsArb, mu, priceArb, shapeArb } from './arbitraries';
+import { percent } from '../../../../payoff/types';
+import { checkOf, codeRank, checkArb, inputsArb, inputsOfPerson, latePayInputsArb, mu, priceArb, shapeArb } from './arbitraries';
 import { v3Line } from '../helpers/fixtures';
 
-const RUNS = { numRuns: 60 };
+const RUNS = { numRuns: fcRuns(200) };
 
 const run = (inputs: V3Inputs, check: CheckV2): Result => evaluate(inputs, check).result;
 
@@ -32,6 +34,22 @@ function withLine(inputs: V3Inputs, line: V3Line): V3Inputs {
   const ym = currentMonthOf(inputs);
   if (!inputs.months.some((m) => m.month === ym)) return inputs;
   return { ...inputs, months: inputs.months.map((m) => (m.month === ym ? { ...m, lines: [...m.lines, line] } : m)) };
+}
+
+/** The money is in the everyday account too: the balance and the first everyday (or mixed, or unstated) account rise by it. */
+function withPaidIn(inputs: V3Inputs, amount: number): V3Inputs {
+  const i = (inputs.accounts ?? []).findIndex((a) => a.use === null || a.use.kind === 'everyday' || a.use.kind === 'mixed');
+  const accounts = inputs.accounts?.map((a, k) => (k === i ? { ...a, balance: mu(a.balance + amount) } : a));
+  return { ...inputs, balance: mu(inputs.balance + amount), ...(accounts === undefined ? {} : { accounts }) };
+}
+
+/**
+ * The money spent has left the everyday account too: the balance and that account fall by it. A paid spending line the balance does
+ * not show means the account opened higher by the same amount (the mirror of withPaidIn, D-86): the rest of this month's everyday
+ * spending (Erest = usual everyday less what is spent so far) shrinks by the line, so the line alone would add it back to the cash path.
+ */
+function withPaidOut(inputs: V3Inputs, amount: number): V3Inputs {
+  return withPaidIn(inputs, -amount);
 }
 
 function extraLine(inputs: V3Inputs, role: V3Line['role'], amount: number, day: number): V3Line {
@@ -57,12 +75,32 @@ describe('end-to-end monotonicity through evaluate()', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, fc.integer({ min: 100, max: 500_000 }), fc.integer({ min: 1, max: 28 }), (inputs, check, amount, day) => {
         const before = run(inputs, check);
-        const after = run(withLine(inputs, extraLine(inputs, 'spending', amount, day)), check);
+        // The spending leaves the account too (withPaidOut); without it the case is an account that opened higher by the amount.
+        const after = run(withPaidOut(withLine(inputs, extraLine(inputs, 'spending', amount, day)), amount), check);
         fc.pre(!asking(before, after));
         expect(codeRank(after.code)).toBeLessThanOrEqual(codeRank(before.code));
       }),
       RUNS
     );
+  });
+
+  // CI run 42216986391 (seed -1072770010): kim, everyday x1.31, balance x1.03, no unspent anchor, no net; a $98,960.18 plan every
+  // 11 weeks x 47 at 30% APR. The cash path ends 2026-12-31 at -$0.01, so Not yet. A $1 spending line on October 1 with the balance
+  // left as it was lowers Erest by $1 and ends the path at +$0.99: the cash check passes and the plan is Monthly short (a looser code).
+  // That input is an account that opened $1 higher, not an extra expense; with the $1 out of the account too, nothing moves.
+  it('I10 pinned: a $1 expense that leaves the account does not lift a Not yet on a -$0.01 cash path (seed -1072770010)', () => {
+    const inputs = inputsOfPerson('kim', { everydayPct: 131, balancePct: 103, unspentMode: 'none', unspentPct: 0, emergency: null, extras: [] });
+    const check = checkOf(9_896_018, {
+      plan: { cadence: { unit: 'week', every: 11 }, count: 47, apr: percent('30'), firstPayment: { kind: 'one_period' } },
+      purpose: null,
+      emergency: false,
+    });
+    const line = extraLine(inputs, 'spending', 100, 1);
+    const before = run(inputs, check);
+    expect(before.code).toBe('not_yet');
+    expect(run(withPaidOut(withLine(inputs, line), 100), check).code).toBe('not_yet');
+    // The impossible input (the line without the money leaving): the path gains the $1 back, by design of Erest.
+    expect(run(withLine(inputs, line), check).code).toBe('monthly_short');
   });
 
   it('I10 a new monthly bill never helps', () => {
@@ -98,7 +136,8 @@ describe('end-to-end monotonicity through evaluate()', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, fc.integer({ min: 100, max: 500_000 }), fc.integer({ min: 1, max: 28 }), (inputs, check, amount, day) => {
         const before = run(inputs, check);
-        const after = run(withLine(inputs, extraLine(inputs, 'income', amount, day)), check);
+        // 05.4 D-86 (FIN-09b): the pay lands in the account too; a pay line the balance does not show means the account opened lower
+        const after = run(withPaidIn(withLine(inputs, extraLine(inputs, 'income', amount, day)), amount), check);
         fc.pre(!asking(before, after));
         expect(codeRank(after.code)).toBeGreaterThanOrEqual(codeRank(before.code));
       }),
@@ -132,7 +171,7 @@ describe('end-to-end monotonicity through evaluate()', () => {
         fc.pre(hi.code === 'not_yet' && lo.code === 'not_yet');
         expect(readyKey(hi.readyBy) >= readyKey(lo.readyBy)).toBe(true);
       }),
-      { numRuns: 60, seed: 0x0413 }
+      { numRuns: fcRuns(200), seed: 0x0413 }
     );
   });
 
@@ -145,7 +184,7 @@ describe('end-to-end monotonicity through evaluate()', () => {
         fc.pre(hi.code === 'not_yet' && lo.code === 'not_yet');
         expect(readyKey(hi.readyBy) >= readyKey(lo.readyBy)).toBe(true);
       }),
-      { numRuns: 200, seed: 0x0513 }
+      { numRuns: fcRuns(200), seed: 0x0513 }
     );
   });
 
@@ -157,7 +196,8 @@ describe('end-to-end monotonicity through evaluate()', () => {
         fc.pre(!asking(...results.map((r) => r.result)));
         for (let i = 1; i < results.length; i++) {
           expect(codeRank(results[i]!.result.code)).toBeLessThanOrEqual(codeRank(results[i - 1]!.result.code));
-          if (results[i - 1]!.cash.kind !== 'ok') expect(results[i]!.result.code).toBe('not_yet');
+          const failed = results[i - 1]!.cash.kind === 'payday' || results[i - 1]!.cash.kind === 'not_covered'; // an overdraft dip is not a failed check (05.4 FIN-03)
+          if (failed) expect(results[i]!.result.code).toBe('not_yet');
         }
       }),
       RUNS

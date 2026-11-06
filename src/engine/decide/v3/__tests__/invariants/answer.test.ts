@@ -3,9 +3,14 @@
  * Every property runs through evaluate() over inputs built on the golden persons (see arbitraries.ts).
  * A failure names its invariant in the test title.
  */
+import { codesOf, restsOn } from '../helpers/restsOn';
 import fc from 'fast-check';
+import { fcRuns } from '../helpers/fcRuns';
+import { laterThisMonth } from '../../afterBuy';
+import { planTotal } from '../../depletion';
 import { evaluate } from '../../evaluate';
-import type { CheckV2, Fact, Notice, Result, RoughFigures, V3Inputs, V3Line } from '../../types';
+import { firstPaymentsToday } from '../../judge/purchase';
+import type { CheckV2, Fact, Notice, Result, TypedEstimates, V3Inputs, V3Line } from '../../types';
 import { loadPersons, personById, toV3Inputs } from '../golden/adapter';
 import { checkOnce } from '../helpers/fixtures';
 import { v3Line, v3Series } from '../helpers/fixtures';
@@ -22,7 +27,7 @@ import {
   shapeArb,
 } from './arbitraries';
 
-const RUNS = { numRuns: 60 };
+const RUNS = { numRuns: fcRuns(200) };
 
 /** D-54: the fund sits in its own dedicated emergency account, so its amount never touches the spending balance (I31, D-43). */
 function withFund(inputs: V3Inputs, amount: number | null): V3Inputs {
@@ -57,29 +62,27 @@ describe('end-to-end invariants through evaluate()', () => {
     );
   });
 
-  it('I1 thin data is never more confident: thinning any history months never raises confidence', () => {
-    const LEVEL = { rough: 0, fair: 1, firm: 2 } as const;
+  it('I1 thin data is never more confident: thinning any history months never makes the basis surer', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, fc.array(fc.boolean(), { minLength: 7, maxLength: 7 }), (inputs, check, mask) => {
         const treatedFull: V3Inputs = { ...inputs, months: inputs.months.map((m) => ({ ...m, full: true })) };
         const thin: V3Inputs = { ...inputs, months: inputs.months.map((m, i) => ({ ...m, full: mask[i % mask.length]! })) };
-        const a = evaluate(thin, check).result.confidence.level;
-        const b = evaluate(treatedFull, check).result.confidence.level;
-        expect(LEVEL[a]).toBeLessThanOrEqual(LEVEL[b]);
+        const a = evaluate(thin, check).result.confidence;
+        const b = evaluate(treatedFull, check).result.confidence;
+        expect(restsOn(a)).toBeLessThanOrEqual(restsOn(b));
       }),
       { ...RUNS, seed: 0x0541 }
     );
   });
 
   // D-42: evaluate() takes the stricter of the as-given and the all-full reading, so partial thinning can never help.
-  const LEVELS = { rough: 0, fair: 1, firm: 2 } as const;
   const partialThinning = (inputs: V3Inputs, check: Parameters<typeof evaluate>[1], mask: readonly boolean[]): void => {
     const treatedFull: V3Inputs = { ...inputs, months: inputs.months.map((m) => ({ ...m, full: true })) };
     const thin: V3Inputs = { ...inputs, months: inputs.months.map((m, i) => ({ ...m, full: mask[i % mask.length]! })) };
     const a = evaluate(thin, check).result;
     const b = evaluate(treatedFull, check).result;
     expect(codeRank(a.code)).toBeLessThanOrEqual(codeRank(b.code));
-    expect(LEVELS[a.confidence.level]).toBeLessThanOrEqual(LEVELS[b.confidence.level]);
+    expect(restsOn(a.confidence)).toBeLessThanOrEqual(restsOn(b.confidence));
   };
 
   it('I1 thin data is never better: PARTIAL thinning, recorded counterexample (D-42)', () => {
@@ -91,7 +94,7 @@ describe('end-to-end invariants through evaluate()', () => {
   });
 
   it('I1 thin data is never better: PARTIAL thinning, any mask (D-42)', () => {
-    fc.assert(fc.property(inputsArb, checkArb, fc.array(fc.boolean(), { minLength: 7, maxLength: 7 }), partialThinning), { numRuns: 100, seed: 0x0542 });
+    fc.assert(fc.property(inputsArb, checkArb, fc.array(fc.boolean(), { minLength: 7, maxLength: 7 }), partialThinning), { numRuns: fcRuns(200), seed: 0x0542 });
   });
 
   it('I3 uncertain income is not cash: removing pending income never improves the code', () => {
@@ -131,11 +134,17 @@ describe('end-to-end invariants through evaluate()', () => {
         else expect(has(noticesOf(ev.result), 'typical_short')).toBe(false);
         if (ev.month.monthLeft < 0) expect(has(noticesOf(ev.result), 'month_heading_short')).toBe(true);
         else expect(has(noticesOf(ev.result), 'month_heading_short')).toBe(false);
-        // Purchase facts report only the purchase's change: month left after = month left minus what the month funds.
+        // Purchase facts report only the purchase's change: month left after = month left minus what the month funds. 05.4-24 (FIN-09,
+        // D-22): the fact says afterBuy.month, which also takes the protected net money the split uses this month and a plan's later
+        // payments this month (I64 pins the whole relation to Home).
         const fact = ev.result.facts.find((f: Fact) => f.code === 'month_left_after');
         if (fact !== undefined) {
-          const fromMonth = ev.result.split.find((s) => s.source === 'month')?.amount ?? 0;
-          expect(fact.values.left).toBe(ev.month.monthLeft - fromMonth);
+          expect(fact.values.left).toBe(ev.result.afterBuy.month);
+          if (ev.result.split.length > 0 && ev.purchase !== null) {
+            const fromMonth = ev.result.split.filter((s) => s.source === 'month' || s.source === 'emergency').reduce((t, s) => t + s.amount, 0);
+            const later = ev.result.facts.some((f) => f.code === 'short_plan_from_cash') ? 0 : laterThisMonth(ev.purchase, inputs.asOf, ev.month.month);
+            expect(fact.values.left).toBe(ev.month.monthLeft - fromMonth - later);
+          }
         }
       }),
       RUNS
@@ -160,7 +169,7 @@ describe('end-to-end invariants through evaluate()', () => {
   it('I5 not enough data: no figures at all is needs_input with no_income_figures, whatever the check', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
-        const bare: V3Inputs = { ...inputs, months: [], series: [], profile: null, rough: null, everydayOverride: null };
+        const bare: V3Inputs = { ...inputs, months: [], series: [], profile: null, typedEstimates: null, everydayOverride: null };
         const r = evaluate(bare, check).result;
         expect(r.code).toBe('needs_input');
         expect(r.missing).toContain('no_income_figures');
@@ -169,7 +178,7 @@ describe('end-to-end invariants through evaluate()', () => {
     );
   });
 
-  it('I25 condition in title: under 3 months used, every result is rough and says why', () => {
+  it('I25 condition in title: under 3 months used, every result says so: few_months and a partial or quick-estimates basis', () => {
     fc.assert(
       fc.property(recordedInputsArb, checkArb, fc.integer({ min: 0, max: 2 }), (inputs, check, keep) => {
         const ym = currentMonth(inputs);
@@ -178,31 +187,31 @@ describe('end-to-end invariants through evaluate()', () => {
         const few: V3Inputs = { ...inputs, months: [...past, ...cur] };
         const ev = evaluate(few, check);
         expect(ev.month.monthsUsed.length).toBeLessThan(3);
-        expect(ev.result.confidence.level).toBe('rough');
-        expect(ev.result.confidence.reasons).toContain('few_months');
+        expect(codesOf(ev.result.confidence)).toContain('few_months');
+        expect(['partial', 'quick_estimates']).toContain(ev.result.confidence.basis.kind);
       }),
       RUNS
     );
   });
 
-  it('I25 below Firm every result carries its reasons (a Firm result has none from the month)', () => {
+  it('I25 a basis other than the clean records sentence always carries a reason', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
         const c = evaluate(inputs, check).result.confidence;
-        if (c.level !== 'firm') expect(c.reasons.length).toBeGreaterThan(0);
+        if (c.basis.kind !== 'records') expect(c.reasons.length).toBeGreaterThan(0);
       }),
       RUNS
     );
   });
 
-  it('I7 unsaved writes are never firm and the freshness notice shows', () => {
+  it('I7 (05.4 APP-02, D-113) unsaved writes are a note on top of the answer, with no count, and nothing else changes', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, fc.integer({ min: 1, max: 9 }), (inputs, check, n) => {
+        const saved = evaluate({ ...inputs, unsavedWrites: 0 }, check).result;
         const r = evaluate({ ...inputs, unsavedWrites: n }, check).result;
-        expect(r.confidence.level).not.toBe('firm');
-        expect(r.confidence.reasons).toContain('unsaved_changes');
-        const note = r.notices.find((x) => x.code === 'unsaved_changes');
-        expect(note?.values.count).toBe(n);
+        expect(r.notices[0]).toEqual({ code: 'unsaved_changes', values: {} });
+        expect(saved.notices.some((x) => x.code === 'unsaved_changes')).toBe(false);
+        expect({ ...r, notices: r.notices.slice(1) }).toEqual(saved);
       }),
       RUNS
     );
@@ -212,7 +221,9 @@ describe('end-to-end invariants through evaluate()', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
         const ev = evaluate(inputs, check);
-        const u = ev.funds.unspent?.value ?? null;
+        // 05.4 D-56: the judged figure is the confirmed one capped at the everyday account at month end, never above it.
+        const u = ev.spare ?? null;
+        if (u !== null) expect(u).toBeLessThanOrEqual(ev.funds.unspent?.available ?? (ev.funds.unspent?.value as number));
         const earlier = ev.result.split.find((s) => s.source === 'unspent_earlier')?.amount ?? 0;
         const fromMonth = ev.result.split.find((s) => s.source === 'month')?.amount ?? 0;
         if (earlier > 0) {
@@ -227,7 +238,11 @@ describe('end-to-end invariants through evaluate()', () => {
         }
         if (ev.result.split.length > 0 && ev.purchase !== null && ev.result.code !== 'emergency_use') {
           const total = ev.result.split.reduce((s, x) => s + x.amount, 0);
-          expect(total).toBe(ev.purchase.dayOne);
+          // D-68 branch (owner, 2026-11-03: "judge by cash better by a slim margin, with caution"): a short plan judged by cash
+          // is the one-off of its whole cost, so the split sums to that cost.
+          const p = ev.purchase;
+          const d68 = ev.result.facts.some((f) => f.code === 'short_plan_from_cash') && p.schedule !== null;
+          expect(total).toBe(d68 && p.schedule !== null ? planTotal(p.dayOne, p.schedule, p.share, firstPaymentsToday(p.schedule, p.share, inputs.asOf)) : p.dayOne);
         }
       }),
       RUNS
@@ -235,7 +250,7 @@ describe('end-to-end invariants through evaluate()', () => {
   });
 
   it('I20 rough figures only lower figures for a person with records', () => {
-    const roughArb: fc.Arbitrary<RoughFigures> = fc.record({
+    const roughArb: fc.Arbitrary<TypedEstimates> = fc.record({
       income: fc.integer({ min: 0, max: 10_000_000 }).map(mu),
       expenses: fc.integer({ min: 0, max: 10_000_000 }).map(mu),
       saving: fc.integer({ min: 0, max: 1_000_000 }).map(mu),
@@ -246,8 +261,8 @@ describe('end-to-end invariants through evaluate()', () => {
     fc.assert(
       fc.property(recordedInputsArb, roughArb, (inputs, rough) => {
         const check = checkOnce(10_000);
-        const before = evaluate({ ...inputs, rough: null }, check);
-        const after = evaluate({ ...inputs, rough: { ...rough, asOf: inputs.asOf } }, check);
+        const before = evaluate({ ...inputs, typedEstimates: null }, check);
+        const after = evaluate({ ...inputs, typedEstimates: { ...rough, asOf: inputs.asOf } }, check);
         expect(after.month.monthLeft).toBeLessThanOrEqual(before.month.monthLeft);
         if (before.month.typicalLeft !== null && after.month.typicalLeft !== null) {
           expect(after.month.typicalLeft).toBeLessThanOrEqual(before.month.typicalLeft);
@@ -320,40 +335,38 @@ describe('end-to-end invariants through evaluate()', () => {
     );
   });
 
-  it('I31 emergency locked end to end: with the flag off, a fund of $0 or $1M gives the same Result except its amount', () => {
+  // 05.4 D-35 / D-41 / D-49 retire the 05.1 lock (only an emergency-marked need could use the fund). With no safety-net record the
+  // fund is the money saved in the net: its protected part only lends as "Dips into your safety net", and money above the size
+  // is spare. What stays from I31: the fund is out of the spending balance (D-43, D-54), and more of it never makes an answer worse.
+  it('I31 the fund stays out of the spending balance: $0 or $1M never moves the suggested figure, notices or confidence, and never worsens the answer', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
-        const off: CheckV2 = { ...check, emergency: false };
-        const zero = evaluate(withFund(inputs, 0), off).result;
-        const million = evaluate(withFund(inputs, 100_000_000), off).result;
-        // D-43, D-54: the fund is out of the spending balance, so the suggested figure, drift, notices and confidence do not
-        // move with it. Only the fund's own line (emergency_untouched) carries its amount.
-        const norm = (r: Result): Result => ({
-          ...r,
-          facts: r.facts.map((f) => (f.code === 'emergency_untouched' ? { ...f, values: { amount: 0 } } : f)),
-        });
-        expect(norm(million)).toEqual(norm(zero));
-        expect(million.code).not.toBe('emergency_use');
+        const zero = evaluate(withFund(inputs, 0), check);
+        const million = evaluate(withFund(inputs, 100_000_000), check);
+        expect(million.funds.suggested).toBe(zero.funds.suggested);
+        expect(million.funds.spending).toBe(zero.funds.spending);
+        expect(million.result.confidence).toEqual(zero.result.confidence);
+        expect(million.result.notices).toEqual(zero.result.notices);
+        fc.pre(zero.result.code !== 'needs_input' && million.result.code !== 'needs_input');
+        expect(codeRank(million.result.code)).toBeGreaterThanOrEqual(codeRank(zero.result.code));
+        expect(million.result.code).not.toBe('emergency_use');
       }),
-      { numRuns: 60, seed: 0x0543 }
+      { numRuns: fcRuns(200), seed: 0x0543 }
     );
   });
 
-  it('I31 a fund that is not set differs only by the emergency notice and fact', () => {
+  it('I31 a fund that is not set differs from a set one only by the emergency notice and the money the net adds', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
-        const off: CheckV2 = { ...check, emergency: false };
-        const none = evaluate(withFund(inputs, null), off).result;
-        const set = evaluate(withFund(inputs, 500_000), off).result;
-        expect(none.code).toBe(set.code);
-        expect(none.split).toEqual(set.split);
-        expect(none.readyBy).toEqual(set.readyBy);
-        expect(none.variant).toEqual(set.variant);
+        const none = evaluate(withFund(inputs, null), check).result;
+        const set = evaluate(withFund(inputs, 500_000), check).result;
         expect(none.confidence).toEqual(set.confidence);
         const rest = (r: Result) => r.notices.filter((n) => n.code !== 'emergency_not_set');
         expect(rest(none)).toEqual(rest(set));
+        fc.pre(none.code !== 'needs_input' && set.code !== 'needs_input');
+        expect(codeRank(set.code)).toBeGreaterThanOrEqual(codeRank(none.code));
       }),
-      { numRuns: 60, seed: 0x0544 }
+      { numRuns: fcRuns(200), seed: 0x0544 }
     );
   });
 
@@ -369,26 +382,21 @@ describe('end-to-end invariants through evaluate()', () => {
     expect(none.suggested - big.suggested).toBe(300_000);
   });
 
-  it('I38 purpose never changes the maths when the check is not an emergency', () => {
-    fc.assert(
-      fc.property(inputsArb, shapeArb, priceArb, (inputs, shape, price) => {
-        const results = PURPOSES.map((purpose) => evaluate(inputs, checkOf(price, { ...shape, purpose, emergency: false })).result);
-        for (const r of results) expect(r).toEqual(results[0]);
-      }),
-      RUNS
-    );
-  });
-
-  it('I38 only necessity and for-work can reach emergency_use; a custom purpose never can (D-19)', () => {
+  it('I38 retired by 05.4 D-35 / D-41 / D-49: the purpose gate on the fund is gone; I-D41 (invariants/safetyNet.test.ts) replaces it', () => {
+    // Any purchase that uses money in the safety net is "Dips into your safety net", whatever its purpose or emergency mark; the
+    // v3 engine never returns emergency_use. The need-or-want reading changes facts and their order only (I-D41).
     fc.assert(
       fc.property(inputsArb, shapeArb, priceArb, fc.constantFrom(...PURPOSES), (inputs, shape, price, purpose) => {
         const big = { ...inputs, emergency: { amount: mu(100_000_000) } };
-        const r = evaluate(big, checkOf(price, { ...shape, purpose, emergency: true })).result;
-        const allowed = purpose !== null && purpose.kind === 'preset' && (purpose.value === 'necessity' || purpose.value === 'for_work');
-        if (!allowed) {
-          expect(r.code).not.toBe('emergency_use');
-          expect(r.split.some((s) => s.source === 'emergency')).toBe(false);
-        }
+        const marked = evaluate(big, checkOf(price, { ...shape, purpose, emergency: true })).result;
+        const unmarked = evaluate(big, checkOf(price, { ...shape, purpose, emergency: false })).result;
+        expect(marked.code).not.toBe('emergency_use');
+        expect({ code: marked.code, variant: marked.variant, split: marked.split, readyBy: marked.readyBy }).toEqual({
+          code: unmarked.code,
+          variant: unmarked.variant,
+          split: unmarked.split,
+          readyBy: unmarked.readyBy,
+        });
         if (purpose !== null && purpose.kind === 'custom') expect(purpose.id).toBe(CUSTOM_PURPOSE_ID);
       }),
       RUNS

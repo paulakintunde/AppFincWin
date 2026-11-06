@@ -1,7 +1,7 @@
 /** Plan 05.2-22 (D-17): "How are you paid?" Six check rows; "No fixed income right now" is exclusive. */
 import React, { forwardRef, useImperativeHandle, useState } from 'react';
 import { View } from 'react-native';
-import { CheckRow } from '@/features/decide/ui/CheckRow';
+import { CheckRow } from '@/ui/CheckRow';
 import { space } from '@/theme/layout';
 import { useSaveSetupStep } from '@/data/mutations/decideSetup';
 import type { SetupStepBodyProps, SetupStepHandle } from '@/features/decide/setup/steps/types';

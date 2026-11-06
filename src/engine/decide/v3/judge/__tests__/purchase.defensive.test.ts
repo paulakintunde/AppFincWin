@@ -4,6 +4,7 @@
 //  - a preset item type's question ids all exist in the library, so questionSpec never answers null for them.
 // Each guard still has a defined, safe behaviour; these tests pin it by making the callee disagree.
 import { minorUnits as mu } from '../../../../money/types';
+import { MAX_CHECK_PRICE } from '../../constants';
 import { percent } from '../../../../payoff/types';
 import { ASOF, checkPlan, inputsOf } from '../../__tests__/helpers/fixtures';
 import { buildPurchase } from '../purchase';
@@ -31,7 +32,7 @@ jest.mock('../presetQuestions', () => {
 });
 
 const inputs = inputsOf();
-const ctx = { asOf: ASOF, thresholds: inputs.thresholds, custom: inputs.custom };
+const ctx = { asOf: ASOF, thresholds: inputs.thresholds, custom: inputs.custom, maxPrice: mu(MAX_CHECK_PRICE) };
 const plan = checkPlan(120000, { count: 12, apr: percent('0'), firstPayment: { kind: 'today' } });
 
 afterEach(() => {

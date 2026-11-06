@@ -15,7 +15,7 @@ import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
 import { useIsDirty } from '@/ui/useIsDirty';
 import type { CheckInputs } from '../snapshot/types';
-import { MoneyInput } from '../ui/MoneyInput';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { Box, Label } from './steps/stepUi';
 
 type Split = NonNullable<CheckInputs['split']>;

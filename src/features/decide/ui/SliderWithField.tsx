@@ -16,9 +16,9 @@ import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { resolveExponent } from '@/engine/money';
 import { pinToTrack } from '../snapshot/customValues';
-import { MoneyInput } from './MoneyInput';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { StepSlider } from './StepSlider';
-import { useShouldStack } from './textFit';
+import { useShouldStack } from '@/ui/textFit';
 
 export interface SliderWithFieldProps {
   label: string;

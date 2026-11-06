@@ -5,6 +5,7 @@
  * input (monthLeft, E, typicalLeft, suggested sum): those appear only in `expect`, with a `working` string. Expectations
  * come from REBUILD-PLAN-v3 section 12 (D-28), never from 00-SCENARIOS.md numbers. Everyone here is synthetic (T-05.1-08).
  */
+import type { GoldenLevel } from '../helpers/restsOn';
 import { minorUnits, type MinorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import type {
@@ -12,7 +13,6 @@ import type {
   Cadence,
   Code,
   CheckV2,
-  ConfidenceLevel,
   CountsAs,
   EmergencyFund,
   Envelope,
@@ -30,7 +30,7 @@ import type {
   PayV2,
   PresetPurpose,
   ReadyBy,
-  RoughFigures,
+  TypedEstimates,
   SeriesRole,
   SeriesStatus,
   TypicalChoice,
@@ -112,7 +112,7 @@ export interface FixturePerson {
   months: FixtureMonth[];
   series: FixtureSeries[];
   profile: IncomeProfile | null;
-  rough: RoughFigures | null;
+  rough: TypedEstimates | null;
   balance: number;
   unspent: { amount: number; at: string } | null;
   emergency: number | null;
@@ -174,7 +174,7 @@ export interface FixtureExpect {
     erest?: number;
   };
   unspentAfter?: number;
-  confidence?: ConfidenceLevel;
+  confidence?: GoldenLevel;
   working: string;
 }
 /**
@@ -341,7 +341,7 @@ export function toV3Inputs(person: FixturePerson, overrides: Partial<V3Inputs> =
       })
     ),
     profile: person.profile,
-    rough: person.rough,
+    typedEstimates: person.rough,
     balance: stated ? stated.balance : mu(person.balance),
     unspent: person.unspent ? { amount: mu(person.unspent.amount), at: person.unspent.at } : null,
     emergency: stated ? stated.emergency : person.emergency === null ? null : { amount: mu(person.emergency) },

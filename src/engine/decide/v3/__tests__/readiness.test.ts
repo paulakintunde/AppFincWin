@@ -40,7 +40,7 @@ const samLate = (): V3Inputs =>
 describe('D-52 readiness', () => {
   it('D-52 ready: Sam on 2026-10-03', () => {
     expect(missingOf(sam())).toEqual([]);
-    expect(evaluate(sam(), check).result.readiness).toEqual({ ready: true, missing: [] });
+    expect(evaluate(sam(), check).result.readiness).toEqual({ ready: true, missing: [], items: [], waived: [] });
   });
 
   it('D-52 ready: Sam on 2026-10-20 with a recent everyday line', () => {
@@ -95,7 +95,7 @@ describe('D-52 readiness', () => {
   });
 
   it('D-52 activity_not_current: with no typical everyday figure the pace part is skipped', () => {
-    const s = sam({ asOf: '2026-10-20', months: [], series: [], rough: null });
+    const s = sam({ asOf: '2026-10-20', months: [], series: [], typedEstimates: null });
     expect(missingOf(s)).toEqual(['past_month_missing']);
     const lone = sam({ asOf: '2026-10-20', months: [{ month: '2026-10', full: false, mark: null, lines: [v3Line({ id: 'a', date: '2026-10-01', amount: 100 })] }], series: [] });
     expect(missingOf(lone)).toEqual(['activity_not_current', 'past_month_missing']);
@@ -113,10 +113,10 @@ describe('D-52 readiness', () => {
 
   it('D-57 no history with rough figures is ready; without them it is not', () => {
     const rough = { income: mu(300000), expenses: mu(200000), saving: mu(0), debt: mu(0), invest: mu(0), asOf: '2026-10-03' };
-    expect(missingOf(sam({ months: [], series: [], rough }))).toEqual([]);
-    expect(missingOf(sam({ months: [], series: [], rough: null }))).toEqual(['past_month_missing']);
+    expect(missingOf(sam({ months: [], series: [], typedEstimates: rough }))).toEqual([]);
+    expect(missingOf(sam({ months: [], series: [], typedEstimates: null }))).toEqual(['past_month_missing']);
     // rough figures do not excuse a person who has history: the usual checks apply
-    const s = sam({ rough });
+    const s = sam({ typedEstimates: rough });
     expect(missingOf({ ...s, months: s.months.map((m) => (m.month === '2026-09' ? { ...m, full: false } : m)) })).toEqual(['past_month_missing']);
   });
 

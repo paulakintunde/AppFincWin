@@ -5,6 +5,9 @@
  *      keyed by library question id or OwnQuestion.id); a missing plan fact is a MissingCode, never a default.
  * I41: the scored payment is the larger of the worked-out and the quoted payment (scoredPayment).
  * D-04 first payment, D-09 foreign price at today's rate, D-18 household share, D-19 own questions, D-24 pause interest.
+ * 05.4 FIN-27 (D-19, D-20): the tax rate is the user's own when typed; else the region's usual rate (tax/lookup.ts, one owner),
+ * with a tax_estimate fact; UK and EU prices include tax; an unknown region adds none and says so (tax_not_included). The
+ * "Price already includes tax" switch adds none. Tax is part of the whole value, so a plan finances it (TX-08).
  *
  * SHARE CONVENTION (types.ts): the schedule is on the FULL lender amount; myPart is applied once to dayOne and once to
  * M = myPart(schedule.monthlyEquivalent + full running costs). The plan card is also on the full amount.
@@ -13,13 +16,13 @@
  */
 import { divideHalfUp } from '../../../money/rounding';
 import type { MinorUnits } from '../../../money/types';
-import { minorFromBigInt, ZERO_PERCENT } from '../../../payoff/types';
+import { minorFromBigInt, rateDenominator, ZERO_PERCENT, type PeriodsPerYear, type Percent } from '../../../payoff/types';
 import { myPart, resolveShare, type ResolvedShare } from '../../share';
 import { purchaseFlows } from '../cash/path';
 import type { DatedFlow } from '../cash/path';
 import { percentText } from '../adapters/inputsV2';
-import { addDays } from '../dates';
-import { countFromTerm, monthlyEquivalentOf } from '../plan/cadence';
+import { addDays, yearMonthOf } from '../dates';
+import { amortBase, countFromTerm, monthlyEquivalentOf, scaledApr } from '../plan/cadence';
 import { planCard, salesTaxOf, type PlanCard } from '../plan/planCard';
 import { checkQuoted, scoredPayment, type QuotedCheck } from '../plan/quoted';
 import { buildSchedule, paymentsInRange } from '../plan/schedule';
@@ -29,6 +32,7 @@ import type {
   CustomOptions,
   Fact,
   HomeThresholds,
+  Layer,
   LocalDate,
   MissingCode,
   Purchase,
@@ -36,8 +40,12 @@ import type {
   Schedule,
 } from '../types';
 import { bandOf, layersFor } from './bands';
-import { canUseEmergency, resolveItemType } from './options';
+import { isNeedPurpose, resolveItemType } from './options';
 import { questionSpec } from './presetQuestions';
+import { lookupTaxDefault, type TaxDefaultLookup } from '../tax/lookup';
+import { closingCost } from '../fullCost/closingCosts';
+import { dayOneDate } from '../fullCost/purchaseDate';
+import { monthlyShare, runningCostOutflows } from '../fullCost/runningCosts';
 
 const FN = 'buildPurchase';
 
@@ -51,12 +59,49 @@ export interface PurchaseBuild {
   readonly missing: readonly MissingCode[];
   readonly reasons: readonly ReasonCode[];
   readonly facts: readonly Fact[];
+  /** Band and layers from the price alone, present while the plan fields are incomplete (same functions as the built Purchase). */
+  readonly preview: { readonly band: Band; readonly layers: readonly Layer[] } | null;
 }
 
 const NONE: QuotedCheck = { kind: 'none' };
 
-function nothing(missing: readonly MissingCode[], reasons: readonly ReasonCode[] = [], facts: readonly Fact[] = []): PurchaseBuild {
-  return { purchase: null, planCard: null, quoted: NONE, missing, reasons, facts };
+/** 05.4 FIN-27: where the buyer is, for the tax default. country null = unknown (D-20). */
+export interface TaxRegion {
+  readonly country: string | null;
+  readonly subdivision: string | null;
+}
+
+export interface PurchaseContext {
+  readonly asOf: LocalDate;
+  readonly thresholds: HomeThresholds;
+  readonly custom: CustomOptions;
+  /** 05.4 FIN-27: absent = unknown region. */
+  readonly region?: TaxRegion;
+  /** 05.4 ENG-15 (D-109): the largest price checked in the home currency (bandEdges.ts maxCheckPrice). */
+  readonly maxPrice: MinorUnits;
+}
+
+/**
+ * 05.4 FIN-27 (D-19, D-20): the rate counted. The switch "Price already includes tax" adds none; a typed rate is used as typed;
+ * else the region's default: 'add' its usual rate (named as an estimate), 'included' none, 'unknown' none and says so.
+ */
+export function taxRuleOf(
+  check: Pick<CheckV2, 'taxPercent' | 'taxIncluded'>,
+  region: TaxRegion
+): { readonly percent: Percent | null; readonly estimate: Extract<TaxDefaultLookup, { kind: 'add' }> | null; readonly notIncluded: boolean } {
+  if (check.taxIncluded === true) return { percent: null, estimate: null, notIncluded: false };
+  if (check.taxPercent !== null) return { percent: check.taxPercent, estimate: null, notIncluded: false };
+  const d = lookupTaxDefault(region);
+  if (d.kind === 'add') return { percent: d.percent, estimate: d, notIncluded: false };
+  return { percent: null, estimate: null, notIncluded: d.kind === 'unknown' };
+}
+
+const UNKNOWN_REGION: TaxRegion = { country: null, subdivision: null };
+
+function nothing(missing: readonly MissingCode[], reasons: readonly ReasonCode[] = [], facts: readonly Fact[] = [],
+  preview: PurchaseBuild['preview'] = null
+): PurchaseBuild {
+  return { purchase: null, planCard: null, quoted: NONE, missing, reasons, facts, preview };
 }
 
 const mb = (v: bigint): MinorUnits => minorFromBigInt(v, FN);
@@ -68,16 +113,62 @@ interface ExtraSpec {
   readonly role: 'cost' | 'credit' | 'modelled_elsewhere';
 }
 
-/** The scored schedule: when the quote is the larger figure it replaces the level payment (I41). */
-function withPayment(s: Schedule, payment: bigint, source: Schedule['source']): Schedule {
-  const feeTotal = BigInt(s.fees.perPeriod) * BigInt(s.lastPaying) + BigInt(s.fees.end);
-  const totalPaid = payment * BigInt(s.lastPaying) + feeTotal;
-  const interest = totalPaid - feeTotal - BigInt(s.financed);
+/** How the level payments run, so a larger payment can be walked to its own last paying period (L-09). */
+interface PayoffWalk {
+  /** Rate per period, already scaled for the cadence (scaledApr). */
+  readonly rate: bigint;
+  readonly base: PeriodsPerYear;
+  /** true: the first payment falls on the day, before any interest (annuity-due). */
+  readonly due: boolean;
+}
+
+/**
+ * Pays `financed + pauseInterest` off with a level `payment`, the last payment taking whatever is left, the same walk
+ * amortise uses. Returns the paying periods, the last payment and the total paid (before per-period and end fees).
+ */
+function walkPayoff(s: Schedule, payment: bigint, w: PayoffWalk): { last: number; final: bigint; paid: bigint } {
+  const D = rateDenominator(w.base);
+  let bal = BigInt(s.financed) + BigInt(s.pauseInterest);
+  let paid = 0n;
+  let final = 0n;
+  let last = 0;
+  for (let k = 0; k < s.count && bal > 0n; k += 1) {
+    const owed = bal + (w.due && k === 0 ? 0n : divideHalfUp(bal * w.rate, D));
+    const p = k === s.count - 1 || payment >= owed ? owed : payment;
+    bal = owed - p;
+    paid += p;
+    final = p;
+    last = k + 1;
+  }
+  return { last, final, paid };
+}
+
+/**
+ * The scored schedule: when the quote is the larger figure it replaces the level payment (I41). With a `walk` the
+ * larger payment clears the loan sooner, so the paying periods, the last payment and the total are worked out again for
+ * it (L-09); without one (a quote with no rate, whose implied rate already fits the count) the periods are kept.
+ */
+function withPayment(s: Schedule, payment: bigint, source: Schedule['source'], walk: PayoffWalk | null): Schedule {
   const pay = mb(payment);
+  let lastPaying = s.lastPaying;
+  let finalPayment = pay;
+  let principalPaid = payment * BigInt(s.lastPaying);
+  if (walk !== null) {
+    const w = walkPayoff(s, payment, walk);
+    lastPaying = w.last;
+    finalPayment = mb(w.final);
+    principalPaid = w.paid;
+  }
+  const feeTotal = BigInt(s.fees.perPeriod) * BigInt(lastPaying) + BigInt(s.fees.end);
+  const totalPaid = principalPaid + feeTotal;
+  const interest = totalPaid - feeTotal - BigInt(s.financed);
+  // D-138: the exact interest share belongs to the computed payment; a quote sets its own, so it is dropped here.
+  const { exactInterestBp: _computedOnly, ...rest } = s;
   return {
-    ...s,
+    ...rest,
     payment: pay,
-    finalPayment: pay,
+    finalPayment,
+    lastPaying,
     totalPaid: mb(totalPaid),
     totalInterest: mb(interest < 0n ? 0n : interest),
     monthlyEquivalent: monthlyEquivalentOf(mb(payment + BigInt(s.fees.perPeriod)), s.cadence),
@@ -85,10 +176,7 @@ function withPayment(s: Schedule, payment: bigint, source: Schedule['source']): 
   };
 }
 
-export function buildPurchase(
-  check: CheckV2,
-  ctx: { readonly asOf: LocalDate; readonly thresholds: HomeThresholds; readonly custom: CustomOptions }
-): PurchaseBuild {
+export function buildPurchase(check: CheckV2, ctx: PurchaseContext): PurchaseBuild {
   if (check.legacyKind === 'invest') return nothing(['legacy_invest_check']);
 
   let share: ResolvedShare;
@@ -110,17 +198,17 @@ export function buildPurchase(
   }
 }
 
-function buildResolved(
-  check: CheckV2,
-  ctx: { readonly asOf: LocalDate; readonly thresholds: HomeThresholds; readonly custom: CustomOptions },
-  share: ResolvedShare
-): PurchaseBuild {
+function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShare): PurchaseBuild {
   const { pay } = check;
   const missing: MissingCode[] = [];
   const reasons: ReasonCode[] = [];
   const facts: Fact[] = [];
 
-  if (check.price === null) missing.push('no_price');
+  // 05.4 ENG-15 (D-109), in both pay modes: no price or 0 asks for a price; a price over the limit is too large to check. The typed
+  // price is read, before tax and fees; anything else past the safe range still reports exceeds_range below.
+  const priceAsk: MissingCode | null =
+    check.price === null || check.price <= 0 ? 'no_price' : check.price > ctx.maxPrice ? 'price_too_large' : null;
+  if (priceAsk !== null) missing.push(priceAsk);
   let count: number | null = null;
   if (pay.mode === 'plan') {
     count = pay.count ?? (pay.termMonths === null ? null : countFromTerm(pay.cadence, pay.termMonths));
@@ -131,26 +219,45 @@ function buildResolved(
       missing.push('pause_interest_not_answered');
     }
   }
-  if (missing.length > 0 || check.price === null) return nothing(missing);
-  // L-01: a deferred first payment dated before today asks for a new date; it is not an out-of-range schedule.
-  if (pay.mode === 'plan' && pay.firstPayment?.kind === 'deferred' && pay.firstPayment.firstDate < ctx.asOf) {
-    return nothing(['first_payment_passed']);
-  }
+  if (check.price === null || priceAsk !== null) return nothing(missing);
+  const price = check.price;
+  const passed = pay.mode === 'plan' && pay.firstPayment?.kind === 'deferred' && pay.firstPayment.firstDate < ctx.asOf;
 
   // Whole value, full (before my share): price + tax + one-off fees.
-  const tax = salesTaxOf(check.price, check.taxPercent);
-  const fullWhole = BigInt(check.price) + BigInt(tax) + BigInt(check.oneOffFees);
-  const whole = myPart(mb(fullWhole), share);
-
-  // Typed amounts only (I36, D-19). Library questions and own questions are treated alike.
-  const resolved = resolveItemType(check.itemType, ctx.custom);
-  reasons.push(...resolved.reasons);
+  let fullWhole: bigint;
+  let whole: MinorUnits;
+  let tax: MinorUnits;
+  let resolved: ReturnType<typeof resolveItemType>;
   const specs: ExtraSpec[] = [];
-  for (const id of resolved.questionIds) {
-    const s = questionSpec(id);
-    if (s !== null) specs.push({ id, cadence: s.cadence, cash: s.cash, role: s.role });
+  let bandResult: ReturnType<typeof bandOf>;
+  let band: Band;
+  let layers: readonly Layer[];
+  const taxRule = taxRuleOf(check, ctx.region ?? UNKNOWN_REGION);
+  try {
+    tax = salesTaxOf(price, taxRule.percent);
+    fullWhole = BigInt(price) + BigInt(tax) + BigInt(check.oneOffFees);
+    whole = myPart(mb(fullWhole), share);
+    // Typed amounts only (I36, D-19). Library questions and own questions are treated alike.
+    resolved = resolveItemType(check.itemType, ctx.custom);
+    for (const id of resolved.questionIds) {
+      const s = questionSpec(id);
+      if (s !== null) specs.push({ id, cadence: s.cadence, cash: s.cash, role: s.role });
+    }
+    for (const o of resolved.ownQuestions) specs.push({ id: o.id, cadence: o.cadence, cash: o.cash, role: 'cost' });
+    bandResult = bandOf(whole, ctx.thresholds);
+    band = bandResult.band;
+    layers = layersFor(band, { periodic: pay.mode === 'plan', hasExtras: specs.length > 0 });
+  } catch (e) {
+    // An incomplete check keeps its missing list even when the price is out of range; a complete one reports exceeds_range.
+    if (e instanceof RangeError && (missing.length > 0 || passed)) return nothing(missing.length > 0 ? missing : ['first_payment_passed']);
+    throw e;
   }
-  for (const o of resolved.ownQuestions) specs.push({ id: o.id, cadence: o.cadence, cash: o.cash, role: 'cost' });
+  const preview = { band, layers };
+  if (missing.length > 0) return nothing(missing, [], [], preview);
+  // L-01: a deferred first payment dated before today asks for a new date; it is not an out-of-range schedule.
+  if (passed) return nothing(['first_payment_passed'], [], [], preview);
+
+  reasons.push(...resolved.reasons);
   let runningFull = 0n;
   let oneOffExtras = 0n;
   let credits = 0n;
@@ -168,11 +275,18 @@ function buildResolved(
     else if (s.cadence === 'yearly') runningFull += divideHalfUp(BigInt(amount), 12n);
     else oneOffExtras += BigInt(amount);
   }
+  // 05.4 BO-05 (05.4-26): the running-cost lines add their monthly share to the usual month (fullCost/runningCosts.ts; each line falls
+  // on its own dates on the cash path, purchaseCashFlows), and home closing costs (a % of the price) are paid up front (RC-06).
+  const lines = check.runningCosts ?? [];
+  runningFull += BigInt(monthlyShare(lines, yearMonthOf(ctx.asOf)));
+  oneOffExtras += BigInt(closingCost(price, check.closingPercent ?? null));
 
-  const bandResult = bandOf(whole, ctx.thresholds);
   reasons.push(...bandResult.reasons);
-  const band: Band = bandResult.band;
-  const layers = layersFor(band, { periodic: pay.mode === 'plan', hasExtras: specs.length > 0 });
+  // 05.4 FIN-27: the region's usual rate is named as an estimate (CMP-F24); no region, no tax, and the answer says so (D-20).
+  if (taxRule.estimate !== null) {
+    facts.push({ code: 'tax_estimate', values: { percent: percentText(taxRule.estimate.percent), amount: tax, basis: taxRule.estimate.basis } });
+  }
+  if (taxRule.notIncluded) reasons.push('tax_not_included');
 
   if (check.foreign !== null) facts.push({ code: 'at_todays_rate', values: { currency: check.foreign.currency } });
 
@@ -190,10 +304,11 @@ function buildResolved(
     const financedBig = fullWhole - BigInt(pay.deposit) - BigInt(pay.tradeIn);
     const financed = mb(financedBig < 0n ? 0n : financedBig);
     const quoteOnly = pay.apr === null;
+    const aprUsed = pay.apr ?? ZERO_PERCENT;
     const out = buildSchedule({
       asOf: ctx.asOf,
       financed,
-      apr: pay.apr ?? ZERO_PERCENT,
+      apr: aprUsed,
       cadence: pay.cadence,
       count,
       firstPayment: pay.firstPayment,
@@ -216,10 +331,13 @@ function buildResolved(
       // A quote whose payments cannot cover the financed amount has no rate: terms are inconsistent, not scoreable.
       if (quoted.impliedApr === null) return nothing(['plan_rate_missing'], reasons, facts);
       facts.push({ code: 'implied_rate', values: { rate: quoted.impliedApr === 'above_max' ? ABOVE_MAX_RATE_TEXT : percentText(quoted.impliedApr) } });
-      sched = withPayment(sched, BigInt(quoted.quoted), 'from_quote');
+      sched = withPayment(sched, BigInt(quoted.quoted), 'from_quote', null);
     } else if (quoted.kind === 'matches' || quoted.kind === 'differs') {
       const scored = scoredPayment(sched.payment, quoted.quoted);
-      if (scored !== null && scored > sched.payment) sched = withPayment(sched, BigInt(scored), 'quoted');
+      if (scored !== null && scored > sched.payment) {
+        const walk: PayoffWalk = { rate: scaledApr(aprUsed, pay.cadence), base: amortBase(pay.cadence), due: pay.firstPayment?.kind !== 'one_period' };
+        sched = withPayment(sched, BigInt(scored), 'quoted', walk);
+      }
       if (quoted.kind === 'differs') {
         facts.push({
           code: 'quoted_differs',
@@ -235,7 +353,7 @@ function buildResolved(
     const upfrontRaw = BigInt(pay.deposit) + BigInt(pay.fees.setup) + firstNow + oneOffExtras - credits;
     dayOne = BigInt(myPart(mb(upfrontRaw < 0n ? 0n : upfrontRaw), share));
     monthly = BigInt(myPart(mb(BigInt(sched.monthlyEquivalent) + runningFull), share));
-    card = planCard({ price: check.price, tax, oneOffFees: check.oneOffFees, schedule: sched, runningMonthly: mb(runningFull) });
+    card = planCard({ price, tax, oneOffFees: check.oneOffFees, schedule: sched, runningMonthly: mb(runningFull) });
   }
 
   const base = resolved.base;
@@ -249,7 +367,7 @@ function buildResolved(
     itemType: base,
     purpose: check.purpose,
     emergency: check.emergency,
-    canUseEmergency: canUseEmergency(check.purpose),
+    canUseEmergency: isNeedPurpose(check.purpose), // D-41: reads as a need; wording only
     band,
     layers,
     financed: pay.mode === 'plan',
@@ -257,25 +375,43 @@ function buildResolved(
     categoryId: check.categoryId,
     envelopeId: check.envelopeId,
     volatileCover: check.volatileCover ?? null, // D-48: the user's answer rides with the plan
+    ...(lines.length > 0 ? { runningCosts: lines } : {}), // 05.4 BO-05: absent when none, so a check without lines is unchanged
   };
-  return { purchase, planCard: card, quoted, missing: [], reasons, facts };
+  return { purchase, planCard: card, quoted, missing: [], reasons, facts, preview: { band, layers } };
 }
 
 /**
  * Dated flows of the purchase for the cash path. Purchase.dayOne already contains a first payment dated today
  * (P, v3 §4.5), and purchaseFlows also emits every schedule payment from asOf on, so that payment would land twice.
- * This takes it out of the day-one flow once; the total on asOf is exactly dayOne plus nothing extra.
+ * This takes it out of the day-one flow once; the total on asOf is exactly dayOne plus nothing extra. 05.4 BO-05 (05.4-26): the
+ * day-one flow falls on the purchase date (buyDate, held inside the path: fullCost/purchaseDate.ts dayOneDate), and the running-cost
+ * lines add their own dated outflows (fullCost/runningCosts.ts). A plan's schedule keeps its own dates (its first payment is always
+ * asked, D-04).
  */
 export function purchaseCashFlows(
-  purchase: Pick<Purchase, 'dayOne' | 'schedule' | 'share'>,
+  purchase: Pick<Purchase, 'dayOne' | 'schedule' | 'share' | 'runningCosts'>,
   asOf: LocalDate,
-  days: number
+  days: number,
+  buyDate: LocalDate = asOf
 ): DatedFlow[] {
   const s = purchase.schedule;
-  let dayOne = BigInt(purchase.dayOne);
-  if (s !== null) {
-    for (const p of paymentsInRange(s, asOf, addDays(asOf, 1))) dayOne -= BigInt(myPart(p.amount, purchase.share));
-  }
-  if (dayOne < 0n) dayOne = 0n;
-  return purchaseFlows({ dayOne: mb(dayOne), schedule: s, share: purchase.share }, asOf, days);
+  // L-03: the first payment due today is taken out of the day-one flow and put back by purchaseFlows, both as the same
+  // myPart, so the two cancel and the total on asOf is exactly dayOne. There is no clamp: a clamp would hide a negative
+  // remainder and make the cash path disagree with the ladder (buildPurchase already floors dayOne itself at 0).
+  const dayOne = BigInt(purchase.dayOne) - BigInt(firstPaymentsToday(s, purchase.share, asOf));
+  const flows = purchaseFlows({ dayOne: mb(dayOne), schedule: s, share: purchase.share }, asOf, days, dayOneDate(buyDate, asOf, days));
+  // 05.4 BO-05 (VC-02, I69): each running cost on its own dates from its start, my share of it, applied once.
+  for (const f of runningCostOutflows(purchase.runningCosts ?? [], asOf, days)) flows.push({ date: f.date, amount: myPart(f.amount, purchase.share) });
+  return flows;
+}
+
+/**
+ * My share of the plan payments dated asOf (0 with no schedule). They are inside Purchase.dayOne and inside Schedule.totalPaid,
+ * so the cash path (purchaseCashFlows) and the interest line's total (depletion.ts, Plan-49 re-run) take them out once.
+ */
+export function firstPaymentsToday(schedule: Schedule | null, share: ResolvedShare, asOf: LocalDate): MinorUnits {
+  if (schedule === null) return mb(0n);
+  let sum = 0n;
+  for (const p of paymentsInRange(schedule, asOf, addDays(asOf, 1))) sum += BigInt(myPart(p.amount, share));
+  return mb(sum);
 }

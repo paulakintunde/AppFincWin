@@ -10,7 +10,7 @@ import type { SectionProps } from '../check/sections/sectionUi';
 import { buy, exact, stepProps, whole, wrap } from '../check/steps/__tests__/helpers/stepProps';
 import { loggedSource } from '../snapshot/__tests__/helpers/snapshotFixtures';
 import { FigureStrip } from '../ui/FigureStrip';
-import { SegmentedToggle } from '../ui/SegmentedToggle';
+import { SegmentedToggle } from '@/ui/SegmentedToggle';
 
 jest.setTimeout(30000);
 

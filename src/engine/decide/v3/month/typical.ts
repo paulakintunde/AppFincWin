@@ -9,7 +9,7 @@ import { minorFromBigInt } from '../../../payoff/types';
 import { yearMonthOf } from '../dates';
 import { LOW_MONTH_RANK, UNDER_LOGGED_PACE_PERCENT, V3_HISTORY_MONTHS } from '../constants';
 import { monthlyEquivalentOf } from '../plan/cadence';
-import type { LowMonth, MonthMark, Notice, ReasonCode, RoughFigures, V3Month, V3Series } from '../types';
+import type { LowMonth, MonthMark, Notice, ReasonCode, TypedEstimates, V3Month, V3Series } from '../types';
 import { classifyLine, liveSeriesOf, seriesIndex } from './series';
 
 /** Median; odd count = middle value, even count = half-up mean of the two middle values (D-29). */
@@ -60,10 +60,12 @@ export interface TypicalInput {
   readonly typicalIncome: MinorUnits;
   readonly setAside: MinorUnits;
   readonly everydayOverride: MinorUnits | null;
-  readonly rough: RoughFigures | null; // D-32: used only when no eligible history month remains
+  readonly typedEstimates: TypedEstimates | null; // D-32: used only when no eligible history month remains
   readonly windowMonths?: number; // D-33: months of history used; default V3_HISTORY_MONTHS (6)
   /** D-36: recorded income per month. When given (variable or seasonal), the typical income and every low-month candidate come from the months' own income. */
   readonly incomeByMonth?: ReadonlyMap<string, bigint> | null;
+  /** 05.3-65 D-31: bill series someone else always pays; left out of every typical figure. Absent means none. */
+  readonly excludedSeries?: ReadonlySet<string>;
 }
 
 export interface TypicalResult {
@@ -80,6 +82,17 @@ export interface TypicalResult {
   readonly reasons: readonly ReasonCode[];
 }
 
+/**
+ * ENG11-QE-BILLS (05.4-57): quick estimates' money out includes the bills (rough_spending, "Money out each month"); the bills
+ * are counted as bills, so the everyday figure is the rest, never below 0. D-74 (owner, 05.4-57): the money out also includes
+ * the recorded card and loan minimums and regular saving (the month's set-asides), so `recorded` is bills + set-asides and each
+ * is counted once.
+ */
+export function typedEverydayOf(expenses: MinorUnits, recorded: MinorUnits): MinorUnits {
+  const rest = BigInt(expenses) - BigInt(recorded);
+  return minorFromBigInt(rest > 0n ? rest : 0n, 'typedEverydayOf');
+}
+
 // Keys (ids, months) are unique, so equal never occurs.
 const cmp = (a: string, b: string): number => (a < b ? -1 : 1);
 
@@ -91,8 +104,10 @@ export function typicalOf(input: TypicalInput): TypicalResult {
   let bills = 0n;
   let housing = 0n;
   const billByCategory = new Map<string, bigint>();
+  // D-31: a series someone else always pays is left out before the loop, so it raises no yearly-bill notice either.
+  const excluded = input.excludedSeries;
   const live = liveSeriesOf(input.series, input.asOf, 'bill')
-    .slice()
+    .filter((s) => excluded === undefined || !excluded.has(s.id))
     .sort((a, b) => cmp(a.id, b.id));
   for (const s of live) {
     const eq = BigInt(monthlyEquivalentOf(s.amount, s.cadence));
@@ -149,25 +164,29 @@ export function typicalOf(input: TypicalInput): TypicalResult {
   const typicalIncomeBig =
     byMonth !== null && used.length > 0 ? medianHalfUp(used.map((m) => incomeOf(m.month))) : BigInt(input.typicalIncome);
 
-  // E: override first, then the median of real months, then rough figures (D-32).
+  // E: override first, then the median of real months, then quick estimates (D-32).
   let eBig: bigint | null = null;
-  let roughOnly = false;
+  let typedOnly = false;
   if (input.everydayOverride !== null) {
     eBig = BigInt(input.everydayOverride);
     reasons.add('everyday_override_used');
   } else if (used.length > 0) {
     eBig = medianHalfUp(used.map((m) => BigInt(m.everyday)));
-  } else if (input.rough !== null) {
-    eBig = BigInt(input.rough.expenses);
-    roughOnly = true;
-    reasons.add('rough_figures_used');
+  } else if (input.typedEstimates !== null) {
+    // ENG11-QE-BILLS, D-74: the bills and the recorded set-asides are inside the money out, counted once.
+    eBig = BigInt(typedEverydayOf(input.typedEstimates.expenses, minorFromBigInt(bills + BigInt(input.setAside), 'typicalOf')));
+    typedOnly = true;
+    reasons.add('quick_estimates_used');
     notices.push({ code: 'from_your_figures', values: {} });
   }
 
   let typicalLeftBig: bigint | null = null;
-  if (roughOnly && input.rough !== null) {
-    const r = input.rough;
-    typicalLeftBig = BigInt(r.income) - BigInt(r.expenses) - BigInt(r.debt) - BigInt(r.saving) - BigInt(r.invest);
+  if (typedOnly && input.typedEstimates !== null) {
+    const r = input.typedEstimates;
+    // D-74: the money out holds the recorded bills and set-asides; when those add up to more, the larger figure goes out.
+    const recorded = bills + BigInt(input.setAside);
+    const out = BigInt(r.expenses) > recorded ? BigInt(r.expenses) : recorded;
+    typicalLeftBig = BigInt(r.income) - out - BigInt(r.debt) - BigInt(r.saving) - BigInt(r.invest);
   } else if (eBig !== null) {
     typicalLeftBig = typicalIncomeBig - bills - eBig - BigInt(input.setAside);
   }

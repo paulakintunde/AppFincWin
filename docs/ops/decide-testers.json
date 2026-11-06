@@ -1,0 +1,11 @@
+{
+  "note": "Account IDs only, no names (D-30). Changes need the owner's PR review.",
+  "accounts": [
+    { "id": "bbf0b346-5845-4710-aac5-4f8b066226c3", "role": "owner" },
+    { "id": "f4718009-d042-4fb6-b3dd-276b8b052b9e", "role": "owner" },
+    { "id": "6d4817b4-3917-4e61-980b-6fcba9dcd36c", "role": "tester" },
+    { "id": "4db15373-e77e-4c7b-971e-5c4b7f808fcf", "role": "tester" },
+    { "id": "baebd206-1168-4802-8160-0d0880352bb6", "role": "tester" },
+    { "id": "861e3f3c-5728-47da-9c9b-1fb5de7d4569", "role": "tester" }
+  ]
+}

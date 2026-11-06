@@ -24,10 +24,10 @@ import {
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
-import { registerWipeHandler } from '@/services/storage/wipe';
 import { stampSettingsPatch } from '@/features/decide/home/settingsPatch';
 import { writeClient } from './writeClient';
 import { newStepId, recordUndoStepSafely } from './undoCapture';
+import { confirmedSettings, isOldestQueued, queuedSettingsPatches, withQueued } from './decideSettingsQueue';
 
 export type SettingsPatch = Partial<Record<(typeof DECIDE_SETTINGS_PATCH_KEYS)[number], unknown>>;
 
@@ -125,22 +125,7 @@ export function changedSettingsKeys(patch: SettingsPatch, current: DecideSetting
   return keys;
 }
 
-/** The last server-confirmed row per user, for rollback (same idea as decideSettings.ts). */
-const confirmed = new Map<string, DecideSettingsRow | null>();
-registerWipeHandler({
-  id: 'decide-setup-confirmed',
-  wipe: async () => {
-    confirmed.clear();
-  },
-});
-
-function pendingEdits(qc: QueryClient, userId: string): SaveSetupStepVars[] {
-  return qc
-    .getMutationCache()
-    .findAll({ mutationKey: mutationKeys.updateDecideSetup, status: 'pending' })
-    .map((m) => m.state.variables as SaveSetupStepVars | undefined)
-    .filter((v): v is SaveSetupStepVars => v !== undefined && v.userId === userId);
-}
+// The last server-confirmed row and the queued edits are shared with decideSettings.ts (decideSettingsQueue.ts, 05.3-117).
 
 export function registerDecideSetupMutations(qc: QueryClient): void {
   qc.setMutationDefaults(mutationKeys.updateDecideSetup, {
@@ -164,7 +149,7 @@ export function registerDecideSetupMutations(qc: QueryClient): void {
       const key = queryKeys.decideSettings(vars.userId);
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<DecideSettingsRow | null>(key);
-      if (pendingEdits(qc, vars.userId)[0] === vars && previous !== undefined) confirmed.set(vars.userId, previous);
+      if (isOldestQueued(qc, vars) && previous !== undefined) confirmedSettings.set(vars.userId, previous);
       qc.setQueryData<DecideSettingsRow | null>(key, (old) => ({
         ...EMPTY_DECIDE_SETTINGS,
         user_id: vars.userId,
@@ -174,24 +159,21 @@ export function registerDecideSetupMutations(qc: QueryClient): void {
       return { previous };
     },
     onSuccess: (row: DecideSettingsRow, vars: SaveSetupStepVars) => {
-      confirmed.set(vars.userId, row);
-      qc.setQueryData(queryKeys.decideSettings(vars.userId), row);
+      confirmedSettings.set(vars.userId, row);
+      // 05.3-117: keep the edits still queued behind this one (either kind) on screen over the server row.
+      qc.setQueryData(queryKeys.decideSettings(vars.userId), withQueued(row, queuedSettingsPatches(qc, vars.userId, vars)));
     },
     onError: async (err: unknown, vars: SaveSetupStepVars, context: unknown) => {
       const cls = classifySettledWriteError(err);
       if (cls !== 'rejected' && cls !== 'not-found') return;
       const key = queryKeys.decideSettings(vars.userId);
       const ctx = context as SettingsContext | undefined;
-      const base = confirmed.has(vars.userId) ? confirmed.get(vars.userId) : ctx?.previous;
+      const base = confirmedSettings.has(vars.userId) ? confirmedSettings.get(vars.userId) : ctx?.previous;
       if (base !== undefined) {
-        const queued = pendingEdits(qc, vars.userId).filter((v) => v !== vars);
+        // The server value plus every edit still queued, of either kind (this one is still pending while onError runs).
+        const queued = queuedSettingsPatches(qc, vars.userId, vars);
         qc.setQueryData<DecideSettingsRow | null>(key, () =>
-          queued.length === 0
-            ? base
-            : queued.reduce<DecideSettingsRow>(
-                (row, v) => ({ ...row, ...(v.patch as DecideSettingsPatch) }),
-                { ...EMPTY_DECIDE_SETTINGS, user_id: vars.userId, ...(base ?? {}) }
-              )
+          queued.length === 0 ? base : withQueued({ ...EMPTY_DECIDE_SETTINGS, user_id: vars.userId, ...(base ?? {}) }, queued)
         );
       }
       void qc.invalidateQueries({ queryKey: key });

@@ -9,9 +9,10 @@ jest.mock('@/engine/decide/v3', () => {
   const actual = jest.requireActual('@/engine/decide/v3');
   return {
     ...actual,
-    evaluate: (inputs: unknown, check: CheckV2) => {
+    // 05.4-33: computeV3 judges on a held Prepared, so the check is read at judgeCheck.
+    judgeCheck: (prepared: unknown, check: CheckV2) => {
       seen.push(check);
-      return actual.evaluate(inputs, check);
+      return actual.judgeCheck(prepared, check);
     },
   };
 });

@@ -1,0 +1,14 @@
+persona:sam:900000:plan: FIN-07: $219.30 a month leaves $205.70 of the $425 usual room, under the $327.50 floor (a tenth of $3,275); tight leads the low month (D-59)
+persona:leo:50000:cash: D-40: $100 spare + $620 extra savings - $500 = $220 left, under the $238 floor; tight leads Fits from extra savings (D-59)
+persona:tia:900000:plan: FIN-07: $219.30 a month leaves $100.70 of the $320 usual room, under the $228 floor; tight leads the no-net caution (D-59)
+persona:dana:200000:cash: D-40: $2,000 spare - $2,000 = $0 left, under the $270 floor; tight leads the costly-debt caution (plan variant order), card lines still shown
+persona:audit-p3:50000:cash: D-40: $679.04 spare - $500 = $179.04 left (October alone $100), under the $240 floor; tight leads the no-net caution
+persona:audit-p9:6000:cash: D-40: $225.80 spare - $60 = $165.80 left (October alone $140), under the $180 floor; tight leads the no-net caution
+persona:audit-p10:6000:cash: D-40: spare money capped at the $179.04 the account holds - $60 = $119.04 left, under the $190 floor (October alone $540)
+gen:20: FIN-07: $135.22 a month (every 3 months) leaves $334.61 of the $469.83 usual room, under the $442.22 floor; tight leads the low month
+gen:46: FIN-07: about $180.83 a month (weekly) leaves $502.21 of the $683.04 usual room, under the $574.59 floor
+gen:87: FIN-07: $147.06 a month leaves $582.96 of the $730.02 usual room, under the $639.04 floor
+gen:113: FIN-07: $444.98 is 83.2% of the $535.03 usual room (more than 80%) and leaves $90.05, under the $685.23 floor
+gen:120: FIN-07: about $27.93 a month leaves $428.63 of the $456.56 usual room, under the $563.50 floor (the room is already under it)
+gen:158: FIN-07: $115.81 is 75.2% of the $154.06 usual room and leaves $38.25, under the $219.09 floor
+gen:177: FIN-07: about $22.57 a month leaves $90.78 of the $113.35 usual room, under the $183.15 floor (the room is already under it)

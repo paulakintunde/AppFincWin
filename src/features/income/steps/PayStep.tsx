@@ -8,7 +8,7 @@ import { View } from 'react-native';
 import * as Crypto from 'expo-crypto';
 import { Chip } from '@/ui/Chip';
 import { DateField } from '@/features/record/entry/pickers/DateField';
-import { MoneyInput } from '@/features/decide/ui/MoneyInput';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { useConfirmRegularCandidate } from '@/data/mutations/seriesAttributes';
 import { useEditSeriesFrom } from '@/data/mutations/recurringSeries';

@@ -105,6 +105,48 @@ module.exports = [
     },
   },
   {
+    // QA-03 (05.4-09): the cross-check calculator shares no code with the engine. Only the table's types may be imported.
+    // This replaces the engine block's rule for these files, so the React and app-layer bans are repeated here.
+    files: [
+      'src/engine/decide/v3/__tests__/crosscheck/plain.ts',
+      'src/engine/decide/v3/__tests__/crosscheck/rules.ts',
+      'src/engine/decide/v3/__tests__/crosscheck/fixtureArb.ts',
+      'src/engine/decide/v3/__tests__/crosscheck/pendingRules.ts',
+      'src/engine/decide/v3/__tests__/crosscheck/__gate_probe__.ts', // verify-gates probe
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '**/engine/**',
+                '../../*',
+                '../../../*',
+                '../../../../*',
+                '../../../../../*',
+                '../rightAnswers/fixture',
+                '../rightAnswers/loader',
+                '../rightAnswers/pick',
+                '../helpers/*',
+                '@/*',
+                'react',
+                'react/*',
+                'react-native',
+                'react-native-*',
+                'expo',
+                'expo-*',
+                '@supabase/*',
+              ],
+              message: 'QA-03: the calculator shares no code with the engine',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // DSG-04: JSX literal text must come from the i18n catalogue.
     files: ['app/**/*.tsx', 'src/features/**/*.tsx', 'src/ui/**/*.tsx', 'src/shell/**/*.tsx'],
     plugins: { i18next },

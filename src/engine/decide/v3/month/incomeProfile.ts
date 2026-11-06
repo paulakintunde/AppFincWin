@@ -14,7 +14,7 @@
 import { divideHalfUp } from "../../../money/rounding";
 import type { MinorUnits } from "../../../money/types";
 import { minorFromBigInt } from "../../../payoff/types";
-import { MISSED_PAY_GRACE_DAYS, PAY_MATCH_DAYS } from "../constants";
+import { MISSED_PAY_GRACE_DAYS, PAY_GAP_ARRIVALS, PAY_GAP_BP, PAY_MATCH_DAYS } from "../constants";
 import { addDays, addYearMonths, yearMonthOf } from "../dates";
 import { resolveIncomeKind } from "../judge/options";
 import type {
@@ -22,7 +22,7 @@ import type {
   IncomeProfile,
   IncomeThisMonth,
   ReasonCode,
-  RoughFigures,
+  TypedEstimates,
   V3Line,
   V3Month,
   PayArrival,
@@ -45,7 +45,7 @@ export interface IncomeInput {
   readonly history: readonly V3Month[];
   readonly series: readonly V3Series[];
   readonly profile: IncomeProfile | null;
-  readonly rough: RoughFigures | null;
+  readonly typedEstimates: TypedEstimates | null;
   readonly custom: CustomOptions;
   readonly payArrivals?: readonly PayArrival[]; // D-58: the user's answers about pay dated before asOf with no matching line
 }
@@ -146,7 +146,7 @@ function sumMonthly(s: V3Series): bigint {
 }
 
 export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
-  const { asOf, current, history, series, profile, rough, custom } = input;
+  const { asOf, current, history, series, profile, typedEstimates, custom } = input;
   const plan = planOf(profile);
   const idx = seriesIndex(series);
   const { ym, start, next } = monthBounds(asOf);
@@ -337,10 +337,10 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
     received === 0n &&
     dueConfirmed === 0n &&
     !hasPay &&
-    rough !== null
+    typedEstimates !== null
   ) {
-    total = big(rough.income);
-    reasons.add("rough_figures_used");
+    total = big(typedEstimates.income);
+    reasons.add("quick_estimates_used");
   }
 
   return {
@@ -352,16 +352,91 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
   };
 }
 
+/** 05.4 FIN-15 (05.4-23): a pay series' set-up amount against the middle of its last PAY_GAP_ARRIVALS arrivals; gapBp of the set-up. */
+export interface PayGap {
+  readonly setup: MinorUnits;
+  readonly middle: MinorUnits;
+  readonly gapBp: number;
+}
+
+/**
+ * 05.4 FIN-15: the amount a pay series is judged on, the lower of its set-up amount and the middle of its last PAY_GAP_ARRIVALS
+ * paid arrivals in full months before this one (QE-06: $3,000 set up, $2,700 / $2,750 / $2,720 arrived, judged on $2,720). The pay
+ * itself is never edited: only the usual month reads the lower figure. gap is set when the middle is more than PAY_GAP_BP below.
+ */
+export function payBasis(
+  s: V3Series,
+  history: readonly V3Month[],
+  asOf: string,
+): { readonly amount: bigint; readonly gap: PayGap | null } {
+  const ym = yearMonthOf(asOf);
+  const arrived: { date: string; amount: bigint }[] = [];
+  for (const m of history) {
+    if (!m.full || m.month >= ym) continue;
+    for (const l of m.lines) {
+      if (l.status === "paid" && l.role === "income" && l.seriesId === s.id) arrived.push({ date: l.date, amount: big(l.amount) });
+    }
+  }
+  const setup = big(s.amount);
+  if (arrived.length < PAY_GAP_ARRIVALS) return { amount: setup, gap: null };
+  const last = arrived
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-PAY_GAP_ARRIVALS)
+    .map((a) => a.amount)
+    .sort((a, b) => Number(a - b));
+  const middle = last[(PAY_GAP_ARRIVALS - 1) / 2] as bigint;
+  if (middle >= setup) return { amount: setup, gap: null };
+  const below = (setup - middle) * 10000n;
+  const gap: PayGap | null =
+    below > big(PAY_GAP_BP) * setup
+      ? {
+          setup: minorFromBigInt(setup, "payBasis"),
+          middle: minorFromBigInt(middle, "payBasis"),
+          gapBp: Number(below / setup),
+        }
+      : null;
+  return { amount: middle, gap };
+}
+
+/**
+ * 05.4 FIN-08 (05.4-23; QE-04: "Her records show 1 low month in the last 6: September, when $1,500 came in"): the full months before
+ * this one in which a pay of a live pay series arrived more than PAY_GAP_BP below its set-up amount. A pay with no line is not a low
+ * pay here (a pay that landed a day early or late is not one either): only a pay that arrived, and arrived low.
+ */
+export function lowPayMonths(history: readonly V3Month[], series: readonly V3Series[], asOf: string): ReadonlySet<string> {
+  const ym = yearMonthOf(asOf);
+  const pay = liveSeriesOf(series, asOf, "pay");
+  const out = new Set<string>();
+  for (const m of history) {
+    if (!m.full || m.month >= ym) continue;
+    for (const l of m.lines) {
+      if (l.status !== "paid" || l.role !== "income") continue;
+      const s = pay.find((x) => x.id === l.seriesId);
+      if (s !== undefined && (big(s.amount) - big(l.amount)) * 10000n > big(PAY_GAP_BP) * big(s.amount)) out.add(m.month);
+    }
+  }
+  return out;
+}
+
 export function typicalIncome(input: IncomeInput): {
   readonly amount: MinorUnits;
   readonly hasConfirmedIncome: boolean;
   readonly reasons: readonly ReasonCode[];
+  /** 05.4 FIN-15: the first pay series whose last arrivals sit more than PAY_GAP_BP below its set-up amount; null when none. */
+  readonly payGap: PayGap | null;
 } {
-  const { asOf, series, profile, rough, custom } = input;
+  const { asOf, series, profile, typedEstimates, custom } = input;
   const plan = planOf(profile);
   const reasons = new Set<ReasonCode>();
   const pay = liveSeriesOf(series, asOf, "pay");
   const hasConfirmedIncome = pay.length > 0;
+  let payGap: PayGap | null = null;
+  // 05.4 FIN-15: each pay series counts at the lower of its set-up amount and the middle of its last arrivals.
+  const payMonthly = (s: V3Series): bigint => {
+    const b = payBasis(s, input.history, asOf);
+    if (payGap === null) payGap = b.gap;
+    return sumMonthly({ ...s, amount: minorFromBigInt(b.amount, "typicalIncome") });
+  };
 
   let sum = 0n;
   let any = false;
@@ -372,14 +447,14 @@ export function typicalIncome(input: IncomeInput): {
   if (steady !== null) {
     if (plan.paySalary)
       for (const s of pay) {
-        sum += sumMonthly(s);
+        sum += payMonthly(s);
         any = true;
       }
     sum += steady;
     any = true;
   } else {
     for (const s of pay) {
-      sum += sumMonthly(s);
+      sum += payMonthly(s);
       any = true;
     }
     for (const s of liveSeriesOf(series, asOf, "other_income")) {
@@ -393,13 +468,14 @@ export function typicalIncome(input: IncomeInput): {
       }
     }
   }
-  if (!any && rough !== null) {
-    reasons.add("rough_figures_used");
-    return { amount: rough.income, hasConfirmedIncome, reasons: [...reasons] };
+  if (!any && typedEstimates !== null) {
+    reasons.add("quick_estimates_used");
+    return { amount: typedEstimates.income, hasConfirmedIncome, reasons: [...reasons], payGap };
   }
   return {
     amount: minorFromBigInt(sum, "typicalIncome"),
     hasConfirmedIncome,
     reasons: [...reasons],
+    payGap,
   };
 }

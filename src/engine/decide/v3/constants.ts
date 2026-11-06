@@ -53,21 +53,32 @@ export const BAND_EDGES_USD: readonly number[] = [
   100_000_000, 200_000_000, 500_000_000,
 ]; // v3 §5.2, O11
 
-// Cite: UP §5.3 (00-UPGRADE-PLAN): six codes, strictest first. The strictest part wins.
-export const CODE_PRECEDENCE = ['needs_input', 'not_yet', 'monthly_short', 'emergency_use', 'fits_unspent', 'fits_month'] as const; // UP §5.3
+// Cite: UP §5.3 (00-UPGRADE-PLAN): the codes, strictest first. The strictest part wins. 05.4 FIN-03 (D-26, D-36) inserts
+// fits_uses_overdraft after monthly_short, its place in the phase target order. FincWin choice.
+// 05.4: fits_uses_net sits after emergency_use, which keeps its slot only for answers stored before 05.4 (D-41).
+// 05.4 FIN-05 (D-07, D-39a): fits_by_borrowing sits after monthly_short, before fits_uses_overdraft (the slot after
+// fits_on_your_answer's), so "Only by borrowing" is stricter than any other fit.
+// 05.4 FIN-08 / CMP-F01 (05.4-23): fits_on_your_answer sits right after monthly_short, so an answer that rests on the user's yes is
+// stricter than every fit the records show (I61).
+export const CODE_PRECEDENCE = ['needs_input', 'not_yet', 'monthly_short', 'fits_on_your_answer', 'fits_by_borrowing', 'fits_uses_overdraft', 'emergency_use', 'fits_uses_net', 'fits_unspent', 'fits_month'] as const; // UP §5.3
 
 // Cite: D-23 (05.1-CONTEXT), overriding the research table: the old four-state verdict each code maps to. FincWin choice.
 export const LEGACY_STATE_OF_CODE = Object.freeze({
   fits_month: 'fits',
   fits_unspent: 'fits',
   monthly_short: 'adjust',
+  fits_uses_overdraft: 'adjust', // 05.4: every new caution code maps to adjust
+  fits_by_borrowing: 'adjust', // 05.4 FIN-05
+  fits_on_your_answer: 'adjust', // 05.4 FIN-08
   emergency_use: 'adjust',
+  fits_uses_net: 'adjust',
   not_yet: 'no',
   needs_input: 'missing',
 }) satisfies Readonly<Record<Code, LegacyState>>; // D-23
 
-// Cite: v3 §3.5, D-19, I38: only these purposes may draw on the emergency fund. FincWin choice.
-export const EMERGENCY_PURPOSES = ['necessity', 'for_work'] as const; // v3 §3.5, I38
+// Cite: D-41 (05.4-CONTEXT, owner round 1): these purposes read as a need. Since D-49 they change wording and the order of facts
+// only, never the answer (the 05.1 I38 purpose gate on the fund is retired). FincWin choice.
+export const NEED_PURPOSES = ['necessity', 'for_work'] as const; // D-41, D-49
 
 // Cite: UP §5.4 rule 3 (00-UPGRADE-PLAN): needs-input applies from band 5 upward. FincWin choice.
 export const NEEDS_INPUT_MIN_BAND = 5; // UP §5.4
@@ -111,6 +122,9 @@ export const CADENCE_EVERY_MAX = 12; // D-19
 // Cite: payoff MAX_TERM_MONTHS cap (600 months, 50 years) in ../../payoff/types. A plan never has more periods than the payoff engine can simulate.
 export const MAX_PLAN_PERIODS = 600; // payoff MAX_TERM_MONTHS
 
+// Cite: ENG-15, D-109 (05.4-28): larger is 'too large to check'. US$100,000,000 in US cents; other currencies convert it with the fixed reference rates (bandEdges.ts maxCheckPrice), capped at MAX_ABS_AMOUNT_MINOR. FincWin choice.
+export const MAX_CHECK_PRICE = 100_000_000_00; // ENG-15, D-109
+
 // Cite: D-33 (05.1-CONTEXT): variable or seasonal earners use up to 12 months so a whole year of seasons is seen. FincWin choice.
 export const V3_VARIABLE_HISTORY_MONTHS = 12; // D-33
 
@@ -148,6 +162,7 @@ export const MISSING_PRIORITY = [
   'everyday_unknown',
   'records_look_behind',
   'no_price',
+  'price_too_large',
   'share_invalid',
   'legacy_invest_check',
   'plan_count_missing',
@@ -169,7 +184,7 @@ export const REFINE_WINDOW_MONTHS = 6; // 05.2
 // Cite: 05.2 D-12, UP §4.12: check in after 3 full months of records since setup.
 export const REFINE_SETUP_MONTHS = 3; // 05.2
 
-// Cite: 05.2 D-12, UP §4.12: check in after 1 full month when setup used rough figures.
+// Cite: 05.2 D-12, UP §4.12: check in after 1 full month when setup used quick estimates.
 export const REFINE_ROUGH_MONTHS = 1; // 05.2
 
 // Cite: 05.2 D-12, UP §4.12: a typed figure 15% off the records.
@@ -204,3 +219,69 @@ export const REFINE_UNDERLOGGED_PCT = 50; // 05.2
 
 // Cite: 05.2 D-20: a regular pay with no paid line for its last 2 expected dates has stopped. FincWin choice (05.2 OQ2, owner approved 2026-10-28).
 export const REFINE_PAY_STOPPED_MISSES = 2; // 05.2
+
+// Cite: 05.4 ENG-14, right-answer case QE-07 (settled dispute 12): records synced recently stand in for a new month with no
+// records yet only in its first 7 days. FincWin choice (owner approved QE-07, 2026-11-02).
+export const RECORDS_FRESH_FIRST_DAYS = 7; // QE-07
+
+// Cite: 05.4 ENG-14, right-answer case QE-07: records count as fresh when they synced at most 3 days before asOf (QE-07: 2 days).
+// FincWin choice (owner approved QE-07, 2026-11-02).
+export const RECORDS_FRESH_SYNC_DAYS = 3; // QE-07
+
+// Cite: D-37 (05.4-CONTEXT, owner round 1): repeat overdraft use looks at the next 3 paydays. FincWin choice.
+export const OVERDRAFT_REPEAT_PAYDAYS = 3; // D-37
+
+// Cite: D-37 (05.4-CONTEXT, owner round 1): below 0 before at least 2 of them is repeat use. FincWin choice.
+export const OVERDRAFT_REPEAT_MIN = 2; // D-37
+
+// Cite: D-36 (05.4-CONTEXT, owner round 1): overdraft interest is charged daily, at the yearly rate over 365 days. FincWin choice.
+export const OVERDRAFT_DAYS_PER_YEAR = 365; // D-36
+
+// Cite: FIN-01 (05.4 fix plan Theme G), D-05: the starter safety net is 1 month of essential costs. FincWin choice.
+export const NET_STARTER_MONTHS = 1; // FIN-01, D-05
+
+// Cite: ARC-07 (05.4 fix plan): essential costs are rounded up to a whole currency unit (100 minor units). FincWin choice.
+export const ESSENTIAL_ROUND_MINOR = 100; // ARC-07
+
+// Cite: D-52 (05.4-CONTEXT, owner 2026-11-03): full months of recorded income before pay is expected from history. FincWin choice.
+export const HISTORY_PAY_MIN_MONTHS = 3; // D-52
+
+// Cite: D-07, D-39b (05.4-CONTEXT, owner question 5 and round 1): borrowing at 20% APR or more is costly. D-07: FincWin's
+// thresholds, not law. In basis points of a yearly rate; 05.4-22 reuses it for the expensive-borrowing caution.
+export const EXPENSIVE_APR_BP = 2000; // D-07, D-39b
+
+// Cite: D-07 (05.4-CONTEXT, owner question 5): borrowing whose total interest is 10% or more of the amount borrowed is expensive.
+// D-07: FincWin's thresholds, not law; D-39c: home loans skip this one. In basis points of the amount borrowed.
+export const EXPENSIVE_INTEREST_SHARE_BP = 1000; // D-07, D-39c
+
+// Cite: D-80 (05.4-CONTEXT, owner 2026-11-04): paying cash that is ready within 31 days of the check date counts as cash fitting, so
+// an expensive plan is "Fits, but borrowing costs more", not "Only by borrowing". FincWin choice.
+export const SHORT_WAIT_DAYS = 31; // D-80
+
+// Cite: D-08 (05.4-CONTEXT, owner question 5) and the 05.4-12 revision notes "Debts": at most 2 debt fact lines, then "and N more".
+// FincWin choice.
+export const DEBT_FACT_LINES = 2; // D-08
+
+// Cite: D-72 (05.4-CONTEXT, owner 2026-11-04): the costly-debt caution needs the money from earlier months to cut the debt's
+// interest by at least 1.00 a month (100 minor units of its currency). FincWin choice.
+export const COSTLY_SAVING_MIN = 100; // D-72
+
+// Cite: FIN-07 (05.4 fix plan Theme A) and the owner's tight rule (05.4-CONTEXT, 2026-11-01): a new monthly payment that takes more
+// than 80% of the usual monthly room is "Fits, but tight each month". In basis points of the room. FincWin choice.
+export const TIGHT_SHARE_BP = 8000; // FIN-07
+
+// Cite: FIN-07, D-40 (05.4-CONTEXT, owner round 1): the tight floor is a tenth of a usual month's bills plus everyday spending,
+// rounded up, unless the user set their own line. FincWin choice.
+export const TIGHT_FLOOR_DIVISOR = 10; // FIN-07, D-40
+
+// Cite: FIN-15 (fix plan Theme A, 05.4-23; QE-06): a steady earner's last 3 pay arrivals are compared with the set-up pay, and a gap
+// of more than 5% (500 basis points of the set-up pay) is named. The lower of the two is judged either way. FincWin choice.
+export const PAY_GAP_BP = 500; // FIN-15
+
+// Cite: FIN-15 (05.4-23; QE-06 "his last three pay days"): the middle of the last 3 pay arrivals of each pay series. FincWin choice.
+export const PAY_GAP_ARRIVALS = 3; // FIN-15
+
+// Cite: D-46 (05.4-CONTEXT, owner round 1b; QE-12 "If each month from November came up another £1,000 short"): the further
+// shortfall the runway line is shown with is 1,000 major units of the check's currency (converted to minor units by its exponent).
+// FincWin choice, not a forecast.
+export const FURTHER_SHORTFALL_MAJOR = 1000; // D-46, QE-12

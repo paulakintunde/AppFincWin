@@ -23,6 +23,16 @@ jobs:
       - run: npm run check:ignores
       - run: npm run test:coverage
       - run: npm run verify:gates
+      - name: Cross-check calculator agrees with the engine (QA-03, 1,000 cases)
+        run: npm run test:crosscheck
+        env:
+          CROSSCHECK_RUNS: 1000
+      - name: Stryker disables need a reason
+        run: npm run check:stryker-disables
+      - name: Right answers unchanged without sign-off
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          npm run check:right-answers
       - name: Migration compatibility (FND-10)
         run: npm run lint:migrations
       - name: Migration gate self-test (FND-10)
@@ -33,8 +43,16 @@ jobs:
         run: npm run check:recurring-mirror
       - name: Decide demo seed mirrors the fixture
         run: npm run check:decide-demo-mirror
+      - name: Decide switch list check (static)
+        run: npm run check:decide-switch -- --static
+      - name: Cache version check (APP-07)
+        run: npm run check:cache-version && node --test scripts/__tests__/check-cache-version.test.mjs
+      - name: Mutation part plan and merged-score gate (05.4-43, D-172)
+        run: node --test scripts/__tests__/mutation-shards.test.mjs scripts/__tests__/mutation-merge.test.mjs
       - name: Service-role key never referenced by client code (ENV-04)
         run: "! grep -rnE 'SERVICE_ROLE|service_role|sb_secret_' src app"
+  # 05.4-43 (D-175): the per-push mutation check moved to mutation-changed.yml, outside this workflow's
+  # cancel-in-progress group; the full run is mutation-full.yml.
   secret-scan:
     name: secret-scan
     runs-on: ubuntu-latest

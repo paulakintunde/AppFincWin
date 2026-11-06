@@ -1,0 +1,13 @@
+# Shared tail of save-offline: the queued line is shown, then saves once the network is back.
+appId: com.fincwin.app
+---
+- assertVisible: ".*1\u00A0change waiting.*|.*1 change waiting.*"
+- scrollUntilVisible:
+    element: "Maestro offline test"
+    direction: DOWN
+- assertVisible: "Maestro offline test, .*queued.*"
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    notVisible: "Maestro offline test, .*queued.*"
+    timeout: 90000
+- assertVisible: "Maestro offline test"

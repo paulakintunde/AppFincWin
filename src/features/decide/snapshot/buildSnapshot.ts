@@ -70,6 +70,7 @@ export interface DebtSource {
   min_floor: number | null;
   paid_in_full: boolean;
   is_housing: boolean; // D-103: a loan (never a card) whose minimum counts toward housingMonthly
+  due_day?: number | null; // 05.4 FIN-04 (Decide v3 only; the old builder ignores it): day of the month the payment is due
   paid_off_on?: string | null; // local date the debt was paid off (05.2-48); absent or null = still owed
   version: number;
   deleted_at: string | null;
@@ -132,7 +133,7 @@ export interface SnapshotSource {
   > &
     Partial<Pick<RecurringSeriesRow, 'counts_as' | 'income_kind' | 'saving_mode' | 'pay_group'>>)[];
   accounts: readonly (Pick<AccountRow, 'id' | 'name' | 'kind' | 'currency' | 'archived_at' | 'deleted_at'> &
-    Partial<Pick<AccountRow, 'use' | 'use_purpose' | 'use_envelope_id' | 'use_extra_set_aside'>>)[];
+    Partial<Pick<AccountRow, 'use' | 'use_purpose' | 'use_envelope_id' | 'use_extra_set_aside' | 'overdraft_limit' | 'overdraft_rate'>>)[];
   balances: Readonly<Record<string, number>>; // account id → paid-only balance in the account's currency
   rates: readonly FxLatestRow[];
   categories: Readonly<Record<string, string | null>>; // category id → builtin_key (null for custom)
@@ -145,6 +146,13 @@ export interface SnapshotSource {
   paymentLinks: readonly { check_id: string; target_id: string; check_kind: 'buy' | 'invest' }[];
   writtenRowLinks: readonly { check_id: string; target_id: string }[];
   judgeOn?: Basis | null; // D-107: the user's Judge-on choice (device view). Absent or null = the stored settings basis_override applies
+  // 05.4-33 (Decide v3 only; the old builder ignores both). D-126: the local day of the oldest real server fetch among the record
+  // reads used; absent/null = unknown. D-127: writes still waiting to send; absent = 0. Notes only, never the sums (APP-02).
+  recordsAsOf?: string | null;
+  unsavedWrites?: number;
+  // 05.4-35 (Decide v3 only): profiles.region_subdivision (D-19); absent/null = not set. It passes with whatever country `region`
+  // resolved to, even from the device (D-142); the engine's tax table knows only real country-and-state pairs.
+  regionSubdivision?: string | null;
 }
 
 const LOOKBACK_MONTHS = 12;
@@ -754,6 +762,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     monthFallback,
     provisional,
     fx: { rates: source.rates, customs: source.customCurrencies, today },
+    debtRecords: debts, // 05.4-35 (D-43): the same debt list on every result kind, for the v3 inputs; the old engine reads snapshot.debts
   };
 
   if (fullKeys.length > 0) {

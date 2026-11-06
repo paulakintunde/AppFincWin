@@ -5,7 +5,7 @@ import { amortise, amortiseDue } from '../../../../payoff/amortise';
 import { PERCENT_SCALE, ZERO_PERCENT, percent, percentFromScaled, rateDenominator } from '../../../../payoff/types';
 import type { Cadence, PlanFees, Schedule } from '../../types';
 import { BIWEEKLY, MONTHLY, QUARTERLY, WEEKLY, scaledApr } from '../cadence';
-import { buildSchedule, paymentsInRange, scheduleLines, type ScheduleInput } from '../schedule';
+import { EXACT_INTEREST_BP_CAP, buildSchedule, exactInterestBp, paymentsInRange, scheduleLines, type ScheduleInput } from '../schedule';
 
 const NO_FEES: PlanFees = { setup: minorUnits(0), perPeriod: minorUnits(0), end: minorUnits(0) };
 const ASOF = '2026-10-26';
@@ -214,5 +214,40 @@ describe('buildSchedule', () => {
       { numRuns: 20 }
     );
     expect(build({ count: 600, apr: percent('30') }).lastPaying).toBeGreaterThan(0);
+  });
+});
+
+describe('D-138 exactInterestBp: the interest before rounding, as a share of the amount (owner, 2026-11-05)', () => {
+  const pct = (n: number): bigint => BigInt(n) * PERCENT_SCALE;
+
+  it('matches the textbook annuity at 1% a month over 12 payments (hand figures)', () => {
+    // arrears: 12 x 0.01 x 1.01^12 / (1.01^12 - 1) = 1.066185...; due: that / 1.01 = 1.055628...; two paused periods: x 1.01^2 = 1.087615...
+    expect(exactInterestBp({ apr: pct(12), count: 12, base: 12, due: false, pausePeriods: 0 })).toBe(661);
+    expect(exactInterestBp({ apr: pct(12), count: 12, base: 12, due: true, pausePeriods: 0 })).toBe(556);
+    expect(exactInterestBp({ apr: pct(12), count: 12, base: 12, due: false, pausePeriods: 2 })).toBe(876);
+    expect(exactInterestBp({ apr: pct(52), count: 26, base: 52, due: false, pausePeriods: 0 })).toBe(1405);
+  });
+
+  it('0% and a share that rounds down to 0 give 0; an absurd rate is capped', () => {
+    expect(exactInterestBp({ apr: 0n, count: 12, base: 12, due: false, pausePeriods: 0 })).toBe(0);
+    expect(exactInterestBp({ apr: 1n, count: 1, base: 12, due: false, pausePeriods: 0 })).toBe(0);
+    expect(exactInterestBp({ apr: 10n ** 30n, count: 12, base: 12, due: false, pausePeriods: 0 })).toBe(EXACT_INTEREST_BP_CAP);
+  });
+
+  it('I9-ROUNDING: $1.00 and $1.01 share one exact figure (9.32%) though their rounded interest differs', () => {
+    const plan = (financed: number) => buildSchedule(input({ financed: minorUnits(financed), apr: percent('11'), cadence: { unit: 'month', every: 2 }, count: 11, firstPayment: { kind: 'today' } }));
+    const lo = plan(100);
+    const hi = plan(101);
+    if (!lo.ok || !hi.ok) throw new Error('schedule');
+    expect([lo.schedule.totalInterest, hi.schedule.totalInterest]).toEqual([10, 8]);
+    expect([lo.schedule.exactInterestBp, hi.schedule.exactInterestBp]).toEqual([932, 932]);
+  });
+
+  it('a schedule with interest during a pause counts the paused periods', () => {
+    const r = buildSchedule(input({ apr: percent('12'), count: 12, firstPayment: { kind: 'deferred', firstDate: '2026-12-26', interestDuringPause: true } }));
+    const flat = buildSchedule(input({ apr: percent('12'), count: 12, firstPayment: { kind: 'deferred', firstDate: '2026-12-26', interestDuringPause: false } }));
+    if (!r.ok || !flat.ok) throw new Error('schedule');
+    expect(flat.schedule.exactInterestBp).toBe(556);
+    expect(r.schedule.exactInterestBp).toBeGreaterThan(556);
   });
 });

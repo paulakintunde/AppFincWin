@@ -65,6 +65,7 @@ export const queryKeys = {
   // Own keys (not row-derived).
   decideChecks: (userId: string, householdId: string) => ['decide-checks', userId, householdId] as const,
   decideSettings: (userId: string) => ['decide-settings', userId] as const,
+  regionSubdivision: (userId: string) => ['region-subdivision', userId] as const, // 05.4-35 (D-19): profiles.region_subdivision
   debts: (householdId: string) => ['debts', householdId] as const,
   decideLinks: (userId: string, householdId: string) => ['decide-links', userId, householdId] as const,
   // Part 2 (05-12): depth reads.
@@ -128,8 +129,10 @@ export const mutationKeys = {
   createCheck: ['decide-checks', 'create'] as const,
   saveCheckDraft: ['decide-checks', 'save-draft'] as const,
   editCheck: ['decide-checks', 'edit'] as const,
+  saveCheckAnswer: ['decide-checks', 'save-answer'] as const,
   decideGoAhead: ['decide-checks', 'go-ahead'] as const,
   decideOutcome: ['decide-checks', 'outcome'] as const,
+  recordBought: ['decide-checks', 'record-bought'] as const,
   updateDecideSettings: ['decide-settings', 'update'] as const,
   saveCardRate: ['debts', 'save-card-rate'] as const,
   saveCardTerms: ['debts', 'save-card-terms'] as const, // D-40 (05-19 useSaveCardTerms)

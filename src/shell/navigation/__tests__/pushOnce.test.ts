@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
-import { PUSH_GUARD_MS, acceptPush, pushOnce, resetPushOnceForTests } from '../pushOnce';
+import { PUSH_GUARD_MS, acceptPush, pushOnce, replaceOnce, resetPushOnceForTests } from '../pushOnce';
 
-jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+jest.mock('expo-router', () => ({ router: { push: jest.fn(), replace: jest.fn() } }));
 
 let now = 1000;
 beforeEach(() => {
@@ -36,6 +36,20 @@ describe('pushOnce', () => {
     expect(router.push).toHaveBeenCalledTimes(2);
     pushOnce('/import' as never);
     expect(router.push).toHaveBeenCalledTimes(2);
+  });
+
+  it('replaceOnce drops a same-target repeat inside the window, not a different target', () => {
+    replaceOnce('/a' as never);
+    replaceOnce('/a' as never);
+    expect(router.replace).toHaveBeenCalledTimes(1);
+    replaceOnce('/b' as never);
+    expect(router.replace).toHaveBeenCalledTimes(2);
+  });
+
+  it('replaceOnce shares the guard with pushOnce', () => {
+    pushOnce('/a' as never);
+    replaceOnce('/a' as never);
+    expect(router.replace).not.toHaveBeenCalled();
   });
 
   it('resetPushOnceForTests clears the guard', () => {

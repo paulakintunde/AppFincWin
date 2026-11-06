@@ -4,7 +4,7 @@
 // transactionForm.ts (pure). Copy is declarative, never advice.
 import * as Crypto from 'expo-crypto';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { router } from 'expo-router';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 import { AccessibilityInfo, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
@@ -1118,7 +1118,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         onManage={() => {
           setPicker(null);
           onClose();
-          router.push('/categories');
+          pushOnce('/categories');
         }}
       />
       <AccountPicker

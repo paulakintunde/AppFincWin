@@ -7,18 +7,18 @@ import NetInfo from '@react-native-community/netinfo';
 import { AppState, type AppStateStatus } from 'react-native';
 import { focusManager, onlineManager, type QueryClient } from '@tanstack/react-query';
 import { getEnv } from '@/config/env';
+import { createOnlineGate, netClass, type OnlineGate } from './sync/connectivity';
+import { queueHead, recordOnlineChange } from './sync/queueDiagnostics';
 
-/**
- * null means "not yet known" (NetInfo has not reported a first state, or a platform detail is
- * unsupported) — only an explicit `false` counts as offline, so app boot does not flash an
- * offline state before the first NetInfo event arrives.
- */
-export function isReachable(state: { isConnected: boolean | null; isInternetReachable: boolean | null }): boolean {
-  return state.isConnected !== false && state.isInternetReachable !== false;
-}
+// 05.3-116 (UAT gap 34): whether a NetInfo report counts as offline is decided by the shared
+// online gate in sync/connectivity.ts. null means "not yet known" and never counts as offline; a
+// lost connection is offline at once; a failed reachability probe on a working connection is
+// offline only after it has lasted UNREACHABLE_GRACE_MS (10 s), so a probe blip on Wi-Fi no longer
+// pauses every queued write.
 
 let started = false;
 let client: QueryClient | null = null;
+let gate: OnlineGate | null = null;
 
 /**
  * D-88: coming back (app focus or a reachable NetInfo state) sets online, replays the paused
@@ -50,6 +50,8 @@ export function reachabilityTest(response: { status: number }): Promise<boolean>
 export function resetOnlineManagerForTests(): void {
   started = false;
   client = null;
+  gate?.dispose();
+  gate = null;
 }
 
 /**
@@ -72,13 +74,20 @@ export function startOnlineManager(qc?: QueryClient): void {
     // default probe
   }
 
-  onlineManager.setEventListener((setOnline) =>
-    NetInfo.addEventListener((state) => {
-      const reachable = isReachable(state);
-      setOnline(reachable);
-      if (reachable && client) resumeAndRefetch(client);
-    }),
-  );
+  onlineManager.setEventListener((setOnline) => {
+    gate?.dispose();
+    const own = createOnlineGate(setOnline);
+    gate = own;
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const online = own.update(state);
+      if (__DEV__) recordOnlineChange('netinfo', state, online, client ? queueHead(client) : null);
+      if (online && netClass(state) === 'online' && client) resumeAndRefetch(client);
+    });
+    return () => {
+      own.dispose();
+      unsubscribe();
+    };
+  });
 
   focusManager.setEventListener((handleFocus) => {
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
@@ -87,7 +96,10 @@ export function startOnlineManager(qc?: QueryClient): void {
       // Ask NetInfo to re-check against Supabase now rather than trusting a stale offline flag.
       void NetInfo.refresh().then(
         (net) => {
-          if (isReachable(net) && client) resumeAndRefetch(client);
+          // Fed to the same gate, so an unreachable answer here gets the same 10 s grace.
+          const online = gate ? gate.update(net) : netClass(net) === 'online';
+          if (__DEV__) recordOnlineChange('focus', net, online, client ? queueHead(client) : null);
+          if (online && netClass(net) === 'online' && client) resumeAndRefetch(client);
         },
         () => {
           if (client) resumeAndRefetch(client);

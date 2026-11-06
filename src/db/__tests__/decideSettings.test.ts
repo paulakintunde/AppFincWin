@@ -119,3 +119,19 @@ describe('05.2 columns', () => {
     expect(DECIDE_SETTINGS_PATCH_KEYS).toContain('refine_snooze_until');
   });
 });
+
+describe('05.4 D-61 safety_net_locked', () => {
+  it('defaults to locked, and is selected and patched', () => {
+    expect(EMPTY_DECIDE_SETTINGS.safety_net_locked).toBe(true);
+    expect(DECIDE_SETTINGS_COLUMNS).toContain('safety_net_locked');
+    expect(DECIDE_SETTINGS_PATCH_KEYS).toContain('safety_net_locked');
+  });
+
+  it('sends an unlock in the upsert payload', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: { ...ROW, safety_net_locked: false }, error: null, status: 200 });
+    await upsertDecideSettings(client, 'u1', { safety_net_locked: false });
+    const sent = client.calls.find((c) => c.method === 'upsert')?.args[0] as Record<string, unknown>;
+    expect(sent.safety_net_locked).toBe(false);
+  });
+});

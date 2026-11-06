@@ -1,0 +1,1552 @@
+{
+  "persona:sam:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 36500
+  },
+  "persona:sam:50000:cash": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "persona:sam:200000:cash": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "persona:sam:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -857500
+  },
+  "persona:sam:900000:plan": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 42500
+  },
+  "persona:maya:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 74000
+  },
+  "persona:maya:50000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 30000
+  },
+  "persona:maya:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -120000
+  },
+  "persona:maya:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -820000
+  },
+  "persona:maya:900000:plan": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 80000
+  },
+  "persona:riley:6000:cash": {
+    "code": "not_yet",
+    "variant": "month_already_short",
+    "afterBuyMonth": -36000
+  },
+  "persona:riley:50000:cash": {
+    "code": "not_yet",
+    "variant": "month_already_short",
+    "afterBuyMonth": -80000
+  },
+  "persona:riley:200000:cash": {
+    "code": "not_yet",
+    "variant": "month_already_short",
+    "afterBuyMonth": -230000
+  },
+  "persona:riley:900000:cash": {
+    "code": "not_yet",
+    "variant": "month_already_short",
+    "afterBuyMonth": -930000
+  },
+  "persona:riley:900000:plan": {
+    "code": "not_yet",
+    "variant": "month_already_short",
+    "afterBuyMonth": -30000
+  },
+  "persona:leo:6000:cash": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": -19484
+  },
+  "persona:leo:50000:cash": {
+    "code": "fits_unspent",
+    "variant": "tight",
+    "afterBuyMonth": -19484
+  },
+  "persona:leo:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -219484
+  },
+  "persona:leo:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -919484
+  },
+  "persona:leo:900000:plan": {
+    "code": "monthly_short",
+    "variant": null,
+    "afterBuyMonth": -19484
+  },
+  "persona:tia:6000:cash": {
+    "code": "not_yet",
+    "variant": "payday",
+    "afterBuyMonth": 17613
+  },
+  "persona:tia:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -26387
+  },
+  "persona:tia:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -176387
+  },
+  "persona:tia:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -876387
+  },
+  "persona:tia:900000:plan": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 23613
+  },
+  "persona:dana:6000:cash": {
+    "code": "fits_month",
+    "variant": "small_net",
+    "afterBuyMonth": 77710
+  },
+  "persona:dana:50000:cash": {
+    "code": "fits_month",
+    "variant": "small_net",
+    "afterBuyMonth": 33710
+  },
+  "persona:dana:200000:cash": {
+    "code": "fits_unspent",
+    "variant": "tight",
+    "afterBuyMonth": 0
+  },
+  "persona:dana:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -816290
+  },
+  "persona:dana:900000:plan": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 83710
+  },
+  "persona:kim:6000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 84000
+  },
+  "persona:kim:50000:cash": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 40000
+  },
+  "persona:kim:200000:cash": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "persona:kim:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -810000
+  },
+  "persona:kim:900000:plan": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 90000
+  },
+  "persona:priya:6000:cash": {
+    "code": "fits_month",
+    "variant": "small_net",
+    "afterBuyMonth": 74000
+  },
+  "persona:priya:50000:cash": {
+    "code": "fits_month",
+    "variant": "small_net",
+    "afterBuyMonth": 30000
+  },
+  "persona:priya:200000:cash": {
+    "code": "not_yet",
+    "variant": "payday",
+    "afterBuyMonth": -120000
+  },
+  "persona:priya:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -820000
+  },
+  "persona:priya:900000:plan": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 80000
+  },
+  "persona:jordan:6000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:jordan:50000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:jordan:200000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:jordan:900000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:jordan:900000:plan": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p1:6000:cash": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 2000
+  },
+  "persona:audit-p1:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -42000
+  },
+  "persona:audit-p1:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -192000
+  },
+  "persona:audit-p1:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -892000
+  },
+  "persona:audit-p1:900000:plan": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": 8000
+  },
+  "persona:audit-p2:6000:cash": {
+    "code": "not_yet",
+    "variant": "month_already_short",
+    "afterBuyMonth": -106000
+  },
+  "persona:audit-p2:50000:cash": {
+    "code": "not_yet",
+    "variant": "month_already_short",
+    "afterBuyMonth": -150000
+  },
+  "persona:audit-p2:200000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2:900000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2:900000:plan": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2-rich:6000:cash": {
+    "code": "fits_unspent",
+    "variant": "month_short_small",
+    "afterBuyMonth": -100000
+  },
+  "persona:audit-p2-rich:50000:cash": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate",
+    "afterBuyMonth": -100000
+  },
+  "persona:audit-p2-rich:200000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2-rich:900000:cash": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p2-rich:900000:plan": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "persona:audit-p3:6000:cash": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 54000
+  },
+  "persona:audit-p3:50000:cash": {
+    "code": "fits_month",
+    "variant": "tight",
+    "afterBuyMonth": 10000
+  },
+  "persona:audit-p3:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -140000
+  },
+  "persona:audit-p3:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -840000
+  },
+  "persona:audit-p3:900000:plan": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 60000
+  },
+  "persona:audit-p4:6000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -64710
+  },
+  "persona:audit-p4:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -108710
+  },
+  "persona:audit-p4:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -258710
+  },
+  "persona:audit-p4:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -958710
+  },
+  "persona:audit-p4:900000:plan": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -58710
+  },
+  "persona:audit-p4-overdrawn:6000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -214710
+  },
+  "persona:audit-p4-overdrawn:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -258710
+  },
+  "persona:audit-p4-overdrawn:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -408710
+  },
+  "persona:audit-p4-overdrawn:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -1108710
+  },
+  "persona:audit-p4-overdrawn:900000:plan": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -208710
+  },
+  "persona:audit-p5:6000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": 90774
+  },
+  "persona:audit-p5:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": 46774
+  },
+  "persona:audit-p5:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -103226
+  },
+  "persona:audit-p5:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -803226
+  },
+  "persona:audit-p5:900000:plan": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": 96774
+  },
+  "persona:audit-p6:6000:cash": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 69000
+  },
+  "persona:audit-p6:50000:cash": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 25000
+  },
+  "persona:audit-p6:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -125000
+  },
+  "persona:audit-p6:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -825000
+  },
+  "persona:audit-p6:900000:plan": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 75000
+  },
+  "persona:audit-p6-lines:6000:cash": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 69000
+  },
+  "persona:audit-p6-lines:50000:cash": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 25000
+  },
+  "persona:audit-p6-lines:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -125000
+  },
+  "persona:audit-p6-lines:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -825000
+  },
+  "persona:audit-p6-lines:900000:plan": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 75000
+  },
+  "persona:audit-p7:6000:cash": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 74000
+  },
+  "persona:audit-p7:50000:cash": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 30000
+  },
+  "persona:audit-p7:200000:cash": {
+    "code": "fits_unspent",
+    "variant": "no_net",
+    "afterBuyMonth": 0
+  },
+  "persona:audit-p7:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -820000
+  },
+  "persona:audit-p7:900000:plan": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 80000
+  },
+  "persona:audit-p8:6000:cash": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 74000
+  },
+  "persona:audit-p8:50000:cash": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 30000
+  },
+  "persona:audit-p8:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -120000
+  },
+  "persona:audit-p8:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -820000
+  },
+  "persona:audit-p8:900000:plan": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 80000
+  },
+  "persona:audit-p9:6000:cash": {
+    "code": "fits_month",
+    "variant": "tight",
+    "afterBuyMonth": 14000
+  },
+  "persona:audit-p9:50000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -30000
+  },
+  "persona:audit-p9:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -180000
+  },
+  "persona:audit-p9:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -880000
+  },
+  "persona:audit-p9:900000:plan": {
+    "code": "monthly_short",
+    "variant": null,
+    "afterBuyMonth": 20000
+  },
+  "persona:audit-p10:6000:cash": {
+    "code": "fits_month",
+    "variant": "tight",
+    "afterBuyMonth": 11904
+  },
+  "persona:audit-p10:50000:cash": {
+    "code": "not_yet",
+    "variant": "payday",
+    "afterBuyMonth": -32096
+  },
+  "persona:audit-p10:200000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -182096
+  },
+  "persona:audit-p10:900000:cash": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -882096
+  },
+  "persona:audit-p10:900000:plan": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 17904
+  },
+  "gen:0": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:1": {
+    "code": "monthly_short",
+    "variant": null,
+    "afterBuyMonth": -86954
+  },
+  "gen:2": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:3": {
+    "code": "fits_month",
+    "variant": "low_month",
+    "afterBuyMonth": 155296
+  },
+  "gen:4": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 46785
+  },
+  "gen:5": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 109469
+  },
+  "gen:6": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:7": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 210551
+  },
+  "gen:8": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:9": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 16374
+  },
+  "gen:10": {
+    "code": "fits_unspent",
+    "variant": "small_net",
+    "afterBuyMonth": 0
+  },
+  "gen:11": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate",
+    "afterBuyMonth": -25422
+  },
+  "gen:12": {
+    "code": "monthly_short",
+    "variant": "month_already_short",
+    "afterBuyMonth": -12570
+  },
+  "gen:13": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:14": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 123913
+  },
+  "gen:15": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:16": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:17": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate",
+    "afterBuyMonth": -1605
+  },
+  "gen:18": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 337073
+  },
+  "gen:19": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:20": {
+    "code": "fits_unspent",
+    "variant": "tight",
+    "afterBuyMonth": 0
+  },
+  "gen:21": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 242008
+  },
+  "gen:22": {
+    "code": "fits_month",
+    "variant": "small_net",
+    "afterBuyMonth": 137729
+  },
+  "gen:23": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:24": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 274394
+  },
+  "gen:25": {
+    "code": "fits_unspent",
+    "variant": "costly_debt",
+    "afterBuyMonth": 0
+  },
+  "gen:26": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:27": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:28": {
+    "code": "monthly_short",
+    "variant": "month_already_short",
+    "afterBuyMonth": -106693
+  },
+  "gen:29": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:30": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate",
+    "afterBuyMonth": -139730
+  },
+  "gen:31": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:32": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:33": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 15200
+  },
+  "gen:34": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 482593
+  },
+  "gen:35": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 85230
+  },
+  "gen:36": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 46208
+  },
+  "gen:37": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 14445
+  },
+  "gen:38": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 105377
+  },
+  "gen:39": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:40": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 29866
+  },
+  "gen:41": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:42": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 85569
+  },
+  "gen:43": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:44": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate_extra",
+    "afterBuyMonth": -84653
+  },
+  "gen:45": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 184809
+  },
+  "gen:46": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 47439
+  },
+  "gen:47": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -2716555
+  },
+  "gen:48": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate",
+    "afterBuyMonth": -63402
+  },
+  "gen:49": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:50": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:51": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate_extra",
+    "afterBuyMonth": -11821
+  },
+  "gen:52": {
+    "code": "monthly_short",
+    "variant": "month_already_short",
+    "afterBuyMonth": -6706
+  },
+  "gen:53": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:54": {
+    "code": "fits_unspent",
+    "variant": "no_net",
+    "afterBuyMonth": 0
+  },
+  "gen:55": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 195871
+  },
+  "gen:56": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 103957
+  },
+  "gen:57": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:58": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -782804
+  },
+  "gen:59": {
+    "code": "fits_month",
+    "variant": "low_month",
+    "afterBuyMonth": 161821
+  },
+  "gen:60": {
+    "code": "fits_unspent",
+    "variant": "extra_savings",
+    "afterBuyMonth": 0
+  },
+  "gen:61": {
+    "code": "fits_unspent",
+    "variant": "costly_debt",
+    "afterBuyMonth": 0
+  },
+  "gen:62": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 165667
+  },
+  "gen:63": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 213016
+  },
+  "gen:64": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 258849
+  },
+  "gen:65": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 114710
+  },
+  "gen:66": {
+    "code": "fits_unspent",
+    "variant": "extra_savings",
+    "afterBuyMonth": 0
+  },
+  "gen:67": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -6321036
+  },
+  "gen:68": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 371440
+  },
+  "gen:69": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 286205
+  },
+  "gen:70": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:71": {
+    "code": "monthly_short",
+    "variant": null,
+    "afterBuyMonth": -5980
+  },
+  "gen:72": {
+    "code": "fits_unspent",
+    "variant": "costly_debt",
+    "afterBuyMonth": 0
+  },
+  "gen:73": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 43676
+  },
+  "gen:74": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:75": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:76": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:77": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 63877
+  },
+  "gen:78": {
+    "code": "fits_month",
+    "variant": "small_net",
+    "afterBuyMonth": 296222
+  },
+  "gen:79": {
+    "code": "monthly_short",
+    "variant": "month_already_short",
+    "afterBuyMonth": -88101
+  },
+  "gen:80": {
+    "code": "monthly_short",
+    "variant": "month_already_short",
+    "afterBuyMonth": -150276
+  },
+  "gen:81": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:82": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 170391
+  },
+  "gen:83": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:84": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 156325
+  },
+  "gen:85": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -256170
+  },
+  "gen:86": {
+    "code": "not_yet",
+    "variant": "month_already_short",
+    "afterBuyMonth": -2300200
+  },
+  "gen:87": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 35101
+  },
+  "gen:88": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 162825
+  },
+  "gen:89": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate",
+    "afterBuyMonth": -86975
+  },
+  "gen:90": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 375651
+  },
+  "gen:91": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:92": {
+    "code": "monthly_short",
+    "variant": "month_already_short",
+    "afterBuyMonth": -11761
+  },
+  "gen:93": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:94": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 203832
+  },
+  "gen:95": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 76565
+  },
+  "gen:96": {
+    "code": "fits_unspent",
+    "variant": "extra_savings",
+    "afterBuyMonth": 0
+  },
+  "gen:97": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 157677
+  },
+  "gen:98": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:99": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 147919
+  },
+  "gen:100": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 83465
+  },
+  "gen:101": {
+    "code": "fits_month",
+    "variant": "low_month",
+    "afterBuyMonth": 211350
+  },
+  "gen:102": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 121365
+  },
+  "gen:103": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:104": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 77689
+  },
+  "gen:105": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 28760
+  },
+  "gen:106": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:107": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 188853
+  },
+  "gen:108": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:109": {
+    "code": "fits_unspent",
+    "variant": "small_net",
+    "afterBuyMonth": 0
+  },
+  "gen:110": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:111": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 297625
+  },
+  "gen:112": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate",
+    "afterBuyMonth": -49453
+  },
+  "gen:113": {
+    "code": "fits_month",
+    "variant": "tight",
+    "afterBuyMonth": 9005
+  },
+  "gen:114": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate",
+    "afterBuyMonth": -106079
+  },
+  "gen:115": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:116": {
+    "code": "not_yet",
+    "variant": "month_already_short",
+    "afterBuyMonth": -1810436
+  },
+  "gen:117": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:118": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:119": {
+    "code": "fits_month",
+    "variant": "small_net",
+    "afterBuyMonth": 163282
+  },
+  "gen:120": {
+    "code": "fits_month",
+    "variant": "tight",
+    "afterBuyMonth": 7650
+  },
+  "gen:121": {
+    "code": "not_yet",
+    "variant": "payday",
+    "afterBuyMonth": -1039663
+  },
+  "gen:122": {
+    "code": "fits_unspent",
+    "variant": "costly_debt",
+    "afterBuyMonth": 0
+  },
+  "gen:123": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 131710
+  },
+  "gen:124": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:125": {
+    "code": "fits_unspent",
+    "variant": "costly_debt",
+    "afterBuyMonth": 0
+  },
+  "gen:126": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate",
+    "afterBuyMonth": -2386
+  },
+  "gen:127": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:128": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -6427318
+  },
+  "gen:129": {
+    "code": "fits_unspent",
+    "variant": "no_net",
+    "afterBuyMonth": 0
+  },
+  "gen:130": {
+    "code": "fits_unspent",
+    "variant": "small_net",
+    "afterBuyMonth": 0
+  },
+  "gen:131": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 247310
+  },
+  "gen:132": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:133": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 59774
+  },
+  "gen:134": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:135": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:136": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -802785
+  },
+  "gen:137": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:138": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 9409
+  },
+  "gen:139": {
+    "code": "monthly_short",
+    "variant": null,
+    "afterBuyMonth": 59514
+  },
+  "gen:140": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 34034
+  },
+  "gen:141": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:142": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 56037
+  },
+  "gen:143": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:144": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 31110
+  },
+  "gen:145": {
+    "code": "fits_unspent",
+    "variant": "no_net",
+    "afterBuyMonth": 0
+  },
+  "gen:146": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 19962
+  },
+  "gen:147": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 43726
+  },
+  "gen:148": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 84944
+  },
+  "gen:149": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:150": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:151": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate",
+    "afterBuyMonth": -7827
+  },
+  "gen:152": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 62794
+  },
+  "gen:153": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -3316011
+  },
+  "gen:154": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 74572
+  },
+  "gen:155": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:156": {
+    "code": "fits_unspent",
+    "variant": "extra_savings",
+    "afterBuyMonth": 0
+  },
+  "gen:157": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:158": {
+    "code": "fits_by_borrowing",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:159": {
+    "code": "fits_unspent",
+    "variant": "no_net",
+    "afterBuyMonth": 0
+  },
+  "gen:160": {
+    "code": "fits_unspent",
+    "variant": "extra_savings",
+    "afterBuyMonth": 0
+  },
+  "gen:161": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:162": {
+    "code": "fits_unspent",
+    "variant": "month_short_small",
+    "afterBuyMonth": -218233
+  },
+  "gen:163": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 220701
+  },
+  "gen:164": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:165": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 242524
+  },
+  "gen:166": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 63535
+  },
+  "gen:167": {
+    "code": "fits_unspent",
+    "variant": "extra_savings",
+    "afterBuyMonth": 0
+  },
+  "gen:168": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:169": {
+    "code": "fits_unspent",
+    "variant": "month_short_moderate",
+    "afterBuyMonth": -146870
+  },
+  "gen:170": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -3065726
+  },
+  "gen:171": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:172": {
+    "code": "fits_unspent",
+    "variant": "extra_savings",
+    "afterBuyMonth": 0
+  },
+  "gen:173": {
+    "code": "fits_month",
+    "variant": "small_net",
+    "afterBuyMonth": 53084
+  },
+  "gen:174": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:175": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -360604
+  },
+  "gen:176": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 117218
+  },
+  "gen:177": {
+    "code": "fits_month",
+    "variant": "tight",
+    "afterBuyMonth": 4564
+  },
+  "gen:178": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 128102
+  },
+  "gen:179": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 23839
+  },
+  "gen:180": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:181": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:182": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 0
+  },
+  "gen:183": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:184": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:185": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:186": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 300819
+  },
+  "gen:187": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 134149
+  },
+  "gen:188": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:189": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -1973586
+  },
+  "gen:190": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:191": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:192": {
+    "code": "needs_input",
+    "variant": null,
+    "afterBuyMonth": null
+  },
+  "gen:193": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 157924
+  },
+  "gen:194": {
+    "code": "fits_month",
+    "variant": "no_net",
+    "afterBuyMonth": 108851
+  },
+  "gen:195": {
+    "code": "not_yet",
+    "variant": "not_covered",
+    "afterBuyMonth": -7263847
+  },
+  "gen:196": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 67976
+  },
+  "gen:197": {
+    "code": "fits_unspent",
+    "variant": null,
+    "afterBuyMonth": 0
+  },
+  "gen:198": {
+    "code": "fits_month",
+    "variant": null,
+    "afterBuyMonth": 35617
+  },
+  "gen:199": {
+    "code": "fits_by_borrowing",
+    "variant": "borrowing_costs_more",
+    "afterBuyMonth": 183930
+  }
+}

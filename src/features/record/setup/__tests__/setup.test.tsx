@@ -75,6 +75,7 @@ jest.mock('@/shell/fab/Fab', () => ({ Fab: () => null }));
 jest.mock('@/shell/fab/FabQuickMenu', () => ({ FabQuickMenu: () => null }));
 jest.mock('@/features/record/entry/ShellEntryHost', () => ({ ShellEntryHost: () => null }));
 jest.mock('@/features/decide/DecideShellHost', () => ({ DecideShellHost: () => null }));
+jest.mock('@/features/decide/shadow/DecideShadowHost', () => ({ DecideShadowHost: () => null }));
 jest.mock('@/shell/fab/FabProvider', () => ({ FabProvider: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock('expo-router/js-tabs', () => ({ Tabs: Object.assign(() => null, { Screen: () => null }) }));
 

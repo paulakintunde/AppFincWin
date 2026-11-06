@@ -2,8 +2,8 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import fc from 'fast-check';
 import { MAX_ABS_AMOUNT_MINOR, minorUnits } from '../../../money/types';
-import { BAND_TABLE, homeThresholds, tidyFromUsd } from '../bandEdges';
-import { BAND_EDGES_USD } from '../constants';
+import { BAND_TABLE, homeThresholds, maxCheckPrice, tidyFromUsd } from '../bandEdges';
+import { BAND_EDGES_USD, MAX_CHECK_PRICE } from '../constants';
 import { bandOf } from '../judge/bands';
 
 describe('bandEdges', () => {
@@ -111,5 +111,26 @@ describe('bandEdges', () => {
       for (let j = i - 1; j >= 0 && lines[j]!.startsWith('//'); j -= 1) if (lines[j]!.startsWith('// Cite:')) cited = true;
       expect({ line: lines[i], cited }).toEqual({ line: lines[i], cited: true });
     }
+  });
+});
+
+describe('05.4 ENG-15 (D-109): the price limit is about US$100,000,000 in every currency', () => {
+  it('US dollars: $100,000,000 exactly', () => {
+    expect(MAX_CHECK_PRICE).toBe(10_000_000_000);
+    expect(maxCheckPrice('USD')).toBe(10_000_000_000);
+  });
+  it('the fixed reference rates convert it with the tidy rule', () => {
+    expect(maxCheckPrice('GBP')).toBe(8_000_000_000); // 79,000,000 tidied to £80,000,000
+    expect(maxCheckPrice('EUR')).toBe(9_000_000_000); // 92,000,000 to €90,000,000
+    expect(maxCheckPrice('CAD')).toBe(10_000_000_000); // 137,000,000 to C$100,000,000
+    expect(maxCheckPrice('JPY')).toBe(20_000_000_000); // 0 decimals: 15,000,000,000 yen to 20,000,000,000
+    expect(maxCheckPrice('KRW')).toBe(100_000_000_000); // 138,000,000,000 won to 100,000,000,000
+  });
+  it('a currency missing from the table uses the database cap (rupiah is no longer about US$6,000)', () => {
+    expect(maxCheckPrice('IDR')).toBe(MAX_ABS_AMOUNT_MINOR);
+    expect(maxCheckPrice('XYZ')).toBe(MAX_ABS_AMOUNT_MINOR);
+  });
+  it('never above the database cap', () => {
+    for (const code of Object.keys(BAND_TABLE)) expect(maxCheckPrice(code)).toBeLessThanOrEqual(MAX_ABS_AMOUNT_MINOR);
   });
 });

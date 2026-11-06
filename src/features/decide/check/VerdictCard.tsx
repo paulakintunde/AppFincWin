@@ -30,7 +30,7 @@ import { EdgeTag } from '../ui/EdgeTag';
 import { FigureStrip } from '../ui/FigureStrip';
 import { InfoLabel } from '../ui/InfoLabel';
 import { useInfoSheet } from '../ui/useInfoSheet';
-import type { StateChipTone } from '../ui/StateChip';
+import type { StateChipTone } from '@/ui/StateChip';
 import { refText, type Translate } from './refText';
 import { joinSentences } from './joinSentences';
 import { useSettledLabel } from './useSettledLabel';

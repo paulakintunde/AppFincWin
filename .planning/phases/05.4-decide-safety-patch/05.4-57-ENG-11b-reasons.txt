@@ -1,0 +1,2 @@
+# ENG-11b (05.4-57, D-74) reasons file. npm run reviewed:diff -- --write ENG-11b listed 0 changed corpus answers, so no key needs a reason.
+# audit-p5, the only corpus person with quick estimates, records no card, loan or regular saving, so D-74 does not bite there.

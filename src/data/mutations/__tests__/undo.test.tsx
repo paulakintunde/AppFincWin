@@ -158,6 +158,38 @@ describe('useUndo', () => {
     expect(rpc(fake)).toHaveLength(1);
   });
 
+  it('a refused undo records what it was: the label key and name', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    // 05.3-97: a Decide check step is label-guarded, so the step's row is read first.
+    fake.respondWith({ data: { id: 'step-1', label_key: 'planSaved', status: 'available', touched_ids: ['c1'] }, error: null, status: 200 });
+    fake.respondWith({ data: { status: 'refused', refusal: refusalJson }, error: null, status: 200 });
+    const qc = newClient();
+    const { result } = await renderHook(() => useUndo(), { wrapper: wrapper(qc) });
+
+    result.current.undo({ ...vars, labelKey: 'planSaved', labelParams: { name: 'Coffee beans' } });
+
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
+    expect(recordFailedWrite.mock.calls[0]?.[0].attempted).toEqual(
+      expect.objectContaining({ stepId: 'step-1', labelKey: 'planSaved', name: 'Coffee beans' })
+    );
+  });
+
+  it('a refused undo with no label name records no name key', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith({ data: { status: 'refused', refusal: refusalJson }, error: null, status: 200 });
+    const qc = newClient();
+    const { result } = await renderHook(() => useUndo(), { wrapper: wrapper(qc) });
+
+    result.current.undo(vars);
+
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalled());
+    const attempted = recordFailedWrite.mock.calls[0]?.[0].attempted;
+    expect(attempted).toHaveProperty('labelKey', 'deletedMany');
+    expect(attempted).not.toHaveProperty('name');
+  });
+
   it('not-found raises the not-recorded info toast', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;
