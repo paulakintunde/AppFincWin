@@ -165,9 +165,7 @@ describe('owner rules as named properties (05.4-40)', () => {
         expect(run({ ...f, check: { ...f.check, purchaseDate: addDays(f.asOf, -back) } })).toEqual(today);
         expect(run({ ...f, check: { ...f.check, purchaseDate: bad } })).toEqual(today);
         // D-96: past day 90 the up-front money is held to day 90; inside one calendar month the usual months before it are the same.
-        // A sale is left out here: a sale arriving on or before the purchase date nets against day one even past day 90
-        // (replaces.ts, SO-01), the open question D96-SALE in the 05.4-40 SUMMARY.
-        if (f.check.replaces?.sale != null) return;
+        // D-137: a sale counts toward such a purchase only when it arrives by day 90, so sales are covered too.
         const d1 = addDays(f.asOf, ahead);
         const d2 = addDays(d1, 1);
         if (d2.slice(0, 7) !== d1.slice(0, 7)) return;

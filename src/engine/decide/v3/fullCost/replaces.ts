@@ -17,7 +17,7 @@
  *   its amount / every months, half up, never more than the usual everyday spending (of its category, when it names one). A debt
  *   the sale pays off: the minimum the usual month counted once (through its bill series, else set aside). Each series once.
  * - replacesEffect: all of it for one check (prepare.ts): the path flows, the sale part that lowers the day-one need (it arrives on or
- *   before the purchase date: SO-01), the later sale the ready date may count (SO-02), the debts after the sale, the yearly-bill
+ *   before the purchase date: SO-01; a purchase past the path reads the path's last day, D-137), the later sale the ready date may count (SO-02), the debts after the sale, the yearly-bill
  *   hold-backs that go, and the facts (sale_counted, debt_left_after_sale; D-106).
  */
 import { divideHalfUp } from '../../../money/rounding';
@@ -28,6 +28,7 @@ import { debtLinks, type DebtFlow } from '../debts';
 import type { DueDrops } from '../month/dueDrops';
 import { liveSeriesOf, seriesOccurrences } from '../month/series';
 import { monthlyEquivalentOf } from '../plan/cadence';
+import { dayOneDate } from './purchaseDate';
 import type { Fact, LocalDate, MonthModel, Replaces, Sale, StoppedCost, V3Debt, V3Series, YearMonth } from '../types';
 
 const EVERY: ReadonlySet<number> = new Set([1, 3, 12]);
@@ -235,7 +236,9 @@ export function replacesEffect(replaces: Replaces | null | undefined, ctx: Repla
   const counted = saleCounts(replaces.sale, ctx.asOf);
   if (stops.length === 0 && !counted) return null;
   const sale = saleFlows(replaces.sale, ctx);
-  const now = counted && (replaces.sale as Sale).arrives <= buyDate;
+  // D-137 (owner, 2026-11-05): a purchase dated past the path is held to its last day (D-96), so a sale counts toward it only when
+  // it arrives by that day; one arriving later helps only the ready date (saleLater), never the answer.
+  const now = counted && (replaces.sale as Sale).arrives <= dayOneDate(buyDate, ctx.asOf, ctx.days);
   const saleNow = now ? sale.toAccount : minorUnits(0);
   const arrives = counted ? (replaces.sale as Sale).arrives : null;
   // The account part arriving on or before the purchase date is netted against day one, so it is not on the path twice.
