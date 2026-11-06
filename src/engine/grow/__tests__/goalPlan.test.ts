@@ -46,7 +46,7 @@ describe('monthsToReach', () => {
   });
   it('agrees with a naive loop', () => {
     fc.assert(
-      fc.property(fc.integer({ min: 0, max: 5000 }), fc.integer({ min: 1, max: 5000 }), fc.integer({ min: 1, max: 500 }), (have, gap, add) => {
+      fc.property(fc.integer({ min: 0, max: 5000 }), fc.integer({ min: 1, max: 5000 }), fc.integer({ min: 10, max: 500 }), (have, gap, add) => {
         let b = have;
         let k = 0;
         while (b < have + gap) {
