@@ -67,6 +67,7 @@ export function buildSchedule(input: ScheduleInput): ScheduleOutcome {
   let firstDate: LocalDate;
   let principal: MinorUnits = financed;
   let pauseInterest = 0n;
+  let pausePeriods = 0;
   let due = true;
 
   if (firstPayment.kind === 'today') {
@@ -85,6 +86,7 @@ export function buildSchedule(input: ScheduleInput): ScheduleOutcome {
     }
     if (firstPayment.interestDuringPause && rate > 0n) {
       const k = periodsBefore(asOf, cadence, firstDate);
+      pausePeriods = k;
       const D = rateDenominator(base);
       let bal = BigInt(financed);
       for (let i = 0; i < k; i++) bal += divideHalfUp(bal * rate, D);
@@ -110,8 +112,36 @@ export function buildSchedule(input: ScheduleInput): ScheduleOutcome {
     fees,
     monthlyEquivalent: monthlyEquivalentOf(minorFromBigInt(BigInt(r.payment) + BigInt(fees.perPeriod), FN), cadence),
     source: 'computed',
+    exactInterestBp: exactInterestBp({ apr: rate, count, base, due, pausePeriods }),
   };
   return { ok: true, schedule };
+}
+
+/** D-138: a share in basis points above this reads as this (it is far past any line, and stays a safe integer). */
+export const EXACT_INTEREST_BP_CAP = 1_000_000_000;
+
+/**
+ * 05.4 D-138 (owner, 2026-11-05): the total interest a plan would cost with no rounding to the minor unit, as a share of the amount
+ * borrowed, in whole basis points rounded down. Integer maths only. With r = apr / D a period (D = rateDenominator(base), A = D + apr):
+ * - paid in arrears, total paid / amount = n x apr x A^n / (D x (A^n - D^n));
+ * - first payment on the day (annuity-due), n x apr x A^(n-1) / (A^n - D^n);
+ * - interest building up over k paused periods multiplies either by A^k / D^k.
+ * The share = total paid / amount - 1; it does not depend on the amount, so a cheaper price can never cross the 10% line alone (I9).
+ * 0 at 0%. Capped at EXACT_INTEREST_BP_CAP.
+ */
+export function exactInterestBp(p: { readonly apr: bigint; readonly count: number; readonly base: 52 | 12; readonly due: boolean; readonly pausePeriods: number }): number {
+  if (p.apr <= 0n) return 0;
+  const D = rateDenominator(p.base);
+  const A = D + p.apr;
+  const n = BigInt(p.count);
+  const k = BigInt(p.pausePeriods);
+  const An = A ** n;
+  const Dn = D ** n;
+  const num = n * p.apr * (p.due ? A ** (n - 1n) : An) * A ** k;
+  const den = (p.due ? 1n : D) * (An - Dn) * D ** k;
+  const bp = (num * 10_000n) / den - 10_000n;
+  if (bp <= 0n) return 0;
+  return bp > BigInt(EXACT_INTEREST_BP_CAP) ? EXACT_INTEREST_BP_CAP : Number(bp);
 }
 
 export function paymentDates(s: Schedule): readonly string[] {
