@@ -65,6 +65,7 @@ export const queryKeys = {
   // Own keys (not row-derived).
   decideChecks: (userId: string, householdId: string) => ['decide-checks', userId, householdId] as const,
   decideSettings: (userId: string) => ['decide-settings', userId] as const,
+  regionSubdivision: (userId: string) => ['region-subdivision', userId] as const, // 05.4-35 (D-19): profiles.region_subdivision
   debts: (householdId: string) => ['debts', householdId] as const,
   decideLinks: (userId: string, householdId: string) => ['decide-links', userId, householdId] as const,
   // Part 2 (05-12): depth reads.

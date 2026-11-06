@@ -40,6 +40,7 @@ const mockFetch = {
   goals: jest.fn(),
   goalLines: jest.fn(),
   balances: jest.fn(),
+  subdivision: jest.fn(),
 };
 jest.mock('@/db/transactions', () => ({ fetchTransactionsInRange: (...a: unknown[]) => mockFetch.range(...a) }));
 jest.mock('@/db/decideChecks', () => ({ fetchDecideChecks: (...a: unknown[]) => mockFetch.checks(...a) }));
@@ -58,6 +59,7 @@ jest.mock('@/db/savingsGoals', () => ({
   fetchGoalLines: (...a: unknown[]) => mockFetch.goalLines(...a),
 }));
 jest.mock('@/db/recordReads', () => ({ fetchAccountBalances: (...a: unknown[]) => mockFetch.balances(...a) }));
+jest.mock('@/db/profile', () => ({ fetchRegionSubdivision: (...a: unknown[]) => mockFetch.subdivision(...a) }));
 
 const mockCtx = {
   ready: true,
@@ -164,6 +166,7 @@ function resetMocks(): void {
   mockFetch.payment.mockResolvedValue([]);
   mockFetch.written.mockResolvedValue([]);
   mockFetch.balances.mockResolvedValue([]);
+  mockFetch.subdivision.mockResolvedValue(null);
 }
 beforeEach(resetMocks);
 
@@ -304,6 +307,18 @@ describe('useDecideSnapshot', () => {
     expect(res.snapshot.pots.map((p) => p.id)).toEqual(['g1']);
     expect(res.pots?.map((p) => p.id)).toEqual(['g1']);
     expect(res.snapshot.housingMonthly).toBe(100_000 + 150_000);
+  });
+
+  it('05.4-35 (D-19): the source carries the stored state or province, read for the signed-in user; none stored is null', async () => {
+    mockFetch.subdivision.mockResolvedValue('CA');
+    const { result } = await ready();
+    expect(result.current.source?.regionSubdivision).toBe('CA');
+    expect(mockFetch.subdivision).toHaveBeenCalledWith(expect.anything(), 'u1');
+  });
+
+  it('05.4-35: no stored state or province reads as null on the source', async () => {
+    const { result } = await ready();
+    expect(result.current.source?.regionSubdivision).toBeNull();
   });
 
   it('the market row follows the device region when no region is set', async () => {

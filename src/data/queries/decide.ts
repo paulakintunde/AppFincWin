@@ -15,6 +15,7 @@ import {
 } from '@/db/decideLinks';
 import { fetchDecideSettings, type DecideSettingsRow } from '@/db/decideSettings';
 import { classifyReadError, type DbErrorKind } from '@/db/errors';
+import { fetchRegionSubdivision } from '@/db/profile';
 import { fetchAccountBalances } from '@/db/recordReads';
 import type { TransactionRow } from '@/db/rows';
 import { fetchGoalLines, fetchSavingsGoals, type SavingsGoalRow } from '@/db/savingsGoals';
@@ -228,6 +229,7 @@ const SNAPSHOT_READ_NAMES = [
   'checks',
   'paymentLinks',
   'writtenRowLinks',
+  'regionSubdivision',
 ] as const;
 
 const countWrite = (): 1 => 1;
@@ -340,6 +342,13 @@ export function useDecideSnapshot(): DecideSnapshotState {
     queryFn: () => fetchWrittenRowLinks(supabase, hh as string),
     enabled: enabled && Boolean(userId),
   });
+  // 05.4-35 (D-19, D-142): the state or province for the tax lookup. A required read like the others, so an answer never flips from
+  // "no tax" to "tax" when it lands. null = not set.
+  const subdivisionQuery = useQuery({
+    queryKey: queryKeys.regionSubdivision(userId ?? ''),
+    queryFn: () => fetchRegionSubdivision(supabase, userId as string),
+    enabled: enabled && Boolean(userId),
+  });
 
   const reads = [
     history,
@@ -358,6 +367,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
     checksQuery,
     paymentQuery,
     writtenQuery,
+    subdivisionQuery,
   ];
   const missing = reads.some((q) => q.data === undefined);
   // 'error' only when a required read failed with nothing cached; a cached copy (offline) is 'ready'.
@@ -436,6 +446,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
       judgeOn,
       recordsAsOf,
       unsavedWrites,
+      regionSubdivision: subdivisionQuery.data ?? null,
     };
   }, [
     rc.ready,
@@ -462,6 +473,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
     waitingForChoice,
     recordsAsOf,
     unsavedWrites,
+    subdivisionQuery.data,
   ]);
 
   const sourceKey = [hh ?? '', rc.today, rc.homeCurrency, region ?? '', judgeOn ?? ''].join('|');
