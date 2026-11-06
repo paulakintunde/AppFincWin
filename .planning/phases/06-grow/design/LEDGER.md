@@ -94,3 +94,52 @@ Still to come:
 - $425 ÷ $3,200 = 13% of pay left over.
 - $1,858.00 unpaid.
 - The score is shown as 58 / 100, Steady. The score is an estimate; the facts above are computed.
+
+## Calculators (Grow, `screens/35-calculators.js`, maths in `calc.js`)
+
+Rules: integer cents. Rates are yearly and added monthly (rate ÷ 12). Each month's interest is rounded half up to the cent. Deposits go in at the end of each month. A "needed each month" amount is rounded **up** to the cent so the goal is actually reached (half-up would fall a few cents short). Goal maths counts deposits only, no interest (the Savings account has no rate in this ledger).
+
+**Goal calculator, Trip to Lisbon (GC02..GC02e, confirm GC03a..e).** $1,800 − $640 = $1,160 to go; deposits on the 16th from Nov 16, 2026.
+
+| Each month | Deposits | Reaches $1,800 | Into goals | Left in a usual month |
+|---|---|---|---|---|
+| $25 (GC02a) | 47 | Sep 2030 | $125 (under the $150 line) | $450 |
+| **$50 (GC02, plan now)** | 24 | **Oct 2028** | $150 | $425 |
+| $75 (GC02b) | 16 | Feb 2028 | $175 | $400 |
+| $100 (GC02c) | 12 | Oct 2027 | $200 | $375 |
+| $82.86 (GC02d, by Dec 2027) | 14 | Dec 2027 | $182.86 | $392.14 |
+| $58 (GC02e, by Jun 2028) | 20 | Jun 2028 | $158 | $417 |
+
+By Oct 2028 (24 deposits) takes $48.34 a month (G03d now says this; it said "about $49"). Laptop goal (G03f): $292 a month reaches $3,500 by **Oct 2027** (12 deposits), $150 a month by **Oct 2028** (24); G03f said Nov 2027 and Apr 2028.
+
+**Auto loan, extra payments (GC04..GC04c, confirm GC06..GC06b).** $8,420 at 6.9% (0.575% a month), $312 on the 15th, first payment Nov 15, 2026 (interest that month $48.42).
+
+| Extra | Each month | Payments | Paid off | Interest from now | Saved | Last payment | Debt share of pay |
+|---|---|---|---|---|---|---|---|
+| None (GC04c, plan now) | $312 | 30 | Apr 2029 | $756.36 | — | $128.36 | 10% |
+| +$25 (GC04a) | $337 | 28 | Feb 2029 | $695.99 | $60.37 | $16.99 | 11% |
+| **+$50 (GC04)** | $362 | 26 | Dec 2028 | $644.91 | $111.45 | $14.91 | 11% |
+| +$100 (GC04b) | $412 | 22 | Aug 2028 | $563.18 | $193.18 | $331.18 | 13% |
+| $1,000 once today (G07) | $312 | 26 | Dec 2028 | $582.04 | $174.32 | $202.04 | 10% |
+
+G07's "about $760 / $640 / $580" agree. G08 said "+$50 saves about $120"; it is $111.45, now "about $110". With one debt, Highest rate first and Smallest balance first give the same result. G07's toggle now reads "Smallest balance first".
+
+**Growth illustration, Investing (GC05a/GC05/GC05b).** Start $7,690.00, $200 at the end of each month, 120 months. Put in $31,690.00.
+
+| Rate a year | After 10 years | Growth | $200 a month alone, from $0 |
+|---|---|---|---|
+| 2% (GC05a) | $35,935.02 | $4,245.02 | $26,543.96 |
+| **4% (GC05)** | **$40,914.44** | $9,224.44 | $29,449.98 |
+| 6% (GC05b) | $46,766.98 | $15,076.98 | $32,775.89 |
+
+**Calculators page (GC01), typed numbers, no records:**
+- Loan calculator (GC10): $20,000 at 7.5% for 60 months → **$400.76 a month** (standard amortisation), last payment $400.67, total interest $4,045.51, total paid $24,045.51.
+- Savings calculator (GC20): target $5,000, saved $500, $250 a month from Dec 2026, 3% → **18 months, May 2028**; put in $5,000.00, interest $119.90, total $5,119.90 (also 18 months at 0%).
+- Compound growth (GC30): $0 start, $200 a month, 4%, 10 years → **$29,449.98**; put in $24,000.00, growth $5,449.98.
+- Debt payoff (GC40): Credit card $4,200 at 21.9% min $120; Personal loan $1,500 at 9.5% min $75; extra $100 → $295 a month in all, from Dec 2026. Extra and freed minimums go to one debt at a time.
+
+| Order | Debt-free | Total interest | First debt cleared |
+|---|---|---|---|
+| Highest rate first | 24 months, Nov 2028 | $1,148.68 | Personal loan, month 22 |
+| Smallest balance first | 24 months, Nov 2028 | $1,280.30 | Personal loan, month 9 |
+| Minimums only ($195) | 41 months, Apr 2030 | $2,184.34 | Personal loan, month 22 |

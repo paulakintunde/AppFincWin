@@ -44,6 +44,7 @@ Owner context (2026-11-06): Decide is switched on for testers now (separate task
 - **D-18:** Debt calculator: an extra payment control showing the new payoff date and interest saved (GRW-08/09).
 - **D-19:** Growth illustration for savings and investments that have a rate (GRW-11 APY): "$200 a month at 4% for 10 years", clearly marked as an illustration, not a forecast.
 - **D-20:** A calculator result can become the real plan with one tap ("Make this the plan"), after a confirm; nothing changes until then (life changes are user-led).
+- **D-21 (owner amendment 2026-11-06, replaces the Phase 06.1 deferral):** The separate Calculators page is built in this phase as its own plan group and ships in the same release (D-03). It holds four calculators usable without any records: loan, savings, compound growth, and debt payoff (both orders side by side plus minimums only). Each shows the result and a "How it was worked out" box, and links to the record-based calculators (goal, debt extra payment, growth illustration). Reached from a "Tools · Calculators" row on Grow home, Debts and Investments. Maths reuses `src/engine/payoff/`; display rule: amounts round half up to the cent, except a "needed each month" amount rounds up so the goal is never a few cents short. Design: prototype screens GC01..GC40 (`design/calculators-screens.js`, maths `design/calc.js`, figures in `design/LEDGER.md` § Calculators). No Phase 06.1 is inserted.
 
 ### Claude's Discretion
 - Empty states, first-run of Grow, and how Grow's setup steps moved from Decide (loans, saving, emergency, envelopes; ARC-16) are sequenced, following the prototype and the "ask, don't block" rule.
@@ -65,7 +66,8 @@ Owner context (2026-11-06): Decide is switched on for testers now (separate task
 
 ### Design (from the owner's clickable prototype, 2026-11-06)
 - Prototype: https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR (Grow tab, screens G01..G12 and sheets G03a..G12c)
-- Spec: `.planning/phases/06-grow/design/areas-spec.md` (Grow section; copied from the prototype's spec) and `.planning/phases/06-grow/design/LEDGER.md` (example numbers the screens use)
+- Spec: `.planning/phases/06-grow/design/areas-spec.md` (Grow section; copied from the prototype's spec) and `.planning/phases/06-grow/design/LEDGER.md` (example numbers the screens use, incl. § Calculators)
+- Screen sources: `design/grow-screens.js` (G01..G12 and sheets, as built in the prototype) and `design/calculators-screens.js` (GC01..GC40 and the calculator rows patched into G01, G03, G07, G08, G10); maths `design/calc.js`
 
 ### Prior phase decisions that apply
 - `.planning/phases/05.4-decide-safety-patch/` (on branch phase/05.4-decide-safety-patch until merged) — safety net protected by default, about 1 month of essential costs, can be switched off or resized
@@ -98,7 +100,7 @@ Owner context (2026-11-06): Decide is switched on for testers now (separate task
 ## Specific Ideas
 
 - Owner's own idea: locked savings goals whose saved money counts as protected as the goal grows (D-05).
-- Calculators the owner wants: goal, debt extra payment, growth illustration (inside Grow), plus a separate Calculators page (deferred to Phase 06.1).
+- Calculators the owner wants: goal, debt extra payment, growth illustration (inside Grow), plus a separate Calculators page (in this phase, D-21).
 - Example figures for screens come from the prototype ledger: safety net $1,300 of $2,300 (locked), Lisbon $640 of $1,800 at $50 a month, Laptop goal linked to a check, investing $7,690 with $200 a month, auto loan $8,420 at $312 a month (10% of pay).
 
 </specifics>
@@ -106,7 +108,7 @@ Owner context (2026-11-06): Decide is switched on for testers now (separate task
 <deferred>
 ## Deferred Ideas
 
-- **Separate Calculators page** (loan, compound interest, savings, usable without records): owner chose a new Phase 06.1 right after Grow, reusing Grow's calculators. Add it with /gsd-phase insert after Phase 6 is planned.
+- ~~Separate Calculators page (Phase 06.1)~~: moved into this phase by D-21 (owner, 2026-11-06).
 - Region-specific investment wrappers (401(k), ISA, TFSA, RRSP): with region support.
 - Live market prices: out of v1 (GRW-10).
 
