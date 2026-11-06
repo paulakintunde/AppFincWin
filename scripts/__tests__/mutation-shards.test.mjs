@@ -23,7 +23,8 @@ test('a big file is cut at safe lines into pieces of at most the piece size, cov
   mutants.push(m(40, 59)); // one wide mutant: lines 41..59 cannot be cut points
   const pieces = splitFile({ name: 'big.ts', lines: 100, mutants }, 30);
   assert.ok(pieces.length > 1);
-  for (const p of pieces) assert.ok(p.count <= 30 || /:(\d+)-\1$/.test(p.mutate), `piece ${p.mutate} has ${p.count}`);
+  // only the piece holding the uncuttable stretch (the wide mutant) may exceed the size
+  for (const p of pieces) assert.ok(p.count <= 30 || inRange(p.mutate, m(40, 59)), `piece ${p.mutate} has ${p.count}`);
   assert.equal(pieces.reduce((s, p) => s + p.count, 0), mutants.length);
   // contiguous 1-based ranges from 1 to the last line
   const ranges = pieces.map((p) => rangeOf(p.mutate));
