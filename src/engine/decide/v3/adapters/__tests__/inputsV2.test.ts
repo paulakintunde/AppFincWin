@@ -133,6 +133,17 @@ describe('parseCheckV2', () => {
     expect(parseCheckV2(JSON.parse(JSON.stringify(toStoredV2(c))))!.taxIncluded).toBe(true);
   });
 
+  it('05.4 D-39c / D-143: a plan keeps its home-loan mark; only true counts, and it round trips', () => {
+    const plan = (housing: unknown) => parseCheckV2({ v: 2, pay: { mode: 'plan', housing } })!.pay;
+    expect(plan(true)).toMatchObject({ mode: 'plan', housing: true });
+    for (const other of [false, null, undefined, 'yes', 1]) expect(plan(other)).not.toHaveProperty('housing');
+    // a pay-once check never carries it
+    expect(parseCheckV2({ v: 2, pay: { mode: 'once', housing: true } })!.pay).toEqual({ mode: 'once' });
+    const c = parseCheckV2({ v: 2, pay: { mode: 'plan', housing: true } })!;
+    expect(parseCheckV2(JSON.parse(JSON.stringify(toStoredV2(c))))!.pay).toMatchObject({ housing: true });
+    expect(readStoredCheck({ v: 2, pay: { mode: 'plan', housing: true } }).check.pay).toMatchObject({ housing: true });
+  });
+
   it('an unknown split rule resets the share to personal', () => {
     const c = parseCheckV2({ v: 2, share: { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: 'bogus' } } })!;
     expect(c.share).toEqual({ kind: 'personal' });
