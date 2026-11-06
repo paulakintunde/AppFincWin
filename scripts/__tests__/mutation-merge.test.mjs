@@ -35,7 +35,7 @@ test('parts of the same file (line ranges) join; nothing is counted twice; ids s
   assert.equal(merged.files['a.ts'].mutants.length, 1);
   const ids = Object.values(merged.files).flatMap((f) => f.mutants.map((x) => x.id));
   assert.equal(new Set(ids).size, ids.length);
-  assert.equal(score(merged).score, 75);
+  assert.equal(score(merged).score, 80); // 4 caught of 5
 });
 
 test('the same mutant in two parts is reported as a duplicate and kept once', () => {
