@@ -1063,7 +1063,7 @@ Plans:
   7. Compliance gate: CMP-F01, F02, F03, F07, F08 and F11 merged; purge job deployed after the Supabase preflight; the owner signs off every changed answer string.
   8. Theme M: the owner-approved right-answer table (about 70 cases: the first 50 plus the Variant C cases from Themes N and O) is committed as tests before the first Theme A engine change, and every case passes; a separate plain calculator agrees with the engine on 1,000 random cases per change and 20,000 nightly; at least 90% of Stryker's breaking changes in `src/engine/decide/` are caught; the round-8 reading-test boards are owner-approved; reading-test round 1, its fixes and the signed freeze with the v1.1 list are pending, before Grow (D-166).
   9. Theme N: the 05.3 engine and plumbing changes are on main with their tests; Maestro flows for Back, saving offline and Record as bought are green; Variant C's inputs (running-cost lines, closing %, cash and installments from one input, what it replaces, purchase date, save-for-it ready date) exist as engine types with tests; a release check fails if any account outside the tester list has `profiles.decide_v3` on; the shadow-run tools are built and migrations 000800-001000 are live; the first shadow run (owner accounts) is pending until after the merge (D-171). Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1: no account sees the 05.2 setup page or engine readout, and `profiles.decide_v3` is on only for accounts on the repo tester list (05.4 D-29, D-30), and stays off until 08.1; shadow runs use the separate server-only `profiles.decide_shadow` flag (05.4-30).
-**Plans:** 55/57 plans executed
+**Plans:** 55/55 plans executed (05.4-43 and 05.4-45 moved to a follow-up on main after the merge, D-182)
 
 Plans:
 **Wave 1**
@@ -1132,10 +1132,9 @@ Plans:
 - [x] 05.4-39-PLAN.md — Move the eight shared Decide UI parts to src/ui with their tests, harvest the MoneyInput change, rewrite imports, and document the "What gets written" pattern.
 - [x] 05.4-42-PLAN.md — Build the shadow report tools and push migrations 000800-001000 (Push 2); the first shadow run on the owner accounts moves to after the merge (D-160, D-171).
 - [x] 05.4-44-PLAN.md — Theme M/O design side for 05.4: VC-01 check, owner-approved round-8 boards (canvas 1793940119-6331, kit 1793940300-8c9d) and the freeze record marked pending reading test; the reading test, freeze and v1.1 list happen before Grow (D-166).
-**Wave 24** *(blocked on Wave 23 completion)*
-- [ ] 05.4-43-PLAN.md — Close the Theme M gates: raise the mutation score to 90% and lock it, prove the pending and knownRed lists are empty, and wire the nightly property runs.
-**Wave 25** *(blocked on Wave 24 completion)*
-- [ ] 05.4-45-PLAN.md — Collect the evidence that the nightly gates hold: three consecutive green nightly runs (20,000-case cross-check, full Stryker at break 90, 2,000-run properties) on main.
+**Follow-up on main after the merge** *(owner 2026-11-06, D-182: merge 05.4 now; 43 and 45 run on main after the merge)*
+- [ ] 05.4-43-PLAN.md — Close the Theme M gates: raise the mutation score to 90% and lock it, prove the pending and knownRed lists are empty, and wire the nightly property runs. Moved out of 05.4 (D-182); the workflows built so far merge with 05.4, the 90% bar and the empty-list proof are done on main.
+- [ ] 05.4-45-PLAN.md — Collect the evidence that the nightly gates hold: three consecutive green nightly runs (20,000-case cross-check, full Stryker at break 90, 2,000-run properties) on main. Moved out of 05.4 (D-182); runs on main after 05.4-43.
 **Gap closure: D-68 and D-69** *(after 05.4-52, one after another; 05.4-19 Task 2 waits for 05.4-56)*
 - [x] 05.4-53-PLAN.md — D-68 in the engine: a short plan that money on hand pays in full inside the 90 days is judged by cash like a one-off, with one caution line; I-D68 property and I44 named cause.
 - [x] 05.4-54-PLAN.md — D-68 in the plain calculator and the right-answer table: hand-written drafts BR-17..BR-23, the approved-case scan, the narrowed FIN-06/FIN-07 skip.
@@ -1160,6 +1159,7 @@ Plans:
 
 Plans:
 - [ ] TBD (run /gsd-plan-phase 05.5 to break down)
+- Carried in from 05.4 (D-182, owner 2026-11-06): 05.4-43 (mutation score to 90% and locked, pending and knownRed lists proved empty) and 05.4-45 (three consecutive green nightly runs) run on main after the 05.4 merge, before 05.5's own plans close. Their plan files stay in the 05.4 phase folder.
 
 ### Phase 6: Grow
 **Goal**: A user can track savings goals, investments and debt payoff against their real numbers.
@@ -1342,7 +1342,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
-| 05.4 Decide safety patch | 55/57 | In Progress|  |
+| 05.4 Decide safety patch | 55/55 | Ready to merge (43 and 45 follow up on main, D-182) |  |
 | 05.5 One shared money model | 0/TBD | Not started | - |
 | 6. Grow | 0/TBD | Not started | - |
 | 7. Insights | 0/TBD | Not started | - |

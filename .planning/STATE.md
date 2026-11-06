@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 05.4 executing (46 plans, 25 waves)
-last_updated: "2026-11-02T07:39:19.802Z"
-last_activity: 2026-11-02 -- Phase 05.4 execution started
+stopped_at: Phase 05.4 ready to merge (PR #94); 05.4-43 and 05.4-45 follow up on main (D-182)
+last_updated: "2026-11-06T14:00:00.000Z"
+last_activity: 2026-11-06 -- owner D-182: merge 05.4 now; 05.4-43 and 05.4-45 run on main after the merge
 progress:
   total_phases: 28
   completed_phases: 11
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 
 ## Current Position
 
-Phase: 05.4 (Decide safety patch) — EXECUTING
+Phase: 05.4 (Decide safety patch) — READY TO MERGE (PR #94, branch phase/05.4-decide-safety-patch). 55/55 plans in the phase; owner 2026-11-06 (D-182): merge now, and 05.4-43 (mutation score to 90% and locked, pending and knownRed lists proved empty) and 05.4-45 (three consecutive green nightly runs) run on main after the merge. After the merge Decide is turned on for all testers with the v3 engine (separate task).
 Phase: 05.3 (decide-screens-v3) — STOPPED 2026-11-01 (fix plan Theme N, BO-01). Branch phase/05.3-decide-screens-v3 is pushed and parked (518 commits ahead of main), never merged. Its engine and plumbing changes are harvested in 05.4 (BO-02, BO-03); the screens are not reused (BO-09).
 Phase: 05.2 (decide-data-and-setup) — COMPLETE 2026-10-29, 75/75 plans. VERIFICATION passed; code review CR/WR fixed in 69-75. Owner signed off after the round-3 Pixel re-check and TalkBack pass (05.2-WALKTHROUGH-FINDINGS.md). Migrations through 20261028001400 in production. N-05 moved to 05.3 D-15. DECIDE_V3 and DECIDE_OPEN stay false. Merged to main as PR #86 (2026-10-29). in C:/dev/fincwin-p5.
 Phase: 05.1 (decide-engine-v3) — COMPLETE 2026-10-27
@@ -36,8 +36,8 @@ Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closur
 Phase 02.1 (PDF statement import): COMPLETE 2026-10-11 — 17/17 plans (PR #60 main 22f8f57, walkthrough fixes PR #62 main ef8bbfa), production at 20261011000300 with read-pdf-statement and purge-statement-uploads deployed, preview APK d7f35c19; 02.1-VERIFICATION.md 5/5 criteria, IMP-01..IMP-05 satisfied, status human_needed (1 item in 02.1-HUMAN-UAT.md: iOS walkthrough; privacy paragraph published 2026-10-11). Phase 02.2 (record-polish): COMPLETE 2026-10-10 — 35/35 plans, 02.2-VERIFICATION.md 8/8 criteria and 20/20 requirements (ACT-06..ACT-18, REC-19..REC-25), status human_needed (1 item in 02.2-HUMAN-UAT.md: iOS walkthrough, blocked on Apple enrolment). Phase 02.3 (record follow-ups): planned 2026-10-12 — 20 plans in 5 waves, checker passed (1 revision); next /gsd-execute-phase 02.3. Phase 03 (shell): planned (16 plans); check against 02.2 before executing (see Blockers). Phase 04 (decide-engine): replanned 2026-10-15 against D-23..D-58 (engine depth expansion D-41..D-58 plus the user's consistency amendments to D-41/D-42/D-24-D-44) — 22 plans in 8 waves (04-01..04-04 unchanged, 04-05..04-13 amended, new 04-14..04-22), research addendum for D-58 thresholds and D-57 reference tables appended to 04-RESEARCH.md, plan checker passed (3 iterations, 0 blockers), decision coverage 35/35 plus D-41..D-58 verified by script; judgment calls in 04-REPLAN-NOTES.md ; user decisions D-59 (cash_dip only when the purchase lowers the 90-day low; cash_tight_before_payday fact) and D-60 (confirmed weekly/fortnightly pay smoothed for CV and income averages) folded in, re-check passed (3 iterations, 0 blockers); open for user review: D-60 partial-month reading and cash_path margin definition (04-REPLAN-NOTES); EXECUTED 2026-10-16 — 22/22 plans on branch phase/04-decide-engine; 04-VERIFICATION.md 6/6 success criteria, DEC-01..DEC-37 complete; code review 14 findings (4 high, 5 medium, 5 low) all fixed with regression tests (D-64 level payment rounds up); engine/decide and engine/payoff at 100% coverage; golden parity holds.
 Phase 05 (decide-ui): planned 2026-10-15, revised 2026-10-16 for the planning-review decisions D-38..D-44, DCU-12..DCU-24 and the final Phase 4 API (D-61..D-63) — 53 plans in 10 waves, plan checker passed (3 iterations, final 0 blockers, 0 warnings); originally against 05-CONTEXT D-01..D-37 (incl. the depth expansion D-24..D-37 and the amended D-24) and the 22-plan Phase 4 `decide()` API; research with a depth addendum, pattern map, VALIDATION.md (nyquist_compliant); plan checker passed after the scope expansion (3 iterations, final 0 blockers; earlier 29-plan set had 2 iterations), decision coverage D-01..D-37 and DCU-01..DCU-11, ANL-06 verified; defaults and items for user review in 05-PLANNING-NOTES.md (OQ1/OQ3 debts table and full-month rule, OQ-A1 FX stamps, OQ-A2/A3/A9 UI-SPEC touch-ups, card minimum gap R4-W2, A19/A21). Execution unblocked once the Phase 4 PR merges; migrations ship via the human-gated `npm run supabase:db:push` in 05-25.
 Walkthrough (2026-10-10): Phase 02.2 Android device walkthrough Parts A–D approved, with exceptions fixed by quick task 261010-i7u (calendar wrap/highlight/scroll, swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check). Part E (sign-out/sign-in) is pending and needs an Expo restart. The sign-in account chooser was requested (ACC-14, Phase 02.3 with REC-26 and REC-27).
-Status: Executing Phase 05.4
-Last activity: 2026-11-02 -- Phase 05.4 execution started
+Status: Phase 05.4 ready to merge; 05.4-43 and 05.4-45 follow up on main (D-182)
+Last activity: 2026-11-06 -- owner D-182: merge 05.4 now; 43 and 45 run on main after the merge
 
 ## Performance Metrics
 
@@ -99,6 +99,7 @@ Last activity: 2026-11-02 -- Phase 05.4 execution started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [05.4 merge, 2026-11-06, D-182]: Owner 2026-11-06: merge 05.4 now; 43 and 45 run on main after the merge. 05.4-43 (raise the mutation score to 90% and lock it, prove pending/knownRed empty) and 05.4-45 (three consecutive green nightly runs) are a follow-up on main; after the merge Decide is turned on for all testers with the v3 engine (separate task).
 - [Decide visibility, 2026-11-02]: Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (fix plan BO-08). From 08.1 only named testers see it, behind the per-account switch and the BO-06 release check; the public gets it after 08.2. The closed beta (question 11) is retired. Until then the `profiles.decide_v3` flag is on only for accounts on the repo tester list (account IDs: the owner's accounts plus each tester the owner names; 05.4 D-29, D-30), and stays off until 08.1; shadow runs use the separate server-only `profiles.decide_shadow` flag (05.4-30, BO-08). 05.4 closes today's gap where a flagged account can open the 05.2 setup page and engine readout. Reading-test round 1 is about 5 people on Variant C (owner, 2026-11-02).
 - [Decide design, 2026-11-01]: the owner chose Variant C ("Decide redesign: three variants" canvas, 40 screens) as the Decide design; Variants A and B are retired and the A+B blend is dropped. Reading-test round 1 runs on Variant C alone (about 5 people) to find what confuses people; findings are fixed, then the screens are frozen (QA-01). Grow stays out of the Decide reading test. Quick task 261101-jee.
 - Roadmap: Supabase provisioning, Apple/Google auth and household-of-one RLS moved into Phase 0 (Foundation) rather than Household — every phase from Record onward is hard-blocked on an authenticated, RLS-protected Supabase connection since local-first was rejected
@@ -217,6 +218,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-02T04:00:00.000Z
-Stopped at: Phase 05.4 context gathered; next /gsd-plan-phase 05.4
+Last session: 2026-11-06T14:00:00.000Z
+Stopped at: Phase 05.4 ready to merge (PR #94); next: merge, then 05.4-43 and 05.4-45 on main (D-182)
 Resume file: .planning/phases/05.4-decide-safety-patch/05.4-CONTEXT.md
