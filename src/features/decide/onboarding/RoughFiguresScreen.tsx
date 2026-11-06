@@ -16,7 +16,7 @@ import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
-import { MoneyInput } from '../ui/MoneyInput';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
 import { stampSettingsPatch } from '../home/settingsPatch';
 

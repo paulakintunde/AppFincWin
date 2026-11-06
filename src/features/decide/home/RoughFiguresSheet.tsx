@@ -15,7 +15,7 @@ import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
-import { MoneyInput } from '../ui/MoneyInput';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { stampSettingsPatch } from './settingsPatch';
 
 export interface RoughFiguresSheetProps {

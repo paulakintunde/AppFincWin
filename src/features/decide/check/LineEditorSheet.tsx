@@ -16,8 +16,8 @@ import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
 import { useIsDirty } from '@/ui/useIsDirty';
-import { MoneyInput } from '../ui/MoneyInput';
-import { SegmentedToggle } from '../ui/SegmentedToggle';
+import { MoneyInput } from '@/ui/MoneyInput';
+import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { useInfoSheet } from '../ui/useInfoSheet';
 import { Box, Label } from './steps/stepUi';
 

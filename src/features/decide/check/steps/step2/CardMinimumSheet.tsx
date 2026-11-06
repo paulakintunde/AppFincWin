@@ -19,7 +19,7 @@ import { useIsDirty } from '@/ui/useIsDirty';
 import { cardTermsSummary, parseCardTermsForm } from '../../../copy/cardTermsCopy';
 import type { CardTermsValues } from '../../../copy/cardTermsCopy';
 import type { CardTermsView } from '../../../snapshot/types';
-import { MoneyInput } from '../../../ui/MoneyInput';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { RateInput } from '../../../ui/RateInput';
 import { useInfoSheet } from '../../../ui/useInfoSheet';
 import { InfoTitle } from '../../InfoTitle';

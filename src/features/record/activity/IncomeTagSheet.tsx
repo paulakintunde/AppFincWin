@@ -11,7 +11,7 @@ import { money } from '@/engine/money';
 import { queryKeys } from '@/data/keys';
 import { useTagIncome } from '@/data/mutations/incomeTags';
 import { earlierUntagged, payerKeyOf } from '@/data/mutations/incomeTagModel';
-import { SegmentedToggle } from '@/features/decide/ui/SegmentedToggle';
+import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { supabase } from '@/services/supabase';

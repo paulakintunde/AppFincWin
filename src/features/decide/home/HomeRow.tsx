@@ -12,7 +12,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { hapticSelection } from '@/ui/haptics';
-import { useShouldStack } from '../ui/textFit';
+import { useShouldStack } from '@/ui/textFit';
 
 export interface HomeRowProps {
   label: string;

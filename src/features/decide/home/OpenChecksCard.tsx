@@ -26,7 +26,7 @@ import { computeChip } from '../snapshot/computeCheck';
 import { selectOtherChecks } from '../snapshot/stacking';
 import type { ChipComputation, SnapshotResult } from '../snapshot/types';
 import { DeletableRow } from '../ui/DeletableRow';
-import { StateChip, type StateChipTone } from '../ui/StateChip';
+import { StateChip, type StateChipTone } from '@/ui/StateChip';
 import { checkHref, openNewCheck, type CheckKind } from './checkHref';
 
 export interface OpenChecksCardProps {

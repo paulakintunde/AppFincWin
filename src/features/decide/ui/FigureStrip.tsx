@@ -6,7 +6,7 @@ import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
-import { useShouldStack } from './textFit';
+import { useShouldStack } from '@/ui/textFit';
 
 const FIGURE_MIN_FONT_SCALE = 0.8; // D-76 rule N
 const FIGURE_MAX_SCALE = 1.3;

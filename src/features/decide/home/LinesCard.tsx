@@ -19,7 +19,7 @@ import type { SnapshotResult } from '../snapshot/types';
 import { FoldRow } from '../ui/FoldRow';
 import { InfoLabel } from '../ui/InfoLabel';
 import { useInfoSheet } from '../ui/useInfoSheet';
-import { useShouldStack } from '../ui/textFit';
+import { useShouldStack } from '@/ui/textFit';
 import { LIMIT_INFO_KEY, LimitEditorSheet, type LimitKey } from './LimitEditorSheet';
 
 export interface LinesCardProps {

@@ -15,8 +15,8 @@ import { useDecideV3 } from '@/data/queries/decideV3';
 import { useDecideSettings } from '@/data/queries/decide';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { everydayByMonth } from '@/engine/decide/v3';
-import { SegmentedToggle } from '@/features/decide/ui/SegmentedToggle';
-import { MoneyInput } from '@/features/decide/ui/MoneyInput';
+import { SegmentedToggle } from '@/ui/SegmentedToggle';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { Intro, Why, useCopy, useNoWrapMoney, useReportReady } from '@/features/income/steps/shared';
 import type { SetupStepBodyProps, SetupStepHandle } from './types';
 

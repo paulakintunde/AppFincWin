@@ -24,7 +24,7 @@ import { Box, Label, type Money } from '../check/steps/stepUi';
 import { monthsText } from '../copy/depthVerdictCopy';
 import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
 import type { SnapshotResult } from '../snapshot/types';
-import { MoneyInput } from '../ui/MoneyInput';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { useInfoSheet } from '../ui/useInfoSheet';
 import type { InfoKey } from '../copy/infoTerms';
 import { LoansCountedAsHousing } from './DebtHousingSwitch';

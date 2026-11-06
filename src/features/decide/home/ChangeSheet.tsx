@@ -22,8 +22,8 @@ import { ToggleRow } from '@/ui/ToggleRow';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { Box, Label, Meta } from '../check/steps/stepUi';
 import { MAX_INPUT_MINOR } from '../snapshot/checkInputs';
-import { MoneyInput } from '../ui/MoneyInput';
-import { SegmentedToggle } from '../ui/SegmentedToggle';
+import { MoneyInput } from '@/ui/MoneyInput';
+import { SegmentedToggle } from '@/ui/SegmentedToggle';
 
 export interface ChangeSheetProps {
   visible: boolean;

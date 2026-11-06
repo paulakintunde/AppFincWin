@@ -20,7 +20,7 @@ import { useConfirmRegularCandidate } from '@/data/mutations/seriesAttributes';
 import { useAddDismissal, useRemoveDismissal } from '@/data/mutations/dismissals';
 import type { NewRecurringSeries } from '@/db/recurringSeries';
 import { useAccounts } from '@/data/queries/accounts';
-import { useShouldStack } from '@/features/decide/ui/textFit';
+import { useShouldStack } from '@/ui/textFit';
 import { Intro, Meta, PausedSeriesList, SeriesStatusLink, TextButton, Why, useCopy, useNoWrapMoney, useReportReady, type Copy } from '@/features/income/steps/shared';
 import type { SetupStepBodyProps, SetupStepHandle } from './types';
 import { setupSheetActions, type RegularPreset } from './setupSheetHost';

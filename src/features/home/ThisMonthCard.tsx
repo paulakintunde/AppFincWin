@@ -19,7 +19,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import type { MonthDataState } from '@/data/queries/monthDataState';
 import { isMonthEmpty, paidOutText } from '@/features/record/activity/monthFigureInputs';
-import { useShouldStack } from '@/features/decide/ui/textFit';
+import { useShouldStack } from '@/ui/textFit';
 import { MonthChips } from './MonthChips';
 
 // UI-SPEC Spacing "prototype-literal exceptions (Home)": the 12 / 14 / 16 px gaps between the

@@ -25,10 +25,10 @@ import { engineCtxOf, isValidAprText, isValidProjectionRateText, toEngineCheck }
 import { LUMP_HORIZON_DEFAULT, expectedReturnProjection } from '../../../snapshot/expectedReturn';
 import type { CardNoteAnswer, CheckInputs, MethodKey } from '../../../snapshot/types';
 import { FigureStrip } from '../../../ui/FigureStrip';
-import { CustomValueChips, CustomValueField } from '../../../ui/CustomValueChips';
-import { MoneyInput } from '../../../ui/MoneyInput';
+import { CustomValueChips, CustomValueField } from '@/ui/CustomValueChips';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { RateInput } from '../../../ui/RateInput';
-import { SegmentedToggle } from '../../../ui/SegmentedToggle';
+import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { SliderWithField } from '../../../ui/SliderWithField';
 import { useInfoSheet } from '../../../ui/useInfoSheet';
 import type { Step2Props } from './types';
