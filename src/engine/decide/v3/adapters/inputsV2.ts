@@ -90,6 +90,8 @@ function payOf(x: unknown): PayV2 {
     apr: percentOf(x.apr, MAX_PERCENT_TEXT), fees: { setup: money(f.setup), perPeriod: money(f.perPeriod), end: money(f.end) },
     deposit: money(x.deposit), tradeIn: money(x.tradeIn), quotedPayment: minorOf(x.quotedPayment),
     firstPayment: firstPaymentOf(x.firstPayment), deferredInterestTerm: x.deferredInterestTerm === true,
+    // 05.4 D-39c / D-143: a home loan; only true is kept (absent = not a home loan, so an unmarked plan reads exactly as before)
+    ...(x.housing === true ? { housing: true } : {}),
   };
 }
 
