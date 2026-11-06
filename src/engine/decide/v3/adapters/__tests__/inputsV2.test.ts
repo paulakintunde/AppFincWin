@@ -52,6 +52,7 @@ const checkArb: fc.Arbitrary<CheckV2> = fc.record({
   foreign: fc.option(fc.constant({ currency: 'EUR' as CurrencyCode, atTodaysRate: true as const }), { nil: null }),
   layerAnswers: fc.constant({ L2: 'yes', 'L3.n': 3 } as Record<string, unknown>),
   volatileCover: fc.constantFrom(true, false, null),
+  taxIncluded: fc.constantFrom(true, false, null), // 05.4 FIN-27
 });
 
 describe('parseCheckV2', () => {
@@ -121,6 +122,26 @@ describe('parseCheckV2', () => {
     expect(parseCheckV2({ v: 2, volatileCover: 'yes' })!.volatileCover).toBeNull();
     const c = parseCheckV2({ v: 2, volatileCover: false })!;
     expect(parseCheckV2(JSON.parse(JSON.stringify(toStoredV2(c))))!.volatileCover).toBe(false);
+  });
+
+  it('05.4 FIN-27 taxIncluded (the "Price already includes tax" switch) is true, false or null and round trips', () => {
+    expect(parseCheckV2({ v: 2, taxIncluded: true })!.taxIncluded).toBe(true);
+    expect(parseCheckV2({ v: 2, taxIncluded: false })!.taxIncluded).toBe(false);
+    expect(parseCheckV2({ v: 2 })!.taxIncluded).toBeNull();
+    expect(parseCheckV2({ v: 2, taxIncluded: 'on' })!.taxIncluded).toBeNull();
+    const c = parseCheckV2({ v: 2, taxIncluded: true })!;
+    expect(parseCheckV2(JSON.parse(JSON.stringify(toStoredV2(c))))!.taxIncluded).toBe(true);
+  });
+
+  it('05.4 D-39c / D-143: a plan keeps its home-loan mark; only true counts, and it round trips', () => {
+    const plan = (housing: unknown) => parseCheckV2({ v: 2, pay: { mode: 'plan', housing } })!.pay;
+    expect(plan(true)).toMatchObject({ mode: 'plan', housing: true });
+    for (const other of [false, null, undefined, 'yes', 1]) expect(plan(other)).not.toHaveProperty('housing');
+    // a pay-once check never carries it
+    expect(parseCheckV2({ v: 2, pay: { mode: 'once', housing: true } })!.pay).toEqual({ mode: 'once' });
+    const c = parseCheckV2({ v: 2, pay: { mode: 'plan', housing: true } })!;
+    expect(parseCheckV2(JSON.parse(JSON.stringify(toStoredV2(c))))!.pay).toMatchObject({ housing: true });
+    expect(readStoredCheck({ v: 2, pay: { mode: 'plan', housing: true } }).check.pay).toMatchObject({ housing: true });
   });
 
   it('an unknown split rule resets the share to personal', () => {

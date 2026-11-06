@@ -31,6 +31,8 @@ export interface Profile {
   analytics_consent_at: string | null;
   /** 05.2 D-02: server-written rollout flag; optional so older cached rows still type-check. */
   decide_v3?: boolean;
+  /** 05.4 D-09: server-written shadow-run consent (05.4-36 reads it); optional so older cached rows still type-check. */
+  decide_shadow?: boolean;
 }
 
 export interface UseProfileResult {
@@ -53,7 +55,7 @@ export interface UseProfileResult {
   patchCached(patch: Partial<Profile>): void;
 }
 
-const PROFILE_COLUMNS = 'id, full_name, email, accent, font_pairing, analytics_consent, analytics_consent_at, decide_v3';
+const PROFILE_COLUMNS = 'id, full_name, email, accent, font_pairing, analytics_consent, analytics_consent_at, decide_v3, decide_shadow';
 
 /** Anything the cache holds with an older timestamp was restored from a previous app session. */
 const SESSION_STARTED_AT = Date.now();

@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import type { Assessment } from '@/engine/decide';
-import * as textFit from '../../ui/textFit';
+import * as textFit from '@/ui/textFit';
 import { LedgersBody } from '../sections/LedgersSection';
 import { MonthBody } from '../sections/MonthSection';
 import { AssumptionsBody } from '../sections/AssumptionsSection';

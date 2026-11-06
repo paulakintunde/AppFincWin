@@ -4,6 +4,7 @@
  * D-48 branches are exercised. A pair where either side asks (needs_input) is skipped with fc.pre: asking is a request for
  * a figure, not a verdict.
  */
+import { restsOn } from './helpers/restsOn';
 import fc from 'fast-check';
 import { evaluate } from '../evaluate';
 import type { CheckV2, ReadyBy, Result, V3Inputs } from '../types';
@@ -35,7 +36,6 @@ function withFund(inputs: V3Inputs, amount: number): V3Inputs {
   };
 }
 
-const LEVELS = { rough: 0, fair: 1, firm: 2 } as const;
 
 describe('variable-income persons: fixed-seed properties', () => {
   it('I9 a cheaper price is never worse', () => {
@@ -55,8 +55,9 @@ describe('variable-income persons: fixed-seed properties', () => {
     fc.assert(
       fc.property(inputsArb, shapeArb, priceArb, fc.integer({ min: 1, max: 99 }), (inputs, shape, price, pct) => {
         const cheaper = Math.max(100, Math.floor((price * pct) / 100));
-        const hi = run(inputs, checkOf(price, shape));
-        const lo = run(inputs, checkOf(cheaper, shape));
+        // 05.4 FIN-08: a low month savings cannot carry asks first; the answer no makes it Not yet, so both sides answer no here.
+        const hi = run(inputs, { ...checkOf(price, shape), volatileCover: false });
+        const lo = run(inputs, { ...checkOf(cheaper, shape), volatileCover: false });
         fc.pre(hi.code === 'not_yet' && lo.code === 'not_yet');
         expect(readyKey(hi.readyBy) >= readyKey(lo.readyBy)).toBe(true);
       }),
@@ -64,17 +65,21 @@ describe('variable-income persons: fixed-seed properties', () => {
     );
   });
 
-  it('I31 with the emergency flag off, a fund of $0 or $1M changes nothing but its own line', () => {
+  // 05.4 D-35 / D-41 / D-49 retire the 05.1 lock: the fund is the money saved in the safety net, so more of it may only help.
+  it('I31 a fund of $0 or $1M never moves the notices or confidence and never worsens the answer', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, (inputs, check) => {
-        const off: CheckV2 = { ...check, emergency: false };
-        const zero = run(withFund(inputs, 0), off);
-        const million = run(withFund(inputs, 100_000_000), off);
-        const norm = (r: Result): Result => ({
-          ...r,
-          facts: r.facts.map((f) => (f.code === 'emergency_untouched' ? { ...f, values: { amount: 0 } } : f)),
-        });
-        expect(norm(million)).toEqual(norm(zero));
+        const zero = run(withFund(inputs, 0), check);
+        const million = run(withFund(inputs, 100_000_000), check);
+        // 05.4 FIN-08 (savings first): money above the net's size can carry the low months, so the cover question, its
+        // income_volatile notice and the user_said_cover reason of a yes come in only without it. Everything else is unchanged.
+        const notices = (r: Result) => r.notices.filter((n) => n.code !== 'income_volatile');
+        const reasons = (r: Result) => r.confidence.reasons.filter((x) => x.code !== 'user_said_cover');
+        expect(notices(million)).toEqual(notices(zero));
+        expect(reasons(million)).toEqual(reasons(zero));
+        if (zero.notices.length === notices(zero).length && million.notices.length === notices(million).length) expect(million.confidence).toEqual(zero.confidence);
+        fc.pre(zero.code !== 'needs_input' && million.code !== 'needs_input');
+        expect(codeRank(million.code)).toBeGreaterThanOrEqual(codeRank(zero.code));
         expect(million.code).not.toBe('emergency_use');
       }),
       { numRuns: 100, seed: 0x054a }
@@ -89,7 +94,7 @@ describe('variable-income persons: fixed-seed properties', () => {
         const a = run(thin, check);
         const b = run(treatedFull, check);
         expect(codeRank(a.code)).toBeLessThanOrEqual(codeRank(b.code));
-        expect(LEVELS[a.confidence.level]).toBeLessThanOrEqual(LEVELS[b.confidence.level]);
+        expect(restsOn(a.confidence)).toBeLessThanOrEqual(restsOn(b.confidence));
       }),
       { numRuns: 100, seed: 0x054b }
     );

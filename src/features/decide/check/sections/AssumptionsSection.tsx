@@ -13,7 +13,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { DetailsToggle } from '../../ui/DetailsToggle';
-import { LabelValueRow } from '../../ui/LabelValueRow';
+import { LabelValueRow } from '@/ui/LabelValueRow';
 import { useInfoSheet } from '../../ui/useInfoSheet';
 import { InfoTitle } from '../InfoTitle';
 import { STEADINESS_LABEL } from '../../copy/codeMaps';

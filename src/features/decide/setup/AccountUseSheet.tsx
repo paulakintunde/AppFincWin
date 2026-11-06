@@ -26,9 +26,9 @@ import { accountUseOfRow } from '@/data/mutations/accountUseModel';
 import { showToast } from '@/state/undoToast';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
-import { CheckRow } from '@/features/decide/ui/CheckRow';
-import { MoneyInput } from '@/features/decide/ui/MoneyInput';
-import { WarningCard } from '@/features/decide/ui/WarningCard';
+import { CheckRow } from '@/ui/CheckRow';
+import { MoneyInput } from '@/ui/MoneyInput';
+import { WarningCard } from '@/ui/WarningCard';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { useNoWrapMoney } from '@/features/income/steps/shared';
 

@@ -5,7 +5,7 @@
 // analytics never disables crash reports and consenting never identifies them.
 import PostHog from 'posthog-react-native';
 import { getEnv } from '@/config/env';
-import type { EventName, EventProps } from './catalogue';
+import { isDecideEvent, type EventName, type EventProps } from './catalogue';
 
 // T-00-13-03: identity is a Supabase UUID (v1-8) only, never a free-form string.
 const SUPABASE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -51,17 +51,23 @@ export function createAnalytics(factory: PostHogFactory = defaultFactory, env = 
     };
   }
 
-  const client = factory(posthogKey, {
+  const base = {
     host: posthogHost,
     defaultOptIn: false,
     enableSessionReplay: false,
     captureAppLifecycleEvents: false,
     flushAt: 20,
-  });
+  };
+  const client = factory(posthogKey, base);
+  // 05.4 CMP-F03 / APP-19 (05.4-38, D-124): Decide events go through this second client. It is never identified, keeps its
+  // random id in memory only (a new one each app open, never on disk, so it cannot be tied to the identified client's id),
+  // makes no person profile and loads no feature flags. Consent gates it exactly like the main client.
+  const anon = factory(posthogKey, { ...base, persistence: 'memory', personProfiles: 'never', preloadFeatureFlags: false });
 
   // T-00-13-01: belt-and-braces — opt out immediately after construction on top of
   // defaultOptIn:false, so a misbehaving SDK default still cannot send before consent.
   void client.optOut();
+  void anon.optOut();
 
   let enabled = false;
 
@@ -73,20 +79,22 @@ export function createAnalytics(factory: PostHogFactory = defaultFactory, env = 
         );
       }
       void client.optIn();
+      void anon.optIn(); // D-124: never identified
       // ANL-01: identify by UUID only — no person properties (name/email/etc).
       client.identify(userId);
       enabled = true;
     },
     async disable() {
       enabled = false;
-      await client.optOut();
+      await Promise.all([client.optOut(), anon.optOut()]);
       client.reset();
+      anon.reset(); // D-124: a fresh random id after sign-out too
     },
     track<E extends EventName>(event: E, properties: EventProps<E>) {
       // Second gate in front of capture, independent of the SDK's own opt-in state, so a
       // consent bug in the SDK can never override this service's own enabled flag.
       if (!enabled) return;
-      client.capture(event, properties);
+      (isDecideEvent(event) ? anon : client).capture(event, properties);
     },
     isEnabled() {
       return enabled;

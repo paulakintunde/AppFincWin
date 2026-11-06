@@ -46,7 +46,11 @@ describe('v3 constants.ts citations', () => {
       fits_month: 'fits',
       fits_unspent: 'fits',
       monthly_short: 'adjust',
+      fits_uses_overdraft: 'adjust',
+      fits_by_borrowing: 'adjust', // 05.4 FIN-05
+      fits_on_your_answer: 'adjust', // 05.4 FIN-08
       emergency_use: 'adjust',
+      fits_uses_net: 'adjust',
       not_yet: 'no',
       needs_input: 'missing',
     });
@@ -57,7 +61,11 @@ describe('v3 constants.ts citations', () => {
       'needs_input',
       'not_yet',
       'monthly_short',
+      'fits_on_your_answer', // 05.4 FIN-08
+      'fits_by_borrowing', // 05.4 FIN-05
+      'fits_uses_overdraft',
       'emergency_use',
+      'fits_uses_net',
       'fits_unspent',
       'fits_month',
     ]);
@@ -103,6 +111,7 @@ describe('v3 constants.ts citations', () => {
       unspent_not_confirmed: true,
       records_look_behind: true,
       no_price: true,
+      price_too_large: true,
       plan_count_missing: true,
       first_payment_not_chosen: true,
       pause_interest_not_answered: true,

@@ -2,7 +2,7 @@ import 'react-native-gesture-handler/jestSetup';
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import { openEntry } from '@/features/record/entry/entryHost';
-import * as textFit from '../../ui/textFit';
+import * as textFit from '@/ui/textFit';
 import { DayByDayBody } from '../sections/DayByDaySection';
 import { OptionsBody } from '../sections/OptionsSection';
 import { SetbacksBody } from '../sections/SetbacksSection';

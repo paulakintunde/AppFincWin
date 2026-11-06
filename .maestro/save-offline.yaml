@@ -1,0 +1,29 @@
+# 05.4-34 BO-03: a line added offline is queued, saves once the network is back, and nothing fails. Then it is undone.
+# Run signed in as the sample data account (D-129; D-139 allowed one run on the Pixel 9's signed-in account). Writes one line and removes it.
+appId: com.fincwin.app
+name: Save offline
+---
+- runFlow: common/to-tabs.yaml
+- tapOn: "Activity, tab, 2 of 3"
+- setAirplaneMode: enabled
+- tapOn: "Add a transaction"
+- assertVisible: "New expense"
+- tapOn: "What is it for?"
+- inputText: "Maestro offline test"
+- tapOn: "Amount"
+- tapOn: "4"
+- tapOn: "2"
+- tapOn: "Done"
+- scrollUntilVisible:
+    element: "Save expense"
+    direction: DOWN
+- tapOn: "Save expense"
+- runFlow: common/keep-samples.yaml
+- runFlow: common/offline-continue.yaml
+- assertNotVisible: ".*couldn’t save.*"
+- runFlow:
+    file: common/undo-latest.yaml
+    env:
+      UNDO_NAME: "Added . Maestro offline test"
+- tapOn: "Activity, tab, 2 of 3"
+- assertNotVisible: "Maestro offline test"

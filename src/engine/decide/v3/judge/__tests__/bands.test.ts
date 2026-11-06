@@ -87,3 +87,30 @@ describe('bands', () => {
     expect(BANDS.filter(stagedRequired)).toEqual([15]);
   });
 });
+
+// L-09 (05.1 review): bandOf treats whole === edges[0] as band 2 and whole === edges[i], i > 0, as the lower band.
+// That is the rule in 00-REBUILD-PLAN-v3.md O11 ('under 50', '50-100', '101-500'), so this pins it with no source change.
+describe('L-09 band edges follow O11', () => {
+  const edges = homeThresholds('USD', null).bandEdges;
+  const band = (w: number): Band => bandOf(minorUnits(w), usd).band;
+
+  it('the first edge opens band 2; later edges close the lower band', () => {
+    expect(band(4_999)).toBe(1);
+    expect(band(5_000)).toBe(2);
+    expect(band(10_000)).toBe(2);
+    expect(band(10_001)).toBe(3);
+    expect(band(50_000)).toBe(3);
+  });
+  it('the last edge closes band 14 and one minor unit over is band 15', () => {
+    const last = edges[edges.length - 1]!;
+    expect(edges).toHaveLength(14);
+    expect(band(last)).toBe(14);
+    expect(band(last + 1)).toBe(15);
+  });
+  it('every later edge belongs to the band below it', () => {
+    for (let i = 1; i < edges.length; i += 1) {
+      expect(band(edges[i]!)).toBe(i + 1);
+      expect(band(edges[i]! + 1)).toBe(i + 2);
+    }
+  });
+});

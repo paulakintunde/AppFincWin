@@ -3,8 +3,9 @@ import { minorUnits } from '../../../../money/types';
 import { SOLE_SHARE } from '../../../share';
 import { addDays, daysInYearMonth, dayOfMonth, yearMonthOf } from '../../dates';
 import { buildCashPathV3, cashCheck, nextPayDate, purchaseFlows, spreadThrough } from '../path';
-import type { Schedule } from '../../types';
+import type { ReadinessWaiver, Schedule, SkippedOccurrence, V3Series } from '../../types';
 import { v3Series } from '../../__tests__/helpers/fixtures';
+import { dueDrops } from '../../month/dueDrops';
 
 const mu = (n: number) => minorUnits(n);
 const MONTH = { unit: 'month', every: 1 } as const;
@@ -321,5 +322,67 @@ describe('purchaseFlows', () => {
   it('payments after the window are left out', () => {
     const flows = purchaseFlows({ dayOne: mu(0), schedule, share: SOLE_SHARE }, '2026-10-20', 20);
     expect(flows.map((f) => f.date)).toEqual(['2026-11-01']);
+  });
+});
+
+describe('dropped dues leave the cash path (05.3-64; D-27, D-31, skips)', () => {
+  const netflix = v3Series({ id: 'netflix', name: 'Netflix', role: 'bill', cadence: MONTH, anchorDate: '2026-01-25', amount: 1199 });
+  const rent = v3Series({ id: 'rent', name: 'Rent', role: 'bill', cadence: MONTH, anchorDate: '2026-01-10', amount: 90000 });
+  const lunch = v3Series({ id: 'lunch', name: 'Lunch', role: 'bill', cadence: { unit: 'week', every: 2 }, anchorDate: '2026-10-05', amount: 1000 });
+  const loan = v3Series({ id: 'loan', role: 'debt_payment', cadence: MONTH, anchorDate: '2026-01-15', amount: 5000 });
+  const series: V3Series[] = [netflix, rent, lunch, loan];
+  const asOf = '2026-10-10';
+
+  function run(waivers: ReadinessWaiver[], skipped: SkippedOccurrence[], paid: ReadonlySet<string> = none) {
+    return path({ asOf, series, paidThisMonth: paid, drops: dueDrops({ asOf, series, waivers, skipped }) });
+  }
+  /** The day's own flow: the change in balance from the day before (no spread, no pay). */
+  function flowOn(p: ReturnType<typeof path>, date: string): number {
+    const i = p.points.findIndex((x) => x.date === date);
+    const prev = i === 0 ? 0 : (p.points[i - 1] as { balance: number }).balance;
+    return (p.points[i] as { balance: number }).balance - prev;
+  }
+  const last = (p: ReturnType<typeof path>): number => (p.points.at(-1) as { balance: number }).balance;
+  const base = path({ asOf, series });
+
+  it('no drops: the same path as without the field', () => {
+    expect(run([], [])).toEqual(base);
+  });
+
+  it('always_other(Netflix) takes no -1199 on any Netflix date up to the horizon', () => {
+    const p = run([{ kind: 'always_other', seriesId: 'netflix' }], []);
+    for (const d of ['2026-10-25', '2026-11-25', '2026-12-25']) {
+      expect(flowOn(base, d)).toBe(-1199);
+      expect(flowOn(p, d)).toBe(0);
+    }
+    expect(last(p) - last(base)).toBe(3 * 1199);
+  });
+
+  it('paid_by_other(Rent, asOf) drops only that occurrence: November Rent is still taken', () => {
+    const p = run([{ kind: 'paid_by_other', seriesId: 'rent', date: '2026-10-10' }], []);
+    expect(flowOn(base, '2026-10-10')).toBe(-90000);
+    expect(flowOn(p, '2026-10-10')).toBe(0);
+    expect(flowOn(p, '2026-11-10')).toBe(-90000);
+    expect(last(p) - last(base)).toBe(90000);
+  });
+
+  it('a skip of Lunch on 10-19 takes no -1000 that day; the next Lunch is still taken', () => {
+    const p = run([], [{ seriesId: 'lunch', date: '2026-10-19' }]);
+    expect(flowOn(base, '2026-10-19')).toBe(-1000);
+    expect(flowOn(p, '2026-10-19')).toBe(0);
+    expect(flowOn(p, '2026-11-02')).toBe(-1000);
+    expect(last(p) - last(base)).toBe(1000);
+  });
+
+  it('always_other on a debt payment series is dropped too', () => {
+    const p = run([{ kind: 'always_other', seriesId: 'loan' }], []);
+    expect(flowOn(base, '2026-10-15')).toBe(-5000);
+    expect(flowOn(p, '2026-10-15')).toBe(0);
+  });
+
+  it('paidThisMonth applies first: a settled occurrence is skipped whether or not it is dropped', () => {
+    const paid = new Set(['rent|2026-10-10']);
+    const p = run([{ kind: 'paid_by_other', seriesId: 'rent', date: '2026-10-10' }], [], paid);
+    expect(p).toEqual(path({ asOf, series, paidThisMonth: paid }));
   });
 });

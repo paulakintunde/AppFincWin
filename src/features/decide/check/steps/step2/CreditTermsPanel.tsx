@@ -18,11 +18,11 @@ import { lateFeeCopy, promoCopy, stressCopy } from '../../../copy/depthInputsCop
 import type { CopyRef } from '../../../copy/types';
 import { MAX_INPUT_MINOR } from '../../../snapshot/checkInputs';
 import type { PromoInput } from '../../../snapshot/types';
-import { CustomValueField } from '../../../ui/CustomValueChips';
+import { CustomValueField } from '@/ui/CustomValueChips';
 import { DetailsToggle } from '../../../ui/DetailsToggle';
-import { MoneyInput } from '../../../ui/MoneyInput';
+import { MoneyInput } from '@/ui/MoneyInput';
 import { RateInput } from '../../../ui/RateInput';
-import { StateChip, type StateChipTone } from '../../../ui/StateChip';
+import { StateChip, type StateChipTone } from '@/ui/StateChip';
 import { useInfoSheet } from '../../../ui/useInfoSheet';
 import { refText } from '../../refText';
 import { Label, Meta, moneyFn } from '../stepUi';

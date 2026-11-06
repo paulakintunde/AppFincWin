@@ -15,7 +15,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { CombineToggle } from '../ui/CombineToggle';
 import { StepBar } from '../ui/StepBar';
-import { useShouldStack } from '../ui/textFit';
+import { useShouldStack } from '@/ui/textFit';
 import type { StepNumber } from './stepTypes';
 import { Eyebrow } from './steps/stepUi';
 import type { SaveStatus } from './useCheckSaveStatus';

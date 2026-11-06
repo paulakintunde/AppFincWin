@@ -6,6 +6,8 @@
  * Two-date refunds (05.2): the month view dates a linked refund on its purchase, but rolled unspent counts it on the day it arrived.
  */
 import { minorUnits, type MinorUnits } from '../../../money/types';
+import { heldBackForBills } from '../heldBack';
+import { dueDrops } from '../month/dueDrops';
 import type { Funds, MonthModel, UnspentSum, V3Inputs } from '../types';
 import { emergencyOf, withLiveEmergency } from './emergency';
 import { envelopesOf, ownEnvelope } from './envelopes';
@@ -57,12 +59,14 @@ function spendingOf(inputs: V3Inputs): Spending {
       pEnv += linkedTo(a.id);
     } else if (use.kind === 'mixed') {
       const aside = linkedTo(a.id) + (inputs.emergency?.accountId === a.id ? inputs.emergency.amount : 0) + (use.extraSetAside ?? 0);
-      const kept = Math.max(0, a.balance - aside);
+      // Put-aside money can only fence off money that is there: an overdrawn mixed account fences nothing and its balance
+      // stays signed (05.4 ENG-02). With money in it this is the old max(0, balance - aside).
+      const fe = Math.min(aside, a.balance > 0 ? a.balance : 0);
+      const kept = a.balance - fe;
       total += kept;
-      fenced += a.balance - kept;
+      fenced += fe;
       gross += a.balance;
       // the fenced money is named in turn: envelopes, then the fund, then the extra the user set aside
-      const fe = a.balance - kept;
       const toEnv = Math.min(fe, linkedTo(a.id));
       const toEmg = Math.min(fe - toEnv, inputs.emergency?.accountId === a.id ? inputs.emergency.amount : 0);
       pEnv += toEnv;
@@ -82,8 +86,11 @@ function spendingOf(inputs: V3Inputs): Spending {
     fenced += inputs.emergency.amount;
     pEmg += inputs.emergency.amount;
   }
+  // 05.4 ENG-02 / FIN-03: balances are signed. Deductions (envelopes, the fund, set-asides) never take more than the money that
+  // is there, so with money in the accounts the spending balance stops at 0 as before; an overdrawn total stays below 0.
+  const lowest = gross < 0 ? gross : 0;
   return {
-    spending: minorUnits(Math.max(0, total)),
+    spending: minorUnits(total < lowest ? lowest : total),
     ringFenced: minorUnits(fenced),
     envelopesAssumedInside: unlinked.filter((e) => e.saved > 0).length,
     unstatedAccounts: unstated,
@@ -92,10 +99,15 @@ function spendingOf(inputs: V3Inputs): Spending {
   };
 }
 
-/** Names the deductions so they net to the spending balance: when they overshoot, envelopes give way first, then the fund, then the set-aside. */
+/**
+ * Names the deductions so they net to the spending balance: when they overshoot the money there, envelopes give way first, then
+ * the fund, then the set-aside. gross is signed (05.4 ENG-02): an overdrawn gross takes no deductions and nets to itself.
+ */
 function partsOf(gross: number, mixed: number, env: number, emg: number): SpendingParts {
-  const g = Math.max(0, gross);
-  let over = Math.max(0, mixed + env + emg - g);
+  const there = gross > 0 ? gross : 0;
+  let over = mixed + env + emg - there;
+  if (over < 0) over = 0; // an overshoot is never negative
+  const g = gross;
   const cut = (v: number): number => {
     const c = Math.min(v, over);
     over -= c;
@@ -111,6 +123,7 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
   const env = envelopesOf(inputs.envelopes, inputs.asOf);
   const emergency = emergencyOf(inputs.emergency).amount;
   const sp = spendingOf(inputs);
+  const drops = dueDrops(inputs);
   const suggested = suggestedUnspent({
     asOf: inputs.asOf,
     spending: sp.spending,
@@ -118,7 +131,11 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
     erest: month.erest,
     profile: inputs.profile,
     series: inputs.series,
+    drops, // 05.3-64 (D-27, D-31): the same rule as the month model and the cash path
   });
+  // 05.4 FIN-11 / D-47: the part of yearly and every-3-month bills the months before they are due cannot cover is held back
+  // from spare money (never from the confirmed figure itself, like a bridge, D-38).
+  const billsHeld = heldBackForBills(inputs.series, inputs.months.flatMap((m) => m.lines), inputs.asOf, month.typicalLeft, drops.alwaysOther);
   const roll =
     inputs.unspent === null
       ? null
@@ -141,15 +158,18 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
   let ringFenced = sp.ringFenced;
   let shown = unspent;
   if (unspent !== null) {
+    let available = unspent.available as MinorUnits;
     const raw = Math.max(0, suggested - unspent.value);
     const covered = validAnswer === null ? 0 : Math.min(validAnswer.amount, raw);
     unexplained = minorUnits(raw - covered);
     if (validAnswer !== null && validAnswer.use === 'spare') {
       // only spare money counts toward a purchase (unspentState always sets available)
-      shown = { ...unspent, available: minorUnits((unspent.available as MinorUnits) + covered) };
+      available = minorUnits(available + covered);
     } else {
       ringFenced = minorUnits(ringFenced + covered);
     }
+    available = minorUnits(available - billsHeld.total);
+    if (available !== unspent.available) shown = { ...unspent, available };
   }
   return {
     balance: inputs.balance,
@@ -165,6 +185,7 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
     unstatedAccounts: sp.unstatedAccounts,
     fundUnlinked: sp.fundUnlinked,
     ...(unexplained === undefined ? {} : { unexplained }),
+    ...(billsHeld.parts.length === 0 ? {} : { billsHeld }),
   };
 }
 
@@ -176,7 +197,7 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
 export function unspentSum(raw: V3Inputs, month: MonthModel): UnspentSum {
   const inputs = withLiveEmergency(raw); // the UI calls this on inputs that never went through evaluate
   const sp = spendingOf(inputs);
-  const input = { asOf: inputs.asOf, billsDue: month.billsDue, erest: month.erest, profile: inputs.profile, series: inputs.series };
+  const input = { asOf: inputs.asOf, billsDue: month.billsDue, erest: month.erest, profile: inputs.profile, series: inputs.series, drops: dueDrops(inputs) };
   const be = billsAndErest(input);
   const suggested = suggestedUnspent({ ...input, spending: sp.spending });
   const heldBack = heldBackOf(inputs.heldBridges ?? []);

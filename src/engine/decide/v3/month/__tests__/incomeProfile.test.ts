@@ -85,7 +85,7 @@ function inp(over: Partial<IncomeInput>): IncomeInput {
     history: [],
     series: [],
     profile: prof({}),
-    rough: null,
+    typedEstimates: null,
     custom: NO_CUSTOM,
     ...over,
   };
@@ -381,16 +381,16 @@ describe("incomeThisMonth", () => {
       invest: mu(0),
       asOf: "2026-10-01",
     };
-    const r = incomeThisMonth(inp({ rough }));
+    const r = incomeThisMonth(inp({ typedEstimates: rough }));
     expect(r.total).toBe(250000);
-    expect(r.reasons).toEqual(["rough_figures_used"]);
+    expect(r.reasons).toEqual(["quick_estimates_used"]);
     // a confirmed pay series (even a missed one) blocks the rough fallback
     const r2 = incomeThisMonth(
       inp({
         asOf: "2026-10-20",
         series: [PAY],
         current: month("2026-10", []),
-        rough,
+        typedEstimates: rough,
       }),
     );
     expect(r2.total).toBe(0);
@@ -920,7 +920,7 @@ describe("incomeThisMonth", () => {
         current: month("2026-10", [line({ id: "a", seriesId: "pay" })]),
         series: [PAY],
         profile: null,
-        rough,
+        typedEstimates: rough,
       }),
     );
     expect(r.total).toBe(400000);
@@ -996,11 +996,12 @@ describe("typicalIncome", () => {
       invest: mu(0),
       asOf: "2026-10-01",
     };
-    const r = typicalIncome(inp({ rough }));
+    const r = typicalIncome(inp({ typedEstimates: rough }));
     expect(r).toEqual({
       amount: 250000,
       hasConfirmedIncome: false,
-      reasons: ["rough_figures_used"],
+      reasons: ["quick_estimates_used"],
+      payGap: null,
     });
     expect(typicalIncome(inp({})).amount).toBe(0);
   });

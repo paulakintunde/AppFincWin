@@ -78,13 +78,13 @@ describe('buildV3Inputs: settings money is read only in the home currency', () =
     it('stored currency differs from home: rough income, spending, saving, debt and invest are all dropped', () => {
       const src = rough('GBP');
       expect(buildDecideSnapshot(src).kind).toBe('rough');
-      expect(buildV3Inputs(src, roughV3).rough).toBeNull();
+      expect(buildV3Inputs(src, roughV3).typedEstimates).toBeNull();
     });
 
     it('stored currency equals home or is null: the figures flow', () => {
       const filled = { income: 400000, expenses: 250000, saving: 1000, debt: 2000, invest: 3000, asOf: '2026-09-15' };
-      expect(buildV3Inputs(rough('USD'), roughV3).rough).toEqual(filled);
-      expect(buildV3Inputs(rough(null), roughV3).rough).toEqual(filled);
+      expect(buildV3Inputs(rough('USD'), roughV3).typedEstimates).toEqual(filled);
+      expect(buildV3Inputs(rough(null), roughV3).typedEstimates).toEqual(filled);
     });
   });
 });

@@ -9,6 +9,7 @@ import { useAccounts } from '@/data/queries/accounts';
 import { needsFirstAccount } from '@/features/record/setup/firstAccountGate';
 import { DECIDE_OPEN } from '@/features/decide/availability';
 import { DecideShellHost } from '@/features/decide/DecideShellHost';
+import { DecideShadowHost } from '@/features/decide/shadow/DecideShadowHost';
 import { ShellEntryHost } from '@/features/record/entry/ShellEntryHost';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { Fab } from '@/shell/fab/Fab';
@@ -53,6 +54,8 @@ export default function TabsLayout() {
       <ShellEntryHost />
       {/* quick-261025-f46: its 'newCheck' registration feeds both the FAB quick menu and You > Add, so hiding it removes "New check" everywhere. */}
       {DECIDE_OPEN ? <DecideShellHost /> : null}
+      {/* 05.4-36 BO-08: quiet shadow runs for consenting testers only (profiles.decide_shadow); renders nothing, also while Decide is off. */}
+      <DecideShadowHost />
     </View>
   );
 }

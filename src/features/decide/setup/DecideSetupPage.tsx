@@ -22,7 +22,7 @@ import { pushOnce } from '@/shell/navigation/pushOnce';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { StateChip, type StateChipTone } from '../ui/StateChip';
+import { StateChip, type StateChipTone } from '@/ui/StateChip';
 import { EmergencyFundSheet } from './EmergencyFundSheet';
 import { EngineReadoutCard } from './EngineReadoutCard';
 import { readoutRows, type ReadoutFormat } from './readoutModel';

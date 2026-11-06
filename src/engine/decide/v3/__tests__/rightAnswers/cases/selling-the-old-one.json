@@ -1,0 +1,1095 @@
+{
+  "topic": "selling-the-old-one",
+  "cases": [
+    {
+      "id": "SO-01",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, sells her old car the same day (invented)",
+      "situation": "Lena has $1,000 free and her usual month leaves $1,000. She buys a $6,000 car today and sells her old one today for $5,500. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 600000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "replaces": {
+            "stops": [],
+            "sale": {
+              "amount": 550000,
+              "arrives": "2026-11-15",
+              "paysDebtId": null
+            }
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "The sale money arrives the same day, so she needs only $6,000 - $5,500 = $500 of her own money: $1,000 - $500 = $500 left this month. Without the sale it would be Not yet.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SO-02",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, sale money a month later (invented)",
+      "situation": "Same as SO-01, but the buyer pays the $5,500 on 20 December. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 600000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "replaces": {
+            "stops": [],
+            "sale": {
+              "amount": 550000,
+              "arrives": "2026-12-20",
+              "paysDebtId": null
+            }
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Paying $6,000 today with $1,000 free would take the account about $5,000 below $0 until 20 December. Money that arrives later does not help today's cash path. On 20 December she has $1,000 + December's $1,000 + $5,500 = $7,500, so it fits from December 2026.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SO-03",
+      "topic": "selling-the-old-one",
+      "persona": "Omar, sale pays off the old loan (invented)",
+      "situation": "Omar's usual month leaves $1,000 after his $250 old car-loan minimum. He sells the old car for $5,000 on 20 November; $4,000 of it pays off the loan and $1,000 comes to him. The new car is $12,000 in 48 payments of $250 at 0%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 168000,
+          "saved": 168000
+        },
+        "bills": [
+          {
+            "id": "b-oldloan",
+            "amount": 25000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-05",
+            "lastPaid": "2026-11-05",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [
+          {
+            "id": "d-old",
+            "kind": "loan",
+            "balance": 400000,
+            "minimum": 25000,
+            "apr": "6.9",
+            "dueDay": 5,
+            "joint": false
+          }
+        ],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 1200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 48,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "replaces": {
+            "stops": [],
+            "sale": {
+              "amount": 500000,
+              "arrives": "2026-11-20",
+              "paysDebtId": "d-old"
+            }
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 100000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "The sale clears the $4,000 loan, so its $250 minimum stops after 20 November. Usual month after buying: $1,000 + $250 (old minimum gone) - $250 (new payment) = $1,000. The other $1,000 of the sale goes to his account. $250 is a quarter of his room, so it is not tight. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
+      "fixIds": [
+        "BO-05",
+        "FIN-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
+      "expertNote": null
+    },
+    {
+      "id": "SO-04",
+      "topic": "selling-the-old-one",
+      "persona": "Omar, old loan bigger than the sale (invented)",
+      "situation": "Same as SO-03, but the old loan is $7,000. The $5,000 sale goes to the loan and $2,000 is still owed, with the $250 minimum still due. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 168000,
+          "saved": 168000
+        },
+        "bills": [
+          {
+            "id": "b-oldloan",
+            "amount": 25000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-05",
+            "lastPaid": "2026-11-05",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [
+          {
+            "id": "d-old",
+            "kind": "loan",
+            "balance": 700000,
+            "minimum": 25000,
+            "apr": "6.9",
+            "dueDay": 5,
+            "joint": false
+          }
+        ],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 1200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 48,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "replaces": {
+            "stops": [],
+            "sale": {
+              "amount": 500000,
+              "arrives": "2026-11-20",
+              "paysDebtId": "d-old"
+            }
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 75000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "debt_left_after_sale",
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "The sale pays $5,000 of the $7,000, so $2,000 is still owed and the $250 minimum keeps coming. Usual month after buying: $1,000 - $250 (new payment) = $750. The answer states the $2,000 still owed as a fact. $750 is well above the tight lines, so it fits. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
+      "fixIds": [
+        "BO-05",
+        "FIN-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
+      "expertNote": null
+    },
+    {
+      "id": "SO-05",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, old phone plan due once more (invented)",
+      "situation": "Lena's usual month leaves $1,000 and includes an $80 phone plan, next due on 1 December. She is ending it on 20 December. The new phone is $1,200 in 24 payments of $50 at 0%, first payment on 15 December, and its new plan is $60 a month from 20 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
+        "bills": [
+          {
+            "id": "b-phone",
+            "amount": 8000,
+            "everyMonths": 1,
+            "nextDue": "2026-12-01",
+            "lastPaid": "2026-11-01",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 120000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 24,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "runningCosts": [
+            {
+              "id": "rc-plan",
+              "amount": 6000,
+              "everyMonths": 1,
+              "start": "2026-12-20",
+              "end": null
+            }
+          ],
+          "replaces": {
+            "stops": [
+              {
+                "id": "b-phone",
+                "amount": 8000,
+                "everyMonths": 1,
+                "stopDate": "2026-12-20",
+                "source": "bill"
+              }
+            ],
+            "sale": null
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 97000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "The old $80 is due on 1 December, before the 20 December stop, so it is counted once more and then never again. December has the old $80, the new $60 and the first $50. From January the usual month is $1,000 + $80 - $50 - $60 = $970. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
+      "fixIds": [
+        "BO-05",
+        "FIN-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
+      "expertNote": null
+    },
+    {
+      "id": "SO-06",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, gym replaced by a rowing machine (invented)",
+      "situation": "Lena pays $50 a month for a gym out of everyday spending and stops it on 30 November. She buys a $900 rowing machine today, paid in cash. She has $1,000 free and her usual month leaves $1,000. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "replaces": {
+            "stops": [
+              {
+                "id": "gym",
+                "amount": 5000,
+                "everyMonths": 1,
+                "stopDate": "2026-11-30",
+                "source": "everyday"
+              }
+            ],
+            "sale": null
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuy": {
+          "month": 10000,
+          "usualMonth": 105000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "tight_floor"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "$1,000 - $900 = $100 left this month (November's gym fee is already paid). After 30 November the gym is never counted again, so the usual month becomes $1,000 + $50 = $1,050. The $100 left is under the $200 floor (a tenth of $1,200 bills + $800 everyday spending), so the answer is \"Fits, but tight\" (D-40). Her safety net is full, so there is no net line.",
+      "fixIds": [
+        "BO-05",
+        "FIN-07"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02): \"Approve, apply SO-06 'tight'.\"",
+      "expertNote": null
+    },
+    {
+      "id": "SO-07",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, saving for a sofa (invented)",
+      "situation": "Lena wants a $3,000 sofa and asks when she could have saved for it. She has $1,000 free now and her usual month leaves $1,000. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 300000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "saveForIt": true
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2027-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "She needs $3,000 - $1,000 = $2,000 more. December adds $1,000 ($2,000 saved) and January adds $1,000 ($3,000): ready January 2027. The $1,000 she has now is counted once. Counting it again as part of November's room would wrongly say December.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SO-08",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, saving for the up-front part only (invented)",
+      "situation": "Same $3,000 sofa, but on a plan: $600 up front, then 12 payments of $200 at 0% from 1 February 2027. She has $500 free now and her usual month leaves $1,000. It is bought on 15 November 2026 (today), with the first payment on 1 February 2027. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 90000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 300000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 60000,
+            "firstPaymentDate": "2027-02-01"
+          },
+          "saveForIt": true
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Only the $600 up front has to be saved; the $200 payments come from the usual month later ($1,000 - $200 = $800). She has $500, so she needs $100 more, and pay on 1 December covers it. Saving for the whole $3,000 would wrongly say February 2027. Every borrowing answer also shows, as facts (D-48): the plan charges no interest, so there is no interest line; \"A safety net covers surprises while you repay.\" (net_covers_surprises) \"More income or lower costs makes the payments easier.\" (income_or_costs_first)",
+      "fixIds": [
+        "BO-05",
+        "FIN-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": "Owner, round 2 (2026-11-02), borrowing: \"Approve, add BR-15 caution and also for others include a caution ... for all borrowing. ... Interest rates are costs that could be saved. safety nets protects against uncertainty.\" and \"Borrowing caution line: Yes, on every borrowing answer.\" (verbatim in 05.4-OWNER-REVIEW-1.md, round 2; app wording stays declarative, D-48).",
+      "expertNote": null
+    },
+    {
+      "id": "SO-09",
+      "topic": "selling-the-old-one",
+      "persona": "Lena, cash and plan from one input (invented)",
+      "situation": "Lena types a $2,400 laptop once. Decide judges paying cash and paying 12 x $200 at 0% (first payment 15 December) from that one input. This case holds the cash side; she has $1,000 free and her usual month leaves $1,000. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 240000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2027-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "Cash: she needs $1,400 more; December gives $2,000, January $3,000, so ready January 2027. Plan: $1,000 - $200 = $800 a month, \"Fits\". Both answers must match two separate checks (one cash, one plan) exactly: one shared input never changes either answer (BO-05).",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-02",
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "SO-10",
+      "topic": "selling-the-old-one",
+      "persona": "Noor, buying on 18 January, sale on 19 January (invented)",
+      "situation": "Noor (invented) is checking a $1,500 purchase on 15 October 2026, to be bought on 18 January 2027, paid in one go. Noor will sell the old one for $1,230; the buyer pays on 19 January 2027. A usual month: pay $1,000 on the 1st, bills $318.50 and everyday spending $591.50 ($295.75 of it on essentials), so $90 is left. This month Noor has received $1,000, has $318.50 of bills still to pay and has spent $147.87 so far; $443.63 of everyday spending is still to come. The Main account holds $852.13, so $90 is left at the end of October. No safety net, no debts.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 100000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 31850,
+          "everyday": 59150,
+          "essentialEveryday": 29575
+        },
+        "thisMonth": {
+          "received": 100000,
+          "billsPaid": 0,
+          "billsDue": 31850,
+          "everydaySoFar": 14787
+        },
+        "historyMonths": 3,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Main",
+            "balance": 85213,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": false,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "purchaseDate": "2027-01-18",
+          "replaces": {
+            "stops": [],
+            "sale": {
+              "amount": 123000,
+              "arrives": "2027-01-19",
+              "paysDebtId": null
+            }
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2027-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "sale_counted"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "The purchase date is more than 90 days ahead, so it is checked on day 90, 12 January 2027 (D-96). The sale arrives on 19 January, after day 90, so it does not count toward the purchase (D-137), even though it arrives the day after the purchase date. Without it Noor has $90 left in October plus the usual $90 from each of November and December = $270, well short of $1,500 (D-95), so Not yet. The sale counts only toward the ready date, from its month.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-05",
+      "ownerReason": "The owner approved this case as written per D-137 (2026-11-05): a sale arriving after day 90 never counts toward a purchase held to day 90.",
+      "expertNote": null,
+      "plannerNote": "05.4-40 (D-137): from the I-D96 property's failing input (the D96-SALE finding). Before D-137, the 19 January date answered \"Fits, but tight\"."
+    },
+    {
+      "id": "SO-11",
+      "topic": "selling-the-old-one",
+      "persona": "Noor, buying on 19 January, the sale's day (invented)",
+      "situation": "Noor (invented) is checking a $1,500 purchase on 15 October 2026, to be bought on 19 January 2027, paid in one go. Noor will sell the old one for $1,230; the buyer pays on 19 January 2027. A usual month: pay $1,000 on the 1st, bills $318.50 and everyday spending $591.50 ($295.75 of it on essentials), so $90 is left. This month Noor has received $1,000, has $318.50 of bills still to pay and has spent $147.87 so far; $443.63 of everyday spending is still to come. The Main account holds $852.13, so $90 is left at the end of October. No safety net, no debts.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 100000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 31850,
+          "everyday": 59150,
+          "essentialEveryday": 29575
+        },
+        "thisMonth": {
+          "received": 100000,
+          "billsPaid": 0,
+          "billsDue": 31850,
+          "everydaySoFar": 14787
+        },
+        "historyMonths": 3,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Main",
+            "balance": 85213,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": false,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "purchaseDate": "2027-01-19",
+          "replaces": {
+            "stops": [],
+            "sale": {
+              "amount": 123000,
+              "arrives": "2027-01-19",
+              "paysDebtId": null
+            }
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": "2027-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "sale_counted"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "The purchase date is more than 90 days ahead, so it is checked on day 90, 12 January 2027 (D-96). The sale arrives on 19 January, after day 90, so it does not count toward the purchase (D-137), even though it arrives on the purchase date. Without it Noor has $90 left in October plus the usual $90 from each of November and December = $270, well short of $1,500 (D-95), so Not yet. The sale counts only toward the ready date, from its month.",
+      "fixIds": [
+        "BO-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-05",
+      "ownerReason": "The owner approved this case as written per D-137 (2026-11-05): a sale arriving after day 90 never counts toward a purchase held to day 90.",
+      "expertNote": null,
+      "plannerNote": "05.4-40 (D-137): from the I-D96 property's failing input (the D96-SALE finding). Before D-137, the 19 January date answered \"Fits, but tight\"."
+    }
+  ]
+}

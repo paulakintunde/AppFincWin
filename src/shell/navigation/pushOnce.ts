@@ -12,14 +12,23 @@ export function acceptPush(last: number | null, now: number): boolean {
   return last === null || now - last >= PUSH_GUARD_MS;
 }
 
-export function pushOnce(href: Href): void {
+function guarded(href: Href, go: (h: Href) => void): void {
   const now = Date.now();
   // WR-03: the guard is per target, so a push to a different route is never silently dropped.
   const key = typeof href === 'string' ? href : JSON.stringify(href);
   if (key === lastKey && !acceptPush(lastAt, now)) return;
   lastAt = now;
   lastKey = key;
-  router.push(href);
+  go(href);
+}
+
+export function pushOnce(href: Href): void {
+  guarded(href, (h) => router.push(h));
+}
+
+// replaceOnce: the same guard for a hop that replaces the current screen (05.3-86: check <-> answer).
+export function replaceOnce(href: Href): void {
+  guarded(href, (h) => router.replace(h));
 }
 
 export function resetPushOnceForTests(): void {

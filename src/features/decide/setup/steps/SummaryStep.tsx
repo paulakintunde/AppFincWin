@@ -15,7 +15,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { useDecideSettings } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { useRecordContext } from '@/features/record/useRecordContext';
-import { LabelValueRow } from '@/features/decide/ui/LabelValueRow';
+import { LabelValueRow } from '@/ui/LabelValueRow';
 import { useCopy, useReportReady } from '@/features/income/steps/shared';
 import { monthLabel } from '../../home/ChangeSheet';
 import { summaryModel, type SummaryRow } from '../summaryModel';

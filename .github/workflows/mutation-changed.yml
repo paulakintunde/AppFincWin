@@ -1,0 +1,63 @@
+name: Mutation (changed code)
+# 05.4-43 (QA-04, D-175): on every push to a PR that touches the engine, re-test only the mutants in changed code,
+# starting from the last complete full-run baseline (mutation-full.yml saves it), and apply the 90% bar (D-174) to
+# the whole score (re-used results plus the new ones). Its own workflow and concurrency group, so a new push queues
+# behind it instead of cancelling it (ci.yml cancels on every push). Moved out of ci.yml's mutation-changed job,
+# which re-tested every file changed since main and never finished on a long phase branch.
+on:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: mutation-changed-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  mutation-changed:
+    name: mutation-changed
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
+        with: { fetch-depth: 0 }
+      - name: Does this PR touch the engine or the mutation set-up?
+        id: scope
+        run: |
+          if git diff --quiet "origin/${{ github.base_ref }}...HEAD" -- src/engine/decide stryker.config.mjs stryker.part.config.mjs jest.engine.config.js; then
+            echo "touched=false" >> "$GITHUB_OUTPUT"
+            echo "No engine change in this PR; nothing to mutate."
+          else
+            echo "touched=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Restore the latest full-run baseline
+        id: baseline
+        if: steps.scope.outputs.touched == 'true'
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0 (v4)
+        with:
+          path: .stryker-cache/incremental.json
+          key: stryker-baseline-${{ github.sha }}
+          restore-keys: stryker-baseline-
+      - name: No baseline yet
+        if: steps.scope.outputs.touched == 'true' && steps.baseline.outputs.cache-matched-key == ''
+        run: |
+          echo "::warning::No full-run mutation baseline yet. Add the mutation-full label to this PR (or run mutation-full.yml) first; a whole-engine run does not fit this job's 120 minutes."
+          echo "No baseline: skipped. Add the \`mutation-full\` label to start a full run." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4.4.0 (v4)
+        if: steps.baseline.outputs.cache-matched-key != ''
+        with: { node-version: 24, cache: npm }
+      - if: steps.baseline.outputs.cache-matched-key != ''
+        run: npm ci --legacy-peer-deps
+      - name: Re-test mutants in changed code
+        if: steps.baseline.outputs.cache-matched-key != ''
+        env: { FC_RUNS: 10 }
+        run: |
+          echo "Baseline: ${{ steps.baseline.outputs.cache-matched-key }}"
+          npx stryker run stryker.part.config.mjs --incremental --ignoreStatic
+      - name: Apply the 90% bar to the whole score (D-174)
+        if: steps.baseline.outputs.cache-matched-key != ''
+        run: node scripts/mutation-merge.mjs --bar 90 --label "Changed-code mutation check" reports/mutation/mutation.json
+      - name: Save the updated baseline
+        if: always() && steps.baseline.outputs.cache-matched-key != '' && hashFiles('.stryker-cache/incremental.json') != ''
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0 (v4)
+        with:
+          path: .stryker-cache/incremental.json
+          key: stryker-baseline-${{ github.sha }}-${{ github.run_attempt }}

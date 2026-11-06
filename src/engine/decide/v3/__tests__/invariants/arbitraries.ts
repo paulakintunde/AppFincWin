@@ -165,3 +165,73 @@ export const latePayInputsArb: fc.Arbitrary<V3Inputs> = fc
     const unspent = person.unspent === null ? null : { ...person.unspent, at: asOf };
     return toV3Inputs({ ...person, asOf, series, months, unspent }, { custom: { itemTypes: [], purposes: [{ id: CUSTOM_PURPOSE_ID }], cadences: [], incomeKinds: [] } });
   });
+
+/**
+ * 05.4 FIN-03 (I47..I49): an overdraft on the person's main spending account. A separate arbitrary, so the draws of tweakArb
+ * (and the I44 digests built from it) are unchanged. balanceDrop lowers the main account and the unspent anchor together:
+ * the anchor is that money, so less of it is less of both (as I12 scales both).
+ */
+export interface OverdraftTweak {
+  readonly overdraftLimit: number | null;
+  readonly overdraftRate: string | null;
+  readonly balanceDrop: number;
+}
+
+export const overdraftTweakArb: fc.Arbitrary<OverdraftTweak> = fc.record({
+  overdraftLimit: fc.option(fc.integer({ min: 0, max: 3_000_000 }), { nil: null }),
+  overdraftRate: fc.constantFrom(null, '0', '19.9', '39.9'),
+  balanceDrop: fc.integer({ min: 0, max: 3_000_000 }),
+});
+
+export function withOverdraft(inputs: V3Inputs, o: OverdraftTweak): V3Inputs {
+  const accounts = inputs.accounts ?? [];
+  const main = accounts.findIndex((a) => a.use !== null && (a.use.kind === 'everyday' || a.use.kind === 'mixed'));
+  if (main < 0) return inputs;
+  return {
+    ...inputs,
+    accounts: accounts.map((a, i) =>
+      i === main
+        ? {
+            ...a,
+            kind: 'current' as const,
+            balance: mu(a.balance - o.balanceDrop),
+            overdraftLimit: o.overdraftLimit === null ? null : mu(o.overdraftLimit),
+            overdraftRate: o.overdraftRate === null ? null : percent(o.overdraftRate),
+          }
+        : a
+    ),
+    balance: mu(inputs.balance - o.balanceDrop),
+    unspent: inputs.unspent === null ? null : { ...inputs.unspent, amount: mu(inputs.unspent.amount - o.balanceDrop) },
+  };
+}
+
+export const overdraftInputsArb: fc.Arbitrary<{ readonly base: V3Inputs; readonly o: OverdraftTweak }> = fc
+  .tuple(fc.constantFrom(...PERSON_IDS), tweakArb, overdraftTweakArb)
+  .map(([id, t, o]) => ({ base: inputsOfPerson(id, t), o }));
+
+/**
+ * 05.4 FIN-01 / FIN-02 (I50..I52, I-saved, I-D41): a safety-net record on a golden person. A separate arbitrary, so the draws of
+ * tweakArb (and the I44 digests built from it) are unchanged. size null = the starter (1 month of essential costs).
+ */
+export interface NetTweak {
+  readonly protect: boolean;
+  readonly size: number | null;
+  readonly saved: number;
+  /** 05.4 D-61: absent = locked. */
+  readonly locked?: boolean;
+}
+
+export const netTweakArb: fc.Arbitrary<NetTweak> = fc.record({
+  protect: fc.boolean(),
+  size: fc.option(fc.integer({ min: 0, max: 2_000_000 }), { nil: null }),
+  saved: fc.integer({ min: 0, max: 3_000_000 }),
+  locked: fc.boolean(), // 05.4 D-61: both sides of the lock
+});
+
+export function withSafetyNet(inputs: V3Inputs, n: NetTweak): V3Inputs {
+  return { ...inputs, safetyNet: { protect: n.protect, size: n.size === null ? null : mu(n.size), saved: mu(n.saved), ...(n.locked === undefined ? {} : { locked: n.locked }) } };
+}
+
+export const netInputsArb: fc.Arbitrary<{ readonly base: V3Inputs; readonly n: NetTweak }> = fc
+  .tuple(fc.constantFrom(...PERSON_IDS), tweakArb, netTweakArb)
+  .map(([id, t, n]) => ({ base: inputsOfPerson(id, t), n }));

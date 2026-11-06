@@ -20,7 +20,10 @@ import {
   subscribeFailedWrites,
   type FailedWrite,
 } from "@/data/sync/failedWrites";
+import { useShouldStack } from "./textFit";
 import { useT } from "@/i18n";
+import { useDeviceLocale } from "@/services/locale/deviceLocale";
+import { clockText } from "./clockText";
 import { useTheme } from "@/theme/ThemeProvider";
 import { radii, space } from "@/theme/layout";
 import { fontSize, textRole } from "@/theme/typography";
@@ -30,16 +33,15 @@ import {
   failedWriteName,
 } from "./failedWriteLabels";
 
-function whenText(at: string): string {
+function whenText(at: string, locale: string): string {
   const d = new Date(at);
-  return Number.isNaN(d.getTime())
-    ? ""
-    : d.toLocaleString(undefined, {
-        day: "numeric",
-        month: "short",
-        hour: "numeric",
-        minute: "2-digit",
-      });
+  if (Number.isNaN(d.getTime())) return "";
+  const date = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+  }).format(d);
+  const time = clockText({ hours: d.getHours(), minutes: d.getMinutes() }, locale);
+  return `${date}, ${time}`;
 }
 
 export function FailedWritesSheet({
@@ -50,10 +52,12 @@ export function FailedWritesSheet({
   onClose: () => void;
 }) {
   const t = useT();
+  const { locale } = useDeviceLocale();
   const { colors, pairing } = useTheme();
   const entries = useSyncExternalStore(subscribeFailedWrites, getFailedWrites);
   const [confirmAll, setConfirmAll] = useState(false);
   const { retry } = useRetryCheckCreate();
+  const stacked = useShouldStack();
 
   const whatOf = (entry: FailedWrite): string => {
     const what = t(failedEntityKey(entry.entity));
@@ -96,14 +100,17 @@ export function FailedWritesSheet({
                 <View
                   key={entry.id}
                   testID={`failed-write-${entry.id}`}
-                  style={[styles.row, { backgroundColor: colors.fill1 }]}
+                  style={[
+                    stacked ? styles.rowStacked : styles.row,
+                    { backgroundColor: colors.fill1 },
+                  ]}
                 >
                   <View style={styles.text}>
                     <Text style={{ ...body, fontWeight: "600" }}>{what}</Text>
-                    <Text style={meta}>{whenText(entry.at)}</Text>
+                    <Text style={meta}>{whenText(entry.at, locale)}</Text>
                     <Text style={body}>{t(failedReasonKey(entry))}</Text>
                   </View>
-                  <View style={styles.actions}>
+                  <View style={stacked ? styles.actionsStacked : styles.actions}>
                     {recoverableCheckCreate(entry) !== null ? (
                       <Pressable
                         accessibilityRole="button"
@@ -177,7 +184,20 @@ const styles = StyleSheet.create({
     padding: space.cardPad,
     borderRadius: radii.card,
   },
-  text: { flex: 1, gap: 2 },
+  rowStacked: {
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: space.gapSm,
+    padding: space.cardPad,
+    borderRadius: radii.card,
+  },
+  text: { flexShrink: 1, flexGrow: 1, minWidth: 0, gap: 2 },
+  actionsStacked: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: space.gapSm,
+    alignItems: "center",
+  },
   actions: { alignItems: "flex-end" },
   dismiss: {
     minHeight: space.touchMin,

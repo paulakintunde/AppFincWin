@@ -1,3 +1,4 @@
+import { CLEAN_CONFIDENCE } from '../../__tests__/helpers/restsOn';
 import { minorUnits, type MinorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import { SOLE_SHARE } from '../../../share';
@@ -28,7 +29,7 @@ function month(over: Partial<MonthModel> = {}): MonthModel {
     categoryMonthly: [],
     housingMonthly: mu(0),
     largestLine: null,
-    confidence: { level: 'fair', reasons: [] },
+    confidence: CLEAN_CONFIDENCE,
     notices: [],
     reasons: [],
     ...over,

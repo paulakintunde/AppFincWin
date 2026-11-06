@@ -6,10 +6,10 @@ import React from 'react';
 import { QueryClient, QueryClientProvider, useQuery, dehydrate, hydrate, onlineManager } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { DbClient } from '@/db/rows';
-import type { DecideCheckRow } from '@/db/decideChecks';
+import type { DecideCheckRow, StoredSeenV3 } from '@/db/decideChecks';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
-import { queryKeys } from '@/data/keys';
+import { mutationKeys, queryKeys } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import { clearVersionChains } from '@/data/sync/versionChain';
 import * as undoToast from '@/state/undoToast';
@@ -19,6 +19,7 @@ import {
   useAbandonCheck,
   useCreateCheck,
   useMarkCheckSeen,
+  useSaveCheckAnswer,
   recoverableCheckCreate,
   useReopenCheck,
   useReopenRedirect,
@@ -78,6 +79,7 @@ const check = (id: string, overrides: Partial<DecideCheckRow> = {}): DecideCheck
   furthest_step: 1,
   last_seen_state: null,
   last_seen_basis: null,
+  answer_v3: null,
   reopened_from: null,
   decided_at: null,
   verdict_at_decision: null,
@@ -513,6 +515,39 @@ describe('useMarkCheckSeen', () => {
   });
 });
 
+describe('useSaveCheckAnswer', () => {
+  const seen: StoredSeenV3 = {
+    v: 3,
+    code: 'fits_month',
+    variant: null,
+    readyBy: null,
+    unspentAfter: 1200,
+    lineFacts: ['a', 'b'],
+  };
+
+  it('writes answer_v3 once, optimistically, and skips an equal stored value', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [check('k1')]);
+    fake.respondWith(ok([check('k1', { answer_v3: seen, version: 2 })]));
+    const { result } = await renderHook(() => useSaveCheckAnswer(), { wrapper: wrapper(qc) });
+
+    expect(result.current.save(check('k1'), seen)).toBe(true);
+    await waitFor(() => expect(qc.getQueryData<DecideCheckRow[]>(KEY)?.[0]).toMatchObject({ answer_v3: seen }));
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'update')).toBe(true));
+    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ answer_v3: seen });
+    expect(insertUndoStep).not.toHaveBeenCalled();
+
+    expect(result.current.save(check('k1', { answer_v3: { ...seen, lineFacts: ['a', 'b'] } }), seen)).toBe(false);
+    expect(fake.calls.filter((c) => c.method === 'update')).toHaveLength(1);
+  });
+
+  it('registers a default under its own key so a paused write resumes', () => {
+    const qc = new QueryClient();
+    registerDecideCheckMutations(qc);
+    expect(qc.getMutationDefaults(mutationKeys.saveCheckAnswer)?.mutationFn).toBeDefined();
+  });
+});
+
 describe('useRemoveDecision', () => {
   it('D-77 Decision deleted restores the goal too (and touches no lines)', async () => {
     const { fake, qc } = setup();
@@ -602,8 +637,7 @@ describe('useReopenCheck', () => {
         status: 'waiting',
         furthest_step: 4,
         inputs: { kind: 'buy', outcome: 'wait', wait: { monthlyAmount: 25000 }, why: 'x' },
-      }),
-      '2026-10-10'
+      })
     );
     expect(id).toBe('id-1');
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'insert')).toBe(true));
@@ -622,7 +656,7 @@ describe('useReopenCheck', () => {
     fake.respondWith({ data: null, error: null, status: 200 }); // the tried id never landed
     fake.respondWith(ok(check('live-1', { reopened_from: 'k1' })));
     const { result } = await renderHook(() => useReopenCheck(), { wrapper: wrapper(qc) });
-    const tried = result.current.reopen(check('k1', { status: 'passed' }), '2026-10-10');
+    const tried = result.current.reopen(check('k1', { status: 'passed' }));
     const redirect = await renderHook(() => useReopenRedirect(tried), { wrapper: wrapper(qc) });
     await waitFor(() => expect(redirect.result.current).toBe('live-1'));
     const ids = (qc.getQueryData<DecideCheckRow[]>(KEY) ?? []).map((r) => r.id);

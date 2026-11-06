@@ -17,25 +17,52 @@ import type {
 
 // Final surface (05.1-30). Extend here when the barrel grows.
 export const V3_RUNTIME_EXPORTS = [
+  'ABOUT_KEYS', // 05.4-37 D-64 (3)
+  'AFTER_BUY_KEYS', // 05.4-24 FIN-09
   'AMOUNT_TOLERANCE_DIVISOR',
   'BAND_EDGES_USD',
+  'BASIS_KEYS',
+  'BASIS_REASON_KEYS',
+  'BASIS_VALUE_KEYS',
   'CADENCE_EVERY_MAX',
   'CADENCE_EVERY_MIN',
   'CASH_PATH_DAYS_V3',
+  'CAVEAT_FIGURE_KEYS', // 05.4-37 D-64 (5)
+  'CAVEAT_KEYS', // 05.4-37 D-64 (4)
+  'CAVEAT_ORDER', // 05.4-37 D-119
+  'CAVEAT_VALUE_KEYS',
+  'CAVEAT_WRONG_FIGURE_KEY',
   'CODE_PRECEDENCE',
   'CONFIDENCE_FIRM_MIN_DAY',
   'CONFIDENCE_MIN_MONTHS',
-  'EMERGENCY_PURPOSES',
+  'COPY_RESOLVERS',
+  'COSTLY_SAVING_MIN',
+  'DEBT_FACT_LINES',
+  'DECIDE_ENGINE_REVISION', // 05.4-36 BO-08 (D-13, D-146)
+  'DISCLAIMER_KEYS', // 05.4-37 D-64 (1)
+  'DISCRIMINATOR_KEYS',
+  'ESSENTIAL_ROUND_MINOR',
+  'EXPENSIVE_APR_BP',
+  'EXPENSIVE_INTEREST_SHARE_BP',
+  'FACT_ACTION_KEYS',
   'FACT_KEYS',
+  'FACT_VALUE_KEYS',
   'FOOTER_KEY',
+  'FREE_HELP', // 05.4-38 CMP-F04
+  'FURTHER_SHORTFALL_MAJOR',
   'FUTURE_ORDER',
+  'HISTORY_PAY_MIN_MONTHS',
+  'INCLUDED_COUNTRIES', // 05.4-25 FIN-27 (D-19): UK and EU, prices include tax
   'INCOME_SWING_CV_PERCENT',
   'INCOME_SWING_MIN_MONTHS',
   'INCOME_VOLATILE_CV_PERCENT',
+  'INTRO_KEYS', // 05.4-37 D-120
   'LEGACY_STATE_OF_CODE',
+  'LONG_PLAN_MONTHS', // 05.4-37 D-64 (4)
   'LOW_MONTH_RANK',
   'MATCH_DAYS',
   'MAX_BUILTIN_LINES',
+  'MAX_CHECK_PRICE', // 05.4-28 ENG-15 (D-109): US$100,000,000 in US cents
   'MAX_CUSTOM_OPTIONS',
   'MAX_OWN_LINES',
   'MAX_OWN_QUESTIONS',
@@ -43,15 +70,31 @@ export const V3_RUNTIME_EXPORTS = [
   'MISSED_PAY_GRACE_DAYS',
   'MISSING_KEYS',
   'MISSING_PRIORITY',
+  'MISSING_VALUE_SOURCE',
   'NEEDS_INPUT_ENTRY_AGE_DAYS',
   'NEEDS_INPUT_MIN_BAND',
+  'NEED_PURPOSES',
+  'NET_STARTER_MONTHS',
+  'NEXT_STEP_KEYS',
   'NOTICE_KEYS',
+  'NOTICE_VALUE_KEYS',
+  'OPTION_ORDER', // 05.4-28 D-110: need / want / no-purpose order of the options
+  'OVERDRAFT_DAYS_PER_YEAR',
+  'OVERDRAFT_REPEAT_MIN',
+  'OVERDRAFT_REPEAT_PAYDAYS',
+  'PAY_GAP_ARRIVALS',
+  'PAY_GAP_BP',
   'PAY_MATCH_DAYS',
+  'PLAN_LABEL_KEYS', // 05.4-38 CMP-F07, CMP-F11
   'PRESET_QUESTIONS',
   'QUESTION_LIBRARY',
   'QUOTED_TOLERANCE_USD',
   'READINESS_KEYS',
+  'REASON_AUDIENCE',
+  'REASON_WEIGHT',
   'RECONFIRM_MIN_MONTHS',
+  'RECORDS_FRESH_FIRST_DAYS',
+  'RECORDS_FRESH_SYNC_DAYS',
   'RECURRING_MIN_REPEATS',
   'RECURRING_WINDOWS',
   'REFINE_CARD_UNPAID_STATEMENTS',
@@ -73,6 +116,12 @@ export const V3_RUNTIME_EXPORTS = [
   'SEASON_CYCLE_MONTHS',
   'SERIES_DRIFT_DIVISOR',
   'SERIES_DRIFT_LAST',
+  'SHADOW_CODES_MAX', // 05.4-36 BO-08
+  'SHADOW_SAMPLE_IDS', // 05.4-36 BO-08 (D-12)
+  'SHORT_WAIT_DAYS',
+  'TAX_KEYS', // 05.4-37 APP-20 typecheck
+  'TIGHT_FLOOR_DIVISOR',
+  'TIGHT_SHARE_BP',
   'TWO_DATE_TOLERANCE_DAYS',
   'UNDER_LOGGED_PACE_PERCENT',
   'UNSPENT_DRIFT_PERCENT_DIVISOR',
@@ -87,32 +136,58 @@ export const V3_RUNTIME_EXPORTS = [
   'buildSchedule',
   'builtinLines',
   'cadenceOfFreq',
-  'canUseEmergency',
+  'cardEligibility', // 05.3-44: shared card rule, so v3 screens never import the old barrel (P-01)
+  'cardPaidInFullHistory', // 05.3-80
   'changeSinceLooked',
+  'cheaperOption', // 05.4-28 UX-28 (D-111): The cheaper one, figures only
   'checkQuoted',
   'detectCandidates',
   'evaluate',
   'everydayByMonth',
   'explore',
+  'freeHelpFor', // 05.4-38 CMP-F04
+  'homeFigure', // 05.4-24 FIN-09 (D-24): Decide Home's month figure
   'homeThresholds',
   'insteadFutures',
+  'insteadLinkFor',
+  'isNeedPurpose',
+  'judgeBoth', // 05.4-27 BO-05: cash and installments from one input
+  'judgeCheck',
+  'layerOfAnswerKey',
   'layersFor',
   'legacyLimits',
   'legacyStateOf',
   'liveEmergencyOf',
+  'lookupTaxDefault', // 05.4-25 FIN-27 (D-19, ARC-25): the one owner of region tax defaults
+  'maxCheckPrice', // 05.4-28 ENG-15 (D-109): the price limit in a currency
+  'monthAfterPlans', // 05.4-24 FIN-09 (D-22)
   'monthlyEquivalentOf',
+  'myShareOf',
+  'orderOptions', // 05.4-28 D-110
   'parseCheckV2',
   'planCard',
+  'prepare',
+  'questionSpec',
   'readStoredCheck',
   'refine',
   'refineNoise',
+  'roundForShadow', // 05.4-36 BO-08 (D-10)
+  'roundSig2', // 05.4-36 BO-08
+  'saleFlows', // 05.4-27 BO-05
+  'salesTaxOf',
+  'saveForItReadyDate', // 05.4-27 BO-05 (D-108)
   'seenOf',
   'seriesDrift',
+  'shadowRun', // 05.4-36 BO-08 (D-11)
+  'shadowSamples', // 05.4-36 BO-08 (D-147)
+  'stagedRequired',
+  'stoppedCostFlows', // 05.4-27 BO-05
   'toStoredV2',
   'unspentSum',
   'upgradeInputs',
   'validateCustomOptions',
   'verdictRowFor',
+  'visibleLayerAnswers',
   'withLiveEmergency',
 ] as const;
 

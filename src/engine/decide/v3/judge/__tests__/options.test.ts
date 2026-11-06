@@ -1,6 +1,6 @@
 import { assert, property, string } from 'fast-check';
 import type { CustomItemType, CustomOptions, OwnQuestion, PresetPurpose } from '../../types';
-import { canUseEmergency, resolveCadence, resolveIncomeKind, resolveItemType, validateCustomOptions } from '../options';
+import { isNeedPurpose, resolveCadence, resolveIncomeKind, resolveItemType, validateCustomOptions } from '../options';
 import { PRESET_QUESTIONS } from '../presetQuestions';
 
 const EMPTY: CustomOptions = { itemTypes: [], purposes: [], cadences: [], incomeKinds: [] };
@@ -8,15 +8,16 @@ const own = (id: string, over: Partial<OwnQuestion> = {}): OwnQuestion => ({ id,
 const itemType = (id: string, over: Partial<CustomItemType> = {}): CustomItemType => ({ id, base: 'vehicle', questionIds: [], ownQuestions: [], ...over });
 const many = <T,>(n: number, f: (i: number) => T): T[] => Array.from({ length: n }, (_, i) => f(i));
 
-describe('canUseEmergency', () => {
-  it('I38 / D-19 emergency purposes', () => {
-    expect(canUseEmergency(null)).toBe(false);
-    expect(canUseEmergency({ kind: 'preset', value: 'necessity' })).toBe(true);
-    expect(canUseEmergency({ kind: 'preset', value: 'for_work' })).toBe(true);
+describe('isNeedPurpose', () => {
+  // 05.4 D-41 / D-49: the 05.1 I38 gate is retired; the same two purposes now only read as a need (wording and order only).
+  it('D-41 necessity and for_work read as a need; any other purpose, a custom one or none as a want', () => {
+    expect(isNeedPurpose(null)).toBe(false);
+    expect(isNeedPurpose({ kind: 'preset', value: 'necessity' })).toBe(true);
+    expect(isNeedPurpose({ kind: 'preset', value: 'for_work' })).toBe(true);
     for (const v of ['invest_in_me', 'nice_to_have', 'treat', 'luxury'] as PresetPurpose[]) {
-      expect(canUseEmergency({ kind: 'preset', value: v })).toBe(false);
+      expect(isNeedPurpose({ kind: 'preset', value: v })).toBe(false);
     }
-    assert(property(string(), (id) => canUseEmergency({ kind: 'custom', id }) === false));
+    assert(property(string(), (id) => isNeedPurpose({ kind: 'custom', id }) === false));
   });
 });
 

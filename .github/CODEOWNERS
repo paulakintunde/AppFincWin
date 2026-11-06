@@ -1,0 +1,4 @@
+/docs/ops/decide-testers.json @paulakintunde
+/docs/ops/decide-never-on.json @paulakintunde
+/scripts/decide-switch-check.mjs @paulakintunde
+/.github/workflows/release-gate.yml @paulakintunde

@@ -4,6 +4,7 @@
  * (rae). Every expectation was worked by hand from the rules and is written with its working in variable-income.json
  * (D-28 style). The engine's own output is never the source of an expectation.
  */
+import { codesOf, goldenLevel } from './helpers/restsOn';
 import en from '../../../../i18n/locales/en';
 import { evaluate } from '../evaluate';
 import type { Evaluation } from '../evaluate';
@@ -31,11 +32,12 @@ function expectMatches(c: LoadedCase): void {
   for (const n of e.notices ?? []) expect(r.notices).toContainEqual(n);
   for (const code of e.noticesAbsent ?? []) expect(r.notices.map((n) => n.code)).not.toContain(code);
   for (const x of e.reasons ?? []) expect(r.reasons).toContain(x);
-  if (e.confidence !== undefined) expect(r.confidence.level).toBe(e.confidence);
+  if (e.confidence !== undefined) expect(goldenLevel(r.confidence)).toBe(e.confidence);
   if (e.futures !== undefined) expect(ev.futures !== null).toBe(e.futures);
   if (e.readyBy !== undefined) expect(r.readyBy).toEqual(e.readyBy);
   if (e.split !== undefined) expect(r.split.map((s) => ({ source: s.source, amount: s.amount }))).toEqual(e.split);
-  if (e.readiness !== undefined) expect(r.readiness).toEqual(e.readiness);
+  // 05.3-54: the goldens pin the D-52 codes; named items are pinned in readinessItems.test.ts.
+  if (e.readiness !== undefined) expect({ ready: r.readiness?.ready, missing: r.readiness?.missing }).toEqual(e.readiness);
   const f = e.funds;
   if (f) {
     if (f.suggested !== undefined) expect(ev.funds.suggested).toBe(f.suggested);
@@ -73,9 +75,10 @@ describe('D-46: every why code appears in a golden with exact values', () => {
 
   it('lean_months_judged, low_month_judged, lean_bridge (with until) and unspent_held_back', () => {
     expect(has('lean_months_judged', (v) => v.from === '2027-01' && v.to === '2027-03' && v.leanLeft === 25000)).toBe(true);
-    expect(has('low_month_judged', (v) => v.month === '2026-05' && v.left === 13000)).toBe(true);
-    expect(has('lean_bridge', (v) => v.until === '2027-03' && v.bridge === 45000 && v.after === 259000)).toBe(true);
-    expect(has('lean_bridge', (v) => v.until === '2026-12' && v.bridge === 24000 && v.after === 220000)).toBe(true);
+    // 05.4-23 (FIN-08): the lowest window month is judged, and the bridge names the savings that carry it
+    expect(has('low_month_judged', (v) => v.month === '2025-12' && v.left === -7000)).toBe(true);
+    expect(has('lean_bridge', (v) => v.until === '2027-03' && v.bridge === 45000 && v.savings === 655000)).toBe(true);
+    expect(has('lean_bridge', (v) => v.until === '2027-04' && v.bridge === 32000 && v.savings === 574000)).toBe(true);
     expect(has('unspent_held_back', (v) => v.amount === 270000)).toBe(true);
   });
 
@@ -93,27 +96,21 @@ describe('D-46: every why code appears in a golden with exact values', () => {
   });
 });
 
-describe('D-48: ask, yes and no each appear in a golden', () => {
-  it('vic asks with the income_volatile values', () => {
-    const r = run(byId('vic-ask')).result;
-    expect(r.code).toBe('needs_input');
-    expect(r.missing).toEqual(['volatile_cover_question']);
-    expect(r.notices).toContainEqual({
-      code: 'income_volatile',
-      values: { payment: 20000, periods: 6, monthly: 20000, months: 6, leanFrom: '2026-05', leanTo: '2026-05', leanLeft: -87000 },
-    });
-  });
-
-  it('a yes fits on her word at rough confidence; a no is not_yet with futures', () => {
-    const yes = run(byId('vic-yes'));
-    expect(yes.result.code).toBe('fits_month');
-    expect(yes.result.facts).toContainEqual({ code: 'rests_on_your_answer', values: { monthly: 20000, months: 6 } });
-    expect(yes.result.confidence.level).toBe('rough');
-    expect(yes.result.confidence.reasons).toContain('user_said_cover');
-    const no = run(byId('vic-no'));
-    expect(no.result.code).toBe('not_yet');
-    expect(no.result.reasons).toContain('volatile_cover_declined');
-    expect(no.futures).not.toBeNull();
+// 05.4-23 (FIN-08: savings first, the question only when they cannot carry it): vic's savings carry her low months, so she is never
+// asked and her answer is never read. The ask, a yes (Only on your answer) and a no (Not yet) are pinned by the approved QE-03 and QE-05
+// (yourWord.test.ts, rightAnswers) and the judge tests.
+describe('D-48 / FIN-08: savings come before the question', () => {
+  it('vic is not asked: her savings carry the low months, whatever she answered', () => {
+    for (const id of ['vic-ask', 'vic-yes', 'vic-no']) {
+      const ev = run(byId(id));
+      expect({ id, code: ev.result.code, variant: ev.result.variant, missing: ev.result.missing }).toEqual({ id, code: 'fits_month', variant: 'low_month', missing: [] });
+      expect(ev.result.notices.map((n) => n.code)).not.toContain('income_volatile');
+      expect(ev.result.facts.map((f) => f.code)).not.toContain('rests_on_your_answer');
+      expect(codesOf(ev.result.confidence)).not.toContain('user_said_cover');
+      expect(ev.result.reasons).not.toContain('volatile_cover_declined');
+      expect(ev.futures).toBeNull();
+      expect(goldenLevel(ev.result.confidence)).toBeDefined();
+    }
   });
 
   it('ines is seasonal at about 28% and never volatile; gabe about 30%; vic about 59% is volatile', () => {
@@ -145,16 +142,19 @@ describe('D-50: unexplained money asks, and only spare counts', () => {
     expect(ask.result.notices).toContainEqual({ code: 'unexplained_money', values: { amount: 50000 } });
     expect(ask.funds.unexplained).toBe(50000);
     expect(run(byId('dee-unexplained-spare')).result.code).toBe('fits_unspent');
-    expect(run(byId('dee-unexplained-someone')).result.code).toBe('not_yet');
+    // 05.4 D-35: kept out of spare money, the someone-else's answer leaves the price to the money saved above the net's size.
+    const fromNet = (id: string): number => run(byId(id)).result.split.filter((s) => s.source === 'extra_savings').reduce((t, s) => t + s.amount, 0); // D-56: extra savings by name
+    expect(fromNet('dee-unexplained-spare')).toBe(0);
+    expect(fromNet('dee-unexplained-someone')).toBe(43000);
     expect(run(byId('dee-unexplained-someone')).funds.ringFenced).toBe(130000);
   });
 });
 
 describe('D-52: past-month fail, current-month fail and pass each appear', () => {
   it('one case fails for each reason, one passes, and readiness never changes the code', () => {
-    expect(run(byId('dee-past-month-missing')).result.readiness).toEqual({ ready: false, missing: ['past_month_missing'] });
-    expect(run(byId('dee-current-not-current')).result.readiness).toEqual({ ready: false, missing: ['activity_not_current'] });
-    expect(run(byId('dee-mixed')).result.readiness).toEqual({ ready: true, missing: [] });
+    expect(run(byId('dee-past-month-missing')).result.readiness).toMatchObject({ ready: false, missing: ['past_month_missing'], waived: [] });
+    expect(run(byId('dee-current-not-current')).result.readiness).toMatchObject({ ready: false, missing: ['activity_not_current'], waived: [] });
+    expect(run(byId('dee-mixed')).result.readiness).toEqual({ ready: true, missing: [], items: [], waived: [] });
     expect(run(byId('dee-past-month-missing')).result.code).toBe('fits_month');
   });
 });
@@ -163,9 +163,9 @@ describe('D-54: one case per account use and an unstated account', () => {
   it('everyday, mixed with put-aside, dedicated emergency, dedicated envelope and untouched each shape the answer', () => {
     expect(run(byId('dee-everyday')).result.code).toBe('fits_unspent');
     expect(run(byId('dee-mixed')).funds.spending).toBe(320000);
-    expect(run(byId('dee-dedicated-emergency')).result.code).toBe('emergency_use');
+    expect(run(byId('dee-dedicated-emergency')).result.code).toBe('not_yet'); // 05.4 D-41: the dedicated account is the net; D-61: locked, so it lends nothing
     expect(run(byId('dee-dedicated-envelope')).result.facts).toContainEqual({ code: 'envelope_used', values: { used: 40000, envelopeId: 'car' } });
-    expect(run(byId('dee-untouched')).result.code).toBe('not_yet');
+    expect(run(byId('dee-untouched')).result.code).toBe('not_yet'); // the untouched account never counts; the net is locked (05.4 D-61)
   });
 
   it('an account of no stated use asks first; an envelope linked to no account is assumed inside and unconfirmed', () => {
@@ -181,8 +181,9 @@ describe('D-54: one case per account use and an unstated account', () => {
 describe('D-57: rough-only answers', () => {
   it('a person with only rough figures is ready and the answer is marked rough', () => {
     const r = run(byId('rae-rough')).result;
-    expect(r.readiness).toEqual({ ready: true, missing: [] });
-    expect(r.confidence.level).toBe('rough');
+    expect(r.readiness).toEqual({ ready: true, missing: [], items: [], waived: [] });
+    expect(codesOf(r.confidence)).toContain('quick_estimates');
+    expect(r.confidence.basis).toEqual({ kind: 'quick_estimates' });
     expect(r.notices.map((n) => n.code)).toContain('from_your_figures');
     expect(JSON.stringify(CASES.map((c) => c.expect))).not.toContain('income_not_recorded');
   });
@@ -194,8 +195,8 @@ describe('D-58: ask, arrived, not yet', () => {
     expect(run(byId('dee-pay-arrived')).month.monthLeft).toBe(97250);
     const missed = run(byId('dee-pay-not-yet')).result;
     expect(missed.notices).toContainEqual({ code: 'pay_counted_missed', values: { amount: 300000, date: '2026-10-01' } });
-    expect(missed.confidence.level).toBe('rough');
-    expect(missed.confidence.reasons).toContain('pay_missed');
+    expect(goldenLevel(missed.confidence)).toBe('rough');
+    expect(codesOf(missed.confidence)).toContain('pay_missed');
   });
 });
 

@@ -11,7 +11,7 @@ import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import type { CheckInputs } from '../snapshot/types';
-import { SegmentedToggle } from '../ui/SegmentedToggle';
+import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { SplitOverrideSheet } from './SplitOverrideSheet';
 
 export interface ScopeToggleProps {

@@ -1,4 +1,5 @@
-import { DbError, VersionConflictError, NotFoundError, toDbError } from '../errors';
+import { RequestTimeoutError } from '@/services/supabase/timeoutFetch';
+import { DbError, VersionConflictError, NotFoundError, SessionUnavailableError, classifyReadError, toDbError } from '../errors';
 
 describe('DbError / toDbError', () => {
   it('maps a PostgREST-shaped error object to a DbError with code and status', () => {
@@ -46,5 +47,45 @@ describe('NotFoundError', () => {
     expect(err.code).toBe('not-found');
     expect(err.entity).toBe('accounts');
     expect(err.id).toBe('acc-1');
+  });
+});
+
+// 05.4-33 APP-10: a read failure has a kind; a network failure never reads as "not found".
+describe('classifyReadError', () => {
+  it('network: a fetch TypeError, the 15 s read timeout, an AbortError and a DbError with no HTTP answer', () => {
+    expect(classifyReadError(new TypeError('Network request failed'))).toBe('network');
+    expect(classifyReadError(new RequestTimeoutError(15_000, false))).toBe('network');
+    expect(classifyReadError({ name: 'AbortError', message: 'Aborted' })).toBe('network');
+    expect(classifyReadError(toDbError({ message: 'TypeError: Network request failed', code: '' }, 0))).toBe('network');
+    expect(classifyReadError(toDbError({ message: 'fetch failed' }))).toBe('network');
+  });
+
+  it('not_found only when the server says so: 404, PGRST116 or a confirmed missing row', () => {
+    expect(classifyReadError(toDbError({ message: 'x' }, 404))).toBe('not_found');
+    expect(classifyReadError(toDbError({ message: 'x', code: 'PGRST116' }, 406))).toBe('not_found');
+    expect(classifyReadError(new NotFoundError('decide_checks', 'c1'))).toBe('not_found');
+  });
+
+  it('forbidden: 401, 403, 42501, the JWT codes and no usable session', () => {
+    expect(classifyReadError(toDbError({ message: 'x' }, 401))).toBe('forbidden');
+    expect(classifyReadError(toDbError({ message: 'x' }, 403))).toBe('forbidden');
+    expect(classifyReadError(toDbError({ message: 'x', code: '42501' }, 400))).toBe('forbidden');
+    expect(classifyReadError(toDbError({ message: 'x', code: 'PGRST303' }, 400))).toBe('forbidden');
+    expect(classifyReadError(new SessionUnavailableError())).toBe('forbidden');
+  });
+
+  it('conflict: 409 or a version conflict', () => {
+    expect(classifyReadError(toDbError({ message: 'x' }, 409))).toBe('conflict');
+    expect(classifyReadError(new VersionConflictError('accounts', 'a1', {}))).toBe('conflict');
+  });
+
+  it('server: 5xx, 408, 429, other codes and anything unknown, never not_found', () => {
+    expect(classifyReadError(toDbError({ message: 'x' }, 500))).toBe('server');
+    expect(classifyReadError(toDbError({ message: 'x' }, 408))).toBe('server');
+    expect(classifyReadError(toDbError({ message: 'x', code: '22P02' }, 400))).toBe('server');
+    expect(classifyReadError(new Error('boom'))).toBe('server');
+    expect(classifyReadError(undefined)).toBe('server');
+    expect(classifyReadError(null)).toBe('server');
+    expect(classifyReadError('text')).toBe('server');
   });
 });

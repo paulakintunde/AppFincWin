@@ -8,6 +8,7 @@ import React from 'react';
 import { Redirect, useLocalSearchParams, type Href } from 'expo-router';
 import { SetupScreen } from './SetupScreen';
 import { SETUP_STEP_KEYS, type SetupStepKey } from '@/features/decide/setup/setupFlow';
+import { DECIDE_SETUP_VISIBLE } from '@/features/decide/availability';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { EditSeriesFromProvider } from '@/features/income/steps/EditSeriesFromProvider';
 import { oneParam } from '@/features/navigation/routeParams';
@@ -23,7 +24,7 @@ const stepParam = (value: string | string[] | undefined, allowed: (k: SetupStepK
 
 export function SetupRoute(): React.JSX.Element {
   const { v3 } = useDecideAccess();
-  if (!v3) return <Redirect href={DECIDE_TAB} />;
+  if (!(DECIDE_SETUP_VISIBLE && v3)) return <Redirect href={DECIDE_TAB} />;
   return <SetupRouteBody />;
 }
 

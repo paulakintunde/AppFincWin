@@ -15,7 +15,7 @@
 import { currencyExponent } from '../../money/currencyExponents';
 import { divideHalfUp } from '../../money/rounding';
 import { MAX_ABS_AMOUNT_MINOR, minorUnits, type MinorUnits } from '../../money/types';
-import { BAND_EDGES_USD, QUOTED_TOLERANCE_USD, UNSPENT_DRIFT_USD } from './constants';
+import { BAND_EDGES_USD, MAX_CHECK_PRICE, QUOTED_TOLERANCE_USD, UNSPENT_DRIFT_USD } from './constants';
 import type { HomeThresholds } from './types';
 
 export interface UsdRate {
@@ -128,4 +128,15 @@ export function homeThresholds(currency: string, usdRate: UsdRate | null): HomeT
     return { bandEdges: e.edges, unspentDrift: e.unspentDrift, quotedTolerance: e.quotedTolerance, source: 'fallback' };
   }
   return { bandEdges: [], unspentDrift: minorUnits(0), quotedTolerance: minorUnits(0), source: 'missing' };
+}
+
+/**
+ * 05.4 ENG-15 (D-109): the largest price Decide checks, about US$100,000,000 in every currency. The fixed reference rate converts it
+ * with the same tidy rule as the band edges (never today's rate, so the limit never moves overnight; tidyFromUsd caps it at
+ * MAX_ABS_AMOUNT_MINOR); a currency missing from the table uses MAX_ABS_AMOUNT_MINOR.
+ */
+// Cite: ENG-15, D-109 (05.4-28, owner 2026-11-05): US$100,000,000 through the fixed reference rates, capped at the database cap. FincWin choice.
+export function maxCheckPrice(currency: string): MinorUnits {
+  const rate = REFERENCE_USD_RATES[currency];
+  return rate === undefined ? minorUnits(MAX_ABS_AMOUNT_MINOR) : tidyFromUsd(MAX_CHECK_PRICE, parseRate(rate), currencyExponent(currency));
 }

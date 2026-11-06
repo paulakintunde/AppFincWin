@@ -3,7 +3,7 @@ import en from '../locales/en';
 import { DRAFT_COPY_KEYS } from '../copyStatus';
 import { UNDO_LABEL_KEYS } from '../../engine/undo/types';
 import { undoLabelText } from '../undoLabel';
-import { FACT_KEYS, FOOTER_KEY, MISSING_KEYS, NOTICE_KEYS, READINESS_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
+import { ABOUT_KEYS, AFTER_BUY_KEYS, BASIS_KEYS, BASIS_REASON_KEYS, CAVEAT_FIGURE_KEYS, CAVEAT_KEYS, CAVEAT_WRONG_FIGURE_KEY, DISCLAIMER_KEYS, FACT_ACTION_KEYS, FACT_KEYS, FOOTER_KEY, INTRO_KEYS, MISSING_KEYS, NEXT_STEP_KEYS, NOTICE_KEYS, PLAN_LABEL_KEYS, READINESS_KEYS, TAX_KEYS, VERDICT_TABLE } from '../../engine/decide/v3/copy/verdictTable';
 
 interface Leaf {
   path: string;
@@ -93,6 +93,8 @@ const CONTROL_LABELS = new Set([
   'decide.flow.commit.none', // disabled primary button label
   'decide.hint.foldTap', // reveal hint named in UI-SPEC as a control
   // 05-110 (R17.6): UI controls on the keyed list; none is a prescription about money
+  'decide.v3.factAction.addLimit', // 05.4 FIN-03 (D-38): answer button to "Does Main have an overdraft?"
+  'decide.v3.factAction.addIt', // 05.4 D-43 (05.4-20): answer button to "No loan, card, other debt or overdraft is recorded. Do you have any?"
   'decide.home.field.check', // button: "Check it"
   'decide.home.field.full', // text link: "Full check"
   'decide.home.field.fullA11y', // the same link's accessibility label
@@ -122,7 +124,32 @@ const CONTROL_LABELS = new Set([
   'income.method.intro', // step intro: "Pick the one that fits you. Nothing is chosen for you."
   'income.other.intro', // step intro: "Choose all that apply, or None."
 ]);
-const BANNED = [/\badvice\b/i, /\badvis/i, /recommend/i, /you should/i, /we suggest/i, /best option/i, /guaranteed/i, /\bapproved\b/i, /pre-approved/i, /\boffer/i, /apply for/i, /\blender\b/i, /loan offer/i, /interest-free/i];
+// 05.4-37: the 05.4 copy rules for decide.v3 (and the D-64 legal keys). Each entry names its rule.
+const V3_COMPLIANCE: readonly RegExp[] = [
+  /\bsuggestion/i, // CMP-F25
+  /\b(rough|fair|firm)\b/i, // D-31: no Rough / Fair / Firm
+  /\bmost dealers\b/i, // CMP-F08: an unsourced claim
+  /\boverspent\b/i, // UX-08, D-116: "short"
+  /\bunspent\b/i, // UX-17, D-56: "spare money"
+  /\broom\b/i, // UX-17, D-117: no exception
+  /\bband \d+\b/i, // UX-18
+  /\bB\d\b/, // UX-18
+  /\basks about\b/i, // UX-18
+  /\b(sure|certain|accurate)\b/i, // CMP-F12: never more confident than the answer
+  /\brecommend/i, // D-92 and the copy rule
+  /\bbest to\b/i,
+  /\byou should\b/i,
+  /\badvice\b/i, // D-92: the one exception is D-64's About-sheet sentence (legal.decideAbout.what.planningInfo), outside decide.v3
+  /\bemergency fund\b/i, // D-35: one name, "safety net"
+  /\bliab(le|ility)\b/i, // D-64 (2): the liability sentence is in the Terms of Use only
+  /\bnot responsible\b/i, // D-64 (2)
+  /\bworks for (most|nearly|almost)\b/i, // D-64: never a success rate
+  /\b\d+ ?% of (people|users|the time)\b/i, // D-64: never a success rate
+];
+// D-35 / round 1b (owner override of Theme G UX-37 / CMP-F13): the months line sits only inside these two net facts.
+const MONTHS_LINE = /\b\d+(\s+to\s+\d+)?\s+months?\s+is\s+(a start|common)\b/i;
+const MONTHS_LINE_KEYS: ReadonlySet<string> = new Set(['decide.v3.fact.net_none_start', 'decide.v3.fact.net_progress']);
+const BANNED = [/\badvice\b/i,/\badvis/i, /recommend/i, /you should/i, /we suggest/i, /best option/i, /guaranteed/i, /\bapproved\b/i, /pre-approved/i, /\boffer/i, /apply for/i, /\blender\b/i, /loan offer/i, /interest-free/i];
 
 // Demo-scale values (05-18 demo: income $4,400 a month, car loan over 48 months). Four-digit amounts are the widest a
 // demo month shows; `already` < `short` by meaning ("already X short. This makes it Y"); 'average' is the longer basis
@@ -152,6 +179,11 @@ describe('decide copy (DCU-09)', () => {
 
   it.each(copyLeaves)('uses no banned word: $path', ({ value }) => {
     for (const re of BANNED) expect(value).not.toMatch(re);
+  });
+
+  // 05.4-25 (owner, 2026-11-04, D-92): the CMP-F24 tax disclaimer carries no "advice"; the copy guards keep no exception for it.
+  it('the CMP-F24 tax disclaimer is worded as the owner set it, with no keyed exception', () => {
+    expect(get('decide.v3.tax.disclaimer')).toBe('This is a planning estimate, not a tax figure.');
   });
 
   it.each(copyLeaves)('does not reassure about the future: $path', ({ value }) => {
@@ -298,7 +330,7 @@ describe('decide depth copy (05-31, DCU-09)', () => {
 
 describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
   const v3 = leaves.filter((l) => l.path.startsWith('decide.v3.'));
-  const V3_BANNED = [/\bshould\b/i, /\bapprove/i, /\bdecline/i, /\bgo ahead\b/i, /\byou can\b/i, /\bsafe\b/i, /\bfree\b/i, /\bbest\b/i, /\bbetter\b/i, /\bworth it\b/i, /\bwill run out\b/i];
+  const V3_BANNED = [/\bshould\b/i, /\bapprove/i, /\bdecline/i, /\bgo ahead\b/i, /\byou can\b/i, /\bsafe\b/i, /\bfree\b/i, /\bbest\b/i, /\bbetter\b/i, /\bworth it\b/i, /\bwill run out\b/i, ...V3_COMPLIANCE];
   // Demo-scale values for the v3 placeholders, kept apart from DEMO_VALUES so the existing length checks are unchanged.
   const V3_DEMO: Record<string, string> = { month: 'September', lowMonth: 'February', fromMonth: '$1,234', after: '$1,234', date: '12 Sep', months: '14', readyMonth: 'March 2027', monthly: '$1,234', used: '$1,234', suggested: '$1,234', days: '45', line: 'housing' };
 
@@ -318,18 +350,52 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       ...Object.values(FACT_KEYS),
       ...Object.values(MISSING_KEYS),
       ...Object.values(READINESS_KEYS),
+      ...Object.values(BASIS_KEYS),
+      ...Object.values(BASIS_REASON_KEYS),
+      ...Object.values(NEXT_STEP_KEYS),
       // Context variants chosen by the UI (05.1-33): not engine codes, so no table maps them.
       'decide.v3.notice.income_from_expected_confirmed',
       'decide.v3.notice.income_from_expected_last_year',
       'decide.v3.notice.income_from_expected_low',
       'decide.v3.missing.account_use_question_fund',
       // Variants chosen by the UI (05.1-40)
-      'decide.v3.fact.emergency_used_rebuild',
+      // 05.4 FIN-02: the wait line names a month when no payday clears the dip
+      'decide.v3.fact.wait_keeps_net_month',
       'decide.v3.fact.line_crossed_percent',
       'decide.v3.fact.line_crossed_money',
       'decide.v3.fact.line_crossed_tenths',
       'decide.v3.notice.month_heading_short_category',
+      // 05.4 FIN-03: variants chosen by the UI (no rate set, no days below 0 without the purchase, no pay in the 90 days)
+      'decide.v3.fact.overdraft_use_no_rate',
+      'decide.v3.fact.overdraft_without_purchase_above',
+      'decide.v3.fact.overdraft_not_cleared_no_pay',
+      // 05.4 D-43 (05.4-20): the ask names only what is not recorded (the fact's kind picks the variant)
+      'decide.v3.fact.ask_debts_not_recorded_loan',
+      'decide.v3.fact.ask_debts_not_recorded_card',
+      'decide.v3.fact.ask_debts_not_recorded_overdraft',
+      'decide.v3.fact.ask_debts_not_recorded_loan_card',
+      'decide.v3.fact.ask_debts_not_recorded_loan_overdraft',
+      'decide.v3.fact.ask_debts_not_recorded_card_overdraft',
+      // 05.4 FIN-07 / D-40 (05.4-21): the tight floor is the user's own line (basis 'user_line')
+      'decide.v3.fact.tight_floor_user_line',
+      // 05.4 FIN-05: the save-or-borrow line, by kind (cash fits, net, overdraft, no date)
+      'decide.v3.fact.save_vs_borrow_cash_fits',
+      'decide.v3.fact.save_vs_borrow_with_net',
+      'decide.v3.fact.save_vs_borrow_with_overdraft',
+      'decide.v3.fact.save_vs_borrow_no_date',
+      'decide.v3.fact.save_vs_borrow_ask', // 05.4 D-79
+      'decide.v3.fact.lean_bridge_net', // 05.4 FIN-08: the low months dip into the safety net (source 'net')
+      'decide.v3.fact.overdraft_repeat_no_rate',
+      'decide.v3.fact.other_account_overdrawn_no_rate',
+      'decide.v3.fact.earlier_money_from_savings', // 05.4 D-44 (05.4-24): where 'savings'
+      ...Object.values(AFTER_BUY_KEYS), // 05.4 FIN-09 (05.4-24)
+      ...Object.values(TAX_KEYS), // 05.4 FIN-27 (CMP-F24, D-21)
+      ...Object.values(FACT_ACTION_KEYS).flatMap((a) => Object.values(a)),
       FOOTER_KEY,
+      ...Object.values(CAVEAT_KEYS), // 05.4-37 D-64 (4)
+      ...Object.values(CAVEAT_FIGURE_KEYS), // D-64 (5)
+      CAVEAT_WRONG_FIGURE_KEY,
+      ...Object.values(PLAN_LABEL_KEYS), // 05.4-38 CMP-F07, CMP-F11
     ];
     expect(keys.filter((k) => resolve(k) === undefined)).toEqual([]);
     // and the other way: every v3 leaf is reachable from a table
@@ -342,8 +408,34 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
     for (const l of v3) for (const re of V3_BANNED) expect({ path: l.path, hit: re.test(l.value) }).toEqual({ path: l.path, hit: false });
   });
 
+  it('05.4-37 the months line sits only inside the two net facts (D-35, round 1b)', () => {
+    expect(v3.filter((l) => MONTHS_LINE.test(l.value) && !MONTHS_LINE_KEYS.has(l.path)).map((l) => l.path)).toEqual([]);
+    for (const k of MONTHS_LINE_KEYS) expect({ k, line: MONTHS_LINE.test(get(k)) }).toEqual({ k, line: true });
+  });
+
+  it('05.4-37 the guard catches the words 05.4 replaced', () => {
+    const old = [
+      'Overspent each month', 'Fits from unspent money', 'Your emergency fund is untouched.', 'This answer is less certain because',
+      'leaves room for a new payment', 'Band 7', 'B7 applies', 'Asks about debts', 'a suggestion', 'Rough', 'most dealers cap card payments',
+      'FincWin accepts no liability', 'We are not responsible for', 'Works for most people.', '90% of users', 'We recommend this', 'best to wait',
+    ];
+    for (const o of old) expect({ o, hit: V3_COMPLIANCE.some((re) => re.test(o)) }).toEqual({ o, hit: true });
+    expect(MONTHS_LINE.test('1 month is a start; 3 to 6 months is common.')).toBe(true);
+  });
+
+  it('D-116 / D-56 / D-35 v3 says short, spare money and safety net', () => {
+    expect(get('decide.v3.verdict.monthlyShort.chip')).toBe('Short each month');
+    expect(get('decide.v3.verdict.fitsUnspent.chip')).toBe('Fits from spare money');
+    expect(v3.filter((l) => /overspent|unspent|emergency fund/i.test(l.value)).map((l) => l.path)).toEqual([]);
+  });
+
+  it('D-117 the two balancing lines read as the owner set them', () => {
+    expect(get('decide.v3.fact.balanced_month_room')).toMatch(/^A usual month that balances leaves money for a new payment\./);
+    expect(get('decide.v3.fact.month_balance_gap')).toMatch(/and then a new payment would fit\.$/);
+  });
+
   it('v3 4.6 forecasts say could, based on your records or on track', () => {
-    const forecastBodies = ['fitsMonth', 'fitsMonthLowMonth', 'fitsUnspentLowMonth', 'notYetPayday', 'notYetNotCovered', 'monthlyShort', 'emergencyUse'];
+    const forecastBodies = ['fitsMonth', 'fitsMonthLowMonth', 'fitsUnspentLowMonth', 'notYetPayday', 'notYetNotCovered', 'monthlyShort', 'fitsUsesNet'];
     for (const name of forecastBodies) {
       expect(get(`decide.v3.verdict.${name}.body`)).toMatch(/\bcould\b|based on your records|on track/i);
     }
@@ -355,17 +447,85 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
     }
   });
 
-  it('v3 leaves are draft copy and the footer reads as the owner worded it', () => {
+  it('v3 leaves are draft copy and the D-64 lines read as the owner worded them', () => {
     const drafts = new Set<string>(DRAFT_COPY_KEYS);
     expect(v3.filter((l) => !drafts.has(l.path)).map((l) => l.path)).toEqual([]);
-    expect(drafts.has('legal.decideFooter')).toBe(true);
-    expect(en.legal.decideFooter).toBe('Worked out from your own records and what you told us. FincWin is a record-keeping and planning tool.');
-    expect(en.legal.decideFooter).not.toMatch(/\badvice\b|recommend|you should/i);
+    expect(en.legal.decideAnswer.caveat).toBe('Worked out only from what’s recorded here. The choice is yours.');
+    expect(en.legal.decideAnswer.cantSeeLink).toBe('What this can’t see');
+    expect(en.legal.decideAnswer.footer).toBe('FincWin is a planning tool, not a lender.');
+    expect(en.legal.decideAbout.what.planningInfo).toBe('This is information to help you plan, not financial advice.');
+    expect(FOOTER_KEY).toBe('legal.decideAnswer.footer');
+    expect('decideFooter' in en.legal).toBe(false); // retired by D-64
+  });
+
+  it('05.4-23 FIN-08 / CMP-F01: Only on your answer says the records do not show it; Not yet and the runway lines never say never', () => {
+    expect(get('decide.v3.verdict.fitsOnYourAnswer.chip')).toBe('Only on your answer');
+    expect(get('decide.v3.verdict.fitsOnYourAnswer.body')).toMatch(/records do not show this/);
+    const paths = ['notYetNotCovered', 'notYetPayday'].flatMap((n) => ['chip', 'title', 'body'].map((p) => `decide.v3.verdict.${n}.${p}`));
+    paths.push('decide.v3.fact.covered_from_savings', 'decide.v3.fact.further_shortfall_runway', 'decide.v3.notice.pay_gap');
+    for (const p of paths) expect({ p, never: /\bnever\b/i.test(get(p)) }).toEqual({ p, never: false });
   });
 
   it('D-30 and D-32 notices exist', () => {
     expect(get('decide.v3.notice.unspent_drifted')).toContain('{{suggested}}');
     expect(get('decide.v3.notice.from_your_figures')).toBe('Worked out from the figures you gave.');
+  });
+});
+
+// 05.4-37 D-64 / D-120: the disclaimer, the About sheet and the intro card sit outside en.decide but follow every Decide guard.
+describe('Decide legal keys (D-64, D-120, D-92)', () => {
+  const legalLeaves = collectLeaves(en.legal, 'legal').filter((l) => l.path.startsWith('legal.decide'));
+  const V3_VOICE = [/\bshould\b/i, /\bapprove/i, /\bdecline/i, /\bgo ahead\b/i, /\byou can\b/i, /\bsafe\b/i, /\bfree\b/i, /\bbest\b/i, /\bbetter\b/i, /\bworth it\b/i, /\bwill run out\b/i, ...V3_COMPLIANCE];
+  // Exactly two keyed exceptions, each with its decision.
+  const EXCEPTIONS: Readonly<Record<string, RegExp>> = {
+    'legal.decideAnswer.footer': /\blender\b/i, // D-64 (1): "FincWin is a planning tool, not a lender."
+    'legal.decideAbout.what.planningInfo': /\badvice\b/i, // D-64 (3), D-92: the one "advice" exception in the guard
+  };
+  const allowed = (path: string, re: RegExp): boolean => EXCEPTIONS[path]?.source === re.source;
+
+  it('has the D-64 and D-120 leaves', () => {
+    expect(legalLeaves.length).toBe(3 + 24 + 2 + 5); // + 2: the About sheet's money-help heading and line (05.4-38, D-122)
+  });
+
+  it('every leaf passes BANNED and the v3 voice list, apart from the two named exceptions', () => {
+    const bad: string[] = [];
+    for (const l of legalLeaves) for (const re of [...BANNED, ...V3_VOICE]) if (re.test(l.value) && !allowed(l.path, re)) bad.push(`${l.path}: ${re.source}`);
+    expect(bad).toEqual([]);
+    expect(Object.keys(EXCEPTIONS).sort()).toEqual(['legal.decideAbout.what.planningInfo', 'legal.decideAnswer.footer']);
+    for (const [path, re] of Object.entries(EXCEPTIONS)) expect({ path, hit: re.test(String(path.split('.').reduce<unknown>((n, p) => (n as Record<string, unknown>)[p], en))) }).toEqual({ path, hit: true });
+  });
+
+  it('"advice" appears in exactly one string across Decide copy (D-92)', () => {
+    const all = [...copyLeaves, ...legalLeaves];
+    expect(all.filter((l) => /\badvice\b/i.test(l.value)).map((l) => l.path)).toEqual(['legal.decideAbout.what.planningInfo']);
+  });
+
+  it('does not reassure, order or instruct, and uses typographic apostrophes', () => {
+    const bad = legalLeaves.filter(
+      (l) =>
+        REASSURING.some((re) => re.test(l.value)) ||
+        (!ACTION_LABELS.has(l.path) && IMPERATIVE_LEAD.test(l.value)) ||
+        (!CONTROL_LABELS.has(l.path) && INSTRUCTION_LEAD.test(l.value)) ||
+        l.value.includes("'")
+    );
+    expect(bad.map((l) => l.path)).toEqual([]);
+  });
+
+  it('uses the word lend only in the footer and the What FincWin is line', () => {
+    expect(legalLeaves.filter((l) => /lend/i.test(l.value)).map((l) => l.path).sort()).toEqual(['legal.decideAbout.what.tool', 'legal.decideAnswer.footer']);
+  });
+
+  it('every legal leaf is draft copy and every table key resolves', () => {
+    const drafts = new Set<string>(DRAFT_COPY_KEYS);
+    expect(legalLeaves.filter((l) => !drafts.has(l.path)).map((l) => l.path)).toEqual([]);
+    const keys = [
+      ...Object.values(DISCLAIMER_KEYS),
+      ...Object.values(ABOUT_KEYS).flat(),
+      ...Object.values(INTRO_KEYS).flat(),
+    ];
+    const paths = new Set(legalLeaves.map((l) => l.path));
+    expect(keys.filter((k) => !paths.has(k))).toEqual([]);
+    expect([...paths].filter((p) => !keys.includes(p as never))).toEqual([]);
   });
 });
 

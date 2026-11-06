@@ -26,6 +26,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'credit_limit', 'deleted_at', 'created_at', 'updated_at',
     // 05.2
     'use', 'use_purpose', 'use_envelope_id', 'use_extra_set_aside',
+    // 05.4
+    'overdraft_rate',
   ],
   categories: ['id', 'owner_id', 'builtin_key', 'name', 'color_key', 'is_system', 'archived_at', 'monthly_cap', 'created_at', 'updated_at'],
   category_rules: [
@@ -48,11 +50,11 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   households: ['id', 'horizon_month'],
   household_members: ['household_id', 'user_id', 'display_name'],
   profiles: [
-    'home_currency', 'show_cents', 'lead_figure', 'region', 'week_start', 'sample_prompt_answered_at',
-    // profiles.decide_v3 is an access switch, not user data: excluded on purpose (05.2).
+    'home_currency', 'show_cents', 'lead_figure', 'region', 'region_subdivision', 'week_start', 'sample_prompt_answered_at',
+    // profiles.decide_v3 and profiles.decide_shadow are access switches, not user data: excluded on purpose (05.2, 05.4).
   ],
   decide_checks: [
-    'id', 'household_id', 'created_by', 'kind', 'name', 'inputs', 'status', 'furthest_step', 'last_seen_state', 'last_seen_basis',
+    'id', 'household_id', 'created_by', 'kind', 'name', 'inputs', 'status', 'furthest_step', 'last_seen_state', 'last_seen_basis', 'answer_v3',
     'reopened_from', 'decided_at', 'verdict_at_decision', 'estimate_day_one', 'estimate_monthly', 'wait_monthly', 'ready_by',
     'broke_line', 'cooling_off_at', 'estimate_monthly_payment', 'estimate_running', 'deleted_at', 'created_at', 'updated_at',
   ],
@@ -67,6 +69,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'deleted_at', 'created_at', 'updated_at',
     // 05.2
     'pays_in_full', 'paid_off_on',
+    // 05.4
+    'due_day',
   ],
   savings_goals: [
     'id', 'household_id', 'created_by', 'check_id', 'name', 'currency', 'target', 'monthly_amount', 'ready_by', 'opening_saved',
@@ -83,6 +87,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'everyday_override_at', 'month_marks', 'unspent_anchor', 'unspent_anchor_at', 'reserve_account_id', 'reserve_goal',
     'rough_saving', 'rough_debt', 'rough_invest', 'rough_as_of', 'unexplained_amount', 'unexplained_use', 'unexplained_at',
     'refine_last_at', 'refine_snooze_until',
+    'custom_options', // 05.3-81
+    'safety_net_protect', 'safety_net_size', 'safety_net_locked', // 05.4 D-33 / D-61 interim, removed in 05.5
   ],
   recurring_dismissals: ['id', 'household_id', 'payee_key', 'direction', 'dismissed_at', 'created_by', 'deleted_at', 'created_at', 'updated_at'],
   income_payer_prompts: [
@@ -97,4 +103,5 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
 export const NOT_USER_DATA: readonly string[] = [
   'transactions_active', // a view over transactions (not-deleted rows); exported through transactions
   'statement_periods_live', // a view over statement_periods; exported through statement_periods
+  'decide_shadow_runs', // rounded engine results, no client read; erased by FK cascade; added to the server export in Phase 10 (CMP-F06 export)
 ];

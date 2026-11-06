@@ -2,7 +2,9 @@ import { minorUnits } from '../../../money/types';
 import { percent } from '../../../payoff/types';
 import { purchaseCashFlows } from '../judge/purchase';
 import { evaluate, stricterOf, type Evaluation } from '../evaluate';
-import type { Code, ConfidenceLevel, ReadyBy } from '../types';
+import type { Code, ConfidenceReason, ReadyBy } from '../types';
+import { reasonItem } from '../confidence/reasons';
+import { codesOf } from './helpers/restsOn';
 import { personById, toV3Inputs } from './golden/adapter';
 import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series, volatileInputs } from './helpers/fixtures';
 
@@ -142,14 +144,18 @@ describe('evaluate', () => {
 
 describe('D-42 the stricter of the as-given and the all-full reading', () => {
   const base = evaluate(sam(), checkOnce(15000));
-  const fake = (code: Code, level: ConfidenceLevel, extra: { readyBy?: ReadyBy | null; reasons?: Evaluation['result']['reasons']; cReasons?: Evaluation['result']['confidence']['reasons'] } = {}): Evaluation => ({
+  const fake = (code: Code, months: number, extra: { readyBy?: ReadyBy | null; reasons?: Evaluation['result']['reasons']; cReasons?: readonly ConfidenceReason[] } = {}): Evaluation => ({
     ...base,
     result: {
       ...base.result,
       code,
       readyBy: extra.readyBy ?? null,
       reasons: extra.reasons ?? [],
-      confidence: { level, reasons: extra.cReasons ?? [] },
+      confidence: {
+        reasons: (extra.cReasons ?? []).map((c) => reasonItem(c)),
+        basis: months < 3 ? { kind: 'partial', used: months, lookedFor: 3, upTo: '2026-10-15' } : { kind: 'records', months, upTo: '2026-10-15' },
+        nextStep: null,
+      },
     },
   });
 
@@ -170,28 +176,34 @@ describe('D-42 the stricter of the as-given and the all-full reading', () => {
   });
 
   it('D-42 the all-full reading is stricter: it wins, and the answer says so', () => {
-    const out = stricterOf(fake('fits_month', 'firm', { reasons: ['rough_figures_used'] }), fake('fits_unspent', 'fair', { cReasons: ['few_months'] }));
+    const out = stricterOf(fake('fits_month', 3, { reasons: ['quick_estimates_used'] }), fake('fits_unspent', 2, { cReasons: ['few_months'] }));
     expect(out.result.code).toBe('fits_unspent');
-    expect(out.result.reasons).toEqual(['rough_figures_used', 'thin_history_stricter']);
-    expect(out.result.confidence).toEqual({ level: 'fair', reasons: ['few_months'] });
+    expect(out.result.reasons).toEqual(['quick_estimates_used', 'thin_history_stricter']);
+    expect(out.result.confidence).toEqual({
+      reasons: [reasonItem('few_months')],
+      basis: { kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-10-15' },
+      nextStep: { reason: 'few_months', step: 'add_records' },
+    });
   });
 
-  it('D-42 the as-given reading is stricter or equal: it wins, no thin_history_stricter, confidence is the lower', () => {
-    const out = stricterOf(fake('fits_unspent', 'rough', { cReasons: ['under_logged'] }), fake('fits_month', 'firm', { cReasons: ['few_months'] }));
+  it('D-42 the as-given reading is stricter or equal: it wins, no thin_history_stricter, reasons are the union and the basis the smaller', () => {
+    const out = stricterOf(fake('fits_unspent', 3, { cReasons: ['under_logged'] }), fake('fits_month', 2, { cReasons: ['few_months'] }));
     expect(out.result.code).toBe('fits_unspent');
     expect(out.result.reasons).toEqual([]);
-    expect(out.result.confidence).toEqual({ level: 'rough', reasons: ['few_months', 'under_logged'] });
-    const same = stricterOf(fake('fits_month', 'fair'), fake('fits_month', 'firm'));
-    expect(same.result.confidence.level).toBe('fair');
+    expect(codesOf(out.result.confidence)).toEqual(['few_months', 'under_logged']);
+    expect(out.result.confidence.basis).toEqual({ kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-10-15' });
+    const same = stricterOf(fake('fits_month', 5), fake('fits_month', 3));
+    expect(same.result.confidence.basis).toEqual({ kind: 'records', months: 3, upTo: '2026-10-15' });
+    expect(same.result.confidence.nextStep).toBeNull();
   });
 
   it('D-42 both not_yet: the later readyBy wins, null (never) last, ties keep the as-given reading', () => {
     const d = (date: string): ReadyBy => ({ kind: 'date', date });
     const m = (month: string): ReadyBy => ({ kind: 'month', month });
-    expect(stricterOf(fake('not_yet', 'fair', { readyBy: d('2026-11-01') }), fake('not_yet', 'fair', { readyBy: m('2026-12') })).result.readyBy).toEqual(m('2026-12'));
-    expect(stricterOf(fake('not_yet', 'fair', { readyBy: m('2026-12') }), fake('not_yet', 'fair', { readyBy: d('2026-11-01') })).result.readyBy).toEqual(m('2026-12'));
-    expect(stricterOf(fake('not_yet', 'fair', { readyBy: d('2026-11-01') }), fake('not_yet', 'fair', { readyBy: null })).result.readyBy).toBeNull();
-    const tie = stricterOf(fake('not_yet', 'fair', { readyBy: d('2026-11-01'), reasons: ['exceeds_range'] }), fake('not_yet', 'fair', { readyBy: d('2026-11-01') }));
+    expect(stricterOf(fake('not_yet', 3, { readyBy: d('2026-11-01') }), fake('not_yet', 3, { readyBy: m('2026-12') })).result.readyBy).toEqual(m('2026-12'));
+    expect(stricterOf(fake('not_yet', 3, { readyBy: m('2026-12') }), fake('not_yet', 3, { readyBy: d('2026-11-01') })).result.readyBy).toEqual(m('2026-12'));
+    expect(stricterOf(fake('not_yet', 3, { readyBy: d('2026-11-01') }), fake('not_yet', 3, { readyBy: null })).result.readyBy).toBeNull();
+    const tie = stricterOf(fake('not_yet', 3, { readyBy: d('2026-11-01'), reasons: ['exceeds_range'] }), fake('not_yet', 3, { readyBy: d('2026-11-01') }));
     expect(tie.result.reasons).toEqual(['exceeds_range']);
   });
 });
@@ -255,7 +267,7 @@ describe('D-35 cap without a current month of records', () => {
   });
 });
 
-describe('D-63 an emergency purchase may count the emergency fund in the cash check', () => {
+describe('05.4 D-35 / D-41 / D-49 (retires D-63): the safety net counts for any purpose, never only for an emergency', () => {
   const leo = (): ReturnType<typeof toV3Inputs> => toV3Inputs(personById('leo'));
   const laptop = (over: Partial<Parameters<typeof checkOnce>[1]> = {}): ReturnType<typeof checkOnce> =>
     checkOnce(70_000, {
@@ -265,40 +277,39 @@ describe('D-63 an emergency purchase may count the emergency fund in the cash ch
       ...over,
     });
 
-  it('D-63 (a) a Leo-like emergency purchase is emergency_use with the emergency_used fact', () => {
+  it('Leo: the 300,000 fund is his net; 62,000 of it sits above the 238,000 starter and is spare, so it pays the rest', () => {
     const ev = evaluate(leo(), laptop());
-    expect(ev.funds.spending).toBe(89_484); // the 300,000 fund sits in its own account
-    expect(ev.cash.kind).toBe('ok'); // the path opens at 89,484 + 300,000
-    expect(ev.result.code).toBe('emergency_use');
-    expect(ev.result.facts.find((f) => f.code === 'emergency_used')?.values).toEqual({ used: 60_000, months: 5 });
+    expect(ev.funds.spending).toBe(89_484); // the fund sits in its own account
+    expect(ev.net).toMatchObject({ protect: true, size: 238_000, starter: 238_000, saved: 300_000, floor: 238_000, aboveSize: 62_000, state: 'above' });
+    expect(ev.cash.kind).toBe('ok'); // the path opens at 89,484 + the 62,000 above the size
+    expect(ev.result.code).toBe('fits_unspent');
+    expect(ev.result.split).toEqual([
+      { source: 'unspent_earlier', amount: 10_000 },
+      { source: 'extra_savings', amount: 60_000 },
+    ]);
+    expect(ev.result.facts).toContainEqual({ code: 'net_above_size', values: { above: 62_000 } });
+    expect(ev.result.facts).toContainEqual({ code: 'emergency_untouched', values: { amount: 238_000 } });
   });
 
-  it('D-63 (b) the same purchase not marked an emergency never sees the fund: not_yet', () => {
-    const ev = evaluate(leo(), laptop({ emergency: false }));
-    expect(ev.cash.kind).toBe('not_covered');
-    expect(ev.result.code).toBe('not_yet');
+  it('the same purchase with no emergency mark, no purpose or a custom purpose gets the same answer (D-41, D-49)', () => {
+    const marked = evaluate(leo(), laptop()).result;
+    for (const over of [{ emergency: false }, { purpose: null }, { purpose: { kind: 'custom' as const, id: 'mine' } }]) {
+      const r = evaluate({ ...leo(), custom: { itemTypes: [], purposes: [{ id: 'mine' }], cadences: [], incomeKinds: [] } }, laptop(over)).result;
+      expect({ code: r.code, split: r.split, facts: r.facts }).toEqual({ code: marked.code, split: marked.split, facts: marked.facts });
+    }
   });
 
-  it('D-63 (c) emergency-marked with a custom purpose keeps the fund locked: not_yet', () => {
-    const ev = evaluate(
-      { ...leo(), custom: { itemTypes: [], purposes: [{ id: 'mine' }], cadences: [], incomeKinds: [] } },
-      laptop({ purpose: { kind: 'custom', id: 'mine' } })
-    );
-    expect(ev.cash.kind).toBe('not_covered');
-    expect(ev.result.code).toBe('not_yet');
-  });
-
-  it('D-63 (c) emergency-marked with no purpose, or no fund at all, adds nothing', () => {
-    expect(evaluate(leo(), laptop({ purpose: null })).cash.kind).toBe('not_covered');
+  it('no fund at all: nothing to lend, so not_yet', () => {
     const noFund = evaluate({ ...leo(), emergency: null }, laptop());
     expect(noFund.funds.emergency).toBeNull();
+    expect(noFund.net?.saved).toBe(0);
     expect(noFund.cash.kind).toBe('not_covered');
+    expect(noFund.result.code).toBe('not_yet');
   });
 
-  it('D-63 (d) an unlinked fund (D-62) is subtracted from spending and added back once for an eligible purchase', () => {
+  it('an unlinked fund (D-62) is subtracted from spending once and still counts as the net once', () => {
     const base = leo();
     const emergency = base.emergency as NonNullable<typeof base.emergency>;
-    // Every account is stated, but the fund sits in none of them: 389,484 everyday, fund 300,000 unlinked.
     const unlinked = {
       ...base,
       emergency: { ...emergency, accountId: null },
@@ -307,10 +318,9 @@ describe('D-63 an emergency purchase may count the emergency fund in the cash ch
     const ev = evaluate(unlinked, laptop());
     expect(ev.funds.fundUnlinked).toBe(true);
     expect(ev.funds.spending).toBe(89_484);
-    // 89,484 + 300,000 once, never 89,484 + 2 x 300,000: the same cash reading as the linked fund.
+    // 89,484 + the 62,000 above the size once, never twice: the same cash reading as the linked fund.
     expect(ev.cash).toEqual(evaluate(leo(), laptop()).cash);
     expect(ev.result.missing).toContain('account_use_question'); // D-62 asks which account holds the fund
-    expect(evaluate(unlinked, laptop({ emergency: false })).cash.kind).toBe('not_covered');
   });
 });
 
@@ -330,9 +340,12 @@ describe('D-48 futures on a declined volatile cover', () => {
     const ask = evaluate(volatileInputs(), plan());
     expect(ask.result.missing).toEqual(['volatile_cover_question']);
     expect(ask.futures).toBeNull();
+    // 05.4-23 (FIN-08, settled dispute 4): the plan's own first payments already make it Not yet on the records alone, so the yes does
+    // not decide it: no rests line and no user_said_cover reason (Only on your answer is QE-03's, yourWord.test.ts).
     const yes = evaluate(volatileInputs(), plan(true));
-    expect(yes.result.facts.map((f) => f.code)).toContain('rests_on_your_answer');
-    expect(yes.result.confidence.level).toBe('rough');
+    expect([yes.result.code, yes.result.parts.monthly]).toEqual(['not_yet', 'fits_on_your_answer']);
+    expect(yes.result.facts.map((f) => f.code)).not.toContain('rests_on_your_answer');
+    expect(codesOf(yes.result.confidence)).not.toContain('user_said_cover');
     expect(yes.futures).toBeNull();
     expect(evaluate(sam(), checkOnce(15000)).futures).toBeNull();
   });

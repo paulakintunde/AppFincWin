@@ -3,6 +3,9 @@ import { personById, toV3Inputs } from '../../__tests__/golden/adapter';
 import { inputsOf, v3Line, v3Series } from '../../__tests__/helpers/fixtures';
 import type { V3Inputs, V3Month } from '../../types';
 import { buildMonthModel, setAsideOf } from '../model';
+import { toEngineInputs } from '../../__tests__/rightAnswers/fixture';
+import { loadCases } from '../../__tests__/rightAnswers/loader';
+import type { RightAnswerCase } from '../../__tests__/rightAnswers/schema';
 
 const mu = minorUnits;
 const sam = (over: Partial<V3Inputs> = {}): V3Inputs => toV3Inputs(personById('sam'), over);
@@ -29,13 +32,17 @@ describe('buildMonthModel', () => {
     expect(m.typicalLeft).toBe(32500);
   });
 
-  it('v3 §12 #20 a raise lifts typicalLeft at once', () => {
+  // 05.4 FIN-15 (05.4-23; later than v3 §12 #20 / D-18): the usual month reads the lower of the set-up pay and the middle of the last
+  // 3 pays that arrived, so a raise counts once it arrives (owner question at the 05.4-23 review); the gap is named, the pay not edited.
+  it('v3 §12 #20 / FIN-15 a raise to 4,300 counts once it arrives: the last 3 pays (middle 4,000) are judged, and the gap is named', () => {
     const base = sam();
     const m = buildMonthModel({
       ...base,
       series: base.series.map((s) => (s.id === 'sam-pay' ? { ...s, amount: mu(430000) } : s)),
     });
-    expect(m.typicalLeft).toBe(72500);
+    expect(m.typicalLeft).toBe(42500);
+    expect(m.reasons).toContain('pay_gap');
+    expect(m.notices.find((n) => n.code === 'pay_gap')?.values).toEqual({ setup: 430000, middle: 400000, gap: '6.9' });
   });
 
   it('I19 a debt minimum counts once, as set-aside', () => {
@@ -111,10 +118,10 @@ describe('buildMonthModel', () => {
     );
     expect(m.typicalLeft).toBeLessThan(0);
     expect(m.monthLeft).toBeLessThan(0);
-    expect(m.notices.map((n) => n.code)).toEqual(['typical_short', 'month_heading_short', 'unsaved_changes']);
+    expect(m.notices.map((n) => n.code)).toEqual(['typical_short', 'month_heading_short']); // 05.4 APP-02 (D-113): the note is on top of the answer (prepare.ts)
     expect(m.notices[1]?.values).toMatchObject({ categoryId: 'food', largest: 20000 });
     expect(m.reasons).toContain('everyday_override_used');
-    expect(m.confidence.reasons).toContain('unsaved_changes');
+    expect(m.confidence.reasons.map((r) => r.code as string)).not.toContain('unsaved_changes');
   });
 
   it('month_heading_short carries nulls when nothing is categorised', () => {
@@ -150,11 +157,11 @@ describe('buildMonthModel', () => {
     expect(m.reasons).toContain('typical_choice_defaulted');
   });
 
-  it('rough figures only: from_your_figures and a rough confidence', () => {
+  it('quick estimates only: from_your_figures, the quick_estimates reason and basis', () => {
     const m = buildMonthModel(
       inputsOf({
         asOf: '2026-10-03',
-        rough: {
+        typedEstimates: {
           income: mu(400000),
           expenses: mu(150000),
           saving: mu(30000),
@@ -165,9 +172,26 @@ describe('buildMonthModel', () => {
       })
     );
     expect(m.notices.map((n) => n.code)).toContain('from_your_figures');
-    expect(m.confidence.level).toBe('rough');
-    expect(m.confidence.reasons).toContain('rough_figures');
+    expect(m.confidence.reasons.map((r) => r.code)).toContain('quick_estimates');
+    expect(m.confidence.basis).toEqual({ kind: 'quick_estimates' });
     expect(m.typicalLeft).toBe(220000);
+  });
+
+  // 05.4-57 ENG11-QE-BILLS: Zoe's quick estimates (money out £1,300 = £1,000 bills + £300 everyday) with the £1,000 of bills
+  // recorded as a monthly series. The bills are counted once: E is £300, £80 still to come on 22 of 30 November.
+  it.each([
+    ['QE-13', 120000],
+    ['QE-01', 117500],
+  ])('ENG11-QE-BILLS %s: e 30000, erest 8000, monthLeft %i, records not behind', (id, left) => {
+    const c = loadCases().find((x) => x.id === id) as RightAnswerCase;
+    const m = buildMonthModel(toEngineInputs(c.fixture).inputs);
+    expect(m.e).toBe(30000);
+    expect(m.recurringBills).toBe(100000);
+    expect(m.erest).toBe(8000);
+    expect(m.monthLeft).toBe(left);
+    expect(m.typicalLeft).toBe(left); // D-74: £2,500 - max(money out, bills + set-asides); QE-01 £1,325 out holds the £25 minimum
+    expect(m.reasons).toContain('quick_estimates_used');
+    expect(m.confidence.reasons.map((r) => r.code)).not.toContain('under_logged');
   });
 
   it('no data at all: no current month, no E, nothing thrown', () => {
@@ -339,6 +363,8 @@ describe('buildMonthModel: variable and seasonal income (05.1-43)', () => {
       months: [],
       leanLeft: null,
       expectedThisMonth: null,
+      // 05.4 FIN-08: July's pay arrived at 3,700 of the 4,000 set up (7.5% low), so it is a low-pay month with what it left
+      lowPay: [{ month: '2026-07', income: 370000, everyday: 130000, left: 30000, lean: false }],
     });
     expect(m.notices.some((n) => ['history_window_12', 'income_from_expected', 'same_season_compared'].includes(n.code))).toBe(false);
     expect(m.reasons).not.toContain('long_history_window');

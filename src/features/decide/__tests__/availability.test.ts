@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { DECIDE_OPEN, DECIDE_V3, decideEngine } from '../availability';
+import { DECIDE_OPEN, DECIDE_SETUP_VISIBLE, DECIDE_V3, decideEngine } from '../availability';
 
 const ROOT = path.join(__dirname, '..', '..', '..', '..');
 
@@ -43,6 +43,10 @@ describe('Decide availability switches', () => {
     expect(decideEngine({})).toBe('v2');
     expect(decideEngine({ decideV3: false })).toBe('v2');
     expect(decideEngine({ decideV3: true })).toBe('v3');
+  });
+
+  it('05.4 BO-06 the setup page stays hidden', () => {
+    expect(DECIDE_SETUP_VISIBLE).toBe(false);
   });
 
   it('DECIDE_OPEN unchanged', () => {

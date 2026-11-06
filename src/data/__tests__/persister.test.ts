@@ -20,6 +20,8 @@ import {
   lastServerFetchAt,
   persistOptions,
   QUERY_CACHE_KEY,
+  carryQueuedWrites,
+  serverFetchTimeOf,
   trackServerFetches,
 } from '../cache/persister';
 import { queryClient } from '../queryClient';
@@ -224,6 +226,34 @@ describe('encrypted query cache persister', () => {
     });
     fresh.setQueryData(TX_KEY, [...TX_DATA, { id: 'optimistic' }]);
     expect(lastServerFetchAt(fresh.getQueryCache().find({ queryKey: TX_KEY })!)).toBe(fetchedAt);
+  });
+
+  it('05.4-33 D-126: serverFetchTimeOf is the real server fetch only: null before one and never moved by a manual write', async () => {
+    clearServerFetchTimes();
+    const client = new QueryClient();
+    const untrack = trackServerFetches(client);
+    client.setQueryData(TX_KEY, TX_DATA);
+    const hash = client.getQueryCache().find({ queryKey: TX_KEY })!.queryHash;
+    expect(serverFetchTimeOf(hash)).toBeNull();
+    await client.fetchQuery({ queryKey: TX_KEY, queryFn: async () => TX_DATA, staleTime: 0 });
+    const fetchedAt = serverFetchTimeOf(hash);
+    expect(typeof fetchedAt).toBe('number');
+    const later = jest.spyOn(Date, 'now').mockReturnValue((fetchedAt as number) + 60_000);
+    client.setQueryData(TX_KEY, [...TX_DATA, { id: 'optimistic' }]);
+    later.mockRestore();
+    expect(serverFetchTimeOf(hash)).toBe(fetchedAt);
+    untrack();
+  });
+
+  it('05.4-33 APP-07: the cache version is 3, and a version 2 blob keeps its queued writes and drops its queries', () => {
+    expect(CACHE_SCHEMA_VERSION).toBe('3');
+    const mutation = { mutationKey: ['w'], state: { status: 'pending' } } as never;
+    const query = { queryKey: ['q'], queryHash: '["q"]', state: { status: 'success', data: 1 } } as never;
+    const old = { timestamp: Date.now(), buster: '2', clientState: { queries: [query], mutations: [mutation] } };
+    const carried = carryQueuedWrites(old, CACHE_SCHEMA_VERSION, CACHE_MAX_AGE_MS)!;
+    expect(carried.buster).toBe('3');
+    expect(carried.clientState.queries).toEqual([]);
+    expect(carried.clientState.mutations).toEqual([mutation]);
   });
 
   it('IN-A05: an old blob without fetch times still deserializes', () => {

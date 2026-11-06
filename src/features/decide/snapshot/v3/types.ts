@@ -37,6 +37,10 @@ export interface V3SettingsSource {
   unexplained_at?: string | null;
   answers?: readonly V3AnswerLite[];
   live_bridge_check_ids?: readonly string[]; // computed by settingsSourceOf from the checks
+  // 05.4 D-33 / D-61 interim columns (removed in 05.5). Optional so an old cached row reads as the column defaults: on, starter, locked.
+  safety_net_protect?: boolean | null;
+  safety_net_size?: number | null; // home-currency minor units (settings money, CR-03); null = the starter size
+  safety_net_locked?: boolean | null;
 }
 
 export interface V3AnswerLite {

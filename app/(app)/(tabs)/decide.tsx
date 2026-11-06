@@ -1,4 +1,4 @@
-import { DECIDE_OPEN } from '@/features/decide/availability';
+import { DECIDE_OPEN, DECIDE_SETUP_VISIBLE } from '@/features/decide/availability';
 import { DecideComingSoonScreen } from '@/features/decide/home/DecideComingSoonScreen';
 import { DecideHomeScreen } from '@/features/decide/home/DecideHomeScreen';
 import { DecideSetupPage } from '@/features/decide/setup/DecideSetupPage';
@@ -13,12 +13,12 @@ function DevShadowExport() {
   return <ShadowExportDevMenu />;
 }
 
-// 05.2 D-18: a test account (the per-account switch on) gets the setup page and engine readout; everyone else keeps today's tab.
+// 05.4 BO-06: the setup page and engine readout are hidden from every account, whatever the per-account switch says.
 export default function DecideRoute() {
   const access = useDecideAccess();
   return (
     <>
-      {DECIDE_OPEN ? <DecideHomeScreen /> : access.v3 ? <DecideSetupPage /> : <DecideComingSoonScreen />}
+      {DECIDE_OPEN ? <DecideHomeScreen /> : DECIDE_SETUP_VISIBLE && access.v3 ? <DecideSetupPage /> : <DecideComingSoonScreen />}
       {__DEV__ ? <DevShadowExport /> : null}
     </>
   );

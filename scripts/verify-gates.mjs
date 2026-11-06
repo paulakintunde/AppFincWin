@@ -130,6 +130,17 @@ try {
     const ignoreCheck = run('node scripts/check-coverage-ignores.mjs');
     expect('check-coverage-ignores fails on the unreasoned ignore', ignoreCheck.status !== 0);
   }
+  console.log('Probe 6: cross-check calculator importing the engine (QA-03)');
+  writeProbe(
+    'src/engine/decide/v3/__tests__/crosscheck/__gate_probe__.ts',
+    "import { evaluate } from '../../evaluate';\nexport const e = evaluate;\n"
+  );
+  {
+    const eslint = run('npx eslint src/engine/decide/v3/__tests__/crosscheck/__gate_probe__.ts');
+    expect('eslint fails on the calculator importing the engine', eslint.status !== 0);
+    const depcruise = run('npx depcruise src --config .dependency-cruiser.cjs');
+    expect('depcruise output names crosscheck-independent', depcruise.output.includes('crosscheck-independent'));
+  }
 } finally {
   cleanup();
 }

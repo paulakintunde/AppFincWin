@@ -11,7 +11,7 @@ import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
-import { useShouldStack } from '@/features/decide/ui/textFit';
+import { useShouldStack } from '@/ui/textFit';
 import { Meta, TextButton, useCopy, useNoWrapMoney } from '@/features/income/steps/shared';
 import type { UnspentLineKey, UnspentSumLines } from './unspentView';
 

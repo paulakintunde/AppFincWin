@@ -8,11 +8,18 @@ import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
 import { planLiveOf, useDecideV3 } from '../decideV3';
 
 const TODAY = '2026-10-03';
-type Q = { data: unknown; isError: boolean; refetch: jest.Mock };
-const q = (data: unknown, isError = false): Q => ({ data, isError, refetch: jest.fn() });
+type Q = { data: unknown; isError: boolean; error?: unknown; refetch: jest.Mock };
+const q = (data: unknown, isError = false, error: unknown = null): Q => ({ data, isError, error, refetch: jest.fn() });
 
 const mockState = {
-  snapshot: { status: 'ready' as 'loading' | 'error' | 'ready', source: null as SnapshotSource | null, result: null, retry: jest.fn() },
+  snapshot: {
+    status: 'ready' as 'loading' | 'error' | 'ready',
+    source: null as SnapshotSource | null,
+    result: null,
+    retry: jest.fn(),
+    errorKind: undefined as 'network' | 'server' | null | undefined,
+    missingReads: undefined as readonly string[] | undefined,
+  },
   settings: q(undefined),
   answers: q(undefined),
   dismissals: q(undefined),
@@ -35,7 +42,7 @@ const link = (over: Partial<DecideLinkRow>): DecideLinkRow => ({
 });
 
 function ready(): void {
-  mockState.snapshot = { status: 'ready', source: demoSource(TODAY), result: null, retry: jest.fn() };
+  mockState.snapshot = { status: 'ready', source: demoSource(TODAY), result: null, retry: jest.fn(), errorKind: undefined, missingReads: undefined };
   mockState.settings = q({ ...EMPTY_DECIDE_SETTINGS, user_id: 'u1', income_types: ['salary_or_wages'], income_pattern: 'steady', income_pattern_confirmed: true });
   mockState.answers = q([]);
   mockState.dismissals = q([]);
@@ -97,6 +104,30 @@ describe('useDecideV3', () => {
     const { result } = await renderHook(() => useDecideV3());
     expect(result.current.status).toBe('ready');
     expect(result.current.inputs!.profile).toBeNull();
+  });
+});
+
+describe('useDecideV3 read errors and missing reads (05.4-33 APP-01, APP-10)', () => {
+  it('a ready state has no error kind and nothing missing', async () => {
+    const { result } = await renderHook(() => useDecideV3());
+    expect(result.current.errorKind).toBeNull();
+    expect(result.current.missingReads).toEqual([]);
+  });
+
+  it('a network failure of its own read is kind network; the missing reads are named with the snapshot ones', async () => {
+    mockState.answers = q(undefined, true, new TypeError('Network request failed'));
+    mockState.snapshot = { ...mockState.snapshot, missingReads: ['history'] };
+    const { result } = await renderHook(() => useDecideV3());
+    expect(result.current.status).toBe('error');
+    expect(result.current.errorKind).toBe('network');
+    expect(result.current.missingReads).toEqual(['history', 'answers']);
+  });
+
+  it('a failed snapshot passes its own kind through, or server when it has none', async () => {
+    mockState.snapshot = { ...mockState.snapshot, status: 'error', source: null, errorKind: 'network' };
+    expect((await renderHook(() => useDecideV3())).result.current.errorKind).toBe('network');
+    mockState.snapshot = { ...mockState.snapshot, errorKind: undefined };
+    expect((await renderHook(() => useDecideV3())).result.current.errorKind).toBe('server');
   });
 });
 

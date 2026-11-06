@@ -1,27 +1,29 @@
-// SYN-01/SYN-02/SYN-06: proves isReachable's truth table, that startOnlineManager wires
+// SYN-01/SYN-02/SYN-06: proves the shared netClass truth table, that startOnlineManager wires
 // NetInfo into TanStack Query's onlineManager exactly once regardless of call count, and that
 // a simulated NetInfo event actually flips onlineManager.isOnline().
 import NetInfo from '@react-native-community/netinfo';
 import { AppState } from 'react-native';
 import { onlineManager, QueryClient } from '@tanstack/react-query';
 import { getEnv } from '@/config/env';
-import { afterCacheRestore, isReachable, reachabilityTest, resetOnlineManagerForTests, startOnlineManager } from '../onlineManager';
+import { afterCacheRestore, reachabilityTest, resetOnlineManagerForTests, startOnlineManager } from '../onlineManager';
+import { netClass, UNREACHABLE_GRACE_MS } from '../sync/connectivity';
 
 jest.mock('@/config/env', () => ({ getEnv: () => ({ supabaseUrl: 'https://abc.supabase.co/' }) }));
 
 const qc = new QueryClient();
 
-describe('isReachable', () => {
+describe('netClass (05.3-116: one shared predicate)', () => {
   it.each([
-    [{ isConnected: true, isInternetReachable: true }, true],
-    [{ isConnected: true, isInternetReachable: null }, true],
-    [{ isConnected: null, isInternetReachable: null }, true],
-    [{ isConnected: false, isInternetReachable: true }, false],
-    [{ isConnected: false, isInternetReachable: null }, false],
-    [{ isConnected: true, isInternetReachable: false }, false],
-    [{ isConnected: false, isInternetReachable: false }, false],
-  ])('isReachable(%o) === %s', (state, expected) => {
-    expect(isReachable(state)).toBe(expected);
+    [{ isConnected: true, isInternetReachable: true }, 'online'],
+    [{ isConnected: true, isInternetReachable: null }, 'online'],
+    [{ isConnected: null, isInternetReachable: null }, 'online'],
+    [{ isConnected: false, isInternetReachable: true }, 'offline'],
+    [{ isConnected: false, isInternetReachable: null }, 'offline'],
+    // Was offline at once before 05.3-116; now offline only after the 10 s grace (UAT gap 34).
+    [{ isConnected: true, isInternetReachable: false }, 'unreachable'],
+    [{ isConnected: false, isInternetReachable: false }, 'offline'],
+  ] as const)('netClass(%o) === %s', (state, expected) => {
+    expect(netClass(state)).toBe(expected);
   });
 });
 
@@ -116,5 +118,89 @@ describe('afterCacheRestore', () => {
     afterCacheRestore(qc3, replay);
     expect(replay).toHaveBeenCalledTimes(1);
     expect(invalidate).toHaveBeenCalledTimes(1); // synchronously, with the replay still pending
+  });
+});
+
+type NetListener = (state: { isConnected: boolean | null; isInternetReachable: boolean | null }) => void;
+
+// 05.3-116 (UAT gap 34): a short reachability blip on a working connection must not pause writes.
+describe('startOnlineManager reachability grace', () => {
+  let qc4: QueryClient;
+  let listener: NetListener;
+  let appState: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    // Every registration hands back a real subscription, so re-registering can remove the last one.
+    appState = jest.spyOn(AppState, 'addEventListener').mockImplementation(() => ({ remove: () => undefined }) as never);
+    resetOnlineManagerForTests();
+    onlineManager.setOnline(true);
+    (NetInfo.addEventListener as jest.Mock).mockClear();
+    qc4 = new QueryClient();
+    startOnlineManager(qc4);
+    const calls = (NetInfo.addEventListener as jest.Mock).mock.calls;
+    listener = calls[calls.length - 1][0] as NetListener;
+  });
+
+  afterEach(() => {
+    resetOnlineManagerForTests();
+    onlineManager.setOnline(true);
+    jest.useRealTimers();
+    appState.mockRestore();
+  });
+
+  it('a blip under 10 s stays online and a write still runs; 10 s sustained goes offline', async () => {
+    listener({ isConnected: true, isInternetReachable: false });
+    expect(onlineManager.isOnline()).toBe(true);
+
+    const mutation = qc4.getMutationCache().build(qc4, { mutationFn: () => Promise.resolve('saved') });
+    const done = mutation.execute(undefined);
+    await jest.advanceTimersByTimeAsync(0);
+    expect(mutation.state.isPaused).toBe(false);
+    await expect(done).resolves.toBe('saved');
+
+    await jest.advanceTimersByTimeAsync(UNREACHABLE_GRACE_MS - 1);
+    expect(onlineManager.isOnline()).toBe(true);
+    await jest.advanceTimersByTimeAsync(1);
+    expect(onlineManager.isOnline()).toBe(false);
+  });
+
+  it('a lost connection is offline at once', () => {
+    listener({ isConnected: false, isInternetReachable: false });
+    expect(onlineManager.isOnline()).toBe(false);
+  });
+
+  it('a reachable report inside the grace keeps it online and replays paused writes', () => {
+    const resume = jest.spyOn(qc4, 'resumePausedMutations').mockResolvedValue(undefined);
+    jest.spyOn(qc4, 'refetchQueries').mockResolvedValue(undefined);
+    listener({ isConnected: true, isInternetReachable: false });
+    expect(resume).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(2_000);
+    expect(onlineManager.isOnline()).toBe(true);
+    listener({ isConnected: true, isInternetReachable: true });
+    expect(onlineManager.isOnline()).toBe(true);
+    expect(resume).toHaveBeenCalledTimes(1);
+    jest.advanceTimersByTime(20_000);
+    expect(onlineManager.isOnline()).toBe(true);
+  });
+
+  it('an unreachable answer on app focus is fed to the same grace', async () => {
+    const focus = appState.mock.calls.find((c) => c[0] === 'change')?.[1] as (s: string) => void;
+    const resume = jest.spyOn(qc4, 'resumePausedMutations').mockResolvedValue(undefined);
+    (NetInfo.refresh as jest.Mock).mockResolvedValueOnce({ isConnected: true, isInternetReachable: false });
+
+    focus('active');
+    await jest.advanceTimersByTimeAsync(0);
+    expect(onlineManager.isOnline()).toBe(true);
+    expect(resume).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(UNREACHABLE_GRACE_MS);
+    expect(onlineManager.isOnline()).toBe(false);
+  });
+
+  it('resetOnlineManagerForTests cancels a pending offline timer', () => {
+    listener({ isConnected: true, isInternetReachable: false });
+    resetOnlineManagerForTests();
+    jest.advanceTimersByTime(20_000);
+    expect(onlineManager.isOnline()).toBe(true);
   });
 });

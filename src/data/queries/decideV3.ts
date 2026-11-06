@@ -4,8 +4,8 @@
 import { useCallback, useMemo } from 'react';
 import type { DecideLinkRow } from '@/db/decideLinks';
 import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
-import { computeV3 } from '@/features/decide/snapshot/v3/computeV3';
-import { buildV3Inputs } from '@/features/decide/snapshot/v3/buildV3Inputs';
+import { classifyReadError, type DbErrorKind } from '@/db/errors';
+import { computeV3, preparedV3 } from '@/features/decide/snapshot/v3/computeV3';
 import { settingsSourceOf } from '@/features/decide/snapshot/v3/settingsSource';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import type { Evaluation, V3Inputs } from '@/engine/decide/v3';
@@ -17,6 +17,10 @@ export interface DecideV3State {
   status: 'loading' | 'error' | 'ready';
   inputs: V3Inputs | null;
   evaluation: Evaluation | null;
+  /** APP-10 (05.4-33): the kind of the first failed read with nothing cached; null unless status is 'error'. Never 'not_found' for a network failure. */
+  errorKind: DbErrorKind | null;
+  /** APP-01 (05.4-33): the reads with nothing cached yet, by name, for the 08.1 offline card. */
+  missingReads: readonly string[];
   refetch(): void;
 }
 
@@ -47,6 +51,7 @@ export function planLiveOf(links: readonly DecideLinkRow[], source: SnapshotSour
 }
 
 const NO_CHECKS: readonly { id: string }[] = [];
+const READ_NAMES = ['settings', 'answers', 'dismissals', 'checks', 'links'] as const;
 
 export function useDecideV3(): DecideV3State {
   const rc = useRecordContext();
@@ -64,6 +69,14 @@ export function useDecideV3(): DecideV3State {
   // 'error' only when a required read failed with nothing cached; a cached copy (offline) is 'ready'.
   const failed = snapshot.status === 'error' || reads.some((q) => q.data === undefined && q.isError);
   const missing = reads.some((q) => q.data === undefined);
+  const ownMissing = READ_NAMES.filter((_, i) => reads[i]?.data === undefined);
+  const missingReads = [...(snapshot.missingReads ?? []), ...ownMissing];
+  const ownFailure = reads.find((q) => q.data === undefined && q.isError);
+  const errorKind: DbErrorKind | null = !failed
+    ? null
+    : snapshot.status === 'error'
+      ? (snapshot.errorKind ?? 'server')
+      : classifyReadError(ownFailure?.error);
 
   const source = snapshot.source;
   const settingsRow = settings.data;
@@ -74,7 +87,8 @@ export function useDecideV3(): DecideV3State {
   const computed = useMemo(() => {
     if (source === null || missing || settingsRow === undefined || answerRows === undefined || dismissalRows === undefined || checkRows === undefined || linkRows === undefined) return null;
     const v3 = settingsSourceOf({ settings: settingsRow, answers: answerRows, dismissals: dismissalRows, checks: checkRows, planLive: planLiveOf(linkRows, source) });
-    return { inputs: buildV3Inputs(source, v3), evaluation: computeV3(source, v3, {}) };
+    // ENG-13 / APP-03 (05.4-33): one build; the evaluation is judged on the same prepared inputs.
+    return { inputs: preparedV3(source, v3).inputs, evaluation: computeV3(source, v3, {}) };
   }, [source, missing, settingsRow, answerRows, dismissalRows, checkRows, linkRows]);
 
   const retrySnapshot = snapshot.retry;
@@ -87,5 +101,5 @@ export function useDecideV3(): DecideV3State {
   }, [retrySnapshot]);
 
   const status: DecideV3State['status'] = failed ? 'error' : computed === null ? 'loading' : 'ready';
-  return { status, inputs: computed?.inputs ?? null, evaluation: computed?.evaluation ?? null, refetch };
+  return { status, inputs: computed?.inputs ?? null, evaluation: computed?.evaluation ?? null, errorKind, missingReads, refetch };
 }

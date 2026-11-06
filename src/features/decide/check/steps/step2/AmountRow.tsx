@@ -14,8 +14,8 @@ import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import type { TextInput } from '@/ui/TextInput';
 import { hapticSelection } from '@/ui/haptics';
-import { MoneyInput } from '../../../ui/MoneyInput';
-import { STACK_FONT_SCALE, useShouldStack } from '../../../ui/textFit';
+import { MoneyInput } from '@/ui/MoneyInput';
+import { STACK_FONT_SCALE, useShouldStack } from '@/ui/textFit';
 
 const FIELD_WIDTH = 112; // R16.3: the Amount field at 1.0x, growing with the text scale
 const BOX_SIZE = 22;

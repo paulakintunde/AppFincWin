@@ -64,6 +64,15 @@ export async function clearSampleData(client: DbClient, householdId: string): Pr
   };
 }
 
+/** APP-15: re-seed the sample household for `today` when its newest month is older than this month. True when it re-dated. */
+export async function redateSampleDataIfStale(client: DbClient, householdId: string, today: string): Promise<boolean> {
+  const { data, error, status } = await client.rpc('redate_sample_data_if_stale', { p_household_id: householdId, p_today: today });
+
+  if (error) throw toDbError(error, status);
+  if (typeof data !== 'boolean') throw bad('redate_sample_data_if_stale is not a boolean');
+  return data;
+}
+
 export async function fetchSampleDataExists(client: DbClient, householdId: string): Promise<boolean> {
   const { data, error, status } = await client.rpc('sample_data_exists', { p_household_id: householdId });
 

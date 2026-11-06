@@ -58,6 +58,9 @@
   "devDependencies": {
     "@fast-check/jest": "^2.3.0",
     "@react-native/jest-preset": "0.86.3",
+    "@stryker-mutator/core": "10.1.1",
+    "@stryker-mutator/jest-runner": "10.1.1",
+    "@stryker-mutator/typescript-checker": "10.1.1",
     "@testing-library/react-native": "^14.0.1",
     "@types/aes-js": "^3.1.4",
     "@types/jest": "29.5.14",
@@ -99,7 +102,18 @@
     "verify:migrations": "node scripts/verify-migration-gate.mjs",
     "check:money-mirror": "node scripts/gen-money-mirror-test.mjs --check",
     "check:recurring-mirror": "node scripts/gen-recurring-mirror-test.mjs --check",
-    "check:decide-demo-mirror": "node scripts/check-decide-demo-mirror.mjs --check"
+    "check:decide-demo-mirror": "node scripts/check-decide-demo-mirror.mjs --check",
+    "test:engine": "jest -c jest.engine.config.js",
+    "test:mutation": "stryker run",
+    "check:stryker-disables": "node scripts/check-stryker-disables.mjs",
+    "rightanswers:page": "node scripts/right-answers/build-page.mjs",
+    "check:right-answers": "node scripts/right-answers/check-expected-unchanged.mjs",
+    "test:crosscheck": "jest -c jest.engine.config.js src/engine/decide/v3/__tests__/crosscheck",
+    "reviewed:diff": "node scripts/reviewed-diff.mjs",
+    "check:decide-switch": "node scripts/decide-switch-check.mjs",
+    "check:cache-version": "node scripts/check-cache-version.mjs",
+    "shadow:report": "node scripts/shadow-report.mjs",
+    "wording:page": "node scripts/wording-page.mjs"
   },
   "private": true
 }

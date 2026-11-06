@@ -10,7 +10,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import type { MonthColumn } from '@/engine/decide';
-import { useShouldStack } from '../../ui/textFit';
+import { useShouldStack } from '@/ui/textFit';
 import { monthFigure } from '../../copy/monthFigure';
 import { basisVariantKey, basisWordKey, monthClosesKey } from '../../copy/basisKey';
 import { refText, type Translate } from '../refText';

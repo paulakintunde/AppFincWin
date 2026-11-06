@@ -8,9 +8,11 @@ import { totalSetAside } from '../../pots';
 import { V3_VARIABLE_HISTORY_MONTHS } from '../constants';
 import { yearMonthOf } from '../dates';
 import { monthlyEquivalentOf } from '../plan/cadence';
-import type { IncomePicture, MonthModel, Notice, NoticeCode, ReasonCode, V3Inputs } from '../types';
-import { confidenceOf } from './confidence';
-import { incomeThisMonth, typicalIncome, type IncomeInput } from './incomeProfile';
+import type { AlwaysOtherSeries, IncomePicture, MonthModel, Notice, NoticeCode, ReasonCode, V3Inputs } from '../types';
+import { confidenceOf } from '../confidence/reasons';
+import { debtsInMonth } from '../debts';
+import { dueDrops } from './dueDrops';
+import { incomeThisMonth, lowPayMonths, typicalIncome, type IncomeInput } from './incomeProfile';
 import {
   buildIncomeMonths,
   expectedFor,
@@ -26,13 +28,16 @@ import {
 } from './incomePattern';
 import { liveSeriesOf } from './series';
 import { thisMonth } from './thisMonth';
-import { typicalOf } from './typical';
+import { typedEverydayOf, typicalOf } from './typical';
 
-/** Debt minimums + fixed saving/investing + envelope set-asides. Flexible saving is explorer-only (excluded). */
+/**
+ * Debt minimums + fixed saving/investing + envelope set-asides. Flexible saving is explorer-only (excluded). 05.4 FIN-10 (DB-07): a
+ * minimum paid through a bill series is in the usual bills already, so it is set aside once (debtsInMonth).
+ */
 export function setAsideOf(inputs: V3Inputs): MinorUnits {
   let total = 0n;
   let fixedSaving = 0n;
-  for (const d of inputs.debts) total += BigInt(d.minimum);
+  for (const d of debtsInMonth(inputs.debts, inputs.series, inputs.asOf)) total += BigInt(d.minimum);
   for (const role of ['saving', 'investing'] as const) {
     for (const s of liveSeriesOf(inputs.series, inputs.asOf, role)) {
       if (s.savingMode === 'flexible') continue;
@@ -48,6 +53,11 @@ export function setAsideOf(inputs: V3Inputs): MinorUnits {
   return minorFromBigInt(total, 'setAsideOf');
 }
 
+/** 05.4 FIN-15: basis points as a percent with one decimal, rounded down (933 -> '9.3'). */
+export function percentText(bp: number): string {
+  return `${Math.floor(bp / 100)}.${Math.floor(bp / 10) % 10}`;
+}
+
 // Fixed order so two equal models always compare equal.
 const NOTICE_ORDER: readonly NoticeCode[] = [
   'typical_short',
@@ -56,10 +66,10 @@ const NOTICE_ORDER: readonly NoticeCode[] = [
   'month_looks_under_logged',
   'income_kind_unmarked',
   'from_your_figures',
+  'pay_gap',
   'history_window_12',
   'income_from_expected',
   'same_season_compared',
-  'unsaved_changes',
 ];
 
 export function buildMonthModel(inputs: V3Inputs): MonthModel {
@@ -72,13 +82,20 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     history,
     series: inputs.series,
     profile: inputs.profile,
-    rough: inputs.rough,
+    typedEstimates: inputs.typedEstimates,
     custom: inputs.custom,
     payArrivals: inputs.payArrivals ?? [],
   };
   const income = incomeThisMonth(incomeInput);
   const ti = typicalIncome(incomeInput);
   const setAside = setAsideOf(inputs);
+  // 05.3-63: one rule for dues that no longer count (D-27, D-31, skips). 05.3-65 passes alwaysOther to the typical month.
+  const drops = dueDrops(inputs);
+  // D-31: every live bill series someone else always pays, whether or not it falls due or was paid this month.
+  const alwaysOther: AlwaysOtherSeries[] = liveSeriesOf(inputs.series, inputs.asOf, 'bill')
+    .filter((s) => drops.alwaysOther.has(s.id))
+    .map((s) => ({ seriesId: s.id, name: s.name ?? null }))
+    .sort((a, b) => (a.seriesId < b.seriesId ? -1 : 1));
 
   // D-33 to D-36: the income pattern decides the window and whether the typical month comes from recorded income.
   const incomeByMonth = recordedIncomeByMonth({
@@ -98,14 +115,18 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     typicalIncome: ti.amount,
     setAside,
     everydayOverride: inputs.everydayOverride,
-    rough: inputs.rough,
+    typedEstimates: inputs.typedEstimates,
     windowMonths,
     incomeByMonth: pattern.treated === 'steady' ? null : incomeByMonth,
+    excludedSeries: drops.alwaysOther, // D-31: also out of buildIncomeMonths below, which uses typical.recurringBills
   });
   const months =
     pattern.treated === 'steady'
       ? []
       : buildIncomeMonths(typical.used, incomeByMonth, BigInt(typical.recurringBills), BigInt(setAside));
+  // 05.4 FIN-08: a steady earner's months whose pay arrived low, with what each left (the low-month bridge reads them).
+  const lowIds = pattern.treated === 'steady' ? lowPayMonths(history, inputs.series, inputs.asOf) : new Set<string>();
+  const lowPay = lowIds.size === 0 ? [] : buildIncomeMonths(typical.used.filter((m) => lowIds.has(m.month)), incomeByMonth, BigInt(typical.recurringBills), BigInt(setAside));
   const base = {
     stated: pattern.stated,
     treated: pattern.treated,
@@ -116,6 +137,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     fullMonths: incomeByMonth.size,
     months,
     leanLeft: pattern.treated === 'seasonal' ? leanLeftOf(months) : null,
+    ...(lowPay.length === 0 ? {} : { lowPay }),
   };
   const expected = expectedFor({ ...base }, inputs.expectedIncome ?? [], currentYm);
   const incomePicture: IncomePicture = { ...base, expectedThisMonth: expected === null ? null : expected.amount };
@@ -132,22 +154,26 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     series: inputs.series,
     income: incomeUsed,
     e: seasonE ?? typical.e,
-    roughExpenses: inputs.rough?.expenses ?? null,
+    typedEveryday: inputs.typedEstimates === null ? null : typedEverydayOf(inputs.typedEstimates.expenses, minorFromBigInt(BigInt(typical.recurringBills) + BigInt(setAside), 'buildMonthModel')), // ENG11-QE-BILLS, D-74
     setAside,
+    drops,
   });
 
   const reasonSet = new Set<ReasonCode>([...income.reasons, ...ti.reasons, ...typical.reasons]);
   if (windowMonths === V3_VARIABLE_HISTORY_MONTHS) reasonSet.add('long_history_window'); // D-33
   if (seasonE !== null) reasonSet.add('same_season_spending'); // D-39
   if (raised && expected.source === 'confirmed') reasonSet.add('expected_income_used'); // D-35
+  // 05.4 FIN-15: a steady earner is judged on the lower pay (typicalIncome); a gap over PAY_GAP_BP is named, never edited.
+  const payGap = pattern.treated === 'steady' ? ti.payGap : null;
+  if (payGap !== null) reasonSet.add('pay_gap');
   const confidence = confidenceOf({
     monthsUsed: typical.monthsUsed.length,
     day: tm.day,
     everydayLogged: tm.everydayLogged,
     e: typical.e,
-    unsavedWrites: inputs.unsavedWrites,
-    roughUsed: reasonSet.has('rough_figures_used'),
+    typedEstimatesUsed: reasonSet.has('quick_estimates_used'),
     provisionalRates: inputs.provisionalRates,
+    upTo: inputs.recordsAsOf ?? inputs.asOf, // ENG-14: the records date when known
   });
 
   const raw: Notice[] = [...typical.notices];
@@ -178,7 +204,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     raw.push({ code: 'same_season_compared', values: { lastYear: seasonMonth.month, everyday: seasonMonth.everyday } });
   }
   if (reasonSet.has('income_kind_unmarked')) raw.push({ code: 'income_kind_unmarked', values: {} });
-  if (inputs.unsavedWrites > 0) raw.push({ code: 'unsaved_changes', values: { count: inputs.unsavedWrites } });
+  if (payGap !== null) raw.push({ code: 'pay_gap', values: { setup: payGap.setup, middle: payGap.middle, gap: percentText(payGap.gapBp) } });
   const notices = NOTICE_ORDER.flatMap((code) => raw.filter((n) => n.code === code));
 
   return {
@@ -207,5 +233,8 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     reasons: [...reasonSet].sort(),
     incomePicture,
     ...(income.unseenPay === undefined ? {} : { unseenPay: income.unseenPay }), // D-58
+    // 05.3-63: set only when non-empty, so a model with no waivers and no skips is byte-identical to before.
+    ...(tm.paidByOther.length === 0 ? {} : { paidByOther: tm.paidByOther }),
+    ...(alwaysOther.length === 0 ? {} : { alwaysOther }),
   };
 }

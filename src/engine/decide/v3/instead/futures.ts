@@ -20,10 +20,52 @@ import { minorUnits, type MinorUnits } from '../../../money/types';
 import { myPart } from '../../share';
 import { addYearMonths } from '../dates';
 import { seasonalReadyMonth } from '../month/seasonWalk';
-import type { Funds, IncomePicture, MonthModel, Purchase, Result, Schedule } from '../types';
+import { divideHalfUp } from '../../../money/rounding';
+import { isNeedPurpose } from '../judge/options';
+import type { CheckValue, Funds, IncomePicture, MonthModel, Purchase, Purpose, Result, Schedule } from '../types';
 
+/** Today's order of the four futures (no purpose); The cheaper one, when there is one, comes last (D-110). */
 export const FUTURE_ORDER = ['buy_now', 'keep', 'deposit', 'buy_later'] as const;
-export type FutureKind = (typeof FUTURE_ORDER)[number];
+export type FutureKind = (typeof FUTURE_ORDER)[number] | 'cheaper';
+
+/**
+ * 05.4 D-41 / D-110 (owner, 2026-11-05): the order of the options by the check's purpose. Order only: the options present and every
+ * figure are the same whatever the purpose (I-D41). A need (necessity, for work) lists the buy-now routes first; a want (any other
+ * purpose: "Invest in me", a custom purpose, nice to have, treat, luxury) lists waiting and saving first; no purpose keeps today's order.
+ */
+export const OPTION_ORDER: Readonly<Record<'need' | 'want' | 'none', readonly FutureKind[]>> = Object.freeze({
+  need: ['cheaper', 'buy_now', 'buy_later', 'keep', 'deposit'],
+  want: ['buy_later', 'keep', 'deposit', 'cheaper', 'buy_now'],
+  none: [...FUTURE_ORDER, 'cheaper'],
+});
+
+/** D-110: the options present, in the purpose's order. No option is added or removed. */
+export function orderOptions(present: readonly FutureKind[], purpose: Purpose | null): readonly FutureKind[] {
+  const reading = purpose === null ? 'none' : isNeedPurpose(purpose) ? 'need' : 'want';
+  return OPTION_ORDER[reading].filter((k) => present.includes(k));
+}
+
+/** 05.4 UX-28 (D-111, D-112): "The cheaper one", figures only (no answer of its own). Per-year figures are null with no years of use. */
+export interface CheaperOption {
+  readonly price: MinorUnits;
+  readonly perYear: MinorUnits | null;
+  /** The cost per year of the one picked, for the comparison ("about $200 a year, against $350 for the one you picked"). */
+  readonly pickedPerYear: MinorUnits | null;
+}
+
+/**
+ * D-111: shown only when the cheaper price is above 0 and below the price. Cost per year = price / years of use, the years read to
+ * 2 decimals (hundredths, so no float touches money) and the result rounded half up to the minor unit; none when the years are
+ * empty or round to 0. Both prices are as typed (before tax and fees), so the two per-year figures compare like for like.
+ */
+export function cheaperOption(price: MinorUnits | null, value: Pick<CheckValue, 'cheaperPrice' | 'useYears'>): CheaperOption | null {
+  const cheaper = value.cheaperPrice;
+  if (price === null || cheaper === null || cheaper <= 0 || cheaper >= price) return null;
+  const hundredths = value.useYears === null ? 0 : Math.round(value.useYears * 100);
+  const perYear = (p: MinorUnits): MinorUnits | null =>
+    hundredths <= 0 ? null : minorFromBigInt(divideHalfUp(BigInt(p) * 100n, BigInt(hundredths)), 'cheaperOption');
+  return { price: cheaper, perYear: perYear(cheaper), pickedPerYear: perYear(price) };
+}
 
 export interface DepositView {
   readonly rate: Percent;
@@ -46,6 +88,8 @@ export interface Futures {
     readonly readyBy: string | null;
     readonly monthlyAmount: MinorUnits | null;
   };
+  /** 05.4 UX-28 (D-111): present only when the check names a cheaper price above 0 and below the price. */
+  readonly cheaper?: CheaperOption;
 }
 
 /**
@@ -77,13 +121,21 @@ export function buyLater(input: {
   readonly month: string;
   /** D-60: a seasonal earner's date is walked from last year's pattern instead of divided by the typical month. */
   readonly picture?: Pick<IncomePicture, 'treated' | 'months'>;
+  /** D-12: what the what-if levers add to every month of a seasonal walk (the caller already adds it to typicalLeft). */
+  readonly lift?: MinorUnits;
+  /**
+   * D-12, finding 6: the answer above says "not yet" even when unspent money covers the price (a dip in the cash path),
+   * and the judge then dates the wait from next month at the earliest (its readyMonth never returns 0). With this set,
+   * a covered price is walked like a gap of zero instead of being ready now, so the two never disagree.
+   */
+  readonly waitsAtLeastAMonth?: boolean;
 }): { readonly months: number | null; readonly readyBy: string | null; readonly monthlyAmount: MinorUnits | null } {
   const none = { months: null, readyBy: null, monthlyAmount: null } as const;
   if (input.unspent === null) return none;
   const target = Math.max(0, input.price - input.unspent);
-  if (target === 0) return { months: 0, readyBy: input.month, monthlyAmount: input.typicalLeft };
+  if (target === 0 && input.waitsAtLeastAMonth !== true) return { months: 0, readyBy: input.month, monthlyAmount: input.typicalLeft };
   if (input.picture !== undefined && input.picture.treated === 'seasonal') {
-    const walked = seasonalReadyMonth(input.picture, input.month, BigInt(target));
+    const walked = seasonalReadyMonth(input.picture, input.month, BigInt(target), BigInt(input.lift ?? 0));
     return walked === null
       ? { ...none, monthlyAmount: input.typicalLeft }
       : { months: walked.months, readyBy: walked.month, monthlyAmount: input.typicalLeft };
@@ -107,8 +159,11 @@ export function insteadFutures(input: {
   readonly purchase: Purchase;
   readonly userRate: Percent | null;
   readonly years: number;
+  /** 05.4 UX-28 (D-111): the typed price and the check's "worth it to you" answers (cheaper price, years of use). */
+  readonly check: { readonly price: MinorUnits | null; readonly value: Pick<CheckValue, 'cheaperPrice' | 'useYears'> };
 }): Futures {
   const { result, month, funds, purchase, userRate } = input;
+  const cheaper = cheaperOption(input.check.price, input.check.value);
   const unspent = funds.unspent === null ? null : (funds.unspent.available ?? funds.unspent.value);
   // one figure per screen: the judge's own unspent after (H-03)
   const afterFact = result.facts.find((x) => x.code === 'unspent_before_after');
@@ -134,7 +189,9 @@ export function insteadFutures(input: {
     }
   }
   return {
-    order: FUTURE_ORDER,
+    // D-110: the purpose orders the options; the set and the figures never change (I-D41)
+    order: orderOptions(cheaper === null ? FUTURE_ORDER : [...FUTURE_ORDER, 'cheaper'], purchase.purpose),
+    ...(cheaper === null ? {} : { cheaper }),
     buyNow: {
       unspentAfter:
         afterFact !== undefined && typeof afterFact.values.after === 'number'
@@ -142,7 +199,7 @@ export function insteadFutures(input: {
           : unspent === null
             ? null
             : minorUnits(unspent - purchase.dayOne),
-      emergencyUntouched: !result.facts.some((f) => f.code === 'emergency_used'),
+      emergencyUntouched: !result.facts.some((f) => f.code === 'net_used'),
       planTotal: sched === null ? null : myPart(sched.totalPaid, purchase.share),
     },
     keep: { unspentKept: unspent === null ? null : minorUnits(unspent) },

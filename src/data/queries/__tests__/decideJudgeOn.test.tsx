@@ -28,6 +28,7 @@ const mockFetch = {
   goals: jest.fn(),
   goalLines: jest.fn(),
   balances: jest.fn(),
+  subdivision: jest.fn(),
 };
 jest.mock('@/db/transactions', () => ({ fetchTransactionsInRange: (...a: unknown[]) => mockFetch.range(...a) }));
 jest.mock('@/db/decideChecks', () => ({ fetchDecideChecks: (...a: unknown[]) => mockFetch.checks(...a) }));
@@ -46,6 +47,7 @@ jest.mock('@/db/savingsGoals', () => ({
   fetchGoalLines: (...a: unknown[]) => mockFetch.goalLines(...a),
 }));
 jest.mock('@/db/recordReads', () => ({ fetchAccountBalances: (...a: unknown[]) => mockFetch.balances(...a) }));
+jest.mock('@/db/profile', () => ({ fetchRegionSubdivision: (...a: unknown[]) => mockFetch.subdivision(...a) }));
 
 const mockCtx = {
   ready: true,
@@ -150,6 +152,7 @@ function resetMocks(): void {
   mockFetch.payment.mockResolvedValue([]);
   mockFetch.written.mockResolvedValue([]);
   mockFetch.balances.mockResolvedValue([]);
+  mockFetch.subdivision.mockResolvedValue(null);
 }
 beforeEach(resetMocks);
 

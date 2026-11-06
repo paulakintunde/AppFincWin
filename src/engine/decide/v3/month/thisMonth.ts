@@ -9,7 +9,8 @@ import { minorUnits, type MinorUnits } from '../../../money/types';
 import { minorFromBigInt } from '../../../payoff/types';
 import { MATCH_DAYS } from '../constants';
 import { addYearMonths, daysInYearMonth, dayOfMonth, yearMonthOf } from '../dates';
-import type { IncomeThisMonth, V3Month, V3Series } from '../types';
+import type { IncomeThisMonth, PaidByOtherDue, V3Month, V3Series } from '../types';
+import type { DueDrops } from './dueDrops';
 import { classifyLine, liveSeriesOf, seriesIndex, seriesOccurrences } from './series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './settle';
 
@@ -23,6 +24,9 @@ export function erestOf(e: MinorUnits, everydayLogged: MinorUnits, day: number, 
   if (!Number.isInteger(day) || day < 1 || day > daysInMonth) {
     throw new RangeError(`erestOf: day ${day} must be an integer from 1 to ${daysInMonth}`);
   }
+  // 05.3-75 (gap 10, owner truth 2026-10-31): on the last day nothing is still to come; under-logging still shows
+  // through the month_looks_under_logged notice and confidence.
+  if (day === daysInMonth) return minorUnits(0);
   const eb = BigInt(e);
   const pace = divideHalfUp(eb * BigInt(daysInMonth - day), BigInt(daysInMonth));
   const gap = eb - BigInt(everydayLogged);
@@ -36,8 +40,11 @@ export interface ThisMonthInput {
   readonly series: readonly V3Series[];
   readonly income: IncomeThisMonth;
   readonly e: MinorUnits | null;
-  readonly roughExpenses: MinorUnits | null;
+  /** 05.4-57 ENG11-QE-BILLS: the everyday part of the quick estimates, bills already taken out; never the whole money out. */
+  readonly typedEveryday: MinorUnits | null;
   readonly setAside: MinorUnits;
+  /** 05.3-63: dues that no longer count (D-27, D-31, skips); absent = none. */
+  readonly drops?: DueDrops;
 }
 
 export interface ThisMonthResult {
@@ -54,6 +61,8 @@ export interface ThisMonthResult {
   readonly monthLeft: MinorUnits;
   readonly largestLine: { readonly categoryId: string | null; readonly amount: MinorUnits } | null;
   readonly everydayUnknown: boolean;
+  /** D-27, D-31: unsettled dues dropped because someone else paid, by date then series. */
+  readonly paidByOther: readonly PaidByOtherDue[];
 }
 
 export function thisMonth(input: ThisMonthInput): ThisMonthResult {
@@ -124,19 +133,35 @@ export function thisMonth(input: ThisMonthInput): ThisMonthResult {
   everyday = everyday > refunds ? everyday - refunds : 0n;
 
   // Bills still due: every occurrence this month that no paid line settled, however long ago its date was (D-51).
+  // A recorded payment still wins: only an unsettled due can be dropped (05.3-63; D-27, D-31, skips).
   let billsDue = 0n;
+  const paidByOther: PaidByOtherDue[] = [];
   for (const d of due) {
-    if (!settled.has(`${d.seriesId}|${d.date}`)) billsDue += BigInt(Math.abs(d.amount));
+    if (settled.has(`${d.seriesId}|${d.date}`)) continue;
+    const dropped = input.drops?.has(d.seriesId, d.date) ?? null;
+    if (dropped === null) {
+      billsDue += BigInt(Math.abs(d.amount));
+    } else if (dropped !== 'skipped') {
+      const s = cadenceOf.get(d.seriesId) as V3Series;
+      paidByOther.push({
+        seriesId: d.seriesId,
+        name: s.name ?? null,
+        date: d.date,
+        amount: minorFromBigInt(BigInt(Math.abs(d.amount)), FN),
+        by: dropped,
+      });
+    }
   }
+  paidByOther.sort((a, b) => (a.date !== b.date ? (a.date < b.date ? -1 : 1) : a.seriesId < b.seriesId ? -1 : 1));
 
   const logged = minorFromBigInt(everyday, FN);
   let erest: MinorUnits;
   let everydayUnknown = false;
   if (input.e !== null) {
     erest = erestOf(input.e, logged, day, n);
-  } else if (input.roughExpenses !== null) {
-    const gap = BigInt(input.roughExpenses) - everyday;
-    erest = minorFromBigInt(gap > 0n ? gap : 0n, FN);
+  } else if (input.typedEveryday !== null) {
+    const gap = BigInt(input.typedEveryday) - everyday;
+    erest = day === n ? minorUnits(0) : minorFromBigInt(gap > 0n ? gap : 0n, FN);
   } else {
     erest = minorUnits(0);
     everydayUnknown = true;
@@ -170,5 +195,6 @@ export function thisMonth(input: ThisMonthInput): ThisMonthResult {
     monthLeft: minorFromBigInt(BigInt(moneyIn) - out, FN),
     largestLine: largest === null ? null : { categoryId: largest.categoryId, amount: minorFromBigInt(largest.amount, FN) },
     everydayUnknown,
+    paidByOther,
   };
 }

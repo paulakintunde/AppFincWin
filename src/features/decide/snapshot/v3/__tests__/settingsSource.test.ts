@@ -38,6 +38,12 @@ describe('settingsSourceOf', () => {
     expect(run({ settings: null })).toBeNull();
   });
 
+  it('copies the interim safety-net columns (05.4 D-33, D-61)', () => {
+    expect(run()).toMatchObject({ safety_net_protect: true, safety_net_size: null, safety_net_locked: true });
+    const off = run({ settings: settings({ safety_net_protect: false, safety_net_size: 250000, safety_net_locked: false }) });
+    expect(off).toMatchObject({ safety_net_protect: false, safety_net_size: 250000, safety_net_locked: false });
+  });
+
   it('copies every column; income_types stays the setup values', () => {
     const v3 = run({
       settings: settings({

@@ -24,6 +24,7 @@ export interface DebtRow {
   min_floor: number | null;
   paid_in_full: boolean; // D-38 / D-40
   pays_in_full?: 'yes' | 'sometimes' | 'no' | null; // 05.2: card payment habit (20261028000500)
+  due_day?: number | null; // 05.4 FIN-04: day of the month the payment is due, 1..31 (20261103000200)
   paid_off_on?: string | null; // 05.2 owner addition 2026-10-28: the local date the debt was paid off; Decide stops counting its minimum from this date (05.2-48)
   is_housing: boolean; // D-103: counts toward the housing line; update grant only, the guard sets it on insert
   is_sample: boolean;
@@ -35,7 +36,7 @@ export interface DebtRow {
 }
 
 export const DEBT_COLUMNS =
-  'id, household_id, account_id, check_id, series_id, name, kind, currency, balance, apr, minimum_payment, secured, term_months, start_date, min_percent, min_interest_added, min_floor, paid_in_full, pays_in_full, paid_off_on, is_housing, is_sample, deleted_at, version, updated_by, created_at, updated_at';
+  'id, household_id, account_id, check_id, series_id, name, kind, currency, balance, apr, minimum_payment, secured, term_months, start_date, min_percent, min_interest_added, min_floor, paid_in_full, pays_in_full, paid_off_on, due_day, is_housing, is_sample, deleted_at, version, updated_by, created_at, updated_at';
 
 export type NewDebt = Pick<
   DebtRow,
@@ -57,6 +58,7 @@ export type NewDebt = Pick<
   | 'min_floor'
   | 'paid_in_full'
   | 'pays_in_full'
+  | 'due_day'
 >;
 
 export type DebtPatch = Partial<
@@ -76,6 +78,7 @@ export type DebtPatch = Partial<
     | 'paid_in_full'
     | 'pays_in_full'
     | 'paid_off_on'
+    | 'due_day'
     | 'is_housing'
     | 'deleted_at'
   >
@@ -100,6 +103,7 @@ export const DEBT_INSERT_KEYS = [
   'min_floor',
   'paid_in_full',
   'pays_in_full',
+  'due_day',
 ] as const satisfies readonly (keyof NewDebt)[];
 
 export const DEBT_PATCH_KEYS = [
@@ -117,6 +121,7 @@ export const DEBT_PATCH_KEYS = [
   'paid_in_full',
   'pays_in_full',
   'paid_off_on',
+  'due_day',
   'is_housing',
   'deleted_at',
 ] as const satisfies readonly (keyof DebtPatch)[];

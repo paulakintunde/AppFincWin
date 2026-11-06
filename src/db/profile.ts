@@ -73,3 +73,28 @@ export async function updateMoneyPrefs(
   if (error) throw toDbError(error, status);
   return data as MoneyPrefsRow;
 }
+
+// 05.4 D-19: state or province code for the tax lookup. Kept apart from MoneyPrefsRow so the money
+// preference reads are unchanged. User-writable through `grant update (region_subdivision)`.
+export const REGION_SUBDIVISION_COLUMN = 'region_subdivision';
+const SUBDIVISION_PATTERN = /^[A-Z0-9]{1,3}$/;
+
+export async function fetchRegionSubdivision(client: DbClient, userId: string): Promise<string | null> {
+  const { data, error, status } = await client
+    .from('profiles')
+    .select(REGION_SUBDIVISION_COLUMN)
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) throw toDbError(error, status);
+  const value = (data as { region_subdivision: string | null } | null)?.region_subdivision;
+  return value ?? null;
+}
+
+export async function updateRegionSubdivision(client: DbClient, userId: string, value: string | null): Promise<void> {
+  if (value !== null && !SUBDIVISION_PATTERN.test(value)) {
+    throw new TypeError('updateRegionSubdivision: value must be 1-3 upper-case letters or digits, or null');
+  }
+  const { error, status } = await client.from('profiles').update({ region_subdivision: value }).eq('id', userId);
+  if (error) throw toDbError(error, status);
+}

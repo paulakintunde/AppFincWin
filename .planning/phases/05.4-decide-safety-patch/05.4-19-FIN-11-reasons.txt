@@ -1,0 +1,3 @@
+# 05.4-19 FIN-11 reason file for --approve (key: reason, colon then a space).
+# The FIN-11 re-run from the settled baseline (answers.json after --approve FIN-01b) lists no changed answer, so there is no key
+# line here. The five corpus checks the rule reads (persona:audit-p8, yearly insurance) are audited by hand in 05.4-19-FIN-11-AUDIT.md.

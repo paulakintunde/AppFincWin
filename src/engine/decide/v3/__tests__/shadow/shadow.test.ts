@@ -1,29 +1,17 @@
 /**
- * The D-14 gate (05.1-28): today's engine against v3 over synthetic data.
- *
- * - every new "fits" (v3 fits_month or fits_unspent where the old engine did not fit) carries a written reason in
- *   approved-changes.json; stale entries fail;
- * - once the owner marks the file reviewed, every new fit must be approved and every cause group accepted;
- * - unsupported comparisons are never counted as agreement or as an approved change;
- * - SHADOW_REPORT=1 writes the review report; the default run writes nothing.
+ * Generators for the synthetic histories (05.1-28, D-17). 05.4-08: the old-engine-vs-v3 comparison and the
+ * approved-changes.json enforcement are retired (BO-05); the reviewed diff in ../reviewed/ replaces them.
+ * The generators stay: deterministic seeds, and no file-system or random source.
  */
+import * as fc from 'fast-check';
 import * as fs from 'fs';
 import * as path from 'path';
-import { classify } from './classify';
-import { runShadow, type ShadowRun } from './compare';
-import { generateHistories, SHADOW_SEED } from './generate';
+import { evaluate } from '../../evaluate';
+import { buildMonthModel } from '../../month/model';
+import { toCheckV2, toV3Inputs } from '../golden/adapter';
+import { generateHistories, historyArb, SHADOW_AS_OF, SHADOW_SEED, steadyOf } from './generate';
 import { generateNearLineHistories, withoutRefundLinks, NEAR_LINE_SEED } from './generateNearLine';
 import { generateRefundHistories, REFUND_SEED } from './generateRefunds';
-import { groupByCause, renderReport, writeReport, type ApprovedChanges } from './report';
-import approvedFile from './approved-changes.json';
-
-const approved = approvedFile as unknown as ApprovedChanges;
-const MIN_REASON = 20;
-
-let run: ShadowRun;
-beforeAll(() => {
-  run = runShadow();
-});
 
 describe('generator', () => {
   it('is deterministic: two calls deep-equal, 300 histories, 6-8 full months and 1-4 purchases each', () => {
@@ -40,6 +28,150 @@ describe('generator', () => {
       expect(g.purchases.length).toBeLessThanOrEqual(4);
     }
     expect(new Set(a.map((g) => g.person.id)).size).toBe(300);
+  });
+});
+
+describe('05.4-48 (audit cause 4): generated people are possible people', () => {
+  it("every generated person's account follows from its records and is never below 0", () => {
+    const raws = fc.sample(historyArb, { seed: SHADOW_SEED, numRuns: 300 });
+    const gens = generateHistories();
+    gens.forEach((g, i) => {
+      const raw = raws[i];
+      if (raw === undefined) throw new RangeError(`no raw history ${i}`);
+      const p = g.person;
+      const fund = p.emergency ?? 0;
+      const pots = p.envelopes.reduce((s, e) => s + Number(e.saved), 0);
+      const oct = p.months.filter((m) => m.full === false).flatMap((m) => m.lines);
+      const octIn = oct.filter((l) => l.role === 'income').reduce((s, l) => s + l.amount, 0);
+      const octOut = oct.filter((l) => l.role === 'spending').reduce((s, l) => s + l.amount, 0);
+      const carried = Math.max(raw.balance, octOut - octIn - pots);
+      const main = p.balance - fund;
+      expect(main).toBe(pots + carried + octIn - octOut);
+      expect(main).toBeGreaterThanOrEqual(0);
+      expect(p.balance).toBeGreaterThanOrEqual(fund);
+      if (p.unspent !== null) {
+        const mm = buildMonthModel(toV3Inputs({ ...p, unspent: null }));
+        const toArrive = Math.max(0, mm.moneyIn - octIn);
+        expect(p.unspent.amount).toBeLessThanOrEqual(main - pots + toArrive);
+      }
+    });
+  });
+
+  it('05.4-51 (Plan-49 re-run): every plan deposit is below its price', () => {
+    for (const g of generateHistories()) {
+      for (const p of g.purchases) if (p.pay.mode === 'plan') expect(p.pay.deposit).toBeLessThan(p.price ?? 0);
+    }
+  });
+
+  it('05.4-51 (Plan-49 re-run): a usual month costs at most 125% of pay (bills + everyday base + debt minimums)', () => {
+    const raws = fc.sample(historyArb, { seed: SHADOW_SEED, numRuns: 300 });
+    for (const raw of raws) {
+      const bills = raw.bills.reduce((t, b) => t + b.amount, 0);
+      const mins = raw.debts.reduce((t, d) => t + d.minimum, 0);
+      expect(raw.everydayBase).toBeDefined();
+      expect(bills + (raw.everydayBase ?? 0) + mins).toBeLessThanOrEqual(Math.floor((raw.pay * 125) / 100) + raw.bills.length);
+      // and never under half of the usual month's money in (a freelancer's stated steady amount): nobody has almost no costs
+      const usualIn = raw.freelance ? steadyOf(raw.pay) : raw.pay;
+      expect(bills + (raw.everydayBase ?? 0) + mins).toBeGreaterThanOrEqual(Math.floor((usualIn * 50) / 100) - raw.bills.length);
+    }
+  });
+
+  it('05.4-51 (D-65): 10 to 60 of the 200 reviewed-corpus people have an already-short usual month', () => {
+    const short = generateHistories(200).filter((g) => {
+      const t = buildMonthModel(toV3Inputs(g.person)).typicalLeft;
+      return t !== null && t < 0;
+    }).length;
+    expect(short).toBeGreaterThanOrEqual(10);
+    expect(short).toBeLessThanOrEqual(60);
+  });
+
+  it('no adapter clamp binds over the 200 reviewed-corpus histories (person.balance >= the fund)', () => {
+    for (const g of generateHistories(200)) expect(g.person.balance).toBeGreaterThanOrEqual(g.person.emergency ?? 0);
+  });
+});
+
+/** Days from SHADOW_AS_OF to a date (UTC). */
+const DAY = 86_400_000;
+const asOfMs = Date.parse(`${SHADOW_AS_OF}T00:00:00Z`);
+/** The day (0 = SHADOW_AS_OF) of a plan's last payment: weeks step by 7 days, months by calendar month (the 3rd never clamps). */
+function lastPaymentDay(cadence: { unit: 'week' | 'month'; every: number }, count: number, today: boolean): number {
+  const steps = (today ? 0 : 1) + (count - 1);
+  if (cadence.unit === 'week') return steps * cadence.every * 7;
+  const d = new Date(asOfMs);
+  d.setUTCMonth(d.getUTCMonth() + steps * cadence.every);
+  return Math.round((d.getTime() - asOfMs) / DAY);
+}
+
+describe('05.4-55 (D-69): prices and plan lengths follow from pay', () => {
+  const raws = fc.sample(historyArb, { seed: SHADOW_SEED, numRuns: 300 });
+  const gens = generateHistories();
+
+  it('every price is at least $1.00 and 0.1%..1,500% of the usual month in; 80..97% are 1%..300%, with extremes on both sides', () => {
+    let within = 0;
+    let below = 0;
+    let above = 0;
+    let all = 0;
+    gens.forEach((g, i) => {
+      const raw = raws[i];
+      if (raw === undefined) throw new RangeError(`no raw history ${i}`);
+      const base = raw.freelance ? steadyOf(raw.pay) : raw.pay;
+      g.purchases.forEach((p) => {
+        const price = p.price ?? 0;
+        all += 1;
+        expect(price).toBeGreaterThanOrEqual(100);
+        expect(price).toBeGreaterThanOrEqual(Math.floor(base / 1000));
+        expect(price).toBeLessThanOrEqual(Math.max(100, base * 15 + 1));
+        if (price < Math.floor(base / 100)) below += 1;
+        else if (price > base * 3 + 1) above += 1;
+        else within += 1;
+      });
+    });
+    // Observed with seed 0x051d (05.4-55): 768 purchases, 681 (88.7%) within 1%..300%, 43 below 1%, 44 above 300%.
+    expect(within / all).toBeGreaterThanOrEqual(0.8);
+    expect(within / all).toBeLessThanOrEqual(0.97);
+    expect(below).toBeGreaterThanOrEqual(1);
+    expect(above).toBeGreaterThanOrEqual(1);
+  });
+
+  it("every plan runs 3..60 months and its count follows from the term and how often it is paid", () => {
+    gens.forEach((g, i) => {
+      const raw = raws[i];
+      if (raw === undefined) throw new RangeError(`no raw history ${i}`);
+      g.purchases.forEach((p, k) => {
+        const r = raw.purchases[k];
+        if (r === undefined) throw new RangeError(`no raw purchase ${i}/${k}`);
+        expect(r.termMonths).toBeGreaterThanOrEqual(3);
+        expect(r.termMonths).toBeLessThanOrEqual(60);
+        if (p.pay.mode !== 'plan') return;
+        const c = p.pay.cadence;
+        const want =
+          c.unit === 'week' && c.every === 1 ? Math.round((r.termMonths * 52) / 12)
+          : c.unit === 'week' ? Math.round((r.termMonths * 26) / 12)
+          : c.every === 1 ? r.termMonths
+          : Math.max(1, Math.floor(r.termMonths / 3));
+        expect(p.pay.count).toBe(want);
+      });
+    });
+  });
+
+  it('at least one of the 200 corpus people has a short plan paid inside the 90 days (a D-68 candidate), and D-68 judges one by cash', () => {
+    let candidates = 0;
+    let byCash = 0;
+    for (const g of generateHistories(200)) {
+      const p = g.purchases[0];
+      if (p === undefined || p.pay.mode !== 'plan' || p.pay.firstPayment === null || p.pay.count === null) continue;
+      const today = p.pay.firstPayment.kind === 'today';
+      if (lastPaymentDay(p.pay.cadence as { unit: 'week' | 'month'; every: number }, p.pay.count, today) >= 90) continue;
+      const r = evaluate(toV3Inputs(g.person), toCheckV2(p)).result;
+      if (r.parts.monthly !== 'monthly_short' && r.parts.monthly !== 'not_yet') continue;
+      candidates += 1;
+      if (r.facts.some((f) => f.code === 'short_plan_from_cash')) byCash += 1;
+    }
+    // Observed with seed 0x051d (05.4-55): 5 corpus plans paid inside the 90 days, 2 of them short each month (gen:70, gen:136);
+    // the engine judges 1 by cash (gen:70, D-68). So the owner's review sees D-68 at work.
+    expect(candidates).toBeGreaterThanOrEqual(1);
+    expect(byCash).toBeGreaterThanOrEqual(1);
+    expect(byCash).toBeLessThanOrEqual(candidates);
   });
 });
 
@@ -75,81 +207,6 @@ describe('near-the-line refund generator (05.2-31)', () => {
   });
 });
 
-describe('comparison', () => {
-  it('counts every comparison exactly once: agreed + changed + unsupported + notReady = total', () => {
-    expect(run.agreed + run.changes.length + run.unsupported.length + run.notReady.length).toBe(run.total);
-    expect(run.total).toBeGreaterThan(300);
-  });
-
-  it('D-52: a not-ready comparison is never listed as a change', () => {
-    const notReady = new Set(run.notReady.map((n) => n.key));
-    for (const c of run.changes) expect(notReady.has(c.key)).toBe(false);
-  });
-
-  it('never lists an unsupported comparison as a change', () => {
-    const unsupported = new Set(run.unsupported.map((u) => u.key));
-    for (const c of run.changes) expect(unsupported.has(c.key)).toBe(false);
-  });
-
-  it('gives each change one cause and a differing legacy state', () => {
-    for (const c of run.changes) {
-      expect(c.cause).toBeTruthy();
-      expect(c.v3Legacy).not.toBe(c.old);
-    }
-  });
-
-  it('includes generated comparisons', () => {
-    const keys = [...run.changes.map((c) => c.key), ...run.unsupported.map((u) => u.key)];
-    expect(keys.some((k) => k.startsWith('generated:'))).toBe(true);
-  });
-});
-
-describe('classify', () => {
-  it('files a needs_input answer under needs_input_rules whatever the old state', () => {
-    const c = run.changes.find((x) => x.v3 === 'needs_input');
-    expect(c?.cause).toBe('needs_input_rules');
-    expect(typeof classify).toBe('function');
-  });
-});
-
-describe('D-14 gate', () => {
-  const newFits = () => run.changes.filter((c) => c.newFits);
-
-  it('every new fits has a written reason (at least 20 characters)', () => {
-    const missing = newFits().filter((c) => {
-      const e = approved.newFits.find((n) => n.key === c.key);
-      return e === undefined || e.reason.trim().length < MIN_REASON;
-    });
-    expect(missing.map((c) => c.key)).toEqual([]);
-  });
-
-  it('has no stale entries: every approved key and group cause is produced by the current run', () => {
-    const keys = new Set(newFits().map((c) => c.key));
-    expect(approved.newFits.filter((e) => !keys.has(e.key)).map((e) => e.key)).toEqual([]);
-    const causes = new Set(run.changes.map((c) => c.cause));
-    expect(approved.groups.filter((g) => !causes.has(g.cause)).map((g) => g.cause)).toEqual([]);
-  });
-
-  it('records the cause of each approved entry as the current run classifies it', () => {
-    const byKey = new Map(run.changes.map((c) => [c.key, c.cause]));
-    expect(approved.newFits.filter((e) => byKey.get(e.key) !== e.cause).map((e) => e.key)).toEqual([]);
-  });
-
-  it('owner sign-off: when reviewed, every new fit is approved and every cause in the run is accepted', () => {
-    if (!approved.reviewed) return;
-    expect(approved.reviewedBy).toBeTruthy();
-    expect(approved.reviewedAt).toBeTruthy();
-    expect(newFits().filter((c) => approved.newFits.find((e) => e.key === c.key)?.approved !== true).map((c) => c.key)).toEqual([]);
-    const unaccepted = [...groupByCause(run.changes).keys()].filter((cause) => approved.groups.find((g) => g.cause === cause)?.accepted !== true);
-    expect(unaccepted).toEqual([]);
-  });
-
-  it('group counts match the run', () => {
-    const counts = groupByCause(run.changes);
-    for (const g of approved.groups) expect(counts.get(g.cause)?.length ?? 0).toBe(g.count);
-  });
-});
-
 describe('D-17 synthetic only', () => {
   it('compare.ts and generate.ts import no file-system module', () => {
     for (const f of ['compare.ts', 'generate.ts', 'generateRefunds.ts']) {
@@ -158,20 +215,5 @@ describe('D-17 synthetic only', () => {
       expect(src).not.toMatch(/require\(['"](node:)?fs['"]\)/);
       expect(src).not.toMatch(/Math\.random|Date\.now/);
     }
-  });
-});
-
-describe('report', () => {
-  it('renders the totals, the causes and every new fit', () => {
-    const md = renderReport(run, approved);
-    expect(md).toContain(`| Comparisons | ${run.total} |`);
-    expect(md).toContain('## New fits');
-    for (const c of run.changes.filter((x) => x.newFits)) expect(md).toContain(c.key);
-    expect(md).not.toContain('MISSING');
-  });
-
-  it('writes files only when SHADOW_REPORT=1', () => {
-    if (process.env.SHADOW_REPORT === '1') writeReport(run, approved);
-    else expect(process.env.SHADOW_REPORT).not.toBe('1');
   });
 });
