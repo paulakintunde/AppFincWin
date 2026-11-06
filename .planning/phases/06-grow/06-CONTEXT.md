@@ -53,7 +53,8 @@ Owner context (2026-11-06): Decide is switched on for testers now (separate task
 - **D-25 (contributions):** A goal's monthly contribution appears as an **Expected** transfer line in Activity that the user confirms; confirming writes the paired legs. Nothing moves by itself. Implemented with `recurring_series.goal_id`.
 - **D-26 (net worth):** Once a holding exists in an investment-kind account, net worth uses the holdings' values and leaves that account's balance out (no double counting).
 - **D-27 (G10 "Lines you will not cross"):** Built in Phase 6 from the prototype, using the existing lines store; no new table.
-- **D-28 (card minimums):** Both. The user can type the statement minimum; when they do, the payoff plan uses it. When they don't, the app works one out from the balance (rule set by the planner from research, e.g. interest + 1% of balance with a floor) and labels it as an estimate the user can replace.
+- **D-28 (card minimums):** Both. The user can type the statement minimum; when they do, the payoff plan uses it. When they don't, the app works one out from the balance (rule set by the planner from research, e.g. interest + 1% of balance with a floor) and labels it as an estimate the user can replace. Owner approved 2026-11-06: Decide keeps using the stored minimum in Phase 6 (no answer drift); the estimate is for Grow's payoff plan and labels only (see Deferred).
+- **D-29 (use an existing goal as the safety net, owner 2026-11-06):** A goal's detail has "Use as my safety net". A confirm sheet states the Decide effect in plain words first (e.g. "This goal becomes Locked. Decide will keep its $800 out of spare money."). On confirm the goal becomes the safety net (is_safety_net, locked and protect all true) and keeps its saved amount, target and monthly amount/series. If a live safety net already exists, the two are swapped atomically: the old one becomes a normal goal and stays Locked. Exactly one live flagged goal per owner holds throughout. One save, one Undo restores both rows. Server path: `set_safety_net` RPC (plan 06-06); hook `useSetSafetyNet` (06-12); UI on goal detail (06-22).
 
 ### Claude's Discretion
 - Empty states, first-run of Grow, and how Grow's setup steps moved from Decide (loans, saving, emergency, envelopes; ARC-16) are sequenced, following the prototype and the "ask, don't block" rule.
@@ -120,6 +121,7 @@ Owner context (2026-11-06): Decide is switched on for testers now (separate task
 - ~~Separate Calculators page (Phase 06.1)~~: moved into this phase by D-21 (owner, 2026-11-06).
 - Region-specific investment wrappers (401(k), ISA, TFSA, RRSP): with region support.
 - Live market prices: out of v1 (GRW-10).
+- Decide using the estimated card minimum for untyped cards — revisit with the next Decide phase. (D-28, owner approved 2026-11-06: in Phase 6 the estimate is used by Grow's payoff plan only; Decide keeps the stored minimum so no answer drifts.)
 
 </deferred>
 

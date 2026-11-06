@@ -1175,7 +1175,7 @@ Plans:
   7. (Decide fix plan) The safety net is the one flagged emergency-fund goal: Decide's old settings copy is migrated, and changing the goal's size in Grow changes Decide's next answer (ARC-13, FIN-16, APP-28).
   8. (Decide fix plan) Debts carry a due day and a payoff strategy in one payoff module; Decide reads them and "adding a debt never raises the lowest point" still passes (ARC-14, ENG-24).
   9. (Decide fix plan) A goal contribution counts exactly once; the Loans, Saving, Emergency and Envelopes setup steps live in Grow; the safety-net and debt contract tests are on (ARC-15, ARC-16).
-**Plans**: 20 plans
+**Plans**: 22 plans
 
 Plans:
 - [ ] 06-01-PLAN.md — Payoff maths: fixed payment, both payoff orders, month-by-month growth, card minimum estimate (W1)
@@ -1183,21 +1183,23 @@ Plans:
 - [ ] 06-03-PLAN.md — Decide engine: locked goals kept out, unlocked goals counted, safety net and goals named (W1)
 - [ ] 06-04-PLAN.md — Schema: goals, APY, debt fields, holdings and lots, apply_patches re-issue, pgTAP (W1)
 - [ ] 06-05-PLAN.md — Connection points (BO-07 goal, safety net, debt) with contract and parity tests (W2)
-- [ ] 06-06-PLAN.md — Schema: goal contributions, materialiser, goal-plan RPCs, safety-net move D-07 (W2)
+- [ ] 06-06-PLAN.md — Schema: goal contributions, materialiser, goal-plan RPCs, set_safety_net swap (D-29), safety-net move D-07 (W2)
 - [ ] 06-07-PLAN.md — Schema: debt plan and sale-closes-loan RPCs (W2)
 - [ ] 06-08-PLAN.md — Typed db access, keys, export manifest, cache version (W2)
-- [ ] 06-09-PLAN.md — Grow copy, copy lint, glyphs and UI primitives (W2)
+- [ ] 06-09-PLAN.md — Grow copy, copy lint, feature flags, glyphs and base primitives (W2)
 - [ ] 06-10-PLAN.md — Decide reads Grow through the connection points; contribution counted once; goals right-answer cases (W3)
-- [ ] 06-11-PLAN.md — [BLOCKING] production schema push, owner-gated (W3)
-- [ ] 06-12-PLAN.md — Goal and safety-net data hooks (W3)
-- [ ] 06-13-PLAN.md — Calculators page with four typed calculators, D-21 (W3)
+- [ ] 06-11-PLAN.md — [BLOCKING] production schema push, owner-gated with hard stops (W3)
+- [ ] 06-12-PLAN.md — Goal and safety-net data hooks, incl. use-as-safety-net (D-29) (W3)
+- [ ] 06-21-PLAN.md — Calculator blocks and Grow charts (split from 06-09) (W3)
+- [ ] 06-13-PLAN.md — Calculators page with four typed calculators, D-21 (W4)
 - [ ] 06-14-PLAN.md — Debt, holding, lot and net-worth data hooks (W4)
-- [ ] 06-15-PLAN.md — Grow tab shell and goal screens (W4)
-- [ ] 06-16-PLAN.md — Safety net screens, first-open sheet, Lines you will not cross (W5)
-- [ ] 06-17-PLAN.md — Debt screens: payoff plan side by side, add debt, sale sheet (W5)
-- [ ] 06-18-PLAN.md — Investing screens and account APY (W5)
-- [ ] 06-19-PLAN.md — Record calculators and Make this the plan (W6)
-- [ ] 06-20-PLAN.md — Setup links, Create from Decide, Grow tab on, phase gate, owner device check (W7)
+- [ ] 06-15-PLAN.md — Grow tab shell, Goals segment and home cards (W5)
+- [ ] 06-17-PLAN.md — Debt screens: payoff plan side by side, add debt, sale sheet (W6)
+- [ ] 06-18-PLAN.md — Investing screens and account APY (W6)
+- [ ] 06-22-PLAN.md — Goal detail, money moves, new goal sheet, and "Use as my safety net" (D-29) (split from 06-15) (W6)
+- [ ] 06-16-PLAN.md — Safety net screens (create, size, monthly), first-open sheet, Lines you will not cross (W7)
+- [ ] 06-19-PLAN.md — Record calculators and Make this the plan (W8)
+- [ ] 06-20-PLAN.md — Setup links, Create from Decide, Grow tab on, phase gate, owner device check (W9)
 **UI hint**: yes
 
 ### Phase 7: Insights
