@@ -31,6 +31,20 @@ describe('undo vocabulary (05: Decide entities and labels)', () => {
     }
   });
 
+  it('06 the Grow labels exist once each', () => {
+    const grow = ['goalMade', 'goalPlanChanged', 'goalEdited', 'goalRemoved', 'goalMoneyMoved', 'goalContributionConfirmed', 'safetyNetChanged', 'safetyNetSizeSaved', 'safetyNetConfirmed', 'debtPlanSaved', 'debtSaleRecorded', 'holdingAdded', 'holdingEdited', 'holdingRemoved', 'holdingEntryAdded', 'holdingEntryEdited', 'holdingEntryRemoved', 'holdingValueUpdated', 'accountRateSaved'];
+    expect(grow).toHaveLength(19);
+    for (const key of grow) {
+      expect(UNDO_LABEL_KEYS.filter((k) => k === key)).toHaveLength(1);
+      expect(key).toMatch(/^[a-zA-Z]{1,40}$/);
+    }
+  });
+
+  it('06 accepts holdings and holding_lots as UndoEntity', () => {
+    const entities: UndoEntity[] = ['holdings', 'holding_lots'];
+    expect(entities).toHaveLength(2);
+  });
+
   it('every label key passes the undo_log.label_key database check', () => {
     for (const key of UNDO_LABEL_KEYS) expect(key).toMatch(/^[a-zA-Z]{1,40}$/);
   });
