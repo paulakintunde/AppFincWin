@@ -11,3 +11,9 @@ export * from './futureValue';
 export * from './simulateMinimum';
 export * from './rateSchedule';
 export * from './futureValuePath';
+// Phase 6 Grow: fixedPayoff (one debt), strategy (several debts, two orders),
+// compoundSteps (growth illustration), estimatedCardMinimum (D-28).
+export * from './fixedPayoff';
+export * from './strategies';
+export * from './compoundSteps';
+export * from './cardMinimumEstimate';
