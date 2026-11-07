@@ -157,7 +157,7 @@ describe('Change a rule (G10a)', () => {
     await fireEvent.press(screen.getByTestId('lines-row-saving'));
     expect(screen.queryByTestId('line-off-note')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Use this rule'));
-    expect(screen.getByText('Answers stop checking this.')).toBeTruthy();
+    expect(screen.getByText('Off, answers use the standard rule instead.')).toBeTruthy();
     await fireEvent.press(screen.getByText('Save rule'));
     expect(mockUpdate).toHaveBeenCalledWith({ saving_floor: null });
   });

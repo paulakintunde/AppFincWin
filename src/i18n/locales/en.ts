@@ -4374,7 +4374,7 @@ const en = {
       change: {
         title: 'Change a rule',
         useRule: 'Use this rule',
-        useRuleOff: 'Answers stop checking this.',
+        useRuleOff: 'Off, answers use the standard rule instead.',
         previewTitle: 'Open checks with this rule',
         previewRow: '{{name}} — {{state}}',
         save: 'Save rule',
