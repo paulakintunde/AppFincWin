@@ -38,6 +38,17 @@ jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: { 
 
 let mockRead: GoalsRead;
 jest.mock('@/features/grow/goals/useGoalsRead', () => ({ useGoalsRead: () => mockRead }));
+// 06-18: the Investing segment reads its own model; an empty one shows the empty state.
+jest.mock('@/features/grow/investing/useInvestingRead', () => ({
+  useInvestingRead: () => ({
+    status: 'ready',
+    userId: 'u1',
+    householdId: 'h1',
+    today: '2026-11-05',
+    refetch: jest.fn(),
+    model: { holdings: [], totals: { value: 0, putIn: 0, gain: 0, gainPercentTenths: null }, monthlyIn: 0, unconverted: 0, anyStale: false },
+  }),
+}));
 let mockFlags: Record<string, boolean> | null = null;
 jest.mock('@/features/grow/growFeatureFlags', () => {
   const actual = jest.requireActual('@/features/grow/growFeatureFlags');
