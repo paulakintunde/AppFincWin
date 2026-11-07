@@ -31,6 +31,11 @@ describe('safetyNetPointOf / safetyNetInputsOf', () => {
     expect(safetyNetPointOf([net], [l], identity, 'USD')?.saved).toBe(140000);
   });
 
+  it('06-10: taking out more than was saved leaves 0, never a negative net', () => {
+    const l = { id: 'l', goal_id: 'net', status: 'paid', deleted_at: null, transfer_id: 't', original_amount: -900000, original_currency: 'USD', local_date: '2026-11-01' };
+    expect(safetyNetPointOf([net], [l], identity, 'USD')?.saved).toBe(0);
+  });
+
   it('protect false, and a cached old row with no protect and no confirm date', () => {
     expect(safetyNetPointOf([{ ...net, protect: false }], [], identity, 'USD')?.protect).toBe(false);
     const { protect: p0, net_confirmed_at: n0, ...old } = net;

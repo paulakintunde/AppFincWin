@@ -15,7 +15,7 @@ describe('right-answer pages: rates (D-53)', () => {
     const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'right-answers', 'build-page.mjs'), '--out', out], { encoding: 'utf8' });
     expect(r.status).toBe(0);
     const files = fs.readdirSync(out).filter((f) => f.endsWith('.html'));
-    expect(files.length).toBe(9);
+    expect(files.length).toBe(10); // 06-10: the goals topic is the tenth
     let seen = 0;
     for (const f of files) {
       const html = fs.readFileSync(path.join(out, f), 'utf8');

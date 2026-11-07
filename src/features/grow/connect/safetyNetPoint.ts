@@ -1,7 +1,7 @@
 // 06-05 (BO-07 item 3): the safety-net connection point. The migrated safety-net goal in, Decide's net and fund out. PURE.
 import type { EmergencyFund, SafetyNet } from '@/engine/decide/v3';
 import { minorUnits } from '@/engine/money';
-import { goalSaved } from './goalSaved';
+import { clampSaved, goalSaved } from './goalSaved';
 import type { GoalLineSource, GoalSourceRow, SafetyNetPoint, ToHome } from './types';
 
 /**
@@ -17,7 +17,7 @@ export function safetyNetPointOf(rows: readonly GoalSourceRow[], lines: readonly
   return {
     ...base,
     size: size === null ? null : minorUnits(size),
-    saved: minorUnits(goalSaved(row, lines, toHome) ?? 0),
+    saved: minorUnits(clampSaved(goalSaved(row, lines, toHome) ?? 0)),
     accountId: row.account_id ?? null,
   };
 }

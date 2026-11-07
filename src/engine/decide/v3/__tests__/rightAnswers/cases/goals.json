@@ -1,0 +1,520 @@
+{
+  "topic": "goals",
+  "cases": [
+    {
+      "id": "GL-01",
+      "topic": "goals",
+      "persona": "Mina (invented)",
+      "situation": "Mina has no safety net yet and $300 spare in November, $300 in a usual month. She has a \"New laptop\" goal that is full: $500 saved of $500, kept in its own savings account and locked, so Decide leaves it out. She is looking at a $1,500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 190000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 190000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 70000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "g1",
+            "kind": "savings",
+            "name": "New laptop",
+            "balance": 50000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "untouched"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "goals": [
+          {
+            "id": "g1",
+            "name": "New laptop",
+            "saved": 50000,
+            "target": 50000,
+            "monthly": null,
+            "locked": true,
+            "accountId": "g1"
+          }
+        ]
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": -120000,
+          "usualMonth": null
+        },
+        "readyBy": "2027-03",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "locked_goals_kept"
+        ],
+        "mustNotHaveFacts": [
+          "unlocked_goals_counted"
+        ]
+      },
+      "why": "The $500 in the locked goal is not spare money, so it is left out: the answer rests on the $300 spare plus $300 a month, and says the locked goals are kept out.",
+      "fixIds": [
+        "D-05",
+        "D-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "GL-02",
+      "topic": "goals",
+      "persona": "Tomas (invented)",
+      "situation": "Tomas has no safety net yet and $300 spare in November. His \"Bike\" goal is locked with $300 saved of $500, kept in its own savings account. He is looking at a $1,500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 190000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 190000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 70000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "g1",
+            "kind": "savings",
+            "name": "Bike",
+            "balance": 30000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "untouched"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "goals": [
+          {
+            "id": "g1",
+            "name": "Bike",
+            "saved": 30000,
+            "target": 50000,
+            "monthly": null,
+            "locked": true,
+            "accountId": "g1"
+          }
+        ]
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": -120000,
+          "usualMonth": null
+        },
+        "readyBy": "2027-03",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "locked_goals_kept"
+        ],
+        "mustNotHaveFacts": [
+          "unlocked_goals_counted"
+        ]
+      },
+      "why": "A locked goal protects what it has saved so far ($300), not its target ($500). The $300 is kept out of the answer.",
+      "fixIds": [
+        "D-05",
+        "D-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "GL-03",
+      "topic": "goals",
+      "persona": "Ines (invented)",
+      "situation": "Ines has no safety net yet and $300 spare in November. She keeps $640 for a \"Weekend away\" goal in a savings account, and has marked the goal unlocked, so Decide may count it. She is looking at a $900 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 190000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 190000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 70000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "g1",
+            "kind": "savings",
+            "name": "Weekend away",
+            "balance": 64000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "untouched"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "goals": [
+          {
+            "id": "g1",
+            "name": "Weekend away",
+            "saved": 64000,
+            "target": 100000,
+            "monthly": null,
+            "locked": false,
+            "accountId": "g1"
+          }
+        ]
+      },
+      "expected": {
+        "code": "fits_unspent",
+        "variant": "tight",
+        "afterBuy": {
+          "month": 0,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "unlocked_goals_counted"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "An unlocked goal is money she has said Decide may use. The $640 is counted as spare money and the answer says so.",
+      "fixIds": [
+        "D-05",
+        "D-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "GL-04",
+      "topic": "goals",
+      "persona": "Kai (invented)",
+      "situation": "Kai had $1,300 in his safety net (the size is $2,300) and took $200 out, so $1,100 is left. He has $300 spare in November. He is looking at a $1,500 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 190000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 190000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 70000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 110000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 230000,
+          "saved": 110000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": -120000,
+          "usualMonth": null
+        },
+        "readyBy": "2027-03",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_locked"
+        ],
+        "mustNotHaveFacts": [
+          "unlocked_goals_counted"
+        ]
+      },
+      "why": "The safety net protects the $1,100 that is in it now, not the $1,300 it held before the withdrawal and not the $2,300 size. His next answer is judged against $1,100.",
+      "fixIds": [
+        "ARC-13",
+        "FIN-16"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "GL-05",
+      "topic": "goals",
+      "persona": "Priya (invented)",
+      "situation": "Priya has $1,300 in a locked safety net (the size is $2,300) and a locked \"Lisbon\" goal with $640 saved, kept in its own savings account. She has $300 spare in November. She is looking at a $2,000 purchase. It is bought on 15 November 2026 (today), paid in one go. A usual month: pay $3,000, bills $1,900 and everyday spending $800 ($500 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 190000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 190000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 70000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 130000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          },
+          {
+            "id": "g1",
+            "kind": "savings",
+            "name": "Lisbon",
+            "balance": 64000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "untouched"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 230000,
+          "saved": 130000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "goals": [
+          {
+            "id": "g1",
+            "name": "Lisbon",
+            "saved": 64000,
+            "target": 180000,
+            "monthly": 5000,
+            "locked": true,
+            "accountId": "g1"
+          }
+        ]
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": -170000,
+          "usualMonth": null
+        },
+        "readyBy": "2027-05",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_and_goals_kept"
+        ],
+        "mustNotHaveFacts": [
+          "unlocked_goals_counted"
+        ]
+      },
+      "why": "Both the locked safety net and the locked Lisbon goal are kept out of the answer, and the answer names the two together.",
+      "fixIds": [
+        "ARC-13",
+        "D-05",
+        "D-06"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    }
+  ]
+}
