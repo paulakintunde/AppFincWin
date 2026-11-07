@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 06.1 UI-SPEC approved; next /gsd-plan-phase 06.1 (build waits for Grow wave 1)
+stopped_at: Phase 06.1 planned (42 plans, 16 waves, checker passed); wave 1 (01-07, 41, 42) buildable now, plan 08 gates the rest on Grow 06-05/06-06/06-10 on main
 last_updated: "2026-11-06T21:55:00.000Z"
-last_activity: 2026-11-06 -- Phase 06.1 context (D-01..D-19) and UI-SPEC approved (PR #99)
+last_activity: 2026-11-06 -- Phase 06.1 planned: 42 plans in 16 waves, plan checker passed after 1 revision (PR #99)
 progress:
   total_phases: 29
   completed_phases: 11
-  total_plans: 549
+  total_plans: 591
   completed_plans: 508
   percent: 93
 ---

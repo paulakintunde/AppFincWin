@@ -1183,7 +1183,7 @@ Plans:
 
 **Goal:** Testers use the new Decide screens, built from the owner's clickable prototype (https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR, the design standard, as in Phase 6 D-04), on the v3 engine and the connection points that exist on main. Every prototype Decide screen (D01-D53, answers N02-N26) replaces today's tester screens in one release with Grow; old 05.x Decide screens deleted; home buying hidden; household left to 08.1 (06.1-CONTEXT D-01..D-06).
 **Requirements**: The 08.1 fix IDs and 08.1-CARRY-OVER rows that need neither household data nor reading-test round 2 (06.1-CONTEXT D-04; the first plan lists the split)
-**Depends on:** Phase 6 wave 1 (safety net, goal and debt connection points). Planning starts now (owner 2026-11-06); building starts after Grow wave 1 merges. Household parts stay hidden until Phase 8.
+**Depends on:** Phase 6: Grow plans 06-05, 06-06 and 06-10 on main (connection points, RPCs, Decide feed; 06.1-CONTEXT D-30). Wave 1 (plans 01-07, 41, 42) can be built now; plan 08 gates the rest. Household parts stay hidden until Phase 8.
 **Plans:** 42 plans
 
 Plans:
