@@ -75,6 +75,17 @@ export interface EditDebtVars {
   stepId: string;
 }
 
+export interface RemoveDebtVars {
+  id: string;
+  ownerId: string;
+  householdId: string;
+  expectedVersion: number;
+  /** The soft-delete stamp (an ISO time). */
+  deletedAt: string;
+  name: string;
+  stepId: string;
+}
+
 export interface SetDebtPaidOffVars {
   id: string;
   ownerId: string;
@@ -120,7 +131,7 @@ interface PatchVars {
 /** Shared default for the two version-conditional debt patches (edit and paid off); one undo step each. */
 function patchDefaults<V extends PatchVars>(
   qc: QueryClient,
-  label: 'debtEdited' | 'debtPaidOff',
+  label: 'debtEdited' | 'debtPaidOff' | 'debtRemoved',
   patchOf: (v: V) => DebtPatch,
   nameOf: (v: V) => string
 ) {
@@ -151,12 +162,15 @@ function patchDefaults<V extends PatchVars>(
       markSession(vars);
       await qc.cancelQueries({ queryKey: queryKeys.debts(vars.householdId) });
       const patch = patchOf(vars);
+      // A soft delete leaves the list at once (the read never returns a deleted row).
       qc.setQueryData<DebtList>(queryKeys.debts(vars.householdId), (old) =>
-        (old ?? []).map((r) => (r.id === vars.id ? { ...r, ...patch, pending: true } : r))
+        patch.deleted_at ? (old ?? []).filter((r) => r.id !== vars.id) : (old ?? []).map((r) => (r.id === vars.id ? { ...r, ...patch, pending: true } : r))
       );
     },
     onSuccess: (row: DebtRow, vars: V) => {
-      qc.setQueryData<DebtList>(queryKeys.debts(vars.householdId), (old) => (old ?? []).map((r) => (r.id === row.id ? row : r)));
+      qc.setQueryData<DebtList>(queryKeys.debts(vars.householdId), (old) =>
+        row.deleted_at ? (old ?? []).filter((r) => r.id !== row.id) : (old ?? []).map((r) => (r.id === row.id ? row : r))
+      );
       invalidateDebts(qc, vars.householdId);
     },
     onError: async (err: unknown, vars: V) => {
@@ -250,6 +264,12 @@ export function registerDebtMutations(qc: QueryClient): void {
   qc.setMutationDefaults(
     mutationKeys.setDebtPaidOff,
     patchDefaults<SetDebtPaidOffVars>(qc, 'debtPaidOff', (v) => ({ paid_off_on: v.date }), (v) => v.name)
+  );
+
+  // 06-16: "Remove debt" is a real soft delete (a debt added by mistake), separate from "Mark paid off". One Undo clears deleted_at.
+  qc.setMutationDefaults(
+    mutationKeys.removeDebt,
+    patchDefaults<RemoveDebtVars & { before: Record<string, PatchValue> }>(qc, 'debtRemoved', (v) => ({ deleted_at: v.deletedAt }), (v) => v.name)
   );
 
   // 05.2-15 (DSU-06): how a card is paid off each month. Same shape as the housing write; label setupStepSaved.
@@ -494,6 +514,31 @@ export function useSetDebtPaidOff(): { setPaidOff(debt: DebtRow, date: string, o
         householdId: debt.household_id,
         expectedVersion: debt.version,
         date,
+        name: debt.name,
+        stepId,
+      });
+      return stepId;
+    },
+  };
+}
+
+/** Remove a debt: soft delete (deleted_at), one Undo (label debtRemoved) that brings it back. Past payments stay in Activity. Returns the undo step id. */
+export function useRemoveDebt(): { remove(debt: DebtRow, ownerId: string): string } {
+  const mutation = useMutation<DebtRow, unknown, RemoveDebtVars & { before: Record<string, PatchValue> }>({
+    mutationKey: mutationKeys.removeDebt,
+    scope: WRITE_SCOPE,
+  });
+  return {
+    remove(debt, ownerId) {
+      if (debt.deleted_at != null) throw new RangeError('remove debt: already removed');
+      const stepId = newStepId();
+      mutation.mutate({
+        id: debt.id,
+        ownerId,
+        householdId: debt.household_id,
+        expectedVersion: debt.version,
+        deletedAt: new Date().toISOString(),
+        before: { deleted_at: null },
         name: debt.name,
         stepId,
       });

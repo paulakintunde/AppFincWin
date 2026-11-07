@@ -29,11 +29,6 @@ import { buildDebtsModel, DEFAULT_EXTRA, DEFAULT_LUMP, useDebtsRead, type DebtLi
 import { useDebts } from '@/data/queries/decide';
 
 export interface DebtsSegmentProps {
-  /**
-   * Kept for the 06-15 call site. The segment now opens its own Add a debt sheet, so this is not called; GrowHome passes
-   * `addOpen` / `onAddClosed` for the FAB instead.
-   */
-  onAdd?: () => void;
   /** The FAB asks for the Add a debt sheet. */
   addOpen?: boolean;
   /** The sheet closed (so the owner can clear `addOpen`). */
@@ -166,7 +161,9 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
     const sub = paidInFull
       ? t('grow.debts.paidInFullRow')
       : d.point.dueDay === null
-        ? [rate, fmt.money(d.point.minimum, d.currency)].filter((x) => x !== null).join(' · ')
+        ? rate !== null
+          ? t('grow.debts.rowNoDay', { rate, payment: fmt.money(d.point.minimum, d.currency) })
+          : t('grow.debts.rowNoDayNoRate', { payment: fmt.money(d.point.minimum, d.currency) })
         : rate !== null
           ? t('grow.debts.row', { rate, payment: fmt.money(d.point.minimum, d.currency), day: fmt.ordinal(d.point.dueDay) })
           : t('grow.debts.rowNoRate', { payment: fmt.money(d.point.minimum, d.currency), day: fmt.ordinal(d.point.dueDay) });

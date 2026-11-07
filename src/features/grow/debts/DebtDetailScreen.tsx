@@ -5,13 +5,12 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { useAccounts } from '@/data/queries/accounts';
-import { useSetDebtPaidOff } from '@/data/mutations/debts';
+import { useRemoveDebt } from '@/data/mutations/debts';
 import { dueDateOf } from '@/features/grow/connect/debtPoint';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { ProgressBar } from '@/features/grow/ui/ProgressBar';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { useT } from '@/i18n';
-import { undoLabelText } from '@/i18n/undoLabel';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
@@ -38,7 +37,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
   const rows = useDebtRows(read.householdId);
   const fmt = useDebtFormat();
   const accounts = useAccounts(read.householdId ?? undefined).data ?? [];
-  const { setPaidOff } = useSetDebtPaidOff();
+  const { remove: removeDebt } = useRemoveDebt();
   const [editOpen, setEditOpen] = useState(false);
   const [saleOpen, setSaleOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
@@ -72,8 +71,8 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
     return (
       <DetailScreen title="">
         <View testID="grow-debt-missing" style={[...card, styles.center]}>
-          <Text style={{ ...body, textAlign: 'center' }}>{t('grow.common.loadErrorTitle')}</Text>
-          <Text style={{ ...label, textAlign: 'center' }}>{t('grow.common.loadErrorBody')}</Text>
+          <Text accessibilityRole="header" style={{ ...body, textAlign: 'center' }}>{t('grow.debts.notFoundTitle')}</Text>
+          <Text style={{ ...label, textAlign: 'center' }}>{t('grow.common.notFoundBody')}</Text>
           <Pill label={t('grow.common.back')} variant="secondary" onPress={() => router.back()} />
         </View>
       </DetailScreen>
@@ -105,9 +104,9 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
   const remove = (): void => {
     if (read.userId === null) return;
     try {
-      const stepId = setPaidOff(row, read.today, read.userId);
+      const stepId = removeDebt(row, read.userId);
       hapticLight();
-      showToast({ kind: 'destructive', text: undoLabelText('debtPaidOff', { name: row.name }), stepId });
+      showToast({ kind: 'destructive', text: { key: 'grow.debts.detail.removedToast', params: { name: row.name } }, stepId });
     } catch {
       showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
     }

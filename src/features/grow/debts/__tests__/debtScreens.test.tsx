@@ -57,9 +57,9 @@ jest.mock('@/ui/haptics', () => ({
 }));
 
 const mockBack = jest.fn();
-const mockPaidOff = jest.fn(() => 'step-removed');
+const mockRemove = jest.fn((..._a: unknown[]) => 'step-removed');
 jest.mock('expo-router', () => ({ router: { back: () => mockBack() } }));
-jest.mock('@/data/mutations/debts', () => ({ useSetDebtPaidOff: () => ({ setPaidOff: mockPaidOff }) }));
+jest.mock('@/data/mutations/debts', () => ({ useRemoveDebt: () => ({ remove: (...a: unknown[]) => mockRemove(...a) }) }));
 jest.mock('@/shell/screen/DetailScreen', () => {
   const R = require('react');
   const { View, Text: RNText } = require('react-native');
@@ -151,6 +151,12 @@ describe('Debts segment (G05)', () => {
     expect(screen.getByText(en.grow.debts.paidInFullSection)).toBeTruthy();
     expect(screen.getByText('Visa card')).toBeTruthy();
     expect(screen.getByText(en.grow.debts.paidInFullRow)).toBeTruthy();
+  });
+
+  it('a debt with no due day reads rate and payment a month, with no due day', async () => {
+    mockRows = [debt({ id: 'nodue', name: 'Family loan', balance: 100000, apr: '3', minimum_payment: 5000, due_day: null, started_balance: 100000 })];
+    await wrap(<DebtsSegment />);
+    expect(screen.getByText('3% · $50 a month')).toBeTruthy();
   });
 
   it('a debt row opens its detail', async () => {
@@ -295,6 +301,18 @@ describe('Add a debt (G07, D-15, D-28)', () => {
   });
 });
 
+describe('Edit a debt', () => {
+  it('saving a change toasts "Debt saved" with the step to undo', async () => {
+    mockRows = [AUTO];
+    await wrap(<DebtDetailScreen id="auto" />);
+    await fireEvent.press(screen.getByTestId('debt-edit'));
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Auto loan 2');
+    await fireEvent.press(screen.getAllByText(en.grow.debts.add.saveEdit).at(-1)!);
+    expect(mockSaveDebt).toHaveBeenCalledTimes(1);
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'step-add', text: { key: 'grow.debts.add.editedToast' } }));
+  });
+});
+
 describe('Debt detail (G06)', () => {
   beforeEach(() => {
     mockRows = [AUTO];
@@ -318,14 +336,17 @@ describe('Debt detail (G06)', () => {
     await fireEvent.press(screen.getByTestId('debt-remove'));
     expect(screen.getByText('Remove Auto loan?')).toBeTruthy();
     expect(screen.getByText(en.grow.debts.detail.removeBody)).toBeTruthy();
-    expect(mockPaidOff).not.toHaveBeenCalled();
+    expect(mockRemove).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByText(en.grow.debts.detail.removeConfirm));
-    expect(mockPaidOff).toHaveBeenCalledWith(expect.objectContaining({ id: 'auto' }), '2026-11-05', 'u1');
+    // A real removal (soft delete), not "paid off": the row and the user, nothing else.
+    expect(mockRemove).toHaveBeenCalledWith(expect.objectContaining({ id: 'auto' }), 'u1');
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ kind: 'destructive', stepId: 'step-removed', text: { key: 'grow.debts.detail.removedToast', params: { name: 'Auto loan' } } }));
   });
 
   it('a debt that is not there says so with a way back', async () => {
     await wrap(<DebtDetailScreen id="nope" />);
     expect(screen.getByTestId('grow-debt-missing')).toBeTruthy();
+    expect(screen.getByText('Debt not found')).toBeTruthy();
   });
 });
 
