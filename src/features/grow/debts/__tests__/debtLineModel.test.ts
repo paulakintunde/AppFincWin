@@ -1,4 +1,4 @@
-import { aboutTens, debtLineModel, estimatedMinimumOf, paidPercent, saleOutcome } from '../debtLineModel';
+import { aboutTens, debtLineModel, estimatedMinimumOf, paidPercent, saleOutcome, soonerSpan } from '../debtLineModel';
 
 describe('debtLineModel', () => {
   it('LEDGER: 312 a month on 3200 pay is 10% against a rule of 36', () => {
@@ -56,5 +56,15 @@ describe('estimatedMinimumOf (D-28)', () => {
     expect(estimatedMinimumOf(null, '21.9')).toBeNull();
     expect(estimatedMinimumOf(0, '21.9')).toBeNull();
     expect(estimatedMinimumOf(420000, '21.999')).toBeNull();
+  });
+});
+
+describe("soonerSpan (audit D10)", () => {
+  it("months only under two years, years and months from two years", () => {
+    expect(soonerSpan(4)).toEqual({ years: 0, months: 4 });
+    expect(soonerSpan(23)).toEqual({ years: 0, months: 23 });
+    expect(soonerSpan(24)).toEqual({ years: 2, months: 0 });
+    expect(soonerSpan(38)).toEqual({ years: 3, months: 2 });
+    expect(soonerSpan(48)).toEqual({ years: 4, months: 0 });
   });
 });

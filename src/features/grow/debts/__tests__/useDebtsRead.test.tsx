@@ -14,7 +14,7 @@ jest.mock('@/features/decide/past/usePastDecisions', () => ({
   usePastContext: () => ({ userId: 'u1', householdId: 'h1', today: '2026-11-05', ctx: {} }),
 }));
 
-import { buildDebtsModel, useDebtsRead } from '../useDebtsRead';
+import { buildDebtsModel, debtWhatIf, useDebtsRead, type DebtLine } from '../useDebtsRead';
 /* eslint-enable import/first */
 
 const debt = (over: Partial<DebtRow> & { id: string; name: string }): DebtRow => ({
@@ -125,6 +125,61 @@ describe('buildDebtsModel on the LEDGER', () => {
     expect(m.debts).toEqual([]);
     expect(m.plan).toBeNull();
     expect(m.focus).toBeNull();
+  });
+
+  it('plan-wide what-ifs carry exact sooner and less-interest figures against minimum only', () => {
+    const m = buildDebtsModel([AUTO], LEDGER_TODAY);
+    const s = m.scenarios?.rate;
+    expect(s?.minimumOnly).toMatchObject({ months: 30, totalInterest: 75636, payoffDate: '2029-04-15' });
+    expect(s?.withExtra).toMatchObject({ months: 26, totalInterest: 64491, soonerMonths: 4, lessInterest: 11145 });
+    expect(s?.withLump).toMatchObject({ outcome: 'cleared', months: 26, totalInterest: 58204, soonerMonths: 4, lessInterest: 17432 });
+    expect(s?.lumpFirstDebtId).toBe('auto');
+    expect(m.scenarios?.balance).toEqual(m.scenarios?.rate);
+    expect(m.savedExtraPlan).toBeNull();
+  });
+
+  it('the saved-extra plan is set when the saved extra is above 0', () => {
+    const m = buildDebtsModel([{ ...AUTO, payoff_extra: 5000 }], LEDGER_TODAY);
+    expect(m.savedExtraPlan?.rate).toMatchObject({ months: 26, totalInterest: 64491 });
+    expect(m.savedExtraPlan?.balance.payoffDate).not.toBeNull();
+  });
+
+  it('two debts: the one-off goes first to the higher rate, or to the smaller balance', () => {
+    const m = buildDebtsModel([AUTO, CARD], LEDGER_TODAY);
+    const byRate = [AUTO, CARD].reduce((a, b) => (Number(b.apr) > Number(a.apr) ? b : a));
+    const bySize = [AUTO, CARD].reduce((a, b) => (b.balance < a.balance ? b : a));
+    expect(m.scenarios?.rate.lumpFirstDebtId).toBe(byRate.id);
+    expect(m.scenarios?.balance.lumpFirstDebtId).toBe(bySize.id);
+    expect(m.scenarios?.rate.withExtra.soonerMonths).toBeGreaterThan(0);
+  });
+
+  it('a debt with no due day still gets a date (today\'s day is the fallback)', () => {
+    const noDay = { ...AUTO, due_day: null };
+    const m = buildDebtsModel([noDay], LEDGER_TODAY);
+    expect(m.scenarios?.rate.minimumOnly.payoffDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(m.plan?.rate.withoutExtra.payoffDate).not.toBeNull();
+    expect(m.plan?.rate.withoutExtra.payoffDate?.slice(8)).toBe(LEDGER_TODAY.slice(8));
+  });
+
+  it('a what-if that never clears has no date and no compare figures', () => {
+    const weak = debt({ id: 'w', name: 'Weak', balance: 1000000, apr: '30', minimum_payment: 1000 });
+    const m = buildDebtsModel([weak], LEDGER_TODAY, { extra: 0, lump: 0 });
+    expect(m.scenarios?.rate.minimumOnly.payoffDate).toBeNull();
+    expect(m.scenarios?.rate.withExtra).toMatchObject({ soonerMonths: null, lessInterest: null });
+  });
+
+  it('debtWhatIf works one debt via the engine', () => {
+    const line = buildDebtsModel([AUTO], LEDGER_TODAY).debts[0] as DebtLine;
+    const r = debtWhatIf(line, LEDGER_TODAY, { extra: 5000 });
+    expect(r.minimumOnly).toMatchObject({ months: 30, totalInterest: 75636 });
+    expect(r.scenario).toMatchObject({ months: 26, soonerMonths: 4, lessInterest: 11145 });
+    const once = debtWhatIf(line, LEDGER_TODAY, { lump: 100000 });
+    expect(once.scenario.totalInterest).toBe(58204);
+    const none = debtWhatIf({ ...line, point: { ...line.point, dueDay: null } }, LEDGER_TODAY, {});
+    expect(none.scenario).toMatchObject({ soonerMonths: 0, lessInterest: 0 });
+    expect(none.scenario.payoffDate?.slice(8)).toBe(LEDGER_TODAY.slice(8));
+    // a lump that clears it: month 0 means today
+    expect(debtWhatIf(line, LEDGER_TODAY, { lump: line.point.balance }).scenario.payoffDate).toBe(LEDGER_TODAY);
   });
 
   it('debts in another currency stay out of the plan (never mixed)', () => {
