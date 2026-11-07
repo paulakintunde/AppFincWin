@@ -166,3 +166,10 @@ Owner checked Grow on the Pixel 9 (dev client): "otherwise it looks mostly good"
   - Fix the audit bug where a net made in the app (or a goal turned into the net) starts unconfirmed and wrongly shows "We moved your safety net here".
   - The hero label reads "Saved across N goals and the safety net" when the net is counted.
 - **D-33 One-off debt payment:** "Once, today" is both a what-if and savable. "Use $1,000 once" records a one-off Expected payment. This needs a new RPC (new migration) and a second owner-approved production push, with the same stop rules as 06-11. The engine's multi-debt strategy gains a lump option, with 100% coverage.
+- **D-34 (owner, 2026-11-07):**
+  - The planner's payoff rules stand:
+    - with 2+ debts and no order picked, the rows prompt for an order;
+    - the extra goes to the debt that already has one, otherwise to the first debt in the chosen order;
+    - a one-off goes to the first debt in the chosen order, capped at its balance, and stays Expected until paid.
+  - "Add money" on goals and the safety net is an outline button.
+  - Debt rows show their payoff end date ("· ends Sep 2041"), added to 06-35.
