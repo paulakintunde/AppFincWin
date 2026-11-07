@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 6 UI-SPEC approved; 05.4 merged (PR #94), 05.4-43 and 05.4-45 follow up on main (D-182)
-last_updated: "2026-11-06T17:50:00.000Z"
-last_activity: 2026-11-06 -- 05.4 merged (PR #94); Phase 6 UI-SPEC approved (D-21 calculators page in Phase 6)
+stopped_at: Phase 06.1 planned (42 plans, 16 waves, checker passed); wave 1 (01-07, 41, 42) buildable now, plan 08 gates the rest on Grow 06-05/06-06/06-10 on main
+last_updated: "2026-11-06T21:55:00.000Z"
+last_activity: 2026-11-06 -- Phase 06.1 planned: 42 plans in 16 waves, plan checker passed after 1 revision (PR #99)
 progress:
-  total_phases: 28
+  total_phases: 29
   completed_phases: 11
-  total_plans: 549
+  total_plans: 591
   completed_plans: 508
   percent: 93
 ---
@@ -93,6 +93,7 @@ Last activity: 2026-11-06 -- owner D-182: merge 05.4 now; 43 and 45 run on main 
 - Phase 08.1 inserted after Phase 8: Decide rebuild on real data (full cost with tax and running costs; Variant C chosen 2026-11-01)
 - Phase 08.2 inserted after Phase 08.1: Decide re-audit
 - Phases 6 and 8 amended and Phase 7 moved after 08.2 by the same plan
+- Phase 06.1 inserted after Phase 6: Decide screens from the prototype (owner 2026-11-06: plan now, build after Grow wave 1; clickable prototype is the design standard)
 
 ### Decisions
 
