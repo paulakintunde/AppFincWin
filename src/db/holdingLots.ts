@@ -52,7 +52,7 @@ export const HOLDING_LOT_PATCH_KEYS = [
 ] as const satisfies readonly (keyof HoldingLotPatch)[];
 
 // Registered in WriteEntity by plan 06-09; the cast keeps this module compiling on its own until both land.
-const ENTITY = 'holding_lots' as unknown as WriteEntity;
+const ENTITY: WriteEntity = 'holding_lots';
 const UNIQUE_VIOLATION = '23505';
 
 /** Live entries of one household, by date then creation order. */
