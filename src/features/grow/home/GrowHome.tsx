@@ -15,6 +15,7 @@ import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
+import { NewGoalSheet } from '@/features/grow/goals/NewGoalSheet';
 import { GoalsSegment } from './GoalsSegment';
 import { ToolsRow } from './ToolsRow';
 
@@ -88,7 +89,15 @@ export function GrowHome({ sheets }: GrowHomeProps = {}) {
   useRegisterFab(fab);
 
   return (
-    <TabRootScreen title={t('grow.home.title')} overlay={sheets ? sheets({ newGoalOpen, closeNewGoal }) : undefined}>
+    <TabRootScreen
+      title={t('grow.home.title')}
+      overlay={
+        <>
+          <NewGoalSheet visible={newGoalOpen} onClose={closeNewGoal} />
+          {sheets ? sheets({ newGoalOpen, closeNewGoal }) : null}
+        </>
+      }
+    >
       <View testID="grow-home" style={styles.body}>
         {basics ? null : <SegmentTabs segments={segments} selected={selected} onSelect={setPicked} />}
         {basics || selected === 'goals' ? (
