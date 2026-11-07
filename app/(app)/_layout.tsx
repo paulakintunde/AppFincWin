@@ -77,6 +77,12 @@ export default function AppLayout() {
                 {/* 05.2-32: per-account gate (decide_v3) is inside the route, so it is not behind DECIDE_OPEN. */}
                 <Stack.Screen name="decide/setup" />
                 <Stack.Screen name="decide/settings" />
+                {/* 06-13 (D-21): the Calculators page and its four typed calculators; not behind the Decide gate. */}
+                <Stack.Screen name="grow/calculators/index" />
+                <Stack.Screen name="grow/calculators/loan" />
+                <Stack.Screen name="grow/calculators/savings" />
+                <Stack.Screen name="grow/calculators/growth" />
+                <Stack.Screen name="grow/calculators/payoff" />
                 {/* quick-261025-f46: today's Decide screens stay unreachable, deep links included, while DECIDE_OPEN is false. */}
                 <Stack.Protected guard={DECIDE_OPEN}>
                   <Stack.Screen name="setup/rough" />
