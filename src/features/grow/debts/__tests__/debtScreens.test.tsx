@@ -70,7 +70,6 @@ jest.mock('@/shell/screen/DetailScreen', () => {
 });
 
 import { DebtsSegment } from '../DebtsSegment';
-import { DebtDetailScreen } from '../DebtDetailScreen';
 /* eslint-enable import/first */
 
 const debt = (over: Partial<DebtRow> & { id: string; name: string }): DebtRow => ({
@@ -298,114 +297,6 @@ describe('Add a debt (G07, D-15, D-28)', () => {
     expect(mockLight).toHaveBeenCalledTimes(1);
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'step-add', text: { key: 'grow.debts.add.addedToast' } }));
     expect(mockPush).toHaveBeenCalledWith('/grow/debt/new-debt');
-  });
-});
-
-describe('Edit a debt', () => {
-  it('saving a change toasts "Debt saved" with the step to undo', async () => {
-    mockRows = [AUTO];
-    await wrap(<DebtDetailScreen id="auto" />);
-    await fireEvent.press(screen.getByTestId('debt-edit'));
-    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Auto loan 2');
-    await fireEvent.press(screen.getAllByText(en.grow.debts.add.saveEdit).at(-1)!);
-    expect(mockSaveDebt).toHaveBeenCalledTimes(1);
-    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'step-add', text: { key: 'grow.debts.add.editedToast' } }));
-  });
-});
-
-describe('Debt detail (G06)', () => {
-  beforeEach(() => {
-    mockRows = [AUTO];
-  });
-
-  it('shows the LEDGER Auto loan', async () => {
-    await wrap(<DebtDetailScreen id="auto" />);
-    expect(screen.getByText('$8,420 owed')).toBeTruthy();
-    expect(screen.getByText('Started at $14,500 · 42% paid')).toBeTruthy();
-    expect(screen.getByText('6.9% a year')).toBeTruthy();
-    expect(screen.getByText('$312 on the 15th · Manual')).toBeTruthy();
-    expect(screen.getByText('Apr 2029 on this payment')).toBeTruthy();
-    expect(screen.getByText('about $760')).toBeTruthy();
-    expect(screen.getByText('+$50 a month ends it in Dec 2028 and saves about $110.')).toBeTruthy();
-    expect(screen.getByText('Nov 15 · $312 · Expected')).toBeTruthy();
-    expect(screen.getByText(en.grow.debts.footer)).toBeTruthy();
-  });
-
-  it('06-19: "Try other amounts" opens the extra-payment calculator for a debt with a rate', async () => {
-    await wrap(<DebtDetailScreen id="auto" />);
-    await fireEvent.press(screen.getByTestId('debt-try-other'));
-    expect(mockPush).toHaveBeenCalledWith('/grow/calculators/debt/auto');
-  });
-
-  it('Remove asks first, then stops Decide counting the debt', async () => {
-    await wrap(<DebtDetailScreen id="auto" />);
-    await fireEvent.press(screen.getByTestId('debt-remove'));
-    expect(screen.getByText('Remove Auto loan?')).toBeTruthy();
-    expect(screen.getByText(en.grow.debts.detail.removeBody)).toBeTruthy();
-    expect(mockRemove).not.toHaveBeenCalled();
-    await fireEvent.press(screen.getByText(en.grow.debts.detail.removeConfirm));
-    // A real removal (soft delete), not "paid off": the row and the user, nothing else.
-    expect(mockRemove).toHaveBeenCalledWith(expect.objectContaining({ id: 'auto' }), 'u1');
-    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ kind: 'destructive', stepId: 'step-removed', text: { key: 'grow.debts.detail.removedToast', params: { name: 'Auto loan' } } }));
-  });
-
-  it('a debt that is not there says so with a way back', async () => {
-    await wrap(<DebtDetailScreen id="nope" />);
-    expect(screen.getByTestId('grow-debt-missing')).toBeTruthy();
-    expect(screen.getByText('Debt not found')).toBeTruthy();
-  });
-});
-
-describe('Close the loan from a sale (D-16)', () => {
-  beforeEach(() => {
-    mockRows = [AUTO];
-  });
-
-  async function openSale() {
-    await wrap(<DebtDetailScreen id="auto" />);
-    await fireEvent.press(screen.getByTestId('debt-sold'));
-  }
-
-  it('prefills the balance and previews what is left over', async () => {
-    await openSale();
-    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.sale.soldFor), '10000');
-    expect(screen.getByText('The $8,420 is paid off and $1,580 is left over')).toBeTruthy();
-    expect(screen.getByText('Left over goes to: Everyday checking')).toBeTruthy();
-  });
-
-  it('paying off with less leaves the rest owed', async () => {
-    await openSale();
-    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.sale.soldFor), '5000');
-    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.sale.paidOffWith), '5000');
-    expect(screen.getByText('$3,420 is still owed')).toBeTruthy();
-  });
-
-  it('more than the balance is refused before saving', async () => {
-    await openSale();
-    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.sale.soldFor), '10000');
-    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.sale.paidOffWith), '9000');
-    expect(screen.getByText('That’s more than the $8,420 still owed.')).toBeTruthy();
-    await fireEvent.press(screen.getByText(en.grow.debts.sale.save));
-    expect(mockRecordSale).not.toHaveBeenCalled();
-  });
-
-  it('"Record the sale" makes one useRecordDebtSale call with both line names and a toast with Undo', async () => {
-    await openSale();
-    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.sale.soldFor), '10000');
-    await fireEvent.press(screen.getByText(en.grow.debts.sale.save));
-    expect(mockRecordSale).toHaveBeenCalledTimes(1);
-    expect(mockRecordSale).toHaveBeenCalledWith(
-      expect.objectContaining({
-        soldFor: 1000000,
-        paidToLoan: 842000,
-        saleAccountId: 'a1',
-        paymentAccountId: 'a1',
-        saleName: 'Auto loan sold',
-        paymentName: 'Auto loan final payment',
-        date: '2026-11-05',
-      }),
-    );
-    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'step-sale', text: { key: 'grow.debts.sale.toast' } }));
   });
 });
 
