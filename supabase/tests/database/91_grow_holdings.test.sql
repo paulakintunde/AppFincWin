@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(26);
+select extensions.plan(28);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -63,6 +63,14 @@ select extensions.is((select value::int from public.holdings where id = 'b910000
   'the value falls back to the previous value lot');
 select extensions.is((select value_as_of::text from public.holdings where id = 'b9100000-0000-0000-0000-000000000001'), '2026-11-01',
   'value_as_of falls back too');
+
+-- 06: a stored Undo step may carry holdings and holding_lots ops (undo_log_fill re-issued in 20261106000100).
+select extensions.lives_ok($$insert into public.undo_log (id, label_key, label_params, ops) values (gen_random_uuid(), 'edited', '{}'::jsonb,
+  '[{"entity":"holdings","id":"b9100000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"name":"Brokerage"}}]'::jsonb)$$,
+  'an Undo step with a holdings op is stored');
+select extensions.lives_ok($$insert into public.undo_log (id, label_key, label_params, ops) values (gen_random_uuid(), 'edited', '{}'::jsonb,
+  '[{"entity":"holding_lots","id":"1a910000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"deleted_at":null}}]'::jsonb)$$,
+  'an Undo step with a holding_lots op is stored');
 
 select extensions.throws_ok($$update public.holdings set value = 1 where id = 'b9100000-0000-0000-0000-000000000001'$$,
   '42501', null, 'a client cannot write holdings.value directly (no column grant)');

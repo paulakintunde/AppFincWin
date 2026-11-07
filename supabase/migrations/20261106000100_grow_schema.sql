@@ -840,3 +840,52 @@ end;
 $$;
 
 revoke execute on function public.undo_adjusted_ops(public.undo_log) from public, anon, authenticated;
+
+-- 06: undo_log_fill re-created from the LATEST definition (20261028001100_apply_patches_v3.sql). Only lines marked `-- 06`
+-- changed: a stored Undo step may now carry holdings and holding_lots ops (apply_patches already allows both).
+create or replace function public.undo_log_fill()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  e jsonb;
+begin
+  -- D-CR-02: a step is validated when it is written, not when it is
+  -- replayed -- every op must be an object carrying an allowlisted entity,
+  -- a uuid id, a positive integer expectedVersion and a non-empty patch
+  -- object. apply_patches re-checks all of this (and the column allowlist)
+  -- at replay time; this just stops a malformed step ever being stored.
+  for e in select value from jsonb_array_elements(new.ops) loop
+    if jsonb_typeof(e) is distinct from 'object'
+       or (coalesce(e ->> 'entity', '') not in ('transactions', 'categories', 'recurring_series', 'accounts', 'category_rules', 'decide_checks', 'debts', 'decide_links', 'decide_changes', 'savings_goals', 'decide_settings', 'recurring_dismissals', 'income_payer_prompts', 'decide_answers', 'holdings', 'holding_lots') -- 02.3, 05, 05.2, 06
+           -- 2.2: households only in a server-recorded step (add-month undo)
+           and not (new.allow_system_keys and e ->> 'entity' = 'households'))
+       or coalesce(e ->> 'id', '') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+       or jsonb_typeof(e -> 'expectedVersion') is distinct from 'number'
+       or coalesce(e ->> 'expectedVersion', '') !~ '^[1-9][0-9]{0,8}$'
+       or jsonb_typeof(e -> 'patch') is distinct from 'object'
+       or e -> 'patch' = '{}'::jsonb then
+      raise exception 'undo_log: malformed op in step %', new.id using errcode = '22023';
+    end if;
+  end loop;
+
+  new.touched_ids := array(select distinct (e2 ->> 'id')::uuid from jsonb_array_elements(new.ops) e2);
+
+  -- D-CR-01: remember how far the materialiser had got for every series
+  -- this step touches, so a replay can tell whether the system has added
+  -- occurrences since (see undo_replay below).
+  new.series_generations := coalesce((
+    select jsonb_object_agg(rs.id::text, rs.generation)
+      from public.recurring_series rs
+     where rs.id in (
+       select (e3 ->> 'id')::uuid from jsonb_array_elements(new.ops) e3
+        where e3 ->> 'entity' = 'recurring_series'
+     )
+  ), '{}'::jsonb);
+  return new;
+end;
+$$;
+
+revoke execute on function public.undo_log_fill() from public, anon, authenticated;
