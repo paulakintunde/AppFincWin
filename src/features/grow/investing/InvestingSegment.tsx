@@ -2,7 +2,7 @@
 // card, one row per holding (value, as-of date, gain or loss), a quiet stale-value row, the allocation bar and the no-live-prices
 // note. Values are ones the user typed; each shows its as-of date. Declarative copy only.
 //
-// The segment opens its own AddHoldingSheet for its buttons, so it works when the host passes no `onAdd` or a no-op one.
+// The segment opens its own AddHoldingSheet for its buttons; GrowHome opens another for the FAB.
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
@@ -23,11 +23,6 @@ import { AddHoldingSheet } from './AddHoldingSheet';
 import { useInvestingFormat } from './investingFormat';
 import { useInvestingRead, type HoldingLine } from './useInvestingRead';
 
-export interface InvestingSegmentProps {
-  /** Optional: kept for the host. The segment's own buttons open its own sheet. */
-  onAdd?: () => void;
-}
-
 const SWATCHES: readonly CategorySwatchKey[] = ['green', 'blue', 'ochre', 'plum', 'teal', 'rust', 'slate'];
 
 /** Gain or loss as a quiet badge: sUp or sDown, ink-toned, with a word for assistive tech. Never red. */
@@ -46,7 +41,7 @@ export function GainBadge({ line }: { line: HoldingLine }) {
   );
 }
 
-export function InvestingSegment(_props: InvestingSegmentProps = {}) {
+export function InvestingSegment() {
   const t = useT();
   const { colors, pairing } = useTheme();
   const f = useInvestingFormat();

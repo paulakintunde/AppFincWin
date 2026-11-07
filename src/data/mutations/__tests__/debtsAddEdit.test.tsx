@@ -11,7 +11,7 @@ import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupaba
 import { mutationKeys, queryKeys } from '@/data/keys';
 import { clearVersionChains } from '@/data/sync/versionChain';
 import { resetToastForTests } from '@/state/undoToast';
-import { registerDebtMutations, useAddDebt, useEditDebt, useSetDebtPaidOff } from '../debts';
+import { registerDebtMutations, useAddDebt, useEditDebt, useRemoveDebt, useSetDebtPaidOff } from '../debts';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
 let mockActiveClient: unknown;
@@ -114,7 +114,7 @@ beforeEach(() => {
 describe('useAddDebt', () => {
   it('registers defaults for all three keys', () => {
     const { qc } = setup();
-    for (const k of [mutationKeys.addDebt, mutationKeys.editDebt, mutationKeys.setDebtPaidOff]) {
+    for (const k of [mutationKeys.addDebt, mutationKeys.editDebt, mutationKeys.setDebtPaidOff, mutationKeys.removeDebt]) {
       expect(qc.getMutationDefaults(k).mutationFn).toBeDefined();
     }
   });
@@ -211,6 +211,42 @@ describe('useEditDebt', () => {
     onlineManager.setOnline(true);
     await qc.resumePausedMutations();
     await waitFor(() => expect(insertUndoStep).toHaveBeenCalledTimes(1));
+  });
+});
+
+describe('useRemoveDebt (06-16)', () => {
+  it('soft-deletes with a debtRemoved step that clears deleted_at, and the debt leaves the cache at once', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [debt({ version: 2 }), debt({ id: 'd2', name: 'Other' })]);
+    fake.respondWith(ok([debt({ deleted_at: '2026-10-28T12:00:00Z', version: 3 })]));
+    const { result } = await renderHook(() => useRemoveDebt(), { wrapper: wrapper(qc) });
+    const stepId = result.current.remove(debt({ version: 2 }), 'user-1');
+    await waitFor(() => expect(qc.getQueryData<DebtRow[]>(KEY)?.map((r) => r.id)).toEqual(['d2']));
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalledTimes(1));
+    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ deleted_at: '2026-10-28T12:00:00.000Z' });
+    expect(fake.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toContainEqual(['version', 2]);
+    expect(insertUndoStep.mock.calls[0]![1]).toMatchObject({
+      id: stepId,
+      labelKey: 'debtRemoved',
+      labelParams: { name: 'Visa' },
+      ops: [{ entity: 'debts', id: 'd1', expectedVersion: 3, patch: { deleted_at: null } }],
+    });
+  });
+
+  it('refuses a debt that is already removed', async () => {
+    const { qc } = setup();
+    const { result } = await renderHook(() => useRemoveDebt(), { wrapper: wrapper(qc) });
+    expect(() => result.current.remove(debt({ deleted_at: '2026-10-01T00:00:00Z' }), 'u')).toThrow(RangeError);
+  });
+
+  it('does not mark the debt paid off', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [debt()]);
+    fake.respondWith(ok([debt({ deleted_at: '2026-10-28T12:00:00Z', version: 2 })]));
+    const { result } = await renderHook(() => useRemoveDebt(), { wrapper: wrapper(qc) });
+    result.current.remove(debt(), 'u');
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalledTimes(1));
+    expect(Object.keys(fake.calls.find((c) => c.method === 'update')?.args[0] as object)).toEqual(['deleted_at']);
   });
 });
 

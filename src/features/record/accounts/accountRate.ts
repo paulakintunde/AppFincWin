@@ -1,14 +1,5 @@
-// 06-18 (GRW-11): wording and the percent rule for an account's interest rate (APY). Kept here because en.ts is owned by another
-// plan while this one runs; move these into en.accounts when that file is free. Declarative wording only.
+// 06-18 (GRW-11): the percent rule for an account's interest rate (APY). The wording lives in en.accounts (sheet.rate*, detail.interest*).
 import { percent } from '@/engine/payoff';
-
-export const ACCOUNT_RATE_TEXT = {
-  label: 'Interest a year (APY)',
-  help: 'Leave blank if none.',
-  invalid: 'Enter a rate from 0 to 100, like 4.5.',
-  detailLabel: 'Interest',
-  detailValue: (rate: string): string => `${rate}% a year`,
-} as const;
 
 /** Savings and investment accounts can carry a rate. */
 export function kindHasRate(kind: string): boolean {

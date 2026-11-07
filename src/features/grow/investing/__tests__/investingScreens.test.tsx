@@ -112,7 +112,7 @@ beforeEach(() => {
 
 describe('Investing segment', () => {
   it('shows the hero, rows with as-of dates, gain and the allocation legend', async () => {
-    await renderIt(<InvestingSegment onAdd={() => undefined} />);
+    await renderIt(<InvestingSegment />);
     expect(screen.getByTestId('investing-hero')).toHaveTextContent('$7,690');
     expect(screen.getByText(/\$690 above what you put in · values you typed, as of Nov 1\./)).toBeTruthy();
     expect(screen.getByText('Retirement · $150 a month · as of Nov 1')).toBeTruthy();
@@ -239,6 +239,12 @@ describe('Holding detail', () => {
     await renderIt(<HoldingDetailScreen id="h-ret" />);
     expect(screen.getByTestId('holding-stale-row')).toBeTruthy();
     expect(screen.getByText('Last updated Oct 6')).toBeTruthy();
+  });
+
+  it('a holding that is gone says Holding not found with a way back', async () => {
+    await renderIt(<HoldingDetailScreen id="gone" />);
+    expect(screen.getByTestId('grow-holding-missing')).toBeTruthy();
+    expect(screen.getByText('Holding not found')).toBeTruthy();
   });
 
   it('asks before removing and names the net-worth drop', async () => {

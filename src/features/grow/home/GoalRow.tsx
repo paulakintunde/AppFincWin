@@ -49,12 +49,17 @@ export function GoalRow({ goal, reachesOn, money, animate = true }: GoalRowProps
   const percent = goalPercent(goal.saved, goal.target);
   const monthly = goal.monthlyAmount !== null && goal.monthlyAmount > 0 ? goal.monthlyAmount : null;
   const date = reachesOn ?? goal.readyBy;
+  // The engine's never-reached signal (monthsToReach caps at 600): a monthly amount, a target not yet reached, and no reach month.
+  const notReached = monthly !== null && goal.target !== null && goal.saved < goal.target && reachesOn === null;
 
   let sub: string;
   let spoken: string;
   if (goal.target === null) {
     sub = t('grow.home.goalRowNoTarget', { saved: money.amount(goal.saved) });
     spoken = `${goal.name}, ${sub}`;
+  } else if (notReached && monthly !== null) {
+    sub = t('grow.home.goalRowNotReached', { saved: money.amount(goal.saved), target: money.amount(goal.target), monthly: money.amount(monthly) });
+    spoken = `${goal.name}, ${sub}, ${percent}%`;
   } else if (monthly === null || date === null) {
     sub = t('grow.home.goalRowNoMonthly', { saved: money.amount(goal.saved), target: money.amount(goal.target) });
     spoken = `${goal.name}, ${sub}, ${percent}%`;

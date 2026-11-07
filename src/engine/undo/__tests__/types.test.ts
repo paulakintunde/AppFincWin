@@ -32,8 +32,8 @@ describe('undo vocabulary (05: Decide entities and labels)', () => {
   });
 
   it('06 the Grow labels exist once each', () => {
-    const grow = ['goalMade', 'goalPlanChanged', 'goalEdited', 'goalRemoved', 'goalMoneyMoved', 'goalContributionConfirmed', 'safetyNetChanged', 'safetyNetSizeSaved', 'safetyNetConfirmed', 'debtPlanSaved', 'debtSaleRecorded', 'holdingAdded', 'holdingEdited', 'holdingRemoved', 'holdingEntryAdded', 'holdingEntryEdited', 'holdingEntryRemoved', 'holdingValueUpdated', 'accountRateSaved'];
-    expect(grow).toHaveLength(19);
+    const grow = ['goalMade', 'goalPlanChanged', 'goalEdited', 'goalRemoved', 'goalMoneyMoved', 'goalContributionConfirmed', 'safetyNetChanged', 'safetyNetSizeSaved', 'safetyNetConfirmed', 'debtPlanSaved', 'debtSaleRecorded', 'holdingAdded', 'holdingEdited', 'holdingRemoved', 'holdingEntryAdded', 'holdingEntryEdited', 'holdingEntryRemoved', 'holdingValueUpdated', 'accountRateSaved', 'debtRemoved'];
+    expect(grow).toHaveLength(20);
     for (const key of grow) {
       expect(UNDO_LABEL_KEYS.filter((k) => k === key)).toHaveLength(1);
       expect(key).toMatch(/^[a-zA-Z]{1,40}$/);

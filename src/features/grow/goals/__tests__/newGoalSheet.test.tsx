@@ -116,6 +116,16 @@ describe('NewGoalSheet', () => {
     expect(screen.getByText('2 of 3')).toBeTruthy();
   });
 
+  it('the icon tiles have spoken names and the By field has a MM/YYYY placeholder', async () => {
+    await wrap(<NewGoalSheet visible onClose={jest.fn()} />);
+    for (const name of ['Calendar', 'Laptop', 'Phone', 'Camera', 'Savings', 'Home', 'Transport', 'Headphones']) {
+      expect(screen.getByLabelText(`${name} icon`)).toBeTruthy();
+    }
+    expect(screen.queryByLabelText(/^Icon /)).toBeNull();
+    await toStepThree();
+    expect(screen.getByTestId('pair-second-input').props.placeholder).toBe('MM/YYYY');
+  });
+
   it('Make goal is disabled until a lock answer is chosen (D-23), and no option starts selected', async () => {
     await wrap(<NewGoalSheet visible onClose={jest.fn()} />);
     await toStepThree();

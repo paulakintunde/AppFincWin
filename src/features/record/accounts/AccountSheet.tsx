@@ -10,7 +10,7 @@ import { currencyExponent } from '@/engine/money';
 import type { AccountPatch, AccountRow } from '@/db/rows';
 import { useAddAccount, useEditAccount } from '@/data/mutations/accounts';
 import { useSetAccountRate } from '@/data/mutations/growHoldings';
-import { ACCOUNT_RATE_TEXT, kindHasRate, rateToStore, validRateInput } from '@/features/record/accounts/accountRateText';
+import { kindHasRate, rateToStore, validRateInput } from '@/features/record/accounts/accountRate';
 import { newStepId } from '@/data/mutations/undoCapture';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 import { OptionPicker } from '@/features/record/entry/pickers/OptionPicker';
@@ -344,18 +344,18 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
 
         {hasRate ? (
           <>
-            <Text style={labelStyle}>{ACCOUNT_RATE_TEXT.label}</Text>
+            <Text style={labelStyle}>{t('accounts.sheet.rateLabel')}</Text>
             <TextInput
               testID="account-rate"
-              accessibilityLabel={ACCOUNT_RATE_TEXT.label}
+              accessibilityLabel={t('accounts.sheet.rateLabel')}
               keyboardType="decimal-pad"
               value={rateText}
               onChangeText={setRateText}
               style={inputStyle}
               placeholderTextColor={colors.inkFaint}
             />
-            {rateFailure ? <Text testID="account-rate-error" style={errorStyle}>{ACCOUNT_RATE_TEXT.invalid}</Text> : null}
-            <Text style={helpStyle}>{ACCOUNT_RATE_TEXT.help}</Text>
+            {rateFailure ? <Text testID="account-rate-error" style={errorStyle}>{t('accounts.sheet.rateInvalid')}</Text> : null}
+            <Text style={helpStyle}>{t('accounts.sheet.rateHelp')}</Text>
           </>
         ) : null}
 

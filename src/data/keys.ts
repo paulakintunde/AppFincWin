@@ -153,6 +153,7 @@ export const mutationKeys = {
   addDebt: ['debts', 'add'] as const, // 05.2-43
   editDebt: ['debts', 'edit'] as const, // 05.2-43
   setDebtPaidOff: ['debts', 'set-paid-off'] as const, // 05.2-43
+  removeDebt: ['debts', 'remove'] as const, // 06-16: soft delete (deleted_at), label debtRemoved
   setSeriesStatus: ['recurring-series', 'status'] as const, // 05.2-44
   // 05.2 (Decide data and setup)
   updateDecideSetup: ['decide-setup', 'update'] as const, // settings forward write + undo (05.2-13)

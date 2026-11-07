@@ -82,6 +82,17 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
     return withIt - without;
   };
 
+  if (holding === null && holdingsQuery.data !== undefined) {
+    return (
+      <DetailScreen title="">
+        <View testID="grow-holding-missing" style={[styles.card, styles.missing, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
+          <Text accessibilityRole="header" style={{ ...textRole(pairing, 'body'), color: colors.ink, textAlign: 'center' }}>{t('grow.investing.notFoundTitle')}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, textAlign: 'center' }}>{t('grow.common.notFoundBody')}</Text>
+          <Pill label={t('grow.common.back')} variant="secondary" onPress={() => router.back()} />
+        </View>
+      </DetailScreen>
+    );
+  }
   if (holding === null || line === null) {
     return <DetailScreen title={t('grow.investing.section')}>{null}</DetailScreen>;
   }
@@ -245,6 +256,7 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
 
 const styles = StyleSheet.create({
   stack: { gap: space.gapSm },
+  missing: { alignItems: 'center' },
   card: { gap: space.gapSm, borderWidth: 1, borderRadius: radii.card, padding: space.cardPadLg },
   gainRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapSm, padding: space.cardPad, minHeight: space.touchMin },

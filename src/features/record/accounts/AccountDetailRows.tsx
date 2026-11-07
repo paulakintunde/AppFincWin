@@ -4,7 +4,6 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
 import { pushOnce } from '@/shell/navigation/pushOnce';
-import { ACCOUNT_RATE_TEXT } from '@/features/record/accounts/accountRateText';
 import { Text } from '@/ui/Text';
 import type { AccountRow } from '@/db/rows';
 import type { AccountBalanceView } from '@/data/queries/activity';
@@ -110,8 +109,8 @@ export function AccountDetailRows({ account, balance, split, horizonMonth }: Acc
   if (rate !== null && rate !== '') {
     rows.push({
       key: 'interest',
-      label: ACCOUNT_RATE_TEXT.detailLabel,
-      value: ACCOUNT_RATE_TEXT.detailValue(rate),
+      label: t('accounts.detail.interest'),
+      value: t('accounts.detail.interestValue', { rate }),
       color: colors.ink,
     });
   }

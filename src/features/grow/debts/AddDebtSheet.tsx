@@ -11,7 +11,6 @@ import type { DebtRow } from '@/db/debts';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
-import { undoLabelText } from '@/i18n/undoLabel';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
@@ -189,7 +188,7 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
         if (Object.keys(fields).length > 0) {
           const { stepId } = save({ ownerId: rc.userId, existing: debt, fields });
           hapticLight();
-          showToast({ kind: 'ordinary', text: undoLabelText('debtEdited', { name }), stepId });
+          showToast({ kind: 'ordinary', text: { key: 'grow.debts.add.editedToast' }, stepId });
         }
         onClose();
       }
