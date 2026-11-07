@@ -22,6 +22,7 @@ import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { radii, space } from '@/theme/layout';
+import { shadows } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
@@ -104,7 +105,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
     return items;
   }, [linesQ.data, row, id]);
 
-  const card = [styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }];
+  const card = [styles.card, { backgroundColor: colors.surface }, shadows.card];
 
   if (rowsQ.isError) {
     return (
@@ -359,7 +360,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
 const styles = StyleSheet.create({
   stack: { gap: space.groupGap, paddingTop: space.groupGap },
   block: { borderRadius: radii.card },
-  card: { borderWidth: 1, borderRadius: radii.card, padding: space.cardPad, gap: space.gapSm },
+  card: { borderRadius: radii.card, padding: space.cardPad, gap: space.gapSm },
   figureCard: { gap: space.gapMd },
   figureRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.gapSm },
   badges: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, flexWrap: 'wrap' },

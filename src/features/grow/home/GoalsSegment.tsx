@@ -15,6 +15,7 @@ import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { radii, space } from '@/theme/layout';
+import { shadows } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -56,7 +57,7 @@ export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: Goals
   const money = useGoalMoney();
   const settings = useDecideSettings(read.userId ?? undefined).data ?? null;
   const rule = settings === null ? null : settings.saving_floor;
-  const card = [styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }];
+  const card = [styles.card, { backgroundColor: colors.surface }, shadows.card];
 
   if (read.status === 'loading') {
     return (
@@ -138,7 +139,7 @@ export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: Goals
 
 const styles = StyleSheet.create({
   stack: { gap: space.groupGap },
-  card: { borderWidth: 1, borderRadius: radii.card, paddingHorizontal: space.cardPad, paddingVertical: space.cardPad, gap: space.gapSm },
+  card: { borderRadius: radii.card, paddingHorizontal: space.cardPad, paddingVertical: space.cardPad, gap: space.gapSm },
   center: { alignItems: 'center' },
   block: { borderRadius: radii.card },
   newGoal: { minHeight: space.touchMin, justifyContent: 'center' },

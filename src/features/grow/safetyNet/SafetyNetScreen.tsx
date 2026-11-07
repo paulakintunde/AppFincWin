@@ -26,7 +26,7 @@ import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
-import { categorySwatch } from '@/theme/tokens';
+import { categorySwatch, shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Pill } from '@/ui/Pill';
@@ -108,7 +108,7 @@ export function SafetyNetScreen() {
   const lineRows = linesQ.data;
   const history = historyOf(lineRows, netId, openingSaved, createdOn);
 
-  const card = [styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }];
+  const card = [styles.card, { backgroundColor: colors.surface }, shadows.card];
   const eyebrow = { ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkMuted };
   const title = t('grow.safetyNet.title');
 
@@ -185,7 +185,7 @@ export function SafetyNetScreen() {
           </View>
         ) : (
           <>
-            <View style={[styles.card, { backgroundColor: categorySwatch.blue.tint, borderColor: categorySwatch.blue.color }]}>
+            <View style={[styles.card, { borderWidth: 1, backgroundColor: categorySwatch.blue.tint, borderColor: categorySwatch.blue.color }]}>
               <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{t('grow.safetyNet.explainer')}</Text>
             </View>
             <View style={card} testID="net-rows">
@@ -289,7 +289,7 @@ export function SafetyNetScreen() {
 const styles = StyleSheet.create({
   stack: { gap: space.groupGap, paddingTop: space.groupGap },
   block: { borderRadius: radii.card },
-  card: { borderWidth: 1, borderRadius: radii.card, padding: space.cardPad, gap: space.gapSm },
+  card: { borderRadius: radii.card, padding: space.cardPad, gap: space.gapSm },
   figureCard: { gap: space.gapMd },
   figureRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.gapSm },
   center: { alignItems: 'center' },
