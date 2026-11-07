@@ -1,13 +1,15 @@
 // 06-15 (G01, D-21): the Grow tab root. Date-free title, a tab-role segmented control (Goals / Debts / Investing), the segment's
 // content in place (no navigation, no haptic), the Tools row and the footer. The FAB label follows the segment.
-// Hook points: `onNewGoal` sets `newGoalOpen` (plan 06-22 mounts NewGoalSheet against it); the debt and holding adds land with
-// plans 06-17 and 06-18.
+// The FAB opens the sheet of the selected segment: NewGoalSheet, AddDebtSheet (through DebtsSegment addOpen / onAddClosed) or
+// AddHoldingSheet. 06-16 adds the first-open safety-net confirm (D-07) over the screen.
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
 import { DebtsSegment } from '@/features/grow/debts/DebtsSegment';
 import { growFeatureFlags, growSegments, isGrowBasics, type GrowSegment } from '@/features/grow/growFeatureFlags';
+import { AddHoldingSheet } from '@/features/grow/investing/AddHoldingSheet';
 import { InvestingSegment } from '@/features/grow/investing/InvestingSegment';
+import { FirstOpenNetSheet } from '@/features/grow/safetyNet/FirstOpenNetSheet';
 import { useRegisterFab } from '@/shell/fab/FabProvider';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { TabRootScreen } from '@/shell/screen/TabRootScreen';
@@ -72,12 +74,15 @@ export function GrowHome({ sheets }: GrowHomeProps = {}) {
   const [picked, setPicked] = useState<GrowSegment>('goals');
   const selected: GrowSegment = segments.includes(picked) ? picked : (segments[0] ?? 'goals');
   const [newGoalOpen, setNewGoalOpen] = useState(false);
+  const [addDebtOpen, setAddDebtOpen] = useState(false);
+  const [addHoldingOpen, setAddHoldingOpen] = useState(false);
 
   const onNewGoal = useCallback(() => setNewGoalOpen(true), []);
   const closeNewGoal = useCallback(() => setNewGoalOpen(false), []);
-  // Plans 06-17 / 06-18 give these their sheets.
-  const onAddDebt = useCallback(() => undefined, []);
-  const onAddHolding = useCallback(() => undefined, []);
+  const onAddDebt = useCallback(() => setAddDebtOpen(true), []);
+  const closeAddDebt = useCallback(() => setAddDebtOpen(false), []);
+  const onAddHolding = useCallback(() => setAddHoldingOpen(true), []);
+  const closeAddHolding = useCallback(() => setAddHoldingOpen(false), []);
   const onChooseTrack = useCallback(() => pushOnce('/you'), []);
 
   const fabKey = FAB_KEY[selected];
@@ -94,6 +99,8 @@ export function GrowHome({ sheets }: GrowHomeProps = {}) {
       overlay={
         <>
           <NewGoalSheet visible={newGoalOpen} onClose={closeNewGoal} />
+          <AddHoldingSheet visible={addHoldingOpen} onClose={closeAddHolding} />
+          <FirstOpenNetSheet />
           {sheets ? sheets({ newGoalOpen, closeNewGoal }) : null}
         </>
       }
@@ -103,9 +110,9 @@ export function GrowHome({ sheets }: GrowHomeProps = {}) {
         {basics || selected === 'goals' ? (
           <GoalsSegment basics={basics} onNewGoal={onNewGoal} onChooseTrack={onChooseTrack} />
         ) : selected === 'debts' ? (
-          <DebtsSegment onAdd={onAddDebt} />
+          <DebtsSegment addOpen={addDebtOpen} onAddClosed={closeAddDebt} />
         ) : (
-          <InvestingSegment onAdd={onAddHolding} />
+          <InvestingSegment />
         )}
         {basics ? null : <ToolsRow />}
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('grow.home.footer')}</Text>

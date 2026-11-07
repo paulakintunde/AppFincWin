@@ -44,6 +44,19 @@ jest.mock('@/features/grow/goals/NewGoalSheet', () => {
   return { NewGoalSheet: (p: { visible: boolean }) => (p.visible ? R.createElement(RNText, { testID: 'new-goal-sheet' }, 'new goal sheet') : null) };
 });
 
+// 06-16: the FAB for each segment opens its own sheet; the sheets are covered by their own tests, so each is a marker here.
+jest.mock('@/features/grow/debts/AddDebtSheet', () => {
+  const R = require('react');
+  const { Text: RNText } = require('react-native');
+  return { AddDebtSheet: (p: { visible: boolean }) => (p.visible ? R.createElement(RNText, { testID: 'add-debt-sheet' }, 'add debt sheet') : null) };
+});
+jest.mock('@/features/grow/investing/AddHoldingSheet', () => {
+  const R = require('react');
+  const { Text: RNText } = require('react-native');
+  return { AddHoldingSheet: (p: { visible: boolean }) => (p.visible ? R.createElement(RNText, { testID: 'add-holding-sheet' }, 'add holding sheet') : null) };
+});
+jest.mock('@/features/grow/safetyNet/FirstOpenNetSheet', () => ({ FirstOpenNetSheet: () => null }));
+
 let mockRead: GoalsRead;
 jest.mock('@/features/grow/goals/useGoalsRead', () => ({ useGoalsRead: () => mockRead }));
 // 06-17: the Debts segment reads its own model; an empty ready one here (the Debts screens have their own tests).
@@ -159,6 +172,28 @@ describe('Grow home shell', () => {
     expect(screen.getByTestId('new-goal-sheet')).toBeTruthy();
   });
 
+  it('the Debts FAB opens Add a debt', async () => {
+    await renderHome();
+    await fireEvent.press(screen.getByTestId('grow-segment-debts'));
+    expect(screen.queryByTestId('add-debt-sheet')).toBeNull();
+    await act(async () => {
+      lastFab()?.onPress();
+    });
+    expect(screen.getByTestId('add-debt-sheet')).toBeTruthy();
+    expect(screen.queryByTestId('add-holding-sheet')).toBeNull();
+  });
+
+  it('the Investing FAB opens Add a holding', async () => {
+    await renderHome();
+    await fireEvent.press(screen.getByTestId('grow-segment-investing'));
+    expect(screen.queryByTestId('add-holding-sheet')).toBeNull();
+    await act(async () => {
+      lastFab()?.onPress();
+    });
+    expect(screen.getByTestId('add-holding-sheet')).toBeTruthy();
+    expect(screen.queryByTestId('add-debt-sheet')).toBeNull();
+  });
+
   it('Basics: only the safety net card and the Choose what to track card, no FAB', async () => {
     mockFlags = { goals: false, debts: false, investing: false };
     await renderHome();
@@ -227,6 +262,15 @@ describe('Goals segment', () => {
     expect(screen.getAllByText('Linked to a check').length).toBeGreaterThan(0);
   });
 
+  it('a monthly amount that never reaches the target says so', async () => {
+    mockRead = {
+      ...LEDGER,
+      model: { ...LEDGER.model, goals: [{ ...LEDGER.model.goals[0]!, monthlyAmount: minorUnits(100) }] },
+    };
+    await renderHome();
+    expect(screen.getByText('$640 of $1,800 · $1 a month doesn’t reach the target')).toBeTruthy();
+  });
+
   it('no size yet: the safety net card invites setting one and opens the safety net page', async () => {
     mockRead = { ...LEDGER, model: { ...LEDGER.model, safetyNet: null } };
     await renderHome();
@@ -245,6 +289,12 @@ describe('Goals segment', () => {
     await renderHome();
     await fireEvent.press(screen.getByText(en.grow.home.toolsCalculators));
     expect(mockPush).toHaveBeenCalledWith('/grow/calculators');
+  });
+
+  it('Tools row opens Your money rules', async () => {
+    await renderHome();
+    await fireEvent.press(screen.getByText(en.grow.lines.title));
+    expect(mockPush).toHaveBeenCalledWith('/grow/lines');
   });
 
   it('Debts and Investing show their empty states and the Tools row', async () => {
