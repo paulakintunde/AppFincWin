@@ -17,6 +17,7 @@ import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { hapticLight } from '@/ui/haptics';
@@ -66,7 +67,7 @@ export function DebtExtraCalculator({ id }: { id: string }) {
   if (row === undefined || line === null || ctx === null) {
     return (
       <CalcPage title="">
-        <View testID={read.status === 'loading' ? 'debt-calc-loading' : 'debt-calc-missing'} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
+        <View testID={read.status === 'loading' ? 'debt-calc-loading' : 'debt-calc-missing'} style={[styles.card, { backgroundColor: colors.surface, ...shadows.card }]}>
           <Text style={{ ...textRole(pairing, 'body'), color: colors.inkMuted }}>
             {read.status === 'loading' ? t('grow.home.loading') : t('grow.common.notFoundBody')}
           </Text>
@@ -238,7 +239,7 @@ export function DebtExtraCalculator({ id }: { id: string }) {
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: radii.card, padding: space.cardPad },
+  card: { borderRadius: radii.card, padding: space.cardPad },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
   orders: { flexDirection: 'row', gap: space.gapMd },
   order: { flex: 1, borderWidth: 1, borderRadius: radii.card, padding: space.cardPad, gap: 4 },

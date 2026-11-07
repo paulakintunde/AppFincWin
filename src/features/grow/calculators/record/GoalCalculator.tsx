@@ -24,6 +24,7 @@ import { Stepper } from '@/features/grow/ui/Stepper';
 import { usePastContext } from '@/features/decide/past/usePastDecisions';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { showToast } from '@/state/undoToast';
 import { Chip } from '@/ui/Chip';
@@ -107,7 +108,7 @@ export function GoalCalculator({ id }: { id: string }) {
   if (row === null || point === null || ctx === null || row.target === null || row.currency !== calc.currency) {
     return (
       <CalcPage title="">
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]} testID={read.status === 'loading' || rows === undefined ? 'goal-calc-loading' : 'goal-calc-missing'}>
+        <View style={[styles.card, { backgroundColor: colors.surface, ...shadows.card }]} testID={read.status === 'loading' || rows === undefined ? 'goal-calc-loading' : 'goal-calc-missing'}>
           <Text style={{ ...textRole(pairing, 'body'), color: colors.inkMuted }}>
             {rows === undefined || read.status === 'loading' ? t('grow.home.loading') : t('grow.common.notFoundBody')}
           </Text>
@@ -277,7 +278,7 @@ export function GoalCalculator({ id }: { id: string }) {
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: radii.card, padding: space.cardPad },
+  card: { borderRadius: radii.card, padding: space.cardPad },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
 });
 

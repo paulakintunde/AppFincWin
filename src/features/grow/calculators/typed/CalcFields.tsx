@@ -8,6 +8,7 @@ import { useT } from '@/i18n';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
@@ -104,7 +105,7 @@ export function ValueRow({ label, value, first = false }: { label: string; value
 
 export function Card({ children }: { children: React.ReactNode }) {
   const { colors } = useTheme();
-  return <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>{children}</View>;
+  return <View style={[styles.card, { backgroundColor: colors.surface, ...shadows.card }]}>{children}</View>;
 }
 
 export function FooterNote({ text }: { text: string }) {
@@ -122,5 +123,5 @@ const styles = StyleSheet.create({
   box: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderRadius: radii.glyphTile + 3, paddingHorizontal: 12 },
   valueRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: space.gapMd, paddingVertical: 10 },
   valueLabel: { flex: 1 },
-  card: { borderWidth: 1, borderRadius: radii.card, paddingHorizontal: space.cardPad, paddingVertical: 4 },
+  card: { borderRadius: radii.card, paddingHorizontal: space.cardPad, paddingVertical: 4 },
 });
