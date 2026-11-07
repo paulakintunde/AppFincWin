@@ -43,6 +43,7 @@ import { registerDecideAnswerMutations } from './decideAnswers';
 import { registerRecordBoughtMutations } from './boughtWrite';
 import { registerGrowGoalMutations } from './growGoals';
 import { registerGrowDebtMutations } from './growDebts';
+import { registerGrowHoldingMutations } from './growHoldings';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
@@ -101,4 +102,6 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerGrowGoalMutations(qc);
   // 06-14: Grow debts, the payoff plan and the sale.
   registerGrowDebtMutations(qc);
+  // 06-14: holdings, entries, values and an account's rate.
+  registerGrowHoldingMutations(qc);
 }
