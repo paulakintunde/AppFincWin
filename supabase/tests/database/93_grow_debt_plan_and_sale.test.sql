@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(31);
+select extensions.plan(44);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -61,7 +61,9 @@ insert into public.debts (id, household_id, created_by, name, kind, currency, ba
   ('d9300000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
    '11111111-1111-1111-1111-111111111111', 'Card', 'card', 'USD', 120000, 5000),
   ('d9300000-0000-0000-0000-000000000009', (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'),
-   '33333333-3333-3333-3333-333333333333', 'Other loan', 'loan', 'USD', 500000, 20000);
+   '33333333-3333-3333-3333-333333333333', 'Other loan', 'loan', 'USD', 500000, 20000),
+  ('d9300000-0000-0000-0000-000000000004', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   '11111111-1111-1111-1111-111111111111', 'Undo loan', 'loan', 'USD', 600000, 20000);
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
@@ -181,6 +183,50 @@ select extensions.throws_ok(
 select extensions.is((select count(*)::integer from public.transactions
     where id in ('7a930000-0000-0000-0000-000000000009', '7a930000-0000-0000-0000-00000000000a')), 0,
   'a refused label writes no rows');
+
+-- Undo of a plan save restores payoff_extra, extra_series_id and payoff_order --------------------------------------
+-- First plan: 3000 by rate on series ...0011. Second plan: 8000 by balance on series ...0012 (ends ...0011).
+select extensions.is(
+  public.t93_plan('d9300000-0000-0000-0000-000000000004', 1, 3000, 'rate', '5a930000-0000-0000-0000-000000000011',
+    'e9300000-0000-0000-0000-000000000021', 'debtPlanSaved') ->> 'status',
+  'applied', 'Undo setup: the first plan applies');
+select extensions.is(
+  public.t93_plan('d9300000-0000-0000-0000-000000000004', public.t93_ver('debts', 'd9300000-0000-0000-0000-000000000004'), 8000,
+    'balance', '5a930000-0000-0000-0000-000000000012', 'e9300000-0000-0000-0000-000000000022', 'debtPlanSaved') ->> 'status',
+  'applied', 'Undo setup: the second plan applies');
+select extensions.is((select payoff_extra from public.debts where id = 'd9300000-0000-0000-0000-000000000004'), 8000::bigint,
+  'Undo setup: payoff_extra is 8000 before Undo');
+select extensions.is(public.apply_undo_step('e9300000-0000-0000-0000-000000000022') ->> 'status', 'undone',
+  'Undo of the second plan save is undone');
+select extensions.is((select payoff_extra from public.debts where id = 'd9300000-0000-0000-0000-000000000004'), 3000::bigint,
+  'Undo: payoff_extra is back to 3000');
+select extensions.is((select extra_series_id from public.debts where id = 'd9300000-0000-0000-0000-000000000004'),
+  '5a930000-0000-0000-0000-000000000011'::uuid, 'Undo: extra_series_id points at the first series again');
+select extensions.is((select payoff_order from public.debts where id = 'd9300000-0000-0000-0000-000000000004'), 'rate',
+  'Undo: payoff_order is back to rate');
+select extensions.ok((select end_date is null and end_reason is null and deleted_at is null from public.recurring_series
+    where id = '5a930000-0000-0000-0000-000000000011'), 'Undo: the first series runs again');
+select extensions.ok((select deleted_at is not null from public.recurring_series where id = '5a930000-0000-0000-0000-000000000012'),
+  'Undo: the second series is removed');
+
+-- The two columns stay server-only for a plain client write and for a client-recorded step.
+select extensions.throws_ok(
+  format($f$select public.apply_patches('[{"entity":"debts","id":"d9300000-0000-0000-0000-000000000004","expectedVersion":%s,"patch":{"payoff_extra":1}}]'::jsonb)$f$,
+    public.t93_ver('debts', 'd9300000-0000-0000-0000-000000000004')),
+  '22023', null, 'a client apply_patches cannot set payoff_extra');
+select extensions.throws_ok(
+  format($f$select public.apply_patches('[{"entity":"debts","id":"d9300000-0000-0000-0000-000000000004","expectedVersion":%s,"patch":{"extra_series_id":null}}]'::jsonb)$f$,
+    public.t93_ver('debts', 'd9300000-0000-0000-0000-000000000004')),
+  '22023', null, 'a client apply_patches cannot set extra_series_id');
+insert into public.undo_log (id, label_key, label_params, ops)
+values ('e9300000-0000-0000-0000-000000000023', 'debtEdited', '{}'::jsonb,
+  jsonb_build_array(jsonb_build_object('entity', 'debts', 'id', 'd9300000-0000-0000-0000-000000000004',
+    'expectedVersion', public.t93_ver('debts', 'd9300000-0000-0000-0000-000000000004'),
+    'patch', jsonb_build_object('payoff_extra', 1))));
+select extensions.is(public.apply_undo_step('e9300000-0000-0000-0000-000000000023') ->> 'status', 'refused',
+  'a client-recorded step that sets payoff_extra is refused');
+select extensions.is((select payoff_extra from public.debts where id = 'd9300000-0000-0000-0000-000000000004'), 3000::bigint,
+  'the refused step leaves payoff_extra at 3000');
 
 select * from extensions.finish();
 rollback;
