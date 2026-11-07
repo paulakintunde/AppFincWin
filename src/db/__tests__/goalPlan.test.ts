@@ -1,9 +1,8 @@
-import { buildStep, inverseOfInserts } from '@/engine/undo';
 import { DbError, VersionConflictError } from '../errors';
 import { confirmGoalContribution, saveGoalPlan, setSafetyNet, type GoalPlanSeries } from '../goalPlan';
 import { createFakeSupabase } from './fakeSupabase';
 
-const STEP = buildStep('u1', 'goalMade', { name: 'Lisbon' }, inverseOfInserts('savings_goals', [{ id: 'g1', version: 1 }]));
+const STEP = { id: 'u1', labelKey: 'goalMade', name: 'Lisbon' } as const;
 const SERIES: GoalPlanSeries = {
   id: 's1',
   account_id: 'a1',
@@ -25,7 +24,8 @@ describe('saveGoalPlan', () => {
     expect(name).toBe('save_goal_plan');
     expect(Object.keys(args).sort()).toEqual(['p_expected_version', 'p_goal', 'p_series', 'p_undo_step']);
     expect(args.p_expected_version).toBeNull();
-    expect(args.p_undo_step).toMatchObject({ id: 'u1', label_key: 'goalMade', label_params: { name: 'Lisbon' } });
+    // The server builds the ops (06-06 follow-up): the step carries no ops at all.
+    expect(args.p_undo_step).toEqual({ id: 'u1', label_key: 'goalMade', label_params: { name: 'Lisbon' } });
   });
 
   it('already-applied is success', async () => {
@@ -74,7 +74,7 @@ describe('saveGoalPlan', () => {
 });
 
 describe('confirmGoalContribution', () => {
-  const CONFIRM_STEP = buildStep('u2', 'goalContributionConfirmed', { name: 'Lisbon' }, inverseOfInserts('transactions', [{ id: 'l1', version: 1 }]));
+  const CONFIRM_STEP = { id: 'u2', name: 'Lisbon' };
   it('sends the in-leg and parses the result', async () => {
     const client = createFakeSupabase();
     client.respondWith(
@@ -90,6 +90,7 @@ describe('confirmGoalContribution', () => {
     const [name, args] = client.calls.find((c) => c.method === 'rpc')?.args as [string, Record<string, unknown>];
     expect(name).toBe('confirm_goal_contribution');
     expect(args).toMatchObject({ p_transaction_id: 'l1', p_expected_version: 1, p_in_leg: { id: 'l2', transfer_id: 't1' } });
+    expect(args.p_undo_step).toEqual({ id: 'u2', label_key: 'goalContributionConfirmed', label_params: { name: 'Lisbon' } });
   });
 
   it('already-applied is success; conflict throws', async () => {

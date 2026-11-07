@@ -2,11 +2,12 @@
 -- contribution series and its Expected lines. Migration 20261106000200.
 -- Needs 20261016000100 .. 20261016000400, 20261028000100 .. 20261106000200.
 -- Undo goes through apply_undo_step as the owner (the replay function is not callable by a user).
+-- save_goal_plan and confirm_goal_contribution build their undo steps on the server; the ops t92_step sends are ignored.
 
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(68);
+select extensions.plan(95);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -266,6 +267,84 @@ select extensions.is(public.save_goal_plan(
   'applied', 'B: the size is set through the edit path');
 select extensions.is(public.t92_flagged('22222222-2222-2222-2222-222222222222'), 1, 'B still has exactly one flagged goal');
 select extensions.is(public.t92_get('savings_goals', '9a920000-0000-0000-0000-00000000000c', 'target'), '230000', 'B: the size reads back');
+
+-- Follow-up (06-06): Undo of the safety-net creation, chained after Undo of a later edit of it -----------------------
+-- b6 is stored with allow_system_keys (un-flag, then delete); b7 is a normal step, already undone when b6 is undone.
+select extensions.is(public.apply_undo_step('57920000-0000-0000-0000-0000000000b7') ->> 'status', 'undone', 'B: Undo of the size edit');
+select extensions.is(public.t92_get('savings_goals', '9a920000-0000-0000-0000-00000000000c', 'target'), null, 'B: the size is gone again');
+select extensions.is(public.apply_undo_step('57920000-0000-0000-0000-0000000000b6') ->> 'status', 'undone', 'B: Undo of the safety-net creation');
+select extensions.is(public.t92_flagged('22222222-2222-2222-2222-222222222222'), 0, 'B: no flagged goal after both Undos');
+select extensions.ok(public.t92_get('savings_goals', '9a920000-0000-0000-0000-00000000000c', 'deleted_at') is not null, 'B: the safety-net goal is deleted');
+
+-- Follow-up (06-06): Undo of a new goal takes its monthly contribution with it -------------------------------------
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select extensions.is(public.save_goal_plan(
+  public.t92_goal('9a920000-0000-0000-0000-000000000010', 'Bike', '{"target":90000,"monthly_amount":2000}'::jsonb),
+  null, public.t92_series('5e920000-0000-0000-0000-000000000010', 'ca920000-0000-0000-0000-000000000001', 2000, current_date - 40),
+  public.t92_step('57920000-0000-0000-0000-000000000c01', 'goalMade', '9a920000-0000-0000-0000-000000000010')) ->> 'status',
+  'applied', 'Undo setup: a goal with a monthly contribution is made');
+select extensions.cmp_ok((select count(*)::int from public.transactions
+  where recurring_series_id = '5e920000-0000-0000-0000-000000000010' and status = 'pending' and deleted_at is null),
+  '>=', 1, 'Undo setup: the contribution has Expected lines');
+select extensions.is(public.apply_undo_step('57920000-0000-0000-0000-000000000c01') ->> 'status', 'undone', 'Undo of the new goal is undone');
+select extensions.ok(public.t92_get('savings_goals', '9a920000-0000-0000-0000-000000000010', 'deleted_at') is not null, 'Undo: the new goal is deleted');
+select extensions.ok(public.t92_get('recurring_series', '5e920000-0000-0000-0000-000000000010', 'deleted_at') is not null,
+  'Undo: its contribution series is deleted');
+select extensions.is((select count(*)::int from public.transactions
+  where recurring_series_id = '5e920000-0000-0000-0000-000000000010' and status = 'pending' and deleted_at is null),
+  0, 'Undo: no Expected line of the contribution is left');
+
+-- Follow-up (06-06): Undo of a plan change puts back the goal fields and the old monthly record ------------------------
+select extensions.is(public.save_goal_plan(
+  public.t92_goal('9a920000-0000-0000-0000-000000000011', 'Car', '{"target":80000,"monthly_amount":2000}'::jsonb),
+  null, public.t92_series('5e920000-0000-0000-0000-000000000011', 'ca920000-0000-0000-0000-000000000001', 2000, current_date - 40),
+  public.t92_step('57920000-0000-0000-0000-000000000c02', 'goalMade', '9a920000-0000-0000-0000-000000000011')) ->> 'status',
+  'applied', 'Edit setup: a goal with a 2000 monthly contribution is made');
+select extensions.is(public.save_goal_plan(
+  '{"id":"9a920000-0000-0000-0000-000000000011","name":"Car fund","target":95000,"monthly_amount":4000}'::jsonb,
+  public.t92_ver('savings_goals', '9a920000-0000-0000-0000-000000000011'),
+  public.t92_series('5e920000-0000-0000-0000-000000000011', 'ca920000-0000-0000-0000-000000000001', 4000, current_date - 40),
+  public.t92_step('57920000-0000-0000-0000-000000000c03', 'goalPlanChanged', '9a920000-0000-0000-0000-000000000011')) ->> 'status',
+  'applied', 'Edit: the plan and the monthly amount are changed');
+select extensions.is((select amount from public.recurring_series where id = '5e920000-0000-0000-0000-000000000011'), -4000::bigint,
+  'Edit: the series carries the new amount');
+select extensions.is(public.apply_undo_step('57920000-0000-0000-0000-000000000c03') ->> 'status', 'undone', 'Undo of the plan change is undone');
+select extensions.ok((select name = 'Car' and target = 80000 and monthly_amount = 2000 from public.savings_goals
+  where id = '9a920000-0000-0000-0000-000000000011'), 'Undo: the goal''s name, target and monthly amount are back');
+select extensions.is((select amount from public.recurring_series where id = '5e920000-0000-0000-0000-000000000011'), -2000::bigint,
+  'Undo: the series amount is back');
+select extensions.is((select count(*)::int from public.transactions
+  where recurring_series_id = '5e920000-0000-0000-0000-000000000011' and status = 'pending' and deleted_at is null
+    and original_amount <> -2000), 0, 'Undo: no Expected line keeps the new amount');
+select extensions.cmp_ok((select count(*)::int from public.transactions
+  where recurring_series_id = '5e920000-0000-0000-0000-000000000011' and status = 'pending' and deleted_at is null),
+  '>=', 1, 'Undo: the old Expected lines are back');
+
+-- Follow-up (06-06): Undo of a stop runs the contribution again with its Expected lines ------------------------------
+create temp table t92_live as
+  select count(*)::int as n from public.transactions
+   where recurring_series_id = '5e920000-0000-0000-0000-000000000011' and status = 'pending' and deleted_at is null;
+grant select on t92_live to authenticated;
+select extensions.is(public.save_goal_plan(
+  '{"id":"9a920000-0000-0000-0000-000000000011"}'::jsonb, public.t92_ver('savings_goals', '9a920000-0000-0000-0000-000000000011'), null,
+  public.t92_step('57920000-0000-0000-0000-000000000c04', 'goalPlanChanged', '9a920000-0000-0000-0000-000000000011')) ->> 'status',
+  'applied', 'Stop: the contribution is stopped');
+select extensions.ok((select end_date is not null and end_reason = 'stopped' from public.recurring_series
+  where id = '5e920000-0000-0000-0000-000000000011'), 'Stop: the series is ended as stopped');
+select extensions.is(public.apply_undo_step('57920000-0000-0000-0000-000000000c04') ->> 'status', 'undone', 'Undo of the stop is undone');
+select extensions.ok((select end_date is null and end_reason is null and deleted_at is null from public.recurring_series
+  where id = '5e920000-0000-0000-0000-000000000011'), 'Undo: the series runs again');
+select extensions.is((select count(*)::int from public.transactions
+  where recurring_series_id = '5e920000-0000-0000-0000-000000000011' and status = 'pending' and deleted_at is null),
+  (select n from t92_live), 'Undo: every Expected line is back');
+
+-- Follow-up (06-06): Undo of a paired confirmation (server-built step) ----------------------------------------------
+select extensions.is(public.apply_undo_step('57920000-0000-0000-0000-000000000006') ->> 'status', 'undone',
+  'Undo of the paired confirmation is undone');
+select extensions.ok((select status = 'pending' and transfer_id is null and goal_id = '9a920000-0000-0000-0000-000000000003'
+  from public.transactions where id = (select id from t92_pend)), 'Undo: the line is Expected again, unpaired, with its goal tag');
+select extensions.ok(public.t92_get('transactions', '7a920000-0000-0000-0000-000000000001', 'deleted_at') is not null,
+  'Undo: the goal-side leg is deleted');
 
 select * from extensions.finish();
 rollback;

@@ -196,16 +196,17 @@ end;
 $$;
 revoke execute on function public.grow_check_undo_step(jsonb, text, text, boolean) from public, anon, authenticated;
 
--- Stores the client-built step (already checked by grow_check_undo_step) and hands the result back.
-create or replace function public.grow_store_step(p_step_id uuid, p_label_key text, p_undo_step jsonb, p_result jsonb)
+-- Stores a server-built step (id and label already checked by grow_check_undo_step) and hands the result back. Client ops
+-- are never stored: the ops come from what the RPC itself wrote.
+create or replace function public.grow_store_step(p_step_id uuid, p_label_key text, p_undo_step jsonb, p_ops jsonb, p_result jsonb)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 begin
   insert into public.undo_log (id, owner_id, label_key, label_params, ops)
-  values (p_step_id, (select auth.uid()), p_label_key, coalesce(p_undo_step -> 'label_params', '{}'::jsonb), p_undo_step -> 'ops');
+  values (p_step_id, (select auth.uid()), p_label_key, coalesce(p_undo_step -> 'label_params', '{}'::jsonb), p_ops);
   return p_result;
 end;
 $$;
-revoke execute on function public.grow_store_step(uuid, text, jsonb, jsonb) from public, anon, authenticated;
+revoke execute on function public.grow_store_step(uuid, text, jsonb, jsonb, jsonb) from public, anon, authenticated;
 
 -- 4. save_goal_plan: make a goal, change its plan, set or stop its monthly contribution, in one save (D-25) ------------
 -- p_goal keys read: id, household_id, name, currency, target, ready_by, monthly_amount, opening_saved, account_id, locked,
@@ -213,8 +214,13 @@ revoke execute on function public.grow_store_step(uuid, text, jsonb, jsonb) from
 -- patchable keys (not currency, check_id or is_safety_net: only set_safety_net flags an existing goal, D-29) are updated.
 -- p_series null stops the goal's live contribution; { id, account_id, amount, anchor_date, time_zone, name, category_id }
 -- starts or updates it. The amount is a positive monthly figure; the series stores it as money out of the paid-from account.
--- The client builds the undo ops; the versions it needs are predictable: a new row is version 1, an update adds 1 per
--- statement, and the response returns goal_version and series_version as the action left them.
+-- The undo step is built HERE from what the save wrote; p_undo_step carries only id, label_key and label_params (any ops
+-- sent are ignored). Undo of an insert soft-deletes the new contribution series (its Expected lines go with it in
+-- undo_replay) and then the goal. Undo of an edit reverses the series change (a stopped series runs again with its lines,
+-- a deleted one comes back with its lines, an edited one gets its old fields and lines back, a new one goes) and then
+-- puts back the goal's plan fields. Every write here moves a row by one version, so each row has one op (two for a new
+-- safety net: un-flag, then delete, because a flagged goal cannot be removed). Only that safety-net step is stored with
+-- allow_system_keys (is_safety_net is a system key); the others are normal steps.
 create or replace function public.save_goal_plan(p_goal jsonb, p_expected_version integer, p_series jsonb, p_undo_step jsonb)
 returns jsonb
 language plpgsql
@@ -247,6 +253,11 @@ declare
   v_next date;
   v_end date;
   v_patch jsonb;
+  v_prev public.savings_goals%rowtype;
+  v_change jsonb;
+  v_ops jsonb := '[]'::jsonb;
+  v_restore jsonb;
+  v_ver integer;
 begin
   if v_uid is null then
     raise exception 'save_goal_plan: sign in first' using errcode = '42501';
@@ -267,7 +278,7 @@ begin
     v_flag := (v_clean ->> 'is_safety_net')::boolean;
   end if;
   v_label := case when not v_insert then 'goalPlanChanged' when v_flag then 'safetyNetSizeSaved' else 'goalMade' end;
-  v_step_id := public.grow_check_undo_step(p_undo_step, v_label, 'save_goal_plan', true);
+  v_step_id := public.grow_check_undo_step(p_undo_step, v_label, 'save_goal_plan', false);
 
   -- Replay of an action that already landed: nothing is written.
   if exists (select 1 from public.undo_log u where u.id = v_step_id and u.owner_id = v_uid) then
@@ -320,6 +331,7 @@ begin
        or (v_in.monthly_amount is not null and v_in.monthly_amount not between 0 and 10000000000000) then
       raise exception 'save_goal_plan: the goal is malformed' using errcode = '22023';
     end if;
+    v_prev := v_goal;
     update public.savings_goals g set
       name = case when v_clean ? 'name' then btrim(v_in.name) else g.name end,
       target = case when v_clean ? 'target' then v_in.target else g.target end,
@@ -350,13 +362,27 @@ begin
        where t.recurring_series_id = v_s.id and t.status = 'pending' and t.deleted_at is null and t.occurrence_date >= v_today;
       v_end := coalesce(v_next - 1, v_today);
       if v_end < v_s.anchor_date then
-        -- nothing of it has come due yet: the series goes, with its Expected lines
-        update public.transactions set deleted_at = now()
-         where recurring_series_id = v_s.id and status = 'pending' and deleted_at is null;
-        update public.recurring_series set deleted_at = now() where id = v_s.id;
+        -- nothing of it has come due yet: the series goes, with its Expected lines. Undo brings both back.
+        with d as (
+          update public.transactions set deleted_at = now()
+           where recurring_series_id = v_s.id and status = 'pending' and deleted_at is null
+          returning id, version
+        )
+        select coalesce(jsonb_agg(jsonb_build_object('entity', 'transactions', 'id', d.id, 'expectedVersion', d.version,
+                                                     'patch', jsonb_build_object('deleted_at', null)) order by d.id), '[]'::jsonb)
+          into v_restore from d;
+        update public.recurring_series set deleted_at = now() where id = v_s.id returning version into v_ver;
+        v_ops := v_ops || jsonb_build_array(jsonb_build_object('entity', 'recurring_series', 'id', v_s.id, 'expectedVersion', v_ver,
+                                                               'patch', jsonb_build_object('deleted_at', null)))
+                       || v_restore;
       else
-        perform public.end_recurring_series(v_s.id, v_s.version, v_end, null);
-        update public.recurring_series set end_reason = 'stopped' where id = v_s.id;
+        -- One statement sets end_date and end_reason (one version), and the Expected lines after the end go.
+        v_change := public.edit_recurring_series_from(v_s.id, v_s.version,
+          jsonb_build_object('end_date', v_end, 'end_reason', 'stopped'), v_end + 1, null);
+        if v_change ->> 'status' is distinct from 'applied' then
+          raise exception 'save_goal_plan: the contribution could not be stopped (%)', v_change ->> 'status' using errcode = '22023';
+        end if;
+        v_ops := v_ops || public.series_change_inverse(v_change);
       end if;
     end if;
   elsif jsonb_typeof(p_series) = 'object' then
@@ -390,6 +416,10 @@ begin
               v_cat, 'monthly', v_anchor, v_tz, v_id, greatest(v_anchor, date_trunc('month', v_today)::date) - 1);
       perform public.materialise_series(v_sid);
       v_series_id := v_sid;
+      -- Undo soft-deletes the new series; undo_replay takes its untouched Expected lines with it.
+      select s.version into v_ver from public.recurring_series s where s.id = v_sid;
+      v_ops := v_ops || jsonb_build_array(jsonb_build_object('entity', 'recurring_series', 'id', v_sid, 'expectedVersion', v_ver,
+                                                             'patch', jsonb_build_object('deleted_at', '$now')));
     else
       v_today := (now() at time zone v_s.time_zone)::date;
       v_patch := '{}'::jsonb;
@@ -400,7 +430,11 @@ begin
       end if;
       if v_anchor is distinct from v_s.anchor_date then v_patch := v_patch || jsonb_build_object('anchor_date', v_anchor); end if;
       if v_patch <> '{}'::jsonb then
-        perform public.edit_recurring_series_from(v_s.id, v_s.version, v_patch, v_today, null);
+        v_change := public.edit_recurring_series_from(v_s.id, v_s.version, v_patch, v_today, null);
+        if v_change ->> 'status' is distinct from 'applied' then
+          raise exception 'save_goal_plan: the contribution could not be changed (%)', v_change ->> 'status' using errcode = '22023';
+        end if;
+        v_ops := v_ops || public.series_change_inverse(v_change);
       end if;
       v_series_id := v_s.id;
     end if;
@@ -413,8 +447,30 @@ begin
   end if;
 
   select g.version into v_goal_version from public.savings_goals g where g.id = v_id;
-  insert into public.undo_log (id, owner_id, label_key, label_params, ops)
-  values (v_step_id, v_uid, v_label, coalesce(p_undo_step -> 'label_params', '{}'::jsonb), p_undo_step -> 'ops');
+
+  -- The goal op goes last, after the series ops.
+  if v_insert and v_flag then
+    -- A flagged goal cannot be soft-deleted, so the new safety net is un-flagged first. Both ops carry the same version:
+    -- apply_patches checks every op before it writes any.
+    v_ops := v_ops || jsonb_build_array(
+      jsonb_build_object('entity', 'savings_goals', 'id', v_id, 'expectedVersion', v_goal_version,
+                         'patch', jsonb_build_object('is_safety_net', false)),
+      jsonb_build_object('entity', 'savings_goals', 'id', v_id, 'expectedVersion', v_goal_version,
+                         'patch', jsonb_build_object('deleted_at', '$now')));
+  elsif v_insert then
+    v_ops := v_ops || jsonb_build_array(jsonb_build_object('entity', 'savings_goals', 'id', v_id, 'expectedVersion', v_goal_version,
+                                                           'patch', jsonb_build_object('deleted_at', '$now')));
+  else
+    v_ops := v_ops || jsonb_build_array(jsonb_build_object('entity', 'savings_goals', 'id', v_id, 'expectedVersion', v_goal_version,
+      'patch', jsonb_build_object('name', v_prev.name, 'target', v_prev.target, 'ready_by', v_prev.ready_by,
+                                  'monthly_amount', v_prev.monthly_amount, 'opening_saved', v_prev.opening_saved,
+                                  'account_id', v_prev.account_id, 'locked', v_prev.locked, 'protect', v_prev.protect,
+                                  'up_front_only', v_prev.up_front_only, 'icon', v_prev.icon, 'color_key', v_prev.color_key)));
+  end if;
+
+  -- allow_system_keys only for the new safety net (its un-flag op patches is_safety_net, a system key).
+  insert into public.undo_log (id, owner_id, label_key, label_params, ops, allow_system_keys)
+  values (v_step_id, v_uid, v_label, coalesce(p_undo_step -> 'label_params', '{}'::jsonb), v_ops, v_insert and v_flag);
 
   return jsonb_build_object('status', 'applied', 'goal_id', v_id, 'goal_version', v_goal_version,
                             'series_id', v_series_id, 'series_version', v_series_version, 'undo_step_id', v_step_id);
@@ -426,7 +482,9 @@ grant execute on function public.save_goal_plan(jsonb, integer, jsonb, jsonb) to
 -- 5. confirm_goal_contribution: an Expected line tagged with a goal becomes real, nothing moves by itself (D-25) --------
 -- A goal kept in Savings (its own account, a different one from the line's, same currency) gets the second leg of a
 -- transfer pair in the same save. Otherwise the single line is simply marked paid and keeps its goal tag. The line's
--- version after the save is p_expected_version + 1; the in-leg is version 1. Both are returned for the client's undo ops.
+-- version after the save is p_expected_version + 1; the in-leg is version 1. The undo step is built HERE from the branch
+-- actually taken (the client cannot know for sure whether the server paired the line): delete the in-leg, then put the
+-- line back to Expected, unpaired, with its goal tag. p_undo_step carries only id, label_key and label_params.
 create or replace function public.confirm_goal_contribution(p_transaction_id uuid, p_expected_version integer, p_in_leg jsonb, p_undo_step jsonb)
 returns jsonb
 language plpgsql
@@ -441,11 +499,12 @@ declare
   v_leg_id uuid;
   v_transfer_id uuid;
   v_row_version integer;
+  v_leg_version integer;
 begin
   if v_uid is null then
     raise exception 'confirm_goal_contribution: sign in first' using errcode = '42501';
   end if;
-  v_step_id := public.grow_check_undo_step(p_undo_step, 'goalContributionConfirmed', 'confirm_goal_contribution', true);
+  v_step_id := public.grow_check_undo_step(p_undo_step, 'goalContributionConfirmed', 'confirm_goal_contribution', false);
   if exists (select 1 from public.undo_log u where u.id = v_step_id and u.owner_id = v_uid) then
     return jsonb_build_object('status', 'already-applied', 'undo_step_id', v_step_id);
   end if;
@@ -474,6 +533,8 @@ begin
   if v_goal.account_id is null or v_goal.account_id = v_row.account_id or v_goal.currency <> v_row.original_currency then
     update public.transactions set status = 'paid' where id = v_row.id returning version into v_row_version;
     return public.grow_store_step(v_step_id, 'goalContributionConfirmed', p_undo_step,
+      jsonb_build_array(jsonb_build_object('entity', 'transactions', 'id', v_row.id, 'expectedVersion', v_row_version,
+                                           'patch', jsonb_build_object('status', 'pending'))),
       jsonb_build_object('status', 'applied', 'transaction_id', v_row.id, 'transaction_version', v_row_version,
                          'in_leg_id', null, 'in_leg_version', null, 'transfer_id', null, 'undo_step_id', v_step_id));
   end if;
@@ -496,13 +557,19 @@ begin
                                    time_zone, name, category_id, payment_type, note, status, transfer_id, goal_id)
   values (v_leg_id, v_row.household_id, v_uid, v_goal.account_id, abs(v_row.original_amount), v_row.original_currency,
           v_row.local_date, v_row.time_zone, v_row.name, v_row.category_id, v_row.payment_type, v_row.note, 'paid',
-          v_transfer_id, v_goal.id);
+          v_transfer_id, v_goal.id)
+  returning version into v_leg_version;
   update public.transactions set status = 'paid', transfer_id = v_transfer_id, goal_id = null
    where id = v_row.id returning version into v_row_version;
 
   return public.grow_store_step(v_step_id, 'goalContributionConfirmed', p_undo_step,
+    jsonb_build_array(
+      jsonb_build_object('entity', 'transactions', 'id', v_leg_id, 'expectedVersion', v_leg_version,
+                         'patch', jsonb_build_object('deleted_at', '$now')),
+      jsonb_build_object('entity', 'transactions', 'id', v_row.id, 'expectedVersion', v_row_version,
+                         'patch', jsonb_build_object('status', 'pending', 'transfer_id', null, 'goal_id', v_row.goal_id))),
     jsonb_build_object('status', 'applied', 'transaction_id', v_row.id, 'transaction_version', v_row_version,
-                       'in_leg_id', v_leg_id, 'in_leg_version', 1, 'transfer_id', v_transfer_id, 'undo_step_id', v_step_id));
+                       'in_leg_id', v_leg_id, 'in_leg_version', v_leg_version, 'transfer_id', v_transfer_id, 'undo_step_id', v_step_id));
 end;
 $$;
 revoke execute on function public.confirm_goal_contribution(uuid, integer, jsonb, jsonb) from public, anon;
