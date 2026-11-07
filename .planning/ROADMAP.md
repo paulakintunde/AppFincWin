@@ -1179,10 +1179,10 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 06-01-PLAN.md — Payoff maths: fixed payment, both payoff orders, month-by-month growth, card minimum estimate (W1)
-- [ ] 06-02-PLAN.md — Grow maths: two-way goal plan, average-cost lots, gain/loss, 30-day as-of rule (W1)
-- [ ] 06-03-PLAN.md — Decide engine: locked goals kept out, unlocked goals counted, safety net and goals named (W1)
-- [ ] 06-04-PLAN.md — Schema: goals, APY, debt fields, holdings and lots, apply_patches re-issue, pgTAP (W1)
+- [x] 06-01-PLAN.md — Payoff maths: fixed payment, both payoff orders, month-by-month growth, card minimum estimate (W1)
+- [x] 06-02-PLAN.md — Grow maths: two-way goal plan, average-cost lots, gain/loss, 30-day as-of rule (W1)
+- [x] 06-03-PLAN.md — Decide engine: locked goals kept out, unlocked goals counted, safety net and goals named (W1)
+- [x] 06-04-PLAN.md — Schema: goals, APY, debt fields, holdings and lots, apply_patches re-issue, pgTAP (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 06-05-PLAN.md — Connection points (BO-07 goal, safety net, debt) with contract and parity tests (W2)
