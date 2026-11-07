@@ -1185,9 +1185,9 @@ Plans:
 - [x] 06-04-PLAN.md — Schema: goals, APY, debt fields, holdings and lots, apply_patches re-issue, pgTAP (W1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 06-05-PLAN.md — Connection points (BO-07 goal, safety net, debt) with contract and parity tests (W2)
-- [ ] 06-08-PLAN.md — Typed db access, keys, export manifest, cache version (W2)
-- [ ] 06-09-PLAN.md — Grow copy, copy lint, feature flags, glyphs, base primitives and the Grow undo label keys (W2)
+- [x] 06-05-PLAN.md — Connection points (BO-07 goal, safety net, debt) with contract and parity tests (W2)
+- [x] 06-08-PLAN.md — Typed db access, keys, export manifest, cache version (W2)
+- [x] 06-09-PLAN.md — Grow copy, copy lint, feature flags, glyphs, base primitives and the Grow undo label keys (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 06-06-PLAN.md — Schema: goal contributions, materialiser, goal-plan RPCs, set_safety_net swap (D-29), safety-net move D-07 (W3)
