@@ -245,7 +245,7 @@ describe('encrypted query cache persister', () => {
     untrack();
   });
   it('06 Grow: the cache version is 5, and a version 4 blob keeps its queued writes and drops its queries', () => {
-    expect(CACHE_SCHEMA_VERSION).toBe('4');
+    expect(CACHE_SCHEMA_VERSION).toBe('5');
     const mutation = { mutationKey: ['w'], state: { status: 'pending' } } as never;
     const query = { queryKey: ['q'], queryHash: '["q"]', state: { status: 'success', data: 1 } } as never;
     const old = { timestamp: Date.now(), buster: '4', clientState: { queries: [query], mutations: [mutation] } };
