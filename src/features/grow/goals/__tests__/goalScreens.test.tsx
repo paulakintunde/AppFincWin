@@ -144,6 +144,19 @@ async function typeMoney(label: string, text: string) {
 }
 
 describe('goal detail', () => {
+  it('06-19: "Try other amounts or dates" opens the goal calculator, and only a goal with a target has it', async () => {
+    const { pushOnce } = require('@/shell/navigation/pushOnce') as { pushOnce: jest.Mock };
+    await wrap(<GoalDetailScreen id="g1" />);
+    await fireEvent.press(screen.getByTestId('goal-try-other'));
+    expect(pushOnce).toHaveBeenCalledWith('/grow/calculators/goal/g1');
+  });
+
+  it('06-19: a goal with no target has no calculator link', async () => {
+    mockRows = [lisbon({ target: null })];
+    await wrap(<GoalDetailScreen id="g1" />);
+    expect(screen.queryByTestId('goal-try-other')).toBeNull();
+  });
+
   it('shows saved of target, the Plan rows and the two buttons', async () => {
     await wrap(<GoalDetailScreen id="g1" />);
     expect(screen.getByTestId('goal-saved').props.children).toBe('$640');

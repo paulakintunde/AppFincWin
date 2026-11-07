@@ -6,7 +6,6 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useAccounts } from '@/data/queries/accounts';
 import { useSaveDebtPlan } from '@/data/mutations/growDebts';
-import type { DebtRow } from '@/db/debts';
 import type { PayoffOrder } from '@/engine/payoff';
 import { useT } from '@/i18n';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
@@ -23,7 +22,7 @@ import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { AddDebtSheet } from './AddDebtSheet';
 import { debtLineModel } from './debtLineModel';
-import { debtHref, useDebtFormat, useDebtMonth, useDebtRows, type DebtFormat } from './debtScreenData';
+import { debtHref, payAccountId, useDebtFormat, useDebtMonth, useDebtRows, type DebtFormat } from './debtScreenData';
 import { PayoffPlanCard, type ScenarioKey } from './PayoffPlanCard';
 import { buildDebtsModel, DEFAULT_EXTRA, DEFAULT_LUMP, useDebtsRead, type DebtLine, type DebtsRead } from './useDebtsRead';
 import { useDebts } from '@/data/queries/decide';
@@ -35,13 +34,6 @@ export interface DebtsSegmentProps {
   onAddClosed?: () => void;
 }
 
-
-/** The account the extra payment leaves: the debt's own, else the first open checking account, else the first open one. */
-function payAccountId(debt: DebtRow, accounts: readonly { id: string; kind: string; archived_at: string | null }[]): string | null {
-  if (debt.account_id !== null) return debt.account_id;
-  const open = accounts.filter((a) => a.archived_at === null);
-  return (open.find((a) => a.kind === 'checking') ?? open[0])?.id ?? null;
-}
 
 export function DebtsSegment({ addOpen = false, onAddClosed }: DebtsSegmentProps) {
   const t = useT() as (key: string, options?: Record<string, string | number>) => string;

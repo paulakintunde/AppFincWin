@@ -158,6 +158,15 @@ describe('Investing segment', () => {
     expect(screen.getByText(en.grow.investing.add.save)).toBeTruthy();
   });
 
+  it('06-19: "See what it could grow to" opens the illustration with the totals', async () => {
+    await renderIt(<InvestingSegment />);
+    await fireEvent.press(screen.getByTestId('investing-see-growth'));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/grow/calculators/illustration',
+      params: { start: '769000', monthly: '20000' },
+    });
+  });
+
   it('a row opens the holding detail route', async () => {
     await renderIt(<InvestingSegment />);
     await fireEvent.press(screen.getByTestId('holding-row-h-ret'));
@@ -226,6 +235,17 @@ describe('Holding detail', () => {
     expect(screen.getByText('Value update · Nov 1 · $6,450')).toBeTruthy();
     expect(screen.getByText(en.grow.investing.taxNote)).toBeTruthy();
     expect(screen.getByLabelText(/Values you typed, from .* Latest \$6,450\./)).toBeTruthy();
+  });
+
+  it('06-19: a holding with a rate opens the illustration with its value, rate and monthly amount', async () => {
+    mockHoldings = [holding({ rate: '4', monthly_amount: 15000 })];
+    mockRead = readOf(mockHoldings);
+    await renderIt(<HoldingDetailScreen id="h-ret" />);
+    await fireEvent.press(screen.getByTestId('holding-growth-row'));
+    const arg = mockPush.mock.calls[0]![0] as { pathname: string; params: Record<string, string> };
+    expect(arg.pathname).toBe('/grow/calculators/illustration');
+    expect(arg.params.rate).toBe('4');
+    expect(arg.params.monthly).toBe('15000');
   });
 
   it('shows the quiet Update value row only after 30 days', async () => {

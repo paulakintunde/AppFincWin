@@ -4,7 +4,7 @@
 // connection points Decide reads (useGoalsRead), so Grow and Decide show one number.
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useConfirmGoalContribution, useEditGoal } from '@/data/mutations/growGoals';
 import { useAccounts } from '@/data/queries/accounts';
 import { useGoalLines, useSavingsGoalRows } from '@/data/queries/growGoals';
@@ -223,6 +223,17 @@ export function GoalDetailScreen({ id }: { id: string }) {
             />
           ) : null}
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('grow.goals.detail.planNote')}</Text>
+          {target !== null && !isNet && row.currency === calc.currency ? (
+            <Pressable
+              testID="goal-try-other"
+              accessibilityRole="button"
+              accessibilityLabel={t('grow.goals.detail.tryOther')}
+              onPress={() => pushOnce(`/grow/calculators/goal/${id}` as Href)}
+              style={[styles.editButton, { alignItems: 'flex-start' }]}
+            >
+              <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('grow.goals.detail.tryOther')}</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <View style={card} testID="goal-line-card">

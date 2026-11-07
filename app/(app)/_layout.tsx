@@ -83,6 +83,10 @@ export default function AppLayout() {
                 <Stack.Screen name="grow/calculators/savings" />
                 <Stack.Screen name="grow/calculators/growth" />
                 <Stack.Screen name="grow/calculators/payoff" />
+                {/* 06-19 (D-17..D-19): the record calculators, also outside the Decide gate. */}
+                <Stack.Screen name="grow/calculators/goal/[id]" />
+                <Stack.Screen name="grow/calculators/debt/[id]" />
+                <Stack.Screen name="grow/calculators/illustration" />
                 {/* 06-22 (G02): one goal. Outside the Decide gate like the rest of Grow. */}
                 <Stack.Screen name="grow/goal/[id]" />
                 {/* 06-16 / 06-17 / 06-18: the rest of the Grow detail screens, also outside the Decide gate. */}
