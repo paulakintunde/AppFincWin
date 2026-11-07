@@ -268,6 +268,14 @@ function buildCorpus(): Emitted[] {
     const { inputs, check } = toEngineInputs(c.fixture);
     collect(out, inputs, check);
   }
+  // 06 D-05, D-06, D-22: locked goals kept out (alone and with a locked net) and unlocked goals counted as spare money.
+  {
+    const sn15 = toEngineInputs(loadCases().find((x) => x.id === 'SN-15')!.fixture);
+    const goal = (locked: boolean) => ({ id: 'g1', kind: 'pot' as const, target: mu(100_000), monthlyAmount: null, readyBy: null, saved: mu(64_000), purposeId: null, accountId: 'a1', locked });
+    collect(out, { ...sn15.inputs, envelopes: [goal(true)] }, sn15.check);
+    collect(out, { ...sn15.inputs, safetyNet: { protect: true, size: mu(100_000), saved: mu(100_000) }, envelopes: [goal(true)] }, sn15.check);
+    collect(out, { ...sn15.inputs, envelopes: [goal(false)] }, sn15.check);
+  }
   // 05.4 D-65: the three tiers when the usual month is already short (month_short_fits, money_lasts_shorter).
   for (const t of Object.values(TIER_CASES)) {
     const { inputs, check } = rileyTier(t);

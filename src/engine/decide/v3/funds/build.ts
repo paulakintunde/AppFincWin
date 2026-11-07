@@ -39,7 +39,8 @@ interface SpendingParts {
  */
 function spendingOf(inputs: V3Inputs): Spending {
   const accounts = inputs.accounts;
-  const envs = inputs.envelopes;
+  // 06 D-05, D-22: an unlocked goal is spare money, so only the others are fenced off (locked absent = locked, as before).
+  const envs = inputs.envelopes.filter((e) => !(e.locked === false));
   const ids = new Set((accounts ?? []).map((a) => a.id));
   const linkedTo = (id: string): number => envs.filter((e) => e.accountId === id).reduce((t, e) => t + e.saved, 0);
   let total: number = accounts === undefined ? inputs.balance : 0;
@@ -119,7 +120,14 @@ function partsOf(gross: number, mixed: number, env: number, emg: number): Spendi
   return { gross: minorUnits(g), mixedSetAside: minorUnits(m), envelopes: minorUnits(e), emergency: minorUnits(f) };
 }
 
+/** 06 D-05, D-22: the money saved in goals the user marked locked (true) or unlocked (false); a goal with locked absent is neither. */
+function namedSaved(envs: V3Inputs['envelopes'], locked: boolean): number {
+  return envs.filter((e) => e.locked === locked).reduce((t, e) => t + (e.saved > 0 ? e.saved : 0), 0);
+}
+
 export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: string | null): Funds {
+  const lockedNamed = namedSaved(inputs.envelopes, true);
+  const unlockedNamed = namedSaved(inputs.envelopes, false);
   const env = envelopesOf(inputs.envelopes, inputs.asOf);
   const emergency = emergencyOf(inputs.emergency).amount;
   const sp = spendingOf(inputs);
@@ -186,6 +194,8 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
     fundUnlinked: sp.fundUnlinked,
     ...(unexplained === undefined ? {} : { unexplained }),
     ...(billsHeld.parts.length === 0 ? {} : { billsHeld }),
+    ...(lockedNamed > 0 ? { lockedNamedSaved: minorUnits(lockedNamed) } : {}),
+    ...(unlockedNamed > 0 ? { unlockedSaved: minorUnits(unlockedNamed) } : {}),
   };
 }
 
