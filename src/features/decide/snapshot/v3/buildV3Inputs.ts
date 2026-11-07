@@ -102,8 +102,6 @@ const pctOf = (x: unknown) => (typeof x === 'string' && DSR_PATTERN.test(x) && N
 const inList = (xs: readonly string[], x: unknown): x is string => typeof x === 'string' && xs.includes(x);
 /** ARC-25: a stored rate as typed, or null; never a default. */
 const rateOf = (x: unknown) => (typeof x === 'string' && RATE_PATTERN.test(x) ? percent(x) : null);
-/** FIN-04: a due day 1..31, or null. */
-const dueDayOf = (x: unknown): number | null => (typeof x === 'number' && Number.isInteger(x) && x >= 1 && x <= 31 ? x : null);
 
 function lineSpecOf(s: unknown): LineSpec | null {
   if (!isRec(s)) return null;
