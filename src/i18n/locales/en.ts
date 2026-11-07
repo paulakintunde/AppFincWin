@@ -3952,6 +3952,7 @@ const en = {
       goalRow: '{{saved}} of {{target}} · {{monthly}} a month · {{date}}',
       goalRowNoMonthly: '{{saved}} of {{target}} · no monthly amount yet',
       goalRowNoTarget: '{{saved}} saved · no set target',
+      goalRowNotReached: '{{saved}} of {{target}} · {{monthly}} a month doesn’t reach the target',
       goalRowA11y: '{{name}}, {{saved}} of {{target}}, {{percent}} percent, {{monthly}} a month, reaches target {{date}}',
       linkedToCheck: 'Linked to a check',
     },
@@ -4149,6 +4150,9 @@ const en = {
       emptyTitle: 'No debts recorded',
       emptyBody: 'If you owe anything with a balance, add it and Decide counts it.',
       emptyAction: 'Add a debt',
+      extraSeriesName: 'Extra on {{name}}',
+      minimumEstimated: 'Estimate',
+      minimumEstimatedNote: 'No minimum typed in, so this is an estimate: the month’s interest plus 1% of the balance, at least {{floor}}.',
       footer: 'An estimate. A lender’s figures can differ. FincWin lends no money.',
       detail: {
         owed: '{{amount}} owed',
@@ -4186,6 +4190,9 @@ const en = {
         leftoverTo: 'Left over goes to',
         save: 'Record the sale',
         toast: 'Loan closed. Sale and final payment recorded.',
+        soldLineName: '{{name}} sold',
+        finalPaymentLineName: '{{name}} final payment',
+        paymentExceedsBalance: 'That’s more than the {{owed}} still owed.',
       },
       add: {
         title: 'Add a debt',
@@ -4298,6 +4305,8 @@ const en = {
         save: 'Save entry',
         remove: 'Remove entry',
         row: '{{kind}} · {{date}} · {{amount}}',
+        sellExceedsUnits: 'That sells more units than you hold ({{units}}).',
+        badUnits: 'Units must be a number above zero.',
       },
       update: {
         title: 'Update value',
