@@ -1,4 +1,4 @@
--- 06 Grow (GRW-01..07, 10, 11; D-05, D-09, D-10, D-12, D-22, D-23). Additive. guard_savings_goal re-created from 20261028000700; apply_patches re-created from 20261103000200; only lines marked 06 changed.
+-- 06 Grow (GRW-01..07, 10, 11; D-05, D-09, D-10, D-12, D-22, D-23). Additive. guard_savings_goal re-created from 20261028000700; apply_patches re-created from 20261103000200; undo_adjusted_ops re-created from 20261030000100; only lines marked 06 changed.
 
 -- 1. savings_goals: open-ended, locked, safety net ---------------------------------------------------------------
 alter table public.savings_goals add column if not exists is_safety_net boolean not null default false;
@@ -739,3 +739,104 @@ $$;
 
 revoke execute on function public.apply_patches(jsonb, jsonb) from public, anon;
 grant execute on function public.apply_patches(jsonb, jsonb) to authenticated;
+
+-- 9. undo_adjusted_ops (re-issued from 20261030000100; changed lines marked 06) ----------------------------------
+-- A later step that was already undone moved a row it touched by its forward write plus its undo. A client-recorded
+-- step replays with versions bumping, so it moved the row by 2 per op (05.3 D-15). A step stored with allow_system_keys
+-- (set_safety_net, save_debt_plan, save_goal_plan's new safety net, record_decide_go / record_decide_outcome) replays
+-- under fincwin.system_restamp, which does not bump versions, so it moved the row by its forward write only: one version
+-- per row (each of those RPCs writes each existing row it lists with one statement). add_activity_month ('monthAdded')
+-- writes its rows under system_restamp too, so it moved them by nothing. Without this, Undo of an earlier step on the
+-- same row (edit a debt, save a plan, Undo the plan, Undo the edit) expected +2, found +1 and was refused. The raised
+-- value is still used only when the row's current version equals it exactly, so any other change still conflicts.
+create or replace function public.undo_adjusted_ops(p_step public.undo_log)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_op jsonb;
+  v_out jsonb := '[]'::jsonb;
+  v_entity text;
+  v_id uuid;
+  v_ev integer;
+  v_k integer;
+  v_row jsonb;
+  v_cur integer;
+  v_in_scope boolean;
+begin
+  for v_op in
+    select value from jsonb_array_elements(p_step.ops) with ordinality as t(value, ord) order by ord
+  loop
+    v_entity := v_op ->> 'entity';
+    v_id := null;
+    v_ev := null;
+    begin
+      v_id := (v_op ->> 'id')::uuid;
+      v_ev := (v_op ->> 'expectedVersion')::integer;
+    exception when others then
+      v_id := null;
+    end;
+
+    if v_entity is null or v_id is null or v_ev is null
+       or v_entity not in ('transactions', 'categories', 'recurring_series', 'accounts', 'households', 'category_rules',
+                           'decide_checks', 'debts', 'decide_links', 'decide_changes', 'savings_goals', 'decide_settings',
+                           'recurring_dismissals', 'income_payer_prompts', 'decide_answers', 'holdings', 'holding_lots') then  -- 06
+      v_out := v_out || jsonb_build_array(v_op);
+      continue;
+    end if;
+
+    v_k := coalesce((
+      select sum(case when l.allow_system_keys and l.label_key = 'monthAdded' then 0  -- 06: forward and undo both unbumped
+                      when l.allow_system_keys then 1  -- 06: a system step's undo does not bump versions
+                      else 2 * (select count(*) from jsonb_array_elements(l.ops) o where o ->> 'id' = v_id::text) end)  -- 06
+        from public.undo_log l
+       where l.owner_id = p_step.owner_id
+         and l.status = 'undone'
+         and (l.created_at, l.id) > (p_step.created_at, p_step.id)
+         and v_id = any (l.touched_ids)
+    ), 0)::integer;
+
+    if v_k = 0 then
+      v_out := v_out || jsonb_build_array(v_op);
+      continue;
+    end if;
+
+    execute format('select to_jsonb(t) from public.%I t where t.id = $1', v_entity) using v_id into v_row;
+
+    -- same scope as apply_patches Phase A; a row out of scope is left to apply_patches to refuse
+    v_in_scope := false;
+    if v_row is not null then
+      if v_entity = 'households' then
+        v_in_scope := (v_row ->> 'id')::uuid in (select public.user_household_ids());
+      elsif v_entity in ('transactions', 'recurring_series', 'accounts', 'debts', 'recurring_dismissals', 'income_payer_prompts') then
+        v_in_scope := (v_row ->> 'household_id')::uuid in (select public.user_household_ids());
+      elsif v_entity = 'category_rules' then
+        v_in_scope := (v_row ->> 'scope' = 'personal' and (v_row ->> 'owner_id')::uuid is not distinct from (select auth.uid()))
+                      or (v_row ->> 'scope' = 'shared' and (v_row ->> 'household_id')::uuid in (select public.user_household_ids()));
+      elsif v_entity = 'decide_settings' then
+        v_in_scope := (v_row ->> 'user_id')::uuid is not distinct from (select auth.uid());
+      elsif v_entity in ('decide_checks', 'decide_links', 'decide_changes', 'savings_goals', 'decide_answers', 'holdings', 'holding_lots') then  -- 06
+        v_in_scope := (v_row ->> 'created_by')::uuid is not distinct from (select auth.uid())
+                      and (v_row ->> 'household_id')::uuid in (select public.user_household_ids());
+      else -- categories
+        v_in_scope := (v_row ->> 'owner_id')::uuid is not distinct from (select auth.uid());
+      end if;
+    end if;
+
+    v_cur := case when v_in_scope then (v_row ->> 'version')::integer else null end;
+
+    if v_cur is not null and v_cur = v_ev + v_k then
+      v_out := v_out || jsonb_build_array(jsonb_set(v_op, '{expectedVersion}', to_jsonb(v_ev + v_k))); -- 05.3 D-15
+    else
+      v_out := v_out || jsonb_build_array(v_op);
+    end if;
+  end loop;
+
+  return v_out;
+end;
+$$;
+
+revoke execute on function public.undo_adjusted_ops(public.undo_log) from public, anon, authenticated;

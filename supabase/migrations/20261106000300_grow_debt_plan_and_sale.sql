@@ -62,7 +62,10 @@ $$;
 revoke execute on function public.grow_check_undo_step(jsonb, text, text) from public, anon, authenticated;
 
 -- Ends one series on p_end (clamped by the caller to >= anchor_date) with end_reason 'stopped', deleting its unpaid
--- pending rows after p_end, and returns the series change envelope with end_reason restored on Undo.
+-- pending rows after p_end, and returns the series change envelope (end_recurring_series shape) with end_reason restored
+-- on Undo. end_date and end_reason are set in ONE statement, so the series moves by exactly one version: undo_adjusted_ops
+-- counts one version per row for a step stored with allow_system_keys (save_debt_plan), and a chained Undo needs that.
+-- The callers check the household; this checks it again.
 create or replace function public.grow_end_series(p_series_id uuid, p_end date)
 returns jsonb
 language plpgsql
@@ -70,19 +73,42 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_old_reason text;
+  s public.recurring_series%rowtype;
   v_version integer;
-  v_change jsonb;
+  v_soft_deleted jsonb;
 begin
-  select s.end_reason into v_old_reason from public.recurring_series s where s.id = p_series_id for update;
-  update public.recurring_series set end_reason = 'stopped' where id = p_series_id
-  returning version into v_version;
-  v_change := public.end_recurring_series(p_series_id, v_version, p_end, null);
-  if v_change ->> 'status' is distinct from 'applied' then
-    raise exception 'grow_end_series: series % could not be ended (%)', p_series_id, v_change ->> 'status'
-      using errcode = '22023';
+  select * into s from public.recurring_series
+   where id = p_series_id and deleted_at is null and household_id in (select public.user_household_ids())
+   for update;
+  if not found or p_end is null or p_end < s.anchor_date then
+    raise exception 'grow_end_series: series % could not be ended', p_series_id using errcode = '22023';
   end if;
-  return jsonb_set(v_change, '{series,before,end_reason}', coalesce(to_jsonb(v_old_reason), 'null'::jsonb));
+
+  update public.recurring_series set end_date = p_end, end_reason = 'stopped' where id = p_series_id
+  returning version into v_version;
+
+  with to_delete as (
+    update public.transactions
+       set deleted_at = now()
+     where recurring_series_id = p_series_id
+       and status = 'pending'
+       and deleted_at is null
+       and occurrence_date > p_end
+    returning id, version
+  )
+  select coalesce(jsonb_agg(jsonb_build_object('id', id, 'version', version)), '[]'::jsonb)
+    into v_soft_deleted
+    from to_delete;
+
+  return jsonb_build_object(
+    'status', 'applied',
+    'series', jsonb_build_object('id', p_series_id, 'version', v_version,
+      'before', jsonb_build_object('end_date', to_jsonb(s.end_date), 'occurrence_count', to_jsonb(s.occurrence_count),
+                                   'end_reason', to_jsonb(s.end_reason))),
+    'inserted', '[]'::jsonb,
+    'soft_deleted', v_soft_deleted,
+    'linked', '[]'::jsonb
+  );
 end;
 $$;
 revoke execute on function public.grow_end_series(uuid, date) from public, anon, authenticated;

@@ -14,7 +14,7 @@ import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { localDateIn, monthOf } from '@/engine/time';
 import { buildTransferLegs } from '@/engine/transfer';
-import { buildStep, inverseOfInserts, inverseOfPatches, type PatchOp, type PatchValue } from '@/engine/undo';
+import { buildStep, inverseOfInserts, inverseOfPatches, type PatchValue } from '@/engine/undo';
 import { VersionConflictError } from '@/db/errors';
 import {
   confirmGoalContribution,
@@ -61,8 +61,8 @@ function invalidateGoals(qc: QueryClient, cache: GoalCacheKey): void {
 
 /**
  * Refresh everything a goal action can change: the goals, the lines that count toward them, the monthly records and the
- * undo list. Call it after Undo of a Grow step too: undoing a step stored with system keys (set_safety_net) does NOT bump
- * row versions, so the screens refetch rather than assume version + 1.
+ * undo list. Call it after Undo of a Grow step too: undoing a step stored with system keys (set_safety_net, or a new
+ * safety net made by save_goal_plan) does NOT bump row versions, so the screens refetch rather than assume version + 1.
  */
 export function refreshGoalReads(qc: QueryClient, cache: GoalCacheKey): void {
   invalidateGoals(qc, cache);
@@ -137,8 +137,6 @@ export interface SaveGoalPlanVars {
   /** null inserts the goal; otherwise the version the edit was made against. */
   expectedVersion: number | null;
   series: GoalPlanSeries | null;
-  /** Edits only: the values the goal had before, for the one Undo step. */
-  before: Record<string, PatchValue> | null;
   labelKey: SavePlanLabel;
   name: string;
   stepId: string;
@@ -192,15 +190,15 @@ function registerSavePlan(qc: QueryClient): void {
       guardSession(vars, async () => {
         const insert = vars.expectedVersion === null;
         const expected = insert ? null : resolveExpectedVersion('savings_goals', vars.goal.id, vars.expectedVersion as number);
-        // A new row is version 1; an update adds 1 for its one statement (06-06). The goal is the Undo step's only row: the
-        // monthly record's own version is known only after the call.
-        const ops: PatchOp[] =
-          expected === null
-            ? inverseOfInserts('savings_goals', [{ id: vars.goal.id, version: 1 }])
-            : inverseOfPatches('savings_goals', [{ id: vars.goal.id, before: vars.before as Record<string, PatchValue>, versionAfter: expected + 1 }]);
-        const step = buildStep(vars.stepId, vars.labelKey, { name: vars.name }, ops);
+        // The server builds the one Undo step from what it wrote (06-06 follow-up): the goal AND its monthly record with
+        // its Expected lines, so Undo of a new goal leaves nothing behind and Undo of an edit puts the old record back.
         const client = await writeClient();
-        const res = await saveGoalPlan(client, { goal: vars.goal, expectedVersion: expected, series: vars.series, undoStep: step });
+        const res = await saveGoalPlan(client, {
+          goal: vars.goal,
+          expectedVersion: expected,
+          series: vars.series,
+          undoStep: { id: vars.stepId, labelKey: vars.labelKey, name: vars.name },
+        });
         if (expected !== null && res.goalVersion !== null) {
           recordWrittenVersion('savings_goals', vars.goal.id, [vars.expectedVersion as number, expected], res.goalVersion);
         }
@@ -307,7 +305,6 @@ export function useSaveGoalPlan(): { save(input: SaveGoalPlanInput): { id: strin
           goal,
           expectedVersion: null,
           series: input.series,
-          before: null,
           labelKey: flag ? 'safetyNetSizeSaved' : 'goalMade',
           name: goal.name as string,
           stepId,
@@ -323,15 +320,12 @@ export function useSaveGoalPlan(): { save(input: SaveGoalPlanInput): { id: strin
       assertGoalFields(f, 'edit goal plan');
       if (row.is_safety_net === true && f.locked === false) throw new RangeError('safety-net-must-be-locked');
       const goal: GoalPlanGoal = { id: row.id, ...(f.name !== undefined ? { name: f.name.trim() } : {}), ...omitName(f) };
-      // The save always writes one statement on the goal, so Undo always has something to put back.
-      const beforeKeys = keys.length > 0 ? keys : ['monthly_amount'];
       mutation.mutate({
         ownerId: input.ownerId,
         cache: { userId: input.ownerId, householdId: row.household_id },
         goal,
         expectedVersion: row.version,
         series: input.series,
-        before: pickBefore(row, beforeKeys),
         labelKey: 'goalPlanChanged',
         name: f.name !== undefined ? f.name.trim() : row.name,
         stepId,
@@ -731,20 +725,15 @@ function registerConfirmContribution(qc: QueryClient): void {
     mutationFn: (vars: ConfirmGoalContributionVars) =>
       guardSession(vars, async () => {
         const expected = resolveExpectedVersion('transactions', vars.lineId, vars.expectedVersion);
-        // The line is version + 1 afterwards; a new goal-side leg is version 1 (06-06). Undo: delete the leg, then unpair the
-        // line and put it back to Expected with its goal tag.
-        const ops: PatchOp[] =
-          vars.inLeg === null
-            ? inverseOfPatches('transactions', [{ id: vars.lineId, before: { status: 'pending' }, versionAfter: expected + 1 }])
-            : [
-                ...inverseOfInserts('transactions', [{ id: vars.inLeg.id, version: 1 }]),
-                ...inverseOfPatches('transactions', [
-                  { id: vars.lineId, before: { status: 'pending', transfer_id: null, goal_id: vars.goalId }, versionAfter: expected + 1 },
-                ]),
-              ];
-        const step = buildStep(vars.stepId, 'goalContributionConfirmed', { name: vars.name }, ops);
+        // The server builds the one Undo step from the branch it took (06-06 follow-up): delete the in-leg, then put the line
+        // back to Expected, unpaired, with its goal tag; or, for a single line, just back to Expected.
         const client = await writeClient();
-        const res = await confirmGoalContribution(client, { transactionId: vars.lineId, expectedVersion: expected, inLeg: vars.inLeg, undoStep: step });
+        const res = await confirmGoalContribution(client, {
+          transactionId: vars.lineId,
+          expectedVersion: expected,
+          inLeg: vars.inLeg,
+          undoStep: { id: vars.stepId, name: vars.name },
+        });
         if (res.transactionVersion !== null) {
           recordWrittenVersion('transactions', vars.lineId, [vars.expectedVersion, expected], res.transactionVersion);
         }

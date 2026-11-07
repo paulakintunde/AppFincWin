@@ -141,7 +141,7 @@ describe('useSaveGoalPlan', () => {
     account_id: 'acc-sav',
   };
 
-  it('a new goal is one queued save: optimistic row, goalMade step whose inverse soft-deletes at version 1', async () => {
+  it('a new goal is one queued save: optimistic row, a goalMade step with no client ops (the server builds them)', async () => {
     const { fake, qc } = setup();
     fake.respondWith(ok({ status: 'applied', goal_id: 'id-2', goal_version: 1, series_id: 's1', series_version: 2, undo_step_id: 'id-1' }));
     const { result } = await renderHook(() => useSaveGoalPlan(), { wrapper: wrapper(qc) });
@@ -155,12 +155,8 @@ describe('useSaveGoalPlan', () => {
     expect(args.p_goal).toMatchObject({ id: 'id-2', household_id: 'hh-1', name: 'Lisbon', locked: true, target: 180000 });
     expect(args.p_goal.is_safety_net).toBeUndefined();
     expect(args.p_series).toMatchObject({ id: 's1', amount: 5000 });
-    expect(args.p_undo_step).toEqual({
-      id: 'id-1',
-      label_key: 'goalMade',
-      label_params: { name: 'Lisbon' },
-      ops: [{ entity: 'savings_goals', id: 'id-2', expectedVersion: 1, patch: { deleted_at: '$now' } }],
-    });
+    // 06-06 follow-up: save_goal_plan builds the Undo step itself (goal, monthly record and its Expected lines).
+    expect(args.p_undo_step).toEqual({ id: 'id-1', label_key: 'goalMade', label_params: { name: 'Lisbon' } });
     await waitFor(() => expect(qc.isMutating()).toBe(0));
     expect(recordFailedWrite).not.toHaveBeenCalled();
   });
@@ -206,7 +202,7 @@ describe('useSaveGoalPlan', () => {
     expect(fake.calls).toHaveLength(0);
   });
 
-  it('a plan change is version-conditional, never sends the flag, and Undo puts the old monthly figure back at version + 1', async () => {
+  it('a plan change is version-conditional, never sends the flag, and names a goalPlanChanged step for the server to build', async () => {
     const { fake, qc } = setup();
     qc.setQueryData(KEY, [goal()]);
     fake.respondWith(ok({ status: 'applied', goal_id: 'g1', goal_version: 4, series_id: 's1', series_version: 2, undo_step_id: 'id-1' }));
@@ -217,11 +213,7 @@ describe('useSaveGoalPlan', () => {
     const [, args] = rpcCall(fake);
     expect(args.p_expected_version).toBe(3);
     expect(args.p_goal).toEqual({ id: 'g1', monthly_amount: 7000 });
-    expect(args.p_undo_step).toMatchObject({
-      label_key: 'goalPlanChanged',
-      label_params: { name: 'Lisbon' },
-      ops: [{ entity: 'savings_goals', id: 'g1', expectedVersion: 4, patch: { monthly_amount: 5000 } }],
-    });
+    expect(args.p_undo_step).toEqual({ id: 'id-1', label_key: 'goalPlanChanged', label_params: { name: 'Lisbon' } });
   });
 
   it('series null is sent as null (stops the monthly record)', async () => {
@@ -493,7 +485,7 @@ describe('useConfirmGoalContribution', () => {
       ...over,
     }) as Pick<TransactionRow, 'id' | 'household_id' | 'account_id' | 'original_amount' | 'original_currency' | 'local_date' | 'version'>;
 
-  it('into a goal with its own account it sends the new leg ids and a pair-undo step', async () => {
+  it('into a goal with its own account it sends the new leg ids and names the step (the server builds the pair undo)', async () => {
     const { fake, qc } = setup();
     fake.respondWith(ok({ status: 'applied', transaction_version: 3, in_leg_id: 'id-2', in_leg_version: 1, transfer_id: 'id-3', undo_step_id: 'id-1' }));
     const { result } = await renderHook(() => useConfirmGoalContribution(), { wrapper: wrapper(qc) });
@@ -503,19 +495,11 @@ describe('useConfirmGoalContribution', () => {
     const [name, args] = rpcCall(fake);
     expect(name).toBe('confirm_goal_contribution');
     expect(args).toMatchObject({ p_transaction_id: 'line-1', p_expected_version: 2, p_in_leg: { id: 'id-2', transfer_id: 'id-3' } });
-    expect(args.p_undo_step).toEqual({
-      id: 'id-1',
-      label_key: 'goalContributionConfirmed',
-      label_params: { name: 'Lisbon' },
-      ops: [
-        { entity: 'transactions', id: 'id-2', expectedVersion: 1, patch: { deleted_at: '$now' } },
-        { entity: 'transactions', id: 'line-1', expectedVersion: 3, patch: { status: 'pending', transfer_id: null, goal_id: 'g1' } },
-      ],
-    });
+    expect(args.p_undo_step).toEqual({ id: 'id-1', label_key: 'goalContributionConfirmed', label_params: { name: 'Lisbon' } });
     await waitFor(() => expect(qc.isMutating()).toBe(0));
   });
 
-  it('without a separate goal account the line just becomes paid (no in-leg), undo puts it back to Expected', async () => {
+  it('without a separate goal account the line just becomes paid (no in-leg) and the step carries no client ops', async () => {
     const { fake, qc } = setup();
     fake.respondWith(ok({ status: 'applied', transaction_version: 3, undo_step_id: 'id-2' }));
     const { result } = await renderHook(() => useConfirmGoalContribution(), { wrapper: wrapper(qc) });
@@ -523,7 +507,7 @@ describe('useConfirmGoalContribution', () => {
     await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
     const [, args] = rpcCall(fake);
     expect(args.p_in_leg).toBeNull();
-    expect(args.p_undo_step.ops).toEqual([{ entity: 'transactions', id: 'line-1', expectedVersion: 3, patch: { status: 'pending' } }]);
+    expect(args.p_undo_step).toEqual({ id: 'id-1', label_key: 'goalContributionConfirmed', label_params: { name: 'Lisbon' } });
   });
 
   it('a replay (already-applied) is success; a conflict is parked', async () => {

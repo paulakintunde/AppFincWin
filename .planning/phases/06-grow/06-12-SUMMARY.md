@@ -78,3 +78,12 @@ None beyond the plan's threat model: T-06-12-01 (client uuids, 'already-applied'
 ## Self-Check: PASSED
 
 Files exist; commits 59c071c3 and ff8e8e5e exist.
+
+## Follow-up: server-built Undo for goal plans and confirmations
+
+The two "Open points" above are closed (commit 88681253, 06-06 follow-up).
+
+- `saveGoalPlan(client, { ..., undoStep: { id, labelKey, name } })` and `confirmGoalContribution(client, { ..., undoStep: { id, name } })` now send only `{ id, label_key, label_params: { name } }`. The server builds the ops: Undo of a new goal also removes its monthly record and Expected lines; Undo of a plan change puts the old record back; Undo of a confirmation matches the branch the server took.
+- `useSaveGoalPlan` no longer computes `before`, and `SaveGoalPlanVars.before` is gone (a queued mutation that still carries it is harmless). `useConfirmGoalContribution` no longer builds ops; `goalId` stays in its variables.
+- Undo of a new safety net is stored with system keys, so it does not bump row versions: call `refreshGoalReads` after it, as for `set_safety_net`.
+- Tests: goalPlan.test.ts and growGoals.test.tsx assert the step carries no ops (42 pass). `npm run typecheck`, eslint on the four files and `check:cache-version` are clean.

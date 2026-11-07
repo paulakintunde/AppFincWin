@@ -1,11 +1,12 @@
 -- pgTAP: Phase 06 Grow (06-07) -- save_debt_plan and record_debt_sale. Migration 20261106000300.
 -- Needs 20261016000100 .. 20261016000400, 20261024000100, 20261028000100 .. 20261106000100 and 20261106000300.
+-- The chained-Undo cases at the end need undo_adjusted_ops as re-issued in 20261106000100 (06-04 follow-up).
 -- Dates are relative to current_date so the monthly materialiser horizon never changes what is asserted.
 
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(44);
+select extensions.plan(56);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -63,7 +64,9 @@ insert into public.debts (id, household_id, created_by, name, kind, currency, ba
   ('d9300000-0000-0000-0000-000000000009', (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'),
    '33333333-3333-3333-3333-333333333333', 'Other loan', 'loan', 'USD', 500000, 20000),
   ('d9300000-0000-0000-0000-000000000004', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
-   '11111111-1111-1111-1111-111111111111', 'Undo loan', 'loan', 'USD', 600000, 20000);
+   '11111111-1111-1111-1111-111111111111', 'Undo loan', 'loan', 'USD', 600000, 20000),
+  ('d9300000-0000-0000-0000-000000000005', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   '11111111-1111-1111-1111-111111111111', 'Chain loan', 'loan', 'USD', 400000, 15000);
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
@@ -227,6 +230,42 @@ select extensions.is(public.apply_undo_step('e9300000-0000-0000-0000-00000000002
   'a client-recorded step that sets payoff_extra is refused');
 select extensions.is((select payoff_extra from public.debts where id = 'd9300000-0000-0000-0000-000000000004'), 3000::bigint,
   'the refused step leaves payoff_extra at 3000');
+
+-- Follow-up (06-04): chained Undo across steps stored with allow_system_keys ---------------------------------------
+-- Undo of a system step does not bump versions, so the earlier step's ops are raised by one version per row for it.
+-- 1. The first plan save (system step), after the second one (system step, which ended the first series) was undone.
+select extensions.is(public.apply_undo_step('e9300000-0000-0000-0000-000000000021') ->> 'status', 'undone',
+  'Chained Undo: the first plan save is undone after the second');
+select extensions.is((select payoff_extra from public.debts where id = 'd9300000-0000-0000-0000-000000000004'), 0::bigint,
+  'Chained Undo: payoff_extra is back to 0');
+select extensions.is((select extra_series_id from public.debts where id = 'd9300000-0000-0000-0000-000000000004'), null::uuid,
+  'Chained Undo: extra_series_id is empty again');
+select extensions.ok((select deleted_at is not null from public.recurring_series where id = '5a930000-0000-0000-0000-000000000011'),
+  'Chained Undo: the first series is removed');
+select extensions.is((select count(*)::integer from public.transactions where recurring_series_id = '5a930000-0000-0000-0000-000000000011'
+    and status = 'pending' and deleted_at is null), 0, 'Chained Undo: no Expected extra payment of it is left');
+
+-- 2. Edit a debt (client step), save a plan (system step), Undo the plan, Undo the edit.
+select extensions.is(public.apply_patches(
+  jsonb_build_array(jsonb_build_object('entity', 'debts', 'id', 'd9300000-0000-0000-0000-000000000005', 'expectedVersion', 1,
+    'patch', jsonb_build_object('name', 'Chain loan renamed'))),
+  jsonb_build_object('id', 'e9300000-0000-0000-0000-000000000031', 'label_key', 'debtEdited', 'label_params', '{}'::jsonb,
+    'ops', jsonb_build_array(jsonb_build_object('entity', 'debts', 'id', 'd9300000-0000-0000-0000-000000000005', 'expectedVersion', 2,
+      'patch', jsonb_build_object('name', 'Chain loan'))))) ->> 'status',
+  'applied', 'Chain: the debt is edited with a client-recorded step');
+select extensions.is(
+  public.t93_plan('d9300000-0000-0000-0000-000000000005', 2, 4000, 'rate', '5a930000-0000-0000-0000-000000000031',
+    'e9300000-0000-0000-0000-000000000032', 'debtPlanSaved') ->> 'status',
+  'applied', 'Chain: a plan is saved on the edited debt');
+select extensions.is(public.apply_undo_step('e9300000-0000-0000-0000-000000000032') ->> 'status', 'undone', 'Chain: Undo of the plan');
+select extensions.is(public.t93_ver('debts', 'd9300000-0000-0000-0000-000000000005'), 3,
+  'Chain: Undo of the plan leaves the debt at the version the plan left it');
+select extensions.is(public.apply_undo_step('e9300000-0000-0000-0000-000000000031') ->> 'status', 'undone',
+  'Chain: Undo of the earlier edit is not refused');
+select extensions.is((select name from public.debts where id = 'd9300000-0000-0000-0000-000000000005'), 'Chain loan',
+  'Chain: the debt''s name is back');
+select extensions.is((select payoff_extra from public.debts where id = 'd9300000-0000-0000-0000-000000000005'), 0::bigint,
+  'Chain: the plan stays undone');
 
 select * from extensions.finish();
 rollback;

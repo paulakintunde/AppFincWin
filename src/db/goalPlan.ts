@@ -9,10 +9,12 @@
 //   -> { status: 'applied' | 'already-applied' | 'conflict', ... }
 // set_safety_net(p_goal_id, p_expected_versions, p_undo_step)
 //   -> { status: 'applied' | 'already-applied' | 'unchanged' | 'conflict', ... } (the undo step is built server-side)
+//
+// All three RPCs build their undo step's ops on the server from what they wrote (06-06 follow-up): p_undo_step is only
+// { id, label_key, label_params: { name } }. So Undo of a new goal also removes its monthly record and Expected lines,
+// and Undo of a confirmation matches the branch the server took (paired or single line).
 
-import type { UndoStepDraft } from '@/engine/undo';
 import { DbError, VersionConflictError, toDbError, type WriteEntity } from './errors';
-import { serialiseStep } from './patches';
 import { BAD_RESPONSE } from './recurringSeries';
 import type { DbClient } from './rows';
 import type { NewGoal, SavingsGoalRow } from './savingsGoals';
@@ -51,13 +53,17 @@ export interface GoalPlanSeries {
   category_id: string | null;
 }
 
+/** The labels save_goal_plan accepts: goalMade (insert), safetyNetSizeSaved (insert of the net), goalPlanChanged (edit). */
+export type GoalPlanLabel = 'goalMade' | 'safetyNetSizeSaved' | 'goalPlanChanged';
+
 export interface SaveGoalPlanInput {
   goal: GoalPlanGoal;
   /** null inserts the goal; otherwise the version the edit was made against. */
   expectedVersion: number | null;
   /** null stops the live monthly record; an object starts or changes it. */
   series: GoalPlanSeries | null;
-  undoStep: UndoStepDraft;
+  /** The server builds the step's ops; the client names the step, its label and the label parameter. */
+  undoStep: { id: string; labelKey: GoalPlanLabel; name: string };
 }
 
 export interface SaveGoalPlanResult {
@@ -105,7 +111,7 @@ export async function saveGoalPlan(client: DbClient, input: SaveGoalPlanInput): 
     p_goal: goal,
     p_expected_version: expectedVersion,
     p_series: series,
-    p_undo_step: serialiseStep(input.undoStep),
+    p_undo_step: { id: input.undoStep.id, label_key: input.undoStep.labelKey, label_params: { name: input.undoStep.name } },
   });
   if (error) throw toDbError(error, status);
   const r = rec(data, 'save_goal_plan');
@@ -128,7 +134,8 @@ export interface ConfirmGoalContributionInput {
   expectedVersion: number;
   /** The new goal-side leg (ids minted by the client so a replay never doubles it); null when the line just becomes paid. */
   inLeg: { id: string; transfer_id: string } | null;
-  undoStep: UndoStepDraft;
+  /** The server builds the step's ops from the branch it took; the client names the step and the label parameter. */
+  undoStep: { id: string; name: string };
 }
 
 export interface ConfirmGoalContributionResult {
@@ -144,7 +151,7 @@ export async function confirmGoalContribution(client: DbClient, input: ConfirmGo
     p_transaction_id: input.transactionId,
     p_expected_version: input.expectedVersion,
     p_in_leg: input.inLeg,
-    p_undo_step: serialiseStep(input.undoStep),
+    p_undo_step: { id: input.undoStep.id, label_key: 'goalContributionConfirmed', label_params: { name: input.undoStep.name } },
   });
   if (error) throw toDbError(error, status);
   const r = rec(data, 'confirm_goal_contribution');

@@ -78,3 +78,23 @@ None beyond the plan's threat model (all seven dispositions implemented; T-06-06
 ## Self-Check: PASSED
 
 Files exist (migration, 90, 92); commits df4579b3, 6f61dae6 and f8ce159b exist; lint passes. pgTAP not run locally.
+
+## Follow-up: undo gaps closed (before the Grow push)
+
+Two Undo gaps fixed in place (none of 20261106000100/200/300 had been pushed). pgTAP not run locally (no Docker); the CI `rls` job is the gate.
+
+**Gap 1: Undo of a new goal left its contribution behind** (commit 88681253).
+- `save_goal_plan` now builds its own undo step from what it wrote. `p_undo_step` is `{ id, label_key, label_params }`; any ops a client sends are ignored (`grow_check_undo_step(..., false)`). Labels, the 22023 refusal of a wrong label, already-applied and conflict are unchanged.
+- Insert: the new contribution series is soft-deleted (undo_replay takes its untouched Expected lines with it), then the goal. A new safety net (`safetyNetSizeSaved`) is un-flagged, then deleted, because the guard refuses removing a flagged goal; only that step is stored with `allow_system_keys` (`is_safety_net` is a system key). Before this, Undo of a new safety net was refused.
+- Edit: the series change is reversed (a stopped series runs again with its lines; a deleted one comes back with its lines; an edited one gets its old fields and lines back; a new one goes), then the goal's 11 plan fields are put back.
+- Stopping a contribution now ends the series in ONE statement (`edit_recurring_series_from` with `end_date` and `end_reason`, effective the day after the end), not `end_recurring_series` plus a separate `end_reason` update. Same rows end up soft-deleted.
+- `confirm_goal_contribution` builds its undo from the branch it actually took (pair: delete the in-leg, then put the line back to Expected, unpaired, with its goal tag; single: back to Expected). The client could not know for sure which branch the server would take, so this is more reliable. `grow_store_step` now takes the ops as an argument.
+- pgTAP 92 (68 -> 95): new goal with a series then Undo (goal, series and every Expected line gone); plan change then Undo (fields, series amount, old lines back); stop then Undo (series runs again, every line back); B's net creation Undo chained after Undo of a later size edit; Undo of the paired confirmation.
+
+**Gap 2: chained Undo after a system step was refused** (commit 93fa56da, see 06-04).
+- Real. Undo of an `allow_system_keys` step replays under `fincwin.system_restamp`, and `bump_version` does not bump under it. `undo_adjusted_ops` assumed every later undone step moved its rows by 2 per op, so "edit, system step, Undo, Undo" expected +2, found +1 and refused.
+- `undo_adjusted_ops` re-issued in 20261106000100 (`-- 06` lines): an undone system step counts 1 per row, a `monthAdded` step 0, a client step still 2 per op. The raised value is still used only on an exact match.
+- `grow_end_series` (06-07) now sets `end_date` and `end_reason` in one statement, so a series ended by `save_debt_plan` or `record_debt_sale` moves one version, matching the count.
+- pgTAP 93 (44 -> 56): edit debt, save plan, Undo plan, Undo edit; Undo of the first plan after the second plan (which ended its series) was undone.
+
+**Client contract:** changed for `save_goal_plan` and `confirm_goal_contribution` (see 06-12 Follow-up).
