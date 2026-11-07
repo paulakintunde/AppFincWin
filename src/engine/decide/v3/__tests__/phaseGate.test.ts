@@ -40,7 +40,7 @@ describe('05.4 phase gate', () => {
 
   it('no draft outside household except shadow-run drafts and those open when 05.4-43 was built', () => {
     const drafts = loadCases()
-      .filter((c) => c.topic !== 'household' && c.topic !== 'goals' && c.status === 'draft' && !fromShadow(c)) // 06-10: the goals topic is Phase 6's; its drafts wait for owner approval in plan 06-20
+      .filter((c) => c.topic !== 'household' && c.status === 'draft' && !fromShadow(c)) // 06-20: goals cases owner-approved 2026-11-07, no longer exempt
       .map((c) => c.id);
     expect(drafts.filter((id) => !OPEN_AT_43.drafts.includes(id))).toEqual([]);
   });

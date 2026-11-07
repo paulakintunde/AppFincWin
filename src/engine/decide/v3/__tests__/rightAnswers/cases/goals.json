@@ -98,9 +98,9 @@
         "D-05",
         "D-06"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-07",
+      "ownerReason": "owner approved in Phase 6 device check",
       "expertNote": null
     },
     {
@@ -200,9 +200,9 @@
         "D-05",
         "D-06"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-07",
+      "ownerReason": "owner approved in Phase 6 device check",
       "expertNote": null
     },
     {
@@ -300,9 +300,9 @@
         "D-05",
         "D-06"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-07",
+      "ownerReason": "owner approved in Phase 6 device check",
       "expertNote": null
     },
     {
@@ -395,9 +395,9 @@
         "ARC-13",
         "FIN-16"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-07",
+      "ownerReason": "owner approved in Phase 6 device check",
       "expertNote": null
     },
     {
@@ -511,9 +511,9 @@
         "D-05",
         "D-06"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-07",
+      "ownerReason": "owner approved in Phase 6 device check",
       "expertNote": null
     }
   ]
