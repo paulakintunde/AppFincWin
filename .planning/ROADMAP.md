@@ -1213,7 +1213,7 @@ Plans:
 - [x] 06-16-PLAN.md — Safety net screens (create, size, monthly), first-open sheet, Your money rules (W7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 06-19-PLAN.md — Record calculators and Make this the plan (W8)
+- [x] 06-19-PLAN.md — Record calculators and Make this the plan (W8)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 06-20-PLAN.md — Setup links, Create from Decide, Grow tab on, phase gate, owner device check (W9)
