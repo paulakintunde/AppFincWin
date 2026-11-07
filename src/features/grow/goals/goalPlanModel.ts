@@ -1,0 +1,66 @@
+// 06-22: the small pure helpers the goal screens share. All money maths is the engine's (engine/grow); this file only picks the
+// anchor, reads a typed month and turns the engine's answers into the figures a screen shows. No React, no I/O.
+import { goalPlanByDate, goalPlanByMonthly } from '@/engine/grow';
+import { minorUnits } from '@/engine/money';
+import { firstOfNextMonth } from '@/features/grow/calculators/typed/useCalcInput';
+
+/** The date of the first deposit the plan counts: the first of next month, the same rule the Grow home uses. */
+export function planAnchor(today: string): string {
+  return firstOfNextMonth(today);
+}
+
+/** The day a monthly record falls on when the user does not pick one. */
+export const DEFAULT_RECORD_DAY = 16;
+
+/** The next date after `today` that falls on `day` (1 to 28). The first occurrence of the monthly record. */
+export function nextRecordDate(today: string, day: number = DEFAULT_RECORD_DAY): string {
+  const d = Math.min(28, Math.max(1, Math.trunc(day)));
+  const year = Number(today.slice(0, 4));
+  const month = Number(today.slice(5, 7));
+  const dom = Number(today.slice(8, 10));
+  const pad = (n: number) => String(n).padStart(2, '0');
+  if (dom < d) return `${year}-${pad(month)}-${pad(d)}`;
+  const ny = month === 12 ? year + 1 : year;
+  const nm = month === 12 ? 1 : month + 1;
+  return `${ny}-${pad(nm)}-${pad(d)}`;
+}
+
+/** 'MM/YYYY', 'M/YYYY' or 'YYYY-MM' to 'YYYY-MM-01'. Null when it is not a real month. */
+export function monthStartFromText(text: string): string | null {
+  const s = text.trim();
+  let y: number;
+  let m: number;
+  let hit = /^(\d{1,2})\s*[/.-]\s*(\d{4})$/.exec(s);
+  if (hit) {
+    m = Number(hit[1]);
+    y = Number(hit[2]);
+  } else {
+    hit = /^(\d{4})\s*[/.-]\s*(\d{1,2})$/.exec(s);
+    if (!hit) return null;
+    y = Number(hit[1]);
+    m = Number(hit[2]);
+  }
+  if (m < 1 || m > 12 || y < 2000 || y > 2200) return null;
+  return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-01`;
+}
+
+export interface MonthlyPlan {
+  /** The first of the month the monthly amount reaches the target in, or null when it does not within 50 years. */
+  reachesOn: string | null;
+}
+
+/** "Each month" edited: when does the target get reached. Null target or a zero amount reaches nothing. */
+export function planFromMonthly(i: { saved: number; target: number | null; monthly: number; today: string }): MonthlyPlan {
+  if (i.target === null || i.monthly <= 0) return { reachesOn: null };
+  if (i.saved >= i.target) return { reachesOn: null };
+  const r = goalPlanByMonthly({ have: minorUnits(i.saved), target: minorUnits(i.target), add: minorUnits(i.monthly), anchor: planAnchor(i.today) });
+  return { reachesOn: r.reachesOn };
+}
+
+/** "By" edited: the amount needed each month, rounded UP to the cent, or null when the month is not after this month. */
+export function planFromBy(i: { saved: number; target: number; byMonthStart: string; today: string }): number | null {
+  const anchor = planAnchor(i.today);
+  if (i.byMonthStart < anchor) return null;
+  if (i.saved >= i.target) return 0;
+  return goalPlanByDate({ have: minorUnits(i.saved), target: minorUnits(i.target), anchor, byDate: i.byMonthStart }).neededEachMonth;
+}

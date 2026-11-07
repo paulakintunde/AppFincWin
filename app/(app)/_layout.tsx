@@ -83,6 +83,8 @@ export default function AppLayout() {
                 <Stack.Screen name="grow/calculators/savings" />
                 <Stack.Screen name="grow/calculators/growth" />
                 <Stack.Screen name="grow/calculators/payoff" />
+                {/* 06-22 (G02): one goal. Outside the Decide gate like the rest of Grow. */}
+                <Stack.Screen name="grow/goal/[id]" />
                 {/* quick-261025-f46: today's Decide screens stay unreachable, deep links included, while DECIDE_OPEN is false. */}
                 <Stack.Protected guard={DECIDE_OPEN}>
                   <Stack.Screen name="setup/rough" />

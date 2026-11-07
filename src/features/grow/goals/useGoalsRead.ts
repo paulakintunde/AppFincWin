@@ -57,7 +57,7 @@ export function buildGoalsModel(
   return { safetyNet, goals, totalSaved, monthlyIntoGoals, needsNetConfirm };
 }
 
-function toHomeOf(ctx: PastContext): ToHome {
+export function toHomeOf(ctx: PastContext): ToHome {
   return (amount, currency) => {
     if (amount === 0 || currency === ctx.home) return amount;
     return convertLatest(amount, currency, ctx.home, ctx.rates, ctx.customs, ctx.today)?.amount ?? null;
