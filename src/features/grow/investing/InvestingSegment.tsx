@@ -155,6 +155,22 @@ export function InvestingSegment() {
         </View>
       ) : null}
 
+      {model.totals.value > 0 ? (
+        <Pressable
+          testID="investing-see-growth"
+          accessibilityRole="button"
+          onPress={() =>
+            pushOnce({
+              pathname: '/grow/calculators/illustration',
+              params: { start: String(model.totals.value), monthly: String(model.monthlyIn) },
+            } as Href)
+          }
+          style={styles.addRow}
+        >
+          <Text style={{ ...body, color: colors.accent }}>{t('grow.investing.detail.seeGrowth')}</Text>
+        </Pressable>
+      ) : null}
+
       <Text style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.noPrices')}</Text>
       <Pressable testID="investing-add-row" accessibilityRole="button" onPress={() => setAdding(true)} style={styles.addRow}>
         <Text style={{ ...body, color: colors.accent }}>{t('grow.investing.addHolding')}</Text>

@@ -194,7 +194,7 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
             accessibilityRole="button"
             onPress={() =>
               pushOnce({
-                pathname: '/grow/calculators/growth',
+                pathname: '/grow/calculators/illustration',
                 params: { start: String(Math.max(0, holding.value)), rate: holding.rate ?? '', monthly: String(holding.monthly_amount ?? 0) },
               } as Href)
             }

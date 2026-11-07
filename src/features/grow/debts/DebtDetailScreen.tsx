@@ -3,7 +3,7 @@
 // read through useDebtsRead / buildDebtsModel; this file lays them out.
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useAccounts } from '@/data/queries/accounts';
 import { useRemoveDebt } from '@/data/mutations/debts';
 import { dueDateOf } from '@/features/grow/connect/debtPoint';
@@ -11,6 +11,7 @@ import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { ProgressBar } from '@/features/grow/ui/ProgressBar';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { useT } from '@/i18n';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
@@ -170,6 +171,17 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
               <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('grow.debts.detail.changeInPlan')}</Text>
               <GrowGlyph name="chev" color={colors.accent} size={16} />
             </Pressable>
+            {rate === null ? null : (
+              <Pressable
+                testID="debt-try-other"
+                accessibilityRole="button"
+                onPress={() => pushOnce(`/grow/calculators/debt/${id}` as Href)}
+                style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+              >
+                <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('grow.debts.detail.tryOther')}</Text>
+                <GrowGlyph name="chev" color={colors.accent} size={16} />
+              </Pressable>
+            )}
           </View>
         )}
 

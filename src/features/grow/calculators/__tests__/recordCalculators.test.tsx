@@ -12,6 +12,8 @@ import type { DebtsRead } from '@/features/grow/debts/useDebtsRead';
 import { DebtExtraCalculator } from '../record/DebtExtraCalculator';
 import { GoalCalculator } from '../record/GoalCalculator';
 import { GrowthIllustration } from '../record/GrowthIllustration';
+import { useRecordLinks } from '../record/useRecordLinks';
+import { CalculatorsScreen } from '../typed/CalculatorsScreen';
 
 jest.setTimeout(60000);
 
@@ -74,6 +76,8 @@ jest.mock('@/features/grow/debts/debtScreenData', () => {
       new Map([['d1', { id: 'd1', name: 'Auto loan', kind: 'loan', currency: 'USD', apr: '6.9', account_id: 'a-chk', deleted_at: null }]]),
   };
 });
+let mockInvesting: { model: { holdings: unknown[]; totals: { value: number }; monthlyIn: number } };
+jest.mock('@/features/grow/investing/useInvestingRead', () => ({ useInvestingRead: () => mockInvesting }));
 jest.mock('@/state/undoToast', () => ({ showToast: (...a: unknown[]) => mockShowToast(...a) }));
 jest.mock('@/ui/haptics', () => ({
   hapticSelection: jest.fn(),
@@ -160,6 +164,7 @@ beforeEach(() => {
   mockSeries = [];
   mockGoalsRead = goalsRead();
   mockDebtsRead = debtsRead();
+  mockInvesting = { model: { holdings: [], totals: { value: 0 }, monthlyIn: 0 } };
 });
 
 describe('GoalCalculator (GC02, D-17)', () => {
@@ -293,5 +298,41 @@ describe('GrowthIllustration (GC05, D-19)', () => {
     await wrap(<GrowthIllustration start="769000" monthly="20000" rate="4.5" />);
     expect(screen.getByText('4.5%')).toBeTruthy();
     expect(screen.getByText(/After 10 years at 4.5% a year/)).toBeTruthy();
+  });
+});
+
+function RecordsPage() {
+  return <CalculatorsScreen recordLinks={useRecordLinks()} />;
+}
+
+describe('Calculators page, With your records (06-19)', () => {
+  it('is absent when there are no records', async () => {
+    mockGoalsRead = { ...goalsRead(), model: { ...goalsRead().model, goals: [] } };
+    mockDebtsRead = { ...debtsRead(), model: { ...debtsRead().model, debts: [] } };
+    await wrap(<RecordsPage />);
+    expect(screen.queryByText('With your records')).toBeNull();
+  });
+
+  it('lists a link for each record that exists and opens the right calculator', async () => {
+    const d = debtsRead();
+    d.model.debts[0]!.point = { ...d.model.debts[0]!.point, apr: 69_000_000_000n } as never;
+    mockDebtsRead = d;
+    mockInvesting = { model: { holdings: [{ id: 'h1' }], totals: { value: 769_000 }, monthlyIn: 20_000 } };
+    await wrap(<RecordsPage />);
+    expect(screen.getByText('With your records')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Trip to Lisbon'));
+    await fireEvent.press(screen.getByText('Auto loan, extra payments'));
+    await fireEvent.press(screen.getByText('Investing, growth illustration'));
+    expect(mockPushOnce.mock.calls.map((c) => c[0])).toEqual([
+      '/grow/calculators/goal/g1',
+      '/grow/calculators/debt/d1',
+      { pathname: '/grow/calculators/illustration', params: { start: '769000', monthly: '20000' } },
+    ]);
+  });
+
+  it('leaves out a debt with no rate', async () => {
+    await wrap(<RecordsPage />);
+    expect(screen.getByText('With your records')).toBeTruthy();
+    expect(screen.queryByText('Auto loan, extra payments')).toBeNull();
   });
 });

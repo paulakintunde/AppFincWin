@@ -331,6 +331,12 @@ describe('Debt detail (G06)', () => {
     expect(screen.getByText(en.grow.debts.footer)).toBeTruthy();
   });
 
+  it('06-19: "Try other amounts" opens the extra-payment calculator for a debt with a rate', async () => {
+    await wrap(<DebtDetailScreen id="auto" />);
+    await fireEvent.press(screen.getByTestId('debt-try-other'));
+    expect(mockPush).toHaveBeenCalledWith('/grow/calculators/debt/auto');
+  });
+
   it('Remove asks first, then stops Decide counting the debt', async () => {
     await wrap(<DebtDetailScreen id="auto" />);
     await fireEvent.press(screen.getByTestId('debt-remove'));
