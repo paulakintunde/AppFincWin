@@ -31,7 +31,7 @@ const daysIn = (year: number, month: number): number => new Date(Date.UTC(year, 
 const pad = (n: number): string => String(n).padStart(2, '0');
 
 /** The date of payment number `index` (0 = the next due date on or after today). The due day is cut to short months. */
-function dueDateOf(today: string, dueDay: number, index: number): string {
+export function dueDateOf(today: string, dueDay: number, index: number): string {
   const year = Number(today.slice(0, 4));
   const month = Number(today.slice(5, 7));
   const dayOf = (y: number, m: number): number => Math.min(dueDay, daysIn(y, m));
