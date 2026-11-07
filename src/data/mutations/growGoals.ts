@@ -155,6 +155,8 @@ export interface NewGoalFields {
   icon?: SavingsGoalRow['icon'];
   color_key?: SavingsGoalRow['color_key'];
   up_front_only?: boolean;
+  /** Insert only. The Decide check this goal was made from (BO-07). */
+  check_id?: string;
   protect?: boolean;
   /** Insert only. A safety net is always Locked, so true with locked false is refused. */
   is_safety_net?: boolean;
@@ -296,6 +298,7 @@ export function useSaveGoalPlan(): { save(input: SaveGoalPlanInput): { id: strin
           ...(f.icon !== undefined ? { icon: f.icon } : {}),
           ...(f.color_key !== undefined ? { color_key: f.color_key } : {}),
           ...(f.up_front_only !== undefined ? { up_front_only: f.up_front_only } : {}),
+          ...(f.check_id !== undefined ? { check_id: f.check_id } : {}),
           ...(f.protect !== undefined || flag ? { protect: f.protect ?? true } : {}),
           ...(flag ? { is_safety_net: true } : {}),
         };

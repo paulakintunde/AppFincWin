@@ -17,6 +17,8 @@ jest.setTimeout(30000);
 
 const mockPush = jest.fn();
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPush(h) }));
+let mockParams: Record<string, string> = {};
+jest.mock('expo-router', () => ({ useLocalSearchParams: () => mockParams }));
 const mockFab: Array<{ label: string; onPress: () => void } | null> = [];
 jest.mock('@/shell/fab/FabProvider', () => ({
   useRegisterFab: (c: { label: string; onPress: () => void } | null) => {
@@ -127,6 +129,7 @@ beforeEach(() => {
   mockRead = LEDGER;
   mockFlags = null;
   mockFab.length = 0;
+  mockParams = {};
   mockPush.mockClear();
 });
 
@@ -224,9 +227,9 @@ describe('Grow home shell', () => {
     expect(screen.getByText(en.grow.home.footer)).toBeTruthy();
   });
 
-  it('the Grow tab stays hidden: 4 tabs, and the layout gives grow href null', () => {
-    expect(availableTabs()).toEqual(['home', 'activity', 'decide']);
-    expect(availableTabs()).not.toContain('grow');
+  it('the Grow tab is on: 4 tabs, and the layout hides a tab only when it is not available', () => {
+    expect(availableTabs()).toEqual(['home', 'activity', 'decide', 'grow']);
+    expect(availableTabs()).toContain('grow');
     const layout = fs.readFileSync(path.join(__dirname, '../../../../../app/(app)/(tabs)/_layout.tsx'), 'utf8');
     expect(layout).toContain("isTabAvailable('grow')");
     expect(layout).toContain('href: null');

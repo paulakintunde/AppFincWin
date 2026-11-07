@@ -211,6 +211,7 @@ function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
         opening_saved: savedAlready ?? 0,
         ...(keptIn !== null ? { account_id: keptIn.id } : {}),
         ...(icon !== null ? { icon } : {}),
+        ...(prefill?.checkId !== undefined ? { check_id: prefill.checkId } : {}),
       },
       series,
     });

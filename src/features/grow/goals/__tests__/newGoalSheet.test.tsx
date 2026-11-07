@@ -224,6 +224,15 @@ describe('NewGoalSheet', () => {
     expect(screen.getByTestId('goal-name').props.value).toBe('Laptop');
   });
 
+  it('a goal made from a Decide check is saved with that check id; one made by hand has none', async () => {
+    await wrap(<NewGoalSheet visible onClose={jest.fn()} prefill={{ name: 'Laptop', target: 350000, checkId: 'c1' }} />);
+    await fireEvent.press(screen.getByText('Continue'));
+    await fireEvent.press(screen.getByText('Continue'));
+    await fireEvent.press(screen.getByText('Yes, lock it'));
+    await fireEvent.press(screen.getByLabelText('Make goal'));
+    expect((mockSave.mock.calls[0]![0] as { fields: Record<string, unknown> }).fields).toMatchObject({ name: 'Laptop', target: 350000, check_id: 'c1' });
+  });
+
   it('edit mode is one page, prefilled, and saves with the goal as it was (expected version)', async () => {
     const goal: SavingsGoalRow = goalFixture('', { id: 'g1', name: 'Trip to Lisbon', kind: 'pot', target: 180000, monthly_amount: 5000, locked: false, is_safety_net: false, account_id: 'a-sav', check_id: null, version: 4 });
     await wrap(<NewGoalSheet visible onClose={jest.fn()} goal={goal} saved={64000} />);
