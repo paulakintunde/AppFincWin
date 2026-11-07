@@ -96,3 +96,10 @@ export function useDebtFormat(): DebtFormat {
 
 /** The debt detail route (06-17). */
 export const debtHref = (id: string): Href => `/grow/debt/${id}` as Href;
+
+/** The account the extra payment leaves: the debt's own, else the first open checking account, else the first open one. */
+export function payAccountId(debt: DebtRow, accounts: readonly { id: string; kind: string; archived_at: string | null }[]): string | null {
+  if (debt.account_id !== null) return debt.account_id;
+  const open = accounts.filter((a) => a.archived_at === null);
+  return (open.find((a) => a.kind === 'checking') ?? open[0])?.id ?? null;
+}
