@@ -1210,7 +1210,7 @@ Plans:
 - [x] 06-22-PLAN.md — Goal detail, money moves, new goal sheet, and "Use as my safety net" (D-29) (split from 06-15) (W6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 06-16-PLAN.md — Safety net screens (create, size, monthly), first-open sheet, Your money rules (W7)
+- [x] 06-16-PLAN.md — Safety net screens (create, size, monthly), first-open sheet, Your money rules (W7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
 - [ ] 06-19-PLAN.md — Record calculators and Make this the plan (W8)
