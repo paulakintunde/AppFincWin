@@ -507,3 +507,130 @@ end;
 $$;
 revoke execute on function public.confirm_goal_contribution(uuid, integer, jsonb, jsonb) from public, anon;
 grant execute on function public.confirm_goal_contribution(uuid, integer, jsonb, jsonb) to authenticated;
+
+-- Part B: safety net (D-07, D-29) -------------------------------------------------------------------------------------
+
+-- Pre-check for the push task (plan 11): how many testers ever unlocked the net. The safety net is always Locked from
+-- here on (D-23), so these rows read as Locked after the copy below. The parity test (plan 05) documents this cell.
+do $$ begin raise notice 'decide_settings rows with safety_net_locked = false: %', (select count(*) from public.decide_settings where safety_net_locked = false); end $$;
+
+-- 6. set_safety_net (D-29): "Use as my safety net" on an existing goal, with an atomic swap of the current net ----------
+-- Exactly one live flagged goal per owner at every point: the old net is un-flagged FIRST (it stays Locked), then the
+-- target is flagged, Locked and protected, inside one transaction under row locks. Saved amount, target, monthly amount,
+-- account and contribution series of both goals are untouched. The undo step is built here, never from client ops.
+create or replace function public.set_safety_net(p_goal_id uuid, p_expected_versions jsonb, p_undo_step jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := (select auth.uid());
+  v_step_id uuid;
+  v_target public.savings_goals%rowtype;
+  v_old public.savings_goals%rowtype;
+  v_has_old boolean;
+  v_tv integer;
+  v_ov integer;
+  v_target_version integer;
+  v_old_version integer;
+  v_ops jsonb;
+begin
+  if v_uid is null then
+    raise exception 'set_safety_net: sign in first' using errcode = '42501';
+  end if;
+  v_step_id := public.grow_check_undo_step(p_undo_step, 'safetyNetChanged', 'set_safety_net', false);
+  if exists (select 1 from public.undo_log u where u.id = v_step_id and u.owner_id = v_uid) then
+    return jsonb_build_object('status', 'already-applied', 'undo_step_id', v_step_id);
+  end if;
+  if p_goal_id is null or jsonb_typeof(p_expected_versions) is distinct from 'object' then
+    raise exception 'set_safety_net: the goal and its versions are required' using errcode = '22023';
+  end if;
+
+  select * into v_target from public.savings_goals g where g.id = p_goal_id for update;
+  if not found then
+    raise exception 'set_safety_net: that goal does not exist' using errcode = '22023';
+  end if;
+  if v_target.created_by is distinct from v_uid or v_target.household_id not in (select public.user_household_ids()) then
+    raise exception 'set_safety_net: that goal is not yours' using errcode = '42501';
+  end if;
+  if v_target.deleted_at is not null or v_target.kind <> 'pot' or v_target.bucket is not null then
+    raise exception 'set_safety_net: that goal cannot be the safety net' using errcode = '22023';
+  end if;
+  if v_target.is_safety_net then
+    return jsonb_build_object('status', 'unchanged', 'goal_id', v_target.id);
+  end if;
+
+  select * into v_old from public.savings_goals g
+   where g.household_id = v_target.household_id and g.created_by = v_uid and g.is_safety_net and g.deleted_at is null
+     and g.id <> v_target.id
+   for update;
+  v_has_old := found;
+
+  begin
+    v_tv := (p_expected_versions ->> v_target.id::text)::integer;
+    if v_has_old then
+      v_ov := (p_expected_versions ->> v_old.id::text)::integer;
+    end if;
+  exception when others then
+    raise exception 'set_safety_net: p_expected_versions is malformed' using errcode = '22023';
+  end;
+  if v_tv is distinct from v_target.version or (v_has_old and v_ov is distinct from v_old.version) then
+    return jsonb_build_object('status', 'conflict');
+  end if;
+
+  perform set_config('fincwin.safety_net_rpc', 'on', true);
+  if v_has_old then
+    update public.savings_goals set is_safety_net = false where id = v_old.id returning version into v_old_version;
+  end if;
+  update public.savings_goals set is_safety_net = true, locked = true, protect = true
+   where id = v_target.id returning version into v_target_version;
+  perform set_config('fincwin.safety_net_rpc', 'off', true);
+
+  -- Undo: un-flag the target (restoring its own Locked and Protect), then put the flag back on the old net, in that order
+  -- so the one-net index holds while the ops replay.
+  v_ops := jsonb_build_array(jsonb_build_object(
+    'entity', 'savings_goals', 'id', v_target.id, 'expectedVersion', v_target_version,
+    'patch', jsonb_build_object('is_safety_net', false, 'locked', v_target.locked, 'protect', v_target.protect)));
+  if v_has_old then
+    v_ops := v_ops || jsonb_build_array(jsonb_build_object(
+      'entity', 'savings_goals', 'id', v_old.id, 'expectedVersion', v_old_version,
+      'patch', jsonb_build_object('is_safety_net', true)));
+  end if;
+  insert into public.undo_log (id, owner_id, label_key, label_params, ops, allow_system_keys)
+  values (v_step_id, v_uid, 'safetyNetChanged', coalesce(p_undo_step -> 'label_params', '{}'::jsonb), v_ops, true);
+
+  return jsonb_build_object('status', 'applied', 'goal_id', v_target.id,
+                            'previous_goal_id', case when v_has_old then v_old.id else null end,
+                            'goal_version', v_target_version, 'previous_version', v_old_version, 'undo_step_id', v_step_id);
+end;
+$$;
+revoke execute on function public.set_safety_net(uuid, jsonb, jsonb) from public, anon;
+grant execute on function public.set_safety_net(uuid, jsonb, jsonb) to authenticated;
+
+-- 7. D-07 data step: each tester's Decide safety-net settings become their one flagged, locked safety-net goal ----------
+-- Idempotent (skips anyone who already has a live flagged goal). The account is linked ONLY where the old reserve amount is
+-- not null: a linked account with a null reserve would make Decide read the whole live balance as the fund (06-05 parity
+-- finding, mirrored by migrateSafetyNetRow in the parity test). A size of 0 reads as no size (a goal target is at least 1).
+-- No JWT runs here, so guard_savings_goal keeps created_by as given. Additive only.
+insert into public.savings_goals (id, household_id, created_by, kind, name, currency, target, opening_saved, account_id,
+                                  protect, locked, is_safety_net, net_confirmed_at)
+select gen_random_uuid(), hm.household_id, ds.user_id, 'pot', 'Safety net',
+       coalesce(ds.currency, p.home_currency, 'USD'), nullif(ds.safety_net_size, 0), coalesce(ds.reserve, 0),
+       case when ds.reserve is null then null
+            else (select a.id from public.accounts a where a.id = ds.reserve_account_id and a.household_id = hm.household_id) end,
+       ds.safety_net_protect, true, true, null
+  from public.decide_settings ds
+  join lateral (select m.household_id from public.household_members m where m.user_id = ds.user_id
+                 order by m.created_at, m.household_id limit 1) hm on true
+  left join public.profiles p on p.id = ds.user_id
+ where not exists (select 1 from public.savings_goals g
+                    where g.household_id = hm.household_id and g.created_by = ds.user_id
+                      and g.is_safety_net and g.deleted_at is null);
+
+-- 8. Interim columns stay (old builds read them); marked for scheduled removal ----------------------------------------
+comment on column public.decide_settings.safety_net_size is 'migrated to savings_goals.is_safety_net (06 D-07); drop after a minimum supported app version bump';
+comment on column public.decide_settings.safety_net_protect is 'migrated to savings_goals.is_safety_net (06 D-07); drop after a minimum supported app version bump';
+comment on column public.decide_settings.safety_net_locked is 'migrated to savings_goals.is_safety_net (06 D-07); drop after a minimum supported app version bump';
+comment on column public.decide_settings.reserve is 'migrated to savings_goals.is_safety_net (06 D-07); drop after a minimum supported app version bump';
+comment on column public.decide_settings.reserve_account_id is 'migrated to savings_goals.is_safety_net (06 D-07); drop after a minimum supported app version bump';
