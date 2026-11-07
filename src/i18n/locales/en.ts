@@ -1801,6 +1801,13 @@ const en = {
   decide: {
     // 05.2: Decide setup, settings, setup page and sheets. Copy is verbatim from 05.2-UI-SPEC.md.
     setup: {
+      growLink: {
+        open: 'Open in Grow',
+        loans: 'Your loans and cards now live in Grow, under Debts. Add or change them there and Decide reads them.',
+        saving: 'What you put aside now lives in Grow, under Goals. Add or change it there and Decide reads it.',
+        emergency: 'Your safety net now lives in Grow. Change its size there and Decide reads the new figure.',
+        envelopes: 'Envelopes you set aside for now live in Grow, under Goals. Add or change them there and Decide reads them.',
+      },
       shell: {
         next: 'Next',
         finishLater: 'Finish later',

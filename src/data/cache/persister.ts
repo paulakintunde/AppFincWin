@@ -32,7 +32,8 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // -- bumped 2 -> 3 (APP-07). scripts/check-cache-version.mjs fails CI when a persisted shape changes without a bump; after
 // a bump run `npm run check:cache-version -- --update`.
 // 06 Grow: goals, debts, accounts and series gained columns and holdings are new -- bumped 3 -> 4.
-export const CACHE_SCHEMA_VERSION = '4';
+// 06-20 phase gate: later Grow plans changed persisted shapes after that bump -- bumped 4 -> 5.
+export const CACHE_SCHEMA_VERSION = '5';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's

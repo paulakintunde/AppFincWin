@@ -48,11 +48,11 @@ describe('TabBar', () => {
     expect(screen.getByLabelText('Activity, tab, 2 of 2')).toBeTruthy();
   });
 
-  it('ships Home, Activity and Decide by default (05-21)', async () => {
-    const { props } = makeProps(['home', 'activity', 'decide'], 2, { availability: undefined });
+  it('ships Home, Activity, Decide and Grow by default (05-21, 06-20)', async () => {
+    const { props } = makeProps(['home', 'activity', 'decide', 'grow'], 2, { availability: undefined });
     await renderWithShellProviders(<TabBar {...props} />);
-    expect(screen.getAllByRole('tab')).toHaveLength(3);
-    expect(screen.getByLabelText('Decide, tab, 3 of 3').props.accessibilityState.selected).toBe(true);
+    expect(screen.getAllByRole('tab')).toHaveLength(4);
+    expect(screen.getByLabelText('Decide, tab, 3 of 4').props.accessibilityState.selected).toBe(true);
   });
 
   it('labels the centre Decide button 3 of 5 when all are available', async () => {
