@@ -52,4 +52,17 @@ describe('en.grow copy lint', () => {
     expect(en.grow.firstOpen.title).toBe('We moved your safety net here');
     expect(en.grow.goals.useAsSafetyNet.row).toBe('Use as my safety net');
   });
+
+  it('keeps the gap-closure strings free of advice wording', () => {
+    const picked = [
+      en.grow.debts.useOnceOn,
+      en.grow.debts.onceToast,
+      en.grow.debts.rowEnds,
+      en.grow.home.goalsHeroLabelNet_one,
+    ];
+    for (const text of picked) {
+      expect(text).toBeTruthy();
+      expect(text).not.toMatch(FORBIDDEN);
+    }
+  });
 });
