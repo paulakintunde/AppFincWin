@@ -1201,8 +1201,8 @@ Plans:
 - [x] 06-13-PLAN.md — Calculators page with four typed calculators, D-21 (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 06-14-PLAN.md — Debt, holding, lot and net-worth data hooks (W5)
-- [ ] 06-15-PLAN.md — Grow tab shell, Goals segment and home cards (W5)
+- [x] 06-14-PLAN.md — Debt, holding, lot and net-worth data hooks (W5)
+- [x] 06-15-PLAN.md — Grow tab shell, Goals segment and home cards (W5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 06-17-PLAN.md — Debt screens: payoff plan side by side, add debt, sale sheet (W6)
