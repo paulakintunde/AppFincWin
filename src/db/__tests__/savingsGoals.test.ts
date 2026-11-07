@@ -8,6 +8,7 @@ import {
   fetchSavingsGoals,
   insertSavingsGoal,
   updateSavingsGoal,
+  type NewGoal,
   type NewPot,
   type SavingsGoalRow,
 } from '../savingsGoals';
@@ -154,11 +155,17 @@ describe('D-101 pot columns and keys', () => {
         'account_id',
         'monthly_amount',
         'color_key',
+        'is_safety_net',
+        'locked',
+        'protect',
+        'up_front_only',
+        'icon',
+        'check_id',
       ].sort()
     );
     // grant update (name, target, ready_by, opening_saved, done_at, deleted_at)
     expect([...SAVINGS_GOAL_PATCH_KEYS].sort()).toEqual(
-      ['deleted_at', 'done_at', 'name', 'opening_saved', 'ready_by', 'target', 'account_id', 'monthly_amount', 'color_key'].sort()
+      ['deleted_at', 'done_at', 'name', 'opening_saved', 'ready_by', 'target', 'account_id', 'monthly_amount', 'color_key', 'locked', 'protect', 'up_front_only', 'icon', 'net_confirmed_at'].sort()
     );
     expect(SAVINGS_GOAL_PATCH_KEYS).not.toContain('kind');
     expect(SAVINGS_GOAL_PATCH_KEYS).not.toContain('check_id');
@@ -187,7 +194,7 @@ describe('D-101 pot columns and keys', () => {
   it('D-101 refuses a client-sent wait kind, a stray key or a bad value before a request', async () => {
     const client = createFakeSupabase();
     await expect(insertSavingsGoal(client, { ...pot, kind: 'wait' } as unknown as NewPot)).rejects.toBeInstanceOf(RangeError);
-    await expect(insertSavingsGoal(client, { ...pot, check_id: ID_B } as unknown as NewPot)).rejects.toBeInstanceOf(TypeError);
+    await expect(insertSavingsGoal(client, { ...pot, is_sample: true } as unknown as NewPot)).rejects.toBeInstanceOf(TypeError);
     await expect(insertSavingsGoal(client, { ...pot, target: 1.5 })).rejects.toBeInstanceOf(RangeError);
     await expect(insertSavingsGoal(client, { ...pot, ready_by: '2027-03' })).rejects.toBeInstanceOf(RangeError);
     expect(client.calls).toHaveLength(0);
@@ -202,5 +209,27 @@ describe('D-101 pot columns and keys', () => {
     await expect(insertSavingsGoal(client, { ...pot, monthly_amount: 5 } as unknown as NewPot)).rejects.toBeInstanceOf(RangeError);
     await expect(insertSavingsGoal(client, { ...bucket, monthly_amount: -1 })).rejects.toBeInstanceOf(RangeError);
     expect(client.calls).toHaveLength(3);
+  });
+});
+
+describe('06 Grow goal insert', () => {
+  it('accepts an open-ended goal that carries locked, and sends locked and icon through', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: goalRow(), error: null, status: 201 });
+    const goal: NewGoal = {
+      id: ID_A,
+      household_id: 'h1',
+      kind: 'pot',
+      name: 'Laptop',
+      currency: 'GBP',
+      opening_saved: 0,
+      locked: false,
+      target: null,
+      ready_by: null,
+      monthly_amount: null,
+      icon: 'laptop',
+    };
+    await expect(insertSavingsGoal(client, goal)).resolves.toMatchObject({ id: ID_A });
+    expect(client.calls.find((c) => c.method === 'insert')?.args).toEqual([goal]);
   });
 });
