@@ -15,7 +15,7 @@ import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
-import type { CategorySwatchKey } from '@/theme/tokens';
+import { shadows, type CategorySwatchKey } from '@/theme/tokens';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
@@ -55,7 +55,7 @@ export function InvestingSegment() {
   if (read.status === 'ready' && model.holdings.length === 0) {
     return (
       <>
-        <View testID="grow-investing-empty" style={[styles.card, styles.center, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
+        <View testID="grow-investing-empty" style={[styles.card, styles.center, { backgroundColor: colors.surface, ...shadows.card }]}>
           <GrowGlyph name="invest" color={colors.accent} size={28} />
           <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, textAlign: 'center' }}>{t('grow.investing.emptyTitle')}</Text>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, textAlign: 'center' }}>{t('grow.investing.emptyBody')}</Text>
@@ -69,6 +69,7 @@ export function InvestingSegment() {
 
   const label = textRole(pairing, 'label');
   const body = textRole(pairing, 'body');
+  const strong = textRole(pairing, 'bodyStrong');
   const above = model.totals.gain >= 0;
   const oldest = model.holdings.reduce<string>((min, h) => (min === '' || h.asOf < min ? h.asOf : min), '');
   const stale = model.holdings.filter((h) => h.stale).sort((a, b) => (a.asOf < b.asOf ? -1 : 1));
@@ -81,7 +82,7 @@ export function InvestingSegment() {
 
   return (
     <View testID="grow-investing" style={styles.stack}>
-      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
+      <View style={[styles.card, { backgroundColor: colors.surface, ...shadows.card }]}>
         <Text style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.heroLabel')}</Text>
         <Text testID="investing-hero" style={{ ...textRole(pairing, 'display'), color: colors.ink }}>{f.money(model.totals.value)}</Text>
         <Text style={{ ...label, color: colors.inkMuted }}>
@@ -93,7 +94,7 @@ export function InvestingSegment() {
         </Text>
       </View>
 
-      <View style={[styles.card, styles.between, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
+      <View style={[styles.card, styles.between, { backgroundColor: colors.surface, ...shadows.card }]}>
         <Text style={{ ...body, color: colors.ink, flex: 1 }}>
           {floor !== null && floor > 0
             ? t('grow.investing.lineCard', { amount: f.money(model.monthlyIn), rule: f.money(floor) })
@@ -103,7 +104,7 @@ export function InvestingSegment() {
       </View>
 
       <Text accessibilityRole="header" style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.section')}</Text>
-      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1, padding: 0 }]}>
+      <View style={[styles.card, { backgroundColor: colors.surface, ...shadows.card, padding: 0 }]}>
         {model.holdings.map((h, i) => {
           const sub =
             h.monthlyAmount !== null && h.monthlyAmount > 0
@@ -119,11 +120,11 @@ export function InvestingSegment() {
               style={[styles.holdingRow, i > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1 } : null]}
             >
               <View style={styles.grow}>
-                <Text style={{ ...body, color: colors.ink }}>{h.name}</Text>
+                <Text style={{ ...strong, color: colors.ink }}>{h.name}</Text>
                 <Text style={{ ...label, color: colors.inkMuted }}>{sub}</Text>
               </View>
               <View style={styles.end}>
-                <Text style={{ ...body, color: colors.ink }}>{f.money(h.value, h.currency)}</Text>
+                <Text style={{ ...strong, color: colors.ink }}>{f.money(h.value, h.currency)}</Text>
                 <GainBadge line={h} />
               </View>
             </Pressable>
@@ -137,7 +138,7 @@ export function InvestingSegment() {
           accessibilityRole="button"
           accessibilityLabel={`${t('grow.investing.staleRow')} ${t('grow.investing.staleSub', { date: f.day(stale[0]!.asOf) })}`}
           onPress={() => pushOnce(`/grow/holding/${stale[0]!.id}` as Href)}
-          style={[styles.card, styles.between, { backgroundColor: colors.surface, borderColor: colors.line1 }]}
+          style={[styles.card, styles.between, { backgroundColor: colors.surface, ...shadows.card }]}
         >
           <Text style={{ ...body, color: colors.ink }}>{t('grow.investing.staleRow')}</Text>
           <Text style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.staleSub', { date: f.day(stale[0]!.asOf) })}</Text>
@@ -145,7 +146,7 @@ export function InvestingSegment() {
       ) : null}
 
       {groups.length > 0 ? (
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
+        <View style={[styles.card, { backgroundColor: colors.surface, ...shadows.card }]}>
           <Text style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.allocationTitle')}</Text>
           <StackedBar
             segments={groups.map(([type, pct], i) => ({ key: type, value: pct, swatch: SWATCHES[i % SWATCHES.length]! }))}
@@ -182,7 +183,7 @@ export function InvestingSegment() {
 
 const styles = StyleSheet.create({
   stack: { gap: space.gapSm },
-  card: { gap: space.gapSm, borderWidth: 1, borderRadius: radii.card, padding: space.cardPadLg },
+  card: { gap: space.gapSm, borderRadius: radii.card, padding: space.cardPadLg },
   center: { alignItems: 'center' },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapSm },
   holdingRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm, padding: space.cardPad, minHeight: space.touchMin },
