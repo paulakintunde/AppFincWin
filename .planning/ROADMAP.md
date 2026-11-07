@@ -1196,9 +1196,9 @@ Plans:
 - [x] 06-21-PLAN.md — Calculator blocks and Grow charts (split from 06-09) (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 06-11-PLAN.md — [BLOCKING] production schema push, owner-gated with hard stops (W4)
-- [ ] 06-12-PLAN.md — Goal and safety-net data hooks, incl. use-as-safety-net (D-29) (W4)
-- [ ] 06-13-PLAN.md — Calculators page with four typed calculators, D-21 (W4)
+- [x] 06-11-PLAN.md — [BLOCKING] production schema push, owner-gated with hard stops (W4)
+- [x] 06-12-PLAN.md — Goal and safety-net data hooks, incl. use-as-safety-net (D-29) (W4)
+- [x] 06-13-PLAN.md — Calculators page with four typed calculators, D-21 (W4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 06-14-PLAN.md — Debt, holding, lot and net-worth data hooks (W5)
