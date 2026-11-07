@@ -129,3 +129,40 @@ Owner context (2026-11-06): Decide is switched on for testers now (separate task
 
 *Phase: 06-grow*
 *Context gathered: 2026-11-06*
+
+## Owner device-check feedback (2026-11-07, plan 06-20 Task 3)
+
+Owner checked Grow on the Pixel 9 (dev client): "otherwise it looks mostly good", approved GL-01..GL-05, and asked for the changes below. Research: `06-UI-AUDIT-OWNER.md`, `06-CRUD-UX-RESEARCH.md`, `06-VISUAL-DEPTH-RESEARCH.md`.
+
+- **D-30 Payoff plan reveal:** the debt payoff plan matches the prototype, and its three rows (Minimum only, Extra each month, Once, today) each open on tap (Option B in 06-UI-AUDIT-OWNER.md).
+  - The open row holds its own control: a stepper, or $500 / $1,000 / $2,500 / Type chips.
+  - It shows the debt-free date with the before value and how much sooner, and the interest with the before value and how much less.
+  - The button follows the open row and names its start date.
+  - Order columns (2+ debts) follow the stepper.
+  - One debt shows the greyed order switch and one note.
+  - Dates appear wherever a time is implied. Fixes from the audit: the stepper value is invisible, and "Use extra" ignores the selected row.
+  - The same reveal appears on debt detail.
+- **D-31 Visual depth, app-wide:**
+  - `canvas` becomes #F6F4EE (the §2 `fill6` value).
+  - One soft card shadow token goes on every card, Grow included, plus a light `edge` shadow for list-row cards.
+  - A new `bodyStrong` (600) role is used for item names and row amounts in cards.
+  - `inkFaint` text never sits on `canvas`.
+  - CLAUDE.md's design-fidelity rule is amended to match (wording in 06-VISUAL-DEPTH-RESEARCH.md).
+  - The Pixel text-fit matrix is re-run.
+- **D-32 Grow editing:** all 10 improvements in 06-CRUD-UX-RESEARCH.md go into Phase 6:
+  - edit or remove an investment entry;
+  - edit a holding;
+  - stop a debt's extra payment;
+  - past payments on debt detail;
+  - tapping a goal or safety-net history row;
+  - "1 to confirm" badges and a one-tap Confirm;
+  - swipe and ⋯ (more) row actions;
+  - change the safety net's account, and a way into the account rate (APY);
+  - one remove style and one header Edit style, plus the missing empty-state buttons;
+  - "+ Add" rows inside the lists, and "Change in the payoff plan" opening the Debts segment.
+
+  Also:
+  - Check that Activity's "Mark paid" on a goal's Expected line goes through the same confirm path as Grow, so the two cannot disagree.
+  - Fix the audit bug where a net made in the app (or a goal turned into the net) starts unconfirmed and wrongly shows "We moved your safety net here".
+  - The hero label reads "Saved across N goals and the safety net" when the net is counted.
+- **D-33 One-off debt payment:** "Once, today" is both a what-if and savable. "Use $1,000 once" records a one-off Expected payment. This needs a new RPC (new migration) and a second owner-approved production push, with the same stop rules as 06-11. The engine's multi-debt strategy gains a lump option, with 100% coverage.
