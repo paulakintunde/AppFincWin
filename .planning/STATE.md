@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 6 plans written (docs/06-plans); Phase 06.1 Decide screens inserted, discuss-phase next
+stopped_at: Phase 06.1 UI-SPEC approved; next /gsd-plan-phase 06.1 (build waits for Grow wave 1)
 last_updated: "2026-11-06T21:55:00.000Z"
-last_activity: 2026-11-06 -- Phase 06.1 (Decide screens from the prototype) inserted after Phase 6
+last_activity: 2026-11-06 -- Phase 06.1 context (D-01..D-19) and UI-SPEC approved (PR #99)
 progress:
   total_phases: 29
   completed_phases: 11
