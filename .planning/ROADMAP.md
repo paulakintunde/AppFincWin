@@ -1205,9 +1205,9 @@ Plans:
 - [x] 06-15-PLAN.md — Grow tab shell, Goals segment and home cards (W5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 06-17-PLAN.md — Debt screens: payoff plan side by side, add debt, sale sheet (W6)
-- [ ] 06-18-PLAN.md — Investing screens and account APY (W6)
-- [ ] 06-22-PLAN.md — Goal detail, money moves, new goal sheet, and "Use as my safety net" (D-29) (split from 06-15) (W6)
+- [x] 06-17-PLAN.md — Debt screens: payoff plan side by side, add debt, sale sheet (W6)
+- [x] 06-18-PLAN.md — Investing screens and account APY (W6)
+- [x] 06-22-PLAN.md — Goal detail, money moves, new goal sheet, and "Use as my safety net" (D-29) (split from 06-15) (W6)
 
 **Wave 7** *(blocked on Wave 6 completion)*
 - [ ] 06-16-PLAN.md — Safety net screens (create, size, monthly), first-open sheet, Your money rules (W7)
