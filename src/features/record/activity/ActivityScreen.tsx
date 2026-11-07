@@ -64,7 +64,7 @@ import { HeaderIconCluster } from './header/HeaderIconCluster';
 import { clearAllExceptUnpaid, clearOne, countActiveFilters, filterChipModels } from './header/activeFilters';
 import { compactMonthLabel } from './header/monthLayout';
 import { useActivityViewModel, useRowFlow, type ActivityView } from './useActivityViewModel';
-import { useRowActions } from './useRowActions';
+import { isGoalLine, useRowActions } from './useRowActions';
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as unknown as typeof FlashList<ActivityItem>;
 
@@ -221,7 +221,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
 
   const onBulkMarkPaid = () => {
     if (selectedRows.length === 0) return setHint('selectFirst');
-    const targets = selectedRows.filter((r) => r.status === 'pending' && r.transfer_id === null);
+    const targets = selectedRows.filter((r) => r.status === 'pending' && r.transfer_id === null && !isGoalLine(r, seriesById));
     if (bulkCtx === null) return undefined;
     if (targets.length === 0) return setHint('nothingToMarkPaid');
     setHint(null);

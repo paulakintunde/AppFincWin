@@ -63,7 +63,7 @@ export interface BulkPatchVars {
 
 type TransactionList = WithPending<TransactionRow>[];
 
-type BulkRow = Pick<TransactionRow, 'id' | 'version' | 'local_date' | 'status' | 'household_id' | 'transfer_id'>;
+type BulkRow = Pick<TransactionRow, 'id' | 'version' | 'local_date' | 'status' | 'household_id' | 'transfer_id' | 'goal_id'>;
 interface BulkContext {
   householdId: string;
   ownerId: string;
@@ -316,7 +316,8 @@ export function useBulkMarkPaid(): {
   return {
     markPaid(rows: readonly BulkRow[], ctx: BulkContext, today: string): string {
       // D-50/D-56: transfer legs are always paid in this phase and are left alone.
-      const targets = uniqueRows(rows).filter((r) => r.status === 'pending' && !r.transfer_id);
+      // 06-34 (D-32, ARC-15): a goal's Expected line is confirmed through confirm_goal_contribution, never patched here.
+      const targets = uniqueRows(rows).filter((r) => r.status === 'pending' && !r.transfer_id && !r.goal_id);
       if (targets.length === 0) throw new RangeError('nothing to mark');
       const dates = targets.map((r) => markPaidDate(today, r.local_date));
       return apply({
