@@ -27,9 +27,9 @@ export function useRecordLinks(): RecordLink[] {
       glyph: 'calendar',
       label: t('grow.calc.page.recordGoal', { name: goal.name }),
       sublabel: t('grow.calc.page.recordGoalSub', {
-        saved: calc.money(goal.saved),
-        target: calc.money(goal.target),
-        monthly: calc.money(goal.monthlyAmount ?? 0),
+        saved: money.money(goal.saved, calc.currency),
+        target: money.money(goal.target, calc.currency),
+        monthly: money.money(goal.monthlyAmount ?? 0, calc.currency),
       }),
       onPress: () => pushOnce(`/grow/calculators/goal/${goal.id}` as Href),
     });
@@ -55,8 +55,8 @@ export function useRecordLinks(): RecordLink[] {
       glyph: 'invest',
       label: t('grow.calc.page.recordGrowth'),
       sublabel: t('grow.calc.page.recordGrowthSub', {
-        value: calc.money(investing.model.totals.value),
-        monthly: calc.money(investing.model.monthlyIn),
+        value: money.money(investing.model.totals.value, calc.currency),
+        monthly: money.money(investing.model.monthlyIn, calc.currency),
       }),
       onPress: () =>
         pushOnce({

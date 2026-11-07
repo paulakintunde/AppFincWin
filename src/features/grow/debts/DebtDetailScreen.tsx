@@ -16,6 +16,7 @@ import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadows } from '@/theme/tokens';
 import { textRole } from '@/theme/typography';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { hapticLight } from '@/ui/haptics';
@@ -59,7 +60,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
 
   const label = { ...textRole(pairing, 'label'), color: colors.inkMuted };
   const body = { ...textRole(pairing, 'body'), color: colors.ink };
-  const card = [styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }];
+  const card = [styles.card, { backgroundColor: colors.surface, ...shadows.card }];
 
   if (read.status === 'loading') {
     return (
@@ -228,7 +229,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
 const styles = StyleSheet.create({
   stack: { gap: space.groupGap },
   hero: { gap: space.gapSm },
-  card: { borderWidth: 1, borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapSm },
+  card: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapSm },
   center: { alignItems: 'center' },
   block: { borderRadius: radii.card },
   fact: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd, minHeight: space.touchMin },

@@ -9,6 +9,7 @@ import { Stepper } from '@/features/grow/ui/Stepper';
 import { useT } from '@/i18n';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadows } from '@/theme/tokens';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
 import { RadioDot } from '@/ui/RadioDot';
@@ -93,7 +94,7 @@ export function PayoffPlanCard({
         ];
 
   return (
-    <View testID="grow-payoff-plan" style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
+    <View testID="grow-payoff-plan" style={[styles.card, { backgroundColor: colors.surface, ...shadows.card }]}>
       <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
         {t('grow.debts.planTitle')}
       </Text>
@@ -198,7 +199,7 @@ export function PayoffPlanCard({
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapMd },
+  card: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapMd },
   columns: { flexDirection: 'row', gap: space.gapMd },
   column: { flex: 1, borderWidth: 2, borderRadius: radii.card, padding: space.cardPad, gap: 2, minHeight: space.touchMin },
   columnHead: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm, marginBottom: space.gapSm },

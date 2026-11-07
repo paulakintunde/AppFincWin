@@ -8,6 +8,7 @@ import { useAccounts } from '@/data/queries/accounts';
 import { useSaveDebtPlan } from '@/data/mutations/growDebts';
 import type { PayoffOrder } from '@/engine/payoff';
 import { useT } from '@/i18n';
+import { AccTile } from '@/features/grow/ui/AccTile';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { ProgressBar } from '@/features/grow/ui/ProgressBar';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
@@ -15,7 +16,7 @@ import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
-import { ACCENT_TINT_OPACITY } from '@/theme/tokens';
+import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { hapticLight } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
@@ -46,7 +47,7 @@ export function DebtsSegment({ addOpen = false, onAddClosed }: DebtsSegmentProps
     setOwnOpen(false);
     onAddClosed?.();
   }, [onAddClosed]);
-  const card = [styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }];
+  const card = [styles.card, { backgroundColor: colors.surface, ...shadows.card }];
   const sheet = open ? <AddDebtSheet visible onClose={closeAdd} /> : null;
 
   if (read.status === 'loading') {
@@ -145,7 +146,7 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
   };
 
   const line = { ...textRole(pairing, 'label'), color: colors.inkMuted };
-  const card = [styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }];
+  const card = [styles.card, { backgroundColor: colors.surface, ...shadows.card }];
 
   const row = (d: DebtLine, paidInFull: boolean) => {
     const stored = rows.get(d.id);
@@ -168,16 +169,13 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
         onPress={() => pushOnce(debtHref(d.id))}
         style={({ pressed }) => [styles.row, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
       >
-        <View style={[styles.tile, { backgroundColor: colors.fill1 }]}>
-          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.accent, opacity: ACCENT_TINT_OPACITY, borderRadius: radii.glyphTile }]} />
-          <GrowGlyph name={d.kind === 'card' ? 'card' : 'debt'} color={colors.accent} size={22} />
-        </View>
+        <AccTile glyph={d.kind === 'card' ? 'card' : 'debt'} />
         <View style={styles.flex}>
-          <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{d.name}</Text>
+          <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{d.name}</Text>
           <Text style={line}>{sub}</Text>
           {d.minimumEstimated ? <StateBadge tone="slate" shape="sQuestion" label={t('grow.debts.minimumEstimated')} /> : null}
         </View>
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, fontVariant: ['tabular-nums'] }}>{fmt.money(d.point.balance, d.currency)}</Text>
+        <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, fontVariant: ['tabular-nums'] }}>{fmt.money(d.point.balance, d.currency)}</Text>
         <GrowGlyph name="chev" color={colors.inkFaint} size={16} />
       </Pressable>
     );
@@ -249,10 +247,9 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
 
 const styles = StyleSheet.create({
   stack: { gap: space.groupGap },
-  card: { borderWidth: 1, borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapSm },
+  card: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapSm },
   center: { alignItems: 'center' },
   block: { borderRadius: radii.card },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, minHeight: 64 },
-  tile: { width: 36, height: 36, borderRadius: radii.glyphTile, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   flex: { flex: 1, gap: 2, alignItems: 'flex-start' },
 });

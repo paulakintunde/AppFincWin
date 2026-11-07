@@ -8,6 +8,7 @@ import { CalcResultCard } from '@/features/grow/ui/CalcResultCard';
 import { HowWorkedOutBox } from '@/features/grow/ui/HowWorkedOutBox';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Text } from '@/ui/Text';
@@ -80,7 +81,7 @@ export function DebtPayoffCalculator() {
     <CalcPage title={t('grow.calc.payoff.title')}>
       <FooterNote text={t('grow.calc.payoff.subtitle')} />
       {debts.map((d, index) => (
-        <View key={d.id} testID={`debt-${index + 1}`} style={[styles.debt, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
+        <View key={d.id} testID={`debt-${index + 1}`} style={[styles.debt, { backgroundColor: colors.surface, ...shadows.card }]}>
           <Text accessibilityRole="header" style={{ ...textRole(pairing, 'label'), color: colors.ink }}>
             {name(index)}
           </Text>
@@ -190,7 +191,7 @@ function balanceDetail(t: T, f: CalcFormat, d: DebtInput, index: number): string
 }
 
 const styles = StyleSheet.create({
-  debt: { borderWidth: 1, borderRadius: radii.card, padding: space.cardPad, gap: space.gapMd },
+  debt: { borderRadius: radii.card, padding: space.cardPad, gap: space.gapMd },
   textButton: { minHeight: space.touchMin, justifyContent: 'center', alignSelf: 'flex-start', paddingHorizontal: 4 },
   orders: { flexDirection: 'row', gap: space.gapMd },
   stacked: { flexDirection: 'column' },

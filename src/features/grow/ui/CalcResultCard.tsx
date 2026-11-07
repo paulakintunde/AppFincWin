@@ -5,6 +5,7 @@ import { AccessibilityInfo, Platform, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
 import { useSettledLabel } from '@/features/decide/check/useSettledLabel';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadows } from '@/theme/tokens';
 import { radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
@@ -41,7 +42,7 @@ export function CalcResultCard({ value, caption, announcement, children }: CalcR
       accessible
       accessibilityLiveRegion="polite"
       accessibilityLabel={settled}
-      style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]}
+      style={[styles.card, { backgroundColor: colors.surface, ...shadows.card }]}
     >
       {caption ? (
         <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkMuted }}>{caption}</Text>
@@ -61,5 +62,5 @@ export function CalcResultCard({ value, caption, announcement, children }: CalcR
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: radii.card, padding: space.cardPad, gap: 6 },
+  card: { borderRadius: radii.card, padding: space.cardPad, gap: 6 },
 });

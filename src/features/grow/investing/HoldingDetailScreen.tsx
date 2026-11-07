@@ -20,6 +20,7 @@ import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadows } from '@/theme/tokens';
 import { textRole } from '@/theme/typography';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Pill } from '@/ui/Pill';
@@ -85,7 +86,7 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
   if (holding === null && holdingsQuery.data !== undefined) {
     return (
       <DetailScreen title="">
-        <View testID="grow-holding-missing" style={[styles.card, styles.missing, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
+        <View testID="grow-holding-missing" style={[styles.card, styles.missing, { backgroundColor: colors.surface, ...shadows.card }]}>
           <Text accessibilityRole="header" style={{ ...textRole(pairing, 'body'), color: colors.ink, textAlign: 'center' }}>{t('grow.investing.notFoundTitle')}</Text>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, textAlign: 'center' }}>{t('grow.common.notFoundBody')}</Text>
           <Pill label={t('grow.common.back')} variant="secondary" onPress={() => router.back()} />
@@ -143,7 +144,7 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
     router.back();
   };
 
-  const card = [styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }];
+  const card = [styles.card, { backgroundColor: colors.surface, ...shadows.card }];
 
   return (
     <DetailScreen title={holding.name}>
@@ -257,7 +258,7 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
 const styles = StyleSheet.create({
   stack: { gap: space.gapSm },
   missing: { alignItems: 'center' },
-  card: { gap: space.gapSm, borderWidth: 1, borderRadius: radii.card, padding: space.cardPadLg },
+  card: { gap: space.gapSm, borderRadius: radii.card, padding: space.cardPadLg },
   gainRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapSm, padding: space.cardPad, minHeight: space.touchMin },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

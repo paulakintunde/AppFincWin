@@ -4,10 +4,12 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useT } from '@/i18n';
-import { GrowGlyph, type GrowGlyphName } from '@/features/grow/ui/GrowGlyph';
+import { AccTile } from '@/features/grow/ui/AccTile';
+import type { GrowGlyphName } from '@/features/grow/ui/GrowGlyph';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
+import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { Row } from '@/ui/Row';
 import { Text } from '@/ui/Text';
@@ -37,7 +39,7 @@ const NO_LINKS: readonly RecordLink[] = [];
 export function CalculatorsScreen({ recordLinks = NO_LINKS }: CalculatorsScreenProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const cardStyle = [styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }];
+  const cardStyle = [styles.card, { backgroundColor: colors.surface, ...shadows.card }];
   return (
     <DetailScreen title={t('grow.calc.page.title')}>
       <View style={styles.page}>
@@ -46,7 +48,7 @@ export function CalculatorsScreen({ recordLinks = NO_LINKS }: CalculatorsScreenP
           {CALCULATORS.map((c) => (
             <Row
               key={c.key}
-              leading={<GrowGlyph name={c.glyph} color={colors.accent} size={22} />}
+              leading={<AccTile glyph={c.glyph} />}
               label={t(c.title as 'grow.calc.page.loan')}
               sublabel={t(c.sub as 'grow.calc.page.loanSub')}
               chevron
@@ -63,7 +65,7 @@ export function CalculatorsScreen({ recordLinks = NO_LINKS }: CalculatorsScreenP
               {recordLinks.map((l) => (
                 <Row
                   key={l.key}
-                  leading={<GrowGlyph name={l.glyph} color={colors.accent} size={22} />}
+                  leading={<AccTile glyph={l.glyph} />}
                   label={l.label}
                   sublabel={l.sublabel}
                   chevron
@@ -81,5 +83,5 @@ export function CalculatorsScreen({ recordLinks = NO_LINKS }: CalculatorsScreenP
 
 const styles = StyleSheet.create({
   page: { gap: space.gapMd, paddingTop: space.gapSm },
-  card: { borderWidth: 1, borderRadius: radii.card, paddingHorizontal: space.cardPad },
+  card: { borderRadius: radii.card, paddingHorizontal: space.cardPad },
 });
