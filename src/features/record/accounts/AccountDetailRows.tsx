@@ -1,7 +1,10 @@
 // ACT-17, CONTEXT D-26, UI-SPEC 14: the account's pending split. Coming in, Going out and the
 // balance after pending, all from the engine's pendingSplit over the server's pending sums.
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import type { Href } from 'expo-router';
+import { pushOnce } from '@/shell/navigation/pushOnce';
+import { ACCOUNT_RATE_TEXT } from '@/features/record/accounts/accountRateText';
 import { Text } from '@/ui/Text';
 import type { AccountRow } from '@/db/rows';
 import type { AccountBalanceView } from '@/data/queries/activity';
@@ -102,6 +105,17 @@ export function AccountDetailRows({ account, balance, split, horizonMonth }: Acc
     },
   ];
 
+  // 06 GRW-11: a rate, when one is set, shows as a row and opens the growth calculator prefilled (an illustration, nothing saved).
+  const rate = account.interest_rate ?? null;
+  if (rate !== null && rate !== '') {
+    rows.push({
+      key: 'interest',
+      label: ACCOUNT_RATE_TEXT.detailLabel,
+      value: ACCOUNT_RATE_TEXT.detailValue(rate),
+      color: colors.ink,
+    });
+  }
+
   return (
     <View style={styles.block}>
       {rows.map((r) => (
@@ -110,6 +124,21 @@ export function AccountDetailRows({ account, balance, split, horizonMonth }: Acc
           <Text style={{ ...body, color: r.color }}>{r.value}</Text>
         </View>
       ))}
+      {rate !== null && rate !== '' ? (
+        <Pressable
+          testID="account-growth-row"
+          accessibilityRole="button"
+          onPress={() =>
+            pushOnce({
+              pathname: '/grow/calculators/growth',
+              params: { start: String(Math.max(0, paid ?? 0)), rate, monthly: '0' },
+            } as Href)
+          }
+          style={styles.growth}
+        >
+          <Text style={{ ...body, color: colors.accent }}>{t('grow.investing.detail.seeGrowth')}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -117,4 +146,5 @@ export function AccountDetailRows({ account, balance, split, horizonMonth }: Acc
 const styles = StyleSheet.create({
   block: { gap: space.gapSm },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: space.gapSm },
+  growth: { minHeight: space.touchMin, justifyContent: 'center' },
 });

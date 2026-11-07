@@ -13,6 +13,7 @@ jest.mock('react-native-safe-area-context', () => ({
 let mockV3 = false;
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockV3 }) }));
 jest.mock('@/data/mutations/accounts', () => ({ useAddAccount: () => ({ add: jest.fn() }), useEditAccount: () => ({ edit: jest.fn() }) }));
+jest.mock('@/data/mutations/growHoldings', () => ({ useSetAccountRate: () => ({ set: jest.fn(() => 'rate-step') }) }));
 jest.mock('@/data/mutations/accountUse', () => ({ useSaveAccountUse: () => ({ save: jest.fn() }) }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => 'step-1' }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: jest.fn() }) }));

@@ -42,6 +42,8 @@ jest.mock('@/data/mutations/accounts', () => ({
   useAddAccount: () => ({ add: mockAdd }),
   useEditAccount: () => ({ edit: mockEdit }),
 }));
+// 06-18: AccountSheet takes the rate write from the Grow holdings mutations (needs a query client, none here).
+jest.mock('@/data/mutations/growHoldings', () => ({ useSetAccountRate: () => ({ set: jest.fn(() => 'rate-step') }) }));
 jest.mock('@/data/mutations/accountDelete', () => ({ useDeleteAccount: () => ({ remove: jest.fn() }) }));
 jest.mock('@/data/queries/pendingSplit', () => ({ usePendingSplit: () => ({ split: new Map(), isLoading: false }) }));
 jest.mock('../useAccountUsage', () => ({ useAccountUsage: () => ({ usage: null }) }));
