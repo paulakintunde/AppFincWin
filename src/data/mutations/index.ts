@@ -41,6 +41,7 @@ import { registerIncomeTagMutations } from './incomeTags';
 import { registerRefundLinkMutations } from './refundLinks';
 import { registerDecideAnswerMutations } from './decideAnswers';
 import { registerRecordBoughtMutations } from './boughtWrite';
+import { registerGrowGoalMutations } from './growGoals';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
@@ -95,4 +96,6 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerDecideAnswerMutations(qc);
   // 05.3-13: Record as bought (v3 write path).
   registerRecordBoughtMutations(qc);
+  // 06-12: Grow goals and the safety net.
+  registerGrowGoalMutations(qc);
 }
