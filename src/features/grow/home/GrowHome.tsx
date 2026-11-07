@@ -2,7 +2,7 @@
 // content in place (no navigation, no haptic), the Tools row and the footer. The FAB label follows the segment.
 // The FAB opens the sheet of the selected segment: NewGoalSheet, AddDebtSheet (through DebtsSegment addOpen / onAddClosed) or
 // AddHoldingSheet. 06-16 adds the first-open safety-net confirm (D-07) over the screen.
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useT } from '@/i18n';
@@ -92,13 +92,16 @@ export function GrowHome({ sheets }: GrowHomeProps = {}) {
   const [newGoalOpen, setNewGoalOpen] = useState(params.newGoal === '1');
   const [prefill, setPrefill] = useState<NewGoalPrefill | undefined>(() => (params.newGoal === '1' ? prefillFromParams(params) : undefined));
   // A later link (the Decide setup steps, Create from Decide) reaches an already-mounted tab through new params.
-  useEffect(() => {
+  const paramKey = [params.segment, params.newGoal, params.name, params.target, params.checkId].join('|');
+  const [seenKey, setSeenKey] = useState(paramKey);
+  if (paramKey !== seenKey) {
+    setSeenKey(paramKey);
     if (params.segment !== undefined) setPicked(segmentParam(params.segment));
     if (params.newGoal === '1') {
       setPrefill(prefillFromParams(params));
       setNewGoalOpen(true);
     }
-  }, [params.segment, params.newGoal, params.name, params.target, params.checkId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
   const [addDebtOpen, setAddDebtOpen] = useState(false);
   const [addHoldingOpen, setAddHoldingOpen] = useState(false);
 
