@@ -52,3 +52,11 @@ Two atomic security-definer RPCs for Grow debts: `save_debt_plan` and `record_de
 - eb4a33f4: test(06-07): pgTAP 93
 
 ## Self-Check: PASSED (files exist, commits present)
+
+## Follow-up: undo gap closed
+
+The "Undo gap (known)" above is fixed. `save_debt_plan` now stores its server-built step with `allow_system_keys = true`, and `apply_patches` (20261106000100) admits `debts.payoff_extra` and `debts.extra_series_id` only as system keys, the same way 06-06 handles `is_safety_net`. Undo of a plan save now puts back the old extra, series link, order and series rows. A plain client `apply_patches` call, or a client-recorded undo step, that sets either column is still refused. `record_debt_sale` writes neither column, so it is unchanged. pgTAP 93 covers both cases (plan 44).
+
+**Note for 06-14:** the client contract does not change. Both RPCs already built their undo ops on the server; `p_undo_step` is still `{ id, label_key, label_params }`. Two client points:
+- After Undo, `payoff_extra` is correct again, so the client may read it directly instead of working it out from the live series.
+- A step stored with `allow_system_keys` replays under `fincwin.system_restamp`, so Undo does not bump the version on the debt or the series rows. After an Undo of `debtPlanSaved`, invalidate the debts and recurring-series queries; do not rely on a version change.

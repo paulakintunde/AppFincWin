@@ -99,7 +99,8 @@ alter table public.debts add column if not exists payoff_extra bigint not null d
 alter table public.debts add column if not exists extra_series_id uuid references public.recurring_series(id) on delete set null;  -- 06
 grant insert (started_balance, payoff_order) on public.debts to authenticated;  -- 06
 grant update (started_balance, payoff_order) on public.debts to authenticated;  -- 06
--- payoff_extra and extra_series_id: no client grant; written only by save_debt_plan (plan 07).
+-- payoff_extra and extra_series_id: no client grant; written only by save_debt_plan (plan 07). apply_patches admits
+-- them only as system keys, i.e. when undo_replay replays save_debt_plan's own server-built step (allow_system_keys).
 
 -- 5. holdings (owner-private) -----------------------------------------------------------------------------------
 create table public.holdings (
@@ -400,7 +401,7 @@ begin
         || case when v_system then array['status', 'decided_at', 'verdict_at_decision', 'estimate_day_one', 'estimate_monthly',
           'wait_monthly', 'ready_by', 'broke_line', 'cooling_off_at', 'estimate_monthly_payment', 'estimate_running'] else '{}'::text[] end  -- 05
       when 'debts' then array['name', 'balance', 'apr', 'minimum_payment', 'secured', 'term_months', 'deleted_at', 'is_housing', 'pays_in_full', 'paid_off_on', 'due_day', 'started_balance', 'payoff_order']  -- 05-119 (R18.4), 05.2, 05.2 paid off, 05.4
-        || case when v_system then array['check_id'] else '{}'::text[] end  -- 05
+        || case when v_system then array['check_id', 'payoff_extra', 'extra_series_id'] else '{}'::text[] end  -- 05; 06 (save_debt_plan undo only)
       when 'decide_links' then array['deleted_at']  -- 05
       when 'decide_changes' then array['kind', 'name', 'monthly_amount', 'currency', 'start_month', 'end_month', 'deleted_at']  -- 05 (D-27)
       when 'savings_goals' then array['name', 'target', 'ready_by', 'opening_saved', 'done_at', 'deleted_at',
@@ -677,6 +678,8 @@ begin
         when 'savings_goals.is_safety_net' then 'boolean'  -- 06
         when 'debts.started_balance' then 'bigint'  -- 06
         when 'debts.payoff_order' then 'text'  -- 06
+        when 'debts.payoff_extra' then 'bigint'  -- 06 (system key: save_debt_plan undo)
+        when 'debts.extra_series_id' then 'uuid'  -- 06 (system key: save_debt_plan undo)
         when 'accounts.interest_rate' then 'text'  -- 06
         when 'holdings.name' then 'text'  -- 06
         when 'holdings.type' then 'text'  -- 06

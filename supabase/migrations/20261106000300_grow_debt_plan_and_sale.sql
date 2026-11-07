@@ -18,9 +18,11 @@
 -- debts.payoff_extra and debts.extra_series_id have no client grant (20261106000100); only save_debt_plan writes them.
 -- Independent of 20261106000200 (06-06): nothing here reads an object created there.
 --
--- Undo note: apply_patches' debts allowlist covers payoff_order, balance and paid_off_on but not payoff_extra or
--- extra_series_id, so Undo of a plan save restores the Expected series and the order; the client reads the extra
--- from the live series, not from payoff_extra alone.
+-- Undo note: both RPCs build their undo ops server-side (the client sends only id, label_key and label_params).
+-- save_debt_plan's step is stored with allow_system_keys, so on replay apply_patches admits payoff_extra and
+-- extra_series_id (system keys in 20261106000100) and Undo puts back the old extra, the old series link, the old
+-- order and the series rows. A plain client apply_patches call still cannot set either column.
+-- record_debt_sale writes neither column, so its step stays a normal one.
 
 -- Validates an undo step before anything is locked or written (record_decide_outcome pattern). Returns the step id.
 create or replace function public.grow_check_undo_step(p_undo_step jsonb, p_label_key text, p_fn text)
@@ -212,12 +214,16 @@ begin
   for v_change in select e.value from jsonb_array_elements(v_changes) e loop
     v_ops := v_ops || public.series_change_inverse(v_change);
   end loop;
+  -- The debt restore goes last: the series rows are back first, so extra_series_id points at a restored series.
   v_ops := v_ops || jsonb_build_array(jsonb_build_object(
     'entity', 'debts', 'id', p_debt_id, 'expectedVersion', v_new_version,
-    'patch', jsonb_build_object('payoff_order', to_jsonb(v_debt.payoff_order))));
+    'patch', jsonb_build_object('payoff_order', to_jsonb(v_debt.payoff_order),
+                                'payoff_extra', v_debt.payoff_extra,
+                                'extra_series_id', to_jsonb(v_debt.extra_series_id))));
 
-  insert into public.undo_log (id, owner_id, label_key, label_params, ops)
-  values (v_step_id, v_uid, 'debtPlanSaved', coalesce(p_undo_step -> 'label_params', '{}'::jsonb), v_ops);
+  -- allow_system_keys: payoff_extra and extra_series_id are server-only, so only this server-built step may restore them.
+  insert into public.undo_log (id, owner_id, label_key, label_params, ops, allow_system_keys)
+  values (v_step_id, v_uid, 'debtPlanSaved', coalesce(p_undo_step -> 'label_params', '{}'::jsonb), v_ops, true);
 
   return jsonb_build_object('status', 'applied', 'series_id', v_new_series, 'undo_step_id', v_step_id);
 end;
