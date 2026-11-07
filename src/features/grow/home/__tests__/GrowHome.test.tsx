@@ -36,6 +36,13 @@ jest.mock('@/features/record/useRecordContext', () => ({
 }));
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: { saving_floor: 15000 } }) }));
 
+// 06-22: the sheet itself is covered in goals/__tests__/newGoalSheet.test.tsx; here only that the FAB opens it.
+jest.mock('@/features/grow/goals/NewGoalSheet', () => {
+  const R = require('react');
+  const { Text: RNText } = require('react-native');
+  return { NewGoalSheet: (p: { visible: boolean }) => (p.visible ? R.createElement(RNText, { testID: 'new-goal-sheet' }, 'new goal sheet') : null) };
+});
+
 let mockRead: GoalsRead;
 jest.mock('@/features/grow/goals/useGoalsRead', () => ({ useGoalsRead: () => mockRead }));
 let mockFlags: Record<string, boolean> | null = null;
@@ -120,6 +127,15 @@ describe('Grow home shell', () => {
       lastFab()?.onPress();
     });
     expect(sheets).toHaveBeenLastCalledWith(expect.objectContaining({ newGoalOpen: true }));
+  });
+
+  it('06-22: the Goals FAB opens the NewGoalSheet', async () => {
+    await renderHome();
+    expect(screen.queryByTestId('new-goal-sheet')).toBeNull();
+    await act(async () => {
+      lastFab()?.onPress();
+    });
+    expect(screen.getByTestId('new-goal-sheet')).toBeTruthy();
   });
 
   it('Basics: only the safety net card and the Choose what to track card, no FAB', async () => {
