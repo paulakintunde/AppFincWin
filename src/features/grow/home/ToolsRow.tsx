@@ -12,6 +12,7 @@ import { Row } from '@/ui/Row';
 import { Text } from '@/ui/Text';
 
 export const CALCULATORS_HREF = '/grow/calculators' as Href;
+export const LINES_HREF = '/grow/lines' as Href;
 
 export function ToolsRow() {
   const t = useT();
@@ -29,6 +30,14 @@ export function ToolsRow() {
           accessibilityLabel={`${t('grow.home.toolsSection')}, ${t('grow.home.toolsCalculators')}`}
           chevron
           onPress={() => pushOnce(CALCULATORS_HREF)}
+        />
+        <Row
+          leading={<GrowGlyph name="lock" color={colors.accent} size={22} />}
+          label={t('grow.lines.title')}
+          sublabel={t('grow.home.toolsRulesSub')}
+          accessibilityLabel={`${t('grow.home.toolsSection')}, ${t('grow.lines.title')}`}
+          chevron
+          onPress={() => pushOnce(LINES_HREF)}
         />
       </View>
     </View>
