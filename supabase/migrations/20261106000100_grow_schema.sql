@@ -39,7 +39,9 @@ begin
     if new.account_id is not null and not exists (select 1 from public.accounts a where a.id = new.account_id and a.household_id = new.household_id) then  -- 05.2
       raise exception 'savings_goals: account is not in this household' using errcode = '42501';  -- 05.2
     end if;  -- 05.2
-    if new.check_id is not null and not exists (select 1 from public.decide_checks c where c.id = new.check_id and c.household_id = new.household_id and c.created_by = (select auth.uid())) then  -- 06
+    -- 06: compare to the stamped created_by (auth.uid() for every client; clients have no created_by grant), so the
+    -- Wait RPC and owner-role writers with no JWT still link their own check. Same rule as guard_holding_lot.
+    if new.check_id is not null and not exists (select 1 from public.decide_checks c where c.id = new.check_id and c.household_id = new.household_id and c.created_by = new.created_by) then  -- 06
       raise exception 'savings_goals: check is not yours' using errcode = '42501';  -- 06
     end if;  -- 06
     return new;
