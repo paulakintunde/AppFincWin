@@ -39,7 +39,7 @@ import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import { ToggleRow } from '@/ui/ToggleRow';
 import { goalHref } from '@/features/grow/home/GoalRow';
-import { monthStartFromText, nextRecordDate, planFromBy, planFromMonthly } from './goalPlanModel';
+import { isSafetyNetRow, monthStartFromText, nextRecordDate, planFromBy, planFromMonthly } from './goalPlanModel';
 import { seriesPayload } from './GoalPlanEditSheet';
 import { useGoalToast } from './useGoalToast';
 import { useGoalsRead } from './useGoalsRead';
@@ -174,7 +174,7 @@ function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
       if (trimmed !== goal.name) fields.name = trimmed;
       if (icon !== (goal.icon ?? null) && icon !== null) fields.icon = icon;
       if (finalTarget !== goal.target) fields.target = finalTarget;
-      if (locked !== (goal.locked === true) && goal.is_safety_net !== true) fields.locked = locked;
+      if (locked !== (goal.locked === true) && !isSafetyNetRow(goal)) fields.locked = locked;
       if (Object.keys(fields).length === 0) {
         onClose();
         return;
@@ -392,7 +392,7 @@ function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
             <>
               {nameBlock}
               {targetBlock}
-              {goal.is_safety_net === true ? null : lockBlock}
+              {isSafetyNetRow(goal) ? null : lockBlock}
             </>
           ) : step === 1 ? (
             nameBlock

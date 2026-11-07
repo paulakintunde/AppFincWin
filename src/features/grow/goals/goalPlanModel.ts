@@ -44,6 +44,11 @@ export function monthStartFromText(text: string): string | null {
   return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-01`;
 }
 
+/** True for the one flagged safety-net row. Screens read the flag here so only set_safety_net ever writes it. */
+export function isSafetyNetRow(row: { is_safety_net?: boolean }): boolean {
+  return row.is_safety_net === true;
+}
+
 export interface MonthlyPlan {
   /** The first of the month the monthly amount reaches the target in, or null when it does not within 50 years. */
   reachesOn: string | null;
