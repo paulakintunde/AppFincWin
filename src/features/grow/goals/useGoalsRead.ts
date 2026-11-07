@@ -6,6 +6,7 @@ import { useGoalLines, useSavingsGoalRows } from '@/data/queries/growGoals';
 import type { TransactionRow } from '@/db/rows';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { usePastContext, type PastContext } from '@/features/decide/past/usePastDecisions';
+import { planFromMonthly } from './goalPlanModel';
 import { goalPointsOf, safetyNetPointOf, type GoalPoint, type SafetyNetPoint, type ToHome } from '../connect';
 
 export type GoalsStatus = 'loading' | 'error' | 'ready';
@@ -21,6 +22,14 @@ export interface GoalsModel {
   monthlyIntoGoals: number;
   /** D-07: the migrated net has not been confirmed yet and has something worth confirming (a size or a saved amount). */
   needsNetConfirm: boolean;
+  /** D-32: Expected lines dated on or before today still waiting for a confirm, by goal id (the safety net included). */
+  pendingByGoal?: Record<string, number>;
+  /** Listed goals only (the safety net is not counted). */
+  goalCount?: number;
+  /** True when the safety net exists and its saved amount is inside totalSaved. */
+  netCounted?: boolean;
+  /** YYYY-MM-DD the net reaches its size at its monthly amount, or null when either is missing. */
+  netReachesOn?: string | null;
 }
 
 export interface GoalsRead {
@@ -32,14 +41,15 @@ export interface GoalsRead {
   today: string;
 }
 
-export const EMPTY_GOALS_MODEL: GoalsModel = { safetyNet: null, goals: [], totalSaved: 0, monthlyIntoGoals: 0, needsNetConfirm: false };
+export const EMPTY_GOALS_MODEL: GoalsModel = { safetyNet: null, goals: [], totalSaved: 0, monthlyIntoGoals: 0, needsNetConfirm: false, pendingByGoal: {}, goalCount: 0, netCounted: false, netReachesOn: null };
 
 /** Pure: the model from the rows and the goal-tagged lines. A goal whose money cannot convert is left out (never guessed). */
 export function buildGoalsModel(
   rows: readonly SavingsGoalRow[],
   lines: readonly TransactionRow[],
   toHome: ToHome,
-  home: string
+  home: string,
+  today?: string
 ): GoalsModel {
   const safetyNet = safetyNetPointOf(rows, lines, toHome, home);
   const goals = goalPointsOf(rows, lines, toHome);
@@ -54,7 +64,18 @@ export function buildGoalsModel(
     if (net !== undefined && net.monthly_amount !== null) monthlyIntoGoals += toHome(net.monthly_amount, net.currency) ?? 0;
   }
   const needsNetConfirm = safetyNet !== null && safetyNet.confirmedAt === null && (safetyNet.size !== null || safetyNet.saved > 0);
-  return { safetyNet, goals, totalSaved, monthlyIntoGoals, needsNetConfirm };
+  const pendingByGoal: Record<string, number> = {};
+  for (const l of lines) {
+    if (l.goal_id == null || l.status !== 'pending' || l.deleted_at !== null || (today !== undefined && l.local_date > today)) continue;
+    pendingByGoal[l.goal_id] = (pendingByGoal[l.goal_id] ?? 0) + 1;
+  }
+  let netReachesOn: string | null = null;
+  if (today !== undefined && safetyNet !== null && safetyNet.size !== null && safetyNet.size > 0) {
+    const net = rows.find((r) => r.id === safetyNet.goalId);
+    const monthly = net === undefined || net.monthly_amount === null ? 0 : (toHome(net.monthly_amount, net.currency) ?? 0);
+    if (monthly > 0) netReachesOn = planFromMonthly({ saved: safetyNet.saved, target: safetyNet.size, monthly, today }).reachesOn;
+  }
+  return { safetyNet, goals, totalSaved, monthlyIntoGoals, needsNetConfirm, pendingByGoal, goalCount: goals.length, netCounted: safetyNet !== null, netReachesOn };
 }
 
 export function toHomeOf(ctx: PastContext): ToHome {
@@ -73,8 +94,8 @@ export function useGoalsRead(): GoalsRead {
   const lines = linesQuery.data;
 
   const model = useMemo(
-    () => (rows === undefined ? EMPTY_GOALS_MODEL : buildGoalsModel(rows, lines ?? [], toHomeOf(ctx), ctx.home)),
-    [rows, lines, ctx]
+    () => (rows === undefined ? EMPTY_GOALS_MODEL : buildGoalsModel(rows, lines ?? [], toHomeOf(ctx), ctx.home, today)),
+    [rows, lines, ctx, today]
   );
   const refetch = useCallback(() => {
     void query.refetch();
