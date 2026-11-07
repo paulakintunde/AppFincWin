@@ -164,10 +164,10 @@ function Body({ onClose, onSaved }: Omit<AddHoldingSheetProps, 'visible'>) {
           </View>
         ) : null}
 
-        <Text style={labelStyle}>{t('grow.debts.add.rate')}</Text>
+        <Text style={labelStyle}>{t('grow.investing.add.rate')}</Text>
         <TextInput
           testID="holding-rate"
-          accessibilityLabel={t('grow.debts.add.rate')}
+          accessibilityLabel={t('grow.investing.add.rate')}
           value={rate}
           onChangeText={setRate}
           keyboardType="decimal-pad"

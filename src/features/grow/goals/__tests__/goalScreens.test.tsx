@@ -180,6 +180,20 @@ describe('goal detail', () => {
     expect(screen.queryByText('Decide keeps $640 out of every answer.')).toBeNull();
   });
 
+  it('an unlocked goal says its saved money counts as spare money in Decide; a locked one keeps the lock line', async () => {
+    await wrap(<GoalDetailScreen id="g1" />);
+    expect(screen.getByText('Unlocked: this goal’s $640 counts as spare money in Decide.')).toBeTruthy();
+    expect(screen.queryByText('Locked: Decide never spends the money saved here.')).toBeNull();
+  });
+
+  it('a locked goal keeps the lock helper and shows no unlocked note', async () => {
+    mockRows = [lisbon({ locked: true })];
+    mockRead = readWith(64_000, { locked: true });
+    await wrap(<GoalDetailScreen id="g1" />);
+    expect(screen.getByText('Locked: Decide never spends the money saved here.')).toBeTruthy();
+    expect(screen.queryByText(/counts as spare money/)).toBeNull();
+  });
+
   it('a locked goal shows the Locked badge and the Decide line', async () => {
     mockRows = [lisbon({ locked: true })];
     mockRead = readWith(64_000, { locked: true });
@@ -201,7 +215,8 @@ describe('goal detail', () => {
     expect(screen.getByText('Expected')).toBeTruthy();
     // tapping the Expected row offers the confirm, which calls the hook once
     await fireEvent.press(screen.getByLabelText('on 2026-11-16 · $50 · Expected'));
-    await fireEvent.press(screen.getByText('Done'));
+    expect(screen.queryByText('Done')).toBeNull();
+    await fireEvent.press(screen.getByText('Confirm'));
     expect(mockConfirm).toHaveBeenCalledTimes(1);
   });
 

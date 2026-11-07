@@ -253,7 +253,7 @@ function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
               key={i}
               testID={`goal-icon-${i}`}
               accessibilityRole="button"
-              accessibilityLabel={`${t('grow.goals.create.iconLabel')} ${i}`}
+              accessibilityLabel={t(`grow.goals.create.icons.${i}`)}
               accessibilityState={{ selected: on }}
               onPress={() => setIcon(i)}
               style={[styles.tile, { backgroundColor: colors.fill1, borderColor: on ? colors.accent : 'transparent' }]}
@@ -329,7 +329,7 @@ function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
                 setByText(v);
               },
               keyboardType: 'default',
-              placeholder: 'MM/YYYY',
+              placeholder: t('grow.goals.create.byPlaceholder'),
             }}
             lastEdited={lastEdited}
             derivedAnnouncement={lastEdited === 'first' ? derivedBy : derivedMonthly}

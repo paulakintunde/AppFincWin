@@ -285,7 +285,9 @@ export function GoalDetailScreen({ id }: { id: string }) {
         {!isNet && row.kind === 'pot' && (row.bucket ?? null) === null ? (
           <View style={card}>
             <ToggleRow label={t('grow.goals.create.lockSwitch')} value={row.locked === true} onChange={onLockChange} />
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('grow.goals.create.lockHelper')}</Text>
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+              {row.locked === true ? t('grow.goals.create.lockHelper') : t('grow.goals.detail.unlockedNote', { amount: money.amount(saved) })}
+            </Text>
             <Row label={t('grow.goals.useAsSafetyNet.row')} dense chevron onPress={() => setNetAsk(true)} accessibilityLabel={t('grow.goals.useAsSafetyNet.row')} />
           </View>
         ) : null}
@@ -335,7 +337,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
         visible={confirming !== null}
         title={confirming === null ? undefined : historyText(confirming)}
         cancelLabel={t('grow.common.cancel')}
-        confirmLabel={t('grow.common.done')}
+        confirmLabel={t('grow.goals.detail.confirm')}
         onCancel={() => setConfirming(null)}
         onConfirm={onConfirmLine}
       />
