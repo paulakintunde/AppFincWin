@@ -1216,13 +1216,13 @@ Plans:
 - [x] 06-19-PLAN.md — Record calculators and Make this the plan (W8)
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 06-20-PLAN.md — Setup links, Create from Decide, Grow tab on, phase gate, owner device check (W9)
+- [x] 06-20-PLAN.md — Setup links, Create from Decide, Grow tab on, phase gate, owner device check (W9)
 
 **Wave 10** *(gap closure, owner device check 2026-11-07; blocked on Wave 9)*
-- [ ] 06-23-PLAN.md — Visual depth app-wide: page tone, card and edge shadows, bodyStrong, CLAUDE.md (D-31) (W10)
-- [ ] 06-24-PLAN.md — Payoff engine lump option; sooner and less-interest in the debts read model (D-30) (W10)
-- [ ] 06-25-PLAN.md — Migration 20261106000400: one-off debt payment RPC, debt_id link, net starts confirmed; pgTAP 94 (D-33) (W10)
-- [ ] 06-26-PLAN.md — Copy for the gap plans and the debtOneOffRecorded undo label (W10)
+- [x] 06-23-PLAN.md — Visual depth app-wide: page tone, card and edge shadows, bodyStrong, CLAUDE.md (D-31) (W10)
+- [x] 06-24-PLAN.md — Payoff engine lump option; sooner and less-interest in the debts read model (D-30) (W10)
+- [x] 06-25-PLAN.md — Migration 20261106000400: one-off debt payment RPC, debt_id link, net starts confirmed; pgTAP 94 (D-33) (W10)
+- [x] 06-26-PLAN.md — Copy for the gap plans and the debtOneOffRecorded undo label (W10)
 
 **Wave 11** *(blocked on Wave 10 completion)*
 - [ ] 06-27-PLAN.md — Grow restyle A: goals, safety net, rules; stepper value, debt glyph (D-31) (W11)
