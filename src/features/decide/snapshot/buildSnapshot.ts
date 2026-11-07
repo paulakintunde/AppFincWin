@@ -90,6 +90,13 @@ export interface GoalSource {
   deleted_at: string | null;
   account_id?: string | null; // 05.2 D-22: where the envelope's money is held (a stored answer beats the transfer-leg guess)
   bucket?: string | null; // 05.2 D-23: set = a saving bucket carved out of regular saving
+  // 06 Grow (read by the connection points in Decide v3 only; the old builder ignores all but is_safety_net). Optional: an old cached row lacks them.
+  name?: string;
+  is_safety_net?: boolean;
+  locked?: boolean;
+  protect?: boolean;
+  up_front_only?: boolean;
+  net_confirmed_at?: string | null;
 }
 
 // structurally identical to src/db/decideChanges.ts (05-38)
@@ -131,7 +138,7 @@ export interface SnapshotSource {
     RecurringSeriesRow,
     'id' | 'account_id' | 'amount' | 'currency' | 'freq' | 'anchor_date' | 'end_date' | 'occurrence_count' | 'category_id' | 'deleted_at'
   > &
-    Partial<Pick<RecurringSeriesRow, 'counts_as' | 'income_kind' | 'saving_mode' | 'pay_group'>>)[];
+    Partial<Pick<RecurringSeriesRow, 'counts_as' | 'income_kind' | 'saving_mode' | 'pay_group' | 'goal_id'>>)[];
   accounts: readonly (Pick<AccountRow, 'id' | 'name' | 'kind' | 'currency' | 'archived_at' | 'deleted_at'> &
     Partial<Pick<AccountRow, 'use' | 'use_purpose' | 'use_envelope_id' | 'use_extra_set_aside' | 'overdraft_limit' | 'overdraft_rate'>>)[];
   balances: Readonly<Record<string, number>>; // account id → paid-only balance in the account's currency
@@ -494,7 +501,7 @@ export function buildDecideSnapshot(source: SnapshotSource): SnapshotResult {
     return v === null || v.amount > MAX_ABS_AMOUNT_MINOR ? false : v.amount;
   };
   for (const g of source.goals) {
-    if (g.deleted_at !== null || g.done_at !== null) continue;
+    if (g.deleted_at !== null || g.done_at !== null || g.is_safety_net === true) continue; // 06: the safety net is not a pot (it reaches Decide through its own connection point)
     const target = g.target === null ? null : toHomeRounded(g.target, g.currency, convertCeiled);
     const monthlyAmount = g.monthly_amount === null ? null : toHomeRounded(g.monthly_amount, g.currency, convertCeiled);
     const opening = toHomeRounded(g.opening_saved, g.currency, convertFloored);

@@ -80,6 +80,9 @@ export const queryKeys = {
   decideAnswers: (userId: string, householdId: string) => ['decide-answers', userId, householdId] as const,
   recurringDismissals: (householdId: string) => ['recurring-dismissals', householdId] as const,
   incomePayerPrompts: (householdId: string) => ['income-payer-prompts', householdId] as const,
+  // 06 Grow: holdings and their entries (owner-private)
+  holdings: (userId: string, householdId: string) => ['holdings', userId, householdId] as const, // 06
+  holdingLots: (userId: string, householdId: string) => ['holding-lots', userId, householdId] as const, // 06
   // 05.2-33 (D-10): refund links across every month. Under transactionsRoot so any transaction write refreshes them.
   refundLinks: (householdId: string) => ['transactions', householdId, 'refund-links'] as const,
   refundPurchases: (householdId: string, ids: string) => ['transactions', householdId, 'refund-purchases', ids] as const,
@@ -150,6 +153,7 @@ export const mutationKeys = {
   addDebt: ['debts', 'add'] as const, // 05.2-43
   editDebt: ['debts', 'edit'] as const, // 05.2-43
   setDebtPaidOff: ['debts', 'set-paid-off'] as const, // 05.2-43
+  removeDebt: ['debts', 'remove'] as const, // 06-16: soft delete (deleted_at), label debtRemoved
   setSeriesStatus: ['recurring-series', 'status'] as const, // 05.2-44
   // 05.2 (Decide data and setup)
   updateDecideSetup: ['decide-setup', 'update'] as const, // settings forward write + undo (05.2-13)
@@ -166,6 +170,21 @@ export const mutationKeys = {
   unlinkRefund: ['refund-links', 'unlink'] as const, // 05.2-16
   saveDecideAnswer: ['decide-answers', 'save'] as const, // 05.2-17
   removeDecideAnswer: ['decide-answers', 'remove'] as const, // 05.2-17
+  // 06 Grow
+  saveGoalPlan: ['savings-goals', 'save-plan'] as const,
+  editGoal: ['savings-goals', 'edit-grow'] as const,
+  moveGoalMoney: ['transactions', 'goal-money'] as const,
+  confirmGoalContribution: ['transactions', 'confirm-goal'] as const,
+  confirmSafetyNet: ['savings-goals', 'confirm-net'] as const,
+  setSafetyNet: ['savings-goals', 'set-net'] as const, // D-29
+  addHolding: ['holdings', 'add'] as const,
+  editHolding: ['holdings', 'edit'] as const,
+  addHoldingLot: ['holding-lots', 'add'] as const,
+  editHoldingLot: ['holding-lots', 'edit'] as const,
+  saveDebtPlan: ['debts', 'save-plan'] as const,
+  recordDebtSale: ['debts', 'record-sale'] as const,
+  saveGrowDebt: ['debts', 'save-grow'] as const,
+  setAccountRate: ['accounts', 'set-rate'] as const,
 };
 
 // D-20: one scope means every paused write replays serially in the order it was queued --

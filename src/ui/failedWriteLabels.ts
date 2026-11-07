@@ -39,6 +39,8 @@ const ENTITIES: ReadonlySet<string> = new Set<WriteEntity>([
   'decide_answers',
   'recurring_dismissals',
   'income_payer_prompts',
+  'holdings',
+  'holding_lots',
 ]);
 
 export function failedEntityKey(entity: string): FailedEntityKey {

@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CASES_DIR = join(ROOT, 'src/engine/decide/v3/__tests__/rightAnswers/cases');
 const OUT_DIR = join(ROOT, 'reports/right-answers');
-const TOPIC_TOTAL = 9;
+const TOPIC_TOTAL = 10;
 
 const LABELS = {
   fits_month: 'Fits',

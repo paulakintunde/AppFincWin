@@ -23,13 +23,13 @@ The FAB on Grow reads "New goal", "Add a debt" or "Add a holding" to match the s
 
 ### G01 Grow
 (kind: screen, tab)
-- **Reached from:** tab bar "Grow"; Decide "Lines you will not cross" footnote "Change any of them in Activity or Grow".
+- **Reached from:** tab bar "Grow"; Decide "Your money rules" footnote "Change any of them in Activity or Grow".
 - **Purpose:** one calm view of goals, debts and investing, with the safety net always first.
 - **Layout, top to bottom:**
   - Date line "THURSDAY, NOV 5". Title "Grow". Avatar "AM" at right (opens You).
   - Segmented control, 44 px: "Goals" (selected) · "Debts" · "Investing". Segments for features that are off are not shown.
   - **Goals segment:**
-    - Hero card: label "Saved across 3 goals"; figure "$1,940"; note "$150 a month goes into goals. Your line is at least $150."
+    - Hero card: label "Saved across 3 goals"; figure "$1,940"; note "$150 a month goes into goals. Your rule is at least $150."
     - Safety net card (navy tint #E4ECF6 border, 64 px tile `lock`): "Safety net" with navy badge `lock` "Locked"; "$1,300 of $2,300"; bar 57% in navy; line "No Decide answer spends it. $100 a month reaches $2,300 by Aug 2027." Chevron.
     - Section "Goals". Rows 64 px with 36 px tile and a thin bar under the text:
       - `calendar` "Trip to Lisbon" / "$640 of $1,800 · $50 a month · Oct 2028"; bar 36%.
@@ -80,13 +80,13 @@ The FAB on Grow reads "New goal", "Add a debt" or "Add a holding" to match the s
   - Step bar "1 of 3" and Back (from step 2).
   - Step 1 "What are you saving for?": field "Name" (placeholder "Trip to Lisbon"); suggestion chips "Holiday", "New phone", "Car", "Home deposit", "Wedding"; icon picker row with 8 tiles from our set (`calendar`, `laptop`, `phone`, `camera`, `savings`, `housing`, `transport`, `headphones`). "Continue".
   - Step 2 "How much?": field "Target" "$1,800"; switch "No set target — save as you go" (hides the field); field "Already saved" "$0". "Continue".
-  - Step 3 "How will it fill?": two linked fields "Each month" "$50" and "By" "Oct 2028" (edit one, the other follows); row "Kept in · Savings account"; switch "Record it each month for me to confirm" (on); if household is on: switch "Share with household" with sub "Split between you and JT; each sees the whole goal". Line at the bottom: "Your goals now total $200 a month. Your line is at least $150." Primary "Make goal".
+  - Step 3 "How will it fill?": two linked fields "Each month" "$50" and "By" "Oct 2028" (edit one, the other follows); row "Kept in · Savings account"; switch "Record it each month for me to confirm" (on); if household is on: switch "Share with household" with sub "Split between you and JT; each sees the whole goal". Line at the bottom: "Your goals now total $200 a month. Your rule is at least $150." Primary "Make goal".
 - **Taps:** "Make goal" → light haptic, closes → G02 for the new goal, toast "Goal made". "Close" mid-way → dialog "Discard this goal?" "Discard" / "Keep going".
 - **Accessibility:** the two linked fields announce the other's new value after a change.
 
 ### G04 Safety net
 (kind: screen)
-- **Reached from:** G01 Safety net card; Decide spec "Lines you will not cross" Safety net row; Decide spec "Not yet (safety net locked)" answer link "See the safety net".
+- **Reached from:** G01 Safety net card; Decide spec "Your money rules" Safety net row; Decide spec "Not yet (safety net locked)" answer link "See the safety net".
 - **Purpose:** show what the safety net is, how big it is, and that Decide will not spend it.
 - **Layout:**
   - Header: back, title "Safety net".
@@ -115,7 +115,7 @@ The FAB on Grow reads "New goal", "Add a debt" or "Add a holding" to match the s
 - **Purpose:** what is owed, when it ends, and what paying more would change.
 - **Layout:**
   - Hero card: label "Total debt"; figure "$8,420"; note "Paid off by Apr 2029 on the minimum."
-  - Line card (amber stays off; plain): "Debt payments · 10% of pay. Your line is at most 36%." with a thin bar at 10 and a tick mark at 36.
+  - Line card (amber stays off; plain): "Debt payments · 10% of pay. Your rule is at most 36%." with a thin bar at 10 and a tick mark at 36.
   - Section "Debts". Row 64 px: `debt` "Auto loan" / "6.9% · $312 a month · due the 15th"; amount "$8,420".
   - Section "Cards paid in full": `card` "Visa card" / "Cleared each month, so not in the plan"; amount "$380".
   - Payoff plan card:
@@ -146,15 +146,15 @@ The FAB on Grow reads "New goal", "Add a debt" or "Add a holding" to match the s
 ### G07 Add a debt
 (kind: sheet)
 - **Reached from:** G05 "+ Add a debt", FAB; O08 answer "A loan" (Home card "Add the loan you mentioned").
-- **Layout:** title "Add a debt"; type chips "Loan", "Credit card", "Line of credit", "Money owed to someone"; field "Name" ("Auto loan"); field "Owed now" "$8,420"; field "Rate" "6.9 %" with helper "Yearly rate (APR). Leave blank if none."; field "Payment" "$312" with chip "Minimum"; "Due day" picker "15th"; row "Paid from · Everyday checking"; switch "Shared with household" (if on). Line: "Debt payments would be 10% of pay. Your line is at most 36%." Primary "Add debt".
-- **Taps:** "Add debt" → light haptic, closes → G06, toast "Debt added. Decide counts it from now." If the new total crosses the 36% line: the line becomes an amber badge `sOver` "Over your line" and text "This brings debt payments to 39% of pay; your line is 36%." The save still works (user-led); warning haptic.
+- **Layout:** title "Add a debt"; type chips "Loan", "Credit card", "Line of credit", "Money owed to someone"; field "Name" ("Auto loan"); field "Owed now" "$8,420"; field "Rate" "6.9 %" with helper "Yearly rate (APR). Leave blank if none."; field "Payment" "$312" with chip "Minimum"; "Due day" picker "15th"; row "Paid from · Everyday checking"; switch "Shared with household" (if on). Line: "Debt payments would be 10% of pay. Your rule is at most 36%." Primary "Add debt".
+- **Taps:** "Add debt" → light haptic, closes → G06, toast "Debt added. Decide counts it from now." If the new total goes over the 36% rule: the rule becomes an amber badge `sOver` "Over your rule" and text "This brings debt payments to 39% of pay; your rule is 36%." The save still works (user-led); warning haptic.
 
 ### G08 Investing
 (kind: screen state of G01, segment "Investing")
 - **Reached from:** G01 segment "Investing".
 - **Layout:**
   - Hero card: label "Invested"; figure "$7,690"; note "$690 above what you put in · values you typed, as of Nov 1."
-  - Line card: "Investing · $200 a month. Your line is at least $200." with `sCheck` green badge "Met".
+  - Line card: "Investing · $200 a month. Your rule is at least $200." with `sCheck` green badge "Met".
   - Section "Holdings". Rows 64 px:
     - `pension` "Retirement fund" / "Roth IRA · $150 a month · as of Nov 1"; amount "$6,450"; under it "+$650" with `sUp` 16.
     - `invest` "Index fund" / "Taxable brokerage · $50 a month · as of Nov 1"; amount "$1,240"; "+$40" with `sUp`.
@@ -176,24 +176,24 @@ The FAB on Grow reads "New goal", "Add a debt" or "Add a holding" to match the s
 - **Layout:** title "Update value"; field "Value on statement $" (pre-filled "$6,450"); date "As of · Today"; preview "Change since Nov 1: +$0". Primary "Save value".
 - **Taps:** "Save value" → light haptic, closes → G09 with new figure and "As of Nov 5".
 
-### G10 Lines you will not cross
+### G10 Your money rules
 (kind: screen)
-- **Reached from:** Decide spec "Lines you will not cross" heading; G01 overflow; You → "Lines you will not cross".
+- **Reached from:** Decide spec "Your money rules" heading; G01 overflow; You → "Your money rules".
 - **Purpose:** the four limits every Decide answer keeps to, with where each one stands now.
 - **Layout:**
-  - Header back, "Lines you will not cross". Body "Every answer keeps to these. Tap one to change it."
+  - Header back, "Your money rules". Body "Every answer keeps to these. Tap one to change it."
   - Rows 64 px, value at right, status underneath:
     - `lock` "Safety net" / "Locked · no answer spends it"; "$1,300". Status: "of $2,300 goal".
     - `debt` "Debt payments at most" / "Share of pay, all debts counted"; "36%". Status: "Now 10%".
     - `invest` "Investing at least" / "A month, kept out of purchases"; "$200". Status: green badge `sCheck` "Met · $200 set up".
     - `savings` "Saving at least" / "A month, into goals"; "$150". Status: green badge `sCheck` "Met · $150 set up".
-  - Note: "These are your own limits. FincWin uses them to word its answers; it doesn’t set them for you."
+  - Note: "These are your own rules. FincWin uses them to word its answers; it doesn’t set them for you."
 - **Taps:** Safety net row → G04. Other rows → G10a.
 
-#### G10a Change a line
+#### G10a Change a rule
 (kind: sheet)
-- **Layout (Debt payments at most):** title; stepper "−  36%  +" (1-point steps) or amount field for money lines; switch "Use this line" (off hides it from answers, with note "Answers stop checking this."); preview card "Open checks with this line: Headphones — Fits, Laptop — Tight." Primary "Save line".
-- **Taps:** "Save line" → light haptic, closes → G10, toast "Line saved. Decide’s next answers use it." with "Undo".
+- **Layout (Debt payments at most):** title; stepper "−  36%  +" (1-point steps) or amount field for money rules; switch "Use this rule" (off hides it from answers, with note "Answers stop checking this."); preview card "Open checks with this rule: Headphones — Fits, Laptop — Tight." Primary "Save rule".
+- **Taps:** "Save rule" → light haptic, closes → G10, toast "Rule saved. Decide’s next answers use it." with "Undo".
 
 ---
 

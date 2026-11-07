@@ -28,6 +28,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'use', 'use_purpose', 'use_envelope_id', 'use_extra_set_aside',
     // 05.4
     'overdraft_rate',
+    // 06
+    'interest_rate',
   ],
   categories: ['id', 'owner_id', 'builtin_key', 'name', 'color_key', 'is_system', 'archived_at', 'monthly_cap', 'created_at', 'updated_at'],
   category_rules: [
@@ -41,6 +43,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     // 05.2
     'counts_as', 'income_kind', 'saving_mode', 'pay_group',
     'end_reason',
+    // 06
+    'goal_id',
   ],
   custom_currencies: ['id', 'owner_id', 'code', 'symbol', 'decimals', 'reference_currency', 'unit_value', 'as_of', 'created_at', 'updated_at'],
   import_profiles: ['id', 'owner_id', 'account_id', 'layout_signature', 'profile', 'created_at'],
@@ -71,12 +75,16 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'pays_in_full', 'paid_off_on',
     // 05.4
     'due_day',
+    // 06
+    'started_balance', 'payoff_order', 'payoff_extra', 'extra_series_id',
   ],
   savings_goals: [
     'id', 'household_id', 'created_by', 'check_id', 'name', 'currency', 'target', 'monthly_amount', 'ready_by', 'opening_saved',
     'kind', 'done_at', 'deleted_at', 'created_at', 'updated_at',
     // 05.2
     'bucket', 'account_id', 'color_key',
+    // 06
+    'is_safety_net', 'locked', 'protect', 'up_front_only', 'icon', 'net_confirmed_at',
   ],
   decide_settings: [
     'id', 'user_id', 'currency', 'rough_income', 'rough_spending', 'reserve', 'dsr_line', 'housing_line', 'unsecured_multiple',
@@ -93,6 +101,15 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   recurring_dismissals: ['id', 'household_id', 'payee_key', 'direction', 'dismissed_at', 'created_by', 'deleted_at', 'created_at', 'updated_at'],
   income_payer_prompts: [
     'id', 'household_id', 'payer_key', 'income_kind', 'counts_as', 'apply_to_future', 'created_by', 'deleted_at', 'created_at', 'updated_at',
+  ],
+  // 06 Grow: owner-private investment records (updated_by, is_sample and version are internal)
+  holdings: [
+    'id', 'household_id', 'created_by', 'name', 'type', 'currency', 'value', 'value_as_of', 'opening_put_in', 'account_id',
+    'paid_from_account_id', 'monthly_amount', 'day', 'rate', 'deleted_at', 'created_at', 'updated_at',
+  ],
+  holding_lots: [
+    'id', 'holding_id', 'household_id', 'created_by', 'kind', 'amount', 'units', 'local_date', 'note', 'deleted_at', 'created_at',
+    'updated_at',
   ],
   decide_answers: [
     'id', 'household_id', 'created_by', 'kind', 'key', 'amount', 'bool_value', 'on_date', 'check_id', 'deleted_at', 'created_at', 'updated_at',

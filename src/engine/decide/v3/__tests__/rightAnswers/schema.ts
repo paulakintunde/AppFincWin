@@ -2,7 +2,7 @@
  * Right-answer table contract (05.4-05, QA-02). Test-only. Money is integer minor units, dates are 'YYYY-MM-DD'.
  * One JSON file per topic holds the cases; the same JSON feeds the engine tests and the owner review pages.
  */
-export const TOPICS = ['safety-net','overdraft','debts','borrowing','tax','running-costs','selling-the-old-one','quick-estimates','household'] as const;
+export const TOPICS = ['safety-net','overdraft','debts','borrowing','tax','running-costs','selling-the-old-one','quick-estimates','household','goals'] as const;
 export type Topic = typeof TOPICS[number];
 export type CaseStatus = 'draft' | 'approved' | 'to_do' | 'disputed';
 export interface FixtureAccount { id: string; kind: 'checking'|'current'|'savings'|'card'; name: string; balance: number; overdraftLimit: number|null; overdraftRate: string|null; use: 'everyday'|'emergency'|'untouched'|null; /** 05.4 ENG-17 (D-114): no exchange rate converts it (the app cannot count its balance); absent = converted */ noRate?: boolean }
@@ -28,6 +28,8 @@ export interface RightAnswerFixture {
   thisMonth: { received: number; billsPaid: number; billsDue: number; everydaySoFar: number };
   historyMonths: number; quickEstimates: { income: number; bills: number; everyday: number } | null; recordsAsOf: string|null;
   accounts: FixtureAccount[]; safetyNet: { protect: boolean; size: number|null; saved: number; /** D-61: absent = locked (the net up to its size is left out of the answer) */ locked?: boolean } | null;
+  /** 06 (D-05, D-06): the user's savings goals; absent = none. locked: kept out of every answer; unlocked: counted as spare. accountId: where the money is kept (null = not linked) */
+  goals?: { id: string; name: string; saved: number; target: number|null; monthly: number|null; locked: boolean; accountId: string|null }[];
   bills: FixtureBill[]; debts: FixtureDebt[]; userLine: number|null; factLines: boolean;
   check: FixtureCheck;
 }
@@ -40,7 +42,7 @@ export interface RightAnswerCase { id: string; topic: Topic; persona: string; si
 
 export const ID_PREFIX: Readonly<Record<Topic, string>> = {
   'safety-net': 'SN', overdraft: 'OD', debts: 'DB', borrowing: 'BR', tax: 'TX', 'running-costs': 'RC',
-  'selling-the-old-one': 'SO', 'quick-estimates': 'QE', household: 'HH',
+  'selling-the-old-one': 'SO', 'quick-estimates': 'QE', household: 'HH', goals: 'GL',
 };
 const STATUSES: readonly string[] = ['draft', 'approved', 'to_do', 'disputed'];
 /** Answer codes a case may expect (no new codes in 05.4; the shadow-run CHECK in migration 20261103000500 holds the same list). */
