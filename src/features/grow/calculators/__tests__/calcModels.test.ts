@@ -118,6 +118,7 @@ describe('debtPayoffCalc (GC40)', () => {
     expect(r!.minimumsOnly.interest).toBe(218434);
     expect(r!.minimumsOnly.firstCleared).toEqual({ index: 1, month: 22 });
     expect(r!.sameForOneDebt).toBe(false);
+    expect(r!.extraTo).toEqual({ rate: 0, balance: 1 });
     expect(r!.workedOut[0]!.key).toBe('grow.calc.payoff.worked');
   });
 

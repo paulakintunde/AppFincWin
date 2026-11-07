@@ -189,7 +189,7 @@ export interface CompoundResult {
   value: number;
   putIn: number;
   growth: number;
-  years: { value: number; putIn: number }[];
+  years: { value: number; putIn: number; growth: number }[];
   workedOut: WorkedLine[];
 }
 
@@ -205,7 +205,7 @@ export function compoundCalc(input: CompoundInput): CompoundResult | null {
       value: c.value,
       putIn: c.putIn,
       growth: c.growth,
-      years: c.years.map((y) => ({ value: y.value, putIn: y.putIn })),
+      years: c.years.map((y) => ({ value: y.value, putIn: y.putIn, growth: y.value - y.putIn })),
       workedOut: [
         {
           key: 'grow.calc.compound.worked',
@@ -255,6 +255,8 @@ export interface PayoffResult {
   balance: OrderResult;
   minimumsOnly: OrderResult;
   sameForOneDebt: boolean;
+  /** Which debt (position in the input) the extra goes to first in each order. */
+  extraTo: { rate: number; balance: number };
   workedOut: WorkedLine[];
 }
 
@@ -280,6 +282,13 @@ function orderResult(
   };
 }
 
+/** Position of the debt that wins `beats` over all others; the earlier one in the list on a tie (as the engine orders them). */
+function pickFirst(plan: readonly PlanDebt[], beats: (a: PlanDebt, b: PlanDebt) => boolean): number {
+  let best = 0;
+  for (let i = 1; i < plan.length; i++) if (beats(plan[i]!, plan[best]!)) best = i;
+  return best;
+}
+
 export function debtPayoffCalc(input: PayoffInput): PayoffResult | null {
   const extra = amountOrNull(input.extra);
   if (extra === null || input.debts.length === 0) return null;
@@ -303,6 +312,7 @@ export function debtPayoffCalc(input: PayoffInput): PayoffResult | null {
       balance,
       minimumsOnly,
       sameForOneDebt: plan.length === 1,
+      extraTo: { rate: pickFirst(plan, (a, b) => a.apr > b.apr), balance: pickFirst(plan, (a, b) => a.balance < b.balance) },
       workedOut: [{ key: 'grow.calc.payoff.worked', values: { budget: { money: budget } } }],
     };
   });
