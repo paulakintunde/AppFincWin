@@ -50,8 +50,30 @@ export interface PlanOutcome {
   outcome: PayoffOutcome;
   months: number;
   totalInterest: MinorUnits | null;
-  /** The date the last debt clears, from the due day of that debt; null without a due day or when it never clears. */
+  /** The date the last debt clears, from the due day of that debt (today's day when it has none); null when it never clears. */
   payoffDate: string | null;
+}
+
+/** One what-if worked end to end: outcome, months, interest and the date the last payment lands (null unless it clears). */
+export interface WhatIf {
+  outcome: PayoffOutcome;
+  months: number;
+  totalInterest: MinorUnits | null;
+  payoffDate: string | null;
+}
+
+/** Exact differences against minimum only; null when either side does not clear; never negative. Screens round and format. */
+export interface Compare {
+  soonerMonths: number | null;
+  lessInterest: MinorUnits | null;
+}
+
+export interface PlanScenarios {
+  minimumOnly: WhatIf;
+  withExtra: WhatIf & Compare;
+  withLump: WhatIf & Compare;
+  /** The first open debt in this order: where a recorded one-off goes. */
+  lumpFirstDebtId: string | null;
 }
 
 export interface OrderPlan {
@@ -81,6 +103,10 @@ export interface DebtsModel {
   plan: { rate: OrderPlan; balance: OrderPlan } | null;
   /** What-ifs for the focus debt (the largest in the plan): minimum only, with the extra, with the lump. */
   focus: { id: string; minimumOnly: Scenario; withExtra: Scenario; withLump: Scenario } | null;
+  /** D-30: plan-wide what-ifs (minimum only, extra each month, once) for each order. */
+  scenarios: { rate: PlanScenarios; balance: PlanScenarios } | null;
+  /** The plan at the SAVED extra, for the hero second line; null when the saved extra is 0. */
+  savedExtraPlan: { rate: WhatIf; balance: WhatIf } | null;
 }
 
 export interface DebtsRead {
@@ -101,22 +127,59 @@ export const EMPTY_DEBTS_MODEL: DebtsModel = {
   oneDebt: false,
   plan: null,
   focus: null,
+  scenarios: null,
+  savedExtraPlan: null,
 };
 
 const scenarioOf = (r: ReturnType<typeof fixedPayoff>): Scenario => ({ outcome: r.outcome, months: r.months, totalInterest: r.totalInterest });
 
-function planOutcome(r: StrategyResult, dueDayOf: (id: string) => number | null, today: string): PlanOutcome {
+const dayOfMonth = (today: string): number => Number(today.slice(8, 10));
+
+/** The date of the last payment: the due day when there is one, else today's day of the month (audit section 3). */
+function lastPaymentDate(today: string, dueDay: number | null, months: number): string {
+  return months <= 0 ? today : dueDateOf(today, dueDay ?? dayOfMonth(today), months - 1);
+}
+
+function whatIfOf(r: StrategyResult, dueDayOf: (id: string) => number | null, today: string): WhatIf {
   let last: { id: string; month: number } | null = null;
   for (const d of r.debts) {
     if (d.doneMonth !== null && d.doneMonth > 0 && (last === null || d.doneMonth > last.month)) last = { id: d.id, month: d.doneMonth };
   }
-  const dueDay = last === null ? null : dueDayOf(last.id);
   return {
     outcome: r.outcome,
     months: r.months,
     totalInterest: r.totalInterest,
-    payoffDate: r.outcome === 'cleared' && last !== null && dueDay !== null ? dueDateOf(today, dueDay, last.month - 1) : null,
+    payoffDate: r.outcome === 'cleared' ? lastPaymentDate(today, last === null ? null : dueDayOf(last.id), last === null ? 0 : last.month) : null,
   };
+}
+
+const planOutcome = whatIfOf;
+
+function compareOf(base: WhatIf, sc: WhatIf): Compare {
+  if (base.outcome !== 'cleared' || sc.outcome !== 'cleared' || base.totalInterest === null || sc.totalInterest === null) {
+    return { soonerMonths: null, lessInterest: null };
+  }
+  return {
+    soonerMonths: Math.max(0, base.months - sc.months),
+    lessInterest: minorUnits(Math.max(0, base.totalInterest - sc.totalInterest)),
+  };
+}
+
+/** Pure: one debt's what-if via fixedPayoff (debt detail chips): minimum only against the extra a month and/or a one-off. */
+export function debtWhatIf(line: DebtLine, today: string, opts: { extra?: number; lump?: number }): { minimumOnly: WhatIf; scenario: WhatIf & Compare } {
+  const apr = line.point.apr ?? ZERO_PERCENT;
+  const dueDay = line.point.dueDay;
+  const toWhatIf = (r: ReturnType<typeof fixedPayoff>): WhatIf => ({
+    outcome: r.outcome,
+    months: r.months,
+    totalInterest: r.totalInterest,
+    payoffDate: r.outcome === 'cleared' ? lastPaymentDate(today, dueDay, r.months) : null,
+  });
+  const minimumOnly = toWhatIf(fixedPayoff(line.point.balance, apr, line.point.minimum));
+  const scenario = toWhatIf(
+    fixedPayoff(line.point.balance, apr, line.point.minimum, { extra: minorUnits(opts.extra ?? 0), lump: minorUnits(opts.lump ?? 0) })
+  );
+  return { minimumOnly, scenario: { ...scenario, ...compareOf(minimumOnly, scenario) } };
 }
 
 /** Pure: the model from the debts. `opts` sets the what-if sizes. */
@@ -186,7 +249,33 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
     };
   }
 
-  return { debts: lines, paidInFull, planCurrency, extra, savedOrder, oneDebt: inPlan.length === 1, plan, focus };
+  let scenarios: DebtsModel['scenarios'] = null;
+  let savedExtraPlan: DebtsModel['savedExtraPlan'] = null;
+  if (planDebts.length > 0) {
+    const scenariosFor = (order: PayoffOrder): PlanScenarios => {
+      const minimumOnly = whatIfOf(strategy(planDebts, minorUnits(0), order), dueDayOf, today);
+      const withExtra = whatIfOf(strategy(planDebts, minorUnits(extraWhatIf), order), dueDayOf, today);
+      const withLump = whatIfOf(strategy(planDebts, minorUnits(0), order, { lump: minorUnits(lump) }), dueDayOf, today);
+      const first = planDebts
+        .filter((d) => d.balance > 0)
+        .sort((a, b) => (order === 'rate' ? (b.apr > a.apr ? 1 : b.apr < a.apr ? -1 : 0) : a.balance - b.balance))[0];
+      return {
+        minimumOnly,
+        withExtra: { ...withExtra, ...compareOf(minimumOnly, withExtra) },
+        withLump: { ...withLump, ...compareOf(minimumOnly, withLump) },
+        lumpFirstDebtId: first?.id ?? null,
+      };
+    };
+    scenarios = { rate: scenariosFor('rate'), balance: scenariosFor('balance') };
+    if (extra > 0) {
+      savedExtraPlan = {
+        rate: whatIfOf(strategy(planDebts, minorUnits(extra), 'rate'), dueDayOf, today),
+        balance: whatIfOf(strategy(planDebts, minorUnits(extra), 'balance'), dueDayOf, today),
+      };
+    }
+  }
+
+  return { debts: lines, paidInFull, planCurrency, extra, savedOrder, oneDebt: inPlan.length === 1, plan, focus, scenarios, savedExtraPlan };
 }
 
 export function useDebtsRead(): DebtsRead {

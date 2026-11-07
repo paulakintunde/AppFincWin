@@ -36,6 +36,11 @@ export function aboutTens(minor: number, exponent = 2): number {
   return Math.floor((minor + unit / 2) / unit) * unit;
 }
 
+/** "4 years sooner": whole years once the gap is two years or more (48 -> 4y 0m, 38 -> 3y 2m); under that, months only. */
+export function soonerSpan(months: number): { years: number; months: number } {
+  return months < 24 ? { years: 0, months } : { years: Math.floor(months / 12), months: months % 12 };
+}
+
 /**
  * The date the first debt in the plan is cleared, in the given payoff order, with `extra` a month on top of the minimums.
  * Null with fewer than two debts in the plan (the screen shows the line only with 2+), or when none clears.
