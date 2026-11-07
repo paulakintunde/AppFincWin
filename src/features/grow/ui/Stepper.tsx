@@ -77,9 +77,9 @@ export function Stepper({ value, step, min = 0, max, onChange, valueText, access
 }
 
 const styles = StyleSheet.create({
-  group: { gap: space.gapSm },
+  group: { gap: space.gapSm, alignSelf: 'stretch' },
   groupStacked: { alignItems: 'flex-start' },
-  buttons: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
+  buttons: { flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', gap: space.gapMd },
   button: { width: space.touchMin, height: space.touchMin, borderRadius: space.touchMin / 2, alignItems: 'center', justifyContent: 'center' },
   value: { flex: 1, textAlign: 'center' },
 });

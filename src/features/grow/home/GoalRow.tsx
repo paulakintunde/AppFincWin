@@ -95,7 +95,7 @@ export function GoalRow({ goal, reachesOn, money, animate = true }: GoalRowProps
           <GrowGlyph name={goal.linkedCheckId !== null ? 'checkbuy' : 'calendar'} color={colors.accent} size={22} />
         </View>
         <View style={styles.text}>
-          <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{goal.name}</Text>
+          <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{goal.name}</Text>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{sub}</Text>
           {goal.linkedCheckId !== null ? <StateBadge tone="plum" shape="sHalf" label={t('grow.home.linkedToCheck')} /> : null}
         </View>

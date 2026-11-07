@@ -118,8 +118,8 @@ function Shape({ name, color }: { name: GrowGlyphName; color: string }): React.J
     case 'debt':
       return (
         <>
-          <Rect x={3} y={5} width={16} height={12} rx={3} fill={color} opacity={SOFT} />
-          <Path d="M3 8.5h16M7 13.5h4" {...line} />
+          <Rect x={4.5} y={2.8} width={13} height={16.4} rx={2.6} fill={color} opacity={SOFT} />
+          <Path d="M8 7h6M11 10.5v5M8.8 13.4 11 15.6l2.2-2.2" {...line} />
         </>
       );
     case 'card':

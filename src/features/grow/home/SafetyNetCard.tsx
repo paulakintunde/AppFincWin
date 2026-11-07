@@ -51,10 +51,10 @@ export function SafetyNetCard({ net, money, animate = true }: SafetyNetCardProps
         </View>
         <View style={styles.text}>
           <View style={styles.titleRow}>
-            <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('grow.safetyNet.title')}</Text>
+            <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('grow.safetyNet.title')}</Text>
             <StateBadge tone="blue" shape="lock" label={t('grow.safetyNet.locked')} accessibilityLabel={t('grow.safetyNet.lockedA11y')} />
           </View>
-          <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{figure}</Text>
+          <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{figure}</Text>
         </View>
         <GrowGlyph name="chev" color={colors.inkFaint} size={16} />
       </View>
