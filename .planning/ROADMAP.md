@@ -1190,10 +1190,10 @@ Plans:
 - [x] 06-09-PLAN.md — Grow copy, copy lint, feature flags, glyphs, base primitives and the Grow undo label keys (W2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 06-06-PLAN.md — Schema: goal contributions, materialiser, goal-plan RPCs, set_safety_net swap (D-29), safety-net move D-07 (W3)
-- [ ] 06-07-PLAN.md — Schema: debt plan and sale-closes-loan RPCs (W3)
-- [ ] 06-10-PLAN.md — Decide reads Grow through the connection points; contribution counted once; goals right-answer cases (W3)
-- [ ] 06-21-PLAN.md — Calculator blocks and Grow charts (split from 06-09) (W3)
+- [x] 06-06-PLAN.md — Schema: goal contributions, materialiser, goal-plan RPCs, set_safety_net swap (D-29), safety-net move D-07 (W3)
+- [x] 06-07-PLAN.md — Schema: debt plan and sale-closes-loan RPCs (W3)
+- [x] 06-10-PLAN.md — Decide reads Grow through the connection points; contribution counted once; goals right-answer cases (W3)
+- [x] 06-21-PLAN.md — Calculator blocks and Grow charts (split from 06-09) (W3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 06-11-PLAN.md — [BLOCKING] production schema push, owner-gated with hard stops (W4)
