@@ -41,8 +41,20 @@ interface Live {
   done: number | null;
 }
 
-export function strategy(debts: readonly PlanDebt[], extra: MinorUnits, order: PayoffOrder): StrategyResult {
+export interface StrategyOptions {
+  /** One-off payment applied before the first month's interest, in the chosen order (D-30, D-33). */
+  lump?: MinorUnits;
+}
+
+export function strategy(
+  debts: readonly PlanDebt[],
+  extra: MinorUnits,
+  order: PayoffOrder,
+  opts: StrategyOptions = {}
+): StrategyResult {
+  const lump = opts.lump ?? 0;
   if (extra < 0) throw new RangeError(`${FN}: extra must be >= 0`);
+  if (lump < 0) throw new RangeError(`${FN}: lump must be >= 0`);
   for (const d of debts) {
     if (d.balance < 0 || d.minimum < 0) {
       throw new RangeError(`${FN}: balance and minimum must be >= 0`);
@@ -66,6 +78,21 @@ export function strategy(debts: readonly PlanDebt[], extra: MinorUnits, order: P
     budget: minorFromBigInt(budget, FN),
     debts: ds.map((d) => ({ id: d.id, doneMonth: d.done, interest: minorFromBigInt(d.interest, FN) })),
   });
+
+  const byOrder = (a: Live, b: Live): number => {
+    const diff = order === 'rate' ? b.apr - a.apr : a.original - b.original;
+    return diff > 0n ? 1 : diff < 0n ? -1 : 0;
+  };
+
+  // The lump lands before month 1's interest, on the open debts in order.
+  let lumpLeft = BigInt(lump);
+  for (const d of ds.filter((x) => x.bal > 0n).sort(byOrder)) {
+    if (lumpLeft <= 0n) break;
+    const p = lumpLeft < d.bal ? lumpLeft : d.bal;
+    d.bal -= p;
+    lumpLeft -= p;
+    if (d.bal === 0n) d.done = 0;
+  }
 
   let month = 0;
   while (ds.some((d) => d.bal > 0n)) {
@@ -97,10 +124,7 @@ export function strategy(debts: readonly PlanDebt[], extra: MinorUnits, order: P
     }
     const open = ds
       .filter((d) => d.bal > 0n)
-      .sort((a, b) => {
-        const diff = order === 'rate' ? b.apr - a.apr : a.original - b.original;
-        return diff > 0n ? 1 : diff < 0n ? -1 : 0;
-      });
+      .sort(byOrder);
     for (const d of open) {
       if (left <= 0n) break;
       const p = left < d.bal ? left : d.bal;

@@ -1,5 +1,6 @@
 import fc from 'fast-check';
 import golden from './golden/calc-grow.json';
+import { fixedPayoff } from '../fixedPayoff';
 import { strategy, type PlanDebt } from '../strategies';
 import { ZERO_PERCENT, percent } from '../types';
 import { minorUnits, type MinorUnits } from '../../money/types';
@@ -90,6 +91,112 @@ describe('strategy', () => {
   ])('negative %s throws', (_n, fn) => {
     expect(fn).toThrow(RangeError);
     expect(fn).toThrow(/^strategy: /);
+  });
+
+  describe('lump', () => {
+    it('lump 0 or absent is deep-equal to today', () => {
+      for (const order of ['rate', 'balance'] as const) {
+        expect(strategy(both, m(10_000), order, { lump: m(0) })).toEqual(strategy(both, m(10_000), order));
+      }
+    });
+
+    it('negative lump throws', () => {
+      expect(() => strategy(both, m(0), 'rate', { lump: -1 as MinorUnits })).toThrow(/^strategy: lump must be >= 0/);
+    });
+
+    it('a lump covering every balance clears at month 0', () => {
+      const r = strategy(both, m(0), 'rate', { lump: m(570_000) });
+      expect(r.outcome).toBe('cleared');
+      expect(r.months).toBe(0);
+      expect(r.totalInterest).toBe(0);
+      expect(r.debts.map((d) => d.doneMonth)).toEqual([0, 0]);
+    });
+
+    it('a small lump drops only the first debt in order', () => {
+      const rate = strategy(both, m(10_000), 'rate', { lump: m(20_000) });
+      const bal = strategy(both, m(10_000), 'balance', { lump: m(20_000) });
+      const none = strategy(both, m(10_000), 'rate');
+      expect(rate.totalInterest as number).toBeLessThan(none.totalInterest as number);
+      // 'rate' pays the card (higher rate), 'balance' pays the loan (smaller balance)
+      expect(rate.debts[0]?.interest).toBeLessThan(none.debts[0]?.interest as number);
+      expect(bal.debts[1]?.interest).toBeLessThan(
+        strategy(both, m(10_000), 'balance').debts[1]?.interest as number
+      );
+    });
+
+    it('a lump larger than the first debt spills to the next; budget does not shrink', () => {
+      const r = strategy(both, m(0), 'balance', { lump: m(200_000) });
+      expect(doneOf(r, 'loan')).toBe(0);
+      expect(r.budget).toBe(19_500);
+      expect(doneOf(r, 'card') as number).toBeGreaterThan(0);
+      const plain = strategy(both, m(0), 'balance');
+      expect(r.months).toBeLessThan(plain.months);
+    });
+
+    it('a lump on a never-clearing plan can make it clear', () => {
+      const weak = { ...card, minimum: m(5_000) };
+      expect(strategy([weak], m(0), 'rate').outcome).toBe('never_clears');
+      expect(strategy([weak], m(0), 'rate', { lump: m(400_000) }).outcome).toBe('cleared');
+    });
+
+    it('one debt matches fixedPayoff with the same lump', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 1, max: 2_000_000 }),
+          fc.integer({ min: 0, max: 3_000 }),
+          fc.integer({ min: 1, max: 100_000 }),
+          fc.integer({ min: 0, max: 2_500_000 }),
+          (balance, apr, minimum, lump) => {
+            const d: PlanDebt = {
+              id: 'x',
+              balance: m(balance),
+              apr: percent((apr / 100).toFixed(2)),
+              minimum: m(minimum),
+            };
+            const s = strategy([d], m(0), 'rate', { lump: m(lump) });
+            const f = fixedPayoff(d.balance, d.apr, d.minimum, { lump: m(lump) });
+            expect(s.outcome).toBe(f.outcome);
+            expect(s.months).toBe(f.months);
+            expect(s.totalInterest).toBe(f.totalInterest);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    it('more lump never worsens months or interest (cleared cases)', () => {
+      fc.assert(
+        fc.property(
+          fc.array(
+            fc.record({
+              balance: fc.integer({ min: 0, max: 1_000_000 }),
+              apr: fc.integer({ min: 0, max: 3_000 }),
+              minimum: fc.integer({ min: 1_000, max: 100_000 }),
+            }),
+            { minLength: 1, maxLength: 3 }
+          ),
+          fc.integer({ min: 0, max: 500_000 }),
+          fc.integer({ min: 0, max: 500_000 }),
+          fc.constantFrom('rate' as const, 'balance' as const),
+          (l, a, b, order) => {
+            const plan: PlanDebt[] = l.map((d, i) => ({
+              id: `d${i}`,
+              balance: m(d.balance),
+              apr: percent((d.apr / 100).toFixed(2)),
+              minimum: m(d.minimum),
+            }));
+            const lo = strategy(plan, m(1_000), order, { lump: m(Math.min(a, b)) });
+            const hi = strategy(plan, m(1_000), order, { lump: m(Math.max(a, b)) });
+            if (lo.outcome === 'cleared' && hi.outcome === 'cleared') {
+              expect(hi.months).toBeLessThanOrEqual(lo.months);
+              expect(hi.totalInterest as number).toBeLessThanOrEqual(lo.totalInterest as number);
+              expect(Number.isSafeInteger(hi.totalInterest)).toBe(true);
+            }
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
   });
 
   describe('properties', () => {
