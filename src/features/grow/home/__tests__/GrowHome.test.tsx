@@ -34,10 +34,19 @@ jest.mock('@/shell/screen/TabRootScreen', () => {
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', today: '2026-11-05', userId: 'u1', householdId: 'h1', ready: true }),
 }));
+jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: { saving_floor: 15000 } }) }));
 
 let mockRead: GoalsRead;
 jest.mock('@/features/grow/goals/useGoalsRead', () => ({ useGoalsRead: () => mockRead }));
+// 06-17: the Debts segment reads its own model; an empty ready one here (the Debts screens have their own tests).
+jest.mock('@/features/grow/debts/useDebtsRead', () => {
+  const actual = jest.requireActual('@/features/grow/debts/useDebtsRead');
+  return {
+    ...actual,
+    useDebtsRead: () => ({ status: 'ready', model: actual.EMPTY_DEBTS_MODEL, refetch: jest.fn(), userId: 'u1', householdId: 'h1', today: '2026-11-05' }),
+  };
+});
 let mockFlags: Record<string, boolean> | null = null;
 jest.mock('@/features/grow/growFeatureFlags', () => {
   const actual = jest.requireActual('@/features/grow/growFeatureFlags');
