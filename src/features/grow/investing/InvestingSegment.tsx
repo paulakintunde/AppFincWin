@@ -6,8 +6,14 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
+import { useEditHolding } from '@/data/mutations/growHoldings';
 import { useDecideSettings } from '@/data/queries/decide';
-import type { HoldingType } from '@/db/holdings';
+import { useHoldingLotRows, useHoldingRows } from '@/data/queries/growHoldings';
+import { DeletableRow } from '@/features/decide/ui/DeletableRow';
+import { AccTile } from '@/features/grow/ui/AccTile';
+import { undoLabelText } from '@/i18n/undoLabel';
+import { showToast } from '@/state/undoToast';
+import type { HoldingRow, HoldingType } from '@/db/holdings';
 import { useT } from '@/i18n';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { StackedBar } from '@/features/grow/ui/StackedBar';
@@ -20,8 +26,11 @@ import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { AddHoldingSheet } from './AddHoldingSheet';
+import { UpdateValueSheet } from './UpdateValueSheet';
 import { useInvestingFormat } from './investingFormat';
 import { useInvestingRead, type HoldingLine } from './useInvestingRead';
+
+const TILE_GLYPH = { pension: 'pension', retirement: 'pension', brokerage: 'invest', crypto: 'invest', other: 'invest' } as const;
 
 const SWATCHES: readonly CategorySwatchKey[] = ['green', 'blue', 'ochre', 'plum', 'teal', 'rust', 'slate'];
 
@@ -48,9 +57,32 @@ export function InvestingSegment() {
   const read = useInvestingRead();
   const settings = useDecideSettings(read.userId ?? undefined).data ?? null;
   const [adding, setAdding] = useState(false);
+  const [updating, setUpdating] = useState<HoldingRow | null>(null);
+  const [editing, setEditing] = useState<HoldingRow | null>(null);
+  const holdingRows = useHoldingRows(read.userId ?? undefined, read.householdId ?? undefined).data;
+  const lotRows = useHoldingLotRows(read.userId ?? undefined, read.householdId ?? undefined).data;
+  const { remove } = useEditHolding();
   const { model } = read;
+  const rowOf = (id: string): HoldingRow | null => holdingRows?.find((h) => h.id === id && h.deleted_at === null) ?? null;
+  const removeHolding = (id: string, name: string) => {
+    const row = rowOf(id);
+    if (row === null || read.userId === null) return;
+    const stepId = remove(row, read.userId);
+    showToast({ kind: 'destructive', text: undoLabelText('holdingRemoved', { name }), stepId });
+  };
 
-  const sheet = <AddHoldingSheet visible={adding} onClose={() => setAdding(false)} />;
+  const sheet = (
+    <>
+      <AddHoldingSheet visible={adding} onClose={() => setAdding(false)} />
+      <AddHoldingSheet
+        visible={editing !== null}
+        holding={editing}
+        lots={editing === null ? undefined : (lotRows ?? []).filter((l) => l.holding_id === editing.id && l.deleted_at === null)}
+        onClose={() => setEditing(null)}
+      />
+      {updating !== null ? <UpdateValueSheet visible holding={updating} onClose={() => setUpdating(null)} /> : null}
+    </>
+  );
 
   if (read.status === 'ready' && model.holdings.length === 0) {
     return (
@@ -63,6 +95,15 @@ export function InvestingSegment() {
         </View>
         {sheet}
       </>
+    );
+  }
+  if (read.status === 'loading') {
+    return (
+      <View testID="grow-investing-loading" accessibilityLabel={t('grow.home.loading')} style={styles.stack}>
+        <View style={[styles.block, { height: 96, backgroundColor: colors.fill1 }]} />
+        <View style={[styles.block, { height: 112, backgroundColor: colors.fill1 }]} />
+        <View style={[styles.block, { height: 128, backgroundColor: colors.fill1 }]} />
+      </View>
     );
   }
   if (read.status !== 'ready') return null;
@@ -111,25 +152,44 @@ export function InvestingSegment() {
               ? t('grow.investing.row', { type: t(`grow.investing.types.${h.type}`), monthly: f.money(h.monthlyAmount, h.currency), date: f.day(h.asOf) })
               : t('grow.investing.rowNoMonthly', { type: t(`grow.investing.types.${h.type}`), date: f.day(h.asOf) });
           return (
-            <Pressable
-              key={h.id}
-              testID={`holding-row-${h.id}`}
-              accessibilityRole="button"
-              accessibilityLabel={`${h.name}, ${f.money(h.value, h.currency)}, ${sub}`}
-              onPress={() => pushOnce(`/grow/holding/${h.id}` as Href)}
-              style={[styles.holdingRow, i > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1 } : null]}
-            >
-              <View style={styles.grow}>
-                <Text style={{ ...strong, color: colors.ink }}>{h.name}</Text>
-                <Text style={{ ...label, color: colors.inkMuted }}>{sub}</Text>
-              </View>
-              <View style={styles.end}>
-                <Text style={{ ...strong, color: colors.ink }}>{f.money(h.value, h.currency)}</Text>
-                <GainBadge line={h} />
-              </View>
-            </Pressable>
+            <View key={h.id} style={i > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1 } : null}>
+              <DeletableRow
+                name={h.name}
+                onOpen={() => pushOnce(`/grow/holding/${h.id}` as Href)}
+                menu={[
+                  { key: 'update', label: t('grow.investing.detail.updateValue'), onSelect: () => setUpdating(rowOf(h.id)) },
+                  { key: 'edit', label: t('grow.investing.detail.edit'), onSelect: () => setEditing(rowOf(h.id)) },
+                ]}
+                confirm={{
+                  title: t('grow.investing.detail.removeTitle', { name: h.name }),
+                  body: t('grow.investing.detail.removeBody', { amount: f.money(h.value, h.currency) }),
+                }}
+                onDelete={() => removeHolding(h.id, h.name)}
+                accessibilityLabel={`${t('grow.investing.rowA11y', { name: h.name, value: f.money(h.value, h.currency), gain: f.signed(h.gain, h.currency) })}, ${sub}`}
+              >
+                <View testID={`holding-row-${h.id}`} style={styles.holdingRow}>
+                  <AccTile glyph={TILE_GLYPH[h.type]} />
+                  <View style={styles.grow}>
+                    <Text style={{ ...strong, color: colors.ink }}>{h.name}</Text>
+                    <Text style={{ ...label, color: colors.inkMuted }}>{sub}</Text>
+                  </View>
+                  <View style={styles.end}>
+                    <Text style={{ ...strong, color: colors.ink }}>{f.money(h.value, h.currency)}</Text>
+                    <GainBadge line={h} />
+                  </View>
+                </View>
+              </DeletableRow>
+            </View>
           );
         })}
+        <Pressable
+          testID="investing-add-row"
+          accessibilityRole="button"
+          onPress={() => setAdding(true)}
+          style={[styles.addRow, styles.addInCard, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1 }]}
+        >
+          <Text style={{ ...body, color: colors.accent }}>{t('grow.investing.addHolding')}</Text>
+        </Pressable>
       </View>
 
       {stale.length > 0 ? (
@@ -173,9 +233,6 @@ export function InvestingSegment() {
       ) : null}
 
       <Text style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.noPrices')}</Text>
-      <Pressable testID="investing-add-row" accessibilityRole="button" onPress={() => setAdding(true)} style={styles.addRow}>
-        <Text style={{ ...body, color: colors.accent }}>{t('grow.investing.addHolding')}</Text>
-      </Pressable>
       {sheet}
     </View>
   );
@@ -189,5 +246,7 @@ const styles = StyleSheet.create({
   holdingRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm, padding: space.cardPad, minHeight: space.touchMin },
   grow: { flex: 1 },
   end: { alignItems: 'flex-end', gap: 2 },
+  block: { borderRadius: radii.card },
+  addInCard: { paddingHorizontal: space.cardPad },
   addRow: { minHeight: space.touchMin, justifyContent: 'center' },
 });

@@ -18,7 +18,7 @@ jest.mock('expo-router', () => ({ router: { back: jest.fn(), push: jest.fn() } }
 jest.mock('@/shell/screen/DetailScreen', () => {
   const R = require('react');
   const { View, Text: RNText } = require('react-native');
-  return { DetailScreen: (p: { title: string; children?: React.ReactNode }) => R.createElement(View, null, R.createElement(RNText, null, p.title), p.children) };
+  return { DetailScreen: (p: { title: string; right?: React.ReactNode; children?: React.ReactNode }) => R.createElement(View, null, R.createElement(RNText, null, p.title), p.right, p.children) };
 });
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', today: '2026-11-06', userId: 'u1', householdId: 'h1', ready: true, showCents: false, region: null }),
@@ -26,16 +26,22 @@ jest.mock('@/features/record/useRecordContext', () => ({
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: { investing_floor: 20000 } }) }));
 const mockAddHolding = jest.fn(() => ({ id: 'new', stepId: 's1' }));
 const mockAddLot = jest.fn(() => ({ id: 'lot', stepId: 's2' }));
+const mockEditHolding = jest.fn(() => 'se');
+const mockRemoveHolding = jest.fn(() => 'rm');
+const mockEditLot = jest.fn(() => 'sl');
+const mockRemoveLot = jest.fn(() => 'rl');
 jest.mock('@/data/mutations/growHoldings', () => {
   const actual = jest.requireActual('@/data/mutations/growHoldings');
   return {
     ...actual,
     useAddHolding: () => ({ add: mockAddHolding }),
     useAddHoldingLot: () => ({ add: mockAddLot }),
-    useEditHolding: () => ({ edit: jest.fn(), remove: jest.fn(() => 'rm') }),
+    useEditHolding: () => ({ edit: mockEditHolding, remove: mockRemoveHolding }),
+    useEditHoldingLot: () => ({ edit: mockEditLot, remove: mockRemoveLot }),
   };
 });
-jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
+const mockToast = jest.fn();
+jest.mock('@/state/undoToast', () => ({ showToast: (a: unknown) => mockToast(a) }));
 jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
 
 let mockRead: InvestingRead;
@@ -105,6 +111,11 @@ beforeEach(() => {
   mockPush.mockClear();
   mockAddHolding.mockClear();
   mockAddLot.mockClear();
+  mockEditHolding.mockClear();
+  mockRemoveHolding.mockClear();
+  mockEditLot.mockClear();
+  mockRemoveLot.mockClear();
+  mockToast.mockClear();
   mockHoldings = [holding(), holding({ id: 'h-idx', name: 'Index fund', type: 'brokerage', value: 124000, opening_put_in: 120000, monthly_amount: 5000 })];
   mockLots = [];
   mockRead = readOf(mockHoldings);
@@ -126,8 +137,7 @@ describe('Investing segment', () => {
   it('every value display carries its as-of date', async () => {
     await renderIt(<InvestingSegment />);
     for (const h of mockHoldings) {
-      const row = screen.getByTestId(`holding-row-${h.id}`);
-      expect(row.props.accessibilityLabel).toMatch(/as of Nov 1/);
+      expect(screen.getByLabelText(new RegExp(`${h.name}.*as of Nov 1`))).toBeTruthy();
     }
   });
 
@@ -234,7 +244,16 @@ describe('Holding detail', () => {
     expect(screen.getByText('Dividend · Sep 30 · $18')).toBeTruthy();
     expect(screen.getByText('Value update · Nov 1 · $6,450')).toBeTruthy();
     expect(screen.getByText(en.grow.investing.taxNote)).toBeTruthy();
+    expect(screen.queryByLabelText(/Values you typed, from/)).toBeNull();
+    expect(screen.getByText(en.grow.investing.detail.chartAfterSecond)).toBeTruthy();
+  });
+
+  it('draws the chart from the second value', async () => {
+    mockLots = [lot({ id: 'v1', local_date: '2026-10-01', amount: 600000 }), lot({ id: 'v2', local_date: '2026-11-01' })];
+    mockRead = readOf(mockHoldings, mockLots);
+    await renderIt(<HoldingDetailScreen id="h-ret" />);
     expect(screen.getByLabelText(/Values you typed, from .* Latest \$6,450\./)).toBeTruthy();
+    expect(screen.queryByText(en.grow.investing.detail.chartAfterSecond)).toBeNull();
   });
 
   it('06-19: a holding with a rate opens the illustration with its value, rate and monthly amount', async () => {
@@ -272,5 +291,137 @@ describe('Holding detail', () => {
     await fireEvent.press(screen.getByText(en.grow.investing.detail.remove));
     expect(screen.getByText('Remove Retirement fund?')).toBeTruthy();
     expect(screen.getByText('Its entries go too. Net worth drops by $6,450.')).toBeTruthy();
+  });
+});
+
+describe('06-33 edit and remove (D-32)', () => {
+  it('Investing shows loading blocks, not nothing', async () => {
+    mockRead = { ...readOf([]), status: 'loading' };
+    await renderIt(<InvestingSegment />);
+    expect(screen.getByTestId('grow-investing-loading')).toBeTruthy();
+  });
+
+  it('puts + Add a holding as a row inside the list card', async () => {
+    await renderIt(<InvestingSegment />);
+    await fireEvent.press(screen.getByTestId('investing-add-row'));
+    expect(screen.getByText(en.grow.investing.add.save)).toBeTruthy();
+  });
+
+  it('the row menu Edit opens the holding sheet filled in', async () => {
+    await renderIt(<InvestingSegment />);
+    await fireEvent.press(screen.getByLabelText('More for Retirement fund'));
+    await fireEvent.press(screen.getByText(en.grow.investing.detail.edit));
+    expect(screen.getByText(en.grow.investing.add.editTitle)).toBeTruthy();
+    expect(screen.getByTestId('holding-name').props.value).toBe('Retirement fund');
+  });
+
+  it('the row menu Update value opens the update sheet', async () => {
+    await renderIt(<InvestingSegment />);
+    await fireEvent.press(screen.getByLabelText('More for Retirement fund'));
+    await fireEvent.press(screen.getByText(en.grow.investing.detail.updateValue));
+    expect(screen.getByText(en.grow.investing.update.save)).toBeTruthy();
+  });
+
+  it('the row menu Delete asks first, then removes once with Undo', async () => {
+    await renderIt(<InvestingSegment />);
+    await fireEvent.press(screen.getByLabelText('More for Retirement fund'));
+    await fireEvent.press(screen.getByText('Delete'));
+    expect(screen.getByText('Remove Retirement fund?')).toBeTruthy();
+    expect(mockRemoveHolding).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getAllByText('Delete').slice(-1)[0]!);
+    expect(mockRemoveHolding).toHaveBeenCalledTimes(1);
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'rm', text: expect.objectContaining({ key: 'undo.label.holdingRemoved' }) }));
+  });
+});
+
+describe('06-33 entries and the holding header', () => {
+  const buy = () => lot({ id: 'e1', kind: 'buy', amount: 15000, units: '2', local_date: '2026-10-01', note: 'monthly' });
+
+  it('an entry row is a button that opens the entry to edit, kind read-only', async () => {
+    mockLots = [buy()];
+    mockRead = readOf(mockHoldings, mockLots);
+    await renderIt(<HoldingDetailScreen id="h-ret" />);
+    expect(screen.getByLabelText('Buy, Oct 1, $150. Edit the entry.')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('entry-e1'));
+    expect(screen.getByText(en.grow.investing.entry.editTitle)).toBeTruthy();
+    expect(screen.getByTestId('lot-units').props.value).toBe('2');
+    expect(screen.getByTestId('lot-date').props.value).toBe('2026-10-01');
+    expect(screen.queryByText(en.grow.investing.entry.sale)).toBeNull();
+  });
+
+  it('saving an entry sends the changed keys only, with a toast and Undo', async () => {
+    mockLots = [buy()];
+    mockRead = readOf(mockHoldings, mockLots);
+    await renderIt(<HoldingDetailScreen id="h-ret" />);
+    await fireEvent.press(screen.getByTestId('entry-e1'));
+    await fireEvent.changeText(screen.getByLabelText(en.grow.investing.entry.amount), '200');
+    await fireEvent.press(screen.getByText(en.grow.investing.entry.save));
+    expect(mockEditLot).toHaveBeenCalledTimes(1);
+    const args = mockEditLot.mock.calls[0] as unknown as [unknown, Record<string, unknown>];
+    expect(args[1]).toEqual({ amount: 20000 });
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'sl', text: expect.objectContaining({ key: 'undo.label.holdingEntryEdited' }) }));
+  });
+
+  it('a sale edited above the units held shows the text and does not save', async () => {
+    mockLots = [
+      lot({ id: 'b1', kind: 'buy', amount: 100000, units: '2', local_date: '2026-09-01' }),
+      lot({ id: 's1', kind: 'sell', amount: 50000, units: '1', local_date: '2026-10-01' }),
+    ];
+    mockRead = readOf(mockHoldings, mockLots);
+    await renderIt(<HoldingDetailScreen id="h-ret" />);
+    await fireEvent.press(screen.getByTestId('entry-s1'));
+    await fireEvent.changeText(screen.getByTestId('lot-units'), '5');
+    expect(screen.getByTestId('lot-exceeds')).toBeTruthy();
+    await fireEvent.press(screen.getByText(en.grow.investing.entry.save));
+    expect(mockEditLot).not.toHaveBeenCalled();
+  });
+
+  it('Remove entry confirms, then removes once with Undo', async () => {
+    mockLots = [buy()];
+    mockRead = readOf(mockHoldings, mockLots);
+    await renderIt(<HoldingDetailScreen id="h-ret" />);
+    await fireEvent.press(screen.getByTestId('entry-e1'));
+    await fireEvent.press(screen.getByTestId('lot-remove'));
+    expect(screen.getByText('Remove Buy · Oct 1 · $150?')).toBeTruthy();
+    expect(screen.getByText('The gain on Retirement fund is worked out again without it.')).toBeTruthy();
+    expect(mockRemoveLot).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByText(en.grow.investing.entry.removeConfirm));
+    expect(mockRemoveLot).toHaveBeenCalledTimes(1);
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'rl', text: expect.objectContaining({ key: 'undo.label.holdingEntryRemoved' }) }));
+  });
+
+  it('a value entry opens the update sheet filled in and edits the amount', async () => {
+    mockLots = [lot({ id: 'v1', local_date: '2026-11-01', amount: 645000 })];
+    mockRead = readOf(mockHoldings, mockLots);
+    await renderIt(<HoldingDetailScreen id="h-ret" />);
+    await fireEvent.press(screen.getByTestId('entry-v1'));
+    expect(screen.getByText(en.grow.investing.entry.editTitle)).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText(en.grow.investing.update.field), '6500');
+    await fireEvent.press(screen.getByText(en.grow.investing.update.save));
+    const args = mockEditLot.mock.calls[0] as unknown as [unknown, Record<string, unknown>];
+    expect(args[1]).toEqual({ amount: 650000 });
+  });
+
+  it('the header Edit opens the holding sheet without Value now or As of, and sends changed keys', async () => {
+    await renderIt(<HoldingDetailScreen id="h-ret" />);
+    await fireEvent.press(screen.getByTestId('holding-edit'));
+    expect(screen.getByText(en.grow.investing.add.editTitle)).toBeTruthy();
+    expect(screen.queryByLabelText(en.grow.investing.add.valueNow)).toBeNull();
+    expect(screen.queryByTestId('holding-as-of')).toBeNull();
+    await fireEvent.changeText(screen.getByTestId('holding-name'), 'Pension pot');
+    await fireEvent.press(screen.getByText(en.grow.investing.add.saveEdit));
+    expect(mockEditHolding).toHaveBeenCalledTimes(1);
+    const args = mockEditHolding.mock.calls[0] as unknown as [unknown, Record<string, unknown>];
+    expect(args[1]).toEqual({ name: 'Pension pot' });
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'se', text: expect.objectContaining({ key: 'undo.label.holdingEdited' }) }));
+  });
+
+  it('the empty entries state offers Update value, and Remove holding is a text button', async () => {
+    await renderIt(<HoldingDetailScreen id="h-ret" />);
+    const empty = screen.getAllByText(en.grow.investing.detail.entriesEmptyAction);
+    expect(empty.length).toBeGreaterThan(0);
+    await fireEvent.press(empty[empty.length - 1]!);
+    expect(screen.getByText(en.grow.investing.update.save)).toBeTruthy();
+    expect(screen.getByTestId('holding-remove')).toBeTruthy();
   });
 });
