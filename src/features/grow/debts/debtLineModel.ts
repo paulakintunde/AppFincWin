@@ -64,3 +64,28 @@ export function estimatedMinimumOf(balance: number | null, rateText: string): nu
   if (text !== '' && !/^\d{1,3}(\.\d{1,2})?$/.test(text)) return null;
   return estimatedCardMinimum(minorUnits(balance), text === '' ? ZERO_PERCENT : percent(text));
 }
+
+/** Whole percent of the starting balance already paid, half up, clamped to 0..100; null without a starting balance. */
+export function paidPercent(started: number | null, balance: number): number | null {
+  if (started === null || started <= 0) return null;
+  const paid = Math.max(0, started - balance);
+  return Math.min(100, Math.floor((paid * 200 + started) / (started * 2)));
+}
+
+export interface SaleOutcome {
+  /** The payment covers the whole balance. */
+  paidOff: boolean;
+  /** What is still owed after the payment (0 when paid off). */
+  stillOwed: number;
+  /** What the sale leaves after the payment to the loan. */
+  leftOver: number;
+  /** The payment is more than the balance: the sale cannot be recorded. */
+  exceeds: boolean;
+}
+
+/** D-16: what a sale and its payment to the loan leave, from the balance, what it sold for and what pays the loan. */
+export function saleOutcome(balance: number, soldFor: number, paidWith: number): SaleOutcome {
+  const exceeds = paidWith > balance;
+  const paid = Math.min(paidWith, balance);
+  return { paidOff: !exceeds && paid >= balance, stillOwed: Math.max(0, balance - paid), leftOver: Math.max(0, soldFor - paidWith), exceeds };
+}

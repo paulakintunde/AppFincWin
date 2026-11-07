@@ -1,4 +1,4 @@
-import { aboutTens, debtLineModel, estimatedMinimumOf } from '../debtLineModel';
+import { aboutTens, debtLineModel, estimatedMinimumOf, paidPercent, saleOutcome } from '../debtLineModel';
 
 describe('debtLineModel', () => {
   it('LEDGER: 312 a month on 3200 pay is 10% against a rule of 36', () => {
@@ -30,6 +30,21 @@ describe('aboutTens', () => {
   it('works for a currency with no decimals', () => {
     expect(aboutTens(765, 0)).toBe(770);
     expect(aboutTens(764, 0)).toBe(760);
+  });
+});
+
+describe('paidPercent and saleOutcome', () => {
+  it('LEDGER: 14500 started, 8420 owed is 42% paid', () => {
+    expect(paidPercent(1450000, 842000)).toBe(42);
+    expect(paidPercent(null, 842000)).toBeNull();
+    expect(paidPercent(1000, 2000)).toBe(0);
+  });
+  it('a sale that covers the balance closes it and leaves the rest', () => {
+    expect(saleOutcome(842000, 1000000, 842000)).toEqual({ paidOff: true, stillOwed: 0, leftOver: 158000, exceeds: false });
+  });
+  it('a smaller payment leaves the rest owed; a bigger one is refused', () => {
+    expect(saleOutcome(842000, 500000, 500000)).toEqual({ paidOff: false, stillOwed: 342000, leftOver: 0, exceeds: false });
+    expect(saleOutcome(842000, 1000000, 900000).exceeds).toBe(true);
   });
 });
 

@@ -38,16 +38,16 @@ const NAME_MAX = 80;
 type TypeChoice = 'loan' | 'card' | 'line' | 'owed';
 type FullAnswer = 'yes' | 'no' | 'unsure';
 
-const TYPES: readonly { value: TypeChoice; labelKey: string }[] = [
-  { value: 'loan', labelKey: 'grow.debts.add.typeLoan' },
-  { value: 'card', labelKey: 'grow.debts.add.typeCard' },
-  { value: 'line', labelKey: 'grow.debts.add.typeLine' },
-  { value: 'owed', labelKey: 'grow.debts.add.typeOwed' },
+const TYPES: readonly { value: TypeChoice; textKey: string }[] = [
+  { value: 'loan', textKey: 'grow.debts.add.typeLoan' },
+  { value: 'card', textKey: 'grow.debts.add.typeCard' },
+  { value: 'line', textKey: 'grow.debts.add.typeLine' },
+  { value: 'owed', textKey: 'grow.debts.add.typeOwed' },
 ];
-const ANSWERS: readonly { value: FullAnswer; labelKey: string }[] = [
-  { value: 'yes', labelKey: 'grow.debts.add.fullYes' },
-  { value: 'no', labelKey: 'grow.debts.add.fullNo' },
-  { value: 'unsure', labelKey: 'grow.debts.add.fullUnsure' },
+const ANSWERS: readonly { value: FullAnswer; textKey: string }[] = [
+  { value: 'yes', textKey: 'grow.debts.add.fullYes' },
+  { value: 'no', textKey: 'grow.debts.add.fullNo' },
+  { value: 'unsure', textKey: 'grow.debts.add.fullUnsure' },
 ];
 
 /** '6.9' -> '6.9'; '' -> null (no rate); anything outside 0..100 with two decimals -> 'invalid'. */
@@ -211,7 +211,7 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
             {TYPES.map((x) => (
               <Chip
                 key={x.value}
-                label={t(x.labelKey)}
+                label={t(x.textKey)}
                 selected={value.type === x.value}
                 onPress={() => {
                   hapticSelection();
@@ -233,7 +233,7 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
                   testID={`add-debt-full-${a.value}`}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
-                  accessibilityLabel={t(a.labelKey)}
+                  accessibilityLabel={t(a.textKey)}
                   onPress={() => {
                     hapticSelection();
                     set({ full: a.value });
@@ -241,7 +241,7 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
                   style={({ pressed }) => [styles.radio, { borderColor: selected ? colors.ink : colors.line1, opacity: pressed ? PRESSED_OPACITY : 1 }]}
                 >
                   <RadioDot selected={selected} />
-                  <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t(a.labelKey)}</Text>
+                  <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t(a.textKey)}</Text>
                 </Pressable>
               );
             })}
