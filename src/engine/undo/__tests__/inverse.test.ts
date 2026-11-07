@@ -12,7 +12,7 @@ import {
 } from '../inverse';
 
 describe('inverseOfInserts', () => {
-  it.each(['recurring_dismissals', 'income_payer_prompts', 'decide_answers'] as const)('soft-deletes an inserted %s row (05.2)', (entity) => {
+  it.each(['recurring_dismissals', 'income_payer_prompts', 'decide_answers', 'holdings', 'holding_lots'] as const)('soft-deletes an inserted %s row (05.2, 06)', (entity) => {
     expect(inverseOfInserts(entity, [{ id: 'r', version: 1 }])).toEqual([
       { entity, id: 'r', expectedVersion: 1, patch: { deleted_at: NOW_SENTINEL } },
     ]);

@@ -288,6 +288,8 @@ const en = {
         decide_answers: 'Decide answer',
         recurring_dismissals: 'Dismissed recurring',
         income_payer_prompts: 'Income source',
+        holdings: 'Holding',
+        holding_lots: 'Holding entry',
         unknown: 'Change',
       },
       reason: {
