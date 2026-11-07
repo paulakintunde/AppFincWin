@@ -27,6 +27,7 @@ const GROW_UNDO_KEYS: Record<string, { named: string; unnamed?: string }> = {
   holdingValueUpdated: { named: 'Value updated · {{name}}', unnamed: 'Value updated' },
   accountRateSaved: { named: 'Interest rate saved · {{name}}', unnamed: 'Interest rate saved' },
   debtRemoved: { named: 'Debt removed · {{name}}', unnamed: 'Debt removed' },
+  debtOneOffRecorded: { named: 'One-off payment · {{name}}', unnamed: 'One-off payment recorded' },
 };
 
 const BANNED = /\b(advice|advise|recommend\w*|should|best|better|optimal)\b/i;
@@ -34,8 +35,8 @@ const label = en.undo.label as Readonly<Record<string, string>>;
 const labelUnnamed = en.undo.labelUnnamed as Readonly<Record<string, string>>;
 
 describe('Grow undo labels', () => {
-  it('registers exactly 20 Grow keys', () => {
-    expect(Object.keys(GROW_UNDO_KEYS)).toHaveLength(20);
+  it('registers exactly 21 Grow keys', () => {
+    expect(Object.keys(GROW_UNDO_KEYS)).toHaveLength(21);
   });
 
   it.each(Object.entries(GROW_UNDO_KEYS))('%s is registered once with exact English', (key, texts) => {

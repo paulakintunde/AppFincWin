@@ -1603,6 +1603,7 @@ const en = {
       holdingEntryRemoved: 'Entry removed · {{name}}',
       holdingValueUpdated: 'Value updated · {{name}}',
       debtRemoved: 'Debt removed · {{name}}',
+      debtOneOffRecorded: 'One-off payment · {{name}}',
       accountRateSaved: 'Interest rate saved · {{name}}',
     },
     // C-WR-06: shown instead of the matching `label` entry when the row has no name, so a
@@ -1689,6 +1690,7 @@ const en = {
       holdingEntryRemoved: 'Entry removed',
       holdingValueUpdated: 'Value updated',
       debtRemoved: 'Debt removed',
+      debtOneOffRecorded: 'One-off payment recorded',
       accountRateSaved: 'Interest rate saved',
     },
     reverted: 'Undone · {{label}}',
