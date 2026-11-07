@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space } from '@/theme/layout';
+import { radii, space } from '@/theme/layout';
 import { categorySwatch, type CategorySwatchKey } from '@/theme/tokens';
 import { fontSize } from '@/theme/typography';
 import { Text } from '@/ui/Text';
@@ -55,8 +55,9 @@ export function StackedBar({ segments, legend, accessibilityLabel }: StackedBarP
       accessibilityLabel={accessibilityLabel}
       onLayout={(e: LayoutChangeEvent) => setWidth(Math.max(120, e.nativeEvent.layout.width))}
     >
+      <View style={{ width, height: STACKED_BAR_HEIGHT, borderRadius: radii.pill, overflow: 'hidden' }}>
       <Svg width={width} height={STACKED_BAR_HEIGHT} importantForAccessibility="no-hide-descendants">
-        <Rect x={0} y={0} width={width} height={STACKED_BAR_HEIGHT} rx={STACKED_BAR_HEIGHT / 2} fill={colors.fill1} />
+        <Rect x={0} y={0} width={width} height={STACKED_BAR_HEIGHT} fill={colors.fill1} />
         {segments.map((s, i) => {
           const w = ((percents[i] ?? 0) * width) / 100;
           const x = ((offsets[i] ?? 0) * width) / 100;
@@ -65,6 +66,7 @@ export function StackedBar({ segments, legend, accessibilityLabel }: StackedBarP
           );
         })}
       </Svg>
+      </View>
       <Text importantForAccessibility="no" accessibilityElementsHidden style={[styles.legend, { color: colors.inkMuted }]}>
         {legend}
       </Text>

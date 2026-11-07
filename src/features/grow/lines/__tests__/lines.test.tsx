@@ -48,6 +48,8 @@ jest.mock('@/features/decide/home/homeCardModel', () => ({ monthBreakdown: () =>
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', today: '2026-11-05', userId: 'u1', householdId: 'h1', ready: true, timeZone: 'UTC' }),
 }));
+let mockNetRows: unknown[] = [];
+jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockNetRows }) }));
 let mockRead: GoalsRead;
 jest.mock('@/features/grow/goals/useGoalsRead', () => ({ useGoalsRead: () => mockRead }));
 
@@ -75,6 +77,7 @@ const logged = (monthlyInvesting: number, monthlySaving: number) => ({
 beforeEach(() => {
   jest.clearAllMocks();
   mockRead = LEDGER_READ;
+  mockNetRows = [];
   mockSettings = { currency: 'USD', dsr_line: '36', investing_floor: 20_000, saving_floor: 15_000 };
   mockResult = logged(20_000, 15_000);
 });
@@ -111,7 +114,22 @@ describe('Your money rules (G10)', () => {
     await wrap(<GrowLinesScreen />);
     expect(screen.getByText('36%')).toBeTruthy();
     expect(screen.getByText('$150')).toBeTruthy();
-    expect(screen.getAllByText('default')).toHaveLength(3);
+    expect(screen.getAllByText('Default')).toHaveLength(3);
+  });
+
+  it('a $0 rule shows no Met badge and a cents amount keeps its cents (R1)', async () => {
+    mockSettings = { currency: 'USD', dsr_line: '36', investing_floor: 0, saving_floor: 55_687 };
+    mockResult = logged(0, 60_000);
+    await wrap(<GrowLinesScreen />);
+    expect(screen.queryByText(/Met · \$0/)).toBeNull();
+    expect(screen.queryByText(/Not yet · \$0/)).toBeNull();
+    expect(screen.getByText('$556.87')).toBeTruthy();
+  });
+
+  it('the safety net row reads its reach date when a monthly amount is set (R2)', async () => {
+    mockNetRows = [{ id: 'net', is_safety_net: true, deleted_at: null, monthly_amount: 50_000 }];
+    await wrap(<GrowLinesScreen />);
+    expect(screen.getByText(/^of \$2,300 · reaches it by /)).toBeTruthy();
   });
 
   it('the safety net row opens the safety net screen', async () => {
