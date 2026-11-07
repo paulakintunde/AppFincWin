@@ -1,4 +1,5 @@
 // 06-05 (BO-07 item 2): what a goal has saved. Opening amount plus its goal-tagged paid lines, each counted once. PURE.
+import { MAX_ABS_AMOUNT_MINOR } from '@/engine/money';
 import type { GoalLineSource, GoalSourceRow, ToHome } from './types';
 
 /**
@@ -17,4 +18,12 @@ export function goalSaved(row: GoalSourceRow, lines: readonly GoalLineSource[], 
     saved += line.transfer_id === null ? Math.abs(amount) : amount;
   }
   return saved;
+}
+
+/**
+ * What Decide may be handed as a pot's saved money: never below 0 (taking out more than was put in leaves nothing saved, and the
+ * engine rejects a negative pot) and never past the money cap (the old builder capped the same way).
+ */
+export function clampSaved(saved: number): number {
+  return Math.min(Math.max(saved, 0), MAX_ABS_AMOUNT_MINOR);
 }

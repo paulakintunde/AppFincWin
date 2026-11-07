@@ -1,4 +1,5 @@
 import { LEDGER_TODAY, goals } from '@/engine/grow/__tests__/fixtures/ledger';
+import { MAX_ABS_AMOUNT_MINOR } from '@/engine/money';
 import { envelopesOf, goalPointsOf, goalSaved } from '../index';
 import type { GoalLineSource, GoalSourceRow } from '../types';
 
@@ -83,6 +84,12 @@ describe('goalPointsOf / envelopesOf', () => {
       { ...lisbon, id: 'eur', currency: 'EUR' },
     ];
     expect(goalPointsOf(rows, [], identity).map((p) => p.id)).toEqual(['g-lisbon']);
+  });
+
+  it('06-10: saved never goes below 0 or past the money cap (the engine rejects both)', () => {
+    const out = line({ id: 'big-out', transfer_id: 't9', original_amount: -900000 });
+    expect(goalPointsOf([lisbon], [out], identity)[0]?.saved).toBe(0);
+    expect(goalPointsOf([{ ...lisbon, opening_saved: MAX_ABS_AMOUNT_MINOR }], [line({ id: 'more' })], identity)[0]?.saved).toBe(MAX_ABS_AMOUNT_MINOR);
   });
 
   it('a target or monthly amount that cannot convert becomes null (the goal stays)', () => {

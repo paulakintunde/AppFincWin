@@ -1,7 +1,7 @@
 // 06-05 (BO-07 item 2): the goal connection point. Grow rows in, Decide envelopes out. PURE: engine types only.
 import type { Envelope } from '@/engine/decide/v3';
 import { minorUnits } from '@/engine/money';
-import { goalSaved } from './goalSaved';
+import { clampSaved, goalSaved } from './goalSaved';
 import type { GoalLineSource, GoalPoint, GoalSourceRow, ToHome } from './types';
 
 /** Live goals (not done, not deleted, not the safety net) whose saved money converts. Absent locked = locked (safe default). */
@@ -18,7 +18,7 @@ export function goalPointsOf(rows: readonly GoalSourceRow[], lines: readonly Goa
       name: row.name,
       kind: row.kind,
       target: target === null ? null : minorUnits(target),
-      saved: minorUnits(saved),
+      saved: minorUnits(clampSaved(saved)),
       monthlyAmount: monthly === null ? null : minorUnits(monthly),
       readyBy: row.ready_by,
       locked: row.locked !== false,

@@ -3,6 +3,7 @@ import { evaluate, readStoredCheck, type CheckV2, type V3Inputs } from '@/engine
 import { carInputs, demoSource, sofaInputs } from '@/features/decide/__tests__/helpers/demoScenario';
 import { buildV3Inputs } from '@/features/decide/snapshot/v3/buildV3Inputs';
 import { v3s } from '@/features/decide/snapshot/v3/__tests__/v3Fixtures';
+import { minorUnits } from '@/engine/money';
 import { safetyNetInputsOf, safetyNetPointOf } from '../index';
 import type { GoalSourceRow } from '../types';
 
@@ -47,10 +48,23 @@ for (const reserve of reserves)
         for (const reserve_account_id of accounts)
           for (const currency of currencies) cells.push({ reserve, safety_net_size, protect, locked, reserve_account_id, currency });
 
+/**
+ * 06-10: the builder no longer reads the interim columns, so the OLD mapping is frozen here as a literal copy of what
+ * buildV3Inputs did (05.4 FIN-01): a settings row in another currency drops the money (size and reserve), protect and locked pass
+ * as stored, saved is the reserve (0 when none), the fund is the reserve linked to reserve_account_id.
+ */
 function oldWay(c: Cell): V3Inputs {
   const base = demoSource(TODAY);
   const source = { ...base, settings: { ...base.settings!, currency: c.currency, reserve: c.reserve } };
-  return buildV3Inputs(source, v3s({ safety_net_size: c.safety_net_size, safety_net_protect: c.protect, safety_net_locked: c.locked, reserve_account_id: c.reserve_account_id }));
+  const built = buildV3Inputs(source, v3s());
+  const usable = c.currency === HOME;
+  const reserve = usable ? c.reserve : null;
+  const size = usable ? c.safety_net_size : null;
+  return {
+    ...built,
+    safetyNet: { protect: c.protect, size: size === null ? null : minorUnits(size), saved: minorUnits(reserve ?? 0), locked: c.locked },
+    emergency: reserve === null ? null : { amount: minorUnits(reserve), accountId: c.reserve_account_id },
+  };
 }
 
 function newWay(c: Cell, old: V3Inputs): V3Inputs {
