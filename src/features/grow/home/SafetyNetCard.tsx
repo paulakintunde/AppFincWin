@@ -22,21 +22,29 @@ export interface SafetyNetCardProps {
   net: SafetyNetPoint | null;
   money: GoalRowMoney;
   animate?: boolean;
+  /** Expected lines waiting for a confirm (D-32). */
+  pending?: number;
+  /** A month into the net, and the month it reaches its size at that rate (YYYY-MM-DD). Both set: the date line. */
+  monthly?: number | null;
+  reachesOn?: string | null;
 }
 
-export function SafetyNetCard({ net, money, animate = true }: SafetyNetCardProps) {
-  const t = useT();
+export function SafetyNetCard({ net, money, animate = true, pending = 0, monthly = null, reachesOn = null }: SafetyNetCardProps) {
+  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const hasSize = net !== null && net.size !== null && net.size > 0;
   const saved = net === null ? 0 : net.saved;
   const percent = hasSize ? goalPercent(saved, net.size) : 0;
-  const figure = hasSize
-    ? `${money.amount(saved)} ${t('grow.safetyNet.figureOf', { target: money.amount(net.size!) })}`
-    : money.amount(saved);
-  const line = hasSize ? t('grow.safetyNet.cardLineNoPlan') : t('grow.safetyNet.emptyBody');
+  const ofText = hasSize ? t('grow.safetyNet.figureOf', { target: money.amount(net.size!) }) : null;
+  const plan = hasSize && monthly !== null && monthly > 0 && reachesOn !== null;
+  const line = plan
+    ? t('grow.safetyNet.cardLine', { monthly: money.amount(monthly), target: money.amount(net.size!), date: money.monthYear(reachesOn) })
+    : hasSize
+      ? t('grow.safetyNet.cardLineNoPlan')
+      : t('grow.safetyNet.emptyBody');
   const spoken = `${t('grow.safetyNet.title')}, ${t('grow.safetyNet.lockedA11y')}, ${
     hasSize ? `${money.spoken(saved)} ${t('grow.safetyNet.figureOf', { target: money.spoken(net.size!) })}, ${percent}%` : money.spoken(saved)
-  }. ${line}`;
+  }. ${line}${pending > 0 ? `, ${t('grow.home.toConfirmA11y', { count: pending })}` : ''}`;
   return (
     <Pressable
       testID="grow-safety-net-card"
@@ -46,7 +54,7 @@ export function SafetyNetCard({ net, money, animate = true }: SafetyNetCardProps
       style={[styles.card, { backgroundColor: categorySwatch.blue.tint, borderColor: categorySwatch.blue.color }]}
     >
       <View style={styles.top}>
-        <View style={[styles.tile, { backgroundColor: colors.surface }]}>
+        <View style={[styles.tile, { backgroundColor: categorySwatch.blue.tint }]}>
           <GrowGlyph name="lock" color={categorySwatch.blue.color} size={30} />
         </View>
         <View style={styles.text}>
@@ -54,7 +62,11 @@ export function SafetyNetCard({ net, money, animate = true }: SafetyNetCardProps
             <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('grow.safetyNet.title')}</Text>
             <StateBadge tone="blue" shape="lock" label={t('grow.safetyNet.locked')} accessibilityLabel={t('grow.safetyNet.lockedA11y')} />
           </View>
-          <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{figure}</Text>
+          <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>
+            {money.amount(saved)}
+            {ofText === null ? null : <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{` ${ofText}`}</Text>}
+          </Text>
+          {pending > 0 ? <StateBadge tone="slate" shape="sClock" label={t('grow.home.toConfirm', { count: pending })} /> : null}
         </View>
         <GrowGlyph name="chev" color={colors.inkFaint} size={16} />
       </View>

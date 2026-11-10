@@ -43,8 +43,28 @@ jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: { 
 jest.mock('@/features/grow/goals/NewGoalSheet', () => {
   const R = require('react');
   const { Text: RNText } = require('react-native');
-  return { NewGoalSheet: (p: { visible: boolean }) => (p.visible ? R.createElement(RNText, { testID: 'new-goal-sheet' }, 'new goal sheet') : null) };
+  return {
+    NewGoalSheet: (p: { visible: boolean; goal?: { id: string } }) =>
+      p.visible ? R.createElement(RNText, { testID: p.goal === undefined ? 'new-goal-sheet' : 'edit-goal-sheet' }, 'goal sheet') : null,
+  };
 });
+
+// 06-31: the row actions. The sheet, queries, remove hook and toast are stubs; what is asserted is what the row decides.
+jest.mock('@/features/grow/goals/MoneyMoveSheet', () => {
+  const R = require('react');
+  const { Text: RNText } = require('react-native');
+  return { MoneyMoveSheet: (p: { visible: boolean }) => (p.visible ? R.createElement(RNText, { testID: 'money-move-sheet' }, 'move sheet') : null) };
+});
+const mockGoalRows = [
+  { id: 'g1', name: 'Trip to Lisbon', household_id: 'h1', account_id: 'a1', deleted_at: null, version: 1 },
+  { id: 'g2', name: 'Laptop', household_id: 'h1', account_id: null, deleted_at: null, version: 1 },
+];
+jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockGoalRows }) }));
+jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [{ id: 'a1', name: 'Everyday checking' }] }) }));
+const mockRemove = jest.fn(() => 'step-1');
+jest.mock('@/data/mutations/growGoals', () => ({ useEditGoal: () => ({ edit: jest.fn(), remove: mockRemove }) }));
+const mockToast = jest.fn();
+jest.mock('@/features/grow/goals/useGoalToast', () => ({ useGoalToast: () => mockToast }));
 
 // 06-16: the FAB for each segment opens its own sheet; the sheets are covered by their own tests, so each is a marker here.
 jest.mock('@/features/grow/debts/AddDebtSheet', () => {
@@ -81,6 +101,12 @@ jest.mock('@/features/grow/investing/useInvestingRead', () => ({
     model: { holdings: [], totals: { value: 0, putIn: 0, gain: 0, gainPercentTenths: null }, monthlyIn: 0, unconverted: 0, anyStale: false },
   }),
 }));
+// 06-33: the segment also reads the raw holding rows for its row actions (edit, remove).
+jest.mock('@/data/queries/growHoldings', () => ({
+  useHoldingRows: () => ({ data: [] }),
+  useHoldingLotRows: () => ({ data: [] }),
+}));
+jest.mock('@/data/mutations/growHoldings', () => ({ useEditHolding: () => ({ edit: jest.fn(), remove: jest.fn() }) }));
 let mockFlags: Record<string, boolean> | null = null;
 jest.mock('@/features/grow/growFeatureFlags', () => {
   const actual = jest.requireActual('@/features/grow/growFeatureFlags');
@@ -108,6 +134,11 @@ const LEDGER: GoalsRead = {
     totalSaved: 194000,
     monthlyIntoGoals: 15000,
     needsNetConfirm: false,
+    pendingByGoal: { g1: 1, net: 2 },
+    goalCount: 2,
+    netCounted: true,
+    netReachesOn: '2027-08-01',
+    netMonthly: 10000,
   },
 };
 
@@ -131,6 +162,8 @@ beforeEach(() => {
   mockFab.length = 0;
   mockParams = {};
   mockPush.mockClear();
+  mockRemove.mockClear();
+  mockToast.mockClear();
 });
 
 describe('Grow home shell', () => {
@@ -239,7 +272,7 @@ describe('Grow home shell', () => {
 describe('Goals segment', () => {
   it('hero, safety net card and goal rows from the LEDGER read model', async () => {
     await renderHome();
-    expect(screen.getByText('Saved across 3 goals')).toBeTruthy();
+    expect(screen.getByText('Saved across 2 goals and the safety net')).toBeTruthy();
     expect(screen.getByText('$1,940')).toBeTruthy();
     expect(screen.getByText('$150 a month goes into goals. Your rule is at least $150.')).toBeTruthy();
     const net = screen.getByTestId('grow-safety-net-card');
@@ -252,9 +285,11 @@ describe('Goals segment', () => {
   it('the Lisbon row reads saved of target, percent, monthly amount and the reach date', async () => {
     await renderHome();
     const row = screen.getByTestId('grow-goal-row-g1');
-    expect(row.props.accessibilityLabel).toMatch(
-      /^Trip to Lisbon, 640 dollars of 1,800 dollars, 36 percent, 50 dollars a month, reaches target [A-Z][a-z]+ 2028$/,
-    );
+    expect(
+      screen.getByLabelText(
+        /^Trip to Lisbon, 640 dollars of 1,800 dollars, 36 percent, 50 dollars a month, reaches target [A-Z][a-z]+ 2028, 1 expected line to confirm$/,
+      ),
+    ).toBeTruthy();
     await fireEvent.press(row);
     expect(mockPush).toHaveBeenCalledWith('/grow/goal/g1');
   });
@@ -308,5 +343,77 @@ describe('Goals segment', () => {
     await fireEvent.press(screen.getByTestId('grow-segment-investing'));
     expect(screen.getByText(en.grow.investing.emptyTitle)).toBeTruthy();
     expect(screen.getByText(en.grow.home.toolsCalculators)).toBeTruthy();
+  });
+});
+
+describe('Goals segment, D-32 (06-31)', () => {
+  it('hero: net only says Saved in the safety net; one goal and no net uses the plain label', async () => {
+    mockRead = { ...LEDGER, model: { ...LEDGER.model, goals: [], goalCount: 0 } };
+    const first = await renderHome();
+    expect(screen.getByText('Saved in the safety net')).toBeTruthy();
+    await first.unmount();
+    mockRead = { ...LEDGER, model: { ...LEDGER.model, safetyNet: null, goals: [LEDGER.model.goals[0]!], goalCount: 1, netCounted: false } };
+    await renderHome();
+    expect(screen.getByText('Saved across 1 goal')).toBeTruthy();
+    expect(screen.getByText('$1,940')).toBeTruthy();
+  });
+
+  it('a goal row and the net card with Expected lines show a to-confirm badge; the net label speaks it', async () => {
+    await renderHome();
+    expect(screen.getAllByText('1 to confirm')).toHaveLength(1);
+    expect(screen.getAllByText('2 to confirm')).toHaveLength(1);
+    expect(screen.getByTestId('grow-safety-net-card').props.accessibilityLabel).toContain('2 expected lines to confirm');
+  });
+
+  it('the more menu lists Add money, Edit then Delete; Add money and Edit open their sheets', async () => {
+    await renderHome();
+    await fireEvent.press(screen.getByLabelText('More for Trip to Lisbon'));
+    expect(screen.getByText('Add money')).toBeTruthy();
+    expect(screen.getByText('Edit')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Add money'));
+    expect(screen.getByTestId('money-move-sheet')).toBeTruthy();
+  });
+
+  it('Edit opens the goal sheet in edit mode', async () => {
+    await renderHome();
+    await fireEvent.press(screen.getByLabelText('More for Trip to Lisbon'));
+    await fireEvent.press(screen.getByText('Edit'));
+    expect(screen.getByTestId('edit-goal-sheet')).toBeTruthy();
+    expect(screen.queryByTestId('new-goal-sheet')).toBeNull();
+  });
+
+  it('removing asks first, removes once and raises the Goal removed toast with Undo', async () => {
+    await renderHome();
+    await fireEvent.press(screen.getByLabelText('More for Trip to Lisbon'));
+    await fireEvent.press(screen.getByText(en.decide.delete.word));
+    expect(mockRemove).not.toHaveBeenCalled();
+    expect(screen.getByText('Remove Trip to Lisbon?')).toBeTruthy();
+    await fireEvent.press(screen.getByText(en.decide.delete.confirm));
+    expect(mockRemove).toHaveBeenCalledTimes(1);
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'grow.goals.removedToast', stepId: 'step-1', undoLabel: 'goalRemoved', name: 'Trip to Lisbon' }),
+    );
+  });
+
+  it('the safety net card has no swipe or more menu', async () => {
+    await renderHome();
+    expect(screen.queryByLabelText(/More for Safety net/)).toBeNull();
+    const src = fs.readFileSync(path.join(__dirname, '../SafetyNetCard.tsx'), 'utf8');
+    expect(src).not.toContain('DeletableRow');
+  });
+
+  it('the net card shows the date line and a muted of-size; without a monthly amount, the plain line', async () => {
+    const first = await renderHome();
+    expect(screen.getByText('No Decide answer spends it. $100 a month reaches $2,300 by Aug 2027.')).toBeTruthy();
+    await first.unmount();
+    mockRead = { ...LEDGER, model: { ...LEDGER.model, netMonthly: null, netReachesOn: null } };
+    await renderHome();
+    expect(screen.getByText(en.grow.safetyNet.cardLineNoPlan)).toBeTruthy();
+  });
+
+  it('a goal with no target draws no bar; one with a target does', async () => {
+    mockRead = { ...LEDGER, model: { ...LEDGER.model, goals: [{ ...LEDGER.model.goals[1]!, target: null, linkedCheckId: null }] } };
+    await renderHome();
+    expect(screen.getByText('$0 saved · no set target')).toBeTruthy();
   });
 });

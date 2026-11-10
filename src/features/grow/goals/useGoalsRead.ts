@@ -30,6 +30,8 @@ export interface GoalsModel {
   netCounted?: boolean;
   /** YYYY-MM-DD the net reaches its size at its monthly amount, or null when either is missing. */
   netReachesOn?: string | null;
+  /** Home-currency minor units a month into the net, or null when none is set. */
+  netMonthly?: number | null;
 }
 
 export interface GoalsRead {
@@ -41,7 +43,7 @@ export interface GoalsRead {
   today: string;
 }
 
-export const EMPTY_GOALS_MODEL: GoalsModel = { safetyNet: null, goals: [], totalSaved: 0, monthlyIntoGoals: 0, needsNetConfirm: false, pendingByGoal: {}, goalCount: 0, netCounted: false, netReachesOn: null };
+export const EMPTY_GOALS_MODEL: GoalsModel = { safetyNet: null, goals: [], totalSaved: 0, monthlyIntoGoals: 0, needsNetConfirm: false, pendingByGoal: {}, goalCount: 0, netCounted: false, netReachesOn: null, netMonthly: null };
 
 /** Pure: the model from the rows and the goal-tagged lines. A goal whose money cannot convert is left out (never guessed). */
 export function buildGoalsModel(
@@ -70,12 +72,14 @@ export function buildGoalsModel(
     pendingByGoal[l.goal_id] = (pendingByGoal[l.goal_id] ?? 0) + 1;
   }
   let netReachesOn: string | null = null;
+  let netMonthly: number | null = null;
   if (today !== undefined && safetyNet !== null && safetyNet.size !== null && safetyNet.size > 0) {
     const net = rows.find((r) => r.id === safetyNet.goalId);
     const monthly = net === undefined || net.monthly_amount === null ? 0 : (toHome(net.monthly_amount, net.currency) ?? 0);
+    if (monthly > 0) netMonthly = monthly;
     if (monthly > 0) netReachesOn = planFromMonthly({ saved: safetyNet.saved, target: safetyNet.size, monthly, today }).reachesOn;
   }
-  return { safetyNet, goals, totalSaved, monthlyIntoGoals, needsNetConfirm, pendingByGoal, goalCount: goals.length, netCounted: safetyNet !== null, netReachesOn };
+  return { safetyNet, goals, totalSaved, monthlyIntoGoals, needsNetConfirm, pendingByGoal, goalCount: goals.length, netCounted: safetyNet !== null, netReachesOn, netMonthly };
 }
 
 export function toHomeOf(ctx: PastContext): ToHome {

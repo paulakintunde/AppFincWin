@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
 import { useT } from '@/i18n';
-import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
+import { AccTile } from '@/features/grow/ui/AccTile';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -24,7 +24,7 @@ export function ToolsRow() {
       </Text>
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
         <Row
-          leading={<GrowGlyph name="bills" color={colors.accent} size={22} />}
+          leading={<AccTile glyph="bills" />}
           label={t('grow.home.toolsCalculators')}
           sublabel={t('grow.home.toolsCalculatorsSub')}
           accessibilityLabel={`${t('grow.home.toolsSection')}, ${t('grow.home.toolsCalculators')}`}
@@ -32,7 +32,7 @@ export function ToolsRow() {
           onPress={() => pushOnce(CALCULATORS_HREF)}
         />
         <Row
-          leading={<GrowGlyph name="lock" color={colors.accent} size={22} />}
+          leading={<AccTile glyph="lock" />}
           label={t('grow.lines.title')}
           sublabel={t('grow.home.toolsRulesSub')}
           accessibilityLabel={`${t('grow.home.toolsSection')}, ${t('grow.lines.title')}`}
