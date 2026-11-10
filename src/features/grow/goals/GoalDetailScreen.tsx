@@ -9,7 +9,7 @@ import { useConfirmGoalContribution, useEditGoal } from '@/data/mutations/growGo
 import { useAccounts } from '@/data/queries/accounts';
 import { useGoalLines, useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
-import type { TransactionRow } from '@/db/rows';
+import { currencyExponent } from '@/engine/money/currencyExponents';
 import { useT } from '@/i18n';
 import { usePastContext } from '@/features/decide/past/usePastDecisions';
 import { checkHref } from '@/features/decide/home/checkHref';
@@ -31,12 +31,14 @@ import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
 import { Text } from '@/ui/Text';
 import { ToggleRow } from '@/ui/ToggleRow';
+import { GoalHistoryCard, goalHistoryOf, type HistoryItem } from './GoalHistory';
 import { GoalPlanEditSheet, goalSeriesOf, type PlanEditMode } from './GoalPlanEditSheet';
 import { MoneyMoveSheet, type MoneyMovedEvent, type MoveKind } from './MoneyMoveSheet';
 import { NewGoalSheet } from './NewGoalSheet';
 import { ReachedMoment } from './ReachedMoment';
 import { UseAsSafetyNetSheet } from './UseAsSafetyNetSheet';
 import { planFromMonthly } from './goalPlanModel';
+import { useGoalRecordDetail } from './useGoalRecordDetail';
 import { useGoalToast } from './useGoalToast';
 import { useGoalsRead } from './useGoalsRead';
 
@@ -46,14 +48,6 @@ function ordinal(n: number): string {
   if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
   const suffix = ({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[n % 10] ?? 'th';
   return `${n}${suffix}`;
-}
-
-interface HistoryItem {
-  key: string;
-  date: string;
-  amount: number;
-  kind: 'paid' | 'expected' | 'start';
-  line: TransactionRow | null;
 }
 
 export function GoalDetailScreen({ id }: { id: string }) {
@@ -87,23 +81,13 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const series = goalSeriesOf(seriesQ.data, id);
   const account = row === null ? null : ((accountsQ.data ?? []).find((a) => a.id === row.account_id) ?? null);
 
-  const history = useMemo<HistoryItem[]>(() => {
-    if (row === null) return [];
-    const items: HistoryItem[] = [];
-    for (const l of linesQ.data ?? []) {
-      if (l.goal_id !== id || l.status === 'skipped' || l.deleted_at !== null) continue;
-      items.push({
-        key: l.id,
-        date: l.local_date,
-        amount: l.transfer_id === null ? Math.abs(l.original_amount) : l.original_amount,
-        kind: l.status === 'pending' ? 'expected' : 'paid',
-        line: l,
-      });
-    }
-    items.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-    if (row.opening_saved > 0) items.push({ key: 'start', date: row.created_at.slice(0, 10), amount: row.opening_saved, kind: 'start', line: null });
-    return items;
-  }, [linesQ.data, row, id]);
+  const lineRows = linesQ.data;
+  const history = useMemo<HistoryItem[]>(
+    () => (row === null ? [] : goalHistoryOf(lineRows, id, row.opening_saved, row.created_at.slice(0, 10), today)),
+    [lineRows, row, id, today]
+  );
+  const goalLines = useMemo(() => (lineRows ?? []).filter((l) => l.goal_id === id), [lineRows, id]);
+  const record = useGoalRecordDetail({ householdId, ownerId: userId, today, lines: goalLines });
 
   const card = [styles.card, { backgroundColor: colors.surface }, shadows.card];
 
@@ -162,18 +146,21 @@ export function GoalDetailScreen({ id }: { id: string }) {
     router.back();
   };
 
-  const onConfirmLine = () => {
-    const item = confirming;
-    setConfirming(null);
+  // One confirm path for the inline Confirm and the confirm sheet (D-25, T-06-32-01).
+  const confirmLine = (item: HistoryItem | null) => {
     if (item === null || item.line === null || userId === null) return;
     const stepId = confirm({ ownerId: userId, line: item.line, goal: { id: row.id, name: row.name, currency: row.currency, account_id: row.account_id ?? null } });
     toast({ key: 'undo.label.goalContributionConfirmed', stepId, undoLabel: 'goalContributionConfirmed', name: row.name, userId, householdId });
   };
-
-  const historyText = (h: HistoryItem): string => {
-    const params = { date: formatDate(h.date), amount: money.amount(h.amount) };
-    return t(h.kind === 'expected' ? 'grow.goals.detail.historyExpected' : h.kind === 'start' ? 'grow.goals.detail.historyStart' : 'grow.goals.detail.historyRow', params);
+  const onConfirmLine = () => {
+    const item = confirming;
+    setConfirming(null);
+    confirmLine(item);
   };
+  const confirmTitle = (h: HistoryItem): string => t('grow.goals.detail.confirmA11y', { amount: money.amount(h.amount), date: formatDate(h.date) });
+  // GD3: whole units when the amount is whole ("$200", not "$200.00").
+  const wholeUnit = 10 ** currencyExponent(calc.currency);
+  const planMoney = (minor: number): string => (minor % wholeUnit === 0 ? money.amount(minor) : calc.money(minor));
 
   const editAction = (
     <Pressable testID="goal-edit" accessibilityRole="button" accessibilityLabel={t('grow.goals.detail.edit')} onPress={() => setEditing(true)} style={styles.editButton}>
@@ -209,7 +196,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
           </Text>
           <Row
             label={t('grow.goals.detail.eachMonth')}
-            value={eachMonth > 0 ? calc.money(eachMonth) : '—'}
+            value={eachMonth > 0 ? planMoney(eachMonth) : '—'}
             dense
             chevron
             onPress={() => setPlanMode('monthly')}
@@ -269,30 +256,19 @@ export function GoalDetailScreen({ id }: { id: string }) {
           </View>
         </View>
 
-        <View style={card} testID="goal-history">
-          <Text accessibilityRole="header" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkMuted }}>
-            {t('grow.goals.detail.history')}
-          </Text>
-          {history.length === 0 ? (
-            <View style={styles.center}>
-              <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('grow.goals.detail.historyEmptyTitle')}</Text>
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('grow.goals.detail.historyEmptyBody')}</Text>
-            </View>
-          ) : (
-            history.map((h) => (
-              <View key={h.key} style={styles.historyRow}>
-                <Row
-                  label={historyText(h)}
-                  dense
-                  chevron={h.kind === 'expected'}
-                  onPress={h.kind === 'expected' ? () => setConfirming(h) : undefined}
-                  accessibilityLabel={historyText(h)}
-                />
-                {h.kind === 'expected' ? <StateBadge tone="slate" shape="sClock" label={t('grow.goals.detail.expected')} /> : null}
-              </View>
-            ))
-          )}
-        </View>
+        <GoalHistoryCard
+          items={history}
+          today={today}
+          testID="goal-history"
+          formatDate={formatDate}
+          amount={money.amount}
+          partnerOf={record.partnerOf}
+          accountName={record.accountName}
+          onOpenPaid={record.open}
+          onConfirm={confirmLine}
+          onOpenExpected={setConfirming}
+          onAddMoney={() => setMove('add')}
+        />
 
         {!isNet && row.kind === 'pot' && (row.bucket ?? null) === null ? (
           <View style={card}>
@@ -347,12 +323,13 @@ export function GoalDetailScreen({ id }: { id: string }) {
       />
       <ConfirmSheet
         visible={confirming !== null}
-        title={confirming === null ? undefined : historyText(confirming)}
+        title={confirming === null ? undefined : confirmTitle(confirming)}
         cancelLabel={t('grow.common.cancel')}
         confirmLabel={t('grow.goals.detail.confirm')}
         onCancel={() => setConfirming(null)}
         onConfirm={onConfirmLine}
       />
+      {record.element}
     </DetailScreen>
   );
 }
@@ -367,8 +344,7 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', gap: space.gapSm },
   buttons: { flexDirection: 'row', gap: space.gapMd },
   buttonCell: { flex: 1 },
-  historyRow: { gap: 2 },
   checkCard: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, minHeight: space.touchMin },
   editButton: { minHeight: space.touchMin, minWidth: space.touchMin, justifyContent: 'center', alignItems: 'center' },
-  removeButton: { minHeight: space.touchMin, alignItems: 'center', justifyContent: 'center' },
+  removeButton: { minHeight: space.touchMin, alignItems: 'flex-start', justifyContent: 'center' },
 });
