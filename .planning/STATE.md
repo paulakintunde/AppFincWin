@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 06.1 planned (42 plans, 16 waves, checker passed); wave 1 (01-07, 41, 42) buildable now, plan 08 gates the rest on Grow 06-05/06-06/06-10 on main
-last_updated: "2026-11-06T21:55:00.000Z"
-last_activity: 2026-11-06 -- Phase 06.1 planned: 42 plans in 16 waves, plan checker passed after 1 revision (PR #99)
+stopped_at: Phase 06.1 wave 1 built (01-07, 41, 42; 9/42) on feat/06.1-decide-screens; next is plan 08, the gate that waits for Grow 06-05/06-06/06-10 on main
+last_updated: "2026-11-10T20:00:00.000Z"
+last_activity: 2026-11-10 -- Phase 06.1 wave 1 built and merged on feat/06.1-decide-screens (9 plans; engine right answers unchanged)
 progress:
   total_phases: 29
   completed_phases: 11
   total_plans: 591
-  completed_plans: 508
+  completed_plans: 517
   percent: 93
 ---
 
@@ -25,6 +25,7 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 
 ## Current Position
 
+Phase: 06.1 (Decide screens from the prototype) — EXECUTING. Wave 1 done 2026-11-10 (01-07, 41, 42; 9/42) on branch feat/06.1-decide-screens in C:/dev/fincwin-ds, built on the plans branch (PR #99). Plan 08 (wave 2) is the D-30 gate: it waits for Grow 06-05, 06-06 and 06-10 on main. Wave 1 notes for later plans: purpose stays the engine's Purpose type (need = necessity, want = nice_to_have); sayResult deps need `today` and `names.figure`; old Decide paths are shims marked for removal by 06.1-36.
 Phase: 05.4 (Decide safety patch) — READY TO MERGE (PR #94, branch phase/05.4-decide-safety-patch). 55/55 plans in the phase; owner 2026-11-06 (D-182): merge now, and 05.4-43 (mutation score to 90% and locked, pending and knownRed lists proved empty) and 05.4-45 (three consecutive green nightly runs) run on main after the merge. After the merge Decide is turned on for all testers with the v3 engine (separate task).
 Phase: 05.3 (decide-screens-v3) — STOPPED 2026-11-01 (fix plan Theme N, BO-01). Branch phase/05.3-decide-screens-v3 is pushed and parked (518 commits ahead of main), never merged. Its engine and plumbing changes are harvested in 05.4 (BO-02, BO-03); the screens are not reused (BO-09).
 Phase: 05.2 (decide-data-and-setup) — COMPLETE 2026-10-29, 75/75 plans. VERIFICATION passed; code review CR/WR fixed in 69-75. Owner signed off after the round-3 Pixel re-check and TalkBack pass (05.2-WALKTHROUGH-FINDINGS.md). Migrations through 20261028001400 in production. N-05 moved to 05.3 D-15. DECIDE_V3 and DECIDE_OPEN stay false. Merged to main as PR #86 (2026-10-29). in C:/dev/fincwin-p5.

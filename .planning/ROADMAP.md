@@ -1187,13 +1187,13 @@ Plans:
 **Plans:** 42 plans
 
 Plans:
-- [ ] 06.1-01-PLAN.md — Scope split (D-04) and prototype inventory (D-27); seven state colour tokens + contrast tests + CLAUDE.md (D-16); ROADMAP requirement lines
-- [ ] 06.1-02-PLAN.md — Engine: parseCheckV2 keeps running costs, replaces, purchase date, purpose and D-21 quick lines (Pitfall 1)
-- [ ] 06.1-03-PLAN.md — Engine: month picture (CO-D-57, 05.5 shape) and labelled 90-day cash timeline (UX-38)
-- [ ] 06.1-04-PLAN.md — Pure rules: stateForVerdict, big-buy rule from band edges (D-09), home-word reader (D-02)
-- [ ] 06.1-05-PLAN.md — decide.screens copy in area files, D-19 rule wording, guards and sign-off scope
-- [ ] 06.1-06-PLAN.md — Production Result-to-sentences renderer (sayResult)
-- [ ] 06.1-07-PLAN.md — Move settingsPatch and the income step types out of old Decide folders, with shims
+- [x] 06.1-01-PLAN.md — Scope split (D-04) and prototype inventory (D-27); seven state colour tokens + contrast tests + CLAUDE.md (D-16); ROADMAP requirement lines
+- [x] 06.1-02-PLAN.md — Engine: parseCheckV2 keeps running costs, replaces, purchase date, purpose and D-21 quick lines (Pitfall 1)
+- [x] 06.1-03-PLAN.md — Engine: month picture (CO-D-57, 05.5 shape) and labelled 90-day cash timeline (UX-38)
+- [x] 06.1-04-PLAN.md — Pure rules: stateForVerdict, big-buy rule from band edges (D-09), home-word reader (D-02)
+- [x] 06.1-05-PLAN.md — decide.screens copy in area files, D-19 rule wording, guards and sign-off scope
+- [x] 06.1-06-PLAN.md — Production Result-to-sentences renderer (sayResult)
+- [x] 06.1-07-PLAN.md — Move settingsPatch and the income step types out of old Decide folders, with shims
 - [ ] 06.1-08-PLAN.md — D-30 gate (Grow 06-05/06-06/06-10 on main) and shared primitives in src/ui with the seven state tones
 - [ ] 06.1-09-PLAN.md — Engine: D-21 quick-estimate overlay, facts, cases; owner approval
 - [ ] 06.1-10-PLAN.md — Migration: D-20 unlock flag + RPC, D-23 flags, check history, Save-for-it goal fields, FIN-20 column; pgTAP
@@ -1227,8 +1227,8 @@ Plans:
 - [ ] 06.1-38-PLAN.md — Move useSettledLabel, RiseIn and the text-fit helper; intro and setup-done phone flags (D-25)
 - [ ] 06.1-39-PLAN.md — Setup done with the tick (D-17) and the quick-estimates first answer (D39)
 - [ ] 06.1-40-PLAN.md — Move PrefillNote, heroAmountText, ChoiceCard and the stepProps helper out of old Decide folders
-- [ ] 06.1-41-PLAN.md — Move the account-use sheet, list and suggestions to Accounts
-- [ ] 06.1-42-PLAN.md — Move the past-decision data hooks to screens/past/data
+- [x] 06.1-41-PLAN.md — Move the account-use sheet, list and suggestions to Accounts
+- [x] 06.1-42-PLAN.md — Move the past-decision data hooks to screens/past/data
 
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
