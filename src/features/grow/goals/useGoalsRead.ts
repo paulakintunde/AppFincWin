@@ -20,7 +20,10 @@ export interface GoalsModel {
   totalSaved: number;
   /** Home-currency minor units a month the goals and the safety net are set to receive. */
   monthlyIntoGoals: number;
-  /** D-07: the migrated net has not been confirmed yet and has something worth confirming (a size or a saved amount). */
+  /**
+   * D-07: the migrated net has not been confirmed yet and has something worth confirming (a size or a saved amount).
+   * D-36: only a net created on or before the Grow migration push (NET_MOVED_BY_MIGRATION_AT).
+   */
   needsNetConfirm: boolean;
   /** D-32: Expected lines dated on or before today still waiting for a confirm, by goal id (the safety net included). */
   pendingByGoal?: Record<string, number>;
@@ -45,6 +48,23 @@ export interface GoalsRead {
 
 export const EMPTY_GOALS_MODEL: GoalsModel = { safetyNet: null, goals: [], totalSaved: 0, monthlyIntoGoals: 0, needsNetConfirm: false, pendingByGoal: {}, goalCount: 0, netCounted: false, netReachesOn: null, netMonthly: null };
 
+/**
+ * 06-37 D-36: "We moved your safety net here" is only for a net that existed before the Grow update. Migration
+ * 20261106000200 moved the net out of Decide's settings and was pushed to production at 2026-11-07T04:03Z. A net created
+ * on or before that minute may be a moved one; a net made in the app afterwards never shows the sheet, even with
+ * net_confirmed_at null (save_goal_plan does not set it on insert).
+ */
+export const NET_MOVED_BY_MIGRATION_AT = '2026-11-07T04:03:00Z';
+const MOVED_BEFORE_MS = Date.parse(NET_MOVED_BY_MIGRATION_AT) + 60_000; // the whole minute counts as "on or before"
+
+/** True when a goal row was created on or before the Grow migration push (an unreadable time counts as after). */
+export function existedBeforeGrow(createdAt: string | null | undefined): boolean {
+  if (createdAt == null) return false;
+  // Postgres may send a space for T and microseconds; keep the form every JS engine (Hermes included) reads.
+  const at = Date.parse(createdAt.replace(' ', 'T').replace(/(\.\d{3})\d+/, '$1'));
+  return Number.isFinite(at) && at < MOVED_BEFORE_MS;
+}
+
 /** Pure: the model from the rows and the goal-tagged lines. A goal whose money cannot convert is left out (never guessed). */
 export function buildGoalsModel(
   rows: readonly SavingsGoalRow[],
@@ -65,7 +85,12 @@ export function buildGoalsModel(
     const net = rows.find((r) => r.id === safetyNet.goalId);
     if (net !== undefined && net.monthly_amount !== null) monthlyIntoGoals += toHome(net.monthly_amount, net.currency) ?? 0;
   }
-  const needsNetConfirm = safetyNet !== null && safetyNet.confirmedAt === null && (safetyNet.size !== null || safetyNet.saved > 0);
+  const netRow = safetyNet === null ? undefined : rows.find((r) => r.id === safetyNet.goalId);
+  const needsNetConfirm =
+    safetyNet !== null &&
+    safetyNet.confirmedAt === null &&
+    (safetyNet.size !== null || safetyNet.saved > 0) &&
+    existedBeforeGrow(netRow?.created_at);
   const pendingByGoal: Record<string, number> = {};
   for (const l of lines) {
     if (l.goal_id == null || l.status !== 'pending' || l.deleted_at !== null || (today !== undefined && l.local_date > today)) continue;
