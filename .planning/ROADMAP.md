@@ -1230,9 +1230,9 @@ Plans:
 - [x] 06-29-PLAN.md — [BLOCKING] second production push (20261106000400), owner-gated with hard stops (D-33) (W11)
 
 **Wave 12** *(blocked on Wave 11 completion)*
-- [ ] 06-30-PLAN.md — One-off debt payment hook, transactions.debt_id on the client, start-date helpers (D-33) (W12)
+- [x] 06-30-PLAN.md — One-off debt payment hook, transactions.debt_id on the client, start-date helpers (D-33) (W12)
 - [x] 06-31-PLAN.md — Grow home: hero label, to-confirm badges, row actions, safety net date (D-32) (W12)
-- [ ] 06-32-PLAN.md — Goal and safety-net detail: history records, one-tap Confirm, Kept in and rate, net confirm fix (D-32) (W12)
+- [x] 06-32-PLAN.md — Goal and safety-net detail: history records, one-tap Confirm, Kept in and rate, net confirm fix (D-32) (W12)
 - [x] 06-33-PLAN.md — Investing: edit and remove entries, edit a holding, row actions (D-32) (W12)
 - [x] 06-34-PLAN.md — Activity Mark paid on goal lines uses the goal confirm path (D-32) (W12)
 
