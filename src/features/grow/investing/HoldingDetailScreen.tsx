@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
-import { useEditHolding } from '@/data/mutations/growHoldings';
+import { useEditHolding, useEditHoldingLot } from '@/data/mutations/growHoldings';
 import { useAccounts } from '@/data/queries/accounts';
 import { useAccountBalances } from '@/data/queries/activity';
 import { convertLatest } from '@/data/queries/fxConvert';
@@ -11,6 +11,7 @@ import { useHoldingLotRows, useHoldingRows } from '@/data/queries/growHoldings';
 import type { HoldingLotRow } from '@/db/holdingLots';
 import { usePastContext } from '@/features/decide/past/usePastDecisions';
 import { LineChart } from '@/features/grow/ui/LineChart';
+import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { netWorthOf } from '@/features/grow/netWorth';
 import { useT } from '@/i18n';
@@ -28,7 +29,7 @@ import { Text } from '@/ui/Text';
 import { LotSheet } from './LotSheet';
 import { UpdateValueSheet } from './UpdateValueSheet';
 import { tenthsText, useInvestingFormat } from './investingFormat';
-import { GainBadge } from './InvestingSegment';
+import { AddHoldingSheet } from './AddHoldingSheet';
 import { useInvestingRead } from './useInvestingRead';
 
 export interface HoldingDetailScreenProps {
@@ -48,9 +49,13 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
   const accounts = useAccounts(read.householdId ?? undefined).data;
   const { balances } = useAccountBalances(read.householdId, accounts ?? []);
   const { remove } = useEditHolding();
+  const lotEdit = useEditHoldingLot();
   const [updating, setUpdating] = useState(false);
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [editingHolding, setEditingHolding] = useState(false);
+  const [editingLot, setEditingLot] = useState<HoldingLotRow | null>(null);
+  const [removingLot, setRemovingLot] = useState<HoldingLotRow | null>(null);
 
   const holding = holdingsQuery.data?.find((h) => h.id === id && h.deleted_at === null) ?? null;
   const line = read.model.holdings.find((h) => h.id === id) ?? null;
@@ -104,7 +109,7 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
   const asOfText = f.day(line.asOf);
   const entries = [...lots].sort((a, b) => (a.local_date < b.local_date ? 1 : a.local_date > b.local_date ? -1 : 0));
   const history = lots.filter((l) => l.kind === 'value').sort((a, b) => (a.local_date < b.local_date ? -1 : 1));
-  const points = history.length > 0 ? history.map((l) => l.amount) : [holding.value];
+  const points = history.map((l) => l.amount);
   const firstDate = history[0]?.local_date ?? line.asOf;
   const paidFrom = accounts?.find((a) => a.id === holding.paid_from_account_id)?.name ?? null;
   const gainLine =
@@ -144,26 +149,51 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
     router.back();
   };
 
+  const lotWords = (l: HoldingLotRow) => ({
+    kind: t(`grow.investing.entry.${KIND_KEY[l.kind]}`),
+    date: f.day(l.local_date),
+    amount: f.money(l.amount, holding.currency),
+  });
+
+  const confirmRemoveLot = () => {
+    const target = removingLot;
+    setRemovingLot(null);
+    if (target === null || read.userId === null) return;
+    try {
+      const stepId = lotEdit.remove(target, holding, lots, read.userId);
+      showToast({ kind: 'destructive', text: undoLabelText('holdingEntryRemoved', { name: holding.name }), stepId });
+    } catch {
+      // The hook refuses a removal that would leave a sale larger than the units held; nothing was written.
+    }
+  };
+
   const card = [styles.card, { backgroundColor: colors.surface, ...shadows.card }];
 
+  const editAction = (
+    <Pressable testID="holding-edit" accessibilityRole="button" accessibilityLabel={t('grow.investing.detail.edit')} onPress={() => setEditingHolding(true)} style={styles.editButton}>
+      <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('grow.investing.detail.edit')}</Text>
+    </Pressable>
+  );
+
   return (
-    <DetailScreen title={holding.name}>
+    <DetailScreen title={holding.name} right={editAction}>
       <View testID="holding-detail" style={styles.stack}>
         <View style={card}>
           <Text testID="holding-value" style={{ ...textRole(pairing, 'display'), color: colors.ink }}>{f.money(line.value, line.currency)}</Text>
           <StateBadge tone="slate" shape="sClock" label={t('grow.investing.detail.asOfBadge', { date: asOfText })} accessibilityLabel={`${f.money(line.value, line.currency)} ${t('grow.investing.detail.asOfA11y', { date: asOfText })}`} />
-          <View style={styles.gainRow}>
-            <GainBadge line={line} />
-            <Text testID="holding-gain-line" style={{ ...label, color: colors.inkMuted, flex: 1 }}>{gainLine}</Text>
-          </View>
-          <LineChart
-            points={points}
-            accessibilityLabel={t('grow.investing.detail.chartA11y', {
-              from: f.day(firstDate),
-              to: asOfText,
-              value: f.money(line.value, line.currency),
-            })}
-          />
+          <Text testID="holding-gain-line" style={{ ...label, color: colors.inkMuted }}>{gainLine}</Text>
+          {points.length >= 2 ? (
+            <LineChart
+              points={points}
+              accessibilityLabel={t('grow.investing.detail.chartA11y', {
+                from: f.day(firstDate),
+                to: asOfText,
+                value: f.money(line.value, line.currency),
+              })}
+            />
+          ) : (
+            <Text testID="holding-chart-after" style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.detail.chartAfterSecond')}</Text>
+          )}
         </View>
 
         <View style={[card, { padding: 0 }]}>
@@ -214,33 +244,67 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
           <View style={card}>
             <Text style={{ ...body, color: colors.ink }}>{t('grow.investing.detail.entriesEmptyTitle')}</Text>
             <Text style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.detail.entriesEmptyBody')}</Text>
+            <Pill label={t('grow.investing.detail.entriesEmptyAction')} variant="secondary" onPress={() => setUpdating(true)} />
           </View>
         ) : (
           <View style={[card, { padding: 0 }]}>
             {entries.map((l, i) => (
-              <View
+              <Pressable
                 key={l.id}
                 testID={`entry-${l.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={t('grow.investing.entry.rowA11y', lotWords(l))}
+                onPress={() => setEditingLot(l)}
                 style={[styles.row, i > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1 } : null]}
               >
-                <Text style={{ ...body, color: colors.ink, flex: 1 }}>
-                  {t('grow.investing.entry.row', {
-                    kind: t(`grow.investing.entry.${KIND_KEY[l.kind]}`),
-                    date: f.day(l.local_date),
-                    amount: f.money(l.amount, holding.currency),
-                  })}
-                </Text>
-              </View>
+                <Text style={{ ...body, color: colors.ink, flex: 1 }}>{t('grow.investing.entry.row', lotWords(l))}</Text>
+                <GrowGlyph name="chev" color={colors.inkFaint} size={16} />
+              </Pressable>
             ))}
           </View>
         )}
 
         <Text style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.taxNote')}</Text>
-        <Pill label={t('grow.investing.detail.remove')} variant="danger" onPress={() => setRemoving(true)} />
+        <Pressable testID="holding-remove" accessibilityRole="button" accessibilityLabel={t('grow.investing.detail.remove')} onPress={() => setRemoving(true)} style={styles.removeButton}>
+          <Text style={{ ...body, color: colors.danger }}>{t('grow.investing.detail.remove')}</Text>
+        </Pressable>
       </View>
 
       <UpdateValueSheet visible={updating} holding={holding} onClose={() => setUpdating(false)} />
+      <UpdateValueSheet
+        visible={editingLot !== null && editingLot.kind === 'value'}
+        holding={holding}
+        lot={editingLot}
+        lots={lots}
+        onRemove={() => {
+          setRemovingLot(editingLot);
+          setEditingLot(null);
+        }}
+        onClose={() => setEditingLot(null)}
+      />
       <LotSheet visible={adding} holding={holding} lots={lots} onClose={() => setAdding(false)} />
+      <LotSheet
+        visible={editingLot !== null && editingLot.kind !== 'value'}
+        holding={holding}
+        lots={lots}
+        lot={editingLot}
+        onRemove={() => {
+          setRemovingLot(editingLot);
+          setEditingLot(null);
+        }}
+        onClose={() => setEditingLot(null)}
+      />
+      <AddHoldingSheet visible={editingHolding} holding={holding} lots={lots} onClose={() => setEditingHolding(false)} />
+      <ConfirmSheet
+        visible={removingLot !== null}
+        title={removingLot === null ? '' : t('grow.investing.entry.removeTitle', lotWords(removingLot))}
+        body={t('grow.investing.entry.removeBody', { name: holding.name })}
+        cancelLabel={t('grow.investing.entry.removeKeep')}
+        confirmLabel={t('grow.investing.entry.removeConfirm')}
+        destructive
+        onConfirm={confirmRemoveLot}
+        onCancel={() => setRemovingLot(null)}
+      />
       <ConfirmSheet
         visible={removing}
         title={t('grow.investing.detail.removeTitle', { name: holding.name })}
@@ -259,7 +323,8 @@ const styles = StyleSheet.create({
   stack: { gap: space.gapSm },
   missing: { alignItems: 'center' },
   card: { gap: space.gapSm, borderRadius: radii.card, padding: space.cardPadLg },
-  gainRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  editButton: { minHeight: space.touchMin, minWidth: space.touchMin, justifyContent: 'center', alignItems: 'center' },
+  removeButton: { minHeight: space.touchMin, justifyContent: 'center', alignItems: 'flex-start' },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapSm, padding: space.cardPad, minHeight: space.touchMin },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   link: { minHeight: space.touchMin, justifyContent: 'center' },

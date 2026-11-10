@@ -2,8 +2,9 @@
 // the date of that value. A regular amount going in and a rate sit behind a disclosure. Saving is one queued write with one Undo.
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useAddHolding } from '@/data/mutations/growHoldings';
-import type { HoldingType } from '@/db/holdings';
+import { useAddHolding, useEditHolding, type EditHoldingFields } from '@/data/mutations/growHoldings';
+import type { HoldingLotRow } from '@/db/holdingLots';
+import type { HoldingRow, HoldingType } from '@/db/holdings';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { undoLabelText } from '@/i18n/undoLabel';
@@ -30,28 +31,34 @@ export interface AddHoldingSheetProps {
   visible: boolean;
   onClose: () => void;
   onSaved?: (id: string) => void;
+  /** D-32: a holding to change. Value moves only through Update value, so Value now and As of are hidden. */
+  holding?: HoldingRow | null;
+  /** The holding's entries, so a put-in change that breaks a sale is refused. */
+  lots?: readonly HoldingLotRow[];
 }
 
-export function AddHoldingSheet({ visible, onClose, onSaved }: AddHoldingSheetProps) {
+export function AddHoldingSheet({ visible, onClose, onSaved, holding, lots }: AddHoldingSheetProps) {
   if (!visible) return null;
-  return <Body onClose={onClose} onSaved={onSaved} />;
+  return <Body onClose={onClose} onSaved={onSaved} holding={holding} lots={lots} />;
 }
 
-function Body({ onClose, onSaved }: Omit<AddHoldingSheetProps, 'visible'>) {
+function Body({ onClose, onSaved, holding, lots }: Omit<AddHoldingSheetProps, 'visible'>) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const { add } = useAddHolding();
+  const { edit } = useEditHolding();
+  const editing = holding ?? null;
 
-  const [name, setName] = useState('');
-  const [type, setType] = useState<HoldingType>('brokerage');
-  const [putIn, setPutIn] = useState<number | null>(null);
+  const [name, setName] = useState(editing?.name ?? '');
+  const [type, setType] = useState<HoldingType>(editing?.type ?? 'brokerage');
+  const [putIn, setPutIn] = useState<number | null>(editing?.opening_put_in ?? null);
   const [value, setValue] = useState<number | null>(null);
   const [asOf, setAsOf] = useState(rc.today);
-  const [regular, setRegular] = useState(false);
-  const [monthly, setMonthly] = useState<number | null>(null);
-  const [day, setDay] = useState('');
-  const [rate, setRate] = useState('');
+  const [regular, setRegular] = useState(editing !== null && editing.monthly_amount !== null && editing.monthly_amount > 0);
+  const [monthly, setMonthly] = useState<number | null>(editing?.monthly_amount ?? null);
+  const [day, setDay] = useState(editing?.day != null ? String(editing.day) : '');
+  const [rate, setRate] = useState(editing?.rate ?? '');
   const [initial] = useState(() => ({ name, type, putIn, value, asOf, monthly, day, rate }));
   const dirty = useIsDirty(initial, { name, type, putIn, value, asOf, monthly, day, rate });
 
@@ -60,9 +67,42 @@ function Body({ onClose, onSaved }: Omit<AddHoldingSheetProps, 'visible'>) {
   const dayNum = day.trim() === '' ? null : Number(day);
   const dayOk = dayNum === null || (Number.isInteger(dayNum) && dayNum >= 1 && dayNum <= 31);
   const rateOk = validRateText(rate);
-  const canSave = rc.ready && rc.householdId !== null && rc.userId !== null && nameOk && putIn !== null && value !== null && dateOk && dayOk && rateOk;
+  const canSave =
+    editing !== null
+      ? rc.userId !== null && nameOk && putIn !== null && dayOk && rateOk
+      : rc.ready && rc.householdId !== null && rc.userId !== null && nameOk && putIn !== null && value !== null && dateOk && dayOk && rateOk;
+
+  const saveEdit = () => {
+    if (editing === null || !canSave || rc.userId === null || putIn === null) return;
+    const fields: EditHoldingFields = {};
+    if (name.trim() !== editing.name) fields.name = name.trim();
+    if (type !== editing.type) fields.type = type;
+    if (putIn !== editing.opening_put_in) fields.opening_put_in = putIn;
+    const nextMonthly = regular ? monthly : null;
+    const nextDay = regular ? dayNum : null;
+    const nextRate = rate.trim() === '' ? null : rate.trim();
+    if (nextMonthly !== editing.monthly_amount) fields.monthly_amount = nextMonthly;
+    if (nextDay !== editing.day) fields.day = nextDay;
+    if (nextRate !== editing.rate) fields.rate = nextRate;
+    if (Object.keys(fields).length === 0) {
+      onClose();
+      return;
+    }
+    try {
+      const stepId = edit(editing, fields, rc.userId, lots);
+      showToast({ kind: 'ordinary', text: undoLabelText('holdingEdited', { name: name.trim() }), stepId });
+      onSaved?.(editing.id);
+      onClose();
+    } catch {
+      // The hook refuses what the form already blocks; nothing was written.
+    }
+  };
 
   const save = () => {
+    if (editing !== null) {
+      saveEdit();
+      return;
+    }
     if (!canSave || rc.householdId === null || rc.userId === null || putIn === null || value === null) return;
     try {
       const { id, stepId } = add({
@@ -88,7 +128,7 @@ function Body({ onClose, onSaved }: Omit<AddHoldingSheetProps, 'visible'>) {
 
   const labelStyle = [textRole(pairing, 'label'), { color: colors.inkMuted }];
   const inputStyle = [textRole(pairing, 'body'), styles.input, { backgroundColor: colors.fill1, color: colors.ink, borderRadius: radii.card / 2 }];
-  const title = t('grow.investing.add.title');
+  const title = editing !== null ? t('grow.investing.add.editTitle') : t('grow.investing.add.title');
 
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={title} dirty={dirty}>
@@ -120,6 +160,8 @@ function Body({ onClose, onSaved }: Omit<AddHoldingSheetProps, 'visible'>) {
           label={t('grow.investing.add.putIn')}
           accessibilityLabel={t('grow.investing.add.putIn')}
         />
+        {editing === null ? (
+          <>
         <MoneyInput
           boxed
           value={value}
@@ -139,6 +181,8 @@ function Body({ onClose, onSaved }: Omit<AddHoldingSheetProps, 'visible'>) {
           style={inputStyle}
           placeholderTextColor={colors.inkFaint}
         />
+          </>
+        ) : null}
 
         <Row label={t('grow.investing.add.regular')} chevron dense onPress={() => setRegular((r) => !r)} accessibilityLabel={t('grow.investing.add.regular')} />
         {regular ? (
@@ -175,7 +219,7 @@ function Body({ onClose, onSaved }: Omit<AddHoldingSheetProps, 'visible'>) {
           placeholderTextColor={colors.inkFaint}
         />
 
-        <Pill label={t('grow.investing.add.save')} variant="primary" onPress={save} disabled={!canSave} />
+        <Pill label={editing !== null ? t('grow.investing.add.saveEdit') : t('grow.investing.add.save')} variant="primary" onPress={save} disabled={!canSave} />
       </SheetScroll>
     </Sheet>
   );
