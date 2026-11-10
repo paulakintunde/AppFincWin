@@ -16,7 +16,7 @@ import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { currencyCode, minorUnits } from '@/engine/money';
 import { heroAmountText, heroOneLineMax } from '@/features/decide/home/heroAmountText';
-import type { SetupStepReady } from '@/features/decide/setup/steps/types';
+import type { SetupStepReady } from '@/features/income/stepTypes';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { openSeriesStatus } from '@/features/record/entry/seriesStatusHost';
 import { seriesStatusOf } from '@/features/record/entry/seriesStatus';

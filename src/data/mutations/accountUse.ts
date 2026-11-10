@@ -31,7 +31,7 @@ import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { showToast } from '@/state/undoToast';
-import { stampSettingsPatch } from '@/features/decide/home/settingsPatch';
+import { stampSettingsPatch } from '@/features/decide/settingsPatch';
 import { writeClient } from './writeClient';
 import { newStepId } from './undoCapture';
 import { changedSettingsKeys, toPatchValue, type SettingsPatch } from './decideSetup';

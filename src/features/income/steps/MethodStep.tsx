@@ -15,7 +15,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { hapticSelection } from '@/ui/haptics';
-import type { SetupStepBodyProps, SetupStepHandle } from '@/features/decide/setup/steps/types';
+import type { SetupStepBodyProps, SetupStepHandle } from '@/features/income/stepTypes';
 import { useIncomeContext } from '../useIncomeContext';
 import { Caption, ChipRow, Intro, Meta, CHOOSE_ONE_REASON_KEY, Why, useNoWrapMoney, useReportReady, useCopy } from './shared';
 

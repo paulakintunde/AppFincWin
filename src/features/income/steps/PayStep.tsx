@@ -20,7 +20,7 @@ import type { RecurringSeriesPatch } from '@/db/recurringSeries';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { space } from '@/theme/layout';
 import { hapticSelection } from '@/ui/haptics';
-import type { SetupStepBodyProps, SetupStepHandle } from '@/features/decide/setup/steps/types';
+import type { SetupStepBodyProps, SetupStepHandle } from '@/features/income/stepTypes';
 import { useIncomeContext } from '../useIncomeContext';
 import { liveSeriesOfKind, payableAccounts, pausedIncomeSeries } from '../seriesHelpers';
 import { PrefillNote } from '@/features/decide/setup/PrefillNote';

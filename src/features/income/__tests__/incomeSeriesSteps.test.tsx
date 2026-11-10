@@ -2,7 +2,7 @@ import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
-import type { SetupStepHandle, SetupStepReady } from '@/features/decide/setup/steps/types';
+import type { SetupStepHandle, SetupStepReady } from '@/features/income/stepTypes';
 import { PayStep } from '../steps/PayStep';
 import { OtherStep } from '../steps/OtherStep';
 
