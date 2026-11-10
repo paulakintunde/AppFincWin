@@ -162,9 +162,11 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
   const extraFrom = extraRow === undefined ? today : extraStartDate(extraRow, today);
   const stopFrom = carrierRow === undefined ? extraFrom : extraStartDate(carrierRow, today);
   const onceOn = oneOffDate(today);
+  // The stepper at $0 stops a saved extra rather than saving nothing (D-32); there is no early return for it.
+  const stepperOn = extra > 0;
 
   const useExtra = (): void => {
-    if (extraRow === undefined || userId === null || extra <= 0 || shownOrder === null) return;
+    if (extraRow === undefined || userId === null || !stepperOn || shownOrder === null) return;
     const accountId = payAccountId(extraRow, accounts);
     if (accountId === null) return;
     try {
@@ -358,7 +360,7 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
           onLump={setLump}
           savedExtra={model.extra}
           lumpDebt={onceLine === null ? null : { name: onceLine.name, balance: onceLine.point.balance }}
-          startDates={{ extra: scenario === 'minimum' || extra <= 0 ? stopFrom : extraFrom, once: onceOn }}
+          startDates={{ extra: scenario === 'minimum' || !stepperOn ? stopFrom : extraFrom, once: onceOn }}
           onUseExtra={useExtra}
           onStopExtra={stopExtra}
           onUseOnce={useOnce}
