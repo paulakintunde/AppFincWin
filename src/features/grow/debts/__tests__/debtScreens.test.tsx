@@ -154,16 +154,16 @@ describe('Debts segment (G05)', () => {
     expect(screen.getByText('Debt payments · 10% of pay. Your rule is at most 36%.')).toBeTruthy();
     expect(screen.queryByText(en.grow.debts.add.overBadge)).toBeNull();
     expect(screen.getByText('Auto loan')).toBeTruthy();
-    expect(screen.getByText('6.9% · $312 a month · due the 15th')).toBeTruthy();
+    expect(screen.getByText('6.9% · $312 a month · due the 15th · ends Apr 2029')).toBeTruthy();
     expect(screen.getByText(en.grow.debts.paidInFullSection)).toBeTruthy();
     expect(screen.getByText('Visa card')).toBeTruthy();
     expect(screen.getByText(en.grow.debts.paidInFullRow)).toBeTruthy();
   });
 
-  it('a debt with no due day reads rate and payment a month, with no due day', async () => {
+  it('a debt with no due day reads rate, payment a month and its end date, with no due day', async () => {
     mockRows = [debt({ id: 'nodue', name: 'Family loan', balance: 100000, apr: '3', minimum_payment: 5000, due_day: null, started_balance: 100000 })];
     await wrap(<DebtsSegment />);
-    expect(screen.getByText('3% · $50 a month')).toBeTruthy();
+    expect(screen.getByText(/^3% · \$50 a month · ends [A-Z][a-z]{2} \d{4}$/)).toBeTruthy();
   });
 
   it('a debt row opens its detail', async () => {
@@ -328,6 +328,132 @@ describe('Payoff plan card (D-30, Option B)', () => {
     expect(soonerText(t, 1)).toBe('1 month sooner');
     expect(soonerText(t, 0)).toBe('Same as the minimum');
     expect(soonerText(t, null)).toBeNull();
+  });
+});
+
+describe('Debts segment wiring (D-30, D-32, D-33, D-34)', () => {
+  it('each debt row ends with its payoff date; a card paid in full has none (owner, D-34)', async () => {
+    await wrap(<DebtsSegment />);
+    expect(screen.getByText(/· ends Apr 2029$/)).toBeTruthy();
+    expect(screen.getByText(en.grow.debts.paidInFullRow)).toBeTruthy();
+    expect(screen.getAllByText(/· ends /)).toHaveLength(1);
+  });
+
+  it('with a saved extra, the row end date follows the plan and the hero adds the extra’s date', async () => {
+    mockRows = [{ ...AUTO, payoff_extra: 5000 }, VISA];
+    await wrap(<DebtsSegment />);
+    expect(screen.getByText('Paid off by Apr 2029 on the minimum.')).toBeTruthy();
+    expect(screen.getByText('With your $50 extra: debt-free by Dec 2028.')).toBeTruthy();
+    expect(screen.getByText('6.9% · $312 a month · due the 15th · ends Dec 2028')).toBeTruthy();
+  });
+
+  it('with no rule set, the line card shows the default rule (D14)', async () => {
+    mockRule = null;
+    await wrap(<DebtsSegment />);
+    expect(screen.getByText('Debt payments · 10% of pay. Your rule is at most 36% (default).')).toBeTruthy();
+    expect(screen.getByTestId('grow-progress-tick')).toBeTruthy();
+  });
+
+  it('"+ Add a debt" is a row in the Debts card; the full-width button is gone (D12)', async () => {
+    await wrap(<DebtsSegment />);
+    expect(screen.queryByText(en.grow.debts.emptyAction)).toBeNull();
+    await fireEvent.press(screen.getByText(en.grow.debts.addDebtRow));
+    expect(screen.getByLabelText(en.grow.debts.add.name)).toBeTruthy();
+  });
+
+  it('the record row under the plan opens the debt calculator for the largest debt (D9)', async () => {
+    await wrap(<DebtsSegment />);
+    expect(screen.getByText(en.grow.debts.recordRowSub)).toBeTruthy();
+    await fireEvent.press(screen.getByText('Extra payments on Auto loan'));
+    expect(mockPush).toHaveBeenCalledWith('/grow/calculators/debt/auto');
+  });
+
+  it('a debt row has ⋯ with Edit and Delete; Delete asks first, removes once, with an Undo toast', async () => {
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByLabelText('More for Auto loan'));
+    expect(screen.getByText('Edit')).toBeTruthy();
+    await fireEvent.press(screen.getByText(en.decide.delete.word));
+    expect(mockRemove).not.toHaveBeenCalled();
+    expect(screen.getByText('Remove Auto loan?')).toBeTruthy();
+    await fireEvent.press(screen.getByText(en.decide.delete.confirm));
+    expect(mockRemove).toHaveBeenCalledTimes(1);
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'destructive', stepId: 'step-removed', text: { key: 'grow.debts.detail.removedToast', params: { name: 'Auto loan' } } }),
+    );
+  });
+
+  it('Edit from ⋯ opens the debt sheet in edit mode', async () => {
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByLabelText('More for Auto loan'));
+    await fireEvent.press(screen.getByText('Edit'));
+    expect(screen.getAllByText(en.grow.debts.add.saveEdit).length).toBeGreaterThan(0);
+  });
+
+  it('"Use $50 extra from Nov 15" saves on the debt with the user’s order (none yet), a light haptic and a dated toast', async () => {
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByText('Use $50 extra from Nov 15'));
+    expect(mockSavePlan).toHaveBeenCalledTimes(1);
+    expect(mockSavePlan).toHaveBeenCalledWith(
+      expect.objectContaining({ extra: 5000, order: null, paidFromAccountId: 'a1', debt: expect.objectContaining({ id: 'auto' }) }),
+    );
+    expect(mockLight).toHaveBeenCalledTimes(1);
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'ordinary', stepId: 'step-plan', text: { key: 'grow.debts.planSavedToastFrom', params: { amount: '$50', date: 'Nov 15' } } }),
+    );
+  });
+
+  it('two debts: the extra stays on the debt that already carries it, even with the other order (no second extra)', async () => {
+    mockRows = [{ ...AUTO, payoff_extra: 2500 }, STORE];
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByTestId('payoff-order-balance'));
+    await fireEvent.press(screen.getByTestId('grow-stepper-plus'));
+    await fireEvent.press(screen.getByText('Use $50 extra from Nov 15'));
+    expect(mockSavePlan).toHaveBeenCalledTimes(1);
+    expect(mockSavePlan).toHaveBeenCalledWith(expect.objectContaining({ debt: expect.objectContaining({ id: 'auto' }), extra: 5000, order: 'balance' }));
+  });
+
+  it('two debts and no extra yet: the extra goes to the first debt in the chosen order', async () => {
+    mockRows = [AUTO, STORE];
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByTestId('payoff-order-rate'));
+    await fireEvent.press(screen.getByText('Use $50 extra from Dec 3'));
+    expect(mockSavePlan).toHaveBeenCalledWith(expect.objectContaining({ debt: expect.objectContaining({ id: 'card' }), order: 'rate' }));
+  });
+
+  it('Stop the extra saves 0 on the debt that carries it, with a dated toast and Undo (D-32)', async () => {
+    mockRows = [{ ...AUTO, payoff_extra: 5000 }, VISA];
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByTestId('payoff-scenario-minimum'));
+    await fireEvent.press(screen.getByText('Stop the extra from Nov 15'));
+    expect(mockSavePlan).toHaveBeenCalledWith(expect.objectContaining({ extra: 0, debt: expect.objectContaining({ id: 'auto' }) }));
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({ stepId: 'step-plan', text: { key: 'grow.debts.stopToast', params: { date: 'Nov 15' } } }),
+    );
+  });
+
+  it('"Use $1,000 once on Nov 5" records one Expected payment on the first debt, with a toast and Undo (D-33)', async () => {
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByTestId('payoff-scenario-once'));
+    await fireEvent.press(screen.getByText('Use $1,000 once on Nov 5'));
+    expect(mockRecordOnce).toHaveBeenCalledTimes(1);
+    expect(mockRecordOnce).toHaveBeenCalledWith({
+      ownerId: 'u1',
+      debt: expect.objectContaining({ id: 'auto' }),
+      amount: 100000,
+      paidFromAccountId: 'a1',
+      name: 'One-off payment · Auto loan',
+    });
+    expect(mockLight).toHaveBeenCalledTimes(1);
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'ordinary',
+        stepId: 'step-once',
+        text: { key: 'grow.debts.onceToast', params: { amount: '$1,000', name: 'Auto loan', date: 'Nov 5' } },
+      }),
+    );
+    expect(en.grow.debts.onceToast.replace('{{amount}}', '$1,000').replace('{{name}}', 'Auto loan').replace('{{date}}', 'Nov 7')).toBe(
+      'A $1,000 one-off payment to Auto loan is expected on Nov 7. Decide counts it.',
+    );
   });
 });
 

@@ -4,7 +4,11 @@
 // `addOpen` / `onAddClosed`, and the segment's own buttons open it without any wiring.
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import type { Href } from 'expo-router';
 import { useAccounts } from '@/data/queries/accounts';
+import { useRemoveDebt } from '@/data/mutations/debts';
+import type { DebtRow } from '@/db/debts';
+import { DeletableRow } from '@/features/decide/ui/DeletableRow';
 import { extraStartDate, oneOffDate, useRecordDebtOneOff, useSaveDebtPlan } from '@/data/mutations/growDebts';
 import type { PayoffOrder } from '@/engine/payoff';
 import { useT } from '@/i18n';
@@ -25,8 +29,20 @@ import { AddDebtSheet } from './AddDebtSheet';
 import { debtLineModel, firstClearedDate } from './debtLineModel';
 import { debtHref, payAccountId, useDebtFormat, useDebtMonth, useDebtRows, type DebtFormat } from './debtScreenData';
 import { PayoffPlanCard, type ScenarioKey } from './PayoffPlanCard';
-import { buildDebtsModel, DEFAULT_EXTRA, DEFAULT_LUMP, useDebtsRead, type DebtLine, type DebtsRead } from './useDebtsRead';
+import {
+  buildDebtsModel,
+  DEFAULT_EXTRA,
+  DEFAULT_LUMP,
+  minimumOnlyFor,
+  savedPlanFor,
+  useDebtsRead,
+  type DebtLine,
+  type DebtsRead,
+} from './useDebtsRead';
 import { useDebts } from '@/data/queries/decide';
+
+/** The debt-payment rule when none is set: 36%, as Your money rules shows it (GrowLinesScreen). */
+const DEFAULT_DEBT_RULE = '36';
 
 export interface DebtsSegmentProps {
   /** The FAB asks for the Add a debt sheet. */
@@ -100,6 +116,8 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
   const accounts = useAccounts(householdId ?? undefined).data ?? [];
   const planSave = useSaveDebtPlan();
   const recordOnce = useRecordDebtOneOff();
+  const { remove: removeDebt } = useRemoveDebt();
+  const [editing, setEditing] = useState<DebtRow | null>(null);
 
   const [extra, setExtra] = useState(model.extra > 0 ? model.extra : DEFAULT_EXTRA);
   // The user's tap, or the order they saved before. Nothing is picked for them.
@@ -117,16 +135,25 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
   const inPlan = model.debts.filter((d) => d.inPlan);
   const total = inPlan.reduce((s, d) => s + d.point.balance, 0);
   const monthly = inPlan.reduce((s, d) => s + d.point.minimum + d.extra, 0);
-  const heroOutcome = model.plan === null ? null : (order === 'balance' ? model.plan.balance : model.plan.rate).withoutExtra;
-  const heroNote = heroOutcome?.payoffDate ? t('grow.debts.heroNote', { date: fmt.monthYear(heroOutcome.payoffDate) }) : t('grow.debts.heroNoteNone');
+  // The order shown: the user's pick, the saved one, or (one debt) either. 2+ debts and none: the later date, no pick.
+  const shownOrder: PayoffOrder | null = order ?? (model.oneDebt ? 'rate' : null);
+  const heroMinimum = model.scenarios === null ? null : minimumOnlyFor(model.scenarios, shownOrder);
+  const heroNote = heroMinimum?.payoffDate ? t('grow.debts.heroNote', { date: fmt.monthYear(heroMinimum.payoffDate) }) : t('grow.debts.heroNoteNone');
+  const heroSaved = model.savedExtraPlan === null ? null : savedPlanFor(model.savedExtraPlan, model.savedOrder ?? shownOrder);
+  const heroExtra =
+    heroSaved?.payoffDate == null
+      ? null
+      : t('grow.debts.heroNoteExtra', { amount: fmt.money(model.extra, currency), date: fmt.monthYear(heroSaved.payoffDate) });
 
-  const lineModel = month.usualPay === null ? null : debtLineModel(monthly, month.usualPay, month.rule ?? '100');
+  // D14: with no rule set, the default rule shows, marked as the default.
+  const ruleIsDefault = month.rule === null;
+  const rule = month.rule ?? DEFAULT_DEBT_RULE;
+  const lineModel = month.usualPay === null ? null : debtLineModel(monthly, month.usualPay, rule);
   const sharePercent = lineModel === null ? null : lineModel.sharePercent;
-  const over = month.rule !== null && lineModel !== null && lineModel.over;
+  const over = lineModel !== null && lineModel.over;
 
   // D-34: one debt carries the extra. Keep it on the debt that already has one; else the first debt in the order shown
   // (one debt: that debt; 2+ debts with no order: none yet, and the card asks for an order).
-  const shownOrder: PayoffOrder | null = order ?? (model.oneDebt ? 'rate' : null);
   const carrierId = inPlan.find((d) => d.extra > 0)?.id ?? null;
   const firstId = shownOrder === null || whatIf.scenarios === null ? null : whatIf.scenarios[shownOrder].lumpFirstDebtId;
   const extraRow = rows.get(carrierId ?? firstId ?? '');
@@ -199,27 +226,33 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
   const line = { ...textRole(pairing, 'label'), color: colors.inkMuted };
   const card = [styles.card, { backgroundColor: colors.surface, ...shadows.card }];
 
-  const row = (d: DebtLine, paidInFull: boolean) => {
+  const removeRow = (debt: DebtRow): void => {
+    if (userId === null) return;
+    try {
+      const stepId = removeDebt(debt, userId);
+      hapticLight();
+      showToast({ kind: 'destructive', text: { key: 'grow.debts.detail.removedToast', params: { name: debt.name } }, stepId });
+    } catch {
+      showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
+    }
+  };
+
+  const subOf = (d: DebtLine, paidInFull: boolean): string => {
+    if (paidInFull) return t('grow.debts.paidInFullRow');
+    const rate = fmt.rate(rows.get(d.id)?.apr ?? null);
+    const payment = fmt.money(d.point.minimum, d.currency);
+    const day = d.point.dueDay === null ? null : fmt.ordinal(d.point.dueDay);
+    const end = d.endDate === null ? null : fmt.monthYear(d.endDate);
+    const key =
+      (end === null ? 'grow.debts.row' : 'grow.debts.rowEnds') + (rate === null ? (day === null ? 'NoDayNoRate' : 'NoRate') : day === null ? 'NoDay' : '');
+    return t(key, { rate: rate ?? '', payment, day: day ?? '', end: end ?? '' });
+  };
+
+  const row = (d: DebtLine, paidInFull: boolean, index: number) => {
     const stored = rows.get(d.id);
-    const rate = fmt.rate(stored?.apr ?? null);
-    const sub = paidInFull
-      ? t('grow.debts.paidInFullRow')
-      : d.point.dueDay === null
-        ? rate !== null
-          ? t('grow.debts.rowNoDay', { rate, payment: fmt.money(d.point.minimum, d.currency) })
-          : t('grow.debts.rowNoDayNoRate', { payment: fmt.money(d.point.minimum, d.currency) })
-        : rate !== null
-          ? t('grow.debts.row', { rate, payment: fmt.money(d.point.minimum, d.currency), day: fmt.ordinal(d.point.dueDay) })
-          : t('grow.debts.rowNoRate', { payment: fmt.money(d.point.minimum, d.currency), day: fmt.ordinal(d.point.dueDay) });
-    return (
-      <Pressable
-        key={d.id}
-        testID={`grow-debt-row-${d.id}`}
-        accessibilityRole="button"
-        accessibilityLabel={`${d.name}, ${sub}, ${fmt.spoken(d.point.balance, d.currency)}`}
-        onPress={() => pushOnce(debtHref(d.id))}
-        style={({ pressed }) => [styles.row, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
-      >
+    const sub = subOf(d, paidInFull);
+    const content = (
+      <View testID={`grow-debt-row-${d.id}`} style={styles.row}>
         <AccTile glyph={d.kind === 'card' ? 'card' : 'debt'} />
         <View style={styles.flex}>
           <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{d.name}</Text>
@@ -227,49 +260,83 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
           {d.minimumEstimated ? <StateBadge tone="slate" shape="sQuestion" label={t('grow.debts.minimumEstimated')} /> : null}
         </View>
         <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, fontVariant: ['tabular-nums'] }}>{fmt.money(d.point.balance, d.currency)}</Text>
-        <GrowGlyph name="chev" color={colors.inkFaint} size={16} />
-      </Pressable>
+      </View>
+    );
+    return (
+      <View key={d.id} style={index > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1 } : null}>
+        <DeletableRow
+          name={d.name}
+          accessibilityLabel={`${d.name}, ${sub}, ${fmt.spoken(d.point.balance, d.currency)}`}
+          onOpen={() => pushOnce(debtHref(d.id))}
+          menu={stored === undefined ? [] : [{ key: 'edit', label: t('decide.delete.menuEdit'), onSelect: () => setEditing(stored) }]}
+          confirm={{ title: t('grow.debts.detail.removeTitle', { name: d.name }), body: t('grow.debts.detail.removeBody') }}
+          onDelete={() => {
+            if (stored !== undefined) removeRow(stored);
+          }}
+          disabled={stored === undefined}
+        >
+          {content}
+        </DeletableRow>
+      </View>
     );
   };
+
+  const eyebrow = { ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkMuted };
+  const recordLine = whatIf.focus === null ? null : model.debts.find((d) => d.id === whatIf.focus?.id) ?? null;
 
   return (
     <View testID="grow-debts" style={styles.stack}>
       <View testID="grow-debts-hero" style={card}>
         <Text style={line}>{t('grow.debts.heroLabel')}</Text>
-        <Text style={{ ...textRole(pairing, 'heading'), color: colors.ink, fontVariant: ['tabular-nums'] }}>{fmt.money(total, currency)}</Text>
+        <Text scale="capped" style={{ ...textRole(pairing, 'display'), color: colors.ink, fontVariant: ['tabular-nums'] }}>
+          {fmt.money(total, currency)}
+        </Text>
         <Text style={line}>{heroNote}</Text>
+        {heroExtra === null ? null : <Text style={line}>{heroExtra}</Text>}
       </View>
 
-      {sharePercent === null ? null : (
+      {sharePercent === null || lineModel === null ? null : (
         <View testID="grow-debts-line" style={card}>
           <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
-            {month.rule === null
-              ? t('grow.debts.lineCardNoRule', { percent: sharePercent })
-              : t('grow.debts.lineCard', { percent: sharePercent, rule: Number(month.rule) })}
+            {t(ruleIsDefault ? 'grow.debts.lineCardDefault' : 'grow.debts.lineCard', { percent: sharePercent, rule: Number(rule) })}
           </Text>
           <ProgressBar
             percent={Math.min(100, sharePercent)}
             variant="thin"
             tone={over ? 'ink' : 'accent'}
             animate={false}
-            tickPercent={month.rule === null || lineModel === null ? undefined : lineModel.line}
+            tickPercent={lineModel.line}
             accessibilityLabel={t('grow.debts.lineCardNoRule', { percent: sharePercent })}
           />
           {over ? <StateBadge tone="warn" shape="sOver" label={t('grow.debts.add.overBadge')} /> : null}
         </View>
       )}
 
-      <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+      <Text accessibilityRole="header" style={eyebrow}>
         {t('grow.debts.section')}
       </Text>
-      <View style={card}>{model.debts.map((d) => row(d, false))}</View>
+      <View style={[...card, styles.listCard]}>
+        {model.debts.map((d, i) => row(d, false, i))}
+        <Pressable
+          testID="debts-add-row"
+          accessibilityRole="button"
+          onPress={onAdd}
+          style={({ pressed }) => [
+            styles.addRow,
+            model.debts.length > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1 } : null,
+            { opacity: pressed ? PRESSED_OPACITY : 1 },
+          ]}
+        >
+          <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('grow.debts.addDebtRow')}</Text>
+        </Pressable>
+      </View>
 
       {model.paidInFull.length > 0 ? (
         <>
-          <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+          <Text accessibilityRole="header" style={eyebrow}>
             {t('grow.debts.paidInFullSection')}
           </Text>
-          <View style={card}>{model.paidInFull.map((d) => row(d, true))}</View>
+          <View style={[...card, styles.listCard]}>{model.paidInFull.map((d, i) => row(d, true, i))}</View>
         </>
       ) : null}
 
@@ -301,8 +368,24 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
         />
       )}
 
-      <Pill label={t('grow.debts.emptyAction')} variant="secondary" onPress={onAdd} />
+      {recordLine === null ? null : (
+        <Pressable
+          testID="debts-record-row"
+          accessibilityRole="button"
+          accessibilityLabel={`${t('grow.debts.recordRow', { name: recordLine.name })}. ${t('grow.debts.recordRowSub')}`}
+          onPress={() => pushOnce(`/grow/calculators/debt/${recordLine.id}` as Href)}
+          style={({ pressed }) => [...card, styles.recordRow, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+        >
+          <View style={styles.flex}>
+            <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('grow.debts.recordRow', { name: recordLine.name })}</Text>
+            <Text style={line}>{t('grow.debts.recordRowSub')}</Text>
+          </View>
+          <GrowGlyph name="chev" color={colors.inkFaint} size={16} />
+        </Pressable>
+      )}
+
       <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{t('grow.debts.footer')}</Text>
+      {editing === null ? null : <AddDebtSheet visible debt={editing} onClose={() => setEditing(null)} />}
     </View>
   );
 }
@@ -312,6 +395,9 @@ const styles = StyleSheet.create({
   card: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapSm },
   center: { alignItems: 'center' },
   block: { borderRadius: radii.card },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, minHeight: 64 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, minHeight: 64, paddingVertical: space.gapSm },
+  listCard: { gap: 0, paddingVertical: space.gapSm },
+  addRow: { minHeight: space.touchMin, justifyContent: 'center' },
+  recordRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
   flex: { flex: 1, gap: 2, alignItems: 'flex-start' },
 });
