@@ -1225,16 +1225,16 @@ Plans:
 - [x] 06-26-PLAN.md — Copy for the gap plans and the debtOneOffRecorded undo label (W10)
 
 **Wave 11** *(blocked on Wave 10 completion)*
-- [ ] 06-27-PLAN.md — Grow restyle A: goals, safety net, rules; stepper value, debt glyph (D-31) (W11)
-- [ ] 06-28-PLAN.md — Grow restyle B: debts, investing, calculators; shared tile (D-31) (W11)
+- [x] 06-27-PLAN.md — Grow restyle A: goals, safety net, rules; stepper value, debt glyph (D-31) (W11)
+- [x] 06-28-PLAN.md — Grow restyle B: debts, investing, calculators; shared tile (D-31) (W11)
 - [ ] 06-29-PLAN.md — [BLOCKING] second production push (20261106000400), owner-gated with hard stops (D-33) (W11)
 
 **Wave 12** *(blocked on Wave 11 completion)*
 - [ ] 06-30-PLAN.md — One-off debt payment hook, transactions.debt_id on the client, start-date helpers (D-33) (W12)
 - [ ] 06-31-PLAN.md — Grow home: hero label, to-confirm badges, row actions, safety net date (D-32) (W12)
 - [ ] 06-32-PLAN.md — Goal and safety-net detail: history records, one-tap Confirm, Kept in and rate, net confirm fix (D-32) (W12)
-- [ ] 06-33-PLAN.md — Investing: edit and remove entries, edit a holding, row actions (D-32) (W12)
-- [ ] 06-34-PLAN.md — Activity Mark paid on goal lines uses the goal confirm path (D-32) (W12)
+- [x] 06-33-PLAN.md — Investing: edit and remove entries, edit a holding, row actions (D-32) (W12)
+- [x] 06-34-PLAN.md — Activity Mark paid on goal lines uses the goal confirm path (D-32) (W12)
 
 **Wave 13** *(blocked on Wave 12 completion)*
 - [ ] 06-35-PLAN.md — Payoff plan reveal on Debts: rows open, dated buttons, Use once, Stop the extra (D-30, D-32, D-33) (W13)
