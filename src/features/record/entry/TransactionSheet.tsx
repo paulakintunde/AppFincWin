@@ -80,6 +80,8 @@ import { OptionPicker } from './pickers/OptionPicker';
 import { CurrencyPicker } from './pickers/CurrencyPicker';
 import { EditScopePrompt } from './EditScopePrompt';
 import { OccurrenceActions } from './OccurrenceActions';
+import { goalIdOfLine } from '@/features/grow/goals/goalLine';
+import { useGoalLinePay } from '@/features/grow/goals/useGoalLinePay';
 import { RepeatsField } from './RepeatsField';
 import { SeriesIncomeRows } from './SeriesIncomeRows';
 import { needsScopePrompt, repeatsProblem, repeatsToSchedule, thisAndFuturePlan, type RepeatsValue } from './recurringForm';
@@ -312,6 +314,8 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const [replaceTarget, setReplaceTarget] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const series = editRow?.recurring_series_id ? seriesList?.find((x) => x.id === editRow.recurring_series_id) : undefined;
+  const seriesById = useMemo(() => new Map((seriesList ?? []).map((x) => [x.id, x])), [seriesList]);
+  const { pay: payGoalLine } = useGoalLinePay(rc.userId, rc.householdId);
   const repeatsError = submitted ? repeatsProblem(repeats, state.localDate) : null;
   const isTransfer = state.direction === 'transfer';
   const parse = (text: string, currency: string) => parser.parse(text, currency, exponentFor(currency));
@@ -556,6 +560,23 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
 
     if (editRow) {
       const patch = toPatch(editRow, state, amountMinor);
+      // 06-37 D-39: Paid on a goal's Expected line goes through the goal confirm (as Mark paid does), so the goal grows
+      // exactly once. Paid with other changes in the same save is refused with a hint: an edit queued ahead of the confirm
+      // could land, fail or be parked on its own, so nothing is written and the user saves the changes first.
+      const goalId =
+        editRow.transfer_id == null && editRow.status === 'pending' && patch.status === 'paid'
+          ? goalIdOfLine(editRow, seriesById)
+          : null;
+      if (goalId !== null) {
+        const { status: _paid, ...others } = patch;
+        if (Object.keys(others).length > 0 || schedule) {
+          showToast({ kind: 'info', text: { key: 'record.sheet.goalLinePaidAlone' } });
+          return;
+        }
+        // Not loaded yet: nothing is written, the hint shows and the sheet stays open.
+        if (payGoalLine(editRow, goalId)) onClose();
+        return;
+      }
       // D-06/D-07: a template change on an occurrence asks which occurrences it applies to.
       // Automatic is a template flag too (D-02): changing it on an occurrence asks the same question.
       if (needsScopePrompt(editRow, patch) || (editRow.recurring_series_id && patch.is_automatic !== undefined)) {

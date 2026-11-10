@@ -365,6 +365,7 @@ const en = {
       transferCategoryLoading: 'Transfers can be added once your categories have loaded.',
       transferNeedsBothSides: 'Both sides of this transfer are needed to change it. They haven’t loaded yet.',
       goalLineNotReady: 'This line’s goal hasn’t loaded yet, so it can’t be marked paid. Try again in a moment.',
+      goalLinePaidAlone: 'A goal line is marked paid on its own. Save your other changes first, then choose Paid.',
       transferLegsLoading: 'Loading both sides of this transfer…',
       transferLegsOffline: 'Both sides of this transfer are needed to change it. You’re offline, so the other side can’t load yet.',
       transferLegsFailed: 'Both sides of this transfer are needed to change it. The other side couldn’t be loaded.',
