@@ -179,3 +179,6 @@ Owner checked Grow on the Pixel 9 (dev client): "otherwise it looks mostly good"
   - **No order picked yet (2+ debts).** The hero and the card's top line show the later of the two orders' minimum-only debt-free dates, so no order is picked for the user. The rows still prompt for an order.
   - **An extra saved before payoff orders existed.** Each debt's end date assumes highest rate first until an order is picked.
   - **Row word.** The swipe and ⋯ menus on Grow rows (goals, holdings and debts) say "Remove", matching their confirm sheets. This goes into 06-37.
+- **D-38 (owner, 2026-11-10), two answers to questions 06-36 raised:**
+  - **"See all in Activity"** on a debt's detail screen opens Activity filtered to that debt's lines (`debt_id`, its payment series and its extra series). This needs a small Activity route parameter and goes into 06-37.
+  - **A manual debt with no recorded lines** keeps its computed next due payment as a plain Expected row, as built.
