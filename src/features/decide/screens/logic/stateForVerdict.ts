@@ -6,8 +6,9 @@
  */
 import { VERDICT_TABLE } from '@/engine/decide/v3';
 
-// TODO(06.1-01 merge): switch to `import type { StateTone } from '@/theme/tokens'` once plan 01's state tokens land.
-export type StateTone = 'fits' | 'tight' | 'net' | 'extra' | 'short' | 'cond' | 'notYet';
+import type { StateTone } from '@/theme/tokens';
+
+export type { StateTone };
 export type StateGlyph = 'sCheck' | 'sOver' | 'lock' | 'sUp' | 'sDown' | 'sHalf' | 'sClock';
 
 export interface VerdictState {

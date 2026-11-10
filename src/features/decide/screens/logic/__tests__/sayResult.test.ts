@@ -236,10 +236,10 @@ describe('sayResult: every engine code reads as one filled sentence (D-18, UX-19
     expect(sayCode('fact', { code: 'sale_counted', values: { amount: 1000, date: '2026-12-01' } }, deps).text).toBe('This counts $10.00 from the sale on <2026-12-01>.');
     expect(sayCode('fact', { code: 'at_todays_rate', values: { currency: 'EUR' } }, deps).text).toBe('Converted from EUR at today’s rate.');
     expect(sayCode('fact', { code: 'line_crossed', values: { lineId: ID, kind: 'single_purchase_cap', unit: 'money', value: 90000, limit: 50000 } }, deps).text).toBe(
-      'This brings it to $900.00; your line is $500.00.'
+      'This brings it to $900.00; your rule is $500.00.'
     );
     expect(sayCode('fact', { code: 'line_crossed', values: { lineId: ID, kind: 'housing_share', unit: 'percent', value: 40, limit: 35 } }, deps).text).toBe(
-      'This brings it to 40% of your income; your line is 35%.'
+      'This brings it to 40% of your income; your rule is 35%.'
     );
     expect(sayCode('fact', { code: 'clearing_first', values: { zero: 0 } }, deps).text).toContain('below $0.00 costs');
   });

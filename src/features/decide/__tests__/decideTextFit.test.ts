@@ -30,10 +30,14 @@ function strip(src: string): string {
 // 05.4-39 (D-156): the parts that moved from decide/ui to src/ui stay under these guards, listed as '@/ui/<Name>.tsx'.
 const SHARED_UI = ['MoneyInput', 'SegmentedToggle', 'StateChip', 'LabelValueRow', 'CheckRow', 'WarningCard', 'WrittenList', 'CustomValueChips'];
 const UI_DIR = join(__dirname, '..', '..', '..', 'ui');
+// 06.1-41: the account-use sheet, list and suggestions moved to record/accounts and stay under these guards, listed by '@/' path.
+const MOVED_TO_RECORD = ['AccountUseSheet', 'AccountUseList'];
+const RECORD_ACCOUNTS_DIR = join(__dirname, '..', '..', 'record', 'accounts');
 
 const FILES = [
   ...walk(ROOT).map((full) => ({ path: relative(ROOT, full).split('\\').join('/'), full })),
   ...SHARED_UI.map((name) => ({ path: `@/ui/${name}.tsx`, full: join(UI_DIR, `${name}.tsx`) })),
+  ...MOVED_TO_RECORD.map((name) => ({ path: `@/features/record/accounts/${name}.tsx`, full: join(RECORD_ACCOUNTS_DIR, `${name}.tsx`) })),
 ].map(({ path, full }) => ({ path, lines: strip(readFileSync(full, 'utf8')).split('\n') }));
 
 interface Hit {
@@ -100,7 +104,7 @@ const NUMBER_ALLOW: { path: string; kind: NumberKind; count: number; reason: str
   { path: 'quick/QuickResult.tsx', kind: 'figure', count: 1, reason: 'rule N quick-check monthly figure' },
   { path: 'home/HomeSummaryCard.tsx', kind: 'figure', count: 1, reason: 'R17.7 the hero amount: the declared hero-only minimumFontScale 0.75 exception to rule N' },
   { path: 'ui/FigureStrip.tsx', kind: 'figure', count: 1, reason: 'rule N strip figures' },
-  { path: 'setup/AccountUseList.tsx', kind: 'figure', count: 1, reason: 'rule N setup account balance, shrinks to its line' },
+  { path: '@/features/record/accounts/AccountUseList.tsx', kind: 'figure', count: 1, reason: 'rule N setup account balance, shrinks to its line' },
   { path: 'setup/EmergencyFundFields.tsx', kind: 'figure', count: 1, reason: 'rule N setup account balance, shrinks to its line' },
   { path: 'setup/UnspentSumCard.tsx', kind: 'figure', count: 2, reason: 'rule N setup line amount and total, shrinks to its line' },
   { path: 'setup/steps/EnvelopesStep.tsx', kind: 'figure', count: 1, reason: 'rule N setup envelope amount, shrinks to its line' },
