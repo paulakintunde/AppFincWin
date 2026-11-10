@@ -2,12 +2,16 @@
 // paid (planned values, or adjusted first), skip it, or end the series. Nothing here runs
 // without an explicit tap (T-02-21-02); ending asks for a destructive confirmation first
 // (T-02-21-03). Undo is offered only for a step the hook actually recorded.
+// 06-37 (06-34 follow-up): a goal's Expected line is marked paid only through confirm_goal_contribution, the same
+// confirm Grow and Activity use, never by a plain status patch; "Adjust, then mark paid" is not offered for it.
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import type { RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import { useEndSeries } from '@/data/mutations/recurringSeries';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
+import { goalIdOfLine } from '@/features/grow/goals/goalLine';
+import { useGoalLinePay } from '@/features/grow/goals/useGoalLinePay';
 import { openSeriesStatus } from './seriesStatusHost';
 import { useMarkPaid, useSkipOccurrence } from '@/data/mutations/transactions';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -41,6 +45,7 @@ export function OccurrenceActions({ row, series, onAdjust, onDone }: OccurrenceA
   const { end } = useEndSeries();
   const [confirmEnd, setConfirmEnd] = useState(false);
   const { v3 } = useDecideAccess();
+  const { pay: payGoalLine } = useGoalLinePay(rc.userId, rc.householdId);
 
   if (row.status !== 'pending' || !rc.userId || !rc.householdId) return null;
   const ownerId = rc.userId;
@@ -48,7 +53,15 @@ export function OccurrenceActions({ row, series, onAdjust, onDone }: OccurrenceA
   const name = row.name ?? undefined;
   const statusStyle = [textRole(pairing, 'label'), { color: overdue ? colors.danger : colors.inkMuted }];
 
+  const goalId =
+    row.transfer_id == null ? goalIdOfLine(row, series === undefined ? undefined : new Map([[series.id, series]])) : null;
+
   const doMarkPaid = () => {
+    if (goalId !== null) {
+      // Not loaded yet: nothing is written, the hint shows and the sheet stays open.
+      if (payGoalLine(row, goalId)) onDone();
+      return;
+    }
     const stepId = markPaid(row, ownerId, rc.today);
     showToast({ kind: 'ordinary', text: undoLabelText('markedPaid', { name }), stepId });
     onDone();
@@ -81,7 +94,7 @@ export function OccurrenceActions({ row, series, onAdjust, onDone }: OccurrenceA
         {overdue ? t('record.recurring.overdue') : t('record.recurring.dueOn', { date: formatter.formatDate(row.local_date) })}
       </Text>
       <Pill label={t('record.recurring.markPaid')} variant="primary" onPress={doMarkPaid} />
-      <Pill label={t('record.recurring.adjustThenMarkPaid')} variant="secondary" onPress={onAdjust} />
+      {goalId === null ? <Pill label={t('record.recurring.adjustThenMarkPaid')} variant="secondary" onPress={onAdjust} /> : null}
       {row.recurring_series_id ? <Pill label={t('record.recurring.skip')} variant="secondary" onPress={doSkip} /> : null}
       {row.recurring_series_id && series && v3 ? (
         <Pill

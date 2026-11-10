@@ -132,6 +132,7 @@ export function GoalRow({ goal, reachesOn, money, animate = true, pending = 0, a
       ]}
       confirm={actions.confirm}
       onDelete={actions.onRemove}
+      actionWord={t('grow.home.rowRemove')}
     >
       {content}
     </DeletableRow>

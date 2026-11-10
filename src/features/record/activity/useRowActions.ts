@@ -11,9 +11,8 @@ import type { ActivityRowView } from '@/data/queries/activity';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useBulkMarkUnpaid, useBulkPatch } from '@/data/mutations/patches';
 import { useEndSeries } from '@/data/mutations/recurringSeries';
-import { useConfirmGoalContribution } from '@/data/mutations/growGoals';
-import { useSavingsGoals } from '@/data/queries/decide';
-import { useGoalToast } from '@/features/grow/goals/useGoalToast';
+import { goalIdOfLine } from '@/features/grow/goals/goalLine';
+import { useGoalLinePay } from '@/features/grow/goals/useGoalLinePay';
 import { useDeleteTransaction, useMarkPaid } from '@/data/mutations/transactions';
 import { useDeleteTransfer, type TransferLegRow } from '@/data/mutations/transfers';
 import { daysInMonth } from '@/engine/recurring';
@@ -57,16 +56,7 @@ export function isGoalLine(
   seriesById?: ReadonlyMap<string, { goal_id?: string | null }>
 ): boolean {
   if (row.status !== 'pending' || row.transfer_id !== null) return false;
-  return goalIdOf(row, seriesById) !== null;
-}
-
-function goalIdOf(
-  row: Pick<ActivityRowView, 'goal_id' | 'recurring_series_id'>,
-  seriesById?: ReadonlyMap<string, { goal_id?: string | null }>
-): string | null {
-  if (row.goal_id) return row.goal_id;
-  if (row.recurring_series_id === null) return null;
-  return seriesById?.get(row.recurring_series_id)?.goal_id ?? null;
+  return goalIdOfLine(row, seriesById) !== null;
 }
 
 function pad2(n: number): string {
@@ -83,9 +73,7 @@ export function useRowActions(ctx: RowActionsContext): RowActions {
   const { remove: removeTransfer } = useDeleteTransfer();
   const { end } = useEndSeries();
   const series = useRecurringSeries(householdId ?? undefined).data;
-  const goals = useSavingsGoals(ownerId ?? undefined, householdId ?? undefined).data;
-  const { confirm: confirmGoalLine } = useConfirmGoalContribution();
-  const goalToast = useGoalToast();
+  const { pay: payGoalLine } = useGoalLinePay(ownerId, householdId);
   const seriesById = useMemo(() => new Map((series ?? []).map((x) => [x.id, x])), [series]);
 
   const partnerOf = useCallback(
@@ -132,28 +120,15 @@ export function useRowActions(ctx: RowActionsContext): RowActions {
       if (!enabled || ownerId === null || row.status !== 'pending') return;
       if (row.transfer_id !== null) return setTransferStatus(row, 'pending', 'paid');
       if (isGoalLine(row, seriesById)) {
-        // The goal grows through the same confirm Grow uses. With the goal not loaded nothing is written.
-        const goal = goals?.find((g) => g.id === goalIdOf(row, seriesById));
-        if (!goal) return;
-        const stepId = confirmGoalLine({
-          ownerId,
-          line: row,
-          goal: { id: goal.id, name: goal.name, currency: goal.currency, account_id: goal.account_id ?? null },
-        });
-        goalToast({
-          key: 'undo.label.goalContributionConfirmed',
-          stepId,
-          undoLabel: 'goalContributionConfirmed',
-          name: goal.name,
-          userId: ownerId,
-          householdId,
-        });
+        // The goal grows through the same confirm Grow uses. With the goal not loaded nothing is written and the
+        // not-ready hint shows (06-37).
+        payGoalLine(row, goalIdOfLine(row, seriesById) as string);
         return;
       }
       const stepId = markPaid(row, ownerId, today);
       showToast({ kind: 'ordinary', text: undoLabelText('markedPaid', { name: row.name ?? undefined }), stepId });
     },
-    [enabled, ownerId, householdId, today, markPaid, setTransferStatus, seriesById, goals, confirmGoalLine, goalToast]
+    [enabled, ownerId, today, markPaid, setTransferStatus, seriesById, payGoalLine]
   );
 
   const unpay = useCallback(

@@ -262,7 +262,7 @@ describe('Debt detail (G06)', () => {
     await fireEvent.press(screen.getByText('Nov 15'));
     expect(mockOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'n1' }));
     await fireEvent.press(screen.getByText(en.grow.debts.detail.seeAllInActivity));
-    expect(mockNavigate).toHaveBeenCalledWith('/activity');
+    expect(mockNavigate).toHaveBeenCalledWith({ pathname: '/activity', params: { debt: 'auto' } }); // 06-37 D-38: filtered to this debt
   });
 
   it('D-32: a manual debt with nothing recorded shows its next due payment as Expected', async () => {

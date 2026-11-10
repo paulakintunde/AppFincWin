@@ -21,7 +21,7 @@ jest.mock('@/features/decide/past/usePastDecisions', () => ({
   }),
 }));
 
-import { buildGoalsModel, useGoalsRead } from '../useGoalsRead';
+import { NET_MOVED_BY_MIGRATION_AT, buildGoalsModel, existedBeforeGrow, useGoalsRead } from '../useGoalsRead';
 /* eslint-enable import/first */
 
 const identity = (amount: number, currency: string): number | null => (currency === 'USD' ? amount : null);
@@ -124,6 +124,31 @@ describe('buildGoalsModel (LEDGER)', () => {
     expect(buildGoalsModel([{ ...unconfirmed, target: null }], [], identity, 'USD').needsNetConfirm).toBe(true); // saved 130000
     expect(buildGoalsModel([{ ...unconfirmed, target: null, opening_saved: 0 }], [], identity, 'USD').needsNetConfirm).toBe(false);
     expect(buildGoalsModel([LISBON], LINES, identity, 'USD').needsNetConfirm).toBe(false);
+  });
+
+  it('06-37 D-36: only a net created on or before the Grow migration push asks to be confirmed', () => {
+    expect(NET_MOVED_BY_MIGRATION_AT).toBe('2026-11-07T04:03:00Z');
+    const unconfirmed = { ...NET, net_confirmed_at: null };
+    const at = (created_at: string) => buildGoalsModel([{ ...unconfirmed, created_at }], [], identity, 'USD').needsNetConfirm;
+    // Moved by the migration: created before the push, or within its minute.
+    expect(at('2026-10-01T00:00:00Z')).toBe(true);
+    expect(at('2026-11-07T04:03:00Z')).toBe(true);
+    expect(at('2026-11-07T04:03:59.999+00:00')).toBe(true);
+    expect(at('2026-11-06 23:03:00-05:00')).toBe(true); // Postgres text form, another offset, same instant as 04:03Z
+    // Made in the app after the push: never the moved sheet, even unconfirmed.
+    expect(at('2026-11-07T04:04:00Z')).toBe(false);
+    expect(at('2026-11-10T12:00:00+00:00')).toBe(false);
+    // A confirmed old net does not ask again.
+    expect(buildGoalsModel([{ ...NET, created_at: '2026-10-01T00:00:00Z' }], [], identity, 'USD').needsNetConfirm).toBe(false);
+  });
+
+  it('06-37 existedBeforeGrow: an unreadable or missing time counts as after', () => {
+    expect(existedBeforeGrow(undefined)).toBe(false);
+    expect(existedBeforeGrow(null)).toBe(false);
+    expect(existedBeforeGrow('not a date')).toBe(false);
+    expect(existedBeforeGrow('2026-11-07T04:02:59Z')).toBe(true);
+    expect(existedBeforeGrow('2026-11-07T04:03:12.123456+00:00')).toBe(true); // microseconds, as PostgREST sends
+    expect(existedBeforeGrow('2026-11-07T04:04:00.000001+00:00')).toBe(false);
   });
 
   it('a goal whose money cannot convert is left out; an other-currency net counts nothing saved', () => {

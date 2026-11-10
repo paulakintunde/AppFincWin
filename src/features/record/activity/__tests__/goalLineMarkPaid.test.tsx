@@ -7,12 +7,14 @@ import { renderHook } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { useBulkMarkPaid } from '@/data/mutations/patches';
-import { resetToastForTests } from '@/state/undoToast';
+import { getToast, resetToastForTests } from '@/state/undoToast';
 import { useRowActions } from '../useRowActions';
 
 const mockMarkPaid = jest.fn((): string | null => 'paid-step');
 const mockConfirm = jest.fn((): string => 'confirm-step');
 const mockGoalToast = jest.fn();
+const LISBON = { id: 'g1', name: 'Lisbon', currency: 'GBP', account_id: 'a2' };
+let mockGoals: (typeof LISBON)[] | undefined = [LISBON];
 
 jest.mock('@/data/mutations/transactions', () => ({
   useMarkPaid: () => ({ markPaid: mockMarkPaid }),
@@ -28,7 +30,7 @@ jest.mock('@/data/queries/recurringSeries', () => ({
   useRecurringSeries: () => ({ data: [{ id: 's1', name: 'Lisbon', version: 3, goal_id: 'g1' }] }),
 }));
 jest.mock('@/data/queries/decide', () => ({
-  useSavingsGoals: () => ({ data: [{ id: 'g1', name: 'Lisbon', currency: 'GBP', account_id: 'a2' }] }),
+  useSavingsGoals: () => ({ data: mockGoals }),
 }));
 
 function row(over: Partial<ActivityRowView>): ActivityRowView {
@@ -72,6 +74,7 @@ async function setup() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockGoals = [LISBON];
   resetToastForTests();
 });
 
@@ -112,5 +115,18 @@ describe('goal Expected lines in Activity', () => {
     const vars = qc.getMutationCache().getAll().map((m) => m.state.variables as { items: { id: string }[] });
     const ids = vars.flatMap((v) => v.items.map((i) => i.id));
     expect(ids).toEqual(['b1']);
+  });
+
+  it.each([
+    ['still loading', undefined],
+    ['not in the loaded list', []],
+  ])('06-37 a goal line whose goal is %s writes nothing and shows the not-ready hint', async (_label, goals) => {
+    mockGoals = goals;
+    const r = await setup();
+    r.current.pay(goalLine);
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockMarkPaid).not.toHaveBeenCalled();
+    expect(mockGoalToast).not.toHaveBeenCalled();
+    expect(getToast()?.text).toEqual({ key: 'record.sheet.goalLineNotReady' });
   });
 });

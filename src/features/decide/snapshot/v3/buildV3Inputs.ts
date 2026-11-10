@@ -476,6 +476,10 @@ export function buildV3Inputs(
       if (line.transferId === null) {
         // 06 ARC-15: single-leg goal contribution, counted once as an envelope deposit
         if (isLiveGoal(rowById.get(line.id)?.goal_id)) return line.direction === 'out' ? 'envelope_deposit' : 'envelope_withdrawal';
+        // 06-37 D-35: a line tagged to a debt (a one-off payment, record_debt_one_off) is a debt payment, the same as a
+        // transfer into a loan or card: money out once, never everyday spending, never in a category's total.
+        const debtId = rowById.get(line.id)?.debt_id;
+        if (line.direction === 'out' && debtId !== null && debtId !== undefined) return 'debt_payment';
         return line.direction === 'out' ? 'spending' : line.isRefund ? 'refund' : 'income';
       }
       const row = rowById.get(line.id);

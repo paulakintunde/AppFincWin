@@ -165,6 +165,7 @@ export function InvestingSegment() {
                   body: t('grow.investing.detail.removeBody', { amount: f.money(h.value, h.currency) }),
                 }}
                 onDelete={() => removeHolding(h.id, h.name)}
+                actionWord={t('grow.home.rowRemove')}
                 accessibilityLabel={`${t('grow.investing.rowA11y', { name: h.name, value: f.money(h.value, h.currency), gain: f.signed(h.gain, h.currency) })}, ${sub}`}
               >
                 <View testID={`holding-row-${h.id}`} style={styles.holdingRow}>
