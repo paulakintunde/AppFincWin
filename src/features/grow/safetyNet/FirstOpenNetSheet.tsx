@@ -7,7 +7,7 @@ import { StyleSheet, View } from 'react-native';
 import { useConfirmSafetyNet } from '@/data/mutations/growGoals';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useT } from '@/i18n';
-import { useGoalMoney } from '@/features/grow/home/GoalsSegment';
+import { useGoalMoney } from '@/features/grow/home/useGoalMoney';
 import { useGoalsRead } from '@/features/grow/goals/useGoalsRead';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { radii, space } from '@/theme/layout';

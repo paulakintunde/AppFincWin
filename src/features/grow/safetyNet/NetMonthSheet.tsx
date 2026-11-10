@@ -17,7 +17,7 @@ import { useCalcFormat } from '@/features/grow/calculators/typed/CalcFields';
 import { useDebtFormat } from '@/features/grow/debts/debtScreenData';
 import { seriesPayload } from '@/features/grow/goals/GoalPlanEditSheet';
 import { nextRecordDate, planFromMonthly } from '@/features/grow/goals/goalPlanModel';
-import { useGoalMoney } from '@/features/grow/home/GoalsSegment';
+import { useGoalMoney } from '@/features/grow/home/useGoalMoney';
 import { Stepper } from '@/features/grow/ui/Stepper';
 import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import { space } from '@/theme/layout';

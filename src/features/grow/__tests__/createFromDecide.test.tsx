@@ -23,6 +23,13 @@ jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', today: '2026-11-05', userId: 'u1', householdId: 'h1', ready: true }),
 }));
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: { saving_floor: 15000 } }) }));
+// 06-31, 06-33: the Goals and Investing segments read their own rows for the row actions.
+jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: [] }) }));
+jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
+jest.mock('@/data/mutations/growGoals', () => ({ useEditGoal: () => ({ edit: jest.fn(), remove: jest.fn() }) }));
+jest.mock('@/data/queries/growHoldings', () => ({ useHoldingRows: () => ({ data: [] }), useHoldingLotRows: () => ({ data: [] }) }));
+jest.mock('@/data/mutations/growHoldings', () => ({ useEditHolding: () => ({ edit: jest.fn(), remove: jest.fn() }) }));
+jest.mock('@/features/grow/goals/useGoalToast', () => ({ useGoalToast: () => jest.fn() }));
 
 const mockSheet = jest.fn();
 jest.mock('@/features/grow/goals/NewGoalSheet', () => {

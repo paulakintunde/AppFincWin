@@ -13,7 +13,7 @@ import { percentText } from '@/features/decide/copy/percentText';
 import { monthBreakdown } from '@/features/decide/home/homeCardModel';
 import { planFromMonthly } from '@/features/grow/goals/goalPlanModel';
 import { useGoalsRead } from '@/features/grow/goals/useGoalsRead';
-import { useGoalMoney } from '@/features/grow/home/GoalsSegment';
+import { useGoalMoney } from '@/features/grow/home/useGoalMoney';
 import { GrowGlyph, type GrowGlyphName } from '@/features/grow/ui/GrowGlyph';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { useRecordContext } from '@/features/record/useRecordContext';

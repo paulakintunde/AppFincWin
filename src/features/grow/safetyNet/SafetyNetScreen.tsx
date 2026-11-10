@@ -20,7 +20,7 @@ import { planFromMonthly } from '@/features/grow/goals/goalPlanModel';
 import { useGoalToast } from '@/features/grow/goals/useGoalToast';
 import { useGoalsRead } from '@/features/grow/goals/useGoalsRead';
 import { goalPercent } from '@/features/grow/home/GoalRow';
-import { useGoalMoney } from '@/features/grow/home/GoalsSegment';
+import { useGoalMoney } from '@/features/grow/home/useGoalMoney';
 import { ProgressBar } from '@/features/grow/ui/ProgressBar';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { DetailScreen } from '@/shell/screen/DetailScreen';

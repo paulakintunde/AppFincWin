@@ -15,7 +15,7 @@ import { usePastContext } from '@/features/decide/past/usePastDecisions';
 import { checkHref } from '@/features/decide/home/checkHref';
 import { useCalcFormat } from '@/features/grow/calculators/typed/CalcFields';
 import { goalPercent } from '@/features/grow/home/GoalRow';
-import { useGoalMoney } from '@/features/grow/home/GoalsSegment';
+import { useGoalMoney } from '@/features/grow/home/useGoalMoney';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { ProgressBar } from '@/features/grow/ui/ProgressBar';
 import { StateBadge } from '@/features/grow/ui/StateBadge';

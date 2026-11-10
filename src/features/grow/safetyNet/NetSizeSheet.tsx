@@ -12,7 +12,7 @@ import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { useT } from '@/i18n';
 import { usePastContext } from '@/features/decide/past/usePastDecisions';
 import { useSettledLabel } from '@/features/decide/check/useSettledLabel';
-import { useGoalMoney } from '@/features/grow/home/GoalsSegment';
+import { useGoalMoney } from '@/features/grow/home/useGoalMoney';
 import { useGoalToast } from '@/features/grow/goals/useGoalToast';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
