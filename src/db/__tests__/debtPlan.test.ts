@@ -1,5 +1,5 @@
 import { DbError, VersionConflictError } from '../errors';
-import { recordDebtSale, saveDebtPlan, type DebtPlanSeries, type DebtSaleLeg } from '../debtPlan';
+import { recordDebtOneOff, recordDebtSale, saveDebtPlan, type DebtPlanSeries, type DebtSaleLeg } from '../debtPlan';
 import { createFakeSupabase } from './fakeSupabase';
 
 const ok = (data: unknown) => ({ data, error: null, status: 200 });
@@ -91,5 +91,52 @@ describe('recordDebtSale', () => {
     await expect(recordDebtSale(client, { ...base, sale: LEG('t1', 5), payment: null })).rejects.toBeInstanceOf(VersionConflictError);
     await expect(recordDebtSale(client, { ...base, sale: LEG('t1', 0), payment: null })).rejects.toBeInstanceOf(RangeError);
     await expect(recordDebtSale(client, { ...base, sale: LEG('t1', 5), payment: LEG('t2', 1.5) })).rejects.toBeInstanceOf(RangeError);
+  });
+});
+
+describe('recordDebtOneOff (06-30, D-33)', () => {
+  const base = { debtId: 'd1', undoStep: { id: 'u1', name: 'Auto loan' } } as const;
+
+  it('one rpc call with the contract keys; applied maps to the transaction and undo step ids', async () => {
+    const client = createFakeSupabase();
+    client.respondWith(ok({ status: 'applied', transaction_id: 't1', undo_step_id: 'u1' }));
+    const out = await recordDebtOneOff(client, { ...base, payment: LEG('t1', 100000) });
+    expect(out).toEqual({ status: 'applied', transactionId: 't1', undoStepId: 'u1' });
+    const calls = client.calls.filter((c) => c.method === 'rpc');
+    expect(calls).toHaveLength(1);
+    const [name, args] = calls[0]?.args as [string, Record<string, any>];
+    expect(name).toBe('record_debt_one_off');
+    expect(Object.keys(args).sort()).toEqual(['p_debt_id', 'p_payment', 'p_undo_step']);
+    expect(args.p_debt_id).toBe('d1');
+    expect(args.p_payment).toMatchObject({ id: 't1', account_id: 'a1', amount: 100000, currency: 'USD', local_date: '2026-11-05' });
+    expect(args.p_undo_step).toEqual({ id: 'u1', label_key: 'debtOneOffRecorded', label_params: { name: 'Auto loan' } });
+  });
+
+  it('already-applied has no transaction id; an unknown status or a missing step id is a bad response', async () => {
+    const client = createFakeSupabase();
+    client.respondWith(ok({ status: 'already-applied', undo_step_id: 'u1' }));
+    await expect(recordDebtOneOff(client, { ...base, payment: LEG('t1', 5) })).resolves.toEqual({
+      status: 'already-applied',
+      transactionId: null,
+      undoStepId: 'u1',
+    });
+    client.respondWith(ok({ status: 'conflict' }));
+    await expect(recordDebtOneOff(client, { ...base, payment: LEG('t1', 5) })).rejects.toBeInstanceOf(DbError);
+    client.respondWith(ok({ status: 'applied', transaction_id: 't1' }));
+    await expect(recordDebtOneOff(client, { ...base, payment: LEG('t1', 5) })).rejects.toBeInstanceOf(DbError);
+  });
+
+  it('refuses a zero, fractional or oversized amount before any call', async () => {
+    const client = createFakeSupabase();
+    await expect(recordDebtOneOff(client, { ...base, payment: LEG('t1', 0) })).rejects.toBeInstanceOf(RangeError);
+    await expect(recordDebtOneOff(client, { ...base, payment: LEG('t1', 1.5) })).rejects.toBeInstanceOf(RangeError);
+    await expect(recordDebtOneOff(client, { ...base, payment: LEG('t1', 10_000_000_000_001) })).rejects.toBeInstanceOf(RangeError);
+    expect(client.calls.filter((c) => c.method === 'rpc')).toHaveLength(0);
+  });
+
+  it('a transport error becomes a DbError', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: { message: 'boom', code: '22023' }, status: 400 });
+    await expect(recordDebtOneOff(client, { ...base, payment: LEG('t1', 5) })).rejects.toBeInstanceOf(DbError);
   });
 });

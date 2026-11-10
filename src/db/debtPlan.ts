@@ -6,8 +6,11 @@
 //   p_series is required when p_extra > 0 (the amount comes from p_extra); extra 0 sends null.
 // record_debt_sale(p_debt_id, p_expected_version, p_sale, p_payment, p_undo_step)
 //   -> { status: 'applied', paid_off, still_owed, undo_step_id } | { status: 'already-applied' } | { status: 'conflict' }
+// record_debt_one_off(p_debt_id, p_payment, p_undo_step)   (06-30, D-33, migration 20261106000400)
+//   -> { status: 'applied', transaction_id, undo_step_id } | { status: 'already-applied', undo_step_id }
+//   One pending (Expected) payment line linked to the debt; the balance does not move until the line is marked paid.
 //
-// Both RPCs build the undo step's ops on the server: p_undo_step is only { id, label_key, label_params: { name } }.
+// All three RPCs build the undo step's ops on the server: p_undo_step is only { id, label_key, label_params: { name } }.
 
 import { DbError, VersionConflictError, toDbError } from './errors';
 import { BAD_RESPONSE } from './recurringSeries';
@@ -135,5 +138,38 @@ export async function recordDebtSale(client: DbClient, input: RecordDebtSaleInpu
     paidOff: typeof r.paid_off === 'boolean' ? r.paid_off : null,
     stillOwed: typeof r.still_owed === 'number' && Number.isInteger(r.still_owed) ? r.still_owed : null,
     undoStepId: undoIdOf(r, 'record_debt_sale'),
+  };
+}
+
+export interface RecordDebtOneOffInput {
+  debtId: string;
+  /** The one-off payment out. `amount` is positive minor units, at most the debt's balance (the server checks too). */
+  payment: DebtSaleLeg;
+  undoStep: { id: string; name: string };
+}
+
+export interface RecordDebtOneOffResult {
+  status: 'applied' | 'already-applied';
+  /** null when the call had already been applied: read the lines again. */
+  transactionId: string | null;
+  undoStepId: string;
+}
+
+export async function recordDebtOneOff(client: DbClient, input: RecordDebtOneOffInput): Promise<RecordDebtOneOffResult> {
+  assertLeg(input.payment, 'recordDebtOneOff payment');
+  const { data, error, status } = await client.rpc('record_debt_one_off', {
+    p_debt_id: input.debtId,
+    p_payment: input.payment,
+    p_undo_step: { id: input.undoStep.id, label_key: 'debtOneOffRecorded', label_params: { name: input.undoStep.name } },
+  });
+  if (error) throw toDbError(error, status);
+  const r = rec(data, 'record_debt_one_off');
+  if (r.status !== 'applied' && r.status !== 'already-applied') {
+    throw new DbError(`record_debt_one_off response: unrecognised ${JSON.stringify(r.status)}`, BAD_RESPONSE, null);
+  }
+  return {
+    status: r.status,
+    transactionId: r.status === 'applied' && typeof r.transaction_id === 'string' && r.transaction_id.length > 0 ? r.transaction_id : null,
+    undoStepId: undoIdOf(r, 'record_debt_one_off'),
   };
 }

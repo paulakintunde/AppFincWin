@@ -5,6 +5,9 @@
 //   useSaveGrowDebt     add or edit a loan or card from Grow (insert / version-conditional update); labels debtAdded / debtEdited
 //   useSaveDebtPlan     the extra a month and the order: save_debt_plan, the server builds the one step (debtPlanSaved)
 //   useRecordDebtSale   "I sold it": record_debt_sale, ONE rpc call for the sale and the final payment (debtSaleRecorded)
+//   useRecordDebtOneOff "Use $1,000 once": record_debt_one_off, ONE Expected payment line linked to the debt (debtOneOffRecorded)
+//
+// extraStartDate / oneOffDate are the dates these writes use, exported so the payoff buttons name the same dates (D-30).
 //
 // Undo of a plan or a sale is a server-built step; it does not bump row versions as the client counts them, so call
 // refreshDebtReads after Undo (like refreshGoalReads) rather than assume version + 1.
@@ -14,7 +17,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { localDateIn } from '@/engine/time';
 import { buildStep, inverseOfInserts, inverseOfPatches, type PatchValue } from '@/engine/undo';
 import { VersionConflictError } from '@/db/errors';
-import { recordDebtSale, saveDebtPlan, type DebtPlanSeries, type DebtSaleLeg } from '@/db/debtPlan';
+import { recordDebtOneOff, recordDebtSale, saveDebtPlan, type DebtPlanSeries, type DebtSaleLeg } from '@/db/debtPlan';
 import { insertDebt, updateDebt, type DebtPatch, type DebtRow, type NewDebt } from '@/db/debts';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
@@ -145,6 +148,7 @@ export function registerGrowDebtMutations(qc: QueryClient): void {
   registerSaveGrowDebt(qc);
   registerSaveDebtPlan(qc);
   registerRecordDebtSale(qc);
+  registerRecordDebtOneOff(qc);
 }
 
 function registerSaveGrowDebt(qc: QueryClient): void {
@@ -297,6 +301,23 @@ export function useSaveGrowDebt(): { save(input: SaveGrowDebtInput): { id: strin
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
+// Start dates (D-30: the button names its start date)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/**
+ * The first date of a monthly extra: the debt's next due date (this month's if it has not passed, else next month's, clamped
+ * to the month's last day), or `today` when no due day is set. useSaveDebtPlan anchors the extra's monthly record on it.
+ */
+export function extraStartDate(debt: Pick<DebtRow, 'due_day'>, today: string): string {
+  return debt.due_day != null ? dueDateOf(today, debt.due_day, 0) : today;
+}
+
+/** The date of a one-off payment: today, in the device's time zone. useRecordDebtOneOff dates the line with it. */
+export function oneOffDate(today: string = localDateIn(new Date(), getDeviceTimeZone())): string {
+  return today;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 // The payoff plan (save_debt_plan)
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -375,11 +396,10 @@ export function useSaveDebtPlan(): { save(input: SaveDebtPlanInput): { stepId: s
       let series: DebtPlanSeries | null = null;
       if (input.extra > 0) {
         if (!input.paidFromAccountId) throw new RangeError('save debt plan: choose the account the extra comes from');
-        const today = localDateIn(new Date(), tz);
         series = {
           id: Crypto.randomUUID(),
           account_id: input.paidFromAccountId,
-          anchor_date: debt.due_day != null ? dueDateOf(today, debt.due_day, 0) : today,
+          anchor_date: extraStartDate(debt, localDateIn(new Date(), tz)),
           time_zone: tz,
           name: (input.seriesName ?? debt.name).trim(),
           category_id: null,
@@ -532,6 +552,92 @@ export function useRecordDebtSale(): { record(input: RecordDebtSaleInput): { ste
         stepId,
       });
       return { stepId, leftOver: Math.max(0, input.soldFor - input.paidToLoan) };
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// A one-off payment (record_debt_one_off, D-33)
+// ---------------------------------------------------------------------------------------------------------------------
+
+export interface RecordDebtOneOffVars {
+  ownerId: string;
+  cache: DebtCacheKey;
+  debtId: string;
+  payment: DebtSaleLeg;
+  name: string;
+  stepId: string;
+}
+
+function registerRecordDebtOneOff(qc: QueryClient): void {
+  qc.setMutationDefaults(mutationKeys.recordDebtOneOff, {
+    mutationFn: (vars: RecordDebtOneOffVars) =>
+      guardSession(vars, async () => {
+        const client = await writeClient();
+        // ONE call: the Expected line and its Undo step land together; a replay with the same ids is 'already-applied'.
+        return recordDebtOneOff(client, { debtId: vars.debtId, payment: vars.payment, undoStep: { id: vars.stepId, name: vars.name } });
+      }),
+    scope: WRITE_SCOPE,
+    retry: shouldRetryWrite,
+    retryDelay: writeRetryDelay,
+    onMutate: (vars: RecordDebtOneOffVars) => {
+      // The debt's balance does not move: the line is Expected until marked paid. Nothing to patch optimistically.
+      markSession(vars);
+    },
+    onSuccess: (_res: unknown, vars: RecordDebtOneOffVars) => {
+      refreshDebtReads(qc, vars.cache);
+    },
+    onError: async (err: unknown, vars: RecordDebtOneOffVars) => {
+      await parkFailure(vars.debtId, err, { labelKey: 'debtOneOffRecorded', fields: 1 }, () => refreshDebtReads(qc, vars.cache));
+    },
+  });
+}
+
+export interface RecordDebtOneOffInput {
+  ownerId: string;
+  debt: DebtRow;
+  /** Positive minor units, at most the debt's balance. */
+  amount: number;
+  /** The account the payment leaves. */
+  paidFromAccountId: string;
+  /** The line's name, e.g. grow.debts.oneOffLineName. */
+  name: string;
+}
+
+/**
+ * "Use $1,000 once": one Expected payment line out of `paidFromAccountId`, dated oneOffDate() and linked to the debt.
+ * One queued call, one server-built Undo ('debtOneOffRecorded'). The balance moves when the line is marked paid.
+ */
+export function useRecordDebtOneOff(): { record(input: RecordDebtOneOffInput): { stepId: string } } {
+  const mutation = useMutation<unknown, unknown, RecordDebtOneOffVars>({ mutationKey: mutationKeys.recordDebtOneOff, scope: WRITE_SCOPE });
+  return {
+    record(input) {
+      const { debt } = input;
+      if (!Number.isSafeInteger(input.amount) || input.amount < 1 || input.amount > MAX_MINOR) throw new RangeError('record one-off: amount out of range');
+      if (input.amount > debt.balance) throw new RangeError('payment-exceeds-balance');
+      if (debt.paid_off_on != null || debt.deleted_at != null) throw new RangeError('record one-off: the debt is paid off or removed');
+      if (!input.paidFromAccountId) throw new RangeError('record one-off: choose the account the payment leaves');
+      if (!validName(input.name)) throw new RangeError('record one-off: name must be 1-80 characters');
+      const tz = getDeviceTimeZone();
+      const payment: DebtSaleLeg = {
+        id: Crypto.randomUUID(),
+        account_id: input.paidFromAccountId,
+        amount: input.amount,
+        currency: debt.currency,
+        local_date: oneOffDate(localDateIn(new Date(), tz)),
+        time_zone: tz,
+        name: input.name.trim(),
+      };
+      const stepId = newStepId();
+      mutation.mutate({
+        ownerId: input.ownerId,
+        cache: { userId: input.ownerId, householdId: debt.household_id },
+        debtId: debt.id,
+        payment,
+        name: debt.name,
+        stepId,
+      });
+      return { stepId };
     },
   };
 }
