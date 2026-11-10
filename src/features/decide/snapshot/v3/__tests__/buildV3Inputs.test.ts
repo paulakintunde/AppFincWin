@@ -1,6 +1,6 @@
 import * as fc from 'fast-check';
 import type { AccountRow, FxLatestRow } from '@/db/rows';
-import { holdsMoney } from '../../../setup/accountUseSuggest';
+import { holdsMoney } from '@/features/record/accounts/accountUseSuggest';
 import { MAX_OWN_LINES, buildMonthModel, type AccountUse } from '@/engine/decide/v3';
 import { MAX_ABS_AMOUNT_MINOR } from '@/engine/money';
 import { demoSource, sofaInputs } from '../../../__tests__/helpers/demoScenario';
