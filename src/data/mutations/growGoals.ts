@@ -236,7 +236,10 @@ function registerSavePlan(qc: QueryClient): void {
           protect: g.protect ?? true,
           up_front_only: g.up_front_only ?? false,
           icon: g.icon ?? null,
-          net_confirmed_at: null,
+          // 06-32 (audit 4.2): a net the user makes here is confirmed from the start, so "We moved your safety net here"
+          // never shows for it. Client half only: save_goal_plan keeps its own key list and does not store this column
+          // yet, so the server row reads null after the refetch until the RPC sets it (see 06-32-SUMMARY, owner decision).
+          net_confirmed_at: flag ? now : null,
           done_at: null,
           is_sample: false,
           deleted_at: null,

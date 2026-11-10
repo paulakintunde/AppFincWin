@@ -2,7 +2,7 @@
 // confirm. The 06-12 hooks, the reads and the shell are stubbed so the tests read what the screens decide: which write is made
 // (create vs edit, never two nets), the exact payload, and the figures shown.
 import React from 'react';
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { minorUnits } from '@/engine/money';
 import { sofaInputs, demoSource } from '@/features/decide/__tests__/helpers/demoScenario';
@@ -48,14 +48,47 @@ jest.mock('@/data/queries/growGoals', () => ({
   useGoalLines: () => ({ data: mockLines }),
 }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: mockSeries }) }));
+let mockSavRate: string | null = null;
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({
     data: [
-      { id: 'a-sav', name: 'Savings account', currency: 'USD', archived_at: null },
-      { id: 'a-chk', name: 'Everyday checking', currency: 'USD', archived_at: null },
+      { id: 'a-sav', name: 'Savings account', currency: 'USD', archived_at: null, interest_rate: mockSavRate },
+      { id: 'a-chk', name: 'Everyday checking', currency: 'USD', archived_at: null, interest_rate: null },
     ],
   }),
 }));
+const mockPushOnce = jest.fn();
+jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (...a: unknown[]) => mockPushOnce(...a) }));
+// 06-32: the record detail is Activity's; stubbed so the test reads which line it opens.
+let mockLegs: unknown[] = [];
+jest.mock('@/data/queries/activity', () => ({ useTransferLegs: () => ({ legs: mockLegs }) }));
+jest.mock('@/features/record/activity/useRowActions', () => ({ useRowActions: () => ({}) }));
+jest.mock('@/features/record/activity/useActivityViewModel', () => {
+  const R = require('react');
+  return {
+    useRowFlow: () => {
+      const [row, setRow] = R.useState(null);
+      return {
+        openDetail: setRow,
+        detail: { row, visible: row !== null, onDismiss: () => setRow(null), onStatus: jest.fn(), onEdit: jest.fn(), onClone: jest.fn(), onDelete: jest.fn() },
+        pendingDelete: null,
+        answerDelete: jest.fn(),
+        entryMode: null,
+        setEntryMode: jest.fn(),
+      };
+    },
+  };
+});
+jest.mock('@/features/record/activity/TransactionDetailSheet', () => {
+  const R = require('react');
+  const { Text: RNText } = require('react-native');
+  return {
+    TransactionDetailSheet: (p: { visible: boolean; row: { id: string; counterpartAccountId: string | null } | null }) =>
+      p.visible && p.row ? R.createElement(RNText, { testID: 'tx-detail' }, `${p.row.id}:${p.row.counterpartAccountId ?? '-'}`) : null,
+  };
+});
+jest.mock('@/features/record/entry/TransactionSheet', () => ({ TransactionSheet: () => null }));
+jest.mock('@/features/record/entry/EditScopePrompt', () => ({ EditScopePrompt: () => null }));
 jest.mock('@/data/queries/categories', () => ({ useCategoryLookup: () => ({ transferCategoryId: 'cat-transfer' }) }));
 let mockOpenChecks: { id: string; name: string; inputs: unknown }[] = [];
 jest.mock('@/data/queries/decide', () => ({
@@ -173,6 +206,68 @@ beforeEach(() => {
   mockOpenChecks = [];
   mockV3 = { source: null, v3: null };
   mockRead = readWith(230_000, 130_000);
+  mockSavRate = null;
+  mockLegs = [];
+});
+
+describe('safety net account, rate and history (06-32, D-32)', () => {
+  const line = (over: Record<string, unknown>) => ({
+    goal_id: 'net', status: 'paid', deleted_at: null, transfer_id: null, original_amount: -10000, original_currency: 'USD',
+    account_id: 'a-chk', household_id: 'h1', version: 1, home_amount: -10000, ...over,
+  });
+
+  it('CRUD #8: Kept in opens "Where is it kept?"; Save edits account_id only and shows the toast with Undo', async () => {
+    await wrap(<SafetyNetScreen />);
+    await fireEvent.press(screen.getByLabelText('Kept in Savings account. Change the account.'));
+    expect(screen.getByText('Where is it kept?')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Everyday checking'));
+    await fireEvent.press(screen.getByText('Save'));
+    expect(mockEdit).toHaveBeenCalledTimes(1);
+    const [goalArg, patch, owner] = mockEdit.mock.calls[0] as unknown as [SavingsGoalRow, Record<string, unknown>, string];
+    expect(goalArg.id).toBe('net');
+    expect(patch).toEqual({ account_id: 'a-chk' });
+    expect(owner).toBe('u1');
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'grow.goals.detail.accountSavedToast', params: { account: 'Everyday checking' }, stepId: 's-edit', undoLabel: 'goalEdited' })
+    );
+  });
+
+  it('Save stays off until a different account is picked', async () => {
+    await wrap(<SafetyNetScreen />);
+    await fireEvent.press(screen.getByLabelText('Kept in Savings account. Change the account.'));
+    await fireEvent.press(screen.getByText('Save'));
+    expect(mockEdit).not.toHaveBeenCalled();
+  });
+
+  it('with a rate on the kept-in account, "Interest a year" opens the account; with none there is no row', async () => {
+    await wrap(<SafetyNetScreen />);
+    expect(screen.queryByText('Interest a year')).toBeNull();
+    mockSavRate = '4.1';
+    await wrap(<SafetyNetScreen />);
+    expect(screen.getByText('4.1%')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Interest a year'));
+    expect(mockPushOnce).toHaveBeenCalledWith('/accounts/a-sav');
+  });
+
+  it('N1: History is a header above the card; rows read date / source / amount; a paid row opens the record', async () => {
+    mockLines = [line({ id: 'in1', local_date: '2026-09-20', transfer_id: 't1', account_id: 'a-sav', original_amount: 10000 })];
+    mockLegs = [{ id: 'out1', transfer_id: 't1', account_id: 'a-chk' }];
+    await wrap(<SafetyNetScreen />);
+    const card = screen.getByTestId('net-history');
+    expect(screen.getByText('History')).toBeTruthy();
+    expect(() => within(card).getByText('History')).toThrow();
+    expect(within(card).getByText('Starting amount')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('on 2026-09-20, $100, From Everyday checking. Opens the record.'));
+    expect(screen.getByTestId('tx-detail').props.children).toBe('in1:a-chk');
+  });
+
+  it('CRUD #6: a waiting Expected line confirms in one tap, once, with Undo', async () => {
+    mockLines = [line({ id: 'l1', status: 'pending', local_date: '2026-10-01' })];
+    await wrap(<SafetyNetScreen />);
+    await fireEvent.press(screen.getByLabelText('Confirm $100 on on 2026-10-01'));
+    expect(mockConfirmLine).toHaveBeenCalledTimes(1);
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ key: 'undo.label.goalContributionConfirmed', stepId: 's-confirm-line' }));
+  });
 });
 
 describe('safety net screen (G04)', () => {

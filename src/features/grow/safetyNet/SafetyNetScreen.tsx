@@ -5,63 +5,40 @@
 // point Decide reads, so Grow and Decide show one number.
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import type { Href } from 'expo-router';
 import { useConfirmGoalContribution } from '@/data/mutations/growGoals';
 import { useAccounts } from '@/data/queries/accounts';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { useGoalLines, useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
-import type { TransactionRow } from '@/db/rows';
 import { useT } from '@/i18n';
 import { usePastContext } from '@/features/decide/past/usePastDecisions';
 import { useCalcFormat } from '@/features/grow/calculators/typed/CalcFields';
+import { GoalHistoryCard, goalHistoryOf, type HistoryItem } from '@/features/grow/goals/GoalHistory';
 import { goalSeriesOf } from '@/features/grow/goals/GoalPlanEditSheet';
 import { MoneyMoveSheet, type MoneyMovedEvent, type MoveKind } from '@/features/grow/goals/MoneyMoveSheet';
 import { planFromMonthly } from '@/features/grow/goals/goalPlanModel';
+import { useGoalRecordDetail } from '@/features/grow/goals/useGoalRecordDetail';
 import { useGoalToast } from '@/features/grow/goals/useGoalToast';
 import { useGoalsRead } from '@/features/grow/goals/useGoalsRead';
 import { goalPercent } from '@/features/grow/home/GoalRow';
 import { useGoalMoney } from '@/features/grow/home/useGoalMoney';
 import { ProgressBar } from '@/features/grow/ui/ProgressBar';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { categorySwatch, shadows } from '@/theme/tokens';
-import { fontSize, textRole } from '@/theme/typography';
+import { textRole } from '@/theme/typography';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
 import { Text } from '@/ui/Text';
+import { NetAccountSheet } from './NetAccountSheet';
 import { NetMonthSheet } from './NetMonthSheet';
 import { NetSizeSheet } from './NetSizeSheet';
 import { coverWeeks, essentialMonthOf } from './netPreview';
-
-interface HistoryItem {
-  key: string;
-  date: string;
-  amount: number;
-  kind: 'paid' | 'expected' | 'start';
-  line: TransactionRow | null;
-}
-
-/** The net's lines newest first, then the starting amount. Pure. */
-function historyOf(lines: readonly TransactionRow[] | undefined, netId: string | null, openingSaved: number, createdOn: string): HistoryItem[] {
-  if (netId === null) return [];
-  const items: HistoryItem[] = [];
-  for (const l of lines ?? []) {
-    if (l.goal_id !== netId || l.status === 'skipped' || l.deleted_at !== null) continue;
-    items.push({
-      key: l.id,
-      date: l.local_date,
-      amount: l.transfer_id === null ? Math.abs(l.original_amount) : l.original_amount,
-      kind: l.status === 'pending' ? 'expected' : 'paid',
-      line: l,
-    });
-  }
-  items.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-  if (openingSaved > 0) items.push({ key: 'start', date: createdOn, amount: openingSaved, kind: 'start', line: null });
-  return items;
-}
 
 export function SafetyNetScreen() {
   const t = useT() as (key: string, params?: Record<string, string | number>) => string;
@@ -83,6 +60,7 @@ export function SafetyNetScreen() {
   const [monthOpen, setMonthOpen] = useState(false);
   const [move, setMove] = useState<MoveKind | null>(null);
   const [confirming, setConfirming] = useState<HistoryItem | null>(null);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const point = read.model.safetyNet;
   const hasSize = point !== null && point.size !== null && point.size > 0;
@@ -106,10 +84,13 @@ export function SafetyNetScreen() {
   const openingSaved = row === null ? 0 : row.opening_saved;
   const createdOn = row === null ? '' : row.created_at.slice(0, 10);
   const lineRows = linesQ.data;
-  const history = historyOf(lineRows, netId, openingSaved, createdOn);
+  const history = goalHistoryOf(lineRows, netId, openingSaved, createdOn, today);
+  const record = useGoalRecordDetail({ householdId, ownerId: userId, today, allLines: lineRows, goalId: netId });
+  // CRUD #8: the kept-in account's rate, edited on the account's own screen.
+  const rate = account?.interest_rate ?? null;
+  const hasRate = rate !== null && rate !== '';
 
   const card = [styles.card, { backgroundColor: colors.surface }, shadows.card];
-  const eyebrow = { ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkMuted };
   const title = t('grow.safetyNet.title');
 
   if (read.status === 'error' || rowsQ.isError) {
@@ -149,18 +130,19 @@ export function SafetyNetScreen() {
     toast({ key: 'undo.label.goalMoneyMoved', stepId: e.stepId, undoLabel: 'goalMoneyMoved', name: row.name, userId, householdId });
   };
 
-  const onConfirmLine = () => {
-    const item = confirming;
-    setConfirming(null);
+  // One confirm path for the inline Confirm and the confirm sheet (D-25, T-06-32-01).
+  const confirmLine = (item: HistoryItem | null) => {
     if (item === null || item.line === null || userId === null || row === null) return;
     const stepId = confirm({ ownerId: userId, line: item.line, goal: { id: row.id, name: row.name, currency: row.currency, account_id: row.account_id ?? null } });
     toast({ key: 'undo.label.goalContributionConfirmed', stepId, undoLabel: 'goalContributionConfirmed', name: row.name, userId, householdId });
   };
-
-  const historyText = (h: HistoryItem): string => {
-    const params = { date: formatDate(h.date), amount: money.amount(h.amount) };
-    return t(h.kind === 'expected' ? 'grow.goals.detail.historyExpected' : h.kind === 'start' ? 'grow.goals.detail.historyStart' : 'grow.goals.detail.historyRow', params);
+  const onConfirmLine = () => {
+    const item = confirming;
+    setConfirming(null);
+    confirmLine(item);
   };
+  const confirmTitle = (h: HistoryItem): string => t('grow.goals.detail.confirmA11y', { amount: money.amount(h.amount), date: formatDate(h.date) });
+  const keptInName = account === null ? t('grow.goals.move.pickAccount') : account.name;
 
   return (
     <DetailScreen title={title}>
@@ -203,11 +185,27 @@ export function SafetyNetScreen() {
                 chevron
                 onPress={() => setMonthOpen(true)}
               />
-              <Row label={t('grow.safetyNet.keptIn')} value={account === null ? '—' : account.name} dense />
+              <Row
+                label={t('grow.safetyNet.keptIn')}
+                value={account === null ? '—' : account.name}
+                dense
+                chevron
+                onPress={() => setAccountOpen(true)}
+                accessibilityLabel={t('grow.goals.detail.keptInA11y', { account: keptInName })}
+              />
+              {hasRate && account !== null ? (
+                <Row
+                  label={t('grow.goals.detail.interestRow')}
+                  value={t('grow.goals.detail.interestValue', { rate: rate as string })}
+                  dense
+                  chevron
+                  onPress={() => pushOnce(`/accounts/${account.id}` as Href)}
+                />
+              ) : null}
             </View>
             {savedWeeks !== null && targetWeeks !== null && monthlyGoingOut !== null ? (
               <View style={card} testID="net-covers">
-                <Text accessibilityRole="header" style={eyebrow}>
+                <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
                   {t('grow.safetyNet.coversTitle')}
                 </Text>
                 <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>
@@ -227,7 +225,7 @@ export function SafetyNetScreen() {
         {row !== null ? (
           <View style={styles.buttons}>
             <View style={styles.buttonCell}>
-              <Pill label={t('grow.safetyNet.addMoney')} variant="primary" onPress={() => setMove('add')} />
+              <Pill label={t('grow.safetyNet.addMoney')} variant="secondary" onPress={() => setMove('add')} />
             </View>
             <View style={styles.buttonCell}>
               <Pill label={t('grow.safetyNet.takeOut')} variant="secondary" onPress={() => setMove('take')} />
@@ -236,27 +234,19 @@ export function SafetyNetScreen() {
         ) : null}
 
         {row !== null ? (
-          <View style={card} testID="net-history">
-            <Text accessibilityRole="header" style={eyebrow}>
-              {t('grow.safetyNet.history')}
-            </Text>
-            {history.length === 0 ? (
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('grow.goals.detail.historyEmptyTitle')}</Text>
-            ) : (
-              history.map((h) => (
-                <View key={h.key} style={styles.historyRow}>
-                  <Row
-                    label={historyText(h)}
-                    dense
-                    chevron={h.kind === 'expected'}
-                    onPress={h.kind === 'expected' ? () => setConfirming(h) : undefined}
-                    accessibilityLabel={historyText(h)}
-                  />
-                  {h.kind === 'expected' ? <StateBadge tone="slate" shape="sClock" label={t('grow.goals.detail.expected')} /> : null}
-                </View>
-              ))
-            )}
-          </View>
+          <GoalHistoryCard
+            items={history}
+            today={today}
+            testID="net-history"
+            formatDate={formatDate}
+            amount={money.amount}
+            partnerOf={record.partnerOf}
+            accountName={record.accountName}
+            onOpenPaid={record.open}
+            onConfirm={confirmLine}
+            onOpenExpected={setConfirming}
+            onAddMoney={() => setMove('add')}
+          />
         ) : null}
 
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('grow.safetyNet.footer')}</Text>
@@ -276,12 +266,26 @@ export function SafetyNetScreen() {
       <MoneyMoveSheet visible={move !== null} goal={row} kind={move ?? 'add'} onClose={() => setMove(null)} onMoved={onMoved} />
       <ConfirmSheet
         visible={confirming !== null}
-        title={confirming === null ? undefined : historyText(confirming)}
+        title={confirming === null ? undefined : confirmTitle(confirming)}
         cancelLabel={t('grow.common.cancel')}
         confirmLabel={t('grow.goals.detail.confirm')}
         onCancel={() => setConfirming(null)}
         onConfirm={onConfirmLine}
       />
+      {row !== null ? (
+        <NetAccountSheet
+          visible={accountOpen}
+          net={row}
+          saved={saved}
+          ownerId={userId}
+          householdId={householdId}
+          onClose={() => setAccountOpen(false)}
+          onSaved={(stepId, name) =>
+            toast({ key: 'grow.goals.detail.accountSavedToast', params: { account: name }, stepId, undoLabel: 'goalEdited', name: row.name, userId, householdId })
+          }
+        />
+      ) : null}
+      {record.element}
     </DetailScreen>
   );
 }
@@ -295,5 +299,4 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center' },
   buttons: { flexDirection: 'row', gap: space.gapMd },
   buttonCell: { flex: 1 },
-  historyRow: { gap: 2 },
 });

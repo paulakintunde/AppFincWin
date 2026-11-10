@@ -83,7 +83,10 @@ function MoveForm({ goal, kind, onClose, onMoved }: Omit<MoneyMoveSheetProps, 'v
   const needsGoalAccount = kind === 'take' && goal.account_id === null;
   const ready = valid && other !== null && !needsGoalAccount && (goal.account_id === null || goalAccount !== null);
 
-  const title = t(kind === 'add' ? 'grow.goals.move.addTitle' : 'grow.goals.move.takeTitle', { name: goal.name });
+  // N3: the net reads "Add to the safety net" / "Take from the safety net".
+  const title = isNet
+    ? t(kind === 'add' ? 'grow.goals.move.addTitleNet' : 'grow.goals.move.takeTitleNet')
+    : t(kind === 'add' ? 'grow.goals.move.addTitle' : 'grow.goals.move.takeTitle', { name: goal.name });
   const action = !valid
     ? t(kind === 'add' ? 'grow.goals.move.addActionBlank' : 'grow.goals.move.takeActionBlank')
     : t(kind === 'add' ? 'grow.goals.move.addAction' : 'grow.goals.move.takeAction', { amount: money(amount) });
@@ -141,10 +144,24 @@ function MoveForm({ goal, kind, onClose, onMoved }: Omit<MoneyMoveSheetProps, 'v
               chevron
               onPress={() => setPickerOpen(true)}
             />
-            <View style={styles.chips}>
-              <Chip label={t('grow.goals.move.today')} selected={date === today} onPress={() => setDate(today)} />
-            </View>
-            <DateField label={t('grow.goals.move.pickDate')} value={date} display={fmt.formatDate(date)} onChange={setDate} />
+            {/* N3: two chips, Today and Pick a date (the picked day shows on the second chip). */}
+            <DateField
+              label={t('grow.goals.move.pickDate')}
+              value={date}
+              display={fmt.formatDate(date)}
+              onChange={setDate}
+              renderTrigger={(open) => (
+                <View style={styles.chips}>
+                  <Chip label={t('grow.goals.move.today')} selected={date === today} onPress={() => setDate(today)} />
+                  <Chip
+                    label={date === today ? t('grow.goals.move.pickDate') : fmt.formatDate(date)}
+                    selected={date !== today}
+                    onPress={open}
+                    accessibilityLabel={t('grow.goals.move.pickDate')}
+                  />
+                </View>
+              )}
+            />
             <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{note}</Text>
             <Pill label={action} variant="primary" disabled={!ready} onPress={onPrimary} accessibilityLabel={action} />
           </View>

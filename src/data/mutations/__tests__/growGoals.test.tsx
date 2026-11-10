@@ -22,6 +22,7 @@ import {
   useSetSafetyNet,
   type MoveGoalMoneyInput,
 } from '../growGoals';
+import { buildGoalsModel } from '@/features/grow/goals/useGoalsRead';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
 let mockActiveClient: unknown;
@@ -36,6 +37,9 @@ jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => `id-${++mockUuid}`) 
 jest.mock('@/data/sync/failedWrites', () => ({ recordFailedWrite: jest.fn(async () => undefined) }));
 jest.mock('@/db/undoLog', () => ({ insertUndoStep: jest.fn(async () => undefined) }));
 jest.mock('@/services/locale/deviceLocale', () => ({ getDeviceTimeZone: () => 'UTC' }));
+// buildGoalsModel is pure; its module's read hooks are not used here.
+jest.mock('@/data/queries/growGoals', () => ({}));
+jest.mock('@/features/decide/past/usePastDecisions', () => ({}));
 
 const { recordFailedWrite } = require('@/data/sync/failedWrites') as { recordFailedWrite: jest.Mock };
 const { insertUndoStep } = require('@/db/undoLog') as { insertUndoStep: jest.Mock };
@@ -184,6 +188,27 @@ describe('useSaveGoalPlan', () => {
     const [, args] = rpcCall(fake);
     expect(args.p_goal).toMatchObject({ is_safety_net: true, locked: true, protect: true, name: 'Safety net', target: 230000 });
     expect(args.p_undo_step.label_key).toBe('safetyNetSizeSaved');
+  });
+
+  it('06-32: a safety net made in the app starts confirmed (no "We moved your safety net here"); a plain goal does not', async () => {
+    const { qc } = setup();
+    onlineManager.setOnline(false); // the optimistic rows stay put while the saves wait
+    const { result } = await renderHook(() => useSaveGoalPlan(), { wrapper: wrapper(qc) });
+    result.current.save({
+      ownerId: 'user-1',
+      householdId: 'hh-1',
+      fields: { name: 'Safety net', currency: 'USD', locked: true, protect: true, is_safety_net: true, target: 230000, ready_by: null, monthly_amount: null, opening_saved: 0 },
+      series: null,
+    });
+    result.current.save({ ownerId: 'user-1', householdId: 'hh-1', fields: FIELDS, series: null });
+    await waitFor(() => expect(qc.getQueryData<SavingsGoalRow[]>(KEY)).toHaveLength(2));
+    const [net, plain] = qc.getQueryData<SavingsGoalRow[]>(KEY) as SavingsGoalRow[];
+    expect(net?.net_confirmed_at).toBe('2026-11-05T12:00:00.000Z');
+    expect(plain?.net_confirmed_at).toBeNull();
+    const model = buildGoalsModel([net as SavingsGoalRow], [], (amount) => amount, 'USD');
+    expect(model.safetyNet).not.toBeNull();
+    expect(model.needsNetConfirm).toBe(false);
+    onlineManager.setOnline(true);
   });
 
   it('refuses a safety net that is not Locked, and bad values, before anything is queued', async () => {
