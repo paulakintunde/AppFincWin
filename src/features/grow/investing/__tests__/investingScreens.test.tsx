@@ -322,13 +322,14 @@ describe('06-33 edit and remove (D-32)', () => {
     expect(screen.getByText(en.grow.investing.update.save)).toBeTruthy();
   });
 
-  it('the row menu Delete asks first, then removes once with Undo', async () => {
+  it('the row menu Remove asks first, then removes once with Undo (06-37 D-37)', async () => {
     await renderIt(<InvestingSegment />);
     await fireEvent.press(screen.getByLabelText('More for Retirement fund'));
-    await fireEvent.press(screen.getByText('Delete'));
+    expect(screen.queryByText('Delete')).toBeNull();
+    await fireEvent.press(screen.getByText('Remove'));
     expect(screen.getByText('Remove Retirement fund?')).toBeTruthy();
     expect(mockRemoveHolding).not.toHaveBeenCalled();
-    await fireEvent.press(screen.getAllByText('Delete').slice(-1)[0]!);
+    await fireEvent.press(screen.getAllByText('Remove').slice(-1)[0]!);
     expect(mockRemoveHolding).toHaveBeenCalledTimes(1);
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'rm', text: expect.objectContaining({ key: 'undo.label.holdingRemoved' }) }));
   });

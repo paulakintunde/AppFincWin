@@ -276,6 +276,7 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
             if (stored !== undefined) removeRow(stored);
           }}
           disabled={stored === undefined}
+          actionWord={t('grow.home.rowRemove')}
         >
           {content}
         </DeletableRow>

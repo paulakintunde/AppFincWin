@@ -368,14 +368,15 @@ describe('Debts segment wiring (D-30, D-32, D-33, D-34)', () => {
     expect(mockPush).toHaveBeenCalledWith('/grow/calculators/debt/auto');
   });
 
-  it('a debt row has ⋯ with Edit and Delete; Delete asks first, removes once, with an Undo toast', async () => {
+  it('a debt row has ⋯ with Edit and Remove; Remove asks first, removes once, with an Undo toast', async () => {
     await wrap(<DebtsSegment />);
     await fireEvent.press(screen.getByLabelText('More for Auto loan'));
     expect(screen.getByText('Edit')).toBeTruthy();
-    await fireEvent.press(screen.getByText(en.decide.delete.word));
+    expect(screen.queryByText(en.decide.delete.word)).toBeNull(); // 06-37 D-37: Grow rows say Remove
+    await fireEvent.press(screen.getByText(en.grow.home.rowRemove));
     expect(mockRemove).not.toHaveBeenCalled();
     expect(screen.getByText('Remove Auto loan?')).toBeTruthy();
-    await fireEvent.press(screen.getByText(en.decide.delete.confirm));
+    await fireEvent.press(screen.getAllByText(en.grow.home.rowRemove).slice(-1)[0]!);
     expect(mockRemove).toHaveBeenCalledTimes(1);
     expect(mockToast).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'destructive', stepId: 'step-removed', text: { key: 'grow.debts.detail.removedToast', params: { name: 'Auto loan' } } }),

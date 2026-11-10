@@ -385,10 +385,11 @@ describe('Goals segment, D-32 (06-31)', () => {
   it('removing asks first, removes once and raises the Goal removed toast with Undo', async () => {
     await renderHome();
     await fireEvent.press(screen.getByLabelText('More for Trip to Lisbon'));
-    await fireEvent.press(screen.getByText(en.decide.delete.word));
+    expect(screen.queryByText(en.decide.delete.word)).toBeNull(); // 06-37 D-37: Grow rows say Remove
+    await fireEvent.press(screen.getByText(en.grow.home.rowRemove));
     expect(mockRemove).not.toHaveBeenCalled();
     expect(screen.getByText('Remove Trip to Lisbon?')).toBeTruthy();
-    await fireEvent.press(screen.getByText(en.decide.delete.confirm));
+    await fireEvent.press(screen.getAllByText(en.grow.home.rowRemove).slice(-1)[0]!);
     expect(mockRemove).toHaveBeenCalledTimes(1);
     expect(mockToast).toHaveBeenCalledWith(
       expect.objectContaining({ key: 'grow.goals.removedToast', stepId: 'step-1', undoLabel: 'goalRemoved', name: 'Trip to Lisbon' }),
