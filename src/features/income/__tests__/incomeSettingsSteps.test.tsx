@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
-import type { SetupStepHandle, SetupStepReady } from '@/features/decide/setup/steps/types';
+import type { SetupStepHandle, SetupStepReady } from '@/features/income/stepTypes';
 import { PaidStep } from '../steps/PaidStep';
 import { SeasonStep } from '../steps/SeasonStep';
 import { MethodStep } from '../steps/MethodStep';

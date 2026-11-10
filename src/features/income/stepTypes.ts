@@ -5,7 +5,6 @@
  * mount the same step components through this one interface:
  * `forwardRef<SetupStepHandle, SetupStepBodyProps>`.
  */
-export type { SetupFacts } from '../setupFlow';
 
 export interface SetupStepReady {
   readonly canContinue: boolean;

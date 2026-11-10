@@ -14,7 +14,7 @@ import en from '@/i18n/locales/en';
 import { MATRIX, expectFits, expectTargets, matrixName } from '@/features/decide/__tests__/helpers/r18Fit';
 import { IncomeProfileSteps, INCOME_STEPS, type IncomeStepKey } from '../IncomeProfileSteps';
 import { ZERO_WIDTH_SPACE } from '@/features/decide/home/heroAmountText';
-import type { SetupStepHandle } from '@/features/decide/setup/steps/types';
+import type { SetupStepHandle } from '@/features/income/stepTypes';
 
 let mockDecideV3 = true;
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));

@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { CheckRow } from '@/ui/CheckRow';
 import { space } from '@/theme/layout';
 import { useSaveSetupStep } from '@/data/mutations/decideSetup';
-import type { SetupStepBodyProps, SetupStepHandle } from '@/features/decide/setup/steps/types';
+import type { SetupStepBodyProps, SetupStepHandle } from '@/features/income/stepTypes';
 import { useIncomeContext } from '../useIncomeContext';
 import { Intro, NEEDED_REASON_KEY, Why, useReportReady, useCopy } from './shared';
 

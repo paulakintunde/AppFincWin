@@ -9,7 +9,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { useSaveSetupStep } from '@/data/mutations/decideSetup';
-import type { SetupStepBodyProps, SetupStepHandle } from '@/features/decide/setup/steps/types';
+import type { SetupStepBodyProps, SetupStepHandle } from '@/features/income/stepTypes';
 import { useIncomeContext } from '../useIncomeContext';
 import { Intro, Why, useReportReady, useCopy } from './shared';
 
