@@ -34,6 +34,20 @@ export function useGoalRecordDetail(args: {
 }): GoalRecordDetail {
   const { householdId, ownerId, today, allLines, goalId } = args;
   const lines = useMemo(() => (goalId === null ? [] : (allLines ?? []).filter((l) => l.goal_id === goalId)), [allLines, goalId]);
+  return useRecordLineDetail({ householdId, ownerId, today, lines });
+}
+
+/**
+ * 06-36: the same detail for any set of lines the caller has already picked (a debt's payments). The goal hook above is this
+ * with the goal's own lines.
+ */
+export function useRecordLineDetail(args: {
+  householdId: string | null;
+  ownerId: string | null;
+  today: string;
+  lines: readonly TransactionRow[];
+}): GoalRecordDetail {
+  const { householdId, ownerId, today, lines } = args;
   const t = useT();
   const accounts = useAccounts(householdId ?? undefined).data;
   const transferIds = useMemo(

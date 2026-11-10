@@ -1,9 +1,12 @@
 // 06-24 (G06, D-16): the debt detail, edit and sale sheet, moved out of debtScreens.test.tsx unchanged. Same fixtures and stubs.
+// 06-36 (D-30, D-32): the detail reveal chips, the payments list and the route to the Debts segment.
 // figures. The data hooks are stubbed at their edges (rows in, mutations recorded); the engine runs for real.
 /* eslint-disable import/first */
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { fontSize } from '@/theme/typography';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import en from '@/i18n/locales/en';
@@ -56,9 +59,28 @@ jest.mock('@/ui/haptics', () => ({
   hapticSelection: jest.fn(),
 }));
 
+let mockPayments: { next: unknown; paid: unknown[] } | undefined;
+const mockPaymentsArgs = jest.fn();
+jest.mock('@/data/queries/growDebts', () => ({
+  useDebtPayments: (...a: unknown[]) => {
+    mockPaymentsArgs(...a);
+    return { data: mockPayments };
+  },
+}));
+const mockOpen = jest.fn();
+jest.mock('@/features/grow/goals/useGoalRecordDetail', () => ({
+  useRecordLineDetail: () => ({
+    partnerOf: () => null,
+    accountName: (id: string | null) => (id === 'a1' ? 'Everyday checking' : null),
+    open: (l: unknown) => mockOpen(l),
+    element: null,
+  }),
+}));
+
 const mockBack = jest.fn();
+const mockNavigate = jest.fn();
 const mockRemove = jest.fn((..._a: unknown[]) => 'step-removed');
-jest.mock('expo-router', () => ({ router: { back: () => mockBack() } }));
+jest.mock('expo-router', () => ({ router: { back: () => mockBack(), navigate: (h: unknown) => mockNavigate(h) } }));
 jest.mock('@/data/mutations/debts', () => ({ useRemoveDebt: () => ({ remove: (...a: unknown[]) => mockRemove(...a) }) }));
 jest.mock('@/shell/screen/DetailScreen', () => {
   const R = require('react');
@@ -129,6 +151,7 @@ async function wrap(ui: React.ReactElement) {
 
 beforeEach(() => {
   mockRows = [AUTO, VISA];
+  mockPayments = { next: null, paid: [] };
   mockRule = '36.0000';
   jest.clearAllMocks();
   jest.useFakeTimers({ now: new Date(`${LEDGER_TODAY}T12:00:00Z`), doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
@@ -156,15 +179,104 @@ describe('Debt detail (G06)', () => {
 
   it('shows the LEDGER Auto loan', async () => {
     await wrap(<DebtDetailScreen id="auto" />);
-    expect(screen.getByText('$8,420 owed')).toBeTruthy();
+    // T1: the amount in display with "owed" muted beside it; the pair reads as one.
+    expect(screen.getByText('$8,420')).toBeTruthy();
+    expect(screen.getByText(en.grow.debts.detail.owedSuffix)).toBeTruthy();
+    expect(screen.getByTestId('debt-owed').props.accessibilityLabel).toBe('$8,420 owed');
     expect(screen.getByText('Started at $14,500 · 42% paid')).toBeTruthy();
     expect(screen.getByText('6.9% a year')).toBeTruthy();
     expect(screen.getByText('$312 on the 15th · Manual')).toBeTruthy();
     expect(screen.getByText('Apr 2029 on this payment')).toBeTruthy();
     expect(screen.getByText('about $760')).toBeTruthy();
-    expect(screen.getByText('+$50 a month ends it in Dec 2028 and saves about $110.')).toBeTruthy();
-    expect(screen.getByText('Nov 15 · $312 · Expected')).toBeTruthy();
     expect(screen.getByText(en.grow.debts.footer)).toBeTruthy();
+  });
+
+  it('T2: the start line hides when the start is not above the balance', async () => {
+    mockRows = [{ ...AUTO, started_balance: 250000, balance: 2500000 }];
+    await wrap(<DebtDetailScreen id="auto" />);
+    expect(screen.queryByText(/Started at/)).toBeNull();
+  });
+
+  it('T5: fact rows sit tight with hairlines between them; the header Edit uses the label role', async () => {
+    await wrap(<DebtDetailScreen id="auto" />);
+    const facts = screen.getByTestId('debt-facts');
+    expect(StyleSheet.flatten(facts.props.style).gap).toBe(0);
+    const rows = facts.children as unknown as { props: { style: object } }[];
+    const border = (i: number) => (StyleSheet.flatten(rows[i]!.props.style) as { borderTopWidth?: number }).borderTopWidth;
+    expect(border(0)).toBeUndefined();
+    expect(border(1)).toBe(StyleSheet.hairlineWidth);
+    const edit = screen.getByText(en.grow.goals.detail.edit);
+    expect(StyleSheet.flatten(edit.props.style).fontSize).toBe(fontSize.label);
+  });
+
+  it('D-30: the reveal chips, +$50 open first, read the engine figures', async () => {
+    await wrap(<DebtDetailScreen id="auto" />);
+    for (const c of ['+$25', '+$50', '+$100', '$1,000 once']) expect(screen.getByText(c)).toBeTruthy();
+    expect(screen.getByText('Debt-free by Dec 2028 · 4 months sooner')).toBeTruthy();
+    expect(screen.getByText('Interest about $640 · about $110 less')).toBeTruthy();
+    expect(screen.getByTestId('debt-reveal').props.accessibilityLabel).toBe(
+      'Debt-free by Dec 2028, 4 months sooner. Interest about $640, about $110 less.'
+    );
+    await fireEvent.press(screen.getByText('$1,000 once'));
+    expect(screen.getByText('Interest about $580 · about $170 less')).toBeTruthy();
+    expect(screen.queryByText(/Interest about \$640/)).toBeNull();
+  });
+
+  it('CRUD #10: "Change in the payoff plan" opens Grow on the Debts segment', async () => {
+    await wrap(<DebtDetailScreen id="auto" />);
+    await fireEvent.press(screen.getByTestId('debt-change-plan'));
+    expect(mockNavigate).toHaveBeenCalledWith('/(tabs)/grow?segment=debts');
+    expect(mockBack).not.toHaveBeenCalled();
+  });
+
+  it('D-32: payments list the next expected line, then paid lines with their source; each opens the record', async () => {
+    const WITH_SERIES = { ...AUTO, series_id: 's1', extra_series_id: 'x1', account_id: 'a1' };
+    mockRows = [WITH_SERIES];
+    const tx = (id: string, local_date: string, over: Record<string, unknown> = {}) => ({
+      id,
+      local_date,
+      account_id: 'a1',
+      original_amount: -31200,
+      original_currency: 'USD',
+      recurring_series_id: 's1',
+      debt_id: null,
+      ...over,
+    });
+    const next = tx('n1', '2026-11-15', { status: 'pending' });
+    const paid = [
+      tx('p1', '2026-10-20', { recurring_series_id: null, debt_id: 'auto', original_amount: -100000 }),
+      tx('p2', '2026-10-15', { recurring_series_id: 'x1', original_amount: -5000 }),
+      tx('p3', '2026-10-15'),
+    ];
+    mockPayments = { next, paid };
+    await wrap(<DebtDetailScreen id="auto" />);
+    expect(mockPaymentsArgs).toHaveBeenCalledWith(expect.objectContaining({ id: 'auto' }), '2026-11-05');
+    expect(screen.getByText('Nov 15')).toBeTruthy();
+    expect(screen.getByText(en.grow.goals.detail.expected)).toBeTruthy();
+    expect(screen.getByText('One-off · from Everyday checking')).toBeTruthy();
+    expect(screen.getByText('Extra · from Everyday checking')).toBeTruthy();
+    expect(screen.getAllByText('From Everyday checking').length).toBe(2);
+    expect(screen.getByText('$1,000')).toBeTruthy();
+    await fireEvent.press(screen.getByText('One-off · from Everyday checking'));
+    expect(mockOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'p1' }));
+    await fireEvent.press(screen.getByText('Nov 15'));
+    expect(mockOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'n1' }));
+    await fireEvent.press(screen.getByText(en.grow.debts.detail.seeAllInActivity));
+    expect(mockNavigate).toHaveBeenCalledWith('/activity');
+  });
+
+  it('D-32: a manual debt with nothing recorded shows its next due payment as Expected', async () => {
+    await wrap(<DebtDetailScreen id="auto" />);
+    expect(screen.getByText('Nov 15')).toBeTruthy();
+    expect(screen.getByText(en.grow.goals.detail.expected)).toBeTruthy();
+    expect(screen.queryByText(en.grow.debts.detail.paymentsEmpty)).toBeNull();
+  });
+
+  it('D-32: no payments and nothing due says so', async () => {
+    mockRows = [{ ...AUTO, due_day: null }];
+    await wrap(<DebtDetailScreen id="auto" />);
+    expect(screen.getByText(en.grow.debts.detail.paymentsEmpty)).toBeTruthy();
+    expect(screen.getByText(en.grow.debts.detail.seeAllInActivity)).toBeTruthy();
   });
 
   it('06-19: "Try other amounts" opens the extra-payment calculator for a debt with a rate', async () => {
