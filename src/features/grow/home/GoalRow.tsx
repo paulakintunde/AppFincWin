@@ -4,6 +4,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
 import { useT } from '@/i18n';
+import { DeletableRow } from '@/features/decide/ui/DeletableRow';
 import type { GoalPoint } from '@/features/grow/connect';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { ProgressBar } from '@/features/grow/ui/ProgressBar';
@@ -32,6 +33,18 @@ export interface GoalRowProps {
   reachesOn: string | null;
   money: GoalRowMoney;
   animate?: boolean;
+  /** Expected lines waiting for a confirm (D-32). */
+  pending?: number;
+  /** Swipe and the more menu (D-32). Absent: a plain tappable row. */
+  actions?: GoalRowActions;
+}
+
+export interface GoalRowActions {
+  onAddMoney: () => void;
+  onEdit: () => void;
+  onRemove: () => void;
+  /** The remove confirm sheet's words. */
+  confirm: { title: string; body: string };
 }
 
 export function goalHref(id: string): Href {
@@ -43,8 +56,8 @@ export function goalPercent(saved: number, target: number | null): number {
   return Math.min(100, Math.max(0, Math.round((saved / target) * 100)));
 }
 
-export function GoalRow({ goal, reachesOn, money, animate = true }: GoalRowProps) {
-  const t = useT();
+export function GoalRow({ goal, reachesOn, money, animate = true, pending = 0, actions }: GoalRowProps) {
+  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const percent = goalPercent(goal.saved, goal.target);
   const monthly = goal.monthlyAmount !== null && goal.monthlyAmount > 0 ? goal.monthlyAmount : null;
@@ -80,15 +93,10 @@ export function GoalRow({ goal, reachesOn, money, animate = true }: GoalRowProps
     });
   }
   if (goal.linkedCheckId !== null) spoken = `${spoken}, ${t('grow.home.linkedToCheck')}`;
+  if (pending > 0) spoken = `${spoken}, ${t('grow.home.toConfirmA11y', { count: pending })}`;
 
-  return (
-    <Pressable
-      testID={`grow-goal-row-${goal.id}`}
-      accessibilityRole="button"
-      accessibilityLabel={spoken}
-      onPress={() => pushOnce(goalHref(goal.id))}
-      style={styles.row}
-    >
+  const content = (
+    <View testID={`grow-goal-row-${goal.id}`} style={styles.row}>
       <View style={styles.top}>
         <View style={[styles.tile, { backgroundColor: colors.fill1 }]}>
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.accent, opacity: ACCENT_TINT_OPACITY, borderRadius: radii.glyphTile }]} />
@@ -98,11 +106,35 @@ export function GoalRow({ goal, reachesOn, money, animate = true }: GoalRowProps
           <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{goal.name}</Text>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{sub}</Text>
           {goal.linkedCheckId !== null ? <StateBadge tone="plum" shape="sHalf" label={t('grow.home.linkedToCheck')} /> : null}
+          {pending > 0 ? <StateBadge tone="slate" shape="sClock" label={t('grow.home.toConfirm', { count: pending })} /> : null}
         </View>
-        <GrowGlyph name="chev" color={colors.inkFaint} size={16} />
+        {actions === undefined ? <GrowGlyph name="chev" color={colors.inkFaint} size={16} /> : null}
       </View>
-      <ProgressBar percent={percent} variant="thin" animate={animate} />
-    </Pressable>
+      {goal.target !== null ? <ProgressBar percent={percent} variant="thin" animate={animate} /> : null}
+    </View>
+  );
+
+  if (actions === undefined) {
+    return (
+      <Pressable accessibilityRole="button" accessibilityLabel={spoken} onPress={() => pushOnce(goalHref(goal.id))}>
+        {content}
+      </Pressable>
+    );
+  }
+  return (
+    <DeletableRow
+      name={goal.name}
+      accessibilityLabel={spoken}
+      onOpen={() => pushOnce(goalHref(goal.id))}
+      menu={[
+        { key: 'add', label: t('grow.goals.detail.addMoney'), onSelect: actions.onAddMoney },
+        { key: 'edit', label: t('grow.goals.detail.edit'), onSelect: actions.onEdit },
+      ]}
+      confirm={actions.confirm}
+      onDelete={actions.onRemove}
+    >
+      {content}
+    </DeletableRow>
   );
 }
 

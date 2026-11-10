@@ -11,7 +11,7 @@ import { useT } from '@/i18n';
 import { lastDayOfMonth } from '@/features/decide/pots/potsModel';
 import { MonthField } from '@/features/decide/pots/MonthField';
 import { useCalcFormat } from '@/features/grow/calculators/typed/CalcFields';
-import { useGoalMoney } from '@/features/grow/home/GoalsSegment';
+import { useGoalMoney } from '@/features/grow/home/useGoalMoney';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';

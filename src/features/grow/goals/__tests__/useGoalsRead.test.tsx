@@ -92,6 +92,30 @@ describe('buildGoalsModel (LEDGER)', () => {
       ['laptop', 0],
     ]);
     expect(m.needsNetConfirm).toBe(false);
+    expect(m.goalCount).toBe(2);
+    expect(m.netCounted).toBe(true);
+  });
+
+  it('pendingByGoal counts due Expected lines per goal, not future, skipped or deleted ones', () => {
+    const line = (id: string, goal: string, over: Record<string, unknown>) =>
+      ({ id, goal_id: goal, status: 'pending', deleted_at: null, local_date: '2026-11-01', ...over }) as unknown as TransactionRow;
+    const lines = [
+      line('p1', 'lisbon', {}),
+      line('p2', 'lisbon', { local_date: '2026-12-01' }),
+      line('p3', 'net', {}),
+      line('p4', 'net', { status: 'skipped' }),
+      line('p5', 'net', { deleted_at: '2026-11-02T00:00:00Z' }),
+    ];
+    const m = buildGoalsModel([NET, LISBON, LAPTOP], [...LINES, ...lines], identity, 'USD', '2026-11-05');
+    expect(m.pendingByGoal).toEqual({ lisbon: 1, net: 1 });
+    expect(m.totalSaved).toBe(194000);
+  });
+
+  it('netReachesOn comes from the monthly amount and size; null without a monthly amount', () => {
+    const withPlan = buildGoalsModel([NET], [], identity, 'USD', '2026-11-05');
+    expect(withPlan.netReachesOn).toBe('2027-09-01');
+    expect(buildGoalsModel([{ ...NET, monthly_amount: null }], [], identity, 'USD', '2026-11-05').netReachesOn).toBeNull();
+    expect(buildGoalsModel([LISBON], [], identity, 'USD', '2026-11-05').netReachesOn).toBeNull();
   });
 
   it('needsNetConfirm: unconfirmed net with a size or money; not when empty or no net', () => {

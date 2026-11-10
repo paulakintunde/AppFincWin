@@ -2,14 +2,19 @@
 // Everything is read through useGoalsRead (06-12), the same connection points Decide uses, so the figures match Decide's.
 // `basics` draws only the safety net card (level Basics: goals off). Loading is grey blocks with no loop; an error is the
 // generic card with Try again.
-import React, { useMemo } from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useEditGoal } from '@/data/mutations/growGoals';
+import { useAccounts } from '@/data/queries/accounts';
 import { useDecideSettings } from '@/data/queries/decide';
-import { currencyCode, minorUnits } from '@/engine/money';
+import { useSavingsGoalRows } from '@/data/queries/growGoals';
+import { minorUnits } from '@/engine/money';
 import { goalPlanByMonthly } from '@/engine/grow';
 import { useT } from '@/i18n';
-import { useCalcFormat } from '@/features/grow/calculators/typed/CalcFields';
 import { firstOfNextMonth } from '@/features/grow/calculators/typed/useCalcInput';
+import { MoneyMoveSheet, type MoneyMovedEvent } from '@/features/grow/goals/MoneyMoveSheet';
+import { NewGoalSheet } from '@/features/grow/goals/NewGoalSheet';
+import { useGoalToast } from '@/features/grow/goals/useGoalToast';
 import { useGoalsRead } from '@/features/grow/goals/useGoalsRead';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { Pill } from '@/ui/Pill';
@@ -18,8 +23,8 @@ import { radii, space } from '@/theme/layout';
 import { shadows } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
-import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
-import { GoalRow, type GoalRowMoney } from './GoalRow';
+import { GoalRow } from './GoalRow';
+import { useGoalMoney } from './useGoalMoney';
 import { SafetyNetCard } from './SafetyNetCard';
 
 export interface GoalsSegmentProps {
@@ -31,30 +36,18 @@ export interface GoalsSegmentProps {
   onChooseTrack?: () => void;
 }
 
-const MONTH_SPOKEN = { month: 'long', year: 'numeric', timeZone: 'UTC' } as const;
-
-export function useGoalMoney(): GoalRowMoney {
-  const calc = useCalcFormat();
-  const whole = useMoneyFormatter(false, calc.currency);
-  return useMemo(() => {
-    const cur = currencyCode(calc.currency);
-    return {
-      amount: (minor) => whole.formatMoney({ amount: minorUnits(minor), currency: cur }),
-      spoken: (minor) => whole.formatMoneyA11y({ amount: minorUnits(minor), currency: cur }),
-      monthYear: calc.monthYear,
-      monthYearLong: (date) => {
-        const [y, m] = date.split('-').map(Number);
-        return new Intl.DateTimeFormat(whole.locale, MONTH_SPOKEN).format(Date.UTC(y!, m! - 1, 1));
-      },
-    };
-  }, [calc, whole]);
-}
+export { useGoalMoney };
 
 export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: GoalsSegmentProps) {
-  const t = useT();
+  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const read = useGoalsRead();
   const money = useGoalMoney();
+  const rowsQ = useSavingsGoalRows(read.userId ?? undefined, read.householdId ?? undefined);
+  const accountsQ = useAccounts(read.householdId ?? undefined);
+  const { remove } = useEditGoal();
+  const toast = useGoalToast();
+  const [sheet, setSheet] = useState<{ id: string; kind: 'add' | 'edit' } | null>(null);
   const settings = useDecideSettings(read.userId ?? undefined).data ?? null;
   const rule = settings === null ? null : settings.saving_floor;
   const card = [styles.card, { backgroundColor: colors.surface }, shadows.card];
@@ -79,7 +72,16 @@ export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: Goals
   }
 
   const { model } = read;
-  const net = <SafetyNetCard net={model.safetyNet} money={money} />;
+  const pendingOf = (id: string): number => (model.pendingByGoal ?? {})[id] ?? 0;
+  const net = (
+    <SafetyNetCard
+      net={model.safetyNet}
+      money={money}
+      pending={model.safetyNet === null ? 0 : pendingOf(model.safetyNet.goalId)}
+      monthly={model.netMonthly ?? null}
+      reachesOn={model.netReachesOn ?? null}
+    />
+  );
   if (basics) {
     return (
       <View style={styles.stack}>
@@ -92,7 +94,29 @@ export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: Goals
     );
   }
 
-  const count = model.goals.length + (model.safetyNet === null ? 0 : 1);
+  const goalCount = model.goalCount ?? model.goals.length;
+  const netCounted = model.netCounted ?? model.safetyNet !== null;
+  const heroLabel =
+    netCounted && goalCount === 0
+      ? t('grow.home.goalsHeroLabelNetOnly')
+      : t(netCounted ? 'grow.home.goalsHeroLabelNet' : 'grow.home.goalsHeroLabel', { count: goalCount });
+  const rows = rowsQ.data;
+  const sheetRow = sheet === null ? null : (rows?.find((r) => r.id === sheet.id && r.deleted_at === null) ?? null);
+  const sheetSaved = sheet === null ? 0 : (model.goals.find((g) => g.id === sheet.id)?.saved ?? 0);
+  const accountName = (accountId: string | null): string => {
+    const a = (accountsQ.data ?? []).find((x) => x.id === accountId);
+    return a === undefined ? t('grow.goals.move.pickAccount') : a.name;
+  };
+  const removeGoal = (id: string) => {
+    const row = rows?.find((r) => r.id === id && r.deleted_at === null);
+    if (row === undefined || read.userId === null) return;
+    const stepId = remove(row, read.userId);
+    toast({ key: 'grow.goals.removedToast', stepId, undoLabel: 'goalRemoved', name: row.name, userId: read.userId, householdId: read.householdId });
+  };
+  const onMoved = (e: MoneyMovedEvent) => {
+    if (sheetRow === null) return;
+    toast({ key: 'undo.label.goalMoneyMoved', stepId: e.stepId, undoLabel: 'goalMoneyMoved', name: sheetRow.name, userId: read.userId, householdId: read.householdId });
+  };
   const anchor = firstOfNextMonth(read.today);
   const reaches = (saved: number, target: number | null, add: number | null): string | null => {
     if (target === null || add === null || add <= 0 || saved >= target) return null;
@@ -102,7 +126,7 @@ export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: Goals
   return (
     <View style={styles.stack}>
       <View testID="grow-goals-hero" style={card}>
-        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('grow.home.goalsHeroLabel', { count })}</Text>
+        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{heroLabel}</Text>
         <Text scale="capped" style={{ ...textRole(pairing, 'display'), color: colors.ink }}>
           {money.amount(model.totalSaved)}
         </Text>
@@ -126,13 +150,33 @@ export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: Goals
       ) : (
         <View style={card}>
           {model.goals.map((g) => (
-            <GoalRow key={g.id} goal={g} reachesOn={reaches(g.saved, g.target, g.monthlyAmount)} money={money} />
+            <GoalRow
+              key={g.id}
+              goal={g}
+              reachesOn={reaches(g.saved, g.target, g.monthlyAmount)}
+              money={money}
+              pending={pendingOf(g.id)}
+              actions={{
+                onAddMoney: () => setSheet({ id: g.id, kind: 'add' }),
+                onEdit: () => setSheet({ id: g.id, kind: 'edit' }),
+                onRemove: () => removeGoal(g.id),
+                confirm: {
+                  title: t('grow.goals.removeTitle', { name: g.name }),
+                  body: t('grow.goals.removeBody', {
+                    amount: money.amount(g.saved),
+                    account: accountName(rows?.find((r) => r.id === g.id)?.account_id ?? null),
+                  }),
+                },
+              }}
+            />
           ))}
           <Pressable accessibilityRole="button" accessibilityLabel={t('grow.home.newGoal')} onPress={onNewGoal} style={styles.newGoal}>
             <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('grow.home.newGoal')}</Text>
           </Pressable>
         </View>
       )}
+      <MoneyMoveSheet visible={sheet?.kind === 'add'} goal={sheetRow} kind="add" onClose={() => setSheet(null)} onMoved={onMoved} />
+      <NewGoalSheet visible={sheet?.kind === 'edit' && sheetRow !== null} goal={sheetRow ?? undefined} saved={sheetSaved} onClose={() => setSheet(null)} />
     </View>
   );
 }
