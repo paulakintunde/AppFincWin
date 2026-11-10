@@ -93,6 +93,9 @@ export interface TransactionRow {
   // 05-34 (D-29, D-34): every select returns both (TRANSACTION_COLUMNS); optional in the type only so the many pre-existing literal fixtures stay valid. Readers use `row.one_off === true` / `row.goal_id ?? null`.
   one_off?: boolean;
   goal_id?: string | null;
+  // 06-30 (D-33): the debt a one-off payment line pays (20261106000400). Select-only: only record_debt_one_off writes it.
+  // Every select returns it; optional in the type only, like goal_id, so existing literal fixtures stay valid.
+  debt_id?: string | null;
   // 05.2: income tags and refund link (client-writable, 20261028000400)
   income_kind?: string | null;
   counts_as?: 'available' | 'kept' | null;
