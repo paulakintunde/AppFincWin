@@ -3705,7 +3705,7 @@ const en = {
         ask_debts_not_recorded: 'No loan, card, other debt or overdraft is recorded. Do you have any?',
         // 05.4 FIN-07 / D-40: basis 'tenth' reads tight_floor, 'user_line' reads tight_floor_user_line.
         tight_floor: 'That is under {{floor}}, a tenth of what you usually spend in a month.',
-        tight_floor_user_line: 'That is under the {{floor}} line you set.',
+        tight_floor_user_line: 'That is under your {{floor}} rule.',
         // 05.4 FIN-05 (D-07): saving for it next to borrowing for it. kind 'ready' reads save_vs_borrow, 'cash_fits' and 'no_date'
         // their own copy. readyBy is a date or a month, formatted by the screen.
         save_vs_borrow: 'Saving for it: ready {{readyBy}}. Borrowing: costs {{more}} more.',
@@ -3745,10 +3745,11 @@ const en = {
         // 05.4 D-61: the safety net is locked by default and left out of the answer.
         net_locked: 'Your safety net of {{locked}} is locked, so this answer leaves it out.',
         envelope_used: '{{used}} comes from the {{envelope}} envelope.',
-        line_crossed: 'This goes past one of your lines.',
-        line_crossed_percent: 'This brings it to {{value}}% of your income; your line is {{limit}}%.',
-        line_crossed_money: 'This brings it to {{value}}; your line is {{limit}}.',
-        line_crossed_tenths: 'This brings what you owe to {{value}} times your monthly income; your line is {{limit}} times.',
+        // 06.1 D-19: a limit the user set is a "rule" (the card is "Your money rules"); key names stay. Signed under D-08.
+        line_crossed: 'This goes past one of your rules.',
+        line_crossed_percent: 'This brings it to {{value}}% of your income; your rule is {{limit}}%.',
+        line_crossed_money: 'This brings it to {{value}}; your rule is {{limit}}.',
+        line_crossed_tenths: 'This brings what you owe to {{value}} times your monthly income; your rule is {{limit}} times.',
         quoted_differs: 'The quoted payment of {{quoted}} differs from the {{computed}} worked out here.',
         implied_rate: 'The figures given imply about {{rate}}%\u00A0a year.',
         deferred_interest_term: 'If the balance isn’t cleared by the end of the pause, interest back to the start could apply.',

@@ -549,6 +549,62 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
   });
 });
 
+// 06.1-05 (D-18, CMP-F12): the new Decide screen strings. Whole-word matches, so "insurance" never trips "sure".
+describe('decide.screens copy (06.1, D-18, D-19)', () => {
+  const screens = leaves.filter((l) => l.path.startsWith('decide.screens.'));
+  const SCREENS_BANNED: readonly RegExp[] = [
+    /\b(sure|surer|certain|accurate)\b/i, // CMP-F12: never more confident than the answer ("Give it more to go on", not "surer")
+    /\badvi(ce|ser|sor)\b/i,
+    /\brecommend/i,
+    /\byou should\b/i,
+    /\b(better|best|optimal)\b/i,
+    /\boverspent\b/i, // D-116: "short"
+    /\bunspent\b/i, // D-56: "spare money"
+    /\bworst month\b/i, // the engine word is "Low month"
+    /\bemergency fund\b/i, // D-35: "safety net"
+    /\bspare cash\b|\bsavings pot\b/i, // D-56: "spare money", "extra savings"
+    /\bband \d+\b|\basks about\b/i, // UX-18
+    /\bfree\b/i, // D-122: "at no cost"
+    /\blines? you will not cross\b/i, // D-19: "Your money rules"
+    /\bhousehold\b|\bshared costs\b/i, // D-03: no household copy in 06.1
+  ];
+
+  it('has the screen leaves', () => {
+    expect(screens.length).toBeGreaterThan(500);
+  });
+
+  it('no screen string uses a banned word', () => {
+    const bad: string[] = [];
+    for (const l of screens) for (const re of SCREENS_BANNED) if (re.test(l.value)) bad.push(`${l.path}: ${re.source}`);
+    expect(bad).toEqual([]);
+  });
+
+  it('the banned list matches whole words only', () => {
+    for (const ok of ['Insurance', 'Car insurance · monthly', 'Measured', 'Assured payments', 'Uncertainty']) {
+      expect({ ok, hit: SCREENS_BANNED.some((re) => re.test(ok)) }).toEqual({ ok, hit: false });
+    }
+    for (const bad of ['Make it surer', 'Not sure', 'less certain', 'accurate', 'not a lender or adviser', 'We recommend', 'you should', 'the best option', 'Worst month', 'Overspent', 'Free help']) {
+      expect({ bad, hit: SCREENS_BANNED.some((re) => re.test(bad)) }).toEqual({ bad, hit: true });
+    }
+  });
+
+  it('D-19 the card and item 5 are "Your money rules", and the home note reads as the UI-SPEC sets it', () => {
+    expect(get('decide.screens.sheetsHome.rulesCard.title')).toBe('Your money rules');
+    expect(get('decide.screens.setup.items.rules')).toBe('Your money rules');
+    expect(get('decide.screens.setup.status.rulesDone_other')).toBe('Done · {{count}} rules');
+    expect(get('decide.screens.stepper.homeNote')).toBe('Home checks come later. Pick another kind for now.');
+    expect(get('decide.screens.common.error.message')).toBe('Couldn’t work this out right now. Your records are safe. Try the check again.');
+  });
+
+  it('D-18 no screen key repeats the footer: answers use legal.decideAnswer.footer', () => {
+    expect(screens.filter((l) => /planning tool|lend|credit/i.test(l.value)).map((l) => l.path)).toEqual([]);
+  });
+
+  it('every screen button named in the UI-SPEC is verb + noun, never a bare Save or Add', () => {
+    expect(screens.filter((l) => /^(Save|Add)$/.test(l.value)).map((l) => l.path)).toEqual([]);
+  });
+});
+
 // 05.4-37 D-64 / D-120: the disclaimer, the About sheet and the intro card sit outside en.decide but follow every Decide guard.
 describe('Decide legal keys (D-64, D-120, D-92)', () => {
   const legalLeaves = collectLeaves(en.legal, 'legal').filter((l) => l.path.startsWith('legal.decide'));

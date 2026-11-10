@@ -54,15 +54,35 @@ function baseRef(): string {
 
 /** en.ts as it was at `ref`, turned into a plain object (its one import, mandatedCopy, is the current module). */
 function enAt(ref: string): unknown {
-  const source = git(`show ${ref}:src/i18n/locales/en.ts`);
-  const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
-  const mod: { exports: { default?: unknown } } = { exports: {} };
-  const req = (id: string): unknown => {
-    if (id === '../mandatedCopy') return mandatedCopy;
-    throw new Error(`wording page: en.ts at ${ref} imports ${id}`);
+  // 06.1-05: en.ts imports the decide.screens area files (./decideScreens, then ./common etc.), so relative imports inside
+  // src/i18n/locales are loaded from the same ref. A file path is tried as `<path>.ts`, then `<path>/index.ts`.
+  const cache = new Map<string, unknown>();
+  const load = (file: string): unknown => {
+    if (cache.has(file)) return cache.get(file);
+    const source = git(`show ${ref}:${file}`);
+    const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
+    const mod: { exports: Record<string, unknown> } = { exports: {} };
+    const dir = file.slice(0, file.lastIndexOf('/'));
+    const req = (id: string): unknown => {
+      if (id === '../mandatedCopy') return mandatedCopy;
+      if (id.startsWith('./')) {
+        const base = `${dir}/${id.slice(2)}`;
+        for (const candidate of [`${base}.ts`, `${base}/index.ts`]) {
+          try {
+            git(`cat-file -e ${ref}:${candidate}`);
+          } catch {
+            continue;
+          }
+          return load(candidate);
+        }
+      }
+      throw new Error(`wording page: ${file} at ${ref} imports ${id}`);
+    };
+    new Function('module', 'exports', 'require', js)(mod, mod.exports, req);
+    cache.set(file, mod.exports);
+    return mod.exports;
   };
-  new Function('module', 'exports', 'require', js)(mod, mod.exports, req);
-  return mod.exports.default;
+  return (load('src/i18n/locales/en.ts') as { default?: unknown }).default;
 }
 
 // ---------------------------------------------------------------- money and months for the worked answers
