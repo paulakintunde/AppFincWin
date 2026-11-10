@@ -1227,7 +1227,7 @@ Plans:
 **Wave 11** *(blocked on Wave 10 completion)*
 - [x] 06-27-PLAN.md — Grow restyle A: goals, safety net, rules; stepper value, debt glyph (D-31) (W11)
 - [x] 06-28-PLAN.md — Grow restyle B: debts, investing, calculators; shared tile (D-31) (W11)
-- [ ] 06-29-PLAN.md — [BLOCKING] second production push (20261106000400), owner-gated with hard stops (D-33) (W11)
+- [x] 06-29-PLAN.md — [BLOCKING] second production push (20261106000400), owner-gated with hard stops (D-33) (W11)
 
 **Wave 12** *(blocked on Wave 11 completion)*
 - [ ] 06-30-PLAN.md — One-off debt payment hook, transactions.debt_id on the client, start-date helpers (D-33) (W12)
