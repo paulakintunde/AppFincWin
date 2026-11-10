@@ -344,7 +344,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
                 />
               );
             })}
-            <Row label={t('grow.debts.detail.seeAllInActivity')} chevron dense onPress={() => router.navigate('/activity' as Href)} />
+            <Row label={t('grow.debts.detail.seeAllInActivity')} chevron dense onPress={() => router.navigate({ pathname: '/activity', params: { debt: row.id } } as Href)} />
           </View>
         </View>
 

@@ -75,6 +75,12 @@ jest.mock('@/data/queries/activity', () => ({
     };
   },
 }));
+const DEBT_ID = '0b0e8d1a-6c4f-4a52-9b3e-1f2a3b4c5d6e';
+let mockDebts: { id: string; name: string; series_id: string | null; extra_series_id: string | null; deleted_at: string | null }[] | undefined = [];
+jest.mock('@/data/queries/decide', () => ({
+  ...jest.requireActual('@/data/queries/decide'),
+  useDebts: () => ({ data: mockDebts }),
+}));
 jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
 jest.mock('@/data/queries/pendingSplit', () => ({ usePaidBefore: () => ({ legs: [], isLoading: false }) }));
 jest.mock('@/data/queries/accounts', () => ({
@@ -165,6 +171,7 @@ beforeEach(() => {
   mockSearchLoading = false;
   mockSearchPaused = false;
   mockSearchError = false;
+  mockDebts = [{ id: DEBT_ID, name: 'Auto loan', series_id: 'pay-series', extra_series_id: 'extra-series', deleted_at: null }];
 });
 
 type Screen = Awaited<ReturnType<typeof renderScreen>>;
@@ -832,5 +839,48 @@ describe('ActivityScreen section colours (02-polish item 5)', () => {
     const style = (el: { props: { style?: unknown } }) => StyleSheet.flatten(el.props.style as never) as Record<string, unknown>;
     expect(style(screen.getAllByText('Paid')[0]!).color).toBe('#1B4D3E');
     expect(style(screen.getAllByText('Still to come')[0]!).color).toBe('#6E6A5E');
+  });
+});
+
+describe('06-37 D-38: Activity filtered to one debt', () => {
+  const lines = () => [
+    row({ id: 'one-off', name: 'One-off payment', debt_id: DEBT_ID, recurring_series_id: null } as Partial<ActivityRowView>),
+    row({ id: 'min', name: 'Auto loan payment', recurring_series_id: 'pay-series' }),
+    row({ id: 'extra', name: 'Auto loan extra', recurring_series_id: 'extra-series' }),
+    row({ id: 'other', name: 'Coffee', recurring_series_id: null }),
+  ];
+
+  it('shows only the debt lines (tag, payment series, extra series) under a chip named after the debt', async () => {
+    mockRows = lines();
+    const screen = await renderScreen({ debtId: DEBT_ID, onClearDebt: jest.fn() });
+    expect(screen.getByText('One-off payment')).toBeTruthy();
+    expect(screen.getByText('Auto loan payment')).toBeTruthy();
+    expect(screen.getByText('Auto loan extra')).toBeTruthy();
+    expect(screen.queryByText('Coffee')).toBeNull();
+    expect(screen.getByLabelText('Filter: Auto loan. Opens filters.')).toBeTruthy();
+  });
+
+  it('clearing the chip asks the route to drop the debt', async () => {
+    mockRows = lines();
+    const onClearDebt = jest.fn();
+    const screen = await renderScreen({ debtId: DEBT_ID, onClearDebt });
+    await fireEvent.press(screen.getByLabelText('Remove filter Auto loan'));
+    expect(onClearDebt).toHaveBeenCalledTimes(1);
+  });
+
+  it('with the debt not loaded, the chip reads Debt and only lines tagged to it show', async () => {
+    mockDebts = undefined;
+    mockRows = lines();
+    const screen = await renderScreen({ debtId: DEBT_ID, onClearDebt: jest.fn() });
+    expect(screen.getByText('One-off payment')).toBeTruthy();
+    expect(screen.queryByText('Auto loan payment')).toBeNull();
+    expect(screen.getByLabelText('Filter: Debt. Opens filters.')).toBeTruthy();
+  });
+
+  it('without a debt the list is whole and has no debt chip', async () => {
+    mockRows = lines();
+    const screen = await renderScreen();
+    expect(screen.getByText('Coffee')).toBeTruthy();
+    expect(screen.queryByLabelText('Filter: Auto loan. Opens filters.')).toBeNull();
   });
 });

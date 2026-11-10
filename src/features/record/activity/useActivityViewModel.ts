@@ -4,6 +4,7 @@
 // Read paths never fetch exchange rates (02-48 rule): a missing rate shows as 'Waiting for a rate'.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAccounts } from '@/data/queries/accounts';
+import { useDebts } from '@/data/queries/decide';
 import { useAddMonth } from '@/data/mutations/addMonth';
 import { useSeriesOffers } from '@/data/queries/offers';
 import {
@@ -55,6 +56,7 @@ import type { SearchScope } from './SearchBar';
 import { previousMonth } from './CloneMonthSheet';
 import { isMonthEmpty, monthPositionOf } from './monthFigureInputs';
 import { useActivitySelection } from './useActivitySelection';
+import { debtFilterOf, matchesDebt } from './debtFilter';
 import type { DeletePrompt, RowActions } from './useRowActions';
 import { showToast } from '@/state/undoToast';
 import { consumeActivityFilterIntent, useActivityFilterIntent, useSelectedMonth } from '@/state/activityFocus';
@@ -66,6 +68,8 @@ export type BalanceNote = { kind: 'after'; text: string } | { kind: 'notCounted'
 export interface ActivityViewModelInput {
   initialMonth?: string;
   supportedViews: readonly ActivityView[];
+  /** 06-37 D-38: a debt id from the route (`?debt=<id>`), already checked as a uuid; null for none. */
+  debtId?: string | null;
 }
 
 /**
@@ -125,7 +129,7 @@ export function useRowFlow(rowActions: RowActions, month: string) {
   return { entryMode, setEntryMode, openDetail, detail, requestDelete, pendingDelete, answerDelete };
 }
 
-export function useActivityViewModel({ initialMonth, supportedViews }: ActivityViewModelInput) {
+export function useActivityViewModel({ initialMonth, supportedViews, debtId = null }: ActivityViewModelInput) {
   const t = useT();
   const rc = useRecordContext();
   const formatter = useMoneyFormatter(rc.showCents);
@@ -151,6 +155,16 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
     setSearchOpen(false);
     consumeActivityFilterIntent();
   }, [intent]);
+
+  // 06-37 D-38: arriving filtered to a debt starts from a clean list (no other filter, no search), like the HOME-01 intent.
+  useEffect(() => {
+    if (debtId === null) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- applies an external route parameter once per debt
+    setFilter(EMPTY_FILTER);
+    setTerm('');
+    setScope('month');
+    setSearchOpen(false);
+  }, [debtId]);
 
   useEffect(() => {
     let live = true;
@@ -182,6 +196,8 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
   const monthView = useMonthView({ householdId: rc.householdId, homeCurrency: rc.homeCurrency, today: rc.today }, month);
   const { months, counts } = useTransactionMonths(rc.householdId, rc.today, rc.horizonMonth ?? null);
   const accounts = useAccounts(rc.householdId ?? undefined).data;
+  const debts = useDebts(debtId === null ? undefined : (rc.householdId ?? undefined)).data;
+  const debt = useMemo(() => debtFilterOf(debtId, debts), [debtId, debts]);
 
   // ACT-03: a 2+ character term in Every month scope is a server search; shorter terms leave
   // the month list alone. Month scope narrows the loaded month instantly.
@@ -192,18 +208,21 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
   // chips, Unpaid banner) is hidden, so search ignores the filters rather than silently applying
   // them. The filter is kept and applies again on Cancel.
   const appliedFilter = searchOpen ? EMPTY_FILTER : filter;
-  const filtering = isFilterActive(appliedFilter);
+  const appliedDebt = searchOpen ? null : debt;
+  const filtering = isFilterActive(appliedFilter) || appliedDebt !== null;
   const narrowed = useMemo(() => {
     let base: ActivityRowView[] = flat ? search.rows : monthView.rows;
     if (scope === 'month' && term.trim() !== '') base = base.filter((r) => matchesSearch(r, term));
+    if (appliedDebt !== null) base = base.filter((r) => matchesDebt(r, appliedDebt));
     return filterRows(base, appliedFilter);
-  }, [flat, search.rows, monthView.rows, scope, term, appliedFilter]);
+  }, [flat, search.rows, monthView.rows, scope, term, appliedFilter, appliedDebt]);
 
   // 03-CONTEXT D-34/D-35: projected bills join the Unpaid list so it matches Home's UNPAID;
   // other filters keep hiding projections.
+  // A debt's own lines are rows; projections carry no debt link, so the debt filter hides them like the other filters.
   const unpaidProjections = useMemo(
-    () => (searching ? [] : filterProjections(monthView.projections, appliedFilter)),
-    [searching, monthView.projections, appliedFilter]
+    () => (searching || appliedDebt !== null ? [] : filterProjections(monthView.projections, appliedFilter)),
+    [searching, monthView.projections, appliedFilter, appliedDebt]
   );
 
   // 03.1 D-47 / D-70: the card shows the whole month, the same figure as Home, under any filter.
@@ -408,6 +427,7 @@ export function useActivityViewModel({ initialMonth, supportedViews }: ActivityV
     filter,
     setFilter,
     filtering,
+    debt,
     searching,
     flat,
     search,

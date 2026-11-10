@@ -74,6 +74,10 @@ export interface ActivityScreenProps {
   onOpenAccounts: () => void;
   onOpenHistory: () => void;
   initialMonth?: string;
+  /** 06-37 D-38: filter to one debt's lines (route `?debt=<id>`); null or absent for none. */
+  debtId?: string | null;
+  /** Clears the debt filter (the route drops its parameter). */
+  onClearDebt?: () => void;
 }
 
 type BulkHint = 'selectFirst' | 'nothingToMarkPaid' | 'nothingToMarkUnpaid' | 'tooMany';
@@ -85,10 +89,10 @@ const BULK_HINT_KEYS = {
   tooMany: 'activity.bulkTooMany',
 } as const satisfies Record<BulkHint, string>;
 
-export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: ActivityScreenProps) {
+export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth, debtId = null, onClearDebt }: ActivityScreenProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const vm = useActivityViewModel({ initialMonth, supportedViews: SUPPORTED_VIEWS });
+  const vm = useActivityViewModel({ initialMonth, supportedViews: SUPPORTED_VIEWS, debtId });
   const { rc, formatter, month, items, positions, itemRows, selection, filter, filtering, searching, flat, search } = vm;
   const accountsData = vm.accounts;
   const accountName = useCallback(
@@ -135,7 +139,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
   const [hint, setHint] = useState<BulkHint | null>(null);
 
   const activeFilterCount = countActiveFilters(filter);
-  const chips = filterChipModels(filter, {
+  const sheetChips = filterChipModels(filter, {
     categoryName: (id) => {
       const c = categories.byId.get(id);
       return c === undefined ? '' : categoryName(c, t);
@@ -144,6 +148,8 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
     formatAmount: (minor) => formatter.formatMoney(money(minor, rc.homeCurrency)),
     t,
   });
+  // 06-37 D-38: the debt chip leads the row, named after the debt, and clears like any other chip.
+  const chips = vm.debt === null ? sheetChips : [{ kind: 'debt' as const, label: vm.debt.name ?? t('activity.filter.debt') }, ...sheetChips];
 
   // D-59..D-61: Search opens on This month; Cancel clears the term and returns focus to the icon.
   // Review WR-08: only a user Cancel returns focus. The HOME-01 intent also closes search, and
@@ -371,8 +377,11 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth }: 
           onOpenDisplay={() => setDisplayOpen(true)}
           displayChipRef={displayChipRef}
           filterChips={chips}
-          onRemoveFilter={(k) => vm.setFilter(clearOne(filter, k))}
-          onClearAllFilters={() => vm.setFilter(clearAllExceptUnpaid(filter))}
+          onRemoveFilter={(k) => (k === 'debt' ? onClearDebt?.() : vm.setFilter(clearOne(filter, k)))}
+          onClearAllFilters={() => {
+            vm.setFilter(clearAllExceptUnpaid(filter));
+            if (vm.debt !== null) onClearDebt?.();
+          }}
           selectionActive={selection.active}
           selectionCount={selection.count}
           onSelectAll={() => {

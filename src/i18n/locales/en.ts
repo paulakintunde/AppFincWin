@@ -970,6 +970,7 @@ const en = {
       account: 'Account',
       amount: 'Amount',
       direction: 'Direction',
+      debt: 'Debt',
       in: 'Money in',
       out: 'Money out',
       transfers: 'Transfers',
