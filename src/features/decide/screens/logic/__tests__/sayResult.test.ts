@@ -27,6 +27,7 @@ import {
   type MissingCode,
   type Notice,
   type NoticeCode,
+  type ReadinessCode,
   type Result,
   type V3Inputs,
 } from '@/engine/decide/v3';
@@ -162,7 +163,7 @@ function result(over: Partial<Result> = {}): Result {
     layers: [],
     confidence: { reasons: [], basis: { kind: 'records', months: 6, upTo: '2026-11-09' }, nextStep: null },
     parts: { oneOff: 'fits_month', monthly: null },
-    afterBuy: { lead: 'month', month: 31000, usualMonth: null, before: 40000, monthName: '2026-11' },
+    afterBuy: { lead: 'month', month: 31000, usualMonth: null, before: 40000, monthName: '2026-11' } as unknown as Result['afterBuy'],
     purchaseDate: '2026-11-10',
     caveats: [],
     ...over,
@@ -303,7 +304,7 @@ describe('sayResult: the Result in reading order', () => {
   });
 
   it('basis reads every kind; records_with_reason reads its reason', () => {
-    const basis = (b: Result['confidence']['basis']): Line | null => sayResult(result({ confidence: { reasons: [], basis, nextStep: null } }), deps).basis;
+    const basis = (b: Result['confidence']['basis']): Line | null => sayResult(result({ confidence: { reasons: [], basis: b, nextStep: null } }), deps).basis;
     expect(basis({ kind: 'records', months: 6, upTo: '2026-11-09' })).toEqual({ key: BASIS_KEYS.records, code: 'records', text: 'Based on 6 months of your records, up to <2026-11-09>.' });
     expect(basis({ kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on 2 of the 3 months of records Decide looks for.');
     expect(basis({ kind: 'quick_estimates' })?.key).toBe(BASIS_KEYS.quick_estimates);
@@ -350,7 +351,8 @@ describe('sayResult: the Result in reading order', () => {
   });
 
   it('after-buy: this month leads a one-off; a plan leads with the usual month; below 0 reads short (D-116)', () => {
-    const lead = (afterBuy: Result['afterBuy']): Line | null => sayResult(result({ afterBuy }), deps).afterBuy.lead;
+    type Loose = { lead: 'month' | 'usualMonth'; month: number; usualMonth: number | null; before: number; monthName: string };
+    const lead = (afterBuy: Loose): Line | null => sayResult(result({ afterBuy: afterBuy as unknown as Result['afterBuy'] }), deps).afterBuy.lead;
     expect(lead({ lead: 'month', month: 31000, usualMonth: null, before: 40000, monthName: '2026-11' })?.text).toBe('<2026-11> would still leave about $310.00.');
     expect(lead({ lead: 'month', month: -15000, usualMonth: null, before: 40000, monthName: '2026-11' })?.text).toBe('<2026-11> would be about $150.00 short.');
     expect(lead({ lead: 'usualMonth', month: 0, usualMonth: 12000, before: 0, monthName: '2026-11' })?.key).toBe(AFTER_BUY_KEYS.usualMonth);
@@ -371,6 +373,7 @@ describe('sayResult: a gap is an error, never a printed code (T-06.1-06-01)', ()
     expect(() => sayCode('fact', { code: 'not_a_code' as FactCode, values: {} }, deps)).toThrow(MissingCopyError);
     expect(() => sayCode('notice', { code: 'not_a_code' as NoticeCode, values: {} }, deps)).toThrow(MissingCopyError);
     expect(() => sayResult(result({ missing: ['not_a_code' as MissingCode] }), deps)).toThrow(MissingCopyError);
+    expect(() => sayResult(result({ readiness: { ready: false, missing: ['not_a_code' as ReadinessCode] } }), deps)).toThrow(MissingCopyError);
   });
 
   it('a key with no copy throws', () => {
