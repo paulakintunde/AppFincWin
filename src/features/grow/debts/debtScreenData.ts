@@ -53,6 +53,8 @@ export interface DebtFormat {
   spoken(minor: number, currency: string): string;
   /** "Apr 2029" from YYYY-MM-DD. */
   monthYear(date: string): string;
+  /** "September 2037" from YYYY-MM-DD (spoken dates). */
+  monthYearLong(date: string): string;
   /** "Nov 15" from YYYY-MM-DD. */
   dayMonth(date: string): string;
   /** "15th". */
@@ -76,6 +78,13 @@ export function useDebtFormat(): DebtFormat {
     },
     [locale]
   );
+  const monthYearLong = useCallback(
+    (date: string) => {
+      const [y, m] = date.split('-').map(Number);
+      return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(Date.UTC(y!, m! - 1, 1));
+    },
+    [locale]
+  );
   const dayMonth = useCallback(
     (date: string) => {
       const [y, m, d] = date.split('-').map(Number);
@@ -91,7 +100,10 @@ export function useDebtFormat(): DebtFormat {
     },
     [locale]
   );
-  return useMemo(() => ({ money, cents: centsFn, spoken, monthYear, dayMonth, ordinal, rate }), [money, centsFn, spoken, monthYear, dayMonth, ordinal, rate]);
+  return useMemo(
+    () => ({ money, cents: centsFn, spoken, monthYear, monthYearLong, dayMonth, ordinal, rate }),
+    [money, centsFn, spoken, monthYear, monthYearLong, dayMonth, ordinal, rate]
+  );
 }
 
 /** The debt detail route (06-17). */

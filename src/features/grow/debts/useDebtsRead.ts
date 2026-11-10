@@ -44,6 +44,11 @@ export interface DebtLine {
   order: PayoffOrder | null;
   /** In the combined payoff plan (open, carried, same currency as the plan). */
   inPlan: boolean;
+  /**
+   * 06-35 (D-34): the date this debt's last payment lands, under the saved plan (the saved extra in the saved order) when one
+   * is saved, else on its own minimum. Null when nothing is owed or it never clears. Cards paid in full carry null.
+   */
+  endDate: string | null;
 }
 
 export interface PlanOutcome {
@@ -207,6 +212,7 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
       extra: row.payoff_extra ?? 0,
       order: row.payoff_order ?? null,
       inPlan: false,
+      endDate: null,
     };
     (paysFull ? paidInFull : lines).push(line);
   }
@@ -226,6 +232,21 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
   const savedOrder = inPlan.find((l) => l.order !== null)?.order ?? null;
   const planDebts: PlanDebt[] = inPlan.map((l) => ({ id: l.id, balance: l.point.balance, apr: l.point.apr ?? ZERO_PERCENT, minimum: l.point.minimum }));
   const dueDayOf = (id: string): number | null => inPlan.find((l) => l.id === id)?.point.dueDay ?? null;
+
+  // 06-35 (D-34): each debt's end date. Under a saved extra the plan's own strategy says when each debt clears (the saved
+  // order; 'rate' only for an extra saved before an order existed). With no extra saved, each debt on its own minimum.
+  const savedPlanRun = extra > 0 && planDebts.length > 0 ? strategy(planDebts, minorUnits(extra), savedOrder ?? 'rate') : null;
+  for (const l of lines) {
+    if (l.point.balance <= 0) continue;
+    let months: number | null;
+    if (savedPlanRun !== null && l.inPlan) {
+      months = savedPlanRun.debts.find((d) => d.id === l.id)?.doneMonth ?? null;
+    } else {
+      const own = fixedPayoff(l.point.balance, l.point.apr ?? ZERO_PERCENT, l.point.minimum);
+      months = own.outcome === 'cleared' ? own.months : null;
+    }
+    l.endDate = months === null ? null : lastPaymentDate(today, l.point.dueDay, months);
+  }
 
   let plan: DebtsModel['plan'] = null;
   if (planDebts.length > 0) {
@@ -276,6 +297,26 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
   }
 
   return { debts: lines, paidInFull, planCurrency, extra, savedOrder, oneDebt: inPlan.length === 1, plan, focus, scenarios, savedExtraPlan };
+}
+
+/**
+ * 06-35: the minimum-only answer the screens show. With an order (picked, saved, or one debt) it is that order's; with 2+
+ * debts and no order it is the later of the two, so no order is chosen for the user and the date is never the hopeful one.
+ */
+export function minimumOnlyFor(scenarios: { rate: PlanScenarios; balance: PlanScenarios }, order: PayoffOrder | null): WhatIf {
+  if (order !== null) return scenarios[order].minimumOnly;
+  return laterOf(scenarios.rate.minimumOnly, scenarios.balance.minimumOnly);
+}
+
+/** 06-35: the saved-extra answer for the hero's second line, by the same rule as minimumOnlyFor. */
+export function savedPlanFor(saved: { rate: WhatIf; balance: WhatIf }, order: PayoffOrder | null): WhatIf {
+  return order !== null ? saved[order] : laterOf(saved.rate, saved.balance);
+}
+
+function laterOf(a: WhatIf, b: WhatIf): WhatIf {
+  if (a.outcome !== 'cleared') return a;
+  if (b.outcome !== 'cleared') return b;
+  return b.months > a.months ? b : a;
 }
 
 export function useDebtsRead(): DebtsRead {
