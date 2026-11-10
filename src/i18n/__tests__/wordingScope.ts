@@ -17,7 +17,8 @@ import { join } from 'node:path';
 
 export type Leaves = Record<string, string>;
 
-export const LOCKED_ROOTS = ['decide.v3', 'legal.decideAnswer', 'legal.decideAbout', 'legal.decideIntro'] as const;
+// 06.1-05 (D-08, D-18): the new Decide screen strings (decide.screens.*) are signed in the same sign-off.
+export const LOCKED_ROOTS = ['decide.v3', 'legal.decideAnswer', 'legal.decideAbout', 'legal.decideIntro', 'decide.screens'] as const;
 
 /** The undo actions plan 05.4-06 added (each has a named and an unnamed label). */
 const UNDO_ACTIONS = [
@@ -149,6 +150,8 @@ const DISCLAIMER = d('D-64', 'Under every answer: "Worked out only from what’s
 const INTRO = d('D-120', 'The one-time "How Decide answers" card gets its wording now.');
 const HELP = d('D-122', 'No "free": "{{name}} gives money help at no cost."; heading "Money help at no cost".');
 const SHORT = d('D-116', 'New Decide copy says "short", never "overspent".');
+// 06.1 decisions (06.1-CONTEXT) share the D-number form with 05.4's, so their words name the phase.
+const RULE = d('D-19', '(06.1) The card is called "Your money rules", and each item in it is a rule ("under your $300 rule").');
 
 /** Owner-worded lines (D-35..D-48 from the round 1-2 review, then the later owner wording up to D-123), key -> decision. */
 export const DECISION_MAP: Readonly<Record<string, Decision>> = Object.freeze({
@@ -236,6 +239,17 @@ export const DECISION_MAP: Readonly<Record<string, Decision>> = Object.freeze({
   'decide.v3.fact.free_help': HELP,
   'legal.decideAbout.freeHelpTitle': HELP,
   'legal.decideAbout.freeHelp': HELP,
+  'decide.v3.fact.line_crossed': RULE,
+  'decide.v3.fact.line_crossed_percent': RULE,
+  'decide.v3.fact.line_crossed_money': RULE,
+  'decide.v3.fact.line_crossed_tenths': RULE,
+  'decide.v3.fact.tight_floor_user_line': RULE,
+  'decide.screens.sheetsHome.rulesCard.title': RULE,
+  'decide.screens.setup.items.rules': RULE,
+  'decide.screens.setup.status.rulesDone_one': RULE,
+  'decide.screens.setup.status.rulesDone_other': RULE,
+  'decide.screens.setupOthers.rules.title': RULE,
+  'decide.screens.stepper.homeNote': d('D-02', '(06.1) Picking Home, or words that read as a home, shows a short plain note that home checks come later.'),
 });
 
 /** One example per placeholder, so a template also reads as a sentence. `count` is 1 on `_one` keys (fillSample). */
@@ -244,6 +258,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   account: 'Everyday',
   after: '$640.00',
   amount: '$250.00',
+  answer: 'fits, $231.00 left that month',
   apr: '24.9',
   balance: '$3,000.00',
   before: '$890.00',
@@ -252,6 +267,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   bridge: '$600.00',
   capped: '$150.00',
   category: 'Groceries',
+  change: 'Phone $45.00 paused',
   computed: '$212.40',
   cost: '$4.10',
   costs: '$2,350.00',
@@ -272,6 +288,10 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   fromMonth: '$200.00',
   gap: '$180.00',
   interest: '$412.00',
+  investing: '$200.00',
+  item: 'Laptop',
+  kind: 'Car',
+  label: 'Up front',
   largest: '$95.00',
   lastYear: 'November last year',
   leanFrom: 'January',
@@ -282,6 +302,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   locked: '$2,400.00',
   lookedFor: '6',
   lowMonth: 'February',
+  method: 'Cash',
   middle: '$2,050.00',
   money: '$1,500.00',
   moneyIn: '$2,800.00',
@@ -295,7 +316,9 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   more: '$412.00',
   name: 'MoneyHelper',
   net: '$1,000.00',
+  next: 'Debts',
   of: '12',
+  ordinal: '15th',
   pay: '$2,800.00',
   payment: '$85.00',
   payments: '12',
@@ -308,6 +331,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   readyMonth: 'February',
   sameMonth: 'November last year',
   saved: '$600.00',
+  saving: '$150.00',
   savings: '$2,000.00',
   setup: '$2,200.00',
   share: '38',
@@ -317,6 +341,9 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   shortfall: '$150.00',
   size: '$2,400.00',
   starter: '$1,225.00',
+  state: 'Fits',
+  step: '2',
+  stepName: 'Price',
   suggested: '$1,180.00',
   times: '3',
   to: 'April',
