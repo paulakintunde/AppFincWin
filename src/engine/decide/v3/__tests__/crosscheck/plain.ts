@@ -526,7 +526,11 @@ export function plainNet(f: RightAnswerFixture): PlainNet {
   const saved = maxC(0n, big(n.saved));
   const off = !n.protect || size === 0n;
   const protectedPart = off ? 0n : saved < size ? saved : size;
-  const above = off ? 0n : saved - protectedPart;
+  // 06 D-05, D-22: "an unlocked goal's saved money counts as spare in Decide"; money in an untouched account never
+  // counts as spending money, so an unlocked goal kept there joins the money above the net's size. Locked goals stay out.
+  const outside = new Set(f.accounts.filter((a) => a.use === 'untouched').map((a) => a.id));
+  const unlocked = (f.goals ?? []).reduce((t, g) => t + (g.locked === false && g.accountId != null && outside.has(g.accountId) ? maxC(0n, big(g.saved)) : 0n), 0n);
+  const above = (off ? 0n : saved - protectedPart) + unlocked;
   const locked = !off && n.locked !== false;
   return { off, locked, saved, size, starter, protectedPart, above, lend: off ? saved : locked ? 0n : protectedPart };
 }
