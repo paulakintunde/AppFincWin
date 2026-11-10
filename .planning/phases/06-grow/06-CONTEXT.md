@@ -182,3 +182,7 @@ Owner checked Grow on the Pixel 9 (dev client): "otherwise it looks mostly good"
 - **D-38 (owner, 2026-11-10), two answers to questions 06-36 raised:**
   - **"See all in Activity"** on a debt's detail screen opens Activity filtered to that debt's lines (`debt_id`, its payment series and its extra series). This needs a small Activity route parameter and goes into 06-37.
   - **A manual debt with no recorded lines** keeps its computed next due payment as a plain Expected row, as built.
+- **D-39 (owner, 2026-11-10), three answers to questions 06-37 raised:**
+  - **Goal lines in the edit form.** In the record sheet's edit form, Paid on a goal's Expected line saves through the goal confirm, so the goal grows exactly once. Paid combined with other edits is blocked with an info toast. Done in the 06-37 follow-up.
+  - **"See all in Activity" from a debt** stays on the month on screen, like every Activity filter.
+  - **D-36 edge case accepted.** A goal made before the update and later turned into the net in the app goes through `set_safety_net`, which sets `net_confirmed_at`, so in practice it does not show the sheet.
