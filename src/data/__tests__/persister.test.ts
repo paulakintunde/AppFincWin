@@ -244,13 +244,13 @@ describe('encrypted query cache persister', () => {
     expect(serverFetchTimeOf(hash)).toBe(fetchedAt);
     untrack();
   });
-  it('06-30: the cache version is 6, and a version 5 blob keeps its queued writes and drops its queries', () => {
-    expect(CACHE_SCHEMA_VERSION).toBe('6');
+  it('06-35/06-36: the cache version is 7, and a version 6 blob keeps its queued writes and drops its queries', () => {
+    expect(CACHE_SCHEMA_VERSION).toBe('7');
     const mutation = { mutationKey: ['w'], state: { status: 'pending' } } as never;
     const query = { queryKey: ['q'], queryHash: '["q"]', state: { status: 'success', data: 1 } } as never;
-    const old = { timestamp: Date.now(), buster: '5', clientState: { queries: [query], mutations: [mutation] } };
+    const old = { timestamp: Date.now(), buster: '6', clientState: { queries: [query], mutations: [mutation] } };
     const carried = carryQueuedWrites(old, CACHE_SCHEMA_VERSION, CACHE_MAX_AGE_MS)!;
-    expect(carried.buster).toBe('6');
+    expect(carried.buster).toBe('7');
     expect(carried.clientState.queries).toEqual([]);
     expect(carried.clientState.mutations).toEqual([mutation]);
   });
