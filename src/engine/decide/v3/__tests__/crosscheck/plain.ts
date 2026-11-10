@@ -830,7 +830,14 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   if (rest === 0n) return { code: 'fits_month', variant: fitVariant(net, false, false, tight), afterBuy: Number(after) };
   // Free money is what sits plus this month's room; less the room this purchase already took, it is the earlier money.
   const earlier = sitting + usualRaw - thisMonth + net.above;
-  if (rest > earlier) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
+  if (rest > earlier) {
+    // Crosscheck seed 349832153: "$1,500 is more than spare money plus the whole net, so it is Not yet" (SN-04), so the net is asked
+    // before Not yet here too, as on a day with records; with protection off or a $0 size its money counts like any other (SN-05,
+    // SN-07). The money test can pass while the ladder is short when stopped costs bring money back by the purchase date.
+    if (rest > earlier + net.lend) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
+    const need = maxC(0n, rest - maxC(0n, sitting + usualRaw - thisMonth) - net.above);
+    return { code: 'fits_uses_net', variant: net.off ? 'protection_off' : null, afterBuy: netDipFigure(usualLeft, cost, need, purchaseMargin(f, margin, pathLowest), net) };
+  }
   return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above, carriesCostlyDebt(f, rest), tight), afterBuy: Number(usualLeft - fromMonth) };
 }
 
