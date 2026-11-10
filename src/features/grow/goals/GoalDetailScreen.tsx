@@ -86,8 +86,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
     () => (row === null ? [] : goalHistoryOf(lineRows, id, row.opening_saved, row.created_at.slice(0, 10), today)),
     [lineRows, row, id, today]
   );
-  const goalLines = useMemo(() => (lineRows ?? []).filter((l) => l.goal_id === id), [lineRows, id]);
-  const record = useGoalRecordDetail({ householdId, ownerId: userId, today, lines: goalLines });
+  const record = useGoalRecordDetail({ householdId, ownerId: userId, today, allLines: lineRows, goalId: id });
 
   const card = [styles.card, { backgroundColor: colors.surface }, shadows.card];
 
@@ -226,6 +225,15 @@ export function GoalDetailScreen({ id }: { id: string }) {
 
         <View style={card} testID="goal-line-card">
           <Row label={t('grow.goals.detail.keptIn')} value={accountName} dense />
+          {account !== null && account.interest_rate != null && account.interest_rate !== '' ? (
+            <Row
+              label={t('grow.goals.detail.interestRow')}
+              value={t('grow.goals.detail.interestValue', { rate: account.interest_rate })}
+              dense
+              chevron
+              onPress={() => pushOnce(`/accounts/${account.id}` as Href)}
+            />
+          ) : null}
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
             {series === null
               ? t('grow.goals.detail.lineManual')
@@ -249,7 +257,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
 
         <View style={styles.buttons}>
           <View style={styles.buttonCell}>
-            <Pill label={t('grow.goals.detail.addMoney')} variant="primary" onPress={() => setMove('add')} />
+            <Pill label={t('grow.goals.detail.addMoney')} variant="secondary" onPress={() => setMove('add')} />
           </View>
           <View style={styles.buttonCell}>
             <Pill label={t('grow.goals.detail.takeOut')} variant="secondary" onPress={() => setMove('take')} />

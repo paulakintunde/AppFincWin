@@ -47,10 +47,11 @@ jest.mock('@/data/queries/growGoals', () => ({
 }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: mockSeries }) }));
 let mockSeries: unknown[] = [];
+let mockSavRate: string | null = null;
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({
     data: [
-      { id: 'a-sav', name: 'Savings account', currency: 'USD', archived_at: null },
+      { id: 'a-sav', name: 'Savings account', currency: 'USD', archived_at: null, interest_rate: mockSavRate },
       { id: 'a-chk', name: 'Everyday checking', currency: 'USD', archived_at: null },
     ],
   }),
@@ -162,6 +163,7 @@ beforeEach(() => {
   mockRows = [lisbon()];
   mockLines = [];
   mockLegs = [];
+  mockSavRate = null;
   mockSeries = [];
   mockRead = readWith(64_000);
   mockMove.mockReturnValue({ stepId: 's-move', transferId: 't1', reachedTarget: false });
@@ -321,6 +323,17 @@ describe('goal detail', () => {
     expect(screen.getByText('No money moved yet')).toBeTruthy();
     await fireEvent.press(screen.getAllByText('Add money').at(-1)!);
     expect(screen.getByText('Add to Trip to Lisbon')).toBeTruthy();
+  });
+
+  it('CRUD #8: with a rate on the kept-in account, "Interest a year" opens the account; with none there is no row', async () => {
+    const { pushOnce } = require('@/shell/navigation/pushOnce') as { pushOnce: jest.Mock };
+    await wrap(<GoalDetailScreen id="g1" />);
+    expect(screen.queryByText('Interest a year')).toBeNull();
+    mockSavRate = '4.1';
+    await wrap(<GoalDetailScreen id="g1" />);
+    expect(screen.getByText('4.1%')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Interest a year'));
+    expect(pushOnce).toHaveBeenCalledWith('/accounts/a-sav');
   });
 
   it('a goal made from a Decide check shows the From a Decide check card', async () => {

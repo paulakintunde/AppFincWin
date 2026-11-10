@@ -28,9 +28,12 @@ export function useGoalRecordDetail(args: {
   householdId: string | null;
   ownerId: string | null;
   today: string;
-  lines: readonly TransactionRow[];
+  /** The goal-tagged lines as read (only this goal's are used). */
+  allLines: readonly TransactionRow[] | undefined;
+  goalId: string | null;
 }): GoalRecordDetail {
-  const { householdId, ownerId, today, lines } = args;
+  const { householdId, ownerId, today, allLines, goalId } = args;
+  const lines = useMemo(() => (goalId === null ? [] : (allLines ?? []).filter((l) => l.goal_id === goalId)), [allLines, goalId]);
   const t = useT();
   const accounts = useAccounts(householdId ?? undefined).data;
   const transferIds = useMemo(
