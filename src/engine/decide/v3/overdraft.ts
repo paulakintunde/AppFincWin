@@ -75,6 +75,19 @@ export function overdraftFloor(accounts: readonly V3Account[] | undefined): Mino
   return minorFromBigInt(-sum, FN);
 }
 
+/**
+ * 06.1 CO-D-57: the overdraft not used yet, on its own line (never inside the other month figures): on each counted checking or
+ * current account, its limit less the part already drawn (a balance below 0), never below 0.
+ */
+export function unusedOverdraftOf(accounts: readonly V3Account[] | undefined): MinorUnits {
+  let sum = 0n;
+  for (const a of accountsOf(accounts)) {
+    const room = BigInt(limitOf(a)) - (a.balance < 0 ? BigInt(-a.balance) : 0n);
+    if (room > 0n) sum += room;
+  }
+  return minorFromBigInt(sum, FN);
+}
+
 /** The account a purchase is paid from: the counted checking or current account holding the most (ties: the first). */
 export function payerOf(accounts: readonly V3Account[] | undefined): V3Account | null {
   let best: V3Account | null = null;

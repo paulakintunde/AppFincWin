@@ -36,6 +36,22 @@ export interface DatedFlow {
   readonly amount: MinorUnits;
 }
 
+/**
+ * 06.1 UX-38 (D55): what one dated flow on the path is, so the "Every date, next 90 days" list (cash/timeline.ts) names each line
+ * from the same flows the path sums (never a second copy of the rules). The order is the list's order on one date.
+ */
+export const FLOW_KINDS = ['pay', 'income', 'bill', 'debt', 'saving', 'purchase', 'plan_payment', 'running_cost', 'sale', 'stopped_cost'] as const;
+export type FlowKind = (typeof FLOW_KINDS)[number];
+
+/** One dated flow with its label. amount is signed: money in is positive, money out negative. */
+export interface LabelledFlow {
+  readonly date: string;
+  readonly amount: MinorUnits;
+  readonly kind: FlowKind;
+  readonly seriesId: string | null;
+  readonly debtId: string | null;
+}
+
 const FN = 'cash/path';
 
 function monthIndex(ym: string): number {
@@ -84,10 +100,10 @@ export interface OpenCashPathInput {
   readonly drops?: DueDrops;
   /** 05.4 D-52: pay expected from history (historyPay) for an irregular earner with no pay series. Never in paidThisMonth. Absent = none. */
   readonly extraPays?: readonly { readonly date: string; readonly amount: MinorUnits }[];
-  /** 05.4 D-67: the regular saving / investing transfers still to leave the everyday account, on their dates. Absent = none. */
-  readonly savings?: readonly DatedFlow[];
-  /** 05.4 FIN-04 (debts.ts debtOutflows): card and loan minimums not paid through a series, on their due dates. Absent = none. */
-  readonly debts?: readonly DatedFlow[];
+  /** 05.4 D-67: the regular saving / investing transfers still to leave the everyday account, on their dates (06.1: with their series id when known). Absent = none. */
+  readonly savings?: readonly (DatedFlow & { readonly seriesId?: string })[];
+  /** 05.4 FIN-04 (debts.ts debtOutflows): card and loan minimums not paid through a series, on their due dates (06.1: with their debt id when known). Absent = none. */
+  readonly debts?: readonly (DatedFlow & { readonly debtId?: string })[];
 }
 
 function putFlow(net: bigint[], asOf: string, end: string, date: string, amount: bigint): void {
@@ -96,28 +112,56 @@ function putFlow(net: bigint[], asOf: string, end: string, date: string, amount:
   net[idx] = (net[idx] as bigint) + amount;
 }
 
-/** Everything about the path that does not depend on the opening balance or the purchase (05.4-13: runs once per prepare). */
-export function openCashPath(input: OpenCashPathInput): OpenCashPath {
-  const { asOf, days } = input;
+function checkDays(days: number): void {
   if (!Number.isInteger(days) || days < 1 || days > CASH_PATH_DAYS_V3) {
     throw new RangeError(`${FN}: days must be 1..${CASH_PATH_DAYS_V3}`);
   }
+}
+
+function label(date: string, amount: bigint, kind: FlowKind, seriesId: string | null, debtId: string | null): LabelledFlow {
+  return { date, amount: minorFromBigInt(amount, FN), kind, seriesId, debtId };
+}
+
+/** Everything about the path that does not depend on the opening balance or the purchase (05.4-13: runs once per prepare). */
+export function openCashPath(input: OpenCashPathInput): OpenCashPath {
+  const { asOf, days } = input;
+  checkDays(days);
   const end = addDays(asOf, days);
   const net = new Array<bigint>(days).fill(0n);
-  const put = (date: string, amount: bigint): void => putFlow(net, asOf, end, date, amount);
-  const pays: { readonly id: string; readonly date: string; readonly amount: bigint }[] = [];
+  // 06.1 UX-38: the path sums exactly the labelled flows the dated list shows, so the two cannot drift
+  const { flows, capped } = openCashFlows(input);
+  for (const f of flows) putFlow(net, asOf, end, f.date, BigInt(f.amount));
+  const spread: bigint[] = [];
+  for (let i = 0; i < days; i++) spread.push(spreadThrough(i, { erest: input.erest, e: input.e, asOf }));
+  return { asOf, days, end, net, spread, capped };
+}
+
+/**
+ * 06.1 UX-38: every price-independent dated flow of the path, labelled, in the order the path takes them, and the pay withheld by
+ * the caps. openCashPath sums exactly these. A pay the caps cut to nothing stays in the list with amount 0.
+ */
+export function openCashFlows(input: OpenCashPathInput): { readonly flows: readonly LabelledFlow[]; readonly capped: bigint } {
+  const { asOf, days } = input;
+  checkDays(days);
+  const end = addDays(asOf, days);
+  const flows: LabelledFlow[] = [];
+  const pays: { readonly id: string; readonly date: string; readonly amount: bigint; readonly history: boolean }[] = [];
+  // a pay expected from history (D-52) has no series: it is listed as income, not as a named pay
+  const put = (p: (typeof pays)[number], amount: bigint): void => {
+    flows.push(p.history ? label(p.date, amount, 'income', null, null) : label(p.date, amount, 'pay', p.id, null));
+  };
   for (const s of liveSeriesOf(input.series, asOf, 'pay')) {
     for (const d of seriesOccurrences(s, asOf, end)) {
       if (input.paidThisMonth.has(`${s.id}|${d}`)) continue; // H-01: a pay already logged is in the opening balance
-      pays.push({ id: s.id, date: d, amount: BigInt(s.amount) });
+      pays.push({ id: s.id, date: d, amount: BigInt(s.amount), history: false });
     }
   }
-  for (const x of input.extraPays ?? []) pays.push({ id: 'history', date: x.date, amount: BigInt(x.amount) }); // before the caps
+  for (const x of input.extraPays ?? []) pays.push({ id: 'history', date: x.date, amount: BigInt(x.amount), history: true }); // before the caps
   // D-35: a variable or seasonal earner's pay in a month never exceeds that month's expected income, so a high-season pay
   // figure cannot cushion a lean month. D-52: a steady-but-irregular earner with no pay series gets history pays (historyPay).
   let capped = 0n;
   if (input.payCaps == null) {
-    for (const p of pays) put(p.date, p.amount);
+    for (const p of pays) put(p, p.amount);
   } else {
     const remaining = new Map<string, bigint>();
     for (const [ym, cap] of input.payCaps) remaining.set(ym, BigInt(cap));
@@ -128,7 +172,7 @@ export function openCashPath(input: OpenCashPathInput): OpenCashPath {
       const landed = p.amount < left ? p.amount : left;
       remaining.set(ym, left - landed);
       capped += p.amount - landed;
-      put(p.date, landed);
+      put(p, landed);
     }
   }
   for (const role of ['bill', 'debt_payment'] as const) {
@@ -136,15 +180,15 @@ export function openCashPath(input: OpenCashPathInput): OpenCashPath {
       for (const d of seriesOccurrences(s, asOf, end)) {
         if (input.paidThisMonth.has(`${s.id}|${d}`)) continue; // a recorded payment wins: settled before any drop
         if ((input.drops?.has(s.id, d) ?? null) !== null) continue; // D-27, D-31, skips: one rule (month/dueDrops.ts)
-        put(d, -BigInt(s.amount));
+        flows.push(label(d, -BigInt(s.amount), role === 'bill' ? 'bill' : 'debt', s.id, null));
       }
     }
   }
-  for (const f of input.savings ?? []) put(f.date, -BigInt(f.amount)); // D-67: saving leaves the everyday account everywhere
-  for (const f of input.debts ?? []) put(f.date, -BigInt(f.amount)); // FIN-04: each minimum on its due date, once
-  const spread: bigint[] = [];
-  for (let i = 0; i < days; i++) spread.push(spreadThrough(i, { erest: input.erest, e: input.e, asOf }));
-  return { asOf, days, end, net, spread, capped };
+  // D-67: saving leaves the everyday account everywhere
+  for (const f of input.savings ?? []) flows.push(label(f.date, -BigInt(f.amount), 'saving', f.seriesId ?? null, null));
+  // FIN-04: each minimum on its due date, once
+  for (const f of input.debts ?? []) flows.push(label(f.date, -BigInt(f.amount), 'debt', null, f.debtId ?? null));
+  return { flows, capped };
 }
 
 /** Adds the opening balance and the purchase's dated flows to an open path. The open path is not changed. */
@@ -245,12 +289,32 @@ export function purchaseFlows(
   days: number,
   dayOneOn: string = asOf
 ): DatedFlow[] {
-  const out: DatedFlow[] = [];
-  if (purchase.dayOne !== 0) out.push({ date: dayOneOn, amount: purchase.dayOne });
+  return purchaseFlowsLabelled(purchase, asOf, days, dayOneOn).map(asOutflow);
+}
+
+/** 06.1 UX-38: purchaseFlows with labels (signed, money out negative); purchaseFlows is this with the labels dropped. */
+export function purchaseFlowsLabelled(
+  purchase: { readonly dayOne: MinorUnits; readonly schedule: Schedule | null; readonly share: ResolvedShare },
+  asOf: string,
+  days: number,
+  dayOneOn: string
+): LabelledFlow[] {
+  const out: LabelledFlow[] = [];
+  if (purchase.dayOne !== 0) out.push(outflow(dayOneOn, purchase.dayOne, 'purchase'));
   if (purchase.schedule !== null) {
     for (const p of paymentsInRange(purchase.schedule, asOf, addDays(asOf, days))) {
-      out.push({ date: p.date, amount: myPart(p.amount, purchase.share) });
+      out.push(outflow(p.date, myPart(p.amount, purchase.share), 'plan_payment'));
     }
   }
   return out;
+}
+
+/** A money-out amount (positive) as a labelled flow (negative). */
+export function outflow(date: string, amount: MinorUnits, kind: FlowKind): LabelledFlow {
+  return { date, amount: minorUnits(-amount), kind, seriesId: null, debtId: null };
+}
+
+/** A labelled flow back as the money-out DatedFlow the path's purchase side takes (the sign flipped back exactly). */
+export function asOutflow(f: Pick<LabelledFlow, 'date' | 'amount'>): DatedFlow {
+  return { date: f.date, amount: minorUnits(-f.amount) };
 }

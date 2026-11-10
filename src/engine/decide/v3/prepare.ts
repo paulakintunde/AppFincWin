@@ -12,7 +12,21 @@ import { carriedOverdraft, homeFigure, openingBalance, rebased, withCarried } fr
 import { maxCheckPrice } from './bandEdges';
 import { CASH_PATH_DAYS_V3, CODE_PRECEDENCE, MATCH_DAYS, PAY_MATCH_DAYS } from './constants';
 import { mergeConfidence } from './confidence/reasons';
-import { applyPurchaseFlows, cashCheck, nextPayDate, openCashPath, payDatesIn, withNet, type CashCheck, type DatedFlow, type OpenCashPath } from './cash/path';
+import {
+  applyPurchaseFlows,
+  asOutflow,
+  cashCheck,
+  nextPayDate,
+  openCashFlows,
+  openCashPath,
+  payDatesIn,
+  withNet,
+  type CashCheck,
+  type DatedFlow,
+  type LabelledFlow,
+  type OpenCashPath,
+  type OpenCashPathInput,
+} from './cash/path';
 import { debtOutflows, debtsInMonth, debtsNotRecorded, dueDayFacts, type DebtFlow, type DebtOutflows } from './debts';
 import { essentialCosts, essentialSpendingOf } from './essentialCosts';
 import { resolveSafetyNet, type ResolvedNet } from './safetyNet';
@@ -25,15 +39,15 @@ import { judge, type BorrowingCtx } from './judge/judge';
 import { uncoveredIncomeMonths } from './judge/needsInput';
 import { withLiveEmergency } from './funds/emergency';
 import { ownEnvelope } from './funds/envelopes';
-import { buildPurchase, purchaseCashFlows } from './judge/purchase';
+import { buildPurchase, purchaseCashFlowsLabelled } from './judge/purchase';
 import { purchaseDateOf } from './fullCost/purchaseDate';
-import { replacesEffect, replacesOutflows, type ReplacesEffect } from './fullCost/replaces';
+import { replacesEffect, replacesFlowsLabelled, type ReplacesEffect } from './fullCost/replaces';
 import { withRedatedRefunds } from './month/refunds';
 import { recordsSynced } from './month/freshness';
 import { dueDrops } from './month/dueDrops';
 import { buildMonthModel } from './month/model';
 import { historyPay, type HistoryPay } from './month/historyPay';
-import { billsHeldTotal, cappedSpare, confirmedUnspent, savingTransfers, spareInAccount } from './moneySource';
+import { billsHeldTotal, cappedSpare, confirmedUnspent, savingTransferFlows, spareInAccount } from './moneySource';
 import { incomeThisMonth, type IncomeInput } from './month/incomeProfile';
 import { expectedFor } from './month/incomePattern';
 import { liveSeriesOf, seriesOccurrences } from './month/series';
@@ -158,7 +172,7 @@ function payCapsOf(inputs: V3Inputs, month: MonthModel): ReadonlyMap<string, Min
 }
 
 /** One reading of the inputs, with everything that does not depend on the check. */
-interface Reading {
+export interface Reading {
   readonly inputs: V3Inputs;
   readonly month: MonthModel;
   readonly funds: Funds;
@@ -192,22 +206,20 @@ export interface Prepared {
   readonly unrated: readonly string[];
 }
 
-function readingOf(inputs: V3Inputs): Reading {
-  const built = buildMonthModel(inputs);
-  // the funds do not depend on the check except for the purchase's own envelope, which judgeReading swaps in
-  const funds = buildFunds(inputs, built, null);
+/** The open 90-day path's input for one reading of the inputs (built: the reading's month model), with the parts readingOf keeps. */
+function openInputOf(inputs: V3Inputs, built: MonthModel): { readonly input: OpenCashPathInput; readonly hp: HistoryPay | null; readonly paid: ReadonlySet<string>; readonly debts: DebtOutflows } {
   // 05.4 D-52: an irregular earner with no pay series expects pay on the usual payday at the low-month amount.
   const hp = historyPay(inputs);
   const histDates = hp?.dates ?? [];
   const paid = paidOccurrences(inputs);
   // 05.4 D-67: the regular saving / investing transfers leave the everyday account everywhere: the open path takes them, so the
   // main cash path, the month-end figure (spareInAccount, the D-56 cap) and the account-only move-by path (D-58) all do.
-  const savings = savingTransfers(inputs.series, savedOccurrences(inputs), inputs.asOf, CASH_PATH_DAYS_V3);
+  const savings = savingTransferFlows(inputs.series, savedOccurrences(inputs), inputs.asOf, CASH_PATH_DAYS_V3);
   // 05.4 FIN-04: card and loan minimums on their due dates, each once (a minimum paid through a series lands through it).
   const ym = yearMonthOf(inputs.asOf);
   const debts = debtOutflows(inputs, inputs.months.find((m) => m.month === ym)?.lines ?? [], CASH_PATH_DAYS_V3);
   const drops = dueDrops(inputs);
-  const open = openCashPath({
+  const input: OpenCashPathInput = {
     asOf: inputs.asOf,
     days: CASH_PATH_DAYS_V3,
     series: inputs.series,
@@ -219,7 +231,27 @@ function readingOf(inputs: V3Inputs): Reading {
     extraPays: histDates.map((date) => ({ date, amount: (hp as HistoryPay).amount })),
     savings,
     debts: debts.flows,
-  });
+  };
+  return { input, hp, paid, debts };
+}
+
+/**
+ * 06.1 UX-38, CO-D-57: the labelled flows the reading's open path sums (cash/path.ts openCashFlows over the same input readingOf
+ * built it from), read again from the reading's inputs: a reading keeps no function, and the month model's withCarried changes
+ * only the month figure and its notices, never the spread or the pay caps.
+ */
+export function openFlowsOf(r: Reading): readonly LabelledFlow[] {
+  return openCashFlows(openInputOf(r.inputs, r.month).input).flows;
+}
+
+function readingOf(inputs: V3Inputs): Reading {
+  const built = buildMonthModel(inputs);
+  // the funds do not depend on the check except for the purchase's own envelope, which judgeReading swaps in
+  const funds = buildFunds(inputs, built, null);
+  const { input, hp, paid, debts } = openInputOf(inputs, built);
+  const histDates = hp?.dates ?? [];
+  const ym = yearMonthOf(inputs.asOf);
+  const open = openCashPath(input);
   // 05.4 D-86 (FIN-09b): an overdraft carried into the month is paid back from this month first; every use of the month reads it.
   const atMonthEnd = spareInAccount(open, funds.spending);
   const month = withCarried(built, carriedOverdraft(openingBalance(funds.spending, inputs.months.find((m) => m.month === ym)?.lines ?? [], ym, debts.paidUnrecorded)));
@@ -275,8 +307,13 @@ export interface JudgeOpts {
   readonly savedFor?: number;
 }
 
-function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
-  const { inputs: inputs0, month } = r;
+/**
+ * The purchase side of one judgement on one reading: the purchase (less a sale netted against day one), what it replaces, the funds,
+ * the opening balance and the labelled dated flows the path takes. 06.1 UX-38: judgeReading and the dated list (cashTimeline via
+ * timelineOf) both read this one function, so the list's flows are the path's flows.
+ */
+function purchaseSideOf(r: Reading, check: CheckV2, opts: JudgeOpts) {
+  const inputs0 = r.inputs;
   const pb0 = buildPurchase(check, {
     asOf: inputs0.asOf,
     thresholds: inputs0.thresholds,
@@ -296,18 +333,24 @@ function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
     rep === null
       ? pb0
       : { ...pb0, purchase: p0 === null || netted === 0 ? p0 : { ...p0, dayOne: minorUnits(p0.dayOne - netted) }, facts: [...pb0.facts, ...rep.facts] };
-  const repFlows: DatedFlow[] = rep === null ? [] : replacesOutflows(rep, netted);
+  const repFlows: LabelledFlow[] = rep === null ? [] : replacesFlowsLabelled(rep, netted);
   const funds1 = rep === null ? r.funds : withoutStoppedHolds(r.funds, rep.heldStops);
   const savedFor = opts.savedFor ?? 0;
   const funds: Funds = { ...funds1, ownEnvelope: minorUnits(ownEnvelope(inputs.envelopes, check.envelopeId) + savedFor) };
   // D-54: spending money plus the purchase's own envelope; other put-aside money never cushions the check. 05.4 D-35 (retires
   // D-63's purpose gate): money saved above the net's size is spare and counts; the protected part only lends when the path
   // would otherwise fail (withNet), whatever the purchase's purpose (D-41, D-49).
-  const net = r.net;
-  const opening = minorUnits(funds.spending + funds.ownEnvelope + net.aboveSize);
+  const opening = minorUnits(funds.spending + funds.ownEnvelope + r.net.aboveSize);
   // 05.4 BO-05 / D-42 (05.4-26): the up-front money leaves on the purchase date; running costs fall on their own dates.
   const purchaseDate = purchaseDateOf(check, inputs.asOf);
-  const flows = [...(pb.purchase ? purchaseCashFlows(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3, purchaseDate) : []), ...repFlows];
+  const labelled = [...(pb.purchase ? purchaseCashFlowsLabelled(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3, purchaseDate) : []), ...repFlows];
+  return { inputs, pb, rep, funds, savedFor, opening, purchaseDate, labelled };
+}
+
+function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
+  const { month, net } = r;
+  const { inputs, pb, rep, funds, savedFor, opening, purchaseDate, labelled } = purchaseSideOf(r, check, opts);
+  const flows: DatedFlow[] = labelled.map(asOutflow);
   const path = applyPurchaseFlows(r.open, opening, flows);
   // 05.4 D-56 / D-58: the everyday accounts alone (no money above the net's size), with the purchase; the regular saving transfers
   // are already in the open path (D-67), so they are taken once here as on the main path.
@@ -376,21 +419,20 @@ function readyKey(r: ReadyBy | null): string {
  * sorted union and the basis is built from the smaller reading (mergeConfidence), so a thin month can never make either surer.
  * 05.4 FIN-08 (settled dispute 4, I62): when the two readings tie, the one that does not rest on the user's answer wins.
  */
-export function stricterOf(a: Evaluation, b: Evaluation): Evaluation {
+const rests = (e: Evaluation): boolean => e.result.facts.some((f) => f.code === 'rests_on_your_answer');
+
+/** Which of two readings' evaluations stricterOf keeps (b when it is stricter, or ties and does not rest on the user's answer). */
+function pickOf(a: Evaluation, b: Evaluation): { readonly pick: Evaluation; readonly bStricter: boolean } {
   const ra = CODE_PRECEDENCE.indexOf(a.result.code);
   const rb = CODE_PRECEDENCE.indexOf(b.result.code);
-  const rests = (e: Evaluation): boolean => e.result.facts.some((f) => f.code === 'rests_on_your_answer');
-  let pick = a;
-  let bStricter = false;
-  if (rb < ra) {
-    pick = b;
-    bStricter = true;
-  } else if (rb === ra && a.result.code === 'not_yet' && readyKey(b.result.readyBy) > readyKey(a.result.readyBy)) {
-    pick = b;
-    bStricter = true;
-  } else if (rb === ra && rests(a) && !rests(b)) {
-    pick = b;
-  }
+  if (rb < ra) return { pick: b, bStricter: true };
+  if (rb === ra && a.result.code === 'not_yet' && readyKey(b.result.readyBy) > readyKey(a.result.readyBy)) return { pick: b, bStricter: true };
+  if (rb === ra && rests(a) && !rests(b)) return { pick: b, bStricter: false };
+  return { pick: a, bStricter: false };
+}
+
+export function stricterOf(a: Evaluation, b: Evaluation): Evaluation {
+  const { pick, bStricter } = pickOf(a, b);
   const other = pick === a ? b : a;
   // The losing reading's yes does not follow the winner: its user_said_cover reason is not merged in (the winner does not rest on it).
   const otherConf =
@@ -485,4 +527,24 @@ export function judgeCheckWith(p: Prepared, check: CheckV2, opts: JudgeOpts): Ev
   // 05.4 CMP-F04 (D-123, 05.4-38): the money-help pointer goes last, read from the finished answer; it never changes it (I76).
   const help = freeHelpFacts(result, p.inputs.region);
   return { ...chosen, result: { ...result, facts: [...result.facts, ...help], caveats } };
+}
+
+/** 06.1 UX-38 (D55): what the dated list reads for one check: the open path, the opening balance and every labelled flow on it. */
+export interface TimelineSource {
+  readonly open: OpenCashPath;
+  readonly opening: MinorUnits;
+  /** The open path's flows (openFlowsOf), then the purchase side's (purchaseSideOf): the flows the cash check's path sums. */
+  readonly flows: readonly LabelledFlow[];
+}
+
+/** The reading judgeCheck keeps for the check (D-42: the stricter of two), with its flows; the same functions the judgement reads. */
+export function timelineOf(p: Prepared, check: CheckV2): TimelineSource {
+  const [first, second] = p.readings as readonly [Reading, Reading | undefined];
+  let r = first;
+  if (second !== undefined) {
+    const a = judgeReading(first, check, {});
+    if (pickOf(a, judgeReading(second, check, {})).pick !== a) r = second;
+  }
+  const side = purchaseSideOf(r, check, {});
+  return { open: r.open, opening: side.opening, flows: [...openFlowsOf(r), ...side.labelled] };
 }

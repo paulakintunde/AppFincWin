@@ -49,6 +49,9 @@ export { saveForItReadyDate } from './fullCost/saveForIt';
 export { stoppedCostFlows, saleFlows } from './fullCost/replaces';
 // 05.4 FIN-09 (05.4-24, D-22..D-24): Decide Home's month figure, the same one every answer's afterBuy starts from (screens in 08.1).
 export { homeFigure, monthAfterPlans } from './afterBuy';
+// 06.1 CO-D-57: built by 06.1 to the 05.5 month-picture contract
+export { monthPicture, pastMonthBars } from './month/picture';
+export type { MonthPicture, MonthBar } from './month/picture';
 export type { Prepared } from './prepare';
 export { unspentSum } from './funds/build';
 export type { Evaluation } from './evaluate';

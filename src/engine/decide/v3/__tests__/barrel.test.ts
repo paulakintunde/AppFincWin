@@ -161,10 +161,12 @@ export const V3_RUNTIME_EXPORTS = [
   'lookupTaxDefault', // 05.4-25 FIN-27 (D-19, ARC-25): the one owner of region tax defaults
   'maxCheckPrice', // 05.4-28 ENG-15 (D-109): the price limit in a currency
   'monthAfterPlans', // 05.4-24 FIN-09 (D-22)
+  'monthPicture', // 06.1 CO-D-57: built to the 05.5 month-picture contract
   'monthlyEquivalentOf',
   'myShareOf',
   'orderOptions', // 05.4-28 D-110
   'parseCheckV2',
+  'pastMonthBars', // 06.1 UX-43
   'planCard',
   'prepare',
   'questionSpec',
