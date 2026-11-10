@@ -24,7 +24,7 @@ import {
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
-import { stampSettingsPatch } from '@/features/decide/home/settingsPatch';
+import { stampSettingsPatch } from '@/features/decide/settingsPatch';
 import { writeClient } from './writeClient';
 import { newStepId, recordUndoStepSafely } from './undoCapture';
 import { confirmedSettings, isOldestQueued, queuedSettingsPatches, withQueued } from './decideSettingsQueue';
