@@ -50,7 +50,8 @@ const ALLOWED: Record<string, string> = {
 describe('D-106 wording', () => {
   // 05.4 D-116 (owner, 2026-11-05; UX-08 and the 05.4 answer names): Decide v3 says "short", never "overspent", so decide.v3 is out
   // of this guard. The old decide.* keys keep D-106 until 05.5 deletes them; decideCopy.test.ts bans "overspent" in decide.v3.
-  const all = leaves(en.decide, 'decide').filter((l) => !l.path.startsWith('decide.v3.'));
+  // 06.1-05 (D-18): the new decide.screens.* keys follow the v3 wording ("left", "short"), so they are out of this guard too.
+  const all = leaves(en.decide, 'decide').filter((l) => !l.path.startsWith('decide.v3.') && !l.path.startsWith('decide.screens.'));
 
   it('D-106 no month figure under decide.* is worded short or left', () => {
     const stray = all.filter(({ path, value }) => MATCH.test(words(value)) && !(path in ALLOWED)).map(({ path, value }) => `${path}: ${value}`);

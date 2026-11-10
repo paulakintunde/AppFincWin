@@ -49,6 +49,7 @@
  *   home.accounts.seeAll are Claude-drafted, awaiting review.
  */
 import { EXCHANGE_RATE_API_ATTRIBUTION } from '../mandatedCopy';
+import { decideScreens } from './decideScreens';
 
 const en = {
   ordinal: { one: '{{n}}st', two: '{{n}}nd', few: '{{n}}rd', other: '{{n}}th' },
@@ -1752,6 +1753,8 @@ const en = {
   },
   // Phase 5 (Decide). Claude-drafted, pending user review (copyStatus). Declarative voice only (DCU-09).
   decide: {
+    // 06.1: new Decide screens (D-18); signed under D-08
+    screens: decideScreens,
     // 05.2: Decide setup, settings, setup page and sheets. Copy is verbatim from 05.2-UI-SPEC.md.
     setup: {
       shell: {

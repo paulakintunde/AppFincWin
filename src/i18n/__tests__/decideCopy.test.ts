@@ -74,6 +74,43 @@ const ACTION_LABELS = new Set([
   'income.method.optionSteady', // choice-card title: "Pay myself a steady amount."
   'activity.incomeTag.save', // button: "Save income type"
   'activity.refund.emptyBody', // empty-search hint, UI-SPEC wording: "Try a payee name or an amount."
+  // 06.1-05 (D-18): decide.screens buttons, item and rule names and toasts that open with one of these verbs. Each names an
+  // action in the app or a rule the user set, not advice about money.
+  'decide.screens.common.saveAndClose', // button
+  'decide.screens.common.error.retry', // button: "Try the check again" (N23)
+  'decide.screens.common.error.retryA11y', // the same button’s accessibility label
+  'decide.screens.home.examples.title', // heading of the example chips: "Try an example"
+  'decide.screens.sheetsHome.rulesCard.keepAtLeast', // rule name: "Keep at least {{amount}} left each month"
+  'decide.screens.sheetsHome.rulesCard.changedSub', // row subline naming what can change: "Pay, a bill or a one-off cost"
+  'decide.screens.sheetsHome.openCheck.saveForIt', // action row
+  'decide.screens.sheetsHome.rule.save', // button
+  'decide.screens.sheetsHome.rule.keep.title', // rule name (sheet title)
+  'decide.screens.sheetsHome.rule.keep.field', // field caption: the rule name
+  'decide.screens.sheetsHome.addRule.keep', // rule kind name
+  'decide.screens.sheetsHome.changed.save', // button
+  'decide.screens.answer.options.later', // option chip: "Buy later" (equal-weight option, UX-10)
+  'decide.screens.answer.worked.payAndBills', // source row name: "Pay and bills"
+  'decide.screens.answerDetail.later.title', // sheet title: "Buy later"
+  'decide.screens.answerActions.bar.saveForIt', // action bar button
+  'decide.screens.setup.items.pay', // setup item name: "Pay and payday"
+  'decide.screens.setupPayBills.pay.title', // setup item name: "Pay and payday"
+  'decide.screens.setupPayBills.pay.countSteady', // choice title, same wording as income.method.optionSteady
+  'decide.screens.setupPayBills.pay.save', // button
+  'decide.screens.setupPayBills.payEdit.save', // button
+  'decide.screens.setupPayBills.payEdit.toast', // toast naming what was saved: "Pay saved: ..."
+  'decide.screens.setupPayBills.bills.save', // button
+  'decide.screens.setupPayBills.billEdit.save', // button
+  'decide.screens.setupOthers.debts.save', // button
+  'decide.screens.setupOthers.net.save', // button
+  'decide.screens.setupOthers.rules.keepAtLeast', // rule name
+  'decide.screens.setupOthers.rules.save', // button
+  'decide.screens.setupOthers.records.save', // button
+  'decide.screens.sheetsInput.quick.save', // button
+  'decide.screens.sheetsInput.plan.save', // button
+  'decide.screens.sheetsInput.often.save', // button
+  'decide.screens.sheetsCosts.sale.save', // button
+  'decide.screens.safetyNet.unlock.keep', // dialog choice: "Keep it locked"
+  'decide.screens.safetyNet.firstAnswer.save', // button
 ]);
 // 2026-10-23 walkthrough: sentences, hints and placeholders are declarative ("A price comes first"), never an order to the
 // user ("Add a price to continue", "Type the rate"). Buttons, dialog titles and field captions that name an action in the
@@ -123,6 +160,45 @@ const CONTROL_LABELS = new Set([
   'income.paid.intro', // step intro: "Choose all that apply."
   'income.method.intro', // step intro: "Pick the one that fits you. Nothing is chosen for you."
   'income.other.intro', // step intro: "Choose all that apply, or None."
+  // 06.1-05 (D-18): decide.screens buttons, links, sheet titles and accessibility labels (06.1-UI-SPEC Copywriting Contract).
+  'decide.screens.common.pickDate', // choice and sheet opener: "Pick a date"
+  'decide.screens.home.moreDetails.tileExpenseA11y', // tile accessibility label
+  'decide.screens.home.moreDetails.tileLoanA11y', // tile accessibility label
+  'decide.screens.home.moreDetails.tileSavingsA11y', // tile accessibility label
+  'decide.screens.home.moreDetails.tileIncomeA11y', // tile accessibility label
+  'decide.screens.sheetsHome.openChecks.addPurchaseA11y', // link accessibility label
+  'decide.screens.sheetsHome.openCheck.choosePay', // action row
+  'decide.screens.sheetsHome.addRule.title', // sheet title
+  'decide.screens.sheetsHome.addRule.add', // button
+  'decide.screens.stepper.kind.addOwn', // tile title
+  'decide.screens.answerDetail.stops.add', // button
+  'decide.screens.answerActions.goal.changeAmount', // link
+  'decide.screens.answerActions.bought.title', // sheet title
+  'decide.screens.answerActions.bought.add', // button
+  'decide.screens.answerActions.bought.addBill', // button
+  'decide.screens.setupPayBills.otherIncome.title', // sheet title
+  'decide.screens.setupPayBills.otherIncome.add', // button
+  'decide.screens.setupPayBills.billAdd.title', // sheet title
+  'decide.screens.setupPayBills.billAdd.add', // button
+  'decide.screens.setupOthers.net.changeSize', // link
+  'decide.screens.setupOthers.records.addSince', // link to Activity quick add
+  'decide.screens.setupOthers.records.addAsYouGo', // button
+  'decide.screens.sheetsInput.date.title', // sheet title
+  'decide.screens.sheetsInput.quick.add', // button
+  'decide.screens.sheetsInput.quick.expense.title', // sheet title
+  'decide.screens.sheetsInput.quick.loan.title', // sheet title
+  'decide.screens.sheetsInput.quick.savings.title', // sheet title
+  'decide.screens.sheetsInput.quick.income.title', // sheet title
+  'decide.screens.sheetsCosts.own.running.title', // sheet title
+  'decide.screens.sheetsCosts.own.running.add', // button
+  'decide.screens.sheetsCosts.own.stop.title', // sheet title
+  'decide.screens.sheetsCosts.own.stop.add', // button
+  'decide.screens.sheetsCosts.own.oneOff.title', // sheet title
+  'decide.screens.sheetsCosts.own.oneOff.add', // button
+  'decide.screens.sheetsCosts.own.kind.title', // sheet title
+  'decide.screens.sheetsCosts.own.kind.add', // button
+  'decide.screens.sheetsCosts.own.addItem', // button
+  'decide.screens.safetyNet.settings.changeSize', // link
 ]);
 // 05.4-37: the 05.4 copy rules for decide.v3 (and the D-64 legal keys). Each entry names its rule.
 const V3_COMPLIANCE: readonly RegExp[] = [
@@ -217,7 +293,8 @@ describe('decide copy (DCU-09)', () => {
   });
 
   it('names no tab that does not exist (Grow)', () => {
-    expect(leaves.filter((l) => /\bGrow\b/.test(l.value)).map((l) => l.path)).toEqual([]);
+    // 06.1 D-06: the new Decide screens ship in one release with Grow, so decide.screens.* may name it.
+    expect(leaves.filter((l) => /\bGrow\b/.test(l.value) && !l.path.startsWith('decide.screens.')).map((l) => l.path)).toEqual([]);
   });
 
   it('every listed action label exists and still opens with its verb (WR-D04)', () => {

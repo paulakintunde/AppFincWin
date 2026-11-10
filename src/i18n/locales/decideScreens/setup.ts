@@ -1,0 +1,70 @@
+/**
+ * 06.1-05 (D-18): Decide setup banner (D30, three states), checklist (D31), setup done (D38) and the quick-estimates first
+ * answer (D39). Owner plans: 17, then 39 (in turn). The six items' own screens are in setupPayBills.ts and setupOthers.ts;
+ * the first-answer safety-net question (D-14) is in safetyNet.ts. Draft copy, signed under D-08.
+ * Item 5 is "Your money rules" (D-19). No household line on D38 (D-03).
+ */
+export const setup = {
+  banner: {
+    newTitle: 'Set up Decide',
+    newSub: '6 short steps, about 4 minutes. Until then, answers use quick estimates.',
+    start: 'Start setup',
+    checkFirst: 'Check a price first',
+    rowTitle: 'Decide setup · {{count}} of 6 done',
+    rowNext: 'Next: {{next}} · about 1 minute',
+    rowA11y: 'Decide setup, {{count}} of 6 done. Next: {{next}}.',
+    doneTitle: 'Setup done. Answers use your records.',
+    doneLink: 'See what Decide uses',
+  },
+  checklist: {
+    title: 'Decide setup',
+    sub: 'Answers rest on these. Do them in any order. Each one saves as you go.',
+    doneTitle: 'Setup done',
+    doneSub: 'Decide uses all of these. Each one can change at any time.',
+    progress: '{{count}} of 6 done',
+    note: 'Nothing here moves money. You can change any of it later.',
+    continue: 'Continue: {{next}}',
+    statusDone: 'Done',
+  },
+  items: {
+    pay: 'Pay and payday',
+    bills: 'Regular bills',
+    debts: 'Debts',
+    net: 'Safety net',
+    rules: 'Your money rules',
+    records: 'Records',
+  },
+  status: {
+    payDone: 'Done · {{amount}} on the {{ordinal}}',
+    billsDone_one: 'Done · {{count}} bill, {{monthly}} a month',
+    billsDone_other: 'Done · {{count}} bills, {{monthly}} a month',
+    debtsOpen: '{{count}} to finish · {{debt}} has no due day',
+    debtsDone: 'Done · {{debt}}, due on the {{ordinal}}',
+    debtsNone: 'Done · no other debts',
+    netDone: 'Done · {{amount}}, set in Grow',
+    netNotSet: 'Done · not set yet',
+    rulesDone_one: 'Done · {{count}} rule',
+    rulesDone_other: 'Done · {{count}} rules',
+    rulesNone: 'Done · no rules',
+    recordsOpen: 'Up to {{date}} · add what you spent since',
+    recordsDone: 'Done · records up to {{date}}',
+    open: 'Not done yet',
+  },
+  done: {
+    title: 'Done',
+    sub: 'Decide now uses your records.',
+    netAndGoals: 'Savings goals and your safety net live in Grow',
+    loans: 'Loans live in Grow',
+  },
+  quick: {
+    title: 'A first answer from three estimates',
+    sub: 'Before your records are ready. Round numbers are fine.',
+    income: 'About how much comes in each month?',
+    bills: 'About how much goes on bills?',
+    everyday: 'About how much on everyday spending?',
+    live: 'A usual month leaves about {{left}} by these estimates.',
+    liveShort: 'A usual month is about {{short}} short by these estimates.',
+    see: 'See the answer now',
+    foot: 'Quick estimates count only until your records cover a full month.',
+  },
+} as const;

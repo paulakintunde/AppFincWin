@@ -1,0 +1,75 @@
+/**
+ * 06.1-05 (D-18): the More detail screens and sheets under an answer: Full cost (D54), Every date (D55), Month by month (D56),
+ * Your month after buying (D58 / N14), Costs that stop (D59 / N17), Buy later (D60), Cheaper one (D61) and Cash and
+ * installments side by side (D62 / N16). Owner plan: 20. Draft copy, signed under D-08.
+ */
+export const answerDetail = {
+  fullCost: {
+    title: 'Full cost, with tax',
+    price: 'Price',
+    tax: 'Sales tax',
+    fees: 'One-off fees',
+    total: 'Full cost',
+  },
+  everyDate: {
+    title: 'Every date, next 90 days',
+    sub: 'Money in and out of {{account}}, with this purchase.',
+    lowest: 'Lowest point',
+    payday: 'Payday',
+    thisPurchase: 'This purchase',
+  },
+  monthByMonth: {
+    title: 'Month by month',
+    sub: 'What each month leaves, with this purchase.',
+    subSaving: 'Spare money saved toward it.',
+  },
+  monthAfter: {
+    title: 'Your month after buying',
+    thisMonth: 'This month',
+    usualMonth: 'A usual month',
+    comesIn: 'Comes in',
+    goesOut: 'Goes out',
+    thisPurchase: 'This purchase',
+    left: 'Left',
+    short: 'Short',
+  },
+  stops: {
+    title: 'Costs that stop when you buy',
+    sub: 'Money you no longer spend once you have it.',
+    none: 'None counted',
+    replaceQ: 'Does it replace something?',
+    replaceExample: 'For example, a subscription it makes unneeded.',
+    add: 'Add a cost that stops',
+    newCosts: 'New costs',
+    stoppedCosts: 'Costs that stop',
+    change: 'Change each month',
+  },
+  later: {
+    title: 'Buy later',
+    sub: 'Each date gives a new answer. Spare money only; your safety net stays locked.',
+    use: 'Use this date',
+  },
+  cheaper: {
+    title: 'A cheaper one',
+    sub: 'The same date and way to pay, at a lower price.',
+    price: 'Cheaper price',
+    years: 'Years of use',
+    check: 'Check at this price',
+  },
+  sideBySide: {
+    title: 'Cash or installments',
+    cash: 'Cash',
+    installments: 'Installments',
+    answer: 'Answer',
+    upFront: 'Paid up front',
+    eachMonth: 'Each month',
+    inAll: 'Paid in all',
+    usualLeaves: 'A usual month leaves',
+    net: 'Safety net',
+    netNotTouched: 'Not touched',
+    netNotCounted: 'Not counted',
+    planTotal: 'The plan total, as you entered it.',
+    seeCash: 'See the cash answer',
+    seeInstallments: 'See the installments answer',
+  },
+} as const;
