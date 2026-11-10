@@ -34,7 +34,9 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // 06 Grow: goals, debts, accounts and series gained columns and holdings are new -- bumped 3 -> 4.
 // 06-20 phase gate: later Grow plans changed persisted shapes after that bump -- bumped 4 -> 5.
 // 06-30: transactions gained debt_id (D-33) -- bumped 5 -> 6.
-export const CACHE_SCHEMA_VERSION = '6';
+// 06-37 gate: 06-30 (recordDebtOneOff mutation key) and 06-36 (debtPayments query key) changed src/data/keys.ts after that
+// bump -- bumped 6 -> 7.
+export const CACHE_SCHEMA_VERSION = '7';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's
