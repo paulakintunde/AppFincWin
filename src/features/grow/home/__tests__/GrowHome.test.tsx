@@ -81,6 +81,12 @@ jest.mock('@/features/grow/investing/useInvestingRead', () => ({
     model: { holdings: [], totals: { value: 0, putIn: 0, gain: 0, gainPercentTenths: null }, monthlyIn: 0, unconverted: 0, anyStale: false },
   }),
 }));
+// 06-33: the segment also reads the raw holding rows for its row actions (edit, remove).
+jest.mock('@/data/queries/growHoldings', () => ({
+  useHoldingRows: () => ({ data: [] }),
+  useHoldingLotRows: () => ({ data: [] }),
+}));
+jest.mock('@/data/mutations/growHoldings', () => ({ useEditHolding: () => ({ edit: jest.fn(), remove: jest.fn() }) }));
 let mockFlags: Record<string, boolean> | null = null;
 jest.mock('@/features/grow/growFeatureFlags', () => {
   const actual = jest.requireActual('@/features/grow/growFeatureFlags');
