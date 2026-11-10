@@ -1,5 +1,5 @@
 import { ACCENTS } from '../accents';
-import { colors } from '../tokens';
+import { colors, stateColors, stateMuted } from '../tokens';
 import { contrastRatio } from '../contrast';
 
 describe('contrastRatio (WCAG 2.x relative luminance)', () => {
@@ -35,4 +35,39 @@ describe('status colours meet WCAG AA (4.5:1) text contrast (02-polish item 5)',
       });
     }
   }
+});
+
+describe('06.1 D-16 state colours', () => {
+  const tones = Object.entries(stateColors);
+  const grounds = { surface: colors.surface, canvas: colors.canvas, fill1: colors.fill1 } as const;
+
+  for (const [tone, pair] of tones) {
+    it(`${tone} text on its own tint meets AA`, () => {
+      expect(contrastRatio(pair.color, pair.tint)).toBeGreaterThanOrEqual(4.5);
+    });
+    it(`muted text and ink on the ${tone} tint meet AA`, () => {
+      expect(contrastRatio(stateMuted, pair.tint)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(colors.ink, pair.tint)).toBeGreaterThanOrEqual(4.5);
+    });
+    for (const [ground, hex] of Object.entries(grounds)) {
+      it(`${tone} text on ${ground} meets AA`, () => {
+        expect(contrastRatio(pair.color, hex)).toBeGreaterThanOrEqual(4.5);
+      });
+    }
+  }
+
+  it('documents why short text is #933720: the short stroke on its tint passes 3:1 for fills but not 4.5:1 for text', () => {
+    const r = contrastRatio(stateColors.short.stroke, stateColors.short.tint);
+    expect(r).toBeGreaterThanOrEqual(3.0);
+    expect(r).toBeLessThan(4.5);
+  });
+
+  it('has seven distinct text colours', () => {
+    expect(new Set(tones.map(([, p]) => p.color)).size).toBe(7);
+  });
+
+  it('every value is an upper-case 6-digit hex', () => {
+    const all = [stateMuted, ...tones.flatMap(([, p]) => [p.color, p.stroke, p.tint])];
+    for (const hex of all) expect(hex).toMatch(/^#[0-9A-F]{6}$/);
+  });
 });
