@@ -106,12 +106,17 @@ export function moveMoneyBy(withPurchaseAccountOnly: CashPathV3, cap: MinorUnits
  * 'investing' series that is not flexible, less the occurrences already logged ("seriesId|date" in paidThisMonth).
  */
 export function savingTransfers(series: readonly V3Series[], paidThisMonth: ReadonlySet<string>, asOf: LocalDate, days: number): DatedFlow[] {
-  const out: DatedFlow[] = [];
+  return savingTransferFlows(series, paidThisMonth, asOf, days).map((f) => ({ date: f.date, amount: f.amount }));
+}
+
+/** 06.1 UX-38: savingTransfers with each transfer's series id, so the dated list can name it (the path reads date and amount only). */
+export function savingTransferFlows(series: readonly V3Series[], paidThisMonth: ReadonlySet<string>, asOf: LocalDate, days: number): (DatedFlow & { readonly seriesId: string })[] {
+  const out: (DatedFlow & { readonly seriesId: string })[] = [];
   const end = addDays(asOf, days);
   for (const role of ['saving', 'investing'] as const) {
     for (const s of liveSeriesOf(series, asOf, role)) {
       if (s.savingMode === 'flexible') continue;
-      for (const d of seriesOccurrences(s, asOf, end, asOf)) if (!paidThisMonth.has(`${s.id}|${d}`)) out.push({ date: d, amount: s.amount });
+      for (const d of seriesOccurrences(s, asOf, end, asOf)) if (!paidThisMonth.has(`${s.id}|${d}`)) out.push({ date: d, amount: s.amount, seriesId: s.id });
     }
   }
   return out;
