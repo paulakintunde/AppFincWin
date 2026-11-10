@@ -17,6 +17,7 @@ let mockRule: string | null = '36.0000';
 const mockSavePlan = jest.fn(() => ({ stepId: 'step-plan' }));
 const mockSaveDebt = jest.fn(() => ({ id: 'new-debt', stepId: 'step-add' }));
 const mockRecordSale = jest.fn(() => ({ stepId: 'step-sale', leftOver: 158000 }));
+const mockRecordOnce = jest.fn(() => ({ stepId: 'step-once' }));
 const mockToast = jest.fn();
 const mockPush = jest.fn();
 const mockWarn = jest.fn();
@@ -43,11 +44,17 @@ jest.mock('@/data/queries/accounts', () => ({
     ],
   }),
 }));
-jest.mock('@/data/mutations/growDebts', () => ({
-  useSaveDebtPlan: () => ({ save: mockSavePlan }),
-  useSaveGrowDebt: () => ({ save: mockSaveDebt }),
-  useRecordDebtSale: () => ({ record: mockRecordSale }),
-}));
+jest.mock('@/data/mutations/growDebts', () => {
+  const actual = jest.requireActual('@/data/mutations/growDebts');
+  return {
+    extraStartDate: actual.extraStartDate,
+    oneOffDate: actual.oneOffDate,
+    useSaveDebtPlan: () => ({ save: mockSavePlan }),
+    useSaveGrowDebt: () => ({ save: mockSaveDebt }),
+    useRecordDebtSale: () => ({ record: mockRecordSale }),
+    useRecordDebtOneOff: () => ({ record: mockRecordOnce }),
+  };
+});
 jest.mock('@/state/undoToast', () => ({ showToast: (t: unknown) => mockToast(t) }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPush(h) }));
 jest.mock('@/ui/haptics', () => ({
@@ -70,6 +77,7 @@ jest.mock('@/shell/screen/DetailScreen', () => {
 });
 
 import { DebtsSegment } from '../DebtsSegment';
+import { soonerText } from '../PayoffPlanCard';
 /* eslint-enable import/first */
 
 const debt = (over: Partial<DebtRow> & { id: string; name: string }): DebtRow => ({
@@ -164,61 +172,6 @@ describe('Debts segment (G05)', () => {
     expect(mockPush).toHaveBeenCalledWith('/grow/debt/auto');
   });
 
-  it('neither payoff order is chosen before a tap, and the choice is the user’s', async () => {
-    await wrap(<DebtsSegment />);
-    expect(screen.getByTestId('payoff-order-rate').props.accessibilityState.selected).toBe(false);
-    expect(screen.getByTestId('payoff-order-balance').props.accessibilityState.selected).toBe(false);
-    expect(screen.getByText(en.grow.debts.orderRate)).toBeTruthy();
-    expect(screen.getByText(en.grow.debts.orderBalance)).toBeTruthy();
-    expect(screen.getByText('The choice is yours.')).toBeTruthy();
-  });
-
-  it('one debt: both orders are disabled and the card says they are the same', async () => {
-    await wrap(<DebtsSegment />);
-    expect(screen.getByTestId('payoff-order-rate').props.accessibilityState.disabled).toBe(true);
-    expect(screen.getByText(en.grow.debts.oneDebt)).toBeTruthy();
-  });
-
-  it('two debts: each column has its own date and a first-cleared line, and a tap marks only that one', async () => {
-    mockRows = [AUTO, debt({ id: 'card', name: 'Store card', kind: 'card', balance: 90000, apr: '21.9', minimum_payment: 4000, due_day: 3, pays_in_full: 'no' })];
-    await wrap(<DebtsSegment />);
-    expect(screen.getAllByText(en.grow.debts.firstCleared)).toHaveLength(2);
-    await fireEvent.press(screen.getByTestId('payoff-order-balance'));
-    expect(screen.getByTestId('payoff-order-balance').props.accessibilityState.selected).toBe(true);
-    expect(screen.getByTestId('payoff-order-rate').props.accessibilityState.selected).toBe(false);
-  });
-
-  it('shows the three scenarios with the LEDGER figures, rounded to the nearest ten', async () => {
-    await wrap(<DebtsSegment />);
-    expect(screen.getByText('Minimum only')).toBeTruthy();
-    expect(screen.getByText('Apr 2029 · about $760 interest')).toBeTruthy();
-    expect(screen.getByText('$50 extra a month')).toBeTruthy();
-    expect(screen.getByText('Dec 2028 · about $640 interest · 4 months sooner')).toBeTruthy();
-    expect(screen.getByText('$1,000 once, today')).toBeTruthy();
-    expect(screen.getByText('Dec 2028 · about $580 interest')).toBeTruthy();
-    expect(screen.getByText('Extra money for debt comes out of what is left each month ($425). Decide counts it.')).toBeTruthy();
-  });
-
-  it('the stepper moves in $25 steps and reads as adjustable, with no haptic', async () => {
-    await wrap(<DebtsSegment />);
-    const stepper = screen.getByTestId('grow-stepper');
-    expect(stepper.props.accessibilityLabel).toMatch(/^Extra each month, .*50.*, adjustable$/);
-    await fireEvent.press(screen.getByTestId('grow-stepper-plus'));
-    expect(screen.getByText('$75 extra a month')).toBeTruthy();
-    expect(mockLight).not.toHaveBeenCalled();
-  });
-
-  it('"Use $50 extra" saves the plan with the user’s order (none yet), a light haptic and a toast with Undo', async () => {
-    await wrap(<DebtsSegment />);
-    await fireEvent.press(screen.getByText('Use $50 extra'));
-    expect(mockSavePlan).toHaveBeenCalledTimes(1);
-    expect(mockSavePlan).toHaveBeenCalledWith(expect.objectContaining({ extra: 5000, order: null, paidFromAccountId: 'a1' }));
-    expect(mockLight).toHaveBeenCalledTimes(1);
-    expect(mockToast).toHaveBeenCalledWith(
-      expect.objectContaining({ stepId: 'step-plan', text: { key: 'grow.debts.planSavedToast', params: { amount: '$50' } } }),
-    );
-  });
-
   it('empty: a card with Add a debt that opens the sheet', async () => {
     mockRows = [];
     await wrap(<DebtsSegment />);
@@ -231,6 +184,150 @@ describe('Debts segment (G05)', () => {
     const closed = jest.fn();
     await wrap(<DebtsSegment addOpen onAddClosed={closed} />);
     expect(screen.getByLabelText(en.grow.debts.add.name)).toBeTruthy();
+  });
+});
+
+const STORE = debt({ id: 'card', name: 'Store card', kind: 'card', balance: 90000, apr: '21.9', minimum_payment: 4000, due_day: 3, pays_in_full: 'no' });
+const button = (name: string | RegExp) => screen.getByRole('button', { name });
+const FORBIDDEN = /recommend|advice|should|best|better|optimal/i;
+
+function allText(): string {
+  return JSON.stringify(screen.toJSON());
+}
+
+describe('Payoff plan card (D-30, Option B)', () => {
+  it('leads with the minimum date; one debt shows the greyed order switch and one note, with no columns', async () => {
+    await wrap(<DebtsSegment />);
+    expect(screen.getByText('Debt-free by Apr 2029 on the minimum.')).toBeTruthy();
+    expect(screen.getByTestId('payoff-order-rate').props.accessibilityState).toEqual({ selected: false, disabled: true });
+    expect(screen.getByTestId('payoff-order-balance').props.accessibilityState).toEqual({ selected: false, disabled: true });
+    expect(screen.getByText(en.grow.debts.oneDebt)).toBeTruthy();
+    expect(screen.queryByText(en.grow.debts.choiceIsYours)).toBeNull();
+    expect(screen.queryByText(en.grow.debts.firstCleared)).toBeNull();
+  });
+
+  it('three rows; Extra each month opens first with the stepper and the date and interest against the minimum', async () => {
+    await wrap(<DebtsSegment />);
+    expect(screen.getByText('Minimum only')).toBeTruthy();
+    expect(screen.getByText('Debt-free by Apr 2029 · about $760 interest')).toBeTruthy();
+    expect(screen.getAllByText('Extra each month')).toHaveLength(2); // the row and the stepper's label
+    expect(screen.getByTestId('grow-stepper')).toBeTruthy();
+    expect(screen.getByText('Dec 2028')).toBeTruthy();
+    expect(screen.getByText('4 months sooner')).toBeTruthy();
+    expect(screen.getByText('was Apr 2029')).toBeTruthy();
+    expect(screen.getByText('about $640')).toBeTruthy();
+    expect(screen.getByText('was $760')).toBeTruthy();
+    expect(screen.getByText('about $110 less')).toBeTruthy();
+    expect(screen.getByText('Once, today')).toBeTruthy();
+    expect(screen.getByText('Debt-free by Dec 2028 · about $580 interest')).toBeTruthy();
+    expect(screen.getByText('Extra money for debt comes out of what is left each month ($425). Decide counts it.')).toBeTruthy();
+    expect(screen.getByTestId('payoff-scenario-extra').props.accessibilityLabel).toBe(
+      'Extra each month. Debt-free by December 2028, 4 months sooner. Interest about $640, about $110 less.',
+    );
+  });
+
+  it('one row open at a time: tapping Once opens it with chips and closes Extra each month', async () => {
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByTestId('payoff-scenario-once'));
+    expect(screen.getByTestId('payoff-scenario-once').props.accessibilityState).toEqual({ selected: true, expanded: true });
+    expect(screen.getByTestId('payoff-scenario-extra').props.accessibilityState).toEqual({ selected: false, expanded: false });
+    expect(screen.queryByTestId('grow-stepper')).toBeNull();
+    expect(screen.getAllByTestId('payoff-reveal')).toHaveLength(1);
+    for (const chip of ['$500', '$1,000', '$2,500', en.grow.debts.onceTypeChip]) expect(screen.getByText(chip)).toBeTruthy();
+    expect(screen.getByText('about $580')).toBeTruthy();
+    expect(screen.getByText('about $170 less')).toBeTruthy();
+    expect(button('Use $1,000 once on Nov 5').props.accessibilityState.disabled).toBe(false);
+    await fireEvent.press(screen.getByText(en.grow.debts.onceTypeChip));
+    expect(screen.getByLabelText(en.grow.debts.onceAmountLabel)).toBeTruthy();
+  });
+
+  it('the stepper moves in $25 steps, reads as adjustable, has no haptic, and the button follows it with its start date', async () => {
+    await wrap(<DebtsSegment />);
+    expect(button('Use $50 extra from Nov 15')).toBeTruthy();
+    const stepper = screen.getByTestId('grow-stepper');
+    expect(stepper.props.accessibilityLabel).toMatch(/^Extra each month, .*50.*, adjustable$/);
+    await fireEvent.press(screen.getByTestId('grow-stepper-plus'));
+    expect(button('Use $75 extra from Nov 15')).toBeTruthy();
+    expect(mockLight).not.toHaveBeenCalled();
+  });
+
+  it('Minimum only with no saved extra: the minimum is the plan, and there is no button', async () => {
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByTestId('payoff-scenario-minimum'));
+    expect(screen.getByText(en.grow.debts.minimumIsPlan)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Use / })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Stop / })).toBeNull();
+  });
+
+  it('with a saved extra: Minimum only, or the stepper at $0, offers Stop the extra from its date', async () => {
+    mockRows = [{ ...AUTO, payoff_extra: 2500 }, VISA];
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByTestId('grow-stepper-minus'));
+    expect(button('Stop the extra from Nov 15')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('payoff-scenario-minimum'));
+    expect(button('Stop the extra from Nov 15')).toBeTruthy();
+  });
+
+  it('a one-off above what is owed is off, with a note', async () => {
+    mockRows = [debt({ id: 'small', name: 'Phone loan', balance: 80000, apr: '5', minimum_payment: 5000, due_day: 10, started_balance: 80000 })];
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByTestId('payoff-scenario-once'));
+    expect(screen.getByText('$1,000 is more than the $800 owed on Phone loan.')).toBeTruthy();
+    expect(button('Use $1,000 once on Nov 5').props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(screen.getByText('$500'));
+    expect(button('Use $500 once on Nov 5').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('two debts: equal columns follow the stepper, none is picked, the rows ask for an order and the button is off', async () => {
+    mockRows = [AUTO, STORE];
+    await wrap(<DebtsSegment />);
+    expect(screen.getByTestId('payoff-order-rate').props.accessibilityState.selected).toBe(false);
+    expect(screen.getByTestId('payoff-order-balance').props.accessibilityState.selected).toBe(false);
+    expect(screen.getByText(en.grow.debts.choiceIsYours)).toBeTruthy();
+    expect(screen.getAllByText(en.grow.debts.firstCleared)).toHaveLength(2);
+    expect(screen.getByText(en.grow.debts.pickOrderFirst)).toBeTruthy();
+    expect(screen.queryByTestId('payoff-reveal')).toBeNull();
+    expect(button(/^Use \$50 extra from /).props.accessibilityState.disabled).toBe(true);
+    const before = allText();
+    for (let i = 0; i < 4; i += 1) await fireEvent.press(screen.getByTestId('grow-stepper-plus'));
+    expect(allText()).not.toBe(before); // the columns follow the stepper
+    await fireEvent.press(screen.getByTestId('payoff-order-balance'));
+    expect(screen.getByTestId('payoff-order-balance').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('payoff-order-rate').props.accessibilityState.selected).toBe(false);
+    expect(screen.queryByText(en.grow.debts.pickOrderFirst)).toBeNull();
+    expect(screen.getByTestId('payoff-reveal')).toBeTruthy();
+  });
+
+  it('two debts, Once: names the debt the one-off goes to first', async () => {
+    mockRows = [AUTO, STORE];
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByTestId('payoff-order-rate'));
+    await fireEvent.press(screen.getByTestId('payoff-scenario-once'));
+    expect(screen.getByText('It goes to Store card first.')).toBeTruthy();
+  });
+
+  it('no wording ranks an order or a scenario', async () => {
+    mockRows = [AUTO, STORE];
+    await wrap(<DebtsSegment />);
+    expect(allText()).not.toMatch(FORBIDDEN);
+    await fireEvent.press(screen.getByTestId('payoff-order-rate'));
+    await fireEvent.press(screen.getByTestId('payoff-scenario-once'));
+    expect(allText()).not.toMatch(FORBIDDEN);
+  });
+
+  it('sooner reads in years from two years up', () => {
+    const table = en.grow.debts as unknown as Record<string, string>;
+    const t = (key: string, o?: Record<string, string | number>): string => {
+      const leaf = key.split('.').pop() as string;
+      const pick = o?.count === undefined ? table[leaf] : table[`${leaf}_${o.count === 1 ? 'one' : 'other'}`];
+      return (pick ?? leaf).replace(/\{\{(\w+)\}\}/g, (_m, k: string) => String(o?.[k] ?? ''));
+    };
+    expect(soonerText(t, 48)).toBe('4 years sooner');
+    expect(soonerText(t, 38)).toBe('3 years 2 months sooner');
+    expect(soonerText(t, 11)).toBe('11 months sooner');
+    expect(soonerText(t, 1)).toBe('1 month sooner');
+    expect(soonerText(t, 0)).toBe('Same as the minimum');
+    expect(soonerText(t, null)).toBeNull();
   });
 });
 

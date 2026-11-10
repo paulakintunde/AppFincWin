@@ -5,7 +5,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useAccounts } from '@/data/queries/accounts';
-import { useSaveDebtPlan } from '@/data/mutations/growDebts';
+import { extraStartDate, oneOffDate, useRecordDebtOneOff, useSaveDebtPlan } from '@/data/mutations/growDebts';
 import type { PayoffOrder } from '@/engine/payoff';
 import { useT } from '@/i18n';
 import { AccTile } from '@/features/grow/ui/AccTile';
@@ -22,7 +22,7 @@ import { hapticLight } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { AddDebtSheet } from './AddDebtSheet';
-import { debtLineModel } from './debtLineModel';
+import { debtLineModel, firstClearedDate } from './debtLineModel';
 import { debtHref, payAccountId, useDebtFormat, useDebtMonth, useDebtRows, type DebtFormat } from './debtScreenData';
 import { PayoffPlanCard, type ScenarioKey } from './PayoffPlanCard';
 import { buildDebtsModel, DEFAULT_EXTRA, DEFAULT_LUMP, useDebtsRead, type DebtLine, type DebtsRead } from './useDebtsRead';
@@ -99,16 +99,18 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
   const rowQuery = useDebts(householdId ?? undefined).data;
   const accounts = useAccounts(householdId ?? undefined).data ?? [];
   const planSave = useSaveDebtPlan();
+  const recordOnce = useRecordDebtOneOff();
 
   const [extra, setExtra] = useState(model.extra > 0 ? model.extra : DEFAULT_EXTRA);
   // The user's tap, or the order they saved before. Nothing is picked for them.
   const [picked, setOrder] = useState<PayoffOrder | null>(null);
   const order = picked ?? model.savedOrder;
   const [scenario, setScenario] = useState<ScenarioKey>('extra');
+  const [lump, setLump] = useState(DEFAULT_LUMP);
 
   const whatIf = useMemo(
-    () => (rowQuery === undefined ? model : buildDebtsModel(rowQuery, today, { extra, lump: DEFAULT_LUMP })),
-    [rowQuery, today, extra, model]
+    () => (rowQuery === undefined ? model : buildDebtsModel(rowQuery, today, { extra, lump })),
+    [rowQuery, today, extra, lump, model]
   );
 
   const currency = model.planCurrency ?? model.debts[0]?.currency ?? model.paidInFull[0]?.currency ?? 'USD';
@@ -122,28 +124,77 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
   const sharePercent = lineModel === null ? null : lineModel.sharePercent;
   const over = month.rule !== null && lineModel !== null && lineModel.over;
 
-  const focusId = whatIf.focus?.id ?? null;
-  const focusRow = focusId === null ? undefined : rows.get(focusId);
+  // D-34: one debt carries the extra. Keep it on the debt that already has one; else the first debt in the order shown
+  // (one debt: that debt; 2+ debts with no order: none yet, and the card asks for an order).
+  const shownOrder: PayoffOrder | null = order ?? (model.oneDebt ? 'rate' : null);
+  const carrierId = inPlan.find((d) => d.extra > 0)?.id ?? null;
+  const firstId = shownOrder === null || whatIf.scenarios === null ? null : whatIf.scenarios[shownOrder].lumpFirstDebtId;
+  const extraRow = rows.get(carrierId ?? firstId ?? '');
+  const carrierRow = carrierId === null ? undefined : rows.get(carrierId);
+  const onceRow = firstId === null ? undefined : rows.get(firstId);
+  const extraFrom = extraRow === undefined ? today : extraStartDate(extraRow, today);
+  const stopFrom = carrierRow === undefined ? extraFrom : extraStartDate(carrierRow, today);
+  const onceOn = oneOffDate(today);
 
   const useExtra = (): void => {
-    if (focusRow === undefined || userId === null || extra <= 0) return;
-    const accountId = payAccountId(focusRow, accounts);
+    if (extraRow === undefined || userId === null || extra <= 0 || shownOrder === null) return;
+    const accountId = payAccountId(extraRow, accounts);
     if (accountId === null) return;
     try {
       const { stepId } = planSave.save({
         ownerId: userId,
-        debt: focusRow,
+        debt: extraRow,
         extra,
         order,
         paidFromAccountId: accountId,
-        seriesName: t('grow.debts.extraSeriesName', { name: focusRow.name }),
+        seriesName: t('grow.debts.extraSeriesName', { name: extraRow.name }),
       });
       hapticLight();
-      showToast({ kind: 'ordinary', text: { key: 'grow.debts.planSavedToast', params: { amount: fmt.money(extra, currency) } }, stepId });
+      showToast({
+        kind: 'ordinary',
+        text: { key: 'grow.debts.planSavedToastFrom', params: { amount: fmt.money(extra, currency), date: fmt.dayMonth(extraFrom) } },
+        stepId,
+      });
     } catch {
       showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
     }
   };
+
+  const stopExtra = (): void => {
+    if (carrierRow === undefined || userId === null) return;
+    try {
+      const { stepId } = planSave.save({ ownerId: userId, debt: carrierRow, extra: 0, order, paidFromAccountId: null });
+      hapticLight();
+      showToast({ kind: 'ordinary', text: { key: 'grow.debts.stopToast', params: { date: fmt.dayMonth(stopFrom) } }, stepId });
+    } catch {
+      showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
+    }
+  };
+
+  const useOnce = (): void => {
+    if (onceRow === undefined || userId === null || lump <= 0 || lump > onceRow.balance) return;
+    const accountId = payAccountId(onceRow, accounts);
+    if (accountId === null) return;
+    try {
+      const { stepId } = recordOnce.record({
+        ownerId: userId,
+        debt: onceRow,
+        amount: lump,
+        paidFromAccountId: accountId,
+        name: t('grow.debts.oneOffLineName', { name: onceRow.name }),
+      });
+      hapticLight();
+      showToast({
+        kind: 'ordinary',
+        text: { key: 'grow.debts.onceToast', params: { amount: fmt.money(lump, currency), name: onceRow.name, date: fmt.dayMonth(onceOn) } },
+        stepId,
+      });
+    } catch {
+      showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
+    }
+  };
+
+  const onceLine = firstId === null ? null : model.debts.find((d) => d.id === firstId) ?? null;
 
   const line = { ...textRole(pairing, 'label'), color: colors.inkMuted };
   const card = [styles.card, { backgroundColor: colors.surface, ...shadows.card }];
@@ -222,22 +273,33 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
         </>
       ) : null}
 
-      <PayoffPlanCard
-        model={model}
-        whatIf={whatIf}
-        currency={currency}
-        today={today}
-        extra={extra}
-        lump={DEFAULT_LUMP}
-        onExtra={setExtra}
-        order={order}
-        onOrder={setOrder}
-        scenario={scenario}
-        onScenario={setScenario}
-        left={month.left}
-        fmt={fmt}
-        onUseExtra={useExtra}
-      />
+      {whatIf.scenarios === null ? null : (
+        <PayoffPlanCard
+          scenarios={whatIf.scenarios}
+          oneDebt={model.oneDebt}
+          firstCleared={{
+            rate: firstClearedDate(model.debts, extra, 'rate', today),
+            balance: firstClearedDate(model.debts, extra, 'balance', today),
+          }}
+          order={order}
+          onOrder={setOrder}
+          open={scenario}
+          onOpen={setScenario}
+          extra={extra}
+          onExtra={setExtra}
+          lump={lump}
+          onLump={setLump}
+          savedExtra={model.extra}
+          lumpDebt={onceLine === null ? null : { name: onceLine.name, balance: onceLine.point.balance }}
+          startDates={{ extra: scenario === 'minimum' || extra <= 0 ? stopFrom : extraFrom, once: onceOn }}
+          onUseExtra={useExtra}
+          onStopExtra={stopExtra}
+          onUseOnce={useOnce}
+          left={month.left}
+          fmt={fmt}
+          currency={currency}
+        />
+      )}
 
       <Pill label={t('grow.debts.emptyAction')} variant="secondary" onPress={onAdd} />
       <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{t('grow.debts.footer')}</Text>
