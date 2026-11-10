@@ -4,7 +4,7 @@
  * Bad or oversized stored values fall back to safe defaults; parseCheckV2 stays total. T-06.1-02-01, T-06.1-02-02.
  */
 import * as fc from 'fast-check';
-import { minorUnits, type MinorUnits } from '../../../../money/types';
+import { minorUnits } from '../../../../money/types';
 import { percentFromScaled, PERCENT_SCALE, type Percent } from '../../../../payoff/types';
 import type { CheckV2, LocalDate, QuickLine, Replaces, RunningCostLine, StoppedCost } from '../../types';
 import { parseCheckV2, readStoredCheck, toStoredV2 } from '../../adapters/inputsV2';
@@ -208,7 +208,7 @@ describe('06.1-02 quickLines (D-21)', () => {
 
   it('trims the name and cuts it to 80 characters; a missing name is empty', () => {
     expect(ql({ ...EXP, name: '  Dentist  ' })[0]!.name).toBe('Dentist');
-    expect(ql({ ...EXP, name: `a${' '.repeat(78)}bcdef` })[0]!.name).toBe('a');
+    expect(ql({ ...EXP, name: `a${' '.repeat(79)}bcdef` })[0]!.name).toBe('a');
     expect(ql({ ...EXP, name: 'n'.repeat(120) })[0]!.name).toHaveLength(80);
     expect(ql({ ...EXP, name: 5 })[0]!.name).toBe('');
   });

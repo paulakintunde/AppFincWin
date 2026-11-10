@@ -8,9 +8,9 @@ import { PERCENT_SCALE, type Percent } from '../../../payoff/types';
 import { isValidLocalDate } from '../dates';
 import { layerOfAnswerKey } from '../judge/bands';
 import { V3_ITEM_TYPES } from '../judge/presetQuestions';
-import type { Cadence, CheckV2, FirstPayment, ItemTypeRef, PayV2, PresetPurpose, Purpose, ReasonCode, V3PresetItemType } from '../types';
+import type { Cadence, CheckV2, FirstPayment, ItemTypeRef, LocalDate, PayV2, PresetPurpose, Purpose, QuickLine, ReasonCode, Replaces, RunningCostLine, Sale, StoppedCost, V3PresetItemType } from '../types';
 import type { ShareScope, SplitRule } from '../../share';
-import { intIn, isRecord, minorOf, percentOf, upgradeInputs } from './legacy';
+import { intIn, isRecord, MAX_MINOR, minorOf, percentOf, upgradeInputs } from './legacy';
 
 const PURPOSES: readonly PresetPurpose[] = ['invest_in_me', 'for_work', 'necessity', 'nice_to_have', 'treat', 'luxury'];
 const CURRENCY = /^[A-Z0-9]{2,4}$/;
@@ -18,6 +18,12 @@ const MAX_ID = 80;
 const MAX_EXTRAS = 50;
 const ZERO = minorUnits(0);
 const MAX_PERCENT_TEXT = 9999.9999999999;
+// 06.1-02 (T-06.1-02-01): caps on the Variant C lists and the D-21 quick lines
+const MAX_RUNNING_COSTS = 12;
+const MAX_STOPS = 8;
+const MAX_QUICK_LINES = 8;
+const MAX_NAME = 80;
+const MAX_PAYMENTS = 600;
 
 function money(x: unknown): MinorUnits {
   return minorOf(x) ?? ZERO;
@@ -119,6 +125,95 @@ function shareOf(x: unknown): ShareScope {
   return { kind: 'household', memberCount, myIndex, rule };
 }
 
+/** Strict money: a whole number of minor units in 0..MAX_MINOR, else null (a list line with a bad amount is dropped, not clamped). */
+function exactMinorOf(x: unknown): MinorUnits | null {
+  return typeof x === 'number' && Number.isSafeInteger(x) && x >= 0 && x <= MAX_MINOR ? minorUnits(x) : null;
+}
+
+function localDateOf(x: unknown): LocalDate | null {
+  return typeof x === 'string' && isValidLocalDate(x) ? x : null;
+}
+
+function everyOf(x: unknown): 1 | 3 | 12 | null {
+  return x === 1 || x === 3 || x === 12 ? x : null;
+}
+
+function nameOf(x: unknown): string {
+  return typeof x === 'string' ? x.trim().slice(0, MAX_NAME).trim() : '';
+}
+
+/** First `max` entries of a stored list, each read by `read`; entries it rejects are dropped. */
+function listOf<T>(x: readonly unknown[], max: number, read: (r: Record<string, unknown>) => T | null): T[] {
+  const out: T[] = [];
+  for (const r of x.slice(0, max)) {
+    const v = isRecord(r) ? read(r) : null;
+    if (v !== null) out.push(v);
+  }
+  return out;
+}
+
+function runningCostOf(x: Record<string, unknown>): RunningCostLine | null {
+  const id = idOf(x.id);
+  const amount = exactMinorOf(x.amount);
+  const everyMonths = everyOf(x.everyMonths);
+  const start = localDateOf(x.start);
+  if (id === null || amount === null || everyMonths === null || start === null) return null;
+  const end = localDateOf(x.end);
+  return { id, amount, everyMonths, start, end: end !== null && end >= start ? end : null, on: x.on !== false };
+}
+
+function stopSourceOf(x: unknown): StoppedCost['source'] | null {
+  if (!isRecord(x)) return null;
+  if (x.kind === 'everyday') return { kind: 'everyday', categoryId: idOf(x.categoryId) };
+  const seriesId = x.kind === 'bill' ? idOf(x.seriesId) : null;
+  return seriesId === null ? null : { kind: 'bill', seriesId };
+}
+
+function stoppedCostOf(x: Record<string, unknown>): StoppedCost | null {
+  const id = idOf(x.id);
+  const amount = exactMinorOf(x.amount);
+  const everyMonths = everyOf(x.everyMonths);
+  const stopDate = localDateOf(x.stopDate);
+  const source = stopSourceOf(x.source);
+  if (id === null || amount === null || everyMonths === null || stopDate === null || source === null) return null;
+  return { id, amount, everyMonths, stopDate, source };
+}
+
+function saleOf(x: unknown): Sale | null {
+  if (!isRecord(x)) return null;
+  const amount = exactMinorOf(x.amount);
+  const arrives = localDateOf(x.arrives);
+  return amount === null || arrives === null ? null : { amount, arrives, paysDebtId: idOf(x.paysDebtId) };
+}
+
+function replacesOf(x: unknown): Replaces | null {
+  if (!isRecord(x)) return null;
+  return { stops: Array.isArray(x.stops) ? listOf(x.stops, MAX_STOPS, stoppedCostOf) : [], sale: saleOf(x.sale) };
+}
+
+/** 06.1 D-21: one quick-estimate line; an unknown kind or a line missing what its kind needs is dropped. */
+function quickLineOf(x: Record<string, unknown>): QuickLine | null {
+  const id = idOf(x.id);
+  if (id === null) return null;
+  const name = nameOf(x.name);
+  const date = localDateOf(x.date);
+  if (x.kind === 'loan') {
+    const monthly = exactMinorOf(x.monthly);
+    const payments = intIn(x.payments, 1, MAX_PAYMENTS);
+    return monthly === null || monthly === 0 || payments === null ? null : { id, kind: 'loan', name, monthly, payments, firstDate: localDateOf(x.firstDate) };
+  }
+  const amount = exactMinorOf(x.amount);
+  if (amount === null) return null;
+  if (x.kind === 'savings') return { id, kind: 'savings', name, amount, usable: x.usable === true };
+  if (x.kind === 'income') {
+    return (x.everyMonths === 0 || x.everyMonths === 1) && date !== null ? { id, kind: 'income', name, amount, everyMonths: x.everyMonths, date } : null;
+  }
+  if (x.kind !== 'expense') return null;
+  if (x.everyMonths === 0) return date === null ? null : { id, kind: 'expense', name, amount, everyMonths: 0, date };
+  const everyMonths = everyOf(x.everyMonths);
+  return everyMonths === null ? null : { id, kind: 'expense', name, amount, everyMonths, date };
+}
+
 /** null when `v !== 2` (the caller then upgrades as v1). Otherwise total: bad fields reset to their defaults. */
 export function parseCheckV2(json: unknown): CheckV2 | null {
   if (!isRecord(json) || json.v !== 2) return null;
@@ -157,6 +252,13 @@ export function parseCheckV2(json: unknown): CheckV2 | null {
     layerAnswers: layerAnswersOf(json.layerAnswers),
     volatileCover: typeof json.volatileCover === 'boolean' ? json.volatileCover : null,
     taxIncluded: typeof json.taxIncluded === 'boolean' ? json.taxIncluded : null, // 05.4 FIN-27 (D-19)
+    // 06.1-02 (Pitfall 1): the Variant C tail and D-21 quick lines. A key absent in storage stays absent, so a check saved
+    // without them reads back deep-equal; a non-list where a list belongs reads as absent (both mean none).
+    ...(Array.isArray(json.runningCosts) ? { runningCosts: listOf(json.runningCosts, MAX_RUNNING_COSTS, runningCostOf) } : {}),
+    ...('closingPercent' in json ? { closingPercent: percentOf(json.closingPercent, MAX_PERCENT_TEXT) } : {}),
+    ...('purchaseDate' in json ? { purchaseDate: localDateOf(json.purchaseDate) } : {}),
+    ...('replaces' in json ? { replaces: replacesOf(json.replaces) } : {}),
+    ...(Array.isArray(json.quickLines) ? { quickLines: listOf(json.quickLines, MAX_QUICK_LINES, quickLineOf) } : {}),
   };
 }
 
@@ -170,7 +272,8 @@ export function percentText(p: Percent): string {
 /** JSON-safe form: Percent becomes decimal text, everything else is already plain data. */
 export function toStoredV2(c: CheckV2): unknown {
   const pay = c.pay.mode === 'plan' ? { ...c.pay, apr: c.pay.apr === null ? null : percentText(c.pay.apr) } : c.pay;
-  return { ...c, taxPercent: c.taxPercent === null ? null : percentText(c.taxPercent), pay };
+  const closing = c.closingPercent === undefined ? {} : { closingPercent: c.closingPercent === null ? null : percentText(c.closingPercent) };
+  return { ...c, taxPercent: c.taxPercent === null ? null : percentText(c.taxPercent), pay, ...closing };
 }
 
 /** v2 as stored, else a v1 (or anything) upgraded. Total. */
