@@ -52,6 +52,9 @@ export { homeFigure, monthAfterPlans } from './afterBuy';
 // 06.1 CO-D-57: built by 06.1 to the 05.5 month-picture contract
 export { monthPicture, pastMonthBars } from './month/picture';
 export type { MonthPicture, MonthBar } from './month/picture';
+// 06.1 UX-38 (D55)
+export { cashTimeline } from './cash/timeline';
+export type { CashTimeline, TimelineRow } from './cash/timeline';
 export type { Prepared } from './prepare';
 export { unspentSum } from './funds/build';
 export type { Evaluation } from './evaluate';

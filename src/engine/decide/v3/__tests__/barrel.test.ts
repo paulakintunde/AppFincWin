@@ -138,6 +138,7 @@ export const V3_RUNTIME_EXPORTS = [
   'cadenceOfFreq',
   'cardEligibility', // 05.3-44: shared card rule, so v3 screens never import the old barrel (P-01)
   'cardPaidInFullHistory', // 05.3-80
+  'cashTimeline', // 06.1 UX-38 (D55): the labelled 90-day list
   'changeSinceLooked',
   'cheaperOption', // 05.4-28 UX-28 (D-111): The cheaper one, figures only
   'checkQuoted',
