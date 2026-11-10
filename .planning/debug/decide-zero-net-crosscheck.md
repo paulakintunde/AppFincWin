@@ -61,3 +61,13 @@ verification: "Seed 349832153: all 3 crosscheck tests pass (852 compared). Seeds
 open_question_for_owner: "Should money freed by costs a purchase stops (replaces.stops) count toward paying for a later-dated purchase on the ladder? Today neither side counts it (engine judge.ts ladder 233-292; plain ladder fromMonth/earlier), only plain's fresh money test does (brought, plain.ts:809). If yes, this fixture becomes fits_unspent (no net needed: $60.01 now + $120.02 Dec-Jan + $55 freed covers $197.44) and that would be an engine answer change needing approval. No approved case covers it."
 side_lead: "Hand-made variant (not drawable by fixtureArb: recordsAsOf null with asOf 1 Nov and nothing recorded) gives engine fits_uses_net/6001 vs plain fits_unspent/60528. Not investigated."
 files_changed: [src/engine/decide/v3/__tests__/crosscheck/plain.ts]
+
+## Owner decision (2026-11-10): count freed money
+
+Owner answer: **count it.** For a purchase dated in a later month, money freed by costs the purchase stops, which falls due before the purchase date, counts toward paying for it. In the found fixture the answer becomes `fits_unspent` and no net is needed.
+
+Follow-up, after Phase 6; not part of Grow:
+- **Engine.** Add the freed money (`replacesDates` amounts before the buy date) to the ladder in `judge.ts` (about lines 233-292). Restate the same rule in plain.ts's ladders.
+- **New right-answer case.** A later-dated purchase that stops a recurring cost, with the freed money needed to fit. The owner signs it off.
+- **Revision bump.** Bump DECIDE_ENGINE_REVISION from 06.1 and rewrite the lock with REVISION_WRITE=1.
+- **Side lead to check in the same plan.** With no records date, 1 November and nothing recorded, the engine says `fits_uses_net` (month 6001) and plain says `fits_unspent` (60528). The random generator cannot produce this fixture today.
