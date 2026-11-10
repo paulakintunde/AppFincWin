@@ -173,3 +173,4 @@ Owner checked Grow on the Pixel 9 (dev client): "otherwise it looks mostly good"
     - a one-off goes to the first debt in the chosen order, capped at its balance, and stays Expected until paid.
   - "Add money" on goals and the safety net is an outline button.
   - Debt rows show their payoff end date ("· ends Sep 2041"), added to 06-35.
+- **D-35 (owner, 2026-11-10): a one-off debt payment counts as a debt payment in Decide.** A line with `transactions.debt_id` is money out once, the same as a regular debt payment. It is never ordinary spending and never counts against a category limit. Raised by 06-30: Decide's month builder only treated transfers into loan or card accounts as debt payments, so one-off lines landed in spending. The change and its test go into 06-37.
