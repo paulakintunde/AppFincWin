@@ -8,18 +8,6 @@ import { useSavingsGoals } from '@/data/queries/decide';
 import { showToast } from '@/state/undoToast';
 import { useGoalToast } from './useGoalToast';
 
-export interface GoalLineFields {
-  goal_id?: string | null;
-  recurring_series_id: string | null;
-}
-
-/** The goal a line pays into: its own tag, else its series' goal (a tag not yet on this device). Null for a plain line. */
-export function goalIdOfLine(row: GoalLineFields, seriesById?: ReadonlyMap<string, { goal_id?: string | null }>): string | null {
-  if (row.goal_id) return row.goal_id;
-  if (!row.recurring_series_id) return null;
-  return seriesById?.get(row.recurring_series_id)?.goal_id ?? null;
-}
-
 export interface GoalLinePay {
   /**
    * Confirms `line` into `goalId` with the Undo toast Grow shows. Returns false when the goal has not loaded: nothing is
