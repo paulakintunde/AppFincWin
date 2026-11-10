@@ -183,6 +183,7 @@ export const mutationKeys = {
   editHoldingLot: ['holding-lots', 'edit'] as const,
   saveDebtPlan: ['debts', 'save-plan'] as const,
   recordDebtSale: ['debts', 'record-sale'] as const,
+  recordDebtOneOff: ['debts', 'record-one-off'] as const, // 06-30 (D-33)
   saveGrowDebt: ['debts', 'save-grow'] as const,
   setAccountRate: ['accounts', 'set-rate'] as const,
 };

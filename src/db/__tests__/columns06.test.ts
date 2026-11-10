@@ -8,6 +8,7 @@ import { DEBT_COLUMNS, DEBT_INSERT_KEYS, DEBT_PATCH_KEYS } from '../debts';
 import { HOLDING_INSERT_KEYS, HOLDING_PATCH_KEYS } from '../holdings';
 import { HOLDING_LOT_INSERT_KEYS, HOLDING_LOT_PATCH_KEYS } from '../holdingLots';
 import { RECURRING_SERIES_COLUMNS } from '../rows';
+import { TRANSACTION_COLUMNS, TRANSACTION_INSERT_KEYS, TRANSACTION_PATCH_KEYS } from '../transactions';
 import { SAVINGS_GOAL_COLUMNS, SAVINGS_GOAL_INSERT_KEYS, SAVINGS_GOAL_PATCH_KEYS } from '../savingsGoals';
 
 const MIGRATION = path.resolve(__dirname, '../../../supabase/migrations/20261106000100_grow_schema.sql');
@@ -74,5 +75,11 @@ describe('06 select strings carry the Grow columns', () => {
 
   it('recurring_series is read-only here', () => {
     expect(RECURRING_SERIES_COLUMNS).toContain('goal_id');
+  });
+
+  it('transactions select debt_id (06-30, D-33) but never write it (only record_debt_one_off sets it)', () => {
+    expect(TRANSACTION_COLUMNS.split(',').map((c) => c.trim())).toContain('debt_id');
+    expect(TRANSACTION_INSERT_KEYS as readonly string[]).not.toContain('debt_id');
+    expect(TRANSACTION_PATCH_KEYS as readonly string[]).not.toContain('debt_id');
   });
 });

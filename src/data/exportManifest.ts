@@ -20,6 +20,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'goal_id', 'stmt_orig_amount', 'stmt_orig_currency', 'conversion_source', 'fx_fee_of', 'created_at', 'updated_at',
     // 05.2
     'income_kind', 'counts_as', 'refund_of',
+    // 06-30
+    'debt_id',
   ],
   accounts: [
     'id', 'household_id', 'created_by', 'name', 'kind', 'currency', 'opening_balance', 'archived_at', 'overdraft_limit',

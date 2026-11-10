@@ -70,6 +70,7 @@ describe('export manifest (05.2 owner OQ3, C13)', () => {
       debts: ['started_balance', 'payoff_order', 'payoff_extra', 'extra_series_id'],
       accounts: ['interest_rate'],
       recurring_series: ['goal_id'],
+      transactions: ['debt_id'],
       holdings: split(HOLDING_COLUMNS),
       holding_lots: split(HOLDING_LOT_COLUMNS),
     };
