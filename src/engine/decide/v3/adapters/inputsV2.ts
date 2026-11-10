@@ -191,7 +191,7 @@ function replacesOf(x: unknown): Replaces | null {
   return { stops: Array.isArray(x.stops) ? listOf(x.stops, MAX_STOPS, stoppedCostOf) : [], sale: saleOf(x.sale) };
 }
 
-/** 06.1 D-21: one quick-estimate line; an unknown kind or a line missing what its kind needs is dropped. */
+/** 06.1 D-21: one entry of CheckV2.quickLines; an unknown kind or a line missing what its kind needs is dropped. */
 function quickLineOf(x: Record<string, unknown>): QuickLine | null {
   const id = idOf(x.id);
   if (id === null) return null;
