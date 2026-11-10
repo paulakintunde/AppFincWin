@@ -110,3 +110,24 @@ Run the plan's Task 2 steps 1-10. Also check these items added in this plan:
 4. Use "Use $1,000 once" on a debt, then mark it paid. Decide's This month does not show it as spending in any category, and money out counts it once.
 5. Make a fresh net in the app, or use "Use as my safety net" on a new goal: "We moved your safety net here" never appears.
 6. Text-fit matrix (402 dp and 320 dp, at 100% and 200%) on the Activity debt chip with a long debt name.
+
+## D-39 follow-up (2026-11-10): the record sheet's Paid chip on a goal line
+
+This answers owner question 1. Commit `188bdddc` changes `TransactionSheet.tsx`, adds one key to `en.ts`, and adds the new suite `TransactionSheet.goalPaid.test.tsx` (7 tests; 4 failed on the old code, then all 7 passed).
+
+- **Paid with nothing else changed:** a goal's Expected line now saves through `useGoalLinePay`. That runs `confirm_goal_contribution` and shows the Undo toast, the same as Mark paid. The goal grows once, and no plain edit is sent. The goal comes from the line's own `goal_id`, or else from its series' `goal_id`.
+- **Paid together with other changes** (amount, date, name, note, account, category, a new repeat): nothing is written. An info toast shows `record.sheet.goalLinePaidAlone`: "A goal line is marked paid on its own. Save your other changes first, then choose Paid." The sheet stays open.
+  - *Why we block instead of "save as Expected, then confirm":* the edit and the confirm are separate queued writes in WRITE_SCOPE. The version chain does let a confirm follow a successful edit. But an edit can fail or be parked while the confirm still goes through on the old, unedited row. A change to a series' template opens the scope prompt. "This and future" rewrites the row through the series RPC, which does not add to the version chain, so the confirm would then conflict. Blocking writes nothing that could be half-done. It also matches (c), which hid "Adjust, then mark paid" for goal lines.
+- **Goal not loaded:** nothing is written, `record.sheet.goalLineNotReady` shows (from the hook), and the sheet stays open.
+- **A paid goal line set back to Pending:** this is still allowed, as a plain status patch. I checked that this is correct:
+  - A single-line contribution (the goal has no account of its own) is paid by setting `status = 'paid'` and keeping `goal_id`. The RPC's own Undo is exactly `status: 'pending'`, and `goalSaved` adds up only paid lines tagged to the goal. So Pending takes the line out of the goal once, and paying again goes through the confirm.
+  - A paired contribution turns into a transfer (`transfer_id` set, `goal_id` null). The sheet opens it as a transfer edit, where the status chips are not shown, so the chips can't unpay it.
+  - Activity's own Mark unpaid makes the same plain patch.
+- **Lines with no goal, and transfers:** no change. A test covers a plain Expected line marked Paid in the form.
+- **Checks:**
+  - eslint on the changed files: no errors and no warnings.
+  - `npm run typecheck`: exit 0.
+  - `npm run depcruise`: no violations.
+  - `npm run check:cache-version`: unchanged (version 7).
+  - `jest --findRelatedTests` (TransactionSheet, the new test, en.ts): 323 suites passed. 3 shell suites timed out under load and passed when re-run alone (33/33).
+  - `jest src/features/record src/features/grow`: 144 suites passed. 3 suites timed out under load (two jest runs were going at once); all passed when re-run alone.
