@@ -1237,7 +1237,7 @@ Plans:
 - [x] 06-34-PLAN.md — Activity Mark paid on goal lines uses the goal confirm path (D-32) (W12)
 
 **Wave 13** *(blocked on Wave 12 completion)*
-- [ ] 06-35-PLAN.md — Payoff plan reveal on Debts: rows open, dated buttons, Use once, Stop the extra (D-30, D-32, D-33) (W13)
+- [x] 06-35-PLAN.md — Payoff plan reveal on Debts: rows open, dated buttons, Use once, Stop the extra (D-30, D-32, D-33) (W13)
 - [ ] 06-36-PLAN.md — Debt detail reveal and past payments (D-30, D-32) (W13)
 
 **Wave 14** *(blocked on Wave 13 completion)*
