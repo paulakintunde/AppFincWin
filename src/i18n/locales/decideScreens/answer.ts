@@ -5,6 +5,19 @@
  * Draft copy, signed under D-08. "surer" is replaced by "Give it more to go on" (CMP-F12).
  */
 export const answer = {
+  frame: {
+    itemA11y: '{{name}}, {{price}}',
+    payTabs: 'How you pay',
+    whenGroup: 'When you buy',
+    whenToday: 'Today',
+    whenPayday: 'Next payday',
+    optionsA11y: 'Other ways to look at it',
+    actionsA11y: 'What you did with this answer',
+    bought: 'I bought it',
+    saveFor: 'Save for it',
+    notBuying: 'I’m not buying it',
+    helpLinkA11y: '{{name}}. Opens a website outside the app',
+  },
   payA11y: 'How you pay',
   whenA11y: 'When',
   editSteps: 'Edit steps',

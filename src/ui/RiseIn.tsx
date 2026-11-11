@@ -17,18 +17,21 @@ export function RiseIn({
   children,
   style,
   animated = RISE_IN_ANIMATED,
+  duration = DURATION.entrance,
 }: {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   /** Defaults to RISE_IN_ANIMATED; a prop so both branches are testable. */
   animated?: boolean;
+  /** Milliseconds; the verdict card rises at DURATION.sheetUp (06.1-14, D-17). */
+  duration?: number;
 }) {
   const { reduced } = useMotion();
   if (reduced || !animated) return <View style={style}>{children}</View>;
   return (
     <Animated.View
       style={style}
-      entering={FadeInDown.duration(DURATION.entrance)
+      entering={FadeInDown.duration(duration)
         .easing(Easing.bezier(0.2, 0.8, 0.3, 1))
         .withInitialValues({ opacity: 0, transform: [{ translateY: RISE_PX }] })}
     >
