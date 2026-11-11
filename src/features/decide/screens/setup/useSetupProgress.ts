@@ -70,7 +70,15 @@ export function setupFactsFrom(
   };
 }
 
-export function useSetupProgress(): SetupProgressState {
+export interface SetupFactsState {
+  loading: boolean;
+  facts: SetupFacts | null;
+  currency: string;
+  today: string;
+}
+
+/** 06.1-25: the facts the six rules read, for item screens that show one rule's parts (Records shows its three checks). */
+export function useSetupFacts(): SetupFactsState {
   const rc = useRecordContext();
   const v3 = useDecideV3();
   const settings = useDecideSettings(rc.userId ?? undefined).data ?? null;
@@ -78,7 +86,7 @@ export function useSetupProgress(): SetupProgressState {
   const inputs = v3.inputs;
   const evaluation = v3.evaluation;
   return useMemo(() => {
-    if (inputs === null || settings === null) return { ...EMPTY, loading: true, currency: inputs?.currency ?? 'USD', today: inputs?.asOf ?? NO_DAY };
+    if (inputs === null || settings === null) return { loading: true, facts: null, currency: inputs?.currency ?? 'USD', today: inputs?.asOf ?? NO_DAY };
     const names = new Map((debts ?? []).map((d) => [d.id, d.name]));
     const under = new Set((evaluation?.month.notices ?? []).filter((n) => n.code === 'month_looks_under_logged').map((n) => String(n.values.month)));
     const facts = setupFactsFrom(
@@ -92,6 +100,14 @@ export function useSetupProgress(): SetupProgressState {
       names,
       under,
     );
-    return { ...setupProgress(facts, inputs.asOf), loading: false, currency: inputs.currency, today: inputs.asOf };
+    return { loading: false, facts, currency: inputs.currency, today: inputs.asOf };
   }, [inputs, evaluation, settings, debts]);
+}
+
+export function useSetupProgress(): SetupProgressState {
+  const { loading, facts, currency, today } = useSetupFacts();
+  return useMemo(() => {
+    if (facts === null) return { ...EMPTY, loading, currency, today };
+    return { ...setupProgress(facts, today), loading, currency, today };
+  }, [loading, facts, currency, today]);
 }
