@@ -1250,7 +1250,7 @@ Plans:
 **Goal:** Testers use the new Decide screens, built from the owner's clickable prototype (https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR, the design standard, as in Phase 6 D-04), on the v3 engine and the connection points that exist on main. Every prototype Decide screen (D01-D53, answers N02-N26) replaces today's tester screens in one release with Grow; old 05.x Decide screens deleted; home buying hidden; household left to 08.1 (06.1-CONTEXT D-01..D-06).
 **Requirements**: FIN-20, FIN-21, FIN-22, FIN-23, FIN-24, FIN-28, FIN-29, FIN-31; ENG-26 (Activity and Grow half), ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-20, UX-21 (renderer), UX-38, UX-41, UX-42, UX-43; CMP-F12 (layout), F14, F15; ARC-11, ARC-24, ARC-25; QA-01 (prototype is the design), QA-02/QA-03 (non-household cases); BO-09; the non-household rows of 08.1-CARRY-OVER-FROM-05.4.md (list in 06.1-01-PLAN.md). FIN-20/22/23 return to 08.1 if their cases are not approved by release (D-26).
 **Depends on:** Phase 6: Grow plans 06-05, 06-06 and 06-10 on main (connection points, RPCs, Decide feed; 06.1-CONTEXT D-30). Wave 1 (plans 01-07, 41, 42) can be built now; plan 08 gates the rest. Household parts stay hidden until Phase 8.
-**Plans:** 11/42 plans executed
+**Plans:** 12/42 plans executed
 
 Plans:
 - [x] 06.1-01-PLAN.md — Scope split (D-04) and prototype inventory (D-27); seven state colour tokens + contrast tests + CLAUDE.md (D-16); ROADMAP requirement lines
@@ -1261,7 +1261,7 @@ Plans:
 - [x] 06.1-06-PLAN.md — Production Result-to-sentences renderer (sayResult)
 - [x] 06.1-07-PLAN.md — Move settingsPatch and the income step types out of old Decide folders, with shims
 - [x] 06.1-08-PLAN.md — D-30 gate (Grow 06-05/06-06/06-10 on main) and shared primitives in src/ui with the seven state tones
-- [ ] 06.1-09-PLAN.md — Engine: D-21 quick-estimate overlay, facts, cases; owner approval
+- [x] 06.1-09-PLAN.md — Engine: D-21 quick-estimate overlay, facts, cases; owner approval
 - [ ] 06.1-10-PLAN.md — Migration: D-20 unlock flag + RPC, D-23 flags, check history, Save-for-it goal fields, FIN-20 column; pgTAP
 - [ ] 06.1-11-PLAN.md — useCheckEngine and useMonthPicture hooks
 - [ ] 06.1-12-PLAN.md — Builder reads the unlock; mutations for unlock, first-answer net (D-28), answered flags, history
