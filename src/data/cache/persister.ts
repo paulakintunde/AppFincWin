@@ -34,6 +34,7 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // 06 Grow: goals, debts, accounts and series gained columns and holdings are new -- bumped 3 -> 4.
 // 06-20 phase gate: later Grow plans changed persisted shapes after that bump -- bumped 4 -> 5.
 // 06-30: transactions gained debt_id (D-33) -- bumped 5 -> 6.
+// 06 waves 12-13: Grow shapes changed again after that bump -- bumped 6 -> 7.
 export const CACHE_SCHEMA_VERSION = '7';
 
 /**

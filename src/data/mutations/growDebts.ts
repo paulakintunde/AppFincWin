@@ -59,6 +59,18 @@ function validName(name: string): boolean {
   const n = name.trim();
   return n.length >= 1 && n.length <= 80;
 }
+/**
+ * 06 review P3-WR-07: a line name made from a debt name ("<debt> final payment", "Extra on <debt>") may run past the 80
+ * characters a line name holds. It is cut to 80 with an ellipsis, the same rule the server applies (grow_line_name), so a
+ * long debt name never makes the sale or the one-off fail. Counts code points, as Postgres char_length does.
+ */
+export function clampLineName(name: string): string {
+  const chars = Array.from(name.trim());
+  return chars.length <= 80 ? chars.join('') : `${chars.slice(0, 79).join('')}…`;
+}
+function validLineName(name: string): boolean {
+  return name.trim().length >= 1;
+}
 function validMinor(n: number): boolean {
   return Number.isSafeInteger(n) && n >= 0 && n <= MAX_MINOR;
 }
@@ -340,7 +352,7 @@ function registerSaveDebtPlan(qc: QueryClient): void {
         const expected = resolveExpectedVersion('debts', vars.debtId, vars.expectedVersion);
         // The server builds the one Undo step from what it wrote (the old extra, the old record, the old order).
         const client = await writeClient();
-        return saveDebtPlan(client, {
+        const res = await saveDebtPlan(client, {
           debtId: vars.debtId,
           expectedVersion: expected,
           extra: vars.extra,
@@ -348,6 +360,9 @@ function registerSaveDebtPlan(qc: QueryClient): void {
           series: vars.series,
           undoStep: { id: vars.stepId, name: vars.name },
         });
+        // 06 review P3-WR-01: chain the next write on the version the server reports, so a quick second tap is not a conflict.
+        if (res.version !== null) recordWrittenVersion('debts', vars.debtId, [vars.expectedVersion, expected], res.version);
+        return res;
       }),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
@@ -401,7 +416,7 @@ export function useSaveDebtPlan(): { save(input: SaveDebtPlanInput): { stepId: s
           account_id: input.paidFromAccountId,
           anchor_date: extraStartDate(debt, localDateIn(new Date(), tz)),
           time_zone: tz,
-          name: (input.seriesName ?? debt.name).trim(),
+          name: clampLineName(input.seriesName ?? debt.name),
           category_id: null,
         };
       }
@@ -446,13 +461,16 @@ function registerRecordDebtSale(qc: QueryClient): void {
         const expected = resolveExpectedVersion('debts', vars.debtId, vars.expectedVersion);
         const client = await writeClient();
         // ONE call: both transactions and the debt change in one server transaction, with one Undo step.
-        return recordDebtSale(client, {
+        const res = await recordDebtSale(client, {
           debtId: vars.debtId,
           expectedVersion: expected,
           sale: vars.sale,
           payment: vars.payment,
           undoStep: { id: vars.stepId, name: vars.name },
         });
+        // 06 review P3-WR-01: chain the next write on the version the server reports.
+        if (res.version !== null) recordWrittenVersion('debts', vars.debtId, [vars.expectedVersion, expected], res.version);
+        return res;
       }),
     scope: WRITE_SCOPE,
     retry: shouldRetryWrite,
@@ -519,7 +537,7 @@ export function useRecordDebtSale(): { record(input: RecordDebtSaleInput): { ste
       if (!Number.isSafeInteger(input.soldFor) || input.soldFor < 1 || input.soldFor > MAX_MINOR) throw new RangeError('record debt sale: sold-for out of range');
       if (!validMinor(input.paidToLoan)) throw new RangeError('record debt sale: payment out of range');
       if (input.paidToLoan > debt.balance) throw new RangeError('payment-exceeds-balance');
-      if (!validName(input.saleName) || !validName(input.paymentName)) throw new RangeError('record debt sale: name must be 1-80 characters');
+      if (!validLineName(input.saleName) || !validLineName(input.paymentName)) throw new RangeError('record debt sale: a name is required');
       const tz = getDeviceTimeZone();
       const date = input.date ?? localDateIn(new Date(), tz);
       if (!DATE_RE.test(date)) throw new RangeError('record debt sale: malformed date');
@@ -531,7 +549,7 @@ export function useRecordDebtSale(): { record(input: RecordDebtSaleInput): { ste
         currency,
         local_date: date,
         time_zone: tz,
-        name: name.trim(),
+        name: clampLineName(name),
       });
       const sale = leg(input.soldFor, input.saleAccountId, input.saleName);
       let payment: DebtSaleLeg | null = null;
@@ -617,7 +635,7 @@ export function useRecordDebtOneOff(): { record(input: RecordDebtOneOffInput): {
       if (input.amount > debt.balance) throw new RangeError('payment-exceeds-balance');
       if (debt.paid_off_on != null || debt.deleted_at != null) throw new RangeError('record one-off: the debt is paid off or removed');
       if (!input.paidFromAccountId) throw new RangeError('record one-off: choose the account the payment leaves');
-      if (!validName(input.name)) throw new RangeError('record one-off: name must be 1-80 characters');
+      if (!validLineName(input.name)) throw new RangeError('record one-off: a name is required');
       const tz = getDeviceTimeZone();
       const payment: DebtSaleLeg = {
         id: Crypto.randomUUID(),
@@ -626,7 +644,7 @@ export function useRecordDebtOneOff(): { record(input: RecordDebtOneOffInput): {
         currency: debt.currency,
         local_date: oneOffDate(localDateIn(new Date(), tz)),
         time_zone: tz,
-        name: input.name.trim(),
+        name: clampLineName(input.name),
       };
       const stepId = newStepId();
       mutation.mutate({

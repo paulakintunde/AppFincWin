@@ -18,6 +18,8 @@ import {
   useConfirmSafetyNet,
   useEditGoal,
   useMoveGoalMoney,
+  MoveGoalMoneyRefused,
+  REMOVE_GOAL_KEY,
   useSaveGoalPlan,
   useSetSafetyNet,
   type MoveGoalMoneyInput,
@@ -118,11 +120,12 @@ afterEach(() => {
 });
 
 describe('registration', () => {
-  it('registers defaults for all six keys', () => {
+  it('registers defaults for all seven keys', () => {
     const { qc } = setup();
     for (const k of [
       mutationKeys.saveGoalPlan,
       mutationKeys.editGoal,
+      REMOVE_GOAL_KEY,
       mutationKeys.moveGoalMoney,
       mutationKeys.confirmGoalContribution,
       mutationKeys.confirmSafetyNet,
@@ -333,18 +336,19 @@ describe('useEditGoal', () => {
     expect(insertUndoStep.mock.calls[0]![1].labelKey).toBe('safetyNetSizeSaved');
   });
 
-  it('remove soft-deletes with a goalRemoved step and drops the row from the cache', async () => {
+  it('remove calls remove_goal once (the server stops the series and builds the step) and drops the row', async () => {
     const { fake, qc } = setup();
     qc.setQueryData(KEY, [goal()]);
-    fake.respondWith(ok([goal({ deleted_at: '2026-11-05T12:00:00Z', version: 4 })]));
+    fake.respondWith(ok({ status: 'applied', goal_id: 'g1', goal_version: 4, undo_step_id: 'step-x' }));
     const { result } = await renderHook(() => useEditGoal(), { wrapper: wrapper(qc) });
-    result.current.remove(goal(), 'user-1');
+    const stepId = result.current.remove(goal(), 'user-1');
     await waitFor(() => expect(qc.getQueryData<SavingsGoalRow[]>(KEY)).toEqual([]));
-    await waitFor(() => expect(insertUndoStep).toHaveBeenCalledTimes(1));
-    expect(insertUndoStep.mock.calls[0]![1]).toMatchObject({
-      labelKey: 'goalRemoved',
-      ops: [{ entity: 'savings_goals', id: 'g1', expectedVersion: 4, patch: { deleted_at: null } }],
-    });
+    await waitFor(() => expect(rpcCall(fake)).toBeDefined());
+    const [fn, args] = rpcCall(fake);
+    expect(fn).toBe('remove_goal');
+    expect(args).toMatchObject({ p_goal_id: 'g1', p_undo_step: { id: stepId, label_key: 'goalRemoved' } });
+    // The step is built on the server: the client records none.
+    expect(insertUndoStep).not.toHaveBeenCalled();
     expect(() => result.current.remove(goal({ deleted_at: 'x' }), 'u')).toThrow(RangeError);
   });
 
@@ -482,8 +486,12 @@ describe('useMoveGoalMoney', () => {
     const { result } = await renderHook(() => useMoveGoalMoney(), { wrapper: wrapper(qc) });
     expect(() => result.current.move(base({ amount: 0 }))).toThrow(RangeError);
     expect(() => result.current.move(base({ amount: 1.5 }))).toThrow(RangeError);
-    expect(() => result.current.move(base({ categoryId: null }))).toThrow(TypeError);
-    expect(() => result.current.move(base({ account: { id: 'acc-sav', currency: 'USD' } }))).toThrow(TypeError);
+    expect(() => result.current.move(base({ categoryId: null }))).toThrow(MoveGoalMoneyRefused);
+    expect(() => result.current.move(base({ account: { id: 'acc-sav', currency: 'USD' } }))).toThrow(RangeError);
+    // 06 review P4-CR-02: tryMove hands a refusal back instead of throwing, and queues nothing.
+    expect(result.current.tryMove(base({ categoryId: null }))).toEqual({ ok: false, reason: 'transfer-category-missing' });
+    expect(result.current.tryMove(base({ goalAccount: null, kind: 'take' }))).toEqual({ ok: false, reason: 'goal-has-no-account' });
+    expect(qc.getMutationCache().getAll()).toHaveLength(0);
   });
 
   it('a rejected write removes the optimistic legs and is parked with ids only', async () => {
@@ -616,5 +624,50 @@ describe('useSetSafetyNet', () => {
     await qc.resumePausedMutations();
     await waitFor(() => expect(fake.calls.filter((c) => c.method === 'rpc')).toHaveLength(1));
     expect(recordFailedWrite).not.toHaveBeenCalled();
+  });
+});
+
+describe('06 review P4-WR-05: the goal-lines reads move at once (and while offline)', () => {
+  const LINES_KEY = queryKeys.goalLines('hh-1', 'g1');
+  const pending = { id: 'line-1', goal_id: 'g1', status: 'pending', deleted_at: null, original_amount: -5000 } as unknown as TransactionRow;
+
+  it('confirm marks the line paid in every loaded goal-lines query that covers the goal', async () => {
+    const { qc } = setup();
+    onlineManager.setOnline(false);
+    qc.setQueryData(LINES_KEY, [pending]);
+    qc.setQueryData(queryKeys.goalLines('hh-1', 'g2'), [{ ...pending, id: 'other', goal_id: 'g2' }]);
+    const { result } = await renderHook(() => useConfirmGoalContribution(), { wrapper: wrapper(qc) });
+    result.current.confirm({
+      ownerId: 'user-1',
+      line: { id: 'line-1', household_id: 'hh-1', account_id: 'acc-chk', original_amount: -5000, original_currency: 'USD', local_date: '2026-11-16', version: 1 },
+      goal: { id: 'g1', name: 'Lisbon', currency: 'USD', account_id: null },
+    });
+    await waitFor(() => expect(qc.getQueryData<TransactionRow[]>(LINES_KEY)?.[0]?.status).toBe('paid'));
+    expect(qc.getQueryData<TransactionRow[]>(queryKeys.goalLines('hh-1', 'g2'))?.[0]?.status).toBe('pending');
+    onlineManager.setOnline(true);
+  });
+
+  it('Add money appends the tagged leg to the goal lines', async () => {
+    const { qc } = setup();
+    onlineManager.setOnline(false);
+    qc.setQueryData(LINES_KEY, []);
+    const { result } = await renderHook(() => useMoveGoalMoney(), { wrapper: wrapper(qc) });
+    result.current.move({
+      householdId: 'hh-1',
+      ownerId: 'user-1',
+      homeCurrency: 'USD',
+      kind: 'add',
+      goal: { id: 'g1', name: 'Lisbon', currency: 'USD', target: 180000, opening_saved: 0 },
+      goalAccount: { id: 'acc-sav', currency: 'USD' },
+      account: { id: 'acc-chk', currency: 'USD' },
+      amount: 20000,
+      categoryId: 'cat-transfer',
+      lines: [],
+      toHome: (a: number) => a,
+      localDate: '2026-11-05',
+    });
+    await waitFor(() => expect(qc.getQueryData<TransactionRow[]>(LINES_KEY)).toHaveLength(1));
+    expect(qc.getQueryData<TransactionRow[]>(LINES_KEY)?.[0]).toMatchObject({ goal_id: 'g1', original_amount: 20000, status: 'paid' });
+    onlineManager.setOnline(true);
   });
 });

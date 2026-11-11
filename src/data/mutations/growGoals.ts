@@ -18,6 +18,7 @@ import { buildStep, inverseOfInserts, inverseOfPatches, type PatchValue } from '
 import { VersionConflictError } from '@/db/errors';
 import {
   confirmGoalContribution,
+  removeGoal,
   saveGoalPlan,
   setSafetyNet,
   type GoalPlanGoal,
@@ -39,6 +40,9 @@ import { optimisticTransactionRow } from './batchInsert';
 import { acceptIfAlreadyApplied, upsertRow } from './cacheRows';
 import { invalidateDerivedReads, patchMonthCacheIfLoaded, placeRowInMonth } from './transactionCache';
 import { newStepId, recordUndoStepSafely } from './undoCapture';
+
+/** 06 review: remove_goal. Kept here, not in keys.ts, so the persisted-cache shape hash (check:cache-version) is unchanged. */
+export const REMOVE_GOAL_KEY = ['savings-goals', 'remove-grow'] as const;
 
 type GoalList = WithPending<SavingsGoalRow>[];
 type TransactionList = WithPending<TransactionRow>[];
@@ -70,6 +74,26 @@ export function refreshGoalReads(qc: QueryClient, cache: GoalCacheKey): void {
   void qc.invalidateQueries({ queryKey: queryKeys.recurringSeries(cache.householdId) });
   void qc.invalidateQueries({ queryKey: queryKeys.undoLog(cache.userId) });
   invalidateDerivedReads(qc, cache.householdId);
+}
+
+/**
+ * 06 review P4-WR-05: patch every loaded goal-lines query (queryKeys.goalLines) that covers `goalId`, or every one when
+ * goalId is null. The goal screens take the saved figure and the history from these queries, not the month caches.
+ */
+async function patchGoalLines(
+  qc: QueryClient,
+  householdId: string,
+  goalId: string | null,
+  updater: (list: TransactionList) => TransactionList
+): Promise<void> {
+  const prefix = queryKeys.goalLines(householdId, '').slice(0, 3);
+  await qc.cancelQueries({ queryKey: prefix });
+  for (const [key, data] of qc.getQueriesData<TransactionList>({ queryKey: prefix })) {
+    if (data === undefined) continue;
+    const ids = typeof key[3] === 'string' ? key[3].split(',') : [];
+    if (goalId !== null && !ids.includes(goalId)) continue;
+    qc.setQueryData<TransactionList>(key, updater(data));
+  }
 }
 
 function validName(name: string): boolean {
@@ -181,6 +205,7 @@ function assertSeries(series: GoalPlanSeries | null): void {
 export function registerGrowGoalMutations(qc: QueryClient): void {
   registerSavePlan(qc);
   registerPatchMutations(qc);
+  registerRemoveGoal(qc);
   registerMoveMoney(qc);
   registerConfirmContribution(qc);
   registerSetSafetyNet(qc);
@@ -431,6 +456,7 @@ export function useEditGoal(): {
   remove(goal: SavingsGoalRow, ownerId: string): string;
 } {
   const mutation = useMutation<SavingsGoalRow, unknown, PatchGoalVars>({ mutationKey: mutationKeys.editGoal, scope: WRITE_SCOPE });
+  const removal = useMutation<unknown, unknown, RemoveGoalVars>({ mutationKey: REMOVE_GOAL_KEY, scope: WRITE_SCOPE });
   return {
     edit(goal, patch, ownerId, saved) {
       const keys = Object.keys(patch);
@@ -460,20 +486,60 @@ export function useEditGoal(): {
     remove(goal, ownerId) {
       if (goal.deleted_at !== null) throw new RangeError('remove goal: already removed');
       const stepId = newStepId();
-      mutation.mutate({
+      // Owner decision 2026-11-10 (06 review P1-CR-03): one remove_goal call stops the monthly contribution and removes its
+      // Expected lines with the goal, as one Undo. Paid lines stay.
+      removal.mutate({
         id: goal.id,
         ownerId,
         cache: { userId: ownerId, householdId: goal.household_id },
         expectedVersion: goal.version,
-        patch: { deleted_at: new Date().toISOString() },
-        before: { deleted_at: null },
-        labelKey: 'goalRemoved',
         name: goal.name,
         stepId,
       });
       return stepId;
     },
   };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Remove a goal (remove_goal): the goal, its monthly contribution and its unpaid Expected lines, one server-built step
+// ---------------------------------------------------------------------------------------------------------------------
+
+export interface RemoveGoalVars {
+  id: string;
+  ownerId: string;
+  cache: GoalCacheKey;
+  expectedVersion: number;
+  name: string;
+  stepId: string;
+}
+
+function registerRemoveGoal(qc: QueryClient): void {
+  qc.setMutationDefaults(REMOVE_GOAL_KEY, {
+    mutationFn: (vars: RemoveGoalVars) =>
+      guardSession(vars, async () => {
+        const expected = resolveExpectedVersion('savings_goals', vars.id, vars.expectedVersion);
+        const client = await writeClient();
+        const res = await removeGoal(client, { goalId: vars.id, expectedVersion: expected, undoStep: { id: vars.stepId, name: vars.name } });
+        if (res.goalVersion !== null) recordWrittenVersion('savings_goals', vars.id, [vars.expectedVersion, expected], res.goalVersion);
+        return res;
+      }),
+    scope: WRITE_SCOPE,
+    retry: shouldRetryWrite,
+    retryDelay: writeRetryDelay,
+    onMutate: async (vars: RemoveGoalVars) => {
+      markSession(vars);
+      await qc.cancelQueries({ queryKey: queryKeys.savingsGoals(vars.cache.userId, vars.cache.householdId) });
+      patchGoals(qc, vars.cache, (rows) => rows.filter((r) => r.id !== vars.id));
+    },
+    onSuccess: (_res: unknown, vars: RemoveGoalVars) => {
+      // The series and its Expected lines changed on the server too.
+      refreshGoalReads(qc, vars.cache);
+    },
+    onError: async (err: unknown, vars: RemoveGoalVars) => {
+      await parkFailure('savings_goals', vars.id, err, { labelKey: 'goalRemoved', fields: ['deleted_at'] }, () => refreshGoalReads(qc, vars.cache));
+    },
+  });
 }
 
 /** D-07: the owner confirms the migrated safety net ("Looks right"). One step, 'safetyNetConfirmed'. Returns the step id. */
@@ -552,6 +618,13 @@ function registerMoveMoney(qc: QueryClient): void {
         await qc.cancelQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, monthOf(tx.local_date)) });
         placeRowInMonth(qc, vars.householdId, optimisticTransactionRow(qc, { ownerId: vars.ownerId, homeCurrency: vars.homeCurrency }, tx, now), []);
       }
+      // 06 review P4-WR-05: the goal screens read the saved figure from the goal-lines queries, so the tagged leg goes there
+      // too, at once and while offline; otherwise the user sees nothing move and adds the money twice.
+      const tagged = vars.rows.filter((r) => r.goal_id === vars.goalId);
+      await patchGoalLines(qc, vars.householdId, vars.goalId, (list) => [
+        ...list.filter((r) => !tagged.some((t) => t.id === r.id)),
+        ...tagged.map((tx) => optimisticTransactionRow(qc, { ownerId: vars.ownerId, homeCurrency: vars.homeCurrency }, tx, now)),
+      ]);
     },
     onSuccess: (_rows: InsertedRow[], vars: MoveGoalMoneyVars) => {
       void qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot(vars.householdId) });
@@ -564,6 +637,7 @@ function registerMoveMoney(qc: QueryClient): void {
       for (const month of new Set(vars.rows.map((r) => monthOf(r.local_date)))) {
         patchMonthCacheIfLoaded(qc, vars.householdId, month, (list: TransactionList) => list.filter((r) => !ids.has(r.id)));
       }
+      await patchGoalLines(qc, vars.householdId, vars.goalId, (list) => list.filter((r) => !ids.has(r.id)));
       invalidateDerivedReads(qc, vars.householdId);
       await recordFailedWrite({
         entity: 'transactions',
@@ -605,12 +679,39 @@ export interface MoveGoalMoneyInput {
  * no account takes one line tagged to the goal (adding only). Both legs go in ONE write with ONE Undo. Returns the step id and
  * whether this deposit carried the goal to its target (for the success moment).
  */
-export function useMoveGoalMoney(): { move(input: MoveGoalMoneyInput): { stepId: string; transferId: string | null; reachedTarget: boolean } } {
+export type MoveGoalMoneyRefusal = 'transfer-category-missing' | 'goal-has-no-account' | 'bad-amount' | 'invalid-transfer';
+
+/** 06 review P4-CR-02: what tryMove hands back. A refusal queues nothing. */
+export type MoveGoalMoneyResult =
+  | { ok: true; stepId: string; transferId: string | null; reachedTarget: boolean }
+  | { ok: false; reason: MoveGoalMoneyRefusal };
+
+/** A move that cannot be queued, thrown by move() (tryMove returns it instead). */
+export class MoveGoalMoneyRefused extends RangeError {
+  constructor(readonly reason: MoveGoalMoneyRefusal) {
+    super(reason);
+    this.name = 'MoveGoalMoneyRefused';
+  }
+}
+
+export function useMoveGoalMoney(): {
+  move(input: MoveGoalMoneyInput): { stepId: string; transferId: string | null; reachedTarget: boolean };
+  /** Same as move, but a refusal (for example the Transfer category not loaded yet) comes back as a typed result, never thrown. */
+  tryMove(input: MoveGoalMoneyInput): MoveGoalMoneyResult;
+} {
   const mutation = useMutation<InsertedRow[], unknown, MoveGoalMoneyVars>({ mutationKey: mutationKeys.moveGoalMoney, scope: WRITE_SCOPE });
-  return {
-    move(input) {
-      if (!validPositive(input.amount)) throw new RangeError('move goal money: amount must be above 0');
-      if (input.otherAmount !== undefined && !validPositive(input.otherAmount)) throw new RangeError('move goal money: amount must be above 0');
+  const api = {
+    tryMove(input: MoveGoalMoneyInput): MoveGoalMoneyResult {
+      try {
+        return { ok: true, ...api.move(input) };
+      } catch (err) {
+        if (err instanceof MoveGoalMoneyRefused) return { ok: false, reason: err.reason };
+        throw err;
+      }
+    },
+    move(input: MoveGoalMoneyInput) {
+      if (!validPositive(input.amount)) throw new MoveGoalMoneyRefused('bad-amount');
+      if (input.otherAmount !== undefined && !validPositive(input.otherAmount)) throw new MoveGoalMoneyRefused('bad-amount');
       const timeZone = input.timeZone ?? getDeviceTimeZone();
       const localDate = input.localDate ?? localDateIn(new Date(), timeZone);
       const other = input.otherAmount ?? input.amount;
@@ -632,10 +733,10 @@ export function useMoveGoalMoney(): { move(input: MoveGoalMoneyInput): { stepId:
       let rows: NewTransaction[];
       let transferId: string | null = null;
       if (input.goalAccount === null) {
-        if (input.kind === 'take') throw new RangeError('goal-has-no-account');
+        if (input.kind === 'take') throw new MoveGoalMoneyRefused('goal-has-no-account');
         rows = [{ ...base(Crypto.randomUUID(), input.account, -other), goal_id: input.goal.id }];
       } else {
-        if (!input.categoryId) throw new TypeError('move goal money: the Transfer category is required');
+        if (!input.categoryId) throw new MoveGoalMoneyRefused('transfer-category-missing');
         transferId = Crypto.randomUUID();
         const from = input.kind === 'add' ? input.account : input.goalAccount;
         const to = input.kind === 'add' ? input.goalAccount : input.account;
@@ -649,7 +750,7 @@ export function useMoveGoalMoney(): { move(input: MoveGoalMoneyInput): { stepId:
           amountIn: (input.kind === 'add' ? input.amount : other) as never,
           localDate,
         });
-        if (!built.ok) throw new TypeError(`move goal money: invalid transfer (${built.error})`);
+        if (!built.ok) throw new MoveGoalMoneyRefused('invalid-transfer');
         const [outLeg, inLeg] = built.legs;
         const goalSideIsIn = input.kind === 'add';
         const toRow = (leg: typeof outLeg, tagged: boolean): NewTransaction => ({
@@ -708,6 +809,7 @@ export function useMoveGoalMoney(): { move(input: MoveGoalMoneyInput): { stepId:
       return { stepId, transferId, reachedTarget };
     },
   };
+  return api;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -752,6 +854,11 @@ function registerConfirmContribution(qc: QueryClient): void {
       markSession(vars);
       await qc.cancelQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, vars.month) });
       patchMonthCacheIfLoaded(qc, vars.householdId, vars.month, (list: TransactionList) =>
+        list.map((r) => (r.id === vars.lineId ? { ...r, status: 'paid' as const, pending: true } : r))
+      );
+      // 06 review P4-WR-05: the goal screens read the goal-lines queries; the line shows as confirmed there at once, so
+      // Confirm is not offered (and sent) a second time while the server has not answered or the device is offline.
+      await patchGoalLines(qc, vars.householdId, vars.goalId, (list) =>
         list.map((r) => (r.id === vars.lineId ? { ...r, status: 'paid' as const, pending: true } : r))
       );
     },

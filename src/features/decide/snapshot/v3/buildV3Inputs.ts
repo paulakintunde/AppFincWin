@@ -363,8 +363,10 @@ export function buildV3Inputs(
       status: over.status,
     };
   };
-  // The series that feed a goal: the goal's monthly amount carries them, so Decide never reads them as series too.
-  const goalLinkedSeries = new Set(source.series.filter((r) => r.goal_id != null).map((r) => r.id));
+  // The series that feed a live goal: the goal's monthly amount carries them, so Decide never reads them as series too.
+  // P5-CR-01: only while the goal is live (not removed, not done). A removed or done goal is not carried by anything, so
+  // a series still tagged to it stays a bill or a Savings series and its outflow is counted, never lost.
+  const goalLinkedSeries = new Set(source.series.filter((r) => isLiveGoal(r.goal_id)).map((r) => r.id));
   // D-03, 05.1 D-53: account use is read from the account columns (one source); `uses` only overrides in tests.
   const effectiveUses: Record<string, AccountUse> = {};
   for (const a of source.accounts) {
@@ -478,8 +480,10 @@ export function buildV3Inputs(
         if (isLiveGoal(rowById.get(line.id)?.goal_id)) return line.direction === 'out' ? 'envelope_deposit' : 'envelope_withdrawal';
         // 06-37 D-35: a line tagged to a debt (a one-off payment, record_debt_one_off) is a debt payment, the same as a
         // transfer into a loan or card: money out once, never everyday spending, never in a category's total.
+        // P5-WR-05: record_debt_sale's final payment carries debt_id too, so it lands here as a debt payment. Money IN tagged
+        // to a debt is the asset sale itself: one-time money in, never pay and never averaged into income.
         const debtId = rowById.get(line.id)?.debt_id;
-        if (line.direction === 'out' && debtId !== null && debtId !== undefined) return 'debt_payment';
+        if (debtId !== null && debtId !== undefined) return line.direction === 'out' ? 'debt_payment' : 'other_in';
         return line.direction === 'out' ? 'spending' : line.isRefund ? 'refund' : 'income';
       }
       const row = rowById.get(line.id);

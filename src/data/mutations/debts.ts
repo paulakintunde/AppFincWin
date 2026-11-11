@@ -8,6 +8,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { buildStep, inverseOfInserts, inverseOfPatches, type PatchValue } from '@/engine/undo';
 import { VersionConflictError } from '@/db/errors';
 import { insertDebt, updateDebt, type DebtPatch, type DebtRow, type NewDebt } from '@/db/debts';
+import { removeDebt } from '@/db/debtPlan';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import {
@@ -266,11 +267,51 @@ export function registerDebtMutations(qc: QueryClient): void {
     patchDefaults<SetDebtPaidOffVars>(qc, 'debtPaidOff', (v) => ({ paid_off_on: v.date }), (v) => v.name)
   );
 
-  // 06-16: "Remove debt" is a real soft delete (a debt added by mistake), separate from "Mark paid off". One Undo clears deleted_at.
-  qc.setMutationDefaults(
-    mutationKeys.removeDebt,
-    patchDefaults<RemoveDebtVars & { before: Record<string, PatchValue> }>(qc, 'debtRemoved', (v) => ({ deleted_at: v.deletedAt }), (v) => v.name)
-  );
+  // 06-16: "Remove debt" is a real soft delete (a debt added by mistake), separate from "Mark paid off".
+  // 06 review (owner decision 2026-11-10, P1-WR-01): one remove_debt call also stops the debt's payment and Expected extra
+  // series and removes their unpaid Expected lines; the server builds the one debtRemoved step that brings it all back.
+  // The variables are unchanged, so a removal queued by an older build replays through this path too.
+  qc.setMutationDefaults(mutationKeys.removeDebt, {
+    mutationFn: (vars: RemoveDebtVars) =>
+      guardSession(vars, async () => {
+        const expected = resolveExpectedVersion('debts', vars.id, vars.expectedVersion);
+        const client = await writeClient();
+        const res = await removeDebt(client, { debtId: vars.id, expectedVersion: expected, undoStep: { id: vars.stepId, name: vars.name } });
+        if (res.version !== null) recordWrittenVersion('debts', vars.id, [vars.expectedVersion, expected], res.version);
+        return res;
+      }),
+    scope: WRITE_SCOPE,
+    retry: shouldRetryWrite,
+    retryDelay: writeRetryDelay,
+    onMutate: async (vars: RemoveDebtVars) => {
+      markSession(vars);
+      await qc.cancelQueries({ queryKey: queryKeys.debts(vars.householdId) });
+      qc.setQueryData<DebtList>(queryKeys.debts(vars.householdId), (old) => (old ?? []).filter((r) => r.id !== vars.id));
+    },
+    onSuccess: (_res: unknown, vars: RemoveDebtVars) => {
+      invalidateDebts(qc, vars.householdId);
+      void qc.invalidateQueries({ queryKey: queryKeys.recurringSeries(vars.householdId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot(vars.householdId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.undoLog(vars.ownerId) });
+      // The same reads as transactionCache's invalidateDerivedReads, inlined: that module
+      // reaches db/fxResolve, which the fx-fetch-never-from-reads rule keeps out of Decide.
+      void qc.invalidateQueries({ queryKey: queryKeys.accountBalances(vars.householdId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactionMonths(vars.householdId) });
+      void qc.invalidateQueries({ queryKey: queryKeys.transactionsSearchRoot(vars.householdId) });
+    },
+    onError: async (err: unknown, vars: RemoveDebtVars) => {
+      const cls = classifySettledWriteError(err);
+      if (cls !== 'conflict' && cls !== 'rejected' && cls !== 'not-found') return;
+      invalidateDebts(qc, vars.householdId);
+      await recordFailedWrite({
+        entity: 'debts',
+        entityId: vars.id,
+        kind: cls,
+        code: cls === 'conflict' ? 'version-conflict' : settledWriteErrorCode(err),
+        attempted: { labelKey: 'debtRemoved', fields: ['deleted_at'] },
+      });
+    },
+  });
 
   // 05.2-15 (DSU-06): how a card is paid off each month. Same shape as the housing write; label setupStepSaved.
   qc.setMutationDefaults(mutationKeys.setDebtPaysInFull, {
@@ -522,9 +563,12 @@ export function useSetDebtPaidOff(): { setPaidOff(debt: DebtRow, date: string, o
   };
 }
 
-/** Remove a debt: soft delete (deleted_at), one Undo (label debtRemoved) that brings it back. Past payments stay in Activity. Returns the undo step id. */
+/**
+ * Remove a debt: soft delete with its payment and Expected extra series stopped and their unpaid Expected lines removed
+ * (remove_debt), one Undo (label debtRemoved) that brings it all back. Past payments stay in Activity. Returns the undo step id.
+ */
 export function useRemoveDebt(): { remove(debt: DebtRow, ownerId: string): string } {
-  const mutation = useMutation<DebtRow, unknown, RemoveDebtVars & { before: Record<string, PatchValue> }>({
+  const mutation = useMutation<unknown, unknown, RemoveDebtVars & { before: Record<string, PatchValue> }>({
     mutationKey: mutationKeys.removeDebt,
     scope: WRITE_SCOPE,
   });

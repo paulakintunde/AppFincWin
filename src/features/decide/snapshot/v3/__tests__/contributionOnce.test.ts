@@ -79,6 +79,32 @@ describe('06-10 a goal contribution counts once (ARC-15)', () => {
     expect(linesOf(inbound, 'envelope_withdrawal')).toHaveLength(0);
   });
 
+  // P5-CR-01: removing a goal (or finishing it) leaves its series running until the server ends it. With the goal no longer
+  // carrying it, the series must stay a real outflow, never dropped.
+  it.each([
+    ['removed', { deleted_at: '2026-09-01T00:00:00Z' }],
+    ['done', { done_at: '2026-09-01T00:00:00Z' }],
+  ] as const)('a %s goal no longer carries its series: the Savings series is counted as saving', (_label, over) => {
+    const s = source([], [{ ...lisbon, ...over }]);
+    const i = buildV3Inputs({ ...s, series: s.series.map((r) => (r.id === 's-lisbon' ? { ...r, category_id: 'cat-savings' } : r)) }, SETTINGS, undefined, USES);
+    expect(i.envelopes.find((e) => e.id === 'g-lisbon')).toBeUndefined();
+    const kept = i.series.find((x) => x.id === 's-lisbon');
+    expect(kept?.role).toBe('saving');
+    expect(Math.abs(kept?.amount ?? 0)).toBe(5000);
+  });
+
+  it('a removed goal no longer carries its series: the bill series is counted as a bill', () => {
+    const gone: Goal = { ...lisbon, deleted_at: '2026-09-01T00:00:00Z' };
+    const months = ['2026-08', '2026-09', '2026-10', MONTH].filter((m, k, xs) => xs.indexOf(m) === k);
+    const paid = months.map((m, k) => row(`lisbon-${k}`, { local_date: `${m}-16`, recurring_series_id: 's-lisbon', goal_id: 'g-lisbon', category_id: null }));
+    const live = buildV3Inputs(source(paid, [lisbon]), SETTINGS, undefined, USES);
+    const dead = buildV3Inputs(source(paid, [gone]), SETTINGS, undefined, USES);
+    expect(live.series.find((x) => x.id === 's-lisbon')).toBeUndefined();
+    const bill = dead.series.find((x) => x.id === 's-lisbon');
+    expect(bill?.role).toBe('bill');
+    expect(Math.abs(bill?.amount ?? 0)).toBe(5000);
+  });
+
   it('a paired goal-tagged transfer still counts once through the existing tagged path', () => {
     const out = row('lisbon-x-out', { transfer_id: 't-1', goal_id: null });
     const into = row('lisbon-x-in', { transfer_id: 't-1', account_id: 'demo-acct-savings', original_amount: 5000, home_amount: 5000, goal_id: 'g-lisbon' });

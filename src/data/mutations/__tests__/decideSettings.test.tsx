@@ -9,7 +9,7 @@ import type { DbClient } from '@/db/rows';
 import { EMPTY_DECIDE_SETTINGS, type DecideSettingsRow } from '@/db/decideSettings';
 import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupabase';
 import { queryKeys } from '@/data/keys';
-import { registerDecideSettingsMutations, useUpdateDecideSettings } from '../decideSettings';
+import { inverseSettingsPatch, registerDecideSettingsMutations, useUpdateDecideSettings } from '../decideSettings';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
 let mockActiveClient: unknown;
@@ -149,5 +149,14 @@ describe('useUpdateDecideSettings', () => {
     const failure = recordFailedWrite.mock.calls[0]![0];
     expect(failure).toMatchObject({ entity: 'decide_settings', attempted: { fields: ['reserve'] } });
     expect(JSON.stringify(failure)).not.toContain('999');
+  });
+});
+
+describe('06 review P4-WR-07: inverseSettingsPatch', () => {
+  it('puts back every column the forward patch wrote, the currency and the cleared figures included', () => {
+    const before = { currency: 'EUR', investing_floor: 1000, saving_floor: 2000, rough_income: 300000 } as never;
+    const forward = { investing_floor: 5000, saving_floor: null, rough_income: null, currency: 'USD' } as never;
+    expect(inverseSettingsPatch(forward, before)).toEqual({ investing_floor: 1000, saving_floor: 2000, rough_income: 300000, currency: 'EUR' });
+    expect(inverseSettingsPatch(forward, null)).toEqual({ investing_floor: null, saving_floor: null, rough_income: null, currency: null });
   });
 });

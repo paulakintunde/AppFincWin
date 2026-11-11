@@ -11,7 +11,7 @@ import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupaba
 import { mutationKeys, queryKeys } from '@/data/keys';
 import { clearVersionChains } from '@/data/sync/versionChain';
 import { resetToastForTests } from '@/state/undoToast';
-import { registerGrowDebtMutations, useSaveDebtPlan, useSaveGrowDebt } from '../growDebts';
+import { clampLineName, registerGrowDebtMutations, useSaveDebtPlan, useSaveGrowDebt } from '../growDebts';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
 let mockActiveClient: unknown;
@@ -269,5 +269,15 @@ describe('useSaveDebtPlan', () => {
     onlineManager.setOnline(true);
     await qc.resumePausedMutations();
     await waitFor(() => expect(fake.calls.filter((c) => c.method === 'rpc')).toHaveLength(1));
+  });
+});
+
+describe('06 review P3-WR-07: clampLineName', () => {
+  it('keeps a name of up to 80 characters and cuts a longer one to 80 with an ellipsis', () => {
+    expect(clampLineName('  Car final payment ')).toBe('Car final payment');
+    expect(clampLineName('a'.repeat(80))).toBe('a'.repeat(80));
+    const long = clampLineName('b'.repeat(95));
+    expect(Array.from(long)).toHaveLength(80);
+    expect(long.endsWith('…')).toBe(true);
   });
 });

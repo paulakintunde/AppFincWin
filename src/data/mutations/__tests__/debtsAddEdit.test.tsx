@@ -215,22 +215,24 @@ describe('useEditDebt', () => {
 });
 
 describe('useRemoveDebt (06-16)', () => {
-  it('soft-deletes with a debtRemoved step that clears deleted_at, and the debt leaves the cache at once', async () => {
+  it('removes through one remove_debt call that carries the debtRemoved step, and the debt leaves the cache at once', async () => {
+    // P1-WR-01: the server soft-deletes the debt, stops its series and writes the one undo step itself.
     const { fake, qc } = setup();
     qc.setQueryData(KEY, [debt({ version: 2 }), debt({ id: 'd2', name: 'Other' })]);
-    fake.respondWith(ok([debt({ deleted_at: '2026-10-28T12:00:00Z', version: 3 })]));
+    fake.respondWith({ data: { status: 'applied', version: 3, undo_step_id: 'srv-step' }, error: null, status: 200 });
     const { result } = await renderHook(() => useRemoveDebt(), { wrapper: wrapper(qc) });
     const stepId = result.current.remove(debt({ version: 2 }), 'user-1');
     await waitFor(() => expect(qc.getQueryData<DebtRow[]>(KEY)?.map((r) => r.id)).toEqual(['d2']));
-    await waitFor(() => expect(insertUndoStep).toHaveBeenCalledTimes(1));
-    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ deleted_at: '2026-10-28T12:00:00.000Z' });
-    expect(fake.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toContainEqual(['version', 2]);
-    expect(insertUndoStep.mock.calls[0]![1]).toMatchObject({
-      id: stepId,
-      labelKey: 'debtRemoved',
-      labelParams: { name: 'Visa' },
-      ops: [{ entity: 'debts', id: 'd1', expectedVersion: 3, patch: { deleted_at: null } }],
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    const rpc = fake.calls.find((c) => c.method === 'rpc');
+    expect(rpc?.args[0]).toBe('remove_debt');
+    expect(rpc?.args[1]).toEqual({
+      p_debt_id: 'd1',
+      p_expected_version: 2,
+      p_undo_step: { id: stepId, label_key: 'debtRemoved', label_params: { name: 'Visa' } },
     });
+    expect(fake.calls.filter((c) => c.method === 'update')).toHaveLength(0);
+    expect(insertUndoStep).not.toHaveBeenCalled();
   });
 
   it('refuses a debt that is already removed', async () => {
@@ -242,11 +244,11 @@ describe('useRemoveDebt (06-16)', () => {
   it('does not mark the debt paid off', async () => {
     const { fake, qc } = setup();
     qc.setQueryData(KEY, [debt()]);
-    fake.respondWith(ok([debt({ deleted_at: '2026-10-28T12:00:00Z', version: 2 })]));
+    fake.respondWith({ data: { status: 'applied', version: 2, undo_step_id: 'srv-step' }, error: null, status: 200 });
     const { result } = await renderHook(() => useRemoveDebt(), { wrapper: wrapper(qc) });
     result.current.remove(debt(), 'u');
-    await waitFor(() => expect(insertUndoStep).toHaveBeenCalledTimes(1));
-    expect(Object.keys(fake.calls.find((c) => c.method === 'update')?.args[0] as object)).toEqual(['deleted_at']);
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    expect(JSON.stringify(fake.calls)).not.toMatch(/paid_off_on/);
   });
 });
 

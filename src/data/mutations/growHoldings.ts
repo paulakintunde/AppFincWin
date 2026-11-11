@@ -8,13 +8,13 @@
 //   useEditHoldingLot   change or remove an entry
 //   useSetAccountRate   an account's interest rate (APY)
 //
-// A 'value' entry makes the server move the holding's value and version (trigger), so the holdings list is refetched after
-// any entry write rather than assuming a version. Call refreshHoldingReads after Undo for the same reason.
+// A 'value' entry makes the server move the holding's value (trigger), so the holdings list is refetched after any entry
+// write. Since 20261110000200 (06 review P1-CR-01) that move no longer changes the holding's version. Undo refreshes the
+// holdings and their entries itself (invalidateAfterUndo, P1-WR-05).
 import * as Crypto from 'expo-crypto';
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
-import { replayLots, type LotEntry } from '@/engine/grow';
-import { minorUnits } from '@/engine/money';
+import { replayLots } from '@/engine/grow';
 import { percent } from '@/engine/payoff';
 import { localDateIn } from '@/engine/time';
 import { buildStep, inverseOfInserts, inverseOfPatches, type PatchValue, type UndoLabelKey } from '@/engine/undo';
@@ -36,6 +36,7 @@ import { classifySettledWriteError, settledWriteErrorCode, shouldRetryWrite, wri
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
+import { holdingLotEntries } from '@/features/grow/investing/lotEntries';
 import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import { writeClient } from './writeClient';
 import { acceptIfAlreadyApplied, upsertRow } from './cacheRows';
@@ -80,20 +81,16 @@ function validPercentText(rate: string): boolean {
   }
 }
 
-/** Replays the entries (the opening put-in counts as the first buy). Returns the engine's error code, or null when they hold up. */
+/**
+ * Replays the entries (the opening put-in counts as the first buy). Returns the engine's error code, or null when they hold up.
+ * 06 review P3-CR-01: a sale without units takes put-in out in proportion to the value AT the sale (the shared
+ * holdingLotEntries helper), not the holding's latest value, so a later "Update value" never rewrites a past sale.
+ */
 export function lotsReplayError(
   holding: Pick<HoldingRow, 'opening_put_in' | 'value'>,
-  lots: readonly Pick<HoldingLotRow, 'kind' | 'amount' | 'units' | 'local_date'>[]
+  lots: readonly (Pick<HoldingLotRow, 'kind' | 'amount' | 'units' | 'local_date'> & Partial<Pick<HoldingLotRow, 'created_at' | 'deleted_at'>>)[]
 ): 'sell-exceeds-units' | 'bad-units' | null {
-  const entries: LotEntry[] = [];
-  if (holding.opening_put_in > 0) {
-    entries.push({ kind: 'buy', amount: minorUnits(holding.opening_put_in), units: null, localDate: '0000-01-01' });
-  }
-  for (const l of lots) {
-    if (l.kind === 'value') continue;
-    entries.push({ kind: l.kind, amount: minorUnits(l.amount), units: l.units, localDate: l.local_date, valueBefore: minorUnits(holding.value) });
-  }
-  const res = replayLots(entries);
+  const res = replayLots(holdingLotEntries(holding, lots));
   return res.ok ? null : res.error;
 }
 
@@ -590,6 +587,10 @@ export function useEditHoldingLot(): {
     },
     remove(lot, holding, lots, ownerId) {
       if (lot.deleted_at !== null) throw new RangeError('remove entry: already removed');
+      // 06 review P1-IN-02: a holding keeps at least one value entry (the server refuses the last one too).
+      if (lot.kind === 'value' && !lots.some((l) => l.id !== lot.id && l.kind === 'value' && l.deleted_at === null)) {
+        throw new RangeError('last-value-entry');
+      }
       if (lot.kind !== 'value') {
         const err = lotsReplayError(holding, lots.filter((l) => l.id !== lot.id));
         if (err !== null) throw new RangeError(err);

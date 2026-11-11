@@ -82,5 +82,18 @@ describe('06-37 a one-off debt payment is a debt payment in Decide (D-35)', () =
     const built = buildV3Inputs({ ...base, rows: [...base.rows, back] }, SETTINGS, undefined, USES);
     const hit = monthLines(built).find((l) => l.id === 'one-off-in');
     expect(hit?.role).not.toBe('debt_payment');
+    // P5-WR-05: money in tagged to a debt is an asset sale: one-time money in, never pay.
+    expect(hit?.role).toBe('other_in');
+  });
+
+  it('P5-WR-05: a sale (money in) and its final payment (money out), both tagged to the debt, are not pay or spending', () => {
+    const sale = oneOffRow(debt.id, { id: 'sale-in', original_amount: 1400000, home_amount: 1400000, status: 'paid' });
+    const payoff = oneOffRow(debt.id, { id: 'sale-payoff', original_amount: -900000, home_amount: -900000, status: 'paid' });
+    const built = buildV3Inputs({ ...base, rows: [...base.rows, sale, payoff] }, SETTINGS, undefined, USES);
+    const lines = monthLines(built);
+    expect(lines.find((l) => l.id === 'sale-in')?.role).toBe('other_in');
+    expect(lines.find((l) => l.id === 'sale-payoff')?.role).toBe('debt_payment');
+    expect(lines.filter((l) => l.role === 'income')).toEqual(monthLines(without).filter((l) => l.role === 'income'));
+    expect(everyday(built).everyday).toBe(everyday(without).everyday);
   });
 });
