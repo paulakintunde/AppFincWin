@@ -212,6 +212,11 @@ function caveatLines(caveat: Caveat | undefined, deps: SayDeps): { caveat: Line 
   return { caveat: line, figures: present([...figures, guard(deps, () => fill(caveat.code, CAVEAT_WRONG_FIGURE_KEY, {}, deps))]) };
 }
 
+/** CO-D-64 (3): every caveat on the result as a sentence (the About sheet's "For this answer"), figures not repeated. */
+export function sayCaveats(r: Result, deps: SayDeps): Line[] {
+  return present((r.caveats ?? []).map((c) => guard(deps, () => fill(c.code, CAVEAT_KEYS[c.code], c.values, deps))));
+}
+
 function afterBuyLead(r: Result, deps: SayDeps): Line | null {
   // A not-ready result or an ask is never a verdict (D-52), so it has no after-buy figure to lead with.
   if (r.code === 'needs_input' || r.readiness?.ready === false) return null;

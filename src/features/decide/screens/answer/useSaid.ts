@@ -5,7 +5,7 @@ import { i18n, useT } from '@/i18n';
 import type { Result } from '@/engine/decide/v3';
 import { money as makeMoney } from '@/engine/money';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
-import { MissingCopyError, sayResult, type SayDeps, type SayNames, type SaidResult } from '../logic/sayResult';
+import { MissingCopyError, sayCaveats, sayResult, type Line, type SayDeps, type SayNames, type SaidResult } from '../logic/sayResult';
 import { verdictValues } from './verdictValues';
 
 export interface UseSaidOptions {
@@ -41,15 +41,13 @@ function monthText(locale: string, ym: string): string {
   return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, 1)));
 }
 
-export function useSaid(result: Result | null, opts: UseSaidOptions): Said {
+function useSayDeps(opts: UseSaidOptions): SayDeps {
   const t = useT();
   const fmt = useMoneyFormatter(opts.showCents ?? true);
   const { currency, today, names, onMissing } = opts;
   const { formatMoney, formatDate, locale } = fmt;
-
-  return useMemo(() => {
-    if (result === null) return EMPTY_SAID;
-    const deps: SayDeps = {
+  return useMemo(
+    () => ({
       t: (key, values) => String(values === undefined ? t(key as never) : t(key as never, values as never)),
       exists: (key) => i18n.exists(key),
       money: (minor, code) => formatMoney(makeMoney(minor, code)),
@@ -65,7 +63,21 @@ export function useSaid(result: Result | null, opts: UseSaidOptions): Said {
         figure: names?.figure ?? FALLBACK_NAME,
       },
       onMissing: onMissing ?? ((): void => undefined),
-    };
+    }),
+    [t, formatMoney, formatDate, locale, currency, today, names, onMissing]
+  );
+}
+
+export function useSaid(result: Result | null, opts: UseSaidOptions): Said {
+  const deps = useSayDeps(opts);
+  return useMemo(() => {
+    if (result === null) return EMPTY_SAID;
     return { ...sayResult(result, deps), verdictValues: verdictValues(result, deps) };
-  }, [result, t, formatMoney, formatDate, locale, currency, today, names, onMissing]);
+  }, [result, deps]);
+}
+
+/** CO-D-64 (3): every caveat of the result as a sentence, for the About sheet. */
+export function useSaidCaveats(result: Result | null, opts: UseSaidOptions): readonly Line[] {
+  const deps = useSayDeps(opts);
+  return useMemo(() => (result === null ? [] : sayCaveats(result, deps)), [result, deps]);
 }
