@@ -14,6 +14,8 @@ export interface FactLinesProps {
   facts: readonly Line[];
   /** V3Inputs.region, to find the free-help site. */
   country?: string | null;
+  /** 06.1-23: extra content under one line (the factAction buttons and a missing figure's Fix link). */
+  renderAfter?: (line: Line, index: number) => React.ReactNode;
 }
 
 const HTTPS = 'https://';
@@ -25,7 +27,7 @@ export function freeHelpUrl(country: string | null | undefined): { name: string;
   return entry !== undefined && entry.url.startsWith(HTTPS) ? { name: entry.name, url: entry.url } : null;
 }
 
-export function FactLines({ facts, country = null }: FactLinesProps) {
+export function FactLines({ facts, country = null, renderAfter }: FactLinesProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const help = freeHelpUrl(country);
@@ -47,6 +49,7 @@ export function FactLines({ facts, country = null }: FactLinesProps) {
                 <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{help.name}</Text>
               </Pressable>
             ) : null}
+            {renderAfter?.(line, i) ?? null}
           </View>
         );
       })}

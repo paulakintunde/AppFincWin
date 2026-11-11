@@ -188,6 +188,16 @@ describe('Decision detail', () => {
     expect(screen.getByTestId('answer-verdict')).toBeTruthy();
   });
 
+  it("the cant-see link on the check as it was opens the About sheet (06.1-23)", async () => {
+    mockDecisions = [decision('c1', { status: 'passed' })];
+    mockHistory = [historyRow('h1', '2026-08-01', storedResult())];
+    await wrap(<DecisionDetailScreen id="c1" />);
+    await fireEvent.press(screen.getByText(P.detail.asItWas));
+    expect(screen.queryByText('About this answer')).toBeNull();
+    await fireEvent.press(screen.getByTestId('answer-cant-see'));
+    expect(screen.getByText('About this answer')).toBeTruthy();
+  });
+
   it('fails soft when the history cannot be read: nothing listed, no error', async () => {
     mockDecisions = [decision('c1', { status: 'passed' })];
     mockHistory = undefined;

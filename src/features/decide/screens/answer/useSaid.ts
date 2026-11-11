@@ -16,6 +16,8 @@ export interface UseSaidOptions {
   /** Name lookups from the category / series / account / debt / envelope reads. A missing one reads as the plain word. */
   readonly names?: Partial<SayNames>;
   readonly onMissing?: (error: MissingCopyError) => void;
+  /** Purchase.monthly of the Evaluation, for the monthly-short verdict's "this adds {{monthly}}" when no fact states it. */
+  readonly monthly?: number | null;
 }
 
 const FALLBACK_NAME = (): string => '';
@@ -70,10 +72,11 @@ function useSayDeps(opts: UseSaidOptions): SayDeps {
 
 export function useSaid(result: Result | null, opts: UseSaidOptions): Said {
   const deps = useSayDeps(opts);
+  const monthly = opts.monthly ?? null;
   return useMemo(() => {
     if (result === null) return EMPTY_SAID;
-    return { ...sayResult(result, deps), verdictValues: verdictValues(result, deps) };
-  }, [result, deps]);
+    return { ...sayResult(result, deps), verdictValues: verdictValues(result, deps, { monthly }) };
+  }, [result, deps, monthly]);
 }
 
 /** CO-D-64 (3): every caveat of the result as a sentence, for the About sheet. */
