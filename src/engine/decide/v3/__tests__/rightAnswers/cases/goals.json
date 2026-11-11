@@ -99,8 +99,8 @@
         "D-06"
       ],
       "status": "approved",
-      "approvedAt": "2026-11-07",
-      "ownerReason": "owner approved in Phase 6 device check",
+      "approvedAt": "2026-11-10",
+      "ownerReason": "owner approved in the Phase 6 device check (2026-11-10)",
       "expertNote": null
     },
     {
@@ -201,8 +201,8 @@
         "D-06"
       ],
       "status": "approved",
-      "approvedAt": "2026-11-07",
-      "ownerReason": "owner approved in Phase 6 device check",
+      "approvedAt": "2026-11-10",
+      "ownerReason": "owner approved in the Phase 6 device check (2026-11-10)",
       "expertNote": null
     },
     {
@@ -301,8 +301,8 @@
         "D-06"
       ],
       "status": "approved",
-      "approvedAt": "2026-11-07",
-      "ownerReason": "owner approved in Phase 6 device check",
+      "approvedAt": "2026-11-10",
+      "ownerReason": "owner approved in the Phase 6 device check (2026-11-10)",
       "expertNote": null
     },
     {
@@ -395,10 +395,11 @@
         "ARC-13",
         "FIN-16"
       ],
-      "status": "approved",
-      "approvedAt": "2026-11-07",
-      "ownerReason": "owner approved in Phase 6 device check",
-      "expertNote": null
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "reviewNote": "Owner (2026-11-10): not approved yet. The next answer should use what is in the net now ($1,100), and after money is taken out of the net the app should pop up a choice to lock the net or leave it unlocked. Approve once that prompt exists."
     },
     {
       "id": "GL-05",
@@ -512,8 +513,8 @@
         "D-06"
       ],
       "status": "approved",
-      "approvedAt": "2026-11-07",
-      "ownerReason": "owner approved in Phase 6 device check",
+      "approvedAt": "2026-11-10",
+      "ownerReason": "owner approved in the Phase 6 device check (2026-11-10)",
       "expertNote": null
     }
   ]
