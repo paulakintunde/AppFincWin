@@ -36,9 +36,9 @@ const GLYPH_TILE = 32;
 const ROW_PAD_H = 18;
 
 /**
- * Surface card segment: the card radius on the outer corners only, shadows.edge on every row position (no seams), and a 1px line1 separator above every row but the first.
+ * Surface card segment: the card radius on the outer corners only, shadows.edge on every row position (no seams), and a 2px line4 separator above every row but the first (owner, Phase 6 device check: rows read apart).
  */
-export function cardStyle(position: CardPosition, c: Pick<typeof ThemeColours, 'surface' | 'line1'>): ViewStyle {
+export function cardStyle(position: CardPosition, c: Pick<typeof ThemeColours, 'surface' | 'line1' | 'line4'>): ViewStyle {
   const base: ViewStyle = {
     backgroundColor: c.surface,
     paddingVertical: space.rowPadDense,
@@ -53,7 +53,7 @@ export function cardStyle(position: CardPosition, c: Pick<typeof ThemeColours, '
     borderBottomLeftRadius: bottom,
     borderBottomRightRadius: bottom,
   };
-  const separator: ViewStyle = position === 'first' ? {} : { borderTopWidth: 1, borderTopColor: c.line1 };
+  const separator: ViewStyle = position === 'first' ? {} : { borderTopWidth: 2, borderTopColor: c.line4 };
   return { ...base, ...corners, ...separator, ...shadows.edge };
 }
 
