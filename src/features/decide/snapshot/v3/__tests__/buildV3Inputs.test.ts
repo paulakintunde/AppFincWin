@@ -431,7 +431,9 @@ describe('buildV3Inputs: new inputs, accounts and sources (D-54, D-51, M-06)', (
     const deleted = { ...base.accounts[0]!, id: 'zz-del', deleted_at: '2026-01-01T00:00:00Z' };
     const foreign = { ...base.accounts[0]!, id: 'zz-xyz', currency: 'XYZ' };
     const inputs = buildV3Inputs({ ...base, accounts: [...base.accounts, archived, deleted, foreign], balances: { ...base.balances, 'zz-xyz': 5 } }, null);
-    expect(inputs.accounts!.map((a) => a.id)).toEqual(base.accounts.filter((a) => a.kind !== 'credit' && a.kind !== 'loan').map((a) => a.id));
+    // 06.1-12 (CO-D-114): the account no rate converts stays listed, marked noRate, holding 0.
+    expect(inputs.accounts!.map((a) => a.id)).toEqual([...base.accounts.filter((a) => a.kind !== 'credit' && a.kind !== 'loan').map((a) => a.id), 'zz-xyz']);
+    expect(inputs.accounts!.find((a) => a.id === 'zz-xyz')).toMatchObject({ noRate: true, balance: 0 });
     expect(inputs.accounts!.every((a) => a.use === null)).toBe(true);
     expect(inputs.accounts!.find((a) => a.id === SAVINGS)!.balance).toBe(base.balances[SAVINGS]);
     expect(buildV3Inputs({ ...base, balances: {} }, null).accounts!.every((a) => a.balance === 0)).toBe(true);
