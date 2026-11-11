@@ -1,6 +1,6 @@
 /**
  * GRW-08/09: several debts, one constant monthly budget (sum of the starting
- * minimums plus the extra), paid in one of two orders (D-13): 'rate' = highest
+ * minimums of the debts that owe money, plus the extra), paid in one of two orders (D-13): 'rate' = highest
  * rate first, 'balance' = smallest original balance first. Freed minimums roll
  * over because the budget never shrinks. Port of prototype `strategy`.
  *
@@ -69,7 +69,8 @@ export function strategy(
     interest: 0n,
     done: d.balance === 0 ? 0 : null,
   }));
-  const budget = ds.reduce((s, d) => s + d.minimum, 0n) + BigInt(extra);
+  // P2-WR-08: a debt already at $0 is not being paid, so its recorded minimum is not part of the monthly budget.
+  const budget = ds.reduce((s, d) => s + (d.original > 0n ? d.minimum : 0n), 0n) + BigInt(extra);
 
   const build = (outcome: PayoffOutcome, months: number, withInterest: boolean): StrategyResult => ({
     outcome,

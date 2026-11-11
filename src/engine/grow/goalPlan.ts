@@ -20,6 +20,12 @@ export function neededEachMonth(left: MinorUnits, deposits: number): MinorUnits 
   return minorFromBigInt(ceilDivide(BigInt(left), BigInt(deposits)), 'neededEachMonth');
 }
 
+/**
+ * Deposits until the balance reaches the target. Step k is the month that ends on deposit k (depositDate(anchor, k)): the balance
+ * earns that month's interest, then deposit k lands. Every caller anchors the plan one period ahead (the first of next month, or a
+ * first deposit "next month"), so `have` sits for that month before deposit 1 and earns its interest (code review P2-WR-05: the
+ * timing matches the dates as long as the anchor is the first deposit, never today).
+ */
 export function monthsToReach(
   have: MinorUnits,
   target: MinorUnits,
@@ -73,12 +79,17 @@ function monthIndex(date: string): number {
   return Number(date.slice(0, 4)) * 12 + Number(date.slice(5, 7));
 }
 
+/** byDate: 'YYYY-MM-DD' (deposits on or before it count) or 'YYYY-MM' (by the end of that month). */
 export function goalPlanByDate(i: {
   have: MinorUnits;
   target: MinorUnits;
   anchor: string;
   byDate: string;
 }): { deposits: number; neededEachMonth: MinorUnits } {
-  const deposits = Math.max(1, monthIndex(i.byDate) - monthIndex(i.anchor) + 1);
+  let deposits = monthIndex(i.byDate) - monthIndex(i.anchor) + 1;
+  // P2-CR-03 (D-21): only deposits on or before the by-date count. A by-date given as a month ('YYYY-MM') means its whole month, so
+  // that month's deposit counts; a full date earlier in the month than the anchor's day misses that month's deposit.
+  if (deposits > 0 && i.byDate.length > 7 && depositDate(i.anchor, deposits) > i.byDate) deposits -= 1;
+  deposits = Math.max(1, deposits);
   return { deposits, neededEachMonth: neededEachMonth((i.target - i.have) as MinorUnits, deposits) };
 }

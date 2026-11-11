@@ -393,6 +393,37 @@ function withReplaces(f: RightAnswerFixture, x: ReplacesRaw): RightAnswerFixture
   return { ...f, check: { ...f.check, ...(replaces === null ? {} : { replaces }), ...(x.saveForIt ? { saveForIt: true } : {}) } };
 }
 
+/**
+ * 06 D-05, D-22 (code review P2-WR-04): one savings goal on 1 in 3 fixtures, locked or unlocked, kept in its own savings account
+ * (use untouched, or no use stated) or in the safety net's account when there is one. Its saved amount is a share of pay; 1 in 5
+ * hold more than the account does (only what is there counts). The goal's money is in the account, never in the spending accounts.
+ */
+const goalArb = fc.option(
+  fc.record({
+    where: fc.constantFrom('untouched' as const, 'unstated' as const, 'net' as const),
+    locked: fc.boolean(),
+    pct: fc.integer({ min: 1, max: 150 }),
+    over: fc.integer({ min: 0, max: 4 }),
+  }),
+  { nil: null, freq: 2 }
+);
+
+type GoalRaw = typeof goalArb extends fc.Arbitrary<infer T> ? T : never;
+
+function withGoal(f: RightAnswerFixture, g: GoalRaw): RightAnswerFixture {
+  if (g === null) return f;
+  const saved = Math.max(100, Math.floor((f.pay.amount * g.pct) / 100));
+  const held = g.over === 0 ? Math.floor(saved / 2) : saved;
+  const goal = { id: 'goal1', name: 'Goal', saved, target: saved * 2, monthly: null, locked: g.locked };
+  const net = f.accounts.find((a) => a.id === 'n1');
+  if (g.where === 'net' && net !== undefined) {
+    return { ...f, accounts: f.accounts.map((a) => (a.id === 'n1' ? { ...a, balance: a.balance + held } : a)), goals: [{ ...goal, accountId: 'n1' }] };
+  }
+  const use = g.where === 'untouched' ? ('untouched' as const) : null;
+  const account = { id: 'k1', kind: 'savings' as const, name: 'Goal savings', balance: held, overdraftLimit: null, overdraftRate: null, use };
+  return { ...f, accounts: [...f.accounts, account], goals: [{ ...goal, accountId: 'k1' }] };
+}
+
 export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc
-  .tuple(peopleArb, taxArb, fullCostArb, replacesArb)
-  .map(([f, t, x, r]) => withReplaces(withFullCost({ ...f, region: t.region, check: { ...f.check, taxPercent: t.typed, taxIncluded: t.included } }, x), r));
+  .tuple(peopleArb, taxArb, fullCostArb, replacesArb, goalArb)
+  .map(([f, t, x, r, g]) => withGoal(withReplaces(withFullCost({ ...f, region: t.region, check: { ...f.check, taxPercent: t.typed, taxIncluded: t.included } }, x), r), g));

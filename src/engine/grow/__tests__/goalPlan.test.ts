@@ -41,6 +41,12 @@ describe('monthsToReach', () => {
   it('interest alone can get there', () => {
     expect(monthsToReach(m(100000), m(101000), m(0), percent('12')).deposits).toBe(1);
   });
+  it('P2-WR-05: step k is the month ending on deposit k, so what is saved earns a month before deposit 1 (the anchor is one period ahead)', () => {
+    // $9,990 at 12%, nothing added: one month's interest ($99.90) reaches $10,000 by the first deposit date
+    expect(monthsToReach(m(999000), m(1000000), m(0), percent('12'))).toEqual({ deposits: 1, interest: 9990, value: 1008990 });
+    // a deposit earns nothing in the month it lands: $0 + $100, then $100 earns $1 (12%) before the second $100
+    expect(monthsToReach(m(0), m(20100), m(10000), percent('12'))).toEqual({ deposits: 2, interest: 100, value: 20100 });
+  });
   it('caps at 600 deposits', () => {
     expect(monthsToReach(m(0), m(1_000_000), m(1)).deposits).toBeNull();
   });
@@ -136,6 +142,19 @@ describe('goalPlanByDate', () => {
   it('a date in the anchor month or earlier is one deposit', () => {
     expect(goalPlanByDate({ have: m(64000), target: m(180000), anchor: '2026-11-16', byDate: '2026-11-30' }).deposits).toBe(1);
     expect(goalPlanByDate({ have: m(64000), target: m(180000), anchor: '2026-11-16', byDate: '2026-01-01' }).deposits).toBe(1);
+  });
+  it('P2-CR-03: a deposit after the by-date is not counted (D-21: never missed by a cent)', () => {
+    // anchor 20 Nov, by 5 Dec: only the 20 Nov deposit lands by then, so all $1,000 is needed in it
+    expect(goalPlanByDate({ have: m(0), target: m(100000), anchor: '2026-11-20', byDate: '2026-12-05' })).toEqual({ deposits: 1, neededEachMonth: 100000 });
+    // on the by-date itself it counts; the day before it does not
+    expect(goalPlanByDate({ have: m(0), target: m(100000), anchor: '2026-11-20', byDate: '2026-12-20' }).deposits).toBe(2);
+    expect(goalPlanByDate({ have: m(0), target: m(100000), anchor: '2026-11-20', byDate: '2026-12-19' }).deposits).toBe(1);
+    // a 31st anchor is compared with its clamped date (28 Feb 2027)
+    expect(goalPlanByDate({ have: m(0), target: m(100000), anchor: '2027-01-31', byDate: '2027-02-28' }).deposits).toBe(2);
+    expect(goalPlanByDate({ have: m(0), target: m(100000), anchor: '2027-01-31', byDate: '2027-02-27' }).deposits).toBe(1);
+  });
+  it("a by-month ('YYYY-MM') counts that month's deposit", () => {
+    expect(goalPlanByDate({ have: m(0), target: m(100000), anchor: '2026-11-20', byDate: '2026-12' }).deposits).toBe(2);
   });
   it('nothing to save when already there', () => {
     expect(goalPlanByDate({ have: m(200000), target: m(180000), anchor: '2026-11-16', byDate: '2027-12-16' })).toEqual({

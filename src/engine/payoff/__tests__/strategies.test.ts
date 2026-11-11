@@ -74,6 +74,16 @@ describe('strategy', () => {
     expect(doneOf(r, 'free')).toBe(2);
     expect(r.totalInterest).toBe(0);
     expect(r.months).toBe(2);
+    expect(r.budget).toBe(5_000);
+  });
+
+  it('P2-WR-08: a debt already at $0 adds nothing to the budget', () => {
+    // A owes $1,000 with a $50 minimum; B owes $0 with a $200 minimum still recorded: the budget is the $50 really paid
+    const a: PlanDebt = { id: 'a', balance: m(100_000), apr: ZERO_PERCENT, minimum: m(5_000) };
+    const b: PlanDebt = { id: 'b', balance: m(0), apr: ZERO_PERCENT, minimum: m(20_000) };
+    const r = strategy([a, b], m(0), 'rate');
+    expect(r.budget).toBe(5_000);
+    expect(doneOf(r, 'a')).toBe(20);
   });
 
   it('a barely sufficient budget reaches the 600-month cap', () => {
@@ -222,7 +232,7 @@ describe('strategy', () => {
           fc.constantFrom('rate' as const, 'balance' as const),
           (l, extra, order) => {
             const r = strategy(toPlan(l), m(extra), order);
-            expect(r.budget).toBe(l.reduce((s, d) => s + d.minimum, 0) + extra);
+            expect(r.budget).toBe(l.reduce((s, d) => s + (d.balance > 0 ? d.minimum : 0), 0) + extra); // P2-WR-08: a $0 debt's minimum is not paid
             expect(r.months).toBeLessThanOrEqual(600);
             if (r.totalInterest !== null) {
               expect(r.totalInterest).toBeGreaterThanOrEqual(0);

@@ -14,6 +14,7 @@ import { minorUnits, type MinorUnits } from '../../money/types';
 import { ceilDivide } from '../../payoff/types';
 import { NET_STARTER_MONTHS } from './constants';
 import type { EssentialCosts } from './essentialCosts';
+import { unlockedOutside } from './funds/unlockedGoals';
 import type { V3Inputs, Variant } from './types';
 
 export type NetState = 'none' | 'small' | 'full' | 'above';
@@ -32,19 +33,20 @@ export interface ResolvedNet {
   readonly saved: MinorUnits;
   /** The protected floor: min(saved, size); 0 when off. */
   readonly floor: MinorUnits;
-  /** Money saved above the size, which counts as spare (D-35); 0 when off. */
+  /** Money saved in the net above its size, which counts as spare (D-35); 0 when off. The net's own money only (06 P2-WR-01). */
   readonly aboveSize: MinorUnits;
+  /**
+   * 06 D-22: money in unlocked goals kept in dedicated or untouched accounts (funds/unlockedGoals.ts), spare money counted once.
+   * Never part of the net, its size or aboveSize; spareSavings adds it to aboveSize where spare money is summed.
+   */
+  readonly goalsOutside: MinorUnits;
+  /** The part of goalsOutside in untouched savings accounts, already inside keptSavings (low months, the runway). */
+  readonly goalsOutsideKept: MinorUnits;
   /** What the net can lend a purchase beyond spare money: the protected floor (0 while locked, D-61), or everything saved when off. */
   readonly usable: MinorUnits;
   /** 05.4 D-61: protection on and the net locked (absent or true; no record at all is locked). Never true when off. */
   readonly locked: boolean;
   readonly state: NetState;
-}
-
-/** 06 D-22: the money saved in unlocked goals that sit in dedicated or untouched accounts (which never count as spending money). */
-function unlockedOutside(inputs: V3Inputs): number {
-  const outside = new Set((inputs.accounts ?? []).filter((a) => a.use !== null && (a.use.kind === 'dedicated' || a.use.kind === 'untouched')).map((a) => a.id));
-  return inputs.envelopes.reduce((t, e) => t + (e.locked === false && e.accountId != null && outside.has(e.accountId) && e.saved > 0 ? e.saved : 0), 0);
 }
 
 /** The net in force for these inputs. A size or saved figure below 0 counts as 0. */
@@ -59,8 +61,9 @@ export function resolveSafetyNet(inputs: V3Inputs, essential: EssentialCosts): R
   const zeroIsOff = protect && size === 0;
   const off = !protect || zeroIsOff;
   const floor = off ? 0 : Math.min(saved, size);
-  // 06 D-22: an unlocked goal in a dedicated or untouched account is spare money above the net, like savings above its size.
-  const aboveSize = (off ? 0 : saved - floor) + unlockedOutside(inputs);
+  const aboveSize = off ? 0 : saved - floor;
+  // 06 D-22: unlocked goals outside the spending accounts are spare money, kept apart from the net's own figures (P2-WR-01).
+  const goals = unlockedOutside(inputs);
   const locked = !off && (sn === null ? true : sn.locked !== false);
   let state: NetState = 'full';
   if (saved === 0) state = 'none';
@@ -75,6 +78,8 @@ export function resolveSafetyNet(inputs: V3Inputs, essential: EssentialCosts): R
     saved: minorUnits(saved),
     floor: minorUnits(floor),
     aboveSize: minorUnits(aboveSize),
+    goalsOutside: goals.outside,
+    goalsOutsideKept: goals.outsideKept,
     usable: minorUnits(off ? saved : locked ? 0 : floor),
     locked,
     state,
@@ -91,10 +96,21 @@ export const NO_NET: ResolvedNet = Object.freeze({
   saved: minorUnits(0),
   floor: minorUnits(0),
   aboveSize: minorUnits(0),
+  goalsOutside: minorUnits(0),
+  goalsOutsideKept: minorUnits(0),
   usable: minorUnits(0),
   locked: false,
   state: 'none',
 });
+
+/**
+ * Spare money saved outside the spending accounts: the net's money above its size (D-35) and unlocked goals kept in dedicated or
+ * untouched accounts (06 D-22). Every spare-money sum uses this; the net's own figures (net_left, net_above_size, the extra_savings
+ * variant) use aboveSize alone.
+ */
+export function spareSavings(net: ResolvedNet): MinorUnits {
+  return minorUnits(net.aboveSize + net.goalsOutside);
+}
 
 export interface NetDip {
   /** Money taken from the net's protected part (or from the net when protection is off). */

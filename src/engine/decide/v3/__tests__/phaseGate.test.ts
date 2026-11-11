@@ -16,7 +16,8 @@ import { TOPICS } from './rightAnswers/schema';
 
 const OPEN_AT_43 = {
   pending: ['PLAIN-PLANS'],
-  drafts: ['BR-16', 'SN-16', 'SN-17', 'SN-18', 'SN-19', 'SN-20', 'SN-21', 'SN-22', 'SN-23', 'SN-24'],
+  // GL-04: owner sent it back on 2026-11-10 (Phase 6 device check). It waits for the lock-or-leave prompt after a net withdrawal.
+  drafts: ['BR-16', 'GL-04', 'SN-16', 'SN-17', 'SN-18', 'SN-19', 'SN-20', 'SN-21', 'SN-22', 'SN-23', 'SN-24'],
 };
 
 const fromShadow = (c: { expertNote: string | null; ownerReason: string | null }): boolean =>

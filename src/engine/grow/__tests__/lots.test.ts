@@ -13,12 +13,12 @@ const pos = (entries: LotEntry[]) => {
 
 describe('replayLots', () => {
   it('empty', () => {
-    expect(pos([])).toEqual({ costBasis: 0, unitsScaled: 0n, realisedGain: 0, dividends: 0, fees: 0, putIn: 0 });
+    expect(pos([])).toEqual({ costBasis: 0, unitsScaled: 0n, realisedGain: 0, dividends: 0, fees: 0 });
   });
   it('simple holding opening buy', () => {
     const p = pos([e({ kind: 'buy', amount: m(holdings.retirement.putIn) })]);
     expect(p.costBasis).toBe(580000);
-    expect(p.putIn).toBe(580000);
+    expect(p).not.toHaveProperty('putIn'); // P2-IN-01: the cost basis is the one "put in" figure
   });
   it('average cost sale by units', () => {
     const p = pos([
@@ -75,9 +75,37 @@ describe('replayLots', () => {
     ]);
     expect(r.costBasis).toBe(500);
   });
-  it('same date keeps entry order', () => {
+  it('same date keeps entry order within a kind', () => {
     const r = pos([e({ kind: 'buy', amount: m(1000), units: '1' }), e({ kind: 'sell', amount: m(900), units: '1' })]);
     expect(r.costBasis).toBe(0);
+  });
+  it('P2-WR-06: on the same date buys come before sells, whatever the order given', () => {
+    // buy 10 units for $1,000 and sell all 10 for $1,100 on one day, the sell given first (newest-first from the database)
+    const r = pos([e({ kind: 'sell', amount: m(110000), units: '10' }), e({ kind: 'buy', amount: m(100000), units: '10' })]);
+    expect(r).toMatchObject({ costBasis: 0, unitsScaled: 0n, realisedGain: 10000 });
+    // dividends and fees sit between buys and sells and never move the basis
+    const d = pos([e({ kind: 'sell', amount: m(500), units: '1' }), e({ kind: 'fee', amount: m(5) }), e({ kind: 'dividend', amount: m(7) }), e({ kind: 'buy', amount: m(1000), units: '2' })]);
+    expect(d).toMatchObject({ costBasis: 500, fees: 5, dividends: 7, realisedGain: 0 });
+  });
+  it('P2-WR-07: a sale with no units sells units in the same proportion', () => {
+    // buy 10 units for $1,000; sell $500 at a value of $1,000 (no units): 5 units go. Then sell 5 units for $300: a $200 loss.
+    const p = pos([
+      e({ kind: 'buy', amount: m(100000), units: '10' }),
+      e({ kind: 'sell', amount: m(50000), valueBefore: m(100000), localDate: '2026-02-01' }),
+      e({ kind: 'sell', amount: m(30000), units: '5', localDate: '2026-03-01' }),
+    ]);
+    expect(p).toMatchObject({ costBasis: 0, unitsScaled: 0n, realisedGain: -20000 });
+    // selling the whole value takes every unit
+    expect(pos([e({ kind: 'buy', amount: m(1000), units: '3' }), e({ kind: 'sell', amount: m(1500), valueBefore: m(1500) })]).unitsScaled).toBe(0n);
+    // no value before: units follow the cost taken out (a quarter here), all of them when the sale takes the whole basis
+    expect(pos([e({ kind: 'buy', amount: m(1000), units: '4' }), e({ kind: 'sell', amount: m(250) })]).unitsScaled).toBe(3n * 10n ** 8n);
+    expect(pos([e({ kind: 'buy', amount: m(1000), units: '4' }), e({ kind: 'sell', amount: m(1000) })]).unitsScaled).toBe(0n);
+    // a holding with no units keeps none
+    expect(pos([e({ kind: 'buy', amount: m(1000) }), e({ kind: 'sell', amount: m(250) })]).unitsScaled).toBe(0n);
+  });
+  it('P2-IN-02: a negative amount is refused', () => {
+    expect(() => replayLots([e({ kind: 'buy', amount: m(-1) })])).toThrow(RangeError);
+    expect(() => replayLots([e({ kind: 'buy', amount: m(1000) }), e({ kind: 'sell', amount: m(-500) })])).toThrow(RangeError);
   });
   it('does not mutate its input', () => {
     const list = [e({ kind: 'sell', amount: m(1), localDate: '2026-02-01' }), e({ kind: 'buy', amount: m(1), localDate: '2026-01-01' })];

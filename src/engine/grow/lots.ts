@@ -23,7 +23,6 @@ export interface Position {
   realisedGain: MinorUnits;
   dividends: MinorUnits;
   fees: MinorUnits;
-  putIn: MinorUnits;
 }
 
 const UNITS_PATTERN = /^(\d{1,12})(?:\.(\d{1,8}))?$/;
@@ -37,10 +36,22 @@ function parseUnits(text: string): bigint | null {
   return BigInt(match[1]! + (match[2] ?? '').padEnd(UNIT_SCALE_DIGITS, '0'));
 }
 
+/** Same-day order (P2-WR-06): buys first, then dividends and fees, then sells, so a same-day buy and sell never fails on order. */
+const KIND_ORDER: Readonly<Record<LotKind, number>> = { buy: 0, dividend: 1, fee: 1, sell: 2 };
+
+/**
+ * Replays the entries by date (same day: KIND_ORDER, then as given). A negative amount is refused (RangeError, P2-IN-02): the
+ * database stores amounts of 0 or more, so one here is a caller's bug.
+ */
 export function replayLots(
   entries: readonly LotEntry[],
 ): { ok: true; position: Position } | { ok: false; error: 'sell-exceeds-units' | 'bad-units' } {
-  const ordered = [...entries].sort((a, b) => (a.localDate < b.localDate ? -1 : a.localDate > b.localDate ? 1 : 0));
+  for (const entry of entries) {
+    if (entry.amount < 0) throw new RangeError(`replayLots: amount ${entry.amount} must be 0 or more`);
+  }
+  const ordered = [...entries].sort((a, b) =>
+    a.localDate < b.localDate ? -1 : a.localDate > b.localDate ? 1 : KIND_ORDER[a.kind] - KIND_ORDER[b.kind],
+  );
   let basis = 0n;
   let units = 0n;
   let realised = 0n;
@@ -61,20 +72,26 @@ export function replayLots(
       units += entryUnits;
     } else if (entry.kind === 'sell') {
       let removed: bigint;
+      // P2-WR-07: a sale with no units still sells units of a holding that has them, in the same proportion as the cost it takes out.
+      let unitsOut: bigint;
       if (entry.units !== null) {
         if (entryUnits > units) {
           return { ok: false, error: 'sell-exceeds-units' };
         }
         removed = entryUnits === units ? basis : divideHalfUp(basis * entryUnits, units);
-        units -= entryUnits;
+        unitsOut = entryUnits;
       } else if (entry.valueBefore != null && entry.valueBefore > 0) {
-        removed = divideHalfUp(basis * amount, BigInt(entry.valueBefore));
+        const before = BigInt(entry.valueBefore);
+        removed = divideHalfUp(basis * amount, before);
+        unitsOut = amount >= before ? units : divideHalfUp(units * amount, before);
       } else {
         removed = amount;
+        unitsOut = amount >= basis ? units : divideHalfUp(units * amount, basis);
       }
       if (removed > basis) {
         removed = basis;
       }
+      units -= unitsOut;
       basis -= removed;
       realised += amount - removed;
     } else if (entry.kind === 'dividend') {
@@ -91,7 +108,6 @@ export function replayLots(
       realisedGain: minorFromBigInt(realised, 'replayLots'),
       dividends: minorFromBigInt(dividends, 'replayLots'),
       fees: minorFromBigInt(fees, 'replayLots'),
-      putIn: minorFromBigInt(basis, 'replayLots'),
     },
   };
 }
