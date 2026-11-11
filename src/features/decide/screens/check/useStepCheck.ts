@@ -6,6 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Href } from 'expo-router';
+import type { DecideCheckRow } from '@/db/decideChecks';
 import { useSaveCheckDraft } from '@/data/mutations/decideChecks';
 import { useCategories } from '@/data/queries/categories';
 import { useDebts, useDecideChecks } from '@/data/queries/decide';
@@ -172,11 +173,12 @@ export interface StepCheck {
   finish(from: StepNumber, prepare?: (c: CheckV2) => CheckV2): void;
 }
 
-export function useStepCheck(id: string): StepCheck {
+/** `fallbackRow` is a check that exists only optimistically (just created, not yet in the list); the stored row wins once it arrives. */
+export function useStepCheck(id: string, fallbackRow: DecideCheckRow | null = null): StepCheck {
   const rc = useRecordContext();
   const checks = useDecideChecks(rc.userId ?? undefined, rc.householdId ?? undefined);
   const { save } = useSaveCheckDraft();
-  const row = useMemo(() => checks.data?.find((r) => r.id === id) ?? null, [checks.data, id]);
+  const row = useMemo(() => checks.data?.find((r) => r.id === id) ?? fallbackRow, [checks.data, id, fallbackRow]);
   const base = useMemo(() => (row === null ? null : readStoredCheck(row.inputs).check), [row]);
   const [edited, setEdited] = useState<CheckV2 | null>(null);
   const check = edited ?? base;

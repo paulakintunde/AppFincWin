@@ -6,7 +6,7 @@
 // an error shows no figure.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, type Href } from 'expo-router';
-import { useMarkCheckSeen } from '@/data/mutations/decideChecks';
+import { useCreateCheck, useMarkCheckSeen } from '@/data/mutations/decideChecks';
 import { useRecordCheckHistory } from '@/data/mutations/decideHistory';
 import { useSetDecideAnswered } from '@/data/mutations/decideSetup';
 import { useAccounts } from '@/data/queries/accounts';
@@ -76,6 +76,7 @@ export interface AnswerScreenProps {
   writes: AnswerWrites;
 }
 
+const NO_ROWS: readonly DecideCheckRow[] = [];
 const asHref = (path: string): Href => path as Href;
 
 function leave(): void {
@@ -88,10 +89,15 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
   const rc = useRecordContext();
   const data = useStepData();
   const fmt = useMoneyFormatter(rc.showCents, data.currency);
-  const step = useStepCheck(id);
-  const { check } = step;
   const checks = useDecideChecks(rc.userId ?? undefined, rc.householdId ?? undefined);
-  const row = useMemo(() => (checks.data ?? []).find((c) => c.id === id && c.deleted_at == null) ?? null, [checks.data, id]);
+  // A check just made by "New check" may exist only optimistically (pending write, works offline): use it until the list has it.
+  const { pendingRows = NO_ROWS } = useCreateCheck();
+  const row = useMemo(
+    () => (checks.data ?? []).find((c) => c.id === id && c.deleted_at == null) ?? pendingRows.find((c) => c.id === id && c.deleted_at == null) ?? null,
+    [checks.data, pendingRows, id]
+  );
+  const step = useStepCheck(id, row);
+  const { check } = step;
   const engine = useCheckEngine(check, { checkId: id });
   const { picture, bars } = useMonthPicture();
   const v3 = useDecideV3();

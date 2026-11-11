@@ -35,7 +35,11 @@ jest.mock('@/features/decide/check/CheckFlowScreen', () => ({ CheckNotFound: () 
 const mockMarkSeen = jest.fn(() => true);
 const mockHistory = jest.fn(() => true);
 const mockAnswered = jest.fn();
-jest.mock('@/data/mutations/decideChecks', () => ({ useMarkCheckSeen: () => ({ markSeen: mockMarkSeen }) }));
+const mockPending: { rows: unknown[] } = { rows: [] };
+jest.mock('@/data/mutations/decideChecks', () => ({
+  useMarkCheckSeen: () => ({ markSeen: mockMarkSeen }),
+  useCreateCheck: () => ({ pendingRows: mockPending.rows }),
+}));
 jest.mock('@/data/mutations/decideHistory', () => ({ useRecordCheckHistory: () => ({ mutate: mockHistory }) }));
 jest.mock('@/data/mutations/decideSetup', () => ({ useSetDecideAnswered: () => ({ set: mockAnswered }) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [{ id: 'a1', name: 'Everyday', deleted_at: null }] }) }));
@@ -54,10 +58,11 @@ const mockState = {
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: true, region: 'US', today: '2026-11-05' }),
 }));
+const mockList: { rows: unknown[] | null } = { rows: null };
 jest.mock('@/data/queries/decide', () => ({
   useDecideChecks: () => ({
     isLoading: false,
-    data: [{ id: 'c1', name: 'Laptop', created_by: 'u1', household_id: 'h1', version: 1, inputs: {}, deleted_at: null, last_seen_state: null, last_seen_basis: null }],
+    data: mockList.rows ?? [{ id: 'c1', name: 'Laptop', created_by: 'u1', household_id: 'h1', version: 1, inputs: {}, deleted_at: null, last_seen_state: null, last_seen_basis: null }],
   }),
 }));
 jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ inputs: mockState.run.inputs, status: 'ready' }) }));
@@ -80,8 +85,8 @@ jest.mock('../../engine/useCheckEngine', () => ({
 }));
 jest.mock('../../check/useStepCheck', () => ({
   ...jest.requireActual('../../check/useStepCheck'),
-  useStepCheck: () => ({
-    status: 'ready',
+  useStepCheck: (_id: string, fallback: unknown) => ({
+    status: fallback === null ? 'not_found' : 'ready',
     check: mockState.check,
     name: 'Laptop',
     update: mockState.update,
@@ -128,6 +133,18 @@ const withResult = (run: Run, change: (r: Evaluation['result']) => Evaluation['r
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockPending.rows = [];
+  mockList.rows = null;
+});
+
+describe('a check that exists only optimistically', () => {
+  it('renders from the pending row instead of not-found', async () => {
+    load(ledgerRun('N02'));
+    mockList.rows = [];
+    mockPending.rows = [{ id: 'c1', name: 'Laptop', created_by: 'u1', household_id: 'h1', version: 1, inputs: {}, deleted_at: null }];
+    await open();
+    expect(screen.getByTestId('answer-verdict-badge')).toBeTruthy();
+  });
 });
 
 describe('first answer gate (D-14)', () => {
@@ -214,7 +231,7 @@ describe('pay mode and date change in place (UX-23)', () => {
   it('How you pay: Cash sets the payment to once in place', async () => {
     const base = ledgerRun('N09');
     const plan = { mode: 'plan', cadence: { unit: 'month', every: 1 }, count: 12, termMonths: 12, apr: null, fees: { setup: 0, perPeriod: 0, end: 0 }, deposit: 0, tradeIn: 0, quotedPayment: null, firstPayment: null, deferredInterestTerm: false };
-    const run = { ...base, check: { ...base.check, pay: plan as never } };
+    const run = { ...base, check: { ...base.check, pay: plan as unknown as CheckV2['pay'] } };
     load(run);
     await open();
     expect(run.check.pay.mode).toBe('plan');
