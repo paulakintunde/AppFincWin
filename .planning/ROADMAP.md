@@ -1208,36 +1208,63 @@ Plans:
 **Plans:** 30 plans in 14 waves (08-25, 08-28, 08-29 gated on 05.5, D-41; they run last, waves 12-14, after the owner-approved push in 08-27)
 
 Plans:
+**Wave 1**
 - [ ] 08-01-PLAN.md — Preconditions + wave-1 privacy migration (personal unless shared, backfill, RLS, views)
 - [ ] 08-02-PLAN.md — Members v2 (owner flag, role label, colours, hidden names, 0% weights), household name, notices table
 - [ ] 08-03-PLAN.md — Engine: line split, weights rebalance, colours, member-name resolver; feature switches (D-44)
 - [ ] 08-04-PLAN.md — Engine: per-pair balances, isSettlement rule, settle-up total
+- [ ] 08-12-PLAN.md — Household copy catalogue (one file per area) + compliance-voice test
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 08-05-PLAN.md — Privacy RPC rewrite (apply_patches v4, undo, definer functions, shared-line edit guard)
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 08-06-PLAN.md — Existing pgTAP suite updated + household table coverage meta-test
 - [ ] 08-07-PLAN.md — SC7 two-user privacy suite + export guard (blocks invite flow)
 - [ ] 08-08-PLAN.md — Realtime spike: publication, reconciler, two-client test harness (blocks invite flow)
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 08-09-PLAN.md — Invites, per-user rate-limited redeem (global rate alert-only), D-01 move-in
 - [ ] 08-10-PLAN.md — Shared lines: stored splits, FX stamping, joint accounts, series, defaults
+
+**Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 08-11-PLAN.md — Settle-up state machine, locks, lapse/reminder cron, undo, write-off
-- [ ] 08-12-PLAN.md — Household copy catalogue (one file per area) + compliance-voice test
 - [ ] 08-13-PLAN.md — Client data A (household, members, invites, notices), resolver hook, feature hook
+
+**Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 08-14-PLAN.md — Leave/remove/transfer/reconnect + account-deletion database rule
-- [ ] 08-15-PLAN.md — Client data B (sharing mutations, settlements, balances, former members)
 - [ ] 08-16-PLAN.md — Household UI primitives, name-resolver guard, member and weights sheets
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 08-15-PLAN.md — Client data B (sharing mutations, settlements, balances, former members)
 - [ ] 08-17-PLAN.md — Household home, notices, You row, invite/rename/currency (owner) sheets
+
+**Wave 8** *(blocked on Wave 7 completion)*
 - [ ] 08-18-PLAN.md — Join flow (fincwin:// link, code entry, what's-shared card)
 - [ ] 08-19-PLAN.md — Sharing UI (entry switch, split sheet, line detail, Activity badges, bulk share)
 - [ ] 08-20-PLAN.md — Rules UI (household and category defaults, apply-to-unsettled, joint accounts)
 - [ ] 08-21-PLAN.md — Balances and settle-up UI
 - [ ] 08-22-PLAN.md — Delete-account Edge Function + in-app deletion
 - [ ] 08-23-PLAN.md — Realtime wiring in the app
-- [ ] 08-24-PLAN.md — Leave/remove UI + removed-member notice
-- [ ] 08-25-PLAN.md — [gated on 05.5] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
-- [ ] 08-26-PLAN.md — Full suite, D-45 check, DPIA draft, validation map
-- [ ] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
-- [ ] 08-28-PLAN.md — [gated on 05.5, hard stop] Partner opt-in, shared safety net, caveat, couples note
-- [ ] 08-29-PLAN.md — [gated on 05.5, hard stop] share_pct removal, Share step to Household, APP-08/APP-22/CMP-F04
 - [ ] 08-30-PLAN.md — ARC-18 client rule: settlement records out of Activity totals and Home month figures
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 08-24-PLAN.md — Leave/remove UI + removed-member notice
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 08-26-PLAN.md — Full suite, D-45 check, DPIA draft, validation map
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [ ] 08-25-PLAN.md — [gated on 05.5] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [ ] 08-28-PLAN.md — [gated on 05.5, hard stop] Partner opt-in, shared safety net, caveat, couples note
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [ ] 08-29-PLAN.md — [gated on 05.5, hard stop] share_pct removal, Share step to Household, APP-08/APP-22/CMP-F04
 **UI hint**: yes
 **Research flag**: The Realtime reconciliation state machine (no pending write / write still queued / own-write echo / genuine version conflict) is a synthesized design, not a documented Supabase recipe. Budget a dedicated spike — two simulated clients, one taken offline mid-edit — before trusting it in production. Also resolve explicitly what happens when a settlement's expiry window lapses unresolved; the prototype specifies the window but not the outcome.
 
