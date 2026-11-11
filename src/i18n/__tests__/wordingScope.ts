@@ -289,6 +289,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   everyday: '$410.00',
   extra: '$100.00',
   figure: 'your everyday spending',
+  frequency: 'Monthly', // 06.1-24
   floor: '$240.00',
   from: 'February',
   fromMonth: '$200.00',
