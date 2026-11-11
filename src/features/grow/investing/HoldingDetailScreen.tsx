@@ -239,7 +239,7 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
             onPress={() =>
               pushOnce({
                 pathname: '/grow/calculators/illustration',
-                params: { start: String(growthStart), rate: holding.rate ?? '', monthly: String(growthMonthly) },
+                params: { start: String(growthStart), rate: holding.rate ?? '', monthly: String(growthMonthly), asOf: line.asOf },
               } as Href)
             }
             style={styles.link}

@@ -54,18 +54,21 @@ export function useRecordLinks(): RecordLink[] {
   }
 
   if (investing.model.holdings.length > 0 && investing.model.totals.value > 0) {
+    // GRW-10: the total is only as current as its oldest value, so it carries that date.
+    const asOf = investing.model.holdings.reduce((min, h) => (h.asOf < min ? h.asOf : min), investing.model.holdings[0]!.asOf);
     links.push({
       key: 'growth',
       glyph: 'invest',
       label: t('grow.calc.page.recordGrowth'),
       sublabel: t('grow.calc.page.recordGrowthSub', {
         value: money.money(investing.model.totals.value, calc.currency),
+        date: money.dayMonth(asOf),
         monthly: money.money(investing.model.monthlyIn, calc.currency),
       }),
       onPress: () =>
         pushOnce({
           pathname: '/grow/calculators/illustration',
-          params: { start: String(investing.model.totals.value), monthly: String(investing.model.monthlyIn) },
+          params: { start: String(investing.model.totals.value), monthly: String(investing.model.monthlyIn), asOf },
         } as Href),
     });
   }

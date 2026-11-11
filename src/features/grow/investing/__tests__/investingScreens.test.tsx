@@ -266,6 +266,7 @@ describe('Holding detail', () => {
     expect(arg.pathname).toBe('/grow/calculators/illustration');
     expect(arg.params.rate).toBe('4');
     expect(arg.params.monthly).toBe('15000');
+    expect(arg.params.asOf).toBe('2026-11-01');
   });
 
   it('shows the quiet Update value row only after 30 days', async () => {

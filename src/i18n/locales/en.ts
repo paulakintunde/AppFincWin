@@ -4533,7 +4533,7 @@ const en = {
         recordDebt: '{{name}}, extra payments',
         recordDebtSub: '{{owed}} · {{payment}} a month',
         recordGrowth: 'Investing, growth illustration',
-        recordGrowthSub: '{{value}} · {{monthly}} a month',
+        recordGrowthSub: '{{value}} as of {{date}} · {{monthly}} a month',
         footer: 'Results come from the numbers you type, worked out to the cent. They are estimates for planning, not offers, quotes or forecasts. FincWin holds no money and lends none.',
       },
       goal: {

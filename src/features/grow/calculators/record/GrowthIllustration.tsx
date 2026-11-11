@@ -29,9 +29,11 @@ export interface GrowthIllustrationProps {
   rate?: string;
   /** Minor units as digits. */
   monthly?: string;
+  /** GRW-10: the date the starting value was last given (YYYY-MM-DD). Falls back to today when missing or malformed. */
+  asOf?: string;
 }
 
-export function GrowthIllustration({ start: startParam, rate: rateParam, monthly: monthlyParam }: GrowthIllustrationProps = {}) {
+export function GrowthIllustration({ start: startParam, rate: rateParam, monthly: monthlyParam, asOf: asOfParam }: GrowthIllustrationProps = {}) {
   const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const f = useCalcFormat();
@@ -40,6 +42,7 @@ export function GrowthIllustration({ start: startParam, rate: rateParam, monthly
   const monthly = prefillMinor(monthlyParam) ?? 0;
   const given = prefillRate(rateParam);
   const [rate, setRate] = useState(given === '' ? '4' : given);
+  const asOf = asOfParam !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(asOfParam) && asOfParam <= today ? asOfParam : today;
 
   const result = useMemo(() => growthIllustrationModel({ start, monthly, rate, years: ILLUSTRATION_YEARS }), [start, monthly, rate]);
   const chips = (RATE_CHIPS as readonly string[]).includes(given) || given === '' ? [...RATE_CHIPS] : [...RATE_CHIPS, given].sort((a, b) => Number(a) - Number(b));
@@ -93,7 +96,7 @@ export function GrowthIllustration({ start: startParam, rate: rateParam, monthly
       {result ? (
         <>
           <Card>
-            <ValueRow first label={t('grow.calc.growth.starting')} value={t('grow.calc.growth.startingValue', { amount: f.money(start), date: formatDate(today) })} />
+            <ValueRow first label={t('grow.calc.growth.starting')} value={t('grow.calc.growth.startingValue', { amount: f.money(start), date: formatDate(asOf) })} />
             <ValueRow label={t('grow.calc.growth.putIn', { years })} value={f.money(result.putIn)} />
             <ValueRow label={t('grow.calc.growth.growth')} value={f.money(result.growth)} />
             <ValueRow label={t('grow.calc.growth.alone', { monthly: f.money(monthly), zero: f.money(0) })} value={f.money(result.alone)} />

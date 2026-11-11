@@ -302,6 +302,22 @@ describe('GrowthIllustration (GC05, D-19)', () => {
     expect(screen.getByText('4.5%')).toBeTruthy();
     expect(screen.getByText(/After 10 years at 4.5% a year/)).toBeTruthy();
   });
+
+  it('GRW-10: the starting value carries its own as-of date, not today', async () => {
+    await wrap(<GrowthIllustration start="769000" monthly="20000" asOf="2026-09-14" />);
+    expect(screen.getByText(/as of on 2026-09-14/)).toBeTruthy();
+    expect(screen.queryByText(/as of on 2026-10-20/)).toBeNull();
+  });
+
+  it('GRW-10: a future date falls back to today', async () => {
+    await wrap(<GrowthIllustration start="769000" monthly="20000" asOf="2027-01-01" />);
+    expect(screen.getByText(/as of on 2026-10-20/)).toBeTruthy();
+  });
+
+  it('GRW-10: a malformed date falls back to today', async () => {
+    await wrap(<GrowthIllustration start="769000" monthly="20000" asOf="nope" />);
+    expect(screen.getByText(/as of on 2026-10-20/)).toBeTruthy();
+  });
 });
 
 function RecordsPage() {
@@ -320,16 +336,17 @@ describe('Calculators page, With your records (06-19)', () => {
     const d = debtsRead();
     d.model.debts[0]!.point = { ...d.model.debts[0]!.point, apr: 69_000_000_000n } as never;
     mockDebtsRead = d;
-    mockInvesting = { model: { holdings: [{ id: 'h1' }], totals: { value: 769_000 }, monthlyIn: 20_000 } };
+    mockInvesting = { model: { holdings: [{ id: 'h1', asOf: '2026-10-01' }, { id: 'h2', asOf: '2026-09-14' }], totals: { value: 769_000 }, monthlyIn: 20_000 } };
     await wrap(<RecordsPage />);
     expect(screen.getByText('With your records')).toBeTruthy();
     await fireEvent.press(screen.getByText('Trip to Lisbon'));
     await fireEvent.press(screen.getByText('Auto loan, extra payments'));
+    expect(screen.getByText(/as of Sep 14 ·/)).toBeTruthy();
     await fireEvent.press(screen.getByText('Investing, growth illustration'));
     expect(mockPushOnce.mock.calls.map((c) => c[0])).toEqual([
       '/grow/calculators/goal/g1',
       '/grow/calculators/debt/d1',
-      { pathname: '/grow/calculators/illustration', params: { start: '769000', monthly: '20000' } },
+      { pathname: '/grow/calculators/illustration', params: { start: '769000', monthly: '20000', asOf: '2026-09-14' } },
     ]);
   });
 
