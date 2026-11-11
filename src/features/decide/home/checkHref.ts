@@ -1,6 +1,5 @@
 // 05-21: the check route's href and the one place a new check id is minted (T-05-21-03: the check route
 // validates the id again). The route itself lands in 05-30, hence the `as Href`.
-import * as Crypto from 'expo-crypto';
 import { type Href } from 'expo-router';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 
@@ -13,9 +12,12 @@ export function checkHref(id: string, params: { kind?: CheckKind; step?: CheckSt
   return { pathname: '/decide/check/[id]', params: { id, ...params } } as Href;
 }
 
-/** Opens a brand-new check. Nothing is written until the check itself saves a draft. */
-export function openNewCheck(kind: CheckKind): void {
-  pushOnce(checkHref(Crypto.randomUUID(), { kind }));
+/** 06.1-28 (D-05): a new check starts on Decide home with the "What is it?" field focused. */
+export const NEW_CHECK_HREF = '/decide?focus=check' as Href;
+
+/** Opens a brand-new check. Nothing is written until the check is built from Decide home. */
+export function openNewCheck(_kind: CheckKind): void {
+  pushOnce(NEW_CHECK_HREF);
 }
 
 export const PAST_HREF = '/decide/past' as Href;

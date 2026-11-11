@@ -329,7 +329,7 @@ describe('DecideHomeScreen', () => {
     await renderScreen();
     const fab = mockRegisterFab.mock.calls[mockRegisterFab.mock.calls.length - 1][0] as { onPress: () => void };
     fab.onPress();
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'buy' } });
+    expect(mockPush).toHaveBeenCalledWith('/decide?focus=check');
   });
 
   it('D-107 the Judge-on dropdown is in the first screenful of the card (top row), not at the bottom where the FAB sits', async () => {
@@ -363,7 +363,7 @@ describe('DecideHomeScreen', () => {
     const [id, run] = mockQuickAction.mock.calls[0] as [string, () => void];
     expect(id).toBe('newCheck');
     run();
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'buy' } });
+    expect(mockPush).toHaveBeenCalledWith('/decide?focus=check');
   });
 
   it('D-95 the budget probe marks the card and rows bottoms only with EXPO_PUBLIC_PERF=1', async () => {
@@ -428,7 +428,7 @@ describe('DecideHomeScreen', () => {
   it('Full check starts a new purchase check', async () => {
     await renderScreen();
     await fireEvent.press(screen.getByLabelText('Full check'));
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'buy' } });
+    expect(mockPush).toHaveBeenCalledWith('/decide?focus=check');
   });
 
   it('reconciles reminders once with the waiting ready-by dates and the decided cooling-off dates', async () => {

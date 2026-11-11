@@ -25,7 +25,6 @@ import { useConsent } from '@/features/consent/useConsent';
 import { requestSignOut, performSignOut } from '@/features/auth/signOut';
 import { useProfile } from './useProfile';
 import { SettingsGroup } from './components/SettingsGroup';
-import { POTS_HREF } from '@/features/decide/home/checkHref';
 import { ACTIVITY_HREF } from '@/features/auth/appHome';
 import { AccentSwitcher } from './components/AccentSwitcher';
 import { FontPairingSwitcher } from './components/FontPairingSwitcher';
@@ -34,6 +33,9 @@ import { WeekStartRow } from './components/WeekStartRow';
 import { HomeCurrencyRow } from './components/HomeCurrencyRow';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { DevSyncProbe } from './components/DevSyncProbe';
+
+// 06.1-28: /decide/pots redirects to Decide home (the old Pots screen is unrouted).
+const POTS_HREF = '/decide/pots' as Href;
 
 // 02-30: Record entry points (D-32, D-39). Hrefs are cast once because generated route types may
 // lag the route files. The statement import lives in the Add group (D-85), not here.

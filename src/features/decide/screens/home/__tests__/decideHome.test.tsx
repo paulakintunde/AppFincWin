@@ -22,7 +22,7 @@ let mockOpenRows: unknown[] = [];
 
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, setParams: jest.fn() }), useLocalSearchParams: () => ({}) }));
 jest.mock('@/shell/screen/TabRootScreen', () => {
   const R = jest.requireActual('react');
   const { View, Text: RNText } = jest.requireActual('react-native');

@@ -4,9 +4,9 @@
  * money rules, Something changed? and the footer. Check it builds a draft check and routes it (useNewCheck): a big buy to the
  * stepper, everything else to the answer, a home nowhere (D-02). The examples fill the fields only (D-15).
  */
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useRouter, type Href } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCategories } from '@/data/queries/categories';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
@@ -156,6 +156,14 @@ export function DecideHome() {
   };
 
   const focusWhat = (): void => textRef.current?.focus();
+  // 06.1-28 (D-05, D-23): the quick menu, You tab and onboarding open Decide with ?focus=check; the field takes focus once, then the param is cleared.
+  const { focus } = useLocalSearchParams<{ focus?: string }>();
+  useEffect(() => {
+    if (focus !== 'check') return;
+    const id = setTimeout(() => textRef.current?.focus(), 0);
+    router.setParams({ focus: undefined });
+    return () => clearTimeout(id);
+  }, [focus, router]);
   const addQuick = (line: QuickLine): void => {
     setQuickLines((prev) => (prev.some((l) => l.id === line.id) ? prev.map((l) => (l.id === line.id ? line : l)) : [...prev, line].slice(0, MAX_QUICK_LINES)));
     setQuick(null);

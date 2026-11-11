@@ -158,7 +158,7 @@ describe('list screens', () => {
     expect(screen.getByText('+ Purchase')).toBeTruthy();
     expect(screen.queryByText('Laptop')).toBeNull();
     await fireEvent.press(screen.getByText('+ Investment'));
-    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'invest' } });
+    expect(mockPush).toHaveBeenCalledWith('/decide?focus=check');
   });
 
   it('D-99 the Changes screen deletes with confirm and Undo', async () => {

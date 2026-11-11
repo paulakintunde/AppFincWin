@@ -272,9 +272,9 @@ describe('OpenChecksCard', () => {
   it('starts a new purchase or investment check from the heading links', async () => {
     await renderCard([checkRow('a')]);
     await fireEvent.press(screen.getByText('+ Purchase'));
-    expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'buy' } });
+    expect(mockPush).toHaveBeenLastCalledWith('/decide?focus=check');
     await fireEvent.press(screen.getByText('+ Investment'));
-    expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/[id]', params: { id: 'new-id', kind: 'invest' } });
+    expect(mockPush).toHaveBeenLastCalledWith('/decide?focus=check');
   });
 
   it('R6 rule W: the heading never shrinks or wraps and the links wrap below it as a group', async () => {
