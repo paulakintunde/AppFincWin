@@ -1598,6 +1598,9 @@ const en = {
       safetyNetChanged: 'Safety net changed · {{name}}',
       safetyNetSizeSaved: 'Safety net size saved',
       safetyNetConfirmed: 'Safety net confirmed',
+      // 06.1 Decide screens (wording reviewed under D-08)
+      safetyNetUnlocked: 'Safety net unlocked for answers',
+      safetyNetLocked: 'Safety net locked',
       debtPlanSaved: 'Payoff plan saved · {{name}}',
       debtSaleRecorded: 'Sale recorded · {{name}}',
       holdingAdded: 'Holding added · {{name}}',
