@@ -15,6 +15,7 @@ export const setup = {
     rowA11y: 'Decide setup, {{count}} of 6 done. Next: {{next}}.',
     doneTitle: 'Setup done. Answers use your records.',
     doneLink: 'See what Decide uses',
+    barA11y: '{{count}} of 6 steps done',
   },
   checklist: {
     title: 'Decide setup',
@@ -25,6 +26,7 @@ export const setup = {
     note: 'Nothing here moves money. You can change any of it later.',
     continue: 'Continue: {{next}}',
     statusDone: 'Done',
+    rowA11y: '{{item}}. {{status}}.',
   },
   items: {
     pay: 'Pay and payday',
