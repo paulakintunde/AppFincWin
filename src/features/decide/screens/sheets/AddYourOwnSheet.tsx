@@ -160,7 +160,7 @@ function OwnForm({ variant, currency, today, bills, categories, existingKindCoun
               <Text style={label}>{k('stop.pickBill')}</Text>
               <View style={styles.chips}>
                 {bills.map((b) => (
-                  <Chip key={b.id} label={b.name} numberOfLines={2} selected={!form.everyday && form.billId === b.id} onPress={() => set({ billId: b.id, everyday: false })} />
+                  <Chip key={b.id} label={b.name} selected={!form.everyday && form.billId === b.id} onPress={() => set({ billId: b.id, everyday: false })} />
                 ))}
                 <Chip label={k('stop.everyday')} selected={form.everyday} onPress={() => set({ everyday: true, billId: null })} />
               </View>
@@ -171,7 +171,7 @@ function OwnForm({ variant, currency, today, bills, categories, existingKindCoun
                 <Text style={label}>{k('stop.everydayCategory')}</Text>
                 <View style={styles.chips}>
                   {categories.map((c) => (
-                    <Chip key={c.id} label={c.name} numberOfLines={2} selected={form.categoryId === c.id} onPress={() => set({ categoryId: c.id })} />
+                    <Chip key={c.id} label={c.name} selected={form.categoryId === c.id} onPress={() => set({ categoryId: c.id })} />
                   ))}
                 </View>
               </View>

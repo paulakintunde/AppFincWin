@@ -119,6 +119,7 @@ const GEOMETRY_HEIGHT: { path: string; count: number; reason: string }[] = [
   { path: 'charts/CashPathChart.tsx', count: 2, reason: 'chart drawing' },
   { path: 'charts/NetWorthChart.tsx', count: 2, reason: 'chart drawing' },
   { path: 'check/sections/sectionUi.tsx', count: 1, reason: '6px dot' },
+  { path: 'screens/sheets/DatePickerSheet.tsx', count: 1, reason: '5px payday dot (no text); day cells use minHeight' },
   { path: 'check/sections/SetbacksSection.tsx', count: 2, reason: 'checkbox glyph and 44 remove target (no text)' },
   { path: 'check/SplitOverrideSheet.tsx', count: 1, reason: 'radio dot' },
   { path: 'check/steps/step2/AmountRow.tsx', count: 3, reason: 'R16.3 remove target (44) and its dash glyph (no text)' },

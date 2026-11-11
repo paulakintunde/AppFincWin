@@ -120,7 +120,7 @@ function SaleForm({ currency, today, sale, debts, onSave, onClose }: SaleSheetPr
                 <View style={styles.chips}>
                   <Chip label={k('noDebt')} selected={form.debtId === null} onPress={() => set({ debtId: null })} />
                   {debts.map((d) => (
-                    <Chip key={d.id} label={d.name} numberOfLines={2} selected={form.debtId === d.id} onPress={() => set({ debtId: d.id })} />
+                    <Chip key={d.id} label={d.name} selected={form.debtId === d.id} onPress={() => set({ debtId: d.id })} />
                   ))}
                 </View>
                 {debt === null ? null : (

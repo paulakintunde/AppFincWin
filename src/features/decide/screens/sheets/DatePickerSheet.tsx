@@ -223,10 +223,10 @@ function DatePickerForm({ check, today, paydays, savedUp, locale, formatDate, on
 const styles = StyleSheet.create({
   column: { gap: space.gapSm, paddingBottom: space.gapMd },
   monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  arrow: { width: CELL, height: CELL, alignItems: 'center', justifyContent: 'center' },
+  arrow: { minWidth: CELL, minHeight: CELL, alignItems: 'center', justifyContent: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: `${100 / 7}%`, height: CELL, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 5, height: 5, borderRadius: 3, position: 'absolute', bottom: 5 },
+  cell: { width: `${100 / 7}%`, minHeight: CELL, alignItems: 'center', justifyContent: 'center', gap: 2, paddingVertical: 2 },
+  dot: { width: 5, height: 5, borderRadius: 3 },
   dim: { opacity: 0.4 },
   saved: { minHeight: CELL, justifyContent: 'center', gap: 2 },
 });
