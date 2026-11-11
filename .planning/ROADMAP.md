@@ -1250,7 +1250,7 @@ Plans:
 **Goal:** Testers use the new Decide screens, built from the owner's clickable prototype (https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR, the design standard, as in Phase 6 D-04), on the v3 engine and the connection points that exist on main. Every prototype Decide screen (D01-D53, answers N02-N26) replaces today's tester screens in one release with Grow; old 05.x Decide screens deleted; home buying hidden; household left to 08.1 (06.1-CONTEXT D-01..D-06).
 **Requirements**: FIN-20, FIN-21, FIN-22, FIN-23, FIN-24, FIN-28, FIN-29, FIN-31; ENG-26 (Activity and Grow half), ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-20, UX-21 (renderer), UX-38, UX-41, UX-42, UX-43; CMP-F12 (layout), F14, F15; ARC-11, ARC-24, ARC-25; QA-01 (prototype is the design), QA-02/QA-03 (non-household cases); BO-09; the non-household rows of 08.1-CARRY-OVER-FROM-05.4.md (list in 06.1-01-PLAN.md). FIN-20/22/23 return to 08.1 if their cases are not approved by release (D-26).
 **Depends on:** Phase 6: Grow plans 06-05, 06-06 and 06-10 on main (connection points, RPCs, Decide feed; 06.1-CONTEXT D-30). Wave 1 (plans 01-07, 41, 42) can be built now; plan 08 gates the rest. Household parts stay hidden until Phase 8.
-**Plans:** 20/42 plans executed
+**Plans:** 28/42 plans executed
 
 Plans:
 - [x] 06.1-01-PLAN.md — Scope split (D-04) and prototype inventory (D-27); seven state colour tokens + contrast tests + CLAUDE.md (D-16); ROADMAP requirement lines
@@ -1269,17 +1269,17 @@ Plans:
 - [x] 06.1-14-PLAN.md — Answer frame: verdict card, legal block, reading order, options, action bar, status cards
 - [x] 06.1-15-PLAN.md — Sheets: pick a date, quick estimates x4, installment plan, how often
 - [x] 06.1-16-PLAN.md — Sheets: add your own x4, selling the old one, waterfall card
-- [ ] 06.1-17-PLAN.md — Setup progress rules (D-10, D-11, D-23), banner and checklist
-- [ ] 06.1-18-PLAN.md — Safety-net settings with unlock confirm and padlock; first-answer gate (D-14, D-25, D-28)
-- [ ] 06.1-19-PLAN.md — Big-buy stepper D10-D13 with running-cost templates (D-24)
-- [ ] 06.1-20-PLAN.md — More-detail sheets D54-D61 and the cash vs installments compare screen
+- [x] 06.1-17-PLAN.md — Setup progress rules (D-10, D-11, D-23), banner and checklist
+- [x] 06.1-18-PLAN.md — Safety-net settings with unlock confirm and padlock; first-answer gate (D-14, D-25, D-28)
+- [x] 06.1-19-PLAN.md — Big-buy stepper D10-D13 with running-cost templates (D-24)
+- [x] 06.1-20-PLAN.md — More-detail sheets D54-D61 and the cash vs installments compare screen
 - [ ] 06.1-21-PLAN.md — Decide home D01/D02 and the Decide tab
-- [ ] 06.1-22-PLAN.md — Open checks, Your money rules (D-19), Something changed?
+- [x] 06.1-22-PLAN.md — Open checks, Your money rules (D-19), Something changed?
 - [ ] 06.1-23-PLAN.md — Answer route for every board, D21, fact actions, history, analytics
 - [ ] 06.1-24-PLAN.md — Setup items: pay and payday, regular bills
 - [ ] 06.1-25-PLAN.md — Setup items: debts, safety net, money rules, records
-- [ ] 06.1-26-PLAN.md — Save for it and I bought it screens
-- [ ] 06.1-27-PLAN.md — Past decisions with look-back and check history
+- [x] 06.1-26-PLAN.md — Save for it and I bought it screens
+- [x] 06.1-27-PLAN.md — Past decisions with look-back and check history
 - [ ] 06.1-28-PLAN.md — Old routes redirect, setup route swap, onboarding and entry-point repoints (D-05)
 - [ ] 06.1-29-PLAN.md — FIN-20 tax set-aside behind owner approval (D-26)
 - [ ] 06.1-30-PLAN.md — FIN-22 and FIN-23 behind owner approval (D-26)
@@ -1287,7 +1287,7 @@ Plans:
 - [ ] 06.1-32-PLAN.md — Maestro flows, text-fit and reading order, full suite, owner device pass
 - [ ] 06.1-33-PLAN.md — D-08 wording sign-off and lock
 - [ ] 06.1-34-PLAN.md — Release with Grow: OTA or preview APK (D-06, D-29)
-- [ ] 06.1-35-PLAN.md — Info sheets: About this answer, Give it more to go on, Free help, How this was worked out
+- [x] 06.1-35-PLAN.md — Info sheets: About this answer, Give it more to go on, Free help, How this was worked out
 - [ ] 06.1-36-PLAN.md — Delete the old Decide code: shell hosts, folders, shims, old tests; fix guards (D-05)
 - [ ] 06.1-37-PLAN.md — Prune old Decide copy from en.ts; copy-guard exemptions and coverage thresholds
 - [x] 06.1-38-PLAN.md — Move useSettledLabel, RiseIn and the text-fit helper; intro and setup-done phone flags (D-25)
