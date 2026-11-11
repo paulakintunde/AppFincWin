@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 06.1 wave 6 done (17-20, 22, 26, 27, 35; 28/42); next is wave 7 (21, 23, 24, 39)
+stopped_at: Phase 06.1 wave 7 done (21, 23, 24, 39; 32/42); next is wave 8 (plan 25, setup items 3-6)
 last_updated: "2026-11-11T20:10:18.502Z"
 last_activity: 2026-11-11
 progress:
