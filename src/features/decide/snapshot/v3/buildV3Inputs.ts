@@ -149,6 +149,9 @@ function limitsOf(v3: V3SettingsSource | null, legacy: Limits): Limits {
   return { lines: [...legacy.lines, ...own] };
 }
 
+/** 06.1-22 FIN-07: the keep-at-least line as minor units; anything unreadable or negative is none. */
+const tightLineOf = (x: unknown) => { const n = moneyOf(x); return n === null ? null : minorUnits(n); };
+
 function cadenceOf(x: unknown): Cadence | null {
   if (!isRec(x)) return null;
   const every = x.every;
@@ -607,6 +610,7 @@ export function buildV3Inputs(
     provisionalRates,
     recordsAsOf: source.recordsAsOf ?? null, // ENG-14, D-126: the oldest real server fetch, null when unknown
     safetyNet,
+    tightLine: tightLineOf(v3?.tight_line),
     factLines: true, // D-08: on by default; the switch's storage and screen are 08.1
     // D-142: the stored state or province passes with whatever country `region` resolved to (even from the device); the engine's
     // tax table knows only real country-and-state pairs, so a mismatch adds no tax and says so. No country -> null.
