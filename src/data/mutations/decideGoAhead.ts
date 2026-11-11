@@ -14,7 +14,9 @@
 import * as Crypto from 'expo-crypto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
-import type { Assessment, PaymentStep, RunningCostCategory, RunningCosts } from '@/engine/decide';
+import type { Assessment, PaymentStep, RunningCostCategory, RunningCosts } from '@/engine/decide'; // 06.1-36 removes the Assessment path
+import { myShareOf, type Cadence, type CheckV2, type Evaluation } from '@/engine/decide/v3';
+import type { MinorUnits } from '@/engine/money/types';
 import { buildTransferLegs } from '@/engine/transfer';
 import { occurrenceDate } from '@/engine/recurring/schedule';
 import type { RecurringFreq } from '@/engine/recurring/schedule';
@@ -503,6 +505,181 @@ export function useGoAhead(): {
         const now = new Date();
         void reminders.scheduleCoolingOffReminder(args.checkId, coolingOffAt(now), now).catch(() => undefined);
       }
+      return stepId;
+    },
+  };
+}
+
+
+// ---- 06.1-13 (ARC-24): I bought it from a v3 check -------------------------------------------------------------------------
+
+export interface GoAheadV3Context {
+  householdId: string;
+  /** The currency of the cash account. */
+  currency: string;
+  timeZone: string;
+  /** 'YYYY-MM-DD': the purchase date when the result carries none. */
+  today: string;
+  /** What the user calls the purchase; the check itself carries no name. */
+  name: string;
+  /** The Debt category, when the plan is a loan (payment series carry it); null otherwise. */
+  debtCategoryId?: string | null;
+  coolingOff?: boolean;
+  mint: () => string;
+}
+
+/** The recurring frequency a plan cadence maps to, or null when the series machinery has no such frequency. */
+function freqOfCadence(c: Cadence): RecurringFreq | null {
+  if (c.unit === 'week') return c.every === 1 ? 'weekly' : c.every === 2 ? 'fortnightly' : null;
+  return c.every === 1 ? 'monthly' : c.every === 3 ? 'quarterly' : c.every === 12 ? 'yearly' : null;
+}
+
+/** Date of the i-th payment on a cadence the recurring frequencies cannot express (every N weeks or months). */
+function stepByCadence(first: string, c: Cadence, i: number): string {
+  const base: RecurringFreq = c.unit === 'week' ? 'weekly' : 'monthly';
+  let d = first;
+  for (let k = 0; k < i * c.every; k++) d = occurrenceDate(d, base, 1);
+  return d;
+}
+
+/**
+ * Pure adapter (replaces the old Assessment input): the rows and series that "I bought it" writes for a v3 check, in the shape
+ * recordDecideGo takes. Cash: one pending row of the whole price with tax and one-off fees (my share, exactly Purchase.whole)
+ * on the purchase date. Plan: the up-front part (Purchase.dayOne, my share) on the purchase date, then the payments from the
+ * first payment date, each my share of the lender's amount including the per-period and end fees. Running costs are NOT
+ * written here: the user adds each as a bill by their own tap (APP-29). No debt row is made (Grow records debts).
+ */
+export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, accountId: string, ctx: GoAheadV3Context): GoAheadWrite {
+  const purchase = evaluation.purchase;
+  if (purchase === null) throw refuse(new TypeError('goAheadInputOfV3: the check has no purchase to write'));
+  const date = evaluation.result.purchaseDate ?? ctx.today;
+  const name = ctx.name.trim();
+
+  const rows: NewTransaction[] = [];
+  const rowRoles: DecideLinkRole[] = [];
+  const series: NewRecurringSeries[] = [];
+  const seriesRoles: DecideLinkRole[] = [];
+
+  const addRow = (amount: number, localDate: string, role: DecideLinkRole): void => {
+    assertSafeInteger('a row amount', amount);
+    rows.push({
+      id: ctx.mint(),
+      household_id: ctx.householdId,
+      account_id: accountId,
+      original_amount: amount,
+      original_currency: ctx.currency,
+      local_date: localDate,
+      time_zone: ctx.timeZone,
+      note: null,
+      name,
+      category_id: role === 'payment' && purchase.financed ? (ctx.debtCategoryId ?? null) : null,
+      status: 'pending',
+      // D-66 (WR-A06): the up-front money won't recur, so it is a one-off and stays out of later spending averages.
+      ...(role === 'day_one' ? { one_off: true } : {}),
+    });
+    rowRoles.push(role);
+  };
+
+  const sched = purchase.schedule;
+  if (check.pay.mode === 'once' || sched === null) {
+    if (purchase.whole > 0) addRow(-purchase.whole, date, 'day_one');
+  } else {
+    if (purchase.dayOne > 0) addRow(-purchase.dayOne, date, 'day_one');
+    const freq = freqOfCadence(sched.cadence);
+    // A payment's amount on the lender's full schedule, with fees, then my share (types.ts SHARE CONVENTION).
+    const mine = (full: number): number => myShareOf(full as MinorUnits, purchase.share);
+    const regular = mine(sched.payment + sched.fees.perPeriod);
+    const last = mine(sched.finalPayment + sched.fees.perPeriod + sched.fees.end);
+    const n = sched.lastPaying;
+    if (n >= 1) {
+      const runOfRegular = regular === last ? n : n - 1;
+      if (freq !== null) {
+        if (runOfRegular >= 2) {
+          assertSafeInteger('a series amount', regular);
+          series.push({
+            id: ctx.mint(),
+            household_id: ctx.householdId,
+            account_id: accountId,
+            name,
+            amount: -regular,
+            currency: ctx.currency,
+            category_id: purchase.financed ? (ctx.debtCategoryId ?? null) : null,
+            payment_type: null,
+            freq,
+            anchor_date: sched.firstDate,
+            time_zone: ctx.timeZone,
+            end_date: null,
+            occurrence_count: runOfRegular,
+          });
+          seriesRoles.push('payment');
+        } else if (runOfRegular === 1) {
+          addRow(-regular, sched.firstDate, 'payment');
+        }
+        if (runOfRegular < n) addRow(-last, occurrenceDate(sched.firstDate, freq, runOfRegular), 'payment');
+      } else {
+        // A cadence the series machinery cannot repeat: one pending row per payment.
+        for (let i = 0; i < n; i++) addRow(-(i === n - 1 ? last : regular), stepByCadence(sched.firstDate, sched.cadence, i), 'payment');
+      }
+    }
+  }
+
+  if (rows.length > DECIDE_GO_MAX_ROWS) {
+    throw refuse(new RangeError(`goAheadInputOfV3: ${rows.length} rows is over ${DECIDE_GO_MAX_ROWS}`));
+  }
+  if (rows.length + series.length === 0) throw refuse(new RangeError('goAheadInputOfV3: nothing to write'));
+
+  const decision: DecideGoDecision = {
+    verdict: evaluation.result.legacyState,
+    estimate_day_one: purchase.dayOne,
+    estimate_monthly: purchase.monthly,
+    estimate_monthly_payment: purchase.monthly - purchase.runningMonthly,
+    estimate_running: purchase.runningMonthly,
+    broke_line: evaluation.result.legacyState !== 'fits',
+    cooling_off: ctx.coolingOff ?? false,
+    row_roles: rowRoles,
+    series_roles: seriesRoles,
+  };
+  return { rows, series, endSeries: [], debt: null, decision };
+}
+
+export interface GoAheadV3Args {
+  checkId: string;
+  ownerId: string;
+  homeCurrency: string;
+  check: CheckV2;
+  evaluation: Evaluation;
+  accountId: string;
+  ctx: GoAheadV3Context;
+}
+
+/** 06.1 ARC-24: "I bought it" on a v3 check: ONE record_decide_go call, one Undo. Returns the undo step id. */
+export function useGoAheadV3(): { goAhead(args: GoAheadV3Args): string } {
+  const qc = useQueryClient();
+  const mutation = useMutation<unknown, unknown, GoAheadVars>({ mutationKey: mutationKeys.decideGoAhead, scope: WRITE_SCOPE });
+  return {
+    goAhead(args): string {
+      const queued = qc
+        .getMutationCache()
+        .findAll({ mutationKey: mutationKeys.decideGoAhead, status: 'pending' })
+        .map((m) => m.state.variables as GoAheadVars | undefined)
+        .find((v) => v?.checkId === args.checkId);
+      if (queued) return queued.stepId;
+      const write = goAheadInputOfV3(args.check, args.evaluation, args.accountId, args.ctx);
+      const stepId = newStepId();
+      mutation.mutate({
+        checkId: args.checkId,
+        ownerId: args.ownerId,
+        householdId: args.ctx.householdId,
+        homeCurrency: args.homeCurrency,
+        name: args.ctx.name.trim(),
+        rows: write.rows,
+        series: write.series,
+        endSeries: write.endSeries,
+        debt: write.debt,
+        decision: write.decision,
+        stepId,
+      });
+      getAnalytics().track('decision_recorded', { decision: 'go' });
       return stepId;
     },
   };
