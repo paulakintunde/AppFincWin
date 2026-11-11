@@ -144,7 +144,7 @@ describe('list screens', () => {
     expect(screen.getByText('Laptop')).toBeTruthy();
     expect(screen.getByText(/Changed since you looked/)).toBeTruthy();
     expect(screen.getByText('+ Purchase')).toBeTruthy();
-    expect(screen.getByText('+ Investment')).toBeTruthy();
+    expect(screen.queryByText('+ Investment')).toBeNull();
     await fireEvent.press(screen.getByLabelText('More for Laptop'));
     await fireEvent.press(screen.getByLabelText('Delete'));
     expect(screen.getByText('Delete this check?')).toBeTruthy();
@@ -157,7 +157,7 @@ describe('list screens', () => {
     await wrap(<OpenChecksScreen />);
     expect(screen.getByText('+ Purchase')).toBeTruthy();
     expect(screen.queryByText('Laptop')).toBeNull();
-    await fireEvent.press(screen.getByText('+ Investment'));
+    await fireEvent.press(screen.getByText('+ Purchase'));
     expect(mockPush).toHaveBeenCalledWith('/decide?focus=check');
   });
 

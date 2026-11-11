@@ -269,12 +269,11 @@ describe('OpenChecksCard', () => {
     expect(screen.getByLabelText(new RegExp('^' + long))).toBeTruthy();
   });
 
-  it('starts a new purchase or investment check from the heading links', async () => {
+  it('starts a new purchase check from the heading link and offers no investment check', async () => {
     await renderCard([checkRow('a')]);
     await fireEvent.press(screen.getByText('+ Purchase'));
     expect(mockPush).toHaveBeenLastCalledWith('/decide?focus=check');
-    await fireEvent.press(screen.getByText('+ Investment'));
-    expect(mockPush).toHaveBeenLastCalledWith('/decide?focus=check');
+    expect(screen.queryByText('+ Investment')).toBeNull();
   });
 
   it('R6 rule W: the heading never shrinks or wraps and the links wrap below it as a group', async () => {

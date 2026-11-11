@@ -4,6 +4,8 @@ import { type Href } from 'expo-router';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 
 export type CheckKind = 'buy' | 'invest';
+// Owner 2026-11-11: no new investment check is offered; investing is planned in Grow. 'invest' stays only for already-saved checks.
+export type NewCheckKind = 'buy';
 
 type CheckStepParam = '1' | '2' | '3' | '4' | '5';
 
@@ -16,7 +18,7 @@ export function checkHref(id: string, params: { kind?: CheckKind; step?: CheckSt
 export const NEW_CHECK_HREF = '/decide?focus=check' as Href;
 
 /** Opens a brand-new check. Nothing is written until the check is built from Decide home. */
-export function openNewCheck(_kind: CheckKind): void {
+export function openNewCheck(_kind: NewCheckKind): void {
   pushOnce(NEW_CHECK_HREF);
 }
 

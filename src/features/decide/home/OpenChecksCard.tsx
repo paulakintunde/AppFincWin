@@ -27,7 +27,7 @@ import { selectOtherChecks } from '../snapshot/stacking';
 import type { ChipComputation, SnapshotResult } from '../snapshot/types';
 import { DeletableRow } from '../ui/DeletableRow';
 import { StateChip, type StateChipTone } from '@/ui/StateChip';
-import { checkHref, openNewCheck, type CheckKind } from './checkHref';
+import { checkHref, openNewCheck, type NewCheckKind } from './checkHref';
 
 export interface OpenChecksCardProps {
   source: SnapshotResult | null;
@@ -96,7 +96,7 @@ export function OpenChecksCard({ source, checks, today, whole, currency, showWhe
     [open, source, today]
   );
 
-  const start = (kind: CheckKind) => {
+  const start = (kind: NewCheckKind) => {
     if (open.length > 0 && !canUse('multipleOpenChecks')) return;
     openNewCheck(kind);
   };
@@ -122,9 +122,6 @@ export function OpenChecksCard({ source, checks, today, whole, currency, showWhe
         <View style={styles.links}>
           <Pressable accessibilityRole="button" onPress={() => start('buy')} style={styles.link}>
             <Text style={[link, styles.noShrink]}>{t('decide.open.purchase')}</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => start('invest')} style={styles.link}>
-            <Text style={[link, styles.noShrink]}>{t('decide.open.investment')}</Text>
           </Pressable>
         </View>
       </View>
