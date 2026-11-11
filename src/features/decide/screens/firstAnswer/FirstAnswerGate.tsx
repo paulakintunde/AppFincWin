@@ -4,9 +4,8 @@
 // Mounted by the answer route before the first answer renders; `onDone` fires once when nothing is left to ask.
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useSafetyNetAnswer } from '@/data/mutations/safetyNetAnswer';
 import { useDecideV3 } from '@/data/queries/decideV3';
-import { INTRO_KEYS } from '@/engine/decide/v3/copy/verdictTable';
+import { INTRO_KEYS } from '@/engine/decide/v3';
 import { currencyCode, minorUnits } from '@/engine/money';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { essentialMonthOf } from '@/features/grow/safetyNet/netPreview';
@@ -20,6 +19,7 @@ import { Pill } from '@/ui/Pill';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
+import type { NetAnswerPort } from '../safetyNet/ports';
 import { useFirstAnswerGate } from './useFirstAnswerGate';
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
@@ -27,20 +27,20 @@ type Translate = (key: string, params?: Record<string, string | number>) => stri
 const GROW_NET = '/grow/safety-net' as const;
 
 export interface FirstAnswerGateProps {
+  /** The first-answer net write, bound by src/shell/decide/FirstAnswerGateBound.tsx. */
+  answer: NetAnswerPort;
   onDone: () => void;
 }
 
 type Step = 'intro' | 'net' | 'done';
 
-export function FirstAnswerGate({ onDone }: FirstAnswerGateProps): React.JSX.Element | null {
+export function FirstAnswerGate({ answer, onDone }: FirstAnswerGateProps): React.JSX.Element | null {
   const gate = useFirstAnswerGate();
   const [step, setStep] = useState<Step | null>(null);
 
-  // Decide what to ask once, when the reads settle; answering a step never re-derives the plan.
-  useEffect(() => {
-    if (gate.loading || step !== null) return;
-    setStep(gate.needsIntro ? 'intro' : gate.needsNet ? 'net' : 'done');
-  }, [gate.loading, gate.needsIntro, gate.needsNet, step]);
+  // Decide what to ask once, when the reads settle (set during render, the React way to derive state once); answering a step never
+  // re-derives the plan.
+  if (step === null && !gate.loading) setStep(gate.needsIntro ? 'intro' : gate.needsNet ? 'net' : 'done');
 
   useEffect(() => {
     if (step === 'done') onDone();
@@ -59,7 +59,7 @@ export function FirstAnswerGate({ onDone }: FirstAnswerGateProps): React.JSX.Ele
         // Dismissing without Got it moves on but is not remembered, so the card shows again next time.
         onDismiss={afterIntro}
       />
-      <NetQuestionSheet visible={step === 'net'} onDone={() => setStep('done')} onDismiss={() => setStep('done')} />
+      <NetQuestionSheet answer={answer} visible={step === 'net'} onDone={() => setStep('done')} onDismiss={() => setStep('done')} />
     </>
   );
 }
@@ -87,6 +87,7 @@ function IntroCard({ visible, onGotIt, onDismiss }: { visible: boolean; onGotIt:
 }
 
 export interface NetQuestionSheetProps {
+  answer: NetAnswerPort;
   visible: boolean;
   /** After the question is answered (an amount saved, or Not set yet). */
   onDone: () => void;
@@ -95,18 +96,17 @@ export interface NetQuestionSheetProps {
 }
 
 /** The D-14 question: "Do you have a safety net? About how much?" Also opened from the safety-net settings empty state. */
-export function NetQuestionSheet({ visible, onDone, onDismiss }: NetQuestionSheetProps): React.JSX.Element | null {
-  return visible ? <NetQuestionBody onDone={onDone} onDismiss={onDismiss} /> : null;
+export function NetQuestionSheet({ answer, visible, onDone, onDismiss }: NetQuestionSheetProps): React.JSX.Element | null {
+  return visible ? <NetQuestionBody answer={answer} onDone={onDone} onDismiss={onDismiss} /> : null;
 }
 
-function NetQuestionBody({ onDone, onDismiss }: { onDone: () => void; onDismiss: () => void }): React.JSX.Element {
+function NetQuestionBody({ answer, onDone, onDismiss }: { answer: NetAnswerPort; onDone: () => void; onDismiss: () => void }): React.JSX.Element {
   const t = useT() as unknown as Translate;
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const currency = rc.homeCurrency;
   const fmt = useMoneyFormatter(false, currency);
   const v3 = useDecideV3();
-  const net = useSafetyNetAnswer(rc.userId ?? '', rc.householdId ?? '');
   const [amount, setAmount] = useState<number | null>(null);
   const [otherCurrency, setOtherCurrency] = useState(false);
 
@@ -122,12 +122,12 @@ function NetQuestionBody({ onDone, onDismiss }: { onDone: () => void; onDismiss:
 
   const save = (): void => {
     if (!ready || amount === null) return;
-    const outcome = net.answer({ kind: 'amount', amount, currency, name: t('decide.screens.safetyNet.settings.title') });
+    const outcome = answer({ kind: 'amount', amount, currency, name: t('decide.screens.safetyNet.settings.title') });
     if (outcome.status === 'other_currency') setOtherCurrency(true);
     else onDone();
   };
   const notSet = (): void => {
-    net.answer({ kind: 'not_set' });
+    answer({ kind: 'not_set' });
     onDone();
   };
   const toGrow = (): void => {

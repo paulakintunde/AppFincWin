@@ -14,7 +14,6 @@ let mockStored: string | null = null;
 let mockRows: unknown[] = [];
 let mockSettings: unknown = { answered_net_not_set_at: null };
 
-jest.mock('@/data/mutations/safetyNetAnswer', () => ({ useSafetyNetAnswer: () => ({ answer: (i: unknown) => mockAnswer(i) }) }));
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: mockSettings, isError: false }) }));
 jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockRows, isError: false }) }));
 jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ source: null, v3: null }) }));
@@ -47,7 +46,7 @@ beforeEach(() => {
   mockAnswer.mockReturnValue({ status: 'created', stepId: 's1' });
 });
 
-const mount = (onDone = jest.fn()) => wrap(<FirstAnswerGate onDone={onDone} />).then(() => onDone);
+const mount = (onDone = jest.fn()) => wrap(<FirstAnswerGate answer={((i: unknown) => mockAnswer(i)) as never} onDone={onDone} />).then(() => onDone);
 
 describe('FirstAnswerGate', () => {
   it('first run shows the intro, then the question; neither unlocks anything', async () => {

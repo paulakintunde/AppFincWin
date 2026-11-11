@@ -4,7 +4,6 @@
 // decide_may_use is read defensively: absent means locked.
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useSetNetAnswerUse } from '@/data/mutations/decideNetUse';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useT } from '@/i18n';
 import { usePastContext } from '@/features/decide/past/usePastDecisions';
@@ -23,20 +22,26 @@ import { Text } from '@/ui/Text';
 import { ToggleRow } from '@/ui/ToggleRow';
 import { NetQuestionSheet } from '../firstAnswer/FirstAnswerGate';
 import { LockGlyphAnimated } from '../motion/LockGlyphAnimated';
+import type { NetAnswerPort, NetUsePort } from './ports';
 import { UnlockConfirm } from './UnlockConfirm';
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
 
 const GROW_NET = '/grow/safety-net' as const;
 
-export function SafetyNetSettings(): React.JSX.Element {
+export interface SafetyNetSettingsProps {
+  /** The unlock/lock write and the first-answer net write, bound by src/shell/decide/SafetyNetRoute.tsx. */
+  net: NetUsePort;
+  answer: NetAnswerPort;
+}
+
+export function SafetyNetSettings({ net, answer }: SafetyNetSettingsProps): React.JSX.Element {
   const t = useT() as unknown as Translate;
   const { colors, pairing } = useTheme();
   const { userId, householdId } = usePastContext();
   const money = useGoalMoney();
   const read = useGoalsRead();
   const rowsQ = useSavingsGoalRows(userId ?? undefined, householdId ?? undefined);
-  const net = useSetNetAnswerUse();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [questionOpen, setQuestionOpen] = useState(false);
 
@@ -68,7 +73,7 @@ export function SafetyNetSettings(): React.JSX.Element {
           <Text style={{ ...textRole(pairing, 'body'), color: colors.inkMuted, textAlign: 'center' }}>{t('decide.screens.safetyNet.settings.emptyBody')}</Text>
           <Pill label={t('decide.screens.safetyNet.settings.setAmount')} variant="primary" onPress={() => setQuestionOpen(true)} />
         </View>
-        <NetQuestionSheet visible={questionOpen} onDone={() => setQuestionOpen(false)} onDismiss={() => setQuestionOpen(false)} />
+        <NetQuestionSheet answer={answer} visible={questionOpen} onDone={() => setQuestionOpen(false)} onDismiss={() => setQuestionOpen(false)} />
       </DetailScreen>
     );
   }
@@ -142,6 +147,7 @@ export function SafetyNetSettings(): React.JSX.Element {
         visible={confirmOpen}
         goal={row}
         ownerId={userId}
+        net={net}
         amountText={money.amount(size ?? saved)}
         onClose={() => setConfirmOpen(false)}
       />
