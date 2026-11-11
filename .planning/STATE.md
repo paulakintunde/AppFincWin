@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 6 UI-SPEC approved; next /gsd-plan-phase 6. 05.4 merged; 05.4-43 and 05.4-45 on main (D-182)
-last_updated: "2026-11-11T19:16:36.096Z"
+last_updated: "2026-11-11T19:25:14.452Z"
 last_activity: 2026-11-11
 progress:
   total_phases: 29
   completed_phases: 12
   total_plans: 639
-  completed_plans: 611
+  completed_plans: 612
   percent: 96
 ---
 
@@ -30,7 +30,7 @@ Phase: 06 (grow) — COMPLETE 2026-11-11, 37/37 plans. Code review: 73 findings 
 Phase: 05.3 (decide-screens-v3) — STOPPED 2026-11-01 (fix plan Theme N, BO-01). Branch phase/05.3-decide-screens-v3 is pushed and parked (518 commits ahead of main), never merged. Its engine and plumbing changes are harvested in 05.4 (BO-02, BO-03); the screens are not reused (BO-09).
 Phase: 05.2 (decide-data-and-setup) — COMPLETE 2026-10-29, 75/75 plans. VERIFICATION passed; code review CR/WR fixed in 69-75. Owner signed off after the round-3 Pixel re-check and TalkBack pass (05.2-WALKTHROUGH-FINDINGS.md). Migrations through 20261028001400 in production. N-05 moved to 05.3 D-15. DECIDE_V3 and DECIDE_OPEN stay false. Merged to main as PR #86 (2026-10-29). in C:/dev/fincwin-p5.
 Phase: 05.1 (decide-engine-v3) — COMPLETE 2026-10-27
-Plan: 2 of 22
+Plan: 3 of 22
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
@@ -221,6 +221,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-11T19:16:36.073Z
+Last session: 2026-11-11T19:25:14.428Z
 Stopped at: Phase 6 UI-SPEC approved; next /gsd-plan-phase 6. 05.4 merged; 05.4-43 and 05.4-45 on main (D-182)
 Resume file: None
