@@ -21,7 +21,8 @@ import { Pill } from '@/ui/Pill';
 import { StateBadge, type StateBadgeShape } from '@/ui/StateBadge';
 import { Text } from '@/ui/Text';
 import { router } from 'expo-router';
-import { AsCheckedAnswer } from './AsCheckedAnswer';
+import { AboutSheet } from '../answer/info/AboutSheet';
+import { AsCheckedAnswer, readStoredResult } from './AsCheckedAnswer';
 import { estimateInputFor, localDateOf, usePastDecisions } from './data/usePastDecisions';
 import { useDeleteDecision } from './data/useDeleteDecision';
 import { stateForVerdict } from '../logic/stateForVerdict';
@@ -46,6 +47,7 @@ export function DecisionDetailScreen({ id }: { id: string | null }) {
   const decision = id === null ? null : (model.decisions.find((d) => d.id === id) ?? null);
   const history = useCheckHistory(model.userId ?? undefined, decision?.id).data;
   const [asOf, setAsOf] = useState<DecideCheckHistoryRow | null>(null);
+  const [about, setAbout] = useState(false);
   const { ctx, whole, wholeIn, formatDate, today } = model;
   const goalList = useMemo(() => [...model.goalByCheck.values()], [model.goalByCheck]);
 
@@ -102,8 +104,16 @@ export function DecisionDetailScreen({ id }: { id: string | null }) {
               today={asOf.said_on}
               country={null}
               once={once}
-              onCantSee={() => undefined}
+              onCantSee={() => setAbout(true)}
             />
+            {about ? (
+              <AboutSheet
+                result={readStoredResult(asOf.result)}
+                country={null}
+                said={{ currency: inputs.currency ?? ctx.home, today: asOf.said_on }}
+                onClose={() => setAbout(false)}
+              />
+            ) : null}
             <Pill variant="secondary" label={t('decide.screens.common.close')} onPress={() => setAsOf(null)} />
           </>
         ) : (
