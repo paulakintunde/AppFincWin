@@ -31,7 +31,8 @@ jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => (
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: null }), usePots: () => ({ data: null }) }));
 jest.mock('@/data/queries/activity', () => ({ useAccountBalances: () => ({ balances: new Map() }) }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: jest.fn() }) }));
-jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
+let mockRates: { quote: string; rate: string; rate_date: string; source: string }[] = [];
+jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: mockRates }) }));
 jest.mock('@/data/queries/currencyOptions', () => ({
   useCurrencyOptions: () => ({
     options: [{ code: 'GBP', name: 'Pound', symbol: '£', exponent: 2, kind: 'iso', rateDate: null }],
@@ -59,6 +60,7 @@ function wrap(node: React.ReactElement) {
 beforeEach(() => {
   jest.clearAllMocks();
   resetToastForTests();
+  mockRates = [];
 });
 
 describe('APY field on the account sheet', () => {
@@ -107,6 +109,14 @@ describe('APY field on the account sheet', () => {
     expect(mockEdit).not.toHaveBeenCalled();
   });
 
+  it('P5-WR-03 a comma decimal (4,5) is accepted and stored as 4.5', async () => {
+    const { getByLabelText, getByText, queryByTestId } = await wrap(<AccountSheet visible mode={{ kind: 'edit', account: account() }} onClose={jest.fn()} />);
+    await fireEvent.changeText(getByLabelText('Interest a year (APY)'), '4,5');
+    expect(queryByTestId('account-rate-error')).toBeNull();
+    await fireEvent.press(getByText('Save changes'));
+    expect(mockSetRate).toHaveBeenCalledWith(expect.objectContaining({ id: 'acc1' }), '4.5', 'u1');
+  });
+
   it('clearing the field clears the rate', async () => {
     const { getByLabelText, getByText } = await wrap(<AccountSheet visible mode={{ kind: 'edit', account: account({ interest_rate: '4.5' }) }} onClose={jest.fn()} />);
     await fireEvent.changeText(getByLabelText('Interest a year (APY)'), '');
@@ -128,6 +138,23 @@ describe('APY on the account detail rows', () => {
       pathname: '/grow/calculators/growth',
       params: { start: '250000', rate: '4.5', monthly: '0' },
     });
+  });
+
+  it('P5-WR-04 a foreign-currency balance is converted to home currency before it prefills the start', async () => {
+    mockRates = [{ quote: 'GBP', rate: '0.8', rate_date: '2026-10-05', source: 'ecb' }];
+    const { getByTestId } = await wrap(
+      <AccountDetailRows account={account({ interest_rate: '4.5', currency: 'EUR' })} balance={view} split={undefined} horizonMonth={null} />
+    );
+    await fireEvent.press(getByTestId('account-growth-row'));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/grow/calculators/growth', params: { start: '200000', rate: '4.5', monthly: '0' } });
+  });
+
+  it('P5-WR-04 with no stored rate for a foreign account, the start is not prefilled', async () => {
+    const { getByTestId } = await wrap(
+      <AccountDetailRows account={account({ interest_rate: '4.5', currency: 'EUR' })} balance={view} split={undefined} horizonMonth={null} />
+    );
+    await fireEvent.press(getByTestId('account-growth-row'));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/grow/calculators/growth', params: { rate: '4.5', monthly: '0' } });
   });
 
   it('hides both rows when the account has no rate', async () => {

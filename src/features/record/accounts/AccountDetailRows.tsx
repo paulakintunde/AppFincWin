@@ -56,9 +56,12 @@ export function AccountDetailRows({ account, balance, split, horizonMonth }: Acc
   const pendingCount = split?.pendingCount ?? 0;
   const dash = t('accounts.detail.dash');
 
+  // The balance in home-currency minor units (null with no balance, or no stored rate for a foreign account).
+  const startHome =
+    account.currency === rc.homeCurrency ? (paid ?? 0) : paid !== null ? projectionHomeAmount(paid, account.currency, rc.homeCurrency, rates ?? []) : null;
   let currencyText: string = t('accounts.detail.currencyHome', { code: account.currency });
   if (account.currency !== rc.homeCurrency) {
-    const home = paid !== null ? projectionHomeAmount(paid, account.currency, rc.homeCurrency, rates ?? []) : null;
+    const home = startHome;
     currencyText =
       home !== null
         ? t('accounts.detail.currencyForeign', { code: account.currency, home: fmtIn(rc.homeCurrency)(home), homeCode: rc.homeCurrency })
@@ -130,7 +133,9 @@ export function AccountDetailRows({ account, balance, split, horizonMonth }: Acc
           onPress={() =>
             pushOnce({
               pathname: '/grow/calculators/growth',
-              params: { start: String(Math.max(0, paid ?? 0)), rate, monthly: '0' },
+              // P5-WR-04: the calculator reads `start` in home-currency minor units. A foreign account's balance is converted
+              // at the latest stored rate; with no rate there is no prefill (the user types the start).
+              params: startHome === null ? { rate, monthly: '0' } : { start: String(Math.max(0, startHome)), rate, monthly: '0' },
             } as Href)
           }
           style={styles.growth}

@@ -9,12 +9,15 @@ import { useAccountBalances, useMonthView, type ActivityRowView } from '@/data/q
 import { useCategoryLookup } from '@/data/queries/categories';
 import { usePendingSplit } from '@/data/queries/pendingSplit';
 import { useMarkPaid } from '@/data/mutations/transactions';
+import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { EMPTY_FILTER, filterRows } from '@/engine/activity';
 import { monthOf } from '@/engine/time';
 import { TransactionSheet } from '@/features/record/entry/TransactionSheet';
 import type { EntryMode } from '@/features/record/entry/transactionForm';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { ActivityRow } from '@/features/record/activity/ActivityRow';
+import { useGoalLineRoute } from '@/features/record/activity/goalLineRoute';
+import { useGoalLinePay } from '@/features/grow/goals/useGoalLinePay';
 import { useT } from '@/i18n';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
@@ -54,6 +57,10 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
   const { split } = usePendingSplit(rc.householdId);
   const { usage } = useAccountUsage(accountId);
   const { markPaid } = useMarkPaid();
+  const { pay: payGoalLine } = useGoalLinePay(rc.userId, rc.householdId);
+  const routeOf = useGoalLineRoute(rc.userId, rc.householdId);
+  const seriesData = useRecurringSeries(rc.householdId ?? undefined).data;
+  const seriesById = useMemo(() => new Map((seriesData ?? []).map((x) => [x.id, x])), [seriesData]);
   const [editing, setEditing] = useState(false);
   const [sheetMode, setSheetMode] = useState<EntryMode | null>(null);
 
@@ -66,11 +73,18 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
   const onMarkPaid = useCallback(
     (row: ActivityRowView) => {
       if (rc.userId === null) return;
+      // P5-WR-01: a goal's Expected line grows the goal through the goal confirm, as Activity does; never a plain patch.
+      const route = row.transfer_id === null ? routeOf(row, seriesById) : null;
+      if (route?.kind === 'goal') {
+        payGoalLine(row, route.goalId);
+        return;
+      }
       const stepId = markPaid(row, rc.userId, rc.today);
-      // Follow-up item 7: a null step id shows the toast with no Undo.
-      showToast({ kind: 'ordinary', text: undoLabelText('markedPaid', { name: row.name ?? undefined }), stepId });
+      // Follow-up item 7: a null step id shows the toast with no Undo. P5-CR-01: a removed goal's line says why it is plain.
+      const text = route?.kind === 'goalGone' ? { key: 'record.sheet.goalGoneMarkedPaid' } : undoLabelText('markedPaid', { name: row.name ?? undefined });
+      showToast({ kind: 'ordinary', text, stepId });
     },
-    [markPaid, rc.userId, rc.today]
+    [markPaid, rc.userId, rc.today, routeOf, seriesById, payGoalLine]
   );
 
   // S-IN-10: while the list loads, nothing; once it has loaded without this id, say so.

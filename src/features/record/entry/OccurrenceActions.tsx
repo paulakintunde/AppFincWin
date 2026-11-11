@@ -10,7 +10,7 @@ import { Text } from '@/ui/Text';
 import type { RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import { useEndSeries } from '@/data/mutations/recurringSeries';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
-import { goalIdOfLine } from '@/features/grow/goals/goalLine';
+import { useGoalLineRoute } from '@/features/record/activity/goalLineRoute';
 import { useGoalLinePay } from '@/features/grow/goals/useGoalLinePay';
 import { openSeriesStatus } from './seriesStatusHost';
 import { useMarkPaid, useSkipOccurrence } from '@/data/mutations/transactions';
@@ -46,6 +46,7 @@ export function OccurrenceActions({ row, series, onAdjust, onDone }: OccurrenceA
   const [confirmEnd, setConfirmEnd] = useState(false);
   const { v3 } = useDecideAccess();
   const { pay: payGoalLine } = useGoalLinePay(rc.userId, rc.householdId);
+  const routeOf = useGoalLineRoute(rc.userId, rc.householdId);
 
   if (row.status !== 'pending' || !rc.userId || !rc.householdId) return null;
   const ownerId = rc.userId;
@@ -53,8 +54,9 @@ export function OccurrenceActions({ row, series, onAdjust, onDone }: OccurrenceA
   const name = row.name ?? undefined;
   const statusStyle = [textRole(pairing, 'label'), { color: overdue ? colors.danger : colors.inkMuted }];
 
-  const goalId =
-    row.transfer_id == null ? goalIdOfLine(row, series === undefined ? undefined : new Map([[series.id, series]])) : null;
+  const route =
+    row.transfer_id == null ? routeOf(row, series === undefined ? undefined : new Map([[series.id, series]])) : null;
+  const goalId = route?.kind === 'goal' ? route.goalId : null;
 
   const doMarkPaid = () => {
     if (goalId !== null) {
@@ -62,8 +64,10 @@ export function OccurrenceActions({ row, series, onAdjust, onDone }: OccurrenceA
       if (payGoalLine(row, goalId)) onDone();
       return;
     }
+    // P5-CR-01: a removed goal's line is marked paid as a plain line, and the toast says why.
     const stepId = markPaid(row, ownerId, rc.today);
-    showToast({ kind: 'ordinary', text: undoLabelText('markedPaid', { name }), stepId });
+    const text = route?.kind === 'goalGone' ? { key: 'record.sheet.goalGoneMarkedPaid' } : undoLabelText('markedPaid', { name });
+    showToast({ kind: 'ordinary', text, stepId });
     onDone();
   };
 

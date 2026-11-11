@@ -138,7 +138,8 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth, de
   // S-WR-02: why the last bulk action did nothing, shown whatever the selected count.
   const [hint, setHint] = useState<BulkHint | null>(null);
 
-  const activeFilterCount = countActiveFilters(filter);
+  // P5-IN-01: the route-driven debt filter narrows the list and shows a chip, so it counts in the badge too.
+  const activeFilterCount = countActiveFilters(filter) + (vm.debt !== null ? 1 : 0);
   const sheetChips = filterChipModels(filter, {
     categoryName: (id) => {
       const c = categories.byId.get(id);

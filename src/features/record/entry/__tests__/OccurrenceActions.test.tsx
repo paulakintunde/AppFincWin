@@ -2,6 +2,9 @@
 // 06-37: a goal's Expected line is marked paid through the goal confirm, never a plain status patch.
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { queryKeys } from '@/data/keys';
+import { getToast, resetToastForTests } from '@/state/undoToast';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import { OccurrenceActions } from '../OccurrenceActions';
@@ -91,6 +94,25 @@ describe('OccurrenceActions entry', () => {
     expect(mockGoalPay).toHaveBeenCalledWith(expect.objectContaining({ goal_id: 'g2' }), 'g2');
     expect(mockMarkPaid).not.toHaveBeenCalled();
     expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('P5-CR-01 a line whose goal was removed (loaded goals without it) is marked paid as a plain line and says why', async () => {
+    resetToastForTests();
+    const qc = new QueryClient();
+    qc.setQueryData(queryKeys.savingsGoals('u1', 'h1'), [{ id: 'g-other' }]);
+    await render(
+      <QueryClientProvider client={qc}>
+        <ThemeProvider>
+          <OccurrenceActions row={goalRow} series={goalSeries} onAdjust={jest.fn()} onDone={onDone} />
+        </ThemeProvider>
+      </QueryClientProvider>
+    );
+    expect(screen.getByText('Adjust, then mark paid')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Mark paid'));
+    expect(mockGoalPay).not.toHaveBeenCalled();
+    expect(mockMarkPaid).toHaveBeenCalledTimes(1);
+    expect(getToast()?.text).toEqual({ key: 'record.sheet.goalGoneMarkedPaid' });
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 
   it('a plain occurrence still uses markPaid and offers Adjust', async () => {

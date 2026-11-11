@@ -1,6 +1,7 @@
 // 06-37 (D-38): "See all in Activity" on a debt's detail opens Activity filtered to that debt, through the route
-// parameter `?debt=<id>`. A line belongs to the debt when it is tagged to it (debt_id: a one-off or a sale's final
-// payment) or is a line of its payment series (series_id) or its extra series (extra_series_id), the same three links
+// parameter `?debt=<id>`. A line belongs to the debt when it is tagged to it (debt_id: record_debt_one_off's payment;
+// record_debt_sale's lines only once that RPC stamps debt_id, P5-WR-05) or is a line of its payment series (series_id) or
+// its extra series (extra_series_id), the same three links
 // the debt's Payments list reads (debtLinkFilter). Pure and React-free.
 import type { DebtRow } from '@/db/debts';
 

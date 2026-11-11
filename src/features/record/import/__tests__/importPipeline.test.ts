@@ -1035,8 +1035,16 @@ describe('toImportCommit', () => {
           before: { status: 'pending', local_date: '2026-09-02', original_amount: -1000 },
           patch: { status: 'paid', local_date: '2026-09-01', original_amount: -1000 },
           line: expect.objectContaining({ original_amount: -1000, status: 'paid', local_date: '2026-09-01', import_batch_id: 'b' }),
+          pendingIsGoalLine: false,
         },
       ]);
+    });
+
+    it('P5-WR-01: flags a goal line so finalize inserts the statement line instead of patching it', () => {
+      const p = preview();
+      const ctx = { ...CTX, existingById: new Map([['p1', { ...info, goalLine: true }]]) };
+      const { finalize } = toImportCommit(p, decisions({ included: all(p), payMatches: new Set([0]) }), ctx, 'b', NEW_IDS());
+      expect(finalize.markPaid[0]?.pendingIsGoalLine).toBe(true);
     });
 
     it('inserts the line as an ordinary row when the pending row is unknown or no longer pending', () => {

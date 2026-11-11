@@ -12,6 +12,7 @@ import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useBulkMarkUnpaid, useBulkPatch } from '@/data/mutations/patches';
 import { useEndSeries } from '@/data/mutations/recurringSeries';
 import { goalIdOfLine } from '@/features/grow/goals/goalLine';
+import { useGoalLineRoute } from './goalLineRoute';
 import { useGoalLinePay } from '@/features/grow/goals/useGoalLinePay';
 import { useDeleteTransaction, useMarkPaid } from '@/data/mutations/transactions';
 import { useDeleteTransfer, type TransferLegRow } from '@/data/mutations/transfers';
@@ -74,6 +75,7 @@ export function useRowActions(ctx: RowActionsContext): RowActions {
   const { end } = useEndSeries();
   const series = useRecurringSeries(householdId ?? undefined).data;
   const { pay: payGoalLine } = useGoalLinePay(ownerId, householdId);
+  const routeOf = useGoalLineRoute(ownerId, householdId);
   const seriesById = useMemo(() => new Map((series ?? []).map((x) => [x.id, x])), [series]);
 
   const partnerOf = useCallback(
@@ -119,16 +121,19 @@ export function useRowActions(ctx: RowActionsContext): RowActions {
     (row: ActivityRowView) => {
       if (!enabled || ownerId === null || row.status !== 'pending') return;
       if (row.transfer_id !== null) return setTransferStatus(row, 'pending', 'paid');
-      if (isGoalLine(row, seriesById)) {
+      const route = routeOf(row, seriesById);
+      if (route.kind === 'goal') {
         // The goal grows through the same confirm Grow uses. With the goal not loaded nothing is written and the
         // not-ready hint shows (06-37).
-        payGoalLine(row, goalIdOfLine(row, seriesById) as string);
+        payGoalLine(row, route.goalId);
         return;
       }
+      // P5-CR-01: a removed goal's line is marked paid as a plain line, and the toast says why.
       const stepId = markPaid(row, ownerId, today);
-      showToast({ kind: 'ordinary', text: undoLabelText('markedPaid', { name: row.name ?? undefined }), stepId });
+      const text = route.kind === 'goalGone' ? { key: 'record.sheet.goalGoneMarkedPaid' } : undoLabelText('markedPaid', { name: row.name ?? undefined });
+      showToast({ kind: 'ordinary', text, stepId });
     },
-    [enabled, ownerId, today, markPaid, setTransferStatus, seriesById, payGoalLine]
+    [enabled, ownerId, today, markPaid, setTransferStatus, seriesById, payGoalLine, routeOf]
   );
 
   const unpay = useCallback(

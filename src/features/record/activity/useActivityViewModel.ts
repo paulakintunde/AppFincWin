@@ -2,9 +2,10 @@
 // list and the running-balance inputs. ActivityScreen composes; it holds no list state.
 // All maths is the engine's (monthTotals, groupBy*, runningBalance); this hook gathers inputs.
 // Read paths never fetch exchange rates (02-48 rule): a missing rate shows as 'Waiting for a rate'.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAccounts } from '@/data/queries/accounts';
 import { useDebts } from '@/data/queries/decide';
+import { useDebtPayments } from '@/data/queries/growDebts';
 import { useAddMonth } from '@/data/mutations/addMonth';
 import { useSeriesOffers } from '@/data/queries/offers';
 import {
@@ -198,6 +199,22 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
   const accounts = useAccounts(rc.householdId ?? undefined).data;
   const debts = useDebts(debtId === null ? undefined : (rc.householdId ?? undefined)).data;
   const debt = useMemo(() => debtFilterOf(debtId, debts), [debtId, debts]);
+  // P5-WR-02: the debt filter stays month-scoped (the owner's choice), so arriving from "See all in Activity" opens the most
+  // recent month that has one of the debt's lines: its latest paid line, else its next expected one. Once per arrival; the
+  // user can move months freely after. With no line found (or not loaded), the month on screen is kept.
+  const debtRow = useMemo(() => (debtId === null ? undefined : debts?.find((d) => d.id === debtId && d.deleted_at === null)), [debtId, debts]);
+  const debtPayments = useDebtPayments(debtRow, rc.today).data;
+  const debtLatest = debtPayments === undefined ? null : (debtPayments.paid[0]?.local_date ?? debtPayments.next?.local_date ?? null);
+  const debtMonthApplied = useRef<string | null>(null);
+  useEffect(() => {
+    if (debtId === null) {
+      debtMonthApplied.current = null;
+      return;
+    }
+    if (debtLatest === null || debtMonthApplied.current === debtId) return;
+    debtMonthApplied.current = debtId;
+    setMonth(monthOf(debtLatest));
+  }, [debtId, debtLatest, setMonth]);
 
   // ACT-03: a 2+ character term in Every month scope is a server search; shorter terms leave
   // the month list alone. Month scope narrows the loaded month instantly.

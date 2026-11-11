@@ -38,7 +38,7 @@ const ROW_PAD_H = 18;
 /**
  * Surface card segment: the card radius on the outer corners only, shadows.edge on every row position (no seams), and a 2px line4 separator above every row but the first (owner, Phase 6 device check: rows read apart).
  */
-export function cardStyle(position: CardPosition, c: Pick<typeof ThemeColours, 'surface' | 'line1' | 'line4'>): ViewStyle {
+export function cardStyle(position: CardPosition, c: Pick<typeof ThemeColours, 'surface' | 'line4'>): ViewStyle {
   const base: ViewStyle = {
     backgroundColor: c.surface,
     paddingVertical: space.rowPadDense,

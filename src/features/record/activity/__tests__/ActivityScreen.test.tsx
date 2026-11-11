@@ -10,7 +10,7 @@ import { monthPositionOf } from '../monthFigureInputs';
 import { focusAccessibility } from '@/shell/a11yFocus';
 import { ActivityScreen } from '../ActivityScreen';
 import { ACTIVITY_VIEW_KEY } from '../activityViewPrefs';
-import { requestActivityFocus, resetActivityFocusForTests } from '@/state/activityFocus';
+import { getSelectedMonth, requestActivityFocus, resetActivityFocusForTests } from '@/state/activityFocus';
 import { EMPTY_FILTER } from '@/engine/activity';
 import { FAB_CLEARANCE } from '@/shell/fab/useShellPositions';
 
@@ -81,6 +81,9 @@ jest.mock('@/data/queries/decide', () => ({
   ...jest.requireActual('@/data/queries/decide'),
   useDebts: () => ({ data: mockDebts }),
 }));
+// P5-WR-02: the debt's own payments (latest paid / next expected) pick the month "See all in Activity" opens on.
+let mockDebtPayments: { paid: { local_date: string }[]; next: { local_date: string } | null } | undefined;
+jest.mock('@/data/queries/growDebts', () => ({ useDebtPayments: (debt: unknown) => ({ data: debt === undefined ? undefined : mockDebtPayments }) }));
 jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
 jest.mock('@/data/queries/pendingSplit', () => ({ usePaidBefore: () => ({ legs: [], isLoading: false }) }));
 jest.mock('@/data/queries/accounts', () => ({
@@ -172,6 +175,7 @@ beforeEach(() => {
   mockSearchPaused = false;
   mockSearchError = false;
   mockDebts = [{ id: DEBT_ID, name: 'Auto loan', series_id: 'pay-series', extra_series_id: 'extra-series', deleted_at: null }];
+  mockDebtPayments = undefined;
 });
 
 type Screen = Awaited<ReturnType<typeof renderScreen>>;
@@ -875,6 +879,33 @@ describe('06-37 D-38: Activity filtered to one debt', () => {
     expect(screen.getByText('One-off payment')).toBeTruthy();
     expect(screen.queryByText('Auto loan payment')).toBeNull();
     expect(screen.getByLabelText('Filter: Debt. Opens filters.')).toBeTruthy();
+  });
+
+  it('P5-IN-01 the debt chip counts in the filter badge', async () => {
+    mockRows = lines();
+    const screen = await renderScreen({ debtId: DEBT_ID, onClearDebt: jest.fn() });
+    expect(screen.getByLabelText('Filter, 1 active')).toBeTruthy();
+  });
+
+  it('P5-WR-02 arriving for a debt opens the month of its latest paid line', async () => {
+    mockDebtPayments = { paid: [{ local_date: '2026-08-01' }], next: { local_date: '2026-10-01' } };
+    mockRows = lines();
+    await renderScreen({ debtId: DEBT_ID, onClearDebt: jest.fn() });
+    expect(getSelectedMonth()).toBe('2026-08');
+  });
+
+  it('P5-WR-02 with nothing paid yet, it opens the month of the next expected line', async () => {
+    mockDebtPayments = { paid: [], next: { local_date: '2026-10-01' } };
+    mockRows = lines();
+    await renderScreen({ debtId: DEBT_ID, onClearDebt: jest.fn() });
+    expect(getSelectedMonth()).toBe('2026-10');
+  });
+
+  it('P5-WR-02 with no line for the debt, the month on screen is kept', async () => {
+    mockDebtPayments = { paid: [], next: null };
+    mockRows = lines();
+    await renderScreen({ debtId: DEBT_ID, onClearDebt: jest.fn() });
+    expect(getSelectedMonth() ?? '2026-09').toBe('2026-09');
   });
 
   it('without a debt the list is whole and has no debt chip', async () => {

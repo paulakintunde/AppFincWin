@@ -7,6 +7,7 @@ import { renderHook } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { useBulkMarkPaid } from '@/data/mutations/patches';
+import { queryKeys } from '@/data/keys';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { useRowActions } from '../useRowActions';
 
@@ -15,6 +16,7 @@ const mockConfirm = jest.fn((): string => 'confirm-step');
 const mockGoalToast = jest.fn();
 const LISBON = { id: 'g1', name: 'Lisbon', currency: 'GBP', account_id: 'a2' };
 let mockGoals: (typeof LISBON)[] | undefined = [LISBON];
+let mockFetching = false;
 
 jest.mock('@/data/mutations/transactions', () => ({
   useMarkPaid: () => ({ markPaid: mockMarkPaid }),
@@ -66,15 +68,21 @@ function makeWrapper(qc: QueryClient) {
 }
 
 async function setup() {
+  // The route reads the goals at tap time from the same cache key useSavingsGoals fills (P5-CR-01).
+  const qc = new QueryClient();
+  const key = queryKeys.savingsGoals('u1', 'h1');
+  if (mockGoals !== undefined) qc.setQueryData(key, mockGoals);
+  if (mockFetching) qc.getQueryCache().find({ queryKey: key })?.setState({ fetchStatus: 'fetching' });
   return (await renderHook(
     () => useRowActions({ householdId: 'h1', ownerId: 'u1', today: '2026-11-10', selectionActive: false }),
-    { wrapper: makeWrapper(new QueryClient()) }
+    { wrapper: makeWrapper(qc) }
   )).result;
 }
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockGoals = [LISBON];
+  mockFetching = false;
   resetToastForTests();
 });
 
@@ -117,16 +125,41 @@ describe('goal Expected lines in Activity', () => {
     expect(ids).toEqual(['b1']);
   });
 
-  it.each([
-    ['still loading', undefined],
-    ['not in the loaded list', []],
-  ])('06-37 a goal line whose goal is %s writes nothing and shows the not-ready hint', async (_label, goals) => {
-    mockGoals = goals;
+  it('06-37 a goal line whose goals are still loading writes nothing and shows the not-ready hint', async () => {
+    mockGoals = undefined;
     const r = await setup();
     r.current.pay(goalLine);
     expect(mockConfirm).not.toHaveBeenCalled();
     expect(mockMarkPaid).not.toHaveBeenCalled();
     expect(mockGoalToast).not.toHaveBeenCalled();
     expect(getToast()?.text).toEqual({ key: 'record.sheet.goalLineNotReady' });
+  });
+
+  it('06-37 while the goal list is refreshing, the not-ready hint shows (a new goal is never taken for a removed one)', async () => {
+    mockGoals = [];
+    mockFetching = true;
+    const r = await setup();
+    r.current.pay(goalLine);
+    expect(mockMarkPaid).not.toHaveBeenCalled();
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(getToast()?.text).toEqual({ key: 'record.sheet.goalLineNotReady' });
+  });
+
+  it('P5-CR-01 a line whose goal was removed (loaded list without it) is marked paid as a plain line, and the toast says why', async () => {
+    mockGoals = [];
+    const r = await setup();
+    r.current.pay(goalLine);
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockMarkPaid).toHaveBeenCalledTimes(1);
+    expect(mockMarkPaid).toHaveBeenCalledWith(expect.objectContaining({ id: 'r1' }), 'u1', '2026-11-10');
+    expect(getToast()).toEqual(expect.objectContaining({ text: { key: 'record.sheet.goalGoneMarkedPaid' }, stepId: 'paid-step' }));
+  });
+
+  it('P5-CR-01 a done goal still confirms through the goal (the confirm accepts a done goal)', async () => {
+    mockGoals = [{ ...LISBON, done_at: '2026-11-01T00:00:00Z' } as typeof LISBON];
+    const r = await setup();
+    r.current.pay(goalLine);
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    expect(mockMarkPaid).not.toHaveBeenCalled();
   });
 });

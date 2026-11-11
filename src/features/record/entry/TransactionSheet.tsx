@@ -80,7 +80,7 @@ import { OptionPicker } from './pickers/OptionPicker';
 import { CurrencyPicker } from './pickers/CurrencyPicker';
 import { EditScopePrompt } from './EditScopePrompt';
 import { OccurrenceActions } from './OccurrenceActions';
-import { goalIdOfLine } from '@/features/grow/goals/goalLine';
+import { useGoalLineRoute } from '@/features/record/activity/goalLineRoute';
 import { useGoalLinePay } from '@/features/grow/goals/useGoalLinePay';
 import { RepeatsField } from './RepeatsField';
 import { SeriesIncomeRows } from './SeriesIncomeRows';
@@ -316,6 +316,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const series = editRow?.recurring_series_id ? seriesList?.find((x) => x.id === editRow.recurring_series_id) : undefined;
   const seriesById = useMemo(() => new Map((seriesList ?? []).map((x) => [x.id, x])), [seriesList]);
   const { pay: payGoalLine } = useGoalLinePay(rc.userId, rc.householdId);
+  const routeOf = useGoalLineRoute(rc.userId, rc.householdId);
   const repeatsError = submitted ? repeatsProblem(repeats, state.localDate) : null;
   const isTransfer = state.direction === 'transfer';
   const parse = (text: string, currency: string) => parser.parse(text, currency, exponentFor(currency));
@@ -563,10 +564,12 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
       // 06-37 D-39: Paid on a goal's Expected line goes through the goal confirm (as Mark paid does), so the goal grows
       // exactly once. Paid with other changes in the same save is refused with a hint: an edit queued ahead of the confirm
       // could land, fail or be parked on its own, so nothing is written and the user saves the changes first.
-      const goalId =
+      // P5-CR-01: a line whose goal was removed saves as a plain edit (the confirm refuses a removed goal).
+      const route =
         editRow.transfer_id == null && editRow.status === 'pending' && patch.status === 'paid'
-          ? goalIdOfLine(editRow, seriesById)
+          ? routeOf(editRow, seriesById)
           : null;
+      const goalId = route?.kind === 'goal' ? route.goalId : null;
       if (goalId !== null) {
         const { status: _paid, ...others } = patch;
         if (Object.keys(others).length > 0 || schedule) {
