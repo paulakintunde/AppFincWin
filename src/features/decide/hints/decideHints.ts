@@ -23,6 +23,8 @@ interface HintsRecord {
   homeBasisSeen?: true;
   judgeOn?: JudgeOn;
   judgeOnDefaulted?: true;
+  introSeenVersion?: string;
+  setupDoneSeen?: true;
 }
 
 /** The stored record, or an empty v1 record when it is missing, unreadable or another version. Never throws. */
@@ -30,20 +32,22 @@ async function readRecord(userId: string): Promise<HintsRecord> {
   try {
     const raw = await AsyncStorage.getItem(decideHintsKey(userId));
     if (!raw) return { v: 1 };
-    const parsed = JSON.parse(raw) as { v?: unknown; foldHintSeen?: unknown; homeBasisSeen?: unknown; judgeOn?: unknown; judgeOnDefaulted?: unknown } | null;
+    const parsed = JSON.parse(raw) as { v?: unknown; foldHintSeen?: unknown; homeBasisSeen?: unknown; judgeOn?: unknown; judgeOnDefaulted?: unknown; introSeenVersion?: unknown; setupDoneSeen?: unknown } | null;
     if (parsed?.v !== 1) return { v: 1 };
     const record: HintsRecord = { v: 1 };
     if (parsed.foldHintSeen === true) record.foldHintSeen = true;
     if (parsed.homeBasisSeen === true) record.homeBasisSeen = true;
     if (isJudgeOn(parsed.judgeOn)) record.judgeOn = parsed.judgeOn;
     if (parsed.judgeOnDefaulted === true) record.judgeOnDefaulted = true;
+    if (typeof parsed.introSeenVersion === 'string') record.introSeenVersion = parsed.introSeenVersion;
+    if (parsed.setupDoneSeen === true) record.setupDoneSeen = true;
     return record;
   } catch {
     return { v: 1 };
   }
 }
 
-async function markFlag(userId: string, flag: 'foldHintSeen' | 'homeBasisSeen' | 'judgeOnDefaulted'): Promise<void> {
+async function markFlag(userId: string, flag: 'foldHintSeen' | 'homeBasisSeen' | 'judgeOnDefaulted' | 'setupDoneSeen'): Promise<void> {
   try {
     const record = await readRecord(userId);
     record[flag] = true;
@@ -92,4 +96,28 @@ export async function loadJudgeOnDefaulted(userId: string): Promise<boolean> {
 
 export async function markJudgeOnDefaulted(userId: string): Promise<void> {
   await markFlag(userId, 'judgeOnDefaulted');
+}
+
+/** D-25: the version of the 'How Decide answers' card last seen on this phone, or null. A changed text shows it again. Never throws. */
+export async function loadIntroSeenVersion(userId: string): Promise<string | null> {
+  return (await readRecord(userId)).introSeenVersion ?? null;
+}
+
+export async function markIntroSeen(userId: string, version: string): Promise<void> {
+  try {
+    const record = await readRecord(userId);
+    record.introSeenVersion = version;
+    await AsyncStorage.setItem(decideHintsKey(userId), JSON.stringify(record));
+  } catch {
+    // A card that cannot be remembered simply shows again.
+  }
+}
+
+/** The setup-done card is shown once per phone. */
+export async function loadSetupDoneSeen(userId: string): Promise<boolean> {
+  return (await readRecord(userId)).setupDoneSeen === true;
+}
+
+export async function markSetupDoneSeen(userId: string): Promise<void> {
+  await markFlag(userId, 'setupDoneSeen');
 }

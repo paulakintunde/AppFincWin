@@ -10,7 +10,11 @@ import {
   decideHintsKey,
   loadFoldHintSeen,
   loadHomeBasisSeen,
+  loadIntroSeenVersion,
   loadJudgeOn,
+  loadSetupDoneSeen,
+  markIntroSeen,
+  markSetupDoneSeen,
   markFoldHintSeen,
   markHomeBasisSeen,
   saveJudgeOn,
@@ -196,5 +200,39 @@ describe('FoldHint', () => {
     const node = screen.getByText(HINT);
     expect(node.props.accessibilityLiveRegion).toBeUndefined();
     expect(screen.queryByRole('button')).toBeNull();
+  });
+});
+
+describe('D-25 intro and setup-done flags', () => {
+  it('stores the intro version and returns it; a new version differs', async () => {
+    expect(await loadIntroSeenVersion(USER)).toBeNull();
+    await markIntroSeen(USER, 'v1');
+    expect(await loadIntroSeenVersion(USER)).toBe('v1');
+    expect(await loadIntroSeenVersion('other')).toBeNull();
+  });
+
+  it('remembers the setup-done card once, alongside other flags', async () => {
+    await markFoldHintSeen(USER);
+    expect(await loadSetupDoneSeen(USER)).toBe(false);
+    await markSetupDoneSeen(USER);
+    expect(await loadSetupDoneSeen(USER)).toBe(true);
+    expect(await loadFoldHintSeen(USER)).toBe(true);
+  });
+
+  it('read and write failures never throw', async () => {
+    const getSpy = jest.spyOn(AsyncStorage, 'getItem').mockRejectedValue(new Error('x'));
+    const setSpy = jest.spyOn(AsyncStorage, 'setItem').mockRejectedValue(new Error('x'));
+    expect(await loadIntroSeenVersion(USER)).toBeNull();
+    expect(await loadSetupDoneSeen(USER)).toBe(false);
+    await expect(markIntroSeen(USER, 'v1')).resolves.toBeUndefined();
+    await expect(markSetupDoneSeen(USER)).resolves.toBeUndefined();
+    getSpy.mockRestore();
+    setSpy.mockRestore();
+  });
+
+  it('is cleared by wipeDeviceData', async () => {
+    await markIntroSeen(USER, 'v1');
+    await wipeDeviceData();
+    expect(await loadIntroSeenVersion(USER)).toBeNull();
   });
 });
