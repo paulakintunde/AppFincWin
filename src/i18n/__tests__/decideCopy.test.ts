@@ -176,6 +176,7 @@ const CONTROL_LABELS = new Set([
   'decide.screens.answerActions.bought.title', // sheet title
   'decide.screens.answerActions.bought.add', // button
   'decide.screens.answerActions.bought.addBill', // button
+  'decide.screens.answerActions.runningCost.add', // button
   'decide.screens.setupPayBills.otherIncome.title', // sheet title
   'decide.screens.setupPayBills.otherIncome.add', // button
   'decide.screens.setupPayBills.billAdd.title', // sheet title
