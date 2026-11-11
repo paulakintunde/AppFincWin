@@ -4086,6 +4086,7 @@ const en = {
         householdSub: 'Split between you and {{name}}; each sees the whole goal',
         lockSwitch: 'Lock this goal',
         lockHelper: 'Locked: Decide never spends the money saved here.',
+        lockHelperNo: 'Unlocked: Decide counts the money saved here as spare money.',
         lockQuestion: 'Keep this goal’s money out of Decide’s answers?',
         lockYes: 'Yes, lock it',
         lockNo: 'No, Decide can count it',

@@ -366,7 +366,7 @@ function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
         <Chip label={t('grow.goals.create.lockYes')} selected={lock === 'yes'} onPress={() => setLock('yes')} />
         <Chip label={t('grow.goals.create.lockNo')} selected={lock === 'no'} onPress={() => setLock('no')} />
       </View>
-      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('grow.goals.create.lockHelper')}</Text>
+      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t(lock === 'no' ? 'grow.goals.create.lockHelperNo' : 'grow.goals.create.lockHelper')}</Text>
     </View>
   );
 
