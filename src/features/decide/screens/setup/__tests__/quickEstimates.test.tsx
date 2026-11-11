@@ -115,4 +115,15 @@ describe('safeReturnTo', () => {
     expect(safeReturnTo('/decide/../settings')).toBe('/decide');
     expect(safeReturnTo(['/decide/check/price'])).toBe('/decide/check/price');
   });
+
+  it('also follows exactly the onboarding import step, with a plain accountId only', () => {
+    expect(safeReturnTo('/setup/history')).toBe('/setup/history');
+    expect(safeReturnTo('/setup/history?accountId=acc-1_x')).toBe('/setup/history?accountId=acc-1_x');
+    expect(safeReturnTo('/setup/history?accountId=a&next=https://evil.example')).toBe('/decide');
+    expect(safeReturnTo('/setup/history/../account')).toBe('/decide');
+    expect(safeReturnTo('/setup/history?accountId=')).toBe('/decide');
+    expect(safeReturnTo('/setup/account')).toBe('/decide');
+    expect(safeReturnTo('//setup/history')).toBe('/decide');
+    expect(safeReturnTo('https://x.example/setup/history')).toBe('/decide');
+  });
 });
