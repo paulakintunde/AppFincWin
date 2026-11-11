@@ -7,6 +7,7 @@
 -- 1. grow_end_series: an end date before the anchor soft-deletes the series (its pending lines after the end go as
 --    before). The change's 'before' is {deleted_at: null}, so series_change_inverse restores it on Undo.
 -- 2. save_debt_plan and record_debt_sale re-issued without the anchor clamp. Bodies otherwise as in 20261106000300.
+-- 3. debt_balance_follows_line: a paid debt-linked line lowers the debt's balance (see section 3 below).
 -- Lines the old clamp left behind are not touched here; the owner's test debt is cleared through the app.
 
 create or replace function public.grow_end_series(p_series_id uuid, p_end date)
@@ -380,3 +381,47 @@ $$;
 
 revoke execute on function public.record_debt_sale(uuid, integer, jsonb, jsonb, jsonb) from public, anon;
 grant execute on function public.record_debt_sale(uuid, integer, jsonb, jsonb, jsonb) to authenticated;
+
+-- 3. Owner decision 2026-11-10: a line linked to a debt (transactions.debt_id, the one-off payment) moves the debt's
+--    balance when it is marked paid, and moves it back when it is marked unpaid, deleted, restored or its amount
+--    changes. Undo needs nothing of its own: it patches the line, and this trigger follows the line.
+--    A payment above what is still owed takes the balance to 0, not below (the check is 0..10^13).
+create or replace function public.debt_balance_follows_line()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_was bigint := 0;
+  v_now bigint := 0;
+begin
+  if old.debt_id is not null and old.status = 'paid' and old.deleted_at is null then
+    v_was := abs(old.original_amount);
+  end if;
+  if new.debt_id is not null and new.status = 'paid' and new.deleted_at is null then
+    v_now := abs(new.original_amount);
+  end if;
+  if old.debt_id is not distinct from new.debt_id then
+    if v_now <> v_was then
+      update public.debts set balance = least(10000000000000, greatest(0, balance - (v_now - v_was)))
+       where id = new.debt_id and deleted_at is null;
+    end if;
+  else
+    if v_was > 0 then
+      update public.debts set balance = least(10000000000000, balance + v_was) where id = old.debt_id and deleted_at is null;
+    end if;
+    if v_now > 0 then
+      update public.debts set balance = greatest(0, balance - v_now) where id = new.debt_id and deleted_at is null;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+revoke execute on function public.debt_balance_follows_line() from public, anon, authenticated;
+
+drop trigger if exists debt_balance_follows_line on public.transactions;
+create trigger debt_balance_follows_line after update of status, deleted_at, original_amount, debt_id on public.transactions
+  for each row
+  when (old.debt_id is not null or new.debt_id is not null)
+  execute function public.debt_balance_follows_line();

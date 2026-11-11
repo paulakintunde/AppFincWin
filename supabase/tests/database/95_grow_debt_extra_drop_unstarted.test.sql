@@ -1,12 +1,13 @@
 -- pgTAP: Phase 06 Grow device-check fix -- an Expected extra that never reached its first date is dropped, not kept.
 -- Migration 20261110000100 (grow_end_series, save_debt_plan and record_debt_sale re-issued).
+-- Also: a paid debt-linked line (the one-off) moves the debt's balance (debt_balance_follows_line).
 -- Repro from the Pixel 9 check: save the extra, change it, stop it, Undo. Before the fix each save left one more
 -- "Extra payment" line on the first date. Dates are relative to current_date.
 
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(17);
+select extensions.plan(24);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a@test.local', '{}', now(), now());
@@ -38,7 +39,15 @@ insert into public.debts (id, household_id, created_by, name, kind, currency, ba
   ('d9500000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
    '11111111-1111-1111-1111-111111111111', 'Test Visa', 'card', 'USD', 400000, 12000),
   ('d9500000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
-   '11111111-1111-1111-1111-111111111111', 'Started loan', 'loan', 'USD', 400000, 12000);
+   '11111111-1111-1111-1111-111111111111', 'Started loan', 'loan', 'USD', 400000, 12000),
+  ('d9500000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   '11111111-1111-1111-1111-111111111111', 'One-off card', 'card', 'USD', 400000, 12000);
+-- A $1,000 one-off line on the card, Expected, as record_debt_one_off writes it.
+insert into public.transactions (id, household_id, account_id, created_by, original_amount, original_currency,
+                                 local_date, time_zone, name, status, debt_id) values
+  ('7a950000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   'a9500000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', -100000, 'USD', current_date, 'UTC',
+   'One-off payment', 'pending', 'd9500000-0000-0000-0000-000000000003');
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
@@ -81,6 +90,25 @@ select extensions.is(public.t95_plan('d9500000-0000-0000-0000-000000000002', 0, 
     'e9500000-0000-0000-0000-000000000005') ->> 'status', 'applied', 'stopping the started extra applies');
 select extensions.ok((select deleted_at is null and end_date is not null and end_reason = 'stopped' from public.recurring_series
     where id = '5a950000-0000-0000-0000-000000000003'), 'a started series is ended as stopped and kept');
+
+-- 7. debt_balance_follows_line (as the table owner: the trigger fires for every writer) ------------------------
+reset role;
+create function public.t95_bal() returns bigint language sql as $$
+  select balance from public.debts where id = 'd9500000-0000-0000-0000-000000000003' $$;
+select extensions.is(public.t95_bal(), 400000::bigint, 'an Expected one-off leaves the balance alone');
+update public.transactions set status = 'paid' where id = '7a950000-0000-0000-0000-000000000001';
+select extensions.is(public.t95_bal(), 300000::bigint, 'marking the one-off paid lowers the balance by $1,000');
+update public.transactions set status = 'pending' where id = '7a950000-0000-0000-0000-000000000001';
+select extensions.is(public.t95_bal(), 400000::bigint, 'marking it unpaid puts the $1,000 back');
+update public.transactions set status = 'paid' where id = '7a950000-0000-0000-0000-000000000001';
+update public.transactions set deleted_at = now() where id = '7a950000-0000-0000-0000-000000000001';
+select extensions.is(public.t95_bal(), 400000::bigint, 'deleting a paid one-off puts the $1,000 back');
+update public.transactions set deleted_at = null where id = '7a950000-0000-0000-0000-000000000001';
+select extensions.is(public.t95_bal(), 300000::bigint, 'restoring it (Undo of the delete) takes it off again');
+update public.transactions set original_amount = -150000 where id = '7a950000-0000-0000-0000-000000000001';
+select extensions.is(public.t95_bal(), 250000::bigint, 'editing the paid amount to $1,500 moves the balance by the difference');
+update public.transactions set original_amount = -900000 where id = '7a950000-0000-0000-0000-000000000001';
+select extensions.is(public.t95_bal(), 0::bigint, 'a payment above what is owed takes the balance to 0, not below');
 
 select * from extensions.finish();
 rollback;

@@ -165,6 +165,10 @@ function invalidateAfterBulk(qc: QueryClient, vars: BulkPatchVars): void {
   // Not awaited: query-core holds WRITE_SCOPE while onSuccess/onError are awaited (WR-A15).
   void qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot(vars.householdId) });
   void qc.invalidateQueries({ queryKey: queryKeys.undoLog(vars.ownerId) });
+  // 20261110000100: a paid debt-linked line moves its debt's balance on the server.
+  if (vars.items.some((i) => i.entity === 'transactions')) {
+    void qc.invalidateQueries({ queryKey: queryKeys.debts(vars.householdId) });
+  }
   if (vars.items.some((i) => i.entity === 'accounts')) {
     void qc.invalidateQueries({ queryKey: queryKeys.accounts(vars.householdId) });
   }
