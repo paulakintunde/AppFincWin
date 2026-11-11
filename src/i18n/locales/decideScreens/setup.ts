@@ -2,7 +2,7 @@
  * 06.1-05 (D-18): Decide setup banner (D30, three states), checklist (D31), setup done (D38) and the quick-estimates first
  * answer (D39). Owner plans: 17, then 39 (in turn). The six items' own screens are in setupPayBills.ts and setupOthers.ts;
  * the first-answer safety-net question (D-14) is in safetyNet.ts. Draft copy, signed under D-08.
- * Item 5 is "Your money rules" (D-19). No household line on D38 (D-03).
+ * Item 5 is "Your money rules" (D-19). D-03 keeps the third line off D38.
  */
 export const setup = {
   banner: {
