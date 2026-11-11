@@ -1,4 +1,4 @@
--- pgTAP: Phase 06 Grow (06-07) -- save_debt_plan and record_debt_sale. Migration 20261106000300.
+-- pgTAP: Phase 06 Grow (06-07) -- save_debt_plan and record_debt_sale. Migration 20261106000300, as re-issued in 20261110000100.
 -- Needs 20261016000100 .. 20261016000400, 20261024000100, 20261028000100 .. 20261106000100 and 20261106000300.
 -- The chained-Undo cases at the end need undo_adjusted_ops as re-issued in 20261106000100 (06-04 follow-up).
 -- Dates are relative to current_date so the monthly materialiser horizon never changes what is asserted.
@@ -131,8 +131,9 @@ select extensions.is(
   'applied', 'extra 0 applies');
 select extensions.is((select extra_series_id from public.debts where id = 'd9300000-0000-0000-0000-000000000002'), null::uuid,
   'extra 0 clears extra_series_id');
-select extensions.ok((select end_date is not null and end_reason = 'stopped' from public.recurring_series
-    where id = '5a930000-0000-0000-0000-000000000002'), 'extra 0 ends the Expected series as stopped');
+-- 20261110000100: the series had not reached its first date (anchor current_date + 2), so it is dropped, not ended.
+select extensions.ok((select deleted_at is not null from public.recurring_series
+    where id = '5a930000-0000-0000-0000-000000000002'), 'extra 0 before the first date drops the Expected series');
 
 -- record_debt_sale: paid in full ---------------------------------------------------------------------------------
 select extensions.is(
