@@ -63,7 +63,7 @@ select extensions.is(public.t95_plan('d9500000-0000-0000-0000-000000000001', 250
 select extensions.ok((select deleted_at is not null from public.recurring_series where id = '5a950000-0000-0000-0000-000000000001'),
   'the unstarted $50 series is dropped');
 select extensions.is(public.t95_lines(current_date + 5), 1, 'still one Expected extra line on the first date');
-select extensions.is((select -amount from public.transactions where recurring_series_id = '5a950000-0000-0000-0000-000000000002'
+select extensions.is((select -original_amount from public.transactions where recurring_series_id = '5a950000-0000-0000-0000-000000000002'
     and status = 'pending' and deleted_at is null and occurrence_date = current_date + 5), 2500::bigint, 'and it is the $25 one');
 
 -- 3. Stop the extra: no line is left.
