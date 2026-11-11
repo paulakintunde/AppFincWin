@@ -4,10 +4,12 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
-import { GROW_GLYPH_NAMES, GrowGlyph } from '../GrowGlyph';
-import { ProgressBar, clampPercent } from '../ProgressBar';
-import { Stepper } from '../Stepper';
-import { StateBadge } from '../StateBadge';
+import { GROW_GLYPH_NAMES, GrowGlyph } from '@/ui/glyphs/StateGlyph';
+import { ProgressBar, clampPercent } from '@/ui/ProgressBar';
+import { Stepper } from '@/ui/Stepper';
+import { StateBadge } from '@/ui/StateBadge';
+import { SegmentedControl } from '@/ui/SegmentedControl';
+import { stateColors, type StateTone } from '@/theme/tokens';
 
 jest.setTimeout(30000);
 
@@ -164,5 +166,40 @@ describe('StateBadge', () => {
     expect(badges).toHaveLength(5);
     expect(badges[2]!.props.accessibilityLabel).toBe('Locked, no Decide answer spends it');
     expect(badges[0]!.props.accessibilityLabel).toBe('Met');
+  });
+});
+
+describe('06.1-08 StateBadge seven tones and SegmentedControl', () => {
+  const tones = Object.keys(stateColors) as StateTone[];
+  it('renders a glyph and a word for each of the seven state tones', async () => {
+    const { getByText, getAllByTestId } = await wrap(
+      <>
+        {tones.map((tone) => (
+          <StateBadge key={tone} tone={tone} shape="sCheck" label={`word-${tone}`} testID="sb" />
+        ))}
+      </>,
+    );
+    expect(tones).toHaveLength(7);
+    expect(getAllByTestId('sb', opts)).toHaveLength(7);
+    for (const tone of tones) expect(getByText(`word-${tone}`, opts)).toBeTruthy();
+  });
+
+  it("maps the legacy 'blue' tone to the net token", async () => {
+    const { getByTestId } = await wrap(<StateBadge tone="blue" shape="lock" label="Locked" />);
+    const flat = StyleSheet.flatten(getByTestId('grow-state-badge', opts).props.style);
+    expect(flat.backgroundColor).toBe(stateColors.net.tint);
+  });
+
+  it('SegmentedControl is a tablist of 44 px tabs and reports changes', async () => {
+    const onChange = jest.fn();
+    const { getAllByRole, getByLabelText } = await wrap(
+      <SegmentedControl options={[{ key: 'a', label: 'One' }, { key: 'b', label: 'Two' }]} value="a" onChange={onChange} accessibilityLabel="Pick" />,
+    );
+    expect(getByLabelText('Pick', opts).props.accessibilityRole).toBe('tablist');
+    const tabs = getAllByRole('tab', opts);
+    expect(tabs).toHaveLength(2);
+    expect(StyleSheet.flatten(tabs[0]!.props.style).minHeight).toBeGreaterThanOrEqual(44);
+    fireEvent.press(tabs[1]!);
+    expect(onChange).toHaveBeenCalledWith('b');
   });
 });
