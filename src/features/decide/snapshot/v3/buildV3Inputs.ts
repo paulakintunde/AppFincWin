@@ -420,13 +420,14 @@ export function buildV3Inputs(
     if (prev === undefined || r.local_date >= prev.local_date) landing.set(r.goal_id, r);
   }
   const envelopes: Envelope[] = envelopesOf(goalPointsOf(goalRows, source.rows, toHome)).map((e) => ({ ...e, accountId: e.accountId ?? landing.get(e.id)?.account_id ?? null }));
-  const accounts: V3Account[] = source.accounts.flatMap((a) => {
+  const accounts: V3Account[] = source.accounts.flatMap((a): V3Account[] => {
     if (a.deleted_at !== null || a.archived_at !== null) return [];
     // 05.2 F-05: only money accounts are V3 accounts. This mirrors holdsMoney in record/accounts/accountUseSuggest.ts, so the account-use
     // step and the unspent step count the same accounts. Cards and loans are debts, handled on the Loans step.
     if (a.kind === 'credit' || a.kind === 'loan') return [];
     const balance = toHome(source.balances[a.id] ?? 0, a.currency);
-    if (balance === null) return [];
+    // 05.4 ENG-17 (CO-D-114): an account no rate converts still reaches the engine (noRate), so account_no_rate can name it; it counts nowhere.
+    if (balance === null) return [{ id: a.id, balance: minorUnits(0), use: null, noRate: true }];
     // 05.4-35 (FIN-03): the limit is in the account's currency; converted at the latest stored rate, rounded DOWN (D-91) so it never
     // overstates the room. No rate converts it -> no limit (cautious). The rate is passed as stored; null stays null (ARC-25).
     const limit = moneyOf(a.overdraft_limit);
@@ -572,7 +573,11 @@ export function buildV3Inputs(
   const everyday = moneyOf(v3?.everyday_override);
   // 06 D-02 (ARC-13, FIN-16): the safety net and its fund come only from the flagged Grow goal. No flagged goal = null (the engine's
   // defaults apply). The interim decide_settings columns and the typed reserve are no longer read: one store.
-  const { safetyNet, emergency } = safetyNetInputsOf(safetyNetPointOf(goalRows, source.rows, toHome, home));
+  const netFromGrow = safetyNetInputsOf(safetyNetPointOf(goalRows, source.rows, toHome, home));
+  const emergency = netFromGrow.emergency;
+  const netGoalRow = source.goals.find((g) => g.is_safety_net === true && g.deleted_at === null);
+  // 06.1 D-20: answers may use the net only when Decide's unlock says so (Grow's own locked flag is not read here)
+  const safetyNet = netFromGrow.safetyNet === null ? null : { ...netFromGrow.safetyNet, locked: !(netGoalRow?.decide_may_use === true) };
   const subdivision = source.regionSubdivision;
 
   return {

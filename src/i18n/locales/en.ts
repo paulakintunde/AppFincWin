@@ -291,6 +291,7 @@ const en = {
         income_payer_prompts: 'Income source',
         holdings: 'Holding',
         holding_lots: 'Holding entry',
+        decide_check_history: 'Decide history',
         unknown: 'Change',
       },
       reason: {

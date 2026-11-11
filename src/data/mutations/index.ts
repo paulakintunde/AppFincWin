@@ -30,6 +30,8 @@ import { registerDecideSettingsMutations } from './decideSettings';
 import { registerDecideLinkMutations } from './decideLinks';
 import { registerDecideGoAheadMutations } from './decideGoAhead';
 import { registerDecideOutcomeMutations } from './decideOutcome';
+import { registerDecideNetUseMutations } from './decideNetUse';
+import { registerDecideHistoryMutations } from './decideHistory';
 import { registerDecideChangeMutations } from './decideChanges';
 import { registerDecidePotMutations } from './decidePots';
 import { registerDebtMutations } from './debts';
@@ -104,4 +106,7 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerGrowDebtMutations(qc);
   // 06-14: holdings, entries, values and an account's rate.
   registerGrowHoldingMutations(qc);
+  // 06.1-12: Decide's safety-net unlock and the per-check history.
+  registerDecideNetUseMutations(qc);
+  registerDecideHistoryMutations(qc);
 }
