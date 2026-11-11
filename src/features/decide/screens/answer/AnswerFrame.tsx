@@ -11,6 +11,7 @@ import { Text } from '@/ui/Text';
 import { ActionBar } from './ActionBar';
 import { AnswerTopBar, type AnswerTopBarProps, type PayMode, type WhenChoice } from './AnswerTopBar';
 import { FactLines } from './FactLines';
+import type { Line } from '../logic/sayResult';
 import { LegalBlock } from './LegalBlock';
 import { OptionChips, type OptionKey } from './OptionChips';
 import { ErrorCard, NotReadyCard, OfflineCard } from './StatusCards';
@@ -53,11 +54,13 @@ export interface AnswerFrameProps {
   onAction: (action: AnswerAction) => void;
   onOption: (key: OptionKey) => void;
   onCantSee: () => void;
+  /** 06.1-23: extra content under a fact or missing line (factAction buttons, Fix links). */
+  renderAfterFact?: (line: Line, index: number) => React.ReactNode;
   /** The "More detail" rows (plan 23). */
   children?: React.ReactNode;
 }
 
-export function AnswerFrame({ check, evaluation, status = 'ready', offlineDate = null, said, onAction, onOption, onCantSee, children }: AnswerFrameProps) {
+export function AnswerFrame({ check, evaluation, status = 'ready', offlineDate = null, said, onAction, onOption, onCantSee, renderAfterFact, children }: AnswerFrameProps) {
   const { colors, pairing } = useTheme();
   const result = status === 'ready' ? (evaluation?.result ?? null) : null;
   const lines = useSaid(result, said);
@@ -98,7 +101,7 @@ export function AnswerFrame({ check, evaluation, status = 'ready', offlineDate =
           </View>
         ) : null}
         <VerdictCard code={result.code} variant={result.variant} once={once} values={lines.verdictValues} lead={lines.afterBuy.lead?.text ?? null} boughtOn={lines.afterBuy.boughtOn?.text ?? null} />
-        <FactLines facts={[...lines.facts, ...lines.missing]} country={check.country ?? null} />
+        <FactLines facts={[...lines.facts, ...lines.missing]} country={check.country ?? null} renderAfter={renderAfterFact} />
         <OptionChips present={check.options} purpose={check.purpose} onOption={onOption} />
         {children !== undefined ? (
           <View testID="answer-detail" style={styles.group}>
