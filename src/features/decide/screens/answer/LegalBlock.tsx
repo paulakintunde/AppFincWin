@@ -2,7 +2,7 @@
 // caveat only (or the large_for_month figure list then the wrong-figure line), the caveat line, the cant-see link, the footer.
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
@@ -18,7 +18,7 @@ export interface LegalBlockProps {
 }
 
 export function LegalBlock({ basis, caveat, caveatFigures, onCantSee }: LegalBlockProps) {
-  const { t } = useTranslation();
+  const t = useT();
   const { colors, pairing } = useTheme();
   const body = { ...textRole(pairing, 'body'), color: colors.inkDim };
   return (

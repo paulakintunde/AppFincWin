@@ -2,7 +2,7 @@
 // colour, glyph and word come from stateForVerdict. The tint sits on the card only, never on the screen (rule 1).
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import { useT } from '@/i18n';
 import { verdictRowFor, type Code, type Variant } from '@/engine/decide/v3';
 import { radii, space } from '@/theme/layout';
 import { DURATION } from '@/theme/motion';
@@ -14,6 +14,7 @@ import { RiseIn } from '@/ui/RiseIn';
 import { StateBadge, type StateBadgeShape } from '@/ui/StateBadge';
 import { Text } from '@/ui/Text';
 import { stateForVerdict } from '../logic/stateForVerdict';
+import { isFilled } from './verdictValues';
 
 /** Above this text scale the title drops from heading to sheetTitle so a long title still fits (UX-02). */
 export const TITLE_DROP_SCALE = 1.3;
@@ -26,11 +27,13 @@ export interface VerdictCardProps {
   /** The after-buy sentence the answer leads with. */
   lead?: string | null;
   boughtOn?: string | null;
+  /** The verdict sentences' placeholder values (verdictValues). A sentence with a gap is left out, never printed with braces. */
+  values?: Readonly<Record<string, string>>;
   testID?: string;
 }
 
-export function VerdictCard({ code, variant, once, lead = null, boughtOn = null, testID = 'answer-verdict' }: VerdictCardProps) {
-  const { t } = useTranslation();
+export function VerdictCard({ code, variant, once, lead = null, boughtOn = null, values = {}, testID = 'answer-verdict' }: VerdictCardProps) {
+  const t = useT();
   const { pairing } = useTheme();
   const fontScale = useFontScale();
   const row = verdictRowFor(code, variant, once);
@@ -38,15 +41,16 @@ export function VerdictCard({ code, variant, once, lead = null, boughtOn = null,
   const state = stateColors[tone];
   const titleRole = fontScale > TITLE_DROP_SCALE ? 'sheetTitle' : 'heading';
   const chip = t(row.chipKey as never);
-  const title = t(row.titleKey as never);
-  const body = t(row.bodyKey as never);
+  const sentence = (key: string): string | null => (isFilled(String(t(key as never)), values) ? String(t(key as never, values as never)) : null);
+  const title = sentence(row.titleKey);
+  const body = sentence(row.bodyKey);
 
   return (
     <RiseIn duration={DURATION.sheetUp} style={[styles.card, { backgroundColor: state.tint }]}>
       <View testID={testID} accessible accessibilityRole="summary" accessibilityLiveRegion="polite" accessibilityLabel={[chip, title, body, lead].filter(Boolean).join('. ')}>
         <StateBadge tone={tone} shape={glyph as StateBadgeShape} label={chip} testID="answer-verdict-badge" />
-        <Text style={[textRole(pairing, titleRole), styles.title, { color: state.color }]}>{title}</Text>
-        <Text style={{ ...textRole(pairing, 'body'), color: stateMuted }}>{body}</Text>
+        {title !== null ? <Text style={[textRole(pairing, titleRole), styles.title, { color: state.color }]}>{title}</Text> : null}
+        {body !== null ? <Text style={{ ...textRole(pairing, 'body'), color: stateMuted }}>{body}</Text> : null}
         {lead !== null ? (
           <Text
             testID="answer-verdict-lead"

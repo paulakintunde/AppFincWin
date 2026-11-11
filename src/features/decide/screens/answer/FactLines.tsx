@@ -2,7 +2,7 @@
 // from the typed FREE_HELP table, and only when that URL is https (T-06.1-14-01).
 import React from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import { useT } from '@/i18n';
 import { FREE_HELP } from '@/engine/decide/v3';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -26,7 +26,7 @@ export function freeHelpUrl(country: string | null | undefined): { name: string;
 }
 
 export function FactLines({ facts, country = null }: FactLinesProps) {
-  const { t } = useTranslation();
+  const t = useT();
   const { colors, pairing } = useTheme();
   const help = freeHelpUrl(country);
   // CO-D-36: a not-cleared overdraft warning is the engine's first fact; it reads in bold ink, no new colour.

@@ -2,7 +2,7 @@
 // no figure; the not-ready card lists what is missing and never reads like a verdict.
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import { useT } from '@/i18n';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { stateColors } from '@/theme/tokens';
@@ -22,7 +22,7 @@ function Card({ testID, children }: { testID: string; children: React.ReactNode 
 }
 
 export function OfflineCard({ date, onRetry }: { date: string; onRetry: () => void }) {
-  const { t } = useTranslation();
+  const t = useT();
   const { colors, pairing } = useTheme();
   return (
     <Card testID="answer-offline">
@@ -33,7 +33,7 @@ export function OfflineCard({ date, onRetry }: { date: string; onRetry: () => vo
 }
 
 export function ErrorCard({ item, onRetry }: { item: string; onRetry: () => void }) {
-  const { t } = useTranslation();
+  const t = useT();
   const { colors, pairing } = useTheme();
   return (
     <Card testID="answer-error">
@@ -57,7 +57,7 @@ export interface NotReadyCardProps {
 }
 
 export function NotReadyCard({ readiness, onFinishSetup, onFromEstimates }: NotReadyCardProps) {
-  const { t } = useTranslation();
+  const t = useT();
   const { colors, pairing } = useTheme();
   return (
     <Card testID="answer-not-ready">

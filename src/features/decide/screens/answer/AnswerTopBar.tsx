@@ -1,7 +1,7 @@
 // 06.1-14 (UX-01, UX-04): back, the item and price, "New check", the pay mode and the When chips. Callbacks only; no data is written here.
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
@@ -26,7 +26,7 @@ export interface AnswerTopBarProps {
 }
 
 export function AnswerTopBar({ name, priceText, pay, when, dateText = null, onBack, onNewCheck, onPay, onWhen }: AnswerTopBarProps) {
-  const { t } = useTranslation();
+  const t = useT();
   const { colors, pairing } = useTheme();
   const whenOptions: { key: WhenChoice; label: string }[] = [
     { key: 'today', label: t('decide.screens.answer.frame.whenToday') },

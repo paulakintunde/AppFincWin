@@ -2,7 +2,7 @@
 // bolder or coloured as the better one; order is the only thing that differs.
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import { useT } from '@/i18n';
 import { orderOptions, type FutureKind, type Purpose } from '@/engine/decide/v3';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -26,7 +26,7 @@ export interface OptionChipsProps {
 }
 
 export function OptionChips({ present, purpose, onOption }: OptionChipsProps) {
-  const { t } = useTranslation();
+  const t = useT();
   const { colors, pairing } = useTheme();
   const ordered = optionOrder(present, purpose);
   if (ordered.length === 0) return null;
