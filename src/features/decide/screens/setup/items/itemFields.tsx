@@ -21,6 +21,8 @@ export interface SetupFormat {
   money(minor: number, currency: string): string;
   ordinal(day: number): string;
   date(iso: string): string;
+  /** The locale the words are formatted in (month names). */
+  locale: string;
 }
 
 /** Money, ordinal day and date words from the same formatters the rest of the app uses. */
@@ -35,6 +37,7 @@ export function useSetupFormat(): SetupFormat {
     money: (minor, currency) => fmt.formatMoney(money(minor, currency)),
     ordinal,
     date: (iso) => fmt.formatDate(iso, 'medium'),
+    locale: fmt.locale,
   };
 }
 
