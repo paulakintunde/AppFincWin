@@ -270,6 +270,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   below: '$320.00',
   bill: 'Car insurance',
   bridge: '$600.00',
+  cadence: 'a month', // 06.1 wave 6
   capped: '$150.00',
   category: 'Groceries',
   change: 'Phone $45.00 paused',
@@ -313,13 +314,14 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   money: '$1,500.00',
   moneyIn: '$2,800.00',
   month: 'November',
-  monthName: 'November',
   monthly: '$85.00',
   monthlyCost: '$6.00',
   monthlyInterest: '$62.00',
+  monthName: 'November',
   months: '4',
   monthsAfter: '3',
   more: '$412.00',
+  n: '3', // 06.1 wave 6
   name: 'MoneyHelper',
   net: '$1,000.00',
   next: 'Debts',
@@ -335,6 +337,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   rate: '22',
   readyBy: 'February',
   readyMonth: 'February',
+  rule: 'Largest purchase', // 06.1 wave 6
   sameMonth: 'November last year',
   saved: '$600.00',
   saving: '$150.00',
@@ -348,6 +351,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   size: '$2,400.00',
   starter: '$1,225.00',
   state: 'Fits',
+  status: 'Done', // 06.1 wave 6
   step: '2',
   stepName: 'Price',
   suggested: '$1,180.00',
@@ -356,8 +360,10 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   total: '$1,312.00',
   twoMonths: '$2,450.00',
   until: 'October next year',
+  up: '$500.00', // 06.1 wave 6
   used: '$500.00',
   value: '40',
+  word: 'Fits', // 06.1 wave 6
   zero: '$0.00',
 });
 

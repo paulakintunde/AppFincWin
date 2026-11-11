@@ -5,7 +5,7 @@ import type { DecideAnswerRow } from '@/db/decideAnswers';
 import type { DecideSettingsRow } from '@/db/decideSettings';
 import type { RecurringDismissalRow } from '@/db/recurringDismissals';
 import { isNotPayKey } from '@/features/income/notPay';
-import { ownLinesOf, readRulesDoc, tightLineOf } from '@/features/decide/screens/home/homeCardsModel';
+import { ownLinesOf, readRulesDoc, tightLineOf } from './rulesDoc';
 import type { V3SettingsSource } from './types';
 
 const ENGINE_TYPE: Readonly<Record<string, IncomeType>> = {
