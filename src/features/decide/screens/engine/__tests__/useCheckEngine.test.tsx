@@ -73,6 +73,23 @@ describe('useCheckEngine', () => {
     expect(prepareMock).not.toHaveBeenCalled();
   });
 
+  it('judgeOn judges the same check on another purchase date, and paydays lists the pay days in the cash path', async () => {
+    const { result } = await renderHook(() => useCheckEngine(checkOnce(20000)));
+    const days = result.current.paydays();
+    expect(days.length).toBeGreaterThan(0);
+    expect([...days].sort()).toEqual(days);
+    const later = result.current.judgeOn(days[0] as never);
+    expect(later).not.toBeNull();
+    expect(later!.result.purchaseDate).toBe(days[0]);
+    expect(result.current.evaluation!.result.purchaseDate).not.toBe(days[0]);
+  });
+
+  it('judgeOn and paydays are empty for a home-kind check', async () => {
+    const { result } = await renderHook(() => useCheckEngine(checkOnce(20000, { itemType: { kind: 'preset', value: 'property' } })));
+    expect(result.current.judgeOn('2026-11-20' as never)).toBeNull();
+    expect(result.current.paydays()).toEqual([]);
+  });
+
   it('a check with quick lines is judged through judgeWithQuickLines', async () => {
     const check = checkOnce(20000, { quickLines: [{ id: 'q1', kind: 'expense', name: 'x', amount: minorUnits(5000), everyMonths: 0, date: null }] });
     const { result } = await renderHook(() => useCheckEngine(check));

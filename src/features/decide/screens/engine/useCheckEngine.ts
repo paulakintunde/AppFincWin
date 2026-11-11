@@ -31,6 +31,10 @@ export interface CheckEngine {
   futures: () => Futures | null;
   readyDate: (saved: number) => LocalDate | null;
   timeline: () => CashTimeline | null;
+  /** 06.1-23: the same check judged as bought on this date (Buy later). null while loading or for a home-kind check. */
+  judgeOn: (date: LocalDate) => Evaluation | null;
+  /** 06.1-23: the pay days inside the 90-day cash path, in date order; empty while loading. */
+  paydays: () => readonly LocalDate[];
 }
 
 /** D-02: home buying stays hidden; a property check is not judged. */
@@ -64,5 +68,20 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
   const readyDate = useCallback((saved: number): LocalDate | null => (prepared === null || judged === null ? null : saveForItReadyDate(prepared, judged, saved)), [prepared, judged]);
   const timeline = useCallback((): CashTimeline | null => (prepared === null || judged === null ? null : cashTimeline(prepared, judged)), [prepared, judged]);
 
-  return { status: state.status, errorKind: state.errorKind, missingReads: state.missingReads, refetch: state.refetch, evaluation, both, futures, readyDate, timeline };
+  const judgeOn = useCallback(
+    (date: LocalDate): Evaluation | null => {
+      if (prepared === null || judged === null) return null;
+      const dated: CheckV2 = { ...judged, purchaseDate: date };
+      return (dated.quickLines ?? []).length > 0 ? judgeWithQuickLines(prepared, dated) : judgeCheck(prepared, dated);
+    },
+    [prepared, judged]
+  );
+  const paydays = useCallback((): readonly LocalDate[] => {
+    if (prepared === null || judged === null) return [];
+    const days = new Set<string>();
+    for (const row of cashTimeline(prepared, judged).rows) if (row.kind === 'pay') days.add(row.date);
+    return [...days].sort() as LocalDate[];
+  }, [prepared, judged]);
+
+  return { status: state.status, errorKind: state.errorKind, missingReads: state.missingReads, refetch: state.refetch, evaluation, both, futures, readyDate, timeline, judgeOn, paydays };
 }
