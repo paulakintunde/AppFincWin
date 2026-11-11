@@ -15,7 +15,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { currencyCode, minorUnits } from '@/engine/money';
-import { heroAmountText, heroOneLineMax } from '@/features/decide/home/heroAmountText';
+import { heroAmountText, heroOneLineMax } from '@/ui/heroAmountText';
 import type { SetupStepReady } from '@/features/income/stepTypes';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { openSeriesStatus } from '@/features/record/entry/seriesStatusHost';

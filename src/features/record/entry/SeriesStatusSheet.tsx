@@ -19,7 +19,7 @@ import type { RecurringSeriesRow } from '@/db/rows';
 import { useSetSeriesStatus } from '@/data/mutations/recurringSeries';
 import { showToast } from '@/state/undoToast';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
-import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
+import { ChoiceCard } from '@/ui/ChoiceCard';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { DateField } from './pickers/DateField';
 import { closeSeriesStatus, useSeriesStatusRequest } from './seriesStatusHost';
