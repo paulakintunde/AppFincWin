@@ -9,8 +9,8 @@
  * Up to 5 of the user's own rules (keep, largest and category rules together), matching the engine's own-line limit (D-12).
  */
 
-export * from '@/features/decide/snapshot/v3/rulesDoc';
 import { MAX_RULE_PERCENT } from '@/features/decide/snapshot/v3/rulesDoc';
+export * from '@/features/decide/snapshot/v3/rulesDoc';
 
 /** The debt share as stored text ("30") to whole percent; null when off or unreadable. */
 export function debtPercentOf(dsrLine: string | null): number | null {
