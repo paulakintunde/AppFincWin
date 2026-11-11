@@ -1,7 +1,7 @@
 ---
 phase: 06-grow
 plan: 20
-status: DRAFT (Tasks 1 and 2 done; Task 3 owner device check pending; Task 4 not started)
+status: complete
 requirements: [GRW-01, GRW-02, GRW-03, GRW-04, GRW-05, GRW-06, GRW-07, GRW-08, GRW-09, GRW-10, GRW-11]
 key-files:
   created:
@@ -19,9 +19,9 @@ key-files:
     - scripts/cache-shape.lock.json
 ---
 
-# Phase 6 Plan 20: Release wiring and phase gate (DRAFT)
+# Phase 6 Plan 20: Release wiring and phase gate
 
-The Grow tab is switched on for every level, Decide's four moved setup steps open Grow, and a goal can be made from a Decide check. The gate is green apart from the items listed under Gate results. The owner device check (Task 3) and the approval of the goals cases (Task 4) have not happened; no case is marked approved.
+The Grow tab is switched on for every level, Decide's four moved setup steps open Grow, and a goal can be made from a Decide check. The owner approved the device check on 2026-11-10 (run under 06-37) and approved four of the five goals cases.
 
 ## Task 1 (commit 56700ab8, lint fix 8dc8d817)
 
@@ -56,7 +56,7 @@ The Grow tab is switched on for every level, Decide's four moved setup steps ope
 4. **No Decide "save for it" pot-creation call site exists in the check flow.** The only pot creators are the Pots screen and the Saving/Envelopes setup steps, which now point to Grow. So the "navigate to `/grow?newGoal=1&...`" entry is provided by the GrowHome param handling and tested, but nothing in Decide's check screens calls it yet. Say if you want a button added to the check result.
 5. **Setup step answered state unchanged.** `isAnswered` already treats these four steps as answered (optional), so no Grow data was added to the setup facts. The old step components (LoansStep, SavingStep, EmergencyStep, EnvelopesStep) are no longer in the registry but their files and tests remain.
 
-## Draft goals right-answer cases (all still `draft`)
+## Goals right-answer cases (owner review 2026-11-10)
 
 - GL-01: Mina, no safety net, $300 spare; a full locked "New laptop" goal ($500 of $500) is left out; a $1,500 purchase is judged on the $300 plus $300 a month, and the answer says locked goals are kept out.
 - GL-02: Tomas; a locked "Bike" goal protects what it holds ($300), not its $500 target.
@@ -64,6 +64,7 @@ The Grow tab is switched on for every level, Decide's four moved setup steps ope
 - GL-04: Kai; safety net size $2,300, was $1,300, $200 taken out; the next answer is judged against the $1,100 now in it.
 - GL-05: Priya; locked safety net ($1,300) and locked "Lisbon" goal ($640) both kept out of a $2,000 purchase, and the answer names the two together.
 
-## Remaining
+## Completion
 
-Task 3 (owner device check) and Task 4 (record approval in `goals.json`, then `test(06-20): owner-approved goals right-answer cases`). STATE.md and ROADMAP.md not updated; nothing pushed.
+- Task 3: the owner device check ran under 06-37 and was approved on 2026-11-10; see 06-37-SUMMARY.md, "Device check result".
+- Task 4 (021189fd): GL-01, GL-02, GL-03 and GL-05 are approved (approvedAt 2026-11-10). GL-04 is back to draft. The owner wants the next answer to use what is in the net now, and a prompt after a withdrawal asking whether to lock the net or leave it unlocked. A commit on 2026-11-07 (e949b47c) had marked all five approved before the owner had seen them; this corrects that.

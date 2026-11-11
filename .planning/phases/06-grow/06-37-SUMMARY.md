@@ -1,9 +1,9 @@
 ---
 phase: 06-grow
 plan: 37
-status: awaiting owner device check
+status: complete
 subsystem: grow, decide/snapshot, record/activity
-tags: [gap-closure, D-35, D-36, D-37, D-38, gate, DRAFT]
+tags: [gap-closure, D-35, D-36, D-37, D-38, gate]
 requires: [06-23, 06-24, 06-25, 06-26, 06-27, 06-28, 06-29, 06-30, 06-31, 06-32, 06-33, 06-34, 06-35, 06-36]
 provides:
   - Decide reads a debt_id line as a debt payment (D-35)
@@ -47,13 +47,13 @@ decisions:
   - The debt filter is month-scoped like every other Activity filter; it hides projections; with the debt not loaded it matches only lines tagged with debt_id and the chip reads "Debt".
   - DebtsModel.focus is kept: DebtsSegment still reads focus.id to pick the "Record calculator" row.
 metrics:
-  completed: 2026-11-10 (code and gate; device check pending)
-  tasks: "Task 1 done; Task 2 (device check) and Task 3 (finalise 06-20) pending"
+  completed: 2026-11-10 (owner approved the Pixel 9 device check)
+  tasks: "Tasks 1-3 done"
 ---
 
-# Phase 6 Plan 37: Gap closure gate (DRAFT, awaiting owner device check)
+# Phase 6 Plan 37: Gap closure gate
 
-The owner addendum items are built: a one-off debt payment is a debt payment in Decide, Grow rows say Remove, Mark paid on a goal line goes through the goal confirm everywhere, the moved-net sheet is only for nets made before the Grow push, and "See all in Activity" opens Activity filtered to the debt. The local gate is green apart from the cache-version check, which feat/06-grow has already fixed, and two load timeouts in untouched files (see Gate). The device check (Task 2) and finalising 06-20 (Task 3) have not been done.
+The owner addendum items are built: a one-off debt payment is a debt payment in Decide, Grow rows say Remove, Mark paid on a goal line goes through the goal confirm everywhere, the moved-net sheet is only for nets made before the Grow push, and "See all in Activity" opens Activity filtered to the debt. The local gate is green apart from the cache-version check, which feat/06-grow has already fixed, and two load timeouts in untouched files (see Gate). The owner approved the Pixel 9 device check on 2026-11-10 after the fixes below, and 06-20 is finalised.
 
 ## What was built
 
@@ -131,3 +131,26 @@ This answers owner question 1. Commit `188bdddc` changes `TransactionSheet.tsx`,
   - `npm run check:cache-version`: unchanged (version 7).
   - `jest --findRelatedTests` (TransactionSheet, the new test, en.ts): 323 suites passed. 3 shell suites timed out under load and passed when re-run alone (33/33).
   - `jest src/features/record src/features/grow`: 144 suites passed. 3 suites timed out under load (two jest runs were going at once); all passed when re-run alone.
+
+## Device check result (Task 2, 2026-11-10): approved
+
+The owner ran Parts A to C on the Pixel 9 and reported five items. I then checked the phone and the data myself. Every fix below was pushed to feat/06-grow, and CI passed all five jobs on 0f39d52a.
+
+| Found by | Problem | Fix | Commit |
+|---|---|---|---|
+| Owner (1) | Activity row lines too thin to tell rows apart | Separator 2 px, colour `line4` | 70e068c2 |
+| Owner (2) | Debt messages (plan saved, stop, one-off, sale, add, edit, remove) showed no Undo | Mapped the debt toast keys to their undo labels in `UndoToastHost` | ce894b6a |
+| Owner (7) | A goal's "Kept in" row could not be tapped | Row opens `NetAccountSheet`; its toast offers Undo | e05b9281 |
+| Owner (4) | Could not find the payments list | No change: it is under "Payments" at the bottom of the debt screen | none |
+| Owner (5) | "Change" in the payoff plan lands at the top of Debts | Works as built; jumping straight to the plan is offered as a follow-up | none |
+| Me | Each save or stop of an extra left one more Expected extra line on its first date (6 duplicates seen) | Migration 20261110000100: `grow_end_series` drops a series that never reached its first date; `save_debt_plan` and `record_debt_sale` re-issued | 77742ef6 |
+| Me | A paid one-off did not lower the debt's balance (owner chose: lower it) | Trigger `debt_balance_follows_line` moves the balance by the paid amount (0 to 10^13); unpaid, delete and Undo put it back; debts query invalidated after line writes | af722d55, 0f39d52a |
+| Me | Goal form showed the "Locked" helper when "No, Decide can count it" was picked | New `lockHelperNo` copy | 5914a46a |
+
+- Migration 20261110000100 was pushed to production (`cohmcbdfgqmiwykztrdg`) on 2026-11-10, with the owner's approval. The preflight passed and CI `rls` passed first; pgTAP 93 and 95 (24 checks) pass.
+- Old test data is not corrected after the fact: the 6 duplicate extra lines and the $1,000 already marked paid. The owner removes Test Visa during cleanup.
+- Small follow-ups, not fixed: the "Add a debt" button covers "Use $50 extra"; the payoff figure columns wrap at font scale 1.15; the goal form's first Continue tap only closes the keyboard; a goal can be kept in the same account it is paid from.
+
+## Task 3: 06-20 finalised
+
+06-20-SUMMARY.md is marked complete. Goals cases GL-01, GL-02, GL-03 and GL-05 were approved by the owner on 2026-11-10 (021189fd). GL-04 went back to draft with the owner's note: the next answer should use what is in the net now, and after a withdrawal the app should ask whether to lock the net or leave it unlocked.

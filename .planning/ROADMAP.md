@@ -1241,7 +1241,7 @@ Plans:
 - [x] 06-36-PLAN.md — Debt detail reveal and past payments (D-30, D-32) (W13)
 
 **Wave 14** *(blocked on Wave 13 completion)*
-- [ ] 06-37-PLAN.md — Gap gate, owner device check on the Pixel 9, finalize 06-20 (W14)
+- [x] 06-37-PLAN.md — Gap gate, owner device check on the Pixel 9, finalize 06-20 (W14)
 **UI hint**: yes
 
 ### Phase 7: Insights
@@ -1410,7 +1410,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
 | 05.4 Decide safety patch | 55/55 | Ready to merge (43 and 45 follow up on main, D-182) |  |
 | 05.5 One shared money model | 0/TBD | Not started | - |
-| 6. Grow | 21/37 | In progress (gap closure planned: 06-23..06-37) | - |
+| 6. Grow | 37/37 | Built; owner device check approved 2026-11-10; code review and verification next | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
