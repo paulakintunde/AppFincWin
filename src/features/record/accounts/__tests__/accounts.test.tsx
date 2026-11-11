@@ -42,12 +42,19 @@ jest.mock('@/data/mutations/accounts', () => ({
   useAddAccount: () => ({ add: mockAdd }),
   useEditAccount: () => ({ edit: mockEdit }),
 }));
+// 06-18: AccountSheet takes the rate write from the Grow holdings mutations (needs a query client, none here).
+jest.mock('@/data/mutations/growHoldings', () => ({ useSetAccountRate: () => ({ set: jest.fn(() => 'rate-step') }) }));
 jest.mock('@/data/mutations/accountDelete', () => ({ useDeleteAccount: () => ({ remove: jest.fn() }) }));
 jest.mock('@/data/queries/pendingSplit', () => ({ usePendingSplit: () => ({ split: new Map(), isLoading: false }) }));
 jest.mock('../useAccountUsage', () => ({ useAccountUsage: () => ({ usage: null }) }));
 jest.mock('expo-router', () => ({ router: { back: jest.fn() } }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => 'step-1' }));
-jest.mock('@/data/mutations/transactions', () => ({ useMarkPaid: () => ({ markPaid: jest.fn(() => null) }) }));
+const mockMarkPaid = jest.fn((..._a: unknown[]): string | null => null);
+const mockGoalPay = jest.fn((..._a: unknown[]): boolean => true);
+jest.mock('@/data/mutations/transactions', () => ({ useMarkPaid: () => ({ markPaid: (...a: unknown[]) => mockMarkPaid(...a) }) }));
+// P5-WR-01: a goal's Expected line is marked paid through the goal confirm, never a plain status patch.
+jest.mock('@/features/grow/goals/useGoalLinePay', () => ({ useGoalLinePay: () => ({ pay: (...a: unknown[]) => mockGoalPay(...a) }) }));
+jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: [{ id: 's-lisbon', goal_id: 'g1' }] }) }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: mockTrack }) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
 jest.mock('@/data/queries/activity', () => ({
@@ -56,6 +63,7 @@ jest.mock('@/data/queries/activity', () => ({
     rows: [
       { id: 't1', account_id: 'acc1', name: 'Coffee', category_id: null, original_amount: -400, amountHome: -400, note: null, transfer_id: null },
       { id: 't2', account_id: 'other', name: 'Elsewhere', category_id: null, original_amount: -900, amountHome: -900, note: null, transfer_id: null },
+      { id: 't3', account_id: 'acc1', name: 'Lisbon', category_id: null, original_amount: -5000, amountHome: -5000, note: null, transfer_id: null, status: 'pending', recurring_series_id: 's-lisbon', goal_id: null },
     ],
     projections: [],
     totals: {},
@@ -97,7 +105,11 @@ jest.mock('@/features/record/useRecordContext', () => ({
 jest.mock('@/features/record/entry/TransactionSheet', () => ({ TransactionSheet: () => null }));
 jest.mock('@/features/record/activity/ActivityRow', () => {
   const { Text } = jest.requireActual('react-native');
-  return { ActivityRow: ({ row }: { row: { name: string } }) => <Text>{`line:${row.name}`}</Text> };
+  return {
+    ActivityRow: ({ row, onMarkPaid }: { row: { name: string }; onMarkPaid?: (r: unknown) => void }) => (
+      <Text onPress={() => onMarkPaid?.(row)}>{`line:${row.name}`}</Text>
+    ),
+  };
 });
 
 function account(over: Partial<AccountRow> = {}): AccountRow {
@@ -413,6 +425,18 @@ describe('AccountsScreen and AccountDetailScreen', () => {
     expect(onImport).toHaveBeenCalledWith('acc1');
     await fireEvent.press(getByText('Edit account'));
     expect(getByText('Save changes')).toBeTruthy();
+  });
+
+  it('P5-WR-01 detail Mark paid on a goal line (tag from its series) goes through the goal confirm; a plain line uses markPaid', async () => {
+    mockAccounts = [account()];
+    mockBalances = new Map([['acc1', view()]]);
+    const { getByText } = await wrap(<AccountDetailScreen accountId="acc1" onImport={jest.fn()} />);
+    await fireEvent.press(getByText('line:Lisbon'));
+    expect(mockGoalPay).toHaveBeenCalledWith(expect.objectContaining({ id: 't3' }), 'g1');
+    expect(mockMarkPaid).not.toHaveBeenCalled();
+    await fireEvent.press(getByText('line:Coffee'));
+    expect(mockMarkPaid).toHaveBeenCalledTimes(1);
+    expect(mockGoalPay).toHaveBeenCalledTimes(1);
   });
 
   it('detail shows the pending rows and the archive footer while usage is unknown', async () => {

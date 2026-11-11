@@ -26,6 +26,11 @@ export interface DebtRow {
   pays_in_full?: 'yes' | 'sometimes' | 'no' | null; // 05.2: card payment habit (20261028000500)
   due_day?: number | null; // 05.4 FIN-04: day of the month the payment is due, 1..31 (20261103000200)
   paid_off_on?: string | null; // 05.2 owner addition 2026-10-28: the local date the debt was paid off; Decide stops counting its minimum from this date (05.2-48)
+  // 06 Grow (20261106000100): optional so rows cached before the update still type-check.
+  started_balance?: number | null; // balance when the debt was first recorded, for the paid-off progress bar
+  payoff_order?: 'rate' | 'balance' | null;
+  payoff_extra?: number; // read-only here: written only by save_debt_plan
+  extra_series_id?: string | null; // read-only here: written only by save_debt_plan
   is_housing: boolean; // D-103: counts toward the housing line; update grant only, the guard sets it on insert
   is_sample: boolean;
   deleted_at: string | null;
@@ -36,7 +41,7 @@ export interface DebtRow {
 }
 
 export const DEBT_COLUMNS =
-  'id, household_id, account_id, check_id, series_id, name, kind, currency, balance, apr, minimum_payment, secured, term_months, start_date, min_percent, min_interest_added, min_floor, paid_in_full, pays_in_full, paid_off_on, due_day, is_housing, is_sample, deleted_at, version, updated_by, created_at, updated_at';
+  'id, household_id, account_id, check_id, series_id, name, kind, currency, balance, apr, minimum_payment, secured, term_months, start_date, min_percent, min_interest_added, min_floor, paid_in_full, pays_in_full, paid_off_on, due_day, started_balance, payoff_order, payoff_extra, extra_series_id, is_housing, is_sample, deleted_at, version, updated_by, created_at, updated_at';
 
 export type NewDebt = Pick<
   DebtRow,
@@ -59,6 +64,8 @@ export type NewDebt = Pick<
   | 'paid_in_full'
   | 'pays_in_full'
   | 'due_day'
+  | 'started_balance'
+  | 'payoff_order'
 >;
 
 export type DebtPatch = Partial<
@@ -79,6 +86,8 @@ export type DebtPatch = Partial<
     | 'pays_in_full'
     | 'paid_off_on'
     | 'due_day'
+    | 'started_balance'
+    | 'payoff_order'
     | 'is_housing'
     | 'deleted_at'
   >
@@ -104,6 +113,8 @@ export const DEBT_INSERT_KEYS = [
   'paid_in_full',
   'pays_in_full',
   'due_day',
+  'started_balance',
+  'payoff_order',
 ] as const satisfies readonly (keyof NewDebt)[];
 
 export const DEBT_PATCH_KEYS = [
@@ -122,6 +133,8 @@ export const DEBT_PATCH_KEYS = [
   'pays_in_full',
   'paid_off_on',
   'due_day',
+  'started_balance',
+  'payoff_order',
   'is_housing',
   'deleted_at',
 ] as const satisfies readonly (keyof DebtPatch)[];

@@ -17,7 +17,7 @@ export const fontSize = {
   amountDisplay: 44,
 } as const;
 
-export type TextRole = 'display' | 'heading' | 'body' | 'label' | 'sheetTitle';
+export type TextRole = 'display' | 'heading' | 'body' | 'bodyStrong' | 'label' | 'sheetTitle';
 
 export interface ResolvedTextStyle {
   fontFamily: string;
@@ -54,6 +54,13 @@ export function textRole(pairing: FontPairingKey, role: TextRole): ResolvedTextS
     case 'body':
       return {
         fontFamily: p.body[500],
+        fontSize: fontSize.body,
+        lineHeight: fontSize.body * 1.5,
+        letterSpacing: 0,
+      };
+    case 'bodyStrong':
+      return {
+        fontFamily: p.body[600],
         fontSize: fontSize.body,
         lineHeight: fontSize.body * 1.5,
         letterSpacing: 0,

@@ -63,7 +63,7 @@ export interface BulkPatchVars {
 
 type TransactionList = WithPending<TransactionRow>[];
 
-type BulkRow = Pick<TransactionRow, 'id' | 'version' | 'local_date' | 'status' | 'household_id' | 'transfer_id'>;
+type BulkRow = Pick<TransactionRow, 'id' | 'version' | 'local_date' | 'status' | 'household_id' | 'transfer_id' | 'goal_id'>;
 interface BulkContext {
   householdId: string;
   ownerId: string;
@@ -165,6 +165,10 @@ function invalidateAfterBulk(qc: QueryClient, vars: BulkPatchVars): void {
   // Not awaited: query-core holds WRITE_SCOPE while onSuccess/onError are awaited (WR-A15).
   void qc.invalidateQueries({ queryKey: queryKeys.transactionsRoot(vars.householdId) });
   void qc.invalidateQueries({ queryKey: queryKeys.undoLog(vars.ownerId) });
+  // 20261110000100: a paid debt-linked line moves its debt's balance on the server.
+  if (vars.items.some((i) => i.entity === 'transactions')) {
+    void qc.invalidateQueries({ queryKey: queryKeys.debts(vars.householdId) });
+  }
   if (vars.items.some((i) => i.entity === 'accounts')) {
     void qc.invalidateQueries({ queryKey: queryKeys.accounts(vars.householdId) });
   }
@@ -316,7 +320,8 @@ export function useBulkMarkPaid(): {
   return {
     markPaid(rows: readonly BulkRow[], ctx: BulkContext, today: string): string {
       // D-50/D-56: transfer legs are always paid in this phase and are left alone.
-      const targets = uniqueRows(rows).filter((r) => r.status === 'pending' && !r.transfer_id);
+      // 06-34 (D-32, ARC-15): a goal's Expected line is confirmed through confirm_goal_contribution, never patched here.
+      const targets = uniqueRows(rows).filter((r) => r.status === 'pending' && !r.transfer_id && !r.goal_id);
       if (targets.length === 0) throw new RangeError('nothing to mark');
       const dates = targets.map((r) => markPaidDate(today, r.local_date));
       return apply({

@@ -28,15 +28,20 @@ export interface DeletableRowProps {
   disabled?: boolean;
   /** The row read as one sentence (carries the full name when the visible one is clamped). */
   accessibilityLabel?: string;
+  /**
+   * 06-37 (D-37): the action's word in the swipe, the ⋯ menu and the confirm button. Grow rows (goals, holdings, debts)
+   * pass "Remove" to match their own confirm sheets; every other row keeps Delete.
+   */
+  actionWord?: string;
 }
 
 const DELETE_KEY = 'delete';
 
-export function DeletableRow({ name, onOpen, menu, confirm, onDelete, children, disabled = false, accessibilityLabel }: DeletableRowProps) {
+export function DeletableRow({ name, onOpen, menu, confirm, onDelete, children, disabled = false, accessibilityLabel, actionWord }: DeletableRowProps) {
   const t = useT();
   const { colors } = useTheme();
   const [confirming, setConfirming] = useState(false);
-  const word = t('decide.delete.word');
+  const word = actionWord ?? t('decide.delete.word');
 
   const options = [
     ...menu.map((m) => ({ key: m.key, label: m.label })),
@@ -76,7 +81,7 @@ export function DeletableRow({ name, onOpen, menu, confirm, onDelete, children, 
         body={confirm.body}
         destructive
         cancelLabel={t('decide.delete.keep')}
-        confirmLabel={t('decide.delete.confirm')}
+        confirmLabel={actionWord ?? t('decide.delete.confirm')}
         onCancel={close}
         onDismiss={close}
         onConfirm={() => {

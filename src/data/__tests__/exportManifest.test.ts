@@ -3,6 +3,8 @@ import path from 'path';
 
 import { DECIDE_ANSWER_COLUMNS } from '@/db/decideAnswers';
 import { DECIDE_SETTINGS_COLUMNS } from '@/db/decideSettings';
+import { HOLDING_LOT_COLUMNS } from '@/db/holdingLots';
+import { HOLDING_COLUMNS } from '@/db/holdings';
 import { PAYER_PROMPT_COLUMNS } from '@/db/incomePayerPrompts';
 import { DISMISSAL_COLUMNS } from '@/db/recurringDismissals';
 import { EXPORT_MANIFEST, NOT_USER_DATA } from '../exportManifest';
@@ -41,6 +43,9 @@ describe('export manifest (05.2 owner OQ3, C13)', () => {
       debts: ['pays_in_full', 'paid_off_on'],
       accounts: ['use', 'use_purpose', 'use_envelope_id', 'use_extra_set_aside'],
       savings_goals: ['bucket', 'account_id', 'color_key'],
+      // 06
+      holdings: ['name', 'type', 'value', 'value_as_of', 'opening_put_in', 'monthly_amount', 'rate'],
+      holding_lots: ['holding_id', 'kind', 'amount', 'units', 'local_date', 'note'],
       decide_settings: split(DECIDE_SETTINGS_COLUMNS),
     };
     for (const [table, cols] of Object.entries(expected)) {
@@ -56,6 +61,22 @@ describe('export manifest (05.2 owner OQ3, C13)', () => {
     ];
     for (const [table, cols] of pairs) {
       for (const c of split(cols).filter((x) => x !== 'version')) expect(EXPORT_MANIFEST[table]).toContain(c);
+    }
+  });
+
+  it('06: holdings, entries and the new goal, debt, account and series columns are exported', () => {
+    const expected: Record<string, string[]> = {
+      savings_goals: ['is_safety_net', 'locked', 'protect', 'up_front_only', 'icon', 'net_confirmed_at'],
+      debts: ['started_balance', 'payoff_order', 'payoff_extra', 'extra_series_id'],
+      accounts: ['interest_rate'],
+      recurring_series: ['goal_id'],
+      transactions: ['debt_id'],
+      holdings: split(HOLDING_COLUMNS),
+      holding_lots: split(HOLDING_LOT_COLUMNS),
+    };
+    const internal = ['version', 'updated_by', 'is_sample'];
+    for (const [table, cols] of Object.entries(expected)) {
+      for (const c of cols.filter((x) => !internal.includes(x))) expect(EXPORT_MANIFEST[table]).toContain(c);
     }
   });
 

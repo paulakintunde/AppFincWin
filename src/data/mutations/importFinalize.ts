@@ -77,6 +77,13 @@ export interface ImportMarkPaid {
    * fallback line (re-pointed to line.id) is the purchase they belong to.
    */
   feeLines?: NewTransaction[];
+  /**
+   * 06 review P5-WR-01: the pending row is an Expected goal line (it has goal_id, or its series feeds a goal). Such a line
+   * becomes paid only through confirm_goal_contribution (the server guard_goal_line_paid refuses a plain patch), so the
+   * finalize never sends it: the statement line is recorded as an ordinary line and the goal line stays Expected for the
+   * user to confirm. The matcher should not offer these at all; this is the safety net. Optional for queued writes.
+   */
+  pendingIsGoalLine?: boolean;
 }
 
 export interface ImportLimit {
@@ -230,9 +237,12 @@ interface Keep {
  */
 async function runFinalize(client: DbClient, vars: ImportFinalizeVars): Promise<ImportFinalizeResult> {
   let links = vars.links;
-  let markPaid = vars.markPaid;
+  // 06 review P5-WR-01: a goal line is never marked paid by a patch; its statement line (and fees) land as ordinary lines.
+  let markPaid = vars.markPaid.filter((m) => m.pendingIsGoalLine !== true);
   let limit = vars.limit;
-  const fallback: NewTransaction[] = [];
+  const fallback: NewTransaction[] = vars.markPaid
+    .filter((m) => m.pendingIsGoalLine === true)
+    .flatMap((m) => [m.line, ...(m.feeLines ?? []).map((f) => ({ ...f, fx_fee_of: m.line.id }))]);
   let dropped: FinalizeDropped | null = null;
   let replayChecked = false;
 

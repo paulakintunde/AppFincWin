@@ -28,6 +28,7 @@ export const ACCOUNT_INSERT_KEYS = [
   'use_envelope_id',
   'use_extra_set_aside',
   'overdraft_rate',
+  'interest_rate',
 ] as const satisfies readonly (keyof NewAccount)[];
 
 export const ACCOUNT_PATCH_KEYS = [
@@ -43,10 +44,11 @@ export const ACCOUNT_PATCH_KEYS = [
   'use_envelope_id',
   'use_extra_set_aside',
   'overdraft_rate',
+  'interest_rate',
 ] as const satisfies readonly (keyof AccountPatch)[];
 
 export const ACCOUNT_COLUMNS =
-  'id, household_id, created_by, name, kind, currency, opening_balance, archived_at, updated_by, overdraft_limit, credit_limit, use, use_purpose, use_envelope_id, use_extra_set_aside, overdraft_rate, deleted_at, is_sample, version, created_at, updated_at';
+  'id, household_id, created_by, name, kind, currency, opening_balance, archived_at, updated_by, overdraft_limit, credit_limit, use, use_purpose, use_envelope_id, use_extra_set_aside, overdraft_rate, interest_rate, deleted_at, is_sample, version, created_at, updated_at';
 
 const ENTITY = 'accounts' as const;
 

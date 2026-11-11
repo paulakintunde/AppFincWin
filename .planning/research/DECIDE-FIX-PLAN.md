@@ -203,7 +203,7 @@ The "running total" counts only the extra work this plan adds. Theme N makes 08.
   - **Theme N:** the six connection points (BO-07) are written and tested: month picture, goal, safety net, debt, bills and household scope. The plan for moving the safety-net, debt, savings and share columns out of `decide_settings` is recorded. Only one Decide remains in the app's routes.
   - The setup-question ownership table is recorded as a decision file.
   - Core Maestro flows run green on the Android emulator.
-  - **Compliance gate:** retired screens deleted (a bundle search for "Lines you will not cross" finds nothing); the guard runs at sentence level and in lint.
+  - **Compliance gate:** retired screens deleted (a bundle search for "Lines you will not cross" finds nothing; the new name, used by Grow and the rebuilt Decide, is "Your money rules", owner 2026-11-06); the guard runs at sentence level and in lint.
 - **Depends on:** 05.4 merged. (The 2-week hold from ARC-01 no longer applies: 05.3 never switched on.)
 
 ### Phase 6: Grow (amended)
@@ -494,7 +494,7 @@ Each theme gives the problem in plain words, then the agreed fixes. Where expert
 - **Joint loans state the joint risk** (FIN-14). "If this plan is in both names, each of you can be asked to pay all of it." The partner-capacity check comes with Household and needs consent. *Bucket:* Now (fact), With Household (partner). *Size:* S + M.
 - **Grow-powered depth** (FIN-13 card-minimum mode, FIN-17 "delays your Holiday goal", FIN-18 "debt-free date moves", ENG-24 one payoff module). *Bucket:* With Grow. *Size:* M each.
 - **Smaller money gaps** (FIN-12 "0% if paid in full" back-charge costed; FIN-20 tax set-aside for the self-employed; FIN-21 running-costs prompt for big items; FIN-22 "lean patch" check on long loans; FIN-23 UK and EU loan rates match lender quotes; FIN-24 far-off dates and foreign prices labelled). *Bucket:* Decide rebuild. *Size:* S to M.
-- **A crossed user-set line shows in the answer** (UX-16). The answer keeps its code but turns amber and says "This takes debt payments to 41%, above the 36% line you set." *Bucket:* Decide rebuild. *Size:* S.
+- **A crossed user-set line shows in the answer** (UX-16). The answer keeps its code but turns amber and says "This takes debt payments to 41%, above the 36% rule you set." *Bucket:* Decide rebuild. *Size:* S.
 - **Permanent persona tests** (FIN-26 / ENG-28). The audit's 16 people become golden tests with corrected answers. Any change that makes one more generous fails the build. *Bucket:* Now. *Size:* S.
 
 **Settled here:** ENG-06 asks whether FIN-06 should also block when *this* month is heading below zero. We adopt it (section 10).

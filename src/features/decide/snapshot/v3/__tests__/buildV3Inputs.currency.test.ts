@@ -47,7 +47,7 @@ describe('buildV3Inputs: settings money is read only in the home currency', () =
     expect(i.unspent).toEqual({ amount: 50000, at: '2026-10-01' });
     expect(i.profile?.steady).toBe(300000);
     expect(i.unexplainedAnswer).not.toBeNull();
-    expect(i.emergency).toEqual({ amount: 500000, accountId: null });
+    expect(i.emergency).toBeNull(); // 06 D-02: the typed reserve is not read; only the flagged Grow goal makes a fund
   });
 
   it('null currency (rows written before the fix) reads as home', () => {

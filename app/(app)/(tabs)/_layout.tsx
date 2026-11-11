@@ -16,7 +16,7 @@ import { Fab } from '@/shell/fab/Fab';
 import { FabQuickMenu } from '@/shell/fab/FabQuickMenu';
 import { TabBar } from '@/shell/tabBar/TabBar';
 import { TabSlideIn } from '@/shell/tabBar/TabSlideIn';
-import { availableTabs } from '@/shell/tabBar/availableTabs';
+import { availableTabs, isTabAvailable } from '@/shell/tabBar/availableTabs';
 import { isTabId } from '@/shell/tabBar/tabs';
 
 export default function TabsLayout() {
@@ -48,6 +48,8 @@ export default function TabsLayout() {
         {availableTabs().map((id) => (
           <Tabs.Screen key={id} name={id} />
         ))}
+        {/* 06-15: grow.tsx exists before the tab opens (D-03); href null keeps it unlisted and unlinkable until 06-20 flips TAB_AVAILABILITY.grow */}
+        {isTabAvailable('grow') ? null : <Tabs.Screen name="grow" options={{ href: null }} />}
       </Tabs>
       <Fab />
       <FabQuickMenu />
