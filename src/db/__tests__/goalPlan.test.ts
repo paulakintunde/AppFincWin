@@ -1,5 +1,5 @@
 import { DbError, VersionConflictError } from '../errors';
-import { confirmGoalContribution, saveGoalPlan, setSafetyNet, type GoalPlanSeries } from '../goalPlan';
+import { confirmGoalContribution, removeGoal, saveGoalPlan, setSafetyNet, type GoalPlanSeries } from '../goalPlan';
 import { createFakeSupabase } from './fakeSupabase';
 
 const STEP = { id: 'u1', labelKey: 'goalMade', name: 'Lisbon' } as const;
@@ -152,5 +152,20 @@ describe('setSafetyNet', () => {
     await expect(setSafetyNet(client, input)).rejects.toBeInstanceOf(DbError);
     client.respondWith(ok({ status: 'wat' }));
     await expect(setSafetyNet(client, input)).rejects.toBeInstanceOf(DbError);
+  });
+});
+
+describe('removeGoal (06 review)', () => {
+  it('sends the contract keys and parses the result; a conflict throws', async () => {
+    const client = createFakeSupabase();
+    client.respondWith(ok({ status: 'applied', goal_id: 'g1', goal_version: 4, undo_step_id: 'u1' }));
+    const out = await removeGoal(client, { goalId: 'g1', expectedVersion: 3, undoStep: { id: 'u1', name: 'Lisbon' } });
+    expect(out).toEqual({ status: 'applied', goalVersion: 4, undoStepId: 'u1' });
+    const [name, args] = client.calls.find((c) => c.method === 'rpc')?.args as [string, Record<string, unknown>];
+    expect(name).toBe('remove_goal');
+    expect(args).toEqual({ p_goal_id: 'g1', p_expected_version: 3, p_undo_step: { id: 'u1', label_key: 'goalRemoved', label_params: { name: 'Lisbon' } } });
+    const c2 = createFakeSupabase();
+    c2.respondWith(ok({ status: 'conflict' }));
+    await expect(removeGoal(c2, { goalId: 'g1', expectedVersion: 3, undoStep: { id: 'u1', name: 'x' } })).rejects.toBeInstanceOf(VersionConflictError);
   });
 });

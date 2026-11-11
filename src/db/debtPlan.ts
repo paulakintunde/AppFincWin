@@ -2,15 +2,22 @@
 // JSON-only payloads: every money field is an integer minor-unit number.
 //
 // save_debt_plan(p_debt_id, p_expected_version, p_extra, p_order, p_series, p_undo_step)
-//   -> { status: 'applied' | 'already-applied' | 'conflict', series_id, undo_step_id }
+//   -> { status: 'applied' | 'already-applied' | 'conflict', series_id, undo_step_id, version }
 //   p_series is required when p_extra > 0 (the amount comes from p_extra); extra 0 sends null.
 // record_debt_sale(p_debt_id, p_expected_version, p_sale, p_payment, p_undo_step)
-//   -> { status: 'applied', paid_off, still_owed, undo_step_id } | { status: 'already-applied' } | { status: 'conflict' }
+//   -> { status: 'applied', paid_off, still_owed, undo_step_id, version } | { status: 'already-applied', version } | { status: 'conflict' }
+//   (06 review, migration 20261110000200) both lines carry debt_id; the balance follows the paid payment line.
 // record_debt_one_off(p_debt_id, p_payment, p_undo_step)   (06-30, D-33, migration 20261106000400)
 //   -> { status: 'applied', transaction_id, undo_step_id } | { status: 'already-applied', undo_step_id }
 //   One pending (Expected) payment line linked to the debt; the balance does not move until the line is marked paid.
+// remove_debt(p_debt_id, p_expected_version, p_undo_step)   (06 review, owner decision 2026-11-10, migration 20261110000200)
+//   -> { status: 'applied', debt_id, version, undo_step_id } | { status: 'already-applied', undo_step_id, version } | { status: 'conflict' }
+//   Removes the debt, stops its payment and Expected extra series and removes their unpaid Expected lines, in ONE step.
 //
-// All three RPCs build the undo step's ops on the server: p_undo_step is only { id, label_key, label_params: { name } }.
+// `version` (06 review P3-WR-01) is the debt's version after the write, so the next write chains on it.
+// Line names longer than 80 characters are cut to 80 with an ellipsis on the server (P3-WR-07); up to 200 are accepted.
+//
+// All four RPCs build the undo step's ops on the server: p_undo_step is only { id, label_key, label_params: { name } }.
 
 import { DbError, VersionConflictError, toDbError } from './errors';
 import { BAD_RESPONSE } from './recurringSeries';
@@ -43,6 +50,8 @@ export interface SaveDebtPlanResult {
   status: 'applied' | 'already-applied';
   seriesId: string | null;
   undoStepId: string;
+  /** The debt's version after the save; null from a server older than 20261110000200. */
+  version: number | null;
 }
 
 /** One side of a sale: money in (the sale) or out (the final payment). `amount` is positive. */
@@ -72,11 +81,17 @@ export interface RecordDebtSaleResult {
   paidOff: boolean | null;
   stillOwed: number | null;
   undoStepId: string;
+  /** The debt's version after the save; null from a server older than 20261110000200. */
+  version: number | null;
 }
 
 function rec(data: unknown, fn: string): Record<string, unknown> {
   if (typeof data !== 'object' || data === null) throw new DbError(`${fn} response: not an object`, BAD_RESPONSE, null);
   return data as Record<string, unknown>;
+}
+
+function versionOf(r: Record<string, unknown>): number | null {
+  return typeof r.version === 'number' && Number.isSafeInteger(r.version) && r.version >= 1 ? r.version : null;
 }
 
 function undoIdOf(r: Record<string, unknown>, fn: string): string {
@@ -114,6 +129,7 @@ export async function saveDebtPlan(client: DbClient, input: SaveDebtPlanInput): 
     status: r.status,
     seriesId: typeof r.series_id === 'string' && r.series_id.length > 0 ? r.series_id : null,
     undoStepId: undoIdOf(r, 'save_debt_plan'),
+    version: versionOf(r),
   };
 }
 
@@ -138,6 +154,7 @@ export async function recordDebtSale(client: DbClient, input: RecordDebtSaleInpu
     paidOff: typeof r.paid_off === 'boolean' ? r.paid_off : null,
     stillOwed: typeof r.still_owed === 'number' && Number.isInteger(r.still_owed) ? r.still_owed : null,
     undoStepId: undoIdOf(r, 'record_debt_sale'),
+    version: versionOf(r),
   };
 }
 
@@ -172,4 +189,36 @@ export async function recordDebtOneOff(client: DbClient, input: RecordDebtOneOff
     transactionId: r.status === 'applied' && typeof r.transaction_id === 'string' && r.transaction_id.length > 0 ? r.transaction_id : null,
     undoStepId: undoIdOf(r, 'record_debt_one_off'),
   };
+}
+
+export interface RemoveDebtInput {
+  debtId: string;
+  expectedVersion: number;
+  undoStep: { id: string; name: string };
+}
+
+export interface RemoveDebtResult {
+  status: 'applied' | 'already-applied';
+  /** The debt's version after the removal; null from an older server. */
+  version: number | null;
+  undoStepId: string;
+}
+
+/**
+ * Remove a debt with its monthly records and their unpaid Expected lines (owner decision 2026-11-10). Paid lines stay.
+ * One server-built Undo step, 'debtRemoved', brings every row back.
+ */
+export async function removeDebt(client: DbClient, input: RemoveDebtInput): Promise<RemoveDebtResult> {
+  const { data, error, status } = await client.rpc('remove_debt', {
+    p_debt_id: input.debtId,
+    p_expected_version: input.expectedVersion,
+    p_undo_step: { id: input.undoStep.id, label_key: 'debtRemoved', label_params: { name: input.undoStep.name } },
+  });
+  if (error) throw toDbError(error, status);
+  const r = rec(data, 'remove_debt');
+  if (r.status === 'conflict') throw new VersionConflictError('debts', input.debtId, null);
+  if (r.status !== 'applied' && r.status !== 'already-applied') {
+    throw new DbError(`remove_debt response: unrecognised ${JSON.stringify(r.status)}`, BAD_RESPONSE, null);
+  }
+  return { status: r.status, version: versionOf(r), undoStepId: undoIdOf(r, 'remove_debt') };
 }

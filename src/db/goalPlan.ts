@@ -7,6 +7,8 @@
 //   The series amount is a positive monthly figure (the server stores it as money out of the paid-from account).
 // confirm_goal_contribution(p_transaction_id, p_expected_version, p_in_leg, p_undo_step)
 //   -> { status: 'applied' | 'already-applied' | 'conflict', ... }
+// remove_goal(p_goal_id, p_expected_version, p_undo_step)   (06 review, migration 20261110000200)
+//   -> { status: 'applied' | 'already-applied' | 'conflict', goal_id, goal_version, undo_step_id }
 // set_safety_net(p_goal_id, p_expected_versions, p_undo_step)
 //   -> { status: 'applied' | 'already-applied' | 'unchanged' | 'conflict', ... } (the undo step is built server-side)
 //
@@ -205,4 +207,37 @@ export async function setSafetyNet(client: DbClient, input: SetSafetyNetInput): 
     previousVersion: numOrNull(r.previous_version),
     undoStepId: strOrNull(r.undo_step_id),
   };
+}
+
+export interface RemoveGoalInput {
+  goalId: string;
+  expectedVersion: number;
+  undoStep: { id: string; name: string };
+}
+
+export interface RemoveGoalResult {
+  status: 'applied' | 'already-applied';
+  /** The goal's version after the removal; null on a replay. */
+  goalVersion: number | null;
+  undoStepId: string;
+}
+
+/**
+ * remove_goal (06 review, owner decision 2026-11-10, migration 20261110000200): removes one of the caller's goals, stops its
+ * monthly contribution and removes its unpaid Expected lines. Paid lines stay. One server-built Undo step, 'goalRemoved',
+ * brings the goal, the series and every line back. The safety net cannot be removed.
+ */
+export async function removeGoal(client: DbClient, input: RemoveGoalInput): Promise<RemoveGoalResult> {
+  const { data, error, status } = await client.rpc('remove_goal', {
+    p_goal_id: input.goalId,
+    p_expected_version: input.expectedVersion,
+    p_undo_step: { id: input.undoStep.id, label_key: 'goalRemoved', label_params: { name: input.undoStep.name } },
+  });
+  if (error) throw toDbError(error, status);
+  const r = rec(data, 'remove_goal');
+  if (r.status === 'conflict') throw conflict('savings_goals', input.goalId);
+  if (r.status !== 'applied' && r.status !== 'already-applied') {
+    throw new DbError(`remove_goal response: unrecognised ${JSON.stringify(r.status)}`, BAD_RESPONSE, null);
+  }
+  return { status: r.status, goalVersion: numOrNull(r.goal_version), undoStepId: undoIdOf(r, 'remove_goal') };
 }

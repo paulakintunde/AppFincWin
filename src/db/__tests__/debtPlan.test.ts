@@ -1,5 +1,5 @@
 import { DbError, VersionConflictError } from '../errors';
-import { recordDebtOneOff, recordDebtSale, saveDebtPlan, type DebtPlanSeries, type DebtSaleLeg } from '../debtPlan';
+import { recordDebtOneOff, recordDebtSale, removeDebt, saveDebtPlan, type DebtPlanSeries, type DebtSaleLeg } from '../debtPlan';
 import { createFakeSupabase } from './fakeSupabase';
 
 const ok = (data: unknown) => ({ data, error: null, status: 200 });
@@ -21,7 +21,7 @@ describe('saveDebtPlan', () => {
     const client = createFakeSupabase();
     client.respondWith(ok({ status: 'applied', series_id: 's1', undo_step_id: 'u1' }));
     const out = await saveDebtPlan(client, { ...base, extra: 5000, series: SERIES });
-    expect(out).toEqual({ status: 'applied', seriesId: 's1', undoStepId: 'u1' });
+    expect(out).toEqual({ status: 'applied', seriesId: 's1', undoStepId: 'u1', version: null });
     const [name, args] = client.calls.find((c) => c.method === 'rpc')?.args as [string, Record<string, unknown>];
     expect(name).toBe('save_debt_plan');
     expect(Object.keys(args).sort()).toEqual(['p_debt_id', 'p_expected_version', 'p_extra', 'p_order', 'p_series', 'p_undo_step']);
@@ -69,7 +69,7 @@ describe('recordDebtSale', () => {
     const client = createFakeSupabase();
     client.respondWith(ok({ status: 'applied', paid_off: true, still_owed: 0, undo_step_id: 'u1' }));
     const out = await recordDebtSale(client, { ...base, sale: LEG('t1', 1000000), payment: LEG('t2', 842000) });
-    expect(out).toEqual({ status: 'applied', paidOff: true, stillOwed: 0, undoStepId: 'u1' });
+    expect(out).toEqual({ status: 'applied', paidOff: true, stillOwed: 0, undoStepId: 'u1', version: null });
     const calls = client.calls.filter((c) => c.method === 'rpc');
     expect(calls).toHaveLength(1);
     const [name, args] = calls[0]?.args as [string, Record<string, any>];
@@ -138,5 +138,31 @@ describe('recordDebtOneOff (06-30, D-33)', () => {
     const client = createFakeSupabase();
     client.respondWith({ data: null, error: { message: 'boom', code: '22023' }, status: 400 });
     await expect(recordDebtOneOff(client, { ...base, payment: LEG('t1', 5) })).rejects.toBeInstanceOf(DbError);
+  });
+});
+
+describe('06 review: versions and remove_debt', () => {
+  it('save_debt_plan and record_debt_sale hand back the debt version (P3-WR-01)', async () => {
+    const client = createFakeSupabase();
+    client.respondWith(ok({ status: 'applied', series_id: 's1', undo_step_id: 'u1', version: 5 }));
+    const plan = await saveDebtPlan(client, { debtId: 'd1', expectedVersion: 4, extra: 5000, order: null, series: SERIES, undoStep: { id: 'u1', name: 'x' } });
+    expect(plan.version).toBe(5);
+    const c2 = createFakeSupabase();
+    c2.respondWith(ok({ status: 'applied', paid_off: false, still_owed: 10, undo_step_id: 'u2', version: 4 }));
+    const sale = await recordDebtSale(c2, { debtId: 'd1', expectedVersion: 4, sale: LEG('a', 5), payment: null, undoStep: { id: 'u2', name: 'x' } });
+    expect(sale.version).toBe(4);
+  });
+
+  it('removeDebt sends the contract keys and parses the result; a conflict throws', async () => {
+    const client = createFakeSupabase();
+    client.respondWith(ok({ status: 'applied', debt_id: 'd1', version: 3, undo_step_id: 'u1' }));
+    const out = await removeDebt(client, { debtId: 'd1', expectedVersion: 2, undoStep: { id: 'u1', name: 'Auto loan' } });
+    expect(out).toEqual({ status: 'applied', version: 3, undoStepId: 'u1' });
+    const [name, args] = client.calls.find((c) => c.method === 'rpc')?.args as [string, Record<string, unknown>];
+    expect(name).toBe('remove_debt');
+    expect(args).toEqual({ p_debt_id: 'd1', p_expected_version: 2, p_undo_step: { id: 'u1', label_key: 'debtRemoved', label_params: { name: 'Auto loan' } } });
+    const c2 = createFakeSupabase();
+    c2.respondWith(ok({ status: 'conflict' }));
+    await expect(removeDebt(c2, { debtId: 'd1', expectedVersion: 2, undoStep: { id: 'u1', name: 'x' } })).rejects.toBeInstanceOf(VersionConflictError);
   });
 });
