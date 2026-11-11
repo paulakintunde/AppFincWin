@@ -57,7 +57,6 @@ export const sheetsCosts = {
     onSwitch: 'Counted as money coming in',
     debtQ: 'Which debt does it pay?',
     noDebt: 'None',
-    pickDate: 'Pick a date',
     arrivesOn: 'It comes in on',
     laterNote: 'A sale a month later is not counted on the day you buy.',
     save: 'Save the sale',
