@@ -179,6 +179,7 @@ describe('verdict table (I22 one code one text)', () => {
         'debt_left_after_sale', 'sale_counted', // 05.4 BO-05 (05.4-27, D-106)
         'free_help', // 05.4 CMP-F04 (05.4-38, D-123)
         'locked_goals_kept', 'net_and_goals_kept', 'unlocked_goals_counted', // 06 D-05, D-06, D-22 (06-03)
+        'quick_lines_counted', 'quick_savings_counted', // 06.1 D-21 (06.1-09)
       ].sort()
     );
     expect(Object.keys(FACT_KEYS)).not.toContain('plan_total');

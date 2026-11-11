@@ -85,3 +85,6 @@ export { roundForShadow, roundSig2, SHADOW_CODES_MAX } from './shadow/round';
 export type { ShadowRound } from './shadow/round';
 export { shadowRun } from './shadow/run';
 export type { ShadowAnswer, ShadowRun } from './shadow/run';
+// 06.1 D-21: quick-estimate lines for one check only
+export { withQuickLines, judgeWithQuickLines } from './quick/overlay';
+export type { QuickOverlay } from './quick/overlay';

@@ -154,6 +154,7 @@ export const V3_RUNTIME_EXPORTS = [
   'isNeedPurpose',
   'judgeBoth', // 05.4-27 BO-05: cash and installments from one input
   'judgeCheck',
+  'judgeWithQuickLines', // 06.1 D-21
   'layerOfAnswerKey',
   'layersFor',
   'legacyLimits',
@@ -192,6 +193,7 @@ export const V3_RUNTIME_EXPORTS = [
   'verdictRowFor',
   'visibleLayerAnswers',
   'withLiveEmergency',
+  'withQuickLines', // 06.1 D-21
 ] as const;
 
 // Compile-only: tsc fails if any of these types leaves the barrel.

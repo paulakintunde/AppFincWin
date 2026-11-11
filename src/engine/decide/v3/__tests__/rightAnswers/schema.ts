@@ -2,7 +2,7 @@
  * Right-answer table contract (05.4-05, QA-02). Test-only. Money is integer minor units, dates are 'YYYY-MM-DD'.
  * One JSON file per topic holds the cases; the same JSON feeds the engine tests and the owner review pages.
  */
-export const TOPICS = ['safety-net','overdraft','debts','borrowing','tax','running-costs','selling-the-old-one','quick-estimates','household','goals'] as const;
+export const TOPICS = ['safety-net','overdraft','debts','borrowing','tax','running-costs','selling-the-old-one','quick-estimates','household','goals','quick-lines'] as const;
 export type Topic = typeof TOPICS[number];
 export type CaseStatus = 'draft' | 'approved' | 'to_do' | 'disputed';
 export interface FixtureAccount { id: string; kind: 'checking'|'current'|'savings'|'card'; name: string; balance: number; overdraftLimit: number|null; overdraftRate: string|null; use: 'everyday'|'emergency'|'untouched'|null; /** 05.4 ENG-17 (D-114): no exchange rate converts it (the app cannot count its balance); absent = converted */ noRate?: boolean }
@@ -10,11 +10,18 @@ export interface FixtureBill { id: string; amount: number; everyMonths: 1|3|12; 
   /** D-70: a yearly or every-3-month bill the usual month already sets aside at amount / everyMonths a month (inside usualMonth.bills, never in thisMonth's figures); absent = false (left out of the usual month, as RC-10) */ inUsualMonth?: boolean }
 export interface FixtureDebt { id: string; kind: 'loan'|'card'|'other'; balance: number; minimum: number; apr: string|null; dueDay: number|null; joint: boolean; /** a mortgage or other housing debt (D-08 housing fact); absent = false */ housing?: boolean; /** already paid toward this month's minimum (DB-10); absent = 0 */ paidThisMonth?: number }
 export interface FixtureRunningCost { id: string; amount: number; everyMonths: 1|3|12; start: string; end: string|null; /** switched off by the user (FIN-28); absent = on */ off?: boolean }
+/** 06.1 D-21: a quick-estimate line for this one check (the engine's QuickLine without its name) */
+export type FixtureQuickLine =
+  | { id: string; kind: 'expense'; amount: number; everyMonths: 0|1|3|12; date: string|null }
+  | { id: string; kind: 'loan'; monthly: number; payments: number; firstDate: string|null }
+  | { id: string; kind: 'savings'; amount: number; usable: boolean }
+  | { id: string; kind: 'income'; amount: number; everyMonths: 0|1; date: string };
 export interface FixtureCheck {
   price: number|null; taxPercent: string|null; taxIncluded: boolean|null; oneOffFees: number;
   pay: { mode: 'once' } | { mode: 'plan'; /** the number of payments */ months: number; apr: string|null; fees: number; deposit: number; firstPaymentDate: string; /** how often a payment falls; absent = month */ every?: 'month'|'fortnight'; /** a 0% deal that back-charges interest if not paid in full; absent = false */ deferredInterest?: boolean; /** a mortgage or other home loan: skips the 10%-of-amount interest test, still costed (D-39c); absent = false */ housing?: boolean };
   runningCosts?: FixtureRunningCost[]; closingPercent?: string|null; purchaseDate?: string|null;
   replaces?: { stops: { id: string; amount: number; everyMonths: 1|3|12; stopDate: string; source: 'bill'|'everyday' }[]; sale: { amount: number; arrives: string; paysDebtId: string|null } | null } | null;
+  quickLines?: FixtureQuickLine[];
   saveForIt?: boolean; yourAnswer?: 'yes'|'no'|null;
   /** the check's existing `purpose` preset; necessity and for_work read as a need, nice_to_have/treat/luxury as a want (D-41: words and order only) */
   purpose?: 'invest_in_me'|'for_work'|'necessity'|'nice_to_have'|'treat'|'luxury'|null;
@@ -42,7 +49,7 @@ export interface RightAnswerCase { id: string; topic: Topic; persona: string; si
 
 export const ID_PREFIX: Readonly<Record<Topic, string>> = {
   'safety-net': 'SN', overdraft: 'OD', debts: 'DB', borrowing: 'BR', tax: 'TX', 'running-costs': 'RC',
-  'selling-the-old-one': 'SO', 'quick-estimates': 'QE', household: 'HH', goals: 'GL',
+  'selling-the-old-one': 'SO', 'quick-estimates': 'QE', household: 'HH', goals: 'GL', 'quick-lines': 'QL',
 };
 const STATUSES: readonly string[] = ['draft', 'approved', 'to_do', 'disputed'];
 /** Answer codes a case may expect (no new codes in 05.4; the shadow-run CHECK in migration 20261103000500 holds the same list). */
@@ -55,7 +62,7 @@ export const CODES = ['needs_input', 'not_yet', 'monthly_short', 'emergency_use'
  */
 export const VARIANTS = ['payday', 'not_covered', 'low_month', 'tight', 'protection_off', 'not_cleared', 'no_net', 'small_net', 'costly_debt', 'borrowing_costs_more', 'extra_savings', 'month_already_short', 'month_short_small', 'month_short_moderate', 'month_short_moderate_extra'] as const; // extra_savings: 05.4 D-62; month_already_short: 05.4 D-63 (both in the CHECK widened by migration 20261103000900); month_short_*: 05.4 D-65 (migration 20261103001000)
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const COUNT_KEYS = ['everyMonths', 'months', 'historyMonths', 'dueDay'];
+const COUNT_KEYS = ['everyMonths', 'months', 'historyMonths', 'dueDay', 'payments'];
 
 function isDate(v: unknown): boolean {
   if (typeof v !== 'string' || !DATE.test(v)) return false;

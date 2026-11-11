@@ -11,6 +11,8 @@ import { minorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import { MISSING_PRIORITY } from '../../constants';
 import { evaluate } from '../../evaluate';
+import { prepare } from '../../prepare';
+import { judgeWithQuickLines } from '../../quick/overlay';
 import type { CaveatCode, CheckV2, CustomOptions, FactCode, LimitLine, MissingCode, NoticeCode, V3Inputs, V3Month } from '../../types';
 import extraFile from '../../__tests__/golden/extra-d18.json';
 import scenariosFile from '../../__tests__/golden/scenarios22.json';
@@ -66,7 +68,7 @@ const OWN_PET: CustomOptions = {
 };
 
 function collect(into: Emitted[], inputs: V3Inputs, check: CheckV2): void {
-  const ev = evaluate(inputs, check);
+  const ev = judgeWithQuickLines(prepare(inputs), check); // 06.1 D-21: the same as evaluate when the check has no quick lines
   for (const f of ev.result.facts) into.push({ group: 'fact', code: f.code, values: f.values });
   for (const n of ev.result.notices) into.push({ group: 'notice', code: n.code, values: n.values });
   for (const c of ev.result.caveats ?? []) CAVEATS.push({ code: c.code, values: c.values });
@@ -265,6 +267,11 @@ function buildCorpus(): Emitted[] {
   }
   // 05.4 FIN-01 / FIN-02: every safety-net case (each net fact: off, $0, need and want, above the size, empty and small).
   for (const c of loadCases().filter((x) => x.topic === 'safety-net')) {
+    const { inputs, check } = toEngineInputs(c.fixture);
+    collect(out, inputs, check);
+  }
+  // 06.1 D-21: the quick-line cases (the quick_lines_counted and quick_savings_counted facts).
+  for (const c of loadCases().filter((x) => x.topic === 'quick-lines')) {
     const { inputs, check } = toEngineInputs(c.fixture);
     collect(out, inputs, check);
   }

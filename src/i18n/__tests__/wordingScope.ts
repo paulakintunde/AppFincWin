@@ -207,6 +207,8 @@ export const DECISION_MAP: Readonly<Record<string, Decision>> = Object.freeze({
   'decide.v3.fact.net_locked': d('D-61', 'The safety net is locked by default and left out of the answer.'),
   'decide.v3.fact.locked_goals_kept': d('D-05', 'Money saved in a locked goal is kept out of the answer, and the answer says so.'),
   'decide.v3.fact.net_and_goals_kept': d('D-06', 'A locked safety net and locked goals are named together.'),
+  'decide.v3.fact.quick_lines_counted': d('D-21', 'Says how many quick estimates this answer counts, for this check only.'),
+  'decide.v3.fact.quick_savings_counted': d('D-21', 'Says how much savings you marked as usable the answer counts, for this check only.'),
   'decide.v3.fact.unlocked_goals_counted': d('D-22', 'Money saved in an unlocked goal counts as spare money, and the answer says so.'),
   'decide.v3.verdict.fitsUnspentExtraSavings.chip': d('D-62', 'Its own headline, "Fits from extra savings".'),
   'decide.v3.verdict.fitsUnspentExtraSavings.body': d('D-62', '"From your extra savings: uses $X of the $Y above your safety net’s size."'),

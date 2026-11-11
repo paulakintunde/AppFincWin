@@ -5,7 +5,7 @@
  */
 import { currencyCode, minorUnits, type MinorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
-import type { AccountUse, Cadence, CheckV2, FirstPayment, PayV2, ReadinessWaiver, Replaces, V3Account, V3Debt, V3Inputs, V3Line, V3Month, V3Series } from '../../types';
+import type { AccountUse, Cadence, CheckV2, FirstPayment, PayV2, QuickLine, ReadinessWaiver, Replaces, V3Account, V3Debt, V3Inputs, V3Line, V3Month, V3Series } from '../../types';
 import { addMonthsClamped, cadenceDate } from '../../dates';
 import { buildFunds } from '../../funds/build';
 import { buildMonthModel } from '../../month/model';
@@ -258,6 +258,16 @@ function replacesOf(r: NonNullable<RightAnswerFixture['check']['replaces']>): Re
   };
 }
 
+/** 06.1 D-21: a fixture quick line in the engine's own shape (the name never reaches a calculation). */
+function quickLineOf(q: NonNullable<RightAnswerFixture['check']['quickLines']>[number]): QuickLine {
+  switch (q.kind) {
+    case 'expense': return { id: q.id, kind: 'expense', name: q.id, amount: mu(q.amount), everyMonths: q.everyMonths, date: q.date };
+    case 'loan': return { id: q.id, kind: 'loan', name: q.id, monthly: mu(q.monthly), payments: q.payments, firstDate: q.firstDate };
+    case 'savings': return { id: q.id, kind: 'savings', name: q.id, amount: mu(q.amount), usable: q.usable };
+    case 'income': return { id: q.id, kind: 'income', name: q.id, amount: mu(q.amount), everyMonths: q.everyMonths, date: q.date };
+  }
+}
+
 export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check: CheckV2 } {
   const ym = f.asOf.slice(0, 7);
   const start = `${monthBefore(ym, f.historyMonths)}-01`;
@@ -422,6 +432,8 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     ...(c.closingPercent == null ? {} : { closingPercent: percent(c.closingPercent) }),
     ...(c.purchaseDate == null ? {} : { purchaseDate: c.purchaseDate }),
     ...(c.replaces == null ? {} : { replaces: replacesOf(c.replaces) }),
+    // 06.1 D-21: the quick-estimate lines for this one check (judged through judgeWithQuickLines).
+    ...(c.quickLines == null ? {} : { quickLines: c.quickLines.map(quickLineOf) }),
   });
   // 05.4-23 (FIN-08): the answer to "Can you cover the low months?"; absent or null = not answered.
   if (c.yourAnswer === 'yes' || c.yourAnswer === 'no') return { inputs, check: { ...check, volatileCover: c.yourAnswer === 'yes' } };
