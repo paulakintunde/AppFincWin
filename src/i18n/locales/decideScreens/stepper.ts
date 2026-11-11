@@ -53,6 +53,7 @@ export const stepper = {
     tradeInSub: 'It lowers the up-front amount.',
     addOneOff: '+ Add a one-off cost',
     upFrontTitle: 'Up front',
+    planDetails: 'Plan details',
     planUpFrontNote: 'Sales tax and one-off fees are part of the amount borrowed, so only the cash down is paid on the day.',
   },
   running: {
@@ -81,5 +82,10 @@ export const stepper = {
     totalQuick: 'These amounts are quick estimates until you change them.',
     yearlyNote: 'Yearly costs are shown as a monthly amount.',
     noneOn: 'No running costs are switched on.',
+    amountYearlyA11y: '{{name}}, amount, {{amount}} a year',
+    amountQuarterlyA11y: '{{name}}, amount, {{amount}} every 3 months',
+    stopFallback: 'A cost that stops',
+    sellingAmount: 'Sale of {{amount}}',
+    percentLegend: '{{name}} {{percent}}%',
   },
 } as const;
