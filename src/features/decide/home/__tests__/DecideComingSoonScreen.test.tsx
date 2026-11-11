@@ -8,10 +8,10 @@ import { DECIDE_OPEN } from '../../availability';
 import { DecideComingSoonScreen } from '../DecideComingSoonScreen';
 import DecideRoute from '../../../../../app/(app)/(tabs)/decide';
 
-jest.mock('@/features/decide/home/DecideHomeScreen', () => {
+jest.mock('@/features/decide/screens/home/DecideHome', () => {
   const R = jest.requireActual('react');
   const { Text: RNText } = jest.requireActual('react-native');
-  return { DecideHomeScreen: () => R.createElement(RNText, null, 'decide-home') };
+  return { DecideHome: () => R.createElement(RNText, null, 'decide-home') };
 });
 // 05.2-35: the route also imports the test-account setup page (and its data hooks, which need Supabase env). It is not drawn
 // here: the switch is off for this account, so the Decide tab shows Coming soon.

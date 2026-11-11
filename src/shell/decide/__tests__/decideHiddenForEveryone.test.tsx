@@ -30,9 +30,9 @@ jest.mock('../SetupScreen', () => {
 });
 jest.mock('@/features/decide/setup/DebtSheet', () => ({ DebtSheetHost: () => null }));
 jest.mock('@/features/income/steps/EditSeriesFromProvider', () => ({ EditSeriesFromProvider: ({ children }: { children: unknown }) => children }));
-jest.mock('@/features/decide/home/DecideHomeScreen', () => {
+jest.mock('@/features/decide/screens/home/DecideHome', () => {
   const { Text: T } = jest.requireActual('react-native');
-  return { DecideHomeScreen: () => <T>{'decide-home'}</T> };
+  return { DecideHome: () => <T>{'decide-home'}</T> };
 });
 jest.mock('@/features/decide/dev/ShadowExportDevMenu', () => ({ ShadowExportDevMenu: () => null }));
 jest.mock('../SetupSheetHost', () => ({ useSetupSheetHost: jest.fn() }));

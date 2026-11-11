@@ -55,6 +55,7 @@ export const home = {
     everyYear: 'every year',
     once: 'once',
     removeA11y: 'Remove {{item}}',
+    editA11y: 'Edit {{item}}',
     forGoodNote: 'To change your records for good, use Something changed? further down.',
   },
   month: {
@@ -71,6 +72,7 @@ export const home = {
     explainUsual: 'A usual month from your records: what comes in, less what goes out.',
     explainLow: 'The lowest month in your records: what came in, less what went out.',
     recordsRow: 'Records up to {{date}} · {{count}} of 3 months',
+    barA11y: 'Comes in {{moneyIn}}, goes out {{costs}}, left {{left}}',
     earlierA11y: 'Earlier month',
     laterA11y: 'Later month',
   },

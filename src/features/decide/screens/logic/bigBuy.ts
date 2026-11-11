@@ -3,7 +3,7 @@
  * (Car; Home is blocked earlier by D-02), it is paid over time, or the price with tax is over the engine's band-6 edge in the home
  * currency. The edge is read from the engine's fixed band table, never typed here; missing edges count as large (cautious).
  */
-import { bandOf, homeThresholds, type UsdRate } from '@/engine/decide/v3';
+import { bandOf, homeThresholds, type HomeThresholds, type UsdRate } from '@/engine/decide/v3';
 import type { MinorUnits } from '@/engine/money';
 
 import type { ItemKind } from './kindWords';
@@ -12,8 +12,9 @@ import type { ItemKind } from './kindWords';
 const BIG_BAND = 6;
 
 /** True when the price with tax is over the band-6 edge; band 15 (no edges) is large. */
-export function isLargePrice(whole: MinorUnits, currency: string, usdRate: UsdRate | null): boolean {
-  return bandOf(whole, homeThresholds(currency, usdRate)).band >= BIG_BAND;
+export function isLargePrice(whole: MinorUnits, currency: string, usdRate: UsdRate | null, thresholds?: HomeThresholds | null): boolean {
+  // 06.1-21: the screens hold the engine's own thresholds (inputs.thresholds), already built from the stored rates; use them as they are.
+  return bandOf(whole, thresholds ?? homeThresholds(currency, usdRate)).band >= BIG_BAND;
 }
 
 export interface BigBuyInput {
@@ -22,11 +23,13 @@ export interface BigBuyInput {
   readonly whole: MinorUnits;
   readonly currency: string;
   readonly usdRate: UsdRate | null;
+  /** The engine's thresholds when the caller has them; they win over currency and usdRate. */
+  readonly thresholds?: HomeThresholds | null;
 }
 
 /** True when the check opens the stepper; false sends it straight to the answer. */
 export function isBigBuy(input: BigBuyInput): boolean {
   if (input.kind === 'car' || input.kind === 'home') return true;
   if (input.payMode === 'plan') return true;
-  return isLargePrice(input.whole, input.currency, input.usdRate);
+  return isLargePrice(input.whole, input.currency, input.usdRate, input.thresholds);
 }
