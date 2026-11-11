@@ -48,13 +48,20 @@ jest.mock('@/data/queries/growGoals', () => ({
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: mockSeries }) }));
 let mockSeries: unknown[] = [];
 let mockSavRate: string | null = null;
+let mockSavArchived: string | null = null;
+let mockOnlySav = false;
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({
     data: [
-      { id: 'a-sav', name: 'Savings account', currency: 'USD', archived_at: null, interest_rate: mockSavRate },
-      { id: 'a-chk', name: 'Everyday checking', currency: 'USD', archived_at: null },
+      { id: 'a-sav', name: 'Savings account', currency: 'USD', archived_at: mockSavArchived, interest_rate: mockSavRate },
+      ...(mockOnlySav ? [] : [{ id: 'a-chk', name: 'Everyday checking', currency: 'USD', archived_at: null }]),
     ],
   }),
+}));
+const mockShowToast = jest.fn();
+jest.mock('@/state/undoToast', () => ({
+  ...jest.requireActual('@/state/undoToast'),
+  showToast: (...a: unknown[]) => mockShowToast(...a),
 }));
 // 06-32: the record detail is Activity's; stubbed so the test reads which line it opens.
 let mockLegs: unknown[] = [];
@@ -86,7 +93,8 @@ jest.mock('@/features/record/activity/TransactionDetailSheet', () => {
 });
 jest.mock('@/features/record/entry/TransactionSheet', () => ({ TransactionSheet: () => null }));
 jest.mock('@/features/record/entry/EditScopePrompt', () => ({ EditScopePrompt: () => null }));
-jest.mock('@/data/queries/categories', () => ({ useCategoryLookup: () => ({ transferCategoryId: 'cat-transfer' }) }));
+let mockTransferCat: string | null = 'cat-transfer';
+jest.mock('@/data/queries/categories', () => ({ useCategoryLookup: () => ({ transferCategoryId: mockTransferCat }) }));
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: { saving_floor: 15000 } }) }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', today: mockToday, userId: 'u1', householdId: 'h1', ready: true, timeZone: 'UTC' }),
@@ -166,6 +174,10 @@ beforeEach(() => {
   mockSavRate = null;
   mockSeries = [];
   mockRead = readWith(64_000);
+  mockSavArchived = null;
+  mockOnlySav = false;
+  mockTransferCat = 'cat-transfer';
+  mockMove.mockReset();
   mockMove.mockReturnValue({ stepId: 's-move', transferId: 't1', reachedTarget: false });
 });
 
@@ -401,7 +413,11 @@ describe('money moves', () => {
   });
 
   it('a deposit that reaches the target plays the moment once: success haptic once, Reached badge, toast with Undo', async () => {
-    mockMove.mockReturnValue({ stepId: 's-reach', transferId: 't1', reachedTarget: true });
+    // the move lands: the read model now shows the target reached
+    mockMove.mockImplementation(() => {
+      mockRead = readWith(180_000);
+      return { stepId: 's-reach', transferId: 't1', reachedTarget: true };
+    });
     await wrap(<GoalDetailScreen id="g1" />);
     await fireEvent.press(screen.getByText('Add money'));
     await typeMoney('Amount', '1160');
@@ -458,3 +474,141 @@ describe('money moves', () => {
     expect(mockMove).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('Phase 6 review, part 4', () => {
+  const isDisabled = (label: string) => screen.getByLabelText(label).props.accessibilityState?.disabled === true;
+
+  it('P4-CR-01: when the only account is the goal own, the move is blocked with a plain reason and never written', async () => {
+    mockOnlySav = true;
+    await wrap(<GoalDetailScreen id="g1" />);
+    await fireEvent.press(screen.getByText('Add money'));
+    await typeMoney('Amount', '50');
+    expect(screen.getByText('There is no other USD account to move money with. Add one in Accounts first.')).toBeTruthy();
+    expect(isDisabled('Add $50')).toBe(true);
+    await fireEvent.press(screen.getByLabelText('Add $50'));
+    expect(mockMove).not.toHaveBeenCalled();
+  });
+
+  it('P4-CR-02: with the Transfer category not loaded, Add is blocked with a reason', async () => {
+    mockTransferCat = null;
+    await wrap(<GoalDetailScreen id="g1" />);
+    await fireEvent.press(screen.getByText('Add money'));
+    await typeMoney('Amount', '50');
+    expect(screen.getByText('Your categories have not loaded yet. Check your connection and try again.')).toBeTruthy();
+    expect(isDisabled('Add $50')).toBe(true);
+  });
+
+  it('P4-CR-01/02: a write that throws shows a toast instead of crashing, and the sheet stays open', async () => {
+    mockMove.mockImplementation(() => {
+      throw new TypeError('move goal money: invalid transfer (same-account)');
+    });
+    await wrap(<GoalDetailScreen id="g1" />);
+    await fireEvent.press(screen.getByText('Add money'));
+    await typeMoney('Amount', '50');
+    await fireEvent.press(screen.getByLabelText('Add $50'));
+    expect(mockShowToast).toHaveBeenCalledWith({ kind: 'refusal', text: { key: 'grow.goals.move.failed' } });
+    expect(mockToast).not.toHaveBeenCalled();
+    expect(mockHapticLight).not.toHaveBeenCalled();
+    expect(screen.getByText('Add to Trip to Lisbon')).toBeTruthy();
+  });
+
+  it('P4-WR-08: an archived goal account says why and offers Where is it kept?', async () => {
+    mockSavArchived = '2026-10-01T00:00:00Z';
+    await wrap(<GoalDetailScreen id="g1" />);
+    await fireEvent.press(screen.getByText('Take some out'));
+    expect(screen.getByText('This goal’s account is archived or in another currency. Choose where it is kept.')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Choose where it is kept'));
+    expect(screen.queryByText('Take from Trip to Lisbon')).toBeNull();
+    expect(screen.getByText('Where is it kept?')).toBeTruthy();
+  });
+
+  it('P4-WR-08: Take from a goal with no account says to choose one first', async () => {
+    mockRows = [lisbon({ account_id: null })];
+    await wrap(<GoalDetailScreen id="g1" />);
+    await fireEvent.press(screen.getByText('Take some out'));
+    expect(screen.getByText('Choose where this goal is kept before taking money out.')).toBeTruthy();
+  });
+
+  it('P4-CR-03: saving a new Each month also stores the ready_by it reaches, so Decide sets aside for the same plan', async () => {
+    await wrap(<GoalDetailScreen id="g1" />);
+    await fireEvent.press(screen.getByText('Each month'));
+    await typeMoney('Each month', '75');
+    await fireEvent.press(screen.getAllByText('Save').at(-1)!);
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    // 1,160 left at 75 a month reaches in Feb 2028 (the preview test above): the last day of that month.
+    expect((mockSave.mock.calls[0] as unknown[])[0]).toMatchObject({ fields: { monthly_amount: 7500, ready_by: '2028-02-29' } });
+  });
+
+  it('P4-WR-01: a goal in another currency shows its saved, target and plan in that currency', async () => {
+    mockRows = [lisbon({ currency: 'EUR' })];
+    mockRead = readWith(70_000); // the home-currency (USD) figure Decide reads
+    await wrap(<GoalDetailScreen id="g1" />);
+    // saved in EUR is the opening 490 (no lines), not the USD figure
+    expect(screen.getByTestId('goal-saved').props.children).toBe('€490');
+    expect(screen.getByText('of €1,800')).toBeTruthy();
+    expect(screen.getByText('€50')).toBeTruthy();
+  });
+
+  it('P4-WR-02: a Wait goal offers no Edit and no plan edits, and says the plan is its check', async () => {
+    mockRows = [lisbon({ kind: 'wait', check_id: 'c1' })];
+    await wrap(<GoalDetailScreen id="g1" />);
+    expect(screen.queryByTestId('goal-edit')).toBeNull();
+    expect(screen.getByTestId('goal-wait-note')).toBeTruthy();
+    expect(screen.queryByTestId('goal-try-other')).toBeNull();
+    await fireEvent.press(screen.getByText('Each month'));
+    expect(screen.queryAllByText('Save')).toHaveLength(0);
+  });
+
+  it('P4-WR-03: a removed goal says so instead of loading forever', async () => {
+    mockRows = [];
+    mockRead = { ...readWith(0), model: { ...readWith(0).model, goals: [] } };
+    await wrap(<GoalDetailScreen id="g1" />);
+    expect(screen.queryByTestId('goal-loading')).toBeNull();
+    expect(screen.getByText('This goal was removed.')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Back'));
+    expect(mockBack).toHaveBeenCalled();
+  });
+
+  it('P4-WR-03: a finished goal says it is done', async () => {
+    mockRows = [lisbon({ done_at: '2026-10-01T00:00:00Z' })];
+    mockRead = { ...readWith(0), model: { ...readWith(0).model, goals: [] } };
+    await wrap(<GoalDetailScreen id="g1" />);
+    expect(screen.getByTestId('goal-done')).toBeTruthy();
+  });
+
+  it('P4-WR-04: the Reached moment goes when the deposit is undone', async () => {
+    mockMove.mockImplementation(() => {
+      mockRead = readWith(180_000);
+      return { stepId: 's-reach', transferId: 't1', reachedTarget: true };
+    });
+    await wrap(<GoalDetailScreen id="g1" />);
+    await fireEvent.press(screen.getByText('Add money'));
+    await typeMoney('Amount', '1160');
+    await fireEvent.press(screen.getByLabelText('Add $1,160'));
+    expect(screen.getByTestId('goal-reached')).toBeTruthy();
+    // Undo: the read model is back below the target; any re-render drops the moment and the badge
+    mockRead = readWith(64_000);
+    await fireEvent.press(screen.getByText('Take some out'));
+    expect(screen.queryByTestId('goal-reached')).toBeNull();
+    expect(screen.queryByText('Reached')).toBeNull();
+  });
+
+  it('P4-WR-05: a sent Confirm is not offered again while the line still reads Expected', async () => {
+    mockLines = [line2({ id: 'l0', status: 'pending', local_date: '2026-10-16' })];
+    await wrap(<GoalDetailScreen id="g1" />);
+    await fireEvent.press(screen.getByLabelText('Confirm $50 on on 2026-10-16'));
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    expect(screen.queryByLabelText('Confirm $50 on on 2026-10-16')).toBeNull();
+    // the confirm sheet path is guarded too
+    await fireEvent.press(screen.getByLabelText('on 2026-10-16, $50, From Everyday checking, Expected'));
+    await fireEvent.press(screen.getAllByText('Confirm').at(-1)!);
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+  });
+});
+
+function line2(over: Record<string, unknown>) {
+  return {
+    goal_id: 'g1', status: 'paid', deleted_at: null, transfer_id: null, original_amount: -5000, original_currency: 'USD',
+    account_id: 'a-chk', household_id: 'h1', version: 1, home_amount: -5000, ...over,
+  };
+}

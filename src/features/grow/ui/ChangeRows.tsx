@@ -1,6 +1,7 @@
 // 06-21: "Make this the plan" before -> after rows. Each row reads as one sentence; the arrow is decorative.
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
@@ -18,11 +19,15 @@ export interface ChangeRow {
   afterSpoken?: string;
 }
 
-export function changeRowLabel(row: ChangeRow): string {
-  return `${row.label}, from ${row.beforeSpoken ?? row.before} to ${row.afterSpoken ?? row.after}`;
+type Translate = (key: string, params?: Record<string, string | number>) => string;
+
+/** P4-IN-04: the row's one spoken sentence, translated ("Each month, from 50 dollars to 82 dollars 86 cents"). */
+export function changeRowLabel(row: ChangeRow, t: Translate): string {
+  return t('grow.calc.changeRowA11y', { label: row.label, before: row.beforeSpoken ?? row.before, after: row.afterSpoken ?? row.after });
 }
 
 export function ChangeRows({ rows }: { rows: readonly ChangeRow[] }) {
+  const t = useT() as Translate;
   const { colors, pairing } = useTheme();
   return (
     <View>
@@ -31,7 +36,7 @@ export function ChangeRows({ rows }: { rows: readonly ChangeRow[] }) {
           key={row.key}
           testID={`change-row-${row.key}`}
           accessible
-          accessibilityLabel={changeRowLabel(row)}
+          accessibilityLabel={changeRowLabel(row, t)}
           style={[styles.row, { minHeight: space.touchMin }]}
         >
           <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 1 }}>{row.label}</Text>

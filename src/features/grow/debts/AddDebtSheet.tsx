@@ -125,19 +125,24 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
   const rate = parseRate(value.rate);
   const day = parseDay(value.day);
   const balanceOk = paidInFull ? value.balance === null || validMinor(value.balance) : validMinor(value.balance) && value.balance > 0;
-  const minimumOk = value.minimum === null || validMinor(value.minimum);
+  // P3-CR-02: a loan, line or money owed needs its monthly payment typed, as Decide's own debt sheet asks. A blank would save
+  // as 0 a month and Decide would leave the payment out. Only a carried card may stay blank (D-28: the estimate stands in).
+  const minimumOk = isCard ? value.minimum === null || validMinor(value.minimum) : validMinor(value.minimum);
+  const minimumMissing = !isCard && value.minimum === null;
   const rateOk = rate !== 'invalid';
   const dayOk = day !== 'invalid';
 
   // D-28: a carried card with no typed minimum.
-  const estimate = isCard && carried && value.minimum === null && rateOk ? estimatedMinimumOf(value.balance, value.rate) : null;
+  const estimate = isCard && carried && value.minimum === null && rateOk ? estimatedMinimumOf(value.balance, value.rate, currency) : null;
   const newMinimum = paidInFull ? 0 : value.minimum ?? estimate ?? 0;
 
   // The live line: what other open debts pay now, plus this one (an edit swaps its own minimum out).
   const others = read.model.debts
     .filter((d) => d.inPlan && d.id !== debt?.id)
     .reduce((s, d) => s + d.point.minimum + d.extra, 0);
-  const lineModel = month.usualPay === null ? null : debtLineModel(others + newMinimum, month.usualPay, month.rule ?? '100');
+  // P3-WR-05: the plan's payments, this debt's minimum and Decide's pay are compared only when all are in one currency.
+  const sameCurrency = currency === month.currency && (read.model.planCurrency ?? currency) === month.currency;
+  const lineModel = month.usualPay === null || !sameCurrency ? null : debtLineModel(others + newMinimum, month.usualPay, month.rule ?? '100');
   const over = month.rule !== null && lineModel !== null && lineModel.over;
   const warned = useRef(false);
   useEffect(() => {
@@ -181,8 +186,17 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
         const fields: EditGrowDebtFields = {};
         if (name !== debt.name) fields.name = name;
         if (value.balance !== null && value.balance !== debt.balance) fields.balance = value.balance;
+        // P3-WR-06: a cleared balance on a card paid in full is stored as 0, as the add path does.
+        if (value.balance === null && paidInFull && debt.balance !== 0) fields.balance = 0;
         if (!paidInFull && rate !== (debt.apr ?? null)) fields.apr = rate;
         if (!paidInFull && value.minimum !== null && value.minimum !== debt.minimum_payment) fields.minimum_payment = value.minimum;
+        // P3-WR-06: a carried card's minimum cleared goes back to the estimate (stored as 0, D-28).
+        if (isCard && carried && value.minimum === null && debt.minimum_payment !== 0) fields.minimum_payment = 0;
+        // P3-WR-06: a card switched to paid in full keeps no rate and no minimum, as the add path saves it.
+        if (paidInFull) {
+          if (debt.apr != null) fields.apr = null;
+          if (debt.minimum_payment !== 0) fields.minimum_payment = 0;
+        }
         if (day !== (debt.due_day ?? null)) fields.due_day = day;
         if (isCard && pays !== (debt.pays_in_full ?? null)) fields.pays_in_full = pays;
         if (Object.keys(fields).length > 0) {
@@ -291,6 +305,7 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
                   label={t('grow.debts.add.minimum')}
                   accessibilityLabel={t('grow.debts.add.minimum')}
                 />
+                {minimumMissing ? <Meta>{t('grow.debts.add.minimumNeeded')}</Meta> : null}
                 {estimate !== null ? (
                   <Text testID="add-debt-estimate" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
                     {t('grow.debts.add.minimumEstimate', { amount: fmt.cents(estimate, currency) })}

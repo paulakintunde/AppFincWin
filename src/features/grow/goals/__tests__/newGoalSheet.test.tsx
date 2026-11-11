@@ -253,4 +253,57 @@ describe('NewGoalSheet', () => {
     expect(screen.getByText(/below what you.ve already saved/)).toBeTruthy();
     expect(screen.getByLabelText('Save goal').props.accessibilityState?.disabled).toBe(true);
   });
+
+  it('P4-CR-03: a new target keeps the monthly amount and moves ready_by with it, so Decide and Grow read one plan', async () => {
+    const goal: SavingsGoalRow = goalFixture('', { id: 'g1', name: 'Trip', kind: 'pot', target: 180000, monthly_amount: 5000, ready_by: '2029-01-31', locked: false, is_safety_net: false, check_id: null });
+    await wrap(<NewGoalSheet visible onClose={jest.fn()} goal={goal} saved={64000} />);
+    await typeMoney('Target', '2400');
+    await fireEvent.press(screen.getByLabelText('Save goal'));
+    // 1,760 left at 50 a month is 36 deposits from 1 Nov 2026: the last falls in Oct 2029.
+    expect((mockSave.mock.calls[0]![0] as { fields: Record<string, unknown> }).fields).toEqual({ target: 240000, ready_by: '2029-10-31' });
+  });
+
+  it('P4-CR-03: with no monthly amount but a date, a new target moves the monthly amount instead (rounded up)', async () => {
+    const goal: SavingsGoalRow = goalFixture('', { id: 'g1', name: 'Trip', kind: 'pot', target: 180000, monthly_amount: null, ready_by: '2027-12-31', locked: false, is_safety_net: false, check_id: null });
+    await wrap(<NewGoalSheet visible onClose={jest.fn()} goal={goal} saved={64000} />);
+    await typeMoney('Target', '2400');
+    await fireEvent.press(screen.getByLabelText('Save goal'));
+    // 1,760 over the 14 deposits Nov 2026 .. Dec 2027 is 125.714..., rounded up to the cent.
+    expect((mockSave.mock.calls[0]![0] as { fields: Record<string, unknown> }).fields).toEqual({ target: 240000, monthly_amount: 12572 });
+  });
+
+  it('P4-CR-03: removing the target clears the date', async () => {
+    const goal: SavingsGoalRow = goalFixture('', { id: 'g1', name: 'Trip', kind: 'pot', target: 180000, monthly_amount: 5000, ready_by: '2028-02-29', locked: false, is_safety_net: false, check_id: null });
+    await wrap(<NewGoalSheet visible onClose={jest.fn()} goal={goal} saved={64000} />);
+    await fireEvent.press(screen.getByLabelText('No set target. Save as you go.'));
+    await fireEvent.press(screen.getByLabelText('Save goal'));
+    expect((mockSave.mock.calls[0]![0] as { fields: Record<string, unknown> }).fields).toEqual({ target: null, ready_by: null });
+  });
+
+  it('P4-WR-09: in edit mode a changed target, icon or lock asks before Close drops it; no change closes at once', async () => {
+    const goal: SavingsGoalRow = goalFixture('', { id: 'g1', name: 'Trip', kind: 'pot', target: 180000, locked: false, is_safety_net: false, check_id: null, icon: null });
+    const onClose = jest.fn();
+    await wrap(<NewGoalSheet visible onClose={onClose} goal={goal} saved={0} />);
+    await typeMoney('Target', '2000');
+    await fireEvent.press(screen.getByLabelText('Close'));
+    expect(screen.getByText('Discard this goal?')).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('P4-WR-09: a changed icon alone also asks', async () => {
+    const goal: SavingsGoalRow = goalFixture('', { id: 'g1', name: 'Trip', kind: 'pot', target: 180000, locked: false, is_safety_net: false, check_id: null, icon: null });
+    const onClose = jest.fn();
+    await wrap(<NewGoalSheet visible onClose={onClose} goal={goal} saved={0} />);
+    await fireEvent.press(screen.getByTestId('goal-icon-laptop'));
+    await fireEvent.press(screen.getByLabelText('Close'));
+    expect(screen.getByText('Discard this goal?')).toBeTruthy();
+  });
+
+  it('P4-WR-09: an untouched edit closes at once', async () => {
+    const goal: SavingsGoalRow = goalFixture('', { id: 'g1', name: 'Trip', kind: 'pot', target: 180000, locked: false, is_safety_net: false, check_id: null, icon: null });
+    const onClose = jest.fn();
+    await wrap(<NewGoalSheet visible onClose={onClose} goal={goal} saved={0} />);
+    await fireEvent.press(screen.getByLabelText('Close'));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

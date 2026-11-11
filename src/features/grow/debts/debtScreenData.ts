@@ -115,3 +115,19 @@ export function payAccountId(debt: DebtRow, accounts: readonly { id: string; kin
   const open = accounts.filter((a) => a.archived_at === null);
   return (open.find((a) => a.kind === 'checking') ?? open[0])?.id ?? null;
 }
+
+/** The longest line name the write hooks accept (growDebts validName). */
+export const LINE_NAME_MAX = 80;
+
+/**
+ * P3-WR-07: a line name built from a template around the debt's name ("{{name}} final payment"), kept within LINE_NAME_MAX by
+ * shortening the debt's name with an ellipsis. A debt name may itself be 80 characters, so the plain template can run over.
+ */
+export function fitLineName(t: (key: string, options?: Record<string, string | number>) => string, key: string, name: string): string {
+  const full = t(key, { name });
+  if (full.length <= LINE_NAME_MAX) return full;
+  const chars = Array.from(name);
+  const room = Math.max(1, chars.length - (full.length - LINE_NAME_MAX) - 1);
+  const short = t(key, { name: `${chars.slice(0, room).join('').trimEnd()}…` });
+  return short.length <= LINE_NAME_MAX ? short : Array.from(short).slice(0, LINE_NAME_MAX).join('');
+}

@@ -3,6 +3,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
+import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { useT } from '@/i18n';
 import { DeletableRow } from '@/features/decide/ui/DeletableRow';
 import type { GoalPoint } from '@/features/grow/connect';
@@ -37,11 +38,14 @@ export interface GoalRowProps {
   pending?: number;
   /** Swipe and the more menu (D-32). Absent: a plain tappable row. */
   actions?: GoalRowActions;
+  /** P4-IN-02: the icon the user picked for the goal; absent, the calendar (or the check glyph for a check's goal). */
+  icon?: SavingsGoalRow['icon'];
 }
 
 export interface GoalRowActions {
   onAddMoney: () => void;
-  onEdit: () => void;
+  /** Absent: no Edit in the menu (P4-WR-02: a Wait goal's plan is its Decide check's). */
+  onEdit?: () => void;
   onRemove: () => void;
   /** The remove confirm sheet's words. */
   confirm: { title: string; body: string };
@@ -56,7 +60,7 @@ export function goalPercent(saved: number, target: number | null): number {
   return Math.min(100, Math.max(0, Math.round((saved / target) * 100)));
 }
 
-export function GoalRow({ goal, reachesOn, money, animate = true, pending = 0, actions }: GoalRowProps) {
+export function GoalRow({ goal, reachesOn, money, animate = true, pending = 0, actions, icon = null }: GoalRowProps) {
   const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const percent = goalPercent(goal.saved, goal.target);
@@ -100,7 +104,7 @@ export function GoalRow({ goal, reachesOn, money, animate = true, pending = 0, a
       <View style={styles.top}>
         <View style={[styles.tile, { backgroundColor: colors.fill1 }]}>
           <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.accent, opacity: ACCENT_TINT_OPACITY, borderRadius: radii.glyphTile }]} />
-          <GrowGlyph name={goal.linkedCheckId !== null ? 'checkbuy' : 'calendar'} color={colors.accent} size={22} />
+          <GrowGlyph name={icon ?? (goal.linkedCheckId !== null ? 'checkbuy' : 'calendar')} color={colors.accent} size={22} />
         </View>
         <View style={styles.text}>
           <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{goal.name}</Text>
@@ -128,7 +132,7 @@ export function GoalRow({ goal, reachesOn, money, animate = true, pending = 0, a
       onOpen={() => pushOnce(goalHref(goal.id))}
       menu={[
         { key: 'add', label: t('grow.goals.detail.addMoney'), onSelect: actions.onAddMoney },
-        { key: 'edit', label: t('grow.goals.detail.edit'), onSelect: actions.onEdit },
+        ...(actions.onEdit === undefined ? [] : [{ key: 'edit', label: t('grow.goals.detail.edit'), onSelect: actions.onEdit }]),
       ]}
       confirm={actions.confirm}
       onDelete={actions.onRemove}

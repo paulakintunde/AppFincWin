@@ -158,6 +158,19 @@ describe('buildGoalsModel (LEDGER)', () => {
     expect(m.safetyNet?.saved).toBe(0);
     expect(m.monthlyIntoGoals).toBe(0);
   });
+
+  it('P4-WR-01: ownSavedByGoal carries each goal in its own currency, beside the home figure Decide reads', () => {
+    // EUR -> USD at 1.10; within EUR every amount stays as it is.
+    const toUsd = (amount: number, currency: string): number | null => (currency === 'USD' ? amount : currency === 'EUR' ? Math.round(amount * 1.1) : null);
+    const toCurrency = (c: string) => (amount: number, from: string): number | null => (from === c ? amount : null);
+    const eur = row({ id: 'eur', name: 'Rome', currency: 'EUR', opening_saved: 100_000 });
+    const usd = row({ id: 'usd', name: 'Lisbon', currency: 'USD', opening_saved: 64_000 });
+    const m = buildGoalsModel([eur, usd], [], toUsd, 'USD', '2026-11-05', toCurrency);
+    expect(m.goals.find((g) => g.id === 'eur')?.saved).toBe(110_000);
+    expect(m.ownSavedByGoal).toEqual({ eur: 100_000, usd: 64_000 });
+    // without the converter the field is absent (older callers)
+    expect(buildGoalsModel([eur, usd], [], toUsd, 'USD').ownSavedByGoal).toBeUndefined();
+  });
 });
 
 describe('useGoalsRead', () => {

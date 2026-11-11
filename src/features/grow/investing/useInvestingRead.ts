@@ -10,10 +10,11 @@ import { convertLatest } from '@/data/queries/fxConvert';
 import { useHoldingLotRows, useHoldingRows } from '@/data/queries/growHoldings';
 import type { HoldingLotRow } from '@/db/holdingLots';
 import type { HoldingRow, HoldingType } from '@/db/holdings';
-import { gainPercentTenths, holdingGain, isValueStale, replayLots, totalGain, type LotEntry } from '@/engine/grow';
+import { gainPercentTenths, holdingGain, isValueStale, replayLots, totalGain } from '@/engine/grow';
 import { divideHalfUp, minorUnits, type MinorUnits } from '@/engine/money';
 import { usePastContext, type PastContext } from '@/features/decide/past/usePastDecisions';
 import type { ToHome } from '../connect';
+import { holdingLotEntries } from './lotEntries';
 
 export type InvestingStatus = 'loading' | 'error' | 'ready';
 
@@ -71,16 +72,6 @@ export const EMPTY_INVESTING_MODEL: InvestingModel = {
   anyStale: false,
 };
 
-function entriesOf(h: HoldingRow, lots: readonly HoldingLotRow[]): LotEntry[] {
-  const out: LotEntry[] = [];
-  if (h.opening_put_in > 0) out.push({ kind: 'buy', amount: minorUnits(h.opening_put_in), units: null, localDate: '0000-01-01' });
-  for (const l of lots) {
-    if (l.kind === 'value') continue;
-    out.push({ kind: l.kind, amount: minorUnits(l.amount), units: l.units, localDate: l.local_date, valueBefore: minorUnits(h.value) });
-  }
-  return out;
-}
-
 /** Pure: the model from the rows. `toHome` converts own-currency minor units to the home currency (null = cannot). */
 export function buildInvestingModel(
   holdings: readonly HoldingRow[],
@@ -104,7 +95,7 @@ export function buildInvestingModel(
 
   for (const h of holdings) {
     if (h.deleted_at !== null) continue;
-    const replay = replayLots(entriesOf(h, lotsBy.get(h.id) ?? []));
+    const replay = replayLots(holdingLotEntries(h, lotsBy.get(h.id) ?? []));
     const broken = !replay.ok;
     const position = replay.ok ? replay.position : null;
     const putIn = position === null ? h.opening_put_in : position.costBasis;
@@ -182,7 +173,8 @@ export function useInvestingRead(): InvestingRead {
     void lotsQuery.refetch();
   }, [holdingsQuery, lotsQuery]);
 
+  // P3-WR-10: cached data stays on screen when a background refetch fails; 'error' only when there is nothing to show.
   const status: InvestingStatus =
-    holdingsQuery.isError || lotsQuery.isError ? 'error' : holdings !== undefined && lots !== undefined ? 'ready' : 'loading';
+    holdings !== undefined && lots !== undefined ? 'ready' : holdingsQuery.isError || lotsQuery.isError ? 'error' : 'loading';
   return { status, model, refetch, userId, householdId, today };
 }

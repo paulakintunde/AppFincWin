@@ -6,8 +6,10 @@ import { useGoalLines, useSavingsGoalRows } from '@/data/queries/growGoals';
 import type { TransactionRow } from '@/db/rows';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { usePastContext, type PastContext } from '@/features/decide/past/usePastDecisions';
+import { toCurrencyOf } from './goalOwnMoney';
 import { planFromMonthly } from './goalPlanModel';
-import { goalPointsOf, safetyNetPointOf, type GoalPoint, type SafetyNetPoint, type ToHome } from '../connect';
+import { goalPointsOf, goalSaved, safetyNetPointOf, type GoalPoint, type SafetyNetPoint, type ToHome } from '../connect';
+import { clampSaved } from '../connect/goalSaved';
 
 export type GoalsStatus = 'loading' | 'error' | 'ready';
 
@@ -35,6 +37,11 @@ export interface GoalsModel {
   netReachesOn?: string | null;
   /** Home-currency minor units a month into the net, or null when none is set. */
   netMonthly?: number | null;
+  /**
+   * P4-WR-01: each listed goal's saved money in the goal's OWN currency (what the goal sheets compare with its target), by goal
+   * id. Absent for a goal whose money cannot convert into its own currency.
+   */
+  ownSavedByGoal?: Record<string, number>;
 }
 
 export interface GoalsRead {
@@ -71,7 +78,9 @@ export function buildGoalsModel(
   lines: readonly TransactionRow[],
   toHome: ToHome,
   home: string,
-  today?: string
+  today?: string,
+  /** P4-WR-01: a converter into a given currency; when passed, ownSavedByGoal is filled. */
+  toCurrency?: (currency: string) => ToHome
 ): GoalsModel {
   const safetyNet = safetyNetPointOf(rows, lines, toHome, home);
   const goals = goalPointsOf(rows, lines, toHome);
@@ -104,7 +113,16 @@ export function buildGoalsModel(
     if (monthly > 0) netMonthly = monthly;
     if (monthly > 0) netReachesOn = planFromMonthly({ saved: safetyNet.saved, target: safetyNet.size, monthly, today }).reachesOn;
   }
-  return { safetyNet, goals, totalSaved, monthlyIntoGoals, needsNetConfirm, pendingByGoal, goalCount: goals.length, netCounted: safetyNet !== null, netReachesOn, netMonthly };
+  const model: GoalsModel = { safetyNet, goals, totalSaved, monthlyIntoGoals, needsNetConfirm, pendingByGoal, goalCount: goals.length, netCounted: safetyNet !== null, netReachesOn, netMonthly };
+  if (toCurrency === undefined) return model;
+  const ownSavedByGoal: Record<string, number> = {};
+  for (const g of goals) {
+    const row = rows.find((r) => r.id === g.id);
+    if (row === undefined) continue;
+    const own = row.currency === home ? g.saved : goalSaved(row, lines, toCurrency(row.currency));
+    if (own !== null) ownSavedByGoal[g.id] = clampSaved(own);
+  }
+  return { ...model, ownSavedByGoal };
 }
 
 export function toHomeOf(ctx: PastContext): ToHome {
@@ -123,7 +141,7 @@ export function useGoalsRead(): GoalsRead {
   const lines = linesQuery.data;
 
   const model = useMemo(
-    () => (rows === undefined ? EMPTY_GOALS_MODEL : buildGoalsModel(rows, lines ?? [], toHomeOf(ctx), ctx.home, today)),
+    () => (rows === undefined ? EMPTY_GOALS_MODEL : buildGoalsModel(rows, lines ?? [], toHomeOf(ctx), ctx.home, today, (c) => toCurrencyOf(ctx, c))),
     [rows, lines, ctx, today]
   );
   const refetch = useCallback(() => {

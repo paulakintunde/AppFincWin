@@ -453,6 +453,13 @@ describe('Each month (GRW-03)', () => {
     expect(call.series).toMatchObject({ account_id: 'a-chk', amount: 10_000, name: 'Safety net', category_id: 'cat-transfer' });
     expect(call.series.id).toBe('uuid-new-series');
   });
+
+  it('P4-IN-03: the record-day stepper is announced as the net record day, not a debt due day', async () => {
+    const p = props(serie);
+    await wrap(<NetMonthSheet {...p} />);
+    expect(screen.getByLabelText('Day of the month it is recorded')).toBeTruthy();
+    expect(screen.queryByLabelText(/due day/i)).toBeNull();
+  });
 });
 
 describe('first-open confirm (D-07)', () => {
@@ -487,6 +494,28 @@ describe('first-open confirm (D-07)', () => {
     await wrap(<FirstOpenNetSheet />);
     await fireEvent.press(screen.getByText('Change it'));
     expect(screen.getByText('Safety net size')).toBeTruthy();
+    expect(mockConfirmNet).not.toHaveBeenCalled();
+  });
+
+  it('P4-WR-06: saving a new size from Change it also confirms the net, so the sheet does not come back', async () => {
+    const row = netRow();
+    mockRows = [row];
+    mockRead = confirmable(130_000);
+    await wrap(<FirstOpenNetSheet />);
+    await fireEvent.press(screen.getByText('Change it'));
+    await fireEvent.press(screen.getByTestId('net-size-own'));
+    await typeMoney('Amount', '3000');
+    await fireEvent.press(screen.getByText('Save size'));
+    expect(mockEdit).toHaveBeenCalledTimes(1);
+    expect(mockConfirmNet).toHaveBeenCalledTimes(1);
+    expect(mockConfirmNet).toHaveBeenCalledWith(row, 'u1');
+  });
+
+  it('P4-WR-06: leaving the size sheet without saving does not confirm', async () => {
+    mockRead = confirmable(130_000);
+    await wrap(<FirstOpenNetSheet />);
+    await fireEvent.press(screen.getByText('Change it'));
+    await fireEvent.press(screen.getByText('Cancel'));
     expect(mockConfirmNet).not.toHaveBeenCalled();
   });
 

@@ -163,3 +163,36 @@ describe('useInvestingRead', () => {
     expect(ready.result.current.model.totals.gain).toBe(69000);
   });
 });
+
+describe('P3-CR-01: a sale with no units is valued at its own date', () => {
+  const H = holding({ id: 'h', name: 'Simple', value: 12000_00, opening_put_in: 10000_00 });
+  const opening = lot({ id: 'v0', holding_id: 'h', kind: 'value', amount: 12000_00, local_date: '2026-06-01', created_at: '2026-06-01T09:00:00Z' });
+  const sale = lot({ id: 's1', holding_id: 'h', kind: 'sell', amount: 6000_00, local_date: '2026-06-10', created_at: '2026-06-10T09:00:00Z' });
+
+  it('put in 10,000, worth 12,000, sell 6,000: put-in 5,000 and a gain of 1,000', () => {
+    const m = buildInvestingModel([{ ...H, value: 6000_00 }], [opening, sale], usd, '2026-06-20');
+    expect(m.holdings[0]).toMatchObject({ putIn: 5000_00, realisedGain: 1000_00 });
+  });
+
+  it('a later value update does not rewrite the past sale', () => {
+    const later = lot({ id: 'v1', holding_id: 'h', kind: 'value', amount: 6000_00, local_date: '2026-07-01', created_at: '2026-07-01T09:00:00Z' });
+    const m = buildInvestingModel([{ ...H, value: 6000_00 }], [opening, sale, later], usd, '2026-07-02');
+    expect(m.holdings[0]).toMatchObject({ putIn: 5000_00, realisedGain: 1000_00, value: 6000_00 });
+  });
+
+  it('a same-day value typed after the sale does not count as the value before it', () => {
+    const after = lot({ id: 'v2', holding_id: 'h', kind: 'value', amount: 3000_00, local_date: '2026-06-10', created_at: '2026-06-10T18:00:00Z' });
+    const m = buildInvestingModel([{ ...H, value: 3000_00 }], [opening, sale, after], usd, '2026-06-20');
+    expect(m.holdings[0]).toMatchObject({ putIn: 5000_00, realisedGain: 1000_00 });
+  });
+});
+
+describe('P3-WR-10: cached data stays when a refetch fails', () => {
+  it('is ready, not error, while rows are cached', async () => {
+    mockError = true;
+    mockHoldings = [RET];
+    mockLots = [];
+    expect((await renderHook(() => useInvestingRead())).result.current.status).toBe('ready');
+    mockError = false;
+  });
+});

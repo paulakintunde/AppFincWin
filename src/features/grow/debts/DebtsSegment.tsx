@@ -2,7 +2,7 @@
 // rows, cards paid in full, and the payoff plan card with both orders side by side. Everything comes from useDebtsRead (06-14),
 // which composes the engine; this file only lays it out. The segment owns its Add a debt sheet: GrowHome's FAB can open it with
 // `addOpen` / `onAddClosed`, and the segment's own buttons open it without any wiring.
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
 import { useAccounts } from '@/data/queries/accounts';
@@ -27,12 +27,11 @@ import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { AddDebtSheet } from './AddDebtSheet';
 import { debtLineModel, firstClearedDate } from './debtLineModel';
-import { debtHref, payAccountId, useDebtFormat, useDebtMonth, useDebtRows, type DebtFormat } from './debtScreenData';
+import { debtHref, fitLineName, payAccountId, useDebtFormat, useDebtMonth, useDebtRows, type DebtFormat } from './debtScreenData';
 import { PayoffPlanCard, type ScenarioKey } from './PayoffPlanCard';
 import {
   buildDebtsModel,
-  DEFAULT_EXTRA,
-  DEFAULT_LUMP,
+  defaultWhatIfs,
   minimumOnlyFor,
   savedPlanFor,
   useDebtsRead,
@@ -119,19 +118,24 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
   const { remove: removeDebt } = useRemoveDebt();
   const [editing, setEditing] = useState<DebtRow | null>(null);
 
-  const [extra, setExtra] = useState(model.extra > 0 ? model.extra : DEFAULT_EXTRA);
+  const currency = model.planCurrency ?? model.debts[0]?.currency ?? model.paidInFull[0]?.currency ?? 'USD';
+  // P3-WR-04: the starting what-ifs are whole units scaled by the plan currency's own decimals.
+  const [extra, setExtra] = useState(() => (model.extra > 0 ? model.extra : defaultWhatIfs(currency).extra));
   // The user's tap, or the order they saved before. Nothing is picked for them.
   const [picked, setOrder] = useState<PayoffOrder | null>(null);
   const order = picked ?? model.savedOrder;
   const [scenario, setScenario] = useState<ScenarioKey>('extra');
-  const [lump, setLump] = useState(DEFAULT_LUMP);
+  const [lump, setLump] = useState(() => defaultWhatIfs(currency).lump);
+  // P3-WR-02: the last write each button made, so a second tap (before or after the cache moves) cannot write it again.
+  const extraDone = useRef<string | null>(null);
+  const onceDone = useRef<string | null>(null);
+  const [onceKeyDone, setOnceKeyDone] = useState<string | null>(null);
 
   const whatIf = useMemo(
     () => (rowQuery === undefined ? model : buildDebtsModel(rowQuery, today, { extra, lump })),
     [rowQuery, today, extra, lump, model]
   );
 
-  const currency = model.planCurrency ?? model.debts[0]?.currency ?? model.paidInFull[0]?.currency ?? 'USD';
   const inPlan = model.debts.filter((d) => d.inPlan);
   const total = inPlan.reduce((s, d) => s + d.point.balance, 0);
   const monthly = inPlan.reduce((s, d) => s + d.point.minimum + d.extra, 0);
@@ -148,7 +152,9 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
   // D14: with no rule set, the default rule shows, marked as the default.
   const ruleIsDefault = month.rule === null;
   const rule = month.rule ?? DEFAULT_DEBT_RULE;
-  const lineModel = month.usualPay === null ? null : debtLineModel(monthly, month.usualPay, rule);
+  // P3-WR-05: the plan's payments and Decide's pay are compared only when they are in the same currency.
+  const sameCurrency = currency === month.currency;
+  const lineModel = month.usualPay === null || !sameCurrency ? null : debtLineModel(monthly, month.usualPay, rule);
   const sharePercent = lineModel === null ? null : lineModel.sharePercent;
   const over = lineModel !== null && lineModel.over;
 
@@ -164,20 +170,37 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
   const onceOn = oneOffDate(today);
   // The stepper at $0 stops a saved extra rather than saving nothing (D-32); there is no early return for it.
   const stepperOn = extra > 0;
+  // P3-WR-02: the stepper already shows the saved plan (same extra, same order): nothing to save.
+  const extraIsPlan = model.extra > 0 && extra === model.extra && order === model.savedOrder;
+  const extraKey = `${extraRow?.id ?? ''}|${extra}|${order ?? ''}|${model.extra}|${model.savedOrder ?? ''}`;
+  // A one-off waits until the amount, the debt or the debt's row (refetched after the write) changes.
+  const onceKey = onceRow === undefined ? null : `${onceRow.id}|${onceRow.version}|${lump}|${onceOn}`;
+
+  // P3-WR-03 (D-34): one debt carries the extra. Any other carrier is stopped, so the plan never counts two extras.
+  const stopOtherCarriers = (keepId: string): void => {
+    if (userId === null) return;
+    for (const d of inPlan) {
+      const other = d.id === keepId || d.extra <= 0 ? undefined : rows.get(d.id);
+      if (other !== undefined) planSave.save({ ownerId: userId, debt: other, extra: 0, order, paidFromAccountId: null });
+    }
+  };
 
   const useExtra = (): void => {
-    if (extraRow === undefined || userId === null || !stepperOn || shownOrder === null) return;
+    if (extraRow === undefined || userId === null || !stepperOn || shownOrder === null || extraIsPlan) return;
+    if (extraDone.current === extraKey) return;
     const accountId = payAccountId(extraRow, accounts);
     if (accountId === null) return;
     try {
+      // save_debt_plan with an extra stops any other carrier in the same undo step (P3-WR-03).
       const { stepId } = planSave.save({
         ownerId: userId,
         debt: extraRow,
         extra,
         order,
         paidFromAccountId: accountId,
-        seriesName: t('grow.debts.extraSeriesName', { name: extraRow.name }),
+        seriesName: fitLineName(t, 'grow.debts.extraSeriesName', extraRow.name),
       });
+      extraDone.current = extraKey;
       hapticLight();
       showToast({
         kind: 'ordinary',
@@ -191,8 +214,12 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
 
   const stopExtra = (): void => {
     if (carrierRow === undefined || userId === null) return;
+    const stopKey = `stop|${carrierRow.id}|${carrierRow.version}`;
+    if (extraDone.current === stopKey) return;
     try {
+      stopOtherCarriers(carrierRow.id);
       const { stepId } = planSave.save({ ownerId: userId, debt: carrierRow, extra: 0, order, paidFromAccountId: null });
+      extraDone.current = stopKey;
       hapticLight();
       showToast({ kind: 'ordinary', text: { key: 'grow.debts.stopToast', params: { date: fmt.dayMonth(stopFrom) } }, stepId });
     } catch {
@@ -201,7 +228,8 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
   };
 
   const useOnce = (): void => {
-    if (onceRow === undefined || userId === null || lump <= 0 || lump > onceRow.balance) return;
+    if (onceRow === undefined || userId === null || lump <= 0 || lump > onceRow.balance || onceKey === null) return;
+    if (onceDone.current === onceKey) return;
     const accountId = payAccountId(onceRow, accounts);
     if (accountId === null) return;
     try {
@@ -210,8 +238,10 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
         debt: onceRow,
         amount: lump,
         paidFromAccountId: accountId,
-        name: t('grow.debts.oneOffLineName', { name: onceRow.name }),
+        name: fitLineName(t, 'grow.debts.oneOffLineName', onceRow.name),
       });
+      onceDone.current = onceKey;
+      setOnceKeyDone(onceKey);
       hapticLight();
       showToast({
         kind: 'ordinary',
@@ -323,6 +353,7 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
         <Pressable
           testID="debts-add-row"
           accessibilityRole="button"
+          accessibilityLabel={t('grow.debts.emptyAction')}
           onPress={onAdd}
           style={({ pressed }) => [
             styles.addRow,
@@ -360,12 +391,14 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
           lump={lump}
           onLump={setLump}
           savedExtra={model.extra}
+          extraIsPlan={extraIsPlan}
+          onceRecorded={onceKey !== null && onceKeyDone === onceKey}
           lumpDebt={onceLine === null ? null : { name: onceLine.name, balance: onceLine.point.balance }}
           startDates={{ extra: scenario === 'minimum' || !stepperOn ? stopFrom : extraFrom, once: onceOn }}
           onUseExtra={useExtra}
           onStopExtra={stopExtra}
           onUseOnce={useOnce}
-          left={month.left}
+          left={sameCurrency ? month.left : null}
           fmt={fmt}
           currency={currency}
         />

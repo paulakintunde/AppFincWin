@@ -69,3 +69,47 @@ export function planFromBy(i: { saved: number; target: number; byMonthStart: str
   if (i.saved >= i.target) return 0;
   return goalPlanByDate({ have: minorUnits(i.saved), target: minorUnits(i.target), anchor, byDate: i.byMonthStart }).neededEachMonth;
 }
+
+/** 'YYYY-MM' to the last day of that month (the same rule as Decide's pots model; string maths only). */
+function monthEnd(month: string): string {
+  const [y = 1970, m = 1] = month.split('-').map((p) => parseInt(p, 10));
+  const day = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/**
+ * P4-CR-03: the `ready_by` a goal stores for a monthly amount. Decide's set-aside for a pot with a target reads only `ready_by`
+ * (remaining over the whole months left), so it must follow the monthly amount Grow shows. The last day of the month the plan
+ * reaches the target, the same rule the new-goal sheet uses on create; null when it is never reached (no target, no amount,
+ * already reached, or over 50 years).
+ */
+export function readyByFromMonthly(i: { saved: number; target: number | null; monthly: number | null; today: string }): string | null {
+  if (i.monthly === null) return null;
+  const { reachesOn } = planFromMonthly({ saved: i.saved, target: i.target, monthly: i.monthly, today: i.today });
+  return reachesOn === null ? null : monthEnd(reachesOn.slice(0, 7));
+}
+
+/**
+ * P4-CR-03: the plan fields to store when a goal's target changes, so `monthly_amount` and `ready_by` still describe one plan.
+ * The monthly amount the user chose is kept and the date follows it; with no monthly amount but a date, the amount follows the
+ * date (rounded up, as the "Reaches by" edit does). No target: the date is cleared (a goal without a target has no date).
+ * Returns only the fields that change.
+ */
+export function planFieldsForTarget(i: {
+  saved: number;
+  target: number | null;
+  monthly: number | null;
+  readyBy: string | null;
+  today: string;
+}): { ready_by?: string | null; monthly_amount?: number | null } {
+  if (i.target === null) return i.readyBy === null ? {} : { ready_by: null };
+  if (i.monthly !== null && i.monthly > 0) {
+    const next = readyByFromMonthly({ saved: i.saved, target: i.target, monthly: i.monthly, today: i.today });
+    return next === i.readyBy ? {} : { ready_by: next };
+  }
+  if (i.readyBy !== null) {
+    const needed = planFromBy({ saved: i.saved, target: i.target, byMonthStart: `${i.readyBy.slice(0, 7)}-01`, today: i.today });
+    if (needed !== null && needed > 0) return needed === i.monthly ? {} : { monthly_amount: needed };
+  }
+  return {};
+}

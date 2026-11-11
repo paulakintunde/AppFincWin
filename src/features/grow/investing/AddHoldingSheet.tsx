@@ -21,7 +21,7 @@ import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import { useIsDirty } from '@/ui/useIsDirty';
-import { DATE_TEXT_RE, validRateText } from './investingFormat';
+import { validDateText, validRateText } from './investingFormat';
 
 /** The five plain-word types (D-10). No tax-wrapper names. */
 export const HOLDING_TYPE_OPTIONS: readonly HoldingType[] = ['brokerage', 'retirement', 'pension', 'crypto', 'other'];
@@ -49,6 +49,8 @@ function Body({ onClose, onSaved, holding, lots }: Omit<AddHoldingSheetProps, 'v
   const { add } = useAddHolding();
   const { edit } = useEditHolding();
   const editing = holding ?? null;
+  // P3-WR-08: an edited holding keeps its own currency (a USD holding with a JPY home still types dollars and cents).
+  const currency = editing?.currency ?? rc.homeCurrency;
 
   const [name, setName] = useState(editing?.name ?? '');
   const [type, setType] = useState<HoldingType>(editing?.type ?? 'brokerage');
@@ -59,11 +61,12 @@ function Body({ onClose, onSaved, holding, lots }: Omit<AddHoldingSheetProps, 'v
   const [monthly, setMonthly] = useState<number | null>(editing?.monthly_amount ?? null);
   const [day, setDay] = useState(editing?.day != null ? String(editing.day) : '');
   const [rate, setRate] = useState(editing?.rate ?? '');
-  const [initial] = useState(() => ({ name, type, putIn, value, asOf, monthly, day, rate }));
-  const dirty = useIsDirty(initial, { name, type, putIn, value, asOf, monthly, day, rate });
+  // P3-IN-04: turning "regular amount" off clears the monthly amount on save, so it counts as a change.
+  const [initial] = useState(() => ({ name, type, putIn, value, asOf, regular, monthly, day, rate }));
+  const dirty = useIsDirty(initial, { name, type, putIn, value, asOf, regular, monthly, day, rate });
 
   const nameOk = name.trim().length >= 1 && name.trim().length <= NAME_MAX;
-  const dateOk = DATE_TEXT_RE.test(asOf) && asOf <= rc.today;
+  const dateOk = validDateText(asOf) && asOf <= rc.today;
   const dayNum = day.trim() === '' ? null : Number(day);
   const dayOk = dayNum === null || (Number.isInteger(dayNum) && dayNum >= 1 && dayNum <= 31);
   const rateOk = validRateText(rate);
@@ -94,7 +97,8 @@ function Body({ onClose, onSaved, holding, lots }: Omit<AddHoldingSheetProps, 'v
       onSaved?.(editing.id);
       onClose();
     } catch {
-      // The hook refuses what the form already blocks; nothing was written.
+      // P3-WR-09: the hook refused (a figure over the cap, or a put-in that breaks a later sale); nothing was written.
+      showToast({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
     }
   };
 
@@ -122,7 +126,7 @@ function Body({ onClose, onSaved, holding, lots }: Omit<AddHoldingSheetProps, 'v
       onSaved?.(id);
       onClose();
     } catch {
-      // The hook refuses what the form already blocks; nothing was written.
+      showToast({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
     }
   };
 
@@ -156,7 +160,7 @@ function Body({ onClose, onSaved, holding, lots }: Omit<AddHoldingSheetProps, 'v
           boxed
           value={putIn}
           onChange={setPutIn}
-          currency={rc.homeCurrency}
+          currency={currency}
           label={t('grow.investing.add.putIn')}
           accessibilityLabel={t('grow.investing.add.putIn')}
         />
@@ -181,6 +185,7 @@ function Body({ onClose, onSaved, holding, lots }: Omit<AddHoldingSheetProps, 'v
           style={inputStyle}
           placeholderTextColor={colors.inkFaint}
         />
+        {dateOk ? null : <Text style={[textRole(pairing, 'label'), { color: colors.danger }]}>{t('grow.investing.dateInvalid')}</Text>}
           </>
         ) : null}
 
@@ -191,7 +196,7 @@ function Body({ onClose, onSaved, holding, lots }: Omit<AddHoldingSheetProps, 'v
               boxed
               value={monthly}
               onChange={setMonthly}
-              currency={rc.homeCurrency}
+              currency={currency}
               label={t('grow.investing.add.eachMonth')}
               accessibilityLabel={t('grow.investing.add.eachMonth')}
             />

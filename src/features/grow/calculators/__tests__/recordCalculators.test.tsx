@@ -73,7 +73,10 @@ jest.mock('@/features/grow/debts/debtScreenData', () => {
     ...actual,
     useDebtMonth: () => ({ usualPay: 320000, left: 42500, rule: '36', currency: 'USD' }),
     useDebtRows: () =>
-      new Map([['d1', { id: 'd1', name: 'Auto loan', kind: 'loan', currency: 'USD', apr: '6.9', account_id: 'a-chk', deleted_at: null }]]),
+      new Map([
+        ['d1', { id: 'd1', name: 'Auto loan', kind: 'loan', currency: 'USD', apr: '6.9', account_id: 'a-chk', deleted_at: null }],
+        ['d2', { id: 'd2', name: 'Store card', kind: 'card', currency: 'USD', apr: '21.9', account_id: 'a-chk', deleted_at: null }],
+      ]),
   };
 });
 let mockInvesting: { model: { holdings: unknown[]; totals: { value: number }; monthlyIn: number } };
@@ -334,5 +337,61 @@ describe('Calculators page, With your records (06-19)', () => {
     await wrap(<RecordsPage />);
     expect(screen.getByText('With your records')).toBeTruthy();
     expect(screen.queryByText('Auto loan, extra payments')).toBeNull();
+  });
+});
+
+describe('Phase 6 review fixes (P3)', () => {
+  const lowPayment = (): DebtsRead => {
+    const d = debtsRead();
+    d.model.debts[0]!.point = { ...d.model.debts[0]!.point, minimum: 4_000 } as never;
+    return d;
+  };
+
+  it('P3-WR-14: a payment below the interest says the debt does not clear, and a clearing extra still shows its result', async () => {
+    mockDebtsRead = lowPayment();
+    await wrap(<DebtExtraCalculator id="d1" />);
+    expect(screen.getByTestId('debt-calc-never-clears').props.children).toBe('At the current payment this debt does not clear.');
+    await fireEvent.press(screen.getByText('+$25'));
+    expect(screen.getByText(/payments of \$65\.00\. The current payment alone does not clear it\./)).toBeTruthy();
+    expect(screen.queryByTestId('debt-calc-never-clears')).toBeNull();
+  });
+
+  it('P3-IN-01: no duplicate order cards for one debt', async () => {
+    await wrap(<DebtExtraCalculator id="d1" />);
+    expect(screen.queryByTestId('debt-calc-order-rate')).toBeNull();
+    expect(screen.queryByTestId('debt-calc-order-balance')).toBeNull();
+  });
+
+  it('P3-WR-02 / WR-03: confirm saves once; the server stops the extra another debt carries in the same step', async () => {
+    const d = debtsRead();
+    d.model.debts.push({ ...d.model.debts[0]!, id: 'd2', name: 'Store card', extra: 2500 } as never);
+    mockDebtsRead = d;
+    await wrap(<DebtExtraCalculator id="d1" />);
+    await fireEvent.press(screen.getByText('+$50'));
+    await fireEvent.press(screen.getByText('Make this the plan'));
+    const buttons = screen.getAllByText('Make this the plan');
+    await fireEvent.press(buttons[buttons.length - 1]!);
+    await fireEvent.press(buttons[buttons.length - 1]!);
+    const calls = mockSaveDebt.mock.calls.map((c) => c[0] as { debt: { id: string }; extra: number });
+    expect(calls.map((c) => [c.debt.id, c.extra])).toEqual([
+      ['d1', 5000],
+    ]);
+  });
+
+  it('P3-WR-12: a goal that arrives after the first render still fills in Each month', async () => {
+    mockGoalsRead = { ...goalsRead(), status: 'loading', model: { ...goalsRead().model, goals: [] } };
+    const view = await wrap(<GoalCalculator id="g1" />);
+    expect(screen.getByTestId('goal-calc-loading')).toBeTruthy();
+    mockGoalsRead = goalsRead();
+    await view.rerender(<GoalCalculator id="g1" />);
+    expect(screen.getByTestId('pair-first-input').props.value).toBe('50.00');
+    await settle();
+    expect(screen.getByTestId('goal-calc-plan-now')).toBeTruthy();
+  });
+
+  it('P3-WR-13: a goal kept in another currency gets no calculator link', async () => {
+    mockRows = [{ ...lisbon(), currency: 'EUR' }];
+    await wrap(<RecordsPage />);
+    expect(screen.queryByText('Trip to Lisbon')).toBeNull();
   });
 });

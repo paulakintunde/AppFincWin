@@ -3,7 +3,7 @@
 import fs from 'fs';
 import path from 'path';
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
@@ -56,7 +56,7 @@ jest.mock('@/features/grow/goals/MoneyMoveSheet', () => {
   return { MoneyMoveSheet: (p: { visible: boolean }) => (p.visible ? R.createElement(RNText, { testID: 'money-move-sheet' }, 'move sheet') : null) };
 });
 const mockGoalRows = [
-  { id: 'g1', name: 'Trip to Lisbon', household_id: 'h1', account_id: 'a1', deleted_at: null, version: 1 },
+  { id: 'g1', name: 'Trip to Lisbon', household_id: 'h1', account_id: 'a1', deleted_at: null, version: 1, icon: 'transport' },
   { id: 'g2', name: 'Laptop', household_id: 'h1', account_id: null, deleted_at: null, version: 1 },
 ];
 jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockGoalRows }) }));
@@ -410,6 +410,22 @@ describe('Goals segment, D-32 (06-31)', () => {
     mockRead = { ...LEDGER, model: { ...LEDGER.model, netMonthly: null, netReachesOn: null } };
     await renderHome();
     expect(screen.getByText(en.grow.safetyNet.cardLineNoPlan)).toBeTruthy();
+  });
+
+  it('P4-WR-02: a Wait goal (its plan is its Decide check) has no Edit in the more menu', async () => {
+    await renderHome();
+    await fireEvent.press(screen.getByLabelText('More for Laptop'));
+    expect(screen.getByText('Add money')).toBeTruthy();
+    expect(screen.queryByText('Edit')).toBeNull();
+  });
+
+  it('P4-IN-02: a goal row draws the icon the user picked', async () => {
+    await renderHome();
+    const hidden = { includeHiddenElements: true }; // the glyph is decorative (hidden from screen readers)
+    const lisbon = screen.getByTestId('grow-goal-row-g1', hidden);
+    expect(within(lisbon).getByTestId('grow-glyph-transport', hidden)).toBeTruthy();
+    // no icon picked: the check glyph for a check's goal
+    expect(within(screen.getByTestId('grow-goal-row-g2', hidden)).getByTestId('grow-glyph-checkbuy', hidden)).toBeTruthy();
   });
 
   it('a goal with no target draws no bar; one with a target does', async () => {

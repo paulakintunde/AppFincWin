@@ -73,6 +73,11 @@ export function DebtPayoffCalculator() {
             </>
           ) : null}
         </>
+      ) : o.outcome !== 'cleared' ? (
+        // P3-IN-05: say why the card has no date: the debts never clear, or take past the 50-year limit worked out here.
+        <Text testID={`${testID}-not-cleared`} style={{ ...textRole(pairing, 'body'), fontSize: fontSize.label, color: colors.ink }}>
+          {o.outcome === 'exceeds_month_cap' ? t('grow.calc.payoff.exceedsCap') : t('grow.calc.payoff.neverClears')}
+        </Text>
       ) : null}
     </View>
   );
@@ -126,7 +131,7 @@ export function DebtPayoffCalculator() {
         </View>
       ))}
       {debts.length < MAX_DEBTS ? (
-        <Pressable accessibilityRole="button" onPress={add} style={styles.textButton}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('grow.calc.payoff.addDebt')} onPress={add} style={styles.textButton}>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('grow.calc.payoff.addDebt')}</Text>
         </Pressable>
       ) : null}

@@ -10,8 +10,8 @@ import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { useT } from '@/i18n';
 import { lastDayOfMonth } from '@/features/decide/pots/potsModel';
 import { MonthField } from '@/features/decide/pots/MonthField';
-import { useCalcFormat } from '@/features/grow/calculators/typed/CalcFields';
 import { useGoalMoney } from '@/features/grow/home/useGoalMoney';
+import { showToast } from '@/state/undoToast';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
@@ -21,7 +21,7 @@ import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
-import { planAnchor, planFromBy, planFromMonthly } from './goalPlanModel';
+import { planAnchor, planFromBy, planFromMonthly, readyByFromMonthly } from './goalPlanModel';
 
 export type PlanEditMode = 'monthly' | 'by';
 
@@ -46,7 +46,7 @@ export function seriesPayload(existing: RecurringSeriesRow, amount: number): Goa
 export interface GoalPlanEditSheetProps {
   mode: PlanEditMode | null;
   goal: SavingsGoalRow;
-  /** Saved so far, home currency minor units. */
+  /** Saved so far, in the goal's own currency (P4-WR-01: compared with the goal-currency target). */
   saved: number;
   today: string;
   series: RecurringSeriesRow | null;
@@ -62,8 +62,8 @@ export function GoalPlanEditSheet(props: GoalPlanEditSheetProps) {
 function PlanForm({ mode, goal, saved, today, series, ownerId, onClose, onSaved }: GoalPlanEditSheetProps & { mode: PlanEditMode }) {
   const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
-  const calc = useCalcFormat();
-  const whole = useGoalMoney();
+  // P4-WR-01: `saved`, the target and the amounts are all in the goal's currency, so they are shown in it.
+  const whole = useGoalMoney(goal.currency);
   const { save } = useSaveGoalPlan();
   const [monthly, setMonthly] = useState<number | null>(goal.monthly_amount);
   const [byMonth, setByMonth] = useState<string | null>(null);
@@ -78,13 +78,13 @@ function PlanForm({ mode, goal, saved, today, series, ownerId, onClose, onSaved 
     value = monthly !== null && monthly > 0 ? monthly : null;
     if (value !== null && target !== null) {
       const { reachesOn } = planFromMonthly({ saved, target, monthly: value, today });
-      if (reachesOn !== null) preview = t('grow.goals.detail.setEachMonthPreview', { target: whole.amount(target), date: calc.monthYear(reachesOn) });
+      if (reachesOn !== null) preview = t('grow.goals.detail.setEachMonthPreview', { target: whole.amount(target), date: whole.monthYear(reachesOn) });
     }
   } else if (byMonth !== null && target !== null) {
     const needed = planFromBy({ saved, target, byMonthStart: `${byMonth}-01`, today });
     if (needed !== null && needed > 0) {
       value = needed;
-      preview = t('grow.goals.detail.setByPreview', { amount: calc.money(needed) });
+      preview = t('grow.goals.detail.setByPreview', { amount: whole.exact(needed) });
     }
   }
 
@@ -93,8 +93,19 @@ function PlanForm({ mode, goal, saved, today, series, ownerId, onClose, onSaved 
 
   const onSave = () => {
     if (!canSave || value === null || ownerId === null) return;
-    const fields = mode === 'monthly' ? { monthly_amount: value } : { monthly_amount: value, ready_by: lastDayOfMonth(byMonth as string) };
-    const { stepId } = save({ ownerId, existing: goal, fields, series: series === null ? null : seriesPayload(series, value) });
+    // P4-CR-03: the date always follows the monthly amount (and the amount follows the date), so Decide's set-aside, which
+    // reads ready_by, uses the same plan Grow shows. A goal with no target keeps its date (it sets aside its monthly amount).
+    const fields =
+      mode === 'monthly'
+        ? { monthly_amount: value, ...(target === null ? {} : { ready_by: readyByFromMonthly({ saved, target, monthly: value, today }) }) }
+        : { monthly_amount: value, ready_by: lastDayOfMonth(byMonth as string) };
+    let stepId: string;
+    try {
+      stepId = save({ ownerId, existing: goal, fields, series: series === null ? null : seriesPayload(series, value) }).stepId;
+    } catch {
+      showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
+      return;
+    }
     hapticLight();
     onClose();
     onSaved(stepId);
@@ -114,7 +125,7 @@ function PlanForm({ mode, goal, saved, today, series, ownerId, onClose, onSaved 
               minMonth={anchorMonth}
               maxMonth={lastMonth}
               empty={t('grow.goals.move.pickDate')}
-              format={(m) => calc.monthYear(`${m}-01`)}
+              format={(m) => whole.monthYear(`${m}-01`)}
               onChange={setByMonth}
             />
           )}

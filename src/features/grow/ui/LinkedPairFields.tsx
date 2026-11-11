@@ -78,6 +78,11 @@ export function LinkedPairFields({ first, second, lastEdited, derivedAnnouncemen
     <View testID="linked-pair" style={[styles.wrap, stacked ? styles.stacked : styles.side]}>
       {renderField('first', first)}
       {renderField('second', second)}
+      {/* P4-IN-05: Android has no announce call that TalkBack reliably reads, so the settled derived value sits in a polite live
+          region (as CalcResultCard does). Hidden from sight, 1 x 1 so it takes no room in the row. */}
+      {Platform.OS === 'android' ? (
+        <View testID="linked-pair-live" accessible={settled !== ''} accessibilityLiveRegion="polite" accessibilityLabel={settled} style={styles.live} />
+      ) : null}
     </View>
   );
 }
@@ -87,5 +92,6 @@ const styles = StyleSheet.create({
   side: { flexDirection: 'row' },
   stacked: { flexDirection: 'column' },
   cell: { flex: 1, gap: 4 },
+  live: { position: 'absolute', width: 1, height: 1, overflow: 'hidden' },
   box: { borderWidth: 1.5, borderRadius: radii.glyphTile + 3, paddingHorizontal: 12, justifyContent: 'center' },
 });

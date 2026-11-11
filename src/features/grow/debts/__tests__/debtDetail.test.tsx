@@ -38,13 +38,13 @@ jest.mock('@/features/decide/past/usePastDecisions', () => ({
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', today: '2026-11-05', userId: 'u1', householdId: 'h1', ready: true }),
 }));
+const TWO_ACCOUNTS = [
+  { id: 'a1', name: 'Everyday checking', kind: 'checking', archived_at: null },
+  { id: 'a2', name: 'Savings', kind: 'savings', archived_at: null },
+];
+let mockAccounts: typeof TWO_ACCOUNTS | undefined = TWO_ACCOUNTS;
 jest.mock('@/data/queries/accounts', () => ({
-  useAccounts: () => ({
-    data: [
-      { id: 'a1', name: 'Everyday checking', kind: 'checking', archived_at: null },
-      { id: 'a2', name: 'Savings', kind: 'savings', archived_at: null },
-    ],
-  }),
+  useAccounts: () => ({ data: mockAccounts }),
 }));
 jest.mock('@/data/mutations/growDebts', () => ({
   useSaveDebtPlan: () => ({ save: mockSavePlan }),
@@ -153,6 +153,7 @@ beforeEach(() => {
   mockRows = [AUTO, VISA];
   mockPayments = { next: null, paid: [] };
   mockRule = '36.0000';
+  mockAccounts = TWO_ACCOUNTS;
   jest.clearAllMocks();
   jest.useFakeTimers({ now: new Date(`${LEDGER_TODAY}T12:00:00Z`), doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
 });
@@ -358,3 +359,67 @@ describe('Close the loan from a sale (D-16)', () => {
 });
 
 void act;
+
+describe('Phase 6 review fixes (P3)', () => {
+  const tree = (ui: React.ReactElement) => (
+    <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top: 62, bottom: 34, left: 0, right: 0 } }}>
+      <ThemeProvider>
+        <FontScaleProvider value={1}>{ui}</FontScaleProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
+  );
+
+  it('P3-WR-11: with a saved extra, the detail shows the same end date as the list, marked as the plan', async () => {
+    mockRows = [{ ...AUTO, payoff_extra: 5000 }];
+    await wrap(<DebtDetailScreen id="auto" />);
+    expect(screen.getByText('Dec 2028 in your payoff plan')).toBeTruthy();
+    expect(screen.queryByText(/on this payment/)).toBeNull();
+  });
+
+  it('P3-IN-03: a refused removal says so and stays on the debt', async () => {
+    mockRows = [AUTO];
+    mockRemove.mockImplementationOnce(() => {
+      throw new RangeError('already removed');
+    });
+    await wrap(<DebtDetailScreen id="auto" />);
+    await fireEvent.press(screen.getByTestId('debt-remove'));
+    await fireEvent.press(screen.getByText(en.grow.debts.detail.removeConfirm));
+    expect(mockToast).toHaveBeenCalledWith({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
+    expect(mockBack).not.toHaveBeenCalled();
+  });
+
+  it('P3-WR-12: accounts that load after the sale sheet opens still fill in the account', async () => {
+    mockRows = [AUTO];
+    mockAccounts = undefined;
+    const view = await wrap(<DebtDetailScreen id="auto" />);
+    await fireEvent.press(screen.getByTestId('debt-sold'));
+    mockAccounts = [TWO_ACCOUNTS[1]!];
+    await view.rerender(tree(<DebtDetailScreen id="auto" />));
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.sale.soldFor), '10000');
+    await fireEvent.press(screen.getByText(en.grow.debts.sale.save));
+    expect(mockRecordSale).toHaveBeenCalledWith(expect.objectContaining({ saleAccountId: 'a2', paymentAccountId: 'a2' }));
+  });
+
+  it('P3-WR-02: a double tap on Record the sale records it once', async () => {
+    mockRows = [AUTO];
+    await wrap(<DebtDetailScreen id="auto" />);
+    await fireEvent.press(screen.getByTestId('debt-sold'));
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.sale.soldFor), '10000');
+    const save = screen.getByText(en.grow.debts.sale.save);
+    await fireEvent.press(save);
+    await fireEvent.press(save);
+    expect(mockRecordSale).toHaveBeenCalledTimes(1);
+  });
+
+  it('P3-WR-07: a long name keeps both sale line names within 80 characters', async () => {
+    mockRows = [{ ...AUTO, name: 'N'.repeat(80) }];
+    await wrap(<DebtDetailScreen id="auto" />);
+    await fireEvent.press(screen.getByTestId('debt-sold'));
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.sale.soldFor), '10000');
+    await fireEvent.press(screen.getByText(en.grow.debts.sale.save));
+    const call = (mockRecordSale.mock.calls[0] as unknown[])[0] as { saleName: string; paymentName: string };
+    expect(call.saleName.length).toBeLessThanOrEqual(80);
+    expect(call.paymentName.length).toBeLessThanOrEqual(80);
+    expect(call.paymentName.endsWith('… final payment')).toBe(true);
+  });
+});

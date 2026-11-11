@@ -39,7 +39,9 @@ import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import { ToggleRow } from '@/ui/ToggleRow';
 import { goalHref } from '@/features/grow/home/GoalRow';
-import { isSafetyNetRow, monthStartFromText, nextRecordDate, planFromBy, planFromMonthly } from './goalPlanModel';
+import { useGoalMoney } from '@/features/grow/home/useGoalMoney';
+import { showToast } from '@/state/undoToast';
+import { isSafetyNetRow, monthStartFromText, nextRecordDate, planFieldsForTarget, planFromBy, planFromMonthly } from './goalPlanModel';
 import { seriesPayload } from './GoalPlanEditSheet';
 import { useGoalToast } from './useGoalToast';
 import { useGoalsRead } from './useGoalsRead';
@@ -88,6 +90,7 @@ function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
   const toast = useGoalToast();
   const edit = goal !== undefined;
   const currency = goal?.currency ?? ctx.home;
+  const goalMoney = useGoalMoney(currency);
 
   const accounts = useMemo(() => (accountsQ.data ?? []).filter((a) => a.archived_at === null && a.currency === currency), [accountsQ.data, currency]);
   const existingSeries: RecurringSeriesRow | null = useMemo(
@@ -149,14 +152,19 @@ function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
     monthly = typedMonthly;
   }
 
-  const dirtyNow = trimmed !== (goal?.name ?? prefill?.name ?? '') || monthlyText !== '' || byText !== '' || (!edit && savedAlready !== null);
+  // P4-WR-09: in edit mode a changed target (or "no target"), icon or lock also counts, so Close asks before dropping it.
+  const editDirty =
+    goal !== undefined &&
+    ((noTarget ? null : target) !== goal.target || icon !== (goal.icon ?? null) || lock !== (goal.locked === true ? 'yes' : 'no'));
+  const dirtyNow = trimmed !== (goal?.name ?? prefill?.name ?? '') || monthlyText !== '' || byText !== '' || (!edit && savedAlready !== null) || editDirty;
   const targetBelowSaved = edit && !noTarget && target !== null && target < saved;
   const step1Ok = trimmed.length >= 1 && trimmed.length <= NAME_MAX;
   const step2Ok = noTarget || (target !== null && target > 0);
   const canMake = step1Ok && step2Ok && lock !== null && !targetBelowSaved && userId !== null && householdId !== null;
 
   const rule = settings === null ? null : settings.saving_floor;
-  const currentMonthly = edit ? (goal.monthly_amount ?? 0) : 0;
+  // P4-WR-01: the total is in the home currency, so the goal's own monthly amount is taken from the read model (home units).
+  const currentMonthly = edit ? (read.model.goals.find((g) => g.id === goal.id)?.monthlyAmount ?? 0) : 0;
   const total = read.model.monthlyIntoGoals - currentMonthly + (monthly ?? 0);
   const totalLine =
     rule === null || rule === undefined
@@ -173,14 +181,30 @@ function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
       const fields: EditGoalPlanFields = {};
       if (trimmed !== goal.name) fields.name = trimmed;
       if (icon !== (goal.icon ?? null) && icon !== null) fields.icon = icon;
-      if (finalTarget !== goal.target) fields.target = finalTarget;
+      if (finalTarget !== goal.target) {
+        fields.target = finalTarget;
+        // P4-CR-03: a new target keeps one plan: the monthly amount stays and the date follows it (or the amount follows the
+        // date), so Decide's set-aside (which reads ready_by) and Grow's "Reaches" agree. The safety net has no date.
+        if (!isSafetyNetRow(goal)) {
+          Object.assign(fields, planFieldsForTarget({ saved, target: finalTarget, monthly: goal.monthly_amount, readyBy: goal.ready_by, today }));
+        }
+      }
       if (locked !== (goal.locked === true) && !isSafetyNetRow(goal)) fields.locked = locked;
       if (Object.keys(fields).length === 0) {
         onClose();
         return;
       }
-      const series = existingSeries === null ? null : seriesPayload(existingSeries, Math.abs(existingSeries.amount));
-      const { stepId } = save({ ownerId: userId, existing: goal, fields, series });
+      const series =
+        existingSeries === null
+          ? null
+          : seriesPayload(existingSeries, fields.monthly_amount != null ? fields.monthly_amount : Math.abs(existingSeries.amount));
+      let stepId: string;
+      try {
+        stepId = save({ ownerId: userId, existing: goal, fields, series }).stepId;
+      } catch {
+        showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
+        return;
+      }
       hapticLight();
       onClose();
       toast({ key: 'undo.label.goalPlanChanged', stepId, undoLabel: 'goalPlanChanged', name: trimmed, userId, householdId });
@@ -283,7 +307,7 @@ function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
         />
       )}
       {targetBelowSaved ? (
-        <Text style={{ ...textRole(pairing, 'label'), color: colors.danger }}>{t('grow.goals.create.targetBelowSaved', { saved: calc.money(saved) })}</Text>
+        <Text style={{ ...textRole(pairing, 'label'), color: colors.danger }}>{t('grow.goals.create.targetBelowSaved', { saved: goalMoney.exact(saved) })}</Text>
       ) : null}
       {edit ? null : (
         <MoneyInput

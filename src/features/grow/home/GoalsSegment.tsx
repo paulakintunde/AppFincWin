@@ -102,7 +102,8 @@ export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: Goals
       : t(netCounted ? 'grow.home.goalsHeroLabelNet' : 'grow.home.goalsHeroLabel', { count: goalCount });
   const rows = rowsQ.data;
   const sheetRow = sheet === null ? null : (rows?.find((r) => r.id === sheet.id && r.deleted_at === null) ?? null);
-  const sheetSaved = sheet === null ? 0 : (model.goals.find((g) => g.id === sheet.id)?.saved ?? 0);
+  // P4-WR-01: the edit sheet compares saved with the goal-currency target, so it gets saved in the goal's own currency.
+  const sheetSaved = sheet === null ? 0 : (model.ownSavedByGoal?.[sheet.id] ?? model.goals.find((g) => g.id === sheet.id)?.saved ?? 0);
   const accountName = (accountId: string | null): string => {
     const a = (accountsQ.data ?? []).find((x) => x.id === accountId);
     return a === undefined ? t('grow.goals.move.pickAccount') : a.name;
@@ -156,9 +157,11 @@ export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: Goals
               reachesOn={reaches(g.saved, g.target, g.monthlyAmount)}
               money={money}
               pending={pendingOf(g.id)}
+              icon={rows?.find((r) => r.id === g.id)?.icon ?? null}
               actions={{
                 onAddMoney: () => setSheet({ id: g.id, kind: 'add' }),
-                onEdit: () => setSheet({ id: g.id, kind: 'edit' }),
+                // P4-WR-02: a Wait goal's plan belongs to its Decide check (the server keeps it), so it has no Edit here.
+                ...(g.kind === 'wait' ? {} : { onEdit: () => setSheet({ id: g.id, kind: 'edit' }) }),
                 onRemove: () => removeGoal(g.id),
                 confirm: {
                   title: t('grow.goals.removeTitle', { name: g.name }),

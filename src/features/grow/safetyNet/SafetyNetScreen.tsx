@@ -21,6 +21,7 @@ import { planFromMonthly } from '@/features/grow/goals/goalPlanModel';
 import { useGoalRecordDetail } from '@/features/grow/goals/useGoalRecordDetail';
 import { useGoalToast } from '@/features/grow/goals/useGoalToast';
 import { useGoalsRead } from '@/features/grow/goals/useGoalsRead';
+import { useSentConfirms } from '@/features/grow/goals/useSentConfirms';
 import { goalPercent } from '@/features/grow/home/GoalRow';
 import { useGoalMoney } from '@/features/grow/home/useGoalMoney';
 import { ProgressBar } from '@/features/grow/ui/ProgressBar';
@@ -86,6 +87,7 @@ export function SafetyNetScreen() {
   const lineRows = linesQ.data;
   const history = goalHistoryOf(lineRows, netId, openingSaved, createdOn, today);
   const record = useGoalRecordDetail({ householdId, ownerId: userId, today, allLines: lineRows, goalId: netId });
+  const { sent, markSent } = useSentConfirms(lineRows);
   // CRUD #8: the kept-in account's rate, edited on the account's own screen.
   const rate = account?.interest_rate ?? null;
   const hasRate = rate !== null && rate !== '';
@@ -132,7 +134,8 @@ export function SafetyNetScreen() {
 
   // One confirm path for the inline Confirm and the confirm sheet (D-25, T-06-32-01).
   const confirmLine = (item: HistoryItem | null) => {
-    if (item === null || item.line === null || userId === null || row === null) return;
+    if (item === null || item.line === null || userId === null || row === null || sent.has(item.line.id)) return;
+    markSent(item.line); // P4-WR-05: one Confirm per line until the lines catch up
     const stepId = confirm({ ownerId: userId, line: item.line, goal: { id: row.id, name: row.name, currency: row.currency, account_id: row.account_id ?? null } });
     toast({ key: 'undo.label.goalContributionConfirmed', stepId, undoLabel: 'goalContributionConfirmed', name: row.name, userId, householdId });
   };
@@ -246,6 +249,7 @@ export function SafetyNetScreen() {
             onConfirm={confirmLine}
             onOpenExpected={setConfirming}
             onAddMoney={() => setMove('add')}
+            sentIds={sent}
           />
         ) : null}
 
@@ -263,7 +267,14 @@ export function SafetyNetScreen() {
           onSaved={(stepId) => toast({ key: 'undo.label.goalPlanChanged', stepId, undoLabel: 'goalPlanChanged', name: row.name, userId, householdId })}
         />
       ) : null}
-      <MoneyMoveSheet visible={move !== null} goal={row} kind={move ?? 'add'} onClose={() => setMove(null)} onMoved={onMoved} />
+      <MoneyMoveSheet
+        visible={move !== null}
+        goal={row}
+        kind={move ?? 'add'}
+        onClose={() => setMove(null)}
+        onMoved={onMoved}
+        onChooseAccount={() => setAccountOpen(true)}
+      />
       <ConfirmSheet
         visible={confirming !== null}
         title={confirming === null ? undefined : confirmTitle(confirming)}

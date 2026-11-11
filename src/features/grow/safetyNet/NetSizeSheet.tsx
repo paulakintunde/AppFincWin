@@ -34,6 +34,8 @@ export interface NetSizeSheetProps {
   /** Saved so far in the net's own currency (edit mode refuses a size below it). */
   saved: number;
   onClose: () => void;
+  /** P4-WR-06: called once after a size is saved (the first-open sheet confirms the moved net with it). */
+  onSaved?: () => void;
 }
 
 type Choice = 'current' | 'one' | 'three' | 'own';
@@ -60,7 +62,7 @@ function PreviewRow({ row }: { row: NetPreviewRow }) {
   );
 }
 
-function SizeForm({ net, saved, onClose }: NetSizeSheetProps) {
+function SizeForm({ net, saved, onClose, onSaved }: NetSizeSheetProps) {
   const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const { userId, householdId, ctx } = usePastContext();
@@ -134,6 +136,7 @@ function SizeForm({ net, saved, onClose }: NetSizeSheetProps) {
       name = net.name;
     }
     hapticLight();
+    onSaved?.();
     onClose();
     toast({ key: 'grow.safetyNet.sizeSheet.savedToast', params: { amount: money.amount(size) }, stepId, undoLabel: 'safetyNetSizeSaved', name, userId, householdId });
   };

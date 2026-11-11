@@ -1,7 +1,7 @@
 // 06-17 (G06, D-16): "Close the loan from a sale". What it sold for, the date, and what pays the loan (prefilled with the whole
 // balance). One save records the sale and the final payment together (useRecordDebtSale, one call); a payment that covers the
 // balance closes the loan, a smaller one leaves the rest owed. The preview says which, in plain words.
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useAccounts } from '@/data/queries/accounts';
 import { useRecordDebtSale } from '@/data/mutations/growDebts';
@@ -24,7 +24,7 @@ import { Text } from '@/ui/Text';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { saleOutcome } from './debtLineModel';
-import { useDebtFormat } from './debtScreenData';
+import { fitLineName, useDebtFormat } from './debtScreenData';
 
 export interface SaleSheetProps {
   visible: boolean;
@@ -48,8 +48,9 @@ export function SaleSheet({ visible, debt, onClose }: SaleSheetProps) {
   const accounts = (useAccounts(rc.householdId ?? undefined).data ?? []).filter((a) => a.archived_at === null);
   const { record } = useRecordDebtSale();
 
+  // P3-WR-12: the default account is worked out at render, so accounts that load after the sheet opens still fill it in.
   const defaultAccount = debt.account_id ?? (accounts.find((a) => a.kind === 'checking') ?? accounts[0])?.id ?? null;
-  const [initial] = useState<Fields>({ soldFor: null, date: rc.today, paidWith: debt.balance, accountId: defaultAccount });
+  const [initial] = useState<Fields>({ soldFor: null, date: rc.today, paidWith: debt.balance, accountId: null });
   const [value, setValue] = useState<Fields>(initial);
   const set = (patch: Partial<Fields>) => setValue((v) => ({ ...v, ...patch }));
   const dirty = useIsDirty(initial, value);
@@ -57,11 +58,12 @@ export function SaleSheet({ visible, debt, onClose }: SaleSheetProps) {
   const soldOk = value.soldFor !== null && value.soldFor >= 1 && value.soldFor <= MAX_INPUT_MINOR;
   const paidOk = value.paidWith !== null && value.paidWith >= 0 && value.paidWith <= MAX_INPUT_MINOR;
   const outcome = soldOk && paidOk ? saleOutcome(debt.balance, value.soldFor as number, value.paidWith as number) : null;
-  const account = accounts.find((a) => a.id === value.accountId) ?? null;
+  const account = accounts.find((a) => a.id === (value.accountId ?? defaultAccount)) ?? null;
+  const saving = useRef(false);
   const canSave = outcome !== null && !outcome.exceeds && account !== null && value.date <= rc.today && rc.userId !== null;
 
   const onSave = (): void => {
-    if (!canSave || outcome === null || account === null || rc.userId === null) return;
+    if (!canSave || outcome === null || account === null || rc.userId === null || saving.current) return;
     try {
       const { stepId } = record({
         ownerId: rc.userId,
@@ -70,10 +72,12 @@ export function SaleSheet({ visible, debt, onClose }: SaleSheetProps) {
         paidToLoan: value.paidWith as number,
         saleAccountId: account.id,
         paymentAccountId: account.id,
-        saleName: t('grow.debts.sale.soldLineName', { name: debt.name }),
-        paymentName: t('grow.debts.sale.finalPaymentLineName', { name: debt.name }),
+        saleName: fitLineName(t, 'grow.debts.sale.soldLineName', debt.name),
+        paymentName: fitLineName(t, 'grow.debts.sale.finalPaymentLineName', debt.name),
         date: value.date,
       });
+      // P3-WR-02: one sale per sheet; a second tap before it closes does nothing.
+      saving.current = true;
       hapticLight();
       showToast({ kind: 'ordinary', text: { key: 'grow.debts.sale.toast' }, stepId });
       onClose();
@@ -129,7 +133,7 @@ export function SaleSheet({ visible, debt, onClose }: SaleSheetProps) {
               <Chip
                 key={a.id}
                 label={a.name}
-                selected={value.accountId === a.id}
+                selected={account?.id === a.id}
                 onPress={() => {
                   hapticSelection();
                   set({ accountId: a.id });

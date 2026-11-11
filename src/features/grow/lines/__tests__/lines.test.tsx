@@ -7,7 +7,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { minorUnits } from '@/engine/money';
 import { wrap } from '@/features/decide/check/steps/__tests__/helpers/stepProps';
 import type { GoalsRead } from '@/features/grow/goals/useGoalsRead';
-import { GrowLinesScreen } from '../GrowLinesScreen';
+import { GrowLinesScreen, isWholeAmount } from '../GrowLinesScreen';
 
 jest.setTimeout(30000);
 
@@ -33,7 +33,10 @@ jest.mock('@/ui/haptics', () => ({
   hapticSuccess: jest.fn(),
   hapticMedium: jest.fn(),
 }));
-jest.mock('@/data/mutations/decideSettings', () => ({ useUpdateDecideSettings: () => ({ update: (p: unknown) => mockUpdate(p) }) }));
+jest.mock('@/data/mutations/decideSettings', () => ({
+  useUpdateDecideSettings: () => ({ update: (p: unknown) => mockUpdate(p) }),
+  inverseSettingsPatch: jest.requireActual('@/data/mutations/decideSettings').inverseSettingsPatch,
+}));
 let mockSettings: Record<string, unknown> | null = null;
 let mockResult: unknown = null;
 jest.mock('@/data/queries/decide', () => ({
@@ -204,5 +207,13 @@ describe('no second store (T-06-16-02)', () => {
     for (const f of fs.readdirSync(dir).filter((n) => n.endsWith('.tsx'))) {
       expect(fs.readFileSync(path.join(dir, f), 'utf8')).not.toMatch(/\b(advice|recommend\w*|should|optimal)\b/i);
     }
+  });
+
+  it('P4-IN-01: "whole amount" follows the currency exponent, not a fixed 2 decimals', () => {
+    expect(isWholeAmount(1500, 'USD')).toBe(true);
+    expect(isWholeAmount(1550, 'USD')).toBe(false);
+    expect(isWholeAmount(1500, 'BHD')).toBe(false); // 1.5 BHD keeps its decimals
+    expect(isWholeAmount(2000, 'BHD')).toBe(true);
+    expect(isWholeAmount(1500, 'JPY')).toBe(true);
   });
 });

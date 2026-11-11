@@ -1,6 +1,6 @@
 // 06-17: the small pure helpers the Debts screens need beyond the engine: the debt-payment share of pay against the user's
 // rule, and the "about" rounding. Whole-number rounding, half up, integers only (no floats for money).
-import { minorUnits } from '@/engine/money';
+import { currencyExponent, minorUnits } from '@/engine/money';
 import { estimatedCardMinimum, percent, strategy, ZERO_PERCENT, type PayoffOrder, type PlanDebt } from '@/engine/payoff';
 import { dueDateOf } from '../connect/debtPoint';
 import type { DebtLine } from './useDebtsRead';
@@ -63,11 +63,11 @@ export function firstClearedDate(lines: readonly DebtLine[], extra: number, orde
  * D-28: the estimated minimum for a carried card with no typed minimum, from the engine's own rule. Null when the balance is
  * empty or the rate text is not a valid yearly rate (blank counts as none).
  */
-export function estimatedMinimumOf(balance: number | null, rateText: string): number | null {
+export function estimatedMinimumOf(balance: number | null, rateText: string, currency?: string): number | null {
   if (balance === null || balance <= 0) return null;
   const text = rateText.trim().replace(',', '.');
   if (text !== '' && !/^\d{1,3}(\.\d{1,2})?$/.test(text)) return null;
-  return estimatedCardMinimum(minorUnits(balance), text === '' ? ZERO_PERCENT : percent(text));
+  return estimatedCardMinimum(minorUnits(balance), text === '' ? ZERO_PERCENT : percent(text), currency === undefined ? 2 : currencyExponent(currency));
 }
 
 /** Whole percent of the starting balance already paid, half up, clamped to 0..100; null without a starting balance. */

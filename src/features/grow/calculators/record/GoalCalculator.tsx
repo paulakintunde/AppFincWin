@@ -67,7 +67,10 @@ export function GoalCalculator({ id }: { id: string }) {
   const currentMonthly = point?.monthlyAmount ?? 0;
 
   const [lastEdited, setLastEdited] = useState<'first' | 'second'>('first');
-  const [firstText, setFirstText] = useState(() => (currentMonthly > 0 ? parser.toInputText(currentMonthly, calc.currency) : ''));
+  // P3-WR-12: until the user types, "Each month" follows the goal's current amount, so a goal that arrives after the first
+  // render (cold start, deep link) still fills it in. null = not typed yet.
+  const [typedFirst, setFirstText] = useState<string | null>(null);
+  const firstText = typedFirst ?? (currentMonthly > 0 ? parser.toInputText(currentMonthly, calc.currency) : '');
   const [secondText, setSecondText] = useState('');
   const [confirming, setConfirming] = useState(false);
 

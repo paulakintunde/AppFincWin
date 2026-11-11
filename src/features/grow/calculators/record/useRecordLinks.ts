@@ -2,6 +2,7 @@
 // target, the first open debt with a rate, and investing when there are holdings. With none, the list is empty and the page
 // draws no section. Read-only; the figures are formatted, not worked out, here.
 import type { Href } from 'expo-router';
+import { useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useT } from '@/i18n';
 import { useDebtFormat } from '@/features/grow/debts/debtScreenData';
 import { useDebtsRead } from '@/features/grow/debts/useDebtsRead';
@@ -18,9 +19,12 @@ export function useRecordLinks(): RecordLink[] {
   const goals = useGoalsRead();
   const debts = useDebtsRead();
   const investing = useInvestingRead();
+  const goalRows = useSavingsGoalRows(goals.userId ?? undefined, goals.householdId ?? undefined).data;
   const links: RecordLink[] = [];
 
-  const goal = goals.model.goals.find((g) => g.target !== null && g.target > 0 && g.saved < g.target);
+  // P3-WR-13: the goal calculator works in the home currency, so only a goal kept in it gets a link (never a dead one).
+  const homeGoalIds = new Set((goalRows ?? []).filter((r) => r.deleted_at === null && r.currency === calc.currency).map((r) => r.id));
+  const goal = goals.model.goals.find((g) => homeGoalIds.has(g.id) && g.target !== null && g.target > 0 && g.saved < g.target);
   if (goal !== undefined && goal.target !== null) {
     links.push({
       key: 'goal',

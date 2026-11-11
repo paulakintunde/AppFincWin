@@ -187,6 +187,22 @@ describe('DebtPayoffCalculator (GC40)', () => {
   });
 });
 
+describe('P3-IN-05: payoff orders that never clear', () => {
+  it('each order card says the debts do not clear instead of showing an empty card', async () => {
+    await wrap(<DebtPayoffCalculator />);
+    await type('Debt 1, Owed', '4200');
+    await type('Debt 1, Rate', '21.9');
+    await type('Debt 1, Minimum', '10');
+    await type('Extra each month', '0');
+    await fireEvent.press(screen.getByLabelText('Remove this debt, Debt 2', o));
+    await settle();
+    await waitFor(() => expect(screen.getByTestId('order-rate-not-cleared', o)).toBeTruthy());
+    expect(screen.getByTestId('order-balance-not-cleared', o).props.children).toBe(
+      'On these numbers the debts do not clear: the interest is more than what is paid.',
+    );
+  });
+});
+
 describe('never saved', () => {
   it('has no write path: the calculators import no mutation, storage or cache writes', () => {
     const fs = jest.requireActual('fs') as typeof import('fs');

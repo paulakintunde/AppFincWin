@@ -8,6 +8,7 @@ import { useDecideSettings, useDecideSnapshot } from '@/data/queries/decide';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
 import { prepareContext } from '@/engine/decide';
 import { currencyCode, minorUnits } from '@/engine/money';
+import { currencyExponent } from '@/engine/money/currencyExponents';
 import { useT } from '@/i18n';
 import { percentText } from '@/features/decide/copy/percentText';
 import { monthBreakdown } from '@/features/decide/home/homeCardModel';
@@ -71,6 +72,11 @@ function LineRow({ testID, glyph, name, sub, value, isDefault, navy = false, sta
   );
 }
 
+/** P4-IN-01: true when `minor` is a whole number of units in `currency` (by its own exponent: 100 for USD, 1000 for BHD). */
+export function isWholeAmount(minor: number, currency: string): boolean {
+  return minor % 10 ** currencyExponent(currency) === 0;
+}
+
 export function GrowLinesScreen() {
   const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
@@ -118,7 +124,7 @@ export function GrowLinesScreen() {
   // R1: a rule amount shows whole units when it is a whole amount, and keeps its cents otherwise.
   const withCents = useMoneyFormatter(true, currency);
   const ruleAmount = (minor: number) =>
-    minor % 100 === 0 ? money.amount(minor) : withCents.formatMoney({ amount: minorUnits(minor), currency: currencyCode(currency) });
+    isWholeAmount(minor, currency) ? money.amount(minor) : withCents.formatMoney({ amount: minorUnits(minor), currency: currencyCode(currency) });
 
   const met = (set: number, floor: number | null) =>
     floor === null || floor <= 0 ? null : (

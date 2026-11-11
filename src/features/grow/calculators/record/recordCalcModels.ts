@@ -111,11 +111,11 @@ export interface DebtExtraResult {
   eachMonth: number;
   /** Interest from now. */
   interest: number;
-  /** Interest saved against no extra (0 for no extra). */
-  interestSaved: number;
+  /** Interest saved against no extra (0 for no extra); null when the payment alone never clears the debt (P3-WR-14). */
+  interestSaved: number | null;
   lastPayment: number;
-  /** Months sooner than with no extra. */
-  soonerMonths: number;
+  /** Months sooner than with no extra; null when the payment alone never clears the debt. */
+  soonerMonths: number | null;
   /** Whole percent of usual pay (half up); null without usual pay. */
   sharePercent: number | null;
   /** The extra clears it with the first payment. */
@@ -128,7 +128,9 @@ export function debtExtraModel(ctx: DebtExtraContext, extra: number): DebtExtraR
   return guarded(() => {
     const base = fixedPayoff(minor(ctx.balance), parsed.rate, minor(ctx.payment));
     const withExtra = fixedPayoff(minor(ctx.balance), parsed.rate, minor(ctx.payment), { extra: minor(extra) });
-    if (base.outcome !== 'cleared' || withExtra.outcome !== 'cleared' || base.totalInterest === null || withExtra.totalInterest === null) return null;
+    // P3-WR-14: an extra that clears a debt the payment alone never clears still has an answer; only the comparison is missing.
+    if (withExtra.outcome !== 'cleared' || withExtra.totalInterest === null) return null;
+    const baseClears = base.outcome === 'cleared' && base.totalInterest !== null;
     if (withExtra.months < 1) return null;
     const eachMonth = ctx.payment + extra;
     const share = ctx.usualPay !== null && ctx.usualPay > 0 ? Number(divideHalfUp(BigInt(eachMonth) * 100n, BigInt(ctx.usualPay))) : null;
@@ -137,9 +139,9 @@ export function debtExtraModel(ctx: DebtExtraContext, extra: number): DebtExtraR
       endDate: depositDate(ctx.firstDate, withExtra.months),
       eachMonth,
       interest: withExtra.totalInterest,
-      interestSaved: base.totalInterest - withExtra.totalInterest,
+      interestSaved: baseClears ? (base.totalInterest as number) - withExtra.totalInterest : null,
       lastPayment: withExtra.lastPayment,
-      soonerMonths: base.months - withExtra.months,
+      soonerMonths: baseClears ? base.months - withExtra.months : null,
       sharePercent: share,
       paidInOnePayment: withExtra.months === 1,
     };

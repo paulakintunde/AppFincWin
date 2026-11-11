@@ -118,7 +118,7 @@ function MonthForm({ net, series, saved, onClose, onSaved }: NetMonthSheetProps)
               max={28}
               onChange={setDay}
               valueText={fmt.ordinal(day)}
-              accessibilityLabel={t('grow.debts.add.dueDay')}
+              accessibilityLabel={t('grow.safetyNet.eachMonthSheet.day')}
               decrementLabel={t('grow.debts.less')}
               incrementLabel={t('grow.debts.more')}
             />

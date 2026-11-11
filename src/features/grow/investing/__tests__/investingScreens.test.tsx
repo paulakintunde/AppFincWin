@@ -68,6 +68,7 @@ import { AddHoldingSheet, HOLDING_TYPE_OPTIONS } from '../AddHoldingSheet';
 import { LotSheet } from '../LotSheet';
 import { UpdateValueSheet } from '../UpdateValueSheet';
 import { buildInvestingModel } from '../useInvestingRead';
+import { validDateText } from '../investingFormat';
 
 const NOW = '2026-11-06';
 
@@ -424,5 +425,94 @@ describe('06-33 entries and the holding header', () => {
     await fireEvent.press(empty[empty.length - 1]!);
     expect(screen.getByText(en.grow.investing.update.save)).toBeTruthy();
     expect(screen.getByTestId('holding-remove')).toBeTruthy();
+  });
+});
+
+describe('Phase 6 review fixes (P3)', () => {
+  it('P3-WR-10: with nothing cached and a failed read, Investing says so and offers Try again', async () => {
+    const refetch = jest.fn();
+    mockRead = { ...readOf([]), status: 'error', refetch };
+    await renderIt(<InvestingSegment />);
+    expect(screen.getByTestId('grow-investing-error')).toBeTruthy();
+    await fireEvent.press(screen.getByText(en.grow.common.tryAgain));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('P3-IN-03: a refused holding removal says so instead of throwing', async () => {
+    mockRead = readOf(mockHoldings);
+    mockRemoveHolding.mockImplementationOnce(() => {
+      throw new RangeError('remove holding: already removed');
+    });
+    await renderIt(<HoldingDetailScreen id="h-ret" />);
+    await fireEvent.press(screen.getByTestId('holding-remove'));
+    await fireEvent.press(screen.getByText(en.grow.investing.detail.removeConfirm));
+    expect(mockToast).toHaveBeenCalledWith({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
+  });
+
+  it('P3-WR-09: removing a buy a later sale depends on is refused with a message', async () => {
+    mockLots = [lot({ id: 'e1', kind: 'buy', amount: 15000, units: '2', local_date: '2026-10-01' })];
+    mockRead = readOf(mockHoldings, mockLots);
+    mockRemoveLot.mockImplementationOnce(() => {
+      throw new RangeError('sell-exceeds-units');
+    });
+    await renderIt(<HoldingDetailScreen id="h-ret" />);
+    await fireEvent.press(screen.getByTestId('entry-e1'));
+    await fireEvent.press(screen.getByTestId('lot-remove'));
+    await fireEvent.press(screen.getByText(en.grow.investing.entry.removeConfirm));
+    expect(mockToast).toHaveBeenCalledWith({ kind: 'refusal', text: { key: 'grow.investing.entry.removeRefused' } });
+  });
+
+  it('P3-WR-09: an impossible date is refused in the entry form, with a message', async () => {
+    await renderIt(<LotSheet visible holding={holding()} lots={[]} onClose={() => undefined} />);
+    await fireEvent.changeText(screen.getByLabelText(en.grow.investing.entry.amount), '500');
+    await fireEvent.changeText(screen.getByTestId('lot-date'), '2026-02-31');
+    expect(screen.getByText(en.grow.investing.dateInvalid)).toBeTruthy();
+    await fireEvent.press(screen.getByText(en.grow.investing.entry.save));
+    expect(mockAddLot).not.toHaveBeenCalled();
+  });
+
+  it('P3-WR-09: a save the hook refuses shows a refusal toast', async () => {
+    mockAddLot.mockImplementationOnce(() => {
+      throw new RangeError('add entry: amount out of range');
+    });
+    await renderIt(<LotSheet visible holding={holding()} lots={[]} onClose={() => undefined} />);
+    await fireEvent.changeText(screen.getByLabelText(en.grow.investing.entry.amount), '500');
+    await fireEvent.press(screen.getByText(en.grow.investing.entry.save));
+    expect(mockToast).toHaveBeenCalledWith({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
+  });
+
+  it('P3-WR-08: editing a euro holding types euros, not home dollars', async () => {
+    const eur = holding({ currency: 'EUR', opening_put_in: 100000 });
+    await renderIt(<AddHoldingSheet visible holding={eur} lots={[]} onClose={() => undefined} />);
+    await fireEvent.changeText(screen.getByLabelText(en.grow.investing.add.putIn), '1500');
+    await fireEvent.press(screen.getByText(en.grow.investing.add.saveEdit));
+    expect(mockEditHolding).toHaveBeenCalledWith(eur, { opening_put_in: 150000 }, 'u1', []);
+  });
+
+  it('P3-WR-08: a holding no stored rate converts gets no growth link (never a foreign amount shown as home money)', async () => {
+    mockHoldings = [holding({ currency: 'EUR', rate: '5' })];
+    mockRead = readOf(mockHoldings);
+    await renderIt(<HoldingDetailScreen id="h-ret" />);
+    expect(screen.queryByTestId('holding-growth-row')).toBeNull();
+  });
+
+  it('P3-IN-04: turning the regular amount off counts as a change', async () => {
+    const onClose = jest.fn();
+    await renderIt(<AddHoldingSheet visible holding={holding()} lots={[]} onClose={onClose} />);
+    await fireEvent.press(screen.getByLabelText(en.grow.investing.add.regular));
+    await fireEvent.press(screen.getByText(en.grow.investing.add.saveEdit));
+    expect(mockEditHolding).toHaveBeenCalledWith(expect.anything(), { monthly_amount: null, day: null }, 'u1', []);
+  });
+});
+
+describe('P3-WR-09: validDateText', () => {
+  it('accepts real calendar days only', () => {
+    expect(validDateText('2026-02-28')).toBe(true);
+    expect(validDateText('2028-02-29')).toBe(true);
+    expect(validDateText('2026-02-29')).toBe(false);
+    expect(validDateText('2026-02-31')).toBe(false);
+    expect(validDateText('2026-13-01')).toBe(false);
+    expect(validDateText('2026-04-00')).toBe(false);
+    expect(validDateText('2026-4-1')).toBe(false);
   });
 });

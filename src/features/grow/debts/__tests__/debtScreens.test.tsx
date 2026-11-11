@@ -76,6 +76,7 @@ jest.mock('@/shell/screen/DetailScreen', () => {
   };
 });
 
+import { AddDebtSheet } from '../AddDebtSheet';
 import { DebtsSegment } from '../DebtsSegment';
 import { soonerText } from '../PayoffPlanCard';
 /* eslint-enable import/first */
@@ -523,5 +524,113 @@ describe('Add a debt (G07, D-15, D-28)', () => {
     expect(mockPush).toHaveBeenCalledWith('/grow/debt/new-debt');
   });
 });
+
+describe('Phase 6 review fixes (P3)', () => {
+  const pressed = (text: string | RegExp) => screen.getByText(text);
+
+  it('P3-WR-02: a double tap on Use extra writes once; a saved extra reads as the plan, with no button', async () => {
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(pressed('Use $50 extra from Nov 15'));
+    await fireEvent.press(pressed('Use $50 extra from Nov 15'));
+    expect(mockSavePlan).toHaveBeenCalledTimes(1);
+  });
+
+  it('P3-WR-02: with the stepper on the saved extra, the plan is named and nothing can be saved again', async () => {
+    mockRows = [{ ...AUTO, payoff_extra: 5000 }];
+    await wrap(<DebtsSegment />);
+    expect(screen.getByTestId('payoff-extra-is-plan').props.children).toBe('$50 extra a month is your plan now.');
+    expect(screen.queryByText('Use $50 extra from Nov 15')).toBeNull();
+  });
+
+  it('P3-WR-02: a double tap on Use once records one payment, and the button waits', async () => {
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByTestId('payoff-scenario-once'));
+    await fireEvent.press(pressed('Use $1,000 once on Nov 5'));
+    await fireEvent.press(pressed('Use $1,000 once on Nov 5'));
+    expect(mockRecordOnce).toHaveBeenCalledTimes(1);
+    expect(button('Use $1,000 once on Nov 5').props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('P3-WR-03: Stop the extra stops it on every debt that carries one (one carrier, D-34)', async () => {
+    mockRows = [{ ...AUTO, payoff_extra: 2500 }, { ...STORE, payoff_extra: 2500 }];
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByTestId('payoff-order-rate'));
+    await fireEvent.press(screen.getByTestId('payoff-scenario-minimum'));
+    await fireEvent.press(screen.getByText(/^Stop the extra from/));
+    expect(mockSavePlan).toHaveBeenCalledTimes(2);
+    const ids = mockSavePlan.mock.calls.map((c) => ((c as unknown[])[0] as { debt: { id: string }; extra: number }));
+    expect(ids.map((c) => [c.debt.id, c.extra]).sort()).toEqual([
+      ['auto', 0],
+      ['card', 0],
+    ]);
+  });
+
+  it('P3-WR-04 / WR-05: a yen plan steps and starts in whole yen; pay in dollars hides the share-of-pay card', async () => {
+    mockRows = [{ ...AUTO, currency: 'JPY', balance: 1200000, minimum_payment: 30000 }];
+    await wrap(<DebtsSegment />);
+    expect(screen.getByText(/^Use ¥50 extra from/)).toBeTruthy();
+    expect(screen.queryByTestId('grow-debts-line')).toBeNull();
+    expect(screen.queryByText(/Extra money for debt comes out of what is left/)).toBeNull();
+    await fireEvent.press(screen.getByTestId('grow-stepper-plus'));
+    expect(screen.getByText(/^Use ¥75 extra from/)).toBeTruthy();
+  });
+
+  it('P3-WR-07: a long debt name is shortened so the one-off line name stays within 80 characters', async () => {
+    const long = 'L'.repeat(75);
+    mockRows = [{ ...AUTO, name: long }];
+    await wrap(<DebtsSegment />);
+    await fireEvent.press(screen.getByTestId('payoff-scenario-once'));
+    await fireEvent.press(screen.getByText(/^Use \$1,000 once on/));
+    const name = ((mockRecordOnce.mock.calls[0] as unknown[])[0] as { name: string }).name;
+    expect(name.length).toBeLessThanOrEqual(80);
+    expect(name.startsWith('One-off payment · LLL')).toBe(true);
+    expect(name.endsWith('…')).toBe(true);
+  });
+
+  it('P3-CR-02: a loan needs its monthly payment typed; a blank minimum does not save as $0', async () => {
+    mockRows = [AUTO];
+    await openAdd();
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Car loan');
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.owedNow), '15000');
+    expect(screen.getByText(en.grow.debts.add.minimumNeeded)).toBeTruthy();
+    expect(button(en.grow.debts.add.save).props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(screen.getByText(en.grow.debts.add.save));
+    expect(mockSaveDebt).not.toHaveBeenCalled();
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.minimum), '320');
+    expect(screen.queryByText(en.grow.debts.add.minimumNeeded)).toBeNull();
+    await fireEvent.press(screen.getByText(en.grow.debts.add.save));
+    expect(mockSaveDebt).toHaveBeenCalledWith(expect.objectContaining({ fields: expect.objectContaining({ kind: 'loan', minimum_payment: 32000 }) }));
+  });
+
+  it('P3-CR-02: a carried card may leave the minimum blank (the estimate stands in, D-28)', async () => {
+    await openAdd();
+    await fireEvent.press(screen.getByText(en.grow.debts.add.typeCard));
+    await fireEvent.press(screen.getByTestId('add-debt-full-no'));
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Store card');
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.owedNow), '4200');
+    expect(screen.queryByText(en.grow.debts.add.minimumNeeded)).toBeNull();
+    await fireEvent.press(screen.getByText(en.grow.debts.add.save));
+    expect(mockSaveDebt).toHaveBeenCalledWith(expect.objectContaining({ fields: expect.objectContaining({ kind: 'card', minimum_payment: 0 }) }));
+  });
+
+  it('P3-WR-06: a card switched to paid in full drops its rate and minimum', async () => {
+    await wrap(<AddDebtSheet visible debt={STORE} onClose={jest.fn()} />);
+    await fireEvent.press(screen.getByTestId('add-debt-full-yes'));
+    const saves = screen.getAllByText(en.grow.debts.add.saveEdit);
+    await fireEvent.press(saves[saves.length - 1]!);
+    expect(mockSaveDebt).toHaveBeenCalledWith(
+      expect.objectContaining({ existing: STORE, fields: { pays_in_full: 'yes', apr: null, minimum_payment: 0 } }),
+    );
+  });
+
+  it('P3-WR-06: clearing a carried card’s minimum goes back to the estimate (saved as 0), not a silent no-op', async () => {
+    await wrap(<AddDebtSheet visible debt={STORE} onClose={jest.fn()} />);
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.minimum), '');
+    const saves = screen.getAllByText(en.grow.debts.add.saveEdit);
+    await fireEvent.press(saves[saves.length - 1]!);
+    expect(mockSaveDebt).toHaveBeenCalledWith(expect.objectContaining({ fields: { minimum_payment: 0 } }));
+  });
+});
+
 
 void act;

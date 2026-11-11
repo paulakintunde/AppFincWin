@@ -4,7 +4,7 @@
 // off saves the line as null (the stored "no figure" value). Saving is a light haptic and a toast whose Undo puts the old value back.
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useUpdateDecideSettings } from '@/data/mutations/decideSettings';
+import { inverseSettingsPatch, useUpdateDecideSettings } from '@/data/mutations/decideSettings';
 import type { DecideSettingsPatch, DecideSettingsRow } from '@/db/decideSettings';
 import { useT } from '@/i18n';
 import { stampSettingsPatch } from '@/features/decide/home/settingsPatch';
@@ -68,12 +68,14 @@ function LineForm({ rule, userId, currency, settings, defaults, onClose, onSaved
     if (!on) patch = { [column]: null };
     else if (rule === 'debt') patch = { dsr_line: String(percent) };
     else patch = { [column]: amount };
-    const previous: DecideSettingsPatch =
-      rule === 'debt' ? { dsr_line: settings?.dsr_line ?? null } : { [column]: storedMoney };
-    mutation.update(stampSettingsPatch(patch, settings, currency));
+    // 06 review P4-WR-07: a figure typed in another currency clears every other money column and changes the currency in
+    // the same write, so Undo puts back every column the write touched (the stored values, not re-stamped).
+    const forward = stampSettingsPatch(patch, settings, currency);
+    const previous = inverseSettingsPatch(forward, settings);
+    mutation.update(forward);
     hapticLight();
     onClose();
-    onSaved(() => mutation.update(stampSettingsPatch(previous, settings, currency)));
+    onSaved(() => mutation.update(previous));
   };
 
   const name = t(NAME[rule]);

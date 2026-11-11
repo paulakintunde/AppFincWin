@@ -64,7 +64,8 @@ function Body({ holding, lot, lots, onRemove, onClose }: Omit<UpdateValueSheetPr
         showToast({ kind: 'ordinary', text: undoLabelText('holdingEntryEdited', { name: holding.name }), stepId });
         onClose();
       } catch {
-        // The hook refuses what the form already blocks.
+        // P3-WR-09: the hook refused (a value over the cap); nothing was written.
+        showToast({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
       }
       return;
     }
@@ -74,7 +75,7 @@ function Body({ holding, lot, lots, onRemove, onClose }: Omit<UpdateValueSheetPr
       showToast({ kind: 'ordinary', text: undoLabelText('holdingValueUpdated', { name: holding.name }), stepId });
       onClose();
     } catch {
-      // The hook refuses what the form already blocks.
+      showToast({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
     }
   };
 

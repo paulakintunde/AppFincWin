@@ -50,6 +50,10 @@ export function FirstOpenNetSheet() {
         visible
         net={row}
         saved={point === null ? 0 : point.saved}
+        // P4-WR-06: choosing a new size answers the question too, so the sheet does not come back on the next launch.
+        onSaved={() => {
+          if (read.userId !== null) confirm(row, read.userId);
+        }}
         onClose={() => {
           setChanging(false);
           dismiss();

@@ -9,7 +9,6 @@ import { useConfirmGoalContribution, useEditGoal } from '@/data/mutations/growGo
 import { useAccounts } from '@/data/queries/accounts';
 import { useGoalLines, useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
-import { currencyExponent } from '@/engine/money/currencyExponents';
 import { useT } from '@/i18n';
 import { usePastContext } from '@/features/decide/past/usePastDecisions';
 import { checkHref } from '@/features/decide/home/checkHref';
@@ -37,8 +36,10 @@ import { MoneyMoveSheet, type MoneyMovedEvent, type MoveKind } from './MoneyMove
 import { NewGoalSheet } from './NewGoalSheet';
 import { ReachedMoment } from './ReachedMoment';
 import { UseAsSafetyNetSheet } from './UseAsSafetyNetSheet';
+import { ownSavedOf } from './goalOwnMoney';
 import { planFromMonthly } from './goalPlanModel';
 import { useGoalRecordDetail } from './useGoalRecordDetail';
+import { useSentConfirms } from './useSentConfirms';
 import { useGoalToast } from './useGoalToast';
 import { useGoalsRead } from './useGoalsRead';
 import { NetAccountSheet } from '@/features/grow/safetyNet/NetAccountSheet';
@@ -54,11 +55,15 @@ function ordinal(n: number): string {
 export function GoalDetailScreen({ id }: { id: string }) {
   const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
-  const { userId, householdId, today, formatDate } = usePastContext();
-  const money = useGoalMoney();
+  const { userId, householdId, today, formatDate, ctx } = usePastContext();
   const calc = useCalcFormat();
   const read = useGoalsRead();
   const rowsQ = useSavingsGoalRows(userId ?? undefined, householdId ?? undefined);
+  const goalRow = rowsQ.data?.find((r) => r.id === id && r.deleted_at === null) ?? null;
+  // P4-WR-01: this goal's figures are in its own currency (target, monthly amount, history), so saved and every amount on the
+  // screen are in that currency too. The home formatter is kept for the safety net's own figure.
+  const money = useGoalMoney(goalRow?.currency);
+  const homeMoney = useGoalMoney();
   const linesQ = useGoalLines(householdId, [id]);
   const seriesQ = useRecurringSeries(householdId ?? undefined);
   const accountsQ = useAccounts(householdId ?? undefined);
@@ -76,7 +81,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const [accountOpen, setAccountOpen] = useState(false);
 
   const rows = rowsQ.data;
-  const row = rows?.find((r) => r.id === id && r.deleted_at === null) ?? null;
+  const row = goalRow;
   const net = rows?.find((r) => r.is_safety_net === true && r.deleted_at === null) ?? null;
   const isNet = row !== null && row.is_safety_net === true;
   const point = isNet ? read.model.safetyNet : (read.model.goals.find((g) => g.id === id) ?? null);
@@ -89,6 +94,9 @@ export function GoalDetailScreen({ id }: { id: string }) {
     [lineRows, row, id, today]
   );
   const record = useGoalRecordDetail({ householdId, ownerId: userId, today, allLines: lineRows, goalId: id });
+  const { sent, markSent } = useSentConfirms(lineRows);
+  // P4-WR-01: saved in the goal's own currency (the read model's figure when the goal is in the home currency).
+  const ownSaved = row === null || lineRows === undefined ? null : ownSavedOf(row, point === null ? null : point.saved, lineRows, ctx);
 
   const card = [styles.card, { backgroundColor: colors.surface }, shadows.card];
 
@@ -103,7 +111,8 @@ export function GoalDetailScreen({ id }: { id: string }) {
       </DetailScreen>
     );
   }
-  if (row === null || point === null) {
+  // P4-WR-03: the skeleton only while the reads load; a removed, finished or unreadable goal says so (never an endless skeleton).
+  if (rows === undefined || (row !== null && (lineRows === undefined || read.status === 'loading'))) {
     return (
       <DetailScreen title="">
         <View testID="goal-loading" accessibilityLabel={t('grow.home.loading')} style={styles.stack}>
@@ -113,8 +122,23 @@ export function GoalDetailScreen({ id }: { id: string }) {
       </DetailScreen>
     );
   }
+  if (row === null || row.done_at !== null || ownSaved === null) {
+    const state = row === null ? 'removed' : row.done_at !== null ? 'done' : 'noRate';
+    return (
+      <DetailScreen title={row === null ? '' : row.name}>
+        <View testID={`goal-${state}`} style={[...card, styles.center]}>
+          <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, textAlign: 'center' }}>
+            {t(`grow.goals.detail.state.${state}`, { currency: row?.currency ?? '' })}
+          </Text>
+          <Pill label={t('grow.goals.detail.state.back')} variant="secondary" onPress={() => router.back()} />
+        </View>
+      </DetailScreen>
+    );
+  }
 
-  const saved = point.saved;
+  const saved = ownSaved;
+  // P4-WR-02: a Wait goal belongs to its Decide check; the server keeps its plan, so it is not offered for editing here.
+  const isWait = row.kind === 'wait';
   const target = row.target;
   const percent = goalPercent(saved, target);
   const reached = target !== null && saved >= target;
@@ -149,7 +173,8 @@ export function GoalDetailScreen({ id }: { id: string }) {
 
   // One confirm path for the inline Confirm and the confirm sheet (D-25, T-06-32-01).
   const confirmLine = (item: HistoryItem | null) => {
-    if (item === null || item.line === null || userId === null) return;
+    if (item === null || item.line === null || userId === null || sent.has(item.line.id)) return;
+    markSent(item.line);
     const stepId = confirm({ ownerId: userId, line: item.line, goal: { id: row.id, name: row.name, currency: row.currency, account_id: row.account_id ?? null } });
     toast({ key: 'undo.label.goalContributionConfirmed', stepId, undoLabel: 'goalContributionConfirmed', name: row.name, userId, householdId });
   };
@@ -159,11 +184,10 @@ export function GoalDetailScreen({ id }: { id: string }) {
     confirmLine(item);
   };
   const confirmTitle = (h: HistoryItem): string => t('grow.goals.detail.confirmA11y', { amount: money.amount(h.amount), date: formatDate(h.date) });
-  // GD3: whole units when the amount is whole ("$200", not "$200.00").
-  const wholeUnit = 10 ** currencyExponent(calc.currency);
-  const planMoney = (minor: number): string => (minor % wholeUnit === 0 ? money.amount(minor) : calc.money(minor));
+  // GD3: whole units when the amount is whole ("$200", not "$200.00"), by the goal currency's own exponent.
+  const planMoney = money.plan;
 
-  const editAction = (
+  const editAction = isWait ? undefined : (
     <Pressable testID="goal-edit" accessibilityRole="button" accessibilityLabel={t('grow.goals.detail.edit')} onPress={() => setEditing(true)} style={styles.editButton}>
       <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('grow.goals.detail.edit')}</Text>
     </Pressable>
@@ -183,7 +207,8 @@ export function GoalDetailScreen({ id }: { id: string }) {
           </View>
           {target !== null ? <ProgressBar percent={percent} variant="thick" accessibilityLabel={`${percent}%`} /> : null}
           <View style={styles.badges}>
-            {justReached ? <ReachedMoment /> : reached ? <StateBadge tone="accent" shape="sCheck" label={t('grow.goals.detail.reached')} /> : null}
+            {/* P4-WR-04: the moment and the badge show only while the goal is reached (an Undo of the deposit takes both away). */}
+            {justReached && reached ? <ReachedMoment /> : reached ? <StateBadge tone="accent" shape="sCheck" label={t('grow.goals.detail.reached')} /> : null}
             {locked ? <StateBadge tone="slate" shape="lock" label={t('grow.goals.detail.locked')} accessibilityLabel={t('grow.goals.detail.lockedA11y')} /> : null}
           </View>
           {locked ? (
@@ -199,20 +224,22 @@ export function GoalDetailScreen({ id }: { id: string }) {
             label={t('grow.goals.detail.eachMonth')}
             value={eachMonth > 0 ? planMoney(eachMonth) : '—'}
             dense
-            chevron
-            onPress={() => setPlanMode('monthly')}
+            chevron={!isWait}
+            onPress={isWait ? undefined : () => setPlanMode('monthly')}
           />
           {target !== null ? (
             <Row
               label={t('grow.goals.detail.reaches', { target: money.amount(target) })}
-              value={reachesOn === null ? '—' : calc.monthYear(reachesOn)}
+              value={reachesOn === null ? '—' : money.monthYear(reachesOn)}
               dense
-              chevron
-              onPress={() => setPlanMode('by')}
+              chevron={!isWait}
+              onPress={isWait ? undefined : () => setPlanMode('by')}
             />
           ) : null}
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('grow.goals.detail.planNote')}</Text>
-          {target !== null && !isNet && row.currency === calc.currency ? (
+          <Text testID={isWait ? 'goal-wait-note' : undefined} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+            {t(isWait ? 'grow.goals.detail.waitNote' : 'grow.goals.detail.planNote')}
+          </Text>
+          {target !== null && !isNet && !isWait && row.currency === calc.currency ? (
             <Pressable
               testID="goal-try-other"
               accessibilityRole="button"
@@ -285,6 +312,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
           onConfirm={confirmLine}
           onOpenExpected={setConfirming}
           onAddMoney={() => setMove('add')}
+          sentIds={sent}
         />
 
         {!isNet && row.kind === 'pot' && (row.bucket ?? null) === null ? (
@@ -304,7 +332,14 @@ export function GoalDetailScreen({ id }: { id: string }) {
         )}
       </View>
 
-      <MoneyMoveSheet visible={move !== null} goal={row} kind={move ?? 'add'} onClose={() => setMove(null)} onMoved={onMoved} />
+      <MoneyMoveSheet
+        visible={move !== null}
+        goal={row}
+        kind={move ?? 'add'}
+        onClose={() => setMove(null)}
+        onMoved={onMoved}
+        onChooseAccount={() => setAccountOpen(true)}
+      />
       <GoalPlanEditSheet
         mode={planMode}
         goal={row}
@@ -322,7 +357,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
         currentNet={net}
         ownerId={userId}
         savedText={money.amount(saved)}
-        netSavedText={money.amount(read.model.safetyNet?.saved ?? 0)}
+        netSavedText={homeMoney.amount(read.model.safetyNet?.saved ?? 0)}
         onClose={() => setNetAsk(false)}
         onSet={(stepId) =>
           toast({ key: 'grow.goals.useAsSafetyNet.toast', stepId, undoLabel: 'safetyNetChanged', name: row.name, userId, householdId })

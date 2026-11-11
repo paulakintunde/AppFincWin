@@ -12,6 +12,7 @@ import { useDebtPayments } from '@/data/queries/growDebts';
 import { useRemoveDebt } from '@/data/mutations/debts';
 import type { TransactionRow } from '@/db/rows';
 import { currencyExponent } from '@/engine/money';
+import { cardMinEstimateFloor } from '@/engine/payoff';
 import { EXTRA_CHIP_UNITS } from '@/features/grow/calculators/record/DebtExtraCalculator';
 import { dueDateOf } from '@/features/grow/connect/debtPoint';
 import { useRecordLineDetail } from '@/features/grow/goals/useGoalRecordDetail';
@@ -141,11 +142,13 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
   if (!line.point.paidInFull && rate !== null) facts.push({ name: t('grow.debts.detail.rate'), value: t('grow.debts.detail.rateValue', { rate }) });
   if (!line.point.paidInFull) facts.push({ name: t('grow.debts.detail.payment'), value: payment });
   if (accountName !== null) facts.push({ name: t('grow.debts.detail.paidFrom'), value: accountName });
-  if (line.point.payoffDate !== null) {
-    facts.push({ name: t('grow.debts.detail.ends'), value: t('grow.debts.detail.endsValue', { date: fmt.monthYear(line.point.payoffDate) }) });
+  // P3-WR-11: the same end date and interest as the Debts list (the saved plan when there is one), so the two never disagree.
+  if (line.endDate !== null) {
+    const endsKey = line.endsInPlan ? 'grow.debts.detail.endsPlanValue' : 'grow.debts.detail.endsValue';
+    facts.push({ name: t('grow.debts.detail.ends'), value: t(endsKey, { date: fmt.monthYear(line.endDate) }) });
   }
-  if (line.point.totalInterest !== null) {
-    facts.push({ name: t('grow.debts.detail.interestLeft'), value: t('grow.debts.detail.interestLeftValue', { amount: about(line.point.totalInterest) }) });
+  if (line.interestLeft !== null) {
+    facts.push({ name: t('grow.debts.detail.interestLeft'), value: t('grow.debts.detail.interestLeftValue', { amount: about(line.interestLeft) }) });
   }
 
   const spanText = (months: number): string => {
@@ -195,14 +198,16 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
 
   const remove = (): void => {
     if (read.userId === null) return;
+    setRemoveOpen(false);
     try {
       const stepId = removeDebt(row, read.userId);
       hapticLight();
       showToast({ kind: 'destructive', text: { key: 'grow.debts.detail.removedToast', params: { name: row.name } }, stepId });
     } catch {
-      showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
+      // P3-IN-03: refused, so the debt is still here; stay on it.
+      showToast({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
+      return;
     }
-    setRemoveOpen(false);
     router.back();
   };
 
@@ -258,7 +263,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
               </View>
             ))}
             {line.minimumEstimated ? (
-              <Text style={[label, styles.factNote]}>{t('grow.debts.minimumEstimatedNote', { floor: fmt.money(2500, cur) })}</Text>
+              <Text style={[label, styles.factNote]}>{t('grow.debts.minimumEstimatedNote', { floor: fmt.money(cardMinEstimateFloor(exp), cur) })}</Text>
             ) : null}
           </View>
         )}
@@ -268,7 +273,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
             <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
               {t('grow.debts.detail.morePayTitle')}
             </Text>
-            <View style={styles.chips} accessibilityRole="radiogroup">
+            <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={t('grow.debts.detail.morePayTitle')}>
               {DETAIL_CHIPS.map((c) => (
                 <Chip key={c.key} label={chipLabel(c)} selected={c.key === reveal.chip.key} onPress={() => setChipKey(c.key)} />
               ))}
@@ -282,6 +287,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
             <Pressable
               testID="debt-change-plan"
               accessibilityRole="button"
+              accessibilityLabel={t('grow.debts.detail.changeInPlan')}
               onPress={() => router.navigate('/(tabs)/grow?segment=debts' as Href)}
               style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
             >
@@ -292,6 +298,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
               <Pressable
                 testID="debt-try-other"
                 accessibilityRole="button"
+                accessibilityLabel={t('grow.debts.detail.tryOther')}
                 onPress={() => pushOnce(`/grow/calculators/debt/${id}` as Href)}
                 style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
               >
@@ -350,11 +357,11 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
 
         <View style={styles.actions}>
           {line.point.paidInFull ? null : (
-            <Pressable testID="debt-sold" accessibilityRole="button" onPress={() => setSaleOpen(true)} style={styles.action}>
+            <Pressable testID="debt-sold" accessibilityRole="button" accessibilityLabel={t('grow.debts.detail.sold')} onPress={() => setSaleOpen(true)} style={styles.action}>
               <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('grow.debts.detail.sold')}</Text>
             </Pressable>
           )}
-          <Pressable testID="debt-remove" accessibilityRole="button" onPress={() => setRemoveOpen(true)} style={styles.action}>
+          <Pressable testID="debt-remove" accessibilityRole="button" accessibilityLabel={t('grow.debts.detail.remove')} onPress={() => setRemoveOpen(true)} style={styles.action}>
             <Text style={{ ...textRole(pairing, 'body'), color: colors.danger }}>{t('grow.debts.detail.remove')}</Text>
           </Pressable>
         </View>

@@ -14,7 +14,7 @@ jest.mock('@/features/decide/past/usePastDecisions', () => ({
   usePastContext: () => ({ userId: 'u1', householdId: 'h1', today: '2026-11-05', ctx: {} }),
 }));
 
-import { buildDebtsModel, debtWhatIf, useDebtsRead, type DebtLine } from '../useDebtsRead';
+import { buildDebtsModel, debtWhatIf, defaultWhatIfs, unitsToMinor, useDebtsRead, type DebtLine } from '../useDebtsRead';
 /* eslint-enable import/first */
 
 const debt = (over: Partial<DebtRow> & { id: string; name: string }): DebtRow => ({
@@ -202,5 +202,32 @@ describe('useDebtsRead', () => {
     expect(ready.result.current.status).toBe('ready');
     expect(ready.result.current.model.debts[0]?.point.totalInterest).toBe(75636);
     expect(ready.result.current.today).toBe('2026-11-05');
+  });
+});
+
+describe('P3 review fixes', () => {
+  it('P3-WR-10: cached rows stay ready when a refetch fails', async () => {
+    mockError = true;
+    mockRows = [AUTO];
+    expect((await renderHook(() => useDebtsRead())).result.current.status).toBe('ready');
+  });
+
+  it('P3-WR-04: the starting what-ifs use the currency’s own decimals', () => {
+    expect(defaultWhatIfs('USD')).toEqual({ extra: 5000, lump: 100000 });
+    expect(defaultWhatIfs('JPY')).toEqual({ extra: 50, lump: 1000 });
+    expect(defaultWhatIfs('KWD')).toEqual({ extra: 50000, lump: 1000000 });
+    expect(unitsToMinor(25, 'JPY')).toBe(25);
+  });
+
+  it('P3-WR-11: each debt carries one end date and interest, from the saved plan when there is one', () => {
+    const own = buildDebtsModel([AUTO], '2026-11-05').debts[0]!;
+    expect(own.endsInPlan).toBe(false);
+    expect(own.interestLeft).toBe(own.point.totalInterest);
+    const planned = buildDebtsModel([{ ...AUTO, payoff_extra: 5000 }, CARD], '2026-11-05').debts;
+    for (const d of planned) {
+      expect(d.endsInPlan).toBe(true);
+      expect(d.endDate).not.toBeNull();
+      expect(d.interestLeft).not.toBeNull();
+    }
   });
 });

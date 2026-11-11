@@ -74,6 +74,8 @@ export interface GoalHistoryCardProps {
   /** Tapping an Expected row's text: the confirm sheet. */
   onOpenExpected: (item: HistoryItem) => void;
   onAddMoney: () => void;
+  /** P4-WR-05: Expected lines whose Confirm was already sent; they show no Confirm button until the lines catch up. */
+  sentIds?: ReadonlySet<string>;
 }
 
 export function GoalHistoryCard(p: GoalHistoryCardProps) {
@@ -129,7 +131,7 @@ export function GoalHistoryCard(p: GoalHistoryCardProps) {
                 />
               );
             }
-            const due = h.date <= p.today;
+            const due = h.date <= p.today && !(h.line !== null && p.sentIds?.has(h.line.id) === true);
             return (
               <View key={h.key} style={styles.expected}>
                 <Row

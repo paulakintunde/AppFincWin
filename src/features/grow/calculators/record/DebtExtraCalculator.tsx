@@ -1,7 +1,7 @@
 // 06-19 GC04 (D-18): the extra-payment calculator for one debt. Chips None / +25 / +50 / +100 show the new payoff date, interest
 // saved and the share of pay. Figures come from debtExtraModel (engine fixedPayoff). Nothing is saved until the user confirms
 // "Make this the plan" (D-20), which goes through useSaveDebtPlan (one save; the server builds the one Undo).
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useSaveDebtPlan } from '@/data/mutations/growDebts';
@@ -9,7 +9,7 @@ import { useAccounts } from '@/data/queries/accounts';
 import { currencyExponent } from '@/engine/money';
 import { useT } from '@/i18n';
 import { dueDateOf } from '@/features/grow/connect/debtPoint';
-import { payAccountId, useDebtFormat, useDebtMonth, useDebtRows } from '@/features/grow/debts/debtScreenData';
+import { fitLineName, payAccountId, useDebtFormat, useDebtMonth, useDebtRows } from '@/features/grow/debts/debtScreenData';
 import { useDebtsRead } from '@/features/grow/debts/useDebtsRead';
 import { CalcResultCard } from '@/features/grow/ui/CalcResultCard';
 import type { ChangeRow } from '@/features/grow/ui/ChangeRows';
@@ -44,6 +44,8 @@ export function DebtExtraCalculator({ id }: { id: string }) {
   const line = read.model.debts.find((d) => d.id === id) ?? null;
   const [picked, setPicked] = useState<number | null>(null);
   const [confirming, setConfirming] = useState(false);
+  // P3-WR-02: one plan save per visit; a second tap before the screen closes does nothing.
+  const saved = useRef(false);
 
   const ctx = useMemo(() => {
     if (row === undefined || line === null || line.point.paidInFull || line.point.balance <= 0) return null;
@@ -52,9 +54,10 @@ export function DebtExtraCalculator({ id }: { id: string }) {
       apr: row.apr && row.apr.trim() !== '' ? row.apr : '0',
       payment: line.point.minimum,
       firstDate: dueDateOf(read.today, line.point.dueDay ?? Number(read.today.slice(8, 10)), 0),
-      usualPay: month.usualPay,
+      // P3-WR-05: the share of pay only when the debt and Decide's pay are in the same currency.
+      usualPay: line.currency === month.currency ? month.usualPay : null,
     };
-  }, [row, line, read.today, month.usualPay]);
+  }, [row, line, read.today, month.usualPay, month.currency]);
 
   const extra = picked ?? line?.extra ?? 0;
   const result = useMemo(() => (ctx === null ? null : debtExtraModel(ctx, extra)), [ctx, extra]);
@@ -62,7 +65,6 @@ export function DebtExtraCalculator({ id }: { id: string }) {
   const noExtra = useMemo(() => (ctx === null ? null : debtExtraModel(ctx, 0)), [ctx]);
 
   const label = { ...textRole(pairing, 'label'), fontSize: fontSize.eyebrow, color: colors.inkMuted };
-  const body = { ...textRole(pairing, 'body'), color: colors.ink };
 
   if (row === undefined || line === null || ctx === null) {
     return (
@@ -90,31 +92,35 @@ export function DebtExtraCalculator({ id }: { id: string }) {
   const isNow = extra === line.extra;
 
   const rowsForSheet = (): ChangeRow[] => {
-    if (result === null || nowResult === null) return [];
+    if (result === null) return [];
+    // P3-WR-14: when the payment now never clears the debt there is no "before" date or interest to show.
     const out: ChangeRow[] = [
-      { key: 'payment', label: t('grow.calc.debtExtra.paymentRow', { name: row.name }), before: cents(nowResult.eachMonth), after: cents(result.eachMonth) },
-      { key: 'paidoff', label: t('grow.calc.debtExtra.paidOff'), before: fmt.monthYear(nowResult.endDate), after: fmt.monthYear(result.endDate) },
-      { key: 'interest', label: t('grow.calc.debtExtra.interestFrom'), before: cents(nowResult.interest), after: cents(result.interest) },
+      { key: 'payment', label: t('grow.calc.debtExtra.paymentRow', { name: row.name }), before: cents(line.point.minimum + line.extra), after: cents(result.eachMonth) },
+      { key: 'paidoff', label: t('grow.calc.debtExtra.paidOff'), before: nowResult === null ? '—' : fmt.monthYear(nowResult.endDate), after: fmt.monthYear(result.endDate) },
+      { key: 'interest', label: t('grow.calc.debtExtra.interestFrom'), before: nowResult === null ? '—' : cents(nowResult.interest), after: cents(result.interest) },
     ];
-    if (result.sharePercent !== null && nowResult.sharePercent !== null) {
+    if (result.sharePercent !== null && nowResult !== null && nowResult.sharePercent !== null) {
       out.push({ key: 'share', label: t('grow.calc.debtExtra.shareRow'), before: `${nowResult.sharePercent}%`, after: `${result.sharePercent}%` });
     }
     return out;
   };
 
   const confirm = () => {
-    if (result === null || read.userId === null) return;
+    if (result === null || read.userId === null || saved.current) return;
+    const ownerId = read.userId;
     try {
       const accountId = extra > 0 ? payAccountId(row, accounts) : null;
       if (extra > 0 && accountId === null) throw new RangeError('no account');
+      // P3-WR-03 (D-34): one debt carries the extra. save_debt_plan stops it on any other debt in the same undo step.
       const { stepId } = planSave.save({
-        ownerId: read.userId,
+        ownerId,
         debt: row,
         extra,
         order: line.order,
         paidFromAccountId: accountId,
-        seriesName: t('grow.debts.extraSeriesName', { name: row.name }),
+        seriesName: fitLineName(t, 'grow.debts.extraSeriesName', row.name),
       });
+      saved.current = true;
       hapticLight();
       setConfirming(false);
       showToast({
@@ -129,17 +135,17 @@ export function DebtExtraCalculator({ id }: { id: string }) {
     }
   };
 
-  const orderCard = (key: string, title: string) => (
-    <View key={key} testID={`debt-calc-order-${key}`} style={[styles.order, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
-      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{title}</Text>
-      {result ? (
-        <>
-          <Text style={{ ...body, fontVariant: ['tabular-nums'] }}>{fmt.monthYear(result.endDate)}</Text>
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{cents(result.interest)}</Text>
-        </>
-      ) : null}
-    </View>
-  );
+  // P3-WR-14: the payment alone never clears this debt (noExtra is null): say so, with or without a clearing extra.
+  const baseNeverClears = noExtra === null;
+  const newPlanText = (r: NonNullable<typeof result>): string =>
+    r.soonerMonths === null
+      ? t('grow.calc.debtExtra.newPlanNoBase', { count: r.months, payment: cents(r.eachMonth) })
+      : t('grow.calc.debtExtra.newPlan', {
+          count: r.months,
+          payment: cents(r.eachMonth),
+          sooner: sooner(r.soonerMonths),
+          date: noExtra === null ? '' : fmt.monthYear(noExtra.endDate),
+        });
 
   const headline = result
     ? result.paidInOnePayment
@@ -162,41 +168,45 @@ export function DebtExtraCalculator({ id }: { id: string }) {
       </Text>
 
       <Text accessibilityRole="header" style={label}>{t('grow.calc.debtExtra.extraLabel')}</Text>
-      <View style={styles.chips} accessibilityRole="radiogroup">
+      <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={t('grow.calc.debtExtra.extraLabel')}>
         {chipExtras.map((n) => (
           <Chip key={n} label={chipLabel(n)} selected={extra === n} onPress={() => setPicked(n)} />
         ))}
       </View>
 
-      <CalcResultCard
-        value={headline}
-        caption={t('grow.calc.debtExtra.paidOff')}
-        announcement={
-          result && !result.paidInOnePayment
-            ? t('grow.calc.debtExtra.paidOffA11y', { date: fmt.monthYear(result.endDate), saved: cents(result.interestSaved) })
-            : undefined
-        }
-      >
-        {result ? (
-          <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
-            {isNow
-              ? t('grow.calc.debtExtra.nowPlan', { count: result.months, payment: cents(result.eachMonth) })
-              : t('grow.calc.debtExtra.newPlan', {
-                  count: result.months,
-                  payment: cents(result.eachMonth),
-                  sooner: sooner(result.soonerMonths),
-                  date: noExtra === null ? '' : fmt.monthYear(noExtra.endDate),
-                })}
+      {result === null && baseNeverClears ? (
+        // P3-WR-14: the figures come from the record, so "Fill in the numbers above" would be wrong; say why there is no date.
+        <View accessibilityLiveRegion="polite" style={[styles.card, { backgroundColor: colors.surface, ...shadows.card }]}>
+          <Text testID="debt-calc-never-clears" style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+            {extra > 0 ? t('grow.calc.debtExtra.neverClearsExtra') : t('grow.calc.debtExtra.neverClears')}
           </Text>
-        ) : null}
-      </CalcResultCard>
+        </View>
+      ) : (
+        <CalcResultCard
+          value={headline}
+          caption={t('grow.calc.debtExtra.paidOff')}
+          announcement={
+            result && !result.paidInOnePayment
+              ? result.interestSaved === null
+                ? t('grow.calc.debtExtra.paidOffA11yNoBase', { date: fmt.monthYear(result.endDate) })
+                : t('grow.calc.debtExtra.paidOffA11y', { date: fmt.monthYear(result.endDate), saved: cents(result.interestSaved) })
+              : undefined
+          }
+        >
+          {result ? (
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
+              {isNow ? t('grow.calc.debtExtra.nowPlan', { count: result.months, payment: cents(result.eachMonth) }) : newPlanText(result)}
+            </Text>
+          ) : null}
+        </CalcResultCard>
+      )}
 
       {result ? (
         <>
           <Card>
             <ValueRow first label={t('grow.calc.eachMonth')} value={cents(result.eachMonth)} />
             <ValueRow label={t('grow.calc.debtExtra.interestFrom')} value={cents(result.interest)} />
-            <ValueRow label={t('grow.calc.debtExtra.interestSaved')} value={result.interestSaved > 0 ? cents(result.interestSaved) : '—'} />
+            <ValueRow label={t('grow.calc.debtExtra.interestSaved')} value={result.interestSaved !== null && result.interestSaved > 0 ? cents(result.interestSaved) : '—'} />
             <ValueRow
               label={t('grow.calc.debtExtra.lastPayment')}
               value={t('grow.calc.debtExtra.lastPaymentValue', { amount: cents(result.lastPayment), date: fmt.monthYear(result.endDate) })}
@@ -206,10 +216,6 @@ export function DebtExtraCalculator({ id }: { id: string }) {
           {month.rule !== null ? <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('grow.calc.debtExtra.lineNote', { rule: month.rule })}</Text> : null}
 
           <Text accessibilityRole="header" style={label}>{t('grow.calc.debtExtra.orderTitle')}</Text>
-          <View style={styles.orders}>
-            {orderCard('rate', t('grow.debts.orderRate'))}
-            {orderCard('balance', t('grow.debts.orderBalance'))}
-          </View>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('grow.calc.debtExtra.orderNote')}</Text>
           <View style={styles.link}>
             <Pill label={t('grow.calc.debtExtra.moreDebts')} variant="secondary" onPress={() => pushOnce('/grow/calculators/payoff' as Href)} />
@@ -241,8 +247,6 @@ export function DebtExtraCalculator({ id }: { id: string }) {
 const styles = StyleSheet.create({
   card: { borderRadius: radii.card, padding: space.cardPad },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
-  orders: { flexDirection: 'row', gap: space.gapMd },
-  order: { flex: 1, borderWidth: 1, borderRadius: radii.card, padding: space.cardPad, gap: 4 },
   link: { flexDirection: 'row' },
 });
 

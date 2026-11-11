@@ -67,8 +67,13 @@ export function InvestingSegment() {
   const removeHolding = (id: string, name: string) => {
     const row = rowOf(id);
     if (row === null || read.userId === null) return;
-    const stepId = remove(row, read.userId);
-    showToast({ kind: 'destructive', text: undoLabelText('holdingRemoved', { name }), stepId });
+    // P3-IN-03: an already-removed row is refused; say so instead of throwing out of the press handler.
+    try {
+      const stepId = remove(row, read.userId);
+      showToast({ kind: 'destructive', text: undoLabelText('holdingRemoved', { name }), stepId });
+    } catch {
+      showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
+    }
   };
 
   const sheet = (
@@ -106,7 +111,16 @@ export function InvestingSegment() {
       </View>
     );
   }
-  if (read.status !== 'ready') return null;
+  if (read.status === 'error') {
+    // P3-WR-10: nothing cached and the read failed; say so and offer Try again (as the Debts segment does).
+    return (
+      <View testID="grow-investing-error" style={[styles.card, styles.center, { backgroundColor: colors.surface, ...shadows.card }]}>
+        <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, textAlign: 'center' }}>{t('grow.common.loadErrorTitle')}</Text>
+        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, textAlign: 'center' }}>{t('grow.common.loadErrorBody')}</Text>
+        <Pill label={t('grow.common.tryAgain')} variant="secondary" onPress={read.refetch} />
+      </View>
+    );
+  }
 
   const label = textRole(pairing, 'label');
   const body = textRole(pairing, 'body');
@@ -186,6 +200,7 @@ export function InvestingSegment() {
         <Pressable
           testID="investing-add-row"
           accessibilityRole="button"
+          accessibilityLabel={t('grow.investing.emptyAction')}
           onPress={() => setAdding(true)}
           style={[styles.addRow, styles.addInCard, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1 }]}
         >
@@ -221,6 +236,7 @@ export function InvestingSegment() {
         <Pressable
           testID="investing-see-growth"
           accessibilityRole="button"
+          accessibilityLabel={t('grow.investing.detail.seeGrowth')}
           onPress={() =>
             pushOnce({
               pathname: '/grow/calculators/illustration',

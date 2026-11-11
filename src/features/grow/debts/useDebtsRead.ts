@@ -7,7 +7,7 @@
 import { useCallback, useMemo } from 'react';
 import { useDebts } from '@/data/queries/decide';
 import type { DebtRow } from '@/db/debts';
-import { minorUnits, type MinorUnits } from '@/engine/money';
+import { currencyExponent, minorUnits, type MinorUnits } from '@/engine/money';
 import {
   estimatedCardMinimum,
   fixedPayoff,
@@ -25,9 +25,19 @@ import { dueDateOf } from '../connect/debtPoint';
 
 export type DebtsStatus = 'loading' | 'error' | 'ready';
 
-/** The what-if figures the segment starts with: an extra a month and a one-off lump, in minor units. */
-export const DEFAULT_EXTRA = 5000;
-export const DEFAULT_LUMP = 100000;
+/** The what-if figures the segment starts with: an extra a month and a one-off lump, in the currency's MAJOR units. */
+export const DEFAULT_EXTRA_UNITS = 50;
+export const DEFAULT_LUMP_UNITS = 1000;
+
+/** P3-WR-04: whole currency units to minor units with the currency's own decimals (50 -> 5000 USD cents, 50 yen, 50000 fils). */
+export function unitsToMinor(units: number, currency: string | null): number {
+  return units * 10 ** (currency === null ? 2 : currencyExponent(currency));
+}
+
+/** The segment's starting extra and lump for a plan in `currency`, in minor units. */
+export function defaultWhatIfs(currency: string | null): { extra: number; lump: number } {
+  return { extra: unitsToMinor(DEFAULT_EXTRA_UNITS, currency), lump: unitsToMinor(DEFAULT_LUMP_UNITS, currency) };
+}
 
 export interface DebtLine {
   id: string;
@@ -49,6 +59,10 @@ export interface DebtLine {
    * is saved, else on its own minimum. Null when nothing is owed or it never clears. Cards paid in full carry null.
    */
   endDate: string | null;
+  /** P3-WR-11: interest still to pay, from the same run as `endDate`; null when it never clears or nothing is owed. */
+  interestLeft: number | null;
+  /** `endDate` and `interestLeft` come from the saved plan (extra and rolled-over minimums), not this debt's own payment. */
+  endsInPlan: boolean;
 }
 
 export interface PlanOutcome {
@@ -189,8 +203,6 @@ export function debtWhatIf(line: DebtLine, today: string, opts: { extra?: number
 
 /** Pure: the model from the debts. `opts` sets the what-if sizes. */
 export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: { extra?: number; lump?: number } = {}): DebtsModel {
-  const extraWhatIf = opts.extra ?? DEFAULT_EXTRA;
-  const lump = opts.lump ?? DEFAULT_LUMP;
   const lines: DebtLine[] = [];
   const paidInFull: DebtLine[] = [];
   for (const row of rows) {
@@ -198,7 +210,7 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
     const apr = row.apr ? percent(row.apr) : ZERO_PERCENT;
     const paysFull = row.kind === 'card' && row.pays_in_full === 'yes';
     const estimated = !paysFull && row.kind === 'card' && row.minimum_payment === 0 && row.balance > 0;
-    const effective: DebtRow = estimated ? { ...row, minimum_payment: estimatedCardMinimum(minorUnits(row.balance), apr) } : row;
+    const effective: DebtRow = estimated ? { ...row, minimum_payment: estimatedCardMinimum(minorUnits(row.balance), apr, currencyExponent(row.currency)) } : row;
     const point = debtPointOf(effective, today);
     if (point.paidOff) continue;
     const line: DebtLine = {
@@ -213,6 +225,8 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
       order: row.payoff_order ?? null,
       inPlan: false,
       endDate: null,
+      interestLeft: null,
+      endsInPlan: false,
     };
     (paysFull ? paidInFull : lines).push(line);
   }
@@ -226,6 +240,9 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
     if (planCurrency === null || total > (totals.get(planCurrency) ?? 0)) planCurrency = cur;
   }
   const inPlan = carried.filter((l) => l.currency === planCurrency);
+  const defaults = defaultWhatIfs(planCurrency);
+  const extraWhatIf = opts.extra ?? defaults.extra;
+  const lump = opts.lump ?? defaults.lump;
   for (const l of inPlan) l.inPlan = true;
 
   const extra = inPlan.reduce((s, l) => s + l.extra, 0);
@@ -239,13 +256,19 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
   for (const l of lines) {
     if (l.point.balance <= 0) continue;
     let months: number | null;
+    let interest: number | null;
     if (savedPlanRun !== null && l.inPlan) {
-      months = savedPlanRun.debts.find((d) => d.id === l.id)?.doneMonth ?? null;
+      const own = savedPlanRun.debts.find((d) => d.id === l.id);
+      months = own?.doneMonth ?? null;
+      interest = months === null || own === undefined ? null : own.interest;
+      l.endsInPlan = true;
     } else {
-      const own = fixedPayoff(l.point.balance, l.point.apr ?? ZERO_PERCENT, l.point.minimum);
+      const own = fixedPayoff(l.point.balance, l.point.apr ?? ZERO_PERCENT, minorUnits(l.point.minimum + l.extra));
       months = own.outcome === 'cleared' ? own.months : null;
+      interest = own.outcome === 'cleared' ? own.totalInterest : null;
     }
     l.endDate = months === null ? null : lastPaymentDate(today, l.point.dueDay, months);
+    l.interestLeft = interest;
   }
 
   let plan: DebtsModel['plan'] = null;
@@ -327,6 +350,7 @@ export function useDebtsRead(): DebtsRead {
   const refetch = useCallback(() => {
     void query.refetch();
   }, [query]);
-  const status: DebtsStatus = query.isError ? 'error' : rows !== undefined ? 'ready' : 'loading';
+  // P3-WR-10: cached rows stay on screen when a background refetch fails; 'error' only when there is nothing to show.
+  const status: DebtsStatus = rows !== undefined ? 'ready' : query.isError ? 'error' : 'loading';
   return { status, model, refetch, userId, householdId, today };
 }

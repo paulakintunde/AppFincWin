@@ -5,8 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useAddHoldingLot, useEditHoldingLot, lotsReplayError, type EditHoldingLotFields } from '@/data/mutations/growHoldings';
 import type { HoldingLotKind, HoldingLotRow } from '@/db/holdingLots';
 import type { HoldingRow } from '@/db/holdings';
-import { replayLots, type LotEntry } from '@/engine/grow';
-import { minorUnits } from '@/engine/money';
+import { replayLots } from '@/engine/grow';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { undoLabelText } from '@/i18n/undoLabel';
@@ -22,7 +21,8 @@ import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import { useIsDirty } from '@/ui/useIsDirty';
-import { DATE_TEXT_RE } from './investingFormat';
+import { validDateText } from './investingFormat';
+import { holdingLotEntries } from './lotEntries';
 
 const KINDS: readonly { kind: Exclude<HoldingLotKind, 'value'>; key: 'buy' | 'sale' | 'dividend' | 'fee' }[] = [
   { kind: 'buy', key: 'buy' },
@@ -50,13 +50,7 @@ export function LotSheet({ visible, holding, lots, lot, onRemove, onClose }: Lot
 }
 
 function unitsHeldText(holding: HoldingRow, lots: readonly HoldingLotRow[]): string {
-  const entries: LotEntry[] = [];
-  if (holding.opening_put_in > 0) entries.push({ kind: 'buy', amount: minorUnits(holding.opening_put_in), units: null, localDate: '0000-01-01' });
-  for (const l of lots) {
-    if (l.kind === 'value') continue;
-    entries.push({ kind: l.kind, amount: minorUnits(l.amount), units: l.units, localDate: l.local_date, valueBefore: minorUnits(holding.value) });
-  }
-  const res = replayLots(entries);
+  const res = replayLots(holdingLotEntries(holding, lots));
   if (!res.ok) return '0';
   const scaled = res.position.unitsScaled;
   const whole = scaled / 100_000_000n;
@@ -83,7 +77,8 @@ function Body({ holding, lots, lot, onRemove, onClose }: Omit<LotSheetProps, 'vi
   const usesUnits = kind === 'buy' || kind === 'sell';
   const unitsText = usesUnits ? units.trim() : '';
   const unitsOk = unitsText === '' || UNITS_TEXT_RE.test(unitsText);
-  const dateOk = DATE_TEXT_RE.test(date) && date <= rc.today;
+  // P3-WR-09: a real calendar day ('2026-02-31' is refused here, not by the server after the toast).
+  const dateOk = validDateText(date) && date <= rc.today;
   const replayError =
     amount !== null && amount > 0 && unitsOk && dateOk
       ? lotsReplayError(holding, [
@@ -112,7 +107,8 @@ function Body({ holding, lots, lot, onRemove, onClose }: Omit<LotSheetProps, 'vi
         showToast({ kind: 'ordinary', text: undoLabelText('holdingEntryEdited', { name: holding.name }), stepId });
         onClose();
       } catch {
-        // The hook refuses what the form already blocks; nothing was written.
+        // P3-WR-09: the hook refused (a figure over the cap, or entries that no longer replay); nothing was written.
+        showToast({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
       }
       return;
     }
@@ -130,7 +126,7 @@ function Body({ holding, lots, lot, onRemove, onClose }: Omit<LotSheetProps, 'vi
       showToast({ kind: 'ordinary', text: undoLabelText('holdingEntryAdded', { name: holding.name }), stepId });
       onClose();
     } catch {
-      // The hook refuses what the form already blocks.
+      showToast({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
     }
   };
 
@@ -186,6 +182,7 @@ function Body({ holding, lots, lot, onRemove, onClose }: Omit<LotSheetProps, 'vi
           style={inputStyle}
           placeholderTextColor={colors.inkFaint}
         />
+        {dateOk ? null : <Text style={[textRole(pairing, 'label'), { color: colors.danger }]}>{t('grow.investing.dateInvalid')}</Text>}
         <Text style={labelStyle}>{t('grow.investing.entry.note')}</Text>
         <TextInput
           accessibilityLabel={t('grow.investing.entry.note')}

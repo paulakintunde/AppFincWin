@@ -98,6 +98,26 @@ describe('LinkedPairFields', () => {
     expect(flat(getByTestId('linked-pair', opts)).flexDirection).toBe('column');
     spy.mockRestore();
   });
+
+  it('P4-IN-05: on Android the settled derived value sits in a polite live region; iOS announces instead', async () => {
+    const { Platform } = jest.requireActual('react-native') as typeof import('react-native');
+    const before = Platform.OS;
+    Object.defineProperty(Platform, 'OS', { configurable: true, get: () => 'android' });
+    try {
+      const { getByTestId } = await wrap(
+        <LinkedPairFields first={field('Each month', '100')} second={field('By', '')} lastEdited="first" derivedAnnouncement="Reaches October 2028" />,
+      );
+      const live = getByTestId('linked-pair-live', opts);
+      expect(live.props.accessibilityLiveRegion).toBe('polite');
+      expect(live.props.accessibilityLabel).toBe('Reaches October 2028');
+    } finally {
+      Object.defineProperty(Platform, 'OS', { configurable: true, get: () => before });
+    }
+    const { queryByTestId } = await wrap(
+      <LinkedPairFields first={field('Each month', '100')} second={field('By', '')} lastEdited="first" derivedAnnouncement="Reaches October 2028" />,
+    );
+    expect(queryByTestId('linked-pair-live', opts)).toBeNull();
+  });
 });
 
 describe('ChangeRows', () => {
@@ -109,7 +129,9 @@ describe('ChangeRows', () => {
     const { getByTestId } = await wrap(<ChangeRows rows={rows} />);
     const row = getByTestId('change-row-month', opts);
     expect(row.props.accessibilityLabel).toBe('Each month, from 50 dollars to 82 dollars 86 cents');
-    expect(changeRowLabel(rows[0]!)).toBe('Each month, from 50 dollars to 82 dollars 86 cents');
+    // P4-IN-04: the sentence comes from the translation, not English built into the code.
+    const t = jest.fn((key: string, p?: Record<string, string | number>) => `${key}|${p?.label}|${p?.before}|${p?.after}`);
+    expect(changeRowLabel(rows[0]!, t)).toBe('grow.calc.changeRowA11y|Each month|50 dollars|82 dollars 86 cents');
     expect(row.props.accessible).toBe(true);
   });
 });

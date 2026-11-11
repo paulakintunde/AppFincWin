@@ -119,6 +119,12 @@ describe('debtExtraModel (GC04)', () => {
   it('has no share without usual pay, and is null when the loan never clears', () => {
     expect(debtExtraModel({ ...autoLoan, usualPay: null }, 0)!.sharePercent).toBeNull();
     expect(debtExtraModel({ ...autoLoan, payment: 100 }, 0)).toBeNull();
+    // P3-WR-14: an extra that clears it still has an answer; only the comparison with the payment alone is missing.
+    const r = debtExtraModel({ ...autoLoan, payment: 4000 }, 2500)!;
+    expect(r).not.toBeNull();
+    expect(r.eachMonth).toBe(6500);
+    expect([r.interestSaved, r.soonerMonths]).toEqual([null, null]);
+    expect(debtExtraModel({ ...autoLoan, payment: 4000 }, 0)).toBeNull();
   });
 });
 

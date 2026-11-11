@@ -43,6 +43,14 @@ export function validRateText(text: string): boolean {
 
 export const DATE_TEXT_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+/** P3-WR-09: a real calendar day in YYYY-MM-DD ('2026-02-31' is not one). */
+export function validDateText(text: string): boolean {
+  if (!DATE_TEXT_RE.test(text)) return false;
+  const [y, m, d] = text.split('-').map(Number);
+  if (m! < 1 || m! > 12 || d! < 1) return false;
+  return d! <= new Date(Date.UTC(y!, m!, 0)).getUTCDate();
+}
+
 /** Percent text from tenths of a percent: 112 -> '11.2'. */
 export function tenthsText(tenths: number): string {
   const whole = Math.trunc(tenths / 10);

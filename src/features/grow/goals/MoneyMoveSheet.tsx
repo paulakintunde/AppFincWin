@@ -27,6 +27,8 @@ import { Row } from '@/ui/Row';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
+import { showToast } from '@/state/undoToast';
+import { ownSavedOf } from './goalOwnMoney';
 import { toHomeOf, useGoalsRead } from './useGoalsRead';
 
 export type MoveKind = 'add' | 'take';
@@ -45,13 +47,37 @@ export interface MoneyMoveSheetProps {
   kind: MoveKind;
   onClose: () => void;
   onMoved?: (e: MoneyMovedEvent) => void;
+  /** P4-WR-08: opens "Where is it kept?" when the goal's account is archived, in another currency or not set. */
+  onChooseAccount?: () => void;
+}
+
+/** Why a move cannot be made right now, or null when it can. The key names the plain-English line the sheet shows. */
+export type MoveBlock = 'accountGone' | 'noGoalAccount' | 'noOther' | 'noCategory';
+
+/**
+ * P4-CR-01, P4-CR-02, P4-WR-08: the checks that keep the write from being refused. The goal's own account must still be live in
+ * the goal's currency; Take needs the goal's account; there must be another account to move with (never the goal's own); and a
+ * goal kept in an account needs the Transfer category to tag the move.
+ */
+export function moveBlockOf(i: {
+  kind: MoveKind;
+  goalAccountId: string | null;
+  goalAccountLive: boolean;
+  hasOther: boolean;
+  transferCategoryReady: boolean;
+}): MoveBlock | null {
+  if (i.goalAccountId !== null && !i.goalAccountLive) return 'accountGone';
+  if (i.kind === 'take' && i.goalAccountId === null) return 'noGoalAccount';
+  if (!i.hasOther) return 'noOther';
+  if (i.goalAccountId !== null && !i.transferCategoryReady) return 'noCategory';
+  return null;
 }
 
 export function MoneyMoveSheet(props: MoneyMoveSheetProps) {
   return props.visible && props.goal !== null ? <MoveForm {...props} goal={props.goal} /> : null;
 }
 
-function MoveForm({ goal, kind, onClose, onMoved }: Omit<MoneyMoveSheetProps, 'visible' | 'goal'> & { goal: SavingsGoalRow }) {
+function MoveForm({ goal, kind, onClose, onMoved, onChooseAccount }: Omit<MoneyMoveSheetProps, 'visible' | 'goal'> & { goal: SavingsGoalRow }) {
   const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const { userId, householdId, today, ctx } = usePastContext();
@@ -72,16 +98,29 @@ function MoveForm({ goal, kind, onClose, onMoved }: Omit<MoneyMoveSheetProps, 'v
   const [pickerOpen, setPickerOpen] = useState(false);
   const [asking, setAsking] = useState(false);
 
-  // The other account: the user's pick, else the first account that is not the goal's own.
-  const other = accounts.find((a) => a.id === pickedId) ?? accounts.find((a) => a.id !== goal.account_id) ?? accounts[0] ?? null;
+  // The other account: the user's pick, else the first account that is not the goal's own. P4-CR-01: never the goal's own
+  // account (a move from an account to itself is refused by the transfer engine), so with no other account it is null.
+  const other =
+    accounts.find((a) => a.id === pickedId && a.id !== goal.account_id) ?? accounts.find((a) => a.id !== goal.account_id) ?? null;
 
   const isNet = goal.is_safety_net === true;
   const point = isNet ? read.model.safetyNet : read.model.goals.find((g) => g.id === goal.id) ?? null;
-  const saved = point === null ? 0 : point.saved;
+  // P4-WR-01: saved in the goal's own currency, the currency the amount is typed in.
+  const saved = ownSavedOf(goal, point === null ? null : point.saved, linesQ.data ?? [], ctx) ?? 0;
   const lockedTake = kind === 'take' && (goal.locked === true || isNet);
   const valid = amount !== null && amount > 0;
-  const needsGoalAccount = kind === 'take' && goal.account_id === null;
-  const ready = valid && other !== null && !needsGoalAccount && (goal.account_id === null || goalAccount !== null);
+  // While the accounts load nothing is said yet (the button simply waits, since `other` is still null).
+  const blocked =
+    accountsQ.data === undefined
+      ? null
+      : moveBlockOf({
+          kind,
+          goalAccountId: goal.account_id ?? null,
+          goalAccountLive: goalAccount !== null,
+          hasOther: other !== null,
+          transferCategoryReady: cats.transferCategoryId !== null,
+        });
+  const ready = valid && blocked === null && other !== null && userId !== null;
 
   // N3: the net reads "Add to the safety net" / "Take from the safety net".
   const title = isNet
@@ -95,21 +134,28 @@ function MoveForm({ goal, kind, onClose, onMoved }: Omit<MoneyMoveSheetProps, 'v
     : t('grow.goals.move.note');
 
   const commit = () => {
-    if (!ready || other === null || amount === null) return;
-    const result = move({
-      householdId: goal.household_id,
-      ownerId: userId as string,
-      homeCurrency: ctx.home,
-      kind,
-      goal: { id: goal.id, name: goal.name, currency: goal.currency, target: goal.target, opening_saved: goal.opening_saved },
-      goalAccount: goalAccount === null ? null : { id: goalAccount.id, currency: goalAccount.currency },
-      account: { id: other.id, currency: other.currency },
-      amount,
-      categoryId: cats.transferCategoryId,
-      lines: linesQ.data ?? [],
-      toHome: toHomeOf(ctx),
-      localDate: date,
-    });
+    if (!ready || other === null || amount === null || userId === null) return;
+    // P4-CR-01 / P4-CR-02: a write that is refused must never throw out of onPress (a fatal error in a release build).
+    let result: { stepId: string; reachedTarget: boolean };
+    try {
+      result = move({
+        householdId: goal.household_id,
+        ownerId: userId,
+        homeCurrency: ctx.home,
+        kind,
+        goal: { id: goal.id, name: goal.name, currency: goal.currency, target: goal.target, opening_saved: goal.opening_saved },
+        goalAccount: goalAccount === null ? null : { id: goalAccount.id, currency: goalAccount.currency },
+        account: { id: other.id, currency: other.currency },
+        amount,
+        categoryId: cats.transferCategoryId,
+        lines: linesQ.data ?? [],
+        toHome: toHomeOf(ctx),
+        localDate: date,
+      });
+    } catch {
+      showToast({ kind: 'refusal', text: { key: 'grow.goals.move.failed' } });
+      return;
+    }
     hapticLight();
     onClose();
     onMoved?.({ kind, stepId: result.stepId, reachedTarget: result.reachedTarget, amount });
@@ -163,6 +209,24 @@ function MoveForm({ goal, kind, onClose, onMoved }: Omit<MoneyMoveSheetProps, 'v
               )}
             />
             <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{note}</Text>
+            {/* P4-CR-01 / P4-CR-02 / P4-WR-08: when the move cannot be made, say why (never a silent grey button). */}
+            {blocked !== null ? (
+              <View testID="move-blocked" style={styles.blocked}>
+                <Text accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), color: colors.ink }}>
+                  {t(`grow.goals.move.blocked.${blocked}`, { currency: goal.currency })}
+                </Text>
+                {(blocked === 'accountGone' || blocked === 'noGoalAccount') && onChooseAccount !== undefined ? (
+                  <Pill
+                    label={t('grow.goals.move.chooseKeptIn')}
+                    variant="secondary"
+                    onPress={() => {
+                      onClose();
+                      onChooseAccount();
+                    }}
+                  />
+                ) : null}
+              </View>
+            ) : null}
             <Pill label={action} variant="primary" disabled={!ready} onPress={onPrimary} accessibilityLabel={action} />
           </View>
         </SheetScroll>
@@ -203,4 +267,5 @@ function MoveForm({ goal, kind, onClose, onMoved }: Omit<MoneyMoveSheetProps, 'v
 const styles = StyleSheet.create({
   body: { gap: space.groupGap, paddingBottom: space.groupGap },
   chips: { flexDirection: 'row', gap: space.gapSm },
+  blocked: { gap: space.gapSm },
 });

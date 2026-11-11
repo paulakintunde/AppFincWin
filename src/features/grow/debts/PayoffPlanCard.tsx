@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { PayoffOrder } from '@/engine/payoff';
 import { Stepper } from '@/features/grow/ui/Stepper';
+import { currencyExponent } from '@/engine/money';
 import { useT } from '@/i18n';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -21,9 +22,10 @@ import { aboutTens, soonerSpan } from './debtLineModel';
 import type { DebtFormat } from './debtScreenData';
 import { minimumOnlyFor, type Compare, type PlanScenarios, type WhatIf } from './useDebtsRead';
 
-export const EXTRA_STEP = 2500;
-/** The one-off chips: $500, $1,000, $2,500 (minor units). */
-export const ONCE_CHIPS = [50000, 100000, 250000] as const;
+/** The stepper's step, in the currency's MAJOR units (P3-WR-04: scaled by the currency's decimals on use). */
+export const EXTRA_STEP_UNITS = 25;
+/** The one-off chips: 500, 1,000, 2,500 in MAJOR units ($500, ¥500, ...). */
+export const ONCE_CHIP_UNITS = [500, 1000, 2500] as const;
 export type ScenarioKey = 'minimum' | 'extra' | 'once';
 /** One debt: the greyed order switch (D4). */
 const GREYED_OPACITY = 0.6;
@@ -49,6 +51,10 @@ export interface PayoffPlanCardProps {
   onLump: (next: number) => void;
   /** The extra a month already saved (0 when none). */
   savedExtra: number;
+  /** P3-WR-02: the stepper's extra in the shown order is already the saved plan, so there is nothing to save. */
+  extraIsPlan?: boolean;
+  /** P3-WR-02: this one-off was just recorded; the button waits for the amount to change or the read to refresh. */
+  onceRecorded?: boolean;
   /** The debt a one-off goes to first, in the shown order; null when there is none yet. */
   lumpDebt: { name: string; balance: number } | null;
   /** YYYY-MM-DD: when a saved (or stopped) extra starts, and the date of a one-off. */
@@ -75,10 +81,12 @@ export function soonerText(t: T, months: number | null): string | null {
 
 export function PayoffPlanCard(props: PayoffPlanCardProps) {
   const { scenarios, oneDebt, firstCleared, order, onOrder, open, onOpen, extra, onExtra, lump, onLump, savedExtra, lumpDebt } = props;
-  const { startDates, onUseExtra, onStopExtra, onUseOnce, left, fmt, currency } = props;
+  const { startDates, onUseExtra, onStopExtra, onUseOnce, left, fmt, currency, extraIsPlan = false, onceRecorded = false } = props;
   const t = useT() as T;
   const { colors, pairing } = useTheme();
   const [typing, setTyping] = useState(false);
+  const exp = currencyExponent(currency);
+  const unit = 10 ** exp;
   const body = { ...textRole(pairing, 'body'), color: colors.ink };
   const label = { ...textRole(pairing, 'label'), color: colors.inkMuted };
   const strong = { ...textRole(pairing, 'bodyStrong'), color: colors.ink };
@@ -90,10 +98,10 @@ export function PayoffPlanCard(props: PayoffPlanCardProps) {
   const minimum = minimumOnlyFor(scenarios, shown);
 
   const dateOf = (w: WhatIf): string => (w.payoffDate === null ? '—' : fmt.monthYear(w.payoffDate));
-  const aboutOf = (w: WhatIf): string => (w.totalInterest === null ? '—' : fmt.money(aboutTens(w.totalInterest), currency));
+  const aboutOf = (w: WhatIf): string => (w.totalInterest === null ? '—' : fmt.money(aboutTens(w.totalInterest, exp), currency));
   const closedSub = (w: WhatIf): string => t('grow.debts.scenarioClosed', { date: dateOf(w), interest: aboutOf(w) });
   const lessText = (c: Compare): string | null =>
-    c.lessInterest === null ? null : c.lessInterest === 0 ? t('grow.debts.revealSame') : t('grow.debts.revealLess', { amount: fmt.money(aboutTens(c.lessInterest), currency) });
+    c.lessInterest === null ? null : c.lessInterest === 0 ? t('grow.debts.revealSame') : t('grow.debts.revealLess', { amount: fmt.money(aboutTens(c.lessInterest, exp), currency) });
 
   const rows: { key: ScenarioKey; title: string; w: (WhatIf & Partial<Compare>) | null }[] = [
     { key: 'minimum', title: t('grow.debts.scenarioMinimum'), w: plan?.minimumOnly ?? null },
@@ -140,7 +148,7 @@ export function PayoffPlanCard(props: PayoffPlanCardProps) {
           <Text style={body}>{t('grow.debts.extraLabel')}</Text>
           <Stepper
             value={extra}
-            step={EXTRA_STEP}
+            step={EXTRA_STEP_UNITS * unit}
             min={0}
             onChange={onExtra}
             valueText={fmt.money(extra, currency)}
@@ -155,7 +163,7 @@ export function PayoffPlanCard(props: PayoffPlanCardProps) {
       return (
         <View style={styles.control}>
           <View style={styles.chips}>
-            {ONCE_CHIPS.map((amount) => (
+            {ONCE_CHIP_UNITS.map((units) => units * unit).map((amount) => (
               <Chip
                 key={amount}
                 label={fmt.money(amount, currency)}
@@ -200,6 +208,10 @@ export function PayoffPlanCard(props: PayoffPlanCardProps) {
     action =
       extra <= 0 && savedExtra > 0 ? (
         <Pill label={t('grow.debts.stopExtraFrom', { date: extraDate })} variant="secondary" disabled={gated} onPress={onStopExtra} />
+      ) : extraIsPlan && extra > 0 ? (
+        <Text testID="payoff-extra-is-plan" style={label}>
+          {t('grow.debts.extraIsPlan', { amount: fmt.money(extra, currency) })}
+        </Text>
       ) : (
         <Pill
           label={t('grow.debts.useExtraFrom', { amount: fmt.money(extra, currency), date: extraDate })}
@@ -219,7 +231,7 @@ export function PayoffPlanCard(props: PayoffPlanCardProps) {
         <Pill
           label={t('grow.debts.useOnceOn', { amount: fmt.money(lump, currency), date: onceDate })}
           variant="primary"
-          disabled={gated || lump <= 0 || lumpDebt === null || overOwed}
+          disabled={gated || lump <= 0 || lumpDebt === null || overOwed || onceRecorded}
           onPress={onUseOnce}
         />
       </>
@@ -302,7 +314,7 @@ export function PayoffPlanCard(props: PayoffPlanCardProps) {
         </>
       )}
 
-      <View accessibilityRole="radiogroup" style={styles.rows}>
+      <View accessibilityRole="radiogroup" accessibilityLabel={t('grow.debts.planTitle')} style={styles.rows}>
         {rows.map((row) => {
           const isOpen = open === row.key;
           const w = row.w;

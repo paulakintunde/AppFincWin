@@ -144,8 +144,14 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
   const confirmRemove = () => {
     setRemoving(false);
     if (read.userId === null) return;
-    const stepId = remove(holding, read.userId);
-    showToast({ kind: 'destructive', text: undoLabelText('holdingRemoved', { name: holding.name }), stepId });
+    // P3-IN-03: an already-removed row is refused; say so and stay rather than throw out of the press handler.
+    try {
+      const stepId = remove(holding, read.userId);
+      showToast({ kind: 'destructive', text: undoLabelText('holdingRemoved', { name: holding.name }), stepId });
+    } catch {
+      showToast({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
+      return;
+    }
     router.back();
   };
 
@@ -163,11 +169,16 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
       const stepId = lotEdit.remove(target, holding, lots, read.userId);
       showToast({ kind: 'destructive', text: undoLabelText('holdingEntryRemoved', { name: holding.name }), stepId });
     } catch {
-      // The hook refuses a removal that would leave a sale larger than the units held; nothing was written.
+      // P3-WR-09: refused, because a later sale uses this entry's units; nothing was written, so say so.
+      showToast({ kind: 'refusal', text: { key: 'grow.investing.entry.removeRefused' } });
     }
   };
 
   const card = [styles.card, { backgroundColor: colors.surface, ...shadows.card }];
+  // P3-WR-08: the growth illustration works in the home currency, so the holding's own figures are converted first; a
+  // holding no stored rate converts gets no link rather than a foreign amount shown as home money.
+  const growthStart = toHome(Math.max(0, holding.value), holding.currency);
+  const growthMonthly = toHome(holding.monthly_amount ?? 0, holding.currency);
 
   const editAction = (
     <Pressable testID="holding-edit" accessibilityRole="button" accessibilityLabel={t('grow.investing.detail.edit')} onPress={() => setEditingHolding(true)} style={styles.editButton}>
@@ -209,6 +220,7 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
           <Pressable
             testID="holding-stale-row"
             accessibilityRole="button"
+            accessibilityLabel={`${t('grow.investing.staleRow')} ${t('grow.investing.staleSub', { date: asOfText })}`}
             onPress={() => setUpdating(true)}
             style={[card, styles.between]}
           >
@@ -219,14 +231,15 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
 
         <Pill label={t('grow.investing.detail.updateValue')} variant="primary" onPress={() => setUpdating(true)} />
 
-        {holding.rate !== null && holding.rate !== '' ? (
+        {holding.rate !== null && holding.rate !== '' && growthStart !== null && growthMonthly !== null ? (
           <Pressable
             testID="holding-growth-row"
             accessibilityRole="button"
+            accessibilityLabel={t('grow.investing.detail.seeGrowth')}
             onPress={() =>
               pushOnce({
                 pathname: '/grow/calculators/illustration',
-                params: { start: String(Math.max(0, holding.value)), rate: holding.rate ?? '', monthly: String(holding.monthly_amount ?? 0) },
+                params: { start: String(growthStart), rate: holding.rate ?? '', monthly: String(growthMonthly) },
               } as Href)
             }
             style={styles.link}
@@ -235,7 +248,7 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
           </Pressable>
         ) : null}
 
-        <Pressable testID="holding-add-entry" accessibilityRole="button" onPress={() => setAdding(true)} style={styles.link}>
+        <Pressable testID="holding-add-entry" accessibilityRole="button" accessibilityLabel={t('grow.investing.detail.addEntry')} onPress={() => setAdding(true)} style={styles.link}>
           <Text style={{ ...body, color: colors.accent }}>{t('grow.investing.detail.addEntry')}</Text>
         </Pressable>
 
