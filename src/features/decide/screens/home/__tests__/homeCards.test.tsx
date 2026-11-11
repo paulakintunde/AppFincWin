@@ -241,7 +241,7 @@ describe('Something changed? (D53)', () => {
     await fireEvent(field, 'blur');
     await fireEvent.press(screen.getByLabelText('Save what changed'));
     expect(mockAdd).toHaveBeenCalledTimes(1);
-    expect(mockAdd.mock.calls[0][0]).toMatchObject({ householdId: 'h1', ownerId: 'u1', change: { kind: 'spending', monthly_amount: 12_000, start_month: '2026-11', end_month: '2026-11' } });
+    expect((mockAdd.mock.calls as unknown as unknown[][])[0]?.[0]).toMatchObject({ householdId: 'h1', ownerId: 'u1', change: { kind: 'spending', monthly_amount: 12_000, start_month: '2026-11', end_month: '2026-11' } });
     expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ kind: 'ordinary', stepId: 'step-1' }));
   });
 
