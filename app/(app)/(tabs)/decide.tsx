@@ -1,8 +1,5 @@
-import { DECIDE_OPEN, DECIDE_SETUP_VISIBLE } from '@/features/decide/availability';
-import { DecideComingSoonScreen } from '@/features/decide/home/DecideComingSoonScreen';
-import { DecideHomeScreen } from '@/features/decide/home/DecideHomeScreen';
-import { DecideSetupPage } from '@/features/decide/setup/DecideSetupPage';
-import { useDecideAccess } from '@/features/decide/useDecideAccess';
+import { DECIDE_OPEN } from '@/features/decide/availability';
+import { DecideHome } from '@/features/decide/screens/home/DecideHome';
 
 // D-27: the shadow export is development-only. The require sits inside the __DEV__ branch, which Metro folds away in a
 // release bundle, so the module (and the data hooks it reads) never enters the release graph.
@@ -13,12 +10,11 @@ function DevShadowExport() {
   return <ShadowExportDevMenu />;
 }
 
-// 05.4 BO-06: the setup page and engine readout are hidden from every account, whatever the per-account switch says.
+// 06.1-21 (D-05): one Decide in the routes. The tab shows the new home; the old home, coming-soon and setup pages are no longer mounted here.
 export default function DecideRoute() {
-  const access = useDecideAccess();
   return (
     <>
-      {DECIDE_OPEN ? <DecideHomeScreen /> : DECIDE_SETUP_VISIBLE && access.v3 ? <DecideSetupPage /> : <DecideComingSoonScreen />}
+      {DECIDE_OPEN ? <DecideHome /> : null}
       {__DEV__ ? <DevShadowExport /> : null}
     </>
   );

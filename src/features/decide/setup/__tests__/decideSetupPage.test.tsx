@@ -25,9 +25,9 @@ jest.mock('@/theme/FontScaleProvider', () => {
   return { ...actual, useFontScale: () => mockScale };
 });
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticSuccess: jest.fn() }));
-jest.mock('@/features/decide/home/DecideHomeScreen', () => {
+jest.mock('@/features/decide/screens/home/DecideHome', () => {
   const { Text: T } = jest.requireActual('react-native');
-  return { DecideHomeScreen: () => <T>{'decide-home'}</T> };
+  return { DecideHome: () => <T>{'decide-home'}</T> };
 });
 jest.mock('@/features/decide/dev/ShadowExportDevMenu', () => ({ ShadowExportDevMenu: () => null }));
 
