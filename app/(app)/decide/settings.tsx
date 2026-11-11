@@ -1,7 +1,6 @@
-import { SettingsRoute } from '@/shell/decide/SettingsRoute';
+import { Redirect, type Href } from 'expo-router';
 
-// 05.2-34: Decide settings. Gated per account by useDecideAccess().v3 inside SettingsRoute (D-01), so it sits outside the
-// DECIDE_OPEN guard in the layout.
+// 06.1-28 D-05: old path. Decide settings are now the setup checklist.
 export default function SettingsRouteScreen() {
-  return <SettingsRoute />;
+  return <Redirect href={'/decide/setup' as Href} />;
 }

@@ -1,7 +1,7 @@
 // 06.1-26 (N18): the Save for it route. Thin: the id is checked, then the screen.
 import { useLocalSearchParams } from 'expo-router';
 import { SaveForItRoute } from '@/shell/decide/ActionRoutes';
-import { CheckNotFound } from '@/features/decide/check/CheckFlowScreen';
+import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
 import { isUuid, oneParam } from '@/features/navigation/routeParams';
 
 export default function SaveForItPage() {

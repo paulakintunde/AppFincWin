@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { CheckNotFound } from '@/features/decide/check/CheckFlowScreen';
+import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
 import { CompareContainer } from '@/features/decide/screens/answer/detail/CompareContainer';
 import { isUuid, oneParam } from '@/features/navigation/routeParams';
 

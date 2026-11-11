@@ -16,7 +16,7 @@ import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { freeHelpFor, type CheckV2, type Evaluation, type LocalDate, type PayV2 } from '@/engine/decide/v3';
 import { money as makeMoney } from '@/engine/money';
-import { CheckNotFound } from '@/features/decide/check/CheckFlowScreen';
+import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
 import { openNewCheck } from '@/features/decide/home/checkHref';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';

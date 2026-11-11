@@ -30,7 +30,7 @@ jest.mock('expo-router', () => {
 });
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: [] }) }));
-jest.mock('@/features/decide/check/CheckFlowScreen', () => ({ CheckNotFound: () => null }));
+jest.mock('@/features/decide/screens/ui/CheckNotFound', () => ({ CheckNotFound: () => null }));
 
 const mockMarkSeen = jest.fn(() => true);
 const mockHistory = jest.fn(() => true);

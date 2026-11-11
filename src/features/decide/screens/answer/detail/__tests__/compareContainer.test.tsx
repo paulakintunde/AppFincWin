@@ -11,7 +11,7 @@ const mockReplace = jest.fn();
 const mockBack = jest.fn();
 jest.mock('expo-router', () => ({ router: { replace: (...a: unknown[]) => mockReplace(...a), back: () => mockBack() } }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
-jest.mock('@/features/decide/check/CheckFlowScreen', () => ({ CheckNotFound: () => null }));
+jest.mock('@/features/decide/screens/ui/CheckNotFound', () => ({ CheckNotFound: () => null }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: true, region: 'US', today: '2026-11-05' }),
 }));

@@ -8,7 +8,7 @@ import { useDecideChecks } from '@/data/queries/decide';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { CompareScreen } from './CompareScreen';
 import { useCheckEngine } from '../../engine/useCheckEngine';
-import { CheckNotFound } from '@/features/decide/check/CheckFlowScreen';
+import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
 import { AboutSheet } from '../info/AboutSheet';
 
 export function CompareContainer({ id }: { id: string }): React.JSX.Element {

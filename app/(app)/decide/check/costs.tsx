@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { CostsStep } from '@/features/decide/screens/check/CostsStep';
-import { CheckNotFound } from '@/features/decide/check/CheckFlowScreen';
+import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
 import { isUuid, oneParam } from '@/features/navigation/routeParams';
 
 // 06.1-19 (D-09): a static route, so it wins over check/[id]. The id comes from the URL, so it is checked before it reaches the screen.

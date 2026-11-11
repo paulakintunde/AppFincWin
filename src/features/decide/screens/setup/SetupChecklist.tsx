@@ -115,7 +115,7 @@ export function SetupChecklist({ progress, currency, onOpen, onBack }: SetupChec
 }
 
 const styles = StyleSheet.create({
-  page: { gap: space.groupGap, paddingHorizontal: space.screenH },
+  page: { gap: space.groupGap },
   titleBlock: { gap: space.gapSm },
   count: { gap: space.gapSm },
   list: { borderRadius: radii.card, overflow: 'hidden' },
