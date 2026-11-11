@@ -1205,7 +1205,7 @@ Plans:
   7. (Decide fix plan, blocking) Every record is personal unless marked shared, enforced by database rules, and the two-user tests are green BEFORE the invite flow merges: member B cannot read, edit, receive live updates for, or export member A's personal rows (CMP-F18, ARC-22).
   8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money.
   9. (Decide fix plan) Household split rules are the one source of "my share"; settlements count as neither spending nor income; money owed to you is not spendable until it arrives (ARC-17, ARC-18, ENG-25).
-**Plans:** 26 plans in 10 waves (08-23, 08-25, 08-26 gated on 05.5, D-41)
+**Plans:** 29 plans in 12 waves (08-25, 08-28, 08-29 gated on 05.5, D-41)
 
 Plans:
 - [ ] 08-01-PLAN.md — Preconditions + wave-1 privacy migration (personal unless shared, backfill, RLS, views)
@@ -1215,25 +1215,28 @@ Plans:
 - [ ] 08-05-PLAN.md — Privacy RPC rewrite (apply_patches v4, undo, definer functions, shared-line edit guard)
 - [ ] 08-06-PLAN.md — Existing pgTAP suite updated + household table coverage meta-test
 - [ ] 08-07-PLAN.md — SC7 two-user privacy suite + export guard (blocks invite flow)
-- [ ] 08-08-PLAN.md — Realtime spike: publication, reconciler, two-client test harness
-- [ ] 08-09-PLAN.md — Invites, rate-limited redeem, D-01 move-in
+- [ ] 08-08-PLAN.md — Realtime spike: publication, reconciler, two-client test harness (blocks invite flow)
+- [ ] 08-09-PLAN.md — Invites, per-user rate-limited redeem (global rate alert-only), D-01 move-in
 - [ ] 08-10-PLAN.md — Shared lines: stored splits, FX stamping, joint accounts, series, defaults
 - [ ] 08-11-PLAN.md — Settle-up state machine, locks, lapse/reminder cron, undo, write-off
-- [ ] 08-12-PLAN.md — Client data A (household, members, invites, notices), resolver hook, copy catalogue
-- [ ] 08-13-PLAN.md — Leave/remove/transfer/reconnect + account-deletion database rule
-- [ ] 08-14-PLAN.md — Client data B (sharing mutations, settlements, balances), ARC-18 totals
-- [ ] 08-15-PLAN.md — Household home, members, weights, invite (owner) screens
-- [ ] 08-16-PLAN.md — Join flow (fincwin:// link, code entry, what's-shared card)
-- [ ] 08-17-PLAN.md — Sharing UI (entry switch, split sheet, line detail, Activity badges, bulk share)
-- [ ] 08-18-PLAN.md — Rules UI (household and category defaults, apply-to-unsettled, joint accounts)
-- [ ] 08-19-PLAN.md — Balances and settle-up UI
-- [ ] 08-20-PLAN.md — Delete-account Edge Function + in-app deletion
-- [ ] 08-21-PLAN.md — Realtime wiring in the app
-- [ ] 08-22-PLAN.md — Leave/remove UI + removed-member notice
-- [ ] 08-23-PLAN.md — [gated on 05.5] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
-- [ ] 08-24-PLAN.md — Full suite, DPIA draft, owner-approved production push and device sign-off
-- [ ] 08-25-PLAN.md — [gated on 05.5] Partner opt-in, shared safety net, caveat, couples note
-- [ ] 08-26-PLAN.md — [gated on 05.5] share_pct removal, Share step to Household, APP-08/APP-22/CMP-F04
+- [ ] 08-12-PLAN.md — Household copy catalogue (one file per area) + compliance-voice test
+- [ ] 08-13-PLAN.md — Client data A (household, members, invites, notices), resolver hook, feature hook
+- [ ] 08-14-PLAN.md — Leave/remove/transfer/reconnect + account-deletion database rule
+- [ ] 08-15-PLAN.md — Client data B (sharing mutations, settlements, balances), ARC-18 totals
+- [ ] 08-16-PLAN.md — Household UI primitives, name-resolver guard, member and weights sheets
+- [ ] 08-17-PLAN.md — Household home, notices, You row, invite/rename/currency (owner) sheets
+- [ ] 08-18-PLAN.md — Join flow (fincwin:// link, code entry, what's-shared card)
+- [ ] 08-19-PLAN.md — Sharing UI (entry switch, split sheet, line detail, Activity badges, bulk share)
+- [ ] 08-20-PLAN.md — Rules UI (household and category defaults, apply-to-unsettled, joint accounts)
+- [ ] 08-21-PLAN.md — Balances and settle-up UI
+- [ ] 08-22-PLAN.md — Delete-account Edge Function + in-app deletion
+- [ ] 08-23-PLAN.md — Realtime wiring in the app
+- [ ] 08-24-PLAN.md — Leave/remove UI + removed-member notice
+- [ ] 08-25-PLAN.md — [gated on 05.5] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
+- [ ] 08-26-PLAN.md — Full suite, D-45 check, DPIA draft, validation map
+- [ ] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
+- [ ] 08-28-PLAN.md — [gated on 05.5, hard stop] Partner opt-in, shared safety net, caveat, couples note
+- [ ] 08-29-PLAN.md — [gated on 05.5, hard stop] share_pct removal, Share step to Household, APP-08/APP-22/CMP-F04
 **UI hint**: yes
 **Research flag**: The Realtime reconciliation state machine (no pending write / write still queued / own-write echo / genuine version conflict) is a synthesized design, not a documented Supabase recipe. Budget a dedicated spike — two simulated clients, one taken offline mid-edit — before trusting it in production. Also resolve explicitly what happens when a settlement's expiry window lapses unresolved; the prototype specifies the window but not the outcome.
 
