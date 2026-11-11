@@ -31,7 +31,11 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // 05.4: cached row shapes changed (accounts.overdraft_rate, debts.due_day, decide_settings safety_net_* and custom_options)
 // -- bumped 2 -> 3 (APP-07). scripts/check-cache-version.mjs fails CI when a persisted shape changes without a bump; after
 // a bump run `npm run check:cache-version -- --update`.
-export const CACHE_SCHEMA_VERSION = '3';
+// 06 Grow: goals, debts, accounts and series gained columns and holdings are new -- bumped 3 -> 4.
+// 06-20 phase gate: later Grow plans changed persisted shapes after that bump -- bumped 4 -> 5.
+// 06-30: transactions gained debt_id (D-33) -- bumped 5 -> 6.
+// 06 waves 12-13: Grow shapes changed again after that bump -- bumped 6 -> 7.
+export const CACHE_SCHEMA_VERSION = '7';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's

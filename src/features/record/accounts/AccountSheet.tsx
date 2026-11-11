@@ -9,6 +9,8 @@ import { TextInput } from '@/ui/TextInput';
 import { currencyExponent } from '@/engine/money';
 import type { AccountPatch, AccountRow } from '@/db/rows';
 import { useAddAccount, useEditAccount } from '@/data/mutations/accounts';
+import { useSetAccountRate } from '@/data/mutations/growHoldings';
+import { kindHasRate, rateToStore, validRateInput } from '@/features/record/accounts/accountRate';
 import { newStepId } from '@/data/mutations/undoCapture';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 import { OptionPicker } from '@/features/record/entry/pickers/OptionPicker';
@@ -129,6 +131,7 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
   const parser = useAmountParser(rc.region);
   const { add } = useAddAccount();
   const { edit } = useEditAccount();
+  const { set: setRate } = useSetAccountRate();
   const account = mode.kind === 'edit' ? mode.account : null;
 
   const exponentFor = (code: string): number => options.find((o) => o.code === code)?.exponent ?? currencyExponent(code);
@@ -156,11 +159,15 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
         : null
     : null;
   const [limitText, setLimitText] = useState(initialLimit !== null ? magnitude(initialLimit, account?.currency ?? '') : '');
+  // 06 GRW-11: savings and investment accounts can carry an interest rate (APY), typed as a percent.
+  const [rateText, setRateText] = useState(account?.interest_rate ?? '');
   const [picker, setPicker] = useState<PickerKey>(null);
   const [submitted, setSubmitted] = useState(false);
   // D-26: unsaved work = any field differs from what the sheet opened with.
-  const [initial] = useState(() => ({ name, kind, pickedCurrency, openingText, signChoice, limitText }));
-  const dirty = useIsDirty(initial, { name, kind, pickedCurrency, openingText, signChoice, limitText });
+  const [initial] = useState(() => ({ name, kind, pickedCurrency, openingText, signChoice, limitText, rateText }));
+  const dirty = useIsDirty(initial, { name, kind, pickedCurrency, openingText, signChoice, limitText, rateText });
+  const hasRate = kindHasRate(kind);
+  const rateFailure = hasRate && !validRateInput(rateText);
 
   const parse = (text: string) => parser.parse(text, currency, exponentFor(currency));
   const limits = limitKind(kind);
@@ -184,8 +191,9 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
   const save = () => {
     setSubmitted(true);
     if (!canSubmit || nameTrimmed === '' || nameTrimmed.length > NAME_MAX) return;
-    if (openingFailure || limitFailure) return;
+    if (openingFailure || limitFailure || rateFailure) return;
     const ownerId = rc.userId;
+    const newRate = hasRate ? rateToStore(rateText) : null;
     if (account === null) {
       if (rc.householdId === null || ownerId === null) return;
       const stepId = newStepId();
@@ -198,6 +206,7 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
           opening_balance: signedOpening,
           ...(limits === 'overdraft' ? { overdraft_limit: limitMinor } : {}),
           ...(limits === 'credit' ? { credit_limit: limitMinor } : {}),
+          ...(newRate !== null ? { interest_rate: newRate } : {}),
         },
         { stepId, ownerId },
         currency !== rc.homeCurrency
@@ -219,8 +228,19 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
     // S-WR-12: a limit the new kind no longer has is cleared, not left behind on the row.
     if (limits !== 'overdraft' && account.overdraft_limit !== null) patch.overdraft_limit = null;
     if (limits !== 'credit' && account.credit_limit !== null) patch.credit_limit = null;
+    // GRW-11: exactly one Undo. A rate-only change uses the rate hook (label accountRateSaved); with other changes the rate
+    // rides in the same patch (label accountEdited).
+    const rateChanged = newRate !== (account.interest_rate ?? null);
     if (Object.keys(patch).length > 0) {
+      if (rateChanged) patch.interest_rate = newRate;
       sendEdit(account, patch, ownerId);
+    } else if (rateChanged) {
+      if (ownerId === null) {
+        edit({ id: account.id, householdId: account.household_id, expectedVersion: account.version, patch: { interest_rate: newRate } });
+      } else {
+        const stepId = setRate(account, newRate, ownerId);
+        showToast({ kind: 'ordinary', text: undoLabelText('accountRateSaved', { name: account.name }), stepId });
+      }
     }
     onSaved?.(account.id);
     onClose();
@@ -322,6 +342,23 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
           </>
         ) : null}
 
+        {hasRate ? (
+          <>
+            <Text style={labelStyle}>{t('accounts.sheet.rateLabel')}</Text>
+            <TextInput
+              testID="account-rate"
+              accessibilityLabel={t('accounts.sheet.rateLabel')}
+              keyboardType="decimal-pad"
+              value={rateText}
+              onChangeText={setRateText}
+              style={inputStyle}
+              placeholderTextColor={colors.inkFaint}
+            />
+            {rateFailure ? <Text testID="account-rate-error" style={errorStyle}>{t('accounts.sheet.rateInvalid')}</Text> : null}
+            <Text style={helpStyle}>{t('accounts.sheet.rateHelp')}</Text>
+          </>
+        ) : null}
+
         {account ? <AccountUseRow account={account} /> : null}
 
         {canSubmit ? null : <Text style={helpStyle}>{t('accounts.sheet.notReady')}</Text>}
@@ -329,7 +366,7 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
           label={t(account ? 'accounts.sheet.saveChanges' : 'accounts.sheet.save')}
           variant="primary"
           onPress={save}
-          disabled={!canSubmit}
+          disabled={!canSubmit || rateFailure}
           accessibilityHint={canSubmit ? undefined : t('accounts.sheet.notReady')}
         />
         {account ? (

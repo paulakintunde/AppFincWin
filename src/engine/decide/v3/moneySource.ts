@@ -60,7 +60,7 @@ export interface SplitArgs {
   readonly earlier: MinorUnits;
   /** The protected net money the purchase uses (what net_used names). */
   readonly protectedUsed: MinorUnits;
-  /** Money saved above the net's size. */
+  /** Spare savings outside the spending accounts: money saved above the net's size, plus unlocked goals kept outside them (06 D-22, spareSavings). */
   readonly aboveSize: MinorUnits;
 }
 

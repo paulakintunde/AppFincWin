@@ -22,6 +22,33 @@ describe('contrastRatio (WCAG 2.x relative luminance)', () => {
   });
 });
 
+describe('text colours on the D-31 canvas (#F6F4EE)', () => {
+  const textTokens = {
+    ink: colors.ink,
+    inkDim: colors.inkDim,
+    inkMuted: colors.inkMuted,
+    danger: colors.danger,
+    warn1: colors.warn1,
+    warn2: colors.warn2,
+    ...ACCENTS,
+  };
+  for (const [name, hex] of Object.entries(textTokens)) {
+    it(`${name} reaches 4.5 on canvas`, () => {
+      expect(contrastRatio(hex, colors.canvas)).toBeGreaterThanOrEqual(4.5);
+    });
+  }
+
+  it('inkFaint reaches 4.5 on surface', () => {
+    expect(contrastRatio(colors.inkFaint, colors.surface)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('documents that inkFaint on canvas is about 4.44 (below 4.5), so it must never sit there', () => {
+    const r = contrastRatio(colors.inkFaint, colors.canvas);
+    expect(r).toBeLessThan(4.5);
+    expect(r).toBeGreaterThan(4.4);
+  });
+});
+
 describe('status colours meet WCAG AA (4.5:1) text contrast (02-polish item 5)', () => {
   const grounds = { surface: colors.surface, canvas: colors.canvas, fill1: colors.fill1 } as const;
 

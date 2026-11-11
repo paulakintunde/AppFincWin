@@ -55,7 +55,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // rejects this org's token with "Invalid org token"; sentry.io/us.sentry.io both recognise
     // it), not EU as originally decided — see docs/decisions/error-tracking.md.
     ['@sentry/react-native/expo', { organization: process.env.SENTRY_ORG, project: process.env.SENTRY_PROJECT }],
-    ['expo-splash-screen', { backgroundColor: '#FBFAF7', image: './assets/splash-icon.png', imageWidth: 160 }],
+    ['expo-splash-screen', { backgroundColor: '#F6F4EE', image: './assets/splash-icon.png', imageWidth: 160 }],
     ...(googleIosUrlScheme
       ? ([['@react-native-google-signin/google-signin', { iosUrlScheme: googleIosUrlScheme }]] as [string, unknown][])
       : []),

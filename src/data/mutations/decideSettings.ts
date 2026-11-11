@@ -96,3 +96,18 @@ export function useUpdateDecideSettings(userId: string): { update(patch: DecideS
     },
   };
 }
+
+/**
+ * 06 review P4-WR-07: the patch that puts back every column `forward` writes, from the row as it was before. A money figure
+ * typed in another currency (stampSettingsPatch) clears every other money column and changes `currency` in the same
+ * write, so an Undo that restores only the edited column would leave the user's other Decide figures wiped. Apply the
+ * result as it is (do not stamp it again): it carries the old `currency` and every old figure. No row yet: every column
+ * goes back to null.
+ */
+export function inverseSettingsPatch(forward: DecideSettingsPatch, settings: DecideSettingsRow | null): DecideSettingsPatch {
+  const back: Record<string, unknown> = {};
+  for (const key of Object.keys(forward) as (keyof DecideSettingsPatch)[]) {
+    back[key] = settings === null ? null : (settings[key] ?? null);
+  }
+  return back as DecideSettingsPatch;
+}

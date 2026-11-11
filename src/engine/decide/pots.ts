@@ -27,6 +27,7 @@ function validate(pot: PotInput, asOf: string): void {
   if (!isValidLocalDate(asOf)) throw new RangeError(`${FN}: asOf "${asOf}" is not a valid local date`);
   if (pot.target !== null) assertRange(pot.target, 1, 'target', pot.id);
   if (pot.monthlyAmount !== null) assertRange(pot.monthlyAmount, 0, 'monthlyAmount', pot.id);
+  if (pot.planMonthly != null) assertRange(pot.planMonthly, 0, 'planMonthly', pot.id);
   assertRange(pot.saved, 0, 'saved', pot.id);
   if (pot.readyBy !== null && !isValidLocalDate(pot.readyBy)) {
     throw new RangeError(`${FN}: pot ${pot.id} readyBy "${pot.readyBy}" is not a valid local date`);
@@ -48,7 +49,8 @@ function line(id: string, monthly: bigint, months: number | null, state: PotLine
 /**
  * D-101 / R18.2: what one pot sets aside each month. Rules in order: no target (the monthly amount, or 0); reached
  * (target - saved <= 0); a Wait pot (its own monthly amount, capped at what remains; none or 0 sets aside 0 with no
- * division); a plain pot past or on its date (past_due, 0); otherwise remaining over the whole months left (at least 1),
+ * division); a plain pot whose plan states a monthly amount above 0 (planMonthly, P4-CR-03: that amount, capped at what remains,
+ * whatever its date); a plain pot past or on its date (past_due, 0); otherwise remaining over the whole months left (at least 1),
  * rounded up, in the direction buildWaitPlan uses.
  */
 export function potSetAside(pot: PotInput, asOf: string): PotLine {
@@ -56,10 +58,10 @@ export function potSetAside(pot: PotInput, asOf: string): PotLine {
   if (pot.target === null) return line(pot.id, BigInt(pot.monthlyAmount ?? ZERO), null, 'active');
   const remaining = BigInt(pot.target) - BigInt(pot.saved);
   if (remaining <= 0n) return line(pot.id, 0n, null, 'reached');
-  if (pot.kind === 'wait') {
-    const amount = BigInt(pot.monthlyAmount ?? ZERO);
-    if (amount === 0n) return line(pot.id, 0n, null, 'active');
-    const monthly = amount < remaining ? amount : remaining;
+  const stated = pot.kind === 'wait' ? BigInt(pot.monthlyAmount ?? ZERO) : BigInt(pot.planMonthly ?? ZERO);
+  if (pot.kind === 'wait' && stated === 0n) return line(pot.id, 0n, null, 'active');
+  if (stated > 0n) {
+    const monthly = stated < remaining ? stated : remaining;
     return line(pot.id, monthly, Number(ceilDivide(remaining, monthly)), 'active');
   }
   if (pot.readyBy === null) return line(pot.id, 0n, null, 'active');

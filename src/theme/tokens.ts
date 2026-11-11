@@ -1,3 +1,5 @@
+import { Platform, type ViewStyle } from 'react-native';
+
 /**
  * The complete BUILD-PROMPT.md §2 colour palette, verbatim. This is the whole palette —
  * no colour is added beyond §2 and the prototype's Component.COL / Component.TINT maps
@@ -7,7 +9,7 @@
  */
 export const colors = {
   surface: '#FFFFFF',
-  canvas: '#FBFAF7',
+  canvas: '#F6F4EE',
   shell: '#E7E4DC',
   ink: '#14150F',
   inkMuted: '#6E6A5E',
@@ -35,7 +37,7 @@ export const colors = {
   fill4: '#F4F2EB',
   fill5: '#FAF8F3',
   fill6: '#F6F4EE',
-  tabBar: 'rgba(251,250,247,.94)',
+  tabBar: 'rgba(246,244,238,.94)',
 } as const;
 
 /**
@@ -126,26 +128,33 @@ export const memberColorNames = ['Green', 'Rust', 'Slate', 'Ochre', 'Plum', 'Tea
 export const shadowColor = '#14150F';
 
 /**
- * BUILD-PROMPT.md §2 shadows, expressed as the nearest RN StyleSheet equivalent.
- * CSS: `0 1px 2px rgba(20,21,15,.05), 0 12px 30px -18px rgba(20,21,15,.22)` (card),
- * `0 10px 26px -10px rgba(20,21,15,.55), 0 2px 6px rgba(20,21,15,.14)` (fab).
- * RN supports a single shadow layer, so each is approximated as one offset/radius/opacity
- * combination that reads closest to the CSS's combined effect, plus the Android `elevation`
- * fallback (RN shadow* props are iOS-only).
+ * D-31 depth. Depth comes only from the page tone (canvas #F6F4EE), white surface cards and these three
+ * shadow tokens: `card` (containers), `edge` (grouped list rows, a 2 px edge so cells stay cheap) and `fab`.
+ * `card` and `edge` use RN boxShadow (iOS and Android API 28+); below API 28 Android falls back to elevation.
+ * boxShadow is never combined with elevation or shadow* props.
  */
-export const shadows = {
-  card: {
-    shadowColor,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 15,
-    elevation: 3,
-  },
-  fab: {
-    shadowColor,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
-    elevation: 6,
-  },
-} as const;
+export function depthShadows() {
+  const legacyAndroid = Platform.OS === 'android' && typeof Platform.Version === 'number' && Platform.Version < 28;
+  const card: ViewStyle = legacyAndroid
+    ? { elevation: 3 }
+    : {
+        boxShadow:
+          '0 0 0 1px rgba(20,21,15,0.04), 0 1px 3px rgba(20,21,15,0.07), 0 8px 20px -8px rgba(20,21,15,0.16)',
+      };
+  const edge: ViewStyle = legacyAndroid
+    ? {}
+    : { boxShadow: '0 0 0 1px rgba(20,21,15,0.04), 0 1px 2px rgba(20,21,15,0.06)' };
+  return {
+    card,
+    edge,
+    fab: {
+      shadowColor,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.28,
+      shadowRadius: 18,
+      elevation: 6,
+    },
+  } as const;
+}
+
+export const shadows = depthShadows();

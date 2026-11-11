@@ -91,8 +91,8 @@ export function HistoryScreen() {
               return (
                 <View key={row.id} style={styles.row} testID="history-row-refused">
                   <View style={styles.text}>
-                    <Text style={[textRole(pairing, 'body'), { color: colors.inkFaint }]}>{label}</Text>
-                    <Text style={[labelStyle, { color: colors.inkFaint }]}>{sub}</Text>
+                    <Text style={[textRole(pairing, 'body'), { color: colors.inkMuted }]}>{label}</Text>
+                    <Text style={[labelStyle, { color: colors.inkMuted }]}>{sub}</Text>
                     <Text style={[labelStyle, { color: colors.danger }]}>{t('history.cantUndo')}</Text>
                     {reason ? <Text style={[labelStyle, { color: colors.danger }]}>{reason}</Text> : null}
                   </View>
@@ -107,7 +107,7 @@ export function HistoryScreen() {
                   <View style={styles.text}>
                     <Text style={titleStyle}>{label}</Text>
                     <Text style={labelStyle}>{sub}</Text>
-                    <Text style={[labelStyle, { color: colors.inkFaint }]}>{t('history.blocked')}</Text>
+                    <Text style={[labelStyle, { color: colors.inkMuted }]}>{t('history.blocked')}</Text>
                   </View>
                 </View>
               );

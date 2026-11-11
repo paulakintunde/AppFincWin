@@ -93,6 +93,9 @@ export interface TransactionRow {
   // 05-34 (D-29, D-34): every select returns both (TRANSACTION_COLUMNS); optional in the type only so the many pre-existing literal fixtures stay valid. Readers use `row.one_off === true` / `row.goal_id ?? null`.
   one_off?: boolean;
   goal_id?: string | null;
+  // 06-30 (D-33): the debt a one-off payment line pays (20261106000400). Select-only: only record_debt_one_off writes it.
+  // Every select returns it; optional in the type only, like goal_id, so existing literal fixtures stay valid.
+  debt_id?: string | null;
   // 05.2: income tags and refund link (client-writable, 20261028000400)
   income_kind?: string | null;
   counts_as?: 'available' | 'kept' | null;
@@ -119,6 +122,8 @@ export interface AccountRow {
   use_extra_set_aside?: number | null;
   // 05.4 FIN-03: the overdraft interest rate as a percent string; null = not given (20261103000200)
   overdraft_rate?: string | null;
+  // 06 GRW-11: the savings interest rate (APY) as a percent string; null = not given (20261106000100)
+  interest_rate?: string | null;
   // Record polish: soft delete (D-24, client-patchable) and server-written is_sample (read-only).
   deleted_at: string | null;
   is_sample: boolean;
@@ -226,6 +231,7 @@ export interface NewAccount {
   use_envelope_id?: string | null;
   use_extra_set_aside?: number | null;
   overdraft_rate?: string | null;
+  interest_rate?: string | null;
 }
 
 export type AccountPatch = Partial<
@@ -243,6 +249,7 @@ export type AccountPatch = Partial<
     | 'use_envelope_id'
     | 'use_extra_set_aside'
     | 'overdraft_rate'
+    | 'interest_rate'
   >
 >;
 
@@ -313,13 +320,14 @@ export interface RecurringSeriesRow {
   income_kind?: string | null;
   saving_mode?: 'fixed' | 'flexible' | null;
   pay_group?: string | null;
+  goal_id?: string | null; // 06: the goal a saving series feeds; read-only here (20261106000100)
   end_reason?: 'stopped' | 'paused' | null; // 05.2 D-24: read only while end_date is set; written through apply_patches
   version: number;
   created_at: string;
   updated_at: string;
 }
 export const RECURRING_SERIES_COLUMNS =
-  'id, household_id, created_by, updated_by, account_id, name, amount, currency, category_id, payment_type, freq, anchor_date, time_zone, end_date, occurrence_count, materialised_through, deleted_at, is_automatic, is_sample, counts_as, income_kind, saving_mode, pay_group, end_reason, version, created_at, updated_at';
+  'id, household_id, created_by, updated_by, account_id, name, amount, currency, category_id, payment_type, freq, anchor_date, time_zone, end_date, occurrence_count, materialised_through, deleted_at, is_automatic, is_sample, counts_as, income_kind, saving_mode, pay_group, goal_id, end_reason, version, created_at, updated_at';
 
 export interface UndoLogRow {
   id: string;

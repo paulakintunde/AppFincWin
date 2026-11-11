@@ -95,7 +95,7 @@ describe('the net in force (D-05, D-06, D-35)', () => {
     resolveSafetyNet(inputsOf({ safetyNet, emergency }), essential(190_000));
 
   it('no record: protection on, the starter, the emergency fund (or nothing) saved', () => {
-    expect(at(undefined)).toEqual({ protect: true, off: false, zeroIsOff: false, size: 190_000, starter: 190_000, saved: 0, floor: 0, aboveSize: 0, usable: 0, locked: true, state: 'none' });
+    expect(at(undefined)).toEqual({ protect: true, off: false, zeroIsOff: false, size: 190_000, starter: 190_000, saved: 0, floor: 0, aboveSize: 0, goalsOutside: 0, goalsOutsideKept: 0, usable: 0, locked: true, state: 'none' });
     // D-61: no record at all is locked, so the protected part lends nothing
     expect(at(null, { amount: mu(120_000) })).toMatchObject({ saved: 120_000, floor: 120_000, usable: 0, locked: true, state: 'small' });
   });

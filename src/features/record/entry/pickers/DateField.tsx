@@ -18,6 +18,8 @@ export interface DateFieldProps {
   onChange: (localDate: string) => void;
   /** 'YYYY-MM-DD': the earliest day the picker offers (S-CR-03). */
   minDate?: string;
+  /** 06-32: draws its own opener (a chip) in place of the Row; it gets the function that opens the picker. */
+  renderTrigger?: (open: () => void, disabled: boolean) => React.ReactNode;
 }
 
 const pad = (n: number): string => String(n).padStart(2, '0');
@@ -31,7 +33,7 @@ function fromLocalDateString(value: string): Date {
   return new Date(y, m - 1, d, 12, 0, 0);
 }
 
-export function DateField({ label, value, display, onChange, minDate }: DateFieldProps) {
+export function DateField({ label, value, display, onChange, minDate, renderTrigger }: DateFieldProps) {
   const t = useT();
   const readOnly = useReadOnlyScope(); // a date inside a decided Decide check is shown, not opened
   const [open, setOpen] = useState(false);
@@ -69,7 +71,13 @@ export function DateField({ label, value, display, onChange, minDate }: DateFiel
 
   return (
     <>
-      <Row label={label} value={display} dense chevron disabled={readOnly} onPress={() => setOpen(true)} />
+      {renderTrigger ? (
+        renderTrigger(() => {
+          if (!readOnly) setOpen(true);
+        }, readOnly)
+      ) : (
+        <Row label={label} value={display} dense chevron disabled={readOnly} onPress={() => setOpen(true)} />
+      )}
       {Platform.OS === 'ios' ? (
         <Sheet visible={open} onDismiss={() => setOpen(false)} accessibilityLabel={label}>
           <SheetHeader title={label} cancelLabel={t('record.sheet.cancel')} onCancel={() => setOpen(false)} />

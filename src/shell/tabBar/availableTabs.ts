@@ -12,7 +12,7 @@ export const TAB_AVAILABILITY: Readonly<Record<TabId, boolean>> = {
   home: true,
   activity: true,
   decide: true, // 05-21: Decide lands (Phase 5)
-  grow: false,
+  grow: true, // 06-20: Grow lands (Phase 6)
   insights: false,
 };
 

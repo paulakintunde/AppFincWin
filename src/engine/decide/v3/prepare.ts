@@ -29,7 +29,7 @@ import {
 } from './cash/path';
 import { debtOutflows, debtsInMonth, debtsNotRecorded, dueDayFacts, type DebtFlow, type DebtOutflows } from './debts';
 import { essentialCosts, essentialSpendingOf } from './essentialCosts';
-import { resolveSafetyNet, type ResolvedNet } from './safetyNet';
+import { resolveSafetyNet, spareSavings, type ResolvedNet } from './safetyNet';
 import { overdraftFloor } from './overdraft';
 import { addDays, addYearMonths, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
@@ -339,8 +339,10 @@ function purchaseSideOf(r: Reading, check: CheckV2, opts: JudgeOpts) {
   const funds: Funds = { ...funds1, ownEnvelope: minorUnits(ownEnvelope(inputs.envelopes, check.envelopeId) + savedFor) };
   // D-54: spending money plus the purchase's own envelope; other put-aside money never cushions the check. 05.4 D-35 (retires
   // D-63's purpose gate): money saved above the net's size is spare and counts; the protected part only lends when the path
-  // would otherwise fail (withNet), whatever the purchase's purpose (D-41, D-49).
-  const opening = minorUnits(funds.spending + funds.ownEnvelope + r.net.aboveSize);
+  // would otherwise fail (withNet), whatever the purchase's purpose (D-41, D-49). 06 D-22: unlocked goals in dedicated or untouched
+  // accounts are spare money too (spareSavings); an unlocked goal is never also the purchase's own envelope (P2-CR-01).
+  const net = r.net;
+  const opening = minorUnits(funds.spending + funds.ownEnvelope + spareSavings(net));
   // 05.4 BO-05 / D-42 (05.4-26): the up-front money leaves on the purchase date; running costs fall on their own dates.
   const purchaseDate = purchaseDateOf(check, inputs.asOf);
   const labelled = [...(pb.purchase ? purchaseCashFlowsLabelled(pb.purchase, inputs.asOf, CASH_PATH_DAYS_V3, purchaseDate) : []), ...repFlows];

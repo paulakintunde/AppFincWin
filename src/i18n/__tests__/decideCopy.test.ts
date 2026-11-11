@@ -292,9 +292,13 @@ describe('decide copy (DCU-09)', () => {
     expect(home.filter((l) => INSTRUCTION_LEAD.test(l.value) || IMPERATIVE_LEAD.test(l.value)).map((l) => l.path)).toEqual([]);
   });
 
-  it('names no tab that does not exist (Grow)', () => {
-    // 06.1 D-06: the new Decide screens ship in one release with Grow, so decide.screens.* may name it.
-    expect(leaves.filter((l) => /\bGrow\b/.test(l.value) && !l.path.startsWith('decide.screens.')).map((l) => l.path)).toEqual([]);
+  it('names Grow only in the new Decide screens and where a setup step points to it (06.1 D-06, 06-20)', () => {
+    // 06.1 D-06: the new Decide screens ship in one release with Grow, so decide.screens.* may name it; 06-20: the tab exists now.
+    expect(
+      leaves
+        .filter((l) => /\bGrow\b/.test(l.value) && !l.path.startsWith('decide.screens.') && !l.path.startsWith('decide.setup.growLink.'))
+        .map((l) => l.path),
+    ).toEqual([]);
   });
 
   it('every listed action label exists and still opens with its verb (WR-D04)', () => {
