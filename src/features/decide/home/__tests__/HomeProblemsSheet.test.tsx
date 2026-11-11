@@ -159,7 +159,7 @@ describe('HomeProblemsSheet', () => {
     expect(screen.getByText('Affects: Net free cash flow')).toBeTruthy();
     expect(screen.getByText('Affects: 1 pot and every check')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Pots'));
-    expect(mockPush).toHaveBeenCalledWith('/decide/pots');
+    expect(mockPush).toHaveBeenCalledWith('/grow?segment=goals');
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

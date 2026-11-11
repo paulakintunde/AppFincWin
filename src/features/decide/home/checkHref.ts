@@ -29,5 +29,5 @@ export const OPEN_HREF = '/decide/open' as Href;
 export const CHANGES_HREF = '/decide/changes' as Href;
 export const LINES_HREF = '/decide/lines' as Href;
 
-// 05-125 (D-101, R18.1): the Pots screen, reached from Month details. 05-127 creates the route, hence the `as Href`.
-export const POTS_HREF = '/decide/pots' as Href;
+// Owner 2026-11-11: pots became Grow goals; Month details and the problems list open the Grow goals segment.
+export const POTS_HREF = '/grow?segment=goals' as Href;

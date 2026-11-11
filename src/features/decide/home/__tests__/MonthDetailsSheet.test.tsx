@@ -196,7 +196,7 @@ describe('MonthDetailsSheet', () => {
     expect(screen.getByText('Pots \u203A')).toBeTruthy();
     await fireEvent.press(link);
     expect(onClose).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith('/decide/pots');
+    expect(mockPush).toHaveBeenCalledWith('/grow?segment=goals');
     expect(onClose.mock.invocationCallOrder[0]).toBeLessThan(mockPush.mock.invocationCallOrder[0]!);
   });
 

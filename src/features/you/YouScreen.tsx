@@ -34,20 +34,20 @@ import { HomeCurrencyRow } from './components/HomeCurrencyRow';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { DevSyncProbe } from './components/DevSyncProbe';
 
-// 06.1-28: /decide/pots redirects to Decide home (the old Pots screen is unrouted).
-const POTS_HREF = '/decide/pots' as Href;
+// Owner 2026-11-11: the old Pots screen is gone; the row opens the Grow goals segment.
+const GOALS_HREF = '/grow?segment=goals' as Href;
 
 // 02-30: Record entry points (D-32, D-39). Hrefs are cast once because generated route types may
 // lag the route files. The statement import lives in the Add group (D-85), not here.
 const MONEY_ROWS: readonly {
-  label: 'you.record.activity' | 'you.record.accounts' | 'you.record.categories' | 'you.record.history' | 'you.record.pots';
+  label: 'you.record.activity' | 'you.record.accounts' | 'you.record.categories' | 'you.record.history' | 'grow.home.segments.goals';
   href: Href;
 }[] = [
   { label: 'you.record.activity', href: ACTIVITY_HREF },
   { label: 'you.record.accounts', href: '/accounts' as Href },
   { label: 'you.record.categories', href: '/categories' as Href },
   { label: 'you.record.history', href: '/history' as Href },
-  { label: 'you.record.pots', href: POTS_HREF },
+  { label: 'grow.home.segments.goals', href: GOALS_HREF },
 ];
 
 // D-85 / R16.1: the Add group rows, in order. Each runs the FAB quick action with the same id.

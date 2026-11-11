@@ -392,14 +392,14 @@ describe('YouScreen Money section', () => {
     ]);
   });
 
-  it('D-101 You Money lists Pots after History', async () => {
+  it('You Money lists Goals after History (owner 2026-11-11)', async () => {
     const { getByText, getByRole, getAllByRole } = await renderScreen();
     const at = (n: string) => getAllByRole('button').indexOf(getByRole('button', { name: n }));
-    expect(at('Pots')).toBe(at('History') + 1);
+    expect(at('Goals')).toBe(at('History') + 1);
     await act(async () => {
-      fireEvent.press(getByText('Pots'));
+      fireEvent.press(getByText('Goals'));
     });
-    expect(mockRouterPush).toHaveBeenLastCalledWith('/decide/pots');
+    expect(mockRouterPush).toHaveBeenLastCalledWith('/grow?segment=goals');
   });
 
   it('D-101 the Add group has no Pots action', async () => {
