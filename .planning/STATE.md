@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 06.1 wave 4 done (10, 11, 40; 15/42); migration 20261111000100_decide_screens.sql written, NOT pushed (plan 31 pushes it); next is wave 5 (plans 12-16)
+stopped_at: Phase 06.1 wave 5 done (12-16; 20/42); cache version 8; next is wave 6 (17, 18, 19, 20, 22, 26, 27, 35)
 last_updated: "2026-11-11T20:10:18.502Z"
 last_activity: 2026-11-11
 progress:
