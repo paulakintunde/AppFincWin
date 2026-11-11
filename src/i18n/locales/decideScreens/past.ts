@@ -20,6 +20,7 @@ export const past = {
     no: 'No',
     saved: 'Saved',
     savedToast: 'Saved to your decisions.',
+    leftOutToast: 'Saved. The {{amount}} is left out.',
     bought: 'Bought {{date}}',
     lookBackIn: 'look back in {{month}}',
     notBought: 'Not bought',
@@ -42,5 +43,10 @@ export const past = {
     asItWas: 'See the check as it was',
     remove: 'Remove from decisions',
     removedToast: 'Removed from your decisions.',
+    asChecked: 'As checked on {{date}}',
+    asCheckedUnreadable: 'This saved answer can’t be shown.',
+    notFoundTitle: 'This decision isn’t here',
+    notFoundBody: 'It may have been removed on another device.',
+    historyA11y: 'What Decide said on {{date}}: {{word}}',
   },
 } as const;

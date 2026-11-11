@@ -99,7 +99,8 @@ export default function AppLayout() {
                   <Stack.Screen name="setup/rough" />
                   <Stack.Screen name="setup/first-check" />
                   <Stack.Screen name="decide/check/[id]" />
-                  <Stack.Screen name="decide/past" />
+                  <Stack.Screen name="decide/past/index" />
+                  <Stack.Screen name="decide/past/[id]" />
                   <Stack.Screen name="decide/open" />
                   <Stack.Screen name="decide/changes" />
                   <Stack.Screen name="decide/lines" />
