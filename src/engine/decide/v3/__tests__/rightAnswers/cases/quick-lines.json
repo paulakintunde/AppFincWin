@@ -100,8 +100,8 @@
       "fixIds": [
         "D-21"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-11",
       "ownerReason": null,
       "expertNote": null
     },
@@ -204,8 +204,8 @@
       "fixIds": [
         "D-21"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-11",
       "ownerReason": null,
       "expertNote": null
     },
@@ -308,8 +308,8 @@
       "fixIds": [
         "D-21"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-11",
       "ownerReason": null,
       "expertNote": null
     },
@@ -413,8 +413,8 @@
       "fixIds": [
         "D-21"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-11",
       "ownerReason": null,
       "expertNote": null
     },
@@ -518,8 +518,8 @@
       "fixIds": [
         "D-21"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-11",
       "ownerReason": null,
       "expertNote": null
     },
@@ -620,8 +620,8 @@
       "fixIds": [
         "D-21"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-11",
       "ownerReason": null,
       "expertNote": null
     },
@@ -722,8 +722,8 @@
       "fixIds": [
         "D-21"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-11",
       "ownerReason": null,
       "expertNote": null
     },
@@ -831,8 +831,8 @@
       "fixIds": [
         "D-21"
       ],
-      "status": "draft",
-      "approvedAt": null,
+      "status": "approved",
+      "approvedAt": "2026-11-11",
       "ownerReason": null,
       "expertNote": null
     }
