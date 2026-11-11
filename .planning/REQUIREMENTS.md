@@ -728,7 +728,7 @@ Populated during roadmap creation.
 | HH-09 | Phase 8 - Household | Pending |
 | HH-10 | Phase 8 - Household | Pending |
 | HH-11 | Phase 8 - Household | Pending |
-| HH-12 | Phase 8 - Household | Pending |
+| HH-12 | Deferred (08-CONTEXT D-45; with invite web page after Apple enrolment) | Pending |
 | HH-13 | Phase 8 - Household | Pending |
 | HH-14 | Phase 8 - Household | Pending |
 | HH-15 | Phase 8 - Household | Pending |

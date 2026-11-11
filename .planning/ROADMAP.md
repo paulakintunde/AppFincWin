@@ -1194,7 +1194,7 @@ Plans:
 ### Phase 8: Household
 **Goal**: Multiple people can share one household's money, live, on top of the RLS foundation Phase 0 already laid.
 **Depends on**: Phase 0 (schema/RLS foundation), Phase 3 (Shell for the UI this phase adds). Designed for Variant C (fix plan Theme N, BO-07): the household scope connection point; the first wave fixes the household-wide read rule on `debts` and `statement_periods`
-**Requirements**: HH-01, HH-02, HH-03, HH-04, HH-05, HH-06, HH-07, HH-08, HH-09, HH-10, HH-11, HH-12, HH-13, HH-14, HH-15
+**Requirements**: HH-01, HH-02, HH-03, HH-04, HH-05, HH-06, HH-07, HH-08, HH-09, HH-10, HH-11, HH-13, HH-14, HH-15 (HH-12 deferred, 08-CONTEXT D-45)
 **Success Criteria** (what must be TRUE):
   1. A user can invite another person with an expiring link and code; the invited person joins by signing in and gains access only to that household's shared records.
   2. A user can assign members a colour, a role (including custom roles) and a weight; mark a transaction as shared and have it split by even/weight/amount/mine-only rules, with a default rule set per category.

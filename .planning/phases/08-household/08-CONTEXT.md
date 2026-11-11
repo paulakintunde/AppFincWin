@@ -77,6 +77,7 @@ Two to six people share one household's money, live. Phase 8 delivers invites an
 - **D-42:** A **confirmed settle-up can be undone by either member for 24 hours**. Undo unlocks the lines, reverses both settlement records and the account-balance moves, restores the owing, and tells both people. After 24 hours it is final. A pending settle-up can be cancelled by the payer at any time.
 - **D-43:** `statement_periods` **follow their card account's visibility**: shared account means household-visible, personal means owner-only. Statement periods are not published to Realtime.
 - **D-44:** Pro switches (D-12) live in **one file, `src/config/householdFeatures.ts`**, one boolean per household feature, all `true` for now. Phase 9 points it at the real entitlement.
+- **D-45:** **HH-12 (read-only household summary link) moves out of Phase 8.** It needs a web page for people without the app; it returns together with the invite web page after Apple enrolment. Phase 8 builds no summary-link table, RPC or screen. Phase 8 success criterion 5 is met by live updates alone.
 
 ### Claude's Discretion
 - Invite code and token length, character set and rate-limit thresholds (D-07). These must make guessing futile, with a pgTAP or edge test proving it.
@@ -159,6 +160,7 @@ Two to six people share one household's money, live. Phase 8 delivers invites an
 - Tracking who funds a joint account (top-up balancing) was rejected for v1 (D-17).
 - Debt simplification across 3+ people was rejected for v1 (D-23).
 - Role-based permissions were rejected for v1 (D-31).
+- HH-12 summary link deferred to a later phase with the invite web page, after Apple enrolment (D-45).
 
 </deferred>
 
