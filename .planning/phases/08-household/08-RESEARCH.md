@@ -396,18 +396,18 @@ Validate `w >= 0`, require at least one `w > 0`, otherwise as existing. A zero-w
 | A8 | `pgcrypto`/`extensions.digest` available (Supabase default) | Pattern 3 | Trivial; check `create extension` in migration |
 | A9 | Realtime throughput (1 to 8 msgs/client/s) is ample for 6 members | Pattern 6 | Low |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Where does the invite landing web page live, and which domain handles universal/app links?**
+1. **Where does the invite landing web page live, and which domain handles universal/app links?** — **RESOLVED: D-38 (custom scheme + typed code; no web page, no universal links this phase)**
    - Known: scheme `fincwin://`; Apple enrolment pending; no web infra in repo.
    - Unclear: host (static site, EAS Hosting, Edge Function), domain ownership.
    - Recommendation: static page on a host the owner controls calling the anon `invite_preview` RPC; ship custom-scheme + typed code as the guaranteed path; defer verified universal links until enrolment. Ask the owner in questions-before-build.
-2. **Household currency conversion for shared lines** (A3). Recommendation: stamp `household_amount` at share time using the existing on-demand FX stamping path; confirm with the stamping migration `20261007000400`.
-3. **Has 05.5 landed?** `countsForMe` and BO-07 contracts absent on this branch. Wave 0 gate required.
-4. **Is account-deletion UI/function in Phase 10 or here?** DB rule here; the invoke path (RPC `delete_my_account` calling auth admin from an Edge Function, since clients cannot delete `auth.users`) must be agreed. Recommend an Edge Function using the service role that calls the DB handoff, owned by whichever phase ships first.
-5. **Owner notice delivery:** in-app `household_events` is the minimum; push waits for Phase 10.
-6. **Does `statement_periods` need to be shared-visible at all?** Recommend follow-the-account visibility, not published to Realtime.
-7. **Pro switches (D-12):** one boolean capability flag per feature; where the flag source lives (static config now, `household_entitlements` in Phase 9). Recommend a single `src/config/householdFeatures.ts` returning true for all.
+2. **Household currency conversion for shared lines** — **RESOLVED: D-39 (stamp household_amount once at share time)** (A3). Recommendation: stamp `household_amount` at share time using the existing on-demand FX stamping path; confirm with the stamping migration `20261007000400`.
+3. **Has 05.5 landed?** — **RESOLVED: D-41 (05.5 not landed; Decide wiring plans gated)** `countsForMe` and BO-07 contracts absent on this branch. Wave 0 gate required.
+4. **Is account-deletion UI/function in Phase 10 or here?** — **RESOLVED: D-40 (deletion built end to end in Phase 8: DB rule, Edge Function, in-app control)** DB rule here; the invoke path (RPC `delete_my_account` calling auth admin from an Edge Function, since clients cannot delete `auth.users`) must be agreed. Recommend an Edge Function using the service role that calls the DB handoff, owned by whichever phase ships first.
+5. **Owner notice delivery:** — **RESOLVED: CONTEXT Claude's Discretion (in-app household_events notices at minimum; push with Phase 10)** in-app `household_events` is the minimum; push waits for Phase 10.
+6. **Does `statement_periods` need to be shared-visible at all?** — **RESOLVED: D-43 (follow the card account's visibility; not published to Realtime)** Recommend follow-the-account visibility, not published to Realtime.
+7. **Pro switches (D-12):** — **RESOLVED: D-44 (src/config/householdFeatures.ts, all true)** one boolean capability flag per feature; where the flag source lives (static config now, `household_entitlements` in Phase 9). Recommend a single `src/config/householdFeatures.ts` returning true for all.
 
 ## Environment Availability
 

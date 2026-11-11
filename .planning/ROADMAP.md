@@ -1200,7 +1200,7 @@ Plans:
   2. A user can assign members a colour, a role (including custom roles) and a weight; mark a transaction as shared and have it split by even/weight/amount/mine-only rules, with a default rule set per category.
   3. A user can see what each member owes or is owed, and settle up with a member so the matching record appears on their side.
   4. A user can toggle between their own figures and the household's, and hide real names from other members with a colour-name fallback.
-  5. A shared record created by one member appears on another member's device without a manual refresh, and a user can share a read-only household summary as an expiring link.
+  5. A shared record created by one member appears on another member's device without a manual refresh. (The read-only summary link, HH-12, is deferred: 08-CONTEXT D-45.)
   6. A member can leave, be removed, or receive ownership; deleting an account follows the documented rule and leaves the remaining members' balances correct; and guessing invite codes is rate-limited to futility.
   7. (Decide fix plan, blocking) Every record is personal unless marked shared, enforced by database rules, and the two-user tests are green BEFORE the invite flow merges: member B cannot read, edit, receive live updates for, or export member A's personal rows (CMP-F18, ARC-22).
   8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money.
