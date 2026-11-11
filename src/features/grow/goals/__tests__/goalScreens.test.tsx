@@ -32,7 +32,9 @@ jest.mock('@/shell/screen/DetailScreen', () => {
       R.createElement(View, null, R.createElement(RNText, null, p.title), p.right, p.children),
   };
 });
+let mockSavingIds: string[] = [];
 jest.mock('@/data/mutations/growGoals', () => ({
+  useGoalSaving: (id: string) => mockSavingIds.includes(id),
   useMoveGoalMoney: () => ({ move: (...a: unknown[]) => mockMove(...a) }),
   useEditGoal: () => ({ edit: (...a: unknown[]) => (mockEdit as (...x: unknown[]) => unknown)(...a), remove: (...a: unknown[]) => (mockRemove as (...x: unknown[]) => unknown)(...a) }),
   useConfirmGoalContribution: () => ({ confirm: (...a: unknown[]) => (mockConfirm as (...x: unknown[]) => unknown)(...a) }),
@@ -167,6 +169,7 @@ function readWith(saved: number, over: Partial<{ locked: boolean }> = {}): Goals
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockSavingIds = [];
   mockToday = '2026-10-20';
   mockRows = [lisbon()];
   mockLines = [];
@@ -557,6 +560,15 @@ describe('Phase 6 review, part 4', () => {
     expect(screen.queryByTestId('goal-try-other')).toBeNull();
     await fireEvent.press(screen.getByText('Each month'));
     expect(screen.queryAllByText('Save')).toHaveLength(0);
+  });
+
+  it('device check 2026-11-11: a new goal still saving shows the loading state, not "removed"', async () => {
+    mockRows = [];
+    mockSavingIds = ['g1'];
+    mockRead = { ...readWith(0), model: { ...readWith(0).model, goals: [] } };
+    await wrap(<GoalDetailScreen id="g1" />);
+    expect(screen.getByTestId('goal-loading')).toBeTruthy();
+    expect(screen.queryByText('This goal was removed.')).toBeNull();
   });
 
   it('P4-WR-03: a removed goal says so instead of loading forever', async () => {

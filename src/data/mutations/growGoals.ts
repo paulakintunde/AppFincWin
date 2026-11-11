@@ -10,7 +10,7 @@
 //   useConfirmSafetyNet        D-07 "Looks right" stamp on the migrated net, one step
 //   useSetSafetyNet            D-29 "Use as my safety net": atomic swap, the server builds the one step
 import * as Crypto from 'expo-crypto';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useMutationState } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { localDateIn, monthOf } from '@/engine/time';
 import { buildTransferLegs } from '@/engine/transfer';
@@ -1012,4 +1012,17 @@ export function useSetSafetyNet(): { set(goal: SavingsGoalRow, current: SavingsG
       return stepId;
     },
   };
+}
+
+/**
+ * Device check 2026-11-11: true while a save of this goal is queued or running. A new goal's page opens before its
+ * optimistic row reaches the cache (scoped writes run in turn, and a refetch can briefly hold the older list), so the
+ * page shows its loading state, not "This goal was removed.", until the save settles.
+ */
+export function useGoalSaving(goalId: string): boolean {
+  const ids = useMutationState({
+    filters: { mutationKey: mutationKeys.saveGoalPlan, status: 'pending' },
+    select: (m) => (m.state.variables as SaveGoalPlanVars | undefined)?.goal.id ?? '',
+  });
+  return ids.includes(goalId);
 }

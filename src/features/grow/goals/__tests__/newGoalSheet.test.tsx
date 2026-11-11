@@ -18,7 +18,9 @@ const mockLight = jest.fn();
 
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'series-uuid' }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPush(h) }));
+let mockSavingIds: string[] = [];
 jest.mock('@/data/mutations/growGoals', () => ({
+  useGoalSaving: (id: string) => mockSavingIds.includes(id),
   useSaveGoalPlan: () => ({ save: (...a: unknown[]) => mockSave(...a) }),
 }));
 jest.mock('@/data/queries/accounts', () => ({

@@ -46,7 +46,9 @@ let mockAccounts: typeof TWO_ACCOUNTS | undefined = TWO_ACCOUNTS;
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({ data: mockAccounts }),
 }));
+let mockSavingIds: string[] = [];
 jest.mock('@/data/mutations/growDebts', () => ({
+  useDebtSettling: (id: string) => mockSavingIds.includes(id),
   useSaveDebtPlan: () => ({ save: mockSavePlan }),
   useSaveGrowDebt: () => ({ save: mockSaveDebt }),
   useRecordDebtSale: () => ({ record: mockRecordSale }),
@@ -296,6 +298,14 @@ describe('Debt detail (G06)', () => {
     // A real removal (soft delete), not "paid off": the row and the user, nothing else.
     expect(mockRemove).toHaveBeenCalledWith(expect.objectContaining({ id: 'auto' }), 'u1');
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ kind: 'destructive', stepId: 'step-removed', text: { key: 'grow.debts.detail.removedToast', params: { name: 'Auto loan' } } }));
+  });
+
+  it('device check 2026-11-11: a new debt still saving shows the loading state, not "not found"', async () => {
+    mockSavingIds = ['nope'];
+    await wrap(<DebtDetailScreen id="nope" />);
+    expect(screen.getByTestId('grow-debt-loading')).toBeTruthy();
+    expect(screen.queryByTestId('grow-debt-missing')).toBeNull();
+    mockSavingIds = [];
   });
 
   it('a debt that is not there says so with a way back', async () => {

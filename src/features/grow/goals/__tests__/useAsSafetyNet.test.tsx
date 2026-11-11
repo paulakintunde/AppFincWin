@@ -11,7 +11,9 @@ jest.setTimeout(30000);
 
 const mockSet = jest.fn((..._a: unknown[]) => 's-net' as string | null);
 const mockLight = jest.fn();
+let mockSavingIds: string[] = [];
 jest.mock('@/data/mutations/growGoals', () => ({
+  useGoalSaving: (id: string) => mockSavingIds.includes(id),
   useSetSafetyNet: () => ({ set: (...a: unknown[]) => mockSet(...a) }),
 }));
 jest.mock('@/ui/haptics', () => ({

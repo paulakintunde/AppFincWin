@@ -33,7 +33,9 @@ jest.mock('@/shell/screen/DetailScreen', () => {
       R.createElement(View, null, R.createElement(RNText, null, p.title), p.right, p.children),
   };
 });
+let mockSavingIds: string[] = [];
 jest.mock('@/data/mutations/growGoals', () => ({
+  useGoalSaving: (id: string) => mockSavingIds.includes(id),
   useSaveGoalPlan: () => ({ save: (...a: unknown[]) => mockSave(...a) }),
   useEditGoal: () => ({ edit: (...a: unknown[]) => mockEdit(...a), remove: jest.fn() }),
   useConfirmSafetyNet: () => ({ confirm: (...a: unknown[]) => mockConfirmNet(...a) }),

@@ -12,7 +12,7 @@
 // Undo of a plan or a sale is a server-built step; it does not bump row versions as the client counts them, so call
 // refreshDebtReads after Undo (like refreshGoalReads) rather than assume version + 1.
 import * as Crypto from 'expo-crypto';
-import { useMutation } from '@tanstack/react-query';
+import { useIsFetching, useMutation, useMutationState } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { localDateIn } from '@/engine/time';
 import { buildStep, inverseOfInserts, inverseOfPatches, type PatchValue } from '@/engine/undo';
@@ -658,4 +658,20 @@ export function useRecordDebtOneOff(): { record(input: RecordDebtOneOffInput): {
       return { stepId };
     },
   };
+}
+
+/**
+ * Device check 2026-11-11: true while an add or edit of this debt is queued or running, or while the debt list is
+ * refetching, so a new debt's page shows its loading state, not "not found", before the row reaches the cache.
+ */
+export function useDebtSettling(debtId: string, householdId: string | null): boolean {
+  const ids = useMutationState({
+    filters: { mutationKey: mutationKeys.saveGrowDebt, status: 'pending' },
+    select: (m) => {
+      const v = m.state.variables as SaveGrowDebtVars | undefined;
+      return v === undefined ? '' : v.mode === 'add' ? v.row.id : v.id;
+    },
+  });
+  const fetching = useIsFetching({ queryKey: queryKeys.debts(householdId ?? '') }) > 0;
+  return ids.includes(debtId) || fetching;
 }

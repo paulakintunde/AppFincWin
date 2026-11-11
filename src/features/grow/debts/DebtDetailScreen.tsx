@@ -7,6 +7,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
+import { useDebtSettling } from '@/data/mutations/growDebts';
 import { useAccounts } from '@/data/queries/accounts';
 import { useDebtPayments } from '@/data/queries/growDebts';
 import { useRemoveDebt } from '@/data/mutations/debts';
@@ -71,6 +72,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
   const [chipKey, setChipKey] = useState(FIRST_CHIP);
 
   const row = rows.get(id);
+  const settling = useDebtSettling(id, read.householdId);
   const line = read.model.debts.find((d) => d.id === id) ?? read.model.paidInFull.find((d) => d.id === id) ?? null;
   const payments = useDebtPayments(row, read.today).data;
   const paymentLines = useMemo(
@@ -99,7 +101,8 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
   const link = { ...textRole(pairing, 'body'), color: colors.accent };
   const card = [styles.card, { backgroundColor: colors.surface, ...shadows.card }];
 
-  if (read.status === 'loading') {
+  // Device check 2026-11-11: a debt that is still saving, or a list that is refetching, is not yet "not found".
+  if (read.status === 'loading' || ((row === undefined || line === null) && settling)) {
     return (
       <DetailScreen title="">
         <View testID="grow-debt-loading" accessibilityLabel={t('grow.home.loading')} style={[styles.block, { height: 120, backgroundColor: colors.fill1 }]} />

@@ -5,7 +5,7 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
-import { useConfirmGoalContribution, useEditGoal } from '@/data/mutations/growGoals';
+import { useConfirmGoalContribution, useEditGoal, useGoalSaving } from '@/data/mutations/growGoals';
 import { useAccounts } from '@/data/queries/accounts';
 import { useGoalLines, useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
@@ -59,6 +59,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const calc = useCalcFormat();
   const read = useGoalsRead();
   const rowsQ = useSavingsGoalRows(userId ?? undefined, householdId ?? undefined);
+  const saving = useGoalSaving(id);
   const goalRow = rowsQ.data?.find((r) => r.id === id && r.deleted_at === null) ?? null;
   // P4-WR-01: this goal's figures are in its own currency (target, monthly amount, history), so saved and every amount on the
   // screen are in that currency too. The home formatter is kept for the safety net's own figure.
@@ -112,7 +113,9 @@ export function GoalDetailScreen({ id }: { id: string }) {
     );
   }
   // P4-WR-03: the skeleton only while the reads load; a removed, finished or unreadable goal says so (never an endless skeleton).
-  if (rows === undefined || (row !== null && (lineRows === undefined || read.status === 'loading'))) {
+  // Device check 2026-11-11: a goal that is still saving, or a list that is refetching, is not yet "removed".
+  const settling = row === null && (saving || rowsQ.isFetching);
+  if (rows === undefined || settling || (row !== null && (lineRows === undefined || read.status === 'loading'))) {
     return (
       <DetailScreen title="">
         <View testID="goal-loading" accessibilityLabel={t('grow.home.loading')} style={styles.stack}>
@@ -270,11 +273,15 @@ export function GoalDetailScreen({ id }: { id: string }) {
               onPress={() => pushOnce(`/accounts/${account.id}` as Href)}
             />
           ) : null}
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
-            {series === null
-              ? t('grow.goals.detail.lineManual')
-              : t('grow.goals.detail.lineAuto', { amount: money.amount(Math.abs(series.amount)), day: ordinal(Number(series.anchor_date.slice(8, 10))) })}
-          </Text>
+          {/* Device check 2026-11-11: the monthly record lands after the goal, so "No monthly record" waits until the
+              save has settled and the records are read, rather than flashing before "Automatic" on a new goal. */}
+          {series === null && (saving || seriesQ.isFetching) ? null : (
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+              {series === null
+                ? t('grow.goals.detail.lineManual')
+                : t('grow.goals.detail.lineAuto', { amount: money.amount(Math.abs(series.amount)), day: ordinal(Number(series.anchor_date.slice(8, 10))) })}
+            </Text>
+          )}
         </View>
 
         {row.check_id ? (

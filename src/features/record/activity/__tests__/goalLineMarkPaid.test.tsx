@@ -22,7 +22,9 @@ jest.mock('@/data/mutations/transactions', () => ({
   useMarkPaid: () => ({ markPaid: mockMarkPaid }),
   useDeleteTransaction: () => ({ remove: jest.fn() }),
 }));
+let mockSavingIds: string[] = [];
 jest.mock('@/data/mutations/growGoals', () => ({
+  useGoalSaving: (id: string) => mockSavingIds.includes(id),
   useConfirmGoalContribution: () => ({ confirm: mockConfirm }),
 }));
 jest.mock('@/features/grow/goals/useGoalToast', () => ({ useGoalToast: () => mockGoalToast }));
