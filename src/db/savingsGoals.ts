@@ -29,6 +29,8 @@ export interface SavingsGoalRow {
   up_front_only?: boolean;
   icon?: 'calendar' | 'laptop' | 'phone' | 'camera' | 'savings' | 'housing' | 'transport' | 'headphones' | null;
   net_confirmed_at?: string | null;
+  // 06.1 (20261111000100) D-20: Decide-only 'answers may use it' flag on the safety net. Read-only: only set_net_answer_use writes it.
+  decide_may_use?: boolean;
   done_at: string | null;
   is_sample: boolean;
   deleted_at: string | null;
