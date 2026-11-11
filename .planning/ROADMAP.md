@@ -27,7 +27,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 05.3: Decide screens v3** (INSERTED) - STOPPED 2026-11-01 (Theme N): the Calm Ledger screens; branch parked, not merged; parts harvested in 05.4
 - [ ] **Phase 05.4: Decide safety patch** (INSERTED) - Decide never says "Fits" when a careful person would say "careful": safety net, overdraft, debt minimums, tax, after-purchase figure; plain confidence sentence replaces Rough/Fair/Firm
 - [ ] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
-- [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
+- [x] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies (completed 2026-11-11)
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
@@ -1410,7 +1410,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
 | 05.4 Decide safety patch | 55/55 | Ready to merge (43 and 45 follow up on main, D-182) |  |
 | 05.5 One shared money model | 0/TBD | Not started | - |
-| 6. Grow | 37/37 | Built; owner device check approved 2026-11-10; code review and verification next | - |
+| 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
