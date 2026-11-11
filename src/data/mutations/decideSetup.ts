@@ -301,3 +301,38 @@ export function useSaveUnexplainedAnswer(userId: string): {
     },
   };
 }
+
+/** 06.1 D-23: the four 'I answered this' flags and the settings column each one stamps. */
+export const DECIDE_ANSWERED_COLUMNS = {
+  no_debts: 'answered_no_debts_at',
+  net_not_set: 'answered_net_not_set_at',
+  no_rules: 'answered_no_rules_at',
+  bills_right: 'answered_bills_right_at',
+} as const;
+export type DecideAnsweredFlag = keyof typeof DECIDE_ANSWERED_COLUMNS;
+
+/**
+ * 06.1 D-23: set (now) or clear an 'I answered this' flag. One queued write and one Undo carrying the previous value; a flag that
+ * is already in the asked state writes nothing (null). `noUndo` is for a bookkeeping clear that rides inside another action's step.
+ */
+export function useSetDecideAnswered(userId: string): {
+  set(a: { flag: DecideAnsweredFlag; on: boolean; noUndo?: boolean }): { stepId: string } | null;
+} {
+  const qc = useQueryClient();
+  const submit = useSubmit(userId);
+  return {
+    set(a) {
+      const column = DECIDE_ANSWERED_COLUMNS[a.flag];
+      const current = qc.getQueryData<DecideSettingsRow | null>(queryKeys.decideSettings(userId)) ?? null;
+      const stored = current === null ? null : (current[column] ?? null);
+      // Already in the asked state: nothing to write (setting an already-set flag would only move its time).
+      if ((stored !== null) === a.on) return null;
+      return submit({
+        labelKey: 'answerSaved',
+        stepTitle: null,
+        patch: { [column]: a.on ? new Date().toISOString() : null },
+        noUndo: a.noUndo,
+      });
+    },
+  };
+}
