@@ -1205,7 +1205,7 @@ Plans:
   7. (Decide fix plan, blocking) Every record is personal unless marked shared, enforced by database rules, and the two-user tests are green BEFORE the invite flow merges: member B cannot read, edit, receive live updates for, or export member A's personal rows (CMP-F18, ARC-22).
   8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money.
   9. (Decide fix plan) Household split rules are the one source of "my share"; settlements count as neither spending nor income; money owed to you is not spendable until it arrives (ARC-17, ARC-18, ENG-25).
-**Plans:** 29 plans in 12 waves (08-25, 08-28, 08-29 gated on 05.5, D-41)
+**Plans:** 30 plans in 14 waves (08-25, 08-28, 08-29 gated on 05.5, D-41; they run last, waves 12-14, after the owner-approved push in 08-27)
 
 Plans:
 - [ ] 08-01-PLAN.md — Preconditions + wave-1 privacy migration (personal unless shared, backfill, RLS, views)
@@ -1222,7 +1222,7 @@ Plans:
 - [ ] 08-12-PLAN.md — Household copy catalogue (one file per area) + compliance-voice test
 - [ ] 08-13-PLAN.md — Client data A (household, members, invites, notices), resolver hook, feature hook
 - [ ] 08-14-PLAN.md — Leave/remove/transfer/reconnect + account-deletion database rule
-- [ ] 08-15-PLAN.md — Client data B (sharing mutations, settlements, balances), ARC-18 totals
+- [ ] 08-15-PLAN.md — Client data B (sharing mutations, settlements, balances, former members)
 - [ ] 08-16-PLAN.md — Household UI primitives, name-resolver guard, member and weights sheets
 - [ ] 08-17-PLAN.md — Household home, notices, You row, invite/rename/currency (owner) sheets
 - [ ] 08-18-PLAN.md — Join flow (fincwin:// link, code entry, what's-shared card)
@@ -1237,6 +1237,7 @@ Plans:
 - [ ] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
 - [ ] 08-28-PLAN.md — [gated on 05.5, hard stop] Partner opt-in, shared safety net, caveat, couples note
 - [ ] 08-29-PLAN.md — [gated on 05.5, hard stop] share_pct removal, Share step to Household, APP-08/APP-22/CMP-F04
+- [ ] 08-30-PLAN.md — ARC-18 client rule: settlement records out of Activity totals and Home month figures
 **UI hint**: yes
 **Research flag**: The Realtime reconciliation state machine (no pending write / write still queued / own-write echo / genuine version conflict) is a synthesized design, not a documented Supabase recipe. Budget a dedicated spike — two simulated clients, one taken offline mid-edit — before trusting it in production. Also resolve explicitly what happens when a settlement's expiry window lapses unresolved; the prototype specifies the window but not the outcome.
 
