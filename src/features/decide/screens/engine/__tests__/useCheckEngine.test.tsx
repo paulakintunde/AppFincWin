@@ -1,0 +1,119 @@
+// 06.1-11: useCheckEngine and useMonthPicture over the mocked reads (as decideV3.test): calm per-keystroke judging, quick lines,
+// the hidden home kind, and offline/error states. Spies sit on the engine barrel, which computeV3 and the hooks both import.
+import { renderHook } from '@testing-library/react-native';
+import { EMPTY_DECIDE_SETTINGS } from '@/db/decideSettings';
+import { demoSource } from '@/features/decide/__tests__/helpers/demoScenario';
+import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
+import * as engine from '@/engine/decide/v3';
+import type { CheckV2 } from '@/engine/decide/v3';
+import { minorUnits } from '@/engine/money';
+import { checkOnce } from '@/engine/decide/v3/__tests__/helpers/fixtures';
+import { useCheckEngine } from '../useCheckEngine';
+import { useMonthPicture } from '../useMonthPicture';
+
+jest.mock('@/engine/decide/v3', () => {
+  const actual = jest.requireActual('@/engine/decide/v3');
+  return { ...actual, prepare: jest.fn(actual.prepare), judgeCheck: jest.fn(actual.judgeCheck), judgeWithQuickLines: jest.fn(actual.judgeWithQuickLines) };
+});
+
+type Q = { data: unknown; isError: boolean; error?: unknown; refetch: jest.Mock };
+const q = (data: unknown, isError = false, error: unknown = null): Q => ({ data, isError, error, refetch: jest.fn() });
+const mockState = {
+  snapshot: { status: 'ready' as 'loading' | 'error' | 'ready', source: null as SnapshotSource | null, result: null, retry: jest.fn(), errorKind: undefined as 'network' | 'server' | null | undefined, missingReads: undefined as readonly string[] | undefined },
+  settings: q(undefined), answers: q(undefined), dismissals: q(undefined), checks: q(undefined), links: q(undefined),
+};
+jest.mock('@/data/queries/decide', () => ({
+  useDecideSnapshot: () => mockState.snapshot,
+  useDecideSettings: () => mockState.settings,
+  useDecideChecks: () => mockState.checks,
+  useDecideLinks: () => mockState.links,
+}));
+jest.mock('@/data/queries/decideAnswers', () => ({ useDecideAnswers: () => mockState.answers }));
+jest.mock('@/data/queries/recurringDismissals', () => ({ useRecurringDismissals: () => mockState.dismissals }));
+jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u1', householdId: 'h1' }) }));
+
+// stable data references across renders, as the real query hooks give
+const SOURCE = demoSource('2026-10-03');
+const SETTINGS = { ...EMPTY_DECIDE_SETTINGS, user_id: 'u1', income_types: ['salary_or_wages'], income_pattern: 'steady', income_pattern_confirmed: true };
+const EMPTY: unknown[] = [];
+
+function ready(): void {
+  mockState.snapshot = { status: 'ready', source: SOURCE, result: null, retry: jest.fn(), errorKind: undefined, missingReads: undefined };
+  mockState.settings = q(SETTINGS);
+  mockState.answers = q(EMPTY);
+  mockState.dismissals = q(EMPTY);
+  mockState.checks = q(EMPTY);
+  mockState.links = q(EMPTY);
+}
+const judgeMock = engine.judgeCheck as jest.Mock;
+const prepareMock = engine.prepare as jest.Mock;
+const quickMock = engine.judgeWithQuickLines as jest.Mock;
+
+beforeEach(() => {
+  ready();
+  jest.clearAllMocks();
+});
+
+describe('useCheckEngine', () => {
+  it('judges a check and offers the lazy extras', async () => {
+    const check = checkOnce(20000);
+    const { result } = await renderHook(() => useCheckEngine(check));
+    expect(result.current.status).toBe('ready');
+    expect(typeof result.current.evaluation!.result.code).toBe('string');
+    expect(result.current.both()!.cash).toBeTruthy();
+    expect(result.current.timeline()).not.toBeNull();
+  });
+
+  it('typing a price re-runs judgeCheck once and does not prepare again', async () => {
+    const { rerender } = await renderHook(({ c }: { c: CheckV2 }) => useCheckEngine(c), { initialProps: { c: checkOnce(20000) } });
+    judgeMock.mockClear();
+    prepareMock.mockClear();
+    await rerender({ c: checkOnce(25000) });
+    expect(judgeMock).toHaveBeenCalledTimes(1);
+    expect(prepareMock).not.toHaveBeenCalled();
+  });
+
+  it('a check with quick lines is judged through judgeWithQuickLines', async () => {
+    const check = checkOnce(20000, { quickLines: [{ id: 'q1', kind: 'expense', name: 'x', amount: minorUnits(5000), everyMonths: 0, date: null }] });
+    const { result } = await renderHook(() => useCheckEngine(check));
+    expect(quickMock).toHaveBeenCalled();
+    expect(result.current.evaluation).not.toBeNull();
+  });
+
+  it('a home-kind check (D-02) gets no evaluation and never reaches the engine', async () => {
+    const check = checkOnce(20000, { itemType: { kind: 'preset', value: 'property' } });
+    const { result } = await renderHook(() => useCheckEngine(check));
+    judgeMock.mockClear();
+    expect(result.current.evaluation).toBeNull();
+    expect(result.current.both()).toBeNull();
+    expect(judgeMock).not.toHaveBeenCalled();
+  });
+
+  it('offline with a cached copy is ready even if a refetch errored (APP-01)', async () => {
+    mockState.dismissals = q(EMPTY, true, new TypeError('Network request failed'));
+    const { result } = await renderHook(() => useCheckEngine(checkOnce(20000)));
+    expect(result.current.status).toBe('ready');
+    expect(result.current.evaluation).not.toBeNull();
+  });
+
+  it('a network failure with nothing cached is an error of kind network, never not_found (APP-10)', async () => {
+    mockState.answers = q(undefined, true, new TypeError('Network request failed'));
+    const { result } = await renderHook(() => useCheckEngine(checkOnce(20000)));
+    expect(result.current.status).toBe('error');
+    expect(result.current.errorKind).toBe('network');
+    expect(result.current.evaluation).toBeNull();
+  });
+});
+
+describe('useMonthPicture', () => {
+  it('returns the picture and bars on the prepared inputs', async () => {
+    const { result } = await renderHook(() => useMonthPicture());
+    expect(result.current.picture).not.toBeNull();
+    expect(Array.isArray(result.current.bars)).toBe(true);
+  });
+  it('is empty while loading', async () => {
+    mockState.settings = q(undefined);
+    const { result } = await renderHook(() => useMonthPicture());
+    expect(result.current).toEqual({ picture: null, bars: [] });
+  });
+});
