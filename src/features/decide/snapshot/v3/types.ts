@@ -24,6 +24,8 @@ export interface V3SettingsSource {
   series_extra: Record<string, V3SeriesExtra>;
   dismissals: string[];
   own_lines: unknown[];
+  /** 06.1-22 (FIN-07): the "keep at least" money-left-each-month rule when it is on; absent or null = none. */
+  tight_line?: number | null;
   custom_options: unknown;
   // 05.2 (names equal the migration columns). Optional so an old cached row or fixture reads as null / empty.
   income_pattern?: 'steady' | 'variable' | 'seasonal' | null;

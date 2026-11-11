@@ -11,6 +11,8 @@ export const sheetsHome = {
     leaves: 'leaves {{left}}',
     payNotChosen: 'how to pay not chosen',
     rowA11y: '{{item}}, {{state}}, {{price}}, {{date}}, leaves {{left}}',
+    changedRow: 'Records changed since you looked',
+    today: 'today',
   },
   rulesCard: {
     title: 'Your money rules',
@@ -28,6 +30,10 @@ export const sheetsHome = {
     addOwn: '+ Add your own rule',
     changedRow: 'Something changed?',
     changedSub: 'Pay, a bill or a one-off cost',
+    off: 'Off',
+    ruleA11y: '{{rule}}, {{state}}. Opens the rule',
+    on: 'On',
+    netRowA11y: 'Safety net, {{state}}. Opens the safety net',
   },
   openCheck: {
     line: '{{price}} · {{date}} · {{state}} · leaves {{left}}',
@@ -94,6 +100,9 @@ export const sheetsHome = {
     value: 'Value',
     add: 'Add rule',
     toast: 'Rule added.',
+    taken: 'Already added',
+    percent: 'Share of pay',
+    noCategories: 'No categories yet.',
   },
   changed: {
     title: 'Something changed?',
@@ -115,5 +124,13 @@ export const sheetsHome = {
     resultShort: 'With this change, a usual month would be {{short}} short.',
     save: 'Save what changed',
     toast: 'Changed: {{change}}. Answers use it from {{date}}.',
+    chipPay: 'New pay {{amount}} a month',
+    chipStopped: '{{bill}} stopped',
+    chipPaused: '{{bill}} paused',
+    chipOneOff: 'One-off {{amount}}',
+    resetToast: 'Change reset.',
+    noBills: 'No monthly bills are recorded.',
+    statusQ: 'What happened to it',
+    userLed: 'Nothing changes until you save.',
   },
 } as const;
