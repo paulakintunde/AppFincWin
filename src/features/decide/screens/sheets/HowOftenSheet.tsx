@@ -95,7 +95,7 @@ function HowOftenForm({ value, amount, formatMoney, formatDate, onPickDate, onSa
         <View style={styles.chips}>
           <Chip label={t('decide.screens.sheetsInput.often.whenIBuy')} selected={draft.start === null} onPress={() => setDraft((d) => ({ ...d, start: null }))} />
           <Chip
-            label={draft.start === null ? t('decide.screens.sheetsInput.often.pickDate') : formatDate(draft.start)}
+            label={draft.start === null ? t('decide.screens.common.pickDate') : formatDate(draft.start)}
             selected={draft.start !== null}
             onPress={() => onPickDate('start', draft.start, (start) => setDraft((d) => ({ ...d, start })))}
           />
@@ -105,7 +105,7 @@ function HowOftenForm({ value, amount, formatMoney, formatDate, onPickDate, onSa
         <View style={styles.chips}>
           <Chip label={t('decide.screens.sheetsInput.often.noEnd')} selected={draft.end === null} onPress={() => setDraft((d) => ({ ...d, end: null }))} />
           <Chip
-            label={draft.end === null ? t('decide.screens.sheetsInput.often.pickDate') : formatDate(draft.end)}
+            label={draft.end === null ? t('decide.screens.common.pickDate') : formatDate(draft.end)}
             selected={draft.end !== null}
             onPress={() => onPickDate('end', draft.end, (end) => setDraft((d) => ({ ...d, end })))}
           />

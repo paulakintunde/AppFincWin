@@ -1,0 +1,209 @@
+// 06.1-15: the four input sheets (Pick a date, Quick estimate, Installment plan, How often). Engine hook and haptics are mocked.
+import React from 'react';
+import { act, fireEvent, screen } from '@testing-library/react-native';
+import { percent } from '@/engine/decide';
+import type { CheckV2, QuickLine } from '@/engine/decide/v3';
+import { checkOnce } from '@/engine/decide/v3/__tests__/helpers/fixtures';
+import { showToast } from '@/state/undoToast';
+import { wrap } from '@/test/stepProps';
+import { DatePickerSheet } from '../DatePickerSheet';
+import { HowOftenSheet } from '../HowOftenSheet';
+import { InstallmentPlanSheet } from '../InstallmentPlanSheet';
+import { QuickEstimateSheet } from '../QuickEstimateSheet';
+import * as kinds from '../quickLineKinds';
+
+jest.setTimeout(30000);
+jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
+jest.mock('expo-crypto', () => ({ randomUUID: () => 'uuid-1' }));
+jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
+jest.mock('../../engine/useCheckEngine', () => ({
+  useCheckEngine: jest.fn(() => ({ evaluation: null, readyDate: () => null })),
+}));
+jest.mock('../quickLineKinds', () => {
+  const actual = jest.requireActual('../quickLineKinds');
+  return { ...actual, QUICK_LINE_KINDS: [...actual.QUICK_LINE_KINDS] };
+});
+
+const TODAY = '2026-11-11';
+const fmt = (n: number) => `$${n / 100}`;
+const fmtDate = (d: string) => `on ${d}`;
+const pickDate = jest.fn();
+
+const planCheck = (over: Partial<CheckV2> = {}): CheckV2 => checkOnce(100_000, over);
+
+async function typeMoney(label: string, text: string) {
+  const field = screen.getByLabelText(label);
+  await fireEvent.changeText(field, text);
+  await fireEvent(field, 'blur');
+}
+
+async function renderPlan(check: CheckV2 = planCheck(), extra: Partial<React.ComponentProps<typeof InstallmentPlanSheet>> = {}) {
+  const onUse = jest.fn();
+  const view = await wrap(
+    <InstallmentPlanSheet visible check={check} currency="USD" today={TODAY} itemKind="laptop" formatMoney={fmt} formatDate={fmtDate} onPickDate={pickDate} onUse={onUse} onDismiss={jest.fn()} {...extra} />,
+  );
+  return { onUse, view };
+}
+
+describe('InstallmentPlanSheet', () => {
+  it('never saves the example rate: an empty rate field leaves pay.apr null', async () => {
+    const { onUse } = await renderPlan();
+    await fireEvent.press(await screen.findByLabelText('12 months'));
+    expect(screen.getByText('Example rate only. It is not your rate and is not saved.')).toBeTruthy();
+    expect(screen.getByText('This is FincWin’s estimate, not the APR on your agreement.')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Use this plan'));
+    expect(onUse).toHaveBeenCalledTimes(1);
+    expect(onUse.mock.calls[0][0]).toMatchObject({ mode: 'plan', apr: null, termMonths: 12, count: 12 });
+  });
+
+  it('saves a typed rate as a Percent', async () => {
+    const { onUse } = await renderPlan();
+    await fireEvent.press(await screen.findByLabelText('12 months'));
+    await fireEvent.changeText(screen.getByLabelText('Rate, % a year'), '7.9');
+    expect(screen.queryByText('Example rate only. It is not your rate and is not saved.')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Use this plan'));
+    expect(onUse.mock.calls[0][0].apr).toBe(percent('7.9'));
+  });
+
+  it('works out the amount borrowed as price + tax + fees - cash down', async () => {
+    await renderPlan(planCheck({ taxPercent: percent('10'), oneOffFees: 5_000 as never }));
+    expect(await screen.findByLabelText('Amount borrowed, $1150')).toBeTruthy(); // 1000 + 100 + 50
+    await typeMoney('Cash down', '200');
+    expect(screen.getByLabelText('Amount borrowed, $950')).toBeTruthy();
+  });
+
+  it('keeps Use this plan disabled until a length is chosen', async () => {
+    await renderPlan();
+    const use = await screen.findByLabelText('Use this plan');
+    expect(use.props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(screen.getByLabelText('6 months'));
+    expect(screen.getByLabelText('Use this plan').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('states the fee note and the footer, and has no home-loan option', async () => {
+    await renderPlan();
+    expect(await screen.findByText('Fees vary by provider.')).toBeTruthy();
+    expect(screen.getByText('FincWin is a planning tool, not a lender.')).toBeTruthy();
+  });
+
+  it('announces the live result once typing stops', async () => {
+    jest.useFakeTimers();
+    try {
+      await renderPlan();
+      await fireEvent.press(await screen.findByLabelText('12 months'));
+      expect(screen.queryByLabelText(/a month for 12 months/)).toBeNull();
+      await act(async () => {
+        jest.advanceTimersByTime(700);
+      });
+      expect(screen.getAllByLabelText(/a month for 12 months/)).toHaveLength(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});
+
+describe('QuickEstimateSheet', () => {
+  const base = { visible: true, currency: 'USD', today: TODAY, formatDate: fmtDate, onPickDate: pickDate, onDismiss: jest.fn() };
+
+  it('builds an expense line and says it counts in this check only', async () => {
+    const onAdd = jest.fn();
+    await wrap(<QuickEstimateSheet {...base} kind="expense" onAdd={onAdd} />);
+    expect(screen.getByText('Counts in this check only. Your records do not change.')).toBeTruthy();
+    const add = () => screen.getByLabelText('Add to this check');
+    expect(add().props.accessibilityState.disabled).toBe(true);
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'Insurance');
+    await typeMoney('Amount', '45');
+    await fireEvent.press(screen.getByLabelText('Every 3 months'));
+    await fireEvent.press(add());
+    expect(onAdd).toHaveBeenCalledWith({ id: 'uuid-1', kind: 'expense', name: 'Insurance', amount: 4_500, everyMonths: 3, date: TODAY });
+  });
+
+  it('builds a loan line with payments left bounded 1 to 600', async () => {
+    const onAdd = jest.fn();
+    await wrap(<QuickEstimateSheet {...base} kind="loan" onAdd={onAdd} />);
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'Family');
+    await typeMoney('Monthly payment', '100');
+    await fireEvent.changeText(screen.getByLabelText('Payments left'), '700');
+    expect(screen.getByLabelText('Add to this check').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByText('Payments go from 1 to 600.')).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Payments left'), '10');
+    await fireEvent.press(screen.getByLabelText('Add to this check'));
+    expect(onAdd).toHaveBeenCalledWith({ id: 'uuid-1', kind: 'loan', name: 'Family', monthly: 10_000, payments: 10, firstDate: null });
+  });
+
+  it('savings default to not usable by answers', async () => {
+    const onAdd = jest.fn();
+    await wrap(<QuickEstimateSheet {...base} kind="savings" onAdd={onAdd} />);
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'Other bank');
+    await typeMoney('Amount', '500');
+    await fireEvent.press(screen.getByLabelText('Add to this check'));
+    expect(onAdd.mock.calls[0][0]).toMatchObject({ kind: 'savings', usable: false });
+  });
+
+  it('builds an income line that arrives on a date', async () => {
+    const onAdd = jest.fn();
+    await wrap(<QuickEstimateSheet {...base} kind="income" onAdd={onAdd} />);
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'Refund');
+    await typeMoney('Amount', '300');
+    await fireEvent.press(screen.getByLabelText('Add to this check'));
+    expect(onAdd.mock.calls[0][0]).toMatchObject({ kind: 'income', amount: 30_000, everyMonths: 0, date: TODAY });
+  });
+
+  it('an expense-only build offers no Loan, Savings or Income sheet', async () => {
+    const list = kinds.QUICK_LINE_KINDS as kinds.QuickLineKind[];
+    const all = [...list];
+    list.splice(0, list.length, 'expense');
+    try {
+      await wrap(<QuickEstimateSheet {...base} kind="loan" onAdd={jest.fn()} />);
+      expect(screen.queryByLabelText('Payments left')).toBeNull();
+      await wrap(<QuickEstimateSheet {...base} kind="expense" onAdd={jest.fn()} />);
+      expect(screen.getByLabelText('Name')).toBeTruthy();
+    } finally {
+      list.splice(0, list.length, ...all);
+    }
+  });
+
+  it('Remove shows a toast whose Undo puts the line back', async () => {
+    const line: QuickLine = { id: 'q1', kind: 'savings', name: 'Other bank', amount: 50_000 as never, usable: true };
+    const onAdd = jest.fn();
+    const onRemove = jest.fn();
+    await wrap(<QuickEstimateSheet {...base} kind="savings" line={line} onAdd={onAdd} onRemove={onRemove} />);
+    expect(screen.getByLabelText('Save quick estimate')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Remove'));
+    expect(onRemove).toHaveBeenCalledWith(line);
+    const toast = (showToast as jest.Mock).mock.calls[0][0];
+    expect(toast).toMatchObject({ kind: 'destructive', text: { key: 'decide.screens.common.toast.removed', params: { item: 'Other bank' } } });
+    toast.onUndo();
+    expect(onAdd).toHaveBeenCalledWith(line);
+  });
+});
+
+describe('DatePickerSheet', () => {
+  it('marks paydays with a dot and in the day label, and flags dates past 90 days', async () => {
+    const onUse = jest.fn();
+    await wrap(
+      <DatePickerSheet visible check={checkOnce(100_000)} today={TODAY} paydays={['2026-11-20']} locale="en-US" formatDate={fmtDate} onUse={onUse} onDismiss={jest.fn()} />,
+    );
+    expect(screen.getByTestId('payday-2026-11-20')).toBeTruthy();
+    expect(screen.getByLabelText('on 2026-11-20, payday')).toBeTruthy();
+    expect(screen.getByLabelText('on 2026-11-11, today')).toBeTruthy();
+    expect(screen.queryByText('This is far off. The answer looks only 90 days ahead.')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('on 2026-11-20, payday'));
+    await fireEvent.press(screen.getByLabelText('Use on 2026-11-20'));
+    expect(onUse).toHaveBeenCalledWith('2026-11-20');
+  });
+});
+
+describe('HowOftenSheet', () => {
+  it('applies only on Save how often and shows the monthly figure', async () => {
+    const onSave = jest.fn();
+    await wrap(
+      <HowOftenSheet visible value={{ everyMonths: 1, start: null, end: null }} amount={120_000} formatMoney={fmt} formatDate={fmtDate} onPickDate={pickDate} onSave={onSave} onDismiss={jest.fn()} />,
+    );
+    await fireEvent.press(screen.getByLabelText('Every year'));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByText('$1200 every year is about $100 a month, from the day you buy.')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Save how often'));
+    expect(onSave).toHaveBeenCalledWith({ everyMonths: 12, start: null, end: null });
+  });
+});
