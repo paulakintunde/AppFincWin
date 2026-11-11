@@ -23,7 +23,7 @@ import { hapticSelection } from '@/ui/haptics';
 import type { SetupStepBodyProps, SetupStepHandle } from '@/features/income/stepTypes';
 import { useIncomeContext } from '../useIncomeContext';
 import { liveSeriesOfKind, payableAccounts, pausedIncomeSeries } from '../seriesHelpers';
-import { PrefillNote } from '@/features/decide/setup/PrefillNote';
+import { PrefillNote } from '@/features/income/PrefillNote';
 import { Caption, ChipRow, Meta, NEEDED_REASON_KEY, PausedSeriesList, SeriesStatusLink, Stack, TextButton, Why, useNoWrapMoney, useReportReady, useCopy } from './shared';
 
 type Freq = 'weekly' | 'fortnightly' | 'monthly';

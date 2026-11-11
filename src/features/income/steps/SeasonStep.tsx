@@ -3,7 +3,7 @@
  * swing question (D-34) is not asked again; only the refine check-in re-asks when the records clearly disagree (D-15, D-16, D-20). */
 import React, { forwardRef, useImperativeHandle, useState } from 'react';
 import { View } from 'react-native';
-import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
+import { ChoiceCard } from '@/ui/ChoiceCard';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';

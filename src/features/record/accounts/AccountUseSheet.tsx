@@ -25,7 +25,7 @@ import { useSaveAccountUse } from '@/data/mutations/accountUse';
 import { accountUseOfRow } from '@/data/mutations/accountUseModel';
 import { showToast } from '@/state/undoToast';
 import { useRecordContext } from '@/features/record/useRecordContext';
-import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
+import { ChoiceCard } from '@/ui/ChoiceCard';
 import { CheckRow } from '@/ui/CheckRow';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { WarningCard } from '@/ui/WarningCard';
