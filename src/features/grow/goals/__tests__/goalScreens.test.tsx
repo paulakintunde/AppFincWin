@@ -336,6 +336,15 @@ describe('goal detail', () => {
     expect(pushOnce).toHaveBeenCalledWith('/accounts/a-sav');
   });
 
+  it('device check: tapping Kept in opens Where is it kept?; picking another account saves only account_id', async () => {
+    await wrap(<GoalDetailScreen id="g1" />);
+    await fireEvent.press(screen.getByLabelText('Kept in Savings account. Change the account.'));
+    expect(screen.getByText('Where is it kept?')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Everyday checking'));
+    await fireEvent.press(screen.getByText('Save'));
+    expect(mockEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 'g1' }), { account_id: 'a-chk' }, expect.anything(), expect.anything());
+  });
+
   it('a goal made from a Decide check shows the From a Decide check card', async () => {
     mockRows = [lisbon({ check_id: 'c1' })];
     await wrap(<GoalDetailScreen id="g1" />);

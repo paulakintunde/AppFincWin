@@ -41,6 +41,7 @@ import { planFromMonthly } from './goalPlanModel';
 import { useGoalRecordDetail } from './useGoalRecordDetail';
 import { useGoalToast } from './useGoalToast';
 import { useGoalsRead } from './useGoalsRead';
+import { NetAccountSheet } from '@/features/grow/safetyNet/NetAccountSheet';
 
 /** "16th" for 16 (English suffixes; the surrounding sentence is the localised part). */
 function ordinal(n: number): string {
@@ -72,6 +73,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const [netAsk, setNetAsk] = useState(false);
   const [confirming, setConfirming] = useState<HistoryItem | null>(null);
   const [justReached, setJustReached] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const rows = rowsQ.data;
   const row = rows?.find((r) => r.id === id && r.deleted_at === null) ?? null;
@@ -224,7 +226,14 @@ export function GoalDetailScreen({ id }: { id: string }) {
         </View>
 
         <View style={card} testID="goal-line-card">
-          <Row label={t('grow.goals.detail.keptIn')} value={accountName} dense />
+          <Row
+            label={t('grow.goals.detail.keptIn')}
+            value={accountName}
+            dense
+            chevron
+            onPress={() => setAccountOpen(true)}
+            accessibilityLabel={t('grow.goals.detail.keptInA11y', { account: accountName })}
+          />
           {account !== null && account.interest_rate != null && account.interest_rate !== '' ? (
             <Row
               label={t('grow.goals.detail.interestRow')}
@@ -336,6 +345,17 @@ export function GoalDetailScreen({ id }: { id: string }) {
         confirmLabel={t('grow.goals.detail.confirm')}
         onCancel={() => setConfirming(null)}
         onConfirm={onConfirmLine}
+      />
+      <NetAccountSheet
+        visible={accountOpen}
+        net={row}
+        saved={saved}
+        ownerId={userId}
+        householdId={householdId}
+        onClose={() => setAccountOpen(false)}
+        onSaved={(stepId, name) =>
+          toast({ key: 'grow.goals.detail.accountSavedToast', params: { account: name }, stepId, undoLabel: 'goalEdited', name: row.name, userId, householdId })
+        }
       />
       {record.element}
     </DetailScreen>
