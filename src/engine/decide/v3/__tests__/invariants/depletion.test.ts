@@ -69,7 +69,10 @@ describe('depletion invariants', () => {
         expect(TIERS.includes(r.variant ?? '')).toBe(short);
         if (short) expect(r.readyBy).toBeNull();
         if (r.variant === 'month_short_small' || r.variant === 'month_short_moderate' || r.variant === 'month_short_moderate_extra') {
-          expect(['fits_month', 'fits_unspent']).toContain(r.code);
+          // 05.4 FIN-05 with D-68 (nightly 2026-11-07..11, seed 21605): an expensive plan judged by cash keeps the tier on
+          // fits_by_borrowing (verdictTable fits_by_borrowing.month_short_*); its one-off part is still the cash fit.
+          const d68Borrowing = r.code === 'fits_by_borrowing' && r.facts[1]?.code === 'short_plan_from_cash';
+          expect(['fits_month', 'fits_unspent']).toContain(d68Borrowing ? r.parts.oneOff : r.code);
           // D-68 branch (owner, 2026-11-03: "judge by cash better by a slim margin, with caution"; refinement (a): the tier of a
           // cash buy of the same total): a short plan judged by cash keeps its monthly figure, with the caution line second.
           if (r.facts[1]?.code === 'short_plan_from_cash') expect(ev.purchase?.schedule).not.toBeNull();

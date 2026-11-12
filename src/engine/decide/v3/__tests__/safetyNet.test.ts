@@ -180,6 +180,7 @@ describe('the cash check with the net lending (cash/path.ts withNet)', () => {
       used: 200,
       added: 200,
       until: '2026-12-01',
+      before: payday,
     });
     expect(withNet(payday, path(100, -200), () => path(0), mu(199))).toBe(payday);
     // a dip that is there without the purchase is not the purchase's: it adds only the difference; not_covered has no payday
