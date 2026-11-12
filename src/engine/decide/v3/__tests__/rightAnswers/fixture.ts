@@ -274,6 +274,8 @@ function profileOf(f: RightAnswerFixture): Pick<V3Inputs, 'profile'> | Record<st
   const fl = f.pay.freelance;
   const types = f.incomeTypes ?? (irr !== undefined ? ['freelance' as const] : fl !== undefined ? ['salary' as const, 'freelance' as const] : null);
   if (types === null) return {};
+  // TX-16: irregular pay with no steady figure counts what comes in ('match').
+  if (irr?.steady === false) return { profile: { types, variable: 'match', steady: null, billsHorizonMonths: null } };
   const steady = irr !== undefined ? f.pay.amount : fl !== undefined ? fl.steady : null;
   return { profile: { types, variable: steady === null ? null : 'steady', steady: steady === null ? null : mu(steady), billsHorizonMonths: null } };
 }

@@ -76,7 +76,7 @@ describe('plain calculator: tax (FIN-27, TX-01..TX-09)', () => {
 describe('plain calculator: tax set-aside (FIN-20, TX-10..TX-15)', () => {
   const all = loadCases();
   const fx = (id: string): RightAnswerFixture => all.find((c) => c.id === id)!.fixture;
-  const ids = ['TX-10', 'TX-11', 'TX-12', 'TX-13', 'TX-14', 'TX-15'];
+  const ids = ['TX-10', 'TX-11', 'TX-12', 'TX-13', 'TX-14', 'TX-15', 'TX-16'];
 
   it('FIN-20 each case states the figures the plain rule and the engine give, and the engine names the share where it applies', () => {
     for (const id of ids) {
@@ -107,12 +107,18 @@ describe('plain calculator: tax set-aside (FIN-20, TX-10..TX-15)', () => {
     expect(plainSetAsideMonthly(fx('TX-10'))).toBe(100_000n); // "25% of $4,000 is $1,000"
     expect(plainSetAsideMonthly(fx('TX-12'))).toBe(37_500n); // "25% of his $1,500 freelance pay is $375"
     expect(plainSetAsideMonthly(fx('TX-15'))).toBe(240_000n); // "60% of $4,000 is $2,400"
+    expect(plainSetAsideMonthly(fx('TX-16'))).toBe(75_000n); // TX-16 (draft): "25% of $3,000 is $750", from the quick income estimate
+    expect(withTaxSetAside(fx('TX-16')).quickEstimates?.income).toBe(225_000);
+    // a salary part keeps the estimate whole (the estimate is not all freelance pay)
+    const both = { ...fx('TX-16'), incomeTypes: ['salary' as const, 'freelance' as const] };
+    expect(withTaxSetAside(both).quickEstimates?.income).toBe(300_000);
+    expect(plainSetAsideMonthly(both)).toBe(75_000n); // the share of the pay itself (irregular pay)
     for (const id of ['TX-11', 'TX-13', 'TX-14']) expect({ id, bp: plainSetAsideBp(fx(id)) }).toEqual({ id, bp: 0n });
   });
 
   it('FIN-20 with nothing applied the case is unchanged, and without the set-aside every case is the plain Fits', () => {
     for (const id of ['TX-11', 'TX-13', 'TX-14']) expect(withTaxSetAside(fx(id))).toBe(fx(id));
-    for (const id of ids) {
+    for (const id of ids.slice(0, 6)) {
       const f = { ...fx(id), taxSetAsideBp: null };
       expect({ id, ...plainAnswer(f) }).toEqual({ id, code: 'fits_month', variant: null, afterBuy: 120_000 });
     }

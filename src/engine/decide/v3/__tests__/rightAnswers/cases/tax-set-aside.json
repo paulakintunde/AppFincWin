@@ -629,6 +629,116 @@
       "ownerReason": "Owner approved all six TX-10..TX-15 cases (D-26, 2026-11-12, chat popup): hold the tax share back from pay already received this month; freelance ticked only (mix alone and commission-only do not get it); half-up per payment to the cent and the 60% cap; the fact line only on answers it changed.",
       "expertNote": null,
       "plannerNote": "Drafted in 06.1-29 and approved as drafted. Engine and plain calculator agree: not_yet, month_already_short, -120000. Without the set-aside: fits_month, null, 120000."
+    },
+    {
+      "id": "TX-16",
+      "topic": "tax",
+      "persona": "Ana, new freelancer on quick estimates, 25% set aside (invented, FIN-20)",
+      "situation": "Ana is a freelancer who started using the app three weeks ago, so she has no full month of records yet and no pay recorded. Her income type is freelance only, with no steady amount set. In her quick estimates she typed income of $3,000 a month, bills $1,200 and everyday spending $600 ($400 of it on essentials). On the pay setup screen she typed that she puts 25% of her freelance pay aside for tax. Besides the estimates, Decide counts what she has recorded: by 22 November she has paid $1,200 of bills and spent $440; $6,000 from earlier work is in her everyday account and $1,600 sits in her savings account marked as her safety net (locked, the default). She is looking at a $600 purchase, bought today (22 November 2026) and paid in one go.",
+      "fixture": {
+        "asOf": "2026-11-22",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null,
+          "irregular": {
+            "amounts": [],
+            "day": 1,
+            "steady": false
+          }
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 60000,
+          "essentialEveryday": 40000
+        },
+        "thisMonth": {
+          "received": 0,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 44000
+        },
+        "historyMonths": 0,
+        "quickEstimates": {
+          "income": 300000,
+          "bills": 120000,
+          "everyday": 60000
+        },
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 600000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 160000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 160000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "incomeTypes": [
+          "freelance"
+        ],
+        "taxSetAsideBp": 2500,
+        "check": {
+          "price": 60000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_unspent",
+        "variant": null,
+        "afterBuy": {
+          "month": 0,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [
+          "quick_estimates"
+        ],
+        "mustHaveFacts": [
+          "tax_set_aside",
+          "earlier_money_from",
+          "no_full_month"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "FIN-20 (owner 2026-11-12): with no pay recorded, the typed quick income estimate stands in for her pay, and with freelance ticked it is freelance pay, so it counts less the share she puts aside for tax. 25% of $3,000 is $750, so her month counts $2,250 in. Without the set-aside: $3,000 - $1,200 bills - $440 spent - $160 everyday still to come = $1,200 left; $1,200 - $600 = $600, a plain \"Fits\" from this month. With it: $2,250 - $1,200 - $440 - $160 = $450 left, so this month covers $450 of the $600 and the other $150 comes from the $6,000 of earlier money in her everyday account: \"Fits from spare money\" (this month is used up, $0 left). Nothing has come in yet, so nothing is held back from her account. The fact line says: \"$750 a month is kept aside for tax, the 25% you set.\"",
+      "fixIds": [
+        "FIN-20"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Draft (06.1-29, owner asked 2026-11-12 for the set-aside on a typed quick income estimate). Plain calculator and engine agree: fits_unspent, null, month 0; without the set-aside both say fits_month, null, 60000. Only the estimate carries her income here (no pay series, no income line, no steady figure), so this case pins the estimate rule. Not yet approved; DECIDE_ENGINE_REVISION not bumped until it is."
     }
   ]
 }

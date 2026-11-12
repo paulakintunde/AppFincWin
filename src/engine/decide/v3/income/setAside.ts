@@ -7,11 +7,13 @@
  * - Freelance pay: an income line that is the profile's own variable income (no income kind and no counts-as mark of its own or its
  *   series'), and, when the profile has no salary part, the pay series and its lines too. Salary is never touched.
  * - Each freelance pay counts at its amount less the share, the share rounded half up per payment, in minor units (owner). The
- *   steady figure, the pay series amount and the confirmed expected income (with no salary part) are cut the same way.
+ *   steady figure, the pay series amount, the confirmed expected income and (owner 2026-11-12, TX-16) a typed quick income estimate
+ *   (these three with no salary part) are cut the same way.
  * - The share of freelance pay already in this month is still in the account but kept for tax (owner: hold it back), so it comes off
  *   the spending balance, the first everyday account and an unspent figure confirmed on or after it arrived.
  * - The fact tax_set_aside { percent, amount } is shown on every answer it changed (owner); amount is the share of a usual month's
- *   freelance pay: the steady figure when one is set, else this month's freelance pay so far.
+ *   freelance pay: the steady figure when one is set, else the typed quick income estimate's share, else this month's freelance pay
+ *   so far.
  *
  * Returns the inputs with taxSetAsideBp cleared, so a second prepare (the quick-line overlay) never cuts twice.
  * Pure: asOf comes from the inputs.
@@ -95,6 +97,10 @@ export function withTaxSetAside(raw: V3Inputs): SetAside {
   });
   const steadyShare = profile.steady === null ? 0 : shareOf(profile.steady, bp);
   if (steadyShare > 0) changed = true;
+  // Owner 2026-11-12 (TX-16): a typed quick income estimate is freelance pay too when the profile has no salary part.
+  const typed = raw.typedEstimates;
+  const estimateShare = typed === null || plan.paySalary ? 0 : shareOf(typed.income, bp);
+  if (estimateShare > 0) changed = true;
   const expectedIncome =
     raw.expectedIncome === undefined || plan.paySalary
       ? raw.expectedIncome
@@ -111,12 +117,13 @@ export function withTaxSetAside(raw: V3Inputs): SetAside {
     months,
     series,
     profile: steadyShare === 0 ? profile : { ...profile, steady: kept(profile.steady as number) },
+    typedEstimates: estimateShare === 0 ? typed : { ...(typed as NonNullable<typeof typed>), income: kept((typed as NonNullable<typeof typed>).income) },
     ...(expectedIncome === undefined ? {} : { expectedIncome }),
     balance: minorUnits(raw.balance - heldNow),
     // only this month's shares dated on or before the confirmed figure are in it (an earlier figure has none)
     unspent: raw.unspent === null ? null : { ...raw.unspent, amount: minorUnits(raw.unspent.amount - heldForAnchor) },
     ...(accounts === undefined ? {} : { accounts: accounts.map((a, i) => (i === everyday ? { ...a, balance: minorUnits(a.balance - heldNow) } : a)) }),
   };
-  const amount = steadyShare > 0 ? steadyShare : thisMonthShare;
+  const amount = steadyShare > 0 ? steadyShare : estimateShare > 0 ? estimateShare : thisMonthShare;
   return { inputs, fact: { code: 'tax_set_aside', values: { percent: percentText(bp), amount } } };
 }

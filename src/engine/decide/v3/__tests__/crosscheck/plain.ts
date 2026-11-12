@@ -43,6 +43,11 @@ function incomeTypes(f: RightAnswerFixture): readonly string[] {
   return f.incomeTypes ?? (f.pay.irregular !== undefined ? ['freelance'] : f.pay.freelance !== undefined ? ['salary', 'freelance'] : []);
 }
 
+/** A salary part (salary or mix ticked): its pay is salary, never cut. */
+function hasSalaryPart(f: RightAnswerFixture): boolean {
+  return incomeTypes(f).some((t) => t === 'salary' || t === 'mix');
+}
+
 /** The share typed, in basis points, when it applies; 0 when it does not (no freelance type, nothing typed, or 0%). */
 export function plainSetAsideBp(f: RightAnswerFixture): Cents {
   const bp = f.taxSetAsideBp ?? 0;
@@ -58,7 +63,10 @@ function setAsideOf(amount: number, bp: Cents): Cents {
 export function plainSetAsideMonthly(f: RightAnswerFixture): Cents {
   const bp = plainSetAsideBp(f);
   if (bp === 0n) return 0n;
-  return setAsideOf(f.pay.freelance !== undefined ? f.pay.freelance.steady : f.pay.amount, bp);
+  if (f.pay.freelance !== undefined) return setAsideOf(f.pay.freelance.steady, bp);
+  // TX-16 (owner 2026-11-12): with no records, the typed quick income estimate is the usual month's freelance pay.
+  if (f.pay.irregular === undefined && f.quickEstimates !== null && !hasSalaryPart(f)) return setAsideOf(f.quickEstimates.income, bp);
+  return setAsideOf(f.pay.amount, bp);
 }
 
 /** The case as the answer reads it: freelance pay less the share, and this month's share held back from the everyday account. */
@@ -78,9 +86,13 @@ export function withTaxSetAside(f: RightAnswerFixture): RightAnswerFixture {
       : fl !== undefined
         ? { ...f.pay, freelance: { ...fl, steady: kept(fl.steady), amounts: fl.amounts.map(kept), received: kept(fl.received) } }
         : { ...f.pay, amount: kept(f.pay.amount), setupAmount: f.pay.setupAmount === null ? null : kept(f.pay.setupAmount), lastThree: f.pay.lastThree === null ? null : [kept(f.pay.lastThree[0]), kept(f.pay.lastThree[1]), kept(f.pay.lastThree[2])], ...(f.pay.lean === undefined ? {} : { lean: f.pay.lean.map((l) => ({ ...l, amount: kept(l.amount) })) }) };
+  // TX-16 (owner 2026-11-12): a typed quick income estimate counts less the share too, when there is no salary part.
+  const q = f.quickEstimates;
+  const quickEstimates = q !== null && fl === undefined && !hasSalaryPart(f) ? { ...q, income: kept(q.income) } : q;
   return {
     ...f,
     taxSetAsideBp: null,
+    quickEstimates,
     pay,
     thisMonth: fl === undefined ? { ...f.thisMonth, received: kept(f.thisMonth.received) } : f.thisMonth,
     accounts: f.accounts.map((a, i) => (i === spend ? { ...a, balance: a.balance - held } : a)),

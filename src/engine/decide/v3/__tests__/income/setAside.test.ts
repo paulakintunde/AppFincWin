@@ -146,6 +146,38 @@ describe('FIN-20 withTaxSetAside', () => {
   });
 });
 
+describe('FIN-20 a typed quick income estimate (owner 2026-11-12, TX-16 draft)', () => {
+  const typed = { income: mu(300_000), expenses: mu(180_000), saving: mu(0), debt: mu(0), invest: mu(0), asOf: ASOF, essential: mu(40_000) };
+  const noPay = { profile: { ...freelance, variable: 'match' as const, steady: null }, months: [], unspent: null };
+
+  it('FIN-20 with no salary part the estimate counts less the share, and the fact names its share', () => {
+    const { inputs, fact } = withTaxSetAside(base({ ...noPay, typedEstimates: typed }));
+    expect(inputs.typedEstimates).toEqual({ ...typed, income: 225_000 });
+    expect(inputs.balance).toBe(500_000); // nothing came in, so nothing is held back
+    expect(fact?.values).toEqual({ percent: '25', amount: 75_000 });
+  });
+
+  it('FIN-20 a salary part keeps the estimate whole; a share that rounds to 0 changes nothing; the steady figure leads the fact', () => {
+    const salary = withTaxSetAside(base({ ...noPay, profile: salaryAndFreelance, typedEstimates: typed }));
+    expect(salary.inputs.typedEstimates).toBe(typed);
+    expect(salary.fact).toBeNull();
+    const tiny = withTaxSetAside(base({ ...noPay, typedEstimates: { ...typed, income: mu(1) } }));
+    expect(tiny.fact).toBeNull();
+    const steady = withTaxSetAside(base({ months: [], unspent: null, typedEstimates: typed }));
+    expect(steady.inputs.typedEstimates?.income).toBe(225_000);
+    expect(steady.fact?.values).toEqual({ percent: '25', amount: 100_000 });
+  });
+
+  it('FIN-20 through prepare the cut estimate moves the answer and the quick-line overlay does not cut it again', () => {
+    const inputs = base({ ...noPay, typedEstimates: typed, accounts: undefined });
+    const p = prepare(inputs);
+    expect(p.inputs.typedEstimates?.income).toBe(225_000);
+    expect(prepare(p.inputs).inputs.typedEstimates?.income).toBe(225_000);
+    const quick = judgeWithQuickLines(p, checkOnce(10_000, { quickLines: [{ id: 'q', kind: 'expense', name: 'q', amount: mu(1_000), everyMonths: 0, date: null }] }));
+    expect(quick.result.facts.filter((f) => f.code === 'tax_set_aside').map((f) => f.values)).toEqual([{ percent: '25', amount: 75_000 }]);
+  });
+});
+
 describe('FIN-20 through prepare', () => {
   it('FIN-20 the fact is on an answer the share changed, never on an ask, and the quick-line overlay never cuts twice', () => {
     const inputs = base({ unspent: null });

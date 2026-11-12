@@ -29,7 +29,7 @@ export interface FixtureCheck {
 export interface RightAnswerFixture {
   asOf: string; currency: 'USD'|'CAD'|'GBP'|'EUR'; region: { country: string; subdivision: string|null } | null;
   pay: { amount: number; cadence: 'monthly'|'fortnightly'|'weekly'; nextDate: string; setupAmount: number|null; lastThree: [number,number,number]|null; /** low months stated explicitly ('YYYY-MM', pay that month); absent = none beyond lastThree */ lean?: { month: string; amount: number }[];
-    /** D-52: no pay is scheduled (freelance); amounts = full-month income oldest first, one per history month, paid on `day`; absent = scheduled pay */ irregular?: { amounts: number[]; day: number };
+    /** D-52: no pay is scheduled (freelance); amounts = full-month income oldest first, one per history month, paid on `day`; absent = scheduled pay */ irregular?: { amounts: number[]; day: number; /** 06.1 FIN-20 (TX-16): false = no steady figure was set (the profile counts what comes in, so a quick income estimate stands in while nothing has come in); absent = pay.amount is the steady figure */ steady?: false };
     /** 06.1 FIN-20 (draft): freelance pay beside the scheduled salary (a salary + freelance profile, steady method): `steady` = the
      *  user's own monthly freelance figure; amounts = full-month freelance income oldest first, one per history month, paid on `day`;
      *  received = this month's freelance pay already in (on `day`, on or before asOf; thisMonth.received is the salary only).
