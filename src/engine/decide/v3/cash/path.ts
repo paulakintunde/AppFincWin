@@ -192,12 +192,17 @@ export function payDatesIn(series: readonly V3Series[], asOf: string, days: numb
  * inside it (I-limit). payday / not_covered: past the floor (D-27; with no limit recorded the floor is 0, D-28).
  * net (05.4 FIN-02, ENG-04, D-35): past the floor, but the money the safety net can lend carries the low point back to 0 or above;
  * used is how far the path goes below 0; added is the part the purchase adds (the dip with it less the dip without it); until is the
- * payday that clears it (null when no payday inside the 90 days does).
+ * payday that clears it (null when no payday inside the 90 days does); before is the failed check the net's money carried (what the
+ * answer reads when the net ends up lending nothing, because the purchase waits anyway).
  */
 export type CashCheck =
   | { readonly kind: 'ok'; readonly lowest: CashPoint }
   | { readonly kind: 'overdraft'; readonly lowest: CashPoint }
-  | { readonly kind: 'net'; readonly lowest: CashPoint; readonly used: MinorUnits; readonly added: MinorUnits; readonly until: string | null }
+  | { readonly kind: 'net'; readonly lowest: CashPoint; readonly used: MinorUnits; readonly added: MinorUnits; readonly until: string | null; readonly before: FailedCash }
+  | FailedCash;
+
+/** A check past the floor: payday clears it, or nothing inside the 90 days does. */
+export type FailedCash =
   | { readonly kind: 'payday'; readonly until: string; readonly shortBy: MinorUnits }
   | { readonly kind: 'not_covered'; readonly shortBy: MinorUnits; readonly payDate?: string | null };
 
@@ -226,7 +231,7 @@ export function withNet(check: CashCheck, withPurchase: CashPathV3, withoutPurch
   if (lowest.balance + usable < 0) return check;
   const before = lowestOf(withoutPurchase()).balance;
   const added = before < 0 ? before - lowest.balance : -lowest.balance;
-  return { kind: 'net', lowest, used: minorUnits(-lowest.balance), added: minorUnits(added > 0 ? added : 0), until: check.kind === 'payday' ? check.until : null };
+  return { kind: 'net', lowest, used: minorUnits(-lowest.balance), added: minorUnits(added > 0 ? added : 0), until: check.kind === 'payday' ? check.until : null, before: check };
 }
 
 function lowestOf(path: CashPathV3): CashPoint {
