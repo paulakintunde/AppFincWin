@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06.1 wave 12 done: 29 (FIN-20 tax set-aside, TX-10..16 approved) complete (38/42); next wave 13 (plan 30)"
+stopped_at: "Phase 06.1 wave 13 done: 30 (FIN-22 long plans, FIN-23 UK/EU APR; LL/AP cases approved) complete (39/42); next wave 14 (plan 32)"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:
