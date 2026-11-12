@@ -18,7 +18,7 @@ jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data
 jest.mock('@/features/grow/goals/useGoalsRead', () => ({
   useGoalsRead: () => ({ status: 'ready', model: { safetyNet: { size: 230000, saved: 130000 } }, refetch: jest.fn() }),
 }));
-jest.mock('@/features/decide/past/usePastDecisions', () => ({ usePastContext: () => ({ userId: 'u1', householdId: 'h1' }) }));
+jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({ usePastContext: () => ({ userId: 'u1', householdId: 'h1' }) }));
 jest.mock('@/features/grow/home/useGoalMoney', () => ({ useGoalMoney: () => ({ amount: (n: number) => `$${n / 100}` }) }));
 jest.mock('@/ui/haptics', () => ({ hapticWarning: () => mockWarning(), hapticLight: jest.fn() }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));

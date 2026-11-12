@@ -4,7 +4,6 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { TransactionRow } from '@/db/rows';
-import { resetJudgeOnStoreForTest } from '@/features/decide/judgeOn/judgeOnStore';
 import * as buildModule from '@/features/decide/snapshot/buildSnapshot';
 import { clearServerFetchTimes, trackServerFetches } from '../../cache/persister';
 import { queryKeys } from '../../keys';
@@ -133,7 +132,6 @@ function history(): TransactionRow[] {
 
 function resetMocks(): void {
   clearSharedSnapshots();
-  resetJudgeOnStoreForTest();
   mockCtx.ready = true;
   mockCtx.userId = 'u1';
   mockCtx.householdId = 'h1';

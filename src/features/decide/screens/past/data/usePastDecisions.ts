@@ -18,9 +18,9 @@ import { useRecordContext } from '@/features/record/useRecordContext';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
-import { moneyFn, type Money } from '@/features/decide/check/steps/stepUi';
+import { moneyFn, type Money } from '@/features/decide/screens/logic/moneyFn';
 import { compareEstimate, scheduleMatch, type Checkpoint, type EstimateInput, type LinkedLine } from '@/features/decide/journal/estimateActual';
-import { checkHref } from '@/features/decide/home/checkHref';
+import { checkHref } from '@/features/decide/screens/logic/checkHref';
 import { cancelCheckReminders } from '@/features/decide/notifications/waitReminder';
 import { parseCheckInputs } from '@/features/decide/snapshot/checkInputs';
 

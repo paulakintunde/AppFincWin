@@ -8,7 +8,7 @@ import type { DecideCheckHistoryRow } from '@/db/decideCheckHistory';
 import { VERDICT_TABLE, verdictRowFor, type Code, type Variant } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
 import { canUse } from '@/features/decide/entitlements';
-import { METHOD_LABEL } from '@/features/decide/copy/codeMaps';
+import { METHOD_LABEL } from '@/features/decide/screens/logic/codeMaps';
 import { compareEstimate } from '@/features/decide/journal/estimateActual';
 import { finalPriceOf, parseCheckInputs } from '@/features/decide/snapshot/checkInputs';
 import { DetailScreen } from '@/shell/screen/DetailScreen';

@@ -7,7 +7,7 @@ import { StyleSheet, View } from 'react-native';
 import { inverseSettingsPatch, useUpdateDecideSettings } from '@/data/mutations/decideSettings';
 import type { DecideSettingsPatch, DecideSettingsRow } from '@/db/decideSettings';
 import { useT } from '@/i18n';
-import { stampSettingsPatch } from '@/features/decide/home/settingsPatch';
+import { stampSettingsPatch } from '@/features/decide/settingsPatch';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { Stepper } from '@/features/grow/ui/Stepper';
 import { space } from '@/theme/layout';

@@ -26,7 +26,6 @@ import { buildDecideSnapshot, type SnapshotSource } from '@/features/decide/snap
 import { recordsAsOfOf, rollForward } from '@/features/decide/snapshot/offlineFallback';
 import { selectOtherChecks } from '@/features/decide/snapshot/stacking';
 import { EMPTY_STACK, type SnapshotResult, type StackSelection } from '@/features/decide/snapshot/types';
-import { useJudgeOn } from '@/features/decide/judgeOn/judgeOnStore';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { getDeviceRegion } from '@/services/locale/deviceLocale';
 import { supabase } from '@/services/supabase';
@@ -415,15 +414,10 @@ export function useDecideSnapshot(): DecideSnapshotState {
   }, [categoryRows]);
 
   const region = getDeviceRegion(rc.region) ?? null;
-  // D-107: the Judge-on choice (device view). null until it has been read, so no verdict flashes on the wrong basis.
-  const { judgeOn: storedJudgeOn, pendingDefault, applyingDefault } = useJudgeOn(userId);
-  // While the one-time default switch is unresolved the snapshot is built on the settings basis (judgeOn null), so the
-  // switch can re-baseline the checks before any render shows This month.
-  const judgeOn = storedJudgeOn !== null && pendingDefault ? null : storedJudgeOn;
-  const waitingForChoice = storedJudgeOn === null || applyingDefault;
+  // 06.1-36: the old Judge-on device choice is gone; the snapshot always judges on the settings basis.
 
   const source = useMemo<SnapshotSource | null>(() => {
-    if (!rc.ready || missing || waitingForChoice) return null;
+    if (!rc.ready || missing) return null;
     return {
       today: rc.today,
       homeCurrency: rc.homeCurrency,
@@ -443,7 +437,6 @@ export function useDecideSnapshot(): DecideSnapshotState {
       changes: changesQuery.data ?? [],
       paymentLinks,
       writtenRowLinks: writtenQuery.data ?? [],
-      judgeOn,
       recordsAsOf,
       unsavedWrites,
       regionSubdivision: subdivisionQuery.data ?? null,
@@ -469,14 +462,12 @@ export function useDecideSnapshot(): DecideSnapshotState {
     changesQuery.data,
     paymentLinks,
     writtenQuery.data,
-    judgeOn,
-    waitingForChoice,
     recordsAsOf,
     unsavedWrites,
     subdivisionQuery.data,
   ]);
 
-  const sourceKey = [hh ?? '', rc.today, rc.homeCurrency, region ?? '', judgeOn ?? ''].join('|');
+  const sourceKey = [hh ?? '', rc.today, rc.homeCurrency, region ?? ''].join('|');
   const sourceDeps = [...reads.map((q) => q.data), recordsAsOf, unsavedWrites];
   const shared = useMemo(
     () => (source === null ? null : sharedSnapshot(sourceKey, sourceDeps, source)),

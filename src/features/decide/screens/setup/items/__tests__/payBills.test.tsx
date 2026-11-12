@@ -38,7 +38,7 @@ let mockSeries: unknown[] = [];
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: mockSeries }) }));
 
 let mockCandidates: unknown[] = [];
-jest.mock('@/features/decide/setup/steps/useRegularCandidates', () => ({
+jest.mock('@/features/decide/screens/setup/items/useRegularCandidates', () => ({
   useRegularCandidates: () => ({ rows: mockCandidates, paused: [], isLoading: false, householdId: 'hh', userId: 'user', today: '2026-11-20', homeCurrency: 'USD', timeZone: 'UTC' }),
 }));
 let mockIncome: Record<string, unknown> = {};

@@ -5,19 +5,17 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import * as motion from '@/theme/motion';
 import { STORAGE_PREFIX, wipeDeviceData } from '@/services/storage/wipe';
-import { FoldHint } from '../../ui/FoldHint';
+import { FoldHint } from '../FoldHint';
 import {
   decideHintsKey,
   loadFoldHintSeen,
   loadHomeBasisSeen,
   loadIntroSeenVersion,
-  loadJudgeOn,
   loadSetupDoneSeen,
   markIntroSeen,
   markSetupDoneSeen,
   markFoldHintSeen,
   markHomeBasisSeen,
-  saveJudgeOn,
 } from '../decideHints';
 import { useFoldHint } from '../useFoldHint';
 
@@ -143,45 +141,24 @@ describe('useFoldHint', () => {
   });
 });
 
-describe('judge-on record', () => {
-  it('D-107 the judge-on choice round-trips per user', async () => {
-    await saveJudgeOn('a', 'worst');
-    await saveJudgeOn('b', 'average');
-    expect(await loadJudgeOn('a')).toBe('worst');
-    expect(await loadJudgeOn('b')).toBe('average');
-    expect(await loadJudgeOn('c')).toBeNull();
-  });
-
-  it('D-107 a missing, unreadable or invalid stored choice loads as null', async () => {
-    expect(await loadJudgeOn(USER)).toBeNull();
-    await AsyncStorage.setItem(decideHintsKey(USER), JSON.stringify({ v: 1, judgeOn: 'best' }));
-    expect(await loadJudgeOn(USER)).toBeNull();
-    await AsyncStorage.setItem(decideHintsKey(USER), '{not json');
-    expect(await loadJudgeOn(USER)).toBeNull();
-    jest.spyOn(AsyncStorage, 'getItem').mockRejectedValueOnce(new Error('boom'));
-    expect(await loadJudgeOn(USER)).toBeNull();
-  });
-
-  it('D-107 saving the choice keeps the other flags and they keep it', async () => {
-    await markFoldHintSeen(USER);
-    await saveJudgeOn(USER, 'month');
-    expect(await loadFoldHintSeen(USER)).toBe(true);
-    expect(await loadJudgeOn(USER)).toBe('month');
-    await markHomeBasisSeen(USER);
-    expect(await loadJudgeOn(USER)).toBe('month');
-    expect(await loadHomeBasisSeen(USER)).toBe(true);
-  });
-
-  it('D-107 a failed write is swallowed', async () => {
+describe('device record', () => {
+  it('a failed write is swallowed', async () => {
     jest.spyOn(AsyncStorage, 'setItem').mockRejectedValueOnce(new Error('full'));
-    await expect(saveJudgeOn(USER, 'worst')).resolves.toBeUndefined();
+    await expect(markFoldHintSeen(USER)).resolves.toBeUndefined();
   });
 
-  it('D-107 the record sits under the fincwin: prefix so wipeDeviceData clears it', async () => {
-    await saveJudgeOn(USER, 'worst');
+  it('the record sits under the fincwin: prefix so wipeDeviceData clears it', async () => {
+    await markFoldHintSeen(USER);
     expect(await AsyncStorage.getItem(decideHintsKey(USER))).not.toBeNull();
     await wipeDeviceData();
-    expect(await loadJudgeOn(USER)).toBeNull();
+    expect(await loadFoldHintSeen(USER)).toBe(false);
+  });
+
+  it('a stored judgeOn from before 06.1-36 is ignored and not carried forward', async () => {
+    await AsyncStorage.setItem(decideHintsKey(USER), JSON.stringify({ v: 1, judgeOn: 'worst', foldHintSeen: true }));
+    expect(await loadFoldHintSeen(USER)).toBe(true);
+    await markHomeBasisSeen(USER);
+    expect(JSON.parse((await AsyncStorage.getItem(decideHintsKey(USER))) as string)).toEqual({ v: 1, foldHintSeen: true, homeBasisSeen: true });
   });
 });
 

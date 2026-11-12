@@ -13,9 +13,9 @@ import {
 } from '@/features/decide/screens/past/data/goalTagEdit';
 import { writtenCount } from '@/features/decide/screens/past/data/useDeleteDecision';
 import { localDateOf } from '@/features/decide/screens/past/data/usePastDecisions';
-import * as oldGoalTagEdit from '@/features/decide/past/goalTagEdit';
-import * as oldDelete from '@/features/decide/past/useDeleteDecision';
-import * as oldPast from '@/features/decide/past/usePastDecisions';
+import * as oldGoalTagEdit from '@/features/decide/screens/past/data/goalTagEdit';
+import * as oldDelete from '@/features/decide/screens/past/data/useDeleteDecision';
+import * as oldPast from '@/features/decide/screens/past/data/usePastDecisions';
 
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({}) }));
 jest.mock('@/data/queries/decide', () => ({}));

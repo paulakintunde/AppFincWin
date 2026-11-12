@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useT } from '@/i18n';
-import { usePastContext } from '@/features/decide/past/usePastDecisions';
+import { usePastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { useGoalsRead } from '@/features/grow/goals/useGoalsRead';
 import { goalPercent } from '@/features/grow/home/GoalRow';
 import { useGoalMoney } from '@/features/grow/home/useGoalMoney';

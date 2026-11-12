@@ -2,7 +2,7 @@
 // goal screens compare saved with the row's target, monthly amount and line amounts, which are all stored in the goal's currency,
 // so they need saved in that same currency. Pure: no React, no I/O.
 import { convertLatest } from '@/data/queries/fxConvert';
-import type { PastContext } from '@/features/decide/past/usePastDecisions';
+import type { PastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { clampSaved, goalSaved } from '../connect/goalSaved';
 import type { GoalLineSource, GoalSourceRow, ToHome } from '../connect/types';
 

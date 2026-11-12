@@ -8,14 +8,15 @@ globalThis.crypto = globalThis.crypto ?? (require('crypto').webcrypto as Crypto)
 import React from 'react';
 import { QueryClient, QueryClientProvider, onlineManager, useMutation } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
-import type { Plan, RunningCosts } from '@/engine/decide';
+import { evaluate } from '@/engine/decide/v3';
+import { minorUnits } from '@/engine/money/types';
+import { checkOnce, inputsOf } from '@/engine/decide/v3/__tests__/helpers/fixtures';
 import type { DbClient } from '@/db/rows';
 import { mutationKeys } from '@/data/keys';
 import { registerMutationDefaults } from '@/data/mutations';
 import { useAddTransaction } from '@/data/mutations/transactions';
-import { useGoAhead, type GoAheadContext, type GoAheadAssessment } from '@/data/mutations/decideGoAhead';
+import { useGoAheadV3, type GoAheadV3Context } from '@/data/mutations/decideGoAhead';
 import type { EditTransferVars } from '@/data/mutations/transfers';
-import { emptyCheckInputs } from '@/features/decide/snapshot/checkInputs';
 import { clearVersionChains } from '@/data/sync/versionChain';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
@@ -166,42 +167,15 @@ const settled = (qc: QueryClient) => async () => {
   expect(all.every((m) => m.state.status === 'success')).toBe(true);
 };
 
-const asMoney = (n: number) => n as never;
-
-const ctx: GoAheadContext = {
+const ctx: GoAheadV3Context = {
   householdId: 'h1',
   currency: 'USD',
   timeZone: 'UTC',
   today: '2026-10-16',
-  cashAccountId: 'cash',
-  cardAccountId: 'card',
+  name: 'Sofa',
   debtCategoryId: 'cat-debt',
-  savingsCategoryId: 'cat-savings',
-  transferCategoryId: 'cat-transfer',
-  investAccount: null,
-  replacedSeries: [],
+  mint: () => `row-${++mockUuid}`,
 };
-
-const RUNNING: RunningCosts = { gross: asMoney(0), replaced: asMoney(0), net: asMoney(0), countedCosts: 0, totalCosts: 0, countedReplaced: 0, nonCash: asMoney(0) };
-
-function cashPlan(): Plan {
-  return {
-    price: asMoney(100000),
-    dayOne: asMoney(100000),
-    monthly: asMoney(0),
-    months: 0,
-    financed: asMoney(0),
-    total: asMoney(100000),
-    interest: asMoney(0),
-    dayFees: asMoney(0),
-    card: null,
-    finalMonthly: null,
-    impliedAnnualRate: null,
-    paymentSteps: [],
-    promo: null,
-    lateFees: null,
-  } as Plan;
-}
 
 beforeEach(() => {
   mockUuid = 0;
@@ -225,23 +199,16 @@ describe('timeout retry replays', () => {
   scenario('Go ahead leaves one set of rows and one undo step', async () => {
     const { server, qc } = setup();
     server.loseAnswers = 1;
-    const { result } = await renderHook(() => useGoAhead(), { wrapper: wrapper(qc) });
+    const { result } = await renderHook(() => useGoAheadV3(), { wrapper: wrapper(qc) });
 
+    const check = checkOnce(15000);
     const stepId = result.current.goAhead({
       checkId: 'chk1',
       ownerId: 'u1',
       homeCurrency: 'USD',
-      inputs: { ...emptyCheckInputs('buy', ctx.today), name: 'Sofa', method: 'cash' as const, needBy: '2026-11-03' },
-      assessment: {
-        state: 'fits',
-        plan: cashPlan(),
-        size: 'from_spare_this_month',
-        mineDayOne: cashPlan().dayOne,
-        mineMonthly: cashPlan().monthly,
-        mineRunning: asMoney(0),
-        newMonthly: cashPlan().monthly,
-      } as unknown as GoAheadAssessment,
-      running: RUNNING,
+      check,
+      evaluation: evaluate(inputsOf({ balance: minorUnits(500000) }), check),
+      accountId: 'cash',
       ctx,
     });
 

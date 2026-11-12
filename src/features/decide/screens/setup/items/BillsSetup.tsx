@@ -17,7 +17,7 @@ import { useSetDecideAnswered } from '@/data/mutations/decideSetup';
 import { useConfirmRegularCandidate } from '@/data/mutations/seriesAttributes';
 import { useAccounts } from '@/data/queries/accounts';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
-import { useRegularCandidates } from '@/features/decide/setup/steps/useRegularCandidates';
+import { useRegularCandidates } from '@/features/decide/screens/setup/items/useRegularCandidates';
 import { payableAccounts } from '@/features/income/seriesHelpers';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';

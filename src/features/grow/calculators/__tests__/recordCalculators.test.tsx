@@ -5,8 +5,8 @@ import React from 'react';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { minorUnits } from '@/engine/money';
-import { wrap } from '@/features/decide/check/steps/__tests__/helpers/stepProps';
-import { goal as goalFixture } from '@/features/decide/past/__tests__/helpers/pastFixtures';
+import { wrap } from '@/test/stepProps';
+import { goal as goalFixture } from '@/test/pastFixtures';
 import type { GoalsRead } from '@/features/grow/goals/useGoalsRead';
 import type { DebtsRead } from '@/features/grow/debts/useDebtsRead';
 import { DebtExtraCalculator } from '../record/DebtExtraCalculator';
@@ -51,7 +51,7 @@ jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: { 
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', showCents: false, today: '2026-10-20', userId: 'u1', householdId: 'h1', ready: true, timeZone: 'UTC' }),
 }));
-jest.mock('@/features/decide/past/usePastDecisions', () => ({
+jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({
   usePastContext: () => ({
     userId: 'u1',
     householdId: 'h1',

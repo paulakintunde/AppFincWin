@@ -6,7 +6,7 @@ import type { RecurringFreq } from '@/engine/recurring';
 import type { RecurringSeriesRow } from '@/db/rows';
 import type { RecurringSeriesPatch } from '@/db/recurringSeries';
 import { seriesStatusOf } from '@/features/record/entry/seriesStatus';
-import type { CandidateRow, CandidateState } from '@/features/decide/setup/steps/useRegularCandidates';
+import type { CandidateRow, CandidateState } from '@/features/decide/screens/setup/items/useRegularCandidates';
 
 /**
  * Edits a saved series from a date on and returns the undo step id. Injected from src/shell/decide (the write path reaches the
