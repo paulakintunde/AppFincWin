@@ -235,7 +235,7 @@ export function AssumptionsBody(props: AssumptionsBodyProps) {
         ),
       )}
       {rows.length > VISIBLE_ROWS ? <DetailsToggle expanded={showAll} onToggle={() => setShowAll((v) => !v)} block={block} /> : null}
-      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkFaint, paddingTop: space.gapSm }}>
+      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted, paddingTop: space.gapSm }}>
         {t('decide.flow.notLender')}
       </Text>
     </View>

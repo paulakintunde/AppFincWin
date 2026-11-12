@@ -7,6 +7,7 @@ import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
 import { classifyReadError, type DbErrorKind } from '@/db/errors';
 import { computeV3, preparedV3 } from '@/features/decide/snapshot/v3/computeV3';
 import { settingsSourceOf } from '@/features/decide/snapshot/v3/settingsSource';
+import type { V3SettingsSource } from '@/features/decide/snapshot/v3/types';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import type { Evaluation, V3Inputs } from '@/engine/decide/v3';
 import { useDecideChecks, useDecideLinks, useDecideSettings, useDecideSnapshot } from './decide';
@@ -17,6 +18,9 @@ export interface DecideV3State {
   status: 'loading' | 'error' | 'ready';
   inputs: V3Inputs | null;
   evaluation: Evaluation | null;
+  /** 06-16: the inputs the evaluation was built from, so Grow can re-judge Decide's open checks with a different safety-net size. Read only. */
+  source?: SnapshotSource | null;
+  v3?: V3SettingsSource | null;
   /** APP-10 (05.4-33): the kind of the first failed read with nothing cached; null unless status is 'error'. Never 'not_found' for a network failure. */
   errorKind: DbErrorKind | null;
   /** APP-01 (05.4-33): the reads with nothing cached yet, by name, for the 08.1 offline card. */
@@ -88,7 +92,7 @@ export function useDecideV3(): DecideV3State {
     if (source === null || missing || settingsRow === undefined || answerRows === undefined || dismissalRows === undefined || checkRows === undefined || linkRows === undefined) return null;
     const v3 = settingsSourceOf({ settings: settingsRow, answers: answerRows, dismissals: dismissalRows, checks: checkRows, planLive: planLiveOf(linkRows, source) });
     // ENG-13 / APP-03 (05.4-33): one build; the evaluation is judged on the same prepared inputs.
-    return { inputs: preparedV3(source, v3).inputs, evaluation: computeV3(source, v3, {}) };
+    return { inputs: preparedV3(source, v3).inputs, evaluation: computeV3(source, v3, {}), source, v3 };
   }, [source, missing, settingsRow, answerRows, dismissalRows, checkRows, linkRows]);
 
   const retrySnapshot = snapshot.retry;
@@ -101,5 +105,5 @@ export function useDecideV3(): DecideV3State {
   }, [retrySnapshot]);
 
   const status: DecideV3State['status'] = failed ? 'error' : computed === null ? 'loading' : 'ready';
-  return { status, inputs: computed?.inputs ?? null, evaluation: computed?.evaluation ?? null, errorKind, missingReads, refetch };
+  return { status, inputs: computed?.inputs ?? null, evaluation: computed?.evaluation ?? null, source: computed?.source ?? null, v3: computed?.v3 ?? null, errorKind, missingReads, refetch };
 }

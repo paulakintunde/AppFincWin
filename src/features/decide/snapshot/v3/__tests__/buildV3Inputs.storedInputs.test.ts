@@ -143,37 +143,39 @@ describe('D-43: debts and overdraft limits reach the engine whatever the records
   });
 });
 
-describe('safety net (FIN-01, D-33, D-35, D-61)', () => {
-  const settings = (over: Partial<NonNullable<SnapshotSource['settings']>> = {}): SnapshotSource => ({
-    ...base(),
-    settings: { ...base().settings!, currency: 'USD', ...over },
+describe('safety net (FIN-01, ARC-13, 06 D-02): the flagged Grow goal is the only source', () => {
+  const goal = (over: Partial<SnapshotSource['goals'][number]> = {}): SnapshotSource['goals'][number] => ({
+    id: 'net', name: 'Safety net', kind: 'pot', check_id: null, currency: 'USD', target: null, monthly_amount: null, ready_by: null, opening_saved: 0,
+    done_at: null, deleted_at: null, account_id: null, is_safety_net: true, locked: true, protect: true, ...over,
   });
+  const withNet = (over: Partial<SnapshotSource['goals'][number]> = {}, src: SnapshotSource = base()): SnapshotSource => ({ ...src, goals: [goal(over)] });
 
-  it('no settings row: null, so the engine defaults apply (on, starter, locked, saved = the emergency fund)', () => {
+  it('no flagged goal: null, so the engine defaults apply (on, starter, locked, saved = the emergency fund)', () => {
     expect(buildV3Inputs(base(), null).safetyNet).toBeNull();
+    expect(buildV3Inputs(base(), v3s()).safetyNet).toBeNull();
   });
 
-  it('protect off with no size: protect false, size null, saved = the emergency fund, locked as stored', () => {
-    const i = buildV3Inputs(settings({ reserve: 300000 }), v3s({ safety_net_protect: false, safety_net_size: null, safety_net_locked: false }));
-    expect(i.safetyNet).toEqual({ protect: false, size: null, saved: 300000, locked: false });
+  it('protect off with no size: protect false, size null, saved = the goal money, always locked', () => {
+    const i = buildV3Inputs(withNet({ protect: false, opening_saved: 300000, account_id: SAVINGS }), v3s());
+    expect(i.safetyNet).toEqual({ protect: false, size: null, saved: 300000, locked: true });
   });
 
-  it('D-35: saved is the money in the net, never the size; no emergency fund saves 0', () => {
-    const i = buildV3Inputs(settings({ reserve: null }), v3s({ safety_net_protect: true, safety_net_size: 900000, safety_net_locked: true }));
+  it('D-35: saved is the money in the net, never the size; nothing saved with no account gives 0 and no fund', () => {
+    const i = buildV3Inputs(withNet({ target: 900000 }), v3s());
     expect(i.safetyNet).toEqual({ protect: true, size: 900000, saved: 0, locked: true });
+    expect(i.emergency).toBeNull();
   });
 
-  it('an old cached row without the columns reads as the column defaults', () => {
-    expect(buildV3Inputs(settings({ reserve: 1000 }), v3s()).safetyNet).toEqual({ protect: true, size: null, saved: 1000, locked: true });
+  it('CR-03: a goal kept in another currency drops the size and the fund; protect is kept', () => {
+    const i = buildV3Inputs(withNet({ currency: 'GBP', protect: false, target: 900000, opening_saved: 300000, account_id: SAVINGS }), v3s());
+    expect(i.safetyNet).toEqual({ protect: false, size: null, saved: 0, locked: true });
+    expect(i.emergency).toBeNull();
   });
 
-  it('CR-03: settings money in another currency drops the size (and the fund); protect and locked are kept', () => {
-    const i = buildV3Inputs(settings({ currency: 'GBP', reserve: 300000 }), v3s({ safety_net_protect: false, safety_net_size: 900000, safety_net_locked: false }));
-    expect(i.safetyNet).toEqual({ protect: false, size: null, saved: 0, locked: false });
-  });
-
-  it('an unreadable size is the starter', () => {
-    expect(buildV3Inputs(settings(), v3s({ safety_net_size: -1 })).safetyNet!.size).toBeNull();
+  it('the typed reserve and its account no longer make a fund (only the goal does)', () => {
+    const src: SnapshotSource = { ...base(), settings: { ...base().settings!, currency: 'USD', reserve: 500000 } };
+    expect(buildV3Inputs(src, v3s()).emergency).toBeNull();
+    expect(buildV3Inputs(withNet({ opening_saved: 500000, account_id: SAVINGS }, src), v3s()).emergency).toEqual({ amount: 500000, accountId: SAVINGS });
   });
 });
 

@@ -30,7 +30,10 @@ jest.mock('../SetupScreen', () => {
 });
 jest.mock('@/features/decide/setup/DebtSheet', () => ({ DebtSheetHost: () => null }));
 jest.mock('@/features/income/steps/EditSeriesFromProvider', () => ({ EditSeriesFromProvider: ({ children }: { children: unknown }) => children }));
-jest.mock('@/features/decide/home/DecideHomeScreen', () => ({ DecideHomeScreen: () => null }));
+jest.mock('@/features/decide/home/DecideHomeScreen', () => {
+  const { Text: T } = jest.requireActual('react-native');
+  return { DecideHomeScreen: () => <T>{'decide-home'}</T> };
+});
 jest.mock('@/features/decide/dev/ShadowExportDevMenu', () => ({ ShadowExportDevMenu: () => null }));
 jest.mock('../SetupSheetHost', () => ({ useSetupSheetHost: jest.fn() }));
 
@@ -39,9 +42,11 @@ describe.each([true, false])('with decide_v3 %s', (flag) => {
     mockV3 = flag;
   });
 
-  it('the Decide tab shows Coming soon, never the setup page or readout', async () => {
+  // quick-261106-bf2 (owner 2026-11-06): DECIDE_OPEN is true, so the tab shows Decide home; the setup page stays hidden.
+  it('the Decide tab shows Decide home, never the setup page or readout', async () => {
     await render(<DecideRoute />);
-    expect(screen.getByText('coming-soon')).toBeTruthy();
+    expect(screen.getByText('decide-home')).toBeTruthy();
+    expect(screen.queryByText('coming-soon')).toBeNull();
     expect(screen.queryByText('WHAT DECIDE RECEIVES')).toBeNull();
   });
 

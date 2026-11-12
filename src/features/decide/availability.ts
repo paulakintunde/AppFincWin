@@ -5,14 +5,17 @@
  * shows a short coming-soon screen; nothing from today's Decide is shown until v3 switches on.
  * Build-rollout switch, not access control.
  */
-export const DECIDE_OPEN: boolean = false;
+// Owner 2026-11-06 (quick-261106-bf2): Decide opens for every tester. The app is testers-only, not on any store.
+export const DECIDE_OPEN: boolean = true;
 
 /**
  * D-15 (05.1): the Decide engine switch. Off until the owner signs off the shadow run (D-14).
  * 05.2 D-02: the per-account flag (profiles.decide_v3, server-written) is passed in by
  * useDecideAccess(); this constant stays false for everyone else. Not access control.
  */
-export const DECIDE_V3: boolean = false;
+// Owner 2026-11-06 (quick-261106-bf2): v3 for every account, whatever profiles.decide_v3 says. The old engine is off;
+// its code is deleted in 05.5.
+export const DECIDE_V3: boolean = true;
 
 /**
  * 05.4 BO-06: the 05.2 setup page, engine readout and Decide settings are hidden from every account until 08.1.

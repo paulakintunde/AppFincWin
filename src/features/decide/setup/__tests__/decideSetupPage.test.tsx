@@ -25,7 +25,10 @@ jest.mock('@/theme/FontScaleProvider', () => {
   return { ...actual, useFontScale: () => mockScale };
 });
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticSuccess: jest.fn() }));
-jest.mock('@/features/decide/home/DecideHomeScreen', () => ({ DecideHomeScreen: () => null }));
+jest.mock('@/features/decide/home/DecideHomeScreen', () => {
+  const { Text: T } = jest.requireActual('react-native');
+  return { DecideHomeScreen: () => <T>{'decide-home'}</T> };
+});
 jest.mock('@/features/decide/dev/ShadowExportDevMenu', () => ({ ShadowExportDevMenu: () => null }));
 
 // The real scaffold pulls in the avatar's Supabase client; the header props and the children are what matter here.
@@ -240,16 +243,17 @@ describe('states', () => {
 });
 
 describe('the Decide tab', () => {
-  it('05.4 BO-06 shows Coming soon even for a switch-on account', async () => {
+  // quick-261106-bf2 (owner 2026-11-06): DECIDE_OPEN is true, so the tab shows Decide home; BO-06 still hides the setup page.
+  it('05.4 BO-06 shows Decide home, not the setup page, even for a switch-on account', async () => {
     await mount(<DecideRoute />);
-    expect(screen.getByText('A better Decide is on its way')).toBeTruthy();
+    expect(screen.getByText('decide-home')).toBeTruthy();
     expect(screen.queryByText('WHAT DECIDE RECEIVES')).toBeNull();
   });
 
-  it('shows Coming soon for everyone else', async () => {
+  it('shows Decide home for everyone else', async () => {
     mockAccess = { v3: false };
     await mount(<DecideRoute />);
-    expect(screen.getByText('A better Decide is on its way')).toBeTruthy();
+    expect(screen.getByText('decide-home')).toBeTruthy();
     expect(screen.queryByText('WHAT DECIDE RECEIVES')).toBeNull();
   });
 });

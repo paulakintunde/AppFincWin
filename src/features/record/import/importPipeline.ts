@@ -632,6 +632,8 @@ export interface ExistingInfo {
   original_amount: number;
   status: string;
   transfer_id: string | null;
+  /** P5-WR-01: a goal line is never marked paid from a statement; the server only lets a goal confirm do that. */
+  goalLine?: boolean;
 }
 
 export interface CommitDecisions {
@@ -737,6 +739,7 @@ export function toImportCommit(
           before: { status: 'pending', local_date: pending.local_date, original_amount: pending.original_amount },
           patch: { status: 'paid', local_date: c.localDate, original_amount: c.amount },
           line: row,
+          pendingIsGoalLine: pending.goalLine === true,
         });
         markPaidByIndex.set(pr.index, markPaid[markPaid.length - 1] as ImportMarkPaid);
         continue;

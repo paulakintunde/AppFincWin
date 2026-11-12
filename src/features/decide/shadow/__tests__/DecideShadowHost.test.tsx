@@ -112,8 +112,8 @@ describe('DecideShadowHost', () => {
     expect(failed).toHaveBeenCalledWith(new Error('decide shadow run failed'), { area: 'sync' });
   });
 
-  it('Decide stays off', () => {
-    expect(availability.DECIDE_OPEN).toBe(false);
-    expect(availability.DECIDE_V3).toBe(false);
+  it('owner 2026-11-06: Decide is on for every tester; the host still runs only for decide_shadow', () => {
+    expect(availability.DECIDE_OPEN).toBe(true);
+    expect(availability.DECIDE_V3).toBe(true);
   });
 });

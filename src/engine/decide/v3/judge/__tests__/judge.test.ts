@@ -261,7 +261,7 @@ describe('judge: one-off ladder (v3 §12)', () => {
   });
 
   it('D-35 a 90-day dip the net carries: a fit dips into it; a price past the ladder, or unknown unspent money, is not a fit', () => {
-    const cash: CashCheck = { kind: 'net', lowest: { date: '2026-10-20', balance: mu(-5_000) }, used: mu(5_000), added: mu(5_000), until: '2026-11-01' };
+    const cash: CashCheck = { kind: 'net', lowest: { date: '2026-10-20', balance: mu(-5_000) }, used: mu(5_000), added: mu(5_000), until: '2026-11-01', before: { kind: 'payday', until: '2026-11-01', shortBy: mu(5_000) } };
     const fits = judge(input({ cash, net: FULL_NET }));
     expect(fits.code).toBe('fits_uses_net');
     expect(fits.facts[0]).toEqual({ code: 'wait_keeps_net', values: { date: '2026-11-01' } });

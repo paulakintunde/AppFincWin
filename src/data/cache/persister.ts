@@ -31,7 +31,11 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // 05.4: cached row shapes changed (accounts.overdraft_rate, debts.due_day, decide_settings safety_net_* and custom_options)
 // -- bumped 2 -> 3 (APP-07). scripts/check-cache-version.mjs fails CI when a persisted shape changes without a bump; after
 // a bump run `npm run check:cache-version -- --update`.
-export const CACHE_SCHEMA_VERSION = '3';
+// 06 Grow: goals, debts, accounts and series gained columns and holdings are new -- bumped 3 -> 4.
+// 06-20 phase gate: later Grow plans changed persisted shapes after that bump -- bumped 4 -> 5.
+// 06-30: transactions gained debt_id (D-33) -- bumped 5 -> 6.
+// 06 waves 12-13: Grow shapes changed again after that bump -- bumped 6 -> 7.
+export const CACHE_SCHEMA_VERSION = '7';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's
@@ -218,11 +222,46 @@ function chunkMutations(mutations: Mutations, maxBytes: number) {
   return { chunks, oversizedSingle };
 }
 
+/**
+ * 06 device check: the whole save (overflow rows, dev log, encrypted write) runs at most once per
+ * `interval`, with the latest client winning. Only the base write used to be throttled, so every
+ * cache event still ran the overflow check and, in dev, a full extra serialise for the log line. A
+ * burst of events at start-up then drained as one `[persist]` line about every second while idle.
+ * Same contract as the library's asyncThrottle: a call made while one is already waiting returns
+ * at once and its client is folded into the waiting save.
+ */
+export function throttleLatest<A>(fn: (arg: A) => Promise<void>, interval: number): (arg: A) => Promise<void> {
+  if (interval <= 0) return fn;
+  let nextAt = 0;
+  let latest: A | undefined;
+  let running = false;
+  let scheduled = false;
+  const wait = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
+  return async (arg: A) => {
+    latest = arg;
+    if (scheduled) return;
+    scheduled = true;
+    while (running) await wait(interval);
+    while (Date.now() < nextAt) await wait(nextAt - Date.now());
+    scheduled = false;
+    running = true;
+    try {
+      await fn(latest as A);
+    } catch {
+      // A failed save is retried by the next cache change, as before.
+    } finally {
+      nextAt = Date.now() + interval;
+      running = false;
+    }
+  };
+}
+
 export function createEncryptedPersister(
   storage: LargeSecureStore = new LargeSecureStore(),
   throttleTime = 1000
 ): Persister {
-  const base = createBasePersister(storage, throttleTime);
+  // The throttle wraps the whole save below, so the base write itself is not throttled again.
+  const base = createBasePersister(storage, 0);
 
   // Removes overflow rows from index `start` upward (stops at the first gap).
   async function removeOverflowFrom(start: number): Promise<void> {
@@ -234,7 +273,7 @@ export function createEncryptedPersister(
   }
 
   return {
-    persistClient: async (client: PersistedClient) => {
+    persistClient: throttleLatest(async (client: PersistedClient) => {
       const mutations = client.clientState.mutations;
       const mutationBytes = mutations.length > 0 ? utf8Length(JSON.stringify(mutations)) : 0;
       let toSave: WithChunks = client;
@@ -260,7 +299,7 @@ export function createEncryptedPersister(
         );
       }
       await base.persistClient(toSave);
-    },
+    }, throttleTime),
     removeClient: async () => {
       await base.removeClient();
       await removeOverflowFrom(0);
