@@ -2,7 +2,7 @@
 import { minorUnits } from '../../../../money/types';
 import { evaluate } from '../../evaluate';
 import { MAX_TAX_SET_ASIDE_BP, percentText, setAsideBpOf, shareOf, withTaxSetAside } from '../../income/setAside';
-import { judgeWithQuickLines } from '../../quick/overlay';
+import { judgeWithQuickLines, withQuickLines } from '../../quick/overlay';
 import { prepare } from '../../prepare';
 import type { IncomeProfile, V3Inputs } from '../../types';
 import { ASOF, checkOnce, inputsOf, monthOf, v3Line, v3Series } from '../helpers/fixtures';
@@ -175,6 +175,19 @@ describe('FIN-20 a typed quick income estimate (owner 2026-11-12, TX-16 draft)',
     expect(prepare(p.inputs).inputs.typedEstimates?.income).toBe(225_000);
     const quick = judgeWithQuickLines(p, checkOnce(10_000, { quickLines: [{ id: 'q', kind: 'expense', name: 'q', amount: mu(1_000), everyMonths: 0, date: null }] }));
     expect(quick.result.facts.filter((f) => f.code === 'tax_set_aside').map((f) => f.values)).toEqual([{ percent: '25', amount: 75_000 }]);
+  });
+});
+
+describe('FIN-20 one-check quick lines (owner 2026-11-12)', () => {
+  it('FIN-20 a one-check income quick line counts as typed: never cut by the share', () => {
+    // A freelancer (no salary part) with 25% set aside: her own pay series is cut once, the one-check $400 income line is not.
+    const p = prepare(base({ unspent: null, series: [pay] }));
+    expect(p.inputs.series.find((s) => s.id === 'pay')?.amount).toBe(187_500);
+    const line = { id: 'qi', kind: 'income' as const, name: 'qi', amount: mu(40_000), everyMonths: 0 as const, date: '2026-10-20' };
+    const folded = withQuickLines(p.inputs, checkOnce(10_000, { quickLines: [line] })).inputs;
+    const again = prepare(folded).inputs.series;
+    expect(again.find((s) => s.id.endsWith('qi'))?.amount).toBe(40_000);
+    expect(again.find((s) => s.id === 'pay')?.amount).toBe(187_500);
   });
 });
 

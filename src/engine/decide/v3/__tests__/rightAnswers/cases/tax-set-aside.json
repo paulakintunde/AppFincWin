@@ -734,11 +734,11 @@
       "fixIds": [
         "FIN-20"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner approved TX-16 (D-26, 2026-11-12, chat popup): the tax set-aside also comes off a typed quick income estimate when freelance is ticked. A one-check + income quick line is not cut; it counts as typed.",
       "expertNote": null,
-      "plannerNote": "Draft (06.1-29, owner asked 2026-11-12 for the set-aside on a typed quick income estimate). Plain calculator and engine agree: fits_unspent, null, month 0; without the set-aside both say fits_month, null, 60000. Only the estimate carries her income here (no pay series, no income line, no steady figure), so this case pins the estimate rule. Not yet approved; DECIDE_ENGINE_REVISION not bumped until it is."
+      "plannerNote": "Draft (06.1-29, owner asked 2026-11-12 for the set-aside on a typed quick income estimate). Plain calculator and engine agree: fits_unspent, null, month 0; without the set-aside both say fits_month, null, 60000. Only the estimate carries her income here (no pay series, no income line, no steady figure), so this case pins the estimate rule. Approved 2026-11-12; DECIDE_ENGINE_REVISION 06.5."
     }
   ]
 }
