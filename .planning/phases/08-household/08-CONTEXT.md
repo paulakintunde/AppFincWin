@@ -3,6 +3,8 @@
 **Gathered:** 2026-11-10
 **Status:** Ready for planning
 
+**Preconditions:** read `08-PRECONDITIONS.md` first (gates, revision round after 06.1, shared-file merge notes; 08-28/08-29 moved to 08.1 on 2026-11-11).
+
 <domain>
 ## Phase Boundary
 
