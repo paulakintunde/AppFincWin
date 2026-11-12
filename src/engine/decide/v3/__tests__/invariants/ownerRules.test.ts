@@ -119,7 +119,12 @@ describe('owner rules as named properties (05.4-40)', () => {
         const earlier = r.split.filter((s) => s.source === 'unspent_earlier' || s.source === 'extra_savings').reduce((t, s) => t + s.amount, 0);
         const saves = (d: V3Debt): bigint =>
           d.apr === null || d.apr <= 0n ? 0n : divideHalfUp(BigInt(Math.max(0, Math.min(earlier, d.balance))) * d.apr, 100n * PERCENT_SCALE * 12n);
-        const qualifies = inputs.debts.some((d) => d.apr !== null && d.apr * 100n >= 2000n * PERCENT_SCALE && saves(d) >= 100n);
+        // D-102: a sale that pays a debt leaves only what is still owed on it (sale_counted, debt_left_after_sale); a debt the sale pays
+        // off is gone, so its interest is not there to cut (nightly 2026-11-07..11, seed 3442: a sale paid a 29.9% loan in full).
+        const paid = has(r, 'sale_counted') ? (check.replaces?.sale?.paysDebtId ?? null) : null;
+        const leftAfterSale = Number(factOf(r, 'debt_left_after_sale')?.values.amount ?? 0);
+        const owed = inputs.debts.flatMap((d) => (d.id !== paid ? [d] : leftAfterSale > 0 ? [{ ...d, balance: leftAfterSale as V3Debt['balance'] }] : []));
+        const qualifies = owed.some((d) => d.apr !== null && d.apr * 100n >= 2000n * PERCENT_SCALE && saves(d) >= 100n);
         if (r.variant === 'costly_debt') {
           costly += 1;
           expect(qualifies).toBe(true);

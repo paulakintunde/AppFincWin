@@ -339,8 +339,11 @@ export function oneOffPart(
   const part = ladder(p, j.month, available, 0, net, later, sale, savedFor);
   if (j.cash.kind === 'ok') return part;
   if (j.cash.kind === 'net') {
+    if (part.code === 'needs_input') return part;
+    // I51: a purchase that waits anyway takes nothing from the net, so it is judged on the check the net's money carried (the payday
+    // date and the not-covered month as with no net); otherwise any money in the net, even 1 cent, would change the wait.
+    if (part.code === 'not_yet') return oneOffPart({ ...j, cash: j.cash.before }, available);
     // 05.4 FIN-02 (D-35): the 90-day path stays above 0 only with the net's money, so any fit dips into it.
-    if (part.code === 'not_yet' || part.code === 'needs_input') return part;
     // What the purchase adds to the dip is what it takes from the net; a dip that is there without it is not the purchase's.
     return { ...part, code: 'fits_uses_net', cashNet: j.cash.added };
   }
@@ -959,8 +962,10 @@ export function judge(j: JudgeInput): Result {
   // 05.4 FIN-07 / D-40: the floor a tight answer is under. Not under a D-63 / D-65 month-short headline (it reads after the tight body).
   if (variant === 'tight' && !monthAlreadyShort(month.typicalLeft)) facts.push(tightFact(tightFloor(spend, line)));
   // D-28, D-38: below 0 with no overdraft limit recorded is Not yet, and the answer asks about it.
-  if (code === 'not_yet' && (j.overdraft?.floor ?? 0) === 0 && (j.cash.kind === 'payday' || j.cash.kind === 'not_covered')) {
-    facts.push(...noLimitFacts(j.inputs.accounts, j.cash.shortBy, readyBy));
+  // I51: a one-off that waits took nothing from the net, so it reads the check the net's money carried.
+  const failed = j.cash.kind === 'net' && one.code === 'not_yet' ? j.cash.before : j.cash;
+  if (code === 'not_yet' && (j.overdraft?.floor ?? 0) === 0 && (failed.kind === 'payday' || failed.kind === 'not_covered')) {
+    facts.push(...noLimitFacts(j.inputs.accounts, failed.shortBy, readyBy));
   }
   // 05.4 D-61: a locked net is left out of the answer, and a Not yet says so.
   const goalsKept = j.funds.lockedNamedSaved ?? 0;
