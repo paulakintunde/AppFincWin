@@ -2245,6 +2245,9 @@ const en = {
         quick_lines_counted: 'This answer counts {{count}} quick estimates you added for this check only.',
         quick_savings_counted: 'It counts {{amount}} of savings you said answers can use, for this check only.',
         tax_set_aside: '{{amount}} a month is kept aside for tax, the {{percent}}% you set.',
+        // 06.1 FIN-23 (owner D-26, 2026-11-12): a typed APR read the way it is quoted in the UK or the EU. The owner's words said "lenders"; DCU-09 keeps the word out of decide.* copy. Signed under D-08 (plan 33).
+        rate_convention_effective: 'This APR is counted the way it is quoted in the UK.',
+        rate_convention_effective_eu: 'This APR is counted the way it is quoted in the EU.',
         envelope_used: '{{used}} comes from the {{envelope}} envelope.',
         // 06.1 D-19: a limit the user set is a "rule" (the card is "Your money rules"); key names stay. Signed under D-08.
         line_crossed: 'This goes past one of your rules.',
@@ -2259,6 +2262,10 @@ const en = {
         // 05.4 FIN-08 (05.4-23, QE-04 / QE-14): savings are tried first; the safety net only ever by name.
         lean_bridge: 'In a month like {{month}}, about {{shortfall}} would come from savings. Over {{payments}} payments, to {{until}}, that could happen about {{times}} times. That is about {{bridge}} of your {{savings}}.',
         lean_bridge_net: 'In a month like {{month}}, about {{shortfall}} would come from your safety net. Over {{payments}} payments, to {{until}}, that could happen about {{times}} times. That is about {{bridge}} of the {{savings}} it holds.',
+        // 06.1 FIN-22 (owner D-26, 2026-11-12): a plan over 12 payments; usual months between the low months refill the savings, so the
+        // total is not compared with what is saved today. Signed under D-08 (plan 33).
+        lean_bridge_long: 'In a month like {{month}}, about {{shortfall}} would come from savings. Over the whole plan, low months would take about {{bridge}} in total; usual months in between refill your savings.',
+        lean_bridge_net_long: 'In a month like {{month}}, about {{shortfall}} would come from your safety net. Over the whole plan, low months would take about {{bridge}} in total; usual months in between refill your safety net.',
         lean_months_judged: 'Judged against your leanest months, {{from}} to {{to}}, which leave about {{leanLeft}} each.',
         low_month_judged: 'Judged against a low month like {{month}}, which leaves about {{left}}.',
         rests_on_your_answer: 'This rests on what you said, that {{monthly}} a month for {{months}} months is covered, not on your records.',

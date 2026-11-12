@@ -85,6 +85,7 @@ const DISCRIMINATED: Readonly<Record<string, Readonly<Record<string, readonly st
   tight_floor: { basis: ['tenth', 'user_line'] },
   earlier_money_from: { where: ['account', 'savings'] },
   lean_bridge: { source: ['savings', 'net'] },
+  rate_convention_effective: { area: ['uk', 'eu'] }, // 06.1 FIN-23
   income_from_expected: { source: ['confirmed', 'last_year', 'low'] },
 };
 
@@ -130,6 +131,8 @@ function shapeVariants(code: string, v: CodeValues): CodeValues[] {
       return [without(v, 'rate', 'monthlyCost')];
     case 'month_heading_short':
       return [without(v, 'categoryId', 'largest')];
+    case 'lean_bridge': // 06.1 FIN-22: the samples run over 12 payments (the _long copy); a 12-payment plan reads the short copy
+      return [{ ...v, payments: 12 }, { ...v, payments: 12, source: 'net' }];
     default:
       return [];
   }
@@ -452,7 +455,7 @@ function keysMatching(group: 'fact' | 'notice', code: string, said: string): str
 }
 
 /** Codes whose variant the reviewed page does not pick yet (it predates these discriminators); sayResult reads them from the engine's comments. */
-const BEYOND_PAGE = new Set(['ask_debts_not_recorded', 'tight_floor', 'earlier_money_from', 'lean_bridge']);
+const BEYOND_PAGE = new Set(['ask_debts_not_recorded', 'tight_floor', 'earlier_money_from', 'lean_bridge', 'rate_convention_effective']);
 
 describe('copyKeyFor picks the same key as the reviewed page (06.1-06)', () => {
   const inputs = { currency: 'USD', series: [] } as unknown as V3Inputs;
@@ -470,6 +473,14 @@ describe('copyKeyFor picks the same key as the reviewed page (06.1-06)', () => {
     expect(copyKeyFor('fact', 'tight_floor', { basis: 'user_line' }, deps.exists)).toBe('decide.v3.fact.tight_floor_user_line');
     expect(copyKeyFor('fact', 'earlier_money_from', { where: 'savings' }, deps.exists)).toBe('decide.v3.fact.earlier_money_from_savings');
     expect(copyKeyFor('fact', 'lean_bridge', { source: 'net' }, deps.exists)).toBe('decide.v3.fact.lean_bridge_net');
+    // 06.1 FIN-22 (owner 2026-11-12): over 12 payments the line states the total and the refill; 12 payments keeps today's line.
+    expect(copyKeyFor('fact', 'lean_bridge', { source: 'savings', payments: 24 }, deps.exists)).toBe('decide.v3.fact.lean_bridge_long');
+    expect(copyKeyFor('fact', 'lean_bridge', { source: 'net', payments: 13 }, deps.exists)).toBe('decide.v3.fact.lean_bridge_net_long');
+    expect(copyKeyFor('fact', 'lean_bridge', { source: 'savings', payments: 12 }, deps.exists)).toBe('decide.v3.fact.lean_bridge');
+    expect(copyKeyFor('fact', 'lean_bridge', { source: 'net', payments: 12 }, deps.exists)).toBe('decide.v3.fact.lean_bridge_net');
+    // 06.1 FIN-23: the UK copy is the base; area 'eu' reads the EU copy.
+    expect(copyKeyFor('fact', 'rate_convention_effective', { area: 'uk' }, deps.exists)).toBe('decide.v3.fact.rate_convention_effective');
+    expect(copyKeyFor('fact', 'rate_convention_effective', { area: 'eu' }, deps.exists)).toBe('decide.v3.fact.rate_convention_effective_eu');
     expect(copyKeyFor('fact', 'not_a_code', {}, deps.exists)).toBeNull();
   });
 });

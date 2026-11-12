@@ -177,6 +177,7 @@ describe('verdict table (I22 one code one text)', () => {
         'overdraft_carried_in', // 05.4 D-86 (05.4-24 FIN-09b)
         'tax_estimate', // 05.4 FIN-27 (05.4-25)
         'tax_set_aside', // 06.1 FIN-20 (06.1-29)
+        'rate_convention_effective', // 06.1 FIN-23 (06.1-30)
         'debt_left_after_sale', 'sale_counted', // 05.4 BO-05 (05.4-27, D-106)
         'free_help', // 05.4 CMP-F04 (05.4-38, D-123)
         'locked_goals_kept', 'net_and_goals_kept', 'unlocked_goals_counted', // 06 D-05, D-06, D-22 (06-03)

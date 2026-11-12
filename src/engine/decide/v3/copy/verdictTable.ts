@@ -214,6 +214,7 @@ export const FACT_KEYS = Object.freeze({
   quick_lines_counted: 'decide.v3.fact.quick_lines_counted', // 06.1 D-21
   quick_savings_counted: 'decide.v3.fact.quick_savings_counted', // 06.1 D-21
   tax_set_aside: 'decide.v3.fact.tax_set_aside', // 06.1 FIN-20 (D-26)
+  rate_convention_effective: 'decide.v3.fact.rate_convention_effective', // 06.1 FIN-23 (D-26); area 'eu' reads the _eu copy
   extra_savings_used: 'decide.v3.fact.extra_savings_used',
   net_two_months: 'decide.v3.fact.net_two_months',
   move_money_by: 'decide.v3.fact.move_money_by',
@@ -407,6 +408,7 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   quick_lines_counted: ['count'], // 06.1 D-21
   quick_savings_counted: ['amount'], // 06.1 D-21
   tax_set_aside: ['percent', 'amount'], // 06.1 FIN-20: percent is readable text ("25"); amount is a usual month's share
+  rate_convention_effective: ['area'], // 06.1 FIN-23: area 'uk' | 'eu' picks the copy
   // 05.4 D-56 / D-62: the extra savings used, of the money above the net's size; 2 months of essential costs. D-58: amount and date.
   extra_savings_used: ['used', 'above'],
   net_two_months: ['twoMonths'],
@@ -484,7 +486,7 @@ export const NOTICE_VALUE_KEYS: Readonly<Record<NoticeCode, readonly string[]>> 
 export const COPY_RESOLVERS = { categoryId: 'category', seriesId: 'bill', envelopeId: 'envelope', accountId: 'account', debtId: 'debt', missing: 'figure' } as const; // missing: 05.4 D-79, a MissingCode named by its decide.v3.missing copy
 
 /** Keys that pick a copy variant or identify a line; they need no placeholder of their own. */
-export const DISCRIMINATOR_KEYS = ['lineId', 'kind', 'unit', 'source', 'basis', 'where', 'country'] as const; // where: 05.4 D-44 earlier_money_from; country: 05.4 CMP-F04 free_help (the FREE_HELP row)
+export const DISCRIMINATOR_KEYS = ['lineId', 'kind', 'unit', 'source', 'basis', 'where', 'country', 'area'] as const; // where: 05.4 D-44 earlier_money_from; country: 05.4 CMP-F04 free_help (the FREE_HELP row); area: 06.1 FIN-23 rate_convention_effective
 
 /** D-48, D-49, D-54, D-58: a missing code's copy reads its placeholder values from this notice. */
 export const MISSING_VALUE_SOURCE = {

@@ -4,7 +4,7 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront, saleNow, replacesDates, plainFreed, withTaxSetAside, plainSetAsideMonthly, plainSetAsideBp, plainPeriodRate, plainPlanPayment, plainMonthOf, PLAIN_RATE_SCALE } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront, saleNow, replacesDates, plainFreed, withTaxSetAside, plainSetAsideMonthly, plainSetAsideBp, plainPeriodRate, plainPlanPayment, plainMonthOf, plainReadsEffective, basisPoints, PLAIN_RATE_SCALE } from './plain';
 import { EXPENSIVE_INTEREST_BP } from './rules';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
@@ -1033,9 +1033,9 @@ describe('plain calculator: selling the old one and what it replaces (BO-05, SO-
 });
 
 
-// 06.1-30 (FIN-22, FIN-23 DRAFTS, owner approval pending, D-26): the hand figures the draft cases state, by the plain calculator, and
-// what the engine says today. No engine rule is built until the owner approves; these pin the draft figures for the review.
-describe('06.1-30 drafts: long loans (FIN-22, LL-01..LL-06) and the UK/EU rate reading (FIN-23, AP-01..AP-06)', () => {
+// 06.1-30 (FIN-22, FIN-23; owner-approved 2026-11-12, D-26): the hand figures the cases state, by the plain calculator, and the engine.
+// FIN-22 is today's FIN-08 rule over the whole term (no new maths); FIN-23 reads a typed APR the UK/EU way when the region is set there.
+describe('06.1-30: long loans (FIN-22, LL-01..LL-06) and the UK/EU rate reading (FIN-23, AP-01..AP-06)', () => {
   const all = loadCases();
   const fx = (id: string): RightAnswerFixture => all.find((c) => c.id === id)!.fixture;
   const engine = (id: string) => {
@@ -1043,7 +1043,7 @@ describe('06.1-30 drafts: long loans (FIN-22, LL-01..LL-06) and the UK/EU rate r
     return pick(evaluate(inputs, check));
   };
 
-  it('FIN-22 the plain low-month rule gives the monthly part each long-loan draft states', () => {
+  it('FIN-22 the plain low-month rule gives the monthly part each long-loan case states', () => {
     expect(plainLowMonths(fx('LL-02'))).toEqual({ code: 'fits_month', variant: 'low_month' });
     expect(plainLowMonths(fx('LL-03'))).toEqual({ code: 'fits_month', variant: 'low_month' });
     expect(plainLowMonths(fx('LL-04'))).toEqual({ code: 'fits_month', variant: 'low_month' }); // the monthly part; the borrowing rule leads
@@ -1052,7 +1052,7 @@ describe('06.1-30 drafts: long loans (FIN-22, LL-01..LL-06) and the UK/EU rate r
     expect(plainLowMonths(fx('LL-05'))).toBeNull(); // no low month
   });
 
-  it('FIN-22 the engine today already gives every long-loan draft its stated answer (the drafted rule is FIN-08 over the whole term)', () => {
+  it('FIN-22 the engine gives every long-loan case its stated answer (FIN-08 over the whole term)', () => {
     for (const c of all.filter((x) => x.topic === 'long-loans')) {
       const got = engine(c.id);
       expect({ id: c.id, code: got.code, variant: got.variant, usual: got.afterBuy.usualMonth }).toEqual({ id: c.id, code: c.expected.code, variant: c.expected.variant, usual: c.expected.afterBuy.usualMonth });
@@ -1074,7 +1074,7 @@ describe('06.1-30 drafts: long loans (FIN-22, LL-01..LL-06) and the UK/EU rate r
     }
   });
 
-  it('FIN-23 the usual month each rate-convention draft states is £/€/$1,000 less the payment as a month', () => {
+  it('FIN-23 the usual month each rate-convention case states is £/€/$1,000 less the payment as a month', () => {
     const usual = (id: string) => { const { payment, perYear } = plainPlanPayment(fx(id)); return 100_000n - plainMonthOf(payment, perYear); };
     for (const c of all.filter((x) => x.topic === 'rate-convention')) expect({ id: c.id, usual: usual(c.id) }).toEqual({ id: c.id, usual: BigInt(c.expected.afterBuy.usualMonth!) });
     expect(plainPlanPayment(fx('AP-05')).payment).toBe(1_096n); // £10.96 a week
@@ -1087,15 +1087,15 @@ describe('06.1-30 drafts: long loans (FIN-22, LL-01..LL-06) and the UK/EU rate r
     expect(share(plainPlanPayment(fx('AP-05'), 'today').payment)).toBeGreaterThan(BigInt(EXPENSIVE_INTEREST_BP));
   });
 
-  it('FIN-23 the engine today: the unchanged drafts already pass, the changed ones show today\'s nominal figures', () => {
-    for (const id of ['AP-03', 'AP-04', 'AP-06']) {
-      const c = all.find((x) => x.id === id)!;
-      const got = engine(id);
-      expect({ id, code: got.code, usual: got.afterBuy.usualMonth }).toEqual({ id, code: c.expected.code, usual: c.expected.afterBuy.usualMonth });
+  it('FIN-23 the engine agrees with the plain payment on every rate-convention case, and names the reading only where it changed it', () => {
+    for (const c of all.filter((x) => x.topic === 'rate-convention')) {
+      const got = engine(c.id);
+      expect({ id: c.id, code: got.code, variant: got.variant, usual: got.afterBuy.usualMonth, month: got.afterBuy.month }).toEqual({ id: c.id, code: c.expected.code, variant: c.expected.variant, usual: c.expected.afterBuy.usualMonth, month: c.expected.afterBuy.month });
+      const f = fx(c.id);
+      const changed = f.region !== null && plainReadsEffective(f.region.country) && basisPoints((f.check.pay as { apr: string }).apr) > 0n;
+      expect({ id: c.id, line: got.facts.includes('rate_convention_effective') }).toEqual({ id: c.id, line: changed });
     }
-    expect(engine('AP-01').afterBuy.usualMonth).toBe(80_386);
-    expect(engine('AP-02').afterBuy.usualMonth).toBe(68_158);
-    const ap5 = engine('AP-05');
-    expect({ code: ap5.code, variant: ap5.variant, usual: ap5.afterBuy.usualMonth }).toEqual({ code: 'fits_by_borrowing', variant: 'borrowing_costs_more', usual: 95_212 });
+    // Read as before 06.1-30 (no region), AP-01's loan is the old £196.14 a month: BR-01 and every region-less plan are unchanged.
+    expect(engine('AP-06').afterBuy.usualMonth).toBe(100_000 - 19_614);
   });
 });

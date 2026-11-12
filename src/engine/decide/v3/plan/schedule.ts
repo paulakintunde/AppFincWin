@@ -9,7 +9,8 @@ import { MAX_OCCURRENCES_PER_CALL } from '../../../recurring/schedule';
 import { cadenceDate } from '../dates';
 import { MAX_PLAN_PERIODS } from '../constants';
 import type { Cadence, FirstPayment, LocalDate, PlanFees, Schedule } from '../types';
-import { amortBase, assertCadence, monthlyEquivalentOf, scaledApr } from './cadence';
+import { amortBase, assertCadence, monthlyEquivalentOf } from './cadence';
+import { periodicRateFor } from './rateConvention';
 
 const FN = 'buildSchedule';
 
@@ -21,6 +22,8 @@ export interface ScheduleInput {
   readonly count: number | null;
   readonly firstPayment: FirstPayment | null;
   readonly fees: PlanFees;
+  /** 06.1 FIN-23: the region's country; the UK and the EU read the APR as lenders there quote it (rateConvention.ts). absent/null = today's reading */
+  readonly country?: string | null;
 }
 
 export type ScheduleOutcome =
@@ -63,7 +66,7 @@ export function buildSchedule(input: ScheduleInput): ScheduleOutcome {
   if (firstPayment === null) return { ok: false, missing: 'first_payment_not_chosen' };
 
   const base = amortBase(cadence);
-  const rate = scaledApr(apr, cadence);
+  const rate = periodicRateFor(apr, cadence, input.country ?? null);
   let firstDate: LocalDate;
   let principal: MinorUnits = financed;
   let pauseInterest = 0n;

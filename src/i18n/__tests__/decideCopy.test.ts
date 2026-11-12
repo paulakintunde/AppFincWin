@@ -354,6 +354,9 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       'decide.v3.fact.save_vs_borrow_no_date',
       'decide.v3.fact.save_vs_borrow_ask', // 05.4 D-79
       'decide.v3.fact.lean_bridge_net', // 05.4 FIN-08: the low months dip into the safety net (source 'net')
+      'decide.v3.fact.lean_bridge_long', // 06.1 FIN-22: a plan over 12 payments (owner 2026-11-12)
+      'decide.v3.fact.lean_bridge_net_long', // 06.1 FIN-22: the same, from the safety net
+      'decide.v3.fact.rate_convention_effective_eu', // 06.1 FIN-23: area 'eu'
       'decide.v3.fact.overdraft_repeat_no_rate',
       'decide.v3.fact.other_account_overdrawn_no_rate',
       'decide.v3.fact.earlier_money_from_savings', // 05.4 D-44 (05.4-24): where 'savings'

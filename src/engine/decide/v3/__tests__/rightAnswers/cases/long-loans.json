@@ -104,10 +104,10 @@
         "FIN-22",
         "FIN-08"
       ],
-      "plannerNote": "Engine today gives exactly this answer (06.1-30 probe, 2026-11-12). The drafted FIN-22 rule adds nothing here.",
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "plannerNote": "The engine before 06.1-30 already gave exactly this answer (06.1-30 probe, 2026-11-12). The drafted FIN-22 rule adds nothing here.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-22: APPROVE LL-01..LL-06 as they are. No new maths. Drop the planned long_plan_low_month fact (the low-month lines already show).\" and \"reword the savings line for long plans (over 12 payments)\" (lean_bridge_long).",
       "expertNote": null
     },
     {
@@ -207,15 +207,15 @@
         ],
         "mustNotHaveFacts": []
       },
-      "why": "Payments are $4,800 / 24 = $200 a month. A usual month leaves $600 - $200 = $400. A month like September leaves $1,500 - $2,400 = -$900, so it is $900 + $200 = $1,100 short with the payment. 1 low month in 6 means about 24 / 6 = 4 low months over the 24 payments (to November 2028), about 4 x $1,100 = $4,400 in all. The usual months between them leave $400 each, so savings only need to hold one low month at a time ($1,100), and she has $4,000. The answer is \"Fits, a low month is tight\" (low_month), with the lines \"Judged against a low month like September, which leaves about -$900.\" and \"In a month like September, about $1,100 would come from savings. Over 24 payments, to November 2028, that could happen about 4 times. That is about $4,400 of your $4,000.\" (see the open question on that last sentence).",
+      "why": "Payments are $4,800 / 24 = $200 a month. A usual month leaves $600 - $200 = $400. A month like September leaves $1,500 - $2,400 = -$900, so it is $900 + $200 = $1,100 short with the payment. 1 low month in 6 means about 24 / 6 = 4 low months over the 24 payments (to November 2028), about 4 x $1,100 = $4,400 in all. The usual months between them leave $400 each, so savings only need to hold one low month at a time ($1,100), and she has $4,000. The answer is \"Fits, a low month is tight\" (low_month), with the lines \"Judged against a low month like September, which leaves about -$900.\" and, the plan being over 12 payments (owner 2026-11-12), \"In a month like September, about $1,100 would come from savings. Over the whole plan, low months would take about $4,400 in total; usual months in between refill your savings.\"",
       "fixIds": [
         "FIN-22",
         "FIN-08"
       ],
-      "plannerNote": "Engine today gives exactly this answer (06.1-30 probe). The low-month check already runs over the whole term (FIN-08, 05.4-23): the count of low months grows with the length of the plan.",
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "plannerNote": "The engine before 06.1-30 already gave exactly this answer (06.1-30 probe). The low-month check already runs over the whole term (FIN-08, 05.4-23): the count of low months grows with the length of the plan.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-22: APPROVE LL-01..LL-06 as they are. No new maths. Drop the planned long_plan_low_month fact (the low-month lines already show).\" and \"reword the savings line for long plans (over 12 payments)\" (lean_bridge_long).",
       "expertNote": null
     },
     {
@@ -321,9 +321,9 @@
         "FIN-08"
       ],
       "plannerNote": "Same figures as approved QE-04; pins that a 12-payment plan is not a long plan.",
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-22: APPROVE LL-01..LL-06 as they are. No new maths. Drop the planned long_plan_low_month fact (the low-month lines already show).\" and \"reword the savings line for long plans (over 12 payments)\" (lean_bridge_long).",
       "expertNote": null
     },
     {
@@ -424,16 +424,16 @@
         ],
         "mustNotHaveFacts": []
       },
-      "why": "Payments are $303.43 a month: $15,000 at 7.9% over 60 months, rounded up to the cent. Over the loan she pays $18,205.71, so $3,205.71 is interest, 21% of the amount, over the 10% line: borrowing costs a lot, so the answer is \"Fits only by borrowing\" (fits_by_borrowing), and that code has no low-month row. A usual month leaves $600 - $303.43 = $296.57. A month like September is $900 + $303.43 = $1,203.43 short with the payment, about 60 / 6 = 10 times over the 60 payments (to November 2031), $12,034.30 in all; the usual months between leave $296.57 each, so savings need to hold one low month at a time ($1,203.43 of her $4,000). The low-month lines still show on the borrowing answer: \"Judged against a low month like September, which leaves about -$900.\" and \"In a month like September, about $1,203.43 would come from savings. Over 60 payments, to November 2031, that could happen about 10 times. That is about $12,034.30 of your $4,000.\"",
+      "why": "Payments are $303.43 a month: $15,000 at 7.9% over 60 months, rounded up to the cent. Over the loan she pays $18,205.71, so $3,205.71 is interest, 21% of the amount, over the 10% line: borrowing costs a lot, so the answer is \"Fits only by borrowing\" (fits_by_borrowing), and that code has no low-month row. A usual month leaves $600 - $303.43 = $296.57. A month like September is $900 + $303.43 = $1,203.43 short with the payment, about 60 / 6 = 10 times over the 60 payments (to November 2031), $12,034.30 in all; the usual months between leave $296.57 each, so savings need to hold one low month at a time ($1,203.43 of her $4,000). The low-month lines still show on the borrowing answer: \"Judged against a low month like September, which leaves about -$900.\" and \"In a month like September, about $1,203.43 would come from savings. Over the whole plan, low months would take about $12,034.30 in total; usual months in between refill your savings.\"",
       "fixIds": [
         "FIN-22",
         "FIN-08",
         "FIN-05"
       ],
-      "plannerNote": "Engine today gives exactly this answer. The plan's drafted fallback fact (long_plan_low_month, for a code with no low-month row) would repeat lean_bridge here; see the open questions.",
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "plannerNote": "The engine before 06.1-30 already gave exactly this answer. The planned long_plan_low_month fact was dropped by the owner (2026-11-12): lean_bridge and low_month_judged already show.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-22: APPROVE LL-01..LL-06 as they are. No new maths. Drop the planned long_plan_low_month fact (the low-month lines already show).\" and \"reword the savings line for long plans (over 12 payments)\" (lean_bridge_long).",
       "expertNote": null
     },
     {
@@ -529,10 +529,10 @@
       "fixIds": [
         "FIN-22"
       ],
-      "plannerNote": "Engine today gives exactly this answer.",
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "plannerNote": "The engine before 06.1-30 already gave exactly this answer.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-22: APPROVE LL-01..LL-06 as they are. No new maths. Drop the planned long_plan_low_month fact (the low-month lines already show).\" and \"reword the savings line for long plans (over 12 payments)\" (lean_bridge_long).",
       "expertNote": null
     },
     {
@@ -626,10 +626,10 @@
         "FIN-22",
         "FIN-08"
       ],
-      "plannerNote": "Engine today gives exactly this answer. Pins that FIN-22 never loosens FIN-08.",
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "plannerNote": "The engine before 06.1-30 already gave exactly this answer. Pins that FIN-22 never loosens FIN-08.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-22: APPROVE LL-01..LL-06 as they are. No new maths. Drop the planned long_plan_low_month fact (the low-month lines already show).\" and \"reword the savings line for long plans (over 12 payments)\" (lean_bridge_long).",
       "expertNote": null
     }
   ]

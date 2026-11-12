@@ -22,7 +22,8 @@ import { asOutflow, outflow, purchaseFlowsLabelled } from '../cash/path';
 import type { DatedFlow, LabelledFlow } from '../cash/path';
 import { percentText } from '../adapters/inputsV2';
 import { addDays, yearMonthOf } from '../dates';
-import { amortBase, countFromTerm, monthlyEquivalentOf, scaledApr } from '../plan/cadence';
+import { amortBase, countFromTerm, monthlyEquivalentOf } from '../plan/cadence';
+import { effectiveAprArea, periodicRateFor } from '../plan/rateConvention';
 import { planCard, salesTaxOf, type PlanCard } from '../plan/planCard';
 import { checkQuoted, scoredPayment, type QuotedCheck } from '../plan/quoted';
 import { buildSchedule, paymentsInRange } from '../plan/schedule';
@@ -115,7 +116,7 @@ interface ExtraSpec {
 
 /** How the level payments run, so a larger payment can be walked to its own last paying period (L-09). */
 interface PayoffWalk {
-  /** Rate per period, already scaled for the cadence (scaledApr). */
+  /** Rate per period, already scaled for the cadence (periodicRateFor, 06.1 FIN-23). */
   readonly rate: bigint;
   readonly base: PeriodsPerYear;
   /** true: the first payment falls on the day, before any interest (annuity-due). */
@@ -305,6 +306,8 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
     const financed = mb(financedBig < 0n ? 0n : financedBig);
     const quoteOnly = pay.apr === null;
     const aprUsed = pay.apr ?? ZERO_PERCENT;
+    // 06.1 FIN-23 (owner D-26, 2026-11-12): with the region set to the UK or an EU country, a typed APR is read as lenders there quote it.
+    const country = ctx.region?.country ?? null;
     const out = buildSchedule({
       asOf: ctx.asOf,
       financed,
@@ -313,6 +316,7 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
       count,
       firstPayment: pay.firstPayment,
       fees: pay.fees,
+      country,
     });
     if (!out.ok) return nothing([out.missing]);
     let sched = out.schedule;
@@ -335,7 +339,7 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
     } else if (quoted.kind === 'matches' || quoted.kind === 'differs') {
       const scored = scoredPayment(sched.payment, quoted.quoted);
       if (scored !== null && scored > sched.payment) {
-        const walk: PayoffWalk = { rate: scaledApr(aprUsed, pay.cadence), base: amortBase(pay.cadence), due: pay.firstPayment?.kind !== 'one_period' };
+        const walk: PayoffWalk = { rate: periodicRateFor(aprUsed, pay.cadence, country), base: amortBase(pay.cadence), due: pay.firstPayment?.kind !== 'one_period' };
         sched = withPayment(sched, BigInt(scored), 'quoted', walk);
       }
       if (quoted.kind === 'differs') {
@@ -346,6 +350,9 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
       }
     }
     if (pay.deferredInterestTerm) facts.push({ code: 'deferred_interest_term', values: {} });
+    // 06.1 FIN-23: the line shows only on a plan whose typed rate it changed (a typed APR above 0%, region UK or EU).
+    const area = effectiveAprArea(country);
+    if (area !== null && aprUsed > 0n) facts.push({ code: 'rate_convention_effective', values: { area } });
     schedule = sched;
 
     // A first payment dated today is part of day one (P); purchaseCashFlows removes it from the dated schedule flows.

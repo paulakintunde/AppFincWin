@@ -16,6 +16,7 @@ import {
   CAVEAT_WRONG_FIGURE_KEY,
   COPY_RESOLVERS,
   FACT_KEYS,
+  LONG_PLAN_MONTHS,
   MISSING_KEYS,
   MISSING_VALUE_SOURCE,
   NEXT_STEP_KEYS,
@@ -106,18 +107,24 @@ const ACCOUNT_ID_CODES = new Set(['account_no_rate', 'shared_money']);
 
 /** The value whose text names a fact's or notice's `_variant` copy (the DISCRIMINATOR_KEYS that pick one). */
 const VARIANT_BY: Readonly<Record<'fact' | 'notice', Readonly<Record<string, string>>>> = {
-  fact: { line_crossed: 'unit', save_vs_borrow: 'kind', ask_debts_not_recorded: 'kind', tight_floor: 'basis', earlier_money_from: 'where', lean_bridge: 'source' },
+  fact: { line_crossed: 'unit', save_vs_borrow: 'kind', ask_debts_not_recorded: 'kind', tight_floor: 'basis', earlier_money_from: 'where', lean_bridge: 'source', rate_convention_effective: 'area' },
   notice: { income_from_expected: 'source' },
 };
 
 /**
  * The copy key a fact's or notice's values pick, or null when the code has none. A `_variant` that has no copy reads the base
- * (save_vs_borrow 'ready', ask_debts 'all', tight_floor 'tenth', earlier_money_from 'account', lean_bridge 'savings').
+ * (save_vs_borrow 'ready', ask_debts 'all', tight_floor 'tenth', earlier_money_from 'account', lean_bridge 'savings',
+ * rate_convention_effective 'uk').
  */
 export function copyKeyFor(group: 'fact' | 'notice', code: string, v: Values, exists: (key: string) => boolean): string | null {
   const base = group === 'fact' ? (FACT_KEYS as Record<string, string>)[code] : (NOTICE_KEYS as Record<string, string>)[code];
   if (base === undefined) return null;
   const pick = (suffix: string): string => (exists(`${base}_${suffix}`) ? `${base}_${suffix}` : base);
+  // 06.1 FIN-22 (owner D-26, 2026-11-12): over a plan of more than LONG_PLAN_MONTHS payments, the savings line states the total the
+  // low months take and that the usual months between refill it (lean_bridge_long, lean_bridge_net_long).
+  if (group === 'fact' && code === 'lean_bridge' && typeof v['payments'] === 'number' && v['payments'] > LONG_PLAN_MONTHS) {
+    return pick(v['source'] === 'net' ? 'net_long' : 'long');
+  }
   const by = VARIANT_BY[group][code];
   if (by !== undefined && typeof v[by] === 'string' && !(code === 'save_vs_borrow' && v[by] === 'ready')) return pick(v[by]);
   if (group === 'fact') {

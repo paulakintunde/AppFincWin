@@ -302,8 +302,8 @@ function buildCorpus(): Emitted[] {
     const { inputs, check } = toEngineInputs({ ...ben, region, check: { ...ben.check, taxPercent: null, taxIncluded: null } });
     collect(out, inputs, check);
   }
-  // 06.1 FIN-20 (D-26): the tax set-aside line (TX-10 freelance, TX-12 salary + freelance).
-  for (const id of ['TX-10', 'TX-12']) {
+  // 06.1 FIN-20 (D-26): the tax set-aside line (TX-10 freelance, TX-12 salary + freelance). 06.1 FIN-23: the UK/EU rate line (AP-01, AP-02).
+  for (const id of ['TX-10', 'TX-12', 'AP-01', 'AP-02']) {
     const { inputs, check } = toEngineInputs(loadCases().find((c) => c.id === id)!.fixture);
     collect(out, inputs, check);
   }

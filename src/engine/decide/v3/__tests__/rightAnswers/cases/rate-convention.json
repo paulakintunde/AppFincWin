@@ -99,10 +99,10 @@
         "FIN-23",
         "FIN-05"
       ],
-      "plannerNote": "Engine today: fits_by_borrowing, usualMonth 80386 (payment £196.14). Rule as drafted: payment £195.24, usualMonth 80476.",
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "plannerNote": "Before 06.1-30 the engine gave: fits_by_borrowing, usualMonth 80386 (payment £196.14). With FIN-23: payment £195.24, usualMonth 80476.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-23: APPROVE AP-01..AP-06 with the UK/EU reading applied ONLY when the region is set to the UK or an EU country. Pounds/euros with no region set stay as today (BR-01 unchanged).\" and \"Rounding up (one penny over the lender's quote) is fine.\"",
       "expertNote": null
     },
     {
@@ -203,10 +203,10 @@
         "FIN-23",
         "FIN-05"
       ],
-      "plannerNote": "Engine today: fits_by_borrowing, usualMonth 68158 (payment €318.42). Rule as drafted: payment €316.76, usualMonth 68324.",
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "plannerNote": "Before 06.1-30 the engine gave: fits_by_borrowing, usualMonth 68158 (payment €318.42). With FIN-23: payment €316.76, usualMonth 68324.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-23: APPROVE AP-01..AP-06 with the UK/EU reading applied ONLY when the region is set to the UK or an EU country. Pounds/euros with no region set stay as today (BR-01 unchanged).\" and \"Rounding up (one penny over the lender's quote) is fine.\"",
       "expertNote": null
     },
     {
@@ -308,10 +308,10 @@
         "FIN-23",
         "FIN-05"
       ],
-      "plannerNote": "Engine today gives exactly this answer.",
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "plannerNote": "The engine before 06.1-30 already gave exactly this answer.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-23: APPROVE AP-01..AP-06 with the UK/EU reading applied ONLY when the region is set to the UK or an EU country. Pounds/euros with no region set stay as today (BR-01 unchanged).\" and \"Rounding up (one penny over the lender's quote) is fine.\"",
       "expertNote": null
     },
     {
@@ -410,10 +410,10 @@
       "fixIds": [
         "FIN-23"
       ],
-      "plannerNote": "Engine today gives exactly this answer.",
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "plannerNote": "The engine before 06.1-30 already gave exactly this answer.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-23: APPROVE AP-01..AP-06 with the UK/EU reading applied ONLY when the region is set to the UK or an EU country. Pounds/euros with no region set stay as today (BR-01 unchanged).\" and \"Rounding up (one penny over the lender's quote) is fine.\"",
       "expertNote": null
     },
     {
@@ -516,10 +516,10 @@
         "FIN-23",
         "FIN-05"
       ],
-      "plannerNote": "Engine today: fits_by_borrowing / borrowing_costs_more, month 97790, usualMonth 95212 (payment £11.05). Rule as drafted: fits_month, month 97808, usualMonth 95251.",
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "plannerNote": "Before 06.1-30 the engine gave: fits_by_borrowing / borrowing_costs_more, month 97790, usualMonth 95212 (payment £11.05). With FIN-23: fits_month, month 97808, usualMonth 95251.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-23: APPROVE AP-01..AP-06 with the UK/EU reading applied ONLY when the region is set to the UK or an EU country. Pounds/euros with no region set stay as today (BR-01 unchanged).\" and \"Rounding up (one penny over the lender's quote) is fine.\"",
       "expertNote": null
     },
     {
@@ -617,10 +617,10 @@
       "fixIds": [
         "FIN-23"
       ],
-      "plannerNote": "Engine today gives exactly this answer.",
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "plannerNote": "The engine before 06.1-30 already gave exactly this answer.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-23: APPROVE AP-01..AP-06 with the UK/EU reading applied ONLY when the region is set to the UK or an EU country. Pounds/euros with no region set stay as today (BR-01 unchanged).\" and \"Rounding up (one penny over the lender's quote) is fine.\"",
       "expertNote": null
     }
   ]
