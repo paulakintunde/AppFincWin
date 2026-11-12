@@ -1,5 +1,5 @@
 import { TAB_ORDER, type TabId } from '../tabs';
-import { TAB_AVAILABILITY, availableTabs, isTabAvailable, tabPosition } from '../availableTabs';
+import { TAB_AVAILABILITY, availableTabs, isTabAvailable, tabPosition, tabRoutes } from '../availableTabs';
 
 const ALL: Record<TabId, boolean> = { home: true, activity: true, decide: true, grow: true, insights: true };
 
@@ -35,5 +35,26 @@ describe('tabPosition', () => {
   it('is null for an unavailable tab', () => {
     expect(tabPosition('insights')).toBeNull();
     expect(tabPosition('grow')).toEqual({ position: 4, total: 4 });
+  });
+});
+
+describe('tabRoutes', () => {
+  it('declares only the visible tabs when Grow is on', () => {
+    expect(tabRoutes()).toEqual(availableTabs().map((name) => ({ name, hidden: false })));
+  });
+  it('still declares Grow, hidden, while its tab is switched off', () => {
+    const growOff = { ...TAB_AVAILABILITY, grow: false };
+    expect(tabRoutes(growOff)).toEqual([
+      { name: 'home', hidden: false },
+      { name: 'activity', hidden: false },
+      { name: 'decide', hidden: false },
+      { name: 'grow', hidden: true },
+    ]);
+  });
+  it('never leaves a gap, so the layout passes Screen children only', () => {
+    for (const grow of [true, false]) {
+      const routes = tabRoutes({ ...TAB_AVAILABILITY, grow });
+      expect(routes.every((r) => r !== null && typeof r === 'object')).toBe(true);
+    }
   });
 });

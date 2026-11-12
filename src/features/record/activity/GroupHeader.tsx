@@ -40,27 +40,33 @@ export function GroupHeader({ item, month, homeCurrency, formatter }: GroupHeade
   const netText = item.net > 0 ? `+${net}` : net;
   const spoken = range === null ? label : `${label}, ${range}`;
   const labelRole = textRole(pairing, 'label');
+  // 06 device check: a group of only transfers or skipped lines counts nothing (netOf leaves them
+  // out), so "0 transactions $0" over real lines would contradict them. The label alone keeps the
+  // date as a divider.
+  const counted = item.count > 0;
 
   return (
     <View
       accessible
       accessibilityRole="header"
-      accessibilityLabel={t('activity.group.a11y', { label: spoken, count: item.count, amount: netText })}
+      accessibilityLabel={counted ? t('activity.group.a11y', { label: spoken, count: item.count, amount: netText }) : spoken}
       style={styles.row}
     >
       <View style={styles.left}>
         <Text style={{ ...labelRole, color: colors.inkMuted }}>{label}</Text>
         {range !== null ? <Text style={{ ...labelRole, color: colors.inkMuted }}>{range}</Text> : null}
-        <Text style={{ ...labelRole, color: colors.inkMuted }}>{t('activity.count', { count: item.count })}</Text>
+        {counted ? <Text style={{ ...labelRole, color: colors.inkMuted }}>{t('activity.count', { count: item.count })}</Text> : null}
       </View>
-      <View style={styles.right}>
-        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...labelRole, color: item.kind === 'in' && item.net > 0 ? colors.accent : colors.ink }}>{netText}</Text>
-        {item.unconvertedCount > 0 ? (
-          <Text style={{ ...labelRole, color: colors.inkMuted }}>
-            {t('activity.group.unconverted', { count: item.unconvertedCount })}
-          </Text>
-        ) : null}
-      </View>
+      {counted ? (
+        <View style={styles.right}>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...labelRole, color: item.kind === 'in' && item.net > 0 ? colors.accent : colors.ink }}>{netText}</Text>
+          {item.unconvertedCount > 0 ? (
+            <Text style={{ ...labelRole, color: colors.inkMuted }}>
+              {t('activity.group.unconverted', { count: item.unconvertedCount })}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
