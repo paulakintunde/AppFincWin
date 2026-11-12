@@ -4,7 +4,7 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront, saleNow, replacesDates, plainFreed } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront, saleNow, replacesDates, plainFreed, plainCashReady, plainShortWait } from './plain';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
@@ -636,6 +636,44 @@ describe('05.4-19 regression: the D-47 hold-back survives the D-56 month-end cap
     expect(plainAnswer(f).code).toBe('not_yet');
     const { inputs, check } = toEngineInputs(f);
     expect(pick(evaluate(inputs, check)).code).toBe('not_yet');
+  });
+});
+
+describe('regression: a dip inside the overdraft does not wait for payday (D-80, I13; crosscheck seed 224530963, path 1873)', () => {
+  // Pay $5,773.20 monthly, next 1 November; $2,063.78 in checking with a $6,533.95 overdraft; a $6,350.52 bill every 3 months,
+  // due 7 December. Paying the $1,412.70 at once is Not yet, ready in November (counted as 30 November, 46 days: not a short
+  // wait). The path dips below $0 but never past the overdraft limit, and after the 1 November pay it dips again (the December
+  // bill), so the pay is not the ready date. The 60-month plan at 19.99% is "Only by borrowing", with no "costs more" line.
+  const f: RightAnswerFixture = {
+    asOf: '2026-10-15', currency: 'USD', region: null,
+    pay: { amount: 577_320, cadence: 'monthly', nextDate: '2026-11-01', setupAmount: null, lastThree: null },
+    usualMonth: { bills: 119_332, everyday: 186_647, essentialEveryday: 93_323 },
+    thisMonth: { received: 577_320, billsPaid: 119_332, billsDue: 0, everydaySoFar: 182_914 },
+    historyMonths: 5, quickEstimates: null, recordsAsOf: null,
+    accounts: [{ id: 'a1', kind: 'checking', name: 'Main', balance: 206_378, overdraftLimit: 653_395, overdraftRate: '0', use: 'everyday' }],
+    safetyNet: null,
+    bills: [{ id: 'long', amount: 635_052, everyMonths: 3, nextDue: '2026-12-07', lastPaid: '2026-09-07', paidBy: 'me' }],
+    debts: [], userLine: null, factLines: false,
+    check: {
+      price: 141_270, taxPercent: '0', taxIncluded: null, oneOffFees: 0,
+      pay: { mode: 'plan', months: 60, apr: '19.99', fees: 2_254, deposit: 7_063, firstPaymentDate: '2026-11-15' },
+    },
+  };
+  const once: RightAnswerFixture = { ...f, check: { ...f.check, pay: { mode: 'once' } } };
+  it('paying at once: ready in November (a month, not the 1 November pay), so not a short wait', () => {
+    const low = plainPath(once, upFront(once)).reduce((m, x) => (x.balance < m ? x.balance : m), 0n);
+    expect(low < 0n && low >= -overdraftRoom(once)).toBe(true);
+    expect(plainCashReady(once)).toEqual({ month: '2026-11' });
+    expect(plainShortWait(once)).toBe(false);
+    const e = toEngineInputs(once);
+    expect(pick(evaluate(e.inputs, e.check))).toMatchObject({ code: 'not_yet', variant: 'not_covered', readyBy: '2026-11' });
+  });
+  it('the plan: plain and engine both say "Only by borrowing", with no "costs more" line', () => {
+    const { inputs, check } = toEngineInputs(f);
+    const got = pick(evaluate(inputs, check));
+    expect({ code: got.code, variant: got.variant }).toEqual({ code: 'fits_by_borrowing', variant: null });
+    const p = plainAnswer(f);
+    expect({ code: p.code, variant: p.variant }).toEqual({ code: 'fits_by_borrowing', variant: null });
   });
 });
 

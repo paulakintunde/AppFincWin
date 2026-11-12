@@ -1407,8 +1407,10 @@ export function plainCashReady(f: RightAnswerFixture): { date: string } | { mont
   if (usual <= 0n) return null;
   const n = short <= 0n ? 1n : maxC(1n, (short + usual - 1n) / usual);
   const month = plusMonths(`${f.asOf.slice(0, 7)}-01`, Number(n)).slice(0, 7);
-  // a path that never goes below $0 waits for the money alone: the month. One that dips waits for the pay too (the later of them).
-  const dips = path.some((x) => x.balance + above < 0n);
+  // a path that never goes past the overdraft limit waits for the money alone: the month (a dip inside the overdraft is not
+  // covered by waiting for the pay). One that goes past the limit waits for the pay too (the later of them). Crosscheck seed
+  // 224530963, path 1873.
+  const dips = path.some((x) => x.balance + above < -overdraftRoom(f));
   return dips && pay !== undefined && pay >= `${month}-01` ? { date: pay } : { month };
 }
 
