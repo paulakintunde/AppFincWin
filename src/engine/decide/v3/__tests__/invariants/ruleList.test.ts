@@ -90,6 +90,8 @@ const RULES: Readonly<Record<string, FixRule>> = {
   // 06 (Grow): locked goals are kept out and unlocked goals count as spare (D-05, D-22); the net and locked goals are named apart (D-06).
   'D-05': { properties: [], units: [unit('__tests__/lockedGoals.test.ts', 'a locked goal with 30,000 saved of 50,000'), unit('__tests__/invariants/lockedGoals.test.ts', 'locking a goal never raises the lowest point')], cases: 'answer' },
   'D-06': { properties: [], units: [unit('__tests__/lockedGoals.test.ts', 'a locked net and locked goals together say both')], cases: 'answer' },
+  // 06.1 (Decide screens): quick-estimate lines fold into a copy of the inputs for one check only (D-21); QL-01..08 owner-approved 2026-11-11.
+  'D-21': { properties: [], units: [unit('__tests__/quick/overlay.test.ts', 'a check with no quick lines gives the same inputs object'), unit('__tests__/quick/overlay.test.ts', 'a loan is a recorded debt of the payments still to come'), unit('__tests__/crosscheck/quickLines.test.ts', 'has the eight quick-line cases')], cases: 'answer' },
 };
 
 /**
