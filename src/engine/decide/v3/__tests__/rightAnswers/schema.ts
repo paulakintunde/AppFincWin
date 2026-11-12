@@ -2,7 +2,7 @@
  * Right-answer table contract (05.4-05, QA-02). Test-only. Money is integer minor units, dates are 'YYYY-MM-DD'.
  * One JSON file per topic holds the cases; the same JSON feeds the engine tests and the owner review pages.
  */
-export const TOPICS = ['safety-net','overdraft','debts','borrowing','tax','running-costs','selling-the-old-one','quick-estimates','household','goals','quick-lines'] as const;
+export const TOPICS = ['safety-net','overdraft','debts','borrowing','tax','running-costs','selling-the-old-one','quick-estimates','household','goals','quick-lines','long-loans','rate-convention'] as const; // long-loans (LL), rate-convention (AP; RC is running costs): 06.1-30 FIN-22 / FIN-23 drafts
 export type Topic = typeof TOPICS[number];
 export type CaseStatus = 'draft' | 'approved' | 'to_do' | 'disputed';
 export interface FixtureAccount { id: string; kind: 'checking'|'current'|'savings'|'card'; name: string; balance: number; overdraftLimit: number|null; overdraftRate: string|null; use: 'everyday'|'emergency'|'untouched'|null; /** 05.4 ENG-17 (D-114): no exchange rate converts it (the app cannot count its balance); absent = converted */ noRate?: boolean }
@@ -18,7 +18,7 @@ export type FixtureQuickLine =
   | { id: string; kind: 'income'; amount: number; everyMonths: 0|1; date: string };
 export interface FixtureCheck {
   price: number|null; taxPercent: string|null; taxIncluded: boolean|null; oneOffFees: number;
-  pay: { mode: 'once' } | { mode: 'plan'; /** the number of payments */ months: number; apr: string|null; fees: number; deposit: number; firstPaymentDate: string; /** how often a payment falls; absent = month */ every?: 'month'|'fortnight'; /** a 0% deal that back-charges interest if not paid in full; absent = false */ deferredInterest?: boolean; /** a mortgage or other home loan: skips the 10%-of-amount interest test, still costed (D-39c); absent = false */ housing?: boolean };
+  pay: { mode: 'once' } | { mode: 'plan'; /** the number of payments */ months: number; apr: string|null; fees: number; deposit: number; firstPaymentDate: string; /** how often a payment falls; absent = month. 'week' added by 06.1-30 (FIN-23 draft AP-05) */ every?: 'month'|'fortnight'|'week'; /** a 0% deal that back-charges interest if not paid in full; absent = false */ deferredInterest?: boolean; /** a mortgage or other home loan: skips the 10%-of-amount interest test, still costed (D-39c); absent = false */ housing?: boolean };
   runningCosts?: FixtureRunningCost[]; closingPercent?: string|null; purchaseDate?: string|null;
   replaces?: { stops: { id: string; amount: number; everyMonths: 1|3|12; stopDate: string; source: 'bill'|'everyday' }[]; sale: { amount: number; arrives: string; paysDebtId: string|null } | null } | null;
   quickLines?: FixtureQuickLine[];
@@ -60,7 +60,7 @@ export interface RightAnswerCase { id: string; topic: Topic; persona: string; si
 
 export const ID_PREFIX: Readonly<Record<Topic, string>> = {
   'safety-net': 'SN', overdraft: 'OD', debts: 'DB', borrowing: 'BR', tax: 'TX', 'running-costs': 'RC',
-  'selling-the-old-one': 'SO', 'quick-estimates': 'QE', household: 'HH', goals: 'GL', 'quick-lines': 'QL',
+  'selling-the-old-one': 'SO', 'quick-estimates': 'QE', household: 'HH', goals: 'GL', 'quick-lines': 'QL', 'long-loans': 'LL', 'rate-convention': 'AP',
 };
 const STATUSES: readonly string[] = ['draft', 'approved', 'to_do', 'disputed'];
 /** Answer codes a case may expect (no new codes in 05.4; the shadow-run CHECK in migration 20261103000500 holds the same list). */

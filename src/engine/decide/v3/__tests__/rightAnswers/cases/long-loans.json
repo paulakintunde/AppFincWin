@@ -1,0 +1,636 @@
+{
+  "topic": "long-loans",
+  "cases": [
+    {
+      "id": "LL-01",
+      "topic": "long-loans",
+      "persona": "Ada, 24 payments, a mild low month (invented, FIN-22)",
+      "situation": "Ada's pay came in at $2,700 instead of $3,000 in September; every other month brought $3,000. She looks at a $2,400 sofa on 24 monthly payments at 0%, first payment on 15 December. She also has $4,000 in a savings account. A usual month: pay $3,000, bills $1,500 and everyday spending $900 ($600 of it on essentials), so it leaves $600. Her everyday account holds $1,050 on 15 November 2026 (today); nothing is saved in a safety net.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": [
+            300000,
+            270000,
+            300000
+          ],
+          "lean": [
+            {
+              "month": "2026-09",
+              "amount": 270000
+            }
+          ]
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 105000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "s1",
+            "kind": "savings",
+            "name": "Savings",
+            "balance": 400000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": null
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 240000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 24,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "yourAnswer": null
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuy": {
+          "month": 60000,
+          "usualMonth": 50000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_none_start"
+        ],
+        "mustNotHaveFacts": [
+          "lean_bridge",
+          "low_month"
+        ]
+      },
+      "why": "Payments are $2,400 / 24 = $100 a month. A usual month leaves $600 - $100 = $500. Her low month (September) leaves $2,700 - $1,500 - $900 = $300, and $300 - $100 = $200, so even the low month carries the payment over the whole 24 months: no low-month caution and no savings bridge. The answer is \"Fits\"; with nothing saved in a safety net it carries the no-net caution (no_net), as every fit does today. This month is unchanged ($600 left after the plan, first payment in December).",
+      "fixIds": [
+        "FIN-22",
+        "FIN-08"
+      ],
+      "plannerNote": "Engine today gives exactly this answer (06.1-30 probe, 2026-11-12). The drafted FIN-22 rule adds nothing here.",
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "LL-02",
+      "topic": "long-loans",
+      "persona": "Ada, 24 payments, the low month falls short, savings carry it (invented, FIN-22)",
+      "situation": "Ada's records show 1 low month in the last 6: September, when $1,500 came in. She looks at a $4,800 sofa on 24 monthly payments at 0%, first payment on 15 December. $4,000 is in her savings account (not marked as a safety net). A usual month: pay $3,000, bills $1,500 and everyday spending $900 ($600 of it on essentials), so it leaves $600. Her everyday account holds $1,050 on 15 November 2026 (today); nothing is saved in a safety net.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": [
+            300000,
+            150000,
+            300000
+          ],
+          "lean": [
+            {
+              "month": "2026-09",
+              "amount": 150000
+            }
+          ]
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 105000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "s1",
+            "kind": "savings",
+            "name": "Savings",
+            "balance": 400000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": null
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 480000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 24,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "yourAnswer": null
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuy": {
+          "month": 60000,
+          "usualMonth": 40000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "low_month_judged",
+          "lean_bridge",
+          "net_none_start"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Payments are $4,800 / 24 = $200 a month. A usual month leaves $600 - $200 = $400. A month like September leaves $1,500 - $2,400 = -$900, so it is $900 + $200 = $1,100 short with the payment. 1 low month in 6 means about 24 / 6 = 4 low months over the 24 payments (to November 2028), about 4 x $1,100 = $4,400 in all. The usual months between them leave $400 each, so savings only need to hold one low month at a time ($1,100), and she has $4,000. The answer is \"Fits, a low month is tight\" (low_month), with the lines \"Judged against a low month like September, which leaves about -$900.\" and \"In a month like September, about $1,100 would come from savings. Over 24 payments, to November 2028, that could happen about 4 times. That is about $4,400 of your $4,000.\" (see the open question on that last sentence).",
+      "fixIds": [
+        "FIN-22",
+        "FIN-08"
+      ],
+      "plannerNote": "Engine today gives exactly this answer (06.1-30 probe). The low-month check already runs over the whole term (FIN-08, 05.4-23): the count of low months grows with the length of the plan.",
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "LL-03",
+      "topic": "long-loans",
+      "persona": "Ada, 12 payments: a plan at the long-plan line (invented, FIN-22)",
+      "situation": "Same Ada and savings as LL-02 (1 low month in 6, September at $1,500), but a $2,400 sofa on 12 monthly payments at 0%, first payment on 15 December. A usual month: pay $3,000, bills $1,500 and everyday spending $900 ($600 of it on essentials), so it leaves $600. Her everyday account holds $1,050 on 15 November 2026 (today); nothing is saved in a safety net.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": [
+            300000,
+            150000,
+            300000
+          ],
+          "lean": [
+            {
+              "month": "2026-09",
+              "amount": 150000
+            }
+          ]
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 105000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "s1",
+            "kind": "savings",
+            "name": "Savings",
+            "balance": 400000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": null
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 240000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "yourAnswer": null
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "low_month",
+        "afterBuy": {
+          "month": 60000,
+          "usualMonth": 40000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "low_month_judged",
+          "lean_bridge",
+          "net_none_start"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "This is QE-04 (approved) again: 12 payments is not over the 12-payment line, so the drafted FIN-22 rule does not apply and nothing changes. $200 a month, a usual month leaves $400; September is $1,100 short with the payment, about 2 times over 12 payments, about $2,200 of her $4,000. \"Fits, a low month is tight\".",
+      "fixIds": [
+        "FIN-22",
+        "FIN-08"
+      ],
+      "plannerNote": "Same figures as approved QE-04; pins that a 12-payment plan is not a long plan.",
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "LL-04",
+      "topic": "long-loans",
+      "persona": "Ada, a 60-month car loan at 7.9% (invented, FIN-22)",
+      "situation": "Same Ada and savings as LL-02 (1 low month in 6, September at $1,500, $4,000 saved). She looks at a $15,000 car on 60 monthly payments at 7.9%, first payment on 15 December. A usual month: pay $3,000, bills $1,500 and everyday spending $900 ($600 of it on essentials), so it leaves $600. Her everyday account holds $1,050 on 15 November 2026 (today); nothing is saved in a safety net.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": [
+            300000,
+            150000,
+            300000
+          ],
+          "lean": [
+            {
+              "month": "2026-09",
+              "amount": 150000
+            }
+          ]
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 105000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "s1",
+            "kind": "savings",
+            "name": "Savings",
+            "balance": 400000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": null
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 1500000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 60,
+            "apr": "7.9",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "yourAnswer": null
+        }
+      },
+      "expected": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuy": {
+          "month": 60000,
+          "usualMonth": 29657
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "low_month_judged",
+          "lean_bridge",
+          "interest_is_a_cost",
+          "save_vs_borrow"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Payments are $303.43 a month: $15,000 at 7.9% over 60 months, rounded up to the cent. Over the loan she pays $18,205.71, so $3,205.71 is interest, 21% of the amount, over the 10% line: borrowing costs a lot, so the answer is \"Fits only by borrowing\" (fits_by_borrowing), and that code has no low-month row. A usual month leaves $600 - $303.43 = $296.57. A month like September is $900 + $303.43 = $1,203.43 short with the payment, about 60 / 6 = 10 times over the 60 payments (to November 2031), $12,034.30 in all; the usual months between leave $296.57 each, so savings need to hold one low month at a time ($1,203.43 of her $4,000). The low-month lines still show on the borrowing answer: \"Judged against a low month like September, which leaves about -$900.\" and \"In a month like September, about $1,203.43 would come from savings. Over 60 payments, to November 2031, that could happen about 10 times. That is about $12,034.30 of your $4,000.\"",
+      "fixIds": [
+        "FIN-22",
+        "FIN-08",
+        "FIN-05"
+      ],
+      "plannerNote": "Engine today gives exactly this answer. The plan's drafted fallback fact (long_plan_low_month, for a code with no low-month row) would repeat lean_bridge here; see the open questions.",
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "LL-05",
+      "topic": "long-loans",
+      "persona": "Ada, 36 payments, no low month in her records (invented, FIN-22)",
+      "situation": "This Ada's pay was $3,000 every month for the last 6 months, so her records show no low month. She looks at a $7,200 sofa on 36 monthly payments at 0%, first payment on 15 December. $4,000 is in her savings account. A usual month: pay $3,000, bills $1,500 and everyday spending $900 ($600 of it on essentials), so it leaves $600. Her everyday account holds $1,050 on 15 November 2026 (today); nothing is saved in a safety net.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 105000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "s1",
+            "kind": "savings",
+            "name": "Savings",
+            "balance": 400000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": null
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 720000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 36,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "yourAnswer": null
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuy": {
+          "month": 60000,
+          "usualMonth": 40000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "net_none_start"
+        ],
+        "mustNotHaveFacts": [
+          "lean_bridge",
+          "low_month",
+          "low_month_judged"
+        ]
+      },
+      "why": "Payments are $7,200 / 36 = $200 a month; a usual month leaves $600 - $200 = $400. No month in her records is lower than the usual one, so there is no low month to check the long plan against: the answer is \"Fits\" with the no-net caution, no low-month lines.",
+      "fixIds": [
+        "FIN-22"
+      ],
+      "plannerNote": "Engine today gives exactly this answer.",
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "LL-06",
+      "topic": "long-loans",
+      "persona": "Ada, 24 payments, the low month falls short and nothing is saved (invented, FIN-22)",
+      "situation": "Same Ada and sofa as LL-02 (1 low month in 6, September at $1,500; $4,800 on 24 monthly payments at 0%), but she has no savings account. A usual month: pay $3,000, bills $1,500 and everyday spending $900 ($600 of it on essentials), so it leaves $600. Her everyday account holds $1,050 on 15 November 2026 (today); nothing is saved in a safety net.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": [
+            300000,
+            150000,
+            300000
+          ],
+          "lean": [
+            {
+              "month": "2026-09",
+              "amount": 150000
+            }
+          ]
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 60000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 105000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 480000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 24,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          },
+          "yourAnswer": null
+        }
+      },
+      "expected": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [
+          "volatile_cover_question"
+        ],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": []
+      },
+      "why": "A usual month carries the $200 payment ($400 left), but a month like September is $1,100 short with it, about 4 times over the 24 payments, and nothing is saved to carry one. The records alone cannot say it fits, so the answer asks: \"Can you cover $200 a month for 24 months, even in your low months?\" (FIN-08: the plan's draft for FIN-22 would instead say \"Fits, a low month is tight\" here, which is looser than today; this case keeps today's stricter ask).",
+      "fixIds": [
+        "FIN-22",
+        "FIN-08"
+      ],
+      "plannerNote": "Engine today gives exactly this answer. Pins that FIN-22 never loosens FIN-08.",
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null
+    }
+  ]
+}

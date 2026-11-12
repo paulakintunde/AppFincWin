@@ -286,6 +286,67 @@ export function monthlyPayment(amount: Cents, months: number, apr: string | null
   return (amount * r * growth) / (S * (growth - S));
 }
 
+/**
+ * 06.1-30 FIN-23 (DRAFT, owner approval pending, AP-01..AP-06). Restated from the draft cases: in the UK and the EU a typed APR is
+ * the yearly rate with the compounding already inside it, so the rate for one payment period is r with (1 + r)^k = 1 + APR (k = 12
+ * for monthly payments, 52 for weekly); elsewhere, or with no region set, r = APR / k as today (AP-03, AP-06). The level payment is
+ * rounded up to the cent, as the cases state ("rounded up to £195.24"). Own list and own maths (QA-03).
+ */
+export const PLAIN_EFFECTIVE_APR_COUNTRIES: readonly string[] = [
+  'GB', 'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL',
+  'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+];
+/** The scale the plain per-period rate is held at (15 decimal places). */
+export const PLAIN_RATE_SCALE: Cents = 10n ** 15n;
+
+export function plainReadsEffective(country: string | null): boolean {
+  return country !== null && PLAIN_EFFECTIVE_APR_COUNTRIES.includes(country);
+}
+
+/** The rate for one payment period, times PLAIN_RATE_SCALE, rounded down. k = payments a year. */
+export function plainPeriodRate(apr: string, k: number, country: string | null): Cents {
+  const S = PLAIN_RATE_SCALE;
+  const bp = basisPoints(apr);
+  if (!plainReadsEffective(country)) return (bp * S) / (10_000n * BigInt(k));
+  // The largest r with (S + r)^k x 10,000 <= S^k x (10,000 + bp): halve the range until it closes.
+  const K = BigInt(k);
+  const target = S ** K * (10_000n + bp);
+  let lo = 0n;
+  let hi = (bp * S) / 10_000n;
+  while (lo < hi) {
+    const mid = (lo + hi + 1n) / 2n;
+    if ((S + mid) ** K * 10_000n <= target) lo = mid;
+    else hi = mid - 1n;
+  }
+  return lo;
+}
+
+/** The level payment on `amount` over n payments at the period rate r (times PLAIN_RATE_SCALE), rounded up to the cent. */
+export function plainLevelPayment(amount: Cents, n: number, r: Cents): Cents {
+  const N = BigInt(n);
+  if (r === 0n) return (amount + N - 1n) / N;
+  const S = PLAIN_RATE_SCALE;
+  const G = (S + r) ** N;
+  const num = amount * r * G;
+  const den = S * (G - S ** N);
+  return (num + den - 1n) / den;
+}
+
+/** The case's own plan: payments a year (12 monthly, 26 fortnightly, 52 weekly) and the payment by the FIN-23 draft rule. */
+export function plainPlanPayment(f: RightAnswerFixture, rule: 'draft' | 'today' = 'draft'): { payment: Cents; perYear: number } {
+  const p = f.check.pay;
+  if (p.mode !== 'plan') throw new Error('plainPlanPayment: not a plan');
+  const perYear = p.every === 'week' ? 52 : p.every === 'fortnight' ? 26 : 12;
+  const country = rule === 'draft' && f.region !== null ? f.region.country : null;
+  const r = plainPeriodRate(p.apr ?? '0', perYear, country);
+  return { payment: plainLevelPayment(big(f.check.price ?? 0) - big(p.deposit), p.months, r), perYear };
+}
+
+/** A payment as a month: payment x payments a year / 12, half up. */
+export function plainMonthOf(payment: Cents, perYear: number): Cents {
+  return (payment * BigInt(perYear) * 2n + 12n) / 24n;
+}
+
 // Restated from the right-answer table (QE-07) and the needs-input rule (UP §5.4 rule 3); not imported from the engine (QA-03).
 /** A purchase over 1,000.00 (band 5 and up) asks for more records first when the records look behind. */
 const ASK_FOR_RECORDS_ABOVE: Cents = 100_000n;

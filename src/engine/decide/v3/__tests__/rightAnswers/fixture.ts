@@ -66,12 +66,13 @@ function firstPaymentOf(asOf: string, cadence: Cadence, firstDate: string): Firs
 
 function payOf(p: RightAnswerFixture['check']['pay'], asOf: string): PayV2 {
   if (p.mode === 'once') return { mode: 'once' };
-  const cadence: Cadence = p.every === 'fortnight' ? { unit: 'week', every: 2 } : { unit: 'month', every: 1 };
+  // 06.1-30 (FIN-23 draft AP-05): 'week' is a payment every week.
+  const cadence: Cadence = p.every === 'fortnight' ? { unit: 'week', every: 2 } : p.every === 'week' ? { unit: 'week', every: 1 } : { unit: 'month', every: 1 };
   return {
     mode: 'plan',
     cadence,
     count: p.months,
-    termMonths: p.every === 'fortnight' ? null : p.months,
+    termMonths: p.every === 'fortnight' || p.every === 'week' ? null : p.months,
     apr: p.apr === null ? null : percent(p.apr),
     fees: { setup: mu(p.fees), perPeriod: mu(0), end: mu(0) },
     deposit: mu(p.deposit),
