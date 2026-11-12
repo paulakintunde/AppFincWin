@@ -150,6 +150,15 @@ export function paymentDates(s: Schedule): readonly string[] {
   return out;
 }
 
+/**
+ * D-68 window: true when every payment the person chose (`count`, not `lastPaying`) is dated before `toExclusive`. The level
+ * payment is rounded up to the cent, so a tiny plan can clear a period early; reading `lastPaying` let a dearer plan land inside
+ * the window while a cheaper one did not (I9, seed -1745555528). The count does not move with the price.
+ */
+export function chosenPaymentsBefore(s: Schedule, toExclusive: string): boolean {
+  return cadenceDate(s.firstDate, s.cadence, s.count - 1) < toExclusive;
+}
+
 /** Dated payments with the per-period fee on each and the end fee on the last. */
 export function paymentsInRange(
   s: Schedule,
