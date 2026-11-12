@@ -91,7 +91,7 @@ Last activity: 2026-11-11 -- Phase 06 complete; Phase 8 planning complete
 - Phase 05.4 inserted after Phase 05.3: Decide safety patch (approved Decide fix plan, 2026-11-01; .planning/research/DECIDE-FIX-PLAN.md)
 - Phase 05.5 inserted after Phase 05.4: One shared money model
 - Phase 08.1 inserted after Phase 8: Decide rebuild on real data (full cost with tax and running costs; Variant C chosen 2026-11-01)
-- 2026-11-11: Phase 8 plans 08-28 and 08-29 (household parts on Decide) and Grow's "Create from Decide" moved to Phase 08.1 (carry-over files in the 08.1 folder); Phase 8 is now 28 plans in 12 waves with one revision round after 06.1 (PR #102) merges. Gates and checklist: .planning/phases/08-household/08-PRECONDITIONS.md; 05.5 notes: 05.5-NOTES-FROM-08.md.
+- 2026-11-11: Phase 8 plans 08-28 and 08-29 (household parts on Decide) and Grow's "Create from Decide" moved to Phase 08.1 (carry-over files in the 08.1 folder); Phase 8 is now 28 plans in 12 waves with one revision round after 06.1 (PR #102) merges. Gates and checklist: .planning/phases/08-household/08-GATES.md; 05.5 notes: 05.5-NOTES-FROM-08.md.
 - Phase 08.2 inserted after Phase 08.1: Decide re-audit
 - Phases 6 and 8 amended and Phase 7 moved after 08.2 by the same plan
 
@@ -209,6 +209,7 @@ Recent decisions affecting current work:
 | 261101-mxs | Decide Stage 0: PR #90 rebased on #91; docs follow BO-08 (Decide off for everyone, testers included, until 08.1; closed beta retired; test-flag gap closed in 05.4); STATE, ROADMAP and REQUIREMENTS refreshed for Variant C; 05.4 handoff note copied to main | 2026-11-02 | 59de1a80 | [261101-mxs-decide-stage-0-housekeeping](./quick/261101-mxs-decide-stage-0-housekeeping/) |
 | 261101-vmi | Engine test pins the unspent roll-forward clamp (unspent.ts:104); fixes the flaky 100% engine coverage gate that failed main and PR #90 | 2026-11-02 | 3416e419 | [261101-vmi-pin-unspent-clamp-coverage](./quick/261101-vmi-pin-unspent-clamp-coverage/) |
 | 261106-bf2 | Switch Decide on for testers: DECIDE_OPEN and DECIDE_V3 true, v3 for every account (owner 2026-11-06) | 2026-11-06 | 8096e25a | [261106-bf2-switch-decide-on-for-testers-decide-open](./quick/261106-bf2-switch-decide-on-for-testers-decide-open/) |
+| 261111-o0p | Phase 8 integration conflicts written into plans (08-28/29 to 08.1, 08-GATES.md, 05.5 notes) | 2026-11-11 | 3df07119 | [261111-o0p-write-phase-8-integration-conflict-decis](./quick/261111-o0p-write-phase-8-integration-conflict-decis/) |
 
 ## Deferred Items
 

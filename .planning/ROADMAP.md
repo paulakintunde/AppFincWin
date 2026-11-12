@@ -1272,7 +1272,7 @@ Plans:
   7. (Decide fix plan, blocking) Every record is personal unless marked shared, enforced by database rules, and the two-user tests are green BEFORE the invite flow merges: member B cannot read, edit, receive live updates for, or export member A's personal rows (CMP-F18, ARC-22).
   8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money. (Decide side moved to 08.1 with 08-28 on 2026-11-11.)
   9. (Decide fix plan) Household split rules are the one source of "my share"; settlements count as neither spending nor income; money owed to you is not spendable until it arrives (ARC-17, ARC-18, ENG-25). (share_pct removal moved to 08.1 or 05.5 with 08-29.)
-**Plans:** 28 plans in 12 waves (08-25 gated on 05.5, D-41; it runs last, wave 12, after the owner-approved push in 08-27). 08-28 and 08-29 moved to Phase 08.1 on 2026-11-11 (owner decision); gates and the post-06.1 revision round are in `08-PRECONDITIONS.md`.
+**Plans:** 28 plans in 12 waves (08-25 gated on 05.5, D-41; it runs last, wave 12, after the owner-approved push in 08-27). 08-28 and 08-29 moved to Phase 08.1 on 2026-11-11 (owner decision); gates and the post-06.1 revision round are in `08-GATES.md`.
 
 Plans:
 **Wave 1**

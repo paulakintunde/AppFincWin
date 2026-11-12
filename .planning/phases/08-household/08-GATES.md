@@ -1,6 +1,8 @@
-# Phase 8: Preconditions and revision checklist
+# Phase 8: Gates and revision checklist
 
 **Written:** 2026-11-11 (owner decisions). **Applies to:** every Phase 8 plan.
+
+(Not the same as `08-PRECONDITIONS.md`, which plan 08-01 writes when it runs.)
 
 Plans 08-28 and 08-29 (the household parts on Decide) moved to Phase 08.1 on 2026-11-11, so they can be re-planned on the new 06.1 screens. Phase 8 is now 28 plans and ends at wave 12. It gets one revision round after 06.1 (PR #102) merges. This file lists what must be true before certain steps, what the revision round must check, and where Phase 8 and 06.1 touch the same files.
 
