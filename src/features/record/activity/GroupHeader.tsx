@@ -50,13 +50,13 @@ export function GroupHeader({ item, month, homeCurrency, formatter }: GroupHeade
     >
       <View style={styles.left}>
         <Text style={{ ...labelRole, color: colors.inkMuted }}>{label}</Text>
-        {range !== null ? <Text style={{ ...labelRole, color: colors.inkFaint }}>{range}</Text> : null}
-        <Text style={{ ...labelRole, color: colors.inkFaint }}>{t('activity.count', { count: item.count })}</Text>
+        {range !== null ? <Text style={{ ...labelRole, color: colors.inkMuted }}>{range}</Text> : null}
+        <Text style={{ ...labelRole, color: colors.inkMuted }}>{t('activity.count', { count: item.count })}</Text>
       </View>
       <View style={styles.right}>
         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...labelRole, color: item.kind === 'in' && item.net > 0 ? colors.accent : colors.ink }}>{netText}</Text>
         {item.unconvertedCount > 0 ? (
-          <Text style={{ ...labelRole, color: colors.inkFaint }}>
+          <Text style={{ ...labelRole, color: colors.inkMuted }}>
             {t('activity.group.unconverted', { count: item.unconvertedCount })}
           </Text>
         ) : null}

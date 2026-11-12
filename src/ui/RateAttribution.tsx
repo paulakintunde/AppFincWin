@@ -72,7 +72,7 @@ export function RateAttribution({ rateDate, rateSource, ratePending }: RateAttri
           accessibilityLabel={attributionText}
           hitSlop={LINK_HIT_SLOP}
         >
-          <Text style={[labelStyle, styles.attribution, { color: colors.inkFaint }]}>{attributionText}</Text>
+          <Text style={[labelStyle, styles.attribution, { color: colors.inkMuted }]}>{attributionText}</Text>
         </Pressable>
       ) : null}
     </View>

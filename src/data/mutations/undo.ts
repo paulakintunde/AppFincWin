@@ -63,6 +63,9 @@ function invalidateAfterUndo(qc: QueryClient, vars: { householdId: string; owner
   void qc.invalidateQueries({ queryKey: queryKeys.decideSettings(vars.ownerId) });
   void qc.invalidateQueries({ queryKey: queryKeys.decideAnswers(vars.ownerId, vars.householdId) });
   void qc.invalidateQueries({ queryKey: queryKeys.incomePayerPrompts(vars.householdId) });
+  // 06 review P1-WR-05: Grow's holdings and their entries are undoable too (holdingAdded, holdingValueUpdated, ...).
+  void qc.invalidateQueries({ queryKey: queryKeys.holdings(vars.ownerId, vars.householdId) });
+  void qc.invalidateQueries({ queryKey: queryKeys.holdingLots(vars.ownerId, vars.householdId) });
 }
 
 async function recordRefusal(

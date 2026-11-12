@@ -567,6 +567,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
             original_amount: r.original_amount,
             status: r.status,
             transfer_id: r.transfer_id,
+            goalLine: r.goal_id != null,
           });
         }
         for (const c of candidates) {

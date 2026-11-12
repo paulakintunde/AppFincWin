@@ -251,7 +251,7 @@ export function YouScreen() {
         }}
         style={styles.credits}
       >
-        <Text style={[styles.creditsText, { fontFamily: fonts.body[500], color: colors.inkFaint }]}>
+        <Text style={[styles.creditsText, { fontFamily: fonts.body[500], color: colors.inkMuted }]}>
           {t('credits.exchangeRateApi')}
         </Text>
       </Pressable>

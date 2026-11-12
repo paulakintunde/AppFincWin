@@ -134,7 +134,7 @@ describe('buildV3Inputs: line roles', () => {
     expect(lineOf(src, 'dep-in')!.role).toBe('own_transfer');
     expect(lineOf(src, 'wd-in')!.role).toBe('envelope_withdrawal');
     expect(lineOf(src, 'old-out')!.role).toBe('saved_invested'); // a done goal counts as saving again
-    expect(inputs.envelopes).toEqual([{ id: 'g1', kind: 'pot', target: 90000, monthlyAmount: 5000, readyBy: '2027-03-01', saved: 17000, purposeId: null, accountId: SAVINGS, bucket: false }]);
+    expect(inputs.envelopes).toEqual([{ id: 'g1', kind: 'pot', target: 90000, monthlyAmount: 5000, readyBy: '2027-03-01', saved: 13000, purposeId: null, accountId: SAVINGS, bucket: false, name: '', locked: true }]); // 06-10: a withdrawal lowers saved (signed legs), the old builder added its absolute value (17000)
   });
 });
 
@@ -224,13 +224,15 @@ describe('buildV3Inputs: v3 settings', () => {
     expect(buildV3Inputs(src, v3s({ unspent_anchor: 5 })).unspent).toBeNull(); // anchor needs its date
   });
 
-  it('emergency comes from the reserve, only in the home currency and only when valid', () => {
-    const withReserve = (reserve: number | null, currency: string | null) => ({ ...src, settings: { ...src.settings!, reserve, currency } });
-    expect(buildV3Inputs(withReserve(500000, null), null).emergency).toEqual({ amount: 500000, accountId: null });
-    expect(buildV3Inputs(withReserve(500000, 'USD'), null).emergency).toEqual({ amount: 500000, accountId: null });
-    expect(buildV3Inputs(withReserve(500000, 'USD'), v3s({ reserve_account_id: SAVINGS })).emergency).toEqual({ amount: 500000, accountId: SAVINGS }); // D-54
-    expect(buildV3Inputs(withReserve(500000, 'EUR'), null).emergency).toBeNull();
-    expect(buildV3Inputs(withReserve(-5, null), null).emergency).toBeNull();
+  it('06 D-02: emergency comes from the flagged safety-net goal, in the home currency only; the typed reserve is not read', () => {
+    const net = (over: Partial<SnapshotSource['goals'][number]> = {}): SnapshotSource => ({
+      ...src,
+      goals: [{ id: 'net', name: 'Safety net', kind: 'pot', check_id: null, currency: 'USD', target: null, monthly_amount: null, ready_by: null, opening_saved: 500000, done_at: null, deleted_at: null, account_id: null, is_safety_net: true, locked: true, protect: true, ...over }],
+    });
+    expect(buildV3Inputs(net(), null).emergency).toEqual({ amount: 500000, accountId: null });
+    expect(buildV3Inputs(net({ account_id: SAVINGS }), v3s()).emergency).toEqual({ amount: 500000, accountId: SAVINGS }); // D-54
+    expect(buildV3Inputs(net({ currency: 'EUR' }), null).emergency).toBeNull();
+    expect(buildV3Inputs({ ...src, settings: { ...src.settings!, reserve: 500000, currency: 'USD' } }, null).emergency).toBeNull();
     expect(buildV3Inputs({ ...src, settings: null }, null).emergency).toBeNull();
   });
 

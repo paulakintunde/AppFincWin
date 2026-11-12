@@ -60,6 +60,8 @@ export function invalidateDerivedReads(qc: QueryClient, householdId: string): vo
   void qc.invalidateQueries({ queryKey: queryKeys.accountBalances(householdId) });
   void qc.invalidateQueries({ queryKey: queryKeys.transactionMonths(householdId) });
   void qc.invalidateQueries({ queryKey: queryKeys.transactionsSearchRoot(householdId) });
+  // 20261110000100: a paid debt-linked line (the one-off) moves its debt's balance on the server.
+  void qc.invalidateQueries({ queryKey: queryKeys.debts(householdId) });
 }
 
 

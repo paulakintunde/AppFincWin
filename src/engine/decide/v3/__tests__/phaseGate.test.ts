@@ -16,7 +16,8 @@ import { TOPICS } from './rightAnswers/schema';
 
 const OPEN_AT_43 = {
   pending: ['PLAIN-PLANS'],
-  drafts: ['BR-16', 'SN-16', 'SN-17', 'SN-18', 'SN-19', 'SN-20', 'SN-21', 'SN-22', 'SN-23', 'SN-24'],
+  // GL-04: owner sent it back on 2026-11-10 (Phase 6 device check). It waits for the lock-or-leave prompt after a net withdrawal.
+  drafts: ['BR-16', 'GL-04', 'SN-16', 'SN-17', 'SN-18', 'SN-19', 'SN-20', 'SN-21', 'SN-22', 'SN-23', 'SN-24'],
 };
 
 const fromShadow = (c: { expertNote: string | null; ownerReason: string | null }): boolean =>
@@ -40,7 +41,7 @@ describe('05.4 phase gate', () => {
 
   it('no draft outside household except shadow-run drafts and those open when 05.4-43 was built', () => {
     const drafts = loadCases()
-      .filter((c) => c.topic !== 'household' && c.status === 'draft' && !fromShadow(c))
+      .filter((c) => c.topic !== 'household' && c.status === 'draft' && !fromShadow(c)) // 06-20: goals cases owner-approved 2026-11-07, no longer exempt
       .map((c) => c.id);
     expect(drafts.filter((id) => !OPEN_AT_43.drafts.includes(id))).toEqual([]);
   });

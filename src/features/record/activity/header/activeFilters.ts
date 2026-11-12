@@ -3,7 +3,8 @@
 import type { TFunction } from 'i18next';
 import { EMPTY_FILTER, type ActivityFilter } from '@/engine/activity';
 
-export type FilterKind = 'category' | 'account' | 'amount' | 'direction';
+/** 'debt' (06-37 D-38) comes from the route, not the filter sheet; the screen clears it, clearOne leaves the filter as is. */
+export type FilterKind = 'category' | 'account' | 'amount' | 'direction' | 'debt';
 
 export interface FilterChipModel {
   kind: FilterKind;
@@ -92,6 +93,8 @@ export function clearOne(f: ActivityFilter, kind: FilterKind): ActivityFilter {
       return { ...f, amountMin: null, amountMax: null };
     case 'direction':
       return { ...f, direction: 'all' };
+    case 'debt':
+      return f;
   }
 }
 

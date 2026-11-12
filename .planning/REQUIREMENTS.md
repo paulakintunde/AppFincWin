@@ -301,17 +301,17 @@ The Decide fix plan's IDs (FIN, ENG, APP, UX, CMP-F, ARC, QA, BO, VC) are tracke
 
 ### Grow
 
-- [ ] **GRW-01**: User can create a savings goal with a target amount, or an open-ended one
-- [ ] **GRW-02**: User can flag exactly one goal as their emergency fund
-- [ ] **GRW-03**: User can set an automatic contribution to a goal
-- [ ] **GRW-04**: User can record investment holdings across the supported account types
-- [ ] **GRW-05**: User can record cost-basis lots — buys, sells, dividends and fees — against a holding
-- [ ] **GRW-06**: User can see gain or loss per holding and in total
-- [ ] **GRW-07**: User can record loans and revolving credit with balance, rate and minimum
-- [ ] **GRW-08**: User can compare avalanche and snowball payoff strategies with an optional extra payment
-- [ ] **GRW-09**: User can see a projected payoff date and total interest for their chosen strategy
-- [ ] **GRW-10**: User records a holding's market value by hand, and its as-of date is shown wherever that value appears
-- [ ] **GRW-11**: User can record an interest rate (APY) on savings and investment accounts, alongside GRW-07's rate (APR) and minimum payment for credit cards and loans. Added 2026-10-07 from the Phase 2 device walkthrough; user decision: deferred to Phase 6.
+- [x] **GRW-01**: User can create a savings goal with a target amount, or an open-ended one
+- [x] **GRW-02**: User can flag exactly one goal as their emergency fund
+- [x] **GRW-03**: User can set an automatic contribution to a goal
+- [x] **GRW-04**: User can record investment holdings across the supported account types
+- [x] **GRW-05**: User can record cost-basis lots — buys, sells, dividends and fees — against a holding
+- [x] **GRW-06**: User can see gain or loss per holding and in total
+- [x] **GRW-07**: User can record loans and revolving credit with balance, rate and minimum
+- [x] **GRW-08**: User can compare avalanche and snowball payoff strategies with an optional extra payment
+- [x] **GRW-09**: User can see a projected payoff date and total interest for their chosen strategy
+- [x] **GRW-10**: User records a holding's market value by hand, and its as-of date is shown wherever that value appears
+- [x] **GRW-11**: User can record an interest rate (APY) on savings and investment accounts, alongside GRW-07's rate (APR) and minimum payment for credit cards and loans. Added 2026-10-07 from the Phase 2 device walkthrough; user decision: deferred to Phase 6.
 
 ### Insights
 
@@ -700,17 +700,17 @@ Populated during roadmap creation.
 | DSU-22 | Phase 05.2 - Decide data and setup | Complete |
 | DSU-23 | Phase 05.2 - Decide data and setup | Complete |
 | DSU-24 | Phase 05.2 - Decide data and setup | Complete |
-| GRW-01 | Phase 6 - Grow | Pending |
-| GRW-02 | Phase 6 - Grow | Pending |
-| GRW-03 | Phase 6 - Grow | Pending |
-| GRW-04 | Phase 6 - Grow | Pending |
-| GRW-05 | Phase 6 - Grow | Pending |
-| GRW-06 | Phase 6 - Grow | Pending |
-| GRW-07 | Phase 6 - Grow | Pending |
-| GRW-08 | Phase 6 - Grow | Pending |
-| GRW-09 | Phase 6 - Grow | Pending |
-| GRW-10 | Phase 6 - Grow | Pending |
-| GRW-11 | Phase 6 - Grow | Pending |
+| GRW-01 | Phase 6 - Grow | Complete |
+| GRW-02 | Phase 6 - Grow | Complete |
+| GRW-03 | Phase 6 - Grow | Complete |
+| GRW-04 | Phase 6 - Grow | Complete |
+| GRW-05 | Phase 6 - Grow | Complete |
+| GRW-06 | Phase 6 - Grow | Complete |
+| GRW-07 | Phase 6 - Grow | Complete |
+| GRW-08 | Phase 6 - Grow | Complete |
+| GRW-09 | Phase 6 - Grow | Complete |
+| GRW-10 | Phase 6 - Grow | Complete |
+| GRW-11 | Phase 6 - Grow | Complete |
 | INS-01 | Phase 7 - Insights | Pending |
 | INS-02 | Phase 7 - Insights | Pending |
 | INS-03 | Phase 7 - Insights | Pending |

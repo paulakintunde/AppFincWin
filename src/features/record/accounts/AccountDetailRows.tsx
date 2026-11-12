@@ -1,7 +1,9 @@
 // ACT-17, CONTEXT D-26, UI-SPEC 14: the account's pending split. Coming in, Going out and the
 // balance after pending, all from the engine's pendingSplit over the server's pending sums.
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import type { Href } from 'expo-router';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 import { Text } from '@/ui/Text';
 import type { AccountRow } from '@/db/rows';
 import type { AccountBalanceView } from '@/data/queries/activity';
@@ -54,9 +56,12 @@ export function AccountDetailRows({ account, balance, split, horizonMonth }: Acc
   const pendingCount = split?.pendingCount ?? 0;
   const dash = t('accounts.detail.dash');
 
+  // The balance in home-currency minor units (null with no balance, or no stored rate for a foreign account).
+  const startHome =
+    account.currency === rc.homeCurrency ? (paid ?? 0) : paid !== null ? projectionHomeAmount(paid, account.currency, rc.homeCurrency, rates ?? []) : null;
   let currencyText: string = t('accounts.detail.currencyHome', { code: account.currency });
   if (account.currency !== rc.homeCurrency) {
-    const home = paid !== null ? projectionHomeAmount(paid, account.currency, rc.homeCurrency, rates ?? []) : null;
+    const home = startHome;
     currencyText =
       home !== null
         ? t('accounts.detail.currencyForeign', { code: account.currency, home: fmtIn(rc.homeCurrency)(home), homeCode: rc.homeCurrency })
@@ -102,6 +107,17 @@ export function AccountDetailRows({ account, balance, split, horizonMonth }: Acc
     },
   ];
 
+  // 06 GRW-11: a rate, when one is set, shows as a row and opens the growth calculator prefilled (an illustration, nothing saved).
+  const rate = account.interest_rate ?? null;
+  if (rate !== null && rate !== '') {
+    rows.push({
+      key: 'interest',
+      label: t('accounts.detail.interest'),
+      value: t('accounts.detail.interestValue', { rate }),
+      color: colors.ink,
+    });
+  }
+
   return (
     <View style={styles.block}>
       {rows.map((r) => (
@@ -110,6 +126,23 @@ export function AccountDetailRows({ account, balance, split, horizonMonth }: Acc
           <Text style={{ ...body, color: r.color }}>{r.value}</Text>
         </View>
       ))}
+      {rate !== null && rate !== '' ? (
+        <Pressable
+          testID="account-growth-row"
+          accessibilityRole="button"
+          onPress={() =>
+            pushOnce({
+              pathname: '/grow/calculators/growth',
+              // P5-WR-04: the calculator reads `start` in home-currency minor units. A foreign account's balance is converted
+              // at the latest stored rate; with no rate there is no prefill (the user types the start).
+              params: startHome === null ? { rate, monthly: '0' } : { start: String(Math.max(0, startHome)), rate, monthly: '0' },
+            } as Href)
+          }
+          style={styles.growth}
+        >
+          <Text style={{ ...body, color: colors.accent }}>{t('grow.investing.detail.seeGrowth')}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -117,4 +150,5 @@ export function AccountDetailRows({ account, balance, split, horizonMonth }: Acc
 const styles = StyleSheet.create({
   block: { gap: space.gapSm },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: space.gapSm },
+  growth: { minHeight: space.touchMin, justifyContent: 'center' },
 });

@@ -47,6 +47,9 @@ function insertInversePatch(entity: UndoEntity): Readonly<Record<string, PatchVa
     case 'recurring_dismissals':
     case 'income_payer_prompts':
     case 'decide_answers':
+    // 06 Grow: holdings and their entries soft-delete (the grants allow deleted_at on both).
+    case 'holdings':
+    case 'holding_lots':
       return { deleted_at: NOW_SENTINEL };
     case 'categories':
     case 'accounts':

@@ -95,7 +95,7 @@ function AccountTile({
         </Text>
       </View>
       <View style={styles.text}>
-        <Text style={{ ...textRole(pairing, "body"), color: colors.ink }}>
+        <Text style={{ ...textRole(pairing, "bodyStrong"), color: colors.ink }}>
           {account.name}
         </Text>
         <Text

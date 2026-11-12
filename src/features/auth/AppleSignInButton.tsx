@@ -61,7 +61,7 @@ export function AppleSignInButton({ enabled, busy = false, onPress }: AppleSignI
         </View>
       </Pressable>
       {!enabled ? (
-        <Text style={[styles.pendingNote, { fontFamily: fonts.body[600], color: colors.inkFaint }]}>
+        <Text style={[styles.pendingNote, { fontFamily: fonts.body[600], color: colors.inkMuted }]}>
           {t('auth.apple.pendingEnrolment')}
         </Text>
       ) : null}
