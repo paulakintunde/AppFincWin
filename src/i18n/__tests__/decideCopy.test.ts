@@ -216,8 +216,8 @@ describe('decide copy (DCU-09)', () => {
     expect(home.filter((l) => INSTRUCTION_LEAD.test(l.value) || IMPERATIVE_LEAD.test(l.value)).map((l) => l.path)).toEqual([]);
   });
 
-  it('names no tab that does not exist (Grow)', () => {
-    expect(leaves.filter((l) => /\bGrow\b/.test(l.value)).map((l) => l.path)).toEqual([]);
+  it('names Grow only where a setup step points to it (06-20: the tab exists now)', () => {
+    expect(leaves.filter((l) => /\bGrow\b/.test(l.value) && !l.path.startsWith('decide.setup.growLink.')).map((l) => l.path)).toEqual([]);
   });
 
   it('every listed action label exists and still opens with its verb (WR-D04)', () => {

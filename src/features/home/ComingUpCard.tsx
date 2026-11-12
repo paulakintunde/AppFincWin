@@ -219,7 +219,7 @@ export function ComingUpCard({
                   </Text>
                 </View>
                 <View style={styles.text}>
-                  <Text numberOfLines={2} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+                  <Text numberOfLines={2} style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>
                     {name}
                   </Text>
                   <Text style={{ fontFamily: bodyFont[500], fontSize: fontSize.meta, color: colors.inkMuted }}>
@@ -232,7 +232,7 @@ export function ComingUpCard({
                     {subText}
                   </Text>
                 </View>
-                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{amountText}</Text>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{amountText}</Text>
               </Pressable>
               {isRow && row ? (
                 <Pressable

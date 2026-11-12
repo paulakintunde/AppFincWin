@@ -38,10 +38,9 @@ describe('settingsSourceOf', () => {
     expect(run({ settings: null })).toBeNull();
   });
 
-  it('copies the interim safety-net columns (05.4 D-33, D-61)', () => {
-    expect(run()).toMatchObject({ safety_net_protect: true, safety_net_size: null, safety_net_locked: true });
-    const off = run({ settings: settings({ safety_net_protect: false, safety_net_size: 250000, safety_net_locked: false }) });
-    expect(off).toMatchObject({ safety_net_protect: false, safety_net_size: 250000, safety_net_locked: false });
+  it('06 D-02: does not copy the interim safety-net columns or the reserve account (the Grow goal is the one store)', () => {
+    const off = run({ settings: settings({ safety_net_protect: false, safety_net_size: 250000, safety_net_locked: false, reserve_account_id: 'acc' }) })!;
+    expect(Object.keys(off).filter((k) => k.startsWith('safety_net_') || k === 'reserve_account_id')).toEqual([]);
   });
 
   it('copies every column; income_types stays the setup values', () => {
@@ -55,7 +54,7 @@ describe('settingsSourceOf', () => {
     })!;
     expect(v3).toMatchObject({
       income_types: ['pension_or_benefits'], income_pattern: 'seasonal', income_pattern_confirmed: true, variable_method: 'spread', steady_amount: 5, spread_months: 3,
-      hold_months: 2, unspent_anchor: -4, unspent_anchor_at: '2026-10-01', reserve_account_id: 'acc', reserve_goal: 9, everyday_override: 7, everyday_override_at: '2026-10-02',
+      hold_months: 2, unspent_anchor: -4, unspent_anchor_at: '2026-10-01', reserve_goal: 9, everyday_override: 7, everyday_override_at: '2026-10-02',
       month_marks: { '2026-09': 'out' }, rough_saving: 1, rough_debt: 2, rough_invest: 3, rough_as_of: '2026-10-03',
       unexplained_amount: 11, unexplained_use: 'spare', unexplained_at: '2026-10-04',
       series_extra: {}, own_lines: [], custom_options: null,

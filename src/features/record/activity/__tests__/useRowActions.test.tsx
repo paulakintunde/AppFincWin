@@ -18,6 +18,9 @@ jest.mock('@/data/mutations/patches', () => ({
   useBulkMarkUnpaid: () => ({ markUnpaid: mockMarkUnpaid }),
   useBulkPatch: () => ({ apply: mockApply }),
 }));
+jest.mock('@/data/mutations/growGoals', () => ({ useConfirmGoalContribution: () => ({ confirm: jest.fn() }) }));
+jest.mock('@/features/grow/goals/useGoalToast', () => ({ useGoalToast: () => jest.fn() }));
+jest.mock('@/data/queries/decide', () => ({ useSavingsGoals: () => ({ data: [] }) }));
 jest.mock('@/data/mutations/transfers', () => ({ useDeleteTransfer: () => ({ remove: mockRemoveTransfer }) }));
 jest.mock('@/data/mutations/recurringSeries', () => ({ useEndSeries: () => ({ end: mockEnd }) }));
 jest.mock('@/data/queries/recurringSeries', () => ({

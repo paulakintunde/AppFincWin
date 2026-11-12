@@ -503,7 +503,7 @@ export function monthEndBalance(f: RightAnswerFixture): Cents {
 // --- Safety net (05.4 FIN-01, FIN-02, ENG-03, ENG-04). Restated from the approved safety-net cases SN-01 .. SN-15, CONTEXT D-05,
 // D-06, D-35, D-41 and the 05.4-12 revision notes. Not read from the engine.
 
-export interface PlainNet { off: boolean; locked: boolean; saved: Cents; size: Cents; starter: Cents; protectedPart: Cents; above: Cents; lend: Cents }
+export interface PlainNet { off: boolean; locked: boolean; saved: Cents; size: Cents; starter: Cents; protectedPart: Cents; netAbove: Cents; goals: Cents; goalsKept: Cents; above: Cents; lend: Cents }
 
 /**
  * "No record means the default: protection on, a starter size of one month of essential costs (bills + debt minimums + essential
@@ -526,9 +526,27 @@ export function plainNet(f: RightAnswerFixture): PlainNet {
   const saved = maxC(0n, big(n.saved));
   const off = !n.protect || size === 0n;
   const protectedPart = off ? 0n : saved < size ? saved : size;
-  const above = off ? 0n : saved - protectedPart;
+  const netAbove = off ? 0n : saved - protectedPart;
+  // 06 D-05, D-22: "an unlocked goal's saved money counts as spare in Decide", once. Money in an account kept for something (the
+  // net's account, an untouched account, a savings account with no use stated) never counts as spending money, so an unlocked goal
+  // kept there is spare savings on its own: never the net's money above its size, and never more than the account holds after its
+  // locked goals. Locked goals stay out. goalsKept is the part in savings accounts the low-month money already counts in full.
+  let goals = 0n;
+  let goalsKept = 0n;
+  for (const a of f.accounts) {
+    const kept = a.kind === 'savings' && (a.use === null || a.use === 'untouched');
+    if (a.use !== 'emergency' && a.use !== 'untouched' && !kept) continue;
+    const mine = (f.goals ?? []).filter((g) => g.accountId === a.id);
+    const unlocked = mine.reduce((t, g) => t + (g.locked === false ? maxC(0n, big(g.saved)) : 0n), 0n);
+    const lockedThere = mine.reduce((t, g) => t + (g.locked === false ? 0n : maxC(0n, big(g.saved))), 0n);
+    const room = maxC(0n, big(a.balance) - lockedThere);
+    const counted = unlocked < room ? unlocked : room;
+    goals += counted;
+    if (kept && a.balance > 0) goalsKept += counted;
+  }
   const locked = !off && n.locked !== false;
-  return { off, locked, saved, size, starter, protectedPart, above, lend: off ? saved : locked ? 0n : protectedPart };
+  // `above` is every spare saving outside the spending accounts: the net's own money above its size and the unlocked goals.
+  return { off, locked, saved, size, starter, protectedPart, netAbove, goals, goalsKept, above: netAbove + goals, lend: off ? saved : locked ? 0n : protectedPart };
 }
 
 /** D-35: a fit while protection is on and the net is empty or below its size is amber. */
@@ -557,7 +575,7 @@ function fitVariant(net: PlainNet, usesExtra: boolean, costly = false, tight = f
   if (tight) return 'tight';
   // D-39b: the costly-debt caution leads the money's source and the net caution (05.4-20).
   if (costly) return 'costly_debt';
-  if (usesExtra) return 'extra_savings';
+  if (usesExtra && net.netAbove > 0n) return 'extra_savings';
   return netVariant(net);
 }
 
@@ -826,7 +844,14 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   if (rest === 0n) return { code: 'fits_month', variant: fitVariant(net, false, false, tight), afterBuy: Number(after) };
   // Free money is what sits plus this month's room; less the room this purchase already took, it is the earlier money.
   const earlier = sitting + usualRaw - thisMonth + net.above;
-  if (rest > earlier) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
+  if (rest > earlier) {
+    // Crosscheck seed 349832153: "$1,500 is more than spare money plus the whole net, so it is Not yet" (SN-04), so the net is asked
+    // before Not yet here too, as on a day with records; with protection off or a $0 size its money counts like any other (SN-05,
+    // SN-07). The money test can pass while the ladder is short when stopped costs bring money back by the purchase date.
+    if (rest > earlier + net.lend) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
+    const need = maxC(0n, rest - maxC(0n, sitting + usualRaw - thisMonth) - net.above);
+    return { code: 'fits_uses_net', variant: net.off ? 'protection_off' : null, afterBuy: netDipFigure(usualLeft, cost, need, purchaseMargin(f, margin, pathLowest), net) };
+  }
   return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above, carriesCostlyDebt(f, rest), tight), afterBuy: Number(usualLeft - fromMonth) };
 }
 
@@ -1227,7 +1252,8 @@ export function plainLowMonths(f: RightAnswerFixture): Omit<PlainAnswer, 'afterB
   const need = maxC(shortfall, shortfall * times - between);
   const net = plainNet(f);
   const kept = f.accounts.filter((a) => a.kind === 'savings' && (a.use === null || a.use === 'untouched')).reduce((s, a) => s + maxC(0n, big(a.balance)), 0n);
-  const savings = freeMoney(f) - maxC(0n, leftThisMonth(f)) - big(c.deposit) + net.above + kept;
+  // 06 D-22: an unlocked goal in a kept savings account is in `kept` already, so it is not added twice
+  const savings = freeMoney(f) - maxC(0n, leftThisMonth(f)) - big(c.deposit) + net.above - net.goalsKept + kept;
   if (savings >= need) return { code: 'fits_month', variant: 'low_month' };
   if (savings + net.lend >= need) return { code: 'fits_uses_net', variant: net.off ? 'protection_off' : null };
   const yes = f.check.yourAnswer ?? null;

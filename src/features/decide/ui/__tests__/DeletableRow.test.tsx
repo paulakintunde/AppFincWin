@@ -38,7 +38,7 @@ jest.mock('@/ui/Sheet', () => {
 
 jest.setTimeout(20000);
 
-async function setup(extra: { disabled?: boolean } = {}) {
+async function setup(extra: { disabled?: boolean; actionWord?: string } = {}) {
   const onOpen = jest.fn();
   const onDelete = jest.fn();
   const onEdit = jest.fn();
@@ -138,5 +138,23 @@ describe('DeletableRow', () => {
     const { queryByLabelText } = await setup({ disabled: true });
     expect(queryByLabelText('More for Sofa')).toBeNull();
     expect(mockSwipe.props.enabled).toBe(false);
+  });
+
+  it('06-37 D-37 an action word (Remove) replaces Delete in the swipe, the ⋯ menu and the confirm button', async () => {
+    const { getByLabelText, getByText, queryByText, onDelete } = await setup({ actionWord: 'Remove' });
+    await fireEvent.press(getByLabelText('More for Sofa'));
+    expect(StyleSheet.flatten(getByText('Remove').props.style).color).toBe(colors.danger);
+    expect(queryByText('Delete')).toBeNull();
+    await fireEvent.press(getByLabelText('Remove'));
+    expect(getByText('Delete this check')).toBeTruthy();
+    expect(getByText('Keep it')).toBeTruthy();
+    await fireEvent.press(getByText('Remove', { exact: true }));
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('06-37 D-37 the swipe action carries the action word', async () => {
+    await setup({ actionWord: 'Remove' });
+    const { getByText } = await render(<ThemeProvider>{mockSwipe.props.renderRightActions()}</ThemeProvider>);
+    expect(getByText('Remove', { includeHiddenElements: true })).toBeTruthy(); // the visual word; SwipeRow hides it from readers
   });
 });

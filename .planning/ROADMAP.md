@@ -27,8 +27,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 05.3: Decide screens v3** (INSERTED) - STOPPED 2026-11-01 (Theme N): the Calm Ledger screens; branch parked, not merged; parts harvested in 05.4
 - [ ] **Phase 05.4: Decide safety patch** (INSERTED) - Decide never says "Fits" when a careful person would say "careful": safety net, overdraft, debt minimums, tax, after-purchase figure; plain confidence sentence replaces Rough/Fair/Firm
 - [ ] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
-- [ ] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies
-- [ ] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
+- [x] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies (completed 2026-11-11)
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide, reading test round 2, public switch-on. Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
@@ -1176,7 +1175,73 @@ Plans:
   7. (Decide fix plan) The safety net is the one flagged emergency-fund goal: Decide's old settings copy is migrated, and changing the goal's size in Grow changes Decide's next answer (ARC-13, FIN-16, APP-28).
   8. (Decide fix plan) Debts carry a due day and a payoff strategy in one payoff module; Decide reads them and "adding a debt never raises the lowest point" still passes (ARC-14, ENG-24).
   9. (Decide fix plan) A goal contribution counts exactly once; the Loans, Saving, Emergency and Envelopes setup steps live in Grow; the safety-net and debt contract tests are on (ARC-15, ARC-16).
-**Plans**: TBD
+**Plans**: 37 plans (22 built + 15 gap-closure plans from the owner device check, D-30..D-33)
+
+Plans:
+**Wave 1**
+- [x] 06-01-PLAN.md — Payoff maths: fixed payment, both payoff orders, month-by-month growth, card minimum estimate (W1)
+- [x] 06-02-PLAN.md — Grow maths: two-way goal plan, average-cost lots, gain/loss, 30-day as-of rule (W1)
+- [x] 06-03-PLAN.md — Decide engine: locked goals kept out, unlocked goals counted, safety net and goals named (W1)
+- [x] 06-04-PLAN.md — Schema: goals, APY, debt fields, holdings and lots, apply_patches re-issue, pgTAP (W1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 06-05-PLAN.md — Connection points (BO-07 goal, safety net, debt) with contract and parity tests (W2)
+- [x] 06-08-PLAN.md — Typed db access, keys, export manifest, cache version (W2)
+- [x] 06-09-PLAN.md — Grow copy, copy lint, feature flags, glyphs, base primitives and the Grow undo label keys (W2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 06-06-PLAN.md — Schema: goal contributions, materialiser, goal-plan RPCs, set_safety_net swap (D-29), safety-net move D-07 (W3)
+- [x] 06-07-PLAN.md — Schema: debt plan and sale-closes-loan RPCs (W3)
+- [x] 06-10-PLAN.md — Decide reads Grow through the connection points; contribution counted once; goals right-answer cases (W3)
+- [x] 06-21-PLAN.md — Calculator blocks and Grow charts (split from 06-09) (W3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 06-11-PLAN.md — [BLOCKING] production schema push, owner-gated with hard stops (W4)
+- [x] 06-12-PLAN.md — Goal and safety-net data hooks, incl. use-as-safety-net (D-29) (W4)
+- [x] 06-13-PLAN.md — Calculators page with four typed calculators, D-21 (W4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [x] 06-14-PLAN.md — Debt, holding, lot and net-worth data hooks (W5)
+- [x] 06-15-PLAN.md — Grow tab shell, Goals segment and home cards (W5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [x] 06-17-PLAN.md — Debt screens: payoff plan side by side, add debt, sale sheet (W6)
+- [x] 06-18-PLAN.md — Investing screens and account APY (W6)
+- [x] 06-22-PLAN.md — Goal detail, money moves, new goal sheet, and "Use as my safety net" (D-29) (split from 06-15) (W6)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [x] 06-16-PLAN.md — Safety net screens (create, size, monthly), first-open sheet, Your money rules (W7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [x] 06-19-PLAN.md — Record calculators and Make this the plan (W8)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [x] 06-20-PLAN.md — Setup links, Create from Decide, Grow tab on, phase gate, owner device check (W9)
+
+**Wave 10** *(gap closure, owner device check 2026-11-07; blocked on Wave 9)*
+- [x] 06-23-PLAN.md — Visual depth app-wide: page tone, card and edge shadows, bodyStrong, CLAUDE.md (D-31) (W10)
+- [x] 06-24-PLAN.md — Payoff engine lump option; sooner and less-interest in the debts read model (D-30) (W10)
+- [x] 06-25-PLAN.md — Migration 20261106000400: one-off debt payment RPC, debt_id link, net starts confirmed; pgTAP 94 (D-33) (W10)
+- [x] 06-26-PLAN.md — Copy for the gap plans and the debtOneOffRecorded undo label (W10)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [x] 06-27-PLAN.md — Grow restyle A: goals, safety net, rules; stepper value, debt glyph (D-31) (W11)
+- [x] 06-28-PLAN.md — Grow restyle B: debts, investing, calculators; shared tile (D-31) (W11)
+- [x] 06-29-PLAN.md — [BLOCKING] second production push (20261106000400), owner-gated with hard stops (D-33) (W11)
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [x] 06-30-PLAN.md — One-off debt payment hook, transactions.debt_id on the client, start-date helpers (D-33) (W12)
+- [x] 06-31-PLAN.md — Grow home: hero label, to-confirm badges, row actions, safety net date (D-32) (W12)
+- [x] 06-32-PLAN.md — Goal and safety-net detail: history records, one-tap Confirm, Kept in and rate, net confirm fix (D-32) (W12)
+- [x] 06-33-PLAN.md — Investing: edit and remove entries, edit a holding, row actions (D-32) (W12)
+- [x] 06-34-PLAN.md — Activity Mark paid on goal lines uses the goal confirm path (D-32) (W12)
+
+**Wave 13** *(blocked on Wave 12 completion)*
+- [x] 06-35-PLAN.md — Payoff plan reveal on Debts: rows open, dated buttons, Use once, Stop the extra (D-30, D-32, D-33) (W13)
+- [x] 06-36-PLAN.md — Debt detail reveal and past payments (D-30, D-32) (W13)
+
+**Wave 14** *(blocked on Wave 13 completion)*
+- [x] 06-37-PLAN.md — Gap gate, owner device check on the Pixel 9, finalize 06-20 (W14)
 **UI hint**: yes
 
 ### Phase 06.1: Decide screens from the prototype (INSERTED)
@@ -1398,7 +1463,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
 | 05.4 Decide safety patch | 55/55 | Ready to merge (43 and 45 follow up on main, D-182) |  |
 | 05.5 One shared money model | 0/TBD | Not started | - |
-| 6. Grow | 0/TBD | Not started | - |
+| 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |

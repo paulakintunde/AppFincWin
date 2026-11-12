@@ -5,4 +5,4 @@
  * "bump DECIDE_ENGINE_REVISION" until it is bumped and the lock rewritten (REVISION_WRITE=1). Matches the table CHECK
  * ^[a-z0-9._-]{1,40}$.
  */
-export const DECIDE_ENGINE_REVISION = '05.4.1';
+export const DECIDE_ENGINE_REVISION = '06.2'; // 06.2: code review fixes: an unlocked goal counted once (D-22, P2-CR-01/02, P2-WR-01..03), a goal's stated monthly amount set aside (P4-CR-03). 06.1: locked and unlocked goals (D-05, D-06, D-22), GL-01..05 approved

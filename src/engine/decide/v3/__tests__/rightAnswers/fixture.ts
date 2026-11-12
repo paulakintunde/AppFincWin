@@ -352,6 +352,20 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     ...(irr ? { profile: { types: ['freelance'], variable: 'steady', steady: mu(f.pay.amount), billsHorizonMonths: null } } : {}),
     balance: mu(spending),
     accounts,
+    // 06 (D-05, D-06): the goals as stated, each with an explicit locked flag.
+    envelopes: (f.goals ?? []).map((g) => ({
+      id: g.id,
+      kind: 'pot' as const,
+      target: g.target === null ? null : mu(g.target),
+      monthlyAmount: g.monthly === null ? null : mu(g.monthly),
+      readyBy: null,
+      saved: mu(g.saved),
+      purposeId: null,
+      accountId: g.accountId,
+      bucket: false,
+      name: g.name,
+      locked: g.locked,
+    })),
     debts,
     unspent: { amount: mu(spending), at: f.asOf }, // replaced below by the app's own suggested figure
     // 05.4-15 (ENG-11, ENG-14): quick estimates are the engine's typed estimates; their spending is bills plus everyday

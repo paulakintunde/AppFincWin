@@ -53,7 +53,6 @@ export function settingsSourceOf(input: SettingsSourceInput): V3SettingsSource |
     hold_months: s.hold_months,
     unspent_anchor: s.unspent_anchor,
     unspent_anchor_at: s.unspent_anchor_at,
-    reserve_account_id: s.reserve_account_id,
     everyday_override: s.everyday_override,
     month_marks: s.month_marks,
     rough_saving: s.rough_saving,
@@ -83,9 +82,5 @@ export function settingsSourceOf(input: SettingsSourceInput): V3SettingsSource |
       .filter((a) => a.deleted_at === null)
       .map((a) => ({ kind: a.kind, key: a.key, amount: a.amount, bool_value: a.bool_value, on_date: a.on_date, check_id: a.check_id })),
     live_bridge_check_ids: liveBridgeCheckIds(input),
-    // 05.4 D-33 / D-61: the interim safety-net columns (an old cached row without them reads as undefined -> the defaults).
-    safety_net_protect: s.safety_net_protect,
-    safety_net_size: s.safety_net_size,
-    safety_net_locked: s.safety_net_locked,
   };
 }

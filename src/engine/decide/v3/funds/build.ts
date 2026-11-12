@@ -11,6 +11,7 @@ import { dueDrops } from '../month/dueDrops';
 import type { Funds, MonthModel, UnspentSum, V3Inputs } from '../types';
 import { emergencyOf, withLiveEmergency } from './emergency';
 import { envelopesOf, ownEnvelope } from './envelopes';
+import { unlockedOutside } from './unlockedGoals';
 import { billsAndErest, heldBackOf, rollForward, suggestedUnspent, unspentState } from './unspent';
 
 interface Spending {
@@ -20,6 +21,8 @@ interface Spending {
   readonly unstatedAccounts: readonly string[];
   readonly fundUnlinked: boolean;
   readonly parts: SpendingParts;
+  /** 06 D-22: unlocked goal money the spending balance holds (never more than the balance), counted there as spare money. */
+  readonly unlockedInside: number;
 }
 
 /** The spending balance as a worked sum: gross - mixedSetAside - envelopes - emergency = spending (deductions never exceed what is there). */
@@ -39,9 +42,14 @@ interface SpendingParts {
  */
 function spendingOf(inputs: V3Inputs): Spending {
   const accounts = inputs.accounts;
-  const envs = inputs.envelopes;
+  // 06 D-05, D-22: an unlocked goal is spare money, so only the others are fenced off (locked absent = locked, as before).
+  const envs = inputs.envelopes.filter((e) => !(e.locked === false));
   const ids = new Set((accounts ?? []).map((a) => a.id));
   const linkedTo = (id: string): number => envs.filter((e) => e.accountId === id).reduce((t, e) => t + e.saved, 0);
+  const unlocked = inputs.envelopes.filter((e) => e.locked === false && e.saved > 0);
+  const unlockedIn = (id: string): number => unlocked.filter((e) => e.accountId === id).reduce((t, e) => t + e.saved, 0);
+  // 06 D-22: the unlocked goal money each spending account still holds once its put-aside money is fenced off.
+  let goalsIn = 0;
   let total: number = accounts === undefined ? inputs.balance : 0;
   let fenced = 0;
   let gross: number = accounts === undefined ? inputs.balance : 0;
@@ -54,6 +62,7 @@ function spendingOf(inputs: V3Inputs): Spending {
     if (use === null) unstated.push(a.id);
     else if (use.kind === 'everyday') {
       total += a.balance - linkedTo(a.id);
+      goalsIn += Math.min(unlockedIn(a.id), Math.max(0, a.balance - linkedTo(a.id)));
       fenced += linkedTo(a.id);
       gross += a.balance;
       pEnv += linkedTo(a.id);
@@ -64,6 +73,7 @@ function spendingOf(inputs: V3Inputs): Spending {
       const fe = Math.min(aside, a.balance > 0 ? a.balance : 0);
       const kept = a.balance - fe;
       total += kept;
+      goalsIn += Math.min(unlockedIn(a.id), Math.max(0, kept));
       fenced += fe;
       gross += a.balance;
       // the fenced money is named in turn: envelopes, then the fund, then the extra the user set aside
@@ -75,6 +85,8 @@ function spendingOf(inputs: V3Inputs): Spending {
     }
   }
   const unlinked = envs.filter((e) => e.accountId == null || !ids.has(e.accountId));
+  // An unlocked goal linked to no known account is taken to be in the spending balance, as an unlinked envelope is (D-54).
+  goalsIn += unlocked.filter((e) => e.accountId == null || !ids.has(e.accountId)).reduce((t, e) => t + e.saved, 0);
   const inside = unlinked.reduce((t, e) => t + e.saved, 0);
   total -= inside;
   fenced += inside;
@@ -89,13 +101,15 @@ function spendingOf(inputs: V3Inputs): Spending {
   // 05.4 ENG-02 / FIN-03: balances are signed. Deductions (envelopes, the fund, set-asides) never take more than the money that
   // is there, so with money in the accounts the spending balance stops at 0 as before; an overdrawn total stays below 0.
   const lowest = gross < 0 ? gross : 0;
+  const spending = total < lowest ? lowest : total;
   return {
-    spending: minorUnits(total < lowest ? lowest : total),
+    spending: minorUnits(spending),
     ringFenced: minorUnits(fenced),
     envelopesAssumedInside: unlinked.filter((e) => e.saved > 0).length,
     unstatedAccounts: unstated,
     fundUnlinked,
     parts: partsOf(gross, pMixed, pEnv, pEmg),
+    unlockedInside: Math.min(goalsIn, Math.max(0, spending)),
   };
 }
 
@@ -119,10 +133,18 @@ function partsOf(gross: number, mixed: number, env: number, emg: number): Spendi
   return { gross: minorUnits(g), mixedSetAside: minorUnits(m), envelopes: minorUnits(e), emergency: minorUnits(f) };
 }
 
+/** 06 D-05: the money saved in goals the user marked locked (true); a goal with locked absent is not named. */
+function lockedSaved(envs: V3Inputs['envelopes']): number {
+  return envs.filter((e) => e.locked === true).reduce((t, e) => t + (e.saved > 0 ? e.saved : 0), 0);
+}
+
 export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: string | null): Funds {
+  const lockedNamed = lockedSaved(inputs.envelopes);
   const env = envelopesOf(inputs.envelopes, inputs.asOf);
   const emergency = emergencyOf(inputs.emergency).amount;
   const sp = spendingOf(inputs);
+  // 06 D-22 (P2-WR-03): the unlocked goal money actually counted: what the spending balance holds plus what sits outside it.
+  const unlockedNamed = sp.unlockedInside + unlockedOutside(inputs).outside;
   const drops = dueDrops(inputs);
   const suggested = suggestedUnspent({
     asOf: inputs.asOf,
@@ -186,6 +208,8 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
     fundUnlinked: sp.fundUnlinked,
     ...(unexplained === undefined ? {} : { unexplained }),
     ...(billsHeld.parts.length === 0 ? {} : { billsHeld }),
+    ...(lockedNamed > 0 ? { lockedNamedSaved: minorUnits(lockedNamed) } : {}),
+    ...(unlockedNamed > 0 ? { unlockedSaved: minorUnits(unlockedNamed) } : {}),
   };
 }
 

@@ -6,11 +6,14 @@
 //    the delete-both confirm (two entries go).
 //  - An occurrence of a repeating series asks "This one / This and future" before deleting.
 // Row actions are off while bulk selection is active.
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useBulkMarkUnpaid, useBulkPatch } from '@/data/mutations/patches';
 import { useEndSeries } from '@/data/mutations/recurringSeries';
+import { goalIdOfLine } from '@/features/grow/goals/goalLine';
+import { useGoalLineRoute } from './goalLineRoute';
+import { useGoalLinePay } from '@/features/grow/goals/useGoalLinePay';
 import { useDeleteTransaction, useMarkPaid } from '@/data/mutations/transactions';
 import { useDeleteTransfer, type TransferLegRow } from '@/data/mutations/transfers';
 import { daysInMonth } from '@/engine/recurring';
@@ -44,6 +47,19 @@ export interface RowActions {
   cloneMode(row: ActivityRowView, viewedMonth: string): EntryMode;
 }
 
+/**
+ * 06-34 (D-32, D-25): a goal's Expected contribution line. Its in-leg is written only by confirm_goal_contribution, so
+ * it is never flipped to paid with a plain status patch. The materialiser tags the line with goal_id; the series'
+ * goal_id covers a line whose tag has not reached this device yet.
+ */
+export function isGoalLine(
+  row: Pick<ActivityRowView, 'goal_id' | 'recurring_series_id' | 'status' | 'transfer_id'>,
+  seriesById?: ReadonlyMap<string, { goal_id?: string | null }>
+): boolean {
+  if (row.status !== 'pending' || row.transfer_id !== null) return false;
+  return goalIdOfLine(row, seriesById) !== null;
+}
+
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
@@ -58,6 +74,9 @@ export function useRowActions(ctx: RowActionsContext): RowActions {
   const { remove: removeTransfer } = useDeleteTransfer();
   const { end } = useEndSeries();
   const series = useRecurringSeries(householdId ?? undefined).data;
+  const { pay: payGoalLine } = useGoalLinePay(ownerId, householdId);
+  const routeOf = useGoalLineRoute(ownerId, householdId);
+  const seriesById = useMemo(() => new Map((series ?? []).map((x) => [x.id, x])), [series]);
 
   const partnerOf = useCallback(
     (row: ActivityRowView): ActivityRowView | undefined =>
@@ -102,10 +121,19 @@ export function useRowActions(ctx: RowActionsContext): RowActions {
     (row: ActivityRowView) => {
       if (!enabled || ownerId === null || row.status !== 'pending') return;
       if (row.transfer_id !== null) return setTransferStatus(row, 'pending', 'paid');
+      const route = routeOf(row, seriesById);
+      if (route.kind === 'goal') {
+        // The goal grows through the same confirm Grow uses. With the goal not loaded nothing is written and the
+        // not-ready hint shows (06-37).
+        payGoalLine(row, route.goalId);
+        return;
+      }
+      // P5-CR-01: a removed goal's line is marked paid as a plain line, and the toast says why.
       const stepId = markPaid(row, ownerId, today);
-      showToast({ kind: 'ordinary', text: undoLabelText('markedPaid', { name: row.name ?? undefined }), stepId });
+      const text = route.kind === 'goalGone' ? { key: 'record.sheet.goalGoneMarkedPaid' } : undoLabelText('markedPaid', { name: row.name ?? undefined });
+      showToast({ kind: 'ordinary', text, stepId });
     },
-    [enabled, ownerId, today, markPaid, setTransferStatus]
+    [enabled, ownerId, today, markPaid, setTransferStatus, seriesById, payGoalLine, routeOf]
   );
 
   const unpay = useCallback(

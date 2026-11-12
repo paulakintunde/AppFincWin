@@ -32,7 +32,6 @@ import {
   type Limits,
   type MonthMark,
   type PayArrival,
-  type SafetyNet,
   type TypedEstimates,
   type SeriesRole,
   type UnexplainedAnswer,
@@ -50,6 +49,7 @@ import {
 import { MAX_ABS_AMOUNT_MINOR, currencyCode, currencyExponent, minorUnits } from '@/engine/money';
 import { percent } from '@/engine/payoff';
 import { occurrenceDate, type RecurringFreq } from '@/engine/recurring';
+import { debtToV3Debt, envelopesOf, goalPointsOf, safetyNetInputsOf, safetyNetPointOf } from '@/features/grow/connect';
 import { buildDecideSnapshot, type SnapshotSource } from '../buildSnapshot';
 import { convertFloored, makeConverter } from '../conversion';
 import type { SnapshotResult } from '../types';
@@ -102,8 +102,6 @@ const pctOf = (x: unknown) => (typeof x === 'string' && DSR_PATTERN.test(x) && N
 const inList = (xs: readonly string[], x: unknown): x is string => typeof x === 'string' && xs.includes(x);
 /** ARC-25: a stored rate as typed, or null; never a default. */
 const rateOf = (x: unknown) => (typeof x === 'string' && RATE_PATTERN.test(x) ? percent(x) : null);
-/** FIN-04: a due day 1..31, or null. */
-const dueDayOf = (x: unknown): number | null => (typeof x === 'number' && Number.isInteger(x) && x >= 1 && x <= 31 ? x : null);
 
 function lineSpecOf(s: unknown): LineSpec | null {
   if (!isRec(s)) return null;
@@ -220,7 +218,6 @@ function withoutMoney(v3: V3SettingsSource | null): V3SettingsSource | null {
     rough_debt: null,
     rough_invest: null,
     unexplained_amount: null,
-    safety_net_size: null, // 05.4 D-33: the size is settings money too (the starter applies)
   };
 }
 
@@ -366,7 +363,10 @@ export function buildV3Inputs(
       status: over.status,
     };
   };
-  const goalRow = new Map(source.goals.map((g) => [g.id, g]));
+  // The series that feed a live goal: the goal's monthly amount carries them, so Decide never reads them as series too.
+  // P5-CR-01: only while the goal is live (not removed, not done). A removed or done goal is not carried by anything, so
+  // a series still tagged to it stays a bill or a Savings series and its outflow is counted, never lost.
+  const goalLinkedSeries = new Set(source.series.filter((r) => isLiveGoal(r.goal_id)).map((r) => r.id));
   // D-03, 05.1 D-53: account use is read from the account columns (one source); `uses` only overrides in tests.
   const effectiveUses: Record<string, AccountUse> = {};
   for (const a of source.accounts) {
@@ -409,19 +409,17 @@ export function buildV3Inputs(
   };
 
   let months: V3Month[] = [];
-  // D-54: the account an envelope's latest goal-tagged leg lands in; null when it has none.
+  const toHome = makeConverter({ home, rates: source.rates, customs: source.customCurrencies, today }).toHome;
+  // 06 D-02: goals, the safety net and debts reach Decide through the Grow connection points only (D-01, no second wiring).
+  const goalRows = source.goals.map((g) => ({ ...g, name: g.name ?? '' }));
+  // D-54, OQ6: a goal with no stored account falls back to the account its latest goal-tagged transfer leg landed in (null when none).
   const landing = new Map<string, Row>();
   for (const r of source.rows) {
     if (r.deleted_at !== null || r.transfer_id === null || r.goal_id == null || r.original_amount <= 0) continue;
     const prev = landing.get(r.goal_id);
     if (prev === undefined || r.local_date >= prev.local_date) landing.set(r.goal_id, r);
   }
-  // OQ6: a stored envelope account wins over the transfer-leg guess, which stays as the fallback. D-23: bucket = a saving bucket.
-  const envelopes: Envelope[] = (built.pots ?? []).map((p) => {
-    const g = goalRow.get(p.id);
-    return { ...p, purposeId: null, accountId: g?.account_id ?? landing.get(p.id)?.account_id ?? null, bucket: (g?.bucket ?? null) !== null };
-  });
-  const toHome = makeConverter({ home, rates: source.rates, customs: source.customCurrencies, today }).toHome;
+  const envelopes: Envelope[] = envelopesOf(goalPointsOf(goalRows, source.rows, toHome)).map((e) => ({ ...e, accountId: e.accountId ?? landing.get(e.id)?.account_id ?? null }));
   const accounts: V3Account[] = source.accounts.flatMap((a) => {
     if (a.deleted_at !== null || a.archived_at !== null) return [];
     // 05.2 F-05: only money accounts are V3 accounts. This mirrors holdsMoney in setup/accountUseSuggest.ts, so the account-use
@@ -450,7 +448,7 @@ export function buildV3Inputs(
   if (built.kind === 'logged') {
     const snap = built.snapshot;
     provisionalRates = snap.provisionalRates === true;
-    for (const b of snap.bills) series.push(make(b.seriesId, 'bill', b.freq, b.anchorDate, b.endDate, b.occurrenceCount, b.latestAmount, b.categoryId));
+    for (const b of snap.bills) if (!goalLinkedSeries.has(b.seriesId)) series.push(make(b.seriesId, 'bill', b.freq, b.anchorDate, b.endDate, b.occurrenceCount, b.latestAmount, b.categoryId));
     for (const s of snap.incomeSeries) {
       const other = incomeKindOf(extraOf(s.seriesId).income_kind);
       const role: SeriesRole = other === null || (other.kind === 'preset' && other.value === 'salary') ? 'pay' : 'other_income';
@@ -463,6 +461,7 @@ export function buildV3Inputs(
     const covered = new Set(source.debts.filter((d) => d.deleted_at === null && d.series_id !== null).map((d) => d.series_id as string));
     for (const s of source.series) {
       if (s.deleted_at !== null || categoryKey(s.category_id) !== 'Savings' || covered.has(s.id)) continue;
+      if (goalLinkedSeries.has(s.id)) continue; // 06 ARC-15: a goal's contribution is carried by the goal's monthly amount; counted once
       if (s.end_date !== null && s.end_date < today) continue;
       const amount = converter.toHome(Math.abs(s.amount), s.currency);
       if (amount === null || amount === 0) continue;
@@ -476,7 +475,17 @@ export function buildV3Inputs(
       return u !== undefined && (u.kind === 'everyday' || u.kind === 'mixed');
     };
     const roleOf = (line: (typeof snap.months)[number]['lines'][number]): LineRole => {
-      if (line.transferId === null) return line.direction === 'out' ? 'spending' : line.isRefund ? 'refund' : 'income';
+      if (line.transferId === null) {
+        // 06 ARC-15: single-leg goal contribution, counted once as an envelope deposit
+        if (isLiveGoal(rowById.get(line.id)?.goal_id)) return line.direction === 'out' ? 'envelope_deposit' : 'envelope_withdrawal';
+        // 06-37 D-35: a line tagged to a debt (a one-off payment, record_debt_one_off) is a debt payment, the same as a
+        // transfer into a loan or card: money out once, never everyday spending, never in a category's total.
+        // P5-WR-05: record_debt_sale's final payment carries debt_id too, so it lands here as a debt payment. Money IN tagged
+        // to a debt is the asset sale itself: one-time money in, never pay and never averaged into income.
+        const debtId = rowById.get(line.id)?.debt_id;
+        if (debtId !== null && debtId !== undefined) return line.direction === 'out' ? 'debt_payment' : 'other_in';
+        return line.direction === 'out' ? 'spending' : line.isRefund ? 'refund' : 'income';
+      }
       const row = rowById.get(line.id);
       if (row === undefined) return 'own_transfer'; // L-09: a leg whose row is gone is ignored
       const partner = (legsOf.get(line.transferId) ?? []).find((r) => r.id !== row.id);
@@ -553,39 +562,17 @@ export function buildV3Inputs(
   const debtRow = new Map(source.debts.map((d) => [d.id, d]));
   // A card's debt carries the card account's id; its debts row (due day) is the live card row on that account.
   const cardRowOn = (accountId: string) => source.debts.find((d) => d.deleted_at === null && d.kind === 'card' && d.account_id === accountId);
-  const debts: V3Debt[] = debtList.map((d) => {
-    const row = debtRow.get(d.id);
-    return {
-      id: d.id,
-      kind: row !== undefined ? row.kind : kindOf(d.id) === 'credit' ? 'card' : 'loan',
-      balance: d.balance,
-      minimum: d.minimumPayment,
-      apr: d.apr,
-      secured: d.secured,
-      isHousing: row !== undefined && row.is_housing,
-      dueDay: dueDayOf((row ?? cardRowOn(d.id))?.due_day), // FIN-04: null = not set (the engine assumes tomorrow and says so)
-    };
-  });
+  const debts: V3Debt[] = debtList.map((d) => debtToV3Debt(d, debtRow.get(d.id), cardRowOn(d.id), kindOf));
 
   const answers = v3?.answers ?? [];
 
   // ── funds ──
-  const reserve = st === null || !moneyUsable ? null : moneyOf(st.reserve);
   const anchorAmount = signedMoneyOf(v3?.unspent_anchor);
   const anchorAt = dateOf(v3?.unspent_anchor_at);
   const everyday = moneyOf(v3?.everyday_override);
-  // 05.4 FIN-01 (D-33, D-35, D-61): the interim columns. No settings row = null (the engine's defaults: on, starter, locked, saved =
-  // the emergency fund). saved is the money in the net (the emergency fund), never the size; size null = the starter.
-  const netSize = moneyOf(v3?.safety_net_size);
-  const safetyNet: SafetyNet | null =
-    v3 === null
-      ? null
-      : {
-          protect: v3.safety_net_protect !== false,
-          size: netSize === null ? null : minorUnits(netSize),
-          saved: minorUnits(reserve ?? 0),
-          locked: v3.safety_net_locked !== false,
-        };
+  // 06 D-02 (ARC-13, FIN-16): the safety net and its fund come only from the flagged Grow goal. No flagged goal = null (the engine's
+  // defaults apply). The interim decide_settings columns and the typed reserve are no longer read: one store.
+  const { safetyNet, emergency } = safetyNetInputsOf(safetyNetPointOf(goalRows, source.rows, toHome, home));
   const subdivision = source.regionSubdivision;
 
   return {
@@ -599,7 +586,7 @@ export function buildV3Inputs(
     typedEstimates: rough,
     balance: built.cash,
     unspent: anchorAmount === null || anchorAt === null ? null : { amount: minorUnits(anchorAmount), at: anchorAt },
-    emergency: reserve === null ? null : { amount: minorUnits(reserve), accountId: v3?.reserve_account_id ?? null },
+    emergency,
     envelopes,
     debts,
     everydayOverride: everyday === null ? null : minorUnits(everyday),
