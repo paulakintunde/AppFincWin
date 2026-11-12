@@ -1,0 +1,47 @@
+# 06.1-32 APP-13 (ask, don't block, D-43 / N21): an answer that asks about a figure it does not have still shows in full. The
+# ask sits under the answer with its own answers (here the debts ask: "Add it" or "None"); a missing figure is its own row with
+# a Fix link. Choosing "None" (the waiver: the plan's draft said "Skip for now"; the real key is decide.v3.factAction.none) keeps
+# the answer, its basis and its footer on screen. Run signed in as a test account with no debts recorded.
+appId: com.fincwin.app
+name: Decide waiver (ask, don't block)
+---
+- runFlow:
+    file: common/decide-new-check.yaml
+    env:
+      ITEM: "concert tickets"
+      PRICE: "150"
+# The answer is there before anything is answered
+- assertVisible:
+    id: "answer-verdict"
+# The ask (or a missing-figure row) under the answer
+- scrollUntilVisible:
+    element: ".*Do you have (any|one)\\?|Fix(: .*)?"
+    direction: DOWN
+- runFlow:
+    when:
+      visible: ".*Do you have (any|one)\\?"
+    commands:
+      - tapOn: "None"
+      - assertNotVisible: ".*Do you have (any|one)\\?"
+- runFlow:
+    when:
+      visible: "Fix(: .*)?"
+    commands:
+      # a missing figure never blocks: Fix is a link under the answer, not a gate
+      - assertVisible:
+          id: "answer-facts"
+# Still the answer: verdict, basis and footer
+- scrollUntilVisible:
+    element:
+      id: "answer-verdict"
+    direction: UP
+- assertVisible:
+    id: "answer-verdict"
+- scrollUntilVisible:
+    element:
+      id: "answer-footer"
+    direction: DOWN
+- assertVisible:
+    id: "answer-basis"
+- assertVisible:
+    id: "answer-footer"

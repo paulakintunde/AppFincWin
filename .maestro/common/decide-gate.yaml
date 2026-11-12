@@ -1,0 +1,38 @@
+# 06.1-32 shared: after Check it or See the answer, get through whatever stands before the answer on this account:
+# the one-time intro card (D-120), the first-answer safety-net question (D-14), and, on an account whose records are not
+# ready, a first answer from quick estimates (ask, don't block). On a ready account none of these show and nothing is tapped.
+appId: com.fincwin.app
+---
+- extendedWaitUntil:
+    visible: "How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet|I bought it"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "How Decide answers"
+    commands:
+      - tapOn: "Got it"
+- runFlow:
+    when:
+      visible: "Do you have a safety net\\? About how much\\?"
+    commands:
+      - tapOn: "Not set yet"
+- extendedWaitUntil:
+    visible: "Not ready yet|I bought it"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Not ready yet"
+    commands:
+      - tapOn: "Answer from quick estimates"
+      - tapOn: "About how much comes in each month\\?"
+      - inputText: "3000"
+      - tapOn: "About how much goes on bills\\?"
+      - inputText: "1200"
+      - tapOn: "About how much on everyday spending\\?"
+      - inputText: "800"
+      - hideKeyboard
+      - tapOn: "See the answer now"
+- extendedWaitUntil:
+    visible:
+      id: "answer-verdict"
+    timeout: 20000

@@ -1,0 +1,69 @@
+# 06.1-32 APP-13: a used car on a plan goes through the big-buy stepper (D-09), the installment plan sheet, then the answer
+# shows the plan's interest line and the legal footer. Run signed in as a test account; the first-answer gate (intro, net
+# question, quick estimates on an account that is not ready) is passed by common/decide-gate.yaml. Writes one check.
+# Words are the real decide.screens / decide.v3 keys in src/i18n/locales.
+appId: com.fincwin.app
+name: Decide stepper loan
+---
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- assertVisible: "Can I afford it\\?"
+- tapOn:
+    id: "check-what"
+- inputText: "used car"
+- tapOn: "Price"
+- inputText: "9000"
+- hideKeyboard
+- tapOn: "Check it"
+# "used car" reads as Car, so the stepper opens on step 2 (price and how you pay)
+- extendedWaitUntil:
+    visible: "Price and how you pay"
+    timeout: 15000
+- assertVisible: "Step 2 of 3"
+- scrollUntilVisible:
+    element: "Installments"
+    direction: DOWN
+- tapOn: "Installments"
+# The installment plan sheet
+- extendedWaitUntil:
+    visible: "Installment plan"
+    timeout: 10000
+- tapOn: "24 months"
+- scrollUntilVisible:
+    element: "Rate, % a year"
+    direction: DOWN
+- tapOn: "Rate, % a year"
+- inputText: "9"
+- hideKeyboard
+- scrollUntilVisible:
+    element: "Use this plan"
+    direction: DOWN
+- assertVisible: ".* a month for 24 months"
+- tapOn: "Use this plan"
+- assertVisible: ".* down · .* a month"
+- scrollUntilVisible:
+    element: "Next"
+    direction: DOWN
+- tapOn: "Next"
+# Step 3: running costs, then the answer
+- extendedWaitUntil:
+    visible: "Step 3 of 3"
+    timeout: 10000
+- scrollUntilVisible:
+    element: "See the answer"
+    direction: DOWN
+- tapOn: "See the answer"
+- runFlow: common/decide-gate.yaml
+# The interest line (decide.v3.fact.interest_is_a_cost or the plan verdict's interest sentence)
+- scrollUntilVisible:
+    element: ".*in interest.*"
+    direction: DOWN
+- assertVisible: ".*in interest.*"
+# The legal footer (legal.decideAnswer.footer) above the action bar
+- scrollUntilVisible:
+    element:
+      id: "answer-footer"
+    direction: DOWN
+- assertVisible:
+    id: "answer-footer"
+- assertVisible: "I bought it"

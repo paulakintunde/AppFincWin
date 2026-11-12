@@ -1,0 +1,37 @@
+# 06.1-32 APP-13 (N19 / D63, N19S): an answer -> I bought it -> Add to records -> Added to records -> the first running-cost
+# offer is passed over ("Not this one": the plan's draft said "Skip"; the real key is answerActions.runningCost.skip), then
+# Undo takes the purchase back out, so the test account keeps no record. A used car brings running costs (insurance, fuel),
+# so at least one offer shows. Run signed in as a test account with an everyday account.
+appId: com.fincwin.app
+name: Decide I bought it
+---
+- runFlow:
+    file: common/decide-new-check.yaml
+    env:
+      ITEM: "used car"
+      PRICE: "9000"
+- scrollUntilVisible:
+    element: "I bought it"
+    direction: DOWN
+- tapOn: "I bought it"
+- extendedWaitUntil:
+    visible: "Add to your records"
+    timeout: 15000
+- assertVisible: "This updates FincWin\\. No payment is made and no money moves\\."
+- scrollUntilVisible:
+    element: "Add to records"
+    direction: DOWN
+- tapOn: "Add to records"
+- extendedWaitUntil:
+    visible: "Added to records"
+    timeout: 20000
+- assertVisible: ".* is in your records, bought .*"
+# The first running-cost offer: pass over it
+- assertVisible: ".*Add it as a bill\\?"
+- tapOn: "Not this one"
+# Clean up: Undo takes the purchase back out
+- tapOn: "Undo"
+- extendedWaitUntil:
+    visible: "Undone\\. Nothing was added\\."
+    timeout: 20000
+- tapOn: "Back to Decide"

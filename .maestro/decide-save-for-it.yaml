@@ -1,0 +1,38 @@
+# 06.1-32 APP-13 (N18, N18S, D-22): an answer -> Save for it -> Make the goal -> Goal made -> See it in Grow. Nothing moves
+# money: the goal lives in Grow. Run signed in as a test account; the made goal is undone at the end of the flow
+# (Back to Goal made, then Undo) so the account keeps no goal.
+appId: com.fincwin.app
+name: Decide save for it
+---
+- runFlow:
+    file: common/decide-new-check.yaml
+    env:
+      ITEM: "laptop"
+      PRICE: "1500"
+- scrollUntilVisible:
+    element: "Save for it"
+    direction: DOWN
+- tapOn: "Save for it"
+- extendedWaitUntil:
+    visible: "A goal for .*"
+    timeout: 15000
+- assertVisible: "A savings goal in Grow, linked to this check\\."
+- scrollUntilVisible:
+    element: "Make the goal"
+    direction: DOWN
+- tapOn: "Make the goal"
+- extendedWaitUntil:
+    visible: "Goal made"
+    timeout: 20000
+- assertVisible: "The goal for .* is in Grow\\. The check now waits for it\\."
+- tapOn: "See it in Grow"
+- extendedWaitUntil:
+    visible: "Grow, tab, .*"
+    timeout: 15000
+# Clean up: back to Goal made, Undo
+- back
+- extendedWaitUntil:
+    visible: "Goal made"
+    timeout: 10000
+- tapOn: "Undo"
+- assertVisible: "Undone\\. Nothing was added\\."

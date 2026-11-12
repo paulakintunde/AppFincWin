@@ -1,0 +1,67 @@
+# 06.1-32 APP-13 (D-14, D-20, D51-D52): the safety net from Your money rules: Unlock for answers -> confirm Unlock -> Undo
+# puts the lock back; unlock again, then the lock switch locks it at once with the plain "Safety net locked." toast.
+# Run signed in as a test account. An account with no safety net gets one first through the D-14 question (Set an amount).
+# Ends locked, as it started.
+appId: com.fincwin.app
+name: Decide safety net
+---
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- scrollUntilVisible:
+    element:
+      id: "money-rules-net"
+    direction: DOWN
+- tapOn:
+    id: "money-rules-net"
+- extendedWaitUntil:
+    visible: "Money kept for emergencies\\. Set in Grow\\.|No safety net yet"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: "No safety net yet"
+    commands:
+      - tapOn: "Set an amount"
+      - tapOn: "About how much"
+      - inputText: "2000"
+      - hideKeyboard
+      - tapOn: "Save and see the answer"
+- extendedWaitUntil:
+    visible:
+      id: "net-word"
+    timeout: 15000
+- assertVisible:
+    id: "net-word"
+    text: "Locked"
+# Unlock needs the confirm
+- scrollUntilVisible:
+    element: "Unlock for answers"
+    direction: DOWN
+- tapOn: "Unlock for answers"
+- assertVisible: "Let answers use your safety net\\?"
+- tapOn: "Unlock"
+- assertVisible: "Safety net unlocked for answers.*"
+# Undo from the toast locks it again
+- tapOn: "Undo"
+- extendedWaitUntil:
+    visible:
+      id: "net-word"
+      text: "Locked"
+    timeout: 10000
+# Unlock again, then lock with the switch: no confirm, a plain toast
+- scrollUntilVisible:
+    element: "Unlock for answers"
+    direction: DOWN
+- tapOn: "Unlock for answers"
+- tapOn: "Unlock"
+- extendedWaitUntil:
+    visible:
+      id: "net-word"
+      text: "Unlocked"
+    timeout: 10000
+- tapOn: "Safety net locked"
+- assertVisible: "Safety net locked\\."
+- extendedWaitUntil:
+    visible:
+      id: "net-word"
+      text: "Locked"
+    timeout: 10000
