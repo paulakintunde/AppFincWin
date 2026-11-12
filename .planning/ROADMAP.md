@@ -1155,6 +1155,7 @@ Plans:
   5. Theme N: six connection points with one owner each are written and tested (month picture, Grow goal, safety net, Grow debt, Activity bills, household scope); the move of the safety-net, debt, savings and share columns out of `decide_settings` is planned; only one Decide remains in the app's routes.
   6. Core Maestro flows run green on the Android emulator.
   7. Compliance gate: retired screens deleted; the copy guard runs at sentence level and in lint.
+**Notes from Phase 8 (2026-11-11):** see `05.5-NOTES-FROM-08.md` (re-scope after 06.1 plans 36/37, share_pct owner, settlement exclusion, `countsForMe` needed before 08-25).
 **Plans:** 0 plans
 
 Plans:
@@ -1260,18 +1261,75 @@ Plans:
 ### Phase 8: Household
 **Goal**: Multiple people can share one household's money, live, on top of the RLS foundation Phase 0 already laid.
 **Depends on**: Phase 0 (schema/RLS foundation), Phase 3 (Shell for the UI this phase adds). Designed for Variant C (fix plan Theme N, BO-07): the household scope connection point; the first wave fixes the household-wide read rule on `debts` and `statement_periods`
-**Requirements**: HH-01, HH-02, HH-03, HH-04, HH-05, HH-06, HH-07, HH-08, HH-09, HH-10, HH-11, HH-12, HH-13, HH-14, HH-15
+**Requirements**: HH-01, HH-02, HH-03, HH-04, HH-05, HH-06, HH-07, HH-08, HH-09, HH-10, HH-11, HH-13, HH-14, HH-15 (HH-12 deferred, 08-CONTEXT D-45)
 **Success Criteria** (what must be TRUE):
   1. A user can invite another person with an expiring link and code; the invited person joins by signing in and gains access only to that household's shared records.
   2. A user can assign members a colour, a role (including custom roles) and a weight; mark a transaction as shared and have it split by even/weight/amount/mine-only rules, with a default rule set per category.
   3. A user can see what each member owes or is owed, and settle up with a member so the matching record appears on their side.
   4. A user can toggle between their own figures and the household's, and hide real names from other members with a colour-name fallback.
-  5. A shared record created by one member appears on another member's device without a manual refresh, and a user can share a read-only household summary as an expiring link.
+  5. A shared record created by one member appears on another member's device without a manual refresh. (The read-only summary link, HH-12, is deferred: 08-CONTEXT D-45.)
   6. A member can leave, be removed, or receive ownership; deleting an account follows the documented rule and leaves the remaining members' balances correct; and guessing invite codes is rate-limited to futility.
   7. (Decide fix plan, blocking) Every record is personal unless marked shared, enforced by database rules, and the two-user tests are green BEFORE the invite flow merges: member B cannot read, edit, receive live updates for, or export member A's personal rows (CMP-F18, ARC-22).
-  8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money.
-  9. (Decide fix plan) Household split rules are the one source of "my share"; settlements count as neither spending nor income; money owed to you is not spendable until it arrives (ARC-17, ARC-18, ENG-25).
-**Plans**: TBD
+  8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money. (Decide side moved to 08.1 with 08-28 on 2026-11-11.)
+  9. (Decide fix plan) Household split rules are the one source of "my share"; settlements count as neither spending nor income; money owed to you is not spendable until it arrives (ARC-17, ARC-18, ENG-25). (share_pct removal moved to 08.1 or 05.5 with 08-29.)
+**Plans:** 28 plans in 12 waves (08-25 gated on 05.5, D-41; it runs last, wave 12, after the owner-approved push in 08-27). 08-28 and 08-29 moved to Phase 08.1 on 2026-11-11 (owner decision); gates and the post-06.1 revision round are in `08-GATES.md`.
+
+Plans:
+**Wave 1**
+- [ ] 08-01-PLAN.md — Preconditions + wave-1 privacy migration (personal unless shared, backfill, RLS, views)
+- [ ] 08-02-PLAN.md — Members v2 (owner flag, role label, colours, hidden names, 0% weights), household name, notices table
+- [ ] 08-03-PLAN.md — Engine: line split, weights rebalance, colours, member-name resolver; feature switches (D-44)
+- [ ] 08-04-PLAN.md — Engine: per-pair balances, isSettlement rule, settle-up total
+- [ ] 08-12-PLAN.md — Household copy catalogue (one file per area) + compliance-voice test
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 08-05-PLAN.md — Privacy RPC rewrite (apply_patches v4, undo, definer functions, shared-line edit guard)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 08-06-PLAN.md — Existing pgTAP suite updated + household table coverage meta-test
+- [ ] 08-07-PLAN.md — SC7 two-user privacy suite + export guard (blocks invite flow)
+- [ ] 08-08-PLAN.md — Realtime spike: publication, reconciler, two-client test harness (blocks invite flow)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 08-09-PLAN.md — Invites, per-user rate-limited redeem (global rate alert-only), D-01 move-in
+- [ ] 08-10-PLAN.md — Shared lines: stored splits, FX stamping, joint accounts, series, defaults
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 08-11-PLAN.md — Settle-up state machine, locks, lapse/reminder cron, undo, write-off
+- [ ] 08-13-PLAN.md — Client data A (household, members, invites, notices), resolver hook, feature hook
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 08-14-PLAN.md — Leave/remove/transfer/reconnect + account-deletion database rule
+- [ ] 08-16-PLAN.md — Household UI primitives, name-resolver guard, member and weights sheets
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 08-15-PLAN.md — Client data B (sharing mutations, settlements, balances, former members)
+- [ ] 08-17-PLAN.md — Household home, notices, You row, invite/rename/currency (owner) sheets
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 08-18-PLAN.md — Join flow (fincwin:// link, code entry, what's-shared card)
+- [ ] 08-19-PLAN.md — Sharing UI (entry switch, split sheet, line detail, Activity badges, bulk share)
+- [ ] 08-20-PLAN.md — Rules UI (household and category defaults, apply-to-unsettled, joint accounts)
+- [ ] 08-21-PLAN.md — Balances and settle-up UI
+- [ ] 08-22-PLAN.md — Delete-account Edge Function + in-app deletion
+- [ ] 08-23-PLAN.md — Realtime wiring in the app
+- [ ] 08-30-PLAN.md — ARC-18 client rule: settlement records out of Activity totals and Home month figures
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 08-24-PLAN.md — Leave/remove UI + removed-member notice
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 08-26-PLAN.md — Full suite, D-45 check, DPIA draft, validation map
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
+
+**Wave 12** *(blocked on Wave 11 completion)*
+- [ ] 08-25-PLAN.md — [gated on 05.5] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
+
+**Moved to Phase 08.1** *(2026-11-11, owner decision; re-plan on the 06.1 screens)*
+- 08-28 — Partner opt-in, shared safety net, caveat, couples note -> `08.1-CARRY-OVER-08-28.md`
+- 08-29 — share_pct removal, Share step to Household, APP-08/APP-22/CMP-F04 -> `08.1-CARRY-OVER-08-29.md`
 **UI hint**: yes
 **Research flag**: The Realtime reconciliation state machine (no pending write / write still queued / own-write echo / genuine version conflict) is a synthesized design, not a documented Supabase recipe. Budget a dedicated spike — two simulated clients, one taken offline mid-edit — before trusting it in production. Also resolve explicitly what happens when a settlement's expiry window lapses unresolved; the prototype specifies the window but not the outcome.
 
@@ -1290,6 +1348,10 @@ Plans:
   7. Screens match the signed set from the design freeze (QA-01), with every change traced to a reading-test round 2 finding or another allowed reason; the right-answer table and the plain calculator cover running costs, loans and household money and still agree with the engine.
   8. Theme N: the Variant C screens are built once, in a new folder, on the finished plumbing and the six connection points, with nothing copied from the parked 05.3 screens; named testers see them behind the per-account switch (not a second tab), with the build name in the footer.
   9. Theme O: version 1 contains the scope listed in the fix plan, Theme O, including the decision record and its "did it cost what you expected?" follow-up; home-buying screens are hidden until their own phase.
+**Carried over from Phase 8 (2026-11-11, owner decision):** re-plan each on the new 06.1 screens (`src/features/decide/screens/**`).
+- Former 08-28: partner opt-in, shared safety net, shared-bills caveat, couples note (`08.1-CARRY-OVER-08-28.md`)
+- Former 08-29: household scope choice in the check, Household link in setup, share_pct removal (owner: 08.1 or 05.5, decided at 05.5 planning), household scope label (`08.1-CARRY-OVER-08-29.md`)
+- "Create from Decide" (Grow follow-up, 06 VERIFICATION override), built on the new 06.1 screens
 **Plans:** 0 plans
 
 Plans:
