@@ -133,6 +133,20 @@ describe('end-to-end monotonicity through evaluate()', () => {
     expect(hi.facts.map((f) => f.code)).not.toContain('short_plan_from_cash');
   });
 
+  // Owner decision 2026-11-12, "rounding only": the count is read only when the early finish comes from the engine's own round-up.
+  // A quoted payment larger than the engine's (L-09) really clears the plan early, so it keeps its real last payment: $300 over 13
+  // weekly 0% payments, the first one week out, quoted at $30 pays off in 10 (the last on day 70, inside the 90 days) while the
+  // 13th chosen payment would fall on day 91. D-68 still judges it by cash, as before PR #108.
+  it('D-68 pinned: a quoted payment that clears the plan inside 90 days is still judged by cash (Sam, $300, quote $30)', () => {
+    const inputs = inputsOfPerson('sam', { everydayPct: 129, balancePct: 50, unspentMode: 'keep', unspentPct: 0, emergency: 186_375, extras: [] });
+    const shape = weekly13('0');
+    const quoted = run(inputs, checkOf(30_000, { ...shape, plan: { ...shape.plan, quotedPayment: mu(3_000) } }));
+    expect([quoted.code, quoted.variant]).toEqual(['fits_unspent', 'month_short_moderate']);
+    expect(quoted.facts.map((f) => f.code)).toContain('short_plan_from_cash');
+    // Without the quote the engine's own payment runs all 13 weeks, past the window: the monthly test.
+    expect(run(inputs, checkOf(30_000, shape)).code).toBe('monthly_short');
+  });
+
   it('I10 a new monthly bill never helps', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, fc.integer({ min: 100, max: 500_000 }), (inputs, check, amount) => {

@@ -151,12 +151,16 @@ export function paymentDates(s: Schedule): readonly string[] {
 }
 
 /**
- * D-68 window: true when every payment the person chose (`count`, not `lastPaying`) is dated before `toExclusive`. The level
- * payment is rounded up to the cent, so a tiny plan can clear a period early; reading `lastPaying` let a dearer plan land inside
- * the window while a cheaper one did not (I9, seed -1745555528). The count does not move with the price.
+ * D-68 window: true when the plan's last payment is dated before `toExclusive`.
+ * - The engine's own payment (`computed`, and `from_quote`, whose periods are still the 0% walk's) is rounded up to the cent
+ *   (D-64), so a tiny plan can clear a period early; reading `lastPaying` there let a dearer plan land inside the window while
+ *   a cheaper one did not (I9, seed -1745555528). Those read the payments the person chose (`count`), which do not move with price.
+ * - A quoted payment larger than the engine's (`quoted`, L-09) really pays the plan off early, so it keeps its real last payment
+ *   (`lastPaying`). Owner decision 2026-11-12: "rounding only".
  */
-export function chosenPaymentsBefore(s: Schedule, toExclusive: string): boolean {
-  return cadenceDate(s.firstDate, s.cadence, s.count - 1) < toExclusive;
+export function lastPaymentBefore(s: Schedule, toExclusive: string): boolean {
+  const last = s.source === 'quoted' ? s.lastPaying : s.count;
+  return cadenceDate(s.firstDate, s.cadence, last - 1) < toExclusive;
 }
 
 /** Dated payments with the per-period fee on each and the end fee on the last. */
