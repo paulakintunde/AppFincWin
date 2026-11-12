@@ -1,0 +1,634 @@
+{
+  "topic": "tax",
+  "cases": [
+    {
+      "id": "TX-10",
+      "topic": "tax",
+      "persona": "Priya, freelancer, 25% set aside for tax (invented, FIN-20)",
+      "situation": "Priya is a freelancer with no scheduled pay. Over the last six months (April to September) her freelance work paid $4,100, $3,900, $4,000, $4,200, $3,800 and $4,000, always on the 1st; at setup she chose a steady amount of $4,000 a month. $4,000 came in on 1 October. By 10 October she has paid $1,500 of bills and spent $300; $2,200 is in her everyday account and $2,300 sits in her savings account marked as her safety net (locked, the default). She is looking at a $300 purchase, bought today (10 October 2026) and paid in one go. A usual month: bills $1,500 and everyday spending $1,000 ($800 of it on essentials). On the pay setup screen she typed that she puts 25% of her freelance pay aside for tax.",
+      "fixture": {
+        "asOf": "2026-10-10",
+        "currency": "USD",
+        "region": null,
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 100000,
+          "essentialEveryday": 80000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 230000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "pay": {
+          "amount": 400000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null,
+          "irregular": {
+            "amounts": [
+              410000,
+              390000,
+              400000,
+              420000,
+              380000,
+              400000
+            ],
+            "day": 1
+          }
+        },
+        "thisMonth": {
+          "received": 400000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 30000
+        },
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 220000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 230000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "taxSetAsideBp": 2500,
+        "check": {
+          "price": 30000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "tight",
+        "afterBuy": {
+          "month": 20000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "tax_set_aside",
+          "tight_floor"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "FIN-20 (draft rule): freelance pay counts after the share she puts aside for tax. 25% of $4,000 is $1,000, so her steady month counts as $3,000, and $1,000 of the $4,000 that came in on 1 October is still in her everyday account but kept for tax, so the answer does not spend it. October without a set-aside: $4,000 in - $1,500 bills - $300 spent - $700 everyday still to come = $1,500 left; $1,500 - $300 = $1,200. With the set-aside: $3,000 in - $1,500 bills - $300 spent - $700 still to come = $500 left; $500 - $300 = $200. The tight floor is $250 (a tenth of $1,500 bills + $1,000 everyday spending), and $200 is under it, so the answer is \"Fits, but tight\" instead of a plain \"Fits\". Her safety net is exactly its starter size ($1,500 bills + $800 essentials = $2,300), so there are no extra savings above it. The fact line says: \"$1,000 a month is kept aside for tax, the 25% you set.\" Her November pay counts at her lowest month less 25% ($3,800 - $950 = $2,850) on 1 November, the same day as her bills, so the cash path stays above $0.",
+      "fixIds": [
+        "FIN-20"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Draft (06.1-29). Plain calculator (withTaxSetAside) and the engine on the same set-aside world agree: fits_month, tight, month 20000. Without the set-aside both say fits_month, null, 120000."
+    },
+    {
+      "id": "TX-11",
+      "topic": "tax",
+      "persona": "Sam, salaried, a set-aside typed but no freelance pay (invented, FIN-20)",
+      "situation": "Sam is paid a $4,000 salary on the 1st of each month. His income type is salary only. A 25% tax set-aside is saved in his settings (typed when he once did freelance work). $4,000 came in on 1 October. By 10 October he has paid $1,500 of bills and spent $300; $2,200 is in his everyday account and $2,300 sits in his savings account marked as his safety net (locked). He is looking at a $300 purchase, bought today (10 October 2026) and paid in one go. A usual month: bills $1,500 and everyday spending $1,000 ($800 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-10-10",
+        "currency": "USD",
+        "region": null,
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 100000,
+          "essentialEveryday": 80000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 230000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "pay": {
+          "amount": 400000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "thisMonth": {
+          "received": 400000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 30000
+        },
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 220000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 230000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "incomeTypes": [
+          "salary"
+        ],
+        "taxSetAsideBp": 2500,
+        "check": {
+          "price": 30000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 120000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [
+          "tax_set_aside"
+        ]
+      },
+      "why": "FIN-20 (draft rule): the set-aside is a share of freelance pay only. Salary already has its tax taken before it arrives, so a salary-only profile ignores the saved 25% and every figure is as it would be with nothing typed: $4,000 in - $1,500 bills - $300 spent - $700 everyday still to come = $1,500 left; $1,500 - $300 = $1,200, over the $250 tight floor, so a plain \"Fits\". No tax set-aside line.",
+      "fixIds": [
+        "FIN-20"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Draft (06.1-29). Engine and plain calculator: fits_month, null, 120000, the same with or without the typed value."
+    },
+    {
+      "id": "TX-12",
+      "topic": "tax",
+      "persona": "Leo, salary plus freelance, 25% of the freelance part set aside (invented, FIN-20)",
+      "situation": "Leo is paid a $2,500 salary on the 1st and also does freelance work. His income types are salary and freelance. Over the last six months his freelance work paid $1,600, $1,400, $1,500, $1,700, $1,300 and $1,500, always on the 5th; at setup he chose a steady freelance amount of $1,500 a month. In October his $2,500 salary came in on the 1st and $1,500 of freelance pay on the 5th. He typed that he puts 25% of his freelance pay aside for tax. By 10 October he has paid $1,500 of bills and spent $300; $2,200 is in his everyday account and $2,300 sits in his savings account marked as his safety net (locked). He is looking at a $300 purchase, bought today (10 October 2026) and paid in one go. A usual month: bills $1,500 and everyday spending $1,000 ($800 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-10-10",
+        "currency": "USD",
+        "region": null,
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 100000,
+          "essentialEveryday": 80000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 230000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null,
+          "freelance": {
+            "steady": 150000,
+            "amounts": [
+              160000,
+              140000,
+              150000,
+              170000,
+              130000,
+              150000
+            ],
+            "day": 5,
+            "received": 150000
+          }
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 30000
+        },
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 220000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 230000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "taxSetAsideBp": 2500,
+        "check": {
+          "price": 30000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 82500,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "tax_set_aside"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "FIN-20 (draft rule): only the freelance part is reduced; the salary is unchanged. 25% of his $1,500 freelance pay is $375, so October counts $2,500 + $1,125 = $3,625 in, and $375 of the freelance pay that came in on 5 October stays in his account but kept for tax. $3,625 - $1,500 bills - $300 spent - $700 everyday still to come = $1,125 left; $1,125 - $300 = $825, over the $250 tight floor, so a plain \"Fits\". If the 25% were wrongly taken from his salary too ($1,000 off $4,000), he would have $200 left and the answer would be \"Fits, but tight\". The fact line says: \"$375 a month is kept aside for tax, the 25% you set.\" Without the set-aside he would have $1,200 left.",
+      "fixIds": [
+        "FIN-20"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Draft (06.1-29). Engine and plain calculator agree: fits_month, null, 82500 (120000 without the set-aside). Open: whether the single \"mix\" income type (which can also mean commission) counts as freelance; this case uses the types salary + freelance."
+    },
+    {
+      "id": "TX-13",
+      "topic": "tax",
+      "persona": "Priya, freelancer, 0% typed (invented, FIN-20)",
+      "situation": "Priya is a freelancer with no scheduled pay. Over the last six months (April to September) her freelance work paid $4,100, $3,900, $4,000, $4,200, $3,800 and $4,000, always on the 1st; at setup she chose a steady amount of $4,000 a month. $4,000 came in on 1 October. By 10 October she has paid $1,500 of bills and spent $300; $2,200 is in her everyday account and $2,300 sits in her savings account marked as her safety net (locked, the default). She is looking at a $300 purchase, bought today (10 October 2026) and paid in one go. A usual month: bills $1,500 and everyday spending $1,000 ($800 of it on essentials). On the pay setup screen she typed 0% for the share she puts aside for tax.",
+      "fixture": {
+        "asOf": "2026-10-10",
+        "currency": "USD",
+        "region": null,
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 100000,
+          "essentialEveryday": 80000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 230000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "pay": {
+          "amount": 400000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null,
+          "irregular": {
+            "amounts": [
+              410000,
+              390000,
+              400000,
+              420000,
+              380000,
+              400000
+            ],
+            "day": 1
+          }
+        },
+        "thisMonth": {
+          "received": 400000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 30000
+        },
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 220000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 230000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "taxSetAsideBp": 0,
+        "check": {
+          "price": 30000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 120000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [
+          "tax_set_aside"
+        ]
+      },
+      "why": "FIN-20 (draft rule): 0% is the same as leaving the field empty. October without a set-aside: $4,000 in - $1,500 bills - $300 spent - $700 everyday still to come = $1,500 left; $1,500 - $300 = $1,200. $1,200 is over the $250 tight floor, so a plain \"Fits\". No tax set-aside line, because nothing was kept aside.",
+      "fixIds": [
+        "FIN-20"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Draft (06.1-29). Engine and plain calculator: fits_month, null, 120000, the same as with no value (TX-10 without its 25%)."
+    },
+    {
+      "id": "TX-14",
+      "topic": "tax",
+      "persona": "Nia, commission earner, a set-aside typed (invented, FIN-20)",
+      "situation": "Nia earns commission with no scheduled pay. Her income type is commission only. A 25% tax set-aside is saved in her settings. Over the last six months her commission paid $4,100, $3,900, $4,000, $4,200, $3,800 and $4,000, always on the 1st; at setup she chose a steady amount of $4,000 a month. $4,000 came in on 1 October. By 10 October she has paid $1,500 of bills and spent $300; $2,200 is in her everyday account and $2,300 sits in her savings account marked as her safety net (locked). She is looking at a $300 purchase, bought today (10 October 2026) and paid in one go. A usual month: bills $1,500 and everyday spending $1,000 ($800 of it on essentials).",
+      "fixture": {
+        "asOf": "2026-10-10",
+        "currency": "USD",
+        "region": null,
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 100000,
+          "essentialEveryday": 80000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 230000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "pay": {
+          "amount": 400000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null,
+          "irregular": {
+            "amounts": [
+              410000,
+              390000,
+              400000,
+              420000,
+              380000,
+              400000
+            ],
+            "day": 1
+          }
+        },
+        "thisMonth": {
+          "received": 400000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 30000
+        },
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 220000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 230000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "incomeTypes": [
+          "commission"
+        ],
+        "taxSetAsideBp": 2500,
+        "check": {
+          "price": 30000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 120000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [
+          "tax_set_aside"
+        ]
+      },
+      "why": "FIN-20 (draft rule): the set-aside applies only when the income profile includes freelance. Commission is usually paid through payroll with tax taken off, so her saved 25% is ignored: $4,000 in - $1,500 bills - $300 spent - $700 everyday still to come = $1,500 left; $1,500 - $300 = $1,200, a plain \"Fits\". No tax set-aside line. (The pay setup screen shows the field only to people whose profile includes freelance; this case covers a value saved earlier.)",
+      "fixIds": [
+        "FIN-20"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Draft (06.1-29). Engine and plain calculator: fits_month, null, 120000. Open: whether commission should also be allowed a set-aside."
+    },
+    {
+      "id": "TX-15",
+      "topic": "tax",
+      "persona": "Priya, freelancer, 60% set aside, the most allowed (invented, FIN-20)",
+      "situation": "Priya is a freelancer with no scheduled pay. Over the last six months (April to September) her freelance work paid $4,100, $3,900, $4,000, $4,200, $3,800 and $4,000, always on the 1st; at setup she chose a steady amount of $4,000 a month. $4,000 came in on 1 October. By 10 October she has paid $1,500 of bills and spent $300; $2,200 is in her everyday account and $2,300 sits in her savings account marked as her safety net (locked, the default). She is looking at a $300 purchase, bought today (10 October 2026) and paid in one go. A usual month: bills $1,500 and everyday spending $1,000 ($800 of it on essentials). On the pay setup screen she typed 60%, the most the field takes, for the share she puts aside for tax.",
+      "fixture": {
+        "asOf": "2026-10-10",
+        "currency": "USD",
+        "region": null,
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 100000,
+          "essentialEveryday": 80000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 230000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "pay": {
+          "amount": 400000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null,
+          "irregular": {
+            "amounts": [
+              410000,
+              390000,
+              400000,
+              420000,
+              380000,
+              400000
+            ],
+            "day": 1
+          }
+        },
+        "thisMonth": {
+          "received": 400000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 30000
+        },
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 220000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 230000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "taxSetAsideBp": 6000,
+        "check": {
+          "price": 30000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuy": {
+          "month": -120000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "tax_set_aside",
+          "usual_month_short"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "FIN-20 (draft rule): 60% is the top of the range (the settings column holds 0% to 60%; the field takes no more). 60% of $4,000 is $2,400, so her steady month counts as $1,600, which is $900 less than her $2,500 of usual bills and everyday spending: her month is already short before the purchase. October: $1,600 in - $1,500 bills - $300 spent - $700 still to come = -$900; -$900 - $300 = -$1,200. Her safety net is locked and there is nothing above it, so the purchase cannot be covered and the answer is \"Not yet\", led by \"your month is already short\". The fact line says: \"$2,400 a month is kept aside for tax, the 60% you set.\"",
+      "fixIds": [
+        "FIN-20"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Draft (06.1-29). Engine and plain calculator agree: not_yet, month_already_short, -120000. Without the set-aside: fits_month, null, 120000."
+    }
+  ]
+}

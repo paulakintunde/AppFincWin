@@ -29,7 +29,12 @@ export interface FixtureCheck {
 export interface RightAnswerFixture {
   asOf: string; currency: 'USD'|'CAD'|'GBP'|'EUR'; region: { country: string; subdivision: string|null } | null;
   pay: { amount: number; cadence: 'monthly'|'fortnightly'|'weekly'; nextDate: string; setupAmount: number|null; lastThree: [number,number,number]|null; /** low months stated explicitly ('YYYY-MM', pay that month); absent = none beyond lastThree */ lean?: { month: string; amount: number }[];
-    /** D-52: no pay is scheduled (freelance); amounts = full-month income oldest first, one per history month, paid on `day`; absent = scheduled pay */ irregular?: { amounts: number[]; day: number } };
+    /** D-52: no pay is scheduled (freelance); amounts = full-month income oldest first, one per history month, paid on `day`; absent = scheduled pay */ irregular?: { amounts: number[]; day: number };
+    /** 06.1 FIN-20 (draft): freelance pay beside the scheduled salary (a salary + freelance profile, steady method): `steady` = the
+     *  user's own monthly freelance figure; amounts = full-month freelance income oldest first, one per history month, paid on `day`;
+     *  received = this month's freelance pay already in (on `day`, on or before asOf; thisMonth.received is the salary only).
+     *  absent = none */
+    freelance?: { steady: number; amounts: number[]; day: number; received: number } };
   usualMonth: { bills: number; everyday: number; essentialEveryday: number;
     /** D-58: a regular monthly transfer from the everyday account to savings; absent = none. movedThisMonth: this month's transfer is logged (on its day, on or before asOf) */ saving?: { amount: number; day: number; movedThisMonth: boolean } };
   thisMonth: { received: number; billsPaid: number; billsDue: number; everydaySoFar: number };
@@ -38,6 +43,12 @@ export interface RightAnswerFixture {
   /** 06 (D-05, D-06): the user's savings goals; absent = none. locked: kept out of every answer; unlocked: counted as spare. accountId: where the money is kept (null = not linked) */
   goals?: { id: string; name: string; saved: number; target: number|null; monthly: number|null; locked: boolean; accountId: string|null }[];
   bills: FixtureBill[]; debts: FixtureDebt[]; userLine: number|null; factLines: boolean;
+  /** 06.1 FIN-20 (draft): the income profile's types; absent = ['freelance'] with irregular pay, ['salary', 'freelance'] with
+   *  pay.freelance, else no profile */
+  incomeTypes?: ('salary'|'commission'|'freelance'|'mix')[];
+  /** 06.1 FIN-20 (draft): the share of freelance pay the user says they put aside for tax, in basis points (2500 = 25%), 0..6000
+   *  as the decide_settings column allows; absent/null = none typed */
+  taxSetAsideBp?: number|null;
   check: FixtureCheck;
 }
 export interface Expected { code: string; variant: string|null; afterBuy: { month: number|null; usualMonth: number|null }; readyBy: string|null; mustHaveReasons: string[]; mustHaveFacts: string[]; mustNotHaveFacts: string[] }
@@ -117,6 +128,15 @@ export function validateCase(c: unknown): string[] {
       if (!Array.isArray(irr.amounts) || irr.amounts.length !== fx.historyMonths) errs.push(`${id}: pay.irregular.amounts needs one amount per history month`);
       if (!Number.isInteger(irr.day) || irr.day < 1 || irr.day > 31) errs.push(`${id}: pay.irregular.day must be 1 to 31`);
     }
+    const fl = fx.pay?.freelance;
+    if (fl !== undefined) {
+      if (fx.pay.irregular !== undefined) errs.push(`${id}: pay.freelance sits beside scheduled pay, not irregular pay`);
+      if (!Array.isArray(fl.amounts) || fl.amounts.length !== fx.historyMonths) errs.push(`${id}: pay.freelance.amounts needs one amount per history month`);
+      if (!Number.isInteger(fl.day) || fl.day < 1 || fl.day > 28) errs.push(`${id}: pay.freelance.day must be 1 to 28`);
+      else if (fl.received > 0 && isDate(fx.asOf) && fl.day > Number(fx.asOf.slice(8, 10))) errs.push(`${id}: pay.freelance cannot be received this month before its day`);
+    }
+    const bp = fx.taxSetAsideBp;
+    if (bp !== undefined && bp !== null && (!Number.isInteger(bp) || bp < 0 || bp > 6000)) errs.push(`${id}: taxSetAsideBp must be a whole number from 0 to 6000`);
     const sv = fx.usualMonth?.saving;
     if (sv !== undefined) {
       if (!Number.isInteger(sv.amount) || sv.amount <= 0) errs.push(`${id}: usualMonth.saving.amount must be a whole number above 0`);

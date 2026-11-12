@@ -22,9 +22,74 @@ export function monthPay(f: RightAnswerFixture): Cents {
 
 function ownPay(f: RightAnswerFixture): Cents {
   if (f.pay.irregular !== undefined) return big(f.pay.amount);
+  if (f.pay.freelance !== undefined) return salaryPay(f) + big(f.pay.freelance.steady);
+  return salaryPay(f);
+}
+
+function salaryPay(f: RightAnswerFixture): Cents {
   if (f.pay.cadence === 'monthly') return lowerPay(f);
   const year = big(f.pay.amount) * (f.pay.cadence === 'fortnightly' ? 26n : 52n);
   return (year * 2n + 12n) / 24n;
+}
+
+// --- Tax set-aside (06.1 FIN-20, DRAFT for the owner: TX-10 .. TX-15). Restated from the plan's draft rule. Not read from the engine.
+// "Freelance income is counted after the share the user says they put aside for tax." Only when the profile's types include
+// freelance and a share above 0 is typed (0% .. 60%). Each freelance pay counts at its amount less the share (the share rounded half
+// up, in minor units); salary is unchanged. The share of freelance pay already in this month is still in the everyday account, so it
+// is held back from that account (the answer never spends it). Everything else follows from the smaller pay.
+
+/** The income profile's types as the case states them (the fixture converter's own reading). */
+function incomeTypes(f: RightAnswerFixture): readonly string[] {
+  return f.incomeTypes ?? (f.pay.irregular !== undefined ? ['freelance'] : f.pay.freelance !== undefined ? ['salary', 'freelance'] : []);
+}
+
+/** The share typed, in basis points, when it applies; 0 when it does not (no freelance type, nothing typed, or 0%). */
+export function plainSetAsideBp(f: RightAnswerFixture): Cents {
+  const bp = f.taxSetAsideBp ?? 0;
+  return incomeTypes(f).includes('freelance') && bp > 0 ? big(bp) : 0n;
+}
+
+/** The share of one freelance pay, rounded half up. */
+function setAsideOf(amount: number, bp: Cents): Cents {
+  return (big(amount) * bp + 5000n) / 10000n;
+}
+
+/** The fact's figure: the share of a usual month's freelance pay (the steady figure); 0 when the rule does not apply. */
+export function plainSetAsideMonthly(f: RightAnswerFixture): Cents {
+  const bp = plainSetAsideBp(f);
+  if (bp === 0n) return 0n;
+  return setAsideOf(f.pay.freelance !== undefined ? f.pay.freelance.steady : f.pay.amount, bp);
+}
+
+/** The case as the answer reads it: freelance pay less the share, and this month's share held back from the everyday account. */
+export function withTaxSetAside(f: RightAnswerFixture): RightAnswerFixture {
+  const bp = plainSetAsideBp(f);
+  if (bp === 0n) return f;
+  const kept = (a: number): number => a - Number(setAsideOf(a, bp));
+  const irr = f.pay.irregular;
+  const fl = f.pay.freelance;
+  const receivedFreelance = fl !== undefined ? fl.received : f.thisMonth.received;
+  const held = Number(setAsideOf(receivedFreelance, bp));
+  const spend = f.accounts.findIndex((a) => (a.kind === 'checking' || a.kind === 'current') && a.use === 'everyday');
+  // A freelance profile with scheduled pay and no freelance part beside it: the scheduled pay is the freelance pay (the last branch).
+  const pay: RightAnswerFixture['pay'] =
+    irr !== undefined
+      ? { ...f.pay, amount: kept(f.pay.amount), irregular: { ...irr, amounts: irr.amounts.map(kept) } }
+      : fl !== undefined
+        ? { ...f.pay, freelance: { ...fl, steady: kept(fl.steady), amounts: fl.amounts.map(kept), received: kept(fl.received) } }
+        : { ...f.pay, amount: kept(f.pay.amount), setupAmount: f.pay.setupAmount === null ? null : kept(f.pay.setupAmount), lastThree: f.pay.lastThree === null ? null : [kept(f.pay.lastThree[0]), kept(f.pay.lastThree[1]), kept(f.pay.lastThree[2])], ...(f.pay.lean === undefined ? {} : { lean: f.pay.lean.map((l) => ({ ...l, amount: kept(l.amount) })) }) };
+  return {
+    ...f,
+    taxSetAsideBp: null,
+    pay,
+    thisMonth: fl === undefined ? { ...f.thisMonth, received: kept(f.thisMonth.received) } : f.thisMonth,
+    accounts: f.accounts.map((a, i) => (i === spend ? { ...a, balance: a.balance - held } : a)),
+  };
+}
+
+/** 06.1 FIN-20 (draft): the freelance pay beside the salary, at its steady figure; 0 when there is none. */
+function freelanceSteady(f: RightAnswerFixture): Cents {
+  return big(f.pay.freelance?.steady ?? 0);
 }
 
 // --- Quick lines (06.1 D-21). Restated from CONTEXT D-21 and the quick-line cases QL-01 .. QL-08. Not read from the engine.
@@ -455,7 +520,8 @@ export function everydayToCome(f: RightAnswerFixture): Cents {
  */
 export function leftThisMonth(f: RightAnswerFixture): Cents {
   const t = f.thisMonth;
-  const moneyIn = (f.pay.irregular === undefined ? big(t.received) : big(f.pay.amount)) + quickIncomeToArrive(f);
+  // 06.1 FIN-20 (draft): freelance pay beside the salary counts at its steady figure this month, received or not, as irregular pay does.
+  const moneyIn = (f.pay.irregular === undefined ? big(t.received) + freelanceSteady(f) : big(f.pay.amount)) + quickIncomeToArrive(f);
   // D-67 / D-55: the month sets the regular saving aside, moved yet or not. DB-10: "$3,000 pay - $1,200 bills - $800 everyday
   // spending - $100 already paid - $200 still due = $700": the whole minimum, paid or not.
   // 05.4-24 FIN-09b (D-86, owner): "money owed from last month comes off this month's big number, for everyone", and "it uses this
@@ -473,7 +539,7 @@ export function carriedIn(f: RightAnswerFixture): Cents {
   const moved = f.usualMonth.saving?.movedThisMonth === true ? big(f.usualMonth.saving.amount) : 0n;
   // DB-10: "$100 already paid - $200 still due": the part of a card or loan minimum already paid this month left the account too
   const debtPaid = maxC(0n, debtMinimums(f) - debtToPay(f));
-  const opening = sittingMoney(f) - big(t.received) + big(t.billsPaid) + big(t.everydaySoFar) + moved + debtPaid;
+  const opening = sittingMoney(f) - big(t.received) - big(f.pay.freelance?.received ?? 0) + big(t.billsPaid) + big(t.everydaySoFar) + moved + debtPaid;
   return opening < 0n ? -opening : 0n;
 }
 
@@ -745,7 +811,7 @@ export function withoutUnrated(f: RightAnswerFixture): RightAnswerFixture {
 
 /** The answer, with D-65's headline (D-63's on the Large tier) on every answer but an ask when the usual month is already short. */
 export function plainAnswer(f0: RightAnswerFixture): PlainAnswer {
-  const f = withoutUnrated(foldQuickLines(f0));
+  const f = withoutUnrated(foldQuickLines(withTaxSetAside(f0)));
   const a = plainCode(f);
   if (a.code === 'needs_input' || !usualMonthShort(f)) return a;
   // 05.4-22: "Only by borrowing" keeps the headline the plan's own fit gets when the month is already short

@@ -268,6 +268,16 @@ function quickLineOf(q: NonNullable<RightAnswerFixture['check']['quickLines']>[n
   }
 }
 
+/** The income profile the case states; absent when it states none (scheduled pay with no types). */
+function profileOf(f: RightAnswerFixture): Pick<V3Inputs, 'profile'> | Record<string, never> {
+  const irr = f.pay.irregular;
+  const fl = f.pay.freelance;
+  const types = f.incomeTypes ?? (irr !== undefined ? ['freelance' as const] : fl !== undefined ? ['salary' as const, 'freelance' as const] : null);
+  if (types === null) return {};
+  const steady = irr !== undefined ? f.pay.amount : fl !== undefined ? fl.steady : null;
+  return { profile: { types, variable: steady === null ? null : 'steady', steady: steady === null ? null : mu(steady), billsHorizonMonths: null } };
+}
+
 export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check: CheckV2 } {
   const ym = f.asOf.slice(0, 7);
   const start = `${monthBefore(ym, f.historyMonths)}-01`;
@@ -281,6 +291,10 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   const savingLine = (m: string) => (sv === undefined ? [] : [v3Line({ id: `save-${m}`, date: `${m}-${pad(sv.day)}`, amount: sv.amount, role: 'saved_invested', seriesId: 'saving' })]);
   // 05.4 D-52: irregular pay has no pay series; each history month's income is one unlinked line on the stated day.
   const irr = f.pay.irregular;
+  // 06.1 FIN-20 (draft): freelance pay beside the salary is one unlinked income line a month on its day (the profile's own variable
+  // income, read by the steady method).
+  const fl = f.pay.freelance;
+  const freelanceLine = (m: string, amount: number) => (fl === undefined || amount <= 0 ? [] : [v3Line({ id: `fl-${m}`, date: `${m}-${pad(fl.day)}`, amount, role: 'income' as const, seriesId: null })]);
   const months: V3Month[] = [];
   for (let i = f.historyMonths; i >= 1; i--) {
     const m = monthBefore(ym, i);
@@ -290,6 +304,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     months.push(
       monthOf(m, [
         income,
+        ...freelanceLine(m, fl === undefined ? 0 : (fl.amounts[f.historyMonths - i] ?? 0)),
         ...bills.history(m),
         // 05.4 ARC-07: the essential part of everyday spending sits in a category marked essential (the starter safety net).
         ...(f.usualMonth.everyday - f.usualMonth.essentialEveryday > 0
@@ -308,6 +323,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
       ym,
       [
         ...(t.received > 0 ? [v3Line({ id: `in-${ym}`, date: `${ym}-01`, amount: t.received, role: 'income' as const, seriesId: irr ? null : 'pay' })] : []),
+        ...freelanceLine(ym, fl === undefined ? 0 : fl.received),
         ...bills.now,
         ...(t.everydaySoFar > 0 ? [v3Line({ id: `day-${ym}`, date: `${ym}-01`, amount: t.everydaySoFar })] : []),
         ...(sv !== undefined && sv.movedThisMonth ? savingLine(ym) : []),
@@ -359,7 +375,9 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     months,
     series: [...(irr ? [] : [pay]), ...bills.series, ...(saving === null ? [] : [saving])],
     ...(bills.waivers.length === 0 ? {} : { waivers: bills.waivers }),
-    ...(irr ? { profile: { types: ['freelance'], variable: 'steady', steady: mu(f.pay.amount), billsHorizonMonths: null } } : {}),
+    // D-52 irregular pay: a freelance profile with her own steady figure. 06.1 FIN-20 (draft): the types as the case states them
+    // (incomeTypes), and salary + freelance with pay.freelance (the steady figure is the freelance part only).
+    ...profileOf(f),
     balance: mu(spending),
     accounts,
     // 06 (D-05, D-06): the goals as stated, each with an explicit locked flag.

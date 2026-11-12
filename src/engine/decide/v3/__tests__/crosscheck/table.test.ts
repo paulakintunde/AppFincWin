@@ -4,7 +4,7 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront, saleNow, replacesDates, plainFreed } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront, saleNow, replacesDates, plainFreed, withTaxSetAside, plainSetAsideMonthly, plainSetAsideBp } from './plain';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
@@ -68,6 +68,54 @@ describe('plain calculator: tax (FIN-27, TX-01..TX-09)', () => {
       const { inputs, check } = toEngineInputs(f);
       expect(pick(evaluate(inputs, check)).reasons.includes('tax_not_included')).toBe(plainTaxNotIncluded(f));
     }
+  });
+});
+
+// 06.1-29 (FIN-20, DRAFT for the owner, D-26): the tax set-aside cases' figures by the plain rule (withTaxSetAside), and the engine
+// on the same set-aside world (the case with its freelance pay already reduced), so the owner sees figures both sides agree on before
+// any engine change. When the cases are approved the engine reads taxSetAsideBp itself and the whole-table check above covers them.
+describe('plain calculator: tax set-aside (FIN-20 draft, TX-10..TX-15)', () => {
+  const all = loadCases();
+  const fx = (id: string): RightAnswerFixture => all.find((c) => c.id === id)!.fixture;
+  const ids = ['TX-10', 'TX-11', 'TX-12', 'TX-13', 'TX-14', 'TX-15'];
+
+  it('FIN-20 each case states the figures the plain rule and the engine give', () => {
+    for (const id of ids) {
+      const c = all.find((x) => x.id === id)!;
+      const p = plainAnswer(c.fixture);
+      const { inputs, check } = toEngineInputs(withTaxSetAside(c.fixture));
+      const g = pick(evaluate(inputs, check));
+      const want = { id, code: c.expected.code, variant: c.expected.variant, month: c.expected.afterBuy.month };
+      expect({ id, code: p.code, variant: p.variant, month: p.afterBuy }).toEqual(want);
+      expect({ id, code: g.code, variant: g.variant, month: g.afterBuy.month }).toEqual(want);
+    }
+  });
+
+  it('FIN-20 the share kept aside each month, as the fact line would say it', () => {
+    expect(plainSetAsideMonthly(fx('TX-10'))).toBe(100_000n); // "25% of $4,000 is $1,000"
+    expect(plainSetAsideMonthly(fx('TX-12'))).toBe(37_500n); // "25% of his $1,500 freelance pay is $375"
+    expect(plainSetAsideMonthly(fx('TX-15'))).toBe(240_000n); // "60% of $4,000 is $2,400"
+    for (const id of ['TX-11', 'TX-13', 'TX-14']) expect({ id, bp: plainSetAsideBp(fx(id)) }).toEqual({ id, bp: 0n });
+  });
+
+  it('FIN-20 with nothing applied the case is unchanged, and without the set-aside every case is the plain Fits', () => {
+    for (const id of ['TX-11', 'TX-13', 'TX-14']) expect(withTaxSetAside(fx(id))).toBe(fx(id));
+    for (const id of ids) {
+      const f = { ...fx(id), taxSetAsideBp: null };
+      expect({ id, ...plainAnswer(f) }).toEqual({ id, code: 'fits_month', variant: null, afterBuy: 120_000 });
+    }
+  });
+
+  it('FIN-20 a freelance profile on scheduled pay reduces that pay (the scheduled pay is the freelance pay)', () => {
+    const sam = fx('TX-11');
+    const f = withTaxSetAside({ ...sam, incomeTypes: ['freelance'], pay: { ...sam.pay, setupAmount: 400_000, lastThree: [400_000, 400_000, 400_000], lean: [{ month: '2026-08', amount: 300_000 }] } });
+    expect(f.pay).toMatchObject({ amount: 300_000, setupAmount: 300_000, lastThree: [300_000, 300_000, 300_000], lean: [{ month: '2026-08', amount: 225_000 }] });
+    expect(f.thisMonth.received).toBe(300_000);
+    expect(f.accounts[0]?.balance).toBe(120_000); // $1,000 of October's $4,000 held back from the everyday account
+    expect(plainSetAsideMonthly({ ...sam, incomeTypes: ['freelance'] })).toBe(100_000n);
+    const plain = withTaxSetAside({ ...sam, incomeTypes: ['freelance'] });
+    expect(plain.pay).toMatchObject({ setupAmount: null, lastThree: null });
+    expect('lean' in plain.pay).toBe(false);
   });
 });
 
