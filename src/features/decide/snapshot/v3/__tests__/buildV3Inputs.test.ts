@@ -277,6 +277,14 @@ describe('buildV3Inputs: v3 settings', () => {
     expect(buildV3Inputs(src, v3s({ own_lines: bad })).limits.lines.filter((l) => l.source === 'own').map((l) => l.id)).toEqual(['ok']);
   });
 
+  it('06.1-22 FIN-07: the keep-at-least line is read as minor units, and anything unreadable is none', () => {
+    expect(buildV3Inputs(src, v3s({ tight_line: 25000 })).tightLine).toBe(25000);
+    expect(buildV3Inputs(src, v3s({ tight_line: null })).tightLine).toBeNull();
+    expect(buildV3Inputs(src, v3s({ tight_line: -1 })).tightLine).toBeNull();
+    expect(buildV3Inputs(src, v3s({ tight_line: 1.5 })).tightLine).toBeNull();
+    expect(buildV3Inputs(src, null).tightLine).toBeNull();
+  });
+
   it('custom options parse, and anything invalid falls back to none', () => {
     const good = {
       itemTypes: [

@@ -32,7 +32,7 @@ import {
   type V3Inputs,
 } from '@/engine/decide/v3';
 import { sayLine } from '@/engine/decide/v3/__tests__/reviewed/page';
-import { MissingCopyError, copyKeyFor, sayCode, sayResult, type Line, type SayDeps } from '../sayResult';
+import { MissingCopyError, copyKeyFor, sayCaveats, sayCode, sayResult, type Line, type SayDeps } from '../sayResult';
 
 // ------------------------------------------------------------------ the real en resources, filled in one pass
 
@@ -471,5 +471,13 @@ describe('copyKeyFor picks the same key as the reviewed page (06.1-06)', () => {
     expect(copyKeyFor('fact', 'earlier_money_from', { where: 'savings' }, deps.exists)).toBe('decide.v3.fact.earlier_money_from_savings');
     expect(copyKeyFor('fact', 'lean_bridge', { source: 'net' }, deps.exists)).toBe('decide.v3.fact.lean_bridge_net');
     expect(copyKeyFor('fact', 'not_a_code', {}, deps.exists)).toBeNull();
+  });
+});
+
+describe('sayCaveats (CO-D-64 3)', () => {
+  it('says every caveat as one sentence and nothing for a result without caveats', () => {
+    const lines = sayCaveats(result({ caveats: [{ code: 'your_word', values: {} }, { code: 'large_for_month', values: { moneyIn: 280000, costs: 235000, used: 50000, price: 90000 } }] }), deps);
+    expect(lines.map((l) => l.key)).toEqual([CAVEAT_KEYS.your_word, CAVEAT_KEYS.large_for_month]);
+    expect(sayCaveats(result({ caveats: undefined }), deps)).toEqual([]);
   });
 });
