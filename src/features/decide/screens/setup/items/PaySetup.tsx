@@ -33,7 +33,8 @@ import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { Text } from '@/ui/Text';
-import { FieldLabel, Note } from '@/features/decide/screens/sheets/sheetUi';
+import { Field, FieldLabel, Note } from '@/features/decide/screens/sheets/sheetUi';
+import { setAsideFromText, setAsidePatch, setAsideText, showsSetAside } from '@/features/decide/screens/logic/taxSetAside';
 import { DayField, RadioRow, dayFromText, useFreqWord, useSetupFormat } from './itemFields';
 import { OtherIncomeSheet, PayEditSheet, type OtherIncomeValues, type PayEditValues } from './PaySheets';
 import { SETUP_HOME, SetupItemFrame } from './SetupItemFrame';
@@ -101,6 +102,10 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
   const [spread, setSpread] = useState<number | null>(stored?.spread_months ?? null);
   const [steady, setSteady] = useState<number | null>(stored?.steady_amount ?? null);
   const [hold, setHold] = useState<Hold | null>(stored?.hold_months ?? null);
+  // 06.1-29 FIN-20: the tax set-aside share, empty by default and never pre-filled; only for a profile that includes freelance.
+  const showsAside = showsSetAside(stored?.income_types);
+  const [asideText, setAsideTextValue] = useState(setAsideText(stored?.tax_set_aside_bp));
+  const asideBad = showsAside && setAsideFromText(asideText).kind === 'bad';
 
   const accountId = accounts[0]?.id ?? null;
   const basis: PayBasis | null = useMemo(() => {
@@ -125,7 +130,7 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
   const followUpDone =
     method === 'match' || (method === 'spread' && spread !== null) || (method === 'steady' && validAmount(steady)) || (method === 'balance' && hold !== null);
   const countDone = !changes || (method !== null && followUpDone);
-  const canSave = canWrite && hasPay && countDone;
+  const canSave = canWrite && hasPay && countDone && !asideBad;
 
   const accountName = (id: string | null): string => accounts.find((a) => a.id === id)?.name ?? ctx.accounts.find((a) => a.id === id)?.name ?? '';
 
@@ -226,6 +231,8 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
       if (method === 'steady' && steady !== (stored?.steady_amount ?? null)) patch.steady_amount = steady;
       if (method === 'balance' && hold !== (stored?.hold_months ?? null)) patch.hold_months = hold;
     }
+    const aside = showsAside ? setAsidePatch(asideText, stored?.tax_set_aside_bp) : undefined;
+    if (aside !== undefined) patch.tax_set_aside_bp = aside;
     if (Object.keys(patch).length > 0) {
       const saved = saver.save({ stepTitle: t('decide.screens.setupPayBills.pay.title'), patch });
       if (saved !== null) stepIds.push(saved.stepId);
@@ -331,6 +338,21 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
               </View>
             );
           })}
+        </View>
+      ) : null}
+
+      {showsAside ? (
+        <View testID="pay-tax-set-aside" style={styles.column}>
+          <FieldLabel>{t('decide.screens.setupPayBills.pay.setAsideLabel')}</FieldLabel>
+          <Field
+            value={asideText}
+            onChangeText={(v) => setAsideTextValue(v.replace(/\D/g, ''))}
+            accessibilityLabel={t('decide.screens.setupPayBills.pay.setAsideLabel')}
+            numeric
+            maxLength={2}
+          />
+          <Text style={label}>{t('decide.screens.setupPayBills.pay.setAsideNote')}</Text>
+          {asideBad ? <Note tone="warn">{t('decide.screens.setupPayBills.pay.setAsideRange')}</Note> : null}
         </View>
       ) : null}
 

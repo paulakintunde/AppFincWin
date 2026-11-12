@@ -65,6 +65,7 @@ export function settingsSourceOf(input: SettingsSourceInput): V3SettingsSource |
     dismissals: input.dismissals.filter((d) => d.deleted_at === null && !isNotPayKey(d.payee_key)).map((d) => d.payee_key),
     own_lines: ownLinesOf(rules),
     tight_line: tightLineOf(rules),
+    tax_set_aside_bp: s.tax_set_aside_bp, // 06.1 FIN-20: a share, not money, so withoutMoney keeps it
     custom_options: null,
     income_pattern: s.income_pattern,
     income_pattern_confirmed: s.income_pattern_confirmed,

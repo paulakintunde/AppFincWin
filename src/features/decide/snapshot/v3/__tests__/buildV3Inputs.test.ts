@@ -285,6 +285,15 @@ describe('buildV3Inputs: v3 settings', () => {
     expect(buildV3Inputs(src, null).tightLine).toBeNull();
   });
 
+  it('06.1-29 FIN-20: the tax set-aside share is whole basis points from 0 to 6000, and anything else is none', () => {
+    expect(buildV3Inputs(src, v3s({ tax_set_aside_bp: 2500 })).taxSetAsideBp).toBe(2500);
+    expect(buildV3Inputs(src, v3s({ tax_set_aside_bp: 0 })).taxSetAsideBp).toBe(0);
+    expect(buildV3Inputs(src, v3s({ tax_set_aside_bp: 6000 })).taxSetAsideBp).toBe(6000);
+    for (const bad of [6001, -1, 12.5, null, '2500']) expect(buildV3Inputs(src, v3s({ tax_set_aside_bp: bad as never })).taxSetAsideBp).toBeNull();
+    expect(buildV3Inputs(src, v3s({})).taxSetAsideBp).toBeNull();
+    expect(buildV3Inputs(src, null).taxSetAsideBp).toBeNull();
+  });
+
   it('custom options parse, and anything invalid falls back to none', () => {
     const good = {
       itemTypes: [

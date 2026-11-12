@@ -213,6 +213,7 @@ export const FACT_KEYS = Object.freeze({
   unlocked_goals_counted: 'decide.v3.fact.unlocked_goals_counted',
   quick_lines_counted: 'decide.v3.fact.quick_lines_counted', // 06.1 D-21
   quick_savings_counted: 'decide.v3.fact.quick_savings_counted', // 06.1 D-21
+  tax_set_aside: 'decide.v3.fact.tax_set_aside', // 06.1 FIN-20 (D-26)
   extra_savings_used: 'decide.v3.fact.extra_savings_used',
   net_two_months: 'decide.v3.fact.net_two_months',
   move_money_by: 'decide.v3.fact.move_money_by',
@@ -405,6 +406,7 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   unlocked_goals_counted: ['amount'],
   quick_lines_counted: ['count'], // 06.1 D-21
   quick_savings_counted: ['amount'], // 06.1 D-21
+  tax_set_aside: ['percent', 'amount'], // 06.1 FIN-20: percent is readable text ("25"); amount is a usual month's share
   // 05.4 D-56 / D-62: the extra savings used, of the money above the net's size; 2 months of essential costs. D-58: amount and date.
   extra_savings_used: ['used', 'above'],
   net_two_months: ['twoMonths'],

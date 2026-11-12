@@ -169,7 +169,8 @@ export function judgeWithQuickLines(prepared: Prepared, check: CheckV2): Evaluat
   const overlay = withQuickLines(prepared.inputs, check);
   if (overlay.counted === 0) return judgeCheck(prepared, overlay.check);
   // The accounts with no exchange rate were taken out by the first prepare; they stay named in the notices.
-  const folded: Prepared = { ...prepare(overlay.inputs), unrated: prepared.unrated };
+  // 06.1 FIN-20: the first prepare already cut the freelance pay (and cleared the share), so its fact is carried over.
+  const folded: Prepared = { ...prepare(overlay.inputs), unrated: prepared.unrated, taxSetAside: prepared.taxSetAside ?? null };
   const ev = judgeCheck(folded, overlay.check);
   if (ev.result.code === 'needs_input') return ev;
   return { ...ev, result: { ...ev.result, facts: withQuickFacts(ev.result.facts, overlay.counted, overlay.savings) } };

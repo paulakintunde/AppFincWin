@@ -151,6 +151,8 @@ function limitsOf(v3: V3SettingsSource | null, legacy: Limits): Limits {
 
 /** 06.1-22 FIN-07: the keep-at-least line as minor units; anything unreadable or negative is none. */
 const tightLineOf = (x: unknown) => { const n = moneyOf(x); return n === null ? null : minorUnits(n); };
+/** 06.1 FIN-20 (D-26): the typed share as whole basis points inside the column's 0 .. 6000; anything else reads as none. */
+const taxSetAsideBpOf = (x: unknown): number | null => (typeof x === 'number' && Number.isInteger(x) && x >= 0 && x <= 6000 ? x : null);
 
 function cadenceOf(x: unknown): Cadence | null {
   if (!isRec(x)) return null;
@@ -611,6 +613,7 @@ export function buildV3Inputs(
     recordsAsOf: source.recordsAsOf ?? null, // ENG-14, D-126: the oldest real server fetch, null when unknown
     safetyNet,
     tightLine: tightLineOf(v3?.tight_line),
+    taxSetAsideBp: taxSetAsideBpOf(v3?.tax_set_aside_bp), // 06.1 FIN-20 (D-26)
     factLines: true, // D-08: on by default; the switch's storage and screen are 08.1
     // D-142: the stored state or province passes with whatever country `region` resolved to (even from the device); the engine's
     // tax table knows only real country-and-state pairs, so a mismatch adds no tax and says so. No country -> null.

@@ -32,6 +32,10 @@ export const setupPayBills = {
     toast: 'Saved: pay details.',
     noAccount: 'There is no account to save pay to yet.',
     otherRowA11y: '{{name}}, {{amount}}, {{frequency}}',
+    // 06.1-29 FIN-20 (owner D-26, 2026-11-12): a share the person types; never a suggested rate.
+    setAsideLabel: 'Set aside for tax, % of freelance pay',
+    setAsideNote: 'Freelance pay counts after this share. Empty means none.',
+    setAsideRange: 'The share goes from 0% to 60%.',
   },
   payEdit: {
     title: 'Change your pay',

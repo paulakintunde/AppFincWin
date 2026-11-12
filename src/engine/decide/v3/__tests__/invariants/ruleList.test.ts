@@ -68,6 +68,8 @@ const RULES: Readonly<Record<string, FixRule>> = {
   'FIN-15': { properties: ['I63'], cases: 'answer' },
   'FIN-25': { properties: ['I45', 'I46'], cases: 'answer' },
   'FIN-27': { properties: ['I65', 'I66', 'I67'], cases: 'answer' },
+  // 06.1 FIN-20 (owner D-26, 2026-11-12): the tax set-aside, TX-10 .. TX-15
+  'FIN-20': { properties: [], units: [unit('__tests__/income/setAside.test.ts', 'FIN-20 freelance pay is cut'), unit('__tests__/income/setAside.test.ts', 'FIN-20 salary is never cut')], cases: 'answer' },
   'ENG-01': { properties: ['I55', 'I56'], cases: 'answer' },
   'ENG-02': { properties: ['I47', 'I48', 'I49'], cases: 'answer' },
   'ENG-03': { properties: ['I50', 'I51', 'I52', 'I-saved'], cases: 'answer' },

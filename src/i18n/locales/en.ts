@@ -2244,6 +2244,7 @@ const en = {
         // 06.1 D-21: quick estimates count for this one check only. Signed under D-08.
         quick_lines_counted: 'This answer counts {{count}} quick estimates you added for this check only.',
         quick_savings_counted: 'It counts {{amount}} of savings you said answers can use, for this check only.',
+        tax_set_aside: '{{amount}} a month is kept aside for tax, the {{percent}}% you set.',
         envelope_used: '{{used}} comes from the {{envelope}} envelope.',
         // 06.1 D-19: a limit the user set is a "rule" (the card is "Your money rules"); key names stay. Signed under D-08.
         line_crossed: 'This goes past one of your rules.',

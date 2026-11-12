@@ -71,23 +71,35 @@ describe('plain calculator: tax (FIN-27, TX-01..TX-09)', () => {
   });
 });
 
-// 06.1-29 (FIN-20, DRAFT for the owner, D-26): the tax set-aside cases' figures by the plain rule (withTaxSetAside), and the engine
-// on the same set-aside world (the case with its freelance pay already reduced), so the owner sees figures both sides agree on before
-// any engine change. When the cases are approved the engine reads taxSetAsideBp itself and the whole-table check above covers them.
-describe('plain calculator: tax set-aside (FIN-20 draft, TX-10..TX-15)', () => {
+// 06.1-29 (FIN-20, approved by the owner 2026-11-12, D-26): the tax set-aside cases also run in the whole-table check above (the
+// engine reads taxSetAsideBp itself). This block pins the plain rule's figures and the engine's fact against what each case says.
+describe('plain calculator: tax set-aside (FIN-20, TX-10..TX-15)', () => {
   const all = loadCases();
   const fx = (id: string): RightAnswerFixture => all.find((c) => c.id === id)!.fixture;
   const ids = ['TX-10', 'TX-11', 'TX-12', 'TX-13', 'TX-14', 'TX-15'];
 
-  it('FIN-20 each case states the figures the plain rule and the engine give', () => {
+  it('FIN-20 each case states the figures the plain rule and the engine give, and the engine names the share where it applies', () => {
     for (const id of ids) {
       const c = all.find((x) => x.id === id)!;
       const p = plainAnswer(c.fixture);
-      const { inputs, check } = toEngineInputs(withTaxSetAside(c.fixture));
-      const g = pick(evaluate(inputs, check));
+      const { inputs, check } = toEngineInputs(c.fixture);
+      const e = evaluate(inputs, check);
+      const g = pick(e);
       const want = { id, code: c.expected.code, variant: c.expected.variant, month: c.expected.afterBuy.month };
       expect({ id, code: p.code, variant: p.variant, month: p.afterBuy }).toEqual(want);
       expect({ id, code: g.code, variant: g.variant, month: g.afterBuy.month }).toEqual(want);
+      const fact = e.result.facts.find((f) => f.code === 'tax_set_aside');
+      const monthly = plainSetAsideMonthly(c.fixture);
+      expect({ id, fact: fact?.values ?? null }).toEqual({ id, fact: monthly === 0n ? null : { percent: String((c.fixture.taxSetAsideBp ?? 0) / 100), amount: Number(monthly) } });
+    }
+  });
+
+  it('FIN-20 the engine on the case with its pay already cut gives the same answer (the rule is the plain transform)', () => {
+    for (const id of ids) {
+      const a = pick(evaluate(toEngineInputs(fx(id)).inputs, toEngineInputs(fx(id)).check));
+      const pre = toEngineInputs(withTaxSetAside(fx(id)));
+      const b = pick(evaluate(pre.inputs, pre.check));
+      expect({ id, code: b.code, variant: b.variant, month: b.afterBuy.month }).toEqual({ id, code: a.code, variant: a.variant, month: a.afterBuy.month });
     }
   });
 

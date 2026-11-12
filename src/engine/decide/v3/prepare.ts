@@ -43,6 +43,7 @@ import { buildPurchase, purchaseCashFlowsLabelled } from './judge/purchase';
 import { purchaseDateOf } from './fullCost/purchaseDate';
 import { replacesEffect, replacesFlowsLabelled, type ReplacesEffect } from './fullCost/replaces';
 import { withRedatedRefunds } from './month/refunds';
+import { withTaxSetAside } from './income/setAside';
 import { recordsSynced } from './month/freshness';
 import { dueDrops } from './month/dueDrops';
 import { buildMonthModel } from './month/model';
@@ -204,6 +205,8 @@ export interface Prepared {
   readonly noFullMonth: boolean;
   /** 05.4 ENG-17 (D-114): the ids of the accounts with no exchange rate, in input order; counted as 0 and named by notices. */
   readonly unrated: readonly string[];
+  /** 06.1 FIN-20: the tax set-aside fact when the typed share changed the inputs; absent/null = it changed nothing. */
+  readonly taxSetAside?: Fact | null;
 }
 
 /** The open 90-day path's input for one reading of the inputs (built: the reading's month model), with the parts readingOf keeps. */
@@ -466,15 +469,17 @@ export function prepare(raw: V3Inputs): Prepared {
   const all: readonly V3Account[] = raw.accounts ?? [];
   const unrated = all.filter((a) => a.noRate === true).map((a) => a.id);
   const rated = unrated.length === 0 ? raw : withoutUnrated(raw, all, new Set(unrated));
+  // 06.1 FIN-20 (D-26): freelance pay is counted after the share the user puts aside for tax, before anything reads the months.
+  const aside = withTaxSetAside(rated);
   // 05.2 D-11: one pre-pass so typical, thisMonth, incomePattern and unspent read the same months, and the fund is at its live balance
-  const inputs = withLiveEmergency(withRedatedRefunds(rated));
+  const inputs = withLiveEmergency(withRedatedRefunds(aside.inputs));
   const ym = yearMonthOf(inputs.asOf);
   const thin = inputs.months.some((m) => m.month < ym && !m.full);
   const first = readingOf(inputs);
   const readings = thin ? [first, readingOf({ ...inputs, months: inputs.months.map((m) => (m.month < ym ? { ...m, full: true } : m)) })] : [first];
   // 05.4 FIN-25: no complete month of records before this one, read from the months as given (never the all-full reading).
   const noFullMonth = !inputs.months.some((m) => m.month < ym && m.full);
-  return { inputs, readings, readiness: readinessOf(inputs, first.month), recordsSynced: recordsSynced(inputs), noFullMonth, unrated };
+  return { inputs, readings, readiness: readinessOf(inputs, first.month), recordsSynced: recordsSynced(inputs), noFullMonth, unrated, taxSetAside: aside.fact };
 }
 
 /**
@@ -521,7 +526,9 @@ export function judgeCheckWith(p: Prepared, check: CheckV2, opts: JudgeOpts): Ev
   // 05.4 FIN-25 (round 1, research section 6): thin records say so as a fact next to the quick_estimates or few_months reason,
   // whatever the answer (an ask included: the fact is true either way).
   const noFull = p.noFullMonth ? [...chosen.result.facts, { code: 'no_full_month' as const, values: {} }] : chosen.result.facts;
-  const facts = [...noFull, ...askDebts(p.inputs, chosen.result)].map(sameMonth);
+  // 06.1 FIN-20 (D-26): the tax set-aside line on every answer it changed (an ask has no figure to change).
+  const aside = p.taxSetAside != null && chosen.result.code !== 'needs_input' ? [p.taxSetAside] : [];
+  const facts = [...noFull, ...askDebts(p.inputs, chosen.result), ...aside].map(sameMonth);
   const notices = [...leadNotes(p), ...chosen.result.notices];
   const result: Result = { ...chosen.result, reasons, facts, notices, afterBuy, readiness: p.readiness, ...(asOf === undefined ? {} : { recordsAsOf: asOf }) };
   // 05.4 D-64 (4), D-119 (05.4-37): read from the finished answer; it never changes it (I75).

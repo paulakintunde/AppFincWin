@@ -426,12 +426,16 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     essentialCategoryIds: f.usualMonth.essentialEveryday > 0 ? [ESSENTIAL] : [],
     factLines: f.factLines, // D-08 (05.4-20)
     tightLine: f.userLine === null ? null : mu(f.userLine), // 05.4-21 (FIN-07, BR-09): the money-left-each-month line the user set
+    // 06.1 FIN-20 (D-26): the share of freelance pay put aside for tax, as typed; prepare cuts the freelance pay (income/setAside.ts).
+    ...(f.taxSetAsideBp == null ? {} : { taxSetAsideBp: f.taxSetAsideBp }),
   });
   // 05.4-18: the confirmed unspent figure is the app's own suggested sum (spending money less the bills still due and the
   // everyday spending still to come), as a user who confirms it would see it. A raw balance would count this month's spending
   // still to come as money from earlier months (SN-04: "$300 now and $300 a month", not $700). Signed (05.4 ENG-02).
   const mm = buildMonthModel(inputs0);
-  const toArrive = mm.moneyIn - t.received > 0 ? mm.moneyIn - t.received : 0;
+  // 06.1 FIN-20: freelance pay beside the salary that is already in is received too (thisMonth.received is the salary only).
+  const inNow = t.received + (fl?.received ?? 0);
+  const toArrive = mm.moneyIn - inNow > 0 ? mm.moneyIn - inNow : 0;
   // 05.4 ENG-17 (D-114): the app cannot convert an account with no rate, so its suggested figure leaves that account out too.
   const rated: V3Inputs = { ...inputs0, accounts: accounts.filter((a) => a.noRate !== true) };
   const inputs: V3Inputs = { ...inputs0, unspent: { amount: mu(buildFunds(rated, mm, null).suggested + toArrive), at: f.asOf } };

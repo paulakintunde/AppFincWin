@@ -169,6 +169,42 @@ describe('PaySetup (D32)', () => {
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 
+  it('06.1-29 FIN-20: no tax set-aside row unless the income types include freelance', async () => {
+    mockIncome = { ...mockIncome, settings: { income_types: ['salary_or_wages'], tax_set_aside_bp: 2500 } };
+    await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
+    expect(screen.queryByTestId('pay-tax-set-aside')).toBeNull();
+    await fireEvent.press(screen.getByText('About the same'));
+    await fireEvent.press(screen.getByText('Save pay details'));
+    expect(mockSaveStep).toHaveBeenCalledWith(expect.objectContaining({ patch: { income_pattern: 'steady', income_pattern_confirmed: true } }));
+  });
+
+  it('06.1-29 FIN-20: a freelancer sees the row empty, a share above 60 holds Save, and a typed share is saved as basis points', async () => {
+    mockIncome = { ...mockIncome, settings: { income_types: ['freelance'], tax_set_aside_bp: null } };
+    await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
+    const field = screen.getByLabelText('Set aside for tax, % of freelance pay');
+    expect(field.props.value).toBe('');
+    await fireEvent.changeText(field, '75');
+    expect(screen.getByText('The share goes from 0% to 60%.')).toBeTruthy();
+    await fireEvent.press(screen.getByText('Save pay details'));
+    expect(mockSaveStep).not.toHaveBeenCalled();
+    await fireEvent.changeText(field, '25%');
+    expect(screen.queryByText('The share goes from 0% to 60%.')).toBeNull();
+    await fireEvent.press(screen.getByText('Save pay details'));
+    expect(mockSaveStep).toHaveBeenCalledWith(expect.objectContaining({ patch: { tax_set_aside_bp: 2500 } }));
+  });
+
+  it('06.1-29 FIN-20: an unchanged share writes nothing; clearing it writes none', async () => {
+    mockIncome = { ...mockIncome, settings: { income_types: ['own_business'], tax_set_aside_bp: 2500 } };
+    await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
+    const field = screen.getByLabelText('Set aside for tax, % of freelance pay');
+    expect(field.props.value).toBe('25');
+    await fireEvent.press(screen.getByText('Save pay details'));
+    expect(mockSaveStep).not.toHaveBeenCalled();
+    await fireEvent.changeText(field, '');
+    await fireEvent.press(screen.getByText('Save pay details'));
+    expect(mockSaveStep).toHaveBeenCalledWith(expect.objectContaining({ patch: { tax_set_aside_bp: null } }));
+  });
+
   it('"Save and close" returns without saving anything', async () => {
     await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
     await fireEvent.press(screen.getByText('About the same'));
