@@ -8,7 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import en from '@/i18n/locales/en';
-import { availableTabs } from '@/shell/tabBar/availableTabs';
+import { availableTabs, tabRoutes } from '@/shell/tabBar/availableTabs';
 import { minorUnits } from '@/engine/money';
 import type { GoalsRead } from '../../goals/useGoalsRead';
 import { GrowHome } from '../GrowHome';
@@ -264,8 +264,11 @@ describe('Grow home shell', () => {
     expect(availableTabs()).toEqual(['home', 'activity', 'decide', 'grow']);
     expect(availableTabs()).toContain('grow');
     const layout = fs.readFileSync(path.join(__dirname, '../../../../../app/(app)/(tabs)/_layout.tsx'), 'utf8');
-    expect(layout).toContain("isTabAvailable('grow')");
+    // The layout maps tabRoutes() (no null children); a tab that is not available keeps its route with href null.
+    expect(layout).toContain('tabRoutes()');
     expect(layout).toContain('href: null');
+    expect(tabRoutes().map((r) => r.name)).toEqual(['home', 'activity', 'decide', 'grow']);
+    expect(tabRoutes().every((r) => !r.hidden)).toBe(true);
   });
 });
 
