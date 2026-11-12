@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: phase_complete
-stopped_at: Phase 6 complete (PR #101 merged); Phase 8 planned (30 plans, 14 waves, PR #103), revision round after 06.1 merges
+stopped_at: Phase 6 complete (PR #101 merged); Phase 8 planned (28 plans, 12 waves; 08-28/08-29 moved to 08.1), PR #103; revision round after 06.1 merges
 last_updated: "2026-11-11T12:00:00.000Z"
 last_activity: 2026-11-11 -- Phase 06 complete; Phase 8 planning complete
 progress:
   total_phases: 28
   completed_phases: 12
-  total_plans: 612
+  total_plans: 610
   completed_plans: 564
   percent: 92
 ---
@@ -91,6 +91,7 @@ Last activity: 2026-11-11 -- Phase 06 complete; Phase 8 planning complete
 - Phase 05.4 inserted after Phase 05.3: Decide safety patch (approved Decide fix plan, 2026-11-01; .planning/research/DECIDE-FIX-PLAN.md)
 - Phase 05.5 inserted after Phase 05.4: One shared money model
 - Phase 08.1 inserted after Phase 8: Decide rebuild on real data (full cost with tax and running costs; Variant C chosen 2026-11-01)
+- 2026-11-11: Phase 8 plans 08-28 and 08-29 (household parts on Decide) and Grow's "Create from Decide" moved to Phase 08.1 (carry-over files in the 08.1 folder); Phase 8 is now 28 plans in 12 waves with one revision round after 06.1 (PR #102) merges. Gates and checklist: .planning/phases/08-household/08-PRECONDITIONS.md; 05.5 notes: 05.5-NOTES-FROM-08.md.
 - Phase 08.2 inserted after Phase 08.1: Decide re-audit
 - Phases 6 and 8 amended and Phase 7 moved after 08.2 by the same plan
 
