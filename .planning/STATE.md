@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06.1 wave 11 done: 31 (prod push) and 37 complete (37/42); next wave 12 (plan 29)"
+stopped_at: "Phase 06.1 wave 12 done: 29 (FIN-20 tax set-aside, TX-10..16 approved) complete (38/42); next wave 13 (plan 30)"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:
