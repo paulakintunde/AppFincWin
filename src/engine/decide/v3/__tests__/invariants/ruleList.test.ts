@@ -87,10 +87,16 @@ const RULES: Readonly<Record<string, FixRule>> = {
   'ENG-18': { properties: ['I45', 'I46'], cases: { none: 'which reasons are shown: how the app works, not an answer (D-134)' } },
   'ENG-29': { properties: ['I68', 'I69'], cases: 'answer' },
   'BO-05': { properties: range(68, 72), cases: 'answer' },
+  // 06 (Grow): locked goals are kept out and unlocked goals count as spare (D-05, D-22); the net and locked goals are named apart (D-06).
+  'D-05': { properties: [], units: [unit('__tests__/lockedGoals.test.ts', 'a locked goal with 30,000 saved of 50,000'), unit('__tests__/invariants/lockedGoals.test.ts', 'locking a goal never raises the lowest point')], cases: 'answer' },
+  'D-06': { properties: [], units: [unit('__tests__/lockedGoals.test.ts', 'a locked net and locked goals together say both')], cases: 'answer' },
 };
 
-/** Fix ids in approved cases that belong to another layer or phase, so they need no engine rule here. */
-const OTHER_LAYER = /^(UX|CMP|ARC)-|^FIN-19$/;
+/**
+ * Fix ids in approved cases that belong to another layer or phase, so they need no engine rule here. FIN-16 (06): the safety net is
+ * read from the flagged Grow goal; that is the input builder's source, and the engine reads safetyNet as before.
+ */
+const OTHER_LAYER = /^(UX|CMP|ARC)-|^FIN-(16|19)$/;
 
 const BR_D68 = ['BR-17', 'BR-18', 'BR-19', 'BR-20', 'BR-21', 'BR-22'];
 

@@ -115,6 +115,7 @@ describe('clearOne / clearAllExceptUnpaid', () => {
     expect(clearOne(full, 'category')).toEqual({ ...full, categoryIds: null });
     expect(clearOne(full, 'account')).toEqual({ ...full, accountIds: null });
     expect(clearOne(full, 'amount')).toEqual({ ...full, amountMin: null, amountMax: null });
+    expect(clearOne(full, 'debt')).toBe(full); // 06-37 D-38: the debt chip is cleared by the route, not the filter
     expect(clearOne(full, 'direction')).toEqual({ ...full, direction: 'all' });
   });
   it('does not mutate its input', () => {

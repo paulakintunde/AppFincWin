@@ -16,7 +16,7 @@ import { Fab } from '@/shell/fab/Fab';
 import { FabQuickMenu } from '@/shell/fab/FabQuickMenu';
 import { TabBar } from '@/shell/tabBar/TabBar';
 import { TabSlideIn } from '@/shell/tabBar/TabSlideIn';
-import { availableTabs } from '@/shell/tabBar/availableTabs';
+import { tabRoutes } from '@/shell/tabBar/availableTabs';
 import { isTabId } from '@/shell/tabBar/tabs';
 
 export default function TabsLayout() {
@@ -45,9 +45,11 @@ export default function TabsLayout() {
           )
         }
       >
-        {availableTabs().map((id) => (
-          <Tabs.Screen key={id} name={id} />
-        ))}
+        {/* 06-15: grow.tsx exists before the tab opens (D-03); href null keeps it unlisted and unlinkable while TAB_AVAILABILITY.grow is off.
+            One list with no null entries: a null child makes expo-router warn "Layout children must be of type Screen". */}
+        {tabRoutes().map(({ name, hidden }) =>
+          hidden ? <Tabs.Screen key={name} name={name} options={{ href: null }} /> : <Tabs.Screen key={name} name={name} />
+        )}
       </Tabs>
       <Fab />
       <FabQuickMenu />

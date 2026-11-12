@@ -52,6 +52,15 @@ const CASES: [string, Record<string, string | number>, string][] = [
   ['decide.setup.saving.toastRaised', { amount: '$50', undoLabel: 'seriesEdited', name: 'Rent' }, 'seriesEdited'],
   ['decide.setup.debtSheet.savedToast', { undoLabel: 'debtAdded', name: 'Card' }, 'debtAdded'],
   ['decide.setup.debtSheet.paidOffToast', { undoLabel: 'debtPaidOff', name: 'Card' }, 'debtPaidOff'],
+  // Phase 6 device check: the Grow debt toasts showed no Undo until they were mapped.
+  ['grow.debts.add.addedToast', {}, 'debtAdded'],
+  ['grow.debts.add.editedToast', {}, 'debtEdited'],
+  ['grow.debts.detail.removedToast', { name: 'Test Visa' }, 'debtRemoved'],
+  ['grow.debts.planSavedToastFrom', { amount: '$50', date: 'Nov 15' }, 'debtPlanSaved'],
+  ['grow.debts.stopToast', { date: 'Nov 15' }, 'debtPlanSaved'],
+  ['grow.debts.onceToast', { amount: '$1,000', name: 'Test Visa', date: 'Nov 10' }, 'debtOneOffRecorded'],
+  ['grow.debts.sale.toast', {}, 'debtSaleRecorded'],
+  ['grow.calc.debtExtra.planSavedToast', { amount: '$50', date: 'May 2029' }, 'debtPlanSaved'],
 ];
 
 describe('UndoToastHost 05.2 toasts (F-08)', () => {

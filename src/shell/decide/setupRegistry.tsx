@@ -10,14 +10,11 @@ import React from 'react';
 import { IncomeProfileSteps } from '@/features/income/IncomeProfileSteps';
 import type { SetupStepKey } from '@/features/decide/setup/setupFlow';
 import { AccountUseStep } from '@/features/decide/setup/steps/AccountUseStep';
+import { GrowLinkStep } from './GrowLinkStep';
 import { DetailStep } from '@/features/decide/setup/steps/DetailStep';
-import { EmergencyStep } from '@/features/decide/setup/steps/EmergencyStep';
-import { EnvelopesStep } from '@/features/decide/setup/steps/EnvelopesStep';
 import { EverydayStep } from '@/features/decide/setup/steps/EverydayStep';
-import { LoansStep } from '@/features/decide/setup/steps/LoansStep';
 import { RegularStep } from '@/features/decide/setup/steps/RegularStep';
 import { RemindersStep } from '@/features/decide/setup/steps/RemindersStep';
-import { SavingStep } from '@/features/decide/setup/steps/SavingStep';
 import { ShareStep } from '@/features/decide/setup/steps/ShareStep';
 import { SummaryStep } from '@/features/decide/setup/steps/SummaryStep';
 import { UnspentStep } from '@/features/decide/setup/steps/UnspentStep';
@@ -41,9 +38,9 @@ export function renderSetupStep(step: SetupStepKey, ref: React.Ref<SetupStepHand
     case 'regular':
       return <RegularStep ref={ref} {...props} />;
     case 'loans':
-      return <LoansStep ref={ref} {...props} />;
+      return <GrowLinkStep ref={ref} step="loans" {...props} />;
     case 'saving':
-      return <SavingStep ref={ref} {...props} />;
+      return <GrowLinkStep ref={ref} step="saving" {...props} />;
     case 'everyday':
       return <EverydayStep ref={ref} {...props} />;
     case 'unusual':
@@ -51,9 +48,9 @@ export function renderSetupStep(step: SetupStepKey, ref: React.Ref<SetupStepHand
     case 'accountUse':
       return <AccountUseStep ref={ref} {...props} />;
     case 'emergency':
-      return <EmergencyStep ref={ref} {...props} />;
+      return <GrowLinkStep ref={ref} step="emergency" {...props} />;
     case 'envelopes':
-      return <EnvelopesStep ref={ref} {...props} />;
+      return <GrowLinkStep ref={ref} step="envelopes" {...props} />;
     case 'unspent':
       return <UnspentStep ref={ref} {...props} />;
     case 'share':

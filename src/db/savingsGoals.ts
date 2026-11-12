@@ -22,6 +22,13 @@ export interface SavingsGoalRow {
   bucket?: 'college' | 'house' | 'car' | 'trip' | 'business' | 'wedding' | 'other' | null;
   account_id?: string | null;
   color_key?: 'green' | 'slate' | 'teal' | 'blue' | 'plum' | 'rust' | 'ochre' | null;
+  // 06 Grow (20261106000100): optional so rows cached before the update still type-check; absent reads safely (locked, not a safety net).
+  is_safety_net?: boolean;
+  locked?: boolean;
+  protect?: boolean;
+  up_front_only?: boolean;
+  icon?: 'calendar' | 'laptop' | 'phone' | 'camera' | 'savings' | 'housing' | 'transport' | 'headphones' | null;
+  net_confirmed_at?: string | null;
   done_at: string | null;
   is_sample: boolean;
   deleted_at: string | null;
@@ -31,7 +38,7 @@ export interface SavingsGoalRow {
 }
 
 export const SAVINGS_GOAL_COLUMNS =
-  'id, household_id, created_by, check_id, name, currency, target, monthly_amount, ready_by, opening_saved, kind, bucket, account_id, color_key, done_at, is_sample, deleted_at, version, created_at, updated_at';
+  'id, household_id, created_by, check_id, name, currency, target, monthly_amount, ready_by, opening_saved, kind, bucket, account_id, color_key, is_safety_net, locked, protect, up_front_only, icon, net_confirmed_at, done_at, is_sample, deleted_at, version, created_at, updated_at';
 
 /**
  * A pot as a client inserts it: home currency, a target and a month end are required by the shape check.
@@ -56,9 +63,33 @@ export type NewPot =
       monthly_amount?: number | null;
     });
 
+/**
+ * 06 Grow: a goal as the Grow flow inserts it. Open-ended goals leave target, ready_by and monthly_amount null.
+ * `locked` is REQUIRED (D-23): the user answers "keep this money out of Decide's answers?" with no default.
+ */
+export interface NewGoal {
+  id: string;
+  household_id: string;
+  kind: 'pot';
+  name: string;
+  currency: string;
+  opening_saved: number;
+  locked: boolean;
+  target: number | null;
+  ready_by: string | null;
+  monthly_amount: number | null;
+  account_id?: string | null;
+  color_key?: SavingsGoalRow['color_key'];
+  icon?: SavingsGoalRow['icon'];
+  is_safety_net?: boolean;
+  protect?: boolean;
+  up_front_only?: boolean;
+  check_id?: string | null;
+}
+
 /** ready_by is never null in a patch. target may be null only for a saving bucket (05.2 D-22: a bucket's goal is optional); the mutation refuses it for an ordinary pot and the pot shape check enforces it in the database. */
 export type SavingsGoalPatch = Partial<
-  Pick<SavingsGoalRow, 'name' | 'opening_saved' | 'done_at' | 'deleted_at' | 'account_id' | 'monthly_amount' | 'color_key'> & { target: number | null; ready_by: string }
+  Pick<SavingsGoalRow, 'name' | 'opening_saved' | 'done_at' | 'deleted_at' | 'account_id' | 'monthly_amount' | 'color_key' | 'locked' | 'protect' | 'up_front_only' | 'icon' | 'net_confirmed_at'> & { target: number | null; ready_by: string }
 >;
 
 export const SAVINGS_GOAL_INSERT_KEYS = [
@@ -74,7 +105,13 @@ export const SAVINGS_GOAL_INSERT_KEYS = [
   'account_id',
   'monthly_amount',
   'color_key',
-] as const satisfies readonly (keyof NewPotBase | 'target' | 'ready_by' | 'bucket' | 'monthly_amount')[];
+  'is_safety_net',
+  'locked',
+  'protect',
+  'up_front_only',
+  'icon',
+  'check_id',
+] as const satisfies readonly (keyof NewPotBase | keyof NewGoal | 'target' | 'ready_by' | 'bucket' | 'monthly_amount')[];
 
 export const SAVINGS_GOAL_PATCH_KEYS = [
   'name',
@@ -86,6 +123,11 @@ export const SAVINGS_GOAL_PATCH_KEYS = [
   'account_id',
   'monthly_amount',
   'color_key',
+  'locked',
+  'protect',
+  'up_front_only',
+  'icon',
+  'net_confirmed_at',
 ] as const satisfies readonly (keyof SavingsGoalPatch)[];
 
 const ENTITY = 'savings_goals' as const;
@@ -143,12 +185,13 @@ function validatePot(p: {
 }
 
 /** D-101: a client-inserted row is always a pot (the guard forces kind). A duplicate client id is read back as landed (MON-08). */
-export async function insertSavingsGoal(client: DbClient, pot: NewPot): Promise<SavingsGoalRow> {
+export async function insertSavingsGoal(client: DbClient, pot: NewPot | NewGoal): Promise<SavingsGoalRow> {
   assertAllowedKeys(pot as unknown as Record<string, unknown>, SAVINGS_GOAL_INSERT_KEYS, 'insertSavingsGoal');
   if (pot.kind !== 'pot') throw new RangeError('insertSavingsGoal: only pots are inserted from the client');
   validatePot(pot);
-  // Mirrors savings_goals_pot_shape: an ordinary pot needs both a target and a month end and no monthly amount.
-  if (pot.bucket == null && (pot.target === null || pot.ready_by === null || pot.monthly_amount != null)) {
+  // Mirrors the pre-06 savings_goals_pot_shape for a legacy pot: it needs both a target and a month end and no monthly amount.
+  // A Grow goal (it carries `locked`) may be open-ended (06 relaxed the constraint), so the legacy rule does not apply.
+  if (!('locked' in pot) && pot.bucket == null && (pot.target === null || pot.ready_by === null || pot.monthly_amount != null)) {
     throw new RangeError('insertSavingsGoal: a pot needs a target and a ready-by date');
   }
 

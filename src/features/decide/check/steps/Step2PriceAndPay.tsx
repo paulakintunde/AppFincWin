@@ -212,7 +212,7 @@ export function Step2PriceAndPay(props: Step2Props) {
       <Lock locked={readOnly}>
         <View style={styles.section}>
           <PaymentMethods {...props} />
-          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkFaint }}>{t('decide.flow.notLender')}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{t('decide.flow.notLender')}</Text>
         </View>
       </Lock>
 

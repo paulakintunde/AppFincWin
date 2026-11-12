@@ -23,7 +23,7 @@ It is a **money-management tool, not a financial institution and not a lender.**
 - **Submission hygiene outranks content framing**: the one detailed 2026 rejection account found in this category failed on mechanical IAP issues — subscription not attached to the version (2.1(b)), missing disclosure copy (3.1.2(c)), a bad support URL (1.5) — and then again because the demo video showed Restore Purchases rather than a fresh purchase. Directional rather than proven, but it should shape where the Compliance phase spends its effort.
 - **EAS Simulator is still waitlist-only** as of September 2026, with no GA announcement. Plan the iOS loop around the iPhone XR plus the Android emulator as the *certain* path; treat the simulator as a bonus if access arrives.
 - **Data residency and privacy**: global from day one, built to GDPR as the standard everywhere — right to erasure, data portability, DPA.
-- **Design fidelity**: the §2 token set is the complete palette and type scale. No gradients, no extra shadows, no additional colours, no substituted icon set. The prototype's restraint is deliberate.
+- **Design fidelity**: the §2 token set is the complete palette and type scale; card item names and row amounts use the `bodyStrong` role (body size at weight 600). Depth comes only from the page tone (`canvas` #F6F4EE, the §2 `fill6` value), white `surface` cards, and the three shadow tokens in `tokens.ts` (`card`, `edge`, `fab`); `inkFaint` text never sits on `canvas`. No gradients, no other shadows, no other colours, no substituted icon set. The prototype's restraint is deliberate.
 <!-- GSD:project-end -->
 
 <!-- GSD:stack-start source:research/STACK.md -->

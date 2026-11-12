@@ -26,11 +26,13 @@ export interface RowProps {
   sublabelTone?: 'inkMuted' | 'warn1';
   /** A row that shows its value but cannot be opened (announced disabled). */
   disabled?: boolean;
+  /** D-31: opt in to the bodyStrong role for the label (card item names). Settings and field rows leave it off. */
+  emphasis?: boolean;
 }
 
-export function Row({ label, value, leading, chevron = false, dense = false, onPress, accessibilityLabel, selected, sublabel, sublabelTone = 'inkMuted', disabled = false }: RowProps) {
+export function Row({ label, value, leading, chevron = false, dense = false, onPress, accessibilityLabel, selected, sublabel, sublabelTone = 'inkMuted', disabled = false, emphasis = false }: RowProps) {
   const { colors, pairing } = useTheme();
-  const labelStyle = { ...textRole(pairing, 'body'), color: colors.ink };
+  const labelStyle = { ...textRole(pairing, emphasis ? 'bodyStrong' : 'body'), color: colors.ink };
   const valueStyle = { ...textRole(pairing, 'body'), color: colors.inkMuted };
 
   const content = (
