@@ -10,17 +10,19 @@ name: Decide I bought it
     env:
       ITEM: "used car"
       PRICE: "9000"
-- scrollUntilVisible:
-    element: "I bought it"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "I bought it"
 - tapOn: "I bought it"
 - extendedWaitUntil:
     visible: "Add to your records"
     timeout: 15000
 - assertVisible: "This updates FincWin\\. No payment is made and no money moves\\."
-- scrollUntilVisible:
-    element: "Add to records"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Add to records"
 - tapOn: "Add to records"
 - extendedWaitUntil:
     visible: "Added to records"

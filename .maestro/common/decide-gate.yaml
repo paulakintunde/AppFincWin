@@ -10,11 +10,19 @@ appId: com.fincwin.app
     when:
       visible: "How Decide answers"
     commands:
+      - runFlow:
+          file: scroll-to.yaml
+          env:
+            TARGET: "Got it"
       - tapOn: "Got it"
 - runFlow:
     when:
       visible: "Do you have a safety net\\? About how much\\?"
     commands:
+      - runFlow:
+          file: scroll-to.yaml
+          env:
+            TARGET: "Not set yet"
       - tapOn: "Not set yet"
 - extendedWaitUntil:
     visible: "Not ready yet|I bought it"
@@ -23,15 +31,12 @@ appId: com.fincwin.app
     when:
       visible: "Not ready yet"
     commands:
+      - runFlow:
+          file: scroll-to.yaml
+          env:
+            TARGET: "Answer from quick estimates"
       - tapOn: "Answer from quick estimates"
-      - tapOn: "About how much comes in each month\\?"
-      - inputText: "3000"
-      - tapOn: "About how much goes on bills\\?"
-      - inputText: "1200"
-      - tapOn: "About how much on everyday spending\\?"
-      - inputText: "800"
-      - hideKeyboard
-      - tapOn: "See the answer now"
+      - runFlow: decide-quick-estimates.yaml
 - extendedWaitUntil:
     visible:
       id: "answer-verdict"

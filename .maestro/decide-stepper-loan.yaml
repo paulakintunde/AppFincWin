@@ -8,62 +8,66 @@ name: Decide stepper loan
 - runFlow: common/to-tabs.yaml
 - tapOn: "Decide, tab, .*"
 - assertVisible: "Can I afford it\\?"
-- tapOn:
-    id: "check-what"
-- inputText: "used car"
-- tapOn: "Price"
-- inputText: "9000"
-- hideKeyboard
-- tapOn: "Check it"
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "used car"
+      PRICE: "9000"
 # "used car" reads as Car, so the stepper opens on step 2 (price and how you pay)
 - extendedWaitUntil:
     visible: "Price and how you pay"
     timeout: 15000
 - assertVisible: "Step 2 of 3"
-- scrollUntilVisible:
-    element: "Installments"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Installments"
 - tapOn: "Installments"
 # The installment plan sheet
 - extendedWaitUntil:
     visible: "Installment plan"
     timeout: 10000
 - tapOn: "24 months"
-- scrollUntilVisible:
-    element: "Rate, % a year"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Rate, % a year"
 - tapOn: "Rate, % a year"
 - inputText: "9"
-- hideKeyboard
-- scrollUntilVisible:
-    element: "Use this plan"
-    direction: DOWN
+# close the keyboard on the sheet's own label (hideKeyboard sends Back, which would close the sheet)
+- tapOn: "Length"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Use this plan"
 - assertVisible: ".* a month for 24 months"
 - tapOn: "Use this plan"
 - assertVisible: ".* down · .* a month"
-- scrollUntilVisible:
-    element: "Next"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Next"
 - tapOn: "Next"
 # Step 3: running costs, then the answer
 - extendedWaitUntil:
     visible: "Step 3 of 3"
     timeout: 10000
-- scrollUntilVisible:
-    element: "See the answer"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "See the answer"
 - tapOn: "See the answer"
 - runFlow: common/decide-gate.yaml
 # The interest line (decide.v3.fact.interest_is_a_cost or the plan verdict's interest sentence)
-- scrollUntilVisible:
-    element: ".*in interest.*"
-    direction: DOWN
-- assertVisible: ".*in interest.*"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: ".*in interest.*"
 # The legal footer (legal.decideAnswer.footer) above the action bar
-- scrollUntilVisible:
-    element:
-      id: "answer-footer"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "FincWin is a planning tool, not a lender\\."
 - assertVisible:
     id: "answer-footer"
 - assertVisible: "I bought it"

@@ -9,17 +9,19 @@ name: Decide save for it
     env:
       ITEM: "laptop"
       PRICE: "1500"
-- scrollUntilVisible:
-    element: "Save for it"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Save for it"
 - tapOn: "Save for it"
 - extendedWaitUntil:
     visible: "A goal for .*"
     timeout: 15000
 - assertVisible: "A savings goal in Grow, linked to this check\\."
-- scrollUntilVisible:
-    element: "Make the goal"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Make the goal"
 - tapOn: "Make the goal"
 - extendedWaitUntil:
     visible: "Goal made"

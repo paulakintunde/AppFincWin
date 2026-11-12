@@ -6,13 +6,14 @@ appId: com.fincwin.app
 - runFlow: to-tabs.yaml
 - tapOn: "Decide, tab, .*"
 - assertVisible: "Can I afford it\\?"
-- tapOn:
-    id: "check-what"
-- inputText: ${ITEM}
-- tapOn: "Price"
-- inputText: ${PRICE}
-- hideKeyboard
-- tapOn: "Check it"
+- runFlow:
+    file: decide-type-check.yaml
+    env:
+      ITEM: ${ITEM}
+      PRICE: ${PRICE}
+- extendedWaitUntil:
+    visible: "Step [123] of 3|How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet|I bought it"
+    timeout: 20000
 - runFlow:
     when:
       visible: "Step [12] of 3"
@@ -22,12 +23,19 @@ appId: com.fincwin.app
           while:
             notVisible: "Step 3 of 3"
           commands:
-            - scrollUntilVisible:
-                element: "Next"
-                direction: DOWN
+            - runFlow:
+                file: scroll-to.yaml
+                env:
+                  TARGET: "Next"
             - tapOn: "Next"
-      - scrollUntilVisible:
-          element: "See the answer"
-          direction: DOWN
+            - waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Step 3 of 3"
+    commands:
+      - runFlow:
+          file: scroll-to.yaml
+          env:
+            TARGET: "See the answer"
       - tapOn: "See the answer"
 - runFlow: decide-gate.yaml

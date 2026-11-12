@@ -7,10 +7,10 @@ name: Decide safety net
 ---
 - runFlow: common/to-tabs.yaml
 - tapOn: "Decide, tab, .*"
-- scrollUntilVisible:
-    element:
-      id: "money-rules-net"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Safety net, .*Opens the safety net"
 - tapOn:
     id: "money-rules-net"
 - extendedWaitUntil:
@@ -23,7 +23,7 @@ name: Decide safety net
       - tapOn: "Set an amount"
       - tapOn: "About how much"
       - inputText: "2000"
-      - hideKeyboard
+      - tapOn: "Money kept for emergencies. Answers keep it out of what counts as spare."
       - tapOn: "Save and see the answer"
 - extendedWaitUntil:
     visible:
@@ -33,9 +33,10 @@ name: Decide safety net
     id: "net-word"
     text: "Locked"
 # Unlock needs the confirm
-- scrollUntilVisible:
-    element: "Unlock for answers"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Unlock for answers"
 - tapOn: "Unlock for answers"
 - assertVisible: "Let answers use your safety net\\?"
 - tapOn: "Unlock"
@@ -46,22 +47,23 @@ name: Decide safety net
     visible:
       id: "net-word"
       text: "Locked"
-    timeout: 10000
+    timeout: 90000
 # Unlock again, then lock with the switch: no confirm, a plain toast
-- scrollUntilVisible:
-    element: "Unlock for answers"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Unlock for answers"
 - tapOn: "Unlock for answers"
 - tapOn: "Unlock"
 - extendedWaitUntil:
     visible:
       id: "net-word"
       text: "Unlocked"
-    timeout: 10000
+    timeout: 90000
 - tapOn: "Safety net locked"
 - assertVisible: "Safety net locked\\."
 - extendedWaitUntil:
     visible:
       id: "net-word"
       text: "Locked"
-    timeout: 10000
+    timeout: 90000

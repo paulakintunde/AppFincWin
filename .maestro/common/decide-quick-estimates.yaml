@@ -1,0 +1,20 @@
+# 06.1-32 shared: the quick-estimates first answer (D39): three round amounts, then See the answer now.
+# The keyboard is closed by tapping the screen's own sentence (hideKeyboard sends Back on Android).
+appId: com.fincwin.app
+---
+- extendedWaitUntil:
+    visible: "A first answer from three estimates"
+    timeout: 15000
+- tapOn: "About how much comes in each month\\?"
+- inputText: "3000"
+- tapOn: "About how much goes on bills\\?"
+- inputText: "1200"
+- tapOn: "About how much on everyday spending\\?"
+- inputText: "800"
+- tapOn: "Before your records are ready\\. Round numbers are fine\\."
+- assertVisible: "A usual month leaves about .* by these estimates\\."
+- runFlow:
+    file: scroll-to.yaml
+    env:
+      TARGET: "See the answer now"
+- tapOn: "See the answer now"

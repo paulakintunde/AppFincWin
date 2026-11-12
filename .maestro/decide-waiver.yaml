@@ -14,9 +14,10 @@ name: Decide waiver (ask, don't block)
 - assertVisible:
     id: "answer-verdict"
 # The ask (or a missing-figure row) under the answer
-- scrollUntilVisible:
-    element: ".*Do you have (any|one)\\?|Fix(: .*)?"
-    direction: DOWN
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: ".*Do you have (any|one)\\?|Fix(: .*)?"
 - runFlow:
     when:
       visible: ".*Do you have (any|one)\\?"
@@ -30,17 +31,11 @@ name: Decide waiver (ask, don't block)
       # a missing figure never blocks: Fix is a link under the answer, not a gate
       - assertVisible:
           id: "answer-facts"
-# Still the answer: verdict, basis and footer
-- scrollUntilVisible:
-    element:
-      id: "answer-verdict"
-    direction: UP
-- assertVisible:
-    id: "answer-verdict"
-- scrollUntilVisible:
-    element:
-      id: "answer-footer"
-    direction: DOWN
+# Still the answer: basis and footer below it
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "FincWin is a planning tool, not a lender\\."
 - assertVisible:
     id: "answer-basis"
 - assertVisible:

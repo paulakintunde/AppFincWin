@@ -1,0 +1,36 @@
+# 06.1-32 shared: on Decide home, type ${ITEM} and ${PRICE} into the check card and press Check it.
+# Each field is cleared first (long press > Select all), because Decide home keeps what was typed before.
+# The keyboard is closed by tapping the "When?" label (hideKeyboard sends Back on Android, which leaves Decide).
+appId: com.fincwin.app
+---
+- tapOn:
+    id: "check-what"
+- longPressOn:
+    id: "check-what"
+- runFlow:
+    when:
+      visible: "Select all"
+    commands:
+      - tapOn: "Select all"
+      - eraseText: 5
+- inputText: ${ITEM}
+# A price already in the field reads "Price, <amount>"; clear it the same way
+- runFlow:
+    when:
+      visible: "Price, .*"
+    commands:
+      - longPressOn: "Price, .*"
+      - runFlow:
+          when:
+            visible: "Select all"
+          commands:
+            - tapOn: "Select all"
+            - eraseText: 5
+- tapOn: "Price"
+- inputText: ${PRICE}
+- tapOn: "When\\?"
+- runFlow:
+    file: scroll-to.yaml
+    env:
+      TARGET: "Check it"
+- tapOn: "Check it"
