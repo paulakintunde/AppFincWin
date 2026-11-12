@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 06.1 wave 10 done (36; 35/42); next is wave 11 (31 prod push, 37 copy prune)
+stopped_at: "Phase 06.1 wave 11: 37 done (36/42); 31 (prod push) awaiting owner"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:
