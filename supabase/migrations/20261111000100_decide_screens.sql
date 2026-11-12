@@ -640,7 +640,6 @@ declare
   v_check_version integer;
   v_goal_version integer;
   v_up_front boolean := false;  -- 06.1 D-22
-  v_price numeric;  -- 06.1 D-22
 begin
   if p_outcome is null or p_outcome not in ('wait', 'pass') then
     raise exception 'record_decide_outcome: the outcome must be wait or pass' using errcode = '22023';
@@ -734,13 +733,8 @@ begin
          or (v_goal ->> 'target')::bigint not between 1 and 10000000000000 then
         raise exception 'record_decide_outcome: the goal is malformed' using errcode = '22023';
       end if;
-      -- 06.1 D-22: the target is the up-front part of what the check priced, so it never exceeds the price.
-      if coalesce(v_check.inputs ->> 'price', '') ~ '^[0-9]{1,14}$' then
-        v_price := (v_check.inputs ->> 'price')::numeric;
-        if v_price > 0 and (v_goal ->> 'target')::numeric > v_price then
-          raise exception 'record_decide_outcome: the goal target is above the price' using errcode = '22023';
-        end if;
-      end if;
+      -- 06.1 D-22 (owner 2026-11-12): no price limit on the target. The app's target is price + sales tax + one-off fees (or a plan's
+      -- up-front part, which can include a setup fee), so it can exceed the typed price; the goal is the person's own record.
       v_up_front := coalesce(v_check.inputs -> 'pay' ->> 'mode', '') = 'plan';
       begin
         v_goal_id := (v_goal ->> 'id')::uuid;

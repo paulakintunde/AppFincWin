@@ -179,11 +179,10 @@ select extensions.is(public.record_decide_outcome('c9700000-0000-0000-0000-00000
 select extensions.is(public.t97_goal('e9700000-0000-0000-0000-000000000002', 'up_front_only') || ':' || public.t97_goal('e9700000-0000-0000-0000-000000000002', 'locked'),
   'false:true', 'D-22: a pay-now goal is locked but not up front only');
 
-select extensions.throws_ok(
-  $$select public.record_decide_outcome('c9700000-0000-0000-0000-000000000004', 'wait',
-    '{"verdict":"adjust","wait_monthly":20000,"ready_by":"2099-01-01","goal":{"id":"e9700000-0000-0000-0000-000000000004","name":"Big","currency":"USD","target":60000}}'::jsonb,
-    '{"id":"59700000-0000-0000-0000-000000000013","label_key":"planSaved","label_params":{}}'::jsonb)$$,
-  '22023', null, 'D-22: a goal target above the price is refused');
+select extensions.is(public.record_decide_outcome('c9700000-0000-0000-0000-000000000004', 'wait',
+  '{"verdict":"adjust","wait_monthly":20000,"ready_by":"2099-01-01","goal":{"id":"e9700000-0000-0000-0000-000000000004","name":"Big","currency":"USD","target":60000}}'::jsonb,
+  '{"id":"59700000-0000-0000-0000-000000000013","label_key":"planSaved","label_params":{}}'::jsonb) ->> 'status',
+  'applied', 'D-22 (owner 2026-11-12): a target above the typed price (tax and fees) is accepted');
 
 select * from extensions.finish();
 rollback;
