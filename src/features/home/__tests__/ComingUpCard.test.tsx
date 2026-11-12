@@ -182,7 +182,7 @@ describe('ComingUpCard', () => {
     expect((StyleSheet.flatten(inner.props.style as never) as Record<string, unknown>).overflow).toBe('hidden');
     const outer = StyleSheet.flatten(inner.parent.props.style as never) as Record<string, unknown>;
     expect(outer.overflow).toBeUndefined();
-    expect(outer.shadowOpacity ?? outer.elevation).toBeDefined();
+    expect(outer.boxShadow ?? outer.shadowOpacity ?? outer.elevation).toBeDefined();
   });
 
   it('See all calls onSeeAll', async () => {

@@ -1,0 +1,2063 @@
+{
+ "no goals": {
+  "debts": [
+   {
+    "id": "demo-debt-0",
+    "kind": "loan",
+    "balance": 620000,
+    "minimum": 19000,
+    "apr": "55000000000n",
+    "secured": false,
+    "isHousing": false,
+    "dueDay": null
+   }
+  ],
+  "results": [
+   {
+    "result": {
+     "code": "fits_unspent",
+     "variant": "tight",
+     "legacyState": "fits",
+     "split": [
+      {
+       "source": "unspent_earlier",
+       "amount": 180000
+      }
+     ],
+     "facts": [
+      {
+       "code": "tight_floor",
+       "values": {
+        "floor": 31100,
+        "basis": "tenth"
+       }
+      },
+      {
+       "code": "month_left_after",
+       "values": {
+        "month": "2026-10",
+        "left": -23903
+       }
+      },
+      {
+       "code": "earlier_money_from",
+       "values": {
+        "amount": 180000,
+        "where": "account"
+       }
+      },
+      {
+       "code": "unspent_before_after",
+       "values": {
+        "before": 200000,
+        "after": 20000
+       }
+      },
+      {
+       "code": "net_none_start",
+       "values": {
+        "starter": 330000
+       }
+      },
+      {
+       "code": "debt_interest_cost",
+       "values": {
+        "balance": 620000,
+        "apr": "5.5",
+        "monthlyInterest": 2842
+       }
+      },
+      {
+       "code": "debt_due_day_assumed",
+       "values": {
+        "debtId": "demo-debt-0",
+        "amount": 19000
+       }
+      }
+     ],
+     "notices": [
+      {
+       "code": "month_heading_short",
+       "values": {
+        "month": "2026-10",
+        "short": 23903,
+        "categoryId": "cat-housing",
+        "largest": 160000
+       }
+      },
+      {
+       "code": "unspent_drifted",
+       "values": {
+        "suggested": -52903
+       }
+      },
+      {
+       "code": "tax_not_included",
+       "values": {}
+      }
+     ],
+     "missing": [],
+     "reasons": [
+      "debt_due_day_assumed",
+      "month_excluded_under_logged",
+      "tax_not_included"
+     ],
+     "readyBy": null,
+     "band": 5,
+     "layers": [
+      "L0",
+      "L1p",
+      "L1e",
+      "L2",
+      "L4"
+     ],
+     "confidence": {
+      "reasons": [
+       {
+        "code": "unspent_drifted",
+        "numbers": {
+         "value": 200000,
+         "suggested": -52903
+        },
+        "weight": 40,
+        "audience": "detail"
+       },
+       {
+        "code": "early_in_month",
+        "numbers": {
+         "day": 3,
+         "from": 20
+        },
+        "weight": 70,
+        "audience": "detail"
+       }
+      ],
+      "basis": {
+       "kind": "records",
+       "months": 6,
+       "upTo": "2026-10-03"
+      },
+      "nextStep": {
+       "reason": "unspent_drifted",
+       "step": "confirm_unspent"
+      }
+     },
+     "parts": {
+      "oneOff": "fits_unspent",
+      "monthly": null
+     },
+     "afterBuy": {
+      "lead": "month",
+      "month": -23903,
+      "usualMonth": null,
+      "before": -23903,
+      "monthName": "2026-10"
+     },
+     "purchaseDate": "2026-10-03",
+     "readiness": {
+      "ready": true,
+      "missing": [],
+      "items": [],
+      "waived": []
+     },
+     "recordsAsOf": null,
+     "caveats": [
+      {
+       "code": "close_to_line",
+       "values": {}
+      },
+      {
+       "code": "tax_not_included",
+       "values": {}
+      }
+     ]
+    },
+    "funds": {
+     "balance": 1298000,
+     "suggested": -52903,
+     "unspent": {
+      "value": 200000,
+      "anchor": {
+       "amount": 200000,
+       "at": "2026-10-03"
+      },
+      "rolled": false,
+      "stale": false,
+      "drifted": true,
+      "breakdown": {
+       "in": 0,
+       "everyday": 0,
+       "bills": 0,
+       "loans": 0,
+       "investedSaved": 0,
+       "other": 0,
+       "heldBack": 0
+      },
+      "available": 200000
+     },
+     "emergency": null,
+     "envelopesSaved": 0,
+     "envelopesMonthly": 0,
+     "ownEnvelope": 0,
+     "spending": 228000,
+     "ringFenced": 0,
+     "envelopesAssumedInside": 0,
+     "unstatedAccounts": [],
+     "fundUnlinked": false,
+     "unexplained": 0
+    }
+   },
+   {
+    "result": {
+     "code": "needs_input",
+     "variant": null,
+     "legacyState": "missing",
+     "split": [],
+     "facts": [],
+     "notices": [
+      {
+       "code": "month_heading_short",
+       "values": {
+        "month": "2026-10",
+        "short": 23903,
+        "categoryId": "cat-housing",
+        "largest": 160000
+       }
+      },
+      {
+       "code": "unspent_drifted",
+       "values": {
+        "suggested": -52903
+       }
+      }
+     ],
+     "missing": [
+      "first_payment_not_chosen"
+     ],
+     "reasons": [
+      "month_excluded_under_logged"
+     ],
+     "readyBy": null,
+     "band": 7,
+     "layers": [
+      "L0",
+      "L1p",
+      "L1e",
+      "L2",
+      "L3",
+      "L4",
+      "L5"
+     ],
+     "confidence": {
+      "reasons": [
+       {
+        "code": "unspent_drifted",
+        "numbers": {
+         "value": 200000,
+         "suggested": -52903
+        },
+        "weight": 40,
+        "audience": "detail"
+       },
+       {
+        "code": "early_in_month",
+        "numbers": {
+         "day": 3,
+         "from": 20
+        },
+        "weight": 70,
+        "audience": "detail"
+       }
+      ],
+      "basis": {
+       "kind": "records",
+       "months": 6,
+       "upTo": "2026-10-03"
+      },
+      "nextStep": {
+       "reason": "unspent_drifted",
+       "step": "confirm_unspent"
+      }
+     },
+     "parts": {
+      "oneOff": "needs_input",
+      "monthly": null
+     },
+     "afterBuy": {
+      "lead": "month",
+      "month": -23903,
+      "usualMonth": null,
+      "before": -23903,
+      "monthName": "2026-10"
+     },
+     "purchaseDate": "2026-10-03",
+     "readiness": {
+      "ready": true,
+      "missing": [],
+      "items": [],
+      "waived": []
+     },
+     "recordsAsOf": null,
+     "caveats": []
+    },
+    "funds": {
+     "balance": 1298000,
+     "suggested": -52903,
+     "unspent": {
+      "value": 200000,
+      "anchor": {
+       "amount": 200000,
+       "at": "2026-10-03"
+      },
+      "rolled": false,
+      "stale": false,
+      "drifted": true,
+      "breakdown": {
+       "in": 0,
+       "everyday": 0,
+       "bills": 0,
+       "loans": 0,
+       "investedSaved": 0,
+       "other": 0,
+       "heldBack": 0
+      },
+      "available": 200000
+     },
+     "emergency": null,
+     "envelopesSaved": 0,
+     "envelopesMonthly": 0,
+     "ownEnvelope": 0,
+     "spending": 228000,
+     "ringFenced": 0,
+     "envelopesAssumedInside": 0,
+     "unstatedAccounts": [],
+     "fundUnlinked": false,
+     "unexplained": 0
+    }
+   }
+  ]
+ },
+ "a pot with no account": {
+  "debts": [
+   {
+    "id": "demo-debt-0",
+    "kind": "loan",
+    "balance": 620000,
+    "minimum": 19000,
+    "apr": "55000000000n",
+    "secured": false,
+    "isHousing": false,
+    "dueDay": null
+   }
+  ],
+  "results": [
+   {
+    "result": {
+     "code": "not_yet",
+     "variant": "payday",
+     "legacyState": "no",
+     "split": [],
+     "facts": [
+      {
+       "code": "no_overdraft_limit",
+       "values": {
+        "accountId": "demo-acct-everyday",
+        "below": 54373,
+        "zero": 0
+       }
+      },
+      {
+       "code": "ready_without_interest",
+       "values": {}
+      },
+      {
+       "code": "debt_interest_cost",
+       "values": {
+        "balance": 620000,
+        "apr": "5.5",
+        "monthlyInterest": 2842
+       }
+      },
+      {
+       "code": "debt_due_day_assumed",
+       "values": {
+        "debtId": "demo-debt-0",
+        "amount": 19000
+       }
+      }
+     ],
+     "notices": [
+      {
+       "code": "month_heading_short",
+       "values": {
+        "month": "2026-10",
+        "short": 23903,
+        "categoryId": "cat-housing",
+        "largest": 160000
+       }
+      },
+      {
+       "code": "unspent_drifted",
+       "values": {
+        "suggested": -116903
+       }
+      },
+      {
+       "code": "tax_not_included",
+       "values": {}
+      },
+      {
+       "code": "envelope_location_assumed",
+       "values": {
+        "count": 1
+       }
+      }
+     ],
+     "missing": [],
+     "reasons": [
+      "debt_due_day_assumed",
+      "month_excluded_under_logged",
+      "tax_not_included"
+     ],
+     "readyBy": {
+      "kind": "date",
+      "date": "2026-10-05"
+     },
+     "band": 5,
+     "layers": [
+      "L0",
+      "L1p",
+      "L1e",
+      "L2",
+      "L4"
+     ],
+     "confidence": {
+      "reasons": [
+       {
+        "code": "unspent_drifted",
+        "numbers": {
+         "value": 200000,
+         "suggested": -116903
+        },
+        "weight": 40,
+        "audience": "detail"
+       },
+       {
+        "code": "early_in_month",
+        "numbers": {
+         "day": 3,
+         "from": 20
+        },
+        "weight": 70,
+        "audience": "detail"
+       }
+      ],
+      "basis": {
+       "kind": "records",
+       "months": 6,
+       "upTo": "2026-10-03"
+      },
+      "nextStep": {
+       "reason": "unspent_drifted",
+       "step": "confirm_unspent"
+      }
+     },
+     "parts": {
+      "oneOff": "not_yet",
+      "monthly": null
+     },
+     "afterBuy": {
+      "lead": "month",
+      "month": -203903,
+      "usualMonth": null,
+      "before": -23903,
+      "monthName": "2026-10"
+     },
+     "purchaseDate": "2026-10-03",
+     "readiness": {
+      "ready": false,
+      "missing": [
+       "envelopes_unconfirmed"
+      ],
+      "items": [
+       {
+        "kind": "envelopes",
+        "code": "envelopes_unconfirmed",
+        "month": "2026-10",
+        "seriesId": null,
+        "envelopeId": "g-lisbon",
+        "lineId": null,
+        "name": null,
+        "amount": null,
+        "date": null
+       }
+      ],
+      "waived": []
+     },
+     "recordsAsOf": null,
+     "caveats": []
+    },
+    "funds": {
+     "balance": 1298000,
+     "suggested": -116903,
+     "unspent": {
+      "value": 200000,
+      "anchor": {
+       "amount": 200000,
+       "at": "2026-10-03"
+      },
+      "rolled": false,
+      "stale": false,
+      "drifted": true,
+      "breakdown": {
+       "in": 0,
+       "everyday": 0,
+       "bills": 0,
+       "loans": 0,
+       "investedSaved": 0,
+       "other": 0,
+       "heldBack": 0
+      },
+      "available": 200000
+     },
+     "emergency": null,
+     "envelopesSaved": 64000,
+     "envelopesMonthly": 0,
+     "ownEnvelope": 0,
+     "spending": 164000,
+     "ringFenced": 64000,
+     "envelopesAssumedInside": 1,
+     "unstatedAccounts": [],
+     "fundUnlinked": false,
+     "unexplained": 0
+    }
+   },
+   {
+    "result": {
+     "code": "needs_input",
+     "variant": null,
+     "legacyState": "missing",
+     "split": [],
+     "facts": [],
+     "notices": [
+      {
+       "code": "month_heading_short",
+       "values": {
+        "month": "2026-10",
+        "short": 23903,
+        "categoryId": "cat-housing",
+        "largest": 160000
+       }
+      },
+      {
+       "code": "unspent_drifted",
+       "values": {
+        "suggested": -116903
+       }
+      },
+      {
+       "code": "envelope_location_assumed",
+       "values": {
+        "count": 1
+       }
+      }
+     ],
+     "missing": [
+      "first_payment_not_chosen"
+     ],
+     "reasons": [
+      "month_excluded_under_logged"
+     ],
+     "readyBy": null,
+     "band": 7,
+     "layers": [
+      "L0",
+      "L1p",
+      "L1e",
+      "L2",
+      "L3",
+      "L4",
+      "L5"
+     ],
+     "confidence": {
+      "reasons": [
+       {
+        "code": "unspent_drifted",
+        "numbers": {
+         "value": 200000,
+         "suggested": -116903
+        },
+        "weight": 40,
+        "audience": "detail"
+       },
+       {
+        "code": "early_in_month",
+        "numbers": {
+         "day": 3,
+         "from": 20
+        },
+        "weight": 70,
+        "audience": "detail"
+       }
+      ],
+      "basis": {
+       "kind": "records",
+       "months": 6,
+       "upTo": "2026-10-03"
+      },
+      "nextStep": {
+       "reason": "unspent_drifted",
+       "step": "confirm_unspent"
+      }
+     },
+     "parts": {
+      "oneOff": "needs_input",
+      "monthly": null
+     },
+     "afterBuy": {
+      "lead": "month",
+      "month": -23903,
+      "usualMonth": null,
+      "before": -23903,
+      "monthName": "2026-10"
+     },
+     "purchaseDate": "2026-10-03",
+     "readiness": {
+      "ready": false,
+      "missing": [
+       "envelopes_unconfirmed"
+      ],
+      "items": [
+       {
+        "kind": "envelopes",
+        "code": "envelopes_unconfirmed",
+        "month": "2026-10",
+        "seriesId": null,
+        "envelopeId": "g-lisbon",
+        "lineId": null,
+        "name": null,
+        "amount": null,
+        "date": null
+       }
+      ],
+      "waived": []
+     },
+     "recordsAsOf": null,
+     "caveats": []
+    },
+    "funds": {
+     "balance": 1298000,
+     "suggested": -116903,
+     "unspent": {
+      "value": 200000,
+      "anchor": {
+       "amount": 200000,
+       "at": "2026-10-03"
+      },
+      "rolled": false,
+      "stale": false,
+      "drifted": true,
+      "breakdown": {
+       "in": 0,
+       "everyday": 0,
+       "bills": 0,
+       "loans": 0,
+       "investedSaved": 0,
+       "other": 0,
+       "heldBack": 0
+      },
+      "available": 200000
+     },
+     "emergency": null,
+     "envelopesSaved": 64000,
+     "envelopesMonthly": 0,
+     "ownEnvelope": 0,
+     "spending": 164000,
+     "ringFenced": 64000,
+     "envelopesAssumedInside": 1,
+     "unstatedAccounts": [],
+     "fundUnlinked": false,
+     "unexplained": 0
+    }
+   }
+  ]
+ },
+ "a pot kept in savings and a wait goal": {
+  "debts": [
+   {
+    "id": "demo-debt-0",
+    "kind": "loan",
+    "balance": 620000,
+    "minimum": 19000,
+    "apr": "55000000000n",
+    "secured": false,
+    "isHousing": false,
+    "dueDay": null
+   }
+  ],
+  "results": [
+   {
+    "result": {
+     "code": "not_yet",
+     "variant": "payday",
+     "legacyState": "no",
+     "split": [],
+     "facts": [
+      {
+       "code": "no_overdraft_limit",
+       "values": {
+        "accountId": "demo-acct-everyday",
+        "below": 10373,
+        "zero": 0
+       }
+      },
+      {
+       "code": "ready_without_interest",
+       "values": {}
+      },
+      {
+       "code": "debt_interest_cost",
+       "values": {
+        "balance": 620000,
+        "apr": "5.5",
+        "monthlyInterest": 2842
+       }
+      },
+      {
+       "code": "debt_due_day_assumed",
+       "values": {
+        "debtId": "demo-debt-0",
+        "amount": 19000
+       }
+      }
+     ],
+     "notices": [
+      {
+       "code": "month_heading_short",
+       "values": {
+        "month": "2026-10",
+        "short": 23903,
+        "categoryId": "cat-housing",
+        "largest": 160000
+       }
+      },
+      {
+       "code": "unspent_drifted",
+       "values": {
+        "suggested": -72903
+       }
+      },
+      {
+       "code": "tax_not_included",
+       "values": {}
+      },
+      {
+       "code": "envelope_location_assumed",
+       "values": {
+        "count": 1
+       }
+      }
+     ],
+     "missing": [],
+     "reasons": [
+      "debt_due_day_assumed",
+      "month_excluded_under_logged",
+      "tax_not_included"
+     ],
+     "readyBy": {
+      "kind": "date",
+      "date": "2026-10-05"
+     },
+     "band": 5,
+     "layers": [
+      "L0",
+      "L1p",
+      "L1e",
+      "L2",
+      "L4"
+     ],
+     "confidence": {
+      "reasons": [
+       {
+        "code": "unspent_drifted",
+        "numbers": {
+         "value": 200000,
+         "suggested": -72903
+        },
+        "weight": 40,
+        "audience": "detail"
+       },
+       {
+        "code": "early_in_month",
+        "numbers": {
+         "day": 3,
+         "from": 20
+        },
+        "weight": 70,
+        "audience": "detail"
+       }
+      ],
+      "basis": {
+       "kind": "records",
+       "months": 6,
+       "upTo": "2026-10-03"
+      },
+      "nextStep": {
+       "reason": "unspent_drifted",
+       "step": "confirm_unspent"
+      }
+     },
+     "parts": {
+      "oneOff": "not_yet",
+      "monthly": null
+     },
+     "afterBuy": {
+      "lead": "month",
+      "month": -203903,
+      "usualMonth": null,
+      "before": -23903,
+      "monthName": "2026-10"
+     },
+     "purchaseDate": "2026-10-03",
+     "readiness": {
+      "ready": false,
+      "missing": [
+       "envelopes_unconfirmed"
+      ],
+      "items": [
+       {
+        "kind": "envelopes",
+        "code": "envelopes_unconfirmed",
+        "month": "2026-10",
+        "seriesId": null,
+        "envelopeId": "g-wait",
+        "lineId": null,
+        "name": null,
+        "amount": null,
+        "date": null
+       }
+      ],
+      "waived": []
+     },
+     "recordsAsOf": null,
+     "caveats": []
+    },
+    "funds": {
+     "balance": 1298000,
+     "suggested": -72903,
+     "unspent": {
+      "value": 200000,
+      "anchor": {
+       "amount": 200000,
+       "at": "2026-10-03"
+      },
+      "rolled": false,
+      "stale": false,
+      "drifted": true,
+      "breakdown": {
+       "in": 0,
+       "everyday": 0,
+       "bills": 0,
+       "loans": 0,
+       "investedSaved": 0,
+       "other": 0,
+       "heldBack": 0
+      },
+      "available": 200000
+     },
+     "emergency": null,
+     "envelopesSaved": 84000,
+     "envelopesMonthly": 0,
+     "ownEnvelope": 0,
+     "spending": 208000,
+     "ringFenced": 20000,
+     "envelopesAssumedInside": 1,
+     "unstatedAccounts": [],
+     "fundUnlinked": false,
+     "unexplained": 0
+    }
+   },
+   {
+    "result": {
+     "code": "needs_input",
+     "variant": null,
+     "legacyState": "missing",
+     "split": [],
+     "facts": [],
+     "notices": [
+      {
+       "code": "month_heading_short",
+       "values": {
+        "month": "2026-10",
+        "short": 23903,
+        "categoryId": "cat-housing",
+        "largest": 160000
+       }
+      },
+      {
+       "code": "unspent_drifted",
+       "values": {
+        "suggested": -72903
+       }
+      },
+      {
+       "code": "envelope_location_assumed",
+       "values": {
+        "count": 1
+       }
+      }
+     ],
+     "missing": [
+      "first_payment_not_chosen"
+     ],
+     "reasons": [
+      "month_excluded_under_logged"
+     ],
+     "readyBy": null,
+     "band": 7,
+     "layers": [
+      "L0",
+      "L1p",
+      "L1e",
+      "L2",
+      "L3",
+      "L4",
+      "L5"
+     ],
+     "confidence": {
+      "reasons": [
+       {
+        "code": "unspent_drifted",
+        "numbers": {
+         "value": 200000,
+         "suggested": -72903
+        },
+        "weight": 40,
+        "audience": "detail"
+       },
+       {
+        "code": "early_in_month",
+        "numbers": {
+         "day": 3,
+         "from": 20
+        },
+        "weight": 70,
+        "audience": "detail"
+       }
+      ],
+      "basis": {
+       "kind": "records",
+       "months": 6,
+       "upTo": "2026-10-03"
+      },
+      "nextStep": {
+       "reason": "unspent_drifted",
+       "step": "confirm_unspent"
+      }
+     },
+     "parts": {
+      "oneOff": "needs_input",
+      "monthly": null
+     },
+     "afterBuy": {
+      "lead": "month",
+      "month": -23903,
+      "usualMonth": null,
+      "before": -23903,
+      "monthName": "2026-10"
+     },
+     "purchaseDate": "2026-10-03",
+     "readiness": {
+      "ready": false,
+      "missing": [
+       "envelopes_unconfirmed"
+      ],
+      "items": [
+       {
+        "kind": "envelopes",
+        "code": "envelopes_unconfirmed",
+        "month": "2026-10",
+        "seriesId": null,
+        "envelopeId": "g-wait",
+        "lineId": null,
+        "name": null,
+        "amount": null,
+        "date": null
+       }
+      ],
+      "waived": []
+     },
+     "recordsAsOf": null,
+     "caveats": []
+    },
+    "funds": {
+     "balance": 1298000,
+     "suggested": -72903,
+     "unspent": {
+      "value": 200000,
+      "anchor": {
+       "amount": 200000,
+       "at": "2026-10-03"
+      },
+      "rolled": false,
+      "stale": false,
+      "drifted": true,
+      "breakdown": {
+       "in": 0,
+       "everyday": 0,
+       "bills": 0,
+       "loans": 0,
+       "investedSaved": 0,
+       "other": 0,
+       "heldBack": 0
+      },
+      "available": 200000
+     },
+     "emergency": null,
+     "envelopesSaved": 84000,
+     "envelopesMonthly": 0,
+     "ownEnvelope": 0,
+     "spending": 208000,
+     "ringFenced": 20000,
+     "envelopesAssumedInside": 1,
+     "unstatedAccounts": [],
+     "fundUnlinked": false,
+     "unexplained": 0
+    }
+   }
+  ]
+ },
+ "a bucket goal": {
+  "debts": [
+   {
+    "id": "demo-debt-0",
+    "kind": "loan",
+    "balance": 620000,
+    "minimum": 19000,
+    "apr": "55000000000n",
+    "secured": false,
+    "isHousing": false,
+    "dueDay": null
+   }
+  ],
+  "results": [
+   {
+    "result": {
+     "code": "fits_unspent",
+     "variant": "tight",
+     "legacyState": "fits",
+     "split": [
+      {
+       "source": "unspent_earlier",
+       "amount": 180000
+      }
+     ],
+     "facts": [
+      {
+       "code": "tight_floor",
+       "values": {
+        "floor": 31100,
+        "basis": "tenth"
+       }
+      },
+      {
+       "code": "month_left_after",
+       "values": {
+        "month": "2026-10",
+        "left": -23903
+       }
+      },
+      {
+       "code": "earlier_money_from",
+       "values": {
+        "amount": 180000,
+        "where": "account"
+       }
+      },
+      {
+       "code": "unspent_before_after",
+       "values": {
+        "before": 200000,
+        "after": 20000
+       }
+      },
+      {
+       "code": "net_none_start",
+       "values": {
+        "starter": 330000
+       }
+      },
+      {
+       "code": "debt_interest_cost",
+       "values": {
+        "balance": 620000,
+        "apr": "5.5",
+        "monthlyInterest": 2842
+       }
+      },
+      {
+       "code": "debt_due_day_assumed",
+       "values": {
+        "debtId": "demo-debt-0",
+        "amount": 19000
+       }
+      }
+     ],
+     "notices": [
+      {
+       "code": "month_heading_short",
+       "values": {
+        "month": "2026-10",
+        "short": 23903,
+        "categoryId": "cat-housing",
+        "largest": 160000
+       }
+      },
+      {
+       "code": "unspent_drifted",
+       "values": {
+        "suggested": -52903
+       }
+      },
+      {
+       "code": "tax_not_included",
+       "values": {}
+      }
+     ],
+     "missing": [],
+     "reasons": [
+      "debt_due_day_assumed",
+      "month_excluded_under_logged",
+      "tax_not_included"
+     ],
+     "readyBy": null,
+     "band": 5,
+     "layers": [
+      "L0",
+      "L1p",
+      "L1e",
+      "L2",
+      "L4"
+     ],
+     "confidence": {
+      "reasons": [
+       {
+        "code": "unspent_drifted",
+        "numbers": {
+         "value": 200000,
+         "suggested": -52903
+        },
+        "weight": 40,
+        "audience": "detail"
+       },
+       {
+        "code": "early_in_month",
+        "numbers": {
+         "day": 3,
+         "from": 20
+        },
+        "weight": 70,
+        "audience": "detail"
+       }
+      ],
+      "basis": {
+       "kind": "records",
+       "months": 6,
+       "upTo": "2026-10-03"
+      },
+      "nextStep": {
+       "reason": "unspent_drifted",
+       "step": "confirm_unspent"
+      }
+     },
+     "parts": {
+      "oneOff": "fits_unspent",
+      "monthly": null
+     },
+     "afterBuy": {
+      "lead": "month",
+      "month": -23903,
+      "usualMonth": null,
+      "before": -23903,
+      "monthName": "2026-10"
+     },
+     "purchaseDate": "2026-10-03",
+     "readiness": {
+      "ready": false,
+      "missing": [
+       "envelopes_unconfirmed"
+      ],
+      "items": [
+       {
+        "kind": "envelopes",
+        "code": "envelopes_unconfirmed",
+        "month": "2026-10",
+        "seriesId": null,
+        "envelopeId": "g-bucket",
+        "lineId": null,
+        "name": null,
+        "amount": null,
+        "date": null
+       }
+      ],
+      "waived": []
+     },
+     "recordsAsOf": null,
+     "caveats": []
+    },
+    "funds": {
+     "balance": 1298000,
+     "suggested": -52903,
+     "unspent": {
+      "value": 200000,
+      "anchor": {
+       "amount": 200000,
+       "at": "2026-10-03"
+      },
+      "rolled": false,
+      "stale": false,
+      "drifted": true,
+      "breakdown": {
+       "in": 0,
+       "everyday": 0,
+       "bills": 0,
+       "loans": 0,
+       "investedSaved": 0,
+       "other": 0,
+       "heldBack": 0
+      },
+      "available": 200000
+     },
+     "emergency": null,
+     "envelopesSaved": 0,
+     "envelopesMonthly": 0,
+     "ownEnvelope": 0,
+     "spending": 228000,
+     "ringFenced": 0,
+     "envelopesAssumedInside": 0,
+     "unstatedAccounts": [],
+     "fundUnlinked": false,
+     "unexplained": 0
+    }
+   },
+   {
+    "result": {
+     "code": "needs_input",
+     "variant": null,
+     "legacyState": "missing",
+     "split": [],
+     "facts": [],
+     "notices": [
+      {
+       "code": "month_heading_short",
+       "values": {
+        "month": "2026-10",
+        "short": 23903,
+        "categoryId": "cat-housing",
+        "largest": 160000
+       }
+      },
+      {
+       "code": "unspent_drifted",
+       "values": {
+        "suggested": -52903
+       }
+      }
+     ],
+     "missing": [
+      "first_payment_not_chosen"
+     ],
+     "reasons": [
+      "month_excluded_under_logged"
+     ],
+     "readyBy": null,
+     "band": 7,
+     "layers": [
+      "L0",
+      "L1p",
+      "L1e",
+      "L2",
+      "L3",
+      "L4",
+      "L5"
+     ],
+     "confidence": {
+      "reasons": [
+       {
+        "code": "unspent_drifted",
+        "numbers": {
+         "value": 200000,
+         "suggested": -52903
+        },
+        "weight": 40,
+        "audience": "detail"
+       },
+       {
+        "code": "early_in_month",
+        "numbers": {
+         "day": 3,
+         "from": 20
+        },
+        "weight": 70,
+        "audience": "detail"
+       }
+      ],
+      "basis": {
+       "kind": "records",
+       "months": 6,
+       "upTo": "2026-10-03"
+      },
+      "nextStep": {
+       "reason": "unspent_drifted",
+       "step": "confirm_unspent"
+      }
+     },
+     "parts": {
+      "oneOff": "needs_input",
+      "monthly": null
+     },
+     "afterBuy": {
+      "lead": "month",
+      "month": -23903,
+      "usualMonth": null,
+      "before": -23903,
+      "monthName": "2026-10"
+     },
+     "purchaseDate": "2026-10-03",
+     "readiness": {
+      "ready": false,
+      "missing": [
+       "envelopes_unconfirmed"
+      ],
+      "items": [
+       {
+        "kind": "envelopes",
+        "code": "envelopes_unconfirmed",
+        "month": "2026-10",
+        "seriesId": null,
+        "envelopeId": "g-bucket",
+        "lineId": null,
+        "name": null,
+        "amount": null,
+        "date": null
+       }
+      ],
+      "waived": []
+     },
+     "recordsAsOf": null,
+     "caveats": []
+    },
+    "funds": {
+     "balance": 1298000,
+     "suggested": -52903,
+     "unspent": {
+      "value": 200000,
+      "anchor": {
+       "amount": 200000,
+       "at": "2026-10-03"
+      },
+      "rolled": false,
+      "stale": false,
+      "drifted": true,
+      "breakdown": {
+       "in": 0,
+       "everyday": 0,
+       "bills": 0,
+       "loans": 0,
+       "investedSaved": 0,
+       "other": 0,
+       "heldBack": 0
+      },
+      "available": 200000
+     },
+     "emergency": null,
+     "envelopesSaved": 0,
+     "envelopesMonthly": 0,
+     "ownEnvelope": 0,
+     "spending": 228000,
+     "ringFenced": 0,
+     "envelopesAssumedInside": 0,
+     "unstatedAccounts": [],
+     "fundUnlinked": false,
+     "unexplained": 0
+    }
+   }
+  ]
+ },
+ "a pot with tagged savings legs": {
+  "debts": [
+   {
+    "id": "demo-debt-0",
+    "kind": "loan",
+    "balance": 620000,
+    "minimum": 19000,
+    "apr": "55000000000n",
+    "secured": false,
+    "isHousing": false,
+    "dueDay": null
+   }
+  ],
+  "results": [
+   {
+    "result": {
+     "code": "fits_unspent",
+     "variant": "tight",
+     "legacyState": "fits",
+     "split": [
+      {
+       "source": "unspent_earlier",
+       "amount": 180000
+      }
+     ],
+     "facts": [
+      {
+       "code": "tight_floor",
+       "values": {
+        "floor": 31100,
+        "basis": "tenth"
+       }
+      },
+      {
+       "code": "month_left_after",
+       "values": {
+        "month": "2026-10",
+        "left": -23903
+       }
+      },
+      {
+       "code": "earlier_money_from",
+       "values": {
+        "amount": 180000,
+        "where": "account"
+       }
+      },
+      {
+       "code": "unspent_before_after",
+       "values": {
+        "before": 200000,
+        "after": 20000
+       }
+      },
+      {
+       "code": "net_none_start",
+       "values": {
+        "starter": 330000
+       }
+      },
+      {
+       "code": "debt_interest_cost",
+       "values": {
+        "balance": 620000,
+        "apr": "5.5",
+        "monthlyInterest": 2842
+       }
+      },
+      {
+       "code": "debt_due_day_assumed",
+       "values": {
+        "debtId": "demo-debt-0",
+        "amount": 19000
+       }
+      }
+     ],
+     "notices": [
+      {
+       "code": "month_heading_short",
+       "values": {
+        "month": "2026-10",
+        "short": 23903,
+        "categoryId": "cat-housing",
+        "largest": 160000
+       }
+      },
+      {
+       "code": "unspent_drifted",
+       "values": {
+        "suggested": -52903
+       }
+      },
+      {
+       "code": "tax_not_included",
+       "values": {}
+      }
+     ],
+     "missing": [],
+     "reasons": [
+      "debt_due_day_assumed",
+      "month_excluded_under_logged",
+      "tax_not_included"
+     ],
+     "readyBy": null,
+     "band": 5,
+     "layers": [
+      "L0",
+      "L1p",
+      "L1e",
+      "L2",
+      "L4"
+     ],
+     "confidence": {
+      "reasons": [
+       {
+        "code": "unspent_drifted",
+        "numbers": {
+         "value": 200000,
+         "suggested": -52903
+        },
+        "weight": 40,
+        "audience": "detail"
+       },
+       {
+        "code": "early_in_month",
+        "numbers": {
+         "day": 3,
+         "from": 20
+        },
+        "weight": 70,
+        "audience": "detail"
+       }
+      ],
+      "basis": {
+       "kind": "records",
+       "months": 6,
+       "upTo": "2026-10-03"
+      },
+      "nextStep": {
+       "reason": "unspent_drifted",
+       "step": "confirm_unspent"
+      }
+     },
+     "parts": {
+      "oneOff": "fits_unspent",
+      "monthly": null
+     },
+     "afterBuy": {
+      "lead": "month",
+      "month": -23903,
+      "usualMonth": null,
+      "before": -23903,
+      "monthName": "2026-10"
+     },
+     "purchaseDate": "2026-10-03",
+     "readiness": {
+      "ready": true,
+      "missing": [],
+      "items": [],
+      "waived": []
+     },
+     "recordsAsOf": null,
+     "caveats": [
+      {
+       "code": "close_to_line",
+       "values": {}
+      },
+      {
+       "code": "tax_not_included",
+       "values": {}
+      }
+     ]
+    },
+    "funds": {
+     "balance": 1298000,
+     "suggested": -52903,
+     "unspent": {
+      "value": 200000,
+      "anchor": {
+       "amount": 200000,
+       "at": "2026-10-03"
+      },
+      "rolled": false,
+      "stale": false,
+      "drifted": true,
+      "breakdown": {
+       "in": 0,
+       "everyday": 0,
+       "bills": 0,
+       "loans": 0,
+       "investedSaved": 0,
+       "other": 0,
+       "heldBack": 0
+      },
+      "available": 200000
+     },
+     "emergency": null,
+     "envelopesSaved": 414000,
+     "envelopesMonthly": 0,
+     "ownEnvelope": 0,
+     "spending": 228000,
+     "ringFenced": 0,
+     "envelopesAssumedInside": 0,
+     "unstatedAccounts": [],
+     "fundUnlinked": false,
+     "unexplained": 0
+    }
+   },
+   {
+    "result": {
+     "code": "needs_input",
+     "variant": null,
+     "legacyState": "missing",
+     "split": [],
+     "facts": [],
+     "notices": [
+      {
+       "code": "month_heading_short",
+       "values": {
+        "month": "2026-10",
+        "short": 23903,
+        "categoryId": "cat-housing",
+        "largest": 160000
+       }
+      },
+      {
+       "code": "unspent_drifted",
+       "values": {
+        "suggested": -52903
+       }
+      }
+     ],
+     "missing": [
+      "first_payment_not_chosen"
+     ],
+     "reasons": [
+      "month_excluded_under_logged"
+     ],
+     "readyBy": null,
+     "band": 7,
+     "layers": [
+      "L0",
+      "L1p",
+      "L1e",
+      "L2",
+      "L3",
+      "L4",
+      "L5"
+     ],
+     "confidence": {
+      "reasons": [
+       {
+        "code": "unspent_drifted",
+        "numbers": {
+         "value": 200000,
+         "suggested": -52903
+        },
+        "weight": 40,
+        "audience": "detail"
+       },
+       {
+        "code": "early_in_month",
+        "numbers": {
+         "day": 3,
+         "from": 20
+        },
+        "weight": 70,
+        "audience": "detail"
+       }
+      ],
+      "basis": {
+       "kind": "records",
+       "months": 6,
+       "upTo": "2026-10-03"
+      },
+      "nextStep": {
+       "reason": "unspent_drifted",
+       "step": "confirm_unspent"
+      }
+     },
+     "parts": {
+      "oneOff": "needs_input",
+      "monthly": null
+     },
+     "afterBuy": {
+      "lead": "month",
+      "month": -23903,
+      "usualMonth": null,
+      "before": -23903,
+      "monthName": "2026-10"
+     },
+     "purchaseDate": "2026-10-03",
+     "readiness": {
+      "ready": true,
+      "missing": [],
+      "items": [],
+      "waived": []
+     },
+     "recordsAsOf": null,
+     "caveats": []
+    },
+    "funds": {
+     "balance": 1298000,
+     "suggested": -52903,
+     "unspent": {
+      "value": 200000,
+      "anchor": {
+       "amount": 200000,
+       "at": "2026-10-03"
+      },
+      "rolled": false,
+      "stale": false,
+      "drifted": true,
+      "breakdown": {
+       "in": 0,
+       "everyday": 0,
+       "bills": 0,
+       "loans": 0,
+       "investedSaved": 0,
+       "other": 0,
+       "heldBack": 0
+      },
+      "available": 200000
+     },
+     "emergency": null,
+     "envelopesSaved": 414000,
+     "envelopesMonthly": 0,
+     "ownEnvelope": 0,
+     "spending": 228000,
+     "ringFenced": 0,
+     "envelopesAssumedInside": 0,
+     "unstatedAccounts": [],
+     "fundUnlinked": false,
+     "unexplained": 0
+    }
+   }
+  ]
+ },
+ "a done and a deleted goal": {
+  "debts": [
+   {
+    "id": "demo-debt-0",
+    "kind": "loan",
+    "balance": 620000,
+    "minimum": 19000,
+    "apr": "55000000000n",
+    "secured": false,
+    "isHousing": false,
+    "dueDay": null
+   }
+  ],
+  "results": [
+   {
+    "result": {
+     "code": "fits_unspent",
+     "variant": "tight",
+     "legacyState": "fits",
+     "split": [
+      {
+       "source": "unspent_earlier",
+       "amount": 180000
+      }
+     ],
+     "facts": [
+      {
+       "code": "tight_floor",
+       "values": {
+        "floor": 31100,
+        "basis": "tenth"
+       }
+      },
+      {
+       "code": "month_left_after",
+       "values": {
+        "month": "2026-10",
+        "left": -23903
+       }
+      },
+      {
+       "code": "earlier_money_from",
+       "values": {
+        "amount": 180000,
+        "where": "account"
+       }
+      },
+      {
+       "code": "unspent_before_after",
+       "values": {
+        "before": 200000,
+        "after": 20000
+       }
+      },
+      {
+       "code": "net_none_start",
+       "values": {
+        "starter": 330000
+       }
+      },
+      {
+       "code": "debt_interest_cost",
+       "values": {
+        "balance": 620000,
+        "apr": "5.5",
+        "monthlyInterest": 2842
+       }
+      },
+      {
+       "code": "debt_due_day_assumed",
+       "values": {
+        "debtId": "demo-debt-0",
+        "amount": 19000
+       }
+      }
+     ],
+     "notices": [
+      {
+       "code": "month_heading_short",
+       "values": {
+        "month": "2026-10",
+        "short": 23903,
+        "categoryId": "cat-housing",
+        "largest": 160000
+       }
+      },
+      {
+       "code": "unspent_drifted",
+       "values": {
+        "suggested": -52903
+       }
+      },
+      {
+       "code": "tax_not_included",
+       "values": {}
+      }
+     ],
+     "missing": [],
+     "reasons": [
+      "debt_due_day_assumed",
+      "month_excluded_under_logged",
+      "tax_not_included"
+     ],
+     "readyBy": null,
+     "band": 5,
+     "layers": [
+      "L0",
+      "L1p",
+      "L1e",
+      "L2",
+      "L4"
+     ],
+     "confidence": {
+      "reasons": [
+       {
+        "code": "unspent_drifted",
+        "numbers": {
+         "value": 200000,
+         "suggested": -52903
+        },
+        "weight": 40,
+        "audience": "detail"
+       },
+       {
+        "code": "early_in_month",
+        "numbers": {
+         "day": 3,
+         "from": 20
+        },
+        "weight": 70,
+        "audience": "detail"
+       }
+      ],
+      "basis": {
+       "kind": "records",
+       "months": 6,
+       "upTo": "2026-10-03"
+      },
+      "nextStep": {
+       "reason": "unspent_drifted",
+       "step": "confirm_unspent"
+      }
+     },
+     "parts": {
+      "oneOff": "fits_unspent",
+      "monthly": null
+     },
+     "afterBuy": {
+      "lead": "month",
+      "month": -23903,
+      "usualMonth": null,
+      "before": -23903,
+      "monthName": "2026-10"
+     },
+     "purchaseDate": "2026-10-03",
+     "readiness": {
+      "ready": true,
+      "missing": [],
+      "items": [],
+      "waived": []
+     },
+     "recordsAsOf": null,
+     "caveats": [
+      {
+       "code": "close_to_line",
+       "values": {}
+      },
+      {
+       "code": "tax_not_included",
+       "values": {}
+      }
+     ]
+    },
+    "funds": {
+     "balance": 1298000,
+     "suggested": -52903,
+     "unspent": {
+      "value": 200000,
+      "anchor": {
+       "amount": 200000,
+       "at": "2026-10-03"
+      },
+      "rolled": false,
+      "stale": false,
+      "drifted": true,
+      "breakdown": {
+       "in": 0,
+       "everyday": 0,
+       "bills": 0,
+       "loans": 0,
+       "investedSaved": 0,
+       "other": 0,
+       "heldBack": 0
+      },
+      "available": 200000
+     },
+     "emergency": null,
+     "envelopesSaved": 0,
+     "envelopesMonthly": 0,
+     "ownEnvelope": 0,
+     "spending": 228000,
+     "ringFenced": 0,
+     "envelopesAssumedInside": 0,
+     "unstatedAccounts": [],
+     "fundUnlinked": false,
+     "unexplained": 0
+    }
+   },
+   {
+    "result": {
+     "code": "needs_input",
+     "variant": null,
+     "legacyState": "missing",
+     "split": [],
+     "facts": [],
+     "notices": [
+      {
+       "code": "month_heading_short",
+       "values": {
+        "month": "2026-10",
+        "short": 23903,
+        "categoryId": "cat-housing",
+        "largest": 160000
+       }
+      },
+      {
+       "code": "unspent_drifted",
+       "values": {
+        "suggested": -52903
+       }
+      }
+     ],
+     "missing": [
+      "first_payment_not_chosen"
+     ],
+     "reasons": [
+      "month_excluded_under_logged"
+     ],
+     "readyBy": null,
+     "band": 7,
+     "layers": [
+      "L0",
+      "L1p",
+      "L1e",
+      "L2",
+      "L3",
+      "L4",
+      "L5"
+     ],
+     "confidence": {
+      "reasons": [
+       {
+        "code": "unspent_drifted",
+        "numbers": {
+         "value": 200000,
+         "suggested": -52903
+        },
+        "weight": 40,
+        "audience": "detail"
+       },
+       {
+        "code": "early_in_month",
+        "numbers": {
+         "day": 3,
+         "from": 20
+        },
+        "weight": 70,
+        "audience": "detail"
+       }
+      ],
+      "basis": {
+       "kind": "records",
+       "months": 6,
+       "upTo": "2026-10-03"
+      },
+      "nextStep": {
+       "reason": "unspent_drifted",
+       "step": "confirm_unspent"
+      }
+     },
+     "parts": {
+      "oneOff": "needs_input",
+      "monthly": null
+     },
+     "afterBuy": {
+      "lead": "month",
+      "month": -23903,
+      "usualMonth": null,
+      "before": -23903,
+      "monthName": "2026-10"
+     },
+     "purchaseDate": "2026-10-03",
+     "readiness": {
+      "ready": true,
+      "missing": [],
+      "items": [],
+      "waived": []
+     },
+     "recordsAsOf": null,
+     "caveats": []
+    },
+    "funds": {
+     "balance": 1298000,
+     "suggested": -52903,
+     "unspent": {
+      "value": 200000,
+      "anchor": {
+       "amount": 200000,
+       "at": "2026-10-03"
+      },
+      "rolled": false,
+      "stale": false,
+      "drifted": true,
+      "breakdown": {
+       "in": 0,
+       "everyday": 0,
+       "bills": 0,
+       "loans": 0,
+       "investedSaved": 0,
+       "other": 0,
+       "heldBack": 0
+      },
+      "available": 200000
+     },
+     "emergency": null,
+     "envelopesSaved": 0,
+     "envelopesMonthly": 0,
+     "ownEnvelope": 0,
+     "spending": 228000,
+     "ringFenced": 0,
+     "envelopesAssumedInside": 0,
+     "unstatedAccounts": [],
+     "fundUnlinked": false,
+     "unexplained": 0
+    }
+   }
+  ]
+ }
+}

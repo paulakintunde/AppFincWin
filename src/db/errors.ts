@@ -24,7 +24,9 @@ export type WriteEntity =
   | 'statement_periods'
   | 'decide_answers'
   | 'recurring_dismissals'
-  | 'income_payer_prompts';
+  | 'income_payer_prompts'
+  | 'holdings'
+  | 'holding_lots';
 
 /**
  * A PostgREST/Postgres error normalized into a typed shape. `code` is the Postgres or

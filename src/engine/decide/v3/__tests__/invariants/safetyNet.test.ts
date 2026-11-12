@@ -7,7 +7,8 @@ import * as fc from 'fast-check';
 import { evaluate, type Evaluation } from '../../evaluate';
 import type { CheckV2, Fact, Result, V3Inputs } from '../../types';
 import { fcRuns } from '../helpers/fcRuns';
-import { PURPOSES, checkArb, checkOf, codeRank, netInputsArb, priceArb, shapeArb, withSafetyNet, type NetTweak } from './arbitraries';
+import { checkOnce } from '../helpers/fixtures';
+import { PURPOSES, checkArb, checkOf, codeRank, inputsOfPerson, netInputsArb, priceArb, shapeArb, withSafetyNet, type NetTweak } from './arbitraries';
 
 const run = (inputs: V3Inputs, check: CheckV2): Result => evaluate(inputs, check).result;
 const asking = (...rs: Result[]): boolean => rs.some((r) => r.code === 'needs_input');
@@ -19,6 +20,10 @@ const DEPLETION = new Set<string>(['usual_month_short', 'depletion_payment', 'pl
 const afterDepletion = (facts: readonly Fact[]): readonly Fact[] => facts.filter((f) => !DEPLETION.has(f.code));
 const otherFacts = (facts: readonly Fact[]): readonly Fact[] => facts.filter((f) => !NET_FACTS.has(f.code));
 const answer = (r: Result): unknown => ({ code: r.code, variant: r.variant, split: r.split, readyBy: r.readyBy, missing: r.missing, parts: r.parts, facts: otherFacts(r.facts), notices: r.notices });
+
+/** 05.4 FIN-05: the save-or-borrow line of an expensive plan, and its kind ('cash_fits', 'ready', 'with_net', 'with_overdraft', 'no_date'). */
+const saveVsBorrow = (r: Result): Fact | undefined => r.facts.find((f) => f.code === 'save_vs_borrow');
+const kindOf = (r: Result): unknown => saveVsBorrow(r)?.values['kind'];
 
 /** What the split takes from the safety net's account. */
 const fromNet = (r: Result): number => r.split.filter((s) => s.source === 'emergency').reduce((t, s) => t + s.amount, 0);
@@ -55,12 +60,37 @@ describe('safety-net invariants', () => {
             expect(['protection_off', 'month_already_short', 'month_short_small', 'month_short_moderate', 'month_short_moderate_extra']).toContain(off.variant);
           }
           expect(codeRank(before.code)).toBeLessThanOrEqual(codeRank(off.code));
+        } else if (kindOf(off) === 'with_net' && kindOf(before) !== 'with_net') {
+          // 05.4 FIN-05 (nightly 2026-11-07..11, seed 1361 after the payday fix): an expensive plan's save_vs_borrow line reads the same
+          // purchase paid in cash. That cash route can be the one using the net's money ("paying cash now would dip into your safety
+          // net") where an empty net makes it wait or gives no date. Only that line moves; the plan's own answer stays exactly the same.
+          expect(['ready', 'no_date']).toContain(kindOf(before));
+          expect(saveVsBorrow(off)?.values['more']).toBe(saveVsBorrow(before)?.values['more']);
+          const rest = (r: Result) => ({ ...(answer(r) as object), facts: otherFacts(r.facts).filter((f) => f.code !== 'save_vs_borrow') });
+          expect(rest(off)).toEqual(rest(before));
         } else {
           expect(answer(off)).toEqual(answer(before));
         }
       }),
       { numRuns: fcRuns(300), seed: 0x0551 }
     );
+  });
+
+  // Nightly 2026-11-07..11 (seed 1361), shrunk: Riley, everyday spending halved, $1,500 in the account, $810 anchored spare money,
+  // a $1,000.01 one-off that takes the 90-day path 1 cent below 0 until payday. An unprotected net holding 1 cent carried that dip,
+  // and the answer lost its payday date ("Not yet, ready on 1 Nov" became "Not yet, not covered, November"). The purchase waits
+  // either way, so it takes nothing from the net and the answer is the same as with an empty net.
+  it('I51 regression: 1 cent in an unprotected net never changes a wait that ends on payday', () => {
+    const base = inputsOfPerson('riley', { everydayPct: 50, balancePct: 50, unspentMode: 'anchor', unspentPct: 54, emergency: null, extras: [] });
+    const check = checkOnce(100_001);
+    const before = evaluate(withSafetyNet(base, { protect: false, size: null, saved: 0, locked: false }), check);
+    const off = evaluate(withSafetyNet(base, { protect: false, size: null, saved: 1, locked: false }), check);
+    expect(before.cash.kind).toBe('payday');
+    expect(off.cash.kind).toBe('net');
+    expect(before.result.code).toBe('not_yet');
+    expect(before.result.variant).toBe('payday');
+    expect(before.result.readyBy).toEqual({ kind: 'date', date: '2026-11-01' });
+    expect(answer(off.result)).toEqual(answer(before.result));
   });
 
   it('I52 a $0 net equals protection off, and says so', () => {

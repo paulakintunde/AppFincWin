@@ -10,6 +10,12 @@ export interface PotInput {
   readonly monthlyAmount: MinorUnits | null;
   readonly readyBy: string | null; // 'YYYY-MM-DD'
   readonly saved: MinorUnits; // opening saved + tagged paid lines
+  /**
+   * 06 code review P4-CR-03: the monthly amount the goal's own plan states (a Grow goal's "Each month"). Set and above 0 on a 'pot'
+   * with a target: the pot sets aside this amount, capped at what remains, instead of splitting what remains over the months to
+   * readyBy, so an edited monthly amount is never ignored. Absent, null or 0 = the readyBy rule as before.
+   */
+  readonly planMonthly?: MinorUnits | null;
 }
 export type PotState = 'active' | 'reached' | 'past_due';
 export interface PotLine {

@@ -61,7 +61,8 @@ import { askFact, borrowingFacts, cashFits, cashSoon, isExpensive, saveVsBorrow,
 import { paymentsInRange } from '../plan/schedule';
 import { afterBuyBlock, firstPaymentLater } from '../afterBuy';
 import { emergencyOf } from '../funds/emergency';
-import { NO_NET, fitVariant, netDip, type ResolvedNet } from '../safetyNet';
+import { NO_NET, fitVariant, netDip, spareSavings, type ResolvedNet } from '../safetyNet';
+import { isKeptSavingsAccount } from '../funds/unlockedGoals';
 import { isTight, isTightOneOff, monthlySpendingOf, tightFact, tightFloor } from '../tight';
 import { noLimitFacts, otherOverdrawnFacts, overdraftUseFacts, type OverdraftCtx } from '../overdraft';
 import { withReason } from '../confidence/reasons';
@@ -265,7 +266,8 @@ function ladder(
     return fit('fits_unspent', split);
   }
   const fromEarlier = earlierRoom > 0 ? earlierRoom : 0;
-  const above = net.aboveSize;
+  // 06 D-22: spare savings are the net's money above its size and unlocked goals kept outside the spending accounts.
+  const above = spareSavings(net);
   const withEarlier = (): FundingSegment[] => (fromEarlier > 0 ? [...split, { source: 'unspent_earlier', amount: mu(fromEarlier) }] : split);
 
   // 05.4 D-35: money saved above the net's size can be used; D-56: it is extra savings, never the safety net.
@@ -308,7 +310,7 @@ export function oneOffPart(
   // 05.4 D-35: money above the net's size is spare, so it counts toward the ready date too; the net itself never does.
   // 05.4 BO-05 (D-108): money set aside for it in kept savings counts toward the ready date (it is in the envelope for the ladder).
   const savedFor = j.savedFor ?? 0;
-  const spare = available.unspent === null ? null : available.unspent + net.aboveSize + savedFor;
+  const spare = available.unspent === null ? null : available.unspent + spareSavings(net) + savedFor;
   // 05.4 BO-05 (SO-02): a sale arriving after the purchase date counts toward the ready date only, from its month.
   const sale = j.replaces?.saleLater ?? null;
   if (j.cash.kind === 'not_covered') {
@@ -329,7 +331,7 @@ export function oneOffPart(
     if (fromMonth > 0) split.push({ source: 'month', amount: mu(fromMonth) });
     if (fromEnvelope > 0) split.push({ source: 'envelope', amount: mu(fromEnvelope) });
     // D-56: the money above the net's size is extra savings; only the rest is the safety net.
-    const fromExtra = Math.min(part.netTaken, net.aboveSize);
+    const fromExtra = Math.min(part.netTaken, spareSavings(net));
     if (fromExtra > 0) split.push({ source: 'extra_savings', amount: mu(fromExtra) });
     if (part.netTaken - fromExtra > 0) split.push({ source: 'emergency', amount: mu(part.netTaken - fromExtra) });
     return { ...part, code: 'fits_uses_overdraft', split };
@@ -337,8 +339,11 @@ export function oneOffPart(
   const part = ladder(p, j.month, available, 0, net, later, sale, savedFor);
   if (j.cash.kind === 'ok') return part;
   if (j.cash.kind === 'net') {
+    if (part.code === 'needs_input') return part;
+    // I51: a purchase that waits anyway takes nothing from the net, so it is judged on the check the net's money carried (the payday
+    // date and the not-covered month as with no net); otherwise any money in the net, even 1 cent, would change the wait.
+    if (part.code === 'not_yet') return oneOffPart({ ...j, cash: j.cash.before }, available);
     // 05.4 FIN-02 (D-35): the 90-day path stays above 0 only with the net's money, so any fit dips into it.
-    if (part.code === 'not_yet' || part.code === 'needs_input') return part;
     // What the purchase adds to the dip is what it takes from the net; a dip that is there without it is not the purchase's.
     return { ...part, code: 'fits_uses_net', cashNet: j.cash.added };
   }
@@ -671,7 +676,7 @@ function netDipFacts(j: JudgeInput, net: ResolvedNet, one: OneOffPart, p: Purcha
   if (j.cash.kind === 'net' && j.cash.until !== null) waits.push({ kind: 'date', date: j.cash.until });
   // The split takes protected net money only past known unspent money (ladder), so unspent is known here.
   if (one.netUsed > 0) {
-    const ready = readyMonth(j.month, p.dayOne, (unspent as MinorUnits) + net.aboveSize);
+    const ready = readyMonth(j.month, p.dayOne, (unspent as MinorUnits) + spareSavings(net));
     if (ready !== null) waits.push(ready);
   }
   const wait = waits.reduce<ReadyBy | null>((a, b) => (a === null || readyKey(b) > readyKey(a) ? b : a), null);
@@ -745,7 +750,7 @@ function planReadyBy(month: MonthModel, p: Purchase, asOf: string, spare: number
  */
 export function keptSavings(accounts: V3Inputs['accounts']): number {
   let total = 0;
-  for (const a of accounts ?? []) if (a.kind === 'savings' && a.use !== null && a.use.kind === 'untouched' && a.balance > 0) total += a.balance;
+  for (const a of accounts ?? []) if (isKeptSavingsAccount(a)) total += a.balance;
   return total;
 }
 
@@ -852,7 +857,7 @@ export function judge(j: JudgeInput): Result {
   const lowSavings =
     unspentValue === null
       ? null
-      : mu(unspentValue - Math.max(0, month.monthLeft) - segment(oneRaw, 'unspent_earlier') + net.aboveSize - segment(oneRaw, 'extra_savings') + keptSavings(j.inputs.accounts));
+      : mu(unspentValue - Math.max(0, month.monthLeft) - segment(oneRaw, 'unspent_earlier') + spareSavings(net) - segment(oneRaw, 'extra_savings') + keptSavings(j.inputs.accounts) - net.goalsOutsideKept);
   const mon = monthlyPart(usualMonth, purchase.monthly, {
     asOf: j.inputs.asOf,
     purchase,
@@ -890,11 +895,15 @@ export function judge(j: JudgeInput): Result {
   const protectedUsed = mu(Math.min(Math.max(one.netUsed, one.cashNet), net.usable, dayOne - fromEnvelope));
   const split: readonly FundingSegment[] =
     one.code === 'fits_uses_net'
-      ? sourceSplit({ dayOne, envelope: mu(fromEnvelope), month: mu(fromMonth), earlier: mu(fromEarlier), protectedUsed, aboveSize: net.aboveSize })
+      ? sourceSplit({ dayOne, envelope: mu(fromEnvelope), month: mu(fromMonth), earlier: mu(fromEarlier), protectedUsed, aboveSize: spareSavings(net) })
       : one.split;
   const fromExtra = split.find((s) => s.source === 'extra_savings')?.amount ?? 0;
+  // 06 D-22 (P2-WR-01, P2-WR-02): the split's savings take the net's money above its size first, then unlocked goal money kept
+  // outside the spending accounts. Only the net's own part is "extra savings above the net's size" in the net's facts and variant.
+  const fromNetAbove = Math.min(fromExtra, net.aboveSize);
+  const goalsTaken = Math.max(0, Math.min(one.netTaken, spareSavings(net)) - net.aboveSize);
   // D-62: a fit paid in part from extra savings is "Fits from extra savings" (on fits_unspent only).
-  const extraV = code === 'fits_unspent' && fromExtra > 0 ? (['extra_savings'] as const) : [];
+  const extraV = code === 'fits_unspent' && fromNetAbove > 0 ? (['extra_savings'] as const) : [];
   // 05.4 D-39b: money saved in earlier months (spare money or extra savings, D-56) goes on a fit while a debt at 20% APR or more
   // remains: amber "Fits, but you carry costly debt". This month's spare money alone stays green (DB-11). A caution rule, so the
   // fact-lines switch never hides it or its own facts (I-DB05).
@@ -909,7 +918,7 @@ export function judge(j: JudgeInput): Result {
   // The one-off money left (I58): spare money after this month's plans (this month's own figure when spare money is unknown) and the
   // extra savings above the net's size, less what the purchase takes from them (the envelope and the net are not spare money).
   // 05.4 BO-05 (RC-08): a purchase dated in a later month also has the usual leftover of the months before it (laterRoom).
-  const oneOffLeft = mu((unspentValue ?? month.monthLeft - one.netUsed) + net.aboveSize + laterRoom(month.typicalLeft, j.inputs.asOf, buyDate) - fromMonth - fromEarlier - fromExtra);
+  const oneOffLeft = mu((unspentValue ?? month.monthLeft - one.netUsed) + spareSavings(net) + laterRoom(month.typicalLeft, j.inputs.asOf, buyDate) - fromMonth - fromEarlier - fromExtra);
   const onceTight = fitCode && (cashPlan !== null || purchase.schedule === null) && isTightOneOff(oneOffLeft, spend, line);
   const tightV = planTight || onceTight ? (['tight'] as const) : [];
   const fitV = fitVariant([...tightV, ...(lowClause ? (['low_month'] as const) : []), ...costlyV, ...extraV, ...(netState === null ? [] : [netState])]).variant;
@@ -925,7 +934,7 @@ export function judge(j: JudgeInput): Result {
     notYetVariant = monthlyLeads ? 'not_covered' : one.variant;
     readyBy = monthlyLeads ? (mon as MonthlyPart).readyBy : one.readyBy;
     // 05.4 FIN-05: a Not yet plan waits until it could start (planReadyBy); spare money counts the extra savings above the net's size.
-    if (purchase.schedule !== null) readyBy = planReadyBy(month, purchase, j.inputs.asOf, unspentValue === null ? null : unspentValue + net.aboveSize, readyBy);
+    if (purchase.schedule !== null) readyBy = planReadyBy(month, purchase, j.inputs.asOf, unspentValue === null ? null : unspentValue + spareSavings(net), readyBy);
   }
 
   // Facts (fixed order): overdraft or the no-limit question, month, unspent, held back, yearly bills, emergency, envelope, plan, low month,
@@ -942,7 +951,7 @@ export function judge(j: JudgeInput): Result {
       typicalLeft: month.typicalLeft,
       typicalIncome: month.typicalIncome,
       net,
-      netTaken: one.netTaken,
+      netTaken: mu(one.netTaken - goalsTaken), // the net's own part (06 D-22: goal money is not the net's)
       firstNow: firstPaymentsToday(purchase.schedule, purchase.share, j.inputs.asOf),
       shortPlanCash: cashPlan !== null,
     }),
@@ -953,16 +962,26 @@ export function judge(j: JudgeInput): Result {
   // 05.4 FIN-07 / D-40: the floor a tight answer is under. Not under a D-63 / D-65 month-short headline (it reads after the tight body).
   if (variant === 'tight' && !monthAlreadyShort(month.typicalLeft)) facts.push(tightFact(tightFloor(spend, line)));
   // D-28, D-38: below 0 with no overdraft limit recorded is Not yet, and the answer asks about it.
-  if (code === 'not_yet' && (j.overdraft?.floor ?? 0) === 0 && (j.cash.kind === 'payday' || j.cash.kind === 'not_covered')) {
-    facts.push(...noLimitFacts(j.inputs.accounts, j.cash.shortBy, readyBy));
+  // I51: a one-off that waits took nothing from the net, so it reads the check the net's money carried.
+  const failed = j.cash.kind === 'net' && one.code === 'not_yet' ? j.cash.before : j.cash;
+  if (code === 'not_yet' && (j.overdraft?.floor ?? 0) === 0 && (failed.kind === 'payday' || failed.kind === 'not_covered')) {
+    facts.push(...noLimitFacts(j.inputs.accounts, failed.shortBy, readyBy));
   }
   // 05.4 D-61: a locked net is left out of the answer, and a Not yet says so.
-  if (code === 'not_yet' && net.locked && net.floor > 0) facts.push({ code: 'net_locked', values: { locked: net.floor } });
+  const goalsKept = j.funds.lockedNamedSaved ?? 0;
+  if (code === 'not_yet' && net.locked && net.floor > 0) {
+    // 06 D-06: a locked net and locked goals are named together
+    facts.push(goalsKept > 0 ? { code: 'net_and_goals_kept', values: { net: net.floor, goals: goalsKept } } : { code: 'net_locked', values: { locked: net.floor } });
+  } else if (goalsKept > 0) {
+    facts.push({ code: 'locked_goals_kept', values: { amount: goalsKept } });
+  }
+  // 06 D-22: money in unlocked goals counts as spare money, and the answer says so.
+  if ((j.funds.unlockedSaved ?? 0) > 0) facts.push({ code: 'unlocked_goals_counted', values: { amount: j.funds.unlockedSaved as MinorUnits } });
   // 05.4 FIN-02 (D-35, D-41): "Dips into your safety net" leads with its own facts. A need reads "Marked as a need" first and
   // drops the wait line; a want (or no purpose) leads with the date it fits without the net. Purpose changes facts and their
   // order only, never the code, the variant or a figure (I-D41).
   const dips = one.code === 'fits_uses_net' && code !== 'not_yet';
-  if (dips) facts.push(...netDipFacts(j, net, one, purchase, unspentValue, protectedUsed, mu(fromExtra)));
+  if (dips) facts.push(...netDipFacts(j, net, one, purchase, unspentValue, protectedUsed, mu(fromNetAbove)));
   // 05.4 FIN-08 (QE-14): the low months dip into the net; what they take is named (a one-off dip already names its own).
   const lowDips = !dips && said !== null && said.code === 'fits_uses_net' && code === 'fits_uses_net';
   if (lowDips) facts.push(...lowMonthNetFacts(net, (said as MonthlyPart).netUsed));
@@ -973,14 +992,14 @@ export function judge(j: JudgeInput): Result {
     code === 'fits_uses_overdraft' ||
     code === 'fits_on_your_answer' ||
     (code === 'monthly_short' && one.code !== 'not_yet');
-  // D-56 / D-62: the extra savings a fit uses, by name.
-  const extraUsed = keepSplit && fromExtra > 0;
-  if (extraUsed) facts.push({ code: 'extra_savings_used', values: { used: mu(fromExtra), above: net.aboveSize } });
+  // D-56 / D-62: the extra savings above the net's size a fit uses, by name (unlocked goal money is named by unlocked_goals_counted).
+  const extraUsed = keepSplit && fromNetAbove > 0;
+  if (extraUsed) facts.push({ code: 'extra_savings_used', values: { used: mu(fromNetAbove), above: net.aboveSize } });
   // D-39b: the costly debt's monthly interest and, for a card, what the price would cut it by; shown whether or not costly_debt wins.
   if (costly !== null) facts.push(...costlyFacts(costly, mu(dayOne)));
   // D-58: the everyday account alone goes below 0 with the purchase, and money in another account covers it.
   if (j.account != null && (code === 'fits_month' || code === 'fits_unspent' || code === 'fits_uses_net')) {
-    const move = moveMoneyBy(j.account.withPurchase, mu(net.aboveSize + (code === 'fits_uses_net' ? net.usable : 0)));
+    const move = moveMoneyBy(j.account.withPurchase, mu(spareSavings(net) + (code === 'fits_uses_net' ? net.usable : 0)));
     if (move !== null) facts.push({ code: 'move_money_by', values: { amount: move.amount, date: move.date } });
   }
   // 05.4 FIN-09 (afterBuy.ts, D-22): the month figure is this month after its plans less what the purchase takes from this month:
@@ -1019,7 +1038,7 @@ export function judge(j: JudgeInput): Result {
   // interest line is not said twice when the depletion lines already state it.
   // 05.4 D-46 (QE-12): a Short each month answer that savings carry for a while says for how many payments, and with a further shortfall.
   if (code === 'monthly_short' && sched !== null && unspentValue !== null) {
-    facts.push(...runwayFacts({ month, purchase, asOf: j.inputs.asOf, money: mu(unspentValue + net.aboveSize + keptSavings(j.inputs.accounts)), step: furtherStep(j.inputs.currency) }));
+    facts.push(...runwayFacts({ month, purchase, asOf: j.inputs.asOf, money: mu(unspentValue + spareSavings(net) + keptSavings(j.inputs.accounts) - net.goalsOutsideKept), step: furtherStep(j.inputs.currency) }));
   }
   if (sched !== null) {
     const total = planTotal(purchase.dayOne, sched, purchase.share, firstPaymentsToday(sched, purchase.share, j.inputs.asOf));
@@ -1058,7 +1077,7 @@ export function judge(j: JudgeInput): Result {
         typicalLeft: month.typicalLeft as MinorUnits,
         spare: unspentValue,
         monthLeft: month.monthLeft,
-        aboveSize: net.aboveSize,
+        aboveSize: spareSavings(net),
         used: mu(dayOne - fromEnvelope),
         fromExtra: mu(fromExtra),
       })

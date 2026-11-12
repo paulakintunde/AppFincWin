@@ -105,7 +105,7 @@ export interface TierInput {
   /** The spare money judged against (this month and earlier, D-56 capped); null with no confirmed figure. */
   readonly spare: MinorUnits | null;
   readonly monthLeft: MinorUnits;
-  /** Extra savings: money saved above the net's size (D-56). The protected net is never counted (D-61). */
+  /** Extra savings: money saved above the net's size (D-56), plus unlocked goals kept outside the spending accounts (06 D-22, spareSavings). The protected net is never counted (D-61). */
   readonly aboveSize: MinorUnits;
   /** What the purchase takes from spare money and extra savings (day one less its own envelope). */
   readonly used: MinorUnits;

@@ -37,11 +37,13 @@ select extensions.is(
   (select kind || '/' || monthly_amount::text || '/' || coalesce(bucket, 'null') from public.savings_goals where id = 'b6700000-0000-0000-0000-000000000002'),
   'wait/50000/null', 'an existing wait goal reads unchanged (bucket null)');
 
+-- 06-04 (GRW-01) allows open-ended goals: a pot with no target, no ready_by and no bucket now saves. The rule that
+-- remains is that a bucket has no date; this assertion now checks that instead of the old 05.2 refusal.
 select extensions.throws_ok(
-  $$insert into public.savings_goals (id, household_id, created_by, kind, name, currency)
+  $$insert into public.savings_goals (id, household_id, created_by, kind, name, currency, bucket, ready_by)
     values ('b6700000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
-            '11111111-1111-1111-1111-111111111111', 'pot', 'No target', 'USD')$$,
-  '23514', null, 'a pot with no target, no ready_by and no bucket is refused');
+            '11111111-1111-1111-1111-111111111111', 'pot', 'Dated trip', 'USD', 'trip', current_date + 30)$$,
+  '23514', null, 'a bucket with a ready_by is refused (06-04: open-ended pots are allowed, a bucket still has no date)');
 select extensions.lives_ok(
   $$insert into public.savings_goals (id, household_id, created_by, kind, name, currency, bucket, monthly_amount)
     values ('b6700000-0000-0000-0000-000000000004', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
@@ -65,7 +67,7 @@ select extensions.throws_ok(
             '11111111-1111-1111-1111-111111111111', 'pot', 'Boat', 'USD', 'boat', 0)$$,
   '23514', null, 'a bucket kind outside the list is refused');
 
--- As A: monthly_amount lands on a bucket, is held on an ordinary pot.
+-- As A: monthly_amount lands on a bucket and, since 06-04 (D-17, D-20), on an ordinary pot too.
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
 
@@ -80,7 +82,7 @@ select extensions.lives_ok(
   'an ordinary pot monthly_amount update does not error');
 select extensions.is(
   (select monthly_amount from public.savings_goals where id = 'b6700000-0000-0000-0000-000000000001'),
-  null::bigint, 'the guard reset the ordinary pot monthly_amount to its old value');
+  777::bigint, 'the ordinary pot monthly_amount landed (06-04, D-17/D-20: the 05.2 pin is gone)');
 
 select extensions.lives_ok(
   $$update public.savings_goals set account_id = 'a6700000-0000-0000-0000-000000000001' where id = 'b6700000-0000-0000-0000-000000000004'$$,

@@ -68,6 +68,16 @@ const DECIDE_TOAST_LABEL: Readonly<Record<string, UndoLabelKey>> = {
   'activity.incomeTag.toastSaved': 'incomeTypeSaved',
   'activity.incomeTag.toastTagged': 'incomeTagged',
   'activity.incomeTag.toastFuture': 'incomeTagged',
+  // Phase 6 device check: the debt toasts keep their own words and carry a real step id, so each needs its label here or the
+  // toast shows no Undo.
+  'grow.debts.add.addedToast': 'debtAdded',
+  'grow.debts.add.editedToast': 'debtEdited',
+  'grow.debts.detail.removedToast': 'debtRemoved',
+  'grow.debts.planSavedToastFrom': 'debtPlanSaved',
+  'grow.debts.stopToast': 'debtPlanSaved',
+  'grow.debts.onceToast': 'debtOneOffRecorded',
+  'grow.debts.sale.toast': 'debtSaleRecorded',
+  'grow.calc.debtExtra.planSavedToast': 'debtPlanSaved',
 };
 
 /** Derives the engine label key and params from a toast's `undo.label[Unnamed].<key>` text (or a Decide toast's own key). */

@@ -115,6 +115,7 @@ async function mountRouter(initialUrl: string) {
       '(app)/(tabs)/home': leaf('home-root'),
       '(app)/(tabs)/activity': leaf('activity-root'),
       '(app)/(tabs)/decide': leaf('decide-root'),
+      '(app)/(tabs)/grow': leaf('grow-root'),
       '(app)/accounts/[id]': leaf('account-detail'),
       '(app)/accounts/index': leaf('accounts-root'),
       '(app)/categories': leaf('categories-root'),
@@ -149,26 +150,26 @@ beforeEach(() => {
 });
 
 describe('shell navigation on the real layouts', () => {
-  it('lands on Home from the root and shows the Home, Activity and Decide tabs (D-02, D-30, 05-21)', async () => {
+  it('lands on Home from the root and shows the Home, Activity, Decide and Grow tabs (D-02, D-30, 05-21)', async () => {
     const { handle: r } = await mountRouter('/');
     expect(r.getPathname()).toBe('/home');
     expect(await screen.findByText('home-root')).toBeTruthy();
-    expect(screen.getByLabelText('Home, tab, 1 of 3')).toBeTruthy();
-    expect(screen.getByLabelText('Activity, tab, 2 of 3')).toBeTruthy();
-    expect(screen.getByLabelText('Decide, tab, 3 of 3')).toBeTruthy();
-    expect(screen.queryByLabelText(/Grow, tab/)).toBeNull();
+    expect(screen.getByLabelText('Home, tab, 1 of 4')).toBeTruthy();
+    expect(screen.getByLabelText('Activity, tab, 2 of 4')).toBeTruthy();
+    expect(screen.getByLabelText('Decide, tab, 3 of 4')).toBeTruthy();
+    expect(screen.getByLabelText('Grow, tab, 4 of 4')).toBeTruthy();
   });
 
   it('pressing the Activity tab navigates to /activity', async () => {
     const { handle: r } = await mountRouter('/home');
-    await fireEvent.press(await screen.findByLabelText('Activity, tab, 2 of 3'));
+    await fireEvent.press(await screen.findByLabelText('Activity, tab, 2 of 4'));
     expect(r.getPathname()).toBe('/activity');
     expect(await screen.findByText('activity-root')).toBeTruthy();
   });
 
   it('hardware back from Activity (history [home]) returns to Home and is consumed (D-06 step 2)', async () => {
     const { handle: r } = await mountRouter('/home');
-    await fireEvent.press(await screen.findByLabelText('Activity, tab, 2 of 3'));
+    await fireEvent.press(await screen.findByLabelText('Activity, tab, 2 of 4'));
     expect(r.getPathname()).toBe('/activity');
     expect(await pressHardwareBack()).toBe(true);
     expect(r.getPathname()).toBe('/home');

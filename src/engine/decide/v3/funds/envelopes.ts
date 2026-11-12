@@ -11,9 +11,12 @@ export function envelopesOf(envs: readonly Envelope[], asOf: string): { readonly
   return { saved: minorUnits(Number(t.saved)), monthly: t.total };
 }
 
-/** The linked envelope's saved amount; null or unknown id gives 0, never another envelope's money. */
+/**
+ * The linked envelope's saved amount; null or unknown id gives 0, never another envelope's money. 06 D-22 (P2-CR-01): an unlocked
+ * goal gives 0 too, because its money is already counted as spare money through its account (funds/unlockedGoals.ts).
+ */
 export function ownEnvelope(envs: readonly Envelope[], envelopeId: string | null): MinorUnits {
   if (envelopeId === null) return minorUnits(0);
   const e = envs.find((x) => x.id === envelopeId);
-  return e === undefined ? minorUnits(0) : e.saved;
+  return e === undefined || e.locked === false ? minorUnits(0) : e.saved;
 }
