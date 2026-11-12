@@ -36,7 +36,8 @@ insert into public.recurring_series (id, household_id, created_by, account_id, c
 
 insert into public.decide_checks (id, household_id, created_by, kind, name, inputs) values
   ('c6100000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'buy', 'House', '{"kind":"buy","itemType":"property"}'),
-  ('c6100000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'buy', 'Car', '{"kind":"buy","itemType":"car"}');
+  ('c6100000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'buy', 'Car', '{"kind":"buy","itemType":"car"}'),
+  ('c6100000-0000-0000-0000-0000000000c3', (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'), '33333333-3333-3333-3333-333333333333', 'buy', 'C check', '{"kind":"buy","itemType":"other"}');
 
 -- Debts. The guard turns is_housing on by itself at insert for the signalled rows, so the "old" state (every
 -- is_housing false) is rebuilt below to prove the backfill statement.
@@ -142,30 +143,32 @@ select extensions.lives_ok(
             '11111111-1111-1111-1111-111111111111', 'pot', 'Car service', 'USD', 60000, current_date + 120)$$,
   'a pot with a target and a ready-by date is accepted');
 
-select extensions.throws_ok(
+-- 06-04 (GRW-01; D-17, D-20) relaxed the pot shape to `kind <> 'pot' or bucket is null or ready_by is null`: open-ended
+-- goals, monthly amounts and check links are allowed on a pot. These four used to be 23514 refusals (05-119).
+select extensions.lives_ok(
   $$insert into public.savings_goals (id, household_id, created_by, kind, name, currency, ready_by)
     values ('b6100000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
             '11111111-1111-1111-1111-111111111111', 'pot', 'No target', 'USD', current_date + 30)$$,
-  '23514', null, 'the shape check refuses a pot with no target');
-select extensions.throws_ok(
+  'a pot with no target is accepted (06-04: open-ended goals)');
+select extensions.lives_ok(
   $$insert into public.savings_goals (id, household_id, created_by, kind, name, currency, target)
-    values ('b6100000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+    values ('b6100000-0000-0000-0000-00000000000a', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
             '11111111-1111-1111-1111-111111111111', 'pot', 'No date', 'USD', 1000)$$,
-  '23514', null, 'the shape check refuses a pot with no ready_by');
-select extensions.throws_ok(
+  'a pot with no ready_by is accepted (06-04: open-ended goals)');
+select extensions.lives_ok(
   $$insert into public.savings_goals (id, household_id, created_by, kind, name, currency, target, ready_by, monthly_amount)
-    values ('b6100000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+    values ('b6100000-0000-0000-0000-00000000000b', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
             '11111111-1111-1111-1111-111111111111', 'pot', 'Monthly', 'USD', 1000, current_date + 30, 100)$$,
-  '23514', null, 'the shape check refuses a pot with a monthly_amount');
-select extensions.throws_ok(
+  'a pot with a monthly_amount is accepted (06-04, D-17/D-20)');
+select extensions.lives_ok(
   $$insert into public.savings_goals (id, household_id, created_by, kind, name, currency, target, ready_by, check_id)
-    values ('b6100000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+    values ('b6100000-0000-0000-0000-00000000000c', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
             '11111111-1111-1111-1111-111111111111', 'pot', 'Checked', 'USD', 1000, current_date + 30, 'c6100000-0000-0000-0000-000000000002')$$,
-  '23514', null, 'the shape check refuses a pot with a check_id');
+  'a pot linked to its owner''s own check is accepted (06-04)');
 select set_config('fincwin.decide_rpc', 'on', true);
 select extensions.throws_ok(
   $$insert into public.savings_goals (id, household_id, created_by, kind, name, currency, target, ready_by)
-    values ('b6100000-0000-0000-0000-000000000003', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+    values ('b6100000-0000-0000-0000-0000000000ff', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
             '11111111-1111-1111-1111-111111111111', 'bogus', 'Bogus', 'USD', 1000, current_date + 30)$$,
   '23514', null, 'kind accepts only wait and pot');
 select set_config('fincwin.decide_rpc', '', true);
@@ -185,14 +188,16 @@ select extensions.is((select kind from public.savings_goals where id = 'b6100000
   'a client insert becomes kind pot even when it asks for wait');
 select extensions.is((select created_by from public.savings_goals where id = 'b6100000-0000-0000-0000-000000000004'),
   '11111111-1111-1111-1111-111111111111'::uuid, 'created_by is filled from the caller');
-select extensions.throws_ok(
+-- 06-04 (D-17, D-20): a monthly_amount on a pot with no bucket no longer breaks the pot shape.
+select extensions.lives_ok(
   $$insert into public.savings_goals (id, household_id, name, currency, target, ready_by, monthly_amount)
     values ('b6100000-0000-0000-0000-000000000005', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'M', 'USD', 1000, current_date + 30, 100)$$,
-  '23514', null, 'a client pot with a monthly_amount and no bucket breaks the pot shape (05.2: monthly_amount is now granted)');
+  'a client pot with a monthly_amount and no bucket is accepted (06-04: monthly amounts on every goal)');
+-- 06-04 granted check_id on insert; the guard refuses a check that is not the caller's own (42501), so this stays a refusal.
 select extensions.throws_ok(
   $$insert into public.savings_goals (id, household_id, name, currency, target, ready_by, check_id)
-    values ('b6100000-0000-0000-0000-000000000005', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'M', 'USD', 1000, current_date + 30, 'c6100000-0000-0000-0000-000000000002')$$,
-  '42501', null, 'check_id has no client insert grant');
+    values ('b6100000-0000-0000-0000-00000000000d', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'M', 'USD', 1000, current_date + 30, 'c6100000-0000-0000-0000-0000000000c3')$$,
+  '42501', null, 'a client goal cannot link another person''s check (06-04: check_id is granted, the guard checks the owner)');
 
 -- wait row: freezes outside the RPC, done_at / deleted_at change
 update public.savings_goals set target = 1, name = 'Renamed', ready_by = current_date, opening_saved = 9
@@ -226,7 +231,7 @@ select extensions.throws_ok(
   '42501', null, 'a pot''s currency has no client update grant');
 select extensions.lives_ok(
   $$update public.savings_goals set monthly_amount = 5 where id = 'b6100000-0000-0000-0000-000000000002'$$,
-  'a non-bucket pot''s monthly_amount update is accepted and held by the guard (05.2: granted for buckets)');
+  'a non-bucket pot''s monthly_amount update is accepted (06-04, D-17/D-20: editable on every pot)');
 
 -- pot row: name, target, ready_by, opening_saved, done_at, deleted_at change
 select extensions.lives_ok(
@@ -243,9 +248,10 @@ select extensions.lives_ok(
 select extensions.ok(
   (select done_at is not null and deleted_at is not null from public.savings_goals where id = 'b6100000-0000-0000-0000-000000000002'),
   'the pot''s done_at and deleted_at landed');
-select extensions.throws_ok(
+-- 06-04 (GRW-01): a pot may be open-ended, so clearing its target is no longer refused by the shape check.
+select extensions.lives_ok(
   $$update public.savings_goals set target = null where id = 'b6100000-0000-0000-0000-000000000004'$$,
-  '23514', null, 'clearing a pot''s target is refused by the shape check');
+  'clearing a pot''s target is accepted (06-04: open-ended goals)');
 
 -- the guard's own freezes, for a writer with the grants out of the way (the table owner)
 reset role;
@@ -254,7 +260,7 @@ update public.savings_goals set kind = 'wait', currency = 'EUR', monthly_amount 
 select extensions.is(
   (select kind || '/' || currency || '/' || coalesce(monthly_amount::text, 'null') || '/' || coalesce(check_id::text, 'null')
      from public.savings_goals where id = 'b6100000-0000-0000-0000-000000000004'),
-  'pot/USD/null/null', 'the guard freezes a pot''s kind, currency, monthly_amount and check_id even for the table owner');
+  'pot/USD/5/null', 'the guard freezes a pot''s kind, currency and check_id even for the table owner; monthly_amount lands (06-04, D-17/D-20)');
 
 -- ---------------------------------------------------------------------
 -- 5. RLS: another user, and anon (tests 48-51).

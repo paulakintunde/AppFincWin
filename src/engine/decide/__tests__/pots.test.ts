@@ -101,6 +101,25 @@ describe('potSetAside', () => {
     expect(() => potSetAside(pot({ readyBy: '2027-02-30' }), ASOF)).toThrow(/readyBy/);
     expect(() => potSetAside(pot(), '2026-13-01')).toThrow(/asOf/);
   });
+
+  it('06 P4-CR-03: a pot whose plan states a monthly amount sets that aside, not the ready-by split', () => {
+    // a 1,200 goal set up at 100 a month (ready by about 12 months out), edited to 300 a month: 300 is set aside, 4 months left
+    const goal = pot({ target: mu(120_000), readyBy: '2027-10-31' });
+    expect(potSetAside(goal, ASOF)).toMatchObject({ monthly: 10_000, months: 12 });
+    expect(potSetAside({ ...goal, planMonthly: mu(30_000) }, ASOF)).toEqual({ id: 'p', monthly: 30_000, months: 4, state: 'active' });
+    // capped at what remains; honoured even past its date or with no date
+    expect(potSetAside({ ...goal, saved: mu(100_000), planMonthly: mu(30_000) }, ASOF)).toMatchObject({ monthly: 20_000, months: 1 });
+    expect(potSetAside({ ...goal, readyBy: '2026-01-01', planMonthly: mu(30_000) }, ASOF)).toMatchObject({ monthly: 30_000, state: 'active' });
+    expect(potSetAside({ ...goal, readyBy: null, planMonthly: mu(30_000) }, ASOF)).toMatchObject({ monthly: 30_000, months: 4 });
+    // absent, null or 0 keeps the ready-by rule; a reached pot stays reached
+    expect(potSetAside({ ...goal, planMonthly: null }, ASOF)).toEqual(potSetAside(goal, ASOF));
+    expect(potSetAside({ ...goal, planMonthly: mu(0) }, ASOF)).toEqual(potSetAside(goal, ASOF));
+    expect(potSetAside({ ...goal, saved: mu(120_000), planMonthly: mu(30_000) }, ASOF).state).toBe('reached');
+    // a Wait pot keeps its own monthlyAmount rule and ignores planMonthly
+    const wait = pot({ kind: 'wait', monthlyAmount: mu(5_000) });
+    expect(potSetAside({ ...wait, planMonthly: mu(30_000) }, ASOF)).toEqual(potSetAside(wait, ASOF));
+    expect(() => potSetAside({ ...goal, planMonthly: mu(-1) }, ASOF)).toThrow(/planMonthly/);
+  });
 });
 
 describe('totalSetAside', () => {

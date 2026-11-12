@@ -5,6 +5,8 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { TransactionSheet } from '../TransactionSheet';
 
+// 06-37: OccurrenceActions marks goal lines paid through useGoalLinePay; these sheets never open a goal line.
+jest.mock('@/features/grow/goals/useGoalLinePay', () => ({ useGoalLinePay: () => ({ pay: jest.fn(() => true) }) }));
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) })); // 05.2-44: OccurrenceActions gates on v3
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),

@@ -121,18 +121,18 @@ describe('ActivityRow card styling (02-polish item 2)', () => {
     expect(card.paddingHorizontal).toBe(18);
   });
 
-  it('rounds only the outer corners of a grouped card and separates rows with a 1px line', async () => {
+  it('rounds only the outer corners of a grouped card and separates rows with a 2px line4 line', async () => {
     const first = flat((await renderRow(row({}), 'first')).screen.getByTestId('activity-card-r1'));
     expect(first.borderTopLeftRadius).toBe(radii.card);
     expect(first.borderBottomLeftRadius).toBe(0);
     expect(first.borderTopWidth).toBeUndefined();
     const middle = flat((await renderRow(row({}), 'middle')).screen.getByTestId('activity-card-r1'));
     expect(middle.borderTopLeftRadius).toBe(0);
-    expect(middle.borderTopWidth).toBe(1);
-    expect(middle.borderTopColor).toBe(colors.line1);
+    expect(middle.borderTopWidth).toBe(2);
+    expect(middle.borderTopColor).toBe(colors.line4);
     const last = flat((await renderRow(row({}), 'last')).screen.getByTestId('activity-card-r1'));
     expect(last.borderBottomRightRadius).toBe(radii.card);
-    expect(last.borderTopWidth).toBe(1);
+    expect(last.borderTopWidth).toBe(2);
   });
 
   it('Mark paid is compact (no taller than the row text) yet keeps a 44pt touch target', async () => {

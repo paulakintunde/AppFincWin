@@ -36,16 +36,15 @@ const GLYPH_TILE = 32;
 const ROW_PAD_H = 18;
 
 /**
- * Surface card segment: the card radius on the outer corners only, shadows.card on the run's
- * outer rows, and a 1px line1 separator above every row but the first.
+ * Surface card segment: the card radius on the outer corners only, shadows.edge on every row position (no seams), and a 2px line4 separator above every row but the first (owner, Phase 6 device check: rows read apart).
  */
-export function cardStyle(position: CardPosition, c: Pick<typeof ThemeColours, 'surface' | 'line1'>): ViewStyle {
+export function cardStyle(position: CardPosition, c: Pick<typeof ThemeColours, 'surface' | 'line4'>): ViewStyle {
   const base: ViewStyle = {
     backgroundColor: c.surface,
     paddingVertical: space.rowPadDense,
     paddingHorizontal: ROW_PAD_H,
   };
-  if (position === 'only') return { ...base, borderRadius: radii.card, ...shadows.card };
+  if (position === 'only') return { ...base, borderRadius: radii.card, ...shadows.edge };
   const top = position === 'first' ? radii.card : 0;
   const bottom = position === 'last' ? radii.card : 0;
   const corners: ViewStyle = {
@@ -54,9 +53,8 @@ export function cardStyle(position: CardPosition, c: Pick<typeof ThemeColours, '
     borderBottomLeftRadius: bottom,
     borderBottomRightRadius: bottom,
   };
-  const separator: ViewStyle = position === 'first' ? {} : { borderTopWidth: 1, borderTopColor: c.line1 };
-  const shadow = position === 'middle' ? {} : shadows.card;
-  return { ...base, ...corners, ...separator, ...shadow };
+  const separator: ViewStyle = position === 'first' ? {} : { borderTopWidth: 2, borderTopColor: c.line4 };
+  return { ...base, ...corners, ...separator, ...shadows.edge };
 }
 
 export interface ActivityRowProps {
@@ -259,7 +257,7 @@ export function ActivityRow({
       ) : null}
       <CategoryGlyph colorKey={swatchKey} letter={letter} />
       <View style={styles.text}>
-        <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: nameColor }}>
+        <Text numberOfLines={1} style={{ ...textRole(pairing, 'bodyStrong'), color: nameColor }}>
           {name}
         </Text>
         <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
@@ -298,7 +296,7 @@ export function ActivityRow({
           onLongPress={onRowLongPress}
           style={styles.amountPress}
         >
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'body'), color: figureColor }}>{amountShown}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...textRole(pairing, 'bodyStrong'), color: figureColor }}>{amountShown}</Text>
           {stmtText !== null ? (
             <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{stmtText}</Text>
           ) : null}

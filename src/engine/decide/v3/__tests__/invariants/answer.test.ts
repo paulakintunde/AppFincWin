@@ -41,6 +41,17 @@ function withFund(inputs: V3Inputs, amount: number | null): V3Inputs {
 }
 
 const has = (ns: readonly Notice[], code: string): boolean => ns.some((n) => n.code === code);
+
+/**
+ * I31 (nightly 2026-11-07..11, seeds 1347 and 1348): income_volatile goes with the low-months cover question (D-48). The fund's money
+ * above the net's size is spare savings (D-35, D-49), so it can carry the low months (lean_bridge, QE-04) and the question is never
+ * asked. That is the one notice the money the net adds may take away, and only when it carries the low months; the answer then only
+ * gets better (checked below). The fund never adds a notice and never touches the spending balance.
+ */
+function withoutCarriedQuestion(without: Result, withFundMoney: Result): readonly Notice[] {
+  const carried = !has(withFundMoney.notices, 'income_volatile') && withFundMoney.facts.some((f) => f.code === 'lean_bridge');
+  return carried ? without.notices.filter((n) => n.code !== 'income_volatile') : without.notices;
+}
 const noticesOf = (r: Result): readonly Notice[] => r.notices;
 
 function currentMonth(inputs: V3Inputs): string {
@@ -346,7 +357,7 @@ describe('end-to-end invariants through evaluate()', () => {
         expect(million.funds.suggested).toBe(zero.funds.suggested);
         expect(million.funds.spending).toBe(zero.funds.spending);
         expect(million.result.confidence).toEqual(zero.result.confidence);
-        expect(million.result.notices).toEqual(zero.result.notices);
+        expect(withoutCarriedQuestion(zero.result, million.result)).toEqual(million.result.notices);
         fc.pre(zero.result.code !== 'needs_input' && million.result.code !== 'needs_input');
         expect(codeRank(million.result.code)).toBeGreaterThanOrEqual(codeRank(zero.result.code));
         expect(million.result.code).not.toBe('emergency_use');
@@ -361,8 +372,8 @@ describe('end-to-end invariants through evaluate()', () => {
         const none = evaluate(withFund(inputs, null), check).result;
         const set = evaluate(withFund(inputs, 500_000), check).result;
         expect(none.confidence).toEqual(set.confidence);
-        const rest = (r: Result) => r.notices.filter((n) => n.code !== 'emergency_not_set');
-        expect(rest(none)).toEqual(rest(set));
+        const rest = (ns: readonly Notice[]) => ns.filter((n) => n.code !== 'emergency_not_set');
+        expect(rest(withoutCarriedQuestion(none, set))).toEqual(rest(set.notices));
         fc.pre(none.code !== 'needs_input' && set.code !== 'needs_input');
         expect(codeRank(set.code)).toBeGreaterThanOrEqual(codeRank(none.code));
       }),

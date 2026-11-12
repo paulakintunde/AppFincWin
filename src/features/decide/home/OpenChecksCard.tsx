@@ -171,7 +171,7 @@ export function OpenChecksCard({ source, checks, today, whole, currency, showWhe
                 onDelete={() => onDelete(row)}
               >
                 <View style={styles.text}>
-                  <Text numberOfLines={2} ellipsizeMode="tail" style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+                  <Text numberOfLines={2} ellipsizeMode="tail" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>
                     {name}
                   </Text>
                   {badge !== null ? (

@@ -166,6 +166,21 @@ export function firstUnansweredNeeded(facts: SetupFacts): SetupStepKey | null {
   return remainingNeeded(facts)[0] ?? null;
 }
 
+/**
+ * ARC-16 (06-20): the four setup steps whose forms moved to Grow open a Grow home. Their answered state is unchanged
+ * here (optional or always answered), so a recorded debt, goal or flagged net needs no extra fact.
+ */
+export const GROW_ROUTES: Readonly<Partial<Record<SetupStepKey, string>>> = {
+  loans: '/grow?segment=debts',
+  saving: '/grow?segment=goals',
+  emergency: '/grow/safety-net',
+  envelopes: '/grow?segment=goals',
+};
+
+export function growRouteOf(step: SetupStepKey): string | null {
+  return GROW_ROUTES[step] ?? null;
+}
+
 export function setupStatus(facts: SetupFacts): 'not_started' | 'rough' | 'done' {
   if (facts.setupDoneAt === null && facts.incomeTypes === null) return 'not_started';
   const overrideRough = facts.everydayOverride !== null && facts.fullMonthsOfRecords < 3;

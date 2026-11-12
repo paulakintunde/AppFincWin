@@ -68,11 +68,13 @@ select extensions.throws_ok(
   $$update public.decide_changes set household_id = (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333') where id = 'e1000000-0000-0000-0000-000000000001'$$,
   '42501', null, 'household_id has no update grant, so it cannot move');
 
--- A cannot insert a goal; a goal inserted by the owner role is visible to A only.
-select extensions.throws_ok(
+-- A client goal insert becomes a pot; a Wait goal inserted under the Wait RPC is visible to A only.
+-- 06-04 (GRW-01): open-ended goals are allowed, so a pot with a target and no ready_by now saves. It used to be
+-- refused by the 05-119 shape check. Its own id keeps it apart from the Wait goal fixture below.
+select extensions.lives_ok(
   $$insert into public.savings_goals (id, household_id, name, currency, target)
-    values ('f1000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Sofa fund', 'USD', 120000)$$,
-  '23514', null, 'a client goal insert becomes a pot, and a pot with no ready_by is refused by the shape check (05-119)');
+    values ('f1000000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Sofa fund', 'USD', 120000)$$,
+  'a client goal insert becomes a pot, and a pot with no ready_by now saves (06-04: open-ended goals)');
 reset role;
 -- 05-119: Wait goals now arrive only through the Wait RPC, so the fixture insert runs with it on.
 select set_config('fincwin.decide_rpc', 'on', true);
