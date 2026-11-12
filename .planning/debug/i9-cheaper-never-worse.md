@@ -35,7 +35,7 @@ reasoning_checkpoint:
   falsification_test: "after switching the window test to the date of payment number count, the pinned pairs still differ or the seeded replay still fails"
   fix_rationale: "count is what the person chose and does not depend on price; the window then cannot flip with rounding slack"
   blind_spots: "quoted payments that clear early (L-09) and 0-financed plans now use count too; may move other answers (check I44 digests)"
-- next_action: owner reviews the PR (do not merge from this session); then archive to resolved/ and add a knowledge-base entry
+- next_action: owner reviews PR #108 (narrowed in a0c59253; do not merge from this session); then archive to resolved/ and add a knowledge-base entry
 
 ## Evidence
 
@@ -73,6 +73,11 @@ reasoning_checkpoint:
   found: pinned tests GREEN (both prices monthly_short / month_already_short); seeded I9 replay (seed -1745555528, 2000 runs) passes; tsc clean; eslint 0 errors
   implication: fix works for the known counterexamples
 
+- timestamp: 2026-11-12
+  checked: narrowing (owner "rounding only"): lastPaymentBefore in plan/schedule.ts reads lastPaying when schedule.source === 'quoted', else count
+  found: new pinned test (Sam, $300, 13 weekly 0%, one period out, quote $30 -> 10 payments, last day 70) is RED on 11d3476c (monthly_short) and GREEN after (fits_unspent / month_short_moderate, short_plan_from_cash). With main's engine files (43e6f48b) it is also green and the two I9 pins are red, so the quoted answer matches main.
+  implication: quoted early payoff is back to its pre-PR-#108 answer; the I9 rounding fix stays.
+
 ## Eliminated
 
 - hypothesis: the split can happen at realistic prices (above $5)
@@ -82,23 +87,30 @@ reasoning_checkpoint:
 ## Resolution
 
 root_cause: D-68's "every payment inside 90 days" test (judge/shortPlan.ts:71, also planReadyBy judge.ts:738) compares paymentsInRange(...).length with s.lastPaying. lastPaying is amortise()'s last period with a non-zero payment (payoff/amortise.ts:61-80 clamp + :143-145 months = walk.lastMonth; plan/schedule.ts:98-99), not the count the person chose. The level payment is rounded UP to the cent (D-64), so for tiny financed amounts the rounding slack can pay the plan off a whole period early (118c/13 -> 10c x 11 + 8c = 12 payments; 100c/13 -> 8c x 12 + 4c = 13 payments). lastPaying is therefore not monotone in price: the dearer plan ends on day 84 (inside, D-68 judges it by cash, fits_unspent) while the cheaper ends on day 91 (outside, monthly test, monthly_short). Cent-level only: max financed $1.69 at 0%, $2.21 at <=30%, $3.18 at 999%.
-fix: OWNER CHOSE Option 1 (2026-11-12): count the payments the person chose. D-68 window test uses the date of payment number count-1 instead of lastPaying, in judge/shortPlan.ts:71 and judge.ts:738 planReadyBy (prefer one shared helper). Pinned regression tests: $1.19 vs $1.00 (13 weekly, 9% APR, one period out, riley, asOf 2026-10-03) and $1.18 vs $1.00 (13 weekly, 0%, one period out, Sam). Then I9 at FC_RUNS=2000 with seed -1745555528, whole invariants dir at 2000, engine suite with coverage (branches stay 100%), tsc. Commit, push, open PR, do not merge.
+owner_decision_2026-11-12: "Rounding only." Count the chosen payments ONLY when the early finish comes from the engine's own
+  round-up of the level payment (D-64). A user-entered quoted payment that clears the plan early (L-09, judge/purchase.ts
+  withPayment source 'quoted') keeps the old behaviour: the window reads lastPaying (the real last payment).
+fix_prior: OWNER CHOSE Option 1 (2026-11-12): count the payments the person chose. D-68 window test uses the date of payment number count-1 instead of lastPaying, in judge/shortPlan.ts:71 and judge.ts:738 planReadyBy (prefer one shared helper). Pinned regression tests: $1.19 vs $1.00 (13 weekly, 9% APR, one period out, riley, asOf 2026-10-03) and $1.18 vs $1.00 (13 weekly, 0%, one period out, Sam). Then I9 at FC_RUNS=2000 with seed -1745555528, whole invariants dir at 2000, engine suite with coverage (branches stay 100%), tsc. Commit, push, open PR, do not merge.
+fix: |
+  lastPaymentBefore(s, end) in plan/schedule.ts (was chosenPaymentsBefore): the plan's last payment date < asOf+90, where the last
+  payment is s.lastPaying when s.source === 'quoted' (a quote larger than the engine's payment, L-09, really clears early) and
+  s.count otherwise ('computed', and 'from_quote' whose periods are still the 0% walk's rounding). Used by judge/shortPlan.ts
+  (D-68 shortPlanByCash) and judge/judge.ts planReadyBy. Commits 5a8f6523 (count) + a0c59253 (narrowing, owner 2026-11-12).
 verification: |
-  Fix: chosenPaymentsBefore(s, end) in plan/schedule.ts = date of payment number `count` (index count-1) < asOf+90; used by
-  judge/shortPlan.ts (D-68 shortPlanByCash) and judge/judge.ts planReadyBy. Pinned tests red before, green after.
-  - Seeded I9 replay (seed -1745555528, 2000 runs): pass (was failing at run 776).
-  - Invariants folder at FC_RUNS=2000: 31/31 suites, 263/263 tests pass (incl. prepare/ruleList I44 digests unchanged), 0 snapshots written.
-  - Engine suite with coverage (jest.engine.config.js): 339 suites passed (1 skipped), 6355 tests passed; branches 100% (9769/9769),
-    functions 100%; schedule.ts / shortPlan.ts / judge.ts each 100% branches. (2 uncovered statements are in statement/limits.ts, untouched.)
-  - tsc --noEmit clean; eslint on changed files 0 errors (34 pre-existing fc import warnings in monotone.test.ts).
-  Answers that changed (user-facing):
-  - Tiny financed plans whose rounded-up payment clears a period early inside 90 days, but whose CHOSEN last payment falls on or
-    after day 90, lose the D-68 cash judgement. Pinned: Sam $1.18 / 13 weekly / 0% / first one week out goes from fits_unspent
-    (month_short_small, short_plan_from_cash) to monthly_short / month_already_short; Riley $1.19 / 13 weekly / 9% the same. The
-    $1.00 cases are unchanged (monthly_short / month_already_short) -- the cheaper price did not gain the cash answer; the dearer one lost it.
-  - Same rule in planReadyBy: a Not yet ready date for such a plan now uses day one + first payment, not the whole cost.
-  - By the earlier enumeration this is only reachable for financed amounts up to $1.69 at 0% ($2.21 at <=30% APR, $3.18 at 999%).
-    A quoted payment that clears a plan early (L-09) is also now judged by its chosen count; no golden, fixture or invariant moved.
+  After the narrowing (a0c59253):
+  - Pinned: both I9 pins green; new quoted pin red on 11d3476c, green now (and green on main's engine code).
+  - Seeded I9 replay at 2000 runs: seeds -1745555528, 1, 20261112 all pass.
+  - Invariants folder at FC_RUNS=2000: 31/31 suites, 264/264 tests, 0 snapshots written (I44 digests unchanged).
+  - Engine suite with coverage: 339 suites passed (1 skipped), 6356 tests passed; branches 100%, functions 100%;
+    schedule.ts / shortPlan.ts / judge.ts / purchase.ts 100% branches. No golden or fixture moved.
+  - tsc --noEmit clean; eslint on changed files 0 errors (34 pre-existing warnings in monotone.test.ts).
+  Answers that change vs main (43e6f48b):
+  - Tiny financed plans (engine payment, no larger quote) whose rounded-up payment clears a period early inside 90 days while the
+    chosen last payment falls on/after day 90: cash judgement (fits_unspent) -> monthly test (monthly_short). Reachable only up to
+    $1.69 financed at 0% ($2.21 at <=30% APR, $3.18 at 999%). Same for planReadyBy's Not yet date.
+  - Quote-only plans (no rate, 'from_quote'): the window now reads the count; on main it read the 0% rounding walk's lastPaying,
+    which differs from count only in the same tiny-amount rounding case.
+  - Plans with a larger quoted payment that clears early: unchanged from main.
 files_changed: [src/engine/decide/v3/plan/schedule.ts, src/engine/decide/v3/judge/shortPlan.ts, src/engine/decide/v3/judge/judge.ts, src/engine/decide/v3/__tests__/invariants/monotone.test.ts]
 
 ## Specialist Review
