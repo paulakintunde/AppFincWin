@@ -17,3 +17,6 @@
 
 ## Android in-app edge swipe on steps skips the stepper Back rule (found by 06.1-64, routed to 06.1-57/60)
 `SwipeBack` on the step screens calls `router.back()` directly. From the answer it lands on the same answer (fine); on the forward path from Decide home it goes to Decide home instead of one step back. Fix in StepFrame (57/60) with `setSwipeBackInterceptor` calling `useStepNav`'s Back.
+
+## QuickEstimatesRoute dead onSave binding (found by 06.1-65, routed to 06.1-61)
+Quick estimates now save inside the screen via `useSaveSetupStep` (with Undo). The screen's `onSave` prop is optional and never called. Remove `onSave` and its `useUpdateDecideSettings` binding from `src/shell/decide/QuickEstimatesRoute.tsx`. Also: `SetupDone` component and its strings are unreachable since 06.1-64 deleted the route; remove them.
