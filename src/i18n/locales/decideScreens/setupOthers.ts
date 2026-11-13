@@ -108,5 +108,15 @@ export const setupOthers = {
     roughClear: 'Clear',
     roughCleared: 'Quick estimates cleared.',
     quickSave: 'Save estimates',
+    // 06.1-58 (A-SU-5, DS-16): each check row carries a word badge and its reason; the accounts are one row that opens a sheet.
+    toFinish: 'To finish',
+    lastMonthDoneWhy: 'In your records to the end of {{month}}.',
+    lastMonthOpenWhy: 'Not all of {{month}} is in your records yet.',
+    lastMonthFix: 'Records for {{month}}',
+    thisMonthDoneWhy: 'Up to date: entries to {{date}}',
+    thisMonthOpenWhy: 'Newest entry {{date}}. Decide needs one from the last 10 days.',
+    thisMonthNone: 'No entries yet this month.',
+    accountsRow_one: '{{count}} account · {{n}} to finish',
+    accountsRow_other: '{{count}} accounts · {{n}} to finish',
   },
 } as const;

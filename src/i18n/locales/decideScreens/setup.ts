@@ -85,5 +85,12 @@ export const setup = {
     // 06.1-65 (CC-7): the save toast (with Undo) and the name in History ('Saved · Quick estimates').
     saved: 'Quick estimates saved.',
     stepName: 'Quick estimates',
+    // 06.1-58 (A-SU-6): the line under the disabled button names the first figure still missing.
+    need: {
+      income: 'What comes in each month is still needed.',
+      bills: 'What goes on bills is still needed.',
+      everyday: 'Everyday spending is still needed.',
+      aboveZero: 'Bills and everyday spending need to come to more than 0.',
+    },
   },
 } as const;

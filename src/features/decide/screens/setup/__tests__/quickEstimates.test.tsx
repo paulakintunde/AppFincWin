@@ -182,6 +182,102 @@ describe('QuickEstimatesScreen save toast and save mode (06.1-65)', () => {
   });
 });
 
+type ScrollJson = { type: string; props: Record<string, unknown>; children?: unknown[] | null };
+function findScroll(node: unknown): ScrollJson | null {
+  if (!node || typeof node === 'string') return null;
+  if (Array.isArray(node)) {
+    for (const n of node) {
+      const hit = findScroll(n);
+      if (hit) return hit;
+    }
+    return null;
+  }
+  const j = node as ScrollJson;
+  if (j.type === 'RCTScrollView') return j;
+  return findScroll(j.children ?? null);
+}
+
+describe('QuickEstimatesScreen pre-fill, need line and first tap (06.1-58 A-SU-6, UX-11)', () => {
+  const STORED = { currency: 'USD', rough_income: 300000, rough_spending: 200000 } as unknown as React.ComponentProps<typeof QuickEstimatesScreen>['stored'];
+
+  it('starts from the saved rough figures: income, the spending sum in bills and everyday at 0', async () => {
+    await setup({ stored: STORED });
+    expect(screen.getByLabelText(INCOME).props.value).toBe('3000.00');
+    expect(screen.getByLabelText(BILLS).props.value).toBe('2000.00');
+    expect(screen.getByLabelText(EVERYDAY).props.value).toBe('0.00');
+    expect(screen.getByText('A usual month leaves about $1,000 by these estimates.')).toBeTruthy();
+    expect(screen.queryByTestId('quick-need')).toBeNull();
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+  });
+
+  it('a null saved figure stays empty', async () => {
+    await setup({ stored: { ...STORED, rough_spending: null } as typeof STORED });
+    expect(screen.getByLabelText(INCOME).props.value).toBe('3000.00');
+    expect(screen.getByLabelText(BILLS).props.value).toBe('');
+    expect(screen.getByLabelText(EVERYDAY).props.value).toBe('');
+  });
+
+  it('figures saved in another currency are not shown as this one', async () => {
+    await setup({ stored: { ...STORED, currency: 'EUR' } as typeof STORED });
+    expect(screen.getByLabelText(INCOME).props.value).toBe('');
+    expect(screen.getByLabelText(BILLS).props.value).toBe('');
+  });
+
+  it('settings that arrive after the first render fill the untouched fields', async () => {
+    const onDone = jest.fn();
+    const { rerender } = await wrap(<QuickEstimatesScreen currency="USD" today="2026-11-11" stored={null} onDone={onDone} />);
+    expect(screen.getByLabelText(INCOME).props.value).toBe('');
+    await act(async () => {
+      rerender(<QuickEstimatesScreen currency="USD" today="2026-11-11" stored={STORED} onDone={onDone} />);
+    });
+    expect(screen.getByLabelText(INCOME).props.value).toBe('3000.00');
+  });
+
+  it('once something is typed, late settings change nothing', async () => {
+    const onDone = jest.fn();
+    const { rerender } = await wrap(<QuickEstimatesScreen currency="USD" today="2026-11-11" stored={null} onDone={onDone} />);
+    await type(INCOME, '500');
+    await act(async () => {
+      rerender(<QuickEstimatesScreen currency="USD" today="2026-11-11" stored={STORED} onDone={onDone} />);
+    });
+    expect(screen.getByLabelText(INCOME).props.value).toBe('500');
+    expect(screen.getByLabelText(BILLS).props.value).toBe('');
+  });
+
+  it('the line under the disabled button names the first figure still missing', async () => {
+    await setup();
+    expect(screen.getByTestId('quick-need')).toHaveTextContent('What comes in each month is still needed.');
+    await type(INCOME, '3200');
+    expect(screen.getByTestId('quick-need')).toHaveTextContent('What goes on bills is still needed.');
+    await type(BILLS, '0');
+    expect(screen.getByTestId('quick-need')).toHaveTextContent('Everyday spending is still needed.');
+    await type(EVERYDAY, '0');
+    expect(screen.getByTestId('quick-need')).toHaveTextContent('Bills and everyday spending need to come to more than 0.');
+    await type(EVERYDAY, '10');
+    expect(screen.queryByTestId('quick-need')).toBeNull();
+  });
+
+  it('the title is a display headline, the fields carry the currency symbol, and taps land with the keyboard open', async () => {
+    const r = await wrap(<QuickEstimatesScreen currency="USD" today="2026-11-11" stored={STORED} onDone={jest.fn()} />);
+    expect(screen.getByTestId('quick-headline')).toHaveTextContent('A first answer from three estimates');
+    expect(screen.getAllByText('$').length).toBeGreaterThanOrEqual(3);
+    expect(findScroll(r.toJSON())?.props.keyboardShouldPersistTaps).toBe('handled');
+  });
+
+  it('one tap on See the answer now saves while a field still has focus', async () => {
+    const { onDone } = await setup({ stored: STORED });
+    const field = screen.getByLabelText(EVERYDAY);
+    await fireEvent(field, 'focus');
+    await type(EVERYDAY, '500');
+    await fireEvent.press(screen.getByText('See the answer now'));
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(savedPatch()).toEqual({ rough_income: 300000, rough_spending: 250000, rough_as_of: '2026-11-11', currency: 'USD' });
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('safeReturnTo', () => {
   it('follows a path inside /decide and nothing else', () => {
     expect(safeReturnTo('/decide/answer/0b2f3c4d-1111-2222-3333-444455556666')).toBe('/decide/answer/0b2f3c4d-1111-2222-3333-444455556666');

@@ -30,7 +30,8 @@ let mockItems: ReadinessItem[] = [];
 jest.mock('@/data/queries/decideV3', () => ({
   useDecideV3: () => ({ inputs: mockInputs, evaluation: { result: { readiness: { ready: mockItems.length === 0, missing: [], items: mockItems } } } }),
 }));
-jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
+let mockAccountRows: unknown[] = [];
+jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccountRows }) }));
 jest.mock('../../../home/useHomeFacts', () => ({
   footerFactsOf: (i: { months: { full: boolean; lines: unknown[] }[] } | null) => ({ months: i === null ? 0 : i.months.filter((m) => m.full).length, entries: i === null ? 0 : i.months.reduce((n, m) => n + m.lines.length, 0) }),
 }));
@@ -39,8 +40,12 @@ let mockSettings: Record<string, unknown> | null = null;
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: mockSettings }) }));
 const mockSetupSave = jest.fn((..._a: unknown[]) => ({ stepId: 'step-clear' }) as { stepId: string } | null);
 jest.mock('@/data/mutations/decideSetup', () => ({ useSaveSetupStep: () => ({ save: mockSetupSave }) }));
-jest.mock('@/data/mutations/accountUse', () => ({ useSaveAccountUse: () => ({ save: jest.fn() }) }));
-jest.mock('@/features/record/accounts/AccountUseSheet', () => ({ AccountUseSheet: () => null }));
+const mockSaveUse = jest.fn((..._a: unknown[]) => ({ stepId: 'step-use' }));
+jest.mock('@/data/mutations/accountUse', () => ({ useSaveAccountUse: () => ({ save: mockSaveUse }) }));
+jest.mock('@/features/record/accounts/AccountUseSheet', () => {
+  const { Text } = jest.requireActual('react-native');
+  return { AccountUseSheet: ({ account }: { account: { id: string } }) => <Text testID="account-use-sheet">{account.id}</Text> };
+});
 const mockSaveAnswer = jest.fn((..._a: unknown[]) => ({ stepId: 'step-answer' }) as { stepId: string } | null);
 jest.mock('@/data/mutations/decideAnswers', () => ({ useSaveDecideAnswer: () => ({ save: mockSaveAnswer }) }));
 let mockCached: [unknown, unknown][] = [];
@@ -51,7 +56,8 @@ jest.mock('../../../sheets/EnvelopeAccountSheet', () => {
 });
 
 let mockFacts: SetupFacts | null = null;
-jest.mock('../../useSetupProgress', () => ({ useSetupFacts: () => ({ loading: mockFacts === null, facts: mockFacts, currency: 'USD', today: '2026-11-20' }) }));
+const mockRetry = jest.fn();
+jest.mock('../../useSetupProgress', () => ({ useSetupFacts: () => ({ loading: mockFacts === null, facts: mockFacts, currency: 'USD', today: '2026-11-20', retry: mockRetry }) }));
 
 const DONE_FACTS: SetupFacts = {
   hasPay: true, payAmountMinor: 320000, payDay: 15, billsRightAnswered: true, billsCount: 3, billsMonthlyMinor: 100000,
@@ -78,6 +84,7 @@ beforeEach(() => {
   mockSettings = null;
   mockItems = [];
   mockCached = [];
+  mockAccountRows = [];
   mockInputs = { accounts: [], months: [{ month: '2026-10', full: true, lines: [{}] }] };
   writes = { skipLine: jest.fn(() => 'step-skip'), setEnvelopeAccount: jest.fn(() => 'step-env') };
 });
@@ -223,5 +230,80 @@ describe('RecordsSetup loading, quick estimates and rough figures (06.1-65)', ()
     mockSettings = { rough_income: null, rough_spending: null };
     await wrap(<RecordsSetup writes={writes} />);
     expect(screen.queryByTestId('records-rough')).toBeNull();
+  });
+});
+
+describe('RecordsSetup rows, badges and the accounts sheet (06.1-58 A-SU-5, DS-16)', () => {
+  const ACCOUNTS = [
+    { id: 'a1', kind: 'checking', use: null, balance: 0 },
+    { id: 'a2', kind: 'checking', use: { kind: 'everyday' }, balance: 0 },
+    { id: 'a3', kind: 'cash', use: null, balance: 0 },
+  ];
+  const ROWS = [
+    { id: 'a1', name: 'Everyday', kind: 'checking' },
+    { id: 'a2', name: 'Joint', kind: 'checking' },
+    { id: 'a3', name: 'Wallet', kind: 'cash' },
+  ];
+
+  it('every check carries a word badge and a reason; with all done there is no Check again', async () => {
+    await wrap(<RecordsSetup writes={writes} />);
+    expect(screen.getByTestId('check-last-badge')).toHaveTextContent('Complete');
+    expect(screen.getByTestId('check-last')).toHaveTextContent(/In your records to the end of October\./);
+    expect(screen.getByTestId('check-this')).toHaveTextContent(/Up to date: entries to Nov 18, 2026/);
+    expect(screen.getByTestId('check-accounts')).toHaveTextContent(/0 accounts say what they are for/);
+    expect(screen.queryByText('Check again')).toBeNull();
+    expect(screen.queryByTestId('last-fix')).toBeNull();
+  });
+
+  it('DS-16: an incomplete last month says why and links to the fix; Check again refetches', async () => {
+    mockFacts = { ...DONE_FACTS, lastMonthComplete: false, newestEntryThisMonth: '2026-11-02' };
+    await wrap(<RecordsSetup writes={writes} />);
+    expect(screen.getByTestId('check-last-badge')).toHaveTextContent('Not complete');
+    expect(screen.getByTestId('check-last')).toHaveTextContent(/Not all of October is in your records yet\./);
+    expect(screen.getByTestId('check-this')).toHaveTextContent(/Newest entry Nov 2, 2026\. Decide needs one from the last 10 days\./);
+    await press(screen.getByTestId('last-fix'));
+    expect(mockPush).toHaveBeenCalledWith('/activity');
+    await press(screen.getByText('Check again'));
+    expect(mockRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it('no entries this month says so', async () => {
+    mockFacts = { ...DONE_FACTS, newestEntryThisMonth: null };
+    await wrap(<RecordsSetup writes={writes} />);
+    expect(screen.getByTestId('check-this')).toHaveTextContent(/No entries yet this month\./);
+  });
+
+  it('Your accounts is one row that opens a sheet with the per-account choices', async () => {
+    mockFacts = { ...DONE_FACTS, accountsAllHaveUse: false };
+    mockInputs = { accounts: ACCOUNTS, months: [{ month: '2026-10', full: true, lines: [{}] }] };
+    mockAccountRows = ROWS;
+    await wrap(<RecordsSetup writes={writes} />);
+    // no inline radio rows on the page
+    expect(screen.queryAllByRole('radio')).toHaveLength(0);
+    expect(screen.getByTestId('check-accounts')).toHaveTextContent(/3 accounts · 2 to finish/);
+    expect(screen.getByText('To finish')).toBeTruthy();
+    await press(screen.getByTestId('check-accounts'));
+    expect(screen.getByText('What is Everyday for?')).toBeTruthy();
+    expect(screen.getByText('What is Wallet for?')).toBeTruthy();
+    expect(screen.getAllByRole('radio')).toHaveLength(12);
+    await press(screen.getAllByLabelText('Not used for spending')[0]!);
+    expect(mockSaveUse).toHaveBeenCalledWith({ account: expect.objectContaining({ id: 'a1' }), use: { kind: 'untouched' } });
+    expect(mockShowToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.accountUse.toastSaved' }, stepId: 'step-use' });
+    // Savings or goals needs the goal, so the account's own sheet takes over
+    await press(screen.getAllByLabelText('Savings or goals')[2]!);
+    expect(screen.getByTestId('account-use-sheet')).toHaveTextContent('a3');
+    expect(screen.queryByText('What is Everyday for?')).toBeNull();
+  });
+
+  it('one open account reads in the singular, and Close shuts the sheet', async () => {
+    mockFacts = { ...DONE_FACTS, accountsAllHaveUse: false };
+    mockInputs = { accounts: [ACCOUNTS[0]], months: [{ month: '2026-10', full: true, lines: [{}] }] };
+    mockAccountRows = ROWS;
+    await wrap(<RecordsSetup writes={writes} />);
+    expect(screen.getByTestId('check-accounts')).toHaveTextContent(/1 account · 1 to finish/);
+    await press(screen.getByTestId('check-accounts'));
+    expect(screen.getByText('What is Everyday for?')).toBeTruthy();
+    await press(screen.getByText('Close'));
+    expect(screen.queryByText('What is Everyday for?')).toBeNull();
   });
 });

@@ -285,6 +285,8 @@ describe('RecordsSetup (D37, D37b)', () => {
     mockFacts = facts({ accountsAllHaveUse: false });
     mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: null, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [] }] };
     await wrap(<RecordsSetup writes={RECORDS_WRITES} />);
+    // 06.1-58 (A-SU-5): the choices sit in the Your accounts sheet
+    await fireEvent.press(screen.getByTestId('check-accounts'));
     for (const label of ['Everyday spending', 'Savings or goals', 'Safety net', 'Not used for spending']) expect(screen.getByLabelText(label)).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Not used for spending'));
     expect(mockSaveUse).toHaveBeenCalledWith({ account: expect.objectContaining({ id: 'a1' }), use: { kind: 'untouched' } });

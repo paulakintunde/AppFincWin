@@ -32,7 +32,11 @@ import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
+import { Sheet, SheetScroll } from '@/ui/Sheet';
+import { SheetHeader } from '@/ui/SheetHeader';
+import { StateBadge } from '@/ui/StateBadge';
 import { Text } from '@/ui/Text';
+import { StateGlyph } from '@/ui/glyphs/StateGlyph';
 import { hapticLight } from '@/ui/haptics';
 import { ReadinessFixList } from '../../answer/ReadinessFixList';
 import { monthNameOf } from '../../home/YourMonthCard';
@@ -51,6 +55,7 @@ const ACTIVITY = '/activity' as Href;
 const IMPORT = '/import' as Href;
 const QUICK_ESTIMATES = '/decide/setup/quick-estimates';
 const NO_ITEMS: readonly ReadinessItem[] = [];
+const CHEV = 16;
 
 /** 06.1-45: the writes bound by the shell (features/decide may not import them; they reach the rate-fetch door). */
 export interface RecordsWrites {
@@ -78,6 +83,20 @@ function fallbackWaiver(item: ReadinessItem): ReadinessWaiver | null {
   return null;
 }
 
+/** 06.1-58 (A-SU-5): a check's title over its reason, with the word badge at the right (glyph plus word, never colour alone). */
+function CheckRowBody({ title, why, ok, word, testID }: { title: string; why: string; ok: boolean; word: string; testID?: string }) {
+  const { colors, pairing } = useTheme();
+  return (
+    <View testID={testID} accessible={testID !== undefined} accessibilityLabel={`${title}, ${word}. ${why}`} style={styles.checkBody}>
+      <View style={styles.checkText}>
+        <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{title}</Text>
+        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{why}</Text>
+      </View>
+      <StateBadge tone={ok ? 'fits' : 'notYet'} shape={ok ? 'sCheck' : 'sClock'} label={word} testID={testID === undefined ? 'check-badge' : `${testID}-badge`} />
+    </View>
+  );
+}
+
 export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const t = useT();
   const router = useRouter();
@@ -85,7 +104,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const { colors, pairing } = useTheme();
   const fmt = useSetupFormat();
   const rc = useRecordContext();
-  const { facts, today, currency } = useSetupFacts();
+  const { facts, today, currency, retry } = useSetupFacts();
   const params = useLocalSearchParams<{ returnTo?: string }>();
   const settings = useDecideSettings(rc.userId ?? undefined).data ?? null;
   const setupSaver = useSaveSetupStep(rc.userId ?? '');
@@ -93,6 +112,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const accountsQ = useAccounts(rc.householdId ?? undefined);
   const saver = useSaveAccountUse(rc.userId ?? '');
   const [sheetFor, setSheetFor] = useState<AccountRow | null>(null);
+  const [accountsOpen, setAccountsOpen] = useState(false);
   const qc = useQueryClient();
   const answers = useSaveDecideAnswer(rc.userId ?? '', rc.householdId ?? '');
   const [envelopeId, setEnvelopeId] = useState<string | null>(null);
@@ -214,6 +234,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
     const use = accountUseOfChoice(choice);
     // "Savings or goals" also says which goal the money is kept for, so the account's own sheet picks it.
     if (use === null) {
+      setAccountsOpen(false);
       setSheetFor(row);
       return;
     }
@@ -241,7 +262,21 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const upTo = fmt.date(facts.recordsUpTo ?? today);
   // GQ2: done only when the three D-11 checks hold and the engine names nothing still open.
   const allDone = checks.allDone && fixRows.length === 0;
-  const rowStyle = [styles.row, { backgroundColor: colors.surface, borderColor: colors.line2 }];
+  const openAccounts = asked.filter((a) => a.use === null).length;
+  // A-SU-5 (DS-16): every check says why, beside a word badge; an open one carries its fix.
+  const lastWhy = checks.lastMonth
+    ? t('decide.screens.setupOthers.records.lastMonthDoneWhy', { month: monthName })
+    : t('decide.screens.setupOthers.records.lastMonthOpenWhy', { month: monthName });
+  const thisWhy = checks.thisMonth
+    ? t('decide.screens.setupOthers.records.thisMonthDoneWhy', { date: upTo })
+    : facts.newestEntryThisMonth === null
+      ? t('decide.screens.setupOthers.records.thisMonthNone')
+      : t('decide.screens.setupOthers.records.thisMonthOpenWhy', { date: fmt.date(facts.newestEntryThisMonth) });
+  const accountsWhy = checks.accounts
+    ? t('decide.screens.setupOthers.records.accountsSay', { count: sayCount })
+    : t('decide.screens.setupOthers.records.accountsRow', { count: asked.length, n: openAccounts });
+  const accountsWord = checks.accounts ? t('decide.screens.setupOthers.records.complete') : t('decide.screens.setupOthers.records.toFinish');
+  const ruleColor = { borderTopColor: colors.line2 };
   return (
     <SetupItemFrame
       title={t('decide.screens.setupOthers.records.title')}
@@ -251,62 +286,65 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
       onLeave={leave}
       onSaveAndClose={saveAndClose}
     >
-      <View style={styles.block}>
-        <View testID="check-last" accessible accessibilityLabel={`${t('decide.screens.setupOthers.records.lastMonth', { month: monthName })}, ${word(checks.lastMonth)}`} style={rowStyle}>
-          <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 1 }}>{t('decide.screens.setupOthers.records.lastMonth', { month: monthName })}</Text>
-          <Text style={{ ...textRole(pairing, 'bodyStrong'), color: checks.lastMonth ? colors.ink : colors.warn1 }}>{word(checks.lastMonth)}</Text>
+      <View testID="records-checks" style={[styles.group, { backgroundColor: colors.surface, borderColor: colors.line2 }]}>
+        <View style={styles.groupRow}>
+          <CheckRowBody
+            testID="check-last"
+            title={t('decide.screens.setupOthers.records.lastMonth', { month: monthName })}
+            why={lastWhy}
+            ok={checks.lastMonth}
+            word={word(checks.lastMonth)}
+          />
+          {!checks.lastMonth ? (
+            <Pressable
+              testID="last-fix"
+              accessibilityRole="link"
+              accessibilityLabel={t('decide.screens.setupOthers.records.lastMonthFix', { month: monthName })}
+              onPress={() => router.push(ACTIVITY)}
+              style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+            >
+              <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.setupOthers.records.lastMonthFix', { month: monthName })}</Text>
+            </Pressable>
+          ) : null}
         </View>
 
-        <View style={[rowStyle, styles.column]}>
-          <View testID="check-this" accessible accessibilityLabel={`${t('decide.screens.setupOthers.records.thisMonth')}, ${checks.thisMonth ? t('decide.screens.setupOthers.records.upTo', { date: upTo }) : t('decide.screens.setupOthers.records.notComplete')}`} style={styles.row2}>
-            <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 1 }}>{t('decide.screens.setupOthers.records.thisMonth')}</Text>
-            <Text style={{ ...textRole(pairing, 'bodyStrong'), color: checks.thisMonth ? colors.ink : colors.warn1 }}>
-              {checks.thisMonth ? t('decide.screens.setupOthers.records.upTo', { date: upTo }) : t('decide.screens.setupOthers.records.notComplete')}
-            </Text>
-          </View>
-          {!checks.thisMonth ? <Text style={small}>{t('decide.screens.setupOthers.records.upTo', { date: upTo })}</Text> : null}
-          <Pressable
-            testID="add-since"
-            accessibilityRole="link"
-            accessibilityLabel={t('decide.screens.setupOthers.records.addSince')}
-            onPress={() => router.push(ACTIVITY)}
-            style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
-          >
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.setupOthers.records.addSince')}</Text>
-          </Pressable>
+        <View style={[styles.groupRow, styles.ruled, ruleColor]}>
+          <CheckRowBody testID="check-this" title={t('decide.screens.setupOthers.records.thisMonth')} why={thisWhy} ok={checks.thisMonth} word={word(checks.thisMonth)} />
+          {!checks.thisMonth ? (
+            <Pressable
+              testID="add-since"
+              accessibilityRole="link"
+              accessibilityLabel={t('decide.screens.setupOthers.records.addSince')}
+              onPress={() => router.push(ACTIVITY)}
+              style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+            >
+              <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.setupOthers.records.addSince')}</Text>
+            </Pressable>
+          ) : null}
         </View>
 
-        <View style={[rowStyle, styles.column]}>
-          <View
-            testID="check-accounts"
-            accessible
-            accessibilityLabel={`${t('decide.screens.setupOthers.records.accounts')}, ${word(checks.accounts)}`}
-            style={styles.row2}
-          >
-            <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 1 }}>{t('decide.screens.setupOthers.records.accounts')}</Text>
-            <Text style={{ ...textRole(pairing, 'bodyStrong'), color: checks.accounts ? colors.ink : colors.warn1 }}>{word(checks.accounts)}</Text>
-          </View>
-          {checks.accounts ? (
-            <Text style={small}>{t('decide.screens.setupOthers.records.accountsSay', { count: sayCount })}</Text>
-          ) : (
-            asked.map((a) => {
-              const row = rowOf(a.id);
-              const current = choiceOfUse(a.use);
-              const name = row?.name ?? '';
-              return (
-                <View key={a.id} testID={`account-${a.id}`} style={styles.block}>
-                  <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.setupOthers.records.accountFor', { name })}</Text>
-                  <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.setupOthers.records.accountFor', { name })}>
-                    {USE_CHOICES.map((c) => (
-                      <RadioRow key={c} label={choiceLabel(c)} selected={current === c} onPress={() => chooseUse(a.id, c)} />
-                    ))}
-                  </View>
-                </View>
-              );
-            })
-          )}
-        </View>
+        <Pressable
+          testID="check-accounts"
+          accessibilityRole="button"
+          accessibilityLabel={`${t('decide.screens.setupOthers.records.accounts')}, ${accountsWord}. ${accountsWhy}`}
+          onPress={() => setAccountsOpen(true)}
+          style={({ pressed }) => [styles.groupRow, styles.ruled, styles.chevRow, ruleColor, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+        >
+          <CheckRowBody title={t('decide.screens.setupOthers.records.accounts')} why={accountsWhy} ok={checks.accounts} word={accountsWord} />
+          <StateGlyph name="chev" color={colors.inkFaint} size={CHEV} />
+        </Pressable>
       </View>
+
+      {!allDone ? (
+        <Pill
+          variant="secondary"
+          label={t('decide.screens.setupOthers.records.checkAgain')}
+          onPress={() => {
+            hapticLight();
+            retry();
+          }}
+        />
+      ) : null}
 
       {fixRows.length > 0 ? (
         <View testID="records-open" style={styles.block}>
@@ -339,6 +377,28 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
         {!allDone ? <Text style={small}>{t('decide.screens.setupOthers.records.openNote')}</Text> : null}
       </View>
 
+      {accountsOpen ? (
+        <Sheet visible onDismiss={() => setAccountsOpen(false)} accessibilityLabel={t('decide.screens.setupOthers.records.accounts')}>
+          <SheetHeader title={t('decide.screens.setupOthers.records.accounts')} cancelLabel={t('decide.screens.common.close')} onCancel={() => setAccountsOpen(false)} />
+          <SheetScroll contentContainerStyle={styles.sheetBody}>
+            {asked.map((a) => {
+              const row = rowOf(a.id);
+              const current = choiceOfUse(a.use);
+              const name = row?.name ?? '';
+              return (
+                <View key={a.id} testID={`account-${a.id}`} style={styles.block}>
+                  <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.setupOthers.records.accountFor', { name })}</Text>
+                  <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.setupOthers.records.accountFor', { name })}>
+                    {USE_CHOICES.map((c) => (
+                      <RadioRow key={c} label={choiceLabel(c)} selected={current === c} onPress={() => chooseUse(a.id, c)} />
+                    ))}
+                  </View>
+                </View>
+              );
+            })}
+          </SheetScroll>
+        </Sheet>
+      ) : null}
       {sheetFor === null ? null : <AccountUseSheet visible account={sheetFor} balance={null} onClose={() => setSheetFor(null)} />}
       {envelopeId === null ? null : (
         <EnvelopeAccountSheet goalId={envelopeId} visible onClose={() => setEnvelopeId(null)} setAccount={writes.setEnvelopeAccount} />
@@ -349,8 +409,14 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
 
 const styles = StyleSheet.create({
   block: { gap: space.gapSm },
-  column: { flexDirection: 'column', alignItems: 'stretch' },
-  row: { borderRadius: radii.card, borderWidth: 1.5, padding: space.cardPad, gap: space.gapSm, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   row2: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: space.gapMd },
   link: { minHeight: space.touchMin, justifyContent: 'center' },
+  // A-SU-5: one grouped card, rows split by a hairline rule (D37).
+  group: { borderRadius: radii.card, borderWidth: 1.5, overflow: 'hidden' },
+  groupRow: { paddingHorizontal: space.cardPad, paddingVertical: space.gapMd, gap: space.gapSm, minHeight: space.touchMin },
+  ruled: { borderTopWidth: StyleSheet.hairlineWidth },
+  chevRow: { flexDirection: 'row', alignItems: 'center' },
+  checkBody: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: space.gapMd },
+  checkText: { flex: 1, gap: space.gapSm / 2 },
+  sheetBody: { gap: space.gapMd, paddingBottom: space.gapMd },
 });
