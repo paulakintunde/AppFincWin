@@ -94,6 +94,7 @@ Last activity: 2026-11-11 -- Phase 06 complete; Phase 8 planning complete
 - 2026-11-11: Phase 8 plans 08-28 and 08-29 (household parts on Decide) and Grow's "Create from Decide" moved to Phase 08.1 (carry-over files in the 08.1 folder); Phase 8 is now 28 plans in 12 waves with one revision round after 06.1 (PR #102) merges. Gates and checklist: .planning/phases/08-household/08-GATES.md; 05.5 notes: 05.5-NOTES-FROM-08.md.
 - Phase 08.2 inserted after Phase 08.1: Decide re-audit
 - Phases 6 and 8 amended and Phase 7 moved after 08.2 by the same plan
+- Phase 06.1 inserted after Phase 6: Decide screens from the prototype (owner 2026-11-06: plan now, build after Grow wave 1; clickable prototype is the design standard)
 
 ### Decisions
 

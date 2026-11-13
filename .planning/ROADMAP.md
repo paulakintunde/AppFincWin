@@ -30,7 +30,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies (completed 2026-11-11)
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
-- [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
+- [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide, reading test round 2, public switch-on. Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
 - [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
 - [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
@@ -1245,6 +1245,57 @@ Plans:
 - [x] 06-37-PLAN.md — Gap gate, owner device check on the Pixel 9, finalize 06-20 (W14)
 **UI hint**: yes
 
+### Phase 06.1: Decide screens from the prototype (INSERTED)
+
+**Goal:** Testers use the new Decide screens, built from the owner's clickable prototype (https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR, the design standard, as in Phase 6 D-04), on the v3 engine and the connection points that exist on main. Every prototype Decide screen (D01-D53, answers N02-N26) replaces today's tester screens in one release with Grow; old 05.x Decide screens deleted; home buying hidden; household left to 08.1 (06.1-CONTEXT D-01..D-06).
+**Requirements**: The 08.1 fix IDs and 08.1-CARRY-OVER rows that need neither household data nor reading-test round 2 (06.1-CONTEXT D-04; the first plan lists the split)
+**Depends on:** Phase 6: Grow plans 06-05, 06-06 and 06-10 on main (connection points, RPCs, Decide feed; 06.1-CONTEXT D-30). Wave 1 (plans 01-07, 41, 42) can be built now; plan 08 gates the rest. Household parts stay hidden until Phase 8.
+**Plans:** 42 plans
+
+Plans:
+- [ ] 06.1-01-PLAN.md — Scope split (D-04) and prototype inventory (D-27); seven state colour tokens + contrast tests + CLAUDE.md (D-16); ROADMAP requirement lines
+- [ ] 06.1-02-PLAN.md — Engine: parseCheckV2 keeps running costs, replaces, purchase date, purpose and D-21 quick lines (Pitfall 1)
+- [ ] 06.1-03-PLAN.md — Engine: month picture (CO-D-57, 05.5 shape) and labelled 90-day cash timeline (UX-38)
+- [ ] 06.1-04-PLAN.md — Pure rules: stateForVerdict, big-buy rule from band edges (D-09), home-word reader (D-02)
+- [ ] 06.1-05-PLAN.md — decide.screens copy in area files, D-19 rule wording, guards and sign-off scope
+- [ ] 06.1-06-PLAN.md — Production Result-to-sentences renderer (sayResult)
+- [ ] 06.1-07-PLAN.md — Move settingsPatch and the income step types out of old Decide folders, with shims
+- [ ] 06.1-08-PLAN.md — D-30 gate (Grow 06-05/06-06/06-10 on main) and shared primitives in src/ui with the seven state tones
+- [ ] 06.1-09-PLAN.md — Engine: D-21 quick-estimate overlay, facts, cases; owner approval
+- [ ] 06.1-10-PLAN.md — Migration: D-20 unlock flag + RPC, D-23 flags, check history, Save-for-it goal fields, FIN-20 column; pgTAP
+- [ ] 06.1-11-PLAN.md — useCheckEngine and useMonthPicture hooks
+- [ ] 06.1-12-PLAN.md — Builder reads the unlock; mutations for unlock, first-answer net (D-28), answered flags, history
+- [ ] 06.1-13-PLAN.md — Save for it (D-22), I bought it on v3 (ARC-24), running costs as bills one by one (APP-29)
+- [ ] 06.1-14-PLAN.md — Answer frame: verdict card, legal block, reading order, options, action bar, status cards
+- [ ] 06.1-15-PLAN.md — Sheets: pick a date, quick estimates x4, installment plan, how often
+- [ ] 06.1-16-PLAN.md — Sheets: add your own x4, selling the old one, waterfall card
+- [ ] 06.1-17-PLAN.md — Setup progress rules (D-10, D-11, D-23), banner and checklist
+- [ ] 06.1-18-PLAN.md — Safety-net settings with unlock confirm and padlock; first-answer gate (D-14, D-25, D-28)
+- [ ] 06.1-19-PLAN.md — Big-buy stepper D10-D13 with running-cost templates (D-24)
+- [ ] 06.1-20-PLAN.md — More-detail sheets D54-D61 and the cash vs installments compare screen
+- [ ] 06.1-21-PLAN.md — Decide home D01/D02 and the Decide tab
+- [ ] 06.1-22-PLAN.md — Open checks, Your money rules (D-19), Something changed?
+- [ ] 06.1-23-PLAN.md — Answer route for every board, D21, fact actions, history, analytics
+- [ ] 06.1-24-PLAN.md — Setup items: pay and payday, regular bills
+- [ ] 06.1-25-PLAN.md — Setup items: debts, safety net, money rules, records
+- [ ] 06.1-26-PLAN.md — Save for it and I bought it screens
+- [ ] 06.1-27-PLAN.md — Past decisions with look-back and check history
+- [ ] 06.1-28-PLAN.md — Old routes redirect, setup route swap, onboarding and entry-point repoints (D-05)
+- [ ] 06.1-29-PLAN.md — FIN-20 tax set-aside behind owner approval (D-26)
+- [ ] 06.1-30-PLAN.md — FIN-22 and FIN-23 behind owner approval (D-26)
+- [ ] 06.1-31-PLAN.md — [BLOCKING] Push the 06.1 schema to production (human-gated)
+- [ ] 06.1-32-PLAN.md — Maestro flows, text-fit and reading order, full suite, owner device pass
+- [ ] 06.1-33-PLAN.md — D-08 wording sign-off and lock
+- [ ] 06.1-34-PLAN.md — Release with Grow: OTA or preview APK (D-06, D-29)
+- [ ] 06.1-35-PLAN.md — Info sheets: About this answer, Give it more to go on, Free help, How this was worked out
+- [ ] 06.1-36-PLAN.md — Delete the old Decide code: shell hosts, folders, shims, old tests; fix guards (D-05)
+- [ ] 06.1-37-PLAN.md — Prune old Decide copy from en.ts; copy-guard exemptions and coverage thresholds
+- [ ] 06.1-38-PLAN.md — Move useSettledLabel, RiseIn and the text-fit helper; intro and setup-done phone flags (D-25)
+- [ ] 06.1-39-PLAN.md — Setup done with the tick (D-17) and the quick-estimates first answer (D39)
+- [ ] 06.1-40-PLAN.md — Move PrefillNote, heroAmountText, ChoiceCard and the stepProps helper out of old Decide folders
+- [ ] 06.1-41-PLAN.md — Move the account-use sheet, list and suggestions to Accounts
+- [ ] 06.1-42-PLAN.md — Move the past-decision data hooks to screens/past/data
+
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
 **Depends on**: Phase 6, and Phase 08.2 (Decide fix plan: built after the re-audit so charts include the household view and the health score agrees with Decide; ARC-21)
@@ -1334,6 +1385,8 @@ Plans:
 **Research flag**: The Realtime reconciliation state machine (no pending write / write still queued / own-write echo / genuine version conflict) is a synthesized design, not a documented Supabase recipe. Budget a dedicated spike — two simulated clients, one taken offline mid-edit — before trusting it in production. Also resolve explicitly what happens when a settlement's expiry window lapses unresolved; the prototype specifies the window but not the outcome.
 
 ### Phase 08.1: Decide rebuild on real data (INSERTED)
+
+**Amended 2026-11-06 (06.1-CONTEXT D-04):** the Variant C / prototype screens are built in Phase 06.1. 08.1 keeps household data in Decide, reading test round 2 and its fixes, and the public switch-on after 08.2. The text below is kept as the record; criteria already met by 06.1 are checked there.
 
 **Goal:** Decide reaches 10/10 on every auditor's checklist using real goals, debts and household data, with the full cost of a purchase (tax, fees and running costs) and the Variant C screens the owner signs off at the design freeze (QA-01). Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 4, 6 (Theme L) and 8. Design: Variant C, chosen by the owner on 2026-11-01 ("Decide redesign: three variants" canvas, 40 screens); Variants A and B are retired. Reading-test round 1 runs on Variant C alone (about 5 people) to find what confuses people; its findings are fixed and the screens are then frozen (QA-01).
 **Requirements**: Fix IDs FIN-12, FIN-20..24, FIN-28, FIN-29, FIN-31; ENG-26, ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-21, APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-26 round 2, UX-38, UX-41; CMP-F12 (layout), F14, F15, F19; ARC-11 (moved setup steps removed); QA-01 (freeze held), QA-02 and QA-03 (extended); BO-09 and the screen side of the 05.4 copy and app items (Theme N); UX-20 (decision record, version 1), UX-42, UX-43, the rest of ARC-24 and ARC-25 (Theme O). Home buying (FIN-30) is its own phase after 08.2; its screens stay hidden
