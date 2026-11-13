@@ -5,7 +5,7 @@ import { useCallback, useMemo } from 'react';
 import type { DecideLinkRow } from '@/db/decideLinks';
 import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
 import { classifyReadError, type DbErrorKind } from '@/db/errors';
-import { emptyCheckEvaluation, preparedV3 } from '@/features/decide/snapshot/v3/computeV3';
+import { emptyCheckEvaluation, preparedV3, withUnsaved } from '@/features/decide/snapshot/v3/computeV3';
 import { liveBridgeCheckIds, settingsSourceOf, type SettingsSourceInput } from '@/features/decide/snapshot/v3/settingsSource';
 import type { V3SettingsSource } from '@/features/decide/snapshot/v3/types';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -129,8 +129,16 @@ export function useDecideV3(): DecideV3State {
     // ENG-13 / APP-03 (05.4-33): one build; the evaluation is judged on the same prepared inputs. 06.1-46 (B-1): the same
     // (source, v3) identities across hooks, so one prepare and one empty-check judge per data version.
     const held = preparedV3(source, v3);
-    return { inputs: held.inputs, prepared: held.prepared, evaluation: emptyCheckEvaluation(source, v3), source, v3 };
+    return { prepared: held.prepared, source, v3 };
   }, [source, missing, settingsRow, answerRows, dismissalRows, checkRows, linkRows]);
+  // 06.1-46 (B-2): the live waiting-write count is laid over at judge time, so a count change re-judges only; the per-keystroke
+  // judges read the same overlaid Prepared.
+  const unsaved = snapshot.unsavedWrites ?? 0;
+  const judged = useMemo(() => {
+    if (computed === null) return null;
+    const prepared = withUnsaved(computed.prepared, unsaved);
+    return { ...computed, prepared, inputs: prepared.inputs, evaluation: emptyCheckEvaluation(computed.source, computed.v3, unsaved) };
+  }, [computed, unsaved]);
 
   const retrySnapshot = snapshot.retry;
   const refetchers = reads.map((q) => q.refetch);
@@ -141,6 +149,6 @@ export function useDecideV3(): DecideV3State {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retrySnapshot]);
 
-  const status: DecideV3State['status'] = failed ? 'error' : computed === null ? 'loading' : 'ready';
-  return { status, inputs: computed?.inputs ?? null, evaluation: computed?.evaluation ?? null, source: computed?.source ?? null, v3: computed?.v3 ?? null, prepared: computed?.prepared ?? null, errorKind, missingReads, refetch };
+  const status: DecideV3State['status'] = failed ? 'error' : judged === null ? 'loading' : 'ready';
+  return { status, inputs: judged?.inputs ?? null, evaluation: judged?.evaluation ?? null, source: judged?.source ?? null, v3: judged?.v3 ?? null, prepared: judged?.prepared ?? null, errorKind, missingReads, refetch };
 }

@@ -3,7 +3,7 @@
 // seeded QueryClient; only the snapshot hook is a stand-in (its own sharing is covered in decide.test.tsx).
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render } from '@testing-library/react-native';
+import { act, render, waitFor } from '@testing-library/react-native';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { EMPTY_DECIDE_SETTINGS } from '@/db/decideSettings';
 import { demoSource } from '@/features/decide/__tests__/helpers/demoScenario';
@@ -116,8 +116,51 @@ describe('useDecideV3: one build per data version (B-1)', () => {
     await act(async () => {
       client.setQueryData(queryKeys.decideChecks('u1', 'h1'), rows.map((r) => ({ ...r, status: 'bought' })));
     });
+    await waitFor(() => expect(last(0).v3!.live_bridge_check_ids).toEqual(['c1']));
     expect(builds).toHaveBeenCalledTimes(2);
-    expect(last(0).v3!.live_bridge_check_ids).toEqual(['c1']);
     for (let i = 1; i < CONSUMERS; i++) expect(last(i).prepared).toBe(last(0).prepared);
+  });
+});
+
+describe('useDecideV3: waiting writes and new checks do not rebuild (B-2, B-3)', () => {
+  it('a waiting-write count 0 -> 1 -> 0 re-judges only; the unsaved notice shows only while the count is 1', async () => {
+    seed(client, [check('c1')]);
+    const view = await mount();
+    const hasNotice = (s: DecideV3State) => s.evaluation!.result.notices.some((n) => n.code === 'unsaved_changes');
+    expect(hasNotice(last(0))).toBe(false);
+    // a fresh element each time, so React re-renders the tree
+    const tree = () => (
+      <QueryClientProvider client={client}>
+        <Screen />
+      </QueryClientProvider>
+    );
+    mockSnap.unsavedWrites = 1;
+    await act(async () => view.rerender(tree()));
+    for (let i = 0; i < CONSUMERS; i++) {
+      expect(hasNotice(last(i))).toBe(true);
+      expect(last(i).prepared!.inputs.unsavedWrites).toBe(1);
+    }
+    mockSnap.unsavedWrites = 0;
+    await act(async () => view.rerender(tree()));
+    expect(hasNotice(last(0))).toBe(false);
+    expect(builds).toHaveBeenCalledTimes(1);
+  });
+
+  it('creating a check keeps the previous links while the new key loads: never back to loading, no rebuild', async () => {
+    seed(client, [check('c1')]);
+    await mount();
+    const seen = states.map((s) => s.length);
+    await act(async () => {
+      client.setQueryData(queryKeys.decideChecks('u1', 'h1'), [check('c1'), check('c3')]);
+    });
+    // the 'c1,c3' links read is pending forever here (the fetcher never resolves)
+    await waitFor(() => expect(client.getQueryState([...queryKeys.decideLinks('u1', 'h1'), 'c1,c3'])?.fetchStatus).toBe('fetching'));
+    expect(client.getQueryState([...queryKeys.decideLinks('u1', 'h1'), 'c1,c3'])?.status).toBe('pending');
+    for (let i = 0; i < CONSUMERS; i++) {
+      const after = states[i]!.slice(seen[i]);
+      expect(after.length).toBeGreaterThan(0);
+      for (const s of after) expect(s.status).toBe('ready');
+    }
+    expect(builds).toHaveBeenCalledTimes(1);
   });
 });
