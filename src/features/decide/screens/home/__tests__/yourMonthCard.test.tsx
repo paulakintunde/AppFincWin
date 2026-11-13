@@ -48,7 +48,7 @@ describe('YourMonthCard labels (A-HOME-1)', () => {
     const lead = screen.getByTestId('month-lead');
     expect(within(lead).getByText('$2,190.95')).toBeTruthy();
     expect(within(lead).getByText('short in November')).toBeTruthy();
-    expect(within(lead).getByText("after this month's plans")).toBeTruthy();
+    expect(within(lead).getByText('after this month’s plans')).toBeTruthy();
     expect(screen.getByTestId('month-tiles-label').props.children).toBe('A usual month');
     expect(within(screen.getByTestId('month-bars')).getByText('$892.62')).toBeTruthy();
   });
@@ -59,7 +59,7 @@ describe('YourMonthCard labels (A-HOME-1)', () => {
     const tiles = screen.getByTestId('month-bars');
     expect(lead.props.accessible).toBe(true);
     expect(tiles.props.accessible).toBe(true);
-    expect(lead.props.accessibilityLabel).toBe("$2,190.95 short in November, after this month's plans");
+    expect(lead.props.accessibilityLabel).toBe('$2,190.95 short in November, after this month’s plans');
     expect(lead.props.accessibilityLabel).not.toContain('$892.62');
     expect(tiles.props.accessibilityLabel).toBe('A usual month: Comes in $5,000.00, goes out $4,107.38, left $892.62');
     expect(tiles.props.accessibilityLabel).not.toContain('$2,190.95');
