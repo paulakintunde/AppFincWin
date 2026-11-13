@@ -114,9 +114,11 @@ export default function AppLayout() {
                   <Stack.Screen name="setup/rough" />
                   <Stack.Screen name="setup/first-check" />
                   <Stack.Screen name="decide/check/[id]" />
-                  <Stack.Screen name="decide/check/kind" />
-                  <Stack.Screen name="decide/check/price" />
-                  <Stack.Screen name="decide/check/costs" />
+                  {/* 06.1-64 (H-3, from 06.1-57): no native iOS edge swipe on the steps; the steps replace each other, so it would pop past
+                      them. Their own Back rule (useStepNav) applies instead. */}
+                  <Stack.Screen name="decide/check/kind" options={{ gestureEnabled: false }} />
+                  <Stack.Screen name="decide/check/price" options={{ gestureEnabled: false }} />
+                  <Stack.Screen name="decide/check/costs" options={{ gestureEnabled: false }} />
                   <Stack.Screen name="decide/answer/[id]" />
                   <Stack.Screen name="decide/compare/[id]" />
                   <Stack.Screen name="decide/save/[id]" />

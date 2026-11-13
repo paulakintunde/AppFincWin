@@ -25,6 +25,7 @@ import { freeHelpFor, type CheckV2, type Evaluation, type LocalDate, type PayV2,
 import { money as makeMoney } from '@/engine/money';
 import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
 import { openNewCheck } from '@/features/decide/screens/logic/checkHref';
+import { goDecideHome, withFromAnswer } from '@/features/decide/screens/logic/decideNav';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { pushOnce } from '@/shell/navigation/pushOnce';
@@ -114,9 +115,11 @@ function fallbackWaiver(item: ReadinessItem): ReadinessWaiver | null {
   return null;
 }
 
+// 06.1-64 (CN-4): with nothing below, the Decide home already in the stack (dismissTo), never a second copy. Steps opened from
+// the answer carry from=answer (withFromAnswer), so their Back and "See the answer" return here (H-3, FQ2).
 function leave(): void {
   if (router.canGoBack()) router.back();
-  else router.replace(asHref('/decide'));
+  else goDecideHome(router);
 }
 
 export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScreenProps) {
@@ -265,7 +268,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
         pushOnce(asHref(`/decide/save/${id}`));
         return;
       case 'notBuying':
-        if (evaluation !== null && writes.notBuying({ row, evaluation }) !== null) router.replace(asHref('/decide'));
+        if (evaluation !== null && writes.notBuying({ row, evaluation }) !== null) goDecideHome(router);
         return;
       case 'retry':
         engine.refetch();
@@ -344,7 +347,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
         pushOnce(asHref('/decide/safety-net'));
         return;
       case 'fixMissing':
-        if (PRICE_STEP_FIXES.has(choice.code)) pushOnce(stepHref(2, id, 'back'));
+        if (PRICE_STEP_FIXES.has(choice.code)) pushOnce(withFromAnswer(stepHref(2, id, 'back')));
         else pushOnce(asHref(FIX_ROUTE[choice.code] ?? '/decide/setup'));
         return;
     }
@@ -391,7 +394,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
   const onOpenRow = (rowKey: DetailRow): void => {
     switch (rowKey) {
       case 'running':
-        pushOnce(stepHref(3, id, 'back'));
+        pushOnce(withFromAnswer(stepHref(3, id, 'back')));
         return;
       case 'sideBySide':
         pushOnce(asHref(`/decide/compare/${id}`));
@@ -429,7 +432,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
             priceLine={priceLine}
             runningLine={runningLine}
             skipped={skipped}
-            onEdit={(n) => pushOnce(stepHref(n, id, 'back'))}
+            onEdit={(n) => pushOnce(withFromAnswer(stepHref(n, id, 'back')))}
           />
         ) : null}
         <MoreDetailRows
@@ -511,7 +514,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
           names={{ stop: stopName }}
           onAdd={() => {
             setSheet(null);
-            pushOnce(stepHref(3, id, 'back'));
+            pushOnce(withFromAnswer(stepHref(3, id, 'back')));
           }}
           onClose={closeSheet}
         />

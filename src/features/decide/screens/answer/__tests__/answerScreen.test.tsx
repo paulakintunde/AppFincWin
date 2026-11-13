@@ -18,13 +18,14 @@ const mockHaptic = jest.fn();
 jest.mock('@/ui/haptics', () => ({ ...jest.requireActual('@/ui/haptics'), hapticWarning: () => mockHaptic() }));
 const mockPush = jest.fn();
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (...a: unknown[]) => mockPush(...a) }));
-const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true };
+const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true, dismissTo: jest.fn() };
 jest.mock('expo-router', () => {
   const router = {
     push: (...a: unknown[]) => mockRouter.push(...a),
     replace: (...a: unknown[]) => mockRouter.replace(...a),
     back: () => mockRouter.back(),
     canGoBack: () => true,
+    dismissTo: (...a: unknown[]) => mockRouter.dismissTo(...a),
   };
   return { router, useRouter: () => router, useLocalSearchParams: () => ({}) };
 });
@@ -235,6 +236,21 @@ describe('What you told Decide (D21, D21b)', () => {
     expect(screen.getByTestId('answer-told-quick')).toBeTruthy();
   });
 
+  it('opens each step with from=answer by push, so Back returns to this answer (06.1-64 H-3, FQ2, DN-3)', async () => {
+    const run = ledgerRun('N02');
+    load(run, { check: { ...run.check, layerAnswers: { ...run.check.layerAnswers, 'L0.skipped_steps': [3] } } });
+    await open();
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('answer-told-1'));
+    });
+    expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/kind', params: { id: 'c1', dir: 'back', from: 'answer' } });
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('answer-told-3'));
+    });
+    expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/costs', params: { id: 'c1', dir: 'back', from: 'answer' } });
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+
   it('is not shown for a check that did not come through the stepper', async () => {
     load(ledgerRun('N02'));
     await open();
@@ -351,7 +367,8 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
     await act(async () => {
       fireEvent.press(screen.getByTestId('answer-fix-no_price'));
     });
-    expect(mockPush).toHaveBeenCalledWith(expect.objectContaining({ pathname: '/decide/check/price' }));
+    // 06.1-64 (H-3, FQ2): the step carries from=answer, so its Back and "See the answer" return to this answer.
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/price', params: { id: 'c1', dir: 'back', from: 'answer' } });
   });
 
   it('no overdraft limit offers Add limit and No overdraft, both opening that account', async () => {
@@ -403,7 +420,9 @@ describe('action bar and rows', () => {
       fireEvent.press(screen.getByText('I’m not buying it'));
     });
     expect(writes.notBuying).toHaveBeenCalledTimes(1);
-    expect(mockRouter.replace).toHaveBeenCalledWith('/decide');
+    // 06.1-64 (CN-4): the Decide home already in the stack, never a replaced copy.
+    expect(mockRouter.dismissTo).toHaveBeenCalledWith('/decide');
+    expect(mockRouter.replace).not.toHaveBeenCalledWith('/decide');
   });
 
   it('keeps Costs that stop out unless the check replaces something, and opens the About sheet from the cant-see link', async () => {

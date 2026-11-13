@@ -32,7 +32,7 @@ import { NeedLine } from '../ui/NeedLine';
 import { StepFrame } from './StepFrame';
 import { isStillSaving, StepStillSaving } from './StepStillSaving';
 import { useOwnAdd } from './ownAdds';
-import { kindOf, lineNamesOf, type BuiltInKind, stepHref, useStepCheck, useStepData, withPrefill, type StepNumber } from './useStepCheck';
+import { kindOf, lineNamesOf, type BuiltInKind, useStepCheck, useStepData, useStepNav, withPrefill, type StepNumber } from './useStepCheck';
 
 type LabelKey = 'insurance' | 'fuel' | 'maintenance' | 'registration' | 'lossOfValue';
 const LABEL_OF_KEY: Readonly<Record<string, LabelKey>> = { insurance: 'insurance', fuel: 'fuel', maintenance: 'maintenance', registration: 'registration', value_loss: 'lossOfValue' };
@@ -60,6 +60,7 @@ export function CostsStep({ id }: { id: string }) {
   const { pendingIds, pendingRows } = useCreateCheck();
   const fallback = useMemo(() => pendingRows.find((r) => r.id === id) ?? null, [pendingRows, id]);
   const step = useStepCheck(id, fallback);
+  const nav = useStepNav(id, 3, step.flush);
   const data = useStepData();
   const fmt = useMoneyFormatter(false, data.currency);
   const engine = useCheckEngine(step.check, { checkId: id });
@@ -83,7 +84,7 @@ export function CostsStep({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs only while the lines have not started
   }, [needsPrefill]);
 
-  if (isStillSaving(status, id, pendingIds)) return <StepStillSaving step={3} name={name} onBack={() => router.replace(stepHref(2, id, 'back'))} />;
+  if (isStillSaving(status, id, pendingIds)) return <StepStillSaving step={3} name={name} onBack={nav.back} />;
   if (status === 'not_found') return <CheckNotFound />;
   if (status !== 'ready' || check === null) return null;
 
@@ -169,13 +170,9 @@ export function CostsStep({ id }: { id: string }) {
     setSaleOpen(false);
   };
 
-  const start = (): void => {
-    // 06.1-49 (A-ST-3, D20): push, so Back from the answer returns to this step.
-    router.push(`/decide/answer/${id}` as never);
-  };
   const finishNow = (from: StepNumber): void => {
     step.finish(from, (c) => withPrefill(c, name, data).check);
-    start();
+    nav.seeAnswer();
   };
   const kind = kindOf(check, name);
   const kindLabel = kind === null || kind.startsWith('own:') ? null : t(`decide.screens.stepper.kind.${kind as BuiltInKind}`);
@@ -192,8 +189,8 @@ export function CostsStep({ id }: { id: string }) {
         why={t('decide.screens.stepper.running.why')}
         meta={price === '' ? name : t('decide.screens.stepper.itemPrice', { item: name, price })}
         kindLabel={kindLabel}
-        onBack={() => router.replace(stepHref(2, id, 'back'))}
-        onJump={(n) => router.replace(stepHref(n, id, 'back'))}
+        onBack={nav.back}
+        onJump={(n) => router.replace(nav.to(n, 'back'))}
         onNext={() => finishNow(3)}
       >
         <Text style={small}>{t('decide.screens.stepper.running.sub')}</Text>

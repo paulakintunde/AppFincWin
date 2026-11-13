@@ -5,7 +5,7 @@
  * pure helpers the three steps share. Nothing computed is stored; only typed inputs and the user's own choices.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Href } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { useSaveCheckDraft } from '@/data/mutations/decideChecks';
 import { useCategories } from '@/data/queries/categories';
@@ -15,6 +15,7 @@ import { DECIDE_READ_STALE_MS } from '@/data/queries/decideStale';
 import { readStoredCheck, toStoredV2, type CheckV2, type ItemTypeRef } from '@/engine/decide/v3';
 import { perfMark, usePerfMount } from '@/features/decide/perf/perfMarks';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import { backToCaller, goDecideHome, isFromAnswer, withFromAnswer } from '../logic/decideNav';
 import { readKind } from '../logic/kindWords';
 import { prefillRunningCosts, type PrefillBill, type PrefilledLine } from '../logic/runningCostTemplates';
 import type { SaleDebt } from '../sheets/SaleSheet';
@@ -51,6 +52,49 @@ const STEP_PATH = { 1: '/decide/check/kind', 2: '/decide/check/price', 3: '/deci
 
 export function stepHref(step: StepNumber, id: string, dir: 'fwd' | 'back' = 'fwd'): Href {
   return { pathname: STEP_PATH[step], params: { id, dir } } as unknown as Href;
+}
+
+/**
+ * 06.1-64 (H-3, FQ2, DN-3): the stepper's one Back rule.
+ * - Opened from the answer (`from=answer`, the answer pushed this step): Back (chevron, Android Back) and "See the answer" flush the
+ *   edit and go back to that same answer, which judges the stored check again. With nothing below, Decide home, never the launcher.
+ * - Opened on the forward path from Decide home: Back goes one step back (the steps replace each other); step 1 Back goes to the
+ *   Decide home already in the stack. "See the answer" pushes the answer, so Back from it returns to this step (06.1-49).
+ * Moving between steps keeps `from=answer`, so a later step still returns to the answer. The native iOS edge swipe is off on the
+ * three step routes (app/(app)/_layout.tsx), so only this rule applies.
+ */
+export interface StepNav {
+  fromAnswer: boolean;
+  /** Another step's href, keeping `from=answer`. */
+  to(step: StepNumber, dir?: 'fwd' | 'back'): Href;
+  back(): void;
+  /** Call after `finish` (which flushes). */
+  seeAnswer(): void;
+}
+
+export function useStepNav(id: string, current: StepNumber, flush: () => void): StepNav {
+  const { from } = useLocalSearchParams<{ from?: string | string[] }>();
+  const fromAnswer = isFromAnswer(from);
+  return useMemo<StepNav>(() => {
+    const to = (n: StepNumber, dir: 'fwd' | 'back' = 'fwd'): Href => (fromAnswer ? withFromAnswer(stepHref(n, id, dir)) : stepHref(n, id, dir));
+    const toAnswer = (): void => backToCaller(router, () => goDecideHome(router));
+    return {
+      fromAnswer,
+      to,
+      back: () => {
+        if (fromAnswer) {
+          flush();
+          toAnswer();
+        } else if (current === 1) goDecideHome(router);
+        else router.replace(to((current - 1) as StepNumber, 'back'));
+      },
+      seeAnswer: () => {
+        if (fromAnswer) toAnswer();
+        // 06.1-49 (A-ST-3, D20): push, so Back from the answer returns to this step.
+        else router.push(`/decide/answer/${id}` as never);
+      },
+    };
+  }, [fromAnswer, id, current, flush]);
 }
 
 const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);

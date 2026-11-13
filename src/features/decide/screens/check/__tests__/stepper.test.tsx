@@ -21,11 +21,12 @@ let mockParams: Record<string, string> = {};
 const mockSave = jest.fn();
 const mockReplace = jest.fn();
 const mockPush = jest.fn();
+const mockDismissTo = jest.fn();
 
 jest.mock('expo-router', () => {
   const { useEffect } = jest.requireActual<typeof import('react')>('react');
   return {
-    router: { replace: (...a: unknown[]) => mockReplace(...a), push: (...a: unknown[]) => mockPush(...a) },
+    router: { replace: (...a: unknown[]) => mockReplace(...a), push: (...a: unknown[]) => mockPush(...a), dismissTo: (...a: unknown[]) => mockDismissTo(...a), back: jest.fn(), canGoBack: () => true },
     useLocalSearchParams: () => mockParams,
     // Focused for the whole test: the effect runs on mount and cleans up on unmount.
     useFocusEffect: (cb: () => void | (() => void)) => useEffect(cb, [cb]),
@@ -75,6 +76,7 @@ beforeEach(() => {
   mockSave.mockClear();
   mockReplace.mockClear();
   mockPush.mockClear();
+  mockDismissTo.mockClear();
 });
 
 describe('KindStep', () => {
@@ -261,11 +263,12 @@ describe('stepper Back order (06.1-49, A-ST-3, D20)', () => {
     expect(mockReplace).toHaveBeenCalledWith(stepHref(2, ID, 'back'));
   });
 
-  it('step 1 Back opens Decide home', async () => {
+  it('step 1 Back opens the Decide home already in the stack (06.1-64 CN-4: dismissTo, not replace)', async () => {
     seed('Something big');
     await wrap(<KindStep id={ID} />);
     await fireEvent.press(await screen.findByTestId('step-back'));
-    expect(mockReplace).toHaveBeenCalledWith('/decide');
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide');
+    expect(mockReplace).not.toHaveBeenCalledWith('/decide');
   });
 
   it('step 3 See the answer pushes the answer, so Back from the answer returns to step 3', async () => {

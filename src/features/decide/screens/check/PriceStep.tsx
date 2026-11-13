@@ -28,7 +28,7 @@ import { useCheckEngine } from '../engine/useCheckEngine';
 import { StepFrame } from './StepFrame';
 import { isStillSaving, StepStillSaving } from './StepStillSaving';
 import { useOwnAdd } from './ownAdds';
-import { kindOf, oneOffsOf, type BuiltInKind, stepHref, useStepCheck, useStepData, withPrefill, type StepNumber } from './useStepCheck';
+import { kindOf, oneOffsOf, type BuiltInKind, useStepCheck, useStepData, useStepNav, withPrefill, type StepNumber } from './useStepCheck';
 
 /** A typed rate: up to two digits and four decimals; anything else is not taken. */
 const TAX_TEXT = /^\d{0,2}([.,]\d{0,4})?$/;
@@ -49,6 +49,7 @@ export function PriceStep({ id }: { id: string }) {
   const { pendingIds, pendingRows } = useCreateCheck();
   const fallback = React.useMemo(() => pendingRows.find((r) => r.id === id) ?? null, [pendingRows, id]);
   const step = useStepCheck(id, fallback);
+  const nav = useStepNav(id, 2, step.flush);
   const data = useStepData();
   const fmt = useMoneyFormatter(false, data.currency);
   const engine = useCheckEngine(step.check, { checkId: id });
@@ -65,7 +66,7 @@ export function PriceStep({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per arrival
   }, [status, id]);
 
-  if (isStillSaving(status, id, pendingIds)) return <StepStillSaving step={2} name={name} onBack={() => router.replace(stepHref(1, id, 'back'))} />;
+  if (isStillSaving(status, id, pendingIds)) return <StepStillSaving step={2} name={name} onBack={nav.back} />;
   if (status === 'not_found') return <CheckNotFound />;
   if (status !== 'ready' || check === null) return null;
 
@@ -116,16 +117,15 @@ export function PriceStep({ id }: { id: string }) {
   const next = (): void => {
     setTouched(true);
     if (price === null || price === 0 || tooLarge) return;
-    router.replace(stepHref(3, id));
+    router.replace(nav.to(3));
   };
   const seeNow = (): void => {
     setTouched(true);
     if (price === null || price === 0 || tooLarge) return;
     step.finish(2, (c) => withPrefill(c, name, data).check);
-    // 06.1-49 (A-ST-3, D20): push, so Back from the answer returns to this step.
-    router.push(`/decide/answer/${id}` as never);
+    nav.seeAnswer();
   };
-  const jump = (n: StepNumber): void => router.replace(stepHref(n, id, 'back'));
+  const jump = (n: StepNumber): void => router.replace(nav.to(n, 'back'));
   const kind = kindOf(check, name);
   const kindLabel = kind === null ? null : kind.startsWith('own:') ? null : t(`decide.screens.stepper.kind.${kind as BuiltInKind}`);
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
@@ -138,7 +138,7 @@ export function PriceStep({ id }: { id: string }) {
         why={t('decide.screens.stepper.price.why')}
         meta={itemPrice}
         kindLabel={kindLabel}
-        onBack={() => router.replace(stepHref(1, id, 'back'))}
+        onBack={nav.back}
         onJump={jump}
         onNext={next}
         nextDisabled={tooLarge}

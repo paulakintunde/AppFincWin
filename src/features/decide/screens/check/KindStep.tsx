@@ -19,7 +19,7 @@ import { KindTile } from './KindTile';
 import { StepFrame } from './StepFrame';
 import { isStillSaving, StepStillSaving } from './StepStillSaving';
 import { useOwnAdd } from './ownAdds';
-import { firstStepFor, kindOf, ownKindsOf, stepHref, useStepCheck, useStepData, withKind, type StepKind } from './useStepCheck';
+import { firstStepFor, kindOf, ownKindsOf, useStepCheck, useStepData, useStepNav, withKind, type StepKind } from './useStepCheck';
 
 const BUILT_IN = ['everyday', 'tech', 'car', 'home', 'other'] as const;
 
@@ -31,6 +31,7 @@ export function KindStep({ id }: { id: string }) {
   const { pendingIds, pendingRows } = useCreateCheck();
   const fallback = React.useMemo(() => pendingRows.find((r) => r.id === id) ?? null, [pendingRows, id]);
   const step = useStepCheck(id, fallback);
+  const nav = useStepNav(id, 1, step.flush);
   const data = useStepData();
   const fmt = useMoneyFormatter(false, data.currency);
   const addOwn = useOwnAdd(step);
@@ -39,12 +40,12 @@ export function KindStep({ id }: { id: string }) {
 
   const skip = status === 'ready' && check !== null && dir !== 'back' && firstStepFor(check, name) === 2;
   useEffect(() => {
-    if (skip) router.replace(stepHref(2, id));
+    if (skip) router.replace(nav.to(2));
     else if (status === 'ready') step.markVisited(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- markVisited is stable per check; run once per arrival
   }, [skip, status, id]);
 
-  if (isStillSaving(status, id, pendingIds)) return <StepStillSaving step={1} name={name} onBack={() => router.replace('/decide' as never)} />;
+  if (isStillSaving(status, id, pendingIds)) return <StepStillSaving step={1} name={name} onBack={nav.back} />;
   if (status === 'not_found') return <CheckNotFound />;
   if (status !== 'ready' || check === null || skip) return <Screen>{null}</Screen>;
 
@@ -64,14 +65,13 @@ export function KindStep({ id }: { id: string }) {
         why={t('decide.screens.stepper.kind.why')}
         meta={meta}
         direction={dir === 'back' ? 'back' : 'fwd'}
-        onBack={() => router.replace('/decide' as never)}
+        onBack={nav.back}
         onJump={() => undefined}
-        onNext={() => router.replace(stepHref(2, id))}
+        onNext={() => router.replace(nav.to(2))}
         nextDisabled={kind === null || isHome}
         onSeeNow={() => {
           step.finish(1);
-          // 06.1-49 (A-ST-3, D20): push, so Back from the answer returns to this step.
-          router.push(`/decide/answer/${id}` as never);
+          nav.seeAnswer();
         }}
       >
         <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.stepper.kind.groupA11y')} style={styles.grid}>
