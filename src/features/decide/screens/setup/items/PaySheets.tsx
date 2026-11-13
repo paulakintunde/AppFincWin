@@ -15,7 +15,7 @@ import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Field, FieldLabel, Note } from '@/features/decide/screens/sheets/sheetUi';
-import { DayField, FreqChips, dayFromText } from './itemFields';
+import { DayGrid, FreqChips } from './itemFields';
 
 export const OTHER_INCOME_NAME_MAX = 40;
 
@@ -45,9 +45,9 @@ export function PayEditSheet(props: PayEditSheetProps) {
 function PayEditForm({ amount, day, accountId, accounts, currency, onSave, onDismiss }: PayEditSheetProps) {
   const t = useT();
   const [amountMinor, setAmountMinor] = useState<number | null>(amount);
-  const [dayText, setDayText] = useState(day === null ? '' : String(day));
+  // 06.1-54 (A-SU-4): the payday is picked from 1 to 31, never typed.
+  const [parsedDay, setParsedDay] = useState<number | null>(day);
   const [account, setAccount] = useState<string | null>(accountId ?? accounts[0]?.id ?? null);
-  const parsedDay = dayFromText(dayText);
   const ready = validAmount(amountMinor) && parsedDay !== null && account !== null;
   const title = t('decide.screens.setupPayBills.payEdit.title');
   const dirty = amountMinor !== amount || parsedDay !== day || account !== (accountId ?? accounts[0]?.id ?? null);
@@ -64,7 +64,8 @@ function PayEditForm({ amount, day, accountId, accounts, currency, onSave, onDis
           accessibilityLabel={t('decide.screens.setupPayBills.payEdit.amount')}
           boxed
         />
-        <DayField label={t('decide.screens.setupPayBills.payEdit.day')} text={dayText} onChange={setDayText} />
+        <FieldLabel>{t('decide.screens.setupPayBills.payEdit.day')}</FieldLabel>
+        <DayGrid label={t('decide.screens.setupPayBills.payEdit.day')} day={parsedDay} onPick={setParsedDay} />
         {accounts.length > 1 ? (
           <View style={styles.column}>
             <FieldLabel>{t('decide.screens.setupPayBills.payEdit.account')}</FieldLabel>

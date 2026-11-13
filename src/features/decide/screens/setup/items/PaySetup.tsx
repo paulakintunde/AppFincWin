@@ -9,12 +9,20 @@
 //  - Other money coming in: rows with I spend it / It's kept, and + Add other income.
 //  - Save pay details creates the pay series when there is none, saves the answers that changed, and returns to the checklist.
 //  - Save and close returns without saving what is still on screen; what a sheet already saved stays.
+//
+// 06.1-54 (G-6, C-3, A-SU-4, C-21, DC-8): "How are you paid?" (the six D-17 answers as chips) sits first; "Salary or wages" is
+// pre-picked only when a steady pay series or payer was found and nothing is stored (owner GQ4). Save pay details writes
+// income_types whenever the picked set differs from the stored one, so Pay ticks as soon as the save lands, including the no-edit
+// path where the found pay is accepted as is. A live income series with no income kind (made in Activity, never marked as pay) is
+// shown as found pay too, and is marked as pay on save. The amount is a boxed money field with the currency symbol; the day is a
+// picker. A disabled Save says the first missing part (NeedLine).
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import * as Crypto from 'expo-crypto';
 import { useT } from '@/i18n';
 import type { RecurringFreq } from '@/engine/recurring';
 import type { RecurringSeriesPatch } from '@/db/recurringSeries';
+import type { RecurringSeriesRow } from '@/db/rows';
 import { useConfirmRegularCandidate, usePatchSeriesAttributes } from '@/data/mutations/seriesAttributes';
 import { useSaveSetupStep } from '@/data/mutations/decideSetup';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
@@ -33,8 +41,9 @@ import { Pill } from '@/ui/Pill';
 import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { Text } from '@/ui/Text';
 import { Field, FieldLabel, Note } from '@/features/decide/screens/sheets/sheetUi';
+import { NeedLine } from '@/features/decide/screens/ui/NeedLine';
 import { setAsideFromText, setAsidePatch, setAsideText, showsSetAside } from '@/features/decide/screens/logic/taxSetAside';
-import { DayField, RadioRow, dayFromText, useFreqWord, useSetupFormat } from './itemFields';
+import { DayPicker, RadioRow, useFreqWord, useSetupFormat } from './itemFields';
 import { OtherIncomeSheet, PayEditSheet, type OtherIncomeValues, type PayEditValues } from './PaySheets';
 import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
 import { anchorWithDay, dayOf, nextDateOnDay, type EditSeriesFrom } from './itemLogic';
@@ -54,10 +63,62 @@ const METHODS: readonly { value: Method; key: 'countMatch' | 'countSpread' | 'co
   { value: 'steady', key: 'countSteady' },
   { value: 'balance', key: 'countBalance' },
 ];
+// D-17: the six answers, in the order and words of the income profile's "How are you paid?" step (income/steps/PaidStep.tsx).
+// Listed here, not imported, so this page does not pull that step's reads in.
+const PAID_OPTIONS = [
+  { value: 'salary_or_wages', labelKey: 'income.paid.optionSalary' },
+  { value: 'commission_or_tips', labelKey: 'income.paid.optionCommission' },
+  { value: 'freelance', labelKey: 'income.paid.optionFreelance' },
+  { value: 'own_business', labelKey: 'income.paid.optionBusiness' },
+  { value: 'pension_or_benefits', labelKey: 'income.paid.optionPension' },
+  { value: 'none', labelKey: 'income.paid.optionNone' },
+] as const;
+const PAID_ORDER: readonly string[] = PAID_OPTIONS.map((o) => o.value);
+
+/** The D-17 answers in display order; "none" stands alone. */
+export function toggledTypes(chosen: readonly string[], value: string): string[] {
+  const has = chosen.includes(value);
+  if (value === 'none') return has ? [] : ['none'];
+  const next = has ? chosen.filter((v) => v !== value) : [...chosen.filter((v) => v !== 'none'), value];
+  return PAID_ORDER.filter((v) => next.includes(v));
+}
+
+/** Two answer sets hold the same values (order does not matter). */
+export function sameTypes(a: readonly string[], b: readonly string[] | null | undefined): boolean {
+  return b != null && a.length === b.length && a.every((v) => b.includes(v));
+}
+
+/**
+ * 06.1-54 (A-SU-4): a live income series with no income kind. Activity makes these when a person accepts a regular payment in;
+ * Decide already counts it as pay (buildV3Inputs), but it was never shown here because only income_kind 'salary' was looked for,
+ * and its arrivals are linked to it so the records scan skips them. The largest one is taken.
+ */
+export function unmarkedPaySeries(series: readonly RecurringSeriesRow[]): RecurringSeriesRow | null {
+  let best: RecurringSeriesRow | null = null;
+  for (const s of series) {
+    if (s.deleted_at !== null || (s.income_kind ?? null) !== null || s.amount <= 0 || (s.saving_mode ?? null) !== null || (s.goal_id ?? null) !== null) continue;
+    if (seriesStatusOf(s).kind !== 'live') continue;
+    if (best === null || s.amount > best.amount) best = s;
+  }
+  return best;
+}
 const SPREAD_CHOICES = [1, 2, 3, 6, 12] as const;
 const HOLD_CHOICES: readonly Hold[] = [1, 2, 3];
 
 const validAmount = (minor: number | null): minor is number => minor !== null && minor > 0 && minor <= MAX_INPUT_MINOR;
+
+type NeedPart = 'howPaid' | 'amount' | 'day' | 'account' | 'count';
+
+/** C-21: the first part Save pay details still waits for, in page order; null when none of these holds it. */
+export function firstNeed(f: { types: readonly string[]; hasPay: boolean; hasBasis: boolean; amount: number | null; day: number | null; countDone: boolean }): NeedPart | null {
+  if (f.types.length === 0) return 'howPaid';
+  if (!f.hasPay) {
+    if (f.hasBasis) return 'account';
+    if (!validAmount(f.amount)) return 'amount';
+    return f.day === null ? 'day' : 'account';
+  }
+  return f.countDone ? null : 'count';
+}
 
 interface PayBasis {
   amount: number;
@@ -81,7 +142,10 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
   const canWrite = ctx.householdId !== undefined && ctx.userId !== undefined;
 
   const accounts = useMemo(() => payableAccounts(ctx.accounts), [ctx.accounts]);
-  const salary = useMemo(() => liveSeriesOfKind(ctx.series, 'salary')[0] ?? null, [ctx.series]);
+  const marked = useMemo(() => liveSeriesOfKind(ctx.series, 'salary')[0] ?? null, [ctx.series]);
+  const unmarked = useMemo(() => (marked === null ? unmarkedPaySeries(ctx.series) : null), [marked, ctx.series]);
+  // The pay series in Activity: one marked as salary, else an unmarked income series (marked as pay on save).
+  const salary = marked ?? unmarked;
   const others = useMemo(
     () => ctx.series.filter((s) => s.deleted_at === null && s.income_kind != null && s.income_kind !== 'salary' && s.amount > 0 && seriesStatusOf(s).kind === 'live'),
     [ctx.series],
@@ -91,7 +155,7 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
   const [draftPay, setDraftPay] = useState<PayEditValues | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [emptyAmount, setEmptyAmount] = useState<number | null>(null);
-  const [emptyDay, setEmptyDay] = useState('');
+  const [emptyDay, setEmptyDay] = useState<number | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [otherOpen, setOtherOpen] = useState(false);
 
@@ -101,10 +165,8 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
   const [spread, setSpread] = useState<number | null>(stored?.spread_months ?? null);
   const [steady, setSteady] = useState<number | null>(stored?.steady_amount ?? null);
   const [hold, setHold] = useState<Hold | null>(stored?.hold_months ?? null);
-  // 06.1-29 FIN-20: the tax set-aside share, empty by default and never pre-filled; only for a profile that includes freelance.
-  const showsAside = showsSetAside(stored?.income_types);
   const [asideText, setAsideTextValue] = useState(setAsideText(stored?.tax_set_aside_bp));
-  const asideBad = showsAside && setAsideFromText(asideText).kind === 'bad';
+  const [pickedTypes, setPickedTypes] = useState<string[] | null>(null);
 
   const accountId = accounts[0]?.id ?? null;
   const basis: PayBasis | null = useMemo(() => {
@@ -114,8 +176,15 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
     return null;
   }, [salary, draftPay, ctx.found, accountId, accounts, ctx.homeCurrency]);
 
-  const emptyDayValue = dayFromText(emptyDay);
-  const emptyPay: PayEditValues | null = validAmount(emptyAmount) && emptyDayValue !== null && accountId !== null ? { amount: emptyAmount, day: emptyDayValue, accountId } : null;
+  // GQ4: "Salary or wages" is pre-picked only when steady pay was found and nothing is stored; otherwise nothing is.
+  const steadyFound = salary !== null || ctx.found !== null;
+  const types: readonly string[] = pickedTypes ?? stored?.income_types ?? (steadyFound ? ['salary_or_wages'] : []);
+  // 06.1-29 FIN-20: the tax set-aside share, empty by default and never pre-filled; only for a profile that includes freelance
+  // (06.1-54: read from the live chip selection).
+  const showsAside = showsSetAside(types);
+  const asideBad = showsAside && setAsideFromText(asideText).kind === 'bad';
+
+  const emptyPay: PayEditValues | null = validAmount(emptyAmount) && emptyDay !== null && accountId !== null ? { amount: emptyAmount, day: emptyDay, accountId } : null;
   // The pay Save pay details would create: the found or edited one, or the typed fields.
   const toCreate: PayEditValues | null =
     salary !== null
@@ -129,8 +198,13 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
   const followUpDone =
     method === 'match' || (method === 'spread' && spread !== null) || (method === 'steady' && validAmount(steady)) || (method === 'balance' && hold !== null);
   const countDone = !changes || (method !== null && followUpDone);
-  const canSave = canWrite && hasPay && countDone && !asideBad;
+  const canSave = canWrite && types.length > 0 && hasPay && countDone && !asideBad;
+  // C-21: the first part still missing, in the order the page asks for them. The set-aside range has its own line by the field.
+  const showsFound = basis !== null && (salary !== null || basis.accountId !== null);
+  const need: NeedPart | null = canSave || !canWrite ? null : firstNeed({ types, hasPay, hasBasis: basis !== null, amount: emptyAmount, day: emptyDay, countDone });
 
+  // The found pay's name: the series name, or the payer the records show; the generic words for a typed change.
+  const foundName = salary?.name ?? (draftPay === null ? ctx.found?.payer : undefined) ?? t('decide.screens.setupPayBills.pay.takeHome');
   const accountName = (id: string | null): string => accounts.find((a) => a.id === id)?.name ?? ctx.accounts.find((a) => a.id === id)?.name ?? '';
 
   const createSalary = (v: PayEditValues): string | null => {
@@ -219,7 +293,13 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
       const id = createSalary(toCreate);
       if (id !== null) stepIds.push(id);
     }
+    if (unmarked !== null) {
+      const marking = patcher.patch([{ series: unmarked, attributes: { income_kind: 'salary', counts_as: unmarked.counts_as ?? 'available' } }]);
+      if (marking !== null) stepIds.push(marking.stepId);
+    }
     const patch: Record<string, unknown> = {};
+    // C-3 / DC-8: the income profile exists only once income_types is stored; without it Pay can never tick.
+    if (!sameTypes(types, stored?.income_types)) patch.income_types = [...types];
     if (pattern !== null && pattern !== (stored?.income_pattern ?? null)) {
       patch.income_pattern = pattern;
       patch.income_pattern_confirmed = true;
@@ -252,12 +332,31 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
       onPrimary={save}
       onBack={leave}
       onSaveAndClose={leave}
+      footer={<NeedLine text={need === null ? null : t(`decide.screens.setupPayBills.pay.need.${need}`)} />}
     >
-      {basis !== null && (salary !== null || basis.accountId !== null) ? (
+      <Text style={heading}>{t('income.paid.title')}</Text>
+      <View testID="pay-types" accessibilityLabel={t('income.paid.title')} style={styles.row}>
+        {PAID_OPTIONS.map((o) => (
+          <Chip
+            key={o.value}
+            label={t(o.labelKey)}
+            selected={types.includes(o.value)}
+            onPress={() => {
+              hapticSelection();
+              setPickedTypes(toggledTypes(types, o.value));
+            }}
+          />
+        ))}
+      </View>
+
+      {showsFound && basis !== null ? (
         <View testID="pay-found" style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line2 }]}>
           <Text style={label}>{t('decide.screens.setupPayBills.pay.found')}</Text>
           <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>
-            {t('decide.screens.setupPayBills.pay.takeHome')} {t('decide.screens.setupPayBills.pay.foundLine', { amount: fmt.money(basis.amount, basis.currency), ordinal: fmt.ordinal(basis.day), account: accountName(basis.accountId) })}
+            {t('decide.screens.setupPayBills.pay.foundLine', { name: foundName, amount: fmt.money(basis.amount, basis.currency) })}
+          </Text>
+          <Text style={label}>
+            {t('decide.screens.setupPayBills.pay.foundWhen', { ordinal: fmt.ordinal(basis.day), account: accountName(basis.accountId) })}
           </Text>
           <View style={styles.row}>
             <Chip
@@ -280,8 +379,14 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
             label={t('decide.screens.setupPayBills.pay.emptyAmount')}
             accessibilityLabel={t('decide.screens.setupPayBills.pay.emptyAmount')}
             boxed
+            prefix="symbol"
           />
-          <DayField label={t('decide.screens.setupPayBills.pay.emptyDay')} text={emptyDay} onChange={setEmptyDay} />
+          <DayPicker
+            label={t('decide.screens.setupPayBills.pay.emptyDay')}
+            day={emptyDay}
+            emptyText={t('decide.screens.setupPayBills.pay.dayNone')}
+            onChange={setEmptyDay}
+          />
           {accounts.length === 0 ? <Note tone="warn">{t('decide.screens.setupPayBills.pay.noAccount')}</Note> : null}
         </View>
       )}
@@ -300,9 +405,11 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
           {METHODS.map((m) => {
             const selected = method === m.value;
             const title = t(`decide.screens.setupPayBills.pay.${m.key}`);
+            const sub = t(`decide.screens.setupPayBills.pay.${m.key}Sub`);
             return (
               <View key={m.value} style={styles.column}>
                 <ChoiceCard selected={selected} onPress={() => setMethod(m.value)} title={title} accessibilityLabel={title} />
+                <Text style={label}>{sub}</Text>
                 {selected && m.value === 'spread' ? (
                   <View style={styles.column}>
                     <FieldLabel>{t('income.method.spreadQuestion')}</FieldLabel>

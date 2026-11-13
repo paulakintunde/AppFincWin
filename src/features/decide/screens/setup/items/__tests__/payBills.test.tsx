@@ -156,7 +156,8 @@ describe('PaySetup (D32)', () => {
     expect(screen.getByTestId('pay-found')).toHaveTextContent(/3,200/);
     await fireEvent.press(screen.getByText('About the same'));
     await fireEvent.press(screen.getByText('Save pay details'));
-    expect(mockSaveStep).toHaveBeenCalledWith(expect.objectContaining({ patch: { income_pattern: 'steady', income_pattern_confirmed: true } }));
+    // 06.1-54 (C-3): with found pay and nothing stored, "Salary or wages" is pre-picked and saved with the answers.
+    expect(mockSaveStep).toHaveBeenCalledWith(expect.objectContaining({ patch: { income_types: ['salary_or_wages'], income_pattern: 'steady', income_pattern_confirmed: true } }));
     expect(mockConfirm).not.toHaveBeenCalled();
     expect(mockDismissTo).toHaveBeenCalledWith('/decide/setup');
   });

@@ -9,7 +9,9 @@ export const setupPayBills = {
     why: 'Your payday sets where each month starts in an answer.',
     found: 'Found in Activity',
     takeHome: 'Take-home pay',
-    foundLine: '{{amount}} · {{ordinal}} of each month · {{account}}',
+    // 06.1-54 (A-SU-4): the name first, then the amount; the day and account on the second line.
+    foundLine: '{{name}} · {{amount}}',
+    foundWhen: '{{ordinal}} of each month · {{account}}',
     right: 'That’s right',
     changesQ: 'Does your pay change from month to month?',
     same: 'About the same',
@@ -21,6 +23,11 @@ export const setupPayBills = {
     countSteady: 'Pay myself a steady amount',
     countBalance: 'Go by my bank balance',
     countNote: 'Nothing is chosen for you.',
+    // 06.1-54 (A-SU-4): one line under each way to count changing pay. Statements, not instructions.
+    countMatchSub: 'Income counts once it arrives.',
+    countSpreadSub: 'A large payment is shared across the months it covers.',
+    countSteadySub: 'A fixed amount counts each month. Anything above it is spare money.',
+    countBalanceSub: 'What is in the bank, less the bills coming up.',
     otherQ: 'Other money coming in?',
     otherSub: 'Side work, rent from a room, interest.',
     addOther: '+ Add other income',
@@ -28,6 +35,15 @@ export const setupPayBills = {
     keptIt: 'It’s kept',
     emptyAmount: 'How much lands in your account?',
     emptyDay: 'Which day?',
+    dayNone: 'No day picked yet',
+    // 06.1-54 (C-21): the first part still missing, said under the disabled Save pay details. Order: how paid, amount, day, account, count.
+    need: {
+      howPaid: 'How you’re paid is still needed.',
+      amount: 'An amount is still needed.',
+      day: 'A pay day is still needed.',
+      account: 'An account is still needed.',
+      count: 'A way to count changing pay is still needed.',
+    },
     save: 'Save pay details',
     toast: 'Saved: pay details.',
     noAccount: 'There is no account to save pay to yet.',
