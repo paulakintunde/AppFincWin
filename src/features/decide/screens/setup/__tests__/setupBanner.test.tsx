@@ -4,7 +4,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { wrap } from '@/test/stepProps';
 import { allNodes, expectFits } from '@/test/textFitMatrix';
 import { setupProgress, type SetupFacts } from '../../logic/setupProgress';
-import { SetupBanner } from '../SetupBanner';
+import { resetSetupBannerSession, SetupBanner } from '../SetupBanner';
 import { SetupChecklist } from '../SetupChecklist';
 
 let mockReduced = false;
@@ -46,6 +46,7 @@ async function banner(facts: SetupFacts, over: Partial<React.ComponentProps<type
 beforeEach(() => {
   mockMarkSeen.mockClear();
   mockReduced = false;
+  resetSetupBannerSession();
 });
 
 describe('SetupBanner', () => {
@@ -114,6 +115,27 @@ describe('SetupBanner', () => {
     const labels = allNodes().filter((n) => typeof n.props.accessibilityLabel === 'string').map((n) => String(n.props.accessibilityLabel));
     expect(labels.filter((l) => /close|dismiss|snooze/i.test(l))).toEqual([]);
     expect(screen.queryByText(/close|dismiss|snooze|later|hide/i)).toBeNull();
+  });
+
+  // 06.1-56 (A-HOME-9, D01s)
+  it('state 2 collapses to a slim pill with the count and the bar, opens again, and remembers it for the session', async () => {
+    const { onStart } = await banner(FOUR);
+    const collapse = screen.getByTestId('setup-banner-collapse');
+    expect(collapse.props.accessibilityLabel).toBe('Make the setup row smaller');
+    expect(collapse.props.accessibilityState).toEqual({ expanded: true });
+    await fireEvent.press(collapse);
+    expect(onStart).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('setup-banner-row')).toBeNull();
+    const slim = screen.getByTestId('setup-banner-slim');
+    expect(slim.props.accessibilityState).toEqual({ expanded: false });
+    expect(slim.props.accessibilityLabel).toBe('Decide setup, 4 of 6 done. Next: Debts.');
+    expect(screen.getByText('Decide setup · 4 of 6 done')).toBeTruthy();
+    expect(screen.getAllByTestId('setup-segment-filled')).toHaveLength(4);
+    // a new mount in the same session stays collapsed
+    await banner(FOUR);
+    expect(screen.getByTestId('setup-banner-slim')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('setup-banner-slim'));
+    expect(screen.getByTestId('setup-banner-row')).toBeTruthy();
   });
 
   it('draws the filled segments at once under Reduce Motion', async () => {

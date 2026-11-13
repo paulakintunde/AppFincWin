@@ -1,6 +1,8 @@
 // 06.1-17 (D-10, D30): the Decide setup banner, three states. It has no control to remove it and never turns red: a person who has not
 // finished setup keeps seeing how far along they are, as one calm row once started. When everything is done it says so once
 // (per device) and then renders nothing. Presentational: progress comes in as a prop.
+// 06.1-56 (A-HOME-9, D01s): the started row has a collapse chevron. Collapsed, it is a slim pill with the count and the bar, and a
+// tap opens it again. The choice lasts for the app session (not stored): setup stays in view, only smaller.
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -17,6 +19,13 @@ import { Text } from '@/ui/Text';
 import { SETUP_ORDER, type SetupItemId, type SetupProgress } from '../logic/setupProgress';
 
 const TILE = 48;
+
+// 06.1-56 (A-HOME-9): collapsed or not, remembered for this app session only.
+let collapsedThisSession = false;
+/** Tests only: forget the session's collapsed choice. */
+export function resetSetupBannerSession(): void {
+  collapsedThisSession = false;
+}
 const SEGMENT_HEIGHT = 4;
 const SEGMENT_GAP = 4;
 
@@ -75,6 +84,12 @@ export function SetupBanner({ progress, onStart, onCheckFirst, onSeeUses, setupD
   const t = useT();
   const { colors, pairing } = useTheme();
   const [markedSeen, setMarkedSeen] = useState(false);
+  const [collapsed, setCollapsed0] = useState(collapsedThisSession);
+  const setCollapsed = (next: boolean): void => {
+    collapsedThisSession = next;
+    hapticLight();
+    setCollapsed0(next);
+  };
 
   if (progress.allDone) {
     if (setupDoneSeen || markedSeen) return null;
@@ -124,24 +139,54 @@ export function SetupBanner({ progress, onStart, onCheckFirst, onSeeUses, setupD
   }
 
   const next = progress.next === null ? '' : itemName(progress.next);
+  const rowLabel = t('decide.screens.setup.banner.rowA11y', { count: progress.doneCount, next });
+  if (collapsed) {
+    return (
+      <Pressable
+        testID="setup-banner-slim"
+        accessibilityRole="button"
+        accessibilityState={{ expanded: false }}
+        accessibilityLabel={rowLabel}
+        onPress={() => setCollapsed(false)}
+        style={({ pressed }) => [styles.slim, { backgroundColor: colors.surface, borderColor: colors.line4, opacity: pressed ? PRESSED_OPACITY : 1 }]}
+      >
+        <View style={styles.slimBar}>
+          <SetupBar done={progress.doneCount} />
+        </View>
+        <Text style={{ ...textRole(pairing, 'label'), fontWeight: '600', color: colors.ink, flexShrink: 1 }}>{t('decide.screens.setup.banner.rowTitle', { count: progress.doneCount })}</Text>
+      </Pressable>
+    );
+  }
   return (
-    <Pressable
-      testID="setup-banner-row"
-      accessibilityRole="button"
-      accessibilityLabel={t('decide.screens.setup.banner.rowA11y', { count: progress.doneCount, next })}
-      onPress={() => {
-        hapticLight();
-        onStart(progress.next);
-      }}
-      style={({ pressed }) => [styles.row, { backgroundColor: colors.surface, opacity: pressed ? PRESSED_OPACITY : 1 }]}
-    >
-      <View style={styles.rowText}>
-        <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.setup.banner.rowTitle', { count: progress.doneCount })}</Text>
-        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('decide.screens.setup.banner.rowNext', { next })}</Text>
-        <SetupBar done={progress.doneCount} />
-      </View>
-      <StateGlyph name="chev" color={colors.inkMuted} size={18} />
-    </Pressable>
+    <View style={[styles.rowWrap, { backgroundColor: colors.surface }]}>
+      <Pressable
+        testID="setup-banner-row"
+        accessibilityRole="button"
+        accessibilityLabel={rowLabel}
+        onPress={() => {
+          hapticLight();
+          onStart(progress.next);
+        }}
+        style={({ pressed }) => [styles.row, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+      >
+        <View style={styles.rowText}>
+          <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.setup.banner.rowTitle', { count: progress.doneCount })}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('decide.screens.setup.banner.rowNext', { next })}</Text>
+          <SetupBar done={progress.doneCount} />
+        </View>
+        <StateGlyph name="chev" color={colors.inkMuted} size={18} />
+      </Pressable>
+      <Pressable
+        testID="setup-banner-collapse"
+        accessibilityRole="button"
+        accessibilityState={{ expanded: true }}
+        accessibilityLabel={t('decide.screens.setup.banner.collapseA11y')}
+        onPress={() => setCollapsed(true)}
+        style={[styles.collapse, { borderLeftColor: colors.line1 }]}
+      >
+        <View style={[styles.collapseChevron, { borderColor: colors.inkMuted }]} />
+      </Pressable>
+    </View>
   );
 }
 
@@ -151,7 +196,13 @@ const styles = StyleSheet.create({
   headText: { flex: 1, gap: 2 },
   tile: { width: TILE, minHeight: TILE, borderRadius: radii.glyphTile + 3, alignItems: 'center', justifyContent: 'center' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, borderRadius: radii.card, padding: space.cardPad, minHeight: 64 },
+  rowWrap: { flexDirection: 'row', alignItems: 'stretch', borderRadius: radii.card, overflow: 'hidden' },
+  row: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.gapMd, padding: space.cardPad, minHeight: 64 },
+  collapse: { width: space.touchMin, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1 },
+  // The Row chevron convention, turned to point up: "make this smaller".
+  collapseChevron: { width: 8, height: 8, borderTopWidth: 2, borderRightWidth: 2, marginTop: 4, transform: [{ rotate: '-45deg' }] },
+  slim: { minHeight: space.touchMin, borderRadius: radii.pill, borderWidth: 1, paddingHorizontal: space.gapMd, flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
+  slimBar: { width: 48 },
   rowText: { flex: 1, gap: 4 },
   bar: { flexDirection: 'row', gap: SEGMENT_GAP },
   segment: { flex: 1, minHeight: SEGMENT_HEIGHT, borderRadius: SEGMENT_HEIGHT / 2, overflow: 'hidden' },

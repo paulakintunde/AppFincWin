@@ -67,6 +67,62 @@ describe('OpenChecksCard', () => {
     expect(screen.getByText('Draft')).toBeTruthy();
     expect(screen.getByText('Records changed since you looked')).toBeTruthy();
   });
+
+  // 06.1-56 (A-HOME-7, DS-12)
+  it('a draft shows its typed price; every row shows its own date; an answered row shows its state word in a badge', async () => {
+    await wrap(
+      <OpenChecksCard
+        rows={[
+          row({ id: 'd', name: 'Studio camera body', price: 420_000, code: null, draft: true, left: null, payNotChosen: true, date: null, createdOn: '2026-11-03' }),
+          row({ id: 'a', date: null, createdOn: '2026-11-11' }),
+        ]}
+        {...cardProps}
+      />,
+    );
+    expect(screen.getByText('$4200 · how to pay not chosen · on 2026-11-03')).toBeTruthy();
+    expect(screen.getByText('$180 · today · leaves $231')).toBeTruthy();
+    expect(screen.getByTestId('open-check-badge-a')).toBeTruthy();
+    expect(screen.getAllByText('Draft')).toHaveLength(1);
+  });
+
+  it('the spoken label has no empty slot and never ends in an empty value', async () => {
+    await wrap(<OpenChecksCard rows={[row({ id: 'n', price: null, left: null, code: null, draft: true, date: null, createdOn: null })]} {...cardProps} />);
+    const label = String(screen.getByTestId('open-check-row-n').props.accessibilityLabel);
+    expect(label).toBe('Headphones, Draft, today');
+    expect(label).not.toMatch(/, ,|, $|leaves\s*$/);
+    await wrap(<OpenChecksCard rows={[row({ id: 'f' })]} {...cardProps} />);
+    expect(String(screen.getByTestId('open-check-row-f').props.accessibilityLabel)).toMatch(/^Headphones, [^,]+, \$180, on 2026-12-15, leaves \$231$/);
+  });
+
+  it('lists the newest 5, then See all opens every open check', async () => {
+    const rows = Array.from({ length: 7 }, (_, i) => row({ id: `r${i}`, name: `Item ${i}` }));
+    await wrap(<OpenChecksCard rows={rows} {...cardProps} />);
+    expect(screen.getByText('Item 4')).toBeTruthy();
+    expect(screen.queryByText('Item 5')).toBeNull();
+    expect(screen.getByLabelText('See all 7 open checks')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('open-checks-see-all'));
+    expect(screen.getByText('Item 6')).toBeTruthy();
+    expect(screen.queryByTestId('open-checks-see-all')).toBeNull();
+  });
+
+  it('five or fewer open checks need no See all', async () => {
+    await wrap(<OpenChecksCard rows={[row(), row({ id: 'k2' })]} {...cardProps} />);
+    expect(screen.queryByTestId('open-checks-see-all')).toBeNull();
+  });
+});
+
+describe('openCheckRowOf (DS-12)', () => {
+  it('carries the day the check was made, and keeps a check with no stored answer as a draft', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { openCheckRowOf } = require('../useHomeCards') as typeof import('../useHomeCards');
+    const r = openCheckRowOf(
+      { id: 'x', name: 'Headphones', inputs: { v: 2, price: 18000 }, answer_v3: null, created_at: '2026-11-03T10:00:00Z', updated_at: '2026-11-05T10:00:00Z' } as never,
+      null,
+    );
+    expect(r.createdOn).toBe('2026-11-03');
+    expect(r.checkedOn).toBe('2026-11-05');
+    expect(r.draft).toBe(true);
+  });
 });
 
 const rulesProps = {
@@ -95,6 +151,39 @@ describe('MoneyRulesCard', () => {
     expect(screen.getByText('Locked · no answer spends it')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('money-rules-net'));
     expect(rulesProps.onOpenNet).toHaveBeenCalled();
+  });
+
+  // 06.1-56 (A-HOME-8)
+  it('each rule row is its name over a sub-line with its own figure at the right; On/Off is spoken only', async () => {
+    const rules = [
+      { id: 'own_keep', kind: 'keep' as const, on: true, value: 30_000, categoryId: null },
+      { id: 'own_largest', kind: 'largest' as const, on: false, value: 50_000, categoryId: null },
+      { id: 'own_cap', kind: 'category_cap' as const, on: true, value: 20_000, categoryId: 'Dining' },
+      { id: 'own_share', kind: 'category_share' as const, on: true, value: 10, categoryId: 'Dining' },
+    ];
+    await wrap(<MoneyRulesCard {...rulesProps} saving={15_000} rules={rules} />);
+    expect(screen.getByText('Debt payments at most')).toBeTruthy();
+    expect(screen.getByText('Share of pay, all debts counted.')).toBeTruthy();
+    expect(screen.getByTestId('money-rule-value-debt')).toHaveTextContent('30%');
+    expect(screen.getByTestId('money-rule-value-investing')).toHaveTextContent('$200');
+    expect(screen.getByTestId('money-rule-value-saving')).toHaveTextContent('$150');
+    expect(screen.getByTestId('money-rule-value-own_keep')).toHaveTextContent('$300');
+    expect(screen.getByTestId('money-rule-value-own_largest')).toHaveTextContent('$500');
+    expect(screen.getByTestId('money-rule-value-own_cap')).toHaveTextContent('$200');
+    expect(screen.getByTestId('money-rule-value-own_share')).toHaveTextContent('10%');
+    expect(screen.getAllByText('Dining at most')).toHaveLength(2);
+    expect(screen.queryByText('On')).toBeNull();
+    expect(screen.queryByText('Off')).toBeNull();
+    expect(screen.getByTestId('money-rule-debt').props.accessibilityLabel).toBe('Debt payments at most, 30%, On. Opens the rule');
+    expect(screen.getByTestId('money-rule-own_largest').props.accessibilityLabel).toBe('Largest single purchase, $500, Off. Opens the rule');
+    await fireEvent.press(screen.getByTestId('money-rule-own_keep'));
+    expect(rulesProps.onEdit).toHaveBeenCalledWith({ kind: 'stored', rule: rules[0] });
+  });
+
+  it('the debt share switched off has no figure and says Off in its label', async () => {
+    await wrap(<MoneyRulesCard {...rulesProps} dsrLine={null} />);
+    expect(screen.queryByTestId('money-rule-value-debt')).toBeNull();
+    expect(screen.getByTestId('money-rule-debt').props.accessibilityLabel).toBe('Debt payments at most, Off. Opens the rule');
   });
 });
 

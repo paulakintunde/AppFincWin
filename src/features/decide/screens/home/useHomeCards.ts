@@ -64,6 +64,7 @@ export function openCheckRowOf(row: DecideCheckRow, evaluation: Evaluation | nul
     payNotChosen: draft && !(isRec(row.inputs) && isRec(row.inputs.pay)),
     changed: fresh?.changed === true,
     checkedOn: row.updated_at.slice(0, 10),
+    createdOn: row.created_at.slice(0, 10),
   };
 }
 

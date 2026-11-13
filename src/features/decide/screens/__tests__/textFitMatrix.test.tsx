@@ -48,7 +48,10 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
   // 06.1-49: StepFrame registers its Android Back only while focused.
   useFocusEffect: jest.fn(),
+  // 06.1-56: Decide home hides the FAB while its tab is focused.
+  useIsFocused: () => true,
 }));
+jest.mock('@/shell/fab/FabProvider', () => ({ useHideFab: jest.fn() }));
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn(), hapticMedium: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }), getDeviceRegion: () => 'US', getDeviceTimeZone: () => 'UTC' }));
@@ -81,6 +84,7 @@ jest.mock('@/data/queries/decide', () => ({
 }));
 jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: [{ id: 'c-ins', name: 'Insurance' }] }) }));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => ({ isOnline: true }) }));
+jest.mock('@/data/sync/useIsOnline', () => ({ useIsOnline: () => true }));
 jest.mock('@/data/mutations/decideChecks', () => ({ useSaveCheckDraft: () => ({ save: jest.fn() }), useCreateCheck: () => ({ create: jest.fn(), pendingIds: [], pendingRows: [] }) }));
 jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockNetRows }) }));
 jest.mock('@/features/grow/goals/useGoalsRead', () => ({

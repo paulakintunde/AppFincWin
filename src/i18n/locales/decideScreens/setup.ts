@@ -16,6 +16,8 @@ export const setup = {
     doneTitle: 'Setup done. Answers use your records.',
     doneLink: 'See what Decide uses',
     barA11y: '{{count}} of 6 steps done',
+    // 06.1-56 (A-HOME-9): the chevron that makes the started row a slim pill for this session.
+    collapseA11y: 'Make the setup row smaller',
   },
   checklist: {
     title: 'Decide setup',

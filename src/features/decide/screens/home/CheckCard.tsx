@@ -82,10 +82,10 @@ function WhenChip({ label, sub, selected, onPress, testID }: { label: string; su
       style={[styles.when, { backgroundColor: colors.fill1, borderColor: selected ? colors.accent : 'transparent' }]}
     >
       {selected ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.accent, opacity: ACCENT_TINT_OPACITY, borderRadius: radii.card }]} /> : null}
-      <Text numberOfLines={2} style={{ ...textRole(pairing, 'label'), fontWeight: '700', color: selected ? colors.accent : colors.ink, textAlign: 'center' }}>
+      <Text style={{ ...textRole(pairing, 'label'), fontWeight: '700', color: selected ? colors.accent : colors.ink, textAlign: 'center' }}>
         {label}
       </Text>
-      <Text numberOfLines={2} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted, textAlign: 'center' }}>
+      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted, textAlign: 'center' }}>
         {sub}
       </Text>
     </Pressable>

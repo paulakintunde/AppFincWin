@@ -88,6 +88,8 @@ export interface OpenCheckRowModel {
   readonly changed: boolean;
   /** When the check was last looked at ('YYYY-MM-DD'), for the "checked" line. */
   readonly checkedOn: string | null;
+  /** 06.1-56 (DS-12): the day the check was made ('YYYY-MM-DD'); the row's date when no purchase date was chosen. */
+  readonly createdOn?: string | null;
 }
 
 // ── D53: Something changed? ─────────────────────────────────────────────────────────────────────────────────────

@@ -65,11 +65,11 @@ function BasisOption({ label, sub, selected, onPress }: { label: string; sub: st
       }}
       style={[styles.basis, selected ? { backgroundColor: colors.surface } : null]}
     >
-      <Text numberOfLines={2} style={{ ...textRole(pairing, 'label'), fontWeight: selected ? '700' : '500', color: selected ? colors.ink : colors.inkDim, textAlign: 'center' }}>
+      <Text style={{ ...textRole(pairing, 'label'), fontWeight: selected ? '700' : '500', color: selected ? colors.ink : colors.inkDim, textAlign: 'center' }}>
         {label}
       </Text>
       {sub === null ? null : (
-        <Text numberOfLines={1} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted, textAlign: 'center', fontVariant: ['tabular-nums'] }}>
+        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted, textAlign: 'center', fontVariant: ['tabular-nums'] }}>
           {sub}
         </Text>
       )}

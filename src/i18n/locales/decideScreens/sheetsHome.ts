@@ -10,7 +10,9 @@ export const sheetsHome = {
     addPurchaseA11y: 'Add a purchase check',
     leaves: 'leaves {{left}}',
     payNotChosen: 'how to pay not chosen',
-    rowA11y: '{{item}}, {{state}}, {{price}}, {{date}}, leaves {{left}}',
+    // 06.1-56 (A-HOME-7): the newest 5 show; this opens the rest in place.
+    seeAll: 'See all {{total}}',
+    seeAllA11y: 'See all {{total}} open checks',
     changedRow: 'Records changed since you looked',
     today: 'today',
   },
@@ -32,6 +34,9 @@ export const sheetsHome = {
     changedSub: 'Pay, a bill or a one-off cost',
     off: 'Off',
     ruleA11y: '{{rule}}, {{state}}. Opens the rule',
+    // 06.1-56 (A-HOME-8): rule rows are the name over a sub-line, with the figure at the right.
+    percentValue: '{{percent}}%',
+    categoryTitle: '{{category}} at most',
     on: 'On',
     netRowA11y: 'Safety net, {{state}}. Opens the safety net',
   },

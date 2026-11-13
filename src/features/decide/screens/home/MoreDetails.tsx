@@ -118,7 +118,7 @@ export function MoreDetails(props: MoreDetailsProps) {
                     }}
                     style={[styles.segment, selected ? { backgroundColor: colors.surface } : null]}
                   >
-                    <Text numberOfLines={2} style={{ ...textRole(pairing, 'label'), fontWeight: selected ? '700' : '500', color: selected ? colors.ink : colors.inkDim, textAlign: 'center' }}>
+                    <Text style={{ ...textRole(pairing, 'label'), fontWeight: selected ? '700' : '500', color: selected ? colors.ink : colors.inkDim, textAlign: 'center' }}>
                       {label}
                     </Text>
                   </Pressable>

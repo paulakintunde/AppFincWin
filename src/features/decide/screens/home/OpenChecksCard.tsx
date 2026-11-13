@@ -3,8 +3,11 @@
  * word, never colour alone), then price, date and what it leaves. A draft shows the notYet "Draft" badge; a check whose records
  * changed since it was last looked at says so. There is one add link, "+ Purchase" (D-13: no investment link). With no open check
  * the card renders nothing.
+ * 06.1-56 (A-HOME-7, DS-12): a draft shows its typed price too; each row carries its own date (the purchase date, else the day it
+ * was made), short ("Nov 3"); the spoken label lists only the parts that have a value. The newest 5 show, then "See all" opens the
+ * rest in place (there is no separate open-checks list).
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { verdictRowFor, type Code, type Variant } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
@@ -24,6 +27,8 @@ export interface OpenChecksCardProps {
   formatDate: (date: string) => string;
   /** 'YYYY-MM-DD': a row dated today reads "today". */
   today: string;
+  /** How many rows show before "See all"; default 5. */
+  limit?: number;
   onOpen: (id: string) => void;
   onAddPurchase: () => void;
 }
@@ -46,23 +51,31 @@ function Row({ row, last, props }: { row: OpenCheckRowModel; last: boolean; prop
   const { colors, pairing } = useTheme();
   const badge = useRowBadge(row);
   const { formatMoney, formatMoneySpoken, formatDate, today } = props;
-  const dateText = row.date === null || row.date === today ? t('decide.screens.sheetsHome.openChecks.today') : formatDate(row.date);
+  const own = row.date ?? row.createdOn ?? null;
+  const dateText = own === null || own === today ? t('decide.screens.sheetsHome.openChecks.today') : formatDate(own);
+  const leaves = row.left === null || row.draft ? null : row.left;
   const meta = [
-    row.draft && row.payNotChosen ? t('decide.screens.sheetsHome.openChecks.payNotChosen') : row.price === null ? null : formatMoney(row.price),
+    row.price === null ? null : formatMoney(row.price),
+    row.draft && row.payNotChosen ? t('decide.screens.sheetsHome.openChecks.payNotChosen') : null,
     dateText,
-    row.left === null || row.draft ? null : t('decide.screens.sheetsHome.openChecks.leaves', { left: formatMoney(row.left) }),
+    leaves === null ? null : t('decide.screens.sheetsHome.openChecks.leaves', { left: formatMoney(leaves) }),
   ]
     .filter((x): x is string => x !== null)
     .join(' · ');
-  const spoken = t('decide.screens.sheetsHome.openChecks.rowA11y', {
-    item: row.name,
-    state: badge.word,
-    price: row.price === null ? '' : formatMoneySpoken(row.price),
-    date: dateText,
-    left: row.left === null ? '' : formatMoneySpoken(row.left),
-  });
+  // 06.1-56 (DS-12): only the parts with a value, so the label never has an empty slot or ends in "leaves ".
+  const spoken = [
+    row.name,
+    badge.word,
+    row.price === null ? null : formatMoneySpoken(row.price),
+    row.draft && row.payNotChosen ? t('decide.screens.sheetsHome.openChecks.payNotChosen') : null,
+    dateText,
+    leaves === null ? null : t('decide.screens.sheetsHome.openChecks.leaves', { left: formatMoneySpoken(leaves) }),
+  ]
+    .filter((x): x is string => x !== null && x.trim() !== '')
+    .join(', ');
   return (
     <Pressable
+      testID={`open-check-row-${row.id}`}
       accessibilityRole="button"
       accessibilityLabel={row.changed ? `${spoken}. ${t('decide.screens.sheetsHome.openChecks.changedRow')}` : spoken}
       onPress={() => {
@@ -93,7 +106,11 @@ function Row({ row, last, props }: { row: OpenCheckRowModel; last: boolean; prop
 export function OpenChecksCard(props: OpenChecksCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
+  const [all, setAll] = useState(false);
   if (props.rows.length === 0) return null;
+  const limit = props.limit ?? 5;
+  const shown = all ? props.rows : props.rows.slice(0, limit);
+  const more = props.rows.length - shown.length;
   return (
     <View testID="open-checks-card" style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.titleRow}>
@@ -112,9 +129,23 @@ export function OpenChecksCard(props: OpenChecksCardProps) {
           <Text style={{ ...textRole(pairing, 'label'), fontWeight: '600', color: colors.accent }}>{t('decide.screens.sheetsHome.openChecks.addPurchase')}</Text>
         </Pressable>
       </View>
-      {props.rows.map((row, i) => (
-        <Row key={row.id} row={row} last={i === props.rows.length - 1} props={props} />
+      {shown.map((row, i) => (
+        <Row key={row.id} row={row} last={i === shown.length - 1 && more === 0} props={props} />
       ))}
+      {more > 0 ? (
+        <Pressable
+          testID="open-checks-see-all"
+          accessibilityRole="button"
+          accessibilityLabel={t('decide.screens.sheetsHome.openChecks.seeAllA11y', { total: props.rows.length })}
+          onPress={() => {
+            hapticSelection();
+            setAll(true);
+          }}
+          style={styles.add}
+        >
+          <Text style={{ ...textRole(pairing, 'label'), fontWeight: '600', color: colors.accent }}>{t('decide.screens.sheetsHome.openChecks.seeAll', { total: props.rows.length })}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
