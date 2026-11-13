@@ -1250,7 +1250,7 @@ Plans:
 **Goal:** Testers use the new Decide screens, built from the owner's clickable prototype (https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR, the design standard, as in Phase 6 D-04), on the v3 engine and the connection points that exist on main. Every prototype Decide screen (D01-D53, answers N02-N26) replaces today's tester screens in one release with Grow; old 05.x Decide screens deleted; home buying hidden; household left to 08.1 (06.1-CONTEXT D-01..D-06).
 **Requirements**: FIN-20, FIN-21, FIN-22, FIN-23, FIN-24, FIN-28, FIN-29, FIN-31; ENG-26 (Activity and Grow half), ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-20, UX-21 (renderer), UX-38, UX-41, UX-42, UX-43; CMP-F12 (layout), F14, F15; ARC-11, ARC-24, ARC-25; QA-01 (prototype is the design), QA-02/QA-03 (non-household cases); BO-09; the non-household rows of 08.1-CARRY-OVER-FROM-05.4.md (list in 06.1-01-PLAN.md). FIN-20/22/23 return to 08.1 if their cases are not approved by release (D-26).
 **Depends on:** Phase 6: Grow plans 06-05, 06-06 and 06-10 on main (connection points, RPCs, Decide feed; 06.1-CONTEXT D-30). Wave 1 (plans 01-07, 41, 42) can be built now; plan 08 gates the rest. Household parts stay hidden until Phase 8.
-**Plans:** 48/61 plans executed
+**Plans:** 51/72 plans executed
 
 Plans:
 - [x] 06.1-01-PLAN.md — Scope split (D-04) and prototype inventory (D-27); seven state colour tokens + contrast tests + CLAUDE.md (D-16); ROADMAP requirement lines
@@ -1303,8 +1303,8 @@ Plans:
 - [x] 06.1-48-PLAN.md — [gap G-3] G-3 (audit F-2, B-4, B-5)
 - [x] 06.1-49-PLAN.md — [gap G-4, G-2] G-4, part 1 of 2 (answer and stepper), plus the A-ANS-2 loading state from G-2
 - [x] 06.1-50-PLAN.md — [gap G-4] G-4, part 2 of 2 (setup)
-- [ ] 06.1-51-PLAN.md — [gap G-1, G-2, G-3, G-4] The owner's Pixel 6 recheck after G-1..G-4 (plans 43-50), as the owner chose on 2026-11-12
-- [ ] 06.1-52-PLAN.md — [gap G-5] G-5, part 1 of 2 (audit C-8..C-11, C-16, C-18, C-19, plus the money-field part of X-4)
+- [x] 06.1-51-PLAN.md — [gap G-1, G-2, G-3, G-4] The owner's Pixel 6 recheck after G-1..G-4 (plans 43-50), as the owner chose on 2026-11-12
+- [x] 06.1-52-PLAN.md — [gap G-5] G-5, part 1 of 2 (audit C-8..C-11, C-16, C-18, C-19, plus the money-field part of X-4)
 - [ ] 06.1-53-PLAN.md — [gap G-5] G-5, part 2 of 2 (C-12..C-15, C-17, C-21 net, C-22)
 - [ ] 06.1-54-PLAN.md — [gap G-6, G-5] G-6 (C-3, A-SU-3, A-SU-4) plus the setup parts of G-5 (C-20, C-21 pay) and the Pay row reason (A-SU-2)
 - [ ] 06.1-55-PLAN.md — [gap G-7] G-7 (A-HOME-1, A-RC-1)
@@ -1314,6 +1314,17 @@ Plans:
 - [ ] 06.1-59-PLAN.md — [gap G-10] G-10, part 1 of 2 (owner finding 4, audit section D, home rows)
 - [ ] 06.1-60-PLAN.md — [gap G-10] G-10, part 2 of 2
 - [ ] 06.1-61-PLAN.md — [gap G-11] G-11
+- [x] 06.1-62-PLAN.md — [flow audit H-1] Every tap shows it landed (press feedback, keyboard-tap prop, answer bar inset)
+- [ ] 06.1-63-PLAN.md — [flow audit H-2] After a decision: Bought, Save for it, Compare, Past
+- [ ] 06.1-64-PLAN.md — [flow audit H-3] Back returns to the answer you came from (FQ2)
+- [ ] 06.1-65-PLAN.md — [flow audit H-4] Setup items: Back goes back, Save saves (FQ1, FQ4)
+- [ ] 06.1-66-PLAN.md — [flow audit H-5] The answer shows the same parts every time (FQ5, FQ6, FQ8)
+- [ ] 06.1-67-PLAN.md — [flow audit H-6] The answer: short line first (FQ9)
+- [ ] 06.1-68-PLAN.md — [flow audit H-7] Answers you give show at once and can be taken back (FQ7)
+- [ ] 06.1-71-PLAN.md — [flow audit H-10] Fix links land on the thing to fix (FQ10, OQ-71-1)
+- [ ] 06.1-72-PLAN.md — [flow audit H-11a] Screen speed (stepper, setup Pay, answer)
+- [ ] 06.1-73-PLAN.md — [flow audit H-11b] Write speed and the post-write busy JS thread (DB-1)
+- [ ] 06.1-74-PLAN.md — [flow audit] Owner Pixel 6 recheck P1 (checkpoint)
 
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
