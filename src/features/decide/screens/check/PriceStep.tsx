@@ -111,7 +111,8 @@ export function PriceStep({ id }: { id: string }) {
     setTouched(true);
     if (price === null || tooLarge) return;
     step.finish(2, (c) => withPrefill(c, name, data).check);
-    router.replace(`/decide/answer/${id}` as never);
+    // 06.1-49 (A-ST-3, D20): push, so Back from the answer returns to this step.
+    router.push(`/decide/answer/${id}` as never);
   };
   const jump = (n: StepNumber): void => router.replace(stepHref(n, id, 'back'));
   const kind = kindOf(check, name);

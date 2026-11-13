@@ -61,7 +61,8 @@ export function KindStep({ id }: { id: string }) {
         nextDisabled={kind === null || isHome}
         onSeeNow={() => {
           step.finish(1);
-          router.replace(`/decide/answer/${id}` as never);
+          // 06.1-49 (A-ST-3, D20): push, so Back from the answer returns to this step.
+          router.push(`/decide/answer/${id}` as never);
         }}
       >
         <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.stepper.kind.groupA11y')} style={styles.grid}>

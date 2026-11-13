@@ -220,6 +220,15 @@ export function useStepCheck(id: string, fallbackRow: DecideCheckRow | null = nu
 
   useEffect(() => flush, [flush]);
 
+  // 06.1-49 (A-ST-3): a step now stays mounted under the answer (pushed). When the stored check changes underneath it (the answer
+  // changed the pay mode or date) and this step holds no unsaved edit, drop the local copy so Back shows the stored check and the
+  // next edit builds on it, not on the copy from before the answer.
+  useEffect(() => {
+    if (held.current !== null) return;
+    latest.current = null;
+    setEdited(null);
+  }, [base]);
+
   const markVisited = useCallback(
     (step: StepNumber): void => {
       const from = latest.current ?? base;

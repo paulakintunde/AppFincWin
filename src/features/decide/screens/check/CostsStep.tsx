@@ -105,7 +105,8 @@ export function CostsStep({ id }: { id: string }) {
   };
 
   const start = (): void => {
-    router.replace(`/decide/answer/${id}` as never);
+    // 06.1-49 (A-ST-3, D20): push, so Back from the answer returns to this step.
+    router.push(`/decide/answer/${id}` as never);
   };
   const finishNow = (from: StepNumber): void => {
     step.finish(from, (c) => withPrefill(c, name, data).check);

@@ -1,5 +1,6 @@
 // 06.1-19: the big-buy stepper on stored drafts. Data hooks are mocked at the query/mutation edge; the hook, steps and frame are real.
 import React from 'react';
+import { BackHandler, StyleSheet } from 'react-native';
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { percent } from '@/engine/decide';
 import { toStoredV2, type CheckV2 } from '@/engine/decide/v3';
@@ -8,7 +9,7 @@ import { wrap } from '@/test/stepProps';
 import { CostsStep } from '../CostsStep';
 import { KindStep } from '../KindStep';
 import { PriceStep } from '../PriceStep';
-import { KEY_KIND, KEY_SKIPPED } from '../useStepCheck';
+import { KEY_KIND, KEY_SKIPPED, stepHref } from '../useStepCheck';
 
 jest.setTimeout(30000);
 
@@ -19,11 +20,17 @@ let mockInputs: Record<string, unknown> = {};
 let mockParams: Record<string, string> = {};
 const mockSave = jest.fn();
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
 
-jest.mock('expo-router', () => ({
-  router: { replace: (...a: unknown[]) => mockReplace(...a), push: jest.fn() },
-  useLocalSearchParams: () => mockParams,
-}));
+jest.mock('expo-router', () => {
+  const { useEffect } = jest.requireActual<typeof import('react')>('react');
+  return {
+    router: { replace: (...a: unknown[]) => mockReplace(...a), push: (...a: unknown[]) => mockPush(...a) },
+    useLocalSearchParams: () => mockParams,
+    // Focused for the whole test: the effect runs on mount and cleans up on unmount.
+    useFocusEffect: (cb: () => void | (() => void)) => useEffect(cb, [cb]),
+  };
+});
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }), getDeviceRegion: () => 'US', getDeviceTimeZone: () => 'UTC' }));
 jest.mock('@/theme/motion', () => ({
@@ -60,6 +67,7 @@ beforeEach(() => {
   mockInputs = baseInputs();
   mockSave.mockClear();
   mockReplace.mockClear();
+  mockPush.mockClear();
 });
 
 describe('KindStep', () => {
@@ -155,7 +163,8 @@ describe('PriceStep', () => {
     const saved = lastSaved().inputs;
     expect(saved.layerAnswers[KEY_SKIPPED]).toEqual([1, 3]);
     expect(saved.runningCosts).toHaveLength(5);
-    expect(JSON.stringify(mockReplace.mock.calls[0])).toContain(`/decide/answer/${ID}`);
+    expect(mockPush).toHaveBeenCalledWith(`/decide/answer/${ID}`);
+    expect(JSON.stringify(mockReplace.mock.calls)).not.toContain('/decide/answer');
   });
 });
 
@@ -219,5 +228,88 @@ describe('StepFrame motion and progress', () => {
     expect(screen.getByText('Step 2 of 3')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('segment-1'));
     expect(JSON.stringify(mockReplace.mock.calls.at(-1))).toContain('/decide/check/kind');
+  });
+});
+
+describe('stepper Back order (06.1-49, A-ST-3, D20)', () => {
+  it('home opened step 2 directly (kind read from the words): Back opens step 1', async () => {
+    seed('Laptop');
+    await wrap(<PriceStep id={ID} />);
+    await fireEvent.press(await screen.findByTestId('step-back'));
+    expect(mockReplace).toHaveBeenCalledWith(stepHref(1, ID, 'back'));
+  });
+
+  it('step 1 reached by that Back shows its tiles and does not skip forward to step 2 again', async () => {
+    seed('Laptop');
+    mockParams = { dir: 'back' };
+    await wrap(<KindStep id={ID} />);
+    expect(await screen.findByTestId('kind-car')).toBeTruthy();
+    expect(mockReplace).not.toHaveBeenCalledWith(stepHref(2, ID));
+  });
+
+  it('step 3 Back opens step 2', async () => {
+    seed('Used car');
+    await wrap(<CostsStep id={ID} />);
+    await fireEvent.press(await screen.findByTestId('step-back'));
+    expect(mockReplace).toHaveBeenCalledWith(stepHref(2, ID, 'back'));
+  });
+
+  it('step 1 Back opens Decide home', async () => {
+    seed('Something big');
+    await wrap(<KindStep id={ID} />);
+    await fireEvent.press(await screen.findByTestId('step-back'));
+    expect(mockReplace).toHaveBeenCalledWith('/decide');
+  });
+
+  it('step 3 See the answer pushes the answer, so Back from the answer returns to step 3', async () => {
+    seed('Used car');
+    await wrap(<CostsStep id={ID} />);
+    await fireEvent.press(await screen.findByText('See the answer'));
+    expect(mockPush).toHaveBeenCalledWith(`/decide/answer/${ID}`);
+    expect(JSON.stringify(mockReplace.mock.calls)).not.toContain('/decide/answer');
+  });
+
+  it('the Android system Back on a step goes one step back, not to Decide home', async () => {
+    let listener: (() => boolean | null | undefined) | null = null;
+    const remove = jest.fn();
+    const spy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_e, handler) => {
+      listener = handler as () => boolean;
+      return { remove };
+    });
+    try {
+      seed('Laptop');
+      const view = await wrap(<PriceStep id={ID} />);
+      await screen.findByTestId('step-back');
+      expect(listener).not.toBeNull();
+      expect(listener!()).toBe(true);
+      expect(mockReplace).toHaveBeenCalledWith(stepHref(1, ID, 'back'));
+      view.unmount();
+      await waitFor(() => expect(remove).toHaveBeenCalled());
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('a step left under the answer shows the stored check after the answer changed it (no stale local copy)', async () => {
+    seed('Used car');
+    const view = await wrap(<CostsStep id={ID} />);
+    await fireEvent.press(await screen.findByLabelText('Insurance'));
+    await waitFor(() => expect(mockSave).toHaveBeenCalled(), { timeout: 5000 });
+    expect(screen.getByText(/1,200/)).toBeTruthy();
+    // The answer (pushed above this step) saved a new price.
+    seed('Used car', checkOnce(150_000));
+    view.rerender(<CostsStep id={ID} />);
+    expect(await screen.findByText(/1,500/)).toBeTruthy();
+  });
+
+  it('Back is a chevron with "Back" for screen readers and a 44 pt target', async () => {
+    seed('Laptop');
+    await wrap(<PriceStep id={ID} />);
+    const back = await screen.findByTestId('step-back');
+    expect(back.props.accessibilityLabel).toBe('Back');
+    expect(screen.getByTestId('step-back-chevron')).toBeTruthy();
+    const style = StyleSheet.flatten(back.props.style);
+    expect(style.minHeight).toBeGreaterThanOrEqual(44);
+    expect(style.minWidth).toBeGreaterThanOrEqual(44);
   });
 });

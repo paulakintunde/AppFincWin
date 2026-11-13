@@ -2,8 +2,9 @@
 // three-segment progress bar, the title (screen-reader focus lands here on each step), "Why we ask:", the content, the primary
 // button, "See the answer now" (not on the last step) and the legal footer. A step change slides 220 ms in the direction of
 // travel; Reduce Motion cross-fades 150 ms. Nothing is written here.
-import React, { useEffect, useRef } from 'react';
-import { AccessibilityInfo, findNodeHandle, Pressable, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { AccessibilityInfo, BackHandler, findNodeHandle, Pressable, StyleSheet, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import Animated, { FadeIn, SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { useT } from '@/i18n';
 import { DURATION, useMotion } from '@/theme/motion';
@@ -40,6 +41,23 @@ export function StepFrame({ step, title, why, meta, direction = 'fwd', kindLabel
   const { reduced } = useMotion();
   const titleRef = useRef<React.ComponentRef<typeof Text>>(null);
 
+  // 06.1-49 (A-ST-3): the Android system Back goes one step back too, not to Decide home. The steps replace each other, so the stack
+  // below a step is Decide home and the app-wide handler would pop straight there. Registered only while the step is focused, so a
+  // step left mounted under the answer (pushed) never answers a Back meant for the answer.
+  const backRef = useRef(onBack);
+  useEffect(() => {
+    backRef.current = onBack;
+  });
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        backRef.current();
+        return true;
+      });
+      return () => sub.remove();
+    }, [])
+  );
+
   useEffect(() => {
     const handle = titleRef.current === null ? null : findNodeHandle(titleRef.current);
     if (handle !== null) AccessibilityInfo.setAccessibilityFocus(handle);
@@ -59,8 +77,9 @@ export function StepFrame({ step, title, why, meta, direction = 'fwd', kindLabel
     <Screen scroll form>
       <Animated.View testID="step-frame" entering={entering} style={styles.body}>
         <View style={styles.top}>
-          <Pressable testID="step-back" accessibilityRole="button" accessibilityLabel={t('decide.screens.common.a11y.back')} onPress={onBack} style={styles.target}>
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.common.back')}</Text>
+          {/* 06.1-49 (A-ST-3, D20): a back chevron (the Row.tsx rotated-border convention, no icon library); "Back" for screen readers. */}
+          <Pressable testID="step-back" accessibilityRole="button" accessibilityLabel={t('decide.screens.common.a11y.back')} onPress={onBack} hitSlop={space.gapSm} style={[styles.target, styles.backTarget]}>
+            <View testID="step-back-chevron" style={[styles.chevron, { borderColor: colors.accent }]} />
           </Pressable>
           <Text style={{ ...label, color: colors.inkMuted, flexShrink: 1, textAlign: 'right' }}>{meta}</Text>
         </View>
@@ -92,5 +111,8 @@ const styles = StyleSheet.create({
   body: { gap: space.gapMd, paddingBottom: space.sheetPadBottom },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd },
   target: { minHeight: space.touchMin, justifyContent: 'center' },
+  backTarget: { minWidth: space.touchMin, alignItems: 'flex-start' },
+  // Row.tsx's chevron turned to point left.
+  chevron: { width: 10, height: 10, borderTopWidth: 2, borderRightWidth: 2, marginLeft: 4, transform: [{ rotate: '-135deg' }] },
   actions: { gap: space.gapSm },
 });

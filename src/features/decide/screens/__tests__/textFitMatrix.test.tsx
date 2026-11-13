@@ -46,6 +46,8 @@ jest.mock('expo-router', () => ({
   router: { replace: jest.fn(), push: jest.fn(), back: jest.fn() },
   useRouter: () => ({ push: jest.fn(), replace: jest.fn(), setParams: jest.fn(), back: jest.fn() }),
   useLocalSearchParams: () => ({}),
+  // 06.1-49: StepFrame registers its Android Back only while focused.
+  useFocusEffect: jest.fn(),
 }));
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn(), hapticMedium: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
