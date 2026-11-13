@@ -6,6 +6,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { hapticSelection } from '@/ui/haptics';
+import { usePressFeedback } from '@/ui/pressFeedback';
 
 export interface SegmentedControlOption {
   key: string;
@@ -22,6 +23,8 @@ export interface SegmentedControlProps {
 
 export function SegmentedControl({ options, value, onChange, accessibilityLabel }: SegmentedControlProps) {
   const { colors, pairing } = useTheme();
+  // 06.1-62 (CB-5 / CF-1): every segment shows a native ripple (Android) or a pressed dim (iOS)
+  const feedback = usePressFeedback('row');
   return (
     <View accessibilityRole="tablist" accessibilityLabel={accessibilityLabel} style={[styles.row, { backgroundColor: colors.fill1 }]}>
       {options.map((option) => {
@@ -37,7 +40,12 @@ export function SegmentedControl({ options, value, onChange, accessibilityLabel 
               hapticSelection();
               onChange(option.key);
             }}
-            style={[styles.segment, { backgroundColor: selected ? colors.surface : 'transparent' }]}
+            android_ripple={feedback.android_ripple}
+            style={({ pressed }) => [
+              styles.segment,
+              { backgroundColor: selected ? colors.surface : 'transparent' },
+              feedback.pressedStyle(pressed),
+            ]}
           >
             <Text scale="capped" style={{ ...textRole(pairing, 'label'), color: selected ? colors.accent : colors.inkDim }}>
               {option.label}
@@ -51,5 +59,5 @@ export function SegmentedControl({ options, value, onChange, accessibilityLabel 
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', borderRadius: radii.pill, padding: 2 },
-  segment: { flex: 1, minHeight: space.touchMin, alignItems: 'center', justifyContent: 'center', borderRadius: radii.pill, paddingHorizontal: space.gapMd },
+  segment: { flex: 1, minHeight: space.touchMin, alignItems: 'center', justifyContent: 'center', borderRadius: radii.pill, paddingHorizontal: space.gapMd, overflow: 'hidden' },
 });

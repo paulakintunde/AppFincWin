@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { Chip } from '../Chip';
 
@@ -58,3 +58,22 @@ describe('Chip dark tone', () => {
     expect(picked.queryByTestId('accent-tint')).toBeNull();
   });
 });
+
+describe('Chip press feedback (06.1-62)', () => {
+  it('keeps the resting look: fill1 background, no dim until pressed, presses still reach onPress', async () => {
+    const onPress = jest.fn();
+    const s = await render(
+      <ThemeProvider>
+        <Chip label="Food" onPress={onPress} />
+      </ThemeProvider>
+    );
+    const chip = s.getByLabelText('Food');
+    const style = StyleSheet.flatten(chip.props.style as never) as Record<string, unknown>;
+    expect(style.backgroundColor).toBe('#F1EFE8');
+    expect(style.minHeight).toBe(44);
+    expect(style.opacity).toBeUndefined();
+    await fireEvent.press(chip);
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+});
+

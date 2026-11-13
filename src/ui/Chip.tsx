@@ -11,6 +11,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { ACCENT_TINT_OPACITY } from '@/theme/tokens';
 import { textRole } from '@/theme/typography';
+import { usePressFeedback } from '@/ui/pressFeedback';
 
 export interface ChipProps {
   label: string;
@@ -33,6 +34,8 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel, pre
   const readOnly = useReadOnlyScope();
   const dark = tone === 'dark';
   const textColor = dark ? (selected ? colors.ink : colors.inkSoft1) : selected ? colors.accent : colors.ink;
+  // 06.1-62 (CB-5 / CF-1): native ripple on Android, pressed dim on iOS; the ink card needs the light ripple
+  const feedback = usePressFeedback(dark && !selected ? 'fill' : 'row');
 
   return (
     <Pressable
@@ -42,7 +45,12 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel, pre
       accessibilityLabel={accessibilityLabel ?? label}
       disabled={readOnly}
       onPress={onPress}
-      style={[styles.chip, { backgroundColor: dark ? (selected ? colors.surface : 'transparent') : colors.fill1 }]}
+      android_ripple={readOnly ? undefined : feedback.android_ripple}
+      style={({ pressed }) => [
+        styles.chip,
+        { backgroundColor: dark ? (selected ? colors.surface : 'transparent') : colors.fill1 },
+        readOnly ? null : feedback.pressedStyle(pressed),
+      ]}
     >
       {dark && !selected ? (
         <View
