@@ -30,3 +30,10 @@ Quick estimates now save inside the screen via `useSaveSetupStep` (with Undo). T
 ## Open-check sheet sometimes leaves an invisible backdrop (G-78-2, found by 06.1-78, routed to 06.1-74)
 Just after opening, the open-check sheet occasionally loses its panel and leaves a full-screen invisible backdrop that swallows the next tap; Android Back clears it. Seen once in Maestro, once by hand. Lives in `src/ui/Sheet.tsx` (06.1-76 H-13 area). 74 must reproduce on the Pixel 6 preview build and fix or route.
 Method note G-78-1: device walks must run on a frozen worktree or a preview build; Metro serving a checkout under edit full-reloads mid-tap (that was DN-1/DN-2).
+
+## Resolved by 06.1-57 (2026-11-13)
+- Android in-app edge swipe on steps: StepFrame claims the swipe with `setSwipeBackInterceptor` while focused and runs `useStepNav`'s Back (one step back on the forward path; the same answer when `from=answer`). Released on blur/unmount. Needs a Pixel check (61).
+- iOS swipe-back on a stepper step (from 06.1-49): already closed by 06.1-64, which turned the native iOS edge swipe off on the three step routes. iPhone XR check stays with 61.
+
+## For 06.1-68 (from 06.1-57)
+- The plan name key is `L0.plan_name` (`KEY_PLAN_NAME` in `src/features/decide/screens/check/planName.ts`, with `withPlanName`), not a bare `plan_name`: the stored-check reader drops any answer key without a layer prefix. The answer's `usePlan(pay, planName)` should call `withPlanName({ ...c, pay }, planName)` in the same `step.update`.
