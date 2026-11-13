@@ -95,9 +95,8 @@ describe('InstallmentPlanSheet', () => {
     await renderPlan();
     await fireEvent.press(await screen.findByLabelText('Other'));
     expect(screen.queryByText('The plan needs a length.')).toBeNull();
-    const field = screen.getAllByLabelText('Number of months (1 to 120)')[0];
-    await fireEvent.changeText(field, '18');
-    await fireEvent.changeText(screen.getAllByLabelText('Number of months (1 to 120)')[0], '');
+    await fireEvent.changeText(screen.getByLabelText('Number of months (1 to 120)'), '18');
+    await fireEvent.changeText(screen.getByLabelText('Number of months (1 to 120)'), '');
     expect(screen.getByText('The plan needs a length.')).toBeTruthy();
   });
 
