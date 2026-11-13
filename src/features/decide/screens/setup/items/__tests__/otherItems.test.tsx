@@ -15,7 +15,7 @@ jest.setTimeout(60000);
 const mockReplace = jest.fn();
 const mockDismissTo = jest.fn();
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, push: mockPush, back: jest.fn(), canGoBack: () => false }) }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, push: mockPush, back: jest.fn(), canGoBack: () => false }), useLocalSearchParams: () => ({}) }));
 jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn(), hapticWarning: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
 const mockShowToast = jest.fn();
@@ -296,6 +296,6 @@ describe('RecordsSetup (D37, D37b)', () => {
     await wrap(<RecordsSetup writes={RECORDS_WRITES} />);
     expect(screen.getByTestId('records-empty')).toBeTruthy();
     await fireEvent.press(screen.getByText('Answer from quick estimates for now'));
-    expect(mockPush).toHaveBeenCalledWith('/decide/setup/quick-estimates');
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/setup/quick-estimates', params: { mode: 'save' } });
   });
 });

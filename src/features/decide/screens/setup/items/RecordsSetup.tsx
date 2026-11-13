@@ -8,15 +8,20 @@
 // answers as the answer screen (ReadinessFixList), led by an envelope summary row. Records is done only when that list is empty
 // (owner GQ2), and "Save and close" with items still open says so. The writes that reach the rate-fetch door (the line skip and
 // Grow's goal writer) are bound in the shell and passed in as `writes`, as on the answer screen.
+// 06.1-65 (CF-8): while the facts load, "Checking your records…" sits under the disabled primary. (CN-5 a): "From quick estimates"
+// passes the answer's returnTo on when Records was opened with one; with no check in view it opens quick estimates in save mode,
+// which comes back here. (CC-7): rough figures in use are listed with Clear (one Undo).
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useRouter, type Href } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useT } from '@/i18n';
 import { useSaveAccountUse } from '@/data/mutations/accountUse';
 import { useSaveDecideAnswer } from '@/data/mutations/decideAnswers';
+import { useSaveSetupStep } from '@/data/mutations/decideSetup';
 import { queryKeys } from '@/data/keys';
 import { useAccounts } from '@/data/queries/accounts';
+import { useDecideSettings } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import type { AccountRow, TransactionRow } from '@/db/rows';
 import type { LocalDate, ReadinessItem, ReadinessWaiver } from '@/engine/decide/v3';
@@ -34,6 +39,9 @@ import { monthNameOf } from '../../home/YourMonthCard';
 import { readinessFixRows, type ReadinessFixRow, type WaiverChoice } from '../../logic/readinessFixes';
 import { EnvelopeAccountSheet, type SetEnvelopeAccount } from '../../sheets/EnvelopeAccountSheet';
 import { footerFactsOf } from '../../home/useHomeFacts';
+import { NeedLine } from '../../ui/NeedLine';
+import { QUICK_SAVE_MODE } from '../QuickEstimatesScreen';
+import { DECIDE_HOME_PATH, safeReturnTo } from '../safeReturnTo';
 import { useSetupFacts } from '../useSetupProgress';
 import { RadioRow, useSetupFormat } from './itemFields';
 import { askedAccounts, choiceOfUse, previousMonthOf, recordChecks, accountUseOfChoice, USE_CHOICES, type UseChoice } from './othersLogic';
@@ -41,7 +49,7 @@ import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
 const ACTIVITY = '/activity' as Href;
 const IMPORT = '/import' as Href;
-const QUICK_ESTIMATES = '/decide/setup/quick-estimates' as Href;
+const QUICK_ESTIMATES = '/decide/setup/quick-estimates';
 const NO_ITEMS: readonly ReadinessItem[] = [];
 
 /** 06.1-45: the writes bound by the shell (features/decide may not import them; they reach the rate-fetch door). */
@@ -78,6 +86,9 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const fmt = useSetupFormat();
   const rc = useRecordContext();
   const { facts, today, currency } = useSetupFacts();
+  const params = useLocalSearchParams<{ returnTo?: string }>();
+  const settings = useDecideSettings(rc.userId ?? undefined).data ?? null;
+  const setupSaver = useSaveSetupStep(rc.userId ?? '');
   const v3 = useDecideV3();
   const accountsQ = useAccounts(rc.householdId ?? undefined);
   const saver = useSaveAccountUse(rc.userId ?? '');
@@ -136,10 +147,56 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
     router.push(ACTIVITY);
   };
 
-  // Not loaded yet: show the frame with the primary off, so nothing flickers between the two variants.
+  // CN-5 (a): from an answer (a safe returnTo), quick estimates go back to it; with no check in view they save and come back here.
+  const answerReturn = safeReturnTo(params.returnTo);
+  const openQuickEstimates = (): void => {
+    router.push(
+      (answerReturn !== DECIDE_HOME_PATH
+        ? { pathname: QUICK_ESTIMATES, params: { returnTo: answerReturn } }
+        : { pathname: QUICK_ESTIMATES, params: { mode: QUICK_SAVE_MODE } }) as Href,
+    );
+  };
+
+  // CC-7: the rough figures in use, with Clear (one Undo puts them back).
+  const roughIn = settings?.rough_income ?? null;
+  const roughOut = settings?.rough_spending ?? null;
+  const roughCurrency = settings?.currency ?? currency;
+  const clearRough = (): void => {
+    const saved = setupSaver.save({ stepTitle: t('decide.screens.setup.quick.stepName'), patch: { rough_income: null, rough_spending: null, rough_as_of: null } });
+    if (saved === null) return;
+    hapticLight();
+    showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.records.roughCleared' }, stepId: saved.stepId });
+  };
+  const roughRow =
+    roughIn === null && roughOut === null ? null : (
+      <View testID="records-rough" style={styles.row2}>
+        <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 1 }}>
+          {t('decide.screens.setupOthers.records.roughInUse', { income: fmt.money(roughIn ?? 0, roughCurrency), spending: fmt.money(roughOut ?? 0, roughCurrency) })}
+        </Text>
+        <Pressable
+          testID="records-rough-clear"
+          accessibilityRole="button"
+          accessibilityLabel={`${t('decide.screens.setupOthers.records.roughClear')}, ${t('decide.screens.setup.quick.stepName')}`}
+          onPress={clearRough}
+          style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+        >
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.setupOthers.records.roughClear')}</Text>
+        </Pressable>
+      </View>
+    );
+
+  // CF-8: not loaded yet: the frame with the primary off and the reason under it, so nothing flickers between the two variants.
   if (facts === null) {
     return (
-      <SetupItemFrame title={t('decide.screens.setupOthers.records.title')} why={t('decide.screens.setupOthers.records.why')} primaryLabel={t('decide.screens.common.saveAndClose')} primaryDisabled onSave={() => undefined} onLeave={leave}>
+      <SetupItemFrame
+        title={t('decide.screens.setupOthers.records.title')}
+        why={t('decide.screens.setupOthers.records.why')}
+        primaryLabel={t('decide.screens.common.saveAndClose')}
+        primaryDisabled
+        onSave={() => undefined}
+        onLeave={leave}
+        footer={<NeedLine testID="records-loading" text={t('decide.screens.setupOthers.records.loading')} />}
+      >
         <View />
       </SetupItemFrame>
     );
@@ -175,7 +232,8 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
         </View>
         <Pill variant="primary" label={t('decide.screens.setupOthers.records.importStatement')} onPress={() => router.push(IMPORT)} />
         <Pill variant="secondary" label={t('decide.screens.setupOthers.records.addAsYouGo')} onPress={() => router.push(ACTIVITY)} />
-        <Pill variant="secondary" label={t('decide.screens.setupOthers.records.fromEstimates')} onPress={() => router.push(QUICK_ESTIMATES)} />
+        <Pill variant="secondary" label={t('decide.screens.setupOthers.records.fromEstimates')} onPress={openQuickEstimates} />
+        {roughRow}
       </SetupItemFrame>
     );
   }
@@ -269,6 +327,8 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
           />
         </View>
       ) : null}
+
+      {roughRow}
 
       <View style={styles.block}>
         <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('decide.screens.setupOthers.records.moreMonthsQ')}</Text>

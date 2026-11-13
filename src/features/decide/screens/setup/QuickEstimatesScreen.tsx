@@ -1,12 +1,19 @@
 // 06.1-39 (D39, UX-11, UX-05, "ask, don't block"): a first answer from three estimates, before records exist. Comes in, bills and
 // everyday spending are typed as whole amounts in minor units; "See the answer now" writes rough_income = in, rough_spending =
 // bills + everyday and rough_as_of = today (saving, debt and invest are left as they are), then returns to the answer. The answer
-// frame, not this screen, says the answer rests on quick estimates. The write comes in as `onSave` (the shell owns the write path).
+// frame, not this screen, says the answer rests on quick estimates.
+// 06.1-65 (CC-7): the write is the undoable setup save, so it toasts "Quick estimates saved." with Undo (Undo puts the old rough
+// figures back). (CN-5 a): opened from Records with no check in view (`mode=save`), the button says "Save" and the screen goes back
+// to Records instead of landing on Decide home with no answer; otherwise the route's onDone sends the person on as before.
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { useSaveSetupStep } from '@/data/mutations/decideSetup';
 import { currencyCode, minorUnits } from '@/engine/money';
 import { useT } from '@/i18n';
+import { useRecordContext } from '@/features/record/useRecordContext';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
+import { showToast } from '@/state/undoToast';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
@@ -18,6 +25,10 @@ import { useSettledLabel } from '@/ui/useSettledLabel';
 import { MAX_INPUT_MINOR } from '../../snapshot/checkInputs';
 import { stampSettingsPatch } from '../../settingsPatch';
 import type { DecideSettingsPatch, DecideSettingsRow } from '@/db/decideSettings';
+import { useLeaveItem } from './items/SetupItemFrame';
+
+/** 06.1-65 (CN-5 a): Records opens this screen with `mode=save` when no check is in view. */
+export const QUICK_SAVE_MODE = 'save';
 
 /** Quiet time before a screen reader reads the live line again, so typing is not read out digit by digit. */
 const LIVE_SETTLE_MS = 700;
@@ -30,14 +41,22 @@ export interface QuickEstimatesScreenProps {
   today: string;
   /** The stored settings, so a figure typed in another currency clears the rest in the same patch (CR-B01). */
   stored: DecideSettingsRow | null;
-  /** The settings write (injected from the shell). */
-  onSave: (patch: DecideSettingsPatch) => void;
-  /** Called after the save; the route sends the person to the answer or home. */
+  /**
+   * No longer called (06.1-65 CC-7): the screen writes through the undoable setup save so the toast can offer Undo. Kept optional
+   * while QuickEstimatesRoute (06.1-64's file this wave) still passes it; drop it there next.
+   */
+  onSave?: (patch: DecideSettingsPatch) => void;
+  /** Called after the save, outside save mode; the route sends the person to the answer or home. */
   onDone: () => void;
 }
 
-export function QuickEstimatesScreen({ currency, today, stored, onSave, onDone }: QuickEstimatesScreenProps): React.JSX.Element {
+export function QuickEstimatesScreen({ currency, today, stored, onDone }: QuickEstimatesScreenProps): React.JSX.Element {
   const t = useT();
+  const rc = useRecordContext();
+  const saver = useSaveSetupStep(rc.userId ?? '');
+  const leave = useLeaveItem();
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const saveMode = mode === QUICK_SAVE_MODE;
   const { colors, pairing } = useTheme();
   const money = useMoneyFormatter(false, currency);
   const [income, setIncome] = useState<number | null>(null);
@@ -59,8 +78,13 @@ export function QuickEstimatesScreen({ currency, today, stored, onSave, onDone }
 
   const see = () => {
     if (!ready) return;
-    onSave(stampSettingsPatch({ rough_income: income, rough_spending: spending, rough_as_of: today }, stored, currency));
-    onDone();
+    if (rc.userId !== null) {
+      const patch = stampSettingsPatch({ rough_income: income, rough_spending: spending, rough_as_of: today }, stored, currency);
+      const saved = saver.save({ stepTitle: t('decide.screens.setup.quick.stepName'), patch });
+      showToast({ kind: 'ordinary', text: { key: 'decide.screens.setup.quick.saved' }, stepId: saved?.stepId ?? null });
+    }
+    if (saveMode) leave();
+    else onDone();
   };
 
   const body = { ...textRole(pairing, 'body'), color: colors.inkDim };
@@ -78,7 +102,7 @@ export function QuickEstimatesScreen({ currency, today, stored, onSave, onDone }
             </Text>
           ) : null}
         </View>
-        <Pill variant="primary" label={t('decide.screens.setup.quick.see')} disabled={!ready} onPress={see} />
+        <Pill variant="primary" label={saveMode ? t('decide.screens.setupOthers.records.quickSave') : t('decide.screens.setup.quick.see')} disabled={!ready} onPress={see} />
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('decide.screens.setup.quick.foot')}</Text>
         <Text testID="quick-footer" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
           {t('legal.decideAnswer.footer')}

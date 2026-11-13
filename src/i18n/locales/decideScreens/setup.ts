@@ -82,5 +82,8 @@ export const setup = {
     liveShort: 'A usual month is about {{short}} short by these estimates.',
     see: 'See the answer now',
     foot: 'Quick estimates count only until your records cover a full month.',
+    // 06.1-65 (CC-7): the save toast (with Undo) and the name in History ('Saved · Quick estimates').
+    saved: 'Quick estimates saved.',
+    stepName: 'Quick estimates',
   },
 } as const;

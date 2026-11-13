@@ -102,5 +102,11 @@ export const setupOthers = {
     envelopesRow_one: 'Envelopes and goals: 1 not linked',
     envelopesRow_other: 'Envelopes and goals: {{count}} not linked',
     stillOpen: 'Records still open: {{count}} to finish.',
+    // 06.1-65 (CF-8, CC-7, CN-5 a)
+    loading: 'Checking your records…',
+    roughInUse: 'Quick estimates in use: {{income}} in, {{spending}} out',
+    roughClear: 'Clear',
+    roughCleared: 'Quick estimates cleared.',
+    quickSave: 'Save estimates',
   },
 } as const;

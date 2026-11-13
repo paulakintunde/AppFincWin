@@ -1,4 +1,5 @@
 // 06.1-39: D39 quick estimates: the live line, the write (rough_income, rough_spending = bills + everyday, rough_as_of), bounds, and the route's returnTo.
+// 06.1-65 (CC-7, CN-5 a): the write is the undoable setup save with a "Quick estimates saved." toast; save mode says "Save" and goes back.
 import React from 'react';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { wrap } from '@/test/stepProps';
@@ -12,22 +13,42 @@ jest.mock('@/services/locale/deviceLocale', () => ({
 jest.mock('@/shell/header/SyncProblemLine', () => ({ SyncProblemLine: () => null }));
 jest.mock('@/shell/header/DetailHeader', () => ({ DetailHeader: () => null }));
 jest.mock('@/shell/a11yFocus', () => ({ useScreenTitleFocus: () => undefined }));
+let mockParams: Record<string, string | undefined> = {};
+const mockBack = jest.fn();
+const mockDismissTo = jest.fn();
+let mockCanGoBack = true;
+jest.mock('expo-router', () => ({
+  useLocalSearchParams: () => mockParams,
+  useRouter: () => ({ back: mockBack, dismissTo: mockDismissTo, canGoBack: () => mockCanGoBack, push: jest.fn(), replace: jest.fn() }),
+}));
+let mockUserId: string | null = 'u1';
+jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: mockUserId }) }));
+const mockSave = jest.fn((..._a: unknown[]) => ({ stepId: 'step-quick' }) as { stepId: string } | null);
+jest.mock('@/data/mutations/decideSetup', () => ({ useSaveSetupStep: () => ({ save: mockSave }) }));
+const mockShowToast = jest.fn();
+jest.mock('@/state/undoToast', () => ({ showToast: (...a: unknown[]) => mockShowToast(...a) }));
+const savedPatch = (): Record<string, unknown> => (mockSave.mock.calls[0]?.[0] as { patch: Record<string, unknown> }).patch;
 
 const INCOME = 'About how much comes in each month?';
 const BILLS = 'About how much goes on bills?';
 const EVERYDAY = 'About how much on everyday spending?';
 
 async function setup(over: Partial<React.ComponentProps<typeof QuickEstimatesScreen>> = {}, scale = 1) {
-  const onSave = jest.fn();
   const onDone = jest.fn();
-  await wrap(<QuickEstimatesScreen currency="USD" today="2026-11-11" stored={null} onSave={onSave} onDone={onDone} {...over} />, scale);
-  return { onSave, onDone };
+  await wrap(<QuickEstimatesScreen currency="USD" today="2026-11-11" stored={null} onDone={onDone} {...over} />, scale);
+  return { onSave: mockSave, onDone };
 }
 async function type(label: string, text: string) {
   await fireEvent.changeText(screen.getByLabelText(label), text);
 }
 
-beforeEach(() => jest.useFakeTimers());
+beforeEach(() => {
+  jest.useFakeTimers();
+  jest.clearAllMocks();
+  mockParams = {};
+  mockCanGoBack = true;
+  mockUserId = 'u1';
+});
 afterEach(() => jest.useRealTimers());
 
 describe('QuickEstimatesScreen', () => {
@@ -67,7 +88,8 @@ describe('QuickEstimatesScreen', () => {
     await type(BILLS, '1850');
     await type(EVERYDAY, '925');
     await fireEvent.press(screen.getByText('See the answer now'));
-    expect(onSave).toHaveBeenCalledWith({ rough_income: 320000, rough_spending: 277500, rough_as_of: '2026-11-11', currency: 'USD' });
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(savedPatch()).toEqual({ rough_income: 320000, rough_spending: 277500, rough_as_of: '2026-11-11', currency: 'USD' });
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
@@ -77,7 +99,8 @@ describe('QuickEstimatesScreen', () => {
     await type(BILLS, '40');
     await type(EVERYDAY, '10');
     await fireEvent.press(screen.getByText('See the answer now'));
-    const patch = onSave.mock.calls[0][0] as Record<string, unknown>;
+    expect(onSave).toHaveBeenCalledTimes(1);
+    const patch = savedPatch();
     expect(Object.keys(patch).sort()).toEqual(['currency', 'rough_as_of', 'rough_income', 'rough_spending']);
   });
 
@@ -102,6 +125,60 @@ describe('QuickEstimatesScreen', () => {
   it('fits at large text', async () => {
     await setup({}, 2);
     expectFits();
+  });
+});
+
+describe('QuickEstimatesScreen save toast and save mode (06.1-65)', () => {
+  async function fill() {
+    await type(INCOME, '3200');
+    await type(BILLS, '1850');
+    await type(EVERYDAY, '925');
+  }
+
+  it('CC-7: saving toasts "Quick estimates saved." with the write’s step id, named Quick estimates in History', async () => {
+    await setup();
+    await fill();
+    await fireEvent.press(screen.getByText('See the answer now'));
+    expect(mockSave).toHaveBeenCalledWith(expect.objectContaining({ stepTitle: 'Quick estimates' }));
+    expect(mockShowToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.screens.setup.quick.saved' }, stepId: 'step-quick' });
+  });
+
+  it('CC-7: figures that match what is stored write nothing, so the toast has no step', async () => {
+    mockSave.mockReturnValueOnce(null);
+    await setup();
+    await fill();
+    await fireEvent.press(screen.getByText('See the answer now'));
+    expect(mockShowToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: null }));
+  });
+
+  it('CN-5 (a): in save mode the button says Save estimates and the screen goes back, not to Decide home', async () => {
+    mockParams = { mode: 'save' };
+    const { onDone } = await setup();
+    expect(screen.queryByText('See the answer now')).toBeNull();
+    await fill();
+    await fireEvent.press(screen.getByText('Save estimates'));
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(mockBack).toHaveBeenCalledTimes(1);
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('CN-5 (a): save mode with no history lands on the checklist', async () => {
+    mockParams = { mode: 'save' };
+    mockCanGoBack = false;
+    await setup();
+    await fill();
+    await fireEvent.press(screen.getByText('Save estimates'));
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide/setup');
+  });
+
+  it('with no signed-in person nothing is written, and the screen still moves on', async () => {
+    mockUserId = null;
+    const { onDone } = await setup();
+    await fill();
+    await fireEvent.press(screen.getByText('See the answer now'));
+    expect(mockSave).not.toHaveBeenCalled();
+    expect(mockShowToast).not.toHaveBeenCalled();
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 });
 

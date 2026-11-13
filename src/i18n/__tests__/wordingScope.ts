@@ -300,6 +300,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   fromMonth: '$200.00',
   gap: '$180.00',
   goals: '$640.00',
+  income: '$3,200.00', // 06.1-65: Records rough figures in use
   interest: '$412.00',
   investing: '$200.00',
   item: 'Laptop',
@@ -355,6 +356,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   shortBefore: '$150.00',
   shortfall: '$150.00',
   size: '$2,400.00',
+  spending: '$2,775.00', // 06.1-65: Records rough figures in use
   starter: '$1,225.00',
   state: 'Fits',
   status: 'Done', // 06.1 wave 6

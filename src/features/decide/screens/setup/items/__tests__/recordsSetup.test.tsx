@@ -1,5 +1,6 @@
 // 06.1-45 (G-1, C-4, C-5): the Records page lists every open readiness item with the answer screen's fixes and answers, leads with
 // an envelope summary row, and "Save and close" with items still open says what is open. Done needs the list empty (GQ2).
+// 06.1-65: the loading line (CF-8), where quick estimates go (CN-5 a) and the rough figures with Clear (CC-7).
 import React from 'react';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { wrap } from '@/test/stepProps';
@@ -12,7 +13,11 @@ jest.setTimeout(60000);
 const mockReplace = jest.fn();
 const mockDismissTo = jest.fn();
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, push: mockPush, back: jest.fn(), canGoBack: () => false }) }));
+let mockParams: Record<string, string | undefined> = {};
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, push: mockPush, back: jest.fn(), canGoBack: () => false }),
+  useLocalSearchParams: () => mockParams,
+}));
 jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn(), hapticWarning: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
 const mockShowToast = jest.fn();
@@ -29,6 +34,11 @@ jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) 
 jest.mock('../../../home/useHomeFacts', () => ({
   footerFactsOf: (i: { months: { full: boolean; lines: unknown[] }[] } | null) => ({ months: i === null ? 0 : i.months.filter((m) => m.full).length, entries: i === null ? 0 : i.months.reduce((n, m) => n + m.lines.length, 0) }),
 }));
+// 06.1-65 (CC-7): the rough figures are read from the settings and cleared through the undoable setup save.
+let mockSettings: Record<string, unknown> | null = null;
+jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: mockSettings }) }));
+const mockSetupSave = jest.fn((..._a: unknown[]) => ({ stepId: 'step-clear' }) as { stepId: string } | null);
+jest.mock('@/data/mutations/decideSetup', () => ({ useSaveSetupStep: () => ({ save: mockSetupSave }) }));
 jest.mock('@/data/mutations/accountUse', () => ({ useSaveAccountUse: () => ({ save: jest.fn() }) }));
 jest.mock('@/features/record/accounts/AccountUseSheet', () => ({ AccountUseSheet: () => null }));
 const mockSaveAnswer = jest.fn((..._a: unknown[]) => ({ stepId: 'step-answer' }) as { stepId: string } | null);
@@ -64,6 +74,8 @@ let writes: RecordsWrites & { skipLine: jest.Mock; setEnvelopeAccount: jest.Mock
 beforeEach(() => {
   jest.clearAllMocks();
   mockFacts = { ...DONE_FACTS };
+  mockParams = {};
+  mockSettings = null;
   mockItems = [];
   mockCached = [];
   mockInputs = { accounts: [], months: [{ month: '2026-10', full: true, lines: [{}] }] };
@@ -147,5 +159,69 @@ describe('RecordsSetup readiness list (06.1-45)', () => {
     await wrap(<RecordsSetup writes={writes} />);
     expect(screen.getByTestId('records-empty')).toBeTruthy();
     expect(screen.queryByTestId('records-open')).toBeNull();
+  });
+});
+
+describe('RecordsSetup loading, quick estimates and rough figures (06.1-65)', () => {
+  const BRAND_NEW = { ...DONE_FACTS, lastMonthComplete: false, newestEntryThisMonth: null, accountsAllHaveUse: false };
+
+  it('CF-8: while the facts load, the line says the records are being checked and the primary is off', async () => {
+    mockFacts = null;
+    await wrap(<RecordsSetup writes={writes} />);
+    expect(screen.getByTestId('records-loading')).toHaveTextContent('Checking your records…');
+    const primary = screen.getAllByRole('button').find((b) => b.props.accessibilityState?.disabled === true);
+    expect(primary).toBeTruthy();
+  });
+
+  it('CN-5 (a): with no check in view, From quick estimates opens it in save mode', async () => {
+    mockFacts = BRAND_NEW;
+    mockInputs = { accounts: [], months: [] };
+    await wrap(<RecordsSetup writes={writes} />);
+    await press(screen.getByText('Answer from quick estimates for now'));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/setup/quick-estimates', params: { mode: 'save' } });
+  });
+
+  it('CN-5 (a): opened from an answer, From quick estimates passes its returnTo on', async () => {
+    mockFacts = BRAND_NEW;
+    mockInputs = { accounts: [], months: [] };
+    mockParams = { returnTo: '/decide/answer/c1' };
+    await wrap(<RecordsSetup writes={writes} />);
+    await press(screen.getByText('Answer from quick estimates for now'));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/setup/quick-estimates', params: { returnTo: '/decide/answer/c1' } });
+  });
+
+  it('CN-5 (a): an unsafe returnTo is not followed (save mode instead)', async () => {
+    mockFacts = BRAND_NEW;
+    mockInputs = { accounts: [], months: [] };
+    mockParams = { returnTo: 'https://example.com' };
+    await wrap(<RecordsSetup writes={writes} />);
+    await press(screen.getByText('Answer from quick estimates for now'));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/setup/quick-estimates', params: { mode: 'save' } });
+  });
+
+  it('CC-7: rough figures in use are listed, and Clear writes nulls with an Undo toast', async () => {
+    mockSettings = { rough_income: 320000, rough_spending: 277500, rough_as_of: '2026-11-11', currency: 'USD' };
+    await wrap(<RecordsSetup writes={writes} />);
+    expect(screen.getByTestId('records-rough')).toHaveTextContent(/^Quick estimates in use: \$3,200 in, \$2,775 out/);
+    await press(screen.getByTestId('records-rough-clear'));
+    expect(mockSetupSave).toHaveBeenCalledWith({ stepTitle: 'Quick estimates', patch: { rough_income: null, rough_spending: null, rough_as_of: null } });
+    expect(mockShowToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.records.roughCleared' }, stepId: 'step-clear' });
+  });
+
+  it('CC-7: a Clear that writes nothing shows no toast; the brand-new page lists the figures too', async () => {
+    mockFacts = BRAND_NEW;
+    mockInputs = { accounts: [], months: [] };
+    mockSettings = { rough_income: 100000, rough_spending: null, currency: null };
+    mockSetupSave.mockReturnValueOnce(null);
+    await wrap(<RecordsSetup writes={writes} />);
+    expect(screen.getByTestId('records-rough')).toHaveTextContent(/^Quick estimates in use: \$1,000 in, \$0 out/);
+    await press(screen.getByTestId('records-rough-clear'));
+    expect(mockShowToast).not.toHaveBeenCalled();
+  });
+
+  it('CC-7: with no rough figures, no row', async () => {
+    mockSettings = { rough_income: null, rough_spending: null };
+    await wrap(<RecordsSetup writes={writes} />);
+    expect(screen.queryByTestId('records-rough')).toBeNull();
   });
 });

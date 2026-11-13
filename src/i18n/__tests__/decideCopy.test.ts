@@ -78,6 +78,7 @@ const ACTION_LABELS = new Set([
   'decide.screens.setupOthers.rules.keepAtLeast', // rule name
   'decide.screens.setupOthers.rules.save', // button
   'decide.screens.setupOthers.records.save', // button
+  'decide.screens.setupOthers.records.quickSave', // 06.1-65 button: "Save estimates" on quick estimates opened from Records
   'decide.screens.sheetsInput.quick.save', // button
   'decide.screens.sheetsInput.plan.save', // button
   'decide.screens.sheetsInput.often.save', // button
