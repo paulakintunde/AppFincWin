@@ -25,6 +25,7 @@ import { cancelCheckReminders } from '@/features/decide/notifications/waitRemind
 import { parseCheckInputs } from '@/features/decide/snapshot/checkInputs';
 
 const PAST_LINES_KEY = 'past-decisions';
+const NO_CHECKS: readonly DecideCheckRow[] = [];
 
 /** IN-B01: the calendar date of a timestamptz instant in the app's time zone (rc.timeZone), as 'YYYY-MM-DD'. */
 export function localDateOf(timestamp: string, timeZone: string): string {
@@ -149,17 +150,20 @@ export function usePastDecisions(): PastDecisionsModel {
     return decided.sort((a, b) => (when(a) < when(b) ? 1 : when(a) > when(b) ? -1 : 0));
   }, [checks]);
 
-  const checkIds = useMemo(() => decisions.map((d) => d.id), [decisions]);
-  const links = useDecideLinks(userId, householdId, checkIds).data;
+  // 06.1-47 (B-8): the links are read for ALL checks, sorted, exactly as useDecideV3 reads them, so both share one cached
+  // query (one fetch) instead of two keys and two round trips. The decided checks are picked out in memory.
+  const allCheckIds = useMemo(() => (checks ?? NO_CHECKS).map((c) => c.id).sort(), [checks]);
+  const links = useDecideLinks(userId, householdId, allCheckIds).data;
 
   const linksByCheck = useMemo(() => {
+    const decidedIds = new Set(decisions.map((d) => d.id));
     const out = new Map<string, DecideLinkRow[]>();
     for (const link of links ?? []) {
-      if (link.deleted_at !== null) continue;
+      if (link.deleted_at !== null || !decidedIds.has(link.check_id)) continue;
       out.set(link.check_id, [...(out.get(link.check_id) ?? []), link]);
     }
     return out;
-  }, [links]);
+  }, [links, decisions]);
 
   const ids = useMemo(() => {
     const transactionIds: string[] = [];
