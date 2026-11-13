@@ -1,12 +1,30 @@
 // SYN-01/SYN-07: the QueryClient singleton used by the whole app, plus the wipe-on-sign-out
 // registration (Phase 0 D-15) that clears both the in-memory cache and its encrypted
 // persisted copy.
-import { QueryClient } from '@tanstack/react-query';
+import { MutationCache, QueryClient } from '@tanstack/react-query';
+import { addBreadcrumb } from '@sentry/react-native';
 import { registerWipeHandler } from '@/services/storage/wipe';
 import { clearServerFetchTimes, persister } from './cache/persister';
 import { bumpSessionEpoch } from './sync/sessionEpoch';
 
 export const queryClient = new QueryClient({
+  // F-2 (06.1-48): every write's time from submit to settle, so a device check can tell app delay from network delay
+  // (the 'net' breadcrumb in timeoutFetch is the send side). Key name, ms, status and failure count only: never the
+  // variables, amounts or ids.
+  mutationCache: new MutationCache({
+    onSettled: (_data, error, _variables, _context, mutation) => {
+      addBreadcrumb({
+        category: 'write',
+        message: 'settled',
+        data: {
+          key: String(mutation.options.mutationKey?.[0] ?? 'unknown'),
+          ms: Date.now() - mutation.state.submittedAt,
+          status: error ? 'error' : 'success',
+          failures: mutation.state.failureCount,
+        },
+      });
+    },
+  }),
   defaultOptions: {
     queries: {
       // gcTime must be at least maxAge (CACHE_MAX_AGE_MS, 30 days) or a query restored from
