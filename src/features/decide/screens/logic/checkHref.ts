@@ -1,7 +1,7 @@
 // 05-21: the check route's href and the one place a new check id is minted (T-05-21-03: the check route
 // validates the id again). The route itself lands in 05-30, hence the `as Href`.
-import { type Href } from 'expo-router';
-import { pushOnce } from '@/shell/navigation/pushOnce';
+import { router, type Href } from 'expo-router';
+import { goDecideHome } from './decideNav';
 
 export type CheckKind = 'buy' | 'invest';
 // Owner 2026-11-11: no new investment check is offered; investing is planned in Grow. 'invest' stays only for already-saved checks.
@@ -17,9 +17,12 @@ export function checkHref(id: string, params: { kind?: CheckKind; step?: CheckSt
 /** 06.1-28 (D-05): a new check starts on Decide home with the "What is it?" field focused. */
 export const NEW_CHECK_HREF = '/decide?focus=check' as Href;
 
-/** Opens a brand-new check. Nothing is written until the check is built from Decide home. */
+/**
+ * Opens a brand-new check. Nothing is written until the check is built from Decide home.
+ * 06.1-64 (CN-4): returns to the Decide home already in the stack (dismissTo), so loops of New check never stack Decide homes.
+ */
 export function openNewCheck(_kind: NewCheckKind): void {
-  pushOnce(NEW_CHECK_HREF);
+  goDecideHome(router, { focusCheck: true });
 }
 
 export const PAST_HREF = '/decide/past' as Href;

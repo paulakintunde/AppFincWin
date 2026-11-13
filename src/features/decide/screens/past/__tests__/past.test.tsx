@@ -29,7 +29,8 @@ jest.mock('@/shell/screen/DetailScreen', () => ({
 }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 const mockNavigate = jest.fn();
-jest.mock('expo-router', () => ({ router: { canGoBack: () => false, back: jest.fn(), navigate: (...a: unknown[]) => mockNavigate(...a) } }));
+const mockDismissTo = jest.fn();
+jest.mock('expo-router', () => ({ router: { canGoBack: () => false, back: jest.fn(), navigate: (...a: unknown[]) => mockNavigate(...a), dismissTo: (...a: unknown[]) => mockDismissTo(...a) } }));
 const mockSetMonth = jest.fn();
 jest.mock('@/state/activityFocus', () => ({ setSelectedMonth: (m: string) => mockSetMonth(m) }));
 // 06.1-77: the real useDeleteDecision (for its copy) needs its write and reminder edges stubbed.
@@ -134,6 +135,9 @@ describe('Your decisions', () => {
     expect(screen.getByText(P.list.emptyTitle)).toBeTruthy();
     expect(screen.getByText(P.list.emptyBody)).toBeTruthy();
     expect(screen.getByText(en.decide.screens.common.backToDecide)).toBeTruthy();
+    // 06.1-64 (CN-4): back to the Decide home already in the stack, never a pushed copy.
+    fireEvent.press(screen.getByText(en.decide.screens.common.backToDecide));
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide');
   });
 
   it('Yes, count it attaches the line once and offers Undo', async () => {

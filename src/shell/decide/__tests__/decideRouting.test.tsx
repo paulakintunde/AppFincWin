@@ -116,7 +116,6 @@ const NEW_ROUTES = [
   'decide/setup/net',
   'decide/setup/rules',
   'decide/setup/records',
-  'decide/setup/done',
   'decide/setup/quick-estimates',
   'decide/past/index',
   'decide/past/[id]',

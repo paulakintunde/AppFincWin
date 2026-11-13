@@ -3,7 +3,7 @@
 // line says how close the estimates were. Data hooks are the existing ones; nothing here computes a verdict.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import type { Href } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useAttachLine, useUnlinkLine } from '@/data/mutations/decideLinks';
 import { useAttachCandidates } from '@/data/queries/decide';
 import { homeAmountFor } from '@/data/queries/homeAmount';
@@ -23,13 +23,13 @@ import { EmptyState } from '@/ui/EmptyState';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { deltaFor, localDateOf, usePastDecisions } from './data/usePastDecisions';
+import { goDecideHome } from '../logic/decideNav';
 import { DETAIL_HREF } from './detailHref';
 import { LookBackCard } from './LookBackCard';
 import { howClosePercent, lookBackOf, type LookBack } from './lookBack';
 
 type T = (key: string, params?: Record<string, string | number>) => string;
 
-const DECIDE_HOME = '/decide' as Href;
 
 /** A saved-to-the-record badge in plain words. It carries no state colour: the look-back is not a verdict. */
 function SavedBadge({ label }: { label: string }) {
@@ -165,7 +165,7 @@ export function PastDecisionsScreen() {
         {decisions.length === 0 ? (
           <View style={styles.empty}>
             <EmptyState heading={t('decide.screens.past.list.emptyTitle')} body={t('decide.screens.past.list.emptyBody')} />
-            <Pill variant="secondary" label={t('decide.screens.common.backToDecide')} onPress={() => pushOnce(DECIDE_HOME)} />
+            <Pill variant="secondary" label={t('decide.screens.common.backToDecide')} onPress={() => goDecideHome(router)} />
           </View>
         ) : (
           <View style={[styles.list, { backgroundColor: colors.surface }]}>

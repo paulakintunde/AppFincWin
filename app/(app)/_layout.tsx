@@ -129,7 +129,6 @@ export default function AppLayout() {
                   <Stack.Screen name="decide/setup/net" />
                   <Stack.Screen name="decide/setup/rules" />
                   <Stack.Screen name="decide/setup/records" />
-                  <Stack.Screen name="decide/setup/done" />
                   <Stack.Screen name="decide/setup/quick-estimates" />
                   <Stack.Screen name="decide/settings" />
                   <Stack.Screen name="decide/past/index" />
