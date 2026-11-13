@@ -179,8 +179,13 @@ export interface GoAheadV3Context {
   /** The currency of the cash account. */
   currency: string;
   timeZone: string;
-  /** 'YYYY-MM-DD': the purchase date when the result carries none. */
+  /** 'YYYY-MM-DD': the household's today (the record context's, in its time zone). Rows on or before it are paid. */
   today: string;
+  /**
+   * 06.1-77 (DC-3, OQ-77-2 A): 'YYYY-MM-DD', the day it was bought, as the Bought screen shows it. Absent = today. A day after
+   * today is held at today, so the day-one row is never a future, unpaid row. The planned purchase date is not used here.
+   */
+  date?: string;
   /** What the user calls the purchase; the check itself carries no name. */
   name: string;
   /** The Debt category, when the plan is a loan (payment series carry it); null otherwise. */
@@ -205,15 +210,16 @@ function stepByCadence(first: string, c: Cadence, i: number): string {
 
 /**
  * Pure adapter (replaces the old Assessment input): the rows and series that "I bought it" writes for a v3 check, in the shape
- * recordDecideGo takes. Cash: one pending row of the whole price with tax and one-off fees (my share, exactly Purchase.whole)
- * on the purchase date. Plan: the up-front part (Purchase.dayOne, my share) on the purchase date, then the payments from the
+ * recordDecideGo takes. Cash: one paid row of the whole price with tax and one-off fees (my share, exactly Purchase.whole)
+ * on the bought date. Plan: the up-front part (Purchase.dayOne, my share) on the bought date, then the payments from the
  * first payment date, each my share of the lender's amount including the per-period and end fees. Running costs are NOT
  * written here: the user adds each as a bill by their own tap (APP-29). No debt row is made (Grow records debts).
  */
 export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, accountId: string, ctx: GoAheadV3Context): GoAheadWrite {
   const purchase = evaluation.purchase;
   if (purchase === null) throw refuse(new TypeError('goAheadInputOfV3: the check has no purchase to write'));
-  const date = evaluation.result.purchaseDate ?? ctx.today;
+  // 06.1-77 (DC-3): the date written and the today it is compared with come from the same clock (the caller's ctx).
+  const date = ctx.date === undefined || ctx.date > ctx.today ? ctx.today : ctx.date;
   const name = ctx.name.trim();
 
   const rows: NewTransaction[] = [];
@@ -234,7 +240,8 @@ export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, account
       note: null,
       name,
       category_id: role === 'payment' && purchase.financed ? (ctx.debtCategoryId ?? null) : null,
-      status: 'pending',
+      // 06.1-77 (DC-3), owner 2026-10-31: rows dated today or earlier are paid; later instalments stay pending.
+      status: localDate <= ctx.today ? 'paid' : 'pending',
       // D-66 (WR-A06): the up-front money won't recur, so it is a one-off and stays out of later spending averages.
       ...(role === 'day_one' ? { one_off: true } : {}),
     });

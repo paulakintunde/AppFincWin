@@ -96,6 +96,15 @@ describe('buildBoughtWrite', () => {
     });
   });
 
+  // 06.1-77 (DC-3): the day-one date and the today it is compared with are both ctx.today, so a device clock a day ahead
+  // (an engine day of Nov 13 while the household's day is Nov 12) cannot make the day-one row a future, pending row.
+  it('date one day ahead: the day-one row is dated ctx.today and paid; later payments stay pending', () => {
+    const w = build(purchase({ financed: true, dayOne: 20000, schedule: schedule({ firstDate: '2026-11-13' }) }), { ...ctx, today: '2026-11-12' });
+    const roles = w.decision.row_roles;
+    expect(w.rows.filter((_, i) => roles[i] === 'day_one')).toEqual([expect.objectContaining({ local_date: '2026-11-12', status: 'paid' })]);
+    for (const r of w.rows.filter((_, i) => roles[i] === 'payment')) expect(r.status).toBe('pending');
+  });
+
   it('labels the rows in the context currency (home) on the everyday account, amounts unchanged', () => {
     const w = build(purchase(), { ...ctx, currency: 'USD', cashAccountId: 'acc-gbp' });
     expect(w.rows[0]).toMatchObject({ original_currency: 'USD', account_id: 'acc-gbp', original_amount: -100000 });

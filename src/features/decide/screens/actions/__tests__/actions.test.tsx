@@ -295,6 +295,37 @@ describe('BoughtScreen', () => {
     expect(screen.getByRole('radio', { name: 'Everyday' }).props.accessibilityState).toMatchObject({ selected: true });
   });
 
+  // 06.1-77 (DC-3, OQ-77-2 A): the Date row shows the day that is written; today by default, changeable, never after today.
+  const pickDay = async (y: number, m: number, d: number) => {
+    await fireEvent.press(screen.getByText(a.bought.dateRow));
+    await fireEvent(screen.getByTestId('date-picker'), 'onChange', { nativeEvent: { timestamp: new Date(y, m - 1, d, 12).getTime() } });
+  };
+
+  it('06.1-77 (OQ-77-2 A): the Date row shows today, even for a check planned for later, and today is what is written', async () => {
+    const planned = { ...r.evaluation, result: { ...r.evaluation.result, purchaseDate: '2026-12-01' } };
+    await wrap(<BoughtScreen {...props()} evaluation={planned} />);
+    expect(screen.getByText(fmtDate(TODAY))).toBeTruthy();
+    await fireEvent.press(screen.getByText(a.bought.add));
+    expect(mockGoAhead.mock.calls[0][0].ctx).toMatchObject({ today: TODAY, date: TODAY });
+  });
+
+  it('06.1-77 (OQ-77-2 A): a picked earlier day is shown and written, and the Added line says it', async () => {
+    await wrap(<BoughtScreen {...props()} />);
+    await pickDay(2026, 11, 5);
+    expect(screen.getByText(fmtDate('2026-11-05'))).toBeTruthy();
+    await fireEvent.press(screen.getByText(a.bought.add));
+    expect(mockGoAhead.mock.calls[0][0].ctx).toMatchObject({ today: TODAY, date: '2026-11-05' });
+    expect(await screen.findByText(new RegExp('on 2026-11-05'))).toBeTruthy();
+  });
+
+  it('06.1-77 (DC-3): a picked day after today is held at today', async () => {
+    await wrap(<BoughtScreen {...props()} />);
+    await pickDay(2026, 11, 20);
+    expect(screen.getByText(fmtDate(TODAY))).toBeTruthy();
+    await fireEvent.press(screen.getByText(a.bought.add));
+    expect(mockGoAhead.mock.calls[0][0].ctx).toMatchObject({ date: TODAY });
+  });
+
   it('Undo after adding calls one undo and says nothing was added', async () => {
     await wrap(<BoughtScreen {...props()} />);
     await fireEvent.press(screen.getByText(a.bought.add));

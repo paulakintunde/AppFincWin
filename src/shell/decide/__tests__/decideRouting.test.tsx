@@ -287,6 +287,12 @@ describe('06.1-63 Bought and Save for it routes (CN-7 / CF-7, CN-12, CB-9, DC-2,
     expect(mockBoughtProps.mock.calls.at(-1)?.[0]).toMatchObject({ accounts: [{ id: 'a1', name: 'Everyday' }], accountsLoading: false });
   });
 
+  it('06.1-77 (DC-3): Bought gets the record context’s today and time zone, never the engine’s purchase date', async () => {
+    mockData.engine = { status: 'ready', evaluation: { result: { purchaseDate: '2026-11-13' }, purchase: null } };
+    await wrap(<BoughtRoute id={ID} />);
+    expect(mockBoughtProps.mock.calls.at(-1)?.[0]).toMatchObject({ today: '2026-11-12', timeZone: 'UTC' });
+  });
+
   it('Save for it: Back to Decide goes home, Back to the answer goes back, See it in Grow replaces with the goal', async () => {
     await wrap(<SaveForItRoute id={ID} />);
     await fireEvent.press(screen.getByTestId('save-to-decide'));

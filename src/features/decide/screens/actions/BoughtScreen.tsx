@@ -5,6 +5,9 @@
  * 06.1-63 (CB-4, CN-8, CB-9): both states sit in DetailScreen ("I bought it", with Back and the safe-area insets). The first account
  * is used until the user picks one, so accounts that arrive after the first render are picked; while they load a loading line shows,
  * not the no-account alert.
+ * 06.1-77 (DC-3, OQ-77-2 A): the Date row shows the day that goes in the records (today by default, even when the check was planned
+ * for a later day) and opens the date picker. A day after today is held at today. The date and the today it is compared with both
+ * come from the shell's record context, so the row is written paid.
  */
 import React, { useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -21,6 +24,7 @@ import { hapticLight } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { RadioDot } from '@/ui/RadioDot';
 import { Text } from '@/ui/Text';
+import { DateField } from '@/features/record/entry/pickers/DateField';
 import { RunningCostOffers, type AddRunningCostBill } from './RunningCostOffers';
 
 export interface BoughtAccount {
@@ -36,7 +40,7 @@ export interface BoughtGoAheadArgs {
   check: CheckV2;
   evaluation: Evaluation;
   accountId: string;
-  ctx: { householdId: string; currency: string; timeZone: string; today: string; name: string; mint: () => string };
+  ctx: { householdId: string; currency: string; timeZone: string; today: string; date: string; name: string; mint: () => string };
 }
 
 export interface BoughtScreenProps {
@@ -51,6 +55,7 @@ export interface BoughtScreenProps {
   /** The currency of the account the purchase is recorded in. */
   currency: string;
   timeZone: string;
+  /** The household's today (the record context's, in its time zone): the default bought date and the paid/pending line. */
   today: LocalDate;
   itemName: string;
   v3: CheckV2;
@@ -81,7 +86,8 @@ export function BoughtScreen(props: BoughtScreenProps) {
   const body = { ...textRole(pairing, 'body'), color: colors.ink };
   const head = { ...textRole(pairing, 'heading'), color: colors.ink };
   const purchase = evaluation.purchase;
-  const date = evaluation.result.purchaseDate ?? today;
+  const [pickedDate, setDate] = useState<LocalDate>(today);
+  const date: LocalDate = pickedDate > today ? today : pickedDate;
 
   const add = (): void => {
     if (busy.current || accountId === null || purchase === null) return;
@@ -94,7 +100,7 @@ export function BoughtScreen(props: BoughtScreenProps) {
       check: v3,
       evaluation,
       accountId,
-      ctx: { householdId, currency, timeZone, today, name: itemName, mint: () => Crypto.randomUUID() },
+      ctx: { householdId, currency, timeZone, today, date, name: itemName, mint: () => Crypto.randomUUID() },
     });
     setAdded({ stepId, accountId });
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.answerActions.added.toast', params: { item: itemName } }, stepId });
@@ -155,8 +161,12 @@ export function BoughtScreen(props: BoughtScreenProps) {
           {t('decide.screens.answerActions.bought.sub')}
         </Text>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <Text style={small}>{t('decide.screens.answerActions.bought.dateRow')}</Text>
-          <Text style={body}>{formatDate(date)}</Text>
+          <DateField
+            label={t('decide.screens.answerActions.bought.dateRow')}
+            value={date}
+            display={formatDate(date)}
+            onChange={setDate}
+          />
           <Text style={small}>{t('decide.screens.answerActions.bought.amountRow')}</Text>
           <Text style={body}>{formatMoney(amount)}</Text>
           {plan === null ? null : (
