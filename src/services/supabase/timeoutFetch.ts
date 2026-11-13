@@ -79,11 +79,15 @@ export function timeoutFetch(input: RequestInfo | URL, init?: RequestInit): Prom
   const startedAt = Date.now();
   const trace = (status: number | 'failed' | 'timeout') => {
     if (!isWrite) return;
-    addBreadcrumb({
-      category: 'net',
-      message: 'write request',
-      data: { method, table: writeTableOf(urlOf(input)), ms: Date.now() - startedAt, status },
-    });
+    try {
+      addBreadcrumb({
+        category: 'net',
+        message: 'write request',
+        data: { method, table: writeTableOf(urlOf(input)), ms: Date.now() - startedAt, status },
+      });
+    } catch {
+      // telemetry only: never turn a response into a failure
+    }
   };
 
   return fetch(input, { ...init, signal: controller.signal })

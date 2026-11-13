@@ -13,16 +13,21 @@ export const queryClient = new QueryClient({
   // variables, amounts or ids.
   mutationCache: new MutationCache({
     onSettled: (_data, error, _variables, _context, mutation) => {
-      addBreadcrumb({
-        category: 'write',
-        message: 'settled',
-        data: {
-          key: String(mutation.options.mutationKey?.[0] ?? 'unknown'),
-          ms: Date.now() - mutation.state.submittedAt,
-          status: error ? 'error' : 'success',
-          failures: mutation.state.failureCount,
-        },
-      });
+      // A breadcrumb must never turn a landed write into a failed one: a throw here would reject the mutation.
+      try {
+        addBreadcrumb({
+          category: 'write',
+          message: 'settled',
+          data: {
+            key: String(mutation.options.mutationKey?.[0] ?? 'unknown'),
+            ms: Date.now() - mutation.state.submittedAt,
+            status: error ? 'error' : 'success',
+            failures: mutation.state.failureCount,
+          },
+        });
+      } catch {
+        // telemetry only
+      }
     },
   }),
   defaultOptions: {
