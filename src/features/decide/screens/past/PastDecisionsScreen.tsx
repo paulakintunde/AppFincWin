@@ -209,7 +209,8 @@ export function PastDecisionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  stack: { gap: space.groupGap },
+  // 06.1-58 (A-PD-1): the screen's top padding, so the subtitle sits clear below the header rule.
+  stack: { gap: space.groupGap, paddingTop: space.gapMd },
   empty: { gap: space.gapMd, alignItems: 'center' },
   list: { borderRadius: radii.card, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, paddingHorizontal: space.cardPad, minHeight: space.touchMin },

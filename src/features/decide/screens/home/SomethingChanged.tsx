@@ -2,6 +2,8 @@
  * 06.1-22 (D53, D01c): "Something changed?". A home row opens the sheet; the sheet is user-led: it suggests nothing, nothing is
  * pre-selected and nothing is written until "Save what changed". A saved change writes one decide_changes row with one Undo, and
  * shows on home as a "Changed: ... · Reset" chip while it is in force; Reset removes it, also with Undo.
+ * 06.1-58 (A-SH-3): each choice sits in a grouped card with the accent tint on the chosen row; the home row has a chevron, since it
+ * opens the sheet. Still user-led: nothing is chosen for the person and nothing is written before Save.
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -21,10 +23,11 @@ import { hapticLight, hapticSelection } from '@/ui/haptics';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
-import { RadioDot } from '@/ui/RadioDot';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
+import { StateGlyph } from '@/ui/glyphs/StateGlyph';
+import { OptionCard, OptionRow } from './OptionCard';
 import { changeRowOf, isActiveChange, leftWithChange, type ChangeEntry } from './homeCardsModel';
 
 export interface BillChoice {
@@ -33,6 +36,8 @@ export interface BillChoice {
   /** A month's amount, positive minor units. */
   amount: number;
 }
+
+const CHEV = 16;
 
 type Kind = 'pay' | 'bill' | 'oneOff';
 
@@ -87,31 +92,26 @@ function ChangedForm({ bills, currency, today, usualLeft, usualPay, formatMoney,
 
   return (
     <Sheet visible onDismiss={onDismiss} accessibilityLabel={title} dirty={kind !== null}>
-      <SheetHeader title={title} cancelLabel={t('decide.screens.common.cancel')} onCancel={onDismiss} />
+      <SheetHeader title={title} cancelLabel={t('decide.screens.sheetsHome.rule.close')} onCancel={onDismiss} />
       <SheetScroll contentContainerStyle={styles.column}>
         <Text style={small}>{t('decide.screens.sheetsHome.changed.sub')}</Text>
         <Text style={small}>{t('decide.screens.sheetsHome.changed.userLed')}</Text>
-        <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.sheetsHome.changed.whatQ')} style={styles.column}>
-          {options.map((o) => (
-            <Pressable
+        <OptionCard label={t('decide.screens.sheetsHome.changed.whatQ')} testID="changed-kinds">
+          {options.map((o, i) => (
+            <OptionRow
               key={o.key}
-              accessibilityRole="radio"
-              accessibilityLabel={o.title}
-              accessibilityState={{ selected: kind === o.key }}
+              testID={`changed-kind-${o.key}`}
+              first={i === 0}
+              title={o.title}
+              sub={o.sub}
+              selected={kind === o.key}
               onPress={() => {
                 hapticSelection();
                 setKind(o.key);
               }}
-              style={styles.radio}
-            >
-              <RadioDot selected={kind === o.key} />
-              <View style={styles.grow}>
-                <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{o.title}</Text>
-                <Text style={small}>{o.sub}</Text>
-              </View>
-            </Pressable>
+            />
           ))}
-        </View>
+        </OptionCard>
 
         {kind === 'pay' || kind === 'oneOff' ? (
           <MoneyInput
@@ -130,38 +130,32 @@ function ChangedForm({ bills, currency, today, usualLeft, usualPay, formatMoney,
           ) : (
             <>
               <Text style={small}>{t('decide.screens.sheetsHome.changed.whichBill')}</Text>
-              <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.sheetsHome.changed.whichBill')} style={styles.column}>
-                {bills.map((b) => (
-                  <Pressable
+              <OptionCard label={t('decide.screens.sheetsHome.changed.whichBill')} testID="changed-bills">
+                {bills.map((b, i) => (
+                  <OptionRow
                     key={b.id}
-                    accessibilityRole="radio"
+                    testID={`changed-bill-${b.id}`}
+                    first={i === 0}
+                    title={b.name}
+                    right={formatMoney(b.amount)}
                     accessibilityLabel={`${b.name}, ${formatMoney(b.amount)}`}
-                    accessibilityState={{ selected: billId === b.id }}
+                    selected={billId === b.id}
                     onPress={() => setBillId(b.id)}
-                    style={styles.radio}
-                  >
-                    <RadioDot selected={billId === b.id} />
-                    <Text style={[styles.grow, { ...textRole(pairing, 'body'), color: colors.ink }]}>{b.name}</Text>
-                    <Text style={small}>{formatMoney(b.amount)}</Text>
-                  </Pressable>
+                  />
                 ))}
-              </View>
+              </OptionCard>
               <Text style={small}>{t('decide.screens.sheetsHome.changed.statusQ')}</Text>
-              <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.sheetsHome.changed.statusQ')} style={styles.row}>
-                {(['stopped', 'paused'] as const).map((s) => (
-                  <Pressable
+              <OptionCard label={t('decide.screens.sheetsHome.changed.statusQ')}>
+                {(['stopped', 'paused'] as const).map((s, i) => (
+                  <OptionRow
                     key={s}
-                    accessibilityRole="radio"
-                    accessibilityLabel={t(`decide.screens.sheetsHome.changed.${s}`)}
-                    accessibilityState={{ selected: status === s }}
+                    first={i === 0}
+                    title={t(`decide.screens.sheetsHome.changed.${s}`)}
+                    selected={status === s}
                     onPress={() => setStatus(s)}
-                    style={styles.radio}
-                  >
-                    <RadioDot selected={status === s} />
-                    <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t(`decide.screens.sheetsHome.changed.${s}`)}</Text>
-                  </Pressable>
+                  />
                 ))}
-              </View>
+              </OptionCard>
             </>
           )
         ) : null}
@@ -274,6 +268,7 @@ export function SomethingChanged() {
         onReset={reset}
       />
       <Pressable
+        testID="something-changed-row"
         accessibilityRole="button"
         accessibilityLabel={`${t('decide.screens.sheetsHome.rulesCard.changedRow')}. ${t('decide.screens.sheetsHome.rulesCard.changedSub')}`}
         onPress={() => {
@@ -282,8 +277,11 @@ export function SomethingChanged() {
         }}
         style={({ pressed }) => [styles.homeRow, { backgroundColor: pressed ? colors.fill6 : colors.surface }]}
       >
-        <Text style={{ ...textRole(pairing, 'body'), fontWeight: '500', color: colors.ink }}>{t('decide.screens.sheetsHome.rulesCard.changedRow')}</Text>
-        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{t('decide.screens.sheetsHome.rulesCard.changedSub')}</Text>
+        <View style={styles.grow}>
+          <Text style={{ ...textRole(pairing, 'body'), fontWeight: '500', color: colors.ink }}>{t('decide.screens.sheetsHome.rulesCard.changedRow')}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{t('decide.screens.sheetsHome.rulesCard.changedSub')}</Text>
+        </View>
+        <StateGlyph name="chev" color={colors.inkFaint} size={CHEV} />
       </Pressable>
       <SomethingChangedSheet
         visible={open}
@@ -303,10 +301,8 @@ export function SomethingChanged() {
 
 const styles = StyleSheet.create({
   column: { gap: space.gapSm, paddingBottom: space.gapSm },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapMd },
-  radio: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
   grow: { flexShrink: 1, flexGrow: 1 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
   chip: { minHeight: space.touchMin, borderRadius: radii.pill, paddingHorizontal: space.gapMd, justifyContent: 'center' },
-  homeRow: { minHeight: 52, borderRadius: radii.card, paddingHorizontal: space.cardPad, paddingVertical: space.gapSm, justifyContent: 'center' },
+  homeRow: { minHeight: 52, borderRadius: radii.card, paddingHorizontal: space.cardPad, paddingVertical: space.gapSm, flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
 });

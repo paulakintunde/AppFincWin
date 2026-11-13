@@ -8,6 +8,10 @@
  * has an answer they are live. H-8: "Edit the check" opens the stepper where a big-buy draft stopped, else the Price step (OQ-53-1 A);
  * "Save for it in Grow" opens the same Save for it screen the answer uses (no goal is made from here); a greyed "See today's answer"
  * says a price is needed; a chosen plan shows a toast; a draft says what it still needs in one line.
+ *
+ * 06.1-58 (A-SH-1, D46): the state is a badge (glyph plus word) over the price, date and what it leaves, with "Checked <date>" on
+ * its own line; the records-changed note sits in a notYet tint box; the actions are one grouped card, rows split by a hairline rule,
+ * each with a chevron except Delete (a danger row that opens nothing). The NeedLines and H-8 actions are unchanged.
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -19,13 +23,16 @@ import { readStoredCheck, toStoredV2, type CheckV2, type LocalDate, type PayV2 }
 import { useT } from '@/i18n';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
-import { space } from '@/theme/layout';
+import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
+import { stateColors } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { hapticLight } from '@/ui/haptics';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
+import { StateBadge } from '@/ui/StateBadge';
 import { Text } from '@/ui/Text';
+import { StateGlyph } from '@/ui/glyphs/StateGlyph';
 import { firstStepFor, KEY_KIND, KEY_VISITED, stepHref, type StepNumber } from '../check/useStepCheck';
 import { useCheckEngine } from '../engine/useCheckEngine';
 import { DatePickerSheet } from '../sheets/DatePickerSheet';
@@ -45,6 +52,8 @@ export interface OpenCheckSheetProps {
   formatDate: (date: LocalDate) => string;
   onDismiss: () => void;
 }
+
+const CHEV = 16;
 
 const clampStep = (n: number): StepNumber => (n >= 3 ? 3 : n <= 1 ? 1 : 2);
 
@@ -78,14 +87,13 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
   const [datePick, setDatePick] = useState<{ current: LocalDate | null; set: (d: LocalDate) => void } | null>(null);
 
   const stateLine = [
-    badge.word,
     model.price === null ? null : formatMoney(model.price),
     model.date === null ? null : formatDate(model.date),
     model.left === null || model.draft ? null : t('decide.screens.sheetsHome.openChecks.leaves', { left: formatMoney(model.left) }),
-    model.checkedOn === null || model.draft ? null : t('decide.screens.sheetsHome.openCheck.checkedOn', { date: formatDate(model.checkedOn) }),
   ]
     .filter((x): x is string => x !== null)
     .join(' · ');
+  const checkedLine = model.checkedOn === null || model.draft ? null : t('decide.screens.sheetsHome.openCheck.checkedOn', { date: formatDate(model.checkedOn) });
 
   // 06.1-78 (DN-2, T-06.1-78-01): a second tap while the first route opens (the sheet is still closing) is dropped by pushOnce, so
   // Edit the check never stacks two copies of a step. The href is a full outer-stack route.
@@ -133,44 +141,66 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.sheetsHome.openCheck.payChosen.plan', params: { name: row.name } }, stepId: null });
   };
 
-  const actionRow = (key: string, label: string, onPress: () => void, opts?: { danger?: boolean; disabled?: boolean }) => (
+  const actionRow = (key: string, label: string, onPress: () => void, opts?: { danger?: boolean; disabled?: boolean; first?: boolean }) => (
     <Pressable
       key={key}
+      testID={`open-check-action-${key}`}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: opts?.disabled === true }}
       disabled={opts?.disabled === true}
       onPress={onPress}
-      style={({ pressed }) => [styles.action, { backgroundColor: pressed ? colors.fill6 : 'transparent', borderBottomColor: colors.line1, opacity: opts?.disabled === true ? 0.4 : 1 }]}
+      style={({ pressed }) => [
+        styles.action,
+        opts?.first === true ? null : { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line2 },
+        { backgroundColor: pressed ? colors.fill6 : colors.surface, opacity: opts?.disabled === true ? 0.4 : 1 },
+      ]}
     >
-      <Text style={{ ...textRole(pairing, 'body'), fontWeight: '500', color: opts?.danger === true ? colors.danger : colors.ink }}>{label}</Text>
+      <Text style={[styles.actionText, { ...textRole(pairing, 'body'), fontWeight: '500', color: opts?.danger === true ? colors.danger : colors.ink }]}>{label}</Text>
+      {opts?.danger === true ? null : <StateGlyph name="chev" color={colors.inkFaint} size={CHEV} />}
     </Pressable>
   );
+  const need = (testID: string, text: string | null) =>
+    text === null ? null : (
+      <View style={styles.need}>
+        <NeedLine testID={testID} text={text} />
+      </View>
+    );
 
   const title = model.name;
   return (
     <Sheet visible onDismiss={onDismiss} accessibilityLabel={title}>
       <SheetHeader title={title} cancelLabel={t('decide.screens.common.close')} onCancel={onDismiss} />
       <SheetScroll contentContainerStyle={styles.column}>
-        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{stateLine}</Text>
+        <View style={styles.stateRow}>
+          <StateBadge tone={badge.tone} shape={badge.shape} label={badge.word} testID="open-check-sheet-badge" />
+          {stateLine === '' ? null : (
+            <Text style={[styles.stateText, { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }]}>{stateLine}</Text>
+          )}
+        </View>
+        {checkedLine === null ? null : (
+          <Text testID="open-check-checked" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+            {checkedLine}
+          </Text>
+        )}
         {notFinished === null ? null : (
           <Text testID="open-check-not-finished" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>
             {notFinished}
           </Text>
         )}
         {model.changed ? (
-          <View accessibilityLiveRegion="polite">
-            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{t('decide.screens.sheetsHome.openCheck.changed')}</Text>
+          <View accessibilityLiveRegion="polite" testID="open-check-changed" style={[styles.changed, { backgroundColor: stateColors.notYet.tint }]}>
+            <Text style={{ ...textRole(pairing, 'label'), color: stateColors.notYet.color }}>{t('decide.screens.sheetsHome.openCheck.changed')}</Text>
           </View>
         ) : null}
-        <View>
-          {model.draft ? actionRow('pay', t('decide.screens.sheetsHome.openCheck.choosePay'), () => setPlanOpen(true)) : null}
-          {actionRow('see', t('decide.screens.sheetsHome.openCheck.seeToday'), () => open('/decide/answer/[id]'), { disabled: noPrice })}
-          <NeedLine testID="need-line-see" text={noPrice ? t('decide.screens.sheetsHome.openCheck.need.price') : null} />
+        <View testID="open-check-actions" style={[styles.group, { backgroundColor: colors.surface, borderColor: colors.line2 }]}>
+          {model.draft ? actionRow('pay', t('decide.screens.sheetsHome.openCheck.choosePay'), () => setPlanOpen(true), { first: true }) : null}
+          {actionRow('see', t('decide.screens.sheetsHome.openCheck.seeToday'), () => open('/decide/answer/[id]'), { disabled: noPrice, first: !model.draft })}
+          {need('need-line-see', noPrice ? t('decide.screens.sheetsHome.openCheck.need.price') : null)}
           {actionRow('edit', t('decide.screens.sheetsHome.openCheck.edit'), () => go(stepHref(editTarget(row, stored, model.draft), row.id)))}
           {actionRow('save', t('decide.screens.sheetsHome.openCheck.saveForIt'), doSave, { disabled: !answered })}
           {actionRow('pass', t('decide.screens.sheetsHome.openCheck.notBuying'), doNotBuying, { disabled: !answered || evaluation === null })}
-          <NeedLine testID="need-line-answer" text={answered ? null : t('decide.screens.sheetsHome.openCheck.need.answerFirst')} />
+          {need('need-line-answer', answered ? null : t('decide.screens.sheetsHome.openCheck.need.answerFirst'))}
           {actionRow('delete', t('decide.screens.common.delete'), doDelete, { danger: true })}
         </View>
       </SheetScroll>
@@ -206,5 +236,11 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
 
 const styles = StyleSheet.create({
   column: { gap: space.gapSm, paddingBottom: space.gapMd },
-  action: { minHeight: 52, justifyContent: 'center', borderBottomWidth: 1 },
+  stateRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.gapSm },
+  stateText: { flexShrink: 1 },
+  changed: { borderRadius: radii.card, paddingHorizontal: space.cardPad, paddingVertical: space.gapMd },
+  group: { borderRadius: radii.card, borderWidth: 1.5, overflow: 'hidden' },
+  action: { minHeight: 52, paddingHorizontal: space.cardPad, flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
+  actionText: { flex: 1 },
+  need: { paddingHorizontal: space.cardPad, paddingBottom: space.gapSm },
 });

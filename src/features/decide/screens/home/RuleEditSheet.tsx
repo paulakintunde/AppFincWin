@@ -3,18 +3,23 @@
  * (an amount), a category rule (its amount or share), and saving / investing at least, which are read-only here and open Grow.
  * "Answers check this rule" switches it on or off. Save goes through commitRule: when the new rule makes an open check cross it,
  * the haptic is the warning one and the toast names the check. "Remove this rule" is for the user's own rules and is undoable.
+ * 06.1-58 (A-SH-2, D49): a percent rule picks from preset chips (30 / 33 / 36 / 40) or Other, which opens a whole-percent field with a
+ * '%' after it; a money rule has the currency symbol in its field. The "today" line shows only where the engine's figures are passed
+ * in (debt share: debtToday; keep at least: usualLeft); nothing is worked out here. The switch row comes after the value, as in D49.
+ * The dismiss button says Close. Built-in rules (the debt share) can only be switched off; own rules also have Remove (T-06.1-58-02).
  */
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
-import { space } from '@/theme/layout';
+import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
-import { Stepper } from '@/ui/Stepper';
+import { Chip } from '@/ui/Chip';
+import { CustomValueField } from '@/ui/CustomValueChips';
 import { Text } from '@/ui/Text';
 import { ToggleRow } from '@/ui/ToggleRow';
 import { useIsDirty } from '@/ui/useIsDirty';
@@ -74,6 +79,7 @@ function RuleEditForm({ target, doc, dsrLine, currency, formatMoney, categoryNam
     : section === 'largest' ? t('decide.screens.sheetsHome.rule.largest.sub')
     : '';
 
+  const percentRule = section === 'debt' || (stored !== null && stored.kind === 'category_share');
   const needsAmount = section === 'keep' || section === 'largest' || (stored !== null && stored.kind === 'category_cap');
   const valid = !draft.on || section === 'debt' || !needsAmount || draft.value > 0;
 
@@ -96,7 +102,7 @@ function RuleEditForm({ target, doc, dsrLine, currency, formatMoney, categoryNam
 
   return (
     <Sheet visible onDismiss={onDismiss} accessibilityLabel={title} dirty={dirty}>
-      <SheetHeader title={title} cancelLabel={t('decide.screens.common.cancel')} onCancel={onDismiss} />
+      <SheetHeader title={title} cancelLabel={t('decide.screens.sheetsHome.rule.close')} onCancel={onDismiss} />
       <SheetScroll contentContainerStyle={styles.column}>
         <Text style={small}>{sub}</Text>
 
@@ -109,22 +115,17 @@ function RuleEditForm({ target, doc, dsrLine, currency, formatMoney, categoryNam
           </>
         ) : (
           <>
-            <ToggleRow label={t('decide.screens.sheetsHome.rule.answersCheck')} value={draft.on} onChange={(on) => setDraft((d) => ({ ...d, on }))} />
-            {section === 'debt' || (stored !== null && stored.kind === 'category_share') ? (
+            {percentRule ? (
               <>
-                <Stepper
+                <PercentChips
                   value={draft.value}
-                  step={1}
                   min={section === 'debt' ? DEBT_STEP_MIN : 1}
                   max={section === 'debt' ? DEBT_STEP_MAX : 100}
+                  label={section === 'debt' ? t('decide.screens.sheetsHome.rule.debt.title') : t('decide.screens.sheetsHome.addRule.percent')}
                   onChange={(value) => setDraft((d) => ({ ...d, value }))}
-                  valueText={t('decide.screens.sheetsHome.rule.debt.value', { percent: String(draft.value) })}
-                  accessibilityLabel={t('decide.screens.sheetsHome.rule.debt.value', { percent: String(draft.value) })}
-                  decrementLabel={t('decide.screens.sheetsHome.rule.debt.lessA11y')}
-                  incrementLabel={t('decide.screens.sheetsHome.rule.debt.moreA11y')}
                 />
                 {section === 'debt' && debtToday !== null ? (
-                  <Text style={small}>
+                  <Text testID="rule-today" style={[styles.today, { ...textRole(pairing, 'body'), color: colors.ink, backgroundColor: colors.fill6 }]}>
                     {t('decide.screens.sheetsHome.rule.debt.today', { percent: String(debtToday.percent), amount: formatMoney(debtToday.amount), pay: formatMoney(debtToday.pay) })}
                   </Text>
                 ) : null}
@@ -138,12 +139,16 @@ function RuleEditForm({ target, doc, dsrLine, currency, formatMoney, categoryNam
                   label={t(section === 'keep' ? 'decide.screens.sheetsHome.rule.keep.field' : 'decide.screens.sheetsHome.rule.largest.field')}
                   accessibilityLabel={t(section === 'keep' ? 'decide.screens.sheetsHome.rule.keep.field' : 'decide.screens.sheetsHome.rule.largest.field')}
                   boxed
+                  prefix="symbol"
                 />
                 {section === 'keep' && usualLeft !== null ? (
-                  <Text style={small}>{t('decide.screens.sheetsHome.rule.keep.today', { left: formatMoney(usualLeft) })}</Text>
+                  <Text testID="rule-today" style={[styles.today, { ...textRole(pairing, 'body'), color: colors.ink, backgroundColor: colors.fill6 }]}>
+                    {t('decide.screens.sheetsHome.rule.keep.today', { left: formatMoney(usualLeft) })}
+                  </Text>
                 ) : null}
               </View>
             )}
+            <ToggleRow label={t('decide.screens.sheetsHome.rule.answersCheck')} value={draft.on} onChange={(on) => setDraft((d) => ({ ...d, on }))} />
             <Pill label={t('decide.screens.sheetsHome.rule.save')} variant="primary" disabled={!valid} onPress={doSave} />
             {stored !== null ? <Pill label={t('decide.screens.sheetsHome.rule.remove')} variant="danger" onPress={doRemove} /> : null}
           </>
@@ -153,6 +158,53 @@ function RuleEditForm({ target, doc, dsrLine, currency, formatMoney, categoryNam
   );
 }
 
+/** D49: the preset shares of pay, then Other. */
+export const PERCENT_PRESETS: readonly number[] = [30, 33, 36, 40];
+
+/** A-SH-2: preset chips for a percent rule; Other opens a whole-percent field ('%' after it) within the rule's range. */
+export function PercentChips({ value, min, max, label, onChange }: { value: number; min: number; max: number; label: string; onChange: (value: number) => void }) {
+  const t = useT();
+  const preset = PERCENT_PRESETS.includes(value);
+  const [other, setOther] = useState(!preset);
+  const percent = (n: number): string => t('decide.screens.sheetsHome.rule.percentChip', { percent: String(n) });
+  return (
+    <View style={styles.column}>
+      <View accessibilityRole="radiogroup" accessibilityLabel={label} style={styles.chips}>
+        {PERCENT_PRESETS.map((p) => (
+          <Chip
+            key={p}
+            label={percent(p)}
+            selected={!other && value === p}
+            onPress={() => {
+              setOther(false);
+              onChange(p);
+            }}
+          />
+        ))}
+        <Chip
+          label={other ? t('decide.screens.sheetsHome.rule.otherValue', { percent: String(value) }) : t('decide.screens.sheetsHome.rule.other')}
+          selected={other}
+          onPress={() => setOther(true)}
+        />
+      </View>
+      {other ? (
+        <CustomValueField
+          value={value}
+          min={min}
+          max={max}
+          rangeText={t('decide.screens.sheetsHome.rule.range', { from: String(min), to: String(max) })}
+          unitWord="%"
+          groupLabel={label}
+          onChange={onChange}
+          autoFocus={preset}
+        />
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   column: { gap: space.gapSm, paddingBottom: space.gapMd },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
+  today: { borderRadius: radii.card, paddingHorizontal: space.cardPad, paddingVertical: space.gapMd, overflow: 'hidden' },
 });

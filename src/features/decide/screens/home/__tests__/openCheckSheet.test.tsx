@@ -340,3 +340,56 @@ describe("OpenCheckSheet on a check with an answer (DB-11)", () => {
     expect(mockPush).toHaveBeenCalledWith(stepHref(2, "c1"));
   });
 });
+
+type J = { type: string; props: Record<string, unknown>; children?: unknown[] | null };
+/** Host nodes of the rendered JSON in document order. */
+function nodesOf(node: unknown, out: J[] = []): J[] {
+  if (!node || typeof node === 'string') return out;
+  if (Array.isArray(node)) {
+    for (const n of node) nodesOf(n, out);
+    return out;
+  }
+  const j = node as J;
+  out.push(j);
+  nodesOf(j.children ?? null, out);
+  return out;
+}
+/** How many svg glyphs sit inside the node with this testID. */
+function glyphsIn(json: unknown, testID: string): number {
+  const host = nodesOf(json).find((n) => n.props.testID === testID);
+  return host === undefined ? -1 : nodesOf(host.children ?? null).filter((n) => n.type === 'RNSVGSvgView').length;
+}
+
+describe("OpenCheckSheet layout (06.1-58 A-SH-1, D46)", () => {
+  it("an answered check shows its state badge (glyph and word), its figures and a Checked line", async () => {
+    await renderSheet(
+      rowOf(big()),
+      modelOf({ draft: false, code: "fits_month", left: 20_000, date: "2026-12-15", checkedOn: "2026-11-10" }),
+    );
+    expect(screen.getByTestId("open-check-sheet-badge")).toBeTruthy();
+    expect(screen.getByText("$9000 · 2026-12-15 · leaves $200")).toBeTruthy();
+    expect(screen.getByTestId("open-check-checked")).toHaveTextContent("Checked 2026-11-10");
+  });
+
+  it("a draft shows the Draft badge and no Checked line", async () => {
+    await renderSheet(rowOf(big()), modelOf({ checkedOn: "2026-11-10" }));
+    expect(screen.getByTestId("open-check-sheet-badge")).toHaveTextContent("Draft");
+    expect(screen.queryByTestId("open-check-checked")).toBeNull();
+  });
+
+  it("the actions are one grouped card; every row but Delete has a chevron", async () => {
+    await renderSheet(rowOf(big()), modelOf({ draft: false, code: "fits_month", left: 20_000, checkedOn: null }));
+    expect(screen.getByTestId("open-check-actions")).toBeTruthy();
+    const chevrons = (key: string) => glyphsIn(screen.toJSON(), `open-check-action-${key}`);
+    for (const key of ["see", "edit", "save", "pass"]) expect(chevrons(key)).toBe(1);
+    expect(chevrons("delete")).toBe(0);
+    expect(screen.queryByTestId("open-check-action-pay")).toBeNull();
+  });
+
+  it("records changed since the check: the note sits in its tint box", async () => {
+    await renderSheet(rowOf(big()), modelOf({ draft: false, code: "fits_month", changed: true }));
+    expect(screen.getByTestId("open-check-changed")).toHaveTextContent(
+      "Your records changed since this check. Open it to see today’s answer.",
+    );
+  });
+});

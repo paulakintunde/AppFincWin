@@ -2,9 +2,11 @@
  * 06.1-22 (D50): add one of the user's own rules. A radio list of rule kinds, a value field, "Add rule". Up to 5 own rules: at the
  * cap the primary is disabled and the cap line is the reason. Keep at least and largest purchase can each be added once. Nothing is
  * pre-selected. The save goes through commitRule, the same crossing check as editing.
+ * 06.1-58 (A-SH-3): the kinds sit in one grouped card; the chosen kind has the accent tint as well as the filled dot. The dismiss
+ * button says Close.
  */
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -12,12 +14,12 @@ import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
-import { RadioDot } from '@/ui/RadioDot';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Stepper } from '@/ui/Stepper';
 import { Text } from '@/ui/Text';
 import { commitRule, type RuleLabel } from './commitRule';
+import { OptionCard, OptionRow } from './OptionCard';
 import { canAddRule, kindTaken, newRuleId, upsertRule, type Crossing, type OwnRuleKind, type RulesDoc } from './homeCardsModel';
 import type { RulesPatch } from './useHomeCards';
 
@@ -65,33 +67,28 @@ function AddRuleForm({ doc, currency, categories, crossings, save, onDismiss }: 
   const title = t('decide.screens.sheetsHome.addRule.title');
   return (
     <Sheet visible onDismiss={onDismiss} accessibilityLabel={title} dirty={kind !== null}>
-      <SheetHeader title={title} cancelLabel={t('decide.screens.common.cancel')} onCancel={onDismiss} />
+      <SheetHeader title={title} cancelLabel={t('decide.screens.sheetsHome.rule.close')} onCancel={onDismiss} />
       <SheetScroll contentContainerStyle={styles.column}>
         <Text style={small}>{t('decide.screens.sheetsHome.addRule.kindQ')}</Text>
-        <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.sheetsHome.addRule.kindQ')} style={styles.column}>
-          {KINDS.map((k) => {
+        <OptionCard label={t('decide.screens.sheetsHome.addRule.kindQ')} testID="add-rule-kinds">
+          {KINDS.map((k, i) => {
             const taken = kindTaken(doc, k.kind);
             const label = t(`decide.screens.sheetsHome.addRule.${k.title}` as never);
-            const selected = kind === k.kind;
             return (
-              <Pressable
+              <OptionRow
                 key={k.kind}
-                accessibilityRole="radio"
+                testID={`add-rule-kind-${k.kind}`}
+                first={i === 0}
+                title={label}
+                sub={taken ? t('decide.screens.sheetsHome.addRule.taken') : t(`decide.screens.sheetsHome.addRule.${k.sub}` as never)}
                 accessibilityLabel={taken ? `${label}, ${t('decide.screens.sheetsHome.addRule.taken')}` : label}
-                accessibilityState={{ selected, disabled: taken }}
+                selected={kind === k.kind}
                 disabled={taken}
                 onPress={() => setKind(k.kind)}
-                style={[styles.radio, { opacity: taken ? 0.4 : 1 }]}
-              >
-                <RadioDot selected={selected} />
-                <View style={styles.grow}>
-                  <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{label}</Text>
-                  <Text style={small}>{taken ? t('decide.screens.sheetsHome.addRule.taken') : t(`decide.screens.sheetsHome.addRule.${k.sub}` as never)}</Text>
-                </View>
-              </Pressable>
+              />
             );
           })}
-        </View>
+        </OptionCard>
 
         {needsCategory ? (
           <>
@@ -142,7 +139,5 @@ function AddRuleForm({ doc, currency, categories, crossings, save, onDismiss }: 
 
 const styles = StyleSheet.create({
   column: { gap: space.gapSm, paddingBottom: space.gapMd },
-  radio: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
-  grow: { flexShrink: 1 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
 });

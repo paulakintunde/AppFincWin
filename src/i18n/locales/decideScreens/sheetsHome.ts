@@ -64,6 +64,12 @@ export const sheetsHome = {
     },
   },
   rule: {
+    // 06.1-58 (A-SH-2): the dismiss button, the percent chips and Other, and the Other field's range.
+    close: 'Close',
+    percentChip: '{{percent}}%',
+    other: 'Other',
+    otherValue: 'Other: {{percent}}%',
+    range: '{{from}} to {{to}}%',
     answersCheck: 'Answers check this rule',
     save: 'Save rule',
     remove: 'Remove this rule',
