@@ -10,3 +10,13 @@ export function safeReturnTo(returnTo: string | string[] | undefined): string {
   const v = Array.isArray(returnTo) ? returnTo[0] : returnTo;
   return typeof v === 'string' && v.length <= 120 && (SAFE_RETURN.test(v) || SETUP_HISTORY_RETURN.test(v)) ? v : DECIDE_HOME_PATH;
 }
+
+/** 06.1-64 (CN-5 b, T-06.1-64-01): only an answer path counts as "back to the answer"; checked after safeReturnTo's allowlist. */
+const ANSWER_RETURN = /^\/decide\/answer\/[A-Za-z0-9_-]+$/;
+export type ReturnKind = 'answer' | 'other';
+
+/** The safe return path and whether it is an answer (which the user came from, so it is the screen below). */
+export function parseReturnTo(returnTo: string | string[] | undefined): { path: string; kind: ReturnKind } {
+  const path = safeReturnTo(returnTo);
+  return { path, kind: ANSWER_RETURN.test(path) ? 'answer' : 'other' };
+}

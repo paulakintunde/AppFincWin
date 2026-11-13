@@ -2,7 +2,7 @@
 // the chevron, the Android Back and "See the answer"; the forward path steps back one step; nothing ever exits the app.
 import React from 'react';
 import { BackHandler } from 'react-native';
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 import { toStoredV2, type CheckV2 } from '@/engine/decide/v3';
 import { checkOnce } from '@/engine/decide/v3/__tests__/helpers/fixtures';
 import { wrap } from '@/test/stepProps';

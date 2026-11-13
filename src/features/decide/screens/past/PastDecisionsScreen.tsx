@@ -3,7 +3,7 @@
 // line says how close the estimates were. Data hooks are the existing ones; nothing here computes a verdict.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { router, type Href } from 'expo-router';
+import { router } from 'expo-router';
 import { useAttachLine, useUnlinkLine } from '@/data/mutations/decideLinks';
 import { useAttachCandidates } from '@/data/queries/decide';
 import { homeAmountFor } from '@/data/queries/homeAmount';

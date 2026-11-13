@@ -1,6 +1,7 @@
 // 06.1-64 (H-3, FQ2, CN-1, CN-4, DN-3): the one place Decide decides "go to Decide home" and "go back to where you came from".
 // The router is passed in, so this stays a pure helper (no hook, no screen import) and every branch is tested here.
 import type { Href } from 'expo-router';
+import { DECIDE_HOME_PATH, parseReturnTo } from '../setup/safeReturnTo';
 
 /** The router calls these helpers use; expo-router's `router` and `useRouter()` both fit. */
 export interface DecideNavRouter {
@@ -40,4 +41,16 @@ export function withFromAnswer(href: Href): Href {
   if (typeof href === 'string') return `${href}${href.includes('?') ? '&' : '?'}from=${FROM_ANSWER}` as Href;
   const obj = href as { pathname: string; params?: Record<string, unknown> };
   return { ...obj, params: { ...(obj.params ?? {}), from: FROM_ANSWER } } as unknown as Href;
+}
+
+/**
+ * 06.1-64 (CN-5 b): leaving quick estimates. Opened from an answer, that answer is the screen below, so go back to it (the same answer,
+ * now judged with the estimates) rather than adding a second copy; with nothing below, dismissTo it. No return path: Decide home.
+ * Any other allowed path (the onboarding import step): dismissTo, which pops to it when it is below and otherwise takes this screen's place.
+ */
+export function returnFromQuickEstimates(router: DecideNavRouter, returnTo: string | string[] | undefined): void {
+  const { path, kind } = parseReturnTo(returnTo);
+  if (kind === 'answer') backToCaller(router, () => router.dismissTo(path as Href));
+  else if (path === DECIDE_HOME_PATH) goDecideHome(router);
+  else router.dismissTo(path as Href);
 }
