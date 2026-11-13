@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useCreateCheck } from '@/data/mutations/decideChecks';
 import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -12,8 +13,11 @@ import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { AddYourOwnSheet } from '../sheets/AddYourOwnSheet';
+import { CheckNotFound } from '../ui/CheckNotFound';
+import { NeedLine } from '../ui/NeedLine';
 import { KindTile } from './KindTile';
 import { StepFrame } from './StepFrame';
+import { isStillSaving, StepStillSaving } from './StepStillSaving';
 import { useOwnAdd } from './ownAdds';
 import { firstStepFor, kindOf, ownKindsOf, stepHref, useStepCheck, useStepData, withKind, type StepKind } from './useStepCheck';
 
@@ -23,7 +27,10 @@ export function KindStep({ id }: { id: string }) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const { dir } = useLocalSearchParams<{ dir?: string }>();
-  const step = useStepCheck(id);
+  // 06.1-52 (C-8): a check just created and not yet in the list opens from its queued row, as the answer does.
+  const { pendingIds, pendingRows } = useCreateCheck();
+  const fallback = React.useMemo(() => pendingRows.find((r) => r.id === id) ?? null, [pendingRows, id]);
+  const step = useStepCheck(id, fallback);
   const data = useStepData();
   const fmt = useMoneyFormatter(false, data.currency);
   const addOwn = useOwnAdd(step);
@@ -37,6 +44,8 @@ export function KindStep({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- markVisited is stable per check; run once per arrival
   }, [skip, status, id]);
 
+  if (isStillSaving(status, id, pendingIds)) return <StepStillSaving step={1} name={name} onBack={() => router.replace('/decide' as never)} />;
+  if (status === 'not_found') return <CheckNotFound />;
   if (status !== 'ready' || check === null || skip) return <Screen>{null}</Screen>;
 
   const kind = kindOf(check, name);
@@ -74,6 +83,8 @@ export function KindStep({ id }: { id: string }) {
           ))}
           <KindTile testID="kind-add-own" dashed title={t('decide.screens.stepper.kind.addOwn')} sub={t('decide.screens.stepper.kind.addOwnSub')} onPress={() => setOwnOpen(true)} />
         </View>
+        {/* 06.1-52 (C-9): Next waits for a kind, and says so. */}
+        {kind === null ? <NeedLine testID="kind-need" text={t('decide.screens.common.need.kind')} /> : null}
         {isHome ? (
           <Text testID="home-note" accessibilityRole="alert" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>
             {t('decide.screens.stepper.homeNote')}

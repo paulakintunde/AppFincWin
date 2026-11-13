@@ -1,11 +1,12 @@
 // 06.1-19 (D13, D-24, FIN-28, UX-41): step 3, running costs and what stops. Lines start from a matching recorded bill, else from the
 // dated "quick estimates" table (prefillRunningCosts); each can be switched off, re-timed and edited. A card lists costs that stop
 // when you buy and the sale of the old one. The total shows a monthly figure and what a usual month leaves, from the engine.
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import type { LocalDate, RunningCostLine, Sale } from '@/engine/decide/v3';
 import { currencyCode, minorUnits } from '@/engine/money';
+import { useCreateCheck } from '@/data/mutations/decideChecks';
 import { useT } from '@/i18n';
 import { showToast } from '@/state/undoToast';
 import { space } from '@/theme/layout';
@@ -23,7 +24,10 @@ import { DatePickerSheet } from '../sheets/DatePickerSheet';
 import { HowOftenSheet, type HowOftenValue } from '../sheets/HowOftenSheet';
 import { SaleSheet } from '../sheets/SaleSheet';
 import { useCheckEngine } from '../engine/useCheckEngine';
+import { CheckNotFound } from '../ui/CheckNotFound';
+import { NeedLine } from '../ui/NeedLine';
 import { StepFrame } from './StepFrame';
+import { isStillSaving, StepStillSaving } from './StepStillSaving';
 import { useOwnAdd } from './ownAdds';
 import { kindOf, lineNamesOf, type BuiltInKind, stepHref, useStepCheck, useStepData, withPrefill, type StepNumber } from './useStepCheck';
 
@@ -33,10 +37,26 @@ const SWATCH_OF_KEY: Readonly<Record<string, StackedSegment['swatch']>> = { insu
 
 const monthlyOf = (amount: number, everyMonths: number): number => Math.round(amount / everyMonths);
 
+/** 06.1-52 (C-16): a line whose amount was cleared. It is held here, out of the stored check, until it has an amount again. */
+interface HeldLine {
+  line: RunningCostLine;
+  index: number;
+}
+
+/** The stored lines with the held (cleared) ones back in their places, for drawing. */
+export function linesWithHeld(stored: readonly RunningCostLine[], held: Readonly<Record<string, HeldLine>>): { line: RunningCostLine; cleared: boolean }[] {
+  const out = stored.map((line) => ({ line, cleared: false }));
+  for (const h of Object.values(held).sort((a, b) => a.index - b.index)) out.splice(Math.min(h.index, out.length), 0, { line: h.line, cleared: true });
+  return out;
+}
+
 export function CostsStep({ id }: { id: string }) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const step = useStepCheck(id);
+  // 06.1-52 (C-8): a check just created and not yet in the list opens from its queued row, as the answer does.
+  const { pendingIds, pendingRows } = useCreateCheck();
+  const fallback = useMemo(() => pendingRows.find((r) => r.id === id) ?? null, [pendingRows, id]);
+  const step = useStepCheck(id, fallback);
   const data = useStepData();
   const fmt = useMoneyFormatter(false, data.currency);
   const engine = useCheckEngine(step.check, { checkId: id });
@@ -46,6 +66,7 @@ export function CostsStep({ id }: { id: string }) {
   const [own, setOwn] = useState<OwnVariant | null>(null);
   const [saleOpen, setSaleOpen] = useState(false);
   const [datePick, setDatePick] = useState<{ current: LocalDate | null; set: (d: LocalDate | null) => void } | null>(null);
+  const [held, setHeld] = useState<Record<string, HeldLine>>({});
 
   // The table or the matching bills start the lines once; after that the user's switches and edits stand.
   const needsPrefill = status === 'ready' && check !== null && data.status !== 'loading' && withPrefill(check, name, data).lines.length > 0;
@@ -58,6 +79,8 @@ export function CostsStep({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs only while the lines have not started
   }, [needsPrefill]);
 
+  if (isStillSaving(status, id, pendingIds)) return <StepStillSaving step={3} name={name} onBack={() => router.replace(stepHref(2, id, 'back'))} />;
+  if (status === 'not_found') return <CheckNotFound />;
   if (status !== 'ready' || check === null) return null;
 
   const money = (n: number): string => fmt.formatMoney({ amount: minorUnits(n), currency: currencyCode(data.currency) });
@@ -73,8 +96,45 @@ export function CostsStep({ id }: { id: string }) {
   const everyLabel = (e: number): string => t(e === 12 ? 'decide.screens.stepper.running.yearly' : e === 3 ? 'decide.screens.stepper.running.every3Months' : 'decide.screens.stepper.running.monthly');
   const a11yKey = (e: number) => (e === 12 ? 'amountYearlyA11y' : e === 3 ? 'amountQuarterlyA11y' : null);
 
-  const patchLine = (lineId: string, patch: Partial<RunningCostLine>): void =>
+  const shown = linesWithHeld(lines, held);
+  const patchLine = (lineId: string, patch: Partial<RunningCostLine>): void => {
+    const h = held[lineId];
+    if (h !== undefined) {
+      setHeld((all) => ({ ...all, [lineId]: { ...h, line: { ...h.line, ...patch } } }));
+      return;
+    }
     step.update((c) => ({ ...c, runningCosts: (c.runningCosts ?? []).map((l) => (l.id === lineId ? { ...l, ...patch } : l)) }));
+  };
+  // 06.1-52 (C-16, T-06.1-52-02): a cleared amount stays empty and is never stored as 0. The line leaves the stored check (so the
+  // total and the answer leave it out) and comes back in its place once an amount is typed.
+  const setAmount = (lineId: string, minor: number | null): void => {
+    const h = held[lineId];
+    if (minor === null) {
+      if (h !== undefined) return;
+      const index = lines.findIndex((l) => l.id === lineId);
+      const line = lines[index];
+      if (line === undefined) return;
+      setHeld((all) => ({ ...all, [lineId]: { line, index: shown.findIndex((s) => s.line.id === lineId) } }));
+      step.update((c) => ({ ...c, runningCosts: (c.runningCosts ?? []).filter((l) => l.id !== lineId) }));
+      return;
+    }
+    if (h === undefined) {
+      patchLine(lineId, { amount: minorUnits(minor) });
+      return;
+    }
+    setHeld((all) => {
+      const rest = { ...all };
+      delete rest[lineId];
+      return rest;
+    });
+    // Back in the place it was drawn in: after the stored lines that were drawn before it.
+    const before = shown.slice(0, shown.findIndex((s) => s.line.id === lineId)).filter((s) => !s.cleared).length;
+    step.update((c) => {
+      const next = [...(c.runningCosts ?? [])];
+      next.splice(Math.min(before, next.length), 0, { ...h.line, amount: minorUnits(minor) });
+      return { ...c, runningCosts: next };
+    });
+  };
 
   const onLines = lines.filter((l) => l.on);
   const parts = [
@@ -116,7 +176,7 @@ export function CostsStep({ id }: { id: string }) {
   const kindLabel = kind === null || kind.startsWith('own:') ? null : t(`decide.screens.stepper.kind.${kind as BuiltInKind}`);
   const price = check.price === null ? '' : money(check.price);
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
-  const oftenLine = often === null ? null : (lines.find((l) => l.id === often) ?? null);
+  const oftenLine = often === null ? null : (shown.find((s) => s.line.id === often)?.line ?? null);
   const oftenValue: HowOftenValue | null = oftenLine === null ? null : { everyMonths: oftenLine.everyMonths, start: oftenLine.start === data.today ? null : oftenLine.start, end: oftenLine.end };
 
   return (
@@ -134,10 +194,14 @@ export function CostsStep({ id }: { id: string }) {
         <Text style={small}>{t('decide.screens.stepper.running.sub')}</Text>
         <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.stepper.running.startTitle')}</Text>
 
-        {lines.map((l) => {
+        {shown.map(({ line: l, cleared }) => {
           const label = nameOf(l);
           const unusual = a11yKey(l.everyMonths);
-          const a11y: string = unusual === null ? t('decide.screens.common.a11y.amountMonthly', { name: label, amount: speak(l.amount) }) : t(`decide.screens.stepper.running.${unusual}`, { name: label, amount: speak(l.amount) });
+          const a11y: string = cleared
+            ? `${label}, ${t('decide.screens.common.amount')}`
+            : unusual === null
+              ? t('decide.screens.common.a11y.amountMonthly', { name: label, amount: speak(l.amount) })
+              : t(`decide.screens.stepper.running.${unusual}`, { name: label, amount: speak(l.amount) });
           return (
             <View key={l.id} testID={`cost-${l.id}`} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
               <ToggleRow
@@ -154,11 +218,12 @@ export function CostsStep({ id }: { id: string }) {
                   label={label}
                   accessibilityLabel={a11y}
                   currency={data.currency}
-                  value={l.amount}
-                  onChange={(v) => patchLine(l.id, { amount: minorUnits(v ?? 0) })}
+                  value={cleared ? null : l.amount}
+                  onChange={(v) => setAmount(l.id, v)}
                   amountField={{ width: 96 }}
                 />
               </View>
+              {cleared ? <NeedLine testID={`cost-need-${l.id}`} text={t('decide.screens.common.need.amount')} /> : null}
             </View>
           );
         })}

@@ -46,7 +46,12 @@ jest.mock('@/data/queries/decide', () => ({
 }));
 jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: [{ id: 'c-ins', name: 'Insurance' }] }) }));
 jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ status: 'ready', inputs: mockInputs, prepared: null, v3: null }) }));
-jest.mock('@/data/mutations/decideChecks', () => ({ useSaveCheckDraft: () => ({ save: mockSave }) }));
+let mockPending: { id: string; name: string; inputs: unknown; furthest_step: number }[] = [];
+let mockPendingIds: string[] = [];
+jest.mock('@/data/mutations/decideChecks', () => ({
+  useSaveCheckDraft: () => ({ save: mockSave }),
+  useCreateCheck: () => ({ create: jest.fn(), pendingIds: mockPendingIds, pendingRows: mockPending }),
+}));
 jest.mock('../../engine/useCheckEngine', () => ({ useCheckEngine: () => ({ evaluation: null, readyDate: () => null }) }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 
@@ -65,6 +70,8 @@ beforeEach(() => {
   mockReduced = false;
   mockParams = {};
   mockInputs = baseInputs();
+  mockPending = [];
+  mockPendingIds = [];
   mockSave.mockClear();
   mockReplace.mockClear();
   mockPush.mockClear();
@@ -311,5 +318,79 @@ describe('stepper Back order (06.1-49, A-ST-3, D20)', () => {
     const style = StyleSheet.flatten(back.props.style);
     expect(style.minHeight).toBeGreaterThanOrEqual(44);
     expect(style.minWidth).toBeGreaterThanOrEqual(44);
+  });
+});
+
+describe('06.1-52 (G-5): no step is blank or silently stuck', () => {
+  it('C-8: a step opened before its new check is in the list opens from the queued row', async () => {
+    mockRow = null;
+    mockPendingIds = [ID];
+    mockPending = [{ id: ID, name: 'Used car', inputs: toStoredV2(checkOnce(120_000)), furthest_step: 1 }];
+    await wrap(<PriceStep id={ID} />);
+    expect(await screen.findByText('Price and how you pay')).toBeTruthy();
+    expect(screen.queryByTestId('step-still-saving')).toBeNull();
+  });
+
+  it('C-8: with the create queued and no row to show, the step says it is still saving, never blank', async () => {
+    mockRow = null;
+    mockPendingIds = [ID];
+    mockPending = [];
+    await wrap(<KindStep id={ID} />);
+    expect(await screen.findByText('This check is still saving. It opens here once it is saved.')).toBeTruthy();
+    expect(screen.getByTestId('step-frame')).toBeTruthy();
+    await wrap(<CostsStep id={ID} />);
+    expect(screen.getAllByTestId('step-still-saving').length).toBeGreaterThan(0);
+  });
+
+  it('a truly missing check shows the not-found page', async () => {
+    mockRow = null;
+    await wrap(<PriceStep id={ID} />);
+    expect(await screen.findByText(/isn.t here/i)).toBeTruthy();
+    expect(screen.queryByTestId('step-still-saving')).toBeNull();
+  });
+
+  it('C-9: Kind Next disabled says a kind is needed', async () => {
+    mockParams = { dir: 'back' };
+    seed('Thing', { ...checkOnce(120_000), layerAnswers: {} });
+    await wrap(<KindStep id={ID} />);
+    expect(await screen.findByText('A kind is needed to go on.')).toBeTruthy();
+    expect(screen.getByLabelText('Next').props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(screen.getByTestId('kind-tech'));
+    expect(screen.queryByText('A kind is needed to go on.')).toBeNull();
+  });
+
+  it('C-11: a price of 0 stays put on Next and See the answer and says a price above zero is needed', async () => {
+    seed('Laptop');
+    await wrap(<PriceStep id={ID} />);
+    const field = await screen.findByLabelText('Price');
+    await fireEvent.changeText(field, '0');
+    await fireEvent(field, 'blur');
+    expect(screen.getByText('A price above zero is needed.')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Next'));
+    await fireEvent.press(screen.getByTestId('see-now'));
+    expect(mockReplace).not.toHaveBeenCalledWith(stepHref(3, ID));
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('C-16: clearing a running-cost amount keeps the field empty, stores no 0 and leaves it out of the total', async () => {
+    seed('Used car');
+    await wrap(<CostsStep id={ID} />);
+    const field = await screen.findByLabelText(/^Insurance, amount, .*140.* a month$/);
+    const totalBefore = screen.getByTestId('costs-total');
+    expect(totalBefore).toHaveTextContent(/a month/);
+    await fireEvent.changeText(field, '');
+    expect(screen.getByText('No amount yet.')).toBeTruthy();
+    expect(screen.getByLabelText('Insurance, Amount').props.value ?? '').toBe('');
+    await waitFor(() => expect(mockSave).toHaveBeenCalled(), { timeout: 2000 });
+    const saved = lastSaved().inputs.runningCosts ?? [];
+    expect(saved.find((l) => l.id === 'rc:insurance')).toBeUndefined();
+    // The other table lines are stored as they were; nothing took the cleared line's place.
+    expect(saved.map((l) => l.id)).not.toContain('rc:insurance');
+    expect(screen.queryByText(/Insurance \d+%/)).toBeNull();
+    // Typing an amount puts the line back in its place.
+    await fireEvent.changeText(screen.getByLabelText('Insurance, Amount'), '150');
+    expect(screen.queryByText('No amount yet.')).toBeNull();
+    await waitFor(() => expect((lastSaved().inputs.runningCosts ?? []).find((l) => l.id === 'rc:insurance')?.amount).toBe(15_000), { timeout: 2000 });
+    expect((lastSaved().inputs.runningCosts ?? [])[0]?.id).toBe('rc:insurance');
   });
 });

@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { percent as parsePercent, type Percent } from '@/engine/decide';
 import { INCLUDED_COUNTRIES, lookupTaxDefault, maxCheckPrice, salesTaxOf, type LocalDate, type PayV2 } from '@/engine/decide/v3';
 import { currencyCode, minorUnits } from '@/engine/money';
+import { useCreateCheck } from '@/data/mutations/decideChecks';
 import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -20,9 +21,12 @@ import { AddYourOwnSheet } from '../sheets/AddYourOwnSheet';
 import { DatePickerSheet } from '../sheets/DatePickerSheet';
 import { InstallmentPlanSheet } from '../sheets/InstallmentPlanSheet';
 import { Field, FieldLabel, Note } from '../sheets/sheetUi';
+import { CheckNotFound } from '../ui/CheckNotFound';
+import { NeedLine } from '../ui/NeedLine';
 import { WaterfallCard, type WaterfallLine } from '../ui/WaterfallCard';
 import { useCheckEngine } from '../engine/useCheckEngine';
 import { StepFrame } from './StepFrame';
+import { isStillSaving, StepStillSaving } from './StepStillSaving';
 import { useOwnAdd } from './ownAdds';
 import { kindOf, oneOffsOf, type BuiltInKind, stepHref, useStepCheck, useStepData, withPrefill, type StepNumber } from './useStepCheck';
 
@@ -41,7 +45,10 @@ function percentText(p: Percent): string {
 export function PriceStep({ id }: { id: string }) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const step = useStepCheck(id);
+  // 06.1-52 (C-8): a check just created and not yet in the list opens from its queued row, as the answer does.
+  const { pendingIds, pendingRows } = useCreateCheck();
+  const fallback = React.useMemo(() => pendingRows.find((r) => r.id === id) ?? null, [pendingRows, id]);
+  const step = useStepCheck(id, fallback);
   const data = useStepData();
   const fmt = useMoneyFormatter(false, data.currency);
   const engine = useCheckEngine(step.check, { checkId: id });
@@ -58,6 +65,8 @@ export function PriceStep({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per arrival
   }, [status, id]);
 
+  if (isStillSaving(status, id, pendingIds)) return <StepStillSaving step={2} name={name} onBack={() => router.replace(stepHref(1, id, 'back'))} />;
+  if (status === 'not_found') return <CheckNotFound />;
   if (status !== 'ready' || check === null) return null;
 
   const money = (n: number): string => fmt.formatMoney({ amount: minorUnits(n), currency: currencyCode(data.currency) });
@@ -70,6 +79,8 @@ export function PriceStep({ id }: { id: string }) {
   const price = check.price;
   const tooLarge = price !== null && price > maxCheckPrice(data.currency);
   const noPrice = price === null && touched;
+  // 06.1-52 (C-11): a price of 0 does not move on, and says so.
+  const zeroPrice = price === 0 && touched;
   const tax = price === null || effective === null ? 0 : salesTaxOf(price, effective);
   const fees = check.oneOffFees;
   const isPlan = check.pay.mode === 'plan';
@@ -104,12 +115,12 @@ export function PriceStep({ id }: { id: string }) {
 
   const next = (): void => {
     setTouched(true);
-    if (price === null || tooLarge) return;
+    if (price === null || price === 0 || tooLarge) return;
     router.replace(stepHref(3, id));
   };
   const seeNow = (): void => {
     setTouched(true);
-    if (price === null || tooLarge) return;
+    if (price === null || price === 0 || tooLarge) return;
     step.finish(2, (c) => withPrefill(c, name, data).check);
     // 06.1-49 (A-ST-3, D20): push, so Back from the answer returns to this step.
     router.push(`/decide/answer/${id}` as never);
@@ -144,6 +155,7 @@ export function PriceStep({ id }: { id: string }) {
             large
           />
           {noPrice ? <Note tone="warn">{t('decide.v3.missing.no_price')}</Note> : null}
+          {zeroPrice ? <NeedLine testID="price-need" text={t('decide.screens.common.need.priceAboveZero')} /> : null}
           {tooLarge ? <Note tone="warn">{t('decide.v3.missing.price_too_large')}</Note> : null}
         </View>
 

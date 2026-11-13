@@ -81,7 +81,7 @@ jest.mock('@/data/queries/decide', () => ({
 }));
 jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: [{ id: 'c-ins', name: 'Insurance' }] }) }));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => ({ isOnline: true }) }));
-jest.mock('@/data/mutations/decideChecks', () => ({ useSaveCheckDraft: () => ({ save: jest.fn() }) }));
+jest.mock('@/data/mutations/decideChecks', () => ({ useSaveCheckDraft: () => ({ save: jest.fn() }), useCreateCheck: () => ({ create: jest.fn(), pendingIds: [], pendingRows: [] }) }));
 jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockNetRows }) }));
 jest.mock('@/features/grow/goals/useGoalsRead', () => ({
   useGoalsRead: () => ({ status: 'ready', model: { safetyNet: { size: 1_250_000_00, saved: 987_654_32 } }, refetch: jest.fn() }),
