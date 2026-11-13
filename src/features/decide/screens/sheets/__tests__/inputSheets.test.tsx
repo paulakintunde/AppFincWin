@@ -6,6 +6,7 @@ import type { CheckV2, QuickLine } from '@/engine/decide/v3';
 import { checkOnce } from '@/engine/decide/v3/__tests__/helpers/fixtures';
 import { showToast } from '@/state/undoToast';
 import { wrap } from '@/test/stepProps';
+import { KEY_PLAN_NAME } from '../../check/planName';
 import { DatePickerSheet } from '../DatePickerSheet';
 import { HowOftenSheet } from '../HowOftenSheet';
 import { InstallmentPlanSheet } from '../InstallmentPlanSheet';
@@ -175,6 +176,62 @@ describe('InstallmentPlanSheet', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+describe('InstallmentPlanSheet 06.1-57 (A-ST-7)', () => {
+  it('offers lengths 12, 24, 36 and 48 months plus Other, for a car and for any other kind', async () => {
+    for (const itemKind of ['car', 'other'] as const) {
+      const { view } = await renderPlan(planCheck(), { itemKind });
+      for (const m of [12, 24, 36, 48]) expect(screen.getByLabelText(`${m} months`)).toBeTruthy();
+      expect(screen.queryByLabelText('6 months')).toBeNull();
+      expect(screen.getByLabelText('Other')).toBeTruthy();
+      await view.unmount();
+    }
+  });
+
+  it('shows the example rate as the field value with an "example" tag; typing replaces it and the tag goes', async () => {
+    const { onUse } = await renderPlan(planCheck(), { itemKind: 'car' });
+    const rate = await screen.findByLabelText('Rate, % a year');
+    expect(rate.props.value).toBe('9.9');
+    expect(rate.props.selectTextOnFocus).toBe(true);
+    expect(screen.getByTestId('rate-example-tag')).toHaveTextContent('example');
+    await fireEvent.changeText(rate, '7.9');
+    expect(screen.getByLabelText('Rate, % a year').props.value).toBe('7.9');
+    expect(screen.queryByTestId('rate-example-tag')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('12 months'));
+    await fireEvent.press(screen.getByLabelText('Use this plan'));
+    expect(onUse.mock.calls[0][0].apr).toBe(percent('7.9'));
+  });
+
+  it('a cleared rate stays empty (the example does not come back) and is still never saved', async () => {
+    const { onUse } = await renderPlan(planCheck(), { itemKind: 'car' });
+    await fireEvent.changeText(await screen.findByLabelText('Rate, % a year'), '');
+    expect(screen.getByLabelText('Rate, % a year').props.value).toBe('');
+    await fireEvent.press(screen.getByLabelText('12 months'));
+    expect(screen.getByText('This is FincWin’s estimate, not the APR on your agreement.')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Use this plan'));
+    expect(onUse.mock.calls[0][0].apr).toBeNull();
+  });
+
+  it('hands the typed plan name to onUse, trimmed; none typed is null', async () => {
+    const first = await renderPlan(planCheck(), { itemKind: 'car' });
+    await fireEvent.changeText(await screen.findByLabelText('Plan name'), '  Car loan ');
+    await fireEvent.press(screen.getByLabelText('24 months'));
+    await fireEvent.press(screen.getByLabelText('Use this plan'));
+    expect(first.onUse.mock.calls[0][1]).toBe('Car loan');
+    await first.view.unmount();
+    const second = await renderPlan(planCheck(), { itemKind: 'car' });
+    await fireEvent.press(await screen.findByLabelText('24 months'));
+    await fireEvent.press(screen.getByLabelText('Use this plan'));
+    expect(second.onUse.mock.calls[0][1]).toBeNull();
+  });
+
+  it('opens with a stored plan name, and the money fields carry the currency sign and the rate a %', async () => {
+    await renderPlan(planCheck({ layerAnswers: { [KEY_PLAN_NAME]: 'Car loan' } }), { itemKind: 'car' });
+    expect((await screen.findByLabelText('Plan name')).props.value).toBe('Car loan');
+    expect(screen.getAllByTestId('money-symbol').length).toBeGreaterThanOrEqual(5);
+    expect(screen.getByTestId('field-suffix')).toHaveTextContent('%');
   });
 });
 

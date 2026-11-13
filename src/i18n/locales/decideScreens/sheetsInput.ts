@@ -80,6 +80,8 @@ export const sheetsInput = {
     every2Weeks: 'Every 2 weeks',
     aWeek: 'A week',
     rate: 'Rate, % a year',
+    // 06.1-57 (A-ST-7): the tag beside an example rate shown in the rate field until the user types one.
+    exampleTag: 'example',
     fees: 'Fees',
     feeSetup: 'Set-up',
     feeEach: 'Each payment',

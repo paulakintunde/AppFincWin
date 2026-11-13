@@ -6,6 +6,10 @@
  * before that. Home buying stays hidden (D-02).
  * 06.1-53 (C-12..C-14): Use stays off until the first payment lands on or after today, and while the cash down covers the whole
  * price (nothing is borrowed); the line under it says which. The length note waits until Use is tried or a length is cleared.
+ * 06.1-57 (A-ST-7, T-06.1-57-02): a Plan name field (optional, handed to onUse as its second argument); the currency sign on the
+ * money fields and '%' on the rate; length chips 12 / 24 / 36 / 48 for a car and for any other kind (shorter sets stay for tech
+ * and small items); the example rate shows as the rate field's value with an "example" tag beside it until the user types, and
+ * typing replaces it (the text is selected on focus). The example is still never written to pay.apr.
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -35,6 +39,7 @@ import { Text } from '@/ui/Text';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { useSettledLabel } from '@/ui/useSettledLabel';
 import { parseWholeInRange } from '@/ui/wholeNumberField';
+import { PLAN_NAME_MAX, planNameOf } from '../check/planName';
 import { NeedLine } from '../ui/NeedLine';
 import { addDaysTo, addMonthsTo } from './dateMath';
 import { Field, FieldLabel, Note } from './sheetUi';
@@ -56,7 +61,8 @@ export interface InstallmentPlanSheetProps {
   formatMoney: (minor: number) => string;
   formatDate: (date: LocalDate) => string;
   onPickDate: (current: LocalDate | null, set: (date: LocalDate) => void) => void;
-  onUse: (pay: Extract<PayV2, { mode: 'plan' }>) => void;
+  /** planName: the typed name, trimmed, or null when none was typed. Callers may ignore it. */
+  onUse: (pay: Extract<PayV2, { mode: 'plan' }>, planName: string | null) => void;
   onDismiss: () => void;
 }
 
@@ -72,7 +78,7 @@ const LENGTHS: Record<PlanItemKind, readonly number[]> = {
   camera: [6, 12, 24],
   headphones: [3, 6, 12],
   phone: [12, 24, 36],
-  other: [6, 12, 24],
+  other: [12, 24, 36, 48],
 };
 
 const CADENCES: Record<CadenceKey, { cadence: Cadence; key: 'aMonth' | 'every2Weeks' | 'aWeek' }> = {
@@ -85,6 +91,7 @@ const CADENCE_ORDER: readonly CadenceKey[] = ['month', 'twoWeeks', 'week'];
 const PERIODS_PER_YEAR: Record<CadenceKey, number> = { month: 12, twoWeeks: 26, week: 52 };
 
 interface Draft {
+  name: string;
   cashDown: number | null;
   months: number | null;
   other: boolean;
@@ -119,6 +126,7 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
     const months = saved?.termMonths ?? null;
     const fp = saved?.firstPayment ?? null;
     return {
+      name: planNameOf(check) ?? '',
       cashDown: saved !== null && saved.deposit > 0 ? saved.deposit : null,
       months,
       other: months !== null && !chips.includes(months),
@@ -165,6 +173,9 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
 
   const fees = useMemo(() => ({ setup: minorUnits(d.setup ?? 0), perPeriod: minorUnits(d.perPeriod ?? 0), end: minorUnits(d.end ?? 0) }), [d.setup, d.perPeriod, d.end]);
   const usingExample = typedRate === null;
+  // T-06.1-57-02: until the user types a rate, the field shows the example and says so; once typed, the field is theirs (even empty).
+  const [rateTyped, setRateTyped] = useState(initial.rateText !== '');
+  const showExample = !rateTyped && d.rateText === '';
 
   const card = useMemo(() => {
     if (periods === null || borrowed <= 0 || firstPayment === null) return null;
@@ -207,7 +218,7 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
       quotedPayment: d.quoted === null ? null : minorUnits(d.quoted),
       firstPayment,
       deferredInterestTerm: saved?.deferredInterestTerm ?? false,
-    });
+    }, d.name.trim() === '' ? null : d.name.trim());
   };
 
   const firstDateMonth = CADENCES[d.cadence].cadence.unit === 'month' ? addMonthsTo(today, 1) : addDaysTo(today, 7 * CADENCES[d.cadence].cadence.every);
@@ -223,12 +234,16 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
       <SheetScroll contentContainerStyle={styles.column}>
         <Note>{t('decide.screens.sheetsInput.plan.sub')}</Note>
 
+        <FieldLabel>{t('decide.screens.sheetsInput.plan.name')}</FieldLabel>
+        <Field value={d.name} onChangeText={(name) => set({ name })} accessibilityLabel={t('decide.screens.sheetsInput.plan.name')} maxLength={PLAN_NAME_MAX} />
+
         <MoneyInput
           value={d.cashDown}
           currency={currency}
           onChange={(cashDown) => set({ cashDown })}
           label={t('decide.screens.sheetsInput.plan.cashDown')}
           accessibilityLabel={t('decide.screens.sheetsInput.plan.cashDown')}
+          prefix="symbol"
         />
         <Note>{t('decide.v3.plan.feesVary')}</Note>
 
@@ -284,20 +299,34 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
         </View>
 
         <FieldLabel>{t('decide.screens.sheetsInput.plan.rate')}</FieldLabel>
-        <Field
-          value={d.rateText}
-          onChangeText={(rateText) => set({ rateText })}
-          accessibilityLabel={t('decide.screens.sheetsInput.plan.rate')}
-          decimal
-          maxLength={5}
-        />
+        <View style={styles.rateRow}>
+          <View style={styles.rateField}>
+            <Field
+              value={showExample ? percentText(EXAMPLE_APR) : d.rateText}
+              onChangeText={(text) => {
+                setRateTyped(true);
+                set({ rateText: text });
+              }}
+              accessibilityLabel={t('decide.screens.sheetsInput.plan.rate')}
+              suffix="%"
+              selectTextOnFocus={showExample}
+              decimal
+              maxLength={5}
+            />
+          </View>
+          {showExample ? (
+            <Text testID="rate-example-tag" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+              {t('decide.screens.sheetsInput.plan.exampleTag')}
+            </Text>
+          ) : null}
+        </View>
         {rateBad ? <Note tone="warn">{t('decide.screens.common.fieldError.rateRange')}</Note> : null}
         {usingExample ? <Note>{t('decide.v3.tax.exampleRate')}</Note> : null}
 
         <FieldLabel>{t('decide.screens.sheetsInput.plan.fees')}</FieldLabel>
-        <MoneyInput value={d.setup} currency={currency} onChange={(setup) => set({ setup })} label={t('decide.screens.sheetsInput.plan.feeSetup')} accessibilityLabel={t('decide.screens.sheetsInput.plan.feeSetup')} />
-        <MoneyInput value={d.perPeriod} currency={currency} onChange={(perPeriod) => set({ perPeriod })} label={t('decide.screens.sheetsInput.plan.feeEach')} accessibilityLabel={t('decide.screens.sheetsInput.plan.feeEach')} />
-        <MoneyInput value={d.end} currency={currency} onChange={(end) => set({ end })} label={t('decide.screens.sheetsInput.plan.feeEnd')} accessibilityLabel={t('decide.screens.sheetsInput.plan.feeEnd')} />
+        <MoneyInput value={d.setup} currency={currency} onChange={(setup) => set({ setup })} label={t('decide.screens.sheetsInput.plan.feeSetup')} accessibilityLabel={t('decide.screens.sheetsInput.plan.feeSetup')} prefix="symbol" />
+        <MoneyInput value={d.perPeriod} currency={currency} onChange={(perPeriod) => set({ perPeriod })} label={t('decide.screens.sheetsInput.plan.feeEach')} accessibilityLabel={t('decide.screens.sheetsInput.plan.feeEach')} prefix="symbol" />
+        <MoneyInput value={d.end} currency={currency} onChange={(end) => set({ end })} label={t('decide.screens.sheetsInput.plan.feeEnd')} accessibilityLabel={t('decide.screens.sheetsInput.plan.feeEnd')} prefix="symbol" />
 
         <FieldLabel>{t('decide.screens.sheetsInput.plan.first')}</FieldLabel>
         <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.sheetsInput.plan.first')} style={styles.column}>
@@ -338,6 +367,7 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
           onChange={(quoted) => set({ quoted })}
           label={t('decide.screens.sheetsInput.plan.quoted')}
           accessibilityLabel={t('decide.screens.sheetsInput.plan.quoted')}
+          prefix="symbol"
         />
         <Note>{t('decide.screens.sheetsInput.plan.quotedNote')}</Note>
 
@@ -380,4 +410,6 @@ const styles = StyleSheet.create({
   radio: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
   readOnly: { gap: 2 },
   card: { borderRadius: space.cardPad, padding: space.cardPad, gap: space.gapSm },
+  rateRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  rateField: { flex: 1 },
 });
