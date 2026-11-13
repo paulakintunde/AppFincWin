@@ -195,6 +195,16 @@ describe('QuickEstimateSheet', () => {
     expect(onAdd).toHaveBeenCalledWith({ id: 'uuid-1', kind: 'expense', name: 'Insurance', amount: 4_500, everyMonths: 3, date: TODAY });
   });
 
+  it('06.1-53 C-17: says a name and an amount above zero are needed under the disabled button', async () => {
+    await wrap(<QuickEstimateSheet {...base} kind="expense" onAdd={jest.fn()} />);
+    const need = 'A name and an amount above zero are needed.';
+    expect(screen.getByText(need)).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'Insurance');
+    expect(screen.getByText(need)).toBeTruthy();
+    await typeMoney('Amount', '45');
+    expect(screen.queryByText(need)).toBeNull();
+  });
+
   it('builds a loan line with payments left bounded 1 to 600', async () => {
     const onAdd = jest.fn();
     await wrap(<QuickEstimateSheet {...base} kind="loan" onAdd={onAdd} />);

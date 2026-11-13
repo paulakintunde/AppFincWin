@@ -57,6 +57,23 @@ describe('AddYourOwnSheet', () => {
     expect(add.line).toEqual({ id: 'id1', amount: 3000, everyMonths: 1, start: TODAY, end: null, on: true });
   });
 
+  it('06.1-53 C-17: the disabled primary says a name and an amount above zero are needed', async () => {
+    await addSheet('running', jest.fn());
+    const need = 'A name and an amount above zero are needed.';
+    expect(screen.getByText(need)).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'Parking permit');
+    expect(screen.getByText(need)).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Amount'), '30');
+    expect(screen.queryByText(need)).toBeNull();
+  });
+
+  it('06.1-53 C-17: an own kind needs only a name, and says so', async () => {
+    await addSheet('kind', jest.fn());
+    expect(screen.getByText('A name is needed.')).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Name'), 'Bike');
+    expect(screen.queryByText('A name is needed.')).toBeNull();
+  });
+
   it('one-off keeps a named line under a stable key', async () => {
     const onAdd = jest.fn();
     await addSheet('oneOff', onAdd);
@@ -114,6 +131,16 @@ describe('SaleSheet', () => {
     await fireEvent.press(screen.getByText('About a month later'));
     await fireEvent.press(screen.getByText('Save the sale'));
     expect(onSave).toHaveBeenCalledWith({ amount: 1_000_000, arrives: '2026-11-15', paysDebtId: 'debt-1' });
+  });
+
+  it('06.1-53 C-17: a sale with no amount keeps Save off and says an amount above zero is needed', async () => {
+    const onSave = jest.fn();
+    await wrap(<SaleSheet {...base} sale={null} onSave={onSave} />);
+    expect(screen.queryByText('An amount above zero is needed.')).toBeNull();
+    await fireEvent.press(screen.getByRole('switch'));
+    expect(screen.getByText('An amount above zero is needed.')).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Sale price'), '100');
+    expect(screen.queryByText('An amount above zero is needed.')).toBeNull();
   });
 
   it('a debt larger than the sale leaves nothing toward the purchase', async () => {

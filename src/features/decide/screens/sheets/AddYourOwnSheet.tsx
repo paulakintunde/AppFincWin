@@ -21,6 +21,7 @@ import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
+import { NeedLine } from '../ui/NeedLine';
 
 /** Keys built from a variant or a list are looked up by name, so the typed key union does not apply. */
 type Translate = (key: string) => string;
@@ -194,6 +195,8 @@ function OwnForm({ variant, currency, today, bills, categories, existingKindCoun
 
         {capped ? <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{k('cap')}</Text> : null}
         <Pill label={k(`${variant}.add`)} variant="primary" disabled={!valid} onPress={add} />
+        {/* 06.1-53 (C-17): an own kind needs only a name; every other variant needs a name and an amount above zero. */}
+        <NeedLine text={valid ? null : t(needsAmount ? 'decide.screens.sheetsCosts.need.nameAndAmount' : 'decide.screens.sheetsCosts.need.name')} />
       </SheetScroll>
     </Sheet>
   );

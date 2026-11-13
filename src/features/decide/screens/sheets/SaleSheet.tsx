@@ -22,6 +22,7 @@ import { useIsDirty } from '@/ui/useIsDirty';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { currencyCode, minorUnits } from '@/engine/money';
 import type { LocalDate, Sale } from '@/engine/decide/v3';
+import { NeedLine } from '../ui/NeedLine';
 import { WaterfallCard } from '../ui/WaterfallCard';
 
 /** Keys are looked up by name, so the typed key union does not apply. */
@@ -153,6 +154,8 @@ function SaleForm({ currency, today, sale, debts, onSave, onClose }: SaleSheetPr
           </>
         ) : null}
         <Pill label={k('save')} variant="primary" disabled={!valid} onPress={save} />
+        {/* 06.1-53 (C-17): the sale has no name field, so the line asks only for the amount. */}
+        <NeedLine text={valid ? null : t('decide.screens.sheetsCosts.need.amount')} />
       </SheetScroll>
     </Sheet>
   );

@@ -21,6 +21,7 @@ import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { parseWholeInRange } from '@/ui/wholeNumberField';
+import { NeedLine } from '../ui/NeedLine';
 import { QUICK_LINE_KINDS, type QuickLineKind } from './quickLineKinds';
 import { Field, FieldLabel, Note } from './sheetUi';
 
@@ -221,6 +222,8 @@ function QuickForm({ kind, line, currency, today, formatDate, onPickDate, onAdd,
           disabled={!valid}
           onPress={add}
         />
+        {/* 06.1-53 (C-17): a missing name or amount is said here; a too-big amount and a bad length have their own notes above. */}
+        <NeedLine text={name === '' || d.amount === null || d.amount <= 0 ? t('decide.screens.sheetsCosts.need.nameAndAmount') : null} />
         {editing && onRemove !== undefined ? (
           <Pressable accessibilityRole="button" accessibilityLabel={t('decide.screens.common.remove')} onPress={remove} style={styles.remove}>
             <Text style={{ ...textRole(pairing, 'body'), color: colors.danger }}>{t('decide.screens.common.remove')}</Text>

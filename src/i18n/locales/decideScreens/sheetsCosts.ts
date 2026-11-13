@@ -76,4 +76,10 @@ export const sheetsCosts = {
     toward: 'Toward this purchase',
     sumA11y: '{{label}}: {{total}}',
   },
+  // 06.1-53 (C-17): the line under a disabled add or save button.
+  need: {
+    nameAndAmount: 'A name and an amount above zero are needed.',
+    name: 'A name is needed.',
+    amount: 'An amount above zero is needed.',
+  },
 } as const;

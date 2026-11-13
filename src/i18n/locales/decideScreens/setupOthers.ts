@@ -40,6 +40,9 @@ export const setupOthers = {
     noAccounts: 'There is no account to hold it yet.',
     toast: 'Saved: safety net.',
     otherCurrency: 'This safety net is in another currency. The size changes in Grow.',
+    need: {
+      amount: 'An amount above zero is needed.',
+    },
   },
   rules: {
     title: 'Your money rules',

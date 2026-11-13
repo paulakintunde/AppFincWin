@@ -26,6 +26,7 @@ import { MoneyInput } from '@/ui/MoneyInput';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { Text } from '@/ui/Text';
 import type { NetAnswerPort } from '../../safetyNet/ports';
+import { NeedLine } from '../../ui/NeedLine';
 import { RadioRow, useSetupFormat } from './itemFields';
 import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
 
@@ -98,6 +99,8 @@ export function NetSetup({ answer, setAccount }: { answer: NetAnswerPort; setAcc
   };
 
   const ready = canWrite && (net !== null || notSet || (amount !== null && amount > 0));
+  // 06.1-53 (C-21 net): with no net yet and "Not set yet" not chosen, Save waits for an amount above zero and says so.
+  const needAmount = net === null && !notSet && (amount === null || amount <= 0);
   const lockWord = locked ? t('decide.screens.safetyNet.settings.locked') : t('decide.screens.safetyNet.settings.unlocked');
 
   return (
@@ -107,6 +110,7 @@ export function NetSetup({ answer, setAccount }: { answer: NetAnswerPort; setAcc
       primaryLabel={t('decide.screens.setupOthers.net.save')}
       primaryDisabled={!ready}
       onPrimary={save}
+      footer={<NeedLine text={needAmount ? t('decide.screens.setupOthers.net.need.amount') : null} />}
       onBack={leave}
       onSaveAndClose={leave}
     >
