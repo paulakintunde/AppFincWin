@@ -677,6 +677,43 @@ describe('regression: a dip inside the overdraft does not wait for payday (D-80,
   });
 });
 
+describe('regression: a sale after the buy day does not make the net lend this month\'s own hole (D-35, D-56; crosscheck seed 482693972, path 9124)', () => {
+  // 1 November, records synced 31 October, nothing logged yet (fresh records). Pay $3,004.64 lands today; the usual bills
+  // ($1,654.95) and everyday spending ($1,409.78) leave the month $60.09 short. $57.14 in checking, so the month ends $2.95 below 0.
+  // A $8,992.58 item (tax included) plus a $5 fee, paid at once, with $8,743.50 from a sale arriving 4 November. The net
+  // (protection off, $14,605.76 saved, $180.27 of it a goal) lends $8,817.31: the price less the $180.27 extra savings. With the
+  // sale on the path, every day stays at or above $0 with that loan, so the $2.95 hole is already inside the month's -$60.09 and is
+  // not lent a second time. The month after the buy is -$60.09 - $8,817.31 = -$8,877.40 on both sides.
+  const f: RightAnswerFixture = {
+    asOf: '2026-11-01', currency: 'USD', region: { country: 'CA', subdivision: 'QC' },
+    pay: { amount: 300_464, cadence: 'monthly', nextDate: '2026-11-01', setupAmount: null, lastThree: null },
+    usualMonth: { bills: 165_495, everyday: 140_978, essentialEveryday: 70_489 },
+    thisMonth: { received: 0, billsPaid: 0, billsDue: 0, everydaySoFar: 0 },
+    historyMonths: 5, quickEstimates: null, recordsAsOf: '2026-10-31',
+    accounts: [
+      { id: 'a1', kind: 'checking', name: 'Main', balance: 5_714, overdraftLimit: null, overdraftRate: null, use: 'everyday' },
+      { id: 'n1', kind: 'savings', name: 'Safety net', balance: 1_478_603, overdraftLimit: null, overdraftRate: null, use: 'emergency' },
+    ],
+    safetyNet: { protect: false, size: 585_277, saved: 1_460_576, locked: false },
+    bills: [], debts: [], userLine: null, factLines: false,
+    check: {
+      price: 899_258, taxPercent: '8.25', taxIncluded: true, oneOffFees: 500, pay: { mode: 'once' }, closingPercent: '0',
+      replaces: { stops: [], sale: { amount: 874_350, arrives: '2026-11-04', paysDebtId: null } },
+    },
+    goals: [{ id: 'goal1', name: 'Goal', saved: 18_027, target: 36_054, monthly: null, locked: false, accountId: 'n1' }],
+  };
+  it('records are fresh and nothing is logged yet, so the fresh-records branch answers', () => {
+    expect(recordsFresh(f)).toBe(true);
+  });
+  it('plain and engine: Dips into your safety net, month after the buy -$8,877.40 (not -$8,880.35)', () => {
+    const { inputs, check } = toEngineInputs(f);
+    const got = pick(evaluate(inputs, check));
+    expect({ code: got.code, month: got.afterBuy?.month }).toEqual({ code: 'fits_uses_net', month: -887_740 });
+    const p = plainAnswer(f);
+    expect({ code: p.code, afterBuy: p.afterBuy }).toEqual({ code: 'fits_uses_net', afterBuy: -887_740 });
+  });
+});
+
 describe('plain calculator: card and loan minimums (05.4-20, FIN-04, FIN-10, D-39b)', () => {
   const db = (id: string): RightAnswerFixture => loadCases().find((c) => c.id === id)!.fixture;
   const engine = (f: RightAnswerFixture) => {
