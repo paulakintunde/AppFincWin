@@ -26,3 +26,7 @@ Quick estimates now save inside the screen via `useSaveSetupStep` (with Undo). T
 - Open checks never leave Draft: the answer stores the shown answer through useSaveCheckAnswer (6e0a27f1).
 - G-72-2: record-context and savings-goal reads keep the five-minute Decide freshness on Decide screens (46b1f06e).
 - New from 06.1-78 for 06.1-74: G-78-1 (device walks on a Metro serving an edited checkout reload mid-tap) and G-78-2 (the open-check sheet can lose its panel and leave an invisible backdrop). See 06.1-78-SUMMARY.md.
+
+## Open-check sheet sometimes leaves an invisible backdrop (G-78-2, found by 06.1-78, routed to 06.1-74)
+Just after opening, the open-check sheet occasionally loses its panel and leaves a full-screen invisible backdrop that swallows the next tap; Android Back clears it. Seen once in Maestro, once by hand. Lives in `src/ui/Sheet.tsx` (06.1-76 H-13 area). 74 must reproduce on the Pixel 6 preview build and fix or route.
+Method note G-78-1: device walks must run on a frozen worktree or a preview build; Metro serving a checkout under edit full-reloads mid-tap (that was DN-1/DN-2).
