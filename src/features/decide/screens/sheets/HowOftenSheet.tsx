@@ -1,6 +1,6 @@
 /**
  * 06.1-15 (D43): How often a cost comes: every month, 3 months or year, when it starts and an optional end. Nothing applies until
- * "Save how often". The date choices open the caller's own date picker through onPickDate, so this sheet stays one screen deep.
+ * "Save how often". 06.1-53 (C-15): an end date before the start date keeps Save off and says why. The date choices open the caller's own date picker through onPickDate, so this sheet stays one screen deep.
  */
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -16,6 +16,7 @@ import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
 import { useIsDirty } from '@/ui/useIsDirty';
+import { NeedLine } from '../ui/NeedLine';
 
 export type EveryMonths = 1 | 3 | 12;
 
@@ -66,6 +67,8 @@ function HowOftenForm({ value, amount, formatMoney, formatDate, onPickDate, onSa
           monthly: formatMoney(Math.round(amount / draft.everyMonths)),
         })
       : '';
+  // 06.1-53 (C-15): an end before the start is refused. LocalDate strings compare as plain text; the same day is allowed.
+  const endBeforeStart = draft.start !== null && draft.end !== null && draft.end < draft.start;
 
   return (
     <Sheet visible onDismiss={onDismiss} accessibilityLabel={title} dirty={dirty}>
@@ -114,7 +117,8 @@ function HowOftenForm({ value, amount, formatMoney, formatDate, onPickDate, onSa
         <Text style={small}>{t('decide.screens.sheetsInput.often.weeklyHelp')}</Text>
         <View accessibilityLiveRegion="polite">{live === '' ? null : <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{live}</Text>}</View>
 
-        <Pill label={t('decide.screens.sheetsInput.often.save')} variant="primary" onPress={() => onSave(draft)} />
+        <Pill label={t('decide.screens.sheetsInput.often.save')} variant="primary" disabled={endBeforeStart} onPress={() => onSave(draft)} />
+        <NeedLine text={endBeforeStart ? t('decide.screens.sheetsInput.often.need.endBeforeStart') : null} />
       </SheetScroll>
     </Sheet>
   );

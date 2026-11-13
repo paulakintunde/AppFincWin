@@ -93,6 +93,10 @@ export const sheetsInput = {
     dontKnow: 'Don’t know',
     firstMonth: 'One month after buying ({{date}})',
     lengthError: 'The plan needs a length.',
+    coveredByCash: 'Cash down covers the whole price, so nothing is borrowed.',
+    need: {
+      firstPayment: 'A first payment date on or after today is needed.',
+    },
     quoted: 'Payment on your quote (optional)',
     quotedNote: 'When this is higher, the answer uses it.',
     result_one: '{{monthly}} a month for 1 month',
@@ -115,5 +119,8 @@ export const sheetsInput = {
     noEnd: 'No end date',
     weeklyHelp: 'A weekly cost? Multiply by 52, then divide by 12.',
     save: 'Save how often',
+    need: {
+      endBeforeStart: 'The end date comes before the start date.',
+    },
   },
 } as const;

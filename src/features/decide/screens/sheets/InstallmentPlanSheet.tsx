@@ -4,6 +4,8 @@
  * schedule. The example rate (decide.v3.tax.exampleRate) is shown only as a hint and in the card, and is NEVER written to pay.apr:
  * a rate is saved only when the user typed it. "Use this plan" writes CheckV2.pay (mode 'plan') through onUse; nothing applies
  * before that. Home buying stays hidden (D-02).
+ * 06.1-53 (C-12..C-14): Use stays off until the first payment lands on or after today, and while the cash down covers the whole
+ * price (nothing is borrowed); the line under it says which. The length note waits until Use is tried or a length is cleared.
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -33,6 +35,7 @@ import { Text } from '@/ui/Text';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { useSettledLabel } from '@/ui/useSettledLabel';
 import { parseWholeInRange } from '@/ui/wholeNumberField';
+import { NeedLine } from '../ui/NeedLine';
 import { addDaysTo, addMonthsTo } from './dateMath';
 import { Field, FieldLabel, Note } from './sheetUi';
 
@@ -134,6 +137,8 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
   });
   const [d, setD] = useState<Draft>(initial);
   const set = (patch: Partial<Draft>) => setD((x) => ({ ...x, ...patch }));
+  // C-14: the length note is not shown on open; only once Use was tried with no length, or a length was cleared.
+  const [lengthAsked, setLengthAsked] = useState(false);
   const dirty = useIsDirty(initial, d);
 
   const price = check.price ?? 0;
@@ -176,12 +181,20 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
     card === null || months === null ? '' : t('decide.screens.sheetsInput.plan.result', { count: months, monthly: formatMoney(card.monthlyEquivalent) });
   const settledResult = useSettledLabel(resultLine, d.cadence, 600);
 
-  const canUse = months !== null && !rateBad;
+  // C-13: the cash down covers price, tax and fees, so there is nothing to borrow and no plan to use.
+  const covered = cashDown > 0 && borrowed <= 0;
+  // C-12: firstPayment is null when the chosen date is missing or before today (plain LocalDate string compare above).
+  const canUse = !rateBad && !covered && firstPayment !== null;
+  const need = covered ? t('decide.screens.sheetsInput.plan.coveredByCash') : firstPayment === null ? t('decide.screens.sheetsInput.plan.need.firstPayment') : null;
   const title = t('decide.screens.sheetsInput.plan.title');
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
 
   const use = () => {
-    if (!canUse || months === null || periods === null) return;
+    if (!canUse) return;
+    if (months === null || periods === null) {
+      setLengthAsked(true);
+      return;
+    }
     onUse({
       mode: 'plan',
       cadence: CADENCES[d.cadence].cadence,
@@ -235,13 +248,24 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
               onPress={() => set({ months: m, other: false })}
             />
           ))}
-          <Chip label={t('decide.screens.sheetsInput.plan.lengthOther')} selected={d.other} onPress={() => set({ other: true, months: null })} />
+          <Chip
+            label={t('decide.screens.sheetsInput.plan.lengthOther')}
+            selected={d.other}
+            onPress={() => {
+              if (!d.other && d.months !== null) setLengthAsked(true);
+              set({ other: true, months: null });
+            }}
+          />
         </View>
         {d.other ? (
           <>
             <Field
               value={d.otherText}
-              onChangeText={(otherText) => set({ otherText: otherText.replace(/\D/g, '') })}
+              onChangeText={(text) => {
+                const otherText = text.replace(/\D/g, '');
+                if (otherText === '' && d.otherText !== '') setLengthAsked(true);
+                set({ otherText });
+              }}
               accessibilityLabel={t('decide.screens.sheetsInput.plan.lengthOtherField')}
               placeholder={t('decide.screens.sheetsInput.plan.lengthOtherField')}
               numeric
@@ -250,7 +274,7 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
             {d.otherText !== '' && other.kind !== 'ok' ? <Note tone="warn">{t('decide.screens.common.fieldError.lengthRange')}</Note> : null}
           </>
         ) : null}
-        {months === null ? <Note>{t('decide.screens.sheetsInput.plan.lengthError')}</Note> : null}
+        {months === null && lengthAsked ? <Note>{t('decide.screens.sheetsInput.plan.lengthError')}</Note> : null}
 
         <FieldLabel>{t('decide.screens.sheetsInput.plan.often')}</FieldLabel>
         <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.sheetsInput.plan.often')} style={styles.chips}>
@@ -334,6 +358,7 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
 
         <Text style={small}>{t('legal.decideAnswer.footer')}</Text>
         <Pill label={t(editing ? 'decide.screens.sheetsInput.plan.save' : 'decide.screens.sheetsInput.plan.use')} variant="primary" disabled={!canUse} onPress={use} />
+        <NeedLine text={need} />
       </SheetScroll>
     </Sheet>
   );

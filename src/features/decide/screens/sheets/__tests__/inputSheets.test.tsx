@@ -72,12 +72,89 @@ describe('InstallmentPlanSheet', () => {
     expect(screen.getByLabelText('Amount borrowed, $950')).toBeTruthy();
   });
 
-  it('keeps Use this plan disabled until a length is chosen', async () => {
-    await renderPlan();
+  it('06.1-53 C-14: the length note is absent on open and shows once Use is tried with no length', async () => {
+    const { onUse } = await renderPlan();
     const use = await screen.findByLabelText('Use this plan');
-    expect(use.props.accessibilityState.disabled).toBe(true);
+    expect(screen.queryByText('The plan needs a length.')).toBeNull();
+    expect(use.props.accessibilityState.disabled).toBe(false);
+    await fireEvent.press(use);
+    expect(onUse).not.toHaveBeenCalled();
+    expect(screen.getByText('The plan needs a length.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('6 months'));
+    expect(screen.queryByText('The plan needs a length.')).toBeNull();
+  });
+
+  it('06.1-53 C-14: clearing a length shows the length note', async () => {
+    await renderPlan();
+    await fireEvent.press(await screen.findByLabelText('6 months'));
+    await fireEvent.press(screen.getByLabelText('Other'));
+    expect(screen.getByText('The plan needs a length.')).toBeTruthy();
+  });
+
+  it('06.1-53 C-14: emptying a typed length shows the length note', async () => {
+    await renderPlan();
+    await fireEvent.press(await screen.findByLabelText('Other'));
+    expect(screen.queryByText('The plan needs a length.')).toBeNull();
+    const field = screen.getAllByLabelText('Number of months (1 to 120)')[0];
+    await fireEvent.changeText(field, '18');
+    await fireEvent.changeText(screen.getAllByLabelText('Number of months (1 to 120)')[0], '');
+    expect(screen.getByText('The plan needs a length.')).toBeTruthy();
+  });
+
+  it('06.1-53 C-12: Use stays off until a first payment date on or after today is picked', async () => {
+    let setter: ((d: string) => void) | null = null;
+    pickDate.mockImplementation((_cur: unknown, set: (d: string) => void) => {
+      setter = set;
+    });
+    const { onUse } = await renderPlan();
+    await fireEvent.press(await screen.findByLabelText('12 months'));
+    expect(screen.queryByTestId('need-line')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Pick a date'));
+    expect(screen.getByLabelText('Use this plan').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByTestId('need-line').props.children).toBe('A first payment date on or after today is needed.');
+    await act(async () => setter?.('2026-11-01'));
+    expect(screen.getByLabelText('Use this plan').props.accessibilityState.disabled).toBe(true);
+    await act(async () => setter?.(TODAY));
     expect(screen.getByLabelText('Use this plan').props.accessibilityState.disabled).toBe(false);
+    expect(screen.queryByTestId('need-line')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Use this plan'));
+    expect(onUse.mock.calls[0][0].firstPayment).toMatchObject({ kind: 'deferred', firstDate: TODAY });
+    pickDate.mockReset();
+  });
+
+  it('06.1-53 C-12: a next payday before today is not offered', async () => {
+    await renderPlan(planCheck(), { nextPayday: '2026-11-01' });
+    expect(screen.queryByText(/Next payday/)).toBeNull();
+  });
+
+  it('06.1-53 C-12: a saved first payment date before today keeps Save plan off', async () => {
+    const saved = planCheck({
+      pay: {
+        mode: 'plan',
+        cadence: { unit: 'month', every: 1 },
+        count: 12,
+        termMonths: 12,
+        apr: null,
+        fees: { setup: 0, perPeriod: 0, end: 0 },
+        deposit: 0,
+        tradeIn: 0,
+        quotedPayment: null,
+        firstPayment: { kind: 'deferred', firstDate: '2026-10-01', interestDuringPause: false },
+        deferredInterestTerm: false,
+      } as never,
+    });
+    await renderPlan(saved, { editing: true });
+    expect(screen.getByLabelText('Save plan').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByText('A first payment date on or after today is needed.')).toBeTruthy();
+  });
+
+  it('06.1-53 C-13: a cash down that covers the whole price says nothing is borrowed and keeps Use off', async () => {
+    await renderPlan();
+    await fireEvent.press(await screen.findByLabelText('12 months'));
+    await typeMoney('Cash down', '1000');
+    expect(screen.getByLabelText('Amount borrowed, $0')).toBeTruthy();
+    expect(screen.getByText('Cash down covers the whole price, so nothing is borrowed.')).toBeTruthy();
+    expect(screen.getByLabelText('Use this plan').props.accessibilityState.disabled).toBe(true);
   });
 
   it('states the fee note and the footer, and has no home-loan option', async () => {
@@ -205,5 +282,30 @@ describe('HowOftenSheet', () => {
     expect(screen.getByText('$1200 every year is about $100 a month, from the day you buy.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Save how often'));
     expect(onSave).toHaveBeenCalledWith({ everyMonths: 12, start: null, end: null });
+  });
+});
+
+describe('HowOftenSheet dates (06.1-53 C-15)', () => {
+  const renderOften = async (start: string | null, end: string | null) => {
+    const onSave = jest.fn();
+    await wrap(
+      <HowOftenSheet visible value={{ everyMonths: 1, start, end }} amount={120_000} formatMoney={fmt} formatDate={fmtDate} onPickDate={pickDate} onSave={onSave} onDismiss={jest.fn()} />,
+    );
+    return onSave;
+  };
+
+  it('refuses an end date before the start date and says why', async () => {
+    const onSave = await renderOften('2026-12-01', '2026-11-20');
+    expect(screen.getByLabelText('Save how often').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByText('The end date comes before the start date.')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Save how often'));
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('allows an end on the start date', async () => {
+    const onSave = await renderOften('2026-12-01', '2026-12-01');
+    expect(screen.queryByText('The end date comes before the start date.')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Save how often'));
+    expect(onSave).toHaveBeenCalledWith({ everyMonths: 1, start: '2026-12-01', end: '2026-12-01' });
   });
 });
