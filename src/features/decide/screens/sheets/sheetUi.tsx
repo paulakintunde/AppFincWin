@@ -33,12 +33,16 @@ export interface FieldProps {
   numeric?: boolean;
   decimal?: boolean;
   readOnly?: boolean;
+  /** 06.1-57 (A-ST-1, A-ST-7): a short word after the text, such as '%'. */
+  suffix?: string;
+  /** 06.1-57 (A-ST-7): the whole text is selected on focus, so typing replaces a shown example. */
+  selectTextOnFocus?: boolean;
 }
 
-export function Field({ value, onChangeText, accessibilityLabel, placeholder, maxLength, numeric = false, decimal = false, readOnly = false }: FieldProps) {
+export function Field({ value, onChangeText, accessibilityLabel, placeholder, maxLength, numeric = false, decimal = false, readOnly = false, suffix, selectTextOnFocus }: FieldProps) {
   const { colors, pairing } = useTheme();
   return (
-    <View style={[styles.box, { backgroundColor: colors.fill6 }]}>
+    <View style={[styles.box, suffix === undefined ? null : styles.adorned, { backgroundColor: colors.fill6 }]}>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -48,8 +52,14 @@ export function Field({ value, onChangeText, accessibilityLabel, placeholder, ma
         maxLength={maxLength}
         inputMode={decimal ? 'decimal' : numeric ? 'numeric' : undefined}
         editable={!readOnly}
-        style={[styles.input, { ...textRole(pairing, 'body'), color: colors.ink }]}
+        selectTextOnFocus={selectTextOnFocus}
+        style={[styles.input, suffix === undefined ? null : styles.grow, { ...textRole(pairing, 'body'), color: colors.ink }]}
       />
+      {suffix === undefined ? null : (
+        <Text testID="field-suffix" style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
+          {suffix}
+        </Text>
+      )}
     </View>
   );
 }
@@ -57,4 +67,6 @@ export function Field({ value, onChangeText, accessibilityLabel, placeholder, ma
 const styles = StyleSheet.create({
   box: { borderRadius: space.cardPad, paddingHorizontal: space.cardPad, justifyContent: 'center' },
   input: { minHeight: space.touchMin, padding: 0 },
+  adorned: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  grow: { flex: 1 },
 });

@@ -3,6 +3,9 @@
 // when you buy and the sale of the old one. The total shows a monthly figure and what a usual month leaves, from the engine.
 // 06.1-55 (A-RC-1): the before/after line compares a usual month (the month picture's usual LEFT) with a usual month once the
 // costs start (afterBuy.usualMonth), never this month after plans against a usual month.
+// 06.1-57 (A-ST-6, X-4): the running costs are one card, a row per cost (switch and name, then how often, "about $50 a month" for a
+// line that is not monthly, and the amount with the currency sign). The legend shows once (StackedBar draws it); the bar's spoken
+// label carries the total and each share. The Price crumb on the segment bar is the up-front figure step 2 shows.
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
@@ -32,7 +35,8 @@ import { NeedLine } from '../ui/NeedLine';
 import { StepFrame } from './StepFrame';
 import { isStillSaving, StepStillSaving } from './StepStillSaving';
 import { useOwnAdd } from './ownAdds';
-import { kindOf, lineNamesOf, type BuiltInKind, useStepCheck, useStepData, useStepNav, withPrefill, type StepNumber } from './useStepCheck';
+import { upFrontOf } from './upFront';
+import { kindOf, lineNamesOf, ownKindsOf, type BuiltInKind, useStepCheck, useStepData, useStepNav, withPrefill, type StepNumber } from './useStepCheck';
 
 type LabelKey = 'insurance' | 'fuel' | 'maintenance' | 'registration' | 'lossOfValue';
 const LABEL_OF_KEY: Readonly<Record<string, LabelKey>> = { insurance: 'insurance', fuel: 'fuel', maintenance: 'maintenance', registration: 'registration', value_loss: 'lossOfValue' };
@@ -175,8 +179,10 @@ export function CostsStep({ id }: { id: string }) {
     nav.seeAnswer();
   };
   const kind = kindOf(check, name);
-  const kindLabel = kind === null || kind.startsWith('own:') ? null : t(`decide.screens.stepper.kind.${kind as BuiltInKind}`);
+  const kindLabel =
+    kind === null ? null : kind.startsWith('own:') ? (ownKindsOf(check).find((o) => `own:${o.id}` === kind)?.name ?? null) : t(`decide.screens.stepper.kind.${kind as BuiltInKind}`);
   const price = check.price === null ? '' : money(check.price);
+  const priceLabel = check.price === null ? null : money(upFrontOf(check, { country: data.country, subdivision: data.subdivision }).cash);
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
   const oftenLine = often === null ? null : (shown.find((s) => s.line.id === often)?.line ?? null);
   const oftenValue: HowOftenValue | null = oftenLine === null ? null : { everyMonths: oftenLine.everyMonths, start: oftenLine.start === data.today ? null : oftenLine.start, end: oftenLine.end };
@@ -189,14 +195,16 @@ export function CostsStep({ id }: { id: string }) {
         why={t('decide.screens.stepper.running.why')}
         meta={price === '' ? name : t('decide.screens.stepper.itemPrice', { item: name, price })}
         kindLabel={kindLabel}
+        priceLabel={priceLabel}
         onBack={nav.back}
         onJump={(n) => router.replace(nav.to(n, 'back'))}
         onNext={() => finishNow(3)}
       >
         <Text style={small}>{t('decide.screens.stepper.running.sub')}</Text>
-        <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.stepper.running.startTitle')}</Text>
+        <View testID="running-card" style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
+          <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.stepper.running.startTitle')}</Text>
 
-        {shown.map(({ line: l, cleared }) => {
+          {shown.map(({ line: l, cleared }, i) => {
           const label = nameOf(l);
           const unusual = a11yKey(l.everyMonths);
           const a11y: string = cleared
@@ -205,7 +213,7 @@ export function CostsStep({ id }: { id: string }) {
               ? t('decide.screens.common.a11y.amountMonthly', { name: label, amount: speak(l.amount) })
               : t(`decide.screens.stepper.running.${unusual}`, { name: label, amount: speak(l.amount) });
           return (
-            <View key={l.id} testID={`cost-${l.id}`} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
+            <View key={l.id} testID={`cost-${l.id}`} style={[styles.costRow, i === 0 ? null : { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1 }]}>
               <ToggleRow
                 label={label}
                 value={l.on}
@@ -215,14 +223,20 @@ export function CostsStep({ id }: { id: string }) {
                 }}
               />
               <View style={styles.rowBetween}>
-                <Chip label={everyLabel(l.everyMonths)} accessibilityLabel={`${t('decide.screens.common.howOften')}, ${everyLabel(l.everyMonths)}`} onPress={() => setOften(l.id)} />
+                <View style={styles.often}>
+                  <Chip label={everyLabel(l.everyMonths)} accessibilityLabel={`${t('decide.screens.common.howOften')}, ${everyLabel(l.everyMonths)}`} onPress={() => setOften(l.id)} />
+                  {cleared || l.everyMonths === 1 ? null : (
+                    <Text style={small}>{t('decide.screens.stepper.running.aboutMonthly', { monthly: money(monthlyOf(l.amount, l.everyMonths)) })}</Text>
+                  )}
+                </View>
                 <MoneyInput
                   label={label}
                   accessibilityLabel={a11y}
                   currency={data.currency}
                   value={cleared ? null : l.amount}
                   onChange={(v) => setAmount(l.id, v)}
-                  amountField={{ width: 96 }}
+                  prefix="symbol"
+                  amountField={{ width: AMOUNT_WIDTH }}
                 />
               </View>
               {cleared ? <NeedLine testID={`cost-need-${l.id}`} text={t('decide.screens.common.need.amount')} /> : null}
@@ -235,9 +249,10 @@ export function CostsStep({ id }: { id: string }) {
             <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, fontVariant: ['tabular-nums'] }}>{money(q.amount)}</Text>
           </View>
         ))}
-        <Pressable accessibilityRole="button" onPress={() => setOwn('running')} style={styles.link}>
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.stepper.running.addRunning')}</Text>
-        </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => setOwn('running')} style={styles.link}>
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.stepper.running.addRunning')}</Text>
+          </Pressable>
+        </View>
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
           <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.stepper.running.stopsTitle')}</Text>
@@ -272,12 +287,12 @@ export function CostsStep({ id }: { id: string }) {
               <Text accessibilityRole="header" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, fontVariant: ['tabular-nums'] }}>
                 {t('decide.screens.stepper.running.totalTitle', { monthly: money(monthly) })}
               </Text>
+              {/* A-ST-6: StackedBar draws the legend once (hidden from screen readers); its label speaks the total and each share. */}
               <StackedBar
                 segments={parts.map((p) => ({ key: p.key, value: p.value, swatch: p.swatch }))}
                 legend={legend}
-                accessibilityLabel={t('decide.screens.stepper.running.totalTitle', { monthly: speak(monthly) })}
+                accessibilityLabel={`${t('decide.screens.stepper.running.totalTitle', { monthly: speak(monthly) })}. ${legend}`}
               />
-              <Text style={small}>{legend}</Text>
               {share === null ? null : <Text style={small}>{t('decide.screens.stepper.running.totalShare', { percent: share })}</Text>}
             </>
           )}
@@ -338,7 +353,12 @@ export function CostsStep({ id }: { id: string }) {
   );
 }
 
+/** The amount field: room for the currency sign and a four-figure amount. */
+const AMOUNT_WIDTH = 120;
+
 const styles = StyleSheet.create({
+  costRow: { gap: space.gapSm, paddingTop: space.gapSm },
+  often: { flexShrink: 1, gap: 2 },
   card: { borderRadius: space.cardPad, borderWidth: 1, padding: space.cardPad, gap: space.gapSm },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd },
   touch: { minHeight: space.touchMin },

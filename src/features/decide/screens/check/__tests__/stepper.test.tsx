@@ -1,14 +1,21 @@
 // 06.1-19: the big-buy stepper on stored drafts. Data hooks are mocked at the query/mutation edge; the hook, steps and frame are real.
 import React from 'react';
 import { BackHandler, StyleSheet } from 'react-native';
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { percent } from '@/engine/decide';
 import { toStoredV2, type CheckV2 } from '@/engine/decide/v3';
 import { checkOnce } from '@/engine/decide/v3/__tests__/helpers/fixtures';
+import { interceptSwipeBack, setSwipeBackInterceptor } from '@/features/navigation/swipeBackGesture';
 import { wrap } from '@/test/stepProps';
+import { DEFAULT_PAIRING } from '@/theme/themeCache';
+import { textRole } from '@/theme/typography';
+import { withFromAnswer } from '../../logic/decideNav';
 import { CostsStep } from '../CostsStep';
 import { KindStep } from '../KindStep';
 import { PriceStep } from '../PriceStep';
+import { StepFrame } from '../StepFrame';
+import { KEY_DEALER_FEES } from '../oneOffPresets';
+import { KEY_PLAN_NAME } from '../planName';
 import { KEY_KIND, KEY_SKIPPED, stepHref } from '../useStepCheck';
 
 jest.setTimeout(30000);
@@ -395,5 +402,209 @@ describe('06.1-52 (G-5): no step is blank or silently stuck', () => {
     expect(screen.queryByText('No amount yet.')).toBeNull();
     await waitFor(() => expect((lastSaved().inputs.runningCosts ?? []).find((l) => l.id === 'rc:insurance')?.amount).toBe(15_000), { timeout: 2000 });
     expect((lastSaved().inputs.runningCosts ?? [])[0]?.id).toBe('rc:insurance');
+  });
+});
+
+describe('06.1-57 (G-8 part 2): the stepper to the prototype', () => {
+  const noTax = (price = 900_000): CheckV2 => ({ ...checkOnce(price), taxIncluded: true });
+
+  it('A-ST-2: the segments show their names, and done steps show their crumbs as visible text', async () => {
+    seed('Used car', noTax());
+    await wrap(<CostsStep id={ID} />);
+    expect(await screen.findByTestId('crumb-1')).toHaveTextContent('✓ Kind: Car');
+    expect(screen.getByTestId('crumb-2')).toHaveTextContent('✓ Price: $9,000');
+    expect(screen.getByTestId('segment-label-3')).toHaveTextContent('Running costs');
+  });
+
+  it('A-ST-2: on step 2 the kind is a crumb and Price and Running costs are plain names', async () => {
+    seed('Used car', noTax());
+    await wrap(<PriceStep id={ID} />);
+    expect(await screen.findByTestId('crumb-1')).toHaveTextContent('✓ Kind: Car');
+    expect(screen.getByTestId('segment-label-2')).toHaveTextContent('Price');
+    expect(screen.getByTestId('segment-label-3')).toHaveTextContent('Running costs');
+    expect(screen.getByTestId('segment-1').props.accessibilityLabel).toBe('Step 1, Kind: Car, done. Change it.');
+  });
+
+  it('DB-9: the Kind crumb opens step 1 and keeps from=answer', async () => {
+    seed('Used car', noTax());
+    mockParams = { from: 'answer' };
+    await wrap(<PriceStep id={ID} />);
+    await fireEvent.press(await screen.findByTestId('segment-1'));
+    expect(mockReplace).toHaveBeenLastCalledWith(withFromAnswer(stepHref(1, ID, 'back')));
+  });
+
+  it('DB-9: the Price crumb on step 3 opens step 2', async () => {
+    seed('Used car', noTax());
+    await wrap(<CostsStep id={ID} />);
+    await fireEvent.press(await screen.findByTestId('segment-2'));
+    expect(mockReplace).toHaveBeenLastCalledWith(stepHref(2, ID, 'back'));
+  });
+
+  it('DB-9: a crumb that cannot open a step has no button role', async () => {
+    await wrap(
+      <StepFrame step={2} title="T" why="W" meta="M" kindLabel="Car" onBack={jest.fn()} onNext={jest.fn()}>
+        {null}
+      </StepFrame>,
+    );
+    expect(screen.getByTestId('crumb-1')).toHaveTextContent('✓ Kind: Car');
+    expect(screen.getByTestId('segment-1').props.accessibilityRole).toBeUndefined();
+  });
+
+  it('X-3: the step title uses the display face at the prototype size', async () => {
+    seed('Used car', noTax());
+    await wrap(<PriceStep id={ID} />);
+    const title = await screen.findByText('Price and how you pay');
+    const style = StyleSheet.flatten(title.props.style);
+    expect(style.fontSize).toBe(26);
+    expect(style.fontFamily).toBe(textRole(DEFAULT_PAIRING, 'display').fontFamily);
+  });
+
+  it('A-ST-5: "Read from the words" shows while the kind came from the words, and goes once one is picked', async () => {
+    seed('Buy a house');
+    await wrap(<KindStep id={ID} />);
+    expect(await screen.findByText('Read from the words: Home')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('kind-car'));
+    expect(screen.queryByTestId('kind-read-from')).toBeNull();
+  });
+
+  it('A-ST-5: no read-from line when nothing was read from the words', async () => {
+    mockParams = { dir: 'back' };
+    seed('Thing', { ...checkOnce(120_000), layerAnswers: {} });
+    await wrap(<KindStep id={ID} />);
+    await screen.findByTestId('kind-car');
+    expect(screen.queryByTestId('kind-read-from')).toBeNull();
+  });
+
+  it('Android edge swipe (from 06.1-64): a step claims the swipe and goes one step back; leaving releases it', async () => {
+    setSwipeBackInterceptor(null);
+    seed('Laptop');
+    const view = await wrap(<PriceStep id={ID} />);
+    await screen.findByTestId('step-back');
+    expect(interceptSwipeBack()).toBe(true);
+    expect(mockReplace).toHaveBeenCalledWith(stepHref(1, ID, 'back'));
+    await view.unmount();
+    expect(interceptSwipeBack()).toBe(false);
+  });
+
+  it('Android edge swipe from a step the answer opened goes back to that answer, not a step back', async () => {
+    setSwipeBackInterceptor(null);
+    seed('Laptop');
+    mockParams = { from: 'answer' };
+    const view = await wrap(<CostsStep id={ID} />);
+    await screen.findByTestId('step-back');
+    expect(interceptSwipeBack()).toBe(true);
+    expect(mockReplace).not.toHaveBeenCalledWith(stepHref(2, ID, 'back'));
+    expect(mockReplace).not.toHaveBeenCalledWith(withFromAnswer(stepHref(2, ID, 'back')));
+    view.unmount();
+  });
+
+  it('A-ST-1: sales tax is a boxed field with a % after it; the price has the currency sign', async () => {
+    seed('Laptop');
+    await wrap(<PriceStep id={ID} />);
+    await screen.findByLabelText('Sales tax, %');
+    const card = screen.getByTestId('price-card');
+    expect(within(card).getByTestId('field-suffix')).toHaveTextContent('%');
+    expect(within(card).getByTestId('money-symbol')).toHaveTextContent('$');
+  });
+
+  it('A-ST-4: the pay choice is two cards with their figures; Installments opens the plan sheet', async () => {
+    seed('Used car', noTax());
+    await wrap(<PriceStep id={ID} />);
+    const cash = await screen.findByLabelText('Cash, $9,000 up front');
+    expect(cash.props.accessibilityState.checked).toBe(true);
+    expect(screen.getByTestId('pay-cash-sub')).toHaveTextContent('$9,000 up front');
+    await fireEvent.press(screen.getByLabelText('Installments'));
+    expect(await screen.findByText('Installment plan')).toBeTruthy();
+  });
+
+  it('A-ST-4 / T-06.1-57-01: dealer fees start off and add nothing until an amount is typed', async () => {
+    seed('Used car', noTax());
+    const view = await wrap(<PriceStep id={ID} />);
+    const toggle = await screen.findByLabelText('Dealer and documentation fees');
+    expect(toggle.props.accessibilityState.checked).toBe(false);
+    await fireEvent.press(toggle);
+    const amount = screen.getByLabelText('Dealer and documentation fees, Amount');
+    expect(amount.props.value ?? '').toBe('');
+    expect(screen.getByTestId('dealer-fees-need')).toBeTruthy();
+    await waitFor(() => expect(mockSave).toHaveBeenCalled(), { timeout: 2000 });
+    expect((lastSaved().inputs as unknown as { oneOffFees: number }).oneOffFees).toBe(0);
+    await fireEvent.changeText(amount, '300');
+    expect(within(screen.getByTestId('up-front-card')).getByText('$9,300')).toBeTruthy();
+    view.unmount();
+    await waitFor(() => expect((lastSaved().inputs as unknown as { oneOffFees: number }).oneOffFees).toBe(30_000));
+    expect(lastSaved().inputs.layerAnswers[KEY_DEALER_FEES]).toEqual({ on: true, amount: 30_000 });
+  });
+
+  it('A-ST-4: switching dealer fees off takes their amount out again', async () => {
+    seed('Used car', { ...noTax(), oneOffFees: 30_000 as never, layerAnswers: { [KEY_DEALER_FEES]: { on: true, amount: 30_000 } } });
+    const view = await wrap(<PriceStep id={ID} />);
+    await fireEvent.press(await screen.findByLabelText('Dealer and documentation fees'));
+    view.unmount();
+    await waitFor(() => expect(mockSave).toHaveBeenCalled());
+    expect((lastSaved().inputs as unknown as { oneOffFees: number }).oneOffFees).toBe(0);
+    expect(lastSaved().inputs.layerAnswers[KEY_DEALER_FEES]).toEqual({ on: false, amount: 30_000 });
+  });
+
+  it('A-ST-4: the trade-in row opens the sale sheet', async () => {
+    seed('Used car', noTax());
+    await wrap(<PriceStep id={ID} />);
+    await fireEvent.press(await screen.findByTestId('trade-in-row'));
+    expect(await screen.findByText('I’m selling one I have now')).toBeTruthy();
+  });
+
+  it('DS-18: with nothing added, the Up front card shows the price once', async () => {
+    seed('Used car', noTax());
+    await wrap(<PriceStep id={ID} />);
+    const card = await screen.findByTestId('up-front-card');
+    expect(within(card).getAllByText('$9,000')).toHaveLength(1);
+    expect(within(card).queryByText('Price')).toBeNull();
+  });
+
+  it('DS-18 / A-ST-4: with tax added, the card lists the price, the tax and the total', async () => {
+    seed('Used car', { ...checkOnce(900_000), taxPercent: percent('8') });
+    await wrap(<PriceStep id={ID} />);
+    const card = await screen.findByTestId('up-front-card');
+    expect(within(card).getByText('$9,000')).toBeTruthy();
+    expect(within(card).getByText('+$720')).toBeTruthy();
+    expect(within(card).getByText('$9,720')).toBeTruthy();
+  });
+
+  it('A-ST-4: with no region, the Up front card says tax is not added', async () => {
+    mockInputs = baseInputs({ region: null, regionSubdivision: null });
+    seed('Used car');
+    await wrap(<PriceStep id={ID} />);
+    expect(within(await screen.findByTestId('up-front-card')).getByText('Tax not added')).toBeTruthy();
+  });
+
+  it('A-ST-6: the running costs are one card with the currency sign on each amount, and the legend shows once', async () => {
+    seed('Used car');
+    await wrap(<CostsStep id={ID} />);
+    const card = await screen.findByTestId('running-card');
+    expect(within(card).getByTestId('cost-rc:insurance')).toBeTruthy();
+    expect(within(card).getByTestId('cost-rc:fuel')).toBeTruthy();
+    expect(within(card).getAllByTestId('money-symbol').length).toBeGreaterThanOrEqual(4);
+    expect(screen.getAllByText(/^Insurance \d+%/, { includeHiddenElements: true })).toHaveLength(1);
+    expect(screen.getByTestId('stacked-bar').props.accessibilityLabel).toMatch(/a month\. Insurance \d+%/);
+  });
+
+  it('A-ST-6: a yearly line says what it is a month', async () => {
+    seed('Used car');
+    await wrap(<CostsStep id={ID} />);
+    const row = await screen.findByTestId('cost-rc:maintenance');
+    expect(within(row).getByText(/^about \$\d+ a month$/)).toBeTruthy();
+  });
+
+  it('A-ST-7: a plan name typed in the plan sheet is written with the pay change', async () => {
+    seed('Used car', noTax());
+    const view = await wrap(<PriceStep id={ID} />);
+    await fireEvent.press(await screen.findByLabelText('Installments'));
+    await fireEvent.changeText(await screen.findByLabelText('Plan name'), 'Car loan');
+    await fireEvent.press(screen.getByLabelText('24 months'));
+    await fireEvent.press(screen.getByLabelText('Use this plan'));
+    view.unmount();
+    await waitFor(() => expect(mockSave).toHaveBeenCalled());
+    const saved = lastSaved().inputs as unknown as { pay: { mode: string; termMonths: number }; layerAnswers: Record<string, unknown> };
+    expect(saved.pay).toMatchObject({ mode: 'plan', termMonths: 24 });
+    expect(saved.layerAnswers[KEY_PLAN_NAME]).toBe('Car loan');
   });
 });
