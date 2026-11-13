@@ -133,4 +133,9 @@ export const sheetsHome = {
     statusQ: 'What happened to it',
     userLed: 'Nothing changes until you save.',
   },
+  // 06.1-43 (D-54, audit C-4): the envelope readiness fix. An envelope is never waived; it says which account holds it.
+  envelopeAccount: {
+    title: 'Which account holds {{envelope}}?',
+    none: 'No accounts yet.',
+  },
 } as const;
