@@ -107,9 +107,14 @@ name: Decide timing (G-2)
 - evalScript: ${output.stepperBack = Date.now() - output.t6}
 - evalScript: "${console.log('TIMING stepper_back=' + output.stepperBack)}"
 
-# 06.1-72 (DP-14, DP-8, DP-9): Past decisions, the Add a rule sheet and the safety-net settings, each from Decide home
-- runFlow: common/to-tabs.yaml
-- tapOn: "Decide, tab, .*"
+# 06.1-72 (DP-14, DP-8, DP-9): Past decisions, the Add a rule sheet and the safety-net settings, each from Decide home.
+# Decide home is opened by link, not by Back: on the emulator a Back press queued behind a busy JS thread can land after the
+# tab bar shows and leave the app.
+- openLink: "fincwin://decide"
+- extendedWaitUntil:
+    visible:
+      id: "check-what"
+    timeout: 60000
 - assertVisible: "Can I afford it\\?"
 - evalScript: ${output.t7 = Date.now()}
 - tapOn:
@@ -119,8 +124,11 @@ name: Decide timing (G-2)
     timeout: 60000
 - evalScript: ${output.pastOpen = Date.now() - output.t7}
 - evalScript: "${console.log('TIMING past_open=' + output.pastOpen)}"
-- runFlow: common/to-tabs.yaml
-- tapOn: "Decide, tab, .*"
+- openLink: "fincwin://decide"
+- extendedWaitUntil:
+    visible:
+      id: "check-what"
+    timeout: 60000
 - runFlow:
     file: common/scroll-to.yaml
     env:
