@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06.1 gap plans 43-61 planned and checked (0 blockers; 4 warnings fixed); plan 32 closed (Task 2 folded into 61); 40/61; next wave 15 (43, 46, 48)"
+stopped_at: "Phase 06.1 gap wave 15 done: 43 (readiness answers reach engine), 46 (one Decide calc per data version), 48 (persister throttle, write timing) (43/61); next wave 16 (44, 47)"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:

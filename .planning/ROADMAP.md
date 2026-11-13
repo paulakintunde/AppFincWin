@@ -1250,7 +1250,7 @@ Plans:
 **Goal:** Testers use the new Decide screens, built from the owner's clickable prototype (https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR, the design standard, as in Phase 6 D-04), on the v3 engine and the connection points that exist on main. Every prototype Decide screen (D01-D53, answers N02-N26) replaces today's tester screens in one release with Grow; old 05.x Decide screens deleted; home buying hidden; household left to 08.1 (06.1-CONTEXT D-01..D-06).
 **Requirements**: FIN-20, FIN-21, FIN-22, FIN-23, FIN-24, FIN-28, FIN-29, FIN-31; ENG-26 (Activity and Grow half), ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-20, UX-21 (renderer), UX-38, UX-41, UX-42, UX-43; CMP-F12 (layout), F14, F15; ARC-11, ARC-24, ARC-25; QA-01 (prototype is the design), QA-02/QA-03 (non-household cases); BO-09; the non-household rows of 08.1-CARRY-OVER-FROM-05.4.md (list in 06.1-01-PLAN.md). FIN-20/22/23 return to 08.1 if their cases are not approved by release (D-26).
 **Depends on:** Phase 6: Grow plans 06-05, 06-06 and 06-10 on main (connection points, RPCs, Decide feed; 06.1-CONTEXT D-30). Wave 1 (plans 01-07, 41, 42) can be built now; plan 08 gates the rest. Household parts stay hidden until Phase 8.
-**Plans:** 40/61 plans executed (gap plans 43-61 added 2026-11-12 from 06.1-DEVICE-AUDIT.md G-1..G-11)
+**Plans:** 43/61 plans executed
 
 Plans:
 - [x] 06.1-01-PLAN.md — Scope split (D-04) and prototype inventory (D-27); seven state colour tokens + contrast tests + CLAUDE.md (D-16); ROADMAP requirement lines
@@ -1295,12 +1295,12 @@ Plans:
 - [x] 06.1-40-PLAN.md — Move PrefillNote, heroAmountText, ChoiceCard and the stepProps helper out of old Decide folders
 - [x] 06.1-41-PLAN.md — Move the account-use sheet, list and suggestions to Accounts
 - [x] 06.1-42-PLAN.md — Move the past-decision data hooks to screens/past/data
-- [ ] 06.1-43-PLAN.md — [gap G-1] G-1, part 1 of 3 (audit section E, rows C-1, C-2, C-4)
+- [x] 06.1-43-PLAN.md — [gap G-1] G-1, part 1 of 3 (audit section E, rows C-1, C-2, C-4)
 - [ ] 06.1-44-PLAN.md — [gap G-1] G-1, part 2 of 3
 - [ ] 06.1-45-PLAN.md — [gap G-1] G-1, part 3 of 3
-- [ ] 06.1-46-PLAN.md — [gap G-2] G-2, part 1 of 2 (audit B-1, B-2, B-3, B-9)
+- [x] 06.1-46-PLAN.md — [gap G-2] G-2, part 1 of 2 (audit B-1, B-2, B-3, B-9)
 - [ ] 06.1-47-PLAN.md — [gap G-2] G-2, part 2 of 2
-- [ ] 06.1-48-PLAN.md — [gap G-3] G-3 (audit F-2, B-4, B-5)
+- [x] 06.1-48-PLAN.md — [gap G-3] G-3 (audit F-2, B-4, B-5)
 - [ ] 06.1-49-PLAN.md — [gap G-4, G-2] G-4, part 1 of 2 (answer and stepper), plus the A-ANS-2 loading state from G-2
 - [ ] 06.1-50-PLAN.md — [gap G-4] G-4, part 2 of 2 (setup)
 - [ ] 06.1-51-PLAN.md — [gap G-1, G-2, G-3, G-4] The owner's Pixel 6 recheck after G-1..G-4 (plans 43-50), as the owner chose on 2026-11-12
