@@ -201,6 +201,19 @@ name: Decide Check it and Edit the check land on the check (06.1-78)
           timeout: 30000
       - tapOn: "Delete"
       - waitForAnimationToEnd
+      # 06.1-74: after the Used car delete, Decide home can stay scrolled below the lamp78 row (scroll-to only looks down),
+      # so go back to the top first.
+      - repeat:
+          times: 10
+          while:
+            notVisible:
+              id: "check-what"
+          commands:
+            - swipe:
+                start: "50%,30%"
+                end: "50%,85%"
+                duration: 300
+            - waitForAnimationToEnd
       - runFlow:
           file: common/scroll-to.yaml
           env:
