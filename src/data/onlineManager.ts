@@ -31,12 +31,14 @@ export function resumeAndRefetch(qc: QueryClient): void {
 }
 
 /**
- * D-88: after the persister restores the cache, the invalidate starts at once, in parallel with
+ * D-88: after the persister restores the cache, it refetches the stale active reads at once, in parallel with
  * replaying the restored writes. It never waits for a write (a stuck write used to hold the refetch).
+ * B-4 (06.1-48): only stale, active reads: restored data still fresh under its staleTime is not refetched, and an
+ * inactive read refetches when it is next mounted (it used to refetch every restored read at once on a cold start).
  */
 export function afterCacheRestore(qc: QueryClient, replay: (qc: QueryClient) => Promise<void>): void {
   void replay(qc).catch(() => undefined);
-  void qc.invalidateQueries();
+  void qc.refetchQueries({ stale: true, type: 'active' }).catch(() => undefined);
 }
 
 /** D-88: NetInfo checks reachability against Supabase itself; any answer under 500 (even 401) is reachable. */
