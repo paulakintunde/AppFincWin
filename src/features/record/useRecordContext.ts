@@ -15,6 +15,7 @@ import { regionWeekStart } from '@/engine/money';
 import { localDateIn } from '@/engine/time';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { getDeviceRegion, getDeviceTimeZone } from '@/services/locale/deviceLocale';
+import { heldRead } from '@/services/locale/deviceReadCache';
 
 export interface RecordContext {
   ready: boolean;
@@ -31,6 +32,12 @@ export interface RecordContext {
   samplePromptAnswered: boolean;
 }
 
+/**
+ * 06.1-72 (G-73-2): today's local date in `timeZone`, held for a second. localDateIn builds two Intl.DateTimeFormat objects per
+ * call and this hook runs in nearly every Decide hook of every render (10.7 s of 06.1-73's profile).
+ */
+const todayIn = heldRead((timeZone: string): string => localDateIn(new Date(), timeZone));
+
 export function useRecordContext(): RecordContext {
   const { status, user } = useAuth();
   const userId = user?.id ?? null;
@@ -41,7 +48,7 @@ export function useRecordContext(): RecordContext {
   const { horizonMonth } = useHouseholdHorizon(householdQuery.data ?? undefined);
   const { hasSamples } = useSampleExists(householdQuery.data ?? undefined);
   const timeZone = getDeviceTimeZone();
-  const today = localDateIn(new Date(), timeZone);
+  const today = todayIn(timeZone);
   const weekStart: 0 | 1 = recordPrefs.week_start ?? regionWeekStart(getDeviceRegion(prefs.region)) ?? 1;
 
   // I-05 (W6-13 WR-07): `ready` is a decision input (a new account's default currency, the
