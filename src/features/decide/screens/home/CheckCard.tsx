@@ -17,6 +17,7 @@ import { Text } from '@/ui/Text';
 import { TextInput, type TextInput as TextInputInstance } from '@/ui/TextInput';
 import { RadioDot } from '@/ui/RadioDot';
 import { hapticSelection } from '@/ui/haptics';
+import { NeedLine } from '../ui/NeedLine';
 import type { WhenChoice } from './useNewCheck';
 
 export interface ReadsAs {
@@ -54,6 +55,10 @@ export interface CheckCardProps {
   moreDetails: React.ReactNode;
   disabled: boolean;
   onCheck: () => void;
+  /** 06.1-52 (C-18): what is still needed, under Check it (NeedLine); null draws nothing. */
+  hint: string | null;
+  /** 06.1-52 (C-18): the price field's raw text, so the hint can tell an empty price from one that did not read. */
+  onPriceText?: (text: string) => void;
 }
 
 function Radio({ label, sub, selected, onPress, testID }: { label: string; sub: string; selected: boolean; onPress: () => void; testID: string }) {
@@ -122,6 +127,7 @@ export function CheckCard({ onWhatRef, ...props }: CheckCardProps) {
           currency={props.currency}
           value={props.price}
           onChange={props.onPrice}
+          onTextChange={props.onPriceText}
           zeroHint
         />
         {props.taxNote === null ? null : (
@@ -167,13 +173,9 @@ export function CheckCard({ onWhatRef, ...props }: CheckCardProps) {
         variant="primary"
         disabled={props.disabled}
         onPress={props.onCheck}
-        accessibilityHint={props.disabled ? t('decide.screens.home.check.checkItHint') : undefined}
+        accessibilityHint={props.disabled && props.hint !== null ? props.hint : undefined}
       />
-      {props.disabled ? (
-        <Text testID="check-it-hint" style={small}>
-          {t('decide.screens.home.check.checkItHint')}
-        </Text>
-      ) : null}
+      <NeedLine testID="check-it-hint" text={props.hint} />
     </View>
   );
 }

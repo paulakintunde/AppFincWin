@@ -123,8 +123,11 @@ const DOUBLE_TAP_MS = 900;
 export interface NewCheck {
   /** True from Check it until the route has opened; the button stays disabled meanwhile (T-06.1-21-02). */
   pending: boolean;
-  /** Returns the route taken, or 'blocked' when nothing was written. */
-  start(fields: NewCheckFields): NewCheckRoute | 'unavailable';
+  /**
+   * Returns the route taken, or 'blocked' when nothing was written. 06.1-52 (C-18): 'loading' while the user or household is not
+   * loaded yet (the caller says so); 'unavailable' while a create is still pending (the button stays disabled meanwhile).
+   */
+  start(fields: NewCheckFields): NewCheckRoute | 'unavailable' | 'loading';
 }
 
 export function useNewCheck(): NewCheck {
@@ -143,8 +146,9 @@ export function useNewCheck(): NewCheck {
   );
 
   const start = useCallback(
-    (fields: NewCheckFields): NewCheckRoute | 'unavailable' => {
-      if (rc.userId === null || rc.householdId === null || pending) return 'unavailable';
+    (fields: NewCheckFields): NewCheckRoute | 'unavailable' | 'loading' => {
+      if (pending) return 'unavailable';
+      if (rc.userId === null || rc.householdId === null) return 'loading';
       const inputs = v3.inputs;
       const country = inputs?.region ?? rc.region;
       const check = buildCheck(fields, { country, nextPayday: picture?.payday ?? null });

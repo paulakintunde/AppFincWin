@@ -24,8 +24,13 @@ export const home = {
     moreDetailsOpen_one: '{{method}} · {{count}} quick estimate',
     moreDetailsOpen_other: '{{method}} · {{count}} quick estimates',
     checkIt: 'Check it',
-    checkItHint: 'What it is and a price come first',
     readsAs: 'Reads as',
+  },
+  // 06.1-52 (C-18): the NeedLine under a disabled Check it names the missing part. Statements, never orders.
+  need: {
+    what: 'What it is comes first.',
+    price: 'A price comes first.',
+    priceUnread: 'That price didn’t read as an amount.',
   },
   examples: {
     title: 'Try an example',

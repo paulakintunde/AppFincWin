@@ -6,13 +6,14 @@ const mockCreate = jest.fn();
 const mockPush = jest.fn();
 let mockRegion: string | null = 'US';
 let mockCurrency = 'USD';
+let mockUserId: string | null = 'u1';
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
 jest.mock('@/data/mutations/decideChecks', () => ({ useCreateCheck: () => ({ create: mockCreate, pendingIds: [], pendingRows: [] }) }));
 jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ inputs: null, prepared: null }) }));
 jest.mock('../../engine/useMonthPicture', () => ({ useMonthPicture: () => ({ picture: { payday: '2026-11-15' }, bars: [] }) }));
 jest.mock('@/features/record/useRecordContext', () => ({
-  useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: mockCurrency, region: mockRegion, today: '2026-11-11' }),
+  useRecordContext: () => ({ userId: mockUserId, householdId: 'h1', homeCurrency: mockCurrency, region: mockRegion, today: '2026-11-11' }),
 }));
 
 const fields = (over: Partial<NewCheckFields>): NewCheckFields => ({
@@ -96,6 +97,19 @@ describe('useNewCheck (T-06.1-21-01, T-06.1-21-02)', () => {
     jest.clearAllMocks();
     mockRegion = 'US';
     mockCurrency = 'USD';
+    mockUserId = 'u1';
+  });
+
+  it('06.1-52 (C-18): returns loading and writes nothing before the user is loaded', async () => {
+    mockUserId = null;
+    const { result } = await renderHook(() => useNewCheck());
+    let r: unknown;
+    await act(async () => {
+      r = result.current.start(fields({ text: 'laptop', price: 350_000 }));
+    });
+    expect(r).toBe('loading');
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('writes nothing for a home', async () => {
@@ -129,7 +143,7 @@ describe('useNewCheck (T-06.1-21-01, T-06.1-21-02)', () => {
     expect(mockPush).toHaveBeenCalledWith('/decide/answer/new-id');
     expect(result.current.pending).toBe(true);
     await act(async () => {
-      result.current.start(fields({ text: 'laptop', price: 350_000 }));
+      expect(result.current.start(fields({ text: 'laptop', price: 350_000 }))).toBe('unavailable');
     });
     expect(mockCreate).toHaveBeenCalledTimes(1);
   });

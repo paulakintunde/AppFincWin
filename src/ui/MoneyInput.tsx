@@ -57,13 +57,15 @@ export interface MoneyInputProps {
   prefix?: 'symbol';
   /** 06.1-52 (X-4): a short word after the text (e.g. 'a month', '%'). */
   suffix?: string;
+  /** 06.1-52 (C-18): the raw text as typed, so a caller can tell an empty field from one that did not read as an amount. */
+  onTextChange?: (text: string) => void;
 }
 
 const COMPACT_MIN_WIDTH = 128;
 const AMOUNT_BORDER = 1.5; // R16.3
 const FOCUS_RING = 2; // D-95
 
-export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, zeroHint = false, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef, tone = 'light', boxed = false, prefix, suffix }: MoneyInputProps) {
+export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, zeroHint = false, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef, tone = 'light', boxed = false, prefix, suffix, onTextChange }: MoneyInputProps) {
   const { colors, pairing } = useTheme();
   const dark = tone === 'dark' && !amountField;
   const [focused, setFocused] = useState(false);
@@ -98,6 +100,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
 
   const onText = (next: string) => {
     setText(next);
+    onTextChange?.(next);
     if (next.trim() === '') {
       setError(null);
       report(null);

@@ -111,6 +111,10 @@ export function DecideHome() {
   }, []);
   const [text, setText] = useState('');
   const [price, setPrice] = useState<number | null>(null);
+  // 06.1-52 (C-18): the price field's raw text, so the hint can tell "no price yet" from "that did not read as an amount".
+  const [priceText, setPriceText] = useState('');
+  // 06.1-52 (C-18): Check it was tapped before the user and household loaded.
+  const [loadingTap, setLoadingTap] = useState(false);
   const [when, setWhen] = useState<WhenChoice>('today');
   const [payMode, setPayMode] = useState<PayChoice>('once');
   const [plan, setPlan] = useState<Extract<PayV2, { mode: 'plan' }> | null>(null);
@@ -139,6 +143,21 @@ export function DecideHome() {
   const kind = readKind(text);
   const kindWord = kind === null || kind === 'home' ? null : t(`decide.screens.stepper.kind.${kind}`);
   const ready = text.trim() !== '' && price !== null && price > 0 && !home;
+  // 06.1-52 (C-18, G-5): the NeedLine under Check it names the one missing part; home words have their own note.
+  const needHint: string | null =
+    newCheck.pending || home
+      ? null
+      : text.trim() === ''
+        ? t('decide.screens.home.need.what')
+        : price === 0
+          ? t('decide.screens.common.need.priceAboveZero')
+          : price !== null
+            ? null
+            : priceText.trim() === ''
+              ? t('decide.screens.home.need.price')
+              : t('decide.screens.home.need.priceUnread');
+  const recordsLoaded = rc.userId !== null && rc.householdId !== null;
+  const hint = needHint ?? (loadingTap && !recordsLoaded ? t('decide.screens.common.need.loading') : null);
 
   const parsed = useMemo(
     () =>
@@ -163,7 +182,7 @@ export function DecideHome() {
   const check = (): void => {
     if (!ready) return;
     perfMark('decide.answer:start'); // 06.1-47: Check it -> answer timing; the end is marked in useCheckEngine
-    newCheck.start(fields);
+    setLoadingTap(newCheck.start(fields) === 'loading');
   };
 
   const focusWhat = (): void => textRef.current?.focus();
@@ -326,6 +345,7 @@ export function DecideHome() {
           homeNote={home}
           price={price}
           onPrice={setPrice}
+          onPriceText={setPriceText}
           currency={currency}
           taxNote={taxNote}
           when={when}
@@ -360,6 +380,7 @@ export function DecideHome() {
           }
           disabled={!ready || newCheck.pending}
           onCheck={check}
+          hint={hint}
         />
 
         <View style={styles.examples}>

@@ -11,7 +11,7 @@ import { useRecordContext } from '@/features/record/useRecordContext';
 import { essentialMonthOf } from '@/features/grow/safetyNet/netPreview';
 import { useT } from '@/i18n';
 import { pushOnce } from '@/shell/navigation/pushOnce';
-import { space } from '@/theme/layout';
+import { space, useScreenInsets } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { MoneyInput } from '@/ui/MoneyInput';
@@ -20,6 +20,7 @@ import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import type { NetAnswerPort } from '../safetyNet/ports';
+import { OfflineCard } from '../answer/StatusCards';
 import { useFirstAnswerGate } from './useFirstAnswerGate';
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
@@ -48,6 +49,9 @@ export function FirstAnswerGate({ answer, onDone }: FirstAnswerGateProps): React
 
   const afterIntro = (): void => setStep(gate.needsNet ? 'net' : 'done');
 
+  // 06.1-52 (C-19): offline with nothing cached, the gate cannot settle; the offline card says so instead of a blank screen.
+  if (step === null && gate.offline) return <GateOffline onRetry={gate.retry} />;
+
   return (
     <>
       <IntroCard
@@ -61,6 +65,20 @@ export function FirstAnswerGate({ answer, onDone }: FirstAnswerGateProps): React
       />
       <NetQuestionSheet answer={answer} visible={step === 'net'} onDone={() => setStep('done')} onDismiss={() => setStep('done')} />
     </>
+  );
+}
+
+function GateOffline({ onRetry }: { onRetry: () => void }): React.JSX.Element {
+  const { colors } = useTheme();
+  const insets = useScreenInsets();
+  const rc = useRecordContext();
+  const v3 = useDecideV3();
+  const fmt = useMoneyFormatter(false, rc.homeCurrency);
+  const asOf = v3.inputs?.recordsAsOf ?? rc.today;
+  return (
+    <View testID="gate-offline" style={[styles.offline, { backgroundColor: colors.canvas, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <OfflineCard date={fmt.formatDate(asOf)} onRetry={onRetry} />
+    </View>
   );
 }
 
@@ -170,4 +188,5 @@ function NetQuestionBody({ answer, onDone, onDismiss }: { answer: NetAnswerPort;
 
 const styles = StyleSheet.create({
   column: { gap: space.groupGap },
+  offline: { flex: 1, justifyContent: 'center', paddingHorizontal: space.screenH },
 });

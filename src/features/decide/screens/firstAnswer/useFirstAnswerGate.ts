@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useDecideSettings } from '@/data/queries/decide';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
+import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import { useT } from '@/i18n';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { loadIntroSeenVersion, markIntroSeen as storeIntroSeen } from '../../hints/decideHints';
@@ -11,6 +12,10 @@ import { introVersion } from './introVersion';
 
 export interface FirstAnswerGateState {
   loading: boolean;
+  /** 06.1-52 (C-19): still loading because the device is offline and nothing is cached; the gate shows the offline card. */
+  offline: boolean;
+  /** Reads the settings and goals again (the offline card's Retry). */
+  retry: () => void;
   needsIntro: boolean;
   needsNet: boolean;
   /** The version of the card now on screen (what Got it stores). */
@@ -25,6 +30,7 @@ export function useFirstAnswerGate(): FirstAnswerGateState {
   const householdId = rc.householdId ?? undefined;
   const settings = useDecideSettings(userId);
   const goals = useSavingsGoalRows(userId, householdId);
+  const sync = useSyncStatus();
   const version = introVersion(t);
   // undefined = not read yet; null = never seen
   const [stored, setStored] = useState<string | null | undefined>(undefined);
@@ -48,10 +54,20 @@ export function useFirstAnswerGate(): FirstAnswerGateState {
   // A failed read must not hold the answer back: the question is then simply not asked this time.
   const readFailed = settings.isError || goals.isError;
   const loading = userId === undefined || stored === undefined || (!readFailed && (settings.data === undefined || goals.data === undefined));
+  const nothingCached = !readFailed && (settings.data === undefined || goals.data === undefined);
+  const offline = loading && !sync.isOnline && nothingCached;
+  const { refetch: refetchSettings } = settings;
+  const { refetch: refetchGoals } = goals;
+  const retry = useCallback((): void => {
+    void refetchSettings?.();
+    void refetchGoals?.();
+  }, [refetchSettings, refetchGoals]);
   const hasNet = (goals.data ?? []).some((g) => g.is_safety_net === true && g.deleted_at === null);
   const notSetAnswered = settings.data?.answered_net_not_set_at != null;
   return {
     loading,
+    offline,
+    retry,
     needsIntro: !loading && stored !== version,
     needsNet: !loading && !readFailed && !hasNet && !notSetAnswered,
     version,

@@ -13,12 +13,16 @@ const mockMarkIntro = jest.fn();
 let mockStored: string | null = null;
 let mockRows: unknown[] = [];
 let mockSettings: unknown = { answered_net_not_set_at: null };
+let mockOnline = true;
+const mockRefetchSettings = jest.fn();
+const mockRefetchGoals = jest.fn();
 
-jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: mockSettings, isError: false }) }));
-jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockRows, isError: false }) }));
-jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ source: null, v3: null }) }));
+jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: mockSettings, isError: false, refetch: mockRefetchSettings }) }));
+jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockRows, isError: false, refetch: mockRefetchGoals }) }));
+jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ source: null, v3: null, inputs: { recordsAsOf: '2026-11-01' } }) }));
+jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => ({ isOnline: mockOnline }) }));
 jest.mock('@/features/grow/safetyNet/netPreview', () => ({ essentialMonthOf: () => null }));
-jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD' }) }));
+jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', today: '2026-11-12' }) }));
 jest.mock('@/features/decide/hints/decideHints', () => ({
   loadIntroSeenVersion: () => Promise.resolve(mockStored),
   markIntroSeen: (user: string, version: string) => {
@@ -43,6 +47,7 @@ beforeEach(() => {
   mockStored = null;
   mockRows = [];
   mockSettings = { answered_net_not_set_at: null };
+  mockOnline = true;
   mockAnswer.mockReturnValue({ status: 'created', stepId: 's1' });
 });
 
@@ -114,6 +119,36 @@ describe('FirstAnswerGate', () => {
     await fireEvent.press(screen.getByText('Save and see the answer'));
     expect(await screen.findByText('Change the size in Grow')).toBeTruthy();
     expect(onDone).not.toHaveBeenCalled();
+  });
+});
+
+describe('06.1-52 (C-19): offline with nothing cached', () => {
+  it('shows the offline card, never a blank screen, and Retry reads settings and goals again', async () => {
+    mockOnline = false;
+    mockSettings = undefined;
+    mockRows = undefined as unknown as unknown[];
+    const onDone = await mount();
+    expect(await screen.findByTestId('answer-offline')).toBeTruthy();
+    expect(screen.getByText(/^Offline\. Using records up to /)).toBeTruthy();
+    await fireEvent.press(screen.getByText('Retry'));
+    expect(mockRefetchSettings).toHaveBeenCalledTimes(1);
+    expect(mockRefetchGoals).toHaveBeenCalledTimes(1);
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('online and still loading shows no offline card', async () => {
+    mockSettings = undefined;
+    await mount();
+    expect(screen.queryByTestId('answer-offline')).toBeNull();
+  });
+
+  it('offline with the reads cached goes on as usual', async () => {
+    mockOnline = false;
+    mockStored = introVersion(t);
+    mockRows = [net];
+    const onDone = await mount();
+    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+    expect(screen.queryByTestId('answer-offline')).toBeNull();
   });
 });
 

@@ -20,6 +20,7 @@ let mockBars: ReturnType<typeof pastMonthBars> = [];
 let mockInputs: unknown = null;
 let mockProgress = { items: [], doneCount: 0, next: 'pay', allDone: false, loading: false, currency: 'USD', today: '2026-10-03' };
 let mockOpenRows: unknown[] = [];
+let mockUserId: string | null = 'u1';
 
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
@@ -33,7 +34,7 @@ jest.mock('@/shell/screen/TabRootScreen', () => {
   };
 });
 jest.mock('@/features/record/useRecordContext', () => ({
-  useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', region: 'US', today: '2026-10-03' }),
+  useRecordContext: () => ({ userId: mockUserId, householdId: 'h1', homeCurrency: 'USD', region: 'US', today: '2026-10-03' }),
 }));
 jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ status: mockStatus, inputs: mockInputs, refetch: jest.fn() }) }));
 jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: [] }) }));
@@ -107,6 +108,7 @@ beforeEach(() => {
   mockOnline = true;
   mockStatus = 'ready';
   mockOpenRows = [];
+  mockUserId = 'u1';
   mockProgress = { items: [], doneCount: 0, next: 'pay', allDone: false, loading: false, currency: 'USD', today: '2026-10-03' };
   const { inputs, prepared } = engineFixture();
   mockInputs = inputs;
@@ -121,7 +123,7 @@ describe('Check it (APP-09, D-02)', () => {
     await wrap(<DecideHome />);
     const pill = screen.getByLabelText('Check it');
     expect(pill.props.accessibilityState.disabled).toBe(true);
-    expect(screen.getByText('What it is and a price come first')).toBeTruthy();
+    expect(screen.getByText('What it is comes first.')).toBeTruthy();
     await fireEvent.press(pill);
     expect(mockStart).not.toHaveBeenCalled();
   });
@@ -321,5 +323,33 @@ describe('the rest of the home', () => {
     await wrap(<DecideHome />);
     await fireEvent.press(screen.getByLabelText("Start setup"));
     expect(mockPush).toHaveBeenCalledWith('/decide/setup/pay');
+  });
+});
+
+describe('06.1-52 (C-18): Check it names what is missing', () => {
+  it('no words: what it is; words, no price: a price; a price that did not read: says so; a 0 price: above zero', async () => {
+    await wrap(<DecideHome />);
+    expect(screen.getByTestId('check-it-hint')).toHaveTextContent('What it is comes first.');
+    await type('What is it?', 'Laptop');
+    expect(screen.getByTestId('check-it-hint')).toHaveTextContent('A price comes first.');
+    await type('Price', 'abc');
+    expect(screen.getByTestId('check-it-hint')).toHaveTextContent('That price didn’t read as an amount.');
+    await type('Price', '0');
+    expect(screen.getByTestId('check-it-hint')).toHaveTextContent('A price above zero is needed.');
+    await type('Price', '$1,200');
+    expect(screen.queryByTestId('check-it-hint')).toBeNull();
+    expect(screen.getByLabelText('Check it').props.accessibilityState.disabled).toBe(false);
+    expect(screen.queryByText('What it is and a price come first')).toBeNull();
+  });
+
+  it('a tap before the records load says they are still loading', async () => {
+    mockStart.mockReturnValueOnce('loading');
+    mockUserId = null;
+    await wrap(<DecideHome />);
+    await type('What is it?', 'Laptop');
+    await type('Price', '1200');
+    await fireEvent.press(screen.getByLabelText('Check it'));
+    expect(mockStart).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('check-it-hint')).toHaveTextContent('Your records are still loading.');
   });
 });
