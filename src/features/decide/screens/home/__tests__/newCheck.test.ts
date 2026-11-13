@@ -175,4 +175,33 @@ describe('useNewCheck (T-06.1-21-01, T-06.1-21-02)', () => {
     });
     expect(mockCreate).toHaveBeenCalledTimes(1);
   });
+  it('06.1-78 (T-06.1-78-01): two Check it taps in the same frame make one check and open one route', async () => {
+    const { result } = await renderHook(() => useNewCheck());
+    const out: unknown[] = [];
+    await act(async () => {
+      // both calls use the same render's start, before `pending` can re-render: the old guard let both through
+      const start = result.current.start;
+      out.push(start(fields({ text: 'used car', price: 900_000 })));
+      out.push(start(fields({ text: 'used car', price: 900_000 })));
+    });
+    expect(out).toEqual(['/decide/check/price?id=new-id', 'unavailable']);
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledTimes(1);
+  });
+
+  it('06.1-78 (DN-1): Check it during a refetch of the Decide reads still writes the check and opens the stepper', async () => {
+    const { result, rerender } = await renderHook(() => useNewCheck());
+    // a refetch hands the hook a new inputs object with the same values
+    mockInputs = loadedInputs();
+    await rerender({});
+    await act(async () => {
+      result.current.start(fields({ text: 'Used car', price: 900_000 }));
+    });
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    expect(mockCreate.mock.calls[0]![0]).toMatchObject({ id: 'new-id', name: 'Used car' });
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith('/decide/check/price?id=new-id');
+    // the push comes after the write, so the stepper finds the pending row
+    expect(mockCreate.mock.invocationCallOrder[0]!).toBeLessThan(mockPush.mock.invocationCallOrder[0]!);
+  });
 });

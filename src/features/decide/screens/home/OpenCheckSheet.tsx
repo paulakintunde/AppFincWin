@@ -11,12 +11,13 @@
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useRouter, type Href } from 'expo-router';
+import type { Href } from 'expo-router';
 import { useNotBuying } from '@/data/mutations/decideOutcome';
 import { useRemoveDecision, useSaveCheckDraft } from '@/data/mutations/decideChecks';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { readStoredCheck, toStoredV2, type CheckV2, type LocalDate, type PayV2 } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -66,7 +67,6 @@ export function OpenCheckSheet(props: OpenCheckSheetProps) {
 
 function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney, formatDate, onDismiss }: OpenCheckSheetProps & { check: DecideCheckRow; model: OpenCheckRowModel }) {
   const t = useT();
-  const router = useRouter();
   const { colors, pairing } = useTheme();
   const badge = useRowBadge(model);
   const stored = useMemo<CheckV2>(() => readStoredCheck(row.inputs).check, [row.inputs]);
@@ -87,10 +87,12 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
     .filter((x): x is string => x !== null)
     .join(' · ');
 
+  // 06.1-78 (DN-2, T-06.1-78-01): a second tap while the first route opens (the sheet is still closing) is dropped by pushOnce, so
+  // Edit the check never stacks two copies of a step. The href is a full outer-stack route.
   const go = (href: Href) => {
     hapticLight();
     onDismiss();
-    router.push(href);
+    pushOnce(href);
   };
   const open = (pathname: string) => go({ pathname, params: { id: row.id } } as Href);
 

@@ -134,6 +134,9 @@ export function useNewCheck(): NewCheck {
   const { create } = useCreateCheck();
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  // 06.1-78 (T-06.1-78-01): the same guard as `pending`, but read at once. Two taps in one frame both saw pending === false
+  // (the state had not re-rendered yet), so each made a check and pushed a route.
+  const opening = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -144,7 +147,7 @@ export function useNewCheck(): NewCheck {
 
   const start = useCallback(
     (fields: NewCheckFields): NewCheckRoute | 'unavailable' | 'loading' => {
-      if (pending) return 'unavailable';
+      if (pending || opening.current) return 'unavailable';
       // 06.1-56 (H-9, CN-6): the route waits for the loaded inputs (thresholds, region, subdivision), so it never depends on load state.
       const inputs = v3.inputs;
       if (rc.userId === null || rc.householdId === null || inputs === null) return 'loading';
@@ -161,8 +164,12 @@ export function useNewCheck(): NewCheck {
         thresholds: inputs.thresholds,
       });
       if (route === 'blocked') return route;
+      opening.current = true;
       setPending(true);
-      timer.current = setTimeout(() => setPending(false), DOUBLE_TAP_MS);
+      timer.current = setTimeout(() => {
+        opening.current = false;
+        setPending(false);
+      }, DOUBLE_TAP_MS);
       create({
         userId: rc.userId,
         id,
@@ -172,6 +179,8 @@ export function useNewCheck(): NewCheck {
         inputs: toStoredV2(check) as Record<string, unknown>,
         furthestStep: 1,
       });
+      // 06.1-78: the draft is written (optimistically, so it works offline) before the route opens; the stepper and the answer read
+      // the pending row until the stored one arrives. The route is a full outer-stack href, never relative to the tab.
       router.push(route as never);
       return route;
     },

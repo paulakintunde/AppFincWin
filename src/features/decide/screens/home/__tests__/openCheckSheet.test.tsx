@@ -11,11 +11,15 @@ import { wrap } from "@/test/stepProps";
 import { KEY_KIND, KEY_VISITED, stepHref } from "../../check/useStepCheck";
 import type { OpenCheckRowModel } from "../homeCardsModel";
 import { editTarget, OpenCheckSheet } from "../OpenCheckSheet";
+import { resetPushOnceForTests } from "@/shell/navigation/pushOnce";
 
 jest.setTimeout(30000);
 
 const mockPush = jest.fn();
-jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush }) }));
+jest.mock("expo-router", () => ({
+  useRouter: () => ({ push: mockPush }),
+  router: { push: (...a: unknown[]) => mockPush(...a) },
+}));
 jest.mock("@/ui/haptics", () => ({
   hapticLight: jest.fn(),
   hapticSelection: jest.fn(),
@@ -145,6 +149,7 @@ const disabled = (label: string) =>
   screen.getByLabelText(label).props.accessibilityState.disabled;
 
 beforeEach(() => {
+  resetPushOnceForTests();
   jest.clearAllMocks();
   mockEvaluation = null;
 });
@@ -204,6 +209,14 @@ describe("OpenCheckSheet on a draft", () => {
   it("Edit the check on a big-buy draft at step 3 pushes the step-3 href", async () => {
     await renderSheet(rowOf(big(), { furthest_step: 3 }), modelOf());
     await fireEvent.press(screen.getByLabelText("Edit the check"));
+    expect(mockPush).toHaveBeenCalledWith(stepHref(3, "c1"));
+  });
+
+  it("06.1-78 (DN-2): Edit the check routes once to the step href, even when pressed twice while the sheet closes", async () => {
+    await renderSheet(rowOf(big(), { furthest_step: 3 }), modelOf());
+    await fireEvent.press(screen.getByLabelText("Edit the check"));
+    await fireEvent.press(screen.getByLabelText("Edit the check"));
+    expect(mockPush).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith(stepHref(3, "c1"));
   });
 

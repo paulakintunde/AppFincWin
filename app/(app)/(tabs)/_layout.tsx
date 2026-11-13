@@ -23,6 +23,14 @@ import { perfEnabled } from '@/features/decide/perf/perfMarks';
 import { probeCommit } from '@/data/perf/cacheProbe';
 import { DecideV3Scope } from '@/data/queries/decideV3';
 
+// 06.1-78 (H-15): the Tabs get Screen elements only. A null child (the old grow fallback once Grow opened) made expo-router log
+// "Layout children must be of type Screen" on every render. Built once: availability is a build switch, not state.
+// 06-15: grow.tsx exists before the tab opens (D-03); href null keeps it unlisted and unlinkable until TAB_AVAILABILITY.grow is on.
+const TAB_SCREENS = [
+  ...availableTabs().map((id) => <Tabs.Screen key={id} name={id} />),
+  ...(isTabAvailable('grow') ? [] : [<Tabs.Screen key="grow" name="grow" options={{ href: null }} />]),
+];
+
 export default function TabsLayout() {
   const rc = useRecordContext();
   const accounts = useAccounts(rc.householdId ?? undefined);
@@ -61,11 +69,7 @@ export default function TabsLayout() {
           );
         }}
       >
-        {availableTabs().map((id) => (
-          <Tabs.Screen key={id} name={id} />
-        ))}
-        {/* 06-15: grow.tsx exists before the tab opens (D-03); href null keeps it unlisted and unlinkable until 06-20 flips TAB_AVAILABILITY.grow */}
-        {isTabAvailable('grow') ? null : <Tabs.Screen name="grow" options={{ href: null }} />}
+        {TAB_SCREENS}
       </Tabs>
       <Fab />
       <FabQuickMenu />
