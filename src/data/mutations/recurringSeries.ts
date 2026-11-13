@@ -198,6 +198,14 @@ function patchSeriesCache(qc: QueryClient, householdId: string, updater: (rows: 
   qc.setQueryData<SeriesList>(queryKeys.recurringSeries(householdId), (old) => updater(old ?? []));
 }
 
+/**
+ * 06.1-75 (DC-5): lays a series patch over the cached row at once, so lists and the Decide inputs built from the series read show the
+ * change before the refetch. The refetch after the write (or after a refused one) replaces the row with what the server holds.
+ */
+function patchSeriesRow(qc: QueryClient, householdId: string, id: string, patch: RecurringSeriesPatch): void {
+  patchSeriesCache(qc, householdId, (rows) => rows.map((r) => (r.id === id ? { ...r, ...patch, pending: true } : r)));
+}
+
 async function invalidateSeriesAndTransactions(qc: QueryClient, householdId: string, ownerId: string): Promise<void> {
   await Promise.all([
     qc.invalidateQueries({ queryKey: queryKeys.recurringSeries(householdId) }),
@@ -341,6 +349,7 @@ export function registerSeriesMutations(qc: QueryClient): void {
     onMutate: async (vars: EditSeriesFromVars) => {
       markSession(vars);
       await qc.cancelQueries({ queryKey: queryKeys.recurringSeries(vars.householdId) });
+      patchSeriesRow(qc, vars.householdId, vars.id, vars.patch);
     },
     onSuccess: async (_result: SeriesWriteResult, vars: EditSeriesFromVars) => {
       await invalidateSeriesAndTransactions(qc, vars.householdId, vars.ownerId);
@@ -373,6 +382,8 @@ export function registerSeriesMutations(qc: QueryClient): void {
     onMutate: async (vars: SetSeriesStatusVars) => {
       markSession(vars);
       await qc.cancelQueries({ queryKey: queryKeys.recurringSeries(vars.householdId) });
+      // 06.1-75 (DC-6): a stopped or paused bill leaves the lists at once; past entries are never touched here.
+      patchSeriesRow(qc, vars.householdId, vars.id, seriesStatusPatch(vars.action, vars.date));
     },
     onSuccess: async (_result: SeriesWriteResult, vars: SetSeriesStatusVars) => {
       await invalidateSeriesAndTransactions(qc, vars.householdId, vars.ownerId);
