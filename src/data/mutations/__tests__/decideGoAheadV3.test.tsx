@@ -48,7 +48,7 @@ beforeEach(() => {
 });
 
 describe('goAheadInputOfV3', () => {
-  it('headphones, cash: one pending one-off row equal to Purchase.whole on the purchase date', () => {
+  it('headphones, cash: one paid one-off row equal to Purchase.whole, dated today', () => {
     const check = checkOnce(15000, { taxPercent: percent('10'), oneOffFees: mu(500) });
     const ev = evaluate(inputsOf({ balance: mu(500000) }), check);
     const w = goAheadInputOfV3(check, ev, 'acc1', mkCtx());
@@ -57,18 +57,54 @@ describe('goAheadInputOfV3', () => {
     expect(w.series).toHaveLength(0);
     expect(w.rows[0]).toMatchObject({
       original_amount: -17000,
-      local_date: ev.result.purchaseDate,
+      local_date: '2026-10-03',
       account_id: 'acc1',
-      status: 'pending',
+      status: 'paid',
       one_off: true,
     });
     expect(w.decision).toMatchObject({ verdict: ev.result.legacyState, row_roles: ['day_one'], series_roles: [], estimate_day_one: 17000 });
   });
 
-  it('a dated purchase writes on that date', () => {
+  // 06.1-77 (DC-3, OQ-77-2 A): "I bought it" records the day it was bought (today unless the user picks another day), not the
+  // planned day, and a row on or before today is paid. It never lands in Home "Coming up" as an unpaid item.
+  it('a check planned for a later day writes today, paid (OQ-77-2 A)', () => {
     const check = checkOnce(15000, { purchaseDate: '2026-11-20' });
     const ev = evaluate(inputsOf({ balance: mu(500000) }), check);
-    expect(goAheadInputOfV3(check, ev, 'acc1', mkCtx()).rows[0]?.local_date).toBe('2026-11-20');
+    expect(ev.result.purchaseDate).toBe('2026-11-20');
+    expect(goAheadInputOfV3(check, ev, 'acc1', mkCtx()).rows[0]).toMatchObject({ local_date: '2026-10-03', status: 'paid' });
+  });
+
+  it('DC-3: an engine day one day ahead of the household day (device clock ahead) still writes a paid row dated today', () => {
+    const check = checkOnce(1200);
+    const ev = evaluate(inputsOf({ asOf: '2026-11-13', balance: mu(500000) }), check);
+    expect(ev.result.purchaseDate).toBe('2026-11-13');
+    const w = goAheadInputOfV3(check, ev, 'acc1', mkCtx({ today: '2026-11-12' }));
+    expect(w.rows).toHaveLength(1);
+    expect(w.rows[0]).toMatchObject({ original_amount: -1200, local_date: '2026-11-12', status: 'paid' });
+  });
+
+  it('the date the user picks is the date written, and an earlier day is paid', () => {
+    const check = checkOnce(1200);
+    const ev = evaluate(inputsOf({ balance: mu(500000) }), check);
+    expect(goAheadInputOfV3(check, ev, 'acc1', mkCtx({ date: '2026-09-28' })).rows[0]).toMatchObject({ local_date: '2026-09-28', status: 'paid' });
+  });
+
+  it('a picked day after today is held at today: the day-one row is never a future, unpaid row', () => {
+    const check = checkOnce(1200);
+    const ev = evaluate(inputsOf({ balance: mu(500000) }), check);
+    expect(goAheadInputOfV3(check, ev, 'acc1', mkCtx({ date: '2026-10-04' })).rows[0]).toMatchObject({ local_date: '2026-10-03', status: 'paid' });
+  });
+
+  it('later instalments stay pending while they are after today', () => {
+    const check = checkPlan(60000, { cadence: { unit: 'month', every: 2 }, count: 3, apr: percent('0'), deposit: mu(6000), firstPayment: { kind: 'one_period' } });
+    const ev = evaluate(inputsOf({ balance: mu(900000) }), check);
+    const w = goAheadInputOfV3(check, ev, 'acc1', mkCtx());
+    const roles = w.decision.row_roles;
+    expect(w.rows.filter((_, i) => roles[i] === 'day_one').map((r) => r.status)).toEqual(['paid']);
+    const payments = w.rows.filter((_, i) => roles[i] === 'payment');
+    expect(payments.length).toBeGreaterThan(0);
+    for (const r of payments) expect(r).toMatchObject({ status: 'pending' });
+    expect(payments.every((r) => r.local_date > '2026-10-03')).toBe(true);
   });
 
   it('used-car plan: the deposit on the day, then a payment series from the first payment date that adds up to the card', () => {
