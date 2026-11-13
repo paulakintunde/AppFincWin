@@ -27,6 +27,12 @@ export const answerActions = {
     seeInGrow: 'See it in Grow',
     toast: 'Goal made: {{item}}.',
   },
+  // 06.1-63 (CS-9, CF-6): whether the ready-date reminder was set, and a save that failed.
+  save: {
+    reminderSet: 'Reminder set for {{date}}.',
+    reminderOff: 'Reminders are off.',
+    failed: 'The goal wasn’t made. Nothing changed.',
+  },
   amount: {
     title: 'How much a month?',
     sub: 'A larger amount reaches the goal sooner.',
@@ -51,6 +57,7 @@ export const answerActions = {
     planRow: 'Payments',
     planSummary: '{{up}} up front, then {{count}} payments',
     noAccount: 'An everyday account is needed to add this to your records.',
+    loadingAccounts: 'Loading your accounts…',
   },
   runningCost: {
     offer: '{{name}}, {{amount}} {{cadence}}. Add it as a bill?',

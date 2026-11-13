@@ -161,16 +161,24 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
     writes: { markSeen, recordHistory: (a) => history.mutate(a) },
   });
 
-  // A cash side picked on the compare screen, applied once.
-  const sideDone = useRef(false);
+  // A side picked on the compare screen, applied once per pick. 06.1-63 (CN-13): Compare now returns to this same answer with a new
+  // `side` (dismissTo), so a changed cash side applies again: cash judges as paid once.
+  const sideDone = useRef<'cash' | 'installments' | null>(null);
   useEffect(() => {
-    if (sideDone.current || side === null || check === null || !gated) return;
-    sideDone.current = true;
+    if (side === null || sideDone.current === side || check === null || !gated) return;
+    sideDone.current = side;
     if (side === 'cash' && check.pay.mode === 'plan') {
       step.update((c) => ({ ...c, pay: { mode: 'once' } }));
       step.flush();
     }
   }, [side, check, gated, step]);
+  // 06.1-63 (CN-13): a later installments side opens the plan sheet (on arrival the initial sheet state already does). Adjusted
+  // during render when the prop changes, not in an effect.
+  const [sideSeen, setSideSeen] = useState(side);
+  if (side !== sideSeen) {
+    setSideSeen(side);
+    if (side === 'installments') setSheet('plan');
+  }
 
   const names = useMemo<NonNullable<UseSaidOptions['names']>>(() => {
     const category = new Map(data.categories.map((c) => [c.id, c.name]));

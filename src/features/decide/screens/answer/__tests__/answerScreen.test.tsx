@@ -121,7 +121,10 @@ jest.mock('../../check/useStepCheck', () => ({
   useStepData: () => ({ currency: 'USD', today: '2026-11-05', country: 'US', subdivision: null, bills: [], billChoices: [], categories: [], debts: [], status: 'ready' }),
 }));
 jest.mock('../../sheets/DatePickerSheet', () => ({ DatePickerSheet: () => null }));
-jest.mock('../../sheets/InstallmentPlanSheet', () => ({ InstallmentPlanSheet: () => null }));
+jest.mock('../../sheets/InstallmentPlanSheet', () => {
+  const { Text } = jest.requireActual('react-native');
+  return { InstallmentPlanSheet: ({ visible }: { visible: boolean }) => (visible ? <Text testID="plan-sheet" /> : null) };
+});
 
 const writes = { notBuying: jest.fn(() => 'step-1'), setEnvelopeAccount: jest.fn(() => 'step-env'), skipLine: (...a: unknown[]) => mockSkip(...a) };
 
@@ -529,5 +532,24 @@ describe('the Not ready card on the answer screen (06.1-44, G-1, C-1, C-2)', () 
     expect(mockPush).not.toHaveBeenCalled();
     expect(mockRouter.push).not.toHaveBeenCalled();
     expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+});
+
+describe('06.1-63 (CN-13): a side picked on Compare comes back to this same answer', () => {
+  it('a later installments side opens the plan sheet; a later cash side pays once', async () => {
+    const base = ledgerRun('N09');
+    const plan = { mode: 'plan', cadence: { unit: 'month', every: 1 }, count: 12, termMonths: 12, apr: null, fees: { setup: 0, perPeriod: 0, end: 0 }, deposit: 0, tradeIn: 0, quotedPayment: null, firstPayment: null, deferredInterestTerm: false };
+    const run = { ...base, check: { ...base.check, pay: plan as unknown as CheckV2['pay'] } };
+    load(run);
+    const view = await wrap(<AnswerScreen id="c1" renderGate={noGate} writes={writes} />);
+    expect(screen.queryByTestId('plan-sheet')).toBeNull();
+    await view.rerender(<AnswerScreen id="c1" side="installments" renderGate={noGate} writes={writes} />);
+    expect(screen.getByTestId('plan-sheet')).toBeTruthy();
+    expect(mockState.update).not.toHaveBeenCalled();
+    await view.rerender(<AnswerScreen id="c1" side="cash" renderGate={noGate} writes={writes} />);
+    expect(mockState.update).toHaveBeenCalledTimes(1);
+    const next = (mockState.update.mock.calls[0] as [(c: CheckV2) => CheckV2])[0](run.check);
+    expect(next.pay).toEqual({ mode: 'once' });
+    expect(mockState.flush).toHaveBeenCalled();
   });
 });
