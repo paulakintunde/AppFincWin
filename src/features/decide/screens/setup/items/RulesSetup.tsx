@@ -7,6 +7,8 @@
 //  - Saving the rules with all of them off sets the no-rules flag, says "No rules. Answers still keep your safety net.", and keeps
 //    the item ticked; any rule on clears the flag.
 //  - Saving and investing at least are the person's regular saving series in Grow, shown as a note and never as engine rules.
+//  - 06.1-65 (CB-15): at the five-rule cap, the value chip of a rule not stored yet is disabled and the cap line sits under it.
+//    (CF-9): the "N rules on" toast carries the step id of the no-rules clear, so it has Undo like every other setup toast.
 import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
@@ -137,8 +139,9 @@ export function RulesSetup() {
       const done = flags.set({ flag: 'no_rules', on: true });
       showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.rules.none' }, stepId: done?.stepId ?? null });
     } else {
-      flags.set({ flag: 'no_rules', on: false, noUndo: true });
-      showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.rules.toast', params: { count: onCount } } });
+      // CF-9: the clear is its own Undo step (null, and no Undo, when the flag was already clear and nothing was written).
+      const cleared = flags.set({ flag: 'no_rules', on: false });
+      showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.rules.toast', params: { count: onCount } }, stepId: cleared?.stepId ?? null });
     }
     return true;
   };
@@ -154,18 +157,28 @@ export function RulesSetup() {
       onLeave={leave}
     >
       <View style={styles.list}>
-        {rows.map((row) => (
-          <View key={row.key} testID={`rule-${row.key}`} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line2 }]}>
-            <ToggleRow label={row.label} value={row.on} onChange={() => flip(row)} />
-            <View style={styles.chipRow}>
-              <Chip
-                label={row.value}
-                accessibilityLabel={t('decide.screens.setupOthers.rules.changeA11y', { rule: `${row.label} ${row.value}` })}
-                onPress={() => (row.needsValue && !roomForOne ? undefined : setTarget(row.target))}
-              />
+        {rows.map((row) => {
+          // CB-15: a rule with no value yet cannot be added at the cap, so its chip is off and the reason sits right under it.
+          const capped = row.needsValue && !roomForOne;
+          return (
+            <View key={row.key} testID={`rule-${row.key}`} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line2 }]}>
+              <ToggleRow label={row.label} value={row.on} onChange={() => flip(row)} />
+              <View style={styles.chipRow}>
+                <Chip
+                  label={row.value}
+                  accessibilityLabel={t('decide.screens.setupOthers.rules.changeA11y', { rule: `${row.label} ${row.value}` })}
+                  disabled={capped}
+                  onPress={() => setTarget(row.target)}
+                />
+              </View>
+              {capped ? (
+                <Text testID={`rule-cap-${row.key}`} style={small}>
+                  {t('decide.screens.setupOthers.rules.capBeside')}
+                </Text>
+              ) : null}
             </View>
-          </View>
-        ))}
+          );
+        })}
       </View>
       <Pill variant="secondary" label={t('decide.screens.setupOthers.rules.addOwn')} disabled={!roomForOne} onPress={() => setAdding(true)} />
       {!roomForOne ? <Text style={small}>{t('decide.screens.setupOthers.rules.cap')}</Text> : null}

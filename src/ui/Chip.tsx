@@ -24,16 +24,19 @@ export interface ChipProps {
   numberOfLines?: number;
   /** D-95 (R17.13): 'dark' sits on the ink card -- unselected surface at .12 with inkSoft1 text, selected a surface fill with ink text. */
   tone?: 'light' | 'dark';
+  /** 06.1-65 (CB-15): not available now; said to screen readers, and the text is muted. The caller shows why next to it. */
+  disabled?: boolean;
 }
 
 /** UI-SPEC Color: surface at .12 over the ink card (the same derivation as the card's own controls). */
 export const SURFACE_ON_INK_OPACITY = 0.12;
 
-export function Chip({ label, selected = false, onPress, accessibilityLabel, pressableRef, numberOfLines, tone = 'light' }: ChipProps) {
+export function Chip({ label, selected = false, onPress, accessibilityLabel, pressableRef, numberOfLines, tone = 'light', disabled = false }: ChipProps) {
   const { colors, pairing } = useTheme();
   const readOnly = useReadOnlyScope();
+  const off = readOnly || disabled;
   const dark = tone === 'dark';
-  const textColor = dark ? (selected ? colors.ink : colors.inkSoft1) : selected ? colors.accent : colors.ink;
+  const textColor = disabled ? colors.inkMuted : dark ? (selected ? colors.ink : colors.inkSoft1) : selected ? colors.accent : colors.ink;
   // 06.1-62 (CB-5 / CF-1): native ripple on Android, pressed dim on iOS; the ink card needs the light ripple
   const feedback = usePressFeedback(dark && !selected ? 'fill' : 'row');
 
@@ -41,15 +44,15 @@ export function Chip({ label, selected = false, onPress, accessibilityLabel, pre
     <Pressable
       ref={pressableRef}
       accessibilityRole="button"
-      accessibilityState={readOnly ? { selected, disabled: true } : { selected }}
+      accessibilityState={off ? { selected, disabled: true } : { selected }}
       accessibilityLabel={accessibilityLabel ?? label}
-      disabled={readOnly}
+      disabled={off}
       onPress={onPress}
-      android_ripple={readOnly ? undefined : feedback.android_ripple}
+      android_ripple={off ? undefined : feedback.android_ripple}
       style={({ pressed }) => [
         styles.chip,
         { backgroundColor: dark ? (selected ? colors.surface : 'transparent') : colors.fill1 },
-        readOnly ? null : feedback.pressedStyle(pressed),
+        off ? null : feedback.pressedStyle(pressed),
       ]}
     >
       {dark && !selected ? (

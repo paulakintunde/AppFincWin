@@ -75,5 +75,17 @@ describe('Chip press feedback (06.1-62)', () => {
     await fireEvent.press(chip);
     expect(onPress).toHaveBeenCalledTimes(1);
   });
-});
 
+  it('06.1-65 (CB-15): disabled says so to screen readers and does not press', async () => {
+    const onPress = jest.fn();
+    const r = await render(
+      <ThemeProvider>
+        <Chip label="Not set" disabled onPress={onPress} />
+      </ThemeProvider>
+    );
+    const chip = r.getByRole('button');
+    expect(chip.props.accessibilityState).toMatchObject({ disabled: true });
+    await fireEvent.press(chip);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+});

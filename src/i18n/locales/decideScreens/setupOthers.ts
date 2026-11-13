@@ -55,6 +55,8 @@ export const setupOthers = {
     notSet: 'Not set',
     addOwn: '+ Add your own rule',
     cap: 'Up to 5 of your own rules.',
+    // 06.1-65 (CB-15): under a rule's disabled value chip at the cap. Counts saved rules, on or off.
+    capBeside: 'Five of your own rules are saved, the most Decide keeps.',
     growNote: 'Saving at least {{saving}} and investing at least {{investing}}',
     growNoteSub: 'These are your regular saving and investing. They change in Grow.',
     none: 'No rules. Answers still keep your safety net.',

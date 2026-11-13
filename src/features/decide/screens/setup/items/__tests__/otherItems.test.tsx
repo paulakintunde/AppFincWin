@@ -219,7 +219,37 @@ describe('RulesSetup (D36)', () => {
     await wrap(<RulesSetup />);
     expect(screen.queryByTestId('rules-none')).toBeNull();
     await fireEvent.press(screen.getByText('Save rules'));
-    expect(mockSetAnswered).toHaveBeenCalledWith({ flag: 'no_rules', on: false, noUndo: true });
+    expect(mockSetAnswered).toHaveBeenCalledWith({ flag: 'no_rules', on: false });
+    // 06.1-65 (CF-9): the "N rules on" toast carries the clear's step id, so it has Undo.
+    expect(mockShowToast).toHaveBeenCalledWith(expect.objectContaining({ text: { key: 'decide.screens.setupOthers.rules.toast', params: { count: 1 } }, stepId: 'step-flag' }));
+  });
+
+  it('06.1-65 (CF-9): with the flag already clear (nothing written), the rules toast has no step', async () => {
+    mockDsr = '36';
+    mockSetAnswered.mockReturnValueOnce(null as never);
+    await wrap(<RulesSetup />);
+    await fireEvent.press(screen.getByText('Save rules'));
+    expect(mockShowToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: null }));
+  });
+
+  it('06.1-65 (CB-15): at the five-rule cap, the chip of a rule with no value is disabled and the cap line sits under it', async () => {
+    const own = (id: string) => ({ id, kind: 'category_cap', on: true, value: 1000, categoryId: 'c1' });
+    mockDoc = { v: 1, rules: [own('r1'), own('r2'), own('r3'), own('r4'), own('r5')] };
+    await wrap(<RulesSetup />);
+    const keepChip = screen.getByLabelText('Keep at least Not set, change');
+    expect(keepChip.props.accessibilityState).toMatchObject({ disabled: true });
+    expect(screen.getByTestId('rule-cap-keep')).toHaveTextContent('Five of your own rules are saved, the most Decide keeps.');
+    expect(screen.getByTestId('rule-cap-largest')).toBeTruthy();
+    // a stored rule's chip still opens its sheet, and the debt rule is never capped
+    expect(screen.queryByTestId('rule-cap-r1')).toBeNull();
+    expect(screen.queryByTestId('rule-cap-debt')).toBeNull();
+    expect(screen.getByLabelText('Debt payments at most Not set, change').props.accessibilityState?.disabled).toBeFalsy();
+  });
+
+  it('06.1-65 (CB-15): under the cap no chip is disabled and no cap line shows beside a chip', async () => {
+    await wrap(<RulesSetup />);
+    expect(screen.getByLabelText('Keep at least Not set, change').props.accessibilityState?.disabled).toBeFalsy();
+    expect(screen.queryByTestId('rule-cap-keep')).toBeNull();
   });
 
   it('switching the debt rule on writes the typed share at once', async () => {
