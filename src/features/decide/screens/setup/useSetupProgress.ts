@@ -1,11 +1,12 @@
 // 06.1-17 (D-10, D-11, D-23): gathers the setup facts from the Decide inputs, the settings flags and the debt names, then hands them
 // to the pure setupProgress rules. Read only: nothing here writes.
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useDebts, useDecideSettings } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
-import type { ReadinessItem, V3Account, V3Inputs, V3Series } from '@/engine/decide/v3';
+import type { ReadinessItem, V3Account, V3Inputs } from '@/engine/decide/v3';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { setupProgress, type SetupFacts, type SetupProgress } from '../logic/setupProgress';
+import { decideBillSetOf, decideBillsTotal, type DecideBillSet } from './items/itemLogic';
 
 export interface SetupProgressState extends SetupProgress {
   loading: boolean;
@@ -31,12 +32,6 @@ function previousMonth(today: string): string {
   return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
 }
 
-/** A monthly figure for a series: weekly amounts are spread over a 52-week year. */
-function monthlyMinor(s: V3Series): number {
-  const every = Math.max(1, s.cadence.every);
-  return s.cadence.unit === 'month' ? Math.round(Number(s.amount) / every) : Math.round((Number(s.amount) * 52) / 12 / every);
-}
-
 /** Accounts that can carry everyday money: cards and savings are not asked "what is it for" here. */
 function everydayCapable(a: V3Account): boolean {
   return a.kind !== 'card' && a.kind !== 'savings';
@@ -54,7 +49,8 @@ export function setupFactsFrom(
   const thisMonth = today.slice(0, 7);
   const prev = previousMonth(today);
   const pay = inputs.series.find((s) => s.role === 'pay' && s.confirmed && s.status === 'live');
-  const bills = inputs.series.filter((s) => s.role === 'bill' && s.status === 'live');
+  // 06.1-75 (DS-6): the one bill set the bills page reads too.
+  const bills = decideBillSetOf(inputs);
   const last = inputs.months.find((m) => m.month === prev);
   const dates = (inputs.months.find((m) => m.month === thisMonth)?.lines ?? []).map((l) => l.date).sort();
   const sized = inputs.safetyNet?.size ?? null;
@@ -64,8 +60,8 @@ export function setupFactsFrom(
     payAmountMinor: pay ? Number(pay.amount) : null,
     payDay: pay ? Number(pay.anchorDate.slice(8, 10)) : null,
     billsRightAnswered: flags.billsRight,
-    billsCount: bills.length,
-    billsMonthlyMinor: bills.reduce((sum, s) => sum + monthlyMinor(s), 0),
+    billsCount: bills.monthly.size,
+    billsMonthlyMinor: decideBillsTotal(bills),
     debts: inputs.debts.map((d) => ({ name: debtNames.get(d.id) ?? '', dueDay: d.dueDay ?? null })),
     noDebtsAnswered: flags.noDebts,
     netSizeMinor: sized !== null && Number(sized) > 0 ? Number(sized) : null,
@@ -127,10 +123,44 @@ export function useSetupFacts(): SetupFactsState {
   }, [inputs, evaluation, settingsRead, debts, error, retry]);
 }
 
+/** Exported for tests (G-72-3): two facts records are the same when every field is (debts and the first readiness item by value). */
+export function sameFacts(a: SetupFacts, b: SetupFacts): boolean {
+  for (const k of Object.keys(a) as (keyof SetupFacts)[]) {
+    if (k === 'debts' || k === 'readinessFirst') continue;
+    if (a[k] !== b[k]) return false;
+  }
+  return JSON.stringify(a.debts) === JSON.stringify(b.debts) && JSON.stringify(a.readinessFirst) === JSON.stringify(b.readinessFirst);
+}
+
 export function useSetupProgress(): SetupProgressState {
-  const { loading, error, retry, facts, currency, today } = useSetupFacts();
+  const { loading, error, retry, facts: fresh, currency, today } = useSetupFacts();
+  // 06.1-75 (G-72-3): a refetch under an open setup item rebuilds the inputs, but the six facts rarely change. Holding the last equal
+  // facts keeps the progress object the same, so the checklist behind the item skips its render.
+  // React's "store information from previous renders" pattern: a changed value is stored during render.
+  const [held, setHeld] = useState<SetupFacts | null>(fresh);
+  let facts = held;
+  if (held !== fresh && (held === null || fresh === null || !sameFacts(held, fresh))) {
+    setHeld(fresh);
+    facts = fresh;
+  }
   return useMemo(() => {
     if (facts === null) return { ...EMPTY, loading, error, retry, currency, today };
     return { ...setupProgress(facts, today), loading, error, retry, currency, today };
   }, [loading, error, retry, facts, currency, today]);
+}
+
+export interface DecideBillsState {
+  /** The bills Decide counts; null until the Decide inputs are read. */
+  set: DecideBillSet | null;
+  /** "These are right" was answered (D-23), so no bill is waiting to be confirmed. */
+  billsRight: boolean;
+}
+
+/** 06.1-75 (DS-6, DS-15): the bills page reads the same set as the checklist, and whether the bills were confirmed. */
+export function useDecideBills(): DecideBillsState {
+  const rc = useRecordContext();
+  const inputs = useDecideV3().inputs;
+  const settings = useDecideSettings(rc.userId ?? undefined).data;
+  const billsRight = (settings?.answered_bills_right_at ?? null) !== null;
+  return useMemo(() => ({ set: inputs === null ? null : decideBillSetOf(inputs), billsRight }), [inputs, billsRight]);
 }

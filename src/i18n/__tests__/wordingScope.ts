@@ -330,6 +330,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   more: '$412.00',
   n: '3', // 06.1 wave 6
   name: 'MoneyHelper',
+  names: 'Laptop, Safety net',
   net: '$1,000.00',
   next: 'Debts',
   of: '12',

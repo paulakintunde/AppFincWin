@@ -89,6 +89,15 @@ export const setupPayBills = {
     noAccount: 'There is no account to save a bill to yet.',
     toast_one: 'Saved: {{count}} regular bill.',
     toast_other: 'Saved: {{count}} regular bills.',
+    // 06.1-75 (DS-6, DS-7, DS-15, DB-2, DC-6): one bill set with the checklist, a total in the home currency, and a way off the list.
+    notConfirmed: 'Not confirmed yet',
+    totalIn: 'Total each month, in {{currency}}',
+    chipOff: 'Already marked.',
+    notCounted: 'Not counted in Decide yet.',
+    elsewhere: 'Counted with savings, goals or debts: {{names}}.',
+    stopped: 'Stopped',
+    stoppedNote: 'Ends from today. Past entries stay in Activity.',
+    stoppedToast: '{{name}} stopped.',
   },
   billEdit: {
     title: 'Change a bill',

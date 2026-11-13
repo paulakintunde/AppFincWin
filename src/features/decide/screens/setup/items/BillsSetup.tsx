@@ -6,6 +6,11 @@
 //  - + Add a bill it missed: D33A, makes a regular bill.
 //  - These are right: sets the bills-right flag (D-23) so the item stays ticked, then returns to the checklist.
 //  - Save and close: returns without setting the flag; marks already made stay.
+//
+// 06.1-75 (H-12): the list and the total read the bills Decide counts (the checklist's set), in the home currency at Decide's converted
+// amounts (DS-6, DS-7). Payments Decide counts with savings, goals or debts leave the list and are named under it. Bills still to
+// confirm are marked and come first (DS-15). "Not regular" on a Regular bill, and "Stopped" in its Change sheet, stop the bill from
+// today with Undo; past entries stay in Activity (OQ-75-1 A, DB-2, DC-6). A chip that cannot act looks and reads as off.
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import * as Crypto from 'expo-crypto';
@@ -30,10 +35,11 @@ import { useShouldStack } from '@/ui/textFit';
 import { Text } from '@/ui/Text';
 import { BillSheet, type BillValues } from './BillSheets';
 import { useFreqWord, useSetupFormat } from './itemFields';
-import { anchorWithDay, buildBillRows, nextDateOnDay, regularCount, regularMonthlyTotal, type BillRow, type EditSeriesFrom } from './itemLogic';
+import { useDecideBills } from '../useSetupProgress';
+import { anchorWithDay, buildBillRows, decideBillsTotal, nextDateOnDay, regularCount, stopFromFor, type BillRow, type EditSeriesFrom, type StopBill } from './itemLogic';
 import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
-export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom }) {
+export function BillsSetup({ editSeriesFrom, onStopBill }: { editSeriesFrom: EditSeriesFrom; onStopBill: StopBill }) {
   const t = useT();
   const leave = useLeaveItem();
   const { colors, pairing } = useTheme();
@@ -51,8 +57,11 @@ export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom 
   const payable = useMemo(() => payableAccounts(accounts.data ?? []), [accounts.data]);
   const fallbackAccount = payable[0] ?? null;
 
-  const rows = useMemo(() => buildBillRows(found.rows, series.data ?? []), [found.rows, series.data]);
-  const total = regularMonthlyTotal(rows);
+  const bills = useDecideBills();
+  const allRows = useMemo(() => buildBillRows(found.rows, series.data ?? [], bills.set, bills.billsRight), [found.rows, series.data, bills.set, bills.billsRight]);
+  const rows = useMemo(() => allRows.filter((r) => r.counted !== 'elsewhere'), [allRows]);
+  const elsewhere = useMemo(() => [...new Set(allRows.filter((r) => r.counted === 'elsewhere').map((r) => r.name))], [allRows]);
+  const total = bills.set === null ? null : decideBillsTotal(bills.set);
   const [editing, setEditing] = useState<BillRow | null>(null);
   const [adding, setAdding] = useState(false);
 
@@ -73,9 +82,11 @@ export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom 
     is_automatic: false,
   });
 
+  const accountFor = (row: BillRow): string | null => row.found?.accountId ?? fallbackAccount?.id ?? null;
+
   const markRegular = (row: BillRow, over?: Partial<BillValues>): void => {
     if (!canWrite || row.found === null) return;
-    const accountId = row.found.accountId ?? fallbackAccount?.id ?? null;
+    const accountId = accountFor(row);
     if (accountId === null) return;
     const name = row.name;
     const { stepId } = confirmer.confirm({
@@ -100,6 +111,20 @@ export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom 
     if (!canWrite || row.found === null) return;
     const { stepId } = dismisser.dismiss({ payeeKey: row.found.candidate.key, direction: row.found.candidate.direction, name: row.name });
     showToast({ kind: 'ordinary', text: undoLabelText('paymentDismissed', { name: row.name }), stepId });
+  };
+
+  // OQ-75-1 A: a saved bill comes off the list by being stopped from today. Only end_date changes; past entries stay, with Undo.
+  const stopBill = (row: BillRow): void => {
+    if (!canWrite || row.series === null) return;
+    const s = row.series;
+    let stepId: string;
+    try {
+      stepId = onStopBill(s, stopFromFor(s, today), userId as string);
+    } catch {
+      // The writer refuses a date before the bill's start; stopFromFor never gives one, so nothing was written.
+      return;
+    }
+    showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupPayBills.bills.stoppedToast', params: { name: row.name } }, stepId });
   };
 
   const saveEdit = (row: BillRow, v: BillValues): void => {
@@ -136,7 +161,7 @@ export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom 
     const done = flags.set({ flag: 'bills_right', on: true });
     showToast({
       kind: 'ordinary',
-      text: { key: 'decide.screens.setupPayBills.bills.toast', params: { count: regularCount(rows) } },
+      text: { key: 'decide.screens.setupPayBills.bills.toast', params: { count: bills.set?.monthly.size ?? regularCount(rows) } },
       stepId: done?.stepId ?? null,
     });
     return true;
@@ -163,6 +188,10 @@ export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom 
           const amount = fmt.money(row.amount, row.currency);
           const stateWord = row.state === 'regular' ? t('decide.screens.setupPayBills.bills.regular') : row.state === 'notRegular' ? t('decide.screens.setupPayBills.bills.notRegular') : t('decide.screens.setupPayBills.bills.notMarked');
           const sub = row.freq === 'monthly' ? t('decide.screens.setupPayBills.bills.rowSub', { ordinal: fmt.ordinal(row.day) }) : freqWord(row.freq);
+          // DB-2: each chip either acts or looks and reads as off. The chosen chip is the current mark; "Not regular" on a Regular bill stops it.
+          const regularOff = !canWrite || row.found === null || accountFor(row) === null;
+          const canStop = row.state === 'regular' && row.series !== null;
+          const notRegularOff = !canWrite || (row.state === 'unmarked' ? row.found === null : !canStop);
           return (
             <View
               key={row.id}
@@ -179,6 +208,12 @@ export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom 
                   <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{row.name}</Text>
                   <Text style={{ ...label, color: colors.inkMuted }}>{sub}</Text>
                   {row.state === 'unmarked' ? <Text style={{ ...label, color: colors.warn1 }}>{stateWord}</Text> : null}
+                  {row.toConfirm ? (
+                    <Text testID={`bill-to-confirm-${row.id}`} style={{ ...label, color: colors.warn1 }}>
+                      {t('decide.screens.setupPayBills.bills.notConfirmed')}
+                    </Text>
+                  ) : null}
+                  {row.counted === 'notCounted' ? <Text style={{ ...label, color: colors.inkMuted }}>{t('decide.screens.setupPayBills.bills.notCounted')}</Text> : null}
                 </View>
                 <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 0 }}>{amount}</Text>
               </View>
@@ -188,7 +223,7 @@ export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom 
                   label={t('decide.screens.setupPayBills.bills.regular')}
                   a11y={t('decide.screens.setupPayBills.bills.markRegularA11y', { name: row.name })}
                   selected={row.state === 'regular'}
-                  disabled={!canWrite || row.state === 'regular' || row.found === null}
+                  off={row.state !== 'regular' && regularOff}
                   fill={!stacked}
                   onPress={() => markRegular(row)}
                 />
@@ -197,29 +232,41 @@ export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom 
                   label={t('decide.screens.setupPayBills.bills.notRegular')}
                   a11y={t('decide.screens.setupPayBills.bills.markNotRegularA11y', { name: row.name })}
                   selected={row.state === 'notRegular'}
-                  // A payment that is already a series is ended where series are edited, not by a dismissal here.
-                  disabled={!canWrite || row.state !== 'unmarked'}
+                  off={row.state !== 'notRegular' && notRegularOff}
+                  hint={canStop ? t('decide.screens.setupPayBills.bills.stoppedNote') : undefined}
                   fill={!stacked}
-                  onPress={() => markNotRegular(row)}
+                  onPress={() => (canStop ? stopBill(row) : markNotRegular(row))}
                 />
                 <MarkChip
                   testID={`change-${row.id}`}
                   label={t('decide.screens.common.change')}
                   a11y={t('decide.screens.setupPayBills.bills.changeA11y', { name: row.name })}
                   selected={false}
-                  disabled={!canWrite}
+                  off={!canWrite}
                   fill={!stacked}
                   onPress={() => setEditing(row)}
                 />
               </View>
+              {canWrite && row.state !== 'regular' && regularOff ? (
+                <Text style={{ ...label, color: colors.inkMuted }}>{t('decide.screens.setupPayBills.bills.noAccount')}</Text>
+              ) : null}
             </View>
           );
         })}
       </View>
-      <View style={styles.totalRow}>
-        <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, flexShrink: 1 }}>{t('decide.screens.setupPayBills.bills.total')}</Text>
-        <Text testID="bills-total" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, flexShrink: 0 }}>{fmt.money(total, homeCurrency)}</Text>
-      </View>
+      {elsewhere.length > 0 ? (
+        <Text testID="bills-elsewhere" style={{ ...label, color: colors.inkMuted }}>
+          {t('decide.screens.setupPayBills.bills.elsewhere', { names: elsewhere.join(', ') })}
+        </Text>
+      ) : null}
+      {total !== null && bills.set !== null ? (
+        <View style={styles.totalRow}>
+          <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, flexShrink: 1 }}>
+            {t('decide.screens.setupPayBills.bills.totalIn', { currency: bills.set.currency })}
+          </Text>
+          <Text testID="bills-total" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, flexShrink: 0 }}>{fmt.money(total, bills.set.currency)}</Text>
+        </View>
+      ) : null}
       <Pill
         variant="secondary"
         label={t('decide.screens.setupPayBills.bills.addMissed')}
@@ -235,6 +282,15 @@ export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom 
         initial={editing === null ? undefined : { name: editing.name, amount: editing.amount, day: editing.day, freq: editing.freq }}
         onSave={(v) => editing !== null && saveEdit(editing, v)}
         onDismiss={() => setEditing(null)}
+        onStop={
+          editing !== null && editing.series !== null && editing.state === 'regular'
+            ? () => {
+                const row = editing;
+                setEditing(null);
+                stopBill(row);
+              }
+            : undefined
+        }
       />
       <BillSheet visible={adding} mode="add" currency={fallbackAccount?.currency ?? homeCurrency} onSave={addBill} onDismiss={() => setAdding(false)} />
     </SetupItemFrame>
@@ -246,31 +302,39 @@ interface MarkChipProps {
   label: string;
   a11y: string;
   selected: boolean;
-  disabled: boolean;
+  /** Cannot act: drawn at the disabled opacity and announced disabled. A selected chip is the current mark and is inert, not off. */
+  off: boolean;
+  hint?: string;
   fill: boolean;
   onPress: () => void;
 }
 
-function MarkChip({ testID, label, a11y, selected, disabled, fill, onPress }: MarkChipProps) {
+function MarkChip({ testID, label, a11y, selected, off, hint, fill, onPress }: MarkChipProps) {
+  const t = useT();
   const { colors, pairing } = useTheme();
+  const inert = off || selected;
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={a11y}
-      accessibilityState={{ selected, disabled }}
-      disabled={disabled}
+      accessibilityHint={selected ? t('decide.screens.setupPayBills.bills.chipOff') : hint}
+      accessibilityState={{ selected, disabled: inert }}
+      disabled={inert}
       onPress={() => {
         hapticSelection();
         onPress();
       }}
-      style={({ pressed }) => [styles.mark, fill ? styles.markFill : styles.markFull, { backgroundColor: colors.fill1, opacity: pressed ? PRESSED_OPACITY : 1 }]}
+      style={({ pressed }) => [styles.mark, fill ? styles.markFill : styles.markFull, { backgroundColor: colors.fill1, opacity: off ? OFF_OPACITY : pressed ? PRESSED_OPACITY : 1 }]}
     >
       {selected ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.accent, opacity: ACCENT_TINT_OPACITY, borderRadius: radii.pill }]} /> : null}
       <Text style={{ ...textRole(pairing, 'label'), color: selected ? colors.accent : colors.ink, textAlign: 'center' }}>{label}</Text>
     </Pressable>
   );
 }
+
+/** The disabled look the Pill uses (06.1-62). */
+const OFF_OPACITY = 0.5;
 
 const styles = StyleSheet.create({
   list: { gap: space.gapMd },

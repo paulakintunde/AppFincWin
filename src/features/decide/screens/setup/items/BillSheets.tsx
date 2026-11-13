@@ -33,13 +33,15 @@ export interface BillSheetProps {
   initial?: { name: string; amount: number; day: number; freq: RecurringFreq };
   onSave: (values: BillValues) => void;
   onDismiss: () => void;
+  /** 06.1-75 (OQ-75-1 A, DC-6): edit mode on a saved bill only. Stops it from today; past entries stay in Activity. */
+  onStop?: () => void;
 }
 
 export function BillSheet(props: BillSheetProps) {
   return props.visible ? <BillForm {...props} /> : null;
 }
 
-function BillForm({ mode, currency, initial, onSave, onDismiss }: BillSheetProps) {
+function BillForm({ mode, currency, initial, onSave, onDismiss, onStop }: BillSheetProps) {
   const t = useT();
   const [name, setName] = useState(initial?.name ?? '');
   const [amount, setAmount] = useState<number | null>(initial?.amount ?? null);
@@ -85,6 +87,20 @@ function BillForm({ mode, currency, initial, onSave, onDismiss }: BillSheetProps
             onSave({ name: name.trim(), amount, day, freq });
           }}
         />
+        {!adding && onStop !== undefined ? (
+          <>
+            <Pill
+              variant="secondary"
+              label={t('decide.screens.setupPayBills.bills.stopped')}
+              accessibilityHint={t('decide.screens.setupPayBills.bills.stoppedNote')}
+              onPress={() => {
+                hapticLight();
+                onStop();
+              }}
+            />
+            <Note>{t('decide.screens.setupPayBills.bills.stoppedNote')}</Note>
+          </>
+        ) : null}
       </SheetScroll>
     </Sheet>
   );

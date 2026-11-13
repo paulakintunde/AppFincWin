@@ -6,7 +6,7 @@
 import React from 'react';
 import { useEditGoal } from '@/data/mutations/growGoals';
 import { useSaveGrowDebt } from '@/data/mutations/growDebts';
-import { useEditSeriesFrom } from '@/data/mutations/recurringSeries';
+import { useEditSeriesFrom, useSetSeriesStatus } from '@/data/mutations/recurringSeries';
 import { useSafetyNetAnswer } from '@/data/mutations/safetyNetAnswer';
 import { useSkipOccurrence } from '@/data/mutations/transactions';
 import { BillsSetup } from '@/features/decide/screens/setup/items/BillsSetup';
@@ -22,9 +22,11 @@ export function SetupPayRoute() {
   return <PaySetup editSeriesFrom={editFrom} />;
 }
 
+// 06.1-75 (OQ-75-1 A, DC-6): the bill stop is the Activity Stopped writer (end_date only, past entries stay, Undo), bound here too.
 export function SetupBillsRoute() {
   const { editFrom } = useEditSeriesFrom();
-  return <BillsSetup editSeriesFrom={editFrom} />;
+  const status = useSetSeriesStatus();
+  return <BillsSetup editSeriesFrom={editFrom} onStopBill={(series, from, ownerId) => status.stop(series, from, ownerId)} />;
 }
 
 // 06.1-25: items 3 and 4. Debts saves a due day on the Grow debt; the safety net saves its account on the Grow goal, or answers
