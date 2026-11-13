@@ -84,7 +84,7 @@ function EnvelopeAccountForm({ goalId, onClose, setAccount }: EnvelopeAccountShe
                 onPress={() => pick(a.id, a.name)}
                 style={({ pressed }) => [styles.row, { borderBottomColor: colors.line2 }, pressed && styles.pressed]}
               >
-                <Text style={labelStyle} numberOfLines={1}>
+                <Text style={labelStyle} numberOfLines={1} ellipsizeMode="tail">
                   {a.name}
                 </Text>
               </Pressable>

@@ -91,6 +91,8 @@ type NumberKind = 'user-name' | 'figure' | 'input' | 'forwarded';
 const NUMBER_ALLOW: { path: string; kind: NumberKind; count: number; reason: string }[] = [
   { path: '@/ui/LabelValueRow.tsx', kind: 'user-name', count: 1, reason: 'valueLines is passed only for user-typed values' },
   { path: '@/features/record/accounts/AccountUseList.tsx', kind: 'figure', count: 1, reason: 'rule N setup account balance, shrinks to its line' },
+  { path: 'screens/actions/BoughtScreen.tsx', kind: 'user-name', count: 1, reason: 'the item name the user typed, two lines then ellipsis' },
+  { path: 'screens/sheets/EnvelopeAccountSheet.tsx', kind: 'user-name', count: 1, reason: 'account name the user typed, one line then ellipsis' },
 ];
 
 
@@ -100,7 +102,10 @@ const GEOMETRY_HEIGHT: { path: string; count: number; reason: string }[] = [
   { path: 'charts/NetWorthChart.tsx', count: 2, reason: 'chart drawing' },
   { path: 'screens/sheets/DatePickerSheet.tsx', count: 1, reason: '5px payday dot (no text); day cells use minHeight' },
   { path: 'screens/home/MoreDetails.tsx', count: 1, reason: 'chevron glyph (no text)' },
-  { path: 'screens/home/YourMonthCard.tsx', count: 3, reason: 'month bar and column drawing (no text) and the arrow chevron glyph' },
+  { path: 'screens/home/YourMonthCard.tsx', count: 4, reason: 'arrow and records chevron glyphs and the records n-of-3 bar (no text)' },
+  { path: 'screens/check/StepFrame.tsx', count: 1, reason: 'back chevron glyph (no text)' },
+  { path: 'screens/setup/SetupBanner.tsx', count: 1, reason: 'collapse chevron glyph (no text)' },
+  { path: 'screens/setup/SetupChecklist.tsx', count: 1, reason: 'back chevron glyph (no text)' },
   { path: '@/ui/CheckRow.tsx', count: 4, reason: 'checkbox and remove glyphs (no text)' },
 ];
 
