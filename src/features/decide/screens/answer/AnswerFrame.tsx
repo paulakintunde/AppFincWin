@@ -3,14 +3,17 @@
 // sentence, first caveat only, caveat line, "What this can't see", footer, and last the action bar. Pure composition; nothing is written.
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import type { Evaluation, Purpose } from '@/engine/decide/v3';
+import type { Evaluation, LocalDate, Purpose, YearMonth } from '@/engine/decide/v3';
+import { money as makeMoney } from '@/engine/money';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
+import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Text } from '@/ui/Text';
 import { ActionBar } from './ActionBar';
 import { AnswerTopBar, type AnswerTopBarProps, type PayMode, type WhenChoice } from './AnswerTopBar';
 import { FactLines } from './FactLines';
+import type { ReadinessFixRow, WaiverChoice } from '../logic/readinessFixes';
 import type { Line } from '../logic/sayResult';
 import { LegalBlock } from './LegalBlock';
 import { OptionChips, type OptionKey } from './OptionChips';
@@ -58,10 +61,39 @@ export interface AnswerFrameProps {
   renderAfterFact?: (line: Line, index: number) => React.ReactNode;
   /** The "More detail" rows (plan 23). */
   children?: React.ReactNode;
+  /** 06.1-44 (G-1, C-2): the named readiness items for the not-ready card (readinessFixRows). Absent = none named. */
+  readinessRows?: readonly ReadinessFixRow[];
+  /** D-57 (C-1): true only while quick estimates can count (estimatesCanAnswer). Absent = false: no quick-estimates control. */
+  canUseEstimates?: boolean;
+  onReadinessFix?: (row: ReadinessFixRow) => void;
+  onReadinessChoice?: (row: ReadinessFixRow, choice: WaiverChoice) => void;
 }
 
-export function AnswerFrame({ check, evaluation, status = 'ready', offlineDate = null, said, onAction, onOption, onCantSee, renderAfterFact, children }: AnswerFrameProps) {
+const NO_ROWS: readonly ReadinessFixRow[] = [];
+
+/** "November" for 2026-11, in the device locale (the same words YourMonthCard uses). */
+function monthNameIn(locale: string): (ym: YearMonth) => string {
+  return (ym) => new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)) - 1, 1)));
+}
+
+export function AnswerFrame({
+  check,
+  evaluation,
+  status = 'ready',
+  offlineDate = null,
+  said,
+  onAction,
+  onOption,
+  onCantSee,
+  renderAfterFact,
+  children,
+  readinessRows = NO_ROWS,
+  canUseEstimates = false,
+  onReadinessFix,
+  onReadinessChoice,
+}: AnswerFrameProps) {
   const { colors, pairing } = useTheme();
+  const fmt = useMoneyFormatter(said.showCents ?? true, said.currency);
   const result = status === 'ready' ? (evaluation?.result ?? null) : null;
   const lines = useSaid(result, said);
 
@@ -84,7 +116,21 @@ export function AnswerFrame({ check, evaluation, status = 'ready', offlineDate =
     body = <ErrorCard item={check.name} onRetry={retry} />;
   } else if (result !== null && result.readiness?.ready === false) {
     // D-52: a not-ready result is never a verdict.
-    body = <NotReadyCard readiness={lines.readiness} onFinishSetup={() => onAction({ kind: 'finishSetup' })} onFromEstimates={() => onAction({ kind: 'fromEstimates' })} />;
+    // 06.1-44 (C-1): quick estimates only when they can count; otherwise the card names each item with its fix and answers.
+    body = (
+      <NotReadyCard
+        rows={readinessRows}
+        canUseEstimates={canUseEstimates}
+        asOf={said.today as LocalDate}
+        money={(minor) => fmt.formatMoney(makeMoney(minor, said.currency))}
+        date={(d) => fmt.formatDate(d)}
+        monthName={monthNameIn(fmt.locale)}
+        onFix={(row) => onReadinessFix?.(row)}
+        onChoice={(row, choice) => onReadinessChoice?.(row, choice)}
+        onFinishSetup={() => onAction({ kind: 'finishSetup' })}
+        onFromEstimates={() => onAction({ kind: 'fromEstimates' })}
+      />
+    );
   } else if (result !== null) {
     // D-68: a short plan judged by cash reads the one-off rows, like a payment made once.
     const once = check.pay === 'cash' || result.facts.some((f) => f.code === 'short_plan_from_cash');

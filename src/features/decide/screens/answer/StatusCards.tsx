@@ -1,5 +1,5 @@
 // 06.1-14 (APP-10, D-52): the offline, error and not-ready cards. One card look. The error card never says "not found" and shows
-// no figure; the not-ready card lists what is missing and never reads like a verdict.
+// no figure; the not-ready card lists what is missing and never reads like a verdict. 06.1-44: the not-ready card names each item.
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
@@ -10,7 +10,8 @@ import { textRole } from '@/theme/typography';
 import { StateGlyph } from '@/ui/glyphs/StateGlyph';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
-import type { Line } from '../logic/sayResult';
+import type { ReadinessFixRow } from '../logic/readinessFixes';
+import { ReadinessFixList, type ReadinessFixListProps } from './ReadinessFixList';
 
 function Card({ testID, children }: { testID: string; children: React.ReactNode }) {
   const { colors } = useTheme();
@@ -50,27 +51,40 @@ export function ErrorCard({ item, onRetry }: { item: string; onRetry: () => void
   );
 }
 
-export interface NotReadyCardProps {
-  readiness: readonly Line[];
+export interface NotReadyCardProps extends Omit<ReadinessFixListProps, 'rows'> {
+  /** 06.1-44 (C-2): the named readiness items with their fixes and answers (readinessFixRows). */
+  rows: readonly ReadinessFixRow[];
+  /** D-57 (C-1): quick estimates count only while the records hold no earlier month (estimatesCanAnswer). */
+  canUseEstimates: boolean;
   onFinishSetup: () => void;
   onFromEstimates: () => void;
 }
 
-export function NotReadyCard({ readiness, onFinishSetup, onFromEstimates }: NotReadyCardProps) {
+/**
+ * 06.1-44 (G-1, C-1, C-2, A-ANS-3): one short lead line, then each named item with its fix and answers. Quick estimates are the
+ * primary only when they can count (a person with no earlier month); otherwise "Finish setup" is the primary and the card carries no
+ * quick-estimates control at all, so a person with records is never sent round the loop again (F-1).
+ */
+export function NotReadyCard({ rows, canUseEstimates, onFinishSetup, onFromEstimates, ...list }: NotReadyCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
+  const title = rows.length === 0 ? t('decide.screens.answer.notReady.title') : t('decide.screens.answer.notReady.title', { count: rows.length });
   return (
     <Card testID="answer-not-ready">
-      <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{t('decide.screens.answer.notReady.title')}</Text>
-      {readiness.map((line, i) => (
-        <Text key={`${line.code}-${i}`} style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
-          {line.text}
-        </Text>
-      ))}
-      <Pill variant="primary" label={t('decide.screens.answer.notReady.finishSetup')} onPress={onFinishSetup} />
-      <Pressable accessibilityRole="button" onPress={onFromEstimates} style={styles.link}>
-        <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.answer.notReady.fromEstimates')}</Text>
-      </Pressable>
+      <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+        {title}
+      </Text>
+      {rows.length > 0 ? <ReadinessFixList rows={rows} {...list} /> : null}
+      {canUseEstimates ? (
+        <>
+          <Pill variant="primary" label={t('decide.screens.answer.notReady.fromEstimates')} onPress={onFromEstimates} />
+          <Pressable testID="answer-not-ready-finish" accessibilityRole="link" onPress={onFinishSetup} style={styles.link}>
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.answer.notReady.finishSetup')}</Text>
+          </Pressable>
+        </>
+      ) : (
+        <Pill variant="primary" label={t('decide.screens.answer.notReady.finishSetup')} onPress={onFinishSetup} />
+      )}
     </Card>
   );
 }

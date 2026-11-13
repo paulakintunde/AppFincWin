@@ -89,8 +89,37 @@ export const answer = {
   },
   notReady: {
     title: 'Not ready yet',
+    // 06.1-44 (G-1, C-2): one short lead line; the named items sit in the list below it.
+    title_one: 'Not ready yet: 1 thing to finish',
+    title_other: 'Not ready yet: {{count}} things to finish',
     finishSetup: 'Finish setup',
     fromEstimates: 'Answer from quick estimates',
+    item: {
+      pay: '{{name}}, {{amount}} on {{date}}, isn’t in your records yet.',
+      payNoName: 'Income of {{amount}} on {{date}} isn’t in your records yet.',
+      bill: '{{name}}, {{amount}} due {{date}}, isn’t in your records yet.',
+      billNoName: 'A bill of {{amount}} due {{date}} isn’t in your records yet.',
+      spending: 'No everyday spending is recorded for {{monthName}} yet.',
+      spendingNow: 'Nothing spent is recorded since {{date}}.',
+      lateStart: '{{monthName}} isn’t fully recorded yet.',
+      envelopes: '{{envelope}} isn’t linked to an account.',
+      envelopesNoName: 'An envelope isn’t linked to an account.',
+    },
+    fix: {
+      records: 'Records for {{monthName}}',
+      envelope: 'Which account?',
+    },
+    choice: {
+      markSkipped: 'It didn’t happen',
+      didntHappen: 'It didn’t happen',
+      paidByOther: 'Someone else paid it',
+      alwaysOther: 'Someone else always pays it',
+      noPay: 'No pay that time',
+      incomeElsewhere: 'Income comes in elsewhere',
+      nothingToAdd: 'Nothing more for {{monthName}}',
+      startFrom: 'Records begin in {{monthName}}',
+    },
+    saved: 'Answer saved.',
   },
   worked: {
     title: 'How this was worked out',
