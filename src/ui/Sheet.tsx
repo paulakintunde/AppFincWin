@@ -91,6 +91,9 @@ interface SheetGesture {
 }
 const SheetGestureContext = createContext<SheetGesture | null>(null);
 
+/** DB-5: a keyboard report shorter than this (dp) is a floating toolbar, not a docked keyboard. */
+export const KEYBOARD_MIN_DP = 100;
+
 /**
  * Android: a transparent Modal is its own window that adjustResize does not shrink under
  * SDK 57 edge-to-edge, and KeyboardAvoidingView has no `behavior` there, so the keyboard
@@ -100,10 +103,21 @@ const SheetGestureContext = createContext<SheetGesture | null>(null);
  */
 function useAndroidKeyboardHeight(): number {
   const [kb, setKb] = useState(0);
+  const lastRef = useRef(0);
   useEffect(() => {
     if (Platform.OS !== 'android') return undefined;
-    const show = Keyboard.addListener('keyboardDidShow', (e) => setKb(e.endCoordinates.height));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setKb(0));
+    // DB-5: one pad change per show and per hide. A repeat didShow with the same height keeps the
+    // same state (no second layout), and a floating keyboard toolbar (under KEYBOARD_MIN_DP) is no
+    // keyboard at all: padding by it moved the sheet's buttons ~63 px on every focus and blur.
+    const set = (h: number) => {
+      if (lastRef.current === h) return;
+      lastRef.current = h;
+      setKb(h);
+    };
+    const show = Keyboard.addListener('keyboardDidShow', (e) =>
+      set(e.endCoordinates.height < KEYBOARD_MIN_DP ? 0 : e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener('keyboardDidHide', () => set(0));
     return () => {
       show.remove();
       hide.remove();
