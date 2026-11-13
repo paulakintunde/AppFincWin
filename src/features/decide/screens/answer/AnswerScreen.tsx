@@ -17,6 +17,7 @@ import { queryKeys } from '@/data/keys';
 import { useAccounts } from '@/data/queries/accounts';
 import { useDecideChecks } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
+import { DECIDE_READ_STALE_MS } from '@/data/queries/decideStale';
 import { useIsOnline } from '@/data/sync/useIsOnline';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { TransactionRow } from '@/db/rows';
@@ -136,7 +137,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
   const { picture, bars } = useMonthPicture();
   const v3 = useDecideV3();
   const isOnline = useIsOnline(); // 06.1-72: the online flag only, not the per-fetch last-synced time
-  const accounts = useAccounts(rc.householdId ?? undefined);
+  const accounts = useAccounts(rc.householdId ?? undefined, { staleTime: DECIDE_READ_STALE_MS }); // 06.1-72: no refetch on the answer's mount
   const { markSeen } = useMarkCheckSeen();
   const history = useRecordCheckHistory(rc.userId ?? '');
   const answered = useSetDecideAnswered(rc.userId ?? '');

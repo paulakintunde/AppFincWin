@@ -11,6 +11,7 @@ import { useSaveCheckDraft } from '@/data/mutations/decideChecks';
 import { useCategories } from '@/data/queries/categories';
 import { useDebts, useDecideChecks } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
+import { DECIDE_READ_STALE_MS } from '@/data/queries/decideStale';
 import { readStoredCheck, toStoredV2, type CheckV2, type ItemTypeRef } from '@/engine/decide/v3';
 import { perfMark, usePerfMount } from '@/features/decide/perf/perfMarks';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -123,8 +124,9 @@ export interface StepData {
 export function useStepData(): StepData {
   const rc = useRecordContext();
   const v3 = useDecideV3();
-  const cats = useCategories(rc.userId ?? undefined).data;
-  const debtRows = useDebts(rc.householdId ?? undefined).data;
+  // 06.1-72 (G-73-1): held fresh like the rest of Decide's reads, so a step or the answer mounting does not refetch them.
+  const cats = useCategories(rc.userId ?? undefined, { staleTime: DECIDE_READ_STALE_MS }).data;
+  const debtRows = useDebts(rc.householdId ?? undefined, { staleTime: DECIDE_READ_STALE_MS }).data;
   const inputs = v3.inputs;
   return useMemo<StepData>(() => {
     const categories = (cats ?? []).map((c) => ({ id: c.id, name: c.name ?? '' }));

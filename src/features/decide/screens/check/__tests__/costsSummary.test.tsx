@@ -39,7 +39,7 @@ jest.mock('@/data/mutations/decideChecks', () => ({
   useCreateCheck: () => ({ create: jest.fn(), pendingIds: [], pendingRows: [] }),
 }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
-jest.mock('@/features/decide/perf/perfMarks', () => ({ perfMark: jest.fn() }));
+jest.mock('@/features/decide/perf/perfMarks', () => ({ perfMark: jest.fn(), usePerfMount: jest.fn() }));
 
 const RC01 = loadCases().find((c) => c.id === 'RC-01');
 if (RC01 === undefined) throw new Error('RC-01 is missing from the right-answer cases');
