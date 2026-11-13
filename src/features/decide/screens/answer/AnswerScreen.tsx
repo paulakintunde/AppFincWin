@@ -6,10 +6,15 @@
 // an error shows no figure.
 // 06.1-44 (G-1, C-1, C-2): a not-ready answer names each item with its fix and one-tap answers. An answer is saved as a readiness
 // waiver (or the pending line is skipped) with one Undo; the screen re-judges from the answers cache and stays put.
+// 06.1-66 (H-5): the same parts every time. "What you told Decide" shows on every loaded answer (home path and stepper path) with the
+// rows that apply; Not ready (readiness or "More needed", OQ-66-2) keeps it with "I'm not buying it" and "Delete this check" (FQ6);
+// pay and When only with a verdict; the payday chip is a short date or absent; a decided check shows its outcome line (FQ8); the
+// first-answer gate sits over the frame's loading state (FQ5), and an unanswered safety-net question is one line that opens it.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { useCreateCheck, useMarkCheckSeen, useSaveCheckAnswer } from '@/data/mutations/decideChecks';
+import { useCreateCheck, useMarkCheckSeen, useRemoveDecision, useSaveCheckAnswer } from '@/data/mutations/decideChecks';
 import { useRecordCheckHistory } from '@/data/mutations/decideHistory';
 import { useSaveDecideAnswer } from '@/data/mutations/decideAnswers';
 import { useSetDecideAnswered } from '@/data/mutations/decideSetup';
@@ -31,6 +36,7 @@ import { useT } from '@/i18n';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { hapticLight } from '@/ui/haptics';
+import { Row } from '@/ui/Row';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { useCheckEngine } from '../engine/useCheckEngine';
 import { useMonthPicture } from '../engine/useMonthPicture';
@@ -38,8 +44,9 @@ import { DatePickerSheet } from '../sheets/DatePickerSheet';
 import { EnvelopeAccountSheet, type SetEnvelopeAccount } from '../sheets/EnvelopeAccountSheet';
 import { InstallmentPlanSheet } from '../sheets/InstallmentPlanSheet';
 import { estimatesCanAnswer, readinessFixRows, type ReadinessFixRow, type WaiverChoice } from '../logic/readinessFixes';
+import { useNetUnanswered } from '../firstAnswer/useFirstAnswerGate';
 import { KEY_SKIPPED, countsLikeOf, kindOf, lineNamesOf, ownKindsOf, stepHref, useStepCheck, useStepData, type BuiltInKind } from '../check/useStepCheck';
-import { AnswerFrame, type AnswerAction, type AnswerCheckView } from './AnswerFrame';
+import { AnswerFrame, isNotReady, type AnswerAction, type AnswerCheckView } from './AnswerFrame';
 import { AnswerLoading } from './AnswerLoading';
 import type { PayMode, WhenChoice } from './AnswerTopBar';
 import { FactActions, type FactActionChoice } from './FactActions';
@@ -90,12 +97,25 @@ export interface AnswerScreenProps {
   side?: 'cash' | 'installments' | null;
   /** The first-answer gate (shell/decide/FirstAnswerGateBound); it calls onDone at once when nothing is left to ask. */
   renderGate: (onDone: () => void) => React.ReactNode;
+  /** 06.1-66 (FQ5): the safety-net question opened from the answer's net line, bound in the shell; onClose(true) once answered. */
+  renderNetQuestion: (onClose: (answered: boolean) => void) => React.ReactNode;
   writes: AnswerWrites;
 }
 
 const NO_ROWS: readonly DecideCheckRow[] = [];
 const NO_ITEMS: readonly ReadinessItem[] = [];
 const asHref = (path: string): Href => path as Href;
+
+/** 06.1-66 (CB-7, FQ8): "Nov 15" for a stored day, in the device locale. */
+function shortDayFormat(locale: string): (d: string) => string {
+  const f = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return (d) => f.format(new Date(`${d.slice(0, 10)}T00:00:00Z`));
+}
+/** 06.1-66 (FQ8): "Nov 12" for a stored moment, on the device's own calendar. */
+function shortMomentFormat(locale: string): (iso: string) => string {
+  const f = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' });
+  return (iso) => f.format(new Date(iso));
+}
 
 /** The pending line a "It didn't happen" answer skips, from any cached transactions list of the household; null when not cached. */
 function cachedPendingLine(qc: QueryClient, householdId: string, lineId: string): TransactionRow | null {
@@ -122,7 +142,14 @@ function leave(): void {
   else goDecideHome(router);
 }
 
-export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScreenProps) {
+/** 06.1-66 (FQ8, CC-2): what happened to a decided check, dated; null while it is open. */
+function outcomeOf(row: DecideCheckRow, t: ReturnType<typeof useT>, shortMoment: (iso: string) => string): string | null {
+  if (row.status !== 'bought' && row.status !== 'waiting' && row.status !== 'passed') return null;
+  const date = shortMoment(row.decided_at ?? row.updated_at);
+  return String(t(`decide.screens.answer.outcome.${row.status}` as never, { date } as never));
+}
+
+export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, writes }: AnswerScreenProps) {
   const t = useT();
   const rc = useRecordContext();
   const data = useStepData();
@@ -148,6 +175,13 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
   const qc = useQueryClient();
   const answers = useSaveDecideAnswer(rc.userId ?? '', rc.householdId ?? '');
   const [envelopeId, setEnvelopeId] = useState<string | null>(null);
+  const { remove } = useRemoveDecision();
+  const netUnanswered = useNetUnanswered();
+  const [netOpen, setNetOpen] = useState(false);
+  // Answered from the line: hidden at once, before the reads catch up. A swipe leaves it.
+  const [netAnsweredHere, setNetAnsweredHere] = useState(false);
+  const shortDay = useMemo(() => shortDayFormat(fmt.locale), [fmt.locale]);
+  const shortMoment = useMemo(() => shortMomentFormat(fmt.locale), [fmt.locale]);
 
   const [gated, setGated] = useState(false);
   // An installments side from the compare screen opens the plan sheet on arrival.
@@ -212,7 +246,6 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
   if (step.status === 'not_found' || (step.status === 'ready' && row === null && !checks.isLoading)) return <CheckNotFound />;
   // 06.1-49 (A-ANS-2): no check yet, so no top bar; the loading state, never a blank screen.
   if (step.status === 'loading' || check === null || row === null) return <AnswerLoading />;
-  if (!gated) return <>{renderGate(() => setGated(true))}</>;
 
   const paydays = engine.paydays();
   const nextPayday = paydays.find((d) => d > today) ?? null;
@@ -225,13 +258,16 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
     priceText: check.price === null ? '' : money(check.price),
     pay,
     when,
-    dateText: when === 'date' && purchase !== null ? fmt.formatDate(purchase) : null,
+    dateText: when === 'date' && purchase !== null ? shortDay(purchase) : null,
+    paydayText: nextPayday === null ? null : shortDay(nextPayday),
     purpose: check.purpose,
     options,
     country: v3.inputs?.region ?? rc.region,
+    outcome: outcomeOf(row, t, shortMoment),
   };
-  const frameStatus = engine.status === 'error' ? 'error' : engine.status === 'loading' ? 'loading' : 'ready';
-  const offlineDate = !isOnline && engine.status === 'ready' ? fmt.formatDate(result?.recordsAsOf ?? today) : null;
+  // 06.1-66 (CN-11): before the gate is done the frame shows its loading state under the gate, never a blank page.
+  const frameStatus = !gated ? 'loading' : engine.status === 'error' ? 'error' : engine.status === 'loading' ? 'loading' : 'ready';
+  const offlineDate = gated && !isOnline && engine.status === 'ready' ? fmt.formatDate(result?.recordsAsOf ?? today) : null;
 
   const edit = (next: (c: CheckV2) => CheckV2): void => {
     step.update(next);
@@ -276,6 +312,18 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
         return;
       case 'finishSetup':
         pushOnce(asHref('/decide/setup'));
+        return;
+      case 'deleteCheck': {
+        // 06.1-66 (FQ6): the check goes, with one Undo, and the screen returns to Decide home.
+        hapticLight();
+        const stepId = remove(row);
+        showToast({ kind: 'destructive', text: { key: 'decide.screens.common.toast.deleted', params: { item: row.name } }, stepId });
+        goDecideHome(router);
+        return;
+      }
+      case 'openPast':
+        // 06.1-66 (FQ8): a decided check's Past decisions entry has the check's own id.
+        pushOnce(asHref(`/decide/past/${id}`));
         return;
       case 'fromEstimates':
         // C-1: reachable only while estimates can count; the card shows no such control otherwise.
@@ -366,8 +414,6 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
     );
   };
 
-  // D21: the check came through the stepper when it carries the stepper's keys.
-  const throughStepper = check.layerAnswers[KEY_SKIPPED] !== undefined;
   const skippedRaw = check.layerAnswers[KEY_SKIPPED];
   const skipped = (Array.isArray(skippedRaw) ? skippedRaw : []).filter((n): n is ToldStep => n === 1 || n === 2 || n === 3);
   const kind = kindOf(check, row.name);
@@ -385,7 +431,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
     check.pay.mode === 'plan'
       ? t('decide.screens.answer.told.onPlan', { monthly: money(evaluation?.purchase?.monthly ?? 0) })
       : t('decide.screens.answer.told.upFrontCash', { amount: money(check.price ?? 0) });
-  const runningLine = runningMonthly > 0 ? t('decide.screens.answer.told.runningMonthly', { monthly: money(runningMonthly) }) : t('decide.screens.answer.told.runningNone');
+  const runningLine = runningMonthly > 0 ? t('decide.screens.answer.told.runningMonthly', { monthly: money(runningMonthly) }) : null;
   const runningValue = runningMonthly > 0 ? t('decide.screens.answer.runningSome', { monthly: money(runningMonthly) }) : t('decide.screens.answer.runningNone');
 
   const giveMoreCount = result === null ? 0 : (result.confidence.nextStep !== null ? 1 : 0) + lines.missing.length + rows.length;
@@ -424,18 +470,33 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
   const recordsUpTo = result?.recordsAsOf != null ? fmt.formatDate(result.recordsAsOf) : null;
   const accountName = (accounts.data ?? []).find((a) => a.deleted_at == null)?.name ?? '';
 
+  // 06.1-66 (CS-2, DC-1): on every answer, verdict or Not ready, whichever way the check was made; each row opens its step from=answer.
+  const told = (
+    <WhatYouToldCard
+      kindLabel={kindLabel}
+      priceLine={priceLine}
+      runningLine={runningLine}
+      skipped={skipped}
+      onEdit={(n) => pushOnce(withFromAnswer(stepHref(n, id, 'back')))}
+    />
+  );
+  // 06.1-66 (FQ5, CS-8): the safety-net question put away unanswered is one line that opens it again.
+  const netLine =
+    netUnanswered && !netAnsweredHere ? (
+      <View testID="answer-net-line">
+        <Row label={t('decide.screens.answer.netLine')} chevron onPress={() => setNetOpen(true)} />
+      </View>
+    ) : null;
   const body =
-    result === null || result.readiness?.ready === false ? undefined : (
+    result === null ? undefined : isNotReady(result) ? (
       <>
-        {throughStepper ? (
-          <WhatYouToldCard
-            kindLabel={kindLabel}
-            priceLine={priceLine}
-            runningLine={runningLine}
-            skipped={skipped}
-            onEdit={(n) => pushOnce(withFromAnswer(stepHref(n, id, 'back')))}
-          />
-        ) : null}
+        {netLine}
+        {told}
+      </>
+    ) : (
+      <>
+        {netLine}
+        {told}
         <MoreDetailRows
           runningValue={runningValue}
           showStops={check.replaces != null && (check.replaces.stops.length > 0 || check.replaces.sale != null)}
@@ -467,6 +528,14 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
         {body}
       </AnswerFrame>
 
+      {/* 06.1-66 (FQ5, CN-11): the gate over the frame's loading state, never on its own. */}
+      {!gated ? renderGate(() => setGated(true)) : null}
+      {netOpen
+        ? renderNetQuestion((answered) => {
+            setNetOpen(false);
+            if (answered) setNetAnsweredHere(true);
+          })
+        : null}
       {sheet === 'later' ? (
         <BuyLaterSheet
           currency={currency}
@@ -550,7 +619,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
       {sheet === 'help' ? <FreeHelpSheet country={country} onClose={closeSheet} /> : null}
       {sheet === 'about' ? <AboutSheet result={result} country={country} said={{ currency, today }} recordsUpTo={recordsUpTo} onClose={closeSheet} /> : null}
       <InstallmentPlanSheet
-        visible={sheet === 'plan'}
+        visible={gated && sheet === 'plan'}
         check={check}
         currency={currency}
         today={today}

@@ -38,7 +38,9 @@ const mockSaveAnswer = jest.fn(() => true);
 const mockHistory = jest.fn(() => true);
 const mockAnswered = jest.fn();
 const mockPending: { rows: unknown[] } = { rows: [] };
+const mockRemove = jest.fn((..._a: unknown[]) => 'step-del');
 jest.mock('@/data/mutations/decideChecks', () => ({
+  useRemoveDecision: () => ({ remove: (...a: unknown[]) => mockRemove(...a) }),
   useMarkCheckSeen: () => ({ markSeen: mockMarkSeen }),
   useSaveCheckAnswer: () => ({ save: mockSaveAnswer }),
   useCreateCheck: () => ({ pendingRows: mockPending.rows }),
@@ -70,6 +72,7 @@ jest.mock('../../sheets/EnvelopeAccountSheet', () => {
   };
 });
 
+const mockPaydays = { list: ['2026-11-20'] as string[] };
 const mockState = {
   run: undefined as unknown as Run,
   inputs: undefined as Run['inputs'] | undefined,
@@ -108,7 +111,7 @@ jest.mock('../../engine/useCheckEngine', () => ({
     readyDate: () => null,
     timeline: () => null,
     judgeOn: () => null,
-    paydays: () => ['2026-11-20'],
+    paydays: () => mockPaydays.list,
   }),
 }));
 jest.mock('../../check/useStepCheck', () => ({
@@ -124,6 +127,9 @@ jest.mock('../../check/useStepCheck', () => ({
   }),
   useStepData: () => ({ currency: 'USD', today: '2026-11-05', country: 'US', subdivision: null, bills: [], billChoices: [], categories: [], debts: [], status: 'ready' }),
 }));
+// 06.1-66 (FQ5): whether the safety-net question is still unanswered (the answer's net line).
+const mockNet = { unanswered: false };
+jest.mock('../../firstAnswer/useFirstAnswerGate', () => ({ useNetUnanswered: () => mockNet.unanswered }));
 jest.mock('../../sheets/DatePickerSheet', () => ({ DatePickerSheet: () => null }));
 jest.mock('../../sheets/InstallmentPlanSheet', () => {
   const { Text } = jest.requireActual('react-native');
@@ -156,8 +162,20 @@ function AutoDone({ onDone }: { onDone: () => void }): null {
 }
 const noGate = (onDone: () => void) => <AutoDone onDone={onDone} />;
 
+/** The bound net question stand-in: "answer" closes it answered, "away" closes it unanswered (a swipe). */
+const renderNetQuestion = (onClose: (answered: boolean) => void) => (
+  <>
+    <Pressable testID="net-answer" accessibilityRole="button" onPress={() => onClose(true)}>
+      {null}
+    </Pressable>
+    <Pressable testID="net-away" accessibilityRole="button" onPress={() => onClose(false)}>
+      {null}
+    </Pressable>
+  </>
+);
+
 async function open(renderGate: (onDone: () => void) => React.ReactNode = noGate) {
-  return wrap(<AnswerScreen id="c1" renderGate={renderGate} writes={writes} />);
+  return wrap(<AnswerScreen id="c1" renderGate={renderGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
 }
 
 /** A copy of a run's evaluation with the result changed. */
@@ -168,6 +186,8 @@ beforeEach(() => {
   mockPending.rows = [];
   mockList.rows = null;
   mockCache.lists = [];
+  mockNet.unanswered = false;
+  mockPaydays.list = ['2026-11-20'];
 });
 
 describe('a check that exists only optimistically', () => {
@@ -181,12 +201,16 @@ describe('a check that exists only optimistically', () => {
 });
 
 describe('first answer gate (D-14)', () => {
-  it('shows the gate before any verdict, then the verdict once it is done', async () => {
+  it('shows the gate over the frame and its loading state, then the verdict once it is done (06.1-66 FQ5, CN-11)', async () => {
     load(ledgerRun('N02'));
     await open(withGate);
     expect(screen.getByTestId('gate')).toBeTruthy();
-    expect(screen.queryByTestId('answer-frame')).toBeNull();
+    // Never the gate alone over a blank page: the top bar with the item, and "Working out the answer".
+    expect(screen.getByTestId('answer-frame')).toBeTruthy();
+    expect(screen.getByText('Laptop')).toBeTruthy();
+    expect(screen.getByText('Working out the answer…')).toBeTruthy();
     expect(screen.queryByTestId('answer-verdict-badge')).toBeNull();
+    expect(screen.queryByTestId('answer-actions')).toBeNull();
     await act(async () => {
       fireEvent.press(screen.getByTestId('gate'));
     });
@@ -212,7 +236,7 @@ describe('a crossed rule (N15, D-19, UX-16)', () => {
     expect(screen.getByText('This brings it to $500.00; your rule is $400.00.')).toBeTruthy();
     expect(screen.queryByText(/\bline\b/i)).toBeNull();
     expect(mockHaptic).toHaveBeenCalledTimes(1);
-    view.rerender(<AnswerScreen id="c1" renderGate={noGate} writes={writes} />);
+    view.rerender(<AnswerScreen id="c1" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
     expect(mockHaptic).toHaveBeenCalledTimes(1);
   });
 
@@ -224,9 +248,15 @@ describe('a crossed rule (N15, D-19, UX-16)', () => {
 });
 
 describe('What you told Decide (D21, D21b)', () => {
+  /** A check through the stepper with a kind, the costs step skipped and running costs counted (every row applies). */
+  const stepped = (run: Run): Partial<typeof mockState> => ({
+    check: { ...run.check, layerAnswers: { ...run.check.layerAnswers, 'L0.kind': 'tech', 'L0.skipped_steps': [3] } },
+    evaluation: { ...run.evaluation, purchase: { ...(run.evaluation.purchase as NonNullable<Evaluation['purchase']>), runningMonthly: 2500 as never } },
+  });
+
   it('lists the three rows after the stepper, and marks a skipped costs step "pre-filled, not checked"', async () => {
     const run = ledgerRun('N02');
-    load(run, { check: { ...run.check, layerAnswers: { ...run.check.layerAnswers, 'L0.skipped_steps': [3] } } });
+    load(run, stepped(run));
     await open();
     expect(screen.getByTestId('answer-told')).toBeTruthy();
     for (const n of [1, 2, 3]) expect(screen.getByTestId(`answer-told-${n}`)).toBeTruthy();
@@ -240,7 +270,7 @@ describe('What you told Decide (D21, D21b)', () => {
 
   it('opens each step with from=answer by push, so Back returns to this answer (06.1-64 H-3, FQ2, DN-3)', async () => {
     const run = ledgerRun('N02');
-    load(run, { check: { ...run.check, layerAnswers: { ...run.check.layerAnswers, 'L0.skipped_steps': [3] } } });
+    load(run, stepped(run));
     await open();
     await act(async () => {
       fireEvent.press(screen.getByTestId('answer-told-1'));
@@ -253,19 +283,40 @@ describe('What you told Decide (D21, D21b)', () => {
     expect(mockRouter.replace).not.toHaveBeenCalled();
   });
 
-  it('is not shown for a check that did not come through the stepper', async () => {
+  it('06.1-66 (CS-2): shows on the home path too, with only the rows that apply, in the same section order', async () => {
+    const run = ledgerRun('N02');
+    load(run);
+    await open();
+    expect(screen.getByTestId('answer-told')).toBeTruthy();
+    expect(screen.getByTestId('answer-told-2')).toBeTruthy();
+    // No running costs counted: no Running costs row.
+    expect(screen.queryByTestId('answer-told-3')).toBeNull();
+    const ids = screen
+      .getAllByTestId(/^answer-(verdict|facts|told|detail-running|basis|actions)$/)
+      .map((n) => String(n.props.testID))
+      .filter((x, i, all) => all.indexOf(x) === i);
+    expect(ids).toEqual(['answer-verdict', 'answer-facts', 'answer-told', 'answer-detail-running', 'answer-basis', 'answer-actions']);
+  });
+
+  it('06.1-66 (DC-1): the price row says Change and opens the Price step from=answer', async () => {
     load(ledgerRun('N02'));
     await open();
-    expect(screen.queryByTestId('answer-told')).toBeNull();
+    expect(within(screen.getByTestId('answer-told-2')).getByText('Change')).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('answer-told-2'));
+    });
+    expect(mockPush).toHaveBeenLastCalledWith({ pathname: '/decide/check/price', params: { id: 'c1', dir: 'back', from: 'answer' } });
   });
 });
 
 describe('pay mode and date change in place (UX-23)', () => {
-  it('When: Next payday saves the draft and re-judges without navigating', async () => {
+  it('When: the payday chip (its short date) saves the draft and re-judges without navigating', async () => {
     load(ledgerRun('N02'));
     await open();
+    expect(screen.queryByText('Next payday')).toBeNull();
+    expect(screen.getByLabelText('Next payday, Nov 20')).toBeTruthy();
     await act(async () => {
-      fireEvent.press(screen.getByText('Next payday'));
+      fireEvent.press(screen.getByText('Nov 20'));
     });
     expect(mockState.update).toHaveBeenCalledTimes(1);
     const next = (mockState.update.mock.calls[0] as [(c: CheckV2) => CheckV2])[0](mockState.check as CheckV2);
@@ -320,7 +371,7 @@ describe('analytics, seen and history (CMP-F03, CO-D-124)', () => {
     const run = ledgerRun('N04');
     load(run);
     const view = await open();
-    view.rerender(<AnswerScreen id="c1" renderGate={noGate} writes={writes} />);
+    view.rerender(<AnswerScreen id="c1" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
     expect(mockTrack).toHaveBeenCalledTimes(1);
     const [name, payload] = mockTrack.mock.calls[0] as [string, Record<string, unknown>];
     expect(name).toBe('decide_answer_shown');
@@ -340,7 +391,7 @@ describe('analytics, seen and history (CMP-F03, CO-D-124)', () => {
     const run = ledgerRun('N02');
     load(run);
     const view = await open();
-    view.rerender(<AnswerScreen id="c1" renderGate={noGate} writes={writes} />);
+    view.rerender(<AnswerScreen id="c1" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
     expect(mockSaveAnswer).toHaveBeenCalledTimes(1);
     const [row, seen] = mockSaveAnswer.mock.calls[0] as unknown as [{ id: string }, { v: number; code: string }];
     expect(row.id).toBe('c1');
@@ -362,12 +413,24 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
   const asks = (run: Run, missing: readonly string[], extra: Evaluation['result']['facts'] = []): Evaluation =>
     withResult(run, (r) => ({ ...r, code: 'needs_input', variant: null, missing: missing as never, facts: [...r.facts, ...extra] }));
 
-  it('shows each missing figure on its own row with a Fix link', async () => {
+  it('06.1-66 (OQ-66-2, DS-2): a More needed answer is the one Not ready layout, naming its first missing figure with a Fix link', async () => {
     const run = ledgerRun('N02');
     load(run, { evaluation: asks(run, ['no_income_figures', 'unspent_not_confirmed', 'everyday_unknown']) });
     await open();
-    expect(screen.getAllByText('Fix')).toHaveLength(3);
-    for (const code of ['no_income_figures', 'unspent_not_confirmed', 'everyday_unknown']) expect(screen.getByTestId(`answer-fix-${code}`)).toBeTruthy();
+    expect(screen.getByTestId('answer-not-ready')).toBeTruthy();
+    expect(screen.getAllByText('Fix')).toHaveLength(1);
+    expect(screen.getByTestId('answer-fix-no_income_figures')).toBeTruthy();
+    expect(screen.getByText(/^First: /)).toBeTruthy();
+    expect(screen.getByText('More may follow once this is done.')).toBeTruthy();
+    // No verdict, no buy or save, no pay or When controls, and never "Bought today." (DS-4).
+    expect(screen.queryByTestId('answer-verdict')).toBeNull();
+    expect(screen.queryByTestId('answer-actions')).toBeNull();
+    expect(screen.queryByText('I bought it')).toBeNull();
+    expect(screen.queryByText('Cash')).toBeNull();
+    expect(screen.queryByText('Today')).toBeNull();
+    expect(screen.queryByText(/Bought today/)).toBeNull();
+    expect(screen.getByTestId('answer-told')).toBeTruthy();
+    expect(screen.getByTestId('answer-not-ready-exits')).toBeTruthy();
     await act(async () => {
       fireEvent.press(screen.getByTestId('answer-fix-no_income_figures'));
     });
@@ -471,12 +534,14 @@ describe('the Not ready card on the answer screen (06.1-44, G-1, C-1, C-2)', () 
     });
   };
 
-  it('with records: names each item, and never offers quick estimates (F-1 loop gone)', async () => {
+  it('with records: names the first item, says more may follow, and never offers quick estimates (F-1 loop gone; 06.1-66 OQ-66-1)', async () => {
     notReadyWith([BILL, PAY]);
     await open();
-    expect(screen.getByText('Not ready yet: 2 things to finish')).toBeTruthy();
-    expect(screen.getByTestId('readiness-row-0')).toBeTruthy();
-    expect(screen.getByTestId('readiness-row-1')).toBeTruthy();
+    expect(screen.getByText('Not ready yet')).toBeTruthy();
+    expect(screen.queryByText(/things? to finish/)).toBeNull();
+    expect(screen.getByText(/^First: Netflix, \$11\.99 due .*, isn’t in your records yet\.$/)).toBeTruthy();
+    expect(screen.getByText('More may follow once this is done.')).toBeTruthy();
+    expect(screen.queryByTestId('readiness-row-1')).toBeNull();
     expect(screen.queryByText(/quick estimates/i)).toBeNull();
     expect(screen.queryByTestId('answer-verdict')).toBeNull();
     expect(screen.queryByTestId('answer-actions')).toBeNull();
@@ -532,20 +597,29 @@ describe('the Not ready card on the answer screen (06.1-44, G-1, C-1, C-2)', () 
   it('"It didn’t happen" with the line not cached answers the occurrence by its waiver instead', async () => {
     mockCache.lists = [[['transactions', 'h1', '2026-10'], [{ ...LINE, status: 'paid' }]]];
     notReadyWith([BILL, { ...PAY, lineId: 'l-pay' }]);
-    await open();
+    const view = await open();
     await press(within(screen.getByTestId('readiness-row-0')).getByText('It didn’t happen'));
     expect(mockSkip).not.toHaveBeenCalled();
     expect(mockSave).toHaveBeenCalledWith({ kind: 'readiness_waiver', waiver: { kind: 'didnt_happen', seriesId: 's-net', date: '2026-10-03' }, at: '2026-11-05' });
-    await press(within(screen.getByTestId('readiness-row-1')).getByText('It didn’t happen'));
+    // Answered: the screen re-judges and the next item comes first.
+    notReadyWith([{ ...PAY, lineId: 'l-pay' }]);
+    await act(async () => {
+      view.rerender(<AnswerScreen id="c1" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
+    });
+    await press(within(screen.getByTestId('readiness-row-0')).getByText('It didn’t happen'));
     expect(mockSave).toHaveBeenLastCalledWith({ kind: 'readiness_waiver', waiver: { kind: 'no_pay', seriesId: 's-pay', date: '2026-10-03' }, at: '2026-11-05' });
   });
 
   it('the records fix opens Activity; the envelope fix opens Which account? for that envelope (D-54)', async () => {
-    notReadyWith([BILL, ENVELOPE]);
-    await open();
+    notReadyWith([BILL]);
+    const view = await open();
     await press(screen.getByText('Records for October'));
     expect(mockPush).toHaveBeenCalledWith('/activity');
     expect(screen.queryByTestId('envelope-sheet')).toBeNull();
+    notReadyWith([ENVELOPE]);
+    await act(async () => {
+      view.rerender(<AnswerScreen id="c1" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
+    });
     await press(screen.getByText('Which account?'));
     expect(screen.getByTestId('envelope-sheet')).toHaveTextContent('g1');
     // The shell's Grow writer is what the sheet saves through (depcruise: no Grow goal write from features/decide).
@@ -559,7 +633,7 @@ describe('the Not ready card on the answer screen (06.1-44, G-1, C-1, C-2)', () 
     expect(screen.getByTestId('answer-not-ready')).toBeTruthy();
     load(ledgerRun('N02'));
     await act(async () => {
-      view.rerender(<AnswerScreen id="c1" renderGate={noGate} writes={writes} />);
+      view.rerender(<AnswerScreen id="c1" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
     });
     expect(await screen.findByTestId('answer-verdict-badge')).toBeTruthy();
     expect(screen.queryByTestId('answer-not-ready')).toBeNull();
@@ -569,18 +643,170 @@ describe('the Not ready card on the answer screen (06.1-44, G-1, C-1, C-2)', () 
   });
 });
 
+describe('06.1-66 (FQ6, CS-3, CS-11): Not ready keeps the details and the two exits', () => {
+  const press = async (node: Parameters<typeof fireEvent.press>[0]): Promise<void> => {
+    await act(async () => {
+      fireEvent.press(node);
+    });
+  };
+
+  it('shows What you told Decide with the price, and no pay or When controls', async () => {
+    load(notReadyRun());
+    await open();
+    expect(screen.getByTestId('answer-not-ready')).toBeTruthy();
+    expect(screen.getByTestId('answer-told')).toBeTruthy();
+    expect(within(screen.getByTestId('answer-told-2')).getByText(/up front, cash/)).toBeTruthy();
+    expect(screen.queryByTestId('answer-when-today')).toBeNull();
+    expect(screen.queryByLabelText('How you pay')).toBeNull();
+    expect(screen.queryByTestId('answer-actions')).toBeNull();
+  });
+
+  it('I’m not buying it goes through the bound writer and back to Decide home', async () => {
+    load(notReadyRun());
+    await open();
+    await press(screen.getByTestId('answer-not-ready-not-buying'));
+    expect(writes.notBuying).toHaveBeenCalledTimes(1);
+    expect(mockRouter.dismissTo).toHaveBeenCalledWith('/decide');
+  });
+
+  it('Delete this check removes it with one Undo and returns to Decide home', async () => {
+    load(notReadyRun());
+    await open();
+    await press(screen.getByText('Delete this check'));
+    expect(mockRemove).toHaveBeenCalledTimes(1);
+    expect((mockRemove.mock.calls[0] as unknown as [{ id: string }])[0].id).toBe('c1');
+    expect(mockToast).toHaveBeenCalledWith({ kind: 'destructive', text: { key: 'decide.screens.common.toast.deleted', params: { item: 'Laptop' } }, stepId: 'step-del' });
+    expect(mockRouter.dismissTo).toHaveBeenCalledWith('/decide');
+  });
+
+  it('an error and the loading state carry no pay or When controls either', async () => {
+    load(ledgerRun('N02'), { status: 'error' });
+    await open();
+    expect(screen.queryByTestId('answer-when-today')).toBeNull();
+    load(ledgerRun('N02'), { status: 'loading' });
+    await open();
+    expect(screen.queryByTestId('answer-when-today')).toBeNull();
+  });
+});
+
+describe('06.1-66 (CB-7, A-ANS-4): the When chips', () => {
+  it('no payday found: no payday chip', async () => {
+    load(ledgerRun('N02'));
+    mockPaydays.list = [];
+    await open();
+    expect(screen.getByTestId('answer-when-today')).toBeTruthy();
+    expect(screen.queryByTestId('answer-when-payday')).toBeNull();
+    expect(screen.getByTestId('answer-when-pick')).toBeTruthy();
+  });
+
+  it('a picked date shows as its own selected chip beside Pick a date', async () => {
+    const run = ledgerRun('N02');
+    load(run, { check: { ...run.check, purchaseDate: '2026-12-03' as never } });
+    await open();
+    const picked = screen.getByTestId('answer-when-picked');
+    expect(within(picked).getByText('Dec 3')).toBeTruthy();
+    expect(picked.props.accessibilityState).toEqual({ checked: true });
+    expect(screen.getByTestId('answer-when-pick').props.accessibilityState).toEqual({ checked: false });
+    expect(screen.getByTestId('answer-when-payday').props.accessibilityState).toEqual({ checked: false });
+  });
+});
+
+describe('06.1-66 (FQ8, CC-2, DS-5): a decided check shows its outcome, never the buy buttons', () => {
+  const decided = (status: string, over: Record<string, unknown> = {}) => [
+    { id: 'c1', name: 'Laptop', created_by: 'u1', household_id: 'h1', version: 2, inputs: {}, deleted_at: null, status, decided_at: '2026-11-12T15:00:00Z', updated_at: '2026-11-12T15:00:00Z', ...over },
+  ];
+
+  it.each([
+    ['bought', 'Bought on Nov 12.'],
+    ['waiting', 'Saving for it since Nov 12.'],
+    ['passed', 'Not buying, Nov 12.'],
+  ])('%s: the outcome line and a link to Past decisions; no action bar', async (status, text) => {
+    load(ledgerRun('N02'));
+    mockList.rows = decided(status);
+    await open();
+    expect(screen.getByText(text)).toBeTruthy();
+    expect(screen.queryByTestId('answer-actions')).toBeNull();
+    expect(screen.queryByText('I bought it')).toBeNull();
+    expect(screen.queryByText('Save for it')).toBeNull();
+    await act(async () => {
+      fireEvent.press(screen.getByText('See it in Past decisions'));
+    });
+    expect(mockPush).toHaveBeenCalledWith('/decide/past/c1');
+  });
+
+  it('a decided check with no decided_at dates the outcome by its last change', async () => {
+    load(ledgerRun('N02'));
+    mockList.rows = decided('bought', { decided_at: null, updated_at: '2026-11-10T15:00:00Z' });
+    await open();
+    expect(screen.getByText('Bought on Nov 10.')).toBeTruthy();
+  });
+
+  it('DS-5: after Add to records the next render shows the outcome line, not a stale action bar', async () => {
+    load(ledgerRun('N02'));
+    mockList.rows = decided('open', { decided_at: null });
+    const view = await open();
+    expect(screen.getByTestId('answer-actions')).toBeTruthy();
+    mockList.rows = decided('bought');
+    await act(async () => {
+      view.rerender(<AnswerScreen id="c1" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
+    });
+    expect(screen.getByTestId('answer-outcome')).toBeTruthy();
+    expect(screen.queryByTestId('answer-actions')).toBeNull();
+  });
+
+  it('a decided Not ready check shows the outcome in place of the exits', async () => {
+    load(notReadyRun());
+    mockList.rows = decided('passed');
+    await open();
+    expect(screen.getByText('Not buying, Nov 12.')).toBeTruthy();
+    expect(screen.queryByTestId('answer-not-ready-exits')).toBeNull();
+  });
+});
+
+describe('06.1-66 (FQ5, CS-8): the safety-net line', () => {
+  it('shows while the question is unanswered, opens the bound question, and hides once answered there', async () => {
+    mockNet.unanswered = true;
+    load(ledgerRun('N02'));
+    await open();
+    expect(screen.getByText('Safety net: not answered yet.')).toBeTruthy();
+    expect(screen.queryByTestId('net-answer')).toBeNull();
+    await act(async () => {
+      fireEvent.press(screen.getByText('Safety net: not answered yet.'));
+    });
+    // Put away again: the line stays.
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('net-away'));
+    });
+    expect(screen.queryByTestId('net-away')).toBeNull();
+    expect(screen.getByText('Safety net: not answered yet.')).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(screen.getByText('Safety net: not answered yet.'));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('net-answer'));
+    });
+    expect(screen.queryByText('Safety net: not answered yet.')).toBeNull();
+  });
+
+  it('is absent once the question is answered', async () => {
+    load(ledgerRun('N02'));
+    await open();
+    expect(screen.queryByTestId('answer-net-line')).toBeNull();
+  });
+});
+
 describe('06.1-63 (CN-13): a side picked on Compare comes back to this same answer', () => {
   it('a later installments side opens the plan sheet; a later cash side pays once', async () => {
     const base = ledgerRun('N09');
     const plan = { mode: 'plan', cadence: { unit: 'month', every: 1 }, count: 12, termMonths: 12, apr: null, fees: { setup: 0, perPeriod: 0, end: 0 }, deposit: 0, tradeIn: 0, quotedPayment: null, firstPayment: null, deferredInterestTerm: false };
     const run = { ...base, check: { ...base.check, pay: plan as unknown as CheckV2['pay'] } };
     load(run);
-    const view = await wrap(<AnswerScreen id="c1" renderGate={noGate} writes={writes} />);
+    const view = await wrap(<AnswerScreen id="c1" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
     expect(screen.queryByTestId('plan-sheet')).toBeNull();
-    await view.rerender(<AnswerScreen id="c1" side="installments" renderGate={noGate} writes={writes} />);
+    await view.rerender(<AnswerScreen id="c1" side="installments" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
     expect(screen.getByTestId('plan-sheet')).toBeTruthy();
     expect(mockState.update).not.toHaveBeenCalled();
-    await view.rerender(<AnswerScreen id="c1" side="cash" renderGate={noGate} writes={writes} />);
+    await view.rerender(<AnswerScreen id="c1" side="cash" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
     expect(mockState.update).toHaveBeenCalledTimes(1);
     const next = (mockState.update.mock.calls[0] as [(c: CheckV2) => CheckV2])[0](run.check);
     expect(next.pay).toEqual({ mode: 'once' });
