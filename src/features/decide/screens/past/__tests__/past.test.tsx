@@ -44,7 +44,11 @@ jest.mock('@/data/queries/homeAmount', () => ({ homeAmountFor: (l: { original_am
 let mockHistory: DecideCheckHistoryRow[] | undefined;
 jest.mock('@/data/queries/decideHistory', () => ({ useCheckHistory: () => ({ data: mockHistory }) }));
 const mockDelete = jest.fn();
-jest.mock('../data/useDeleteDecision', () => ({ useDeleteDecision: () => ({ deleteDecision: mockDelete }) }));
+const mockConfirmCopy = jest.fn((_d: unknown, written: number) => ({ title: 'Delete this decision?', body: `Kept: ${written}` }));
+jest.mock('../data/useDeleteDecision', () => ({
+  writtenCount: (links: unknown[] | undefined) => (links ?? []).length,
+  useDeleteDecision: () => ({ deleteDecision: mockDelete, confirmCopy: (d: unknown, w: number) => mockConfirmCopy(d, w) }),
+}));
 
 let mockDecisions: DecideCheckRow[] = [];
 let mockMonthly = new Map<string, { estimate: number; actual: number; diff: number }>();
@@ -207,10 +211,27 @@ describe('Decision detail', () => {
     expect(screen.getByText(P.detail.remove)).toBeTruthy();
   });
 
-  it('removes through the shared delete path, which carries the Undo toast', async () => {
+  it('06.1-63 (CC-3): Remove asks first with the confirm copy; Keep it deletes nothing', async () => {
+    mockDecisions = [decision('c1', { status: 'bought' })];
+    mockDelete.mockClear();
+    await wrap(<DecisionDetailScreen id="c1" />);
+    expect(screen.queryByText('Delete this decision?')).toBeNull();
+    await fireEvent.press(screen.getByTestId('past-remove'));
+    expect(screen.getByText('Delete this decision?')).toBeTruthy();
+    expect(screen.getByText('Kept: 0')).toBeTruthy();
+    expect(mockConfirmCopy.mock.calls.at(-1)?.[0]).toMatchObject({ id: 'c1', status: 'bought' });
+    await fireEvent.press(screen.getByText(en.decide.delete.keep));
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+
+  it('06.1-63 (CC-3): confirming removes once through the shared delete path, which carries the Undo toast', async () => {
     mockDecisions = [decision('c1', { status: 'passed' })];
+    mockDelete.mockClear();
     await wrap(<DecisionDetailScreen id="c1" />);
     await fireEvent.press(screen.getByTestId('past-remove'));
+    expect(mockDelete).not.toHaveBeenCalled();
+    const removes = screen.getAllByText(P.detail.remove);
+    await fireEvent.press(removes[removes.length - 1] as never);
     expect(mockDelete).toHaveBeenCalledTimes(1);
   });
 

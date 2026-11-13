@@ -1,6 +1,7 @@
 // 06.1-27 (CO-D-64 (6), D48): one past decision. What Decide counted, what the records show so far, "What Decide said on {date}" from the
 // check history (newest first), "See the check as it was" (a read-only answer), and "Remove from decisions" (danger text, Undo toast).
 // The history read fails soft: when the table cannot be read nothing is listed and no error shows (10 is not in production yet).
+// 06.1-63 (CC-3): Remove asks first, in a confirm sheet with the existing confirm copy (it says what is kept); Undo stays on the toast.
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useCheckHistory } from '@/data/queries/decideHistory';
@@ -17,6 +18,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { EmptyState } from '@/ui/EmptyState';
 import { LabelValueRow } from '@/ui/LabelValueRow';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Pill } from '@/ui/Pill';
 import { StateBadge, type StateBadgeShape } from '@/ui/StateBadge';
 import { Text } from '@/ui/Text';
@@ -24,7 +26,7 @@ import { router } from 'expo-router';
 import { AboutSheet } from '../answer/info/AboutSheet';
 import { AsCheckedAnswer, readStoredResult } from './AsCheckedAnswer';
 import { estimateInputFor, localDateOf, usePastDecisions } from './data/usePastDecisions';
-import { useDeleteDecision } from './data/useDeleteDecision';
+import { useDeleteDecision, writtenCount } from './data/useDeleteDecision';
 import { stateForVerdict } from '../logic/stateForVerdict';
 
 type T = (key: string, params?: Record<string, string | number>) => string;
@@ -48,6 +50,7 @@ export function DecisionDetailScreen({ id }: { id: string | null }) {
   const history = useCheckHistory(model.userId ?? undefined, decision?.id).data;
   const [asOf, setAsOf] = useState<DecideCheckHistoryRow | null>(null);
   const [about, setAbout] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const { ctx, whole, wholeIn, formatDate, today } = model;
   const goalList = useMemo(() => [...model.goalByCheck.values()], [model.goalByCheck]);
 
@@ -87,7 +90,9 @@ export function DecisionDetailScreen({ id }: { id: string | null }) {
   const rows = history ?? [];
   const name = decision.name || t('decide.quick.unnamed');
 
+  const confirm = del.confirmCopy(decision, writtenCount(model.linksByCheck.get(decision.id)));
   const onRemove = () => {
+    setConfirming(false);
     del.deleteDecision(decision, goalList);
     if (router.canGoBack()) router.back();
   };
@@ -164,7 +169,7 @@ export function DecisionDetailScreen({ id }: { id: string | null }) {
             <Pressable
               testID="past-remove"
               accessibilityRole="button"
-              onPress={onRemove}
+              onPress={() => setConfirming(true)}
               style={styles.remove}
             >
               <Text style={{ ...textRole(pairing, 'label'), color: colors.danger }}>{t('decide.screens.past.detail.remove')}</Text>
@@ -172,6 +177,16 @@ export function DecisionDetailScreen({ id }: { id: string | null }) {
           </>
         )}
       </View>
+      <ConfirmSheet
+        visible={confirming}
+        title={confirm.title}
+        body={confirm.body}
+        cancelLabel={t('decide.delete.keep')}
+        confirmLabel={t('decide.screens.past.detail.remove')}
+        destructive
+        onConfirm={onRemove}
+        onCancel={() => setConfirming(false)}
+      />
     </DetailScreen>
   );
 }
