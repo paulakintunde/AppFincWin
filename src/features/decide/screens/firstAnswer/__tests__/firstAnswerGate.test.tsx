@@ -10,7 +10,9 @@ jest.setTimeout(30000);
 
 const mockAnswer = jest.fn();
 const mockMarkIntro = jest.fn();
+const mockMarkNet = jest.fn();
 let mockStored: string | null = null;
+let mockNetSeen = false;
 let mockRows: unknown[] = [];
 let mockSettings: unknown = { answered_net_not_set_at: null };
 let mockOnline = true;
@@ -30,12 +32,26 @@ jest.mock('@/features/decide/hints/decideHints', () => ({
     mockMarkIntro(user, version);
     return Promise.resolve();
   },
+  loadNetQuestionSeen: () => Promise.resolve(mockNetSeen),
+  markNetQuestionSeen: (user: string) => {
+    mockMarkNet(user);
+    return Promise.resolve();
+  },
 }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('@/ui/Sheet', () => {
   const { View } = require('react-native');
   return {
-    Sheet: ({ visible, children }: { visible: boolean; children: React.ReactNode }) => (visible ? <View>{children}</View> : null),
+    // 06.1-66: "sheet-away" stands for a swipe-down or Back (the Sheet's onDismiss).
+    Sheet: ({ visible, onDismiss, children }: { visible: boolean; onDismiss: () => void; children: React.ReactNode }) => {
+      const { Pressable } = require('react-native');
+      return visible ? (
+        <View>
+          <Pressable testID="sheet-away" accessibilityRole="button" onPress={onDismiss} />
+          {children}
+        </View>
+      ) : null;
+    },
     SheetScroll: ({ children }: { children: React.ReactNode }) => <View>{children}</View>,
   };
 });
@@ -46,6 +62,7 @@ const net = { id: 'net', is_safety_net: true, deleted_at: null };
 beforeEach(() => {
   jest.clearAllMocks();
   mockStored = null;
+  mockNetSeen = false;
   mockRows = [];
   mockSettings = { answered_net_not_set_at: null };
   mockOnline = true;
@@ -120,6 +137,52 @@ describe('FirstAnswerGate', () => {
     await fireEvent.press(screen.getByText('Save and see the answer'));
     expect(await screen.findByText('Change the size in Grow')).toBeTruthy();
     expect(onDone).not.toHaveBeenCalled();
+  });
+});
+
+describe('06.1-66 (FQ5, CN-11): a swipe counts as seen', () => {
+  it('the intro put away by a swipe is remembered like Got it, and the question follows', async () => {
+    const onDone = await mount();
+    expect(await screen.findByText('How Decide answers')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('sheet-away'));
+    expect(mockMarkIntro).toHaveBeenCalledWith('u1', introVersion(t));
+    expect(await screen.findByText('Do you have a safety net? About how much?')).toBeTruthy();
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('the question put away by a swipe is remembered on this phone; nothing is written and no Not set yet flag', async () => {
+    mockStored = introVersion(t);
+    const onDone = await mount();
+    expect(await screen.findByText('Do you have a safety net? About how much?')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('sheet-away'));
+    expect(mockMarkNet).toHaveBeenCalledWith('u1');
+    expect(mockAnswer).not.toHaveBeenCalled();
+    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+  });
+
+  it('an answered question is remembered as seen too', async () => {
+    mockStored = introVersion(t);
+    await mount();
+    await fireEvent.press(await screen.findByText('Not set yet'));
+    expect(mockMarkNet).toHaveBeenCalledWith('u1');
+  });
+
+  it('a question seen before is not asked again, even with no answer on the account', async () => {
+    mockStored = introVersion(t);
+    mockNetSeen = true;
+    const onDone = await mount();
+    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('Do you have a safety net? About how much?')).toBeNull();
+  });
+
+  it('after a swipe on the intro, a second answer shows no intro', async () => {
+    await mount();
+    await fireEvent.press(await screen.findByTestId('sheet-away'));
+    mockStored = introVersion(t);
+    mockRows = [net];
+    const onDone = await mount();
+    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('How Decide answers')).toBeNull();
   });
 });
 

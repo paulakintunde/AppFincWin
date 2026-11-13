@@ -16,6 +16,8 @@ interface HintsRecord {
   homeBasisSeen?: true;
   introSeenVersion?: string;
   setupDoneSeen?: true;
+  /** 06.1-66 (FQ5): the first-answer safety-net question was shown and put away (answered or not); the gate asks it once. */
+  netQuestionSeen?: true;
 }
 
 /** The stored record, or an empty v1 record when it is missing, unreadable or another version. Never throws. */
@@ -23,20 +25,21 @@ async function readRecord(userId: string): Promise<HintsRecord> {
   try {
     const raw = await AsyncStorage.getItem(decideHintsKey(userId));
     if (!raw) return { v: 1 };
-    const parsed = JSON.parse(raw) as { v?: unknown; foldHintSeen?: unknown; homeBasisSeen?: unknown; introSeenVersion?: unknown; setupDoneSeen?: unknown } | null;
+    const parsed = JSON.parse(raw) as { v?: unknown; foldHintSeen?: unknown; homeBasisSeen?: unknown; introSeenVersion?: unknown; setupDoneSeen?: unknown; netQuestionSeen?: unknown } | null;
     if (parsed?.v !== 1) return { v: 1 };
     const record: HintsRecord = { v: 1 };
     if (parsed.foldHintSeen === true) record.foldHintSeen = true;
     if (parsed.homeBasisSeen === true) record.homeBasisSeen = true;
     if (typeof parsed.introSeenVersion === 'string') record.introSeenVersion = parsed.introSeenVersion;
     if (parsed.setupDoneSeen === true) record.setupDoneSeen = true;
+    if (parsed.netQuestionSeen === true) record.netQuestionSeen = true;
     return record;
   } catch {
     return { v: 1 };
   }
 }
 
-async function markFlag(userId: string, flag: 'foldHintSeen' | 'homeBasisSeen' | 'setupDoneSeen'): Promise<void> {
+async function markFlag(userId: string, flag: 'foldHintSeen' | 'homeBasisSeen' | 'setupDoneSeen' | 'netQuestionSeen'): Promise<void> {
   try {
     const record = await readRecord(userId);
     record[flag] = true;
@@ -85,4 +88,13 @@ export async function loadSetupDoneSeen(userId: string): Promise<boolean> {
 
 export async function markSetupDoneSeen(userId: string): Promise<void> {
   await markFlag(userId, 'setupDoneSeen');
+}
+
+/** 06.1-66 (FQ5): true once the first-answer safety-net question was put away on this phone, even by a swipe. Nothing is written to the account. */
+export async function loadNetQuestionSeen(userId: string): Promise<boolean> {
+  return (await readRecord(userId)).netQuestionSeen === true;
+}
+
+export async function markNetQuestionSeen(userId: string): Promise<void> {
+  await markFlag(userId, 'netQuestionSeen');
 }

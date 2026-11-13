@@ -113,6 +113,7 @@ const GEOMETRY_HEIGHT: { path: string; count: number; reason: string }[] = [
 const OVERLAY_ABSOLUTE: { path: string; count: number; reason: string }[] = [
   { path: 'charts/CashPathChart.tsx', count: 1, reason: 'chart axis labels, clamped to plot' },
   { path: 'charts/NetWorthChart.tsx', count: 1, reason: 'chart axis labels, clamped to plot' },
+  { path: 'screens/firstAnswer/FirstAnswerGate.tsx', count: 1, reason: '06.1-66 (CN-11): the offline gate view covers the answer frame it sits over; its card text flows normally inside it' },
 ];
 
 describe('D-76 static text-fit', () => {

@@ -1,6 +1,8 @@
 // 06.1-18 (D-14, D-25, D-28): what the first answer still has to ask. The intro card is remembered on this phone by text version;
 // the safety-net question is asked once -- never again after an amount made the flagged goal, or after "Not set yet" stamped
 // answered_net_not_set_at. Reads only, plus the device flag write.
+// 06.1-66 (FQ5, CN-11): a swipe or Back counts as seen. The intro is remembered as with Got it; the net question is remembered on
+// this phone (netQuestionSeen) with nothing written to the account, and the answer then offers it as one line (useNetUnanswered).
 import { useCallback, useEffect, useState } from 'react';
 import { useDecideSettings } from '@/data/queries/decide';
 import { DECIDE_READ_STALE_MS } from '@/data/queries/decideStale';
@@ -8,7 +10,7 @@ import { useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useIsOnline } from '@/data/sync/useIsOnline';
 import { useT } from '@/i18n';
 import { useRecordContext } from '@/features/record/useRecordContext';
-import { loadIntroSeenVersion, markIntroSeen as storeIntroSeen } from '../../hints/decideHints';
+import { loadIntroSeenVersion, loadNetQuestionSeen, markIntroSeen as storeIntroSeen, markNetQuestionSeen } from '../../hints/decideHints';
 import { introVersion } from './introVersion';
 
 export interface FirstAnswerGateState {
@@ -22,6 +24,24 @@ export interface FirstAnswerGateState {
   /** The version of the card now on screen (what Got it stores). */
   version: string;
   markIntroSeen: () => Promise<void>;
+  /** 06.1-66 (FQ5): the net question was shown and put away; it is not asked again by the gate. */
+  markNetSeen: () => Promise<void>;
+}
+
+/** 06.1-66 (FQ5): no safety net and no "Not set yet" on the account. False while loading or when a read failed. */
+function netUnansweredOf(settings: ReturnType<typeof useDecideSettings>, goals: ReturnType<typeof useSavingsGoalRows>): boolean {
+  if (settings.isError || goals.isError || settings.data === undefined || goals.data === undefined) return false;
+  const hasNet = goals.data.some((g) => g.is_safety_net === true && g.deleted_at === null);
+  return !hasNet && settings.data?.answered_net_not_set_at == null;
+}
+
+/** 06.1-66 (FQ5, CS-8): true while the safety-net question is still unanswered, so the answer can show its line. */
+export function useNetUnanswered(): boolean {
+  const rc = useRecordContext();
+  const userId = rc.userId ?? undefined;
+  const settings = useDecideSettings(userId);
+  const goals = useSavingsGoalRows(userId, rc.householdId ?? undefined, { staleTime: DECIDE_READ_STALE_MS });
+  return netUnansweredOf(settings, goals);
 }
 
 export function useFirstAnswerGate(): FirstAnswerGateState {
@@ -35,12 +55,15 @@ export function useFirstAnswerGate(): FirstAnswerGateState {
   const version = introVersion(t);
   // undefined = not read yet; null = never seen
   const [stored, setStored] = useState<string | null | undefined>(undefined);
+  const [netSeen, setNetSeen] = useState(false);
 
   useEffect(() => {
     if (userId === undefined) return;
     let live = true;
-    void loadIntroSeenVersion(userId).then((v) => {
-      if (live) setStored(v);
+    void Promise.all([loadIntroSeenVersion(userId), loadNetQuestionSeen(userId)]).then(([v, seen]) => {
+      if (!live) return;
+      setNetSeen(seen);
+      setStored(v);
     });
     return () => {
       live = false;
@@ -51,6 +74,11 @@ export function useFirstAnswerGate(): FirstAnswerGateState {
     if (userId !== undefined) await storeIntroSeen(userId, version);
     setStored(version);
   }, [userId, version]);
+
+  const markNetSeen = useCallback(async (): Promise<void> => {
+    setNetSeen(true);
+    if (userId !== undefined) await markNetQuestionSeen(userId);
+  }, [userId]);
 
   // A failed read must not hold the answer back: the question is then simply not asked this time.
   const readFailed = settings.isError || goals.isError;
@@ -63,15 +91,14 @@ export function useFirstAnswerGate(): FirstAnswerGateState {
     void refetchSettings?.();
     void refetchGoals?.();
   }, [refetchSettings, refetchGoals]);
-  const hasNet = (goals.data ?? []).some((g) => g.is_safety_net === true && g.deleted_at === null);
-  const notSetAnswered = settings.data?.answered_net_not_set_at != null;
   return {
     loading,
     offline,
     retry,
     needsIntro: !loading && stored !== version,
-    needsNet: !loading && !readFailed && !hasNet && !notSetAnswered,
+    needsNet: !loading && !netSeen && netUnansweredOf(settings, goals),
     version,
     markIntroSeen,
+    markNetSeen,
   };
 }

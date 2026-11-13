@@ -2,6 +2,9 @@
 // checks go straight through. An amount makes the flagged Grow goal (locked) or sizes the one that exists; "Not set yet" makes
 // nothing and stamps the flag. Neither step unlocks the net: only the safety-net settings screen does (D-20).
 // Mounted by the answer route before the first answer renders; `onDone` fires once when nothing is left to ask.
+// 06.1-66 (FQ5, CN-11): it sits over the answer frame and its loading state, never over a blank page. A swipe or Back counts as
+// seen: the intro is remembered as with Got it, and the net question is remembered on this phone with nothing written (no "Not set
+// yet" flag); the answer then shows it as one line that opens it again.
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useDecideV3 } from '@/data/queries/decideV3';
@@ -60,10 +63,25 @@ export function FirstAnswerGate({ answer, onDone }: FirstAnswerGateProps): React
           void gate.markIntroSeen();
           afterIntro();
         }}
-        // Dismissing without Got it moves on but is not remembered, so the card shows again next time.
-        onDismiss={afterIntro}
+        // 06.1-66 (FQ5): a swipe or Back counts as seen, the same as Got it.
+        onDismiss={() => {
+          void gate.markIntroSeen();
+          afterIntro();
+        }}
       />
-      <NetQuestionSheet answer={answer} visible={step === 'net'} onDone={() => setStep('done')} onDismiss={() => setStep('done')} />
+      <NetQuestionSheet
+        answer={answer}
+        visible={step === 'net'}
+        onDone={() => {
+          void gate.markNetSeen();
+          setStep('done');
+        }}
+        // 06.1-66 (FQ5): put away unanswered: seen on this phone, nothing written; the answer shows the net line.
+        onDismiss={() => {
+          void gate.markNetSeen();
+          setStep('done');
+        }}
+      />
     </>
   );
 }
@@ -188,5 +206,6 @@ function NetQuestionBody({ answer, onDone, onDismiss }: { answer: NetAnswerPort;
 
 const styles = StyleSheet.create({
   column: { gap: space.groupGap },
-  offline: { flex: 1, justifyContent: 'center', paddingHorizontal: space.screenH },
+  // 06.1-66 (CN-11): the gate renders over the answer frame, so the offline card covers it rather than sharing its column.
+  offline: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'center', paddingHorizontal: space.screenH },
 });
