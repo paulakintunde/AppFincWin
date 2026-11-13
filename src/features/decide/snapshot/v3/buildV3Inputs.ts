@@ -32,6 +32,8 @@ import {
   type Limits,
   type MonthMark,
   type PayArrival,
+  type ReadinessWaiver,
+  type SkippedOccurrence,
   type TypedEstimates,
   type SeriesRole,
   type UnexplainedAnswer,
@@ -54,6 +56,7 @@ import { buildDecideSnapshot, type SnapshotSource } from '../buildSnapshot';
 import { convertFloored, makeConverter } from '../conversion';
 import type { SnapshotResult } from '../types';
 import { engineIncomeTypes } from './settingsSource';
+import { waiverOfAnswer } from './waiverKeys';
 import type { V3SeriesExtra, V3SettingsSource } from './types';
 
 type Obj = Record<string, unknown>;
@@ -302,6 +305,29 @@ function expectedIncomeOf(answers: readonly AnswerLite[]): ExpectedMonthIncome[]
     const at = dateOf(a.on_date);
     return a.kind === 'expected_income' && MONTH_PATTERN.test(a.key) && amount !== null && at !== null ? [{ month: a.key, amount: minorUnits(amount), at }] : [];
   });
+}
+
+/** 06.1-43 (G-1, C-2; 05.3 D-28): readiness answers, in stored order. A malformed stored row is skipped, never thrown. */
+function waiversOf(answers: readonly AnswerLite[]): ReadinessWaiver[] {
+  return answers.flatMap((a): ReadinessWaiver[] => {
+    const w = waiverOfAnswer(a);
+    return w === null ? [] : [w];
+  });
+}
+
+/**
+ * 06.1-43 (G-1, C-2): a skipped occurrence of a series settles its due silently (a record, not an answer). One per series and
+ * date, sorted by series id then date (plain string order). The skipped rows still never become month lines.
+ */
+function skippedOf(rows: SnapshotSource['rows']): SkippedOccurrence[] {
+  const sep = String.fromCharCode(1); // below every id and date character, so a shorter id sorts first
+  const seen = new Map<string, SkippedOccurrence>();
+  for (const r of rows) {
+    if (r.deleted_at !== null || r.status !== 'skipped' || r.recurring_series_id === null) continue;
+    seen.set(`${r.recurring_series_id}${sep}${r.local_date}`, { seriesId: r.recurring_series_id, date: r.local_date });
+  }
+  // The default sort is plain UTF-16 code unit order (never localeCompare).
+  return [...seen.keys()].sort().map((k) => seen.get(k) as SkippedOccurrence);
 }
 
 /** D-38, Pitfall 9: a held-back bridge counts only while its check is in the live set. */
@@ -608,6 +634,8 @@ export function buildV3Inputs(
     payArrivals: payArrivalsOf(answers),
     expectedIncome: expectedIncomeOf(answers),
     heldBridges: heldBridgesOf(answers, new Set(v3?.live_bridge_check_ids ?? [])),
+    waivers: waiversOf(answers), // 06.1-43 (G-1): the user's readiness answers
+    skipped: skippedOf(source.rows), // 06.1-43 (G-1): skipped occurrences settle their dues
     unsavedWrites: unsavedOf(source.unsavedWrites), // D-127: the D-113 note only, never the sums
     provisionalRates,
     recordsAsOf: source.recordsAsOf ?? null, // ENG-14, D-126: the oldest real server fetch, null when unknown
