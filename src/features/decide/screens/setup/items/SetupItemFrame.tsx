@@ -13,6 +13,7 @@
 import React, { useEffect, useRef } from 'react';
 import { AccessibilityInfo, findNodeHandle, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
+import { usePerfMount } from '@/features/decide/perf/perfMarks';
 import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -51,6 +52,7 @@ export interface SetupItemFrameProps {
 }
 
 export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = false, onPrimary, onBack, onSaveAndClose, footer, children }: SetupItemFrameProps) {
+  usePerfMount('setupItem.mount'); // 06.1-72: perf builds only
   const t = useT();
   const { colors, pairing } = useTheme();
   const titleRef = useRef<React.ComponentRef<typeof Text>>(null);

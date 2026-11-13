@@ -1,7 +1,7 @@
 // 06.1-11: the one hook every answer, stepper and sheet uses to reach the v3 engine. It rides on useDecideV3 so nothing is read
 // twice: the Prepared is built once per data change (APP-05) and typing a price re-runs only judgeCheck. The bigint-carrying
 // Evaluation lives in memory only and is never put in a React Query cache. Engine reached through the barrel only.
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   cashTimeline,
   insteadFutures,
@@ -19,7 +19,7 @@ import {
 } from '@/engine/decide/v3';
 import type { DbErrorKind } from '@/db/errors';
 import { useDecideV3, type DecideV3State } from '@/data/queries/decideV3';
-import { perfMark } from '@/features/decide/perf/perfMarks';
+import { perfMark, usePerfMount } from '@/features/decide/perf/perfMarks';
 
 export interface CheckEngine {
   status: DecideV3State['status'];
@@ -60,6 +60,9 @@ function paydaysOf(prepared: Prepared, judged: CheckV2): readonly LocalDate[] {
 }
 
 export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string }): CheckEngine {
+  // 06.1-72: perf builds time this hook's first mount (answer.mount) and its first judge (answer.firstJudge); no-ops otherwise.
+  usePerfMount('answer.mount');
+  useState(() => perfMark('answer.firstJudge:start')); // the first render only
   const state = useDecideV3();
   const prepared: Prepared | null = state.prepared;
   const checkId = opts?.checkId;
@@ -79,7 +82,10 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
   const deferredJudged = useDeferredValue(judged);
   const evaluation = useMemo<Evaluation | null>(() => {
     if (prepared === null || deferredJudged === null) return null;
-    return (deferredJudged.quickLines ?? []).length > 0 ? judgeWithQuickLines(prepared, deferredJudged) : judgeCheck(prepared, deferredJudged);
+    perfMark('answer.judge:start');
+    const judgedNow = (deferredJudged.quickLines ?? []).length > 0 ? judgeWithQuickLines(prepared, deferredJudged) : judgeCheck(prepared, deferredJudged);
+    perfMark('answer.judge:end');
+    return judgedNow;
   }, [prepared, deferredJudged]);
 
   // 06.1-47: the end of the Check it -> answer timing, once per check id (the start is marked by Decide home's Check it).
@@ -88,6 +94,7 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
     if (evaluation === null) return;
     const key = checkId ?? '';
     if (markedFor.current === key) return;
+    if (markedFor.current === null) perfMark('answer.firstJudge:end');
     markedFor.current = key;
     perfMark('decide.answer:end');
   }, [evaluation, checkId]);

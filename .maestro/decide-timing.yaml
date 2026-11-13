@@ -4,6 +4,15 @@
 #   write_settle    the same Check it until the "waiting to save" notice (answer-notice-unsaved_changes) is gone
 #   stepper_next    the stepper's Next from step 2 to step 3 (used car 9000)
 #   setup_pay       the setup checklist's Pay row until the Pay and payday screen shows
+# 06.1-72 adds the device-walk steps (06.1-FLOW-AUDIT section 6), each timed the same way:
+#   decide_tab_open    the Decide tab from Home until the check card shows (DP-12; "first open" only on a fresh app start)
+#   stepper_back       the stepper's Back from step 3 to step 2 (DP-6)
+#   past_open          Past decisions until its list screen shows (DP-14)
+#   rule_sheet_open    "+ Add your own rule" until the Add a rule sheet shows (DP-8)
+#   net_settings_open  the Safety net row until the safety-net settings show (DP-9)
+# Perf builds (EXPO_PUBLIC_PERF=1) also log `PERF <mark> median= p95= n=` lines every 10 s (answer.mount, answer.firstJudge,
+# answer.judge, step.mount, step.flush, setupItem.mount, decide.prepare, decide.answer); the flow ends with a 12 s wait so the
+# last report lands in logcat (adb logcat -s ReactNativeJS).
 # Best run signed in as a test account that has already met the first-answer gate (intro card, safety-net question), so the
 # timed answer is the answer itself. If the gate shows, it is passed by common/decide-gate.yaml and the checkit_answer line
 # says "gated" (the figure then times the gate card, not the answer). Writes two checks (headphones, used car).
@@ -15,7 +24,15 @@ name: Decide timing (G-2)
 ---
 - runFlow: common/to-tabs.yaml
 - evalScript: ${output.gated = false}
+- tapOn: "Home, tab, .*"
+- evalScript: ${output.t5 = Date.now()}
 - tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible:
+      id: "check-what"
+    timeout: 60000
+- evalScript: ${output.decideTabOpen = Date.now() - output.t5}
+- evalScript: "${console.log('TIMING decide_tab_open=' + output.decideTabOpen)}"
 - assertVisible: "Can I afford it\\?"
 
 # 1. Check it -> answer, and Check it -> the write settled
@@ -79,6 +96,59 @@ name: Decide timing (G-2)
     timeout: 20000
 - evalScript: ${output.stepperNext = Date.now() - output.t1}
 - evalScript: "${console.log('TIMING stepper_next=' + output.stepperNext)}"
+# 06.1-72 (DP-6): Back from step 3 to step 2
+- waitForAnimationToEnd
+- evalScript: ${output.t6 = Date.now()}
+- tapOn:
+    id: "step-back"
+- extendedWaitUntil:
+    visible: "Step 2 of 3"
+    timeout: 60000
+- evalScript: ${output.stepperBack = Date.now() - output.t6}
+- evalScript: "${console.log('TIMING stepper_back=' + output.stepperBack)}"
+
+# 06.1-72 (DP-14, DP-8, DP-9): Past decisions, the Add a rule sheet and the safety-net settings, each from Decide home
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- assertVisible: "Can I afford it\\?"
+- evalScript: ${output.t7 = Date.now()}
+- tapOn:
+    id: "past-pill"
+- extendedWaitUntil:
+    visible: "Your decisions"
+    timeout: 60000
+- evalScript: ${output.pastOpen = Date.now() - output.t7}
+- evalScript: "${console.log('TIMING past_open=' + output.pastOpen)}"
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "\\+ Add your own rule"
+- waitForAnimationToEnd
+- evalScript: ${output.t8 = Date.now()}
+- tapOn: "\\+ Add your own rule"
+- extendedWaitUntil:
+    visible: "Add a rule"
+    timeout: 60000
+- evalScript: ${output.ruleSheetOpen = Date.now() - output.t8}
+- evalScript: "${console.log('TIMING rule_sheet_open=' + output.ruleSheetOpen)}"
+- tapOn: "Cancel"
+- waitForAnimationToEnd
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Safety net.*"
+- waitForAnimationToEnd
+- evalScript: ${output.t9 = Date.now()}
+- tapOn:
+    id: "money-rules-net"
+- extendedWaitUntil:
+    visible:
+      id: "net-tile|net-settings-empty"
+    timeout: 60000
+- evalScript: ${output.netSettingsOpen = Date.now() - output.t9}
+- evalScript: "${console.log('TIMING net_settings_open=' + output.netSettingsOpen)}"
 
 # 3. Setup checklist -> Pay (the checklist is /decide/setup; its Pay row opens /decide/setup/pay)
 - runFlow: common/to-tabs.yaml
@@ -104,3 +174,5 @@ name: Decide timing (G-2)
 - assertTrue: ${output.stepperNext <= 8000}
 - assertTrue: ${output.setupPay <= 8000}
 - runFlow: common/to-tabs.yaml
+# 06.1-72: let the perf build's 10 s report (PERF lines) land before the run ends; a plain wait in other builds
+- evalScript: ${(function () { var t = Date.now(); while (Date.now() - t < 12000) {} })()}

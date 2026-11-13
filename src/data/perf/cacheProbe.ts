@@ -6,7 +6,7 @@
  * ms=<total>` lines and `PERF idle_after_write ms=<ms>` (from a write settling to the last cache event before 5 s of quiet).
  */
 import type { QueryClient } from '@tanstack/react-query';
-import { perfEnabled, perfReport } from '@/features/decide/perf/perfMarks';
+import { perfDump, perfEnabled } from '@/features/decide/perf/perfMarks';
 
 /** How long the caches must be quiet after a write before the app counts as idle. */
 export const IDLE_QUIET_MS = 5_000;
@@ -84,7 +84,7 @@ export function startCacheProbe(qc: QueryClient): () => void {
   const reporter = setInterval(() => {
     if (!changed) return;
     probeReport(true);
-    perfReport(); // the Decide marks (prepare, judge, answer): counts and ms only
+    perfDump(); // 06.1-72: the Decide marks as `PERF <name> median= p95= n=` lines: names and ms only
   }, REPORT_EVERY_MS);
   return () => {
     offQueries();

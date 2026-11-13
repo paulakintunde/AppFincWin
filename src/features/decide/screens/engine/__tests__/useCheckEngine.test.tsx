@@ -8,6 +8,7 @@ import * as engine from '@/engine/decide/v3';
 import type { CheckV2 } from '@/engine/decide/v3';
 import { minorUnits } from '@/engine/money';
 import { checkOnce } from '@/engine/decide/v3/__tests__/helpers/fixtures';
+import { perfReport, perfReset } from '@/features/decide/perf/perfMarks';
 import { useCheckEngine } from '../useCheckEngine';
 import { useMonthPicture } from '../useMonthPicture';
 
@@ -160,3 +161,34 @@ describe('useMonthPicture', () => {
     expect(result.current).toEqual({ picture: null, bars: [] });
   });
 });
+
+describe('06.1-72 perf marks (EXPO_PUBLIC_PERF=1 only)', () => {
+  const original = process.env.EXPO_PUBLIC_PERF;
+  afterEach(() => {
+    if (original === undefined) delete process.env.EXPO_PUBLIC_PERF;
+    else process.env.EXPO_PUBLIC_PERF = original;
+    perfReset();
+  });
+
+  it('times the mount, the first judge and each judge, by name only; nothing while off', async () => {
+    jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    process.env.EXPO_PUBLIC_PERF = '1';
+    perfReset();
+    const check = checkOnce(20000);
+    const hook = await renderHook(({ c }: { c: CheckV2 }) => useCheckEngine(c, { checkId: 'k1' }), { initialProps: { c: check } });
+    expect(hook.result.current.evaluation).not.toBeNull();
+    await hook.rerender({ c: { ...check, price: minorUnits(30000) } });
+    const report = perfReport();
+    expect(report['answer.mount']!.count).toBe(1);
+    expect(report['answer.firstJudge']!.count).toBe(1);
+    expect(report['answer.judge']!.count).toBeGreaterThanOrEqual(2);
+    expect(Object.keys(report).every((name) => /^[a-z.A-Z]+$/.test(name))).toBe(true);
+    delete process.env.EXPO_PUBLIC_PERF;
+    perfReset();
+    await renderHook(() => useCheckEngine(check, { checkId: 'k2' }));
+    process.env.EXPO_PUBLIC_PERF = '1';
+    expect(perfReport()).toEqual({});
+    (console.log as jest.Mock).mockRestore();
+  });
+});
+

@@ -12,6 +12,7 @@ import { useCategories } from '@/data/queries/categories';
 import { useDebts, useDecideChecks } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { readStoredCheck, toStoredV2, type CheckV2, type ItemTypeRef } from '@/engine/decide/v3';
+import { perfMark, usePerfMount } from '@/features/decide/perf/perfMarks';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { readKind } from '../logic/kindWords';
 import { prefillRunningCosts, type PrefillBill, type PrefilledLine } from '../logic/runningCostTemplates';
@@ -175,6 +176,7 @@ export interface StepCheck {
 
 /** `fallbackRow` is a check that exists only optimistically (just created, not yet in the list); the stored row wins once it arrives. */
 export function useStepCheck(id: string, fallbackRow: DecideCheckRow | null = null): StepCheck {
+  usePerfMount('step.mount'); // 06.1-72: perf builds only
   const rc = useRecordContext();
   const checks = useDecideChecks(rc.userId ?? undefined, rc.householdId ?? undefined);
   const { save } = useSaveCheckDraft();
@@ -199,7 +201,9 @@ export function useStepCheck(id: string, fallbackRow: DecideCheckRow | null = nu
     const { row: current, save: doSave } = live.current;
     if (next === null || current === null) return;
     held.current = null;
+    perfMark('step.flush:start'); // 06.1-72: perf builds only
     doSave({ id, name: current.name, inputs: toStoredV2(next) as Record<string, unknown>, furthestStep: current.furthest_step });
+    perfMark('step.flush:end');
   }, [id]);
 
   // Edits apply to this ref at once (not inside a state updater), so two edits in one event and a flush right after both see the latest.

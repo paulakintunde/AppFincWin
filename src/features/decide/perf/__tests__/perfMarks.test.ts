@@ -1,4 +1,5 @@
-import { PERF_WINDOW, perfEnabled, perfMark, perfReport, perfReset } from '../perfMarks';
+import { renderHook } from '@testing-library/react-native';
+import { PERF_WINDOW, perfDump, perfEnabled, perfMark, perfReport, perfReset, usePerfMount } from '../perfMarks';
 
 const original = process.env.EXPO_PUBLIC_PERF;
 let now = 0;
@@ -64,6 +65,38 @@ describe('perfMarks', () => {
     process.env.EXPO_PUBLIC_PERF = '1';
     perfMark('verdict:end');
     perfMark('verdict');
+    expect(perfReport()).toEqual({});
+  });
+
+  it('06.1-72 perfDump logs one PERF line per name, whole ms, and nothing while off', () => {
+    delete process.env.EXPO_PUBLIC_PERF;
+    time('answer.mount', 5);
+    expect(perfDump()).toEqual([]);
+    expect(console.log).not.toHaveBeenCalled();
+    process.env.EXPO_PUBLIC_PERF = '1';
+    time('step.mount', 10.4);
+    time('step.mount', 20.6);
+    time('answer.mount', 7);
+    expect(perfDump()).toEqual(['PERF answer.mount median=7 p95=7 n=1', 'PERF step.mount median=16 p95=21 n=2']);
+    expect(console.log).toHaveBeenCalledWith('PERF step.mount median=16 p95=21 n=2');
+  });
+
+  it('06.1-72 usePerfMount times the first mount once and is a no-op while off', async () => {
+    process.env.EXPO_PUBLIC_PERF = '1';
+    const { rerender, unmount } = await renderHook(() => {
+      now += 3;
+      usePerfMount('setupItem.mount');
+    });
+    await rerender({});
+    await rerender({});
+    await unmount();
+    const stat = perfReport()['setupItem.mount']!;
+    expect(stat.count).toBe(1);
+    expect(stat.median).toBeGreaterThanOrEqual(0);
+    delete process.env.EXPO_PUBLIC_PERF;
+    perfReset();
+    await (await renderHook(() => usePerfMount('setupItem.mount'))).unmount();
+    process.env.EXPO_PUBLIC_PERF = '1';
     expect(perfReport()).toEqual({});
   });
 });
