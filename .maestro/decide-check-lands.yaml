@@ -6,22 +6,51 @@
 #   4. the round's two checks are deleted from their open-check sheets (undoing the round's writes; also a write right before
 #      the next round's taps).
 # Writes on the signed-in account: two draft checks per round, both deleted in the same round. Run on a test account that
-# has met the first-answer gate. Android: the keyboard is closed by a label tap and pages scroll with common/scroll-to.yaml.
+# has met the first-answer gate. Android: the keyboard is closed by a label tap and pages scroll with swipes (common/scroll-to.yaml
+# downwards; an inline swipe loop upwards), not the built-in scroll-until or hide-keyboard commands.
+# Run it against a Metro whose checkout nobody is editing: a file save reloads a dev build and lands it on Home (06.1-78 cause).
 appId: com.fincwin.app
 name: Decide Check it and Edit the check land on the check (06.1-78)
 ---
+# Start on the tabs. The app may still be starting or busy: wait for the tab bar before any Back press (a Back on a slow start
+# leaves the app).
+- extendedWaitUntil:
+    visible:
+      id: "tab-bar"
+    timeout: 90000
 - runFlow: common/to-tabs.yaml
 - repeat:
     times: 5
     commands:
       # 1. small item -> the answer, named
-      - runFlow:
-          file: common/to-tabs.yaml
+      # Back to Decide home one Back at a time, waiting for each screen (the shared to-tabs presses Back blindly, which leaves
+      # the app when a closing sheet hides the tab bar from the hierarchy for a moment).
+      - repeat:
+          times: 3
+          while:
+            notVisible:
+              id: "tab-bar"
+          commands:
+            - back
+            - extendedWaitUntil:
+                visible: "Can I afford it\\?|Step [123] of 3|Overview"
+                timeout: 30000
       - tapOn: "Decide, tab, .*"
       - extendedWaitUntil:
-          visible:
-            id: "check-what"
+          visible: "Can I afford it\\?"
           timeout: 60000
+      # Decide home keeps its scroll position: back to the top, where the check card is.
+      - repeat:
+          times: 10
+          while:
+            notVisible:
+              id: "check-what"
+          commands:
+            - swipe:
+                start: "50%,30%"
+                end: "50%,85%"
+                duration: 300
+            - waitForAnimationToEnd
       - runFlow:
           file: common/decide-type-check.yaml
           env:
@@ -40,13 +69,45 @@ name: Decide Check it and Edit the check land on the check (06.1-78)
       - assertVisible: ".*lamp78.*"
 
       # 2. the Used car example -> Check it -> step 2 of the stepper (DN-1)
-      - runFlow: common/to-tabs.yaml
+      # Back to Decide home one Back at a time, waiting for each screen (the shared to-tabs presses Back blindly, which leaves
+      # the app when a closing sheet hides the tab bar from the hierarchy for a moment).
+      - repeat:
+          times: 3
+          while:
+            notVisible:
+              id: "tab-bar"
+          commands:
+            - back
+            - extendedWaitUntil:
+                visible: "Can I afford it\\?|Step [123] of 3|Overview"
+                timeout: 30000
       - tapOn: "Decide, tab, .*"
       - extendedWaitUntil:
-          visible:
-            id: "check-what"
+          visible: "Can I afford it\\?"
           timeout: 60000
-      - tapOn: "Used car .*"
+      - repeat:
+          times: 10
+          while:
+            notVisible:
+              id: "check-what"
+          commands:
+            - swipe:
+                start: "50%,30%"
+                end: "50%,85%"
+                duration: 300
+            - waitForAnimationToEnd
+      # Short swipes: the examples sit just under the check card, and a long swipe can carry them past the screen.
+      - repeat:
+          times: 8
+          while:
+            notVisible: 'Used car \$.*'
+          commands:
+            - swipe:
+                start: "50%,70%"
+                end: "50%,50%"
+                duration: 400
+            - waitForAnimationToEnd
+      - tapOn: 'Used car \$.*'
       - runFlow:
           file: common/scroll-to.yaml
           env:
@@ -60,12 +121,33 @@ name: Decide Check it and Edit the check land on the check (06.1-78)
       - assertVisible: "Price and how you pay"
 
       # 3. a Used car draft -> Edit the check -> a stepper step (DN-2)
-      - runFlow: common/to-tabs.yaml
+      # Back to Decide home one Back at a time, waiting for each screen (the shared to-tabs presses Back blindly, which leaves
+      # the app when a closing sheet hides the tab bar from the hierarchy for a moment).
+      - repeat:
+          times: 3
+          while:
+            notVisible:
+              id: "tab-bar"
+          commands:
+            - back
+            - extendedWaitUntil:
+                visible: "Can I afford it\\?|Step [123] of 3|Overview"
+                timeout: 30000
       - tapOn: "Decide, tab, .*"
       - extendedWaitUntil:
-          visible:
-            id: "check-what"
+          visible: "Can I afford it\\?"
           timeout: 60000
+      - repeat:
+          times: 10
+          while:
+            notVisible:
+              id: "check-what"
+          commands:
+            - swipe:
+                start: "50%,30%"
+                end: "50%,85%"
+                duration: 300
+            - waitForAnimationToEnd
       - runFlow:
           file: common/scroll-to.yaml
           env:
@@ -81,13 +163,34 @@ name: Decide Check it and Edit the check land on the check (06.1-78)
       - assertNotVisible:
           id: "tab-bar"
 
-      # 4. undo the round's writes: delete the Used car and lamp78 checks made above
-      - runFlow: common/to-tabs.yaml
+      # 4. undo the round's writes: delete the newest Used car and lamp78 checks (the open checks list is newest first)
+      # Back to Decide home one Back at a time, waiting for each screen (the shared to-tabs presses Back blindly, which leaves
+      # the app when a closing sheet hides the tab bar from the hierarchy for a moment).
+      - repeat:
+          times: 3
+          while:
+            notVisible:
+              id: "tab-bar"
+          commands:
+            - back
+            - extendedWaitUntil:
+                visible: "Can I afford it\\?|Step [123] of 3|Overview"
+                timeout: 30000
       - tapOn: "Decide, tab, .*"
       - extendedWaitUntil:
-          visible:
-            id: "check-what"
+          visible: "Can I afford it\\?"
           timeout: 60000
+      - repeat:
+          times: 10
+          while:
+            notVisible:
+              id: "check-what"
+          commands:
+            - swipe:
+                start: "50%,30%"
+                end: "50%,85%"
+                duration: 300
+            - waitForAnimationToEnd
       - runFlow:
           file: common/scroll-to.yaml
           env:

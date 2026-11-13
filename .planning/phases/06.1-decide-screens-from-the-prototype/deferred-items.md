@@ -20,3 +20,9 @@
 
 ## QuickEstimatesRoute dead onSave binding (found by 06.1-65, routed to 06.1-61)
 Quick estimates now save inside the screen via `useSaveSetupStep` (with Undo). The screen's `onSave` prop is optional and never called. Remove `onSave` and its `useUpdateDecideSettings` binding from `src/shell/decide/QuickEstimatesRoute.tsx`. Also: `SetupDone` component and its strings are unreachable since 06.1-64 deleted the route; remove them.
+
+## Resolved by 06.1-78 (2026-11-13)
+- furthest_step: the stepper flush now writes the furthest step visited (`furthestStepOf`, f703f8e7).
+- Open checks never leave Draft: the answer stores the shown answer through useSaveCheckAnswer (6e0a27f1).
+- G-72-2: record-context and savings-goal reads keep the five-minute Decide freshness on Decide screens (46b1f06e).
+- New from 06.1-78 for 06.1-74: G-78-1 (device walks on a Metro serving an edited checkout reload mid-tap) and G-78-2 (the open-check sheet can lose its panel and leave an invisible backdrop). See 06.1-78-SUMMARY.md.
