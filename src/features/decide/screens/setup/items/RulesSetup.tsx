@@ -32,7 +32,7 @@ import { useMoneyRules, useRuleCrossings } from '../../home/useHomeCards';
 import { rulesFactsOf } from '../../home/useHomeFacts';
 import { rulesOnCount } from './othersLogic';
 import { useSetupFormat } from './itemFields';
-import { SETUP_HOME, SetupItemFrame } from './SetupItemFrame';
+import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
 
 const SAVED_KEY = 'decide.screens.sheetsHome.rule.savedToast';
 const GROW = '/grow' as Href;
@@ -50,6 +50,7 @@ interface RuleRowModel {
 export function RulesSetup() {
   const t = useT();
   const router = useRouter();
+  const leave = useLeaveToChecklist();
   const { colors, pairing } = useTheme();
   const fmt = useSetupFormat();
   const rc = useRecordContext();
@@ -129,7 +130,6 @@ export function RulesSetup() {
 
   const onCount = rulesOnCount(rules.dsrLine, rules.doc, v3.inputs === null ? null : v3.inputs.limits.lines.filter((l) => l.on).length);
 
-  const leave = (): void => router.replace(SETUP_HOME);
   const saveRules = (): void => {
     if (userId === '') return;
     if (onCount === 0) {
@@ -139,7 +139,7 @@ export function RulesSetup() {
       flags.set({ flag: 'no_rules', on: false, noUndo: true });
       showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.rules.toast', params: { count: onCount } } });
     }
-    router.replace(SETUP_HOME);
+    leave();
   };
 
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };

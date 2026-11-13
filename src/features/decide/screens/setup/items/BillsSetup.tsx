@@ -8,7 +8,6 @@
 //  - Save and close: returns without setting the flag; marks already made stay.
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import * as Crypto from 'expo-crypto';
 import { useT } from '@/i18n';
 import type { NewRecurringSeries, RecurringSeriesPatch } from '@/db/recurringSeries';
@@ -32,11 +31,11 @@ import { Text } from '@/ui/Text';
 import { BillSheet, type BillValues } from './BillSheets';
 import { useFreqWord, useSetupFormat } from './itemFields';
 import { anchorWithDay, buildBillRows, nextDateOnDay, regularCount, regularMonthlyTotal, type BillRow, type EditSeriesFrom } from './itemLogic';
-import { SETUP_HOME, SetupItemFrame } from './SetupItemFrame';
+import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
 
 export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom }) {
   const t = useT();
-  const router = useRouter();
+  const leave = useLeaveToChecklist();
   const { colors, pairing } = useTheme();
   const stacked = useShouldStack();
   const fmt = useSetupFormat();
@@ -138,10 +137,9 @@ export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom 
       text: { key: 'decide.screens.setupPayBills.bills.toast', params: { count: regularCount(rows) } },
       stepId: done?.stepId ?? null,
     });
-    router.replace(SETUP_HOME);
+    leave();
   };
 
-  const leave = (): void => router.replace(SETUP_HOME);
   const label = { ...textRole(pairing, 'label'), fontSize: fontSize.meta };
 
   return (

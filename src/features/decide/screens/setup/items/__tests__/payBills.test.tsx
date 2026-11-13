@@ -9,7 +9,8 @@ import { BillsSetup } from '../BillsSetup';
 import { PaySetup } from '../PaySetup';
 
 const mockReplace = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, back: jest.fn(), push: jest.fn() }) }));
+const mockDismissTo = jest.fn();
+jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, back: jest.fn(), push: jest.fn() }) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
 jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
@@ -121,14 +122,14 @@ describe('BillsSetup (D33)', () => {
     await fireEvent.press(screen.getByText('These are right'));
     expect(mockSetAnswered).toHaveBeenCalledTimes(1);
     expect(mockSetAnswered).toHaveBeenCalledWith({ flag: 'bills_right', on: true });
-    expect(mockReplace).toHaveBeenCalledWith('/decide/setup');
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide/setup');
   });
 
   it('"Save and close" returns to the checklist without setting the flag', async () => {
     await wrap(<BillsSetup editSeriesFrom={editSeriesFrom} />);
     await fireEvent.press(screen.getByTestId('item-save-close'));
     expect(mockSetAnswered).not.toHaveBeenCalled();
-    expect(mockReplace).toHaveBeenCalledWith('/decide/setup');
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide/setup');
   });
 
   it('fits at the large text sizes', async () => {
@@ -157,7 +158,7 @@ describe('PaySetup (D32)', () => {
     await fireEvent.press(screen.getByText('Save pay details'));
     expect(mockSaveStep).toHaveBeenCalledWith(expect.objectContaining({ patch: { income_pattern: 'steady', income_pattern_confirmed: true } }));
     expect(mockConfirm).not.toHaveBeenCalled();
-    expect(mockReplace).toHaveBeenCalledWith('/decide/setup');
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide/setup');
   });
 
   it('with no pay found, the fields are shown and Save pay details waits for them', async () => {
@@ -211,6 +212,6 @@ describe('PaySetup (D32)', () => {
     await fireEvent.press(screen.getByTestId('item-save-close'));
     expect(mockSaveStep).not.toHaveBeenCalled();
     expect(mockSetAnswered).not.toHaveBeenCalled();
-    expect(mockReplace).toHaveBeenCalledWith('/decide/setup');
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide/setup');
   });
 });

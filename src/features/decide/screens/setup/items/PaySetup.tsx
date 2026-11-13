@@ -11,7 +11,6 @@
 //  - Save and close returns without saving what is still on screen; what a sheet already saved stays.
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import * as Crypto from 'expo-crypto';
 import { useT } from '@/i18n';
 import type { RecurringFreq } from '@/engine/recurring';
@@ -37,7 +36,7 @@ import { Field, FieldLabel, Note } from '@/features/decide/screens/sheets/sheetU
 import { setAsideFromText, setAsidePatch, setAsideText, showsSetAside } from '@/features/decide/screens/logic/taxSetAside';
 import { DayField, RadioRow, dayFromText, useFreqWord, useSetupFormat } from './itemFields';
 import { OtherIncomeSheet, PayEditSheet, type OtherIncomeValues, type PayEditValues } from './PaySheets';
-import { SETUP_HOME, SetupItemFrame } from './SetupItemFrame';
+import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
 import { anchorWithDay, dayOf, nextDateOnDay, type EditSeriesFrom } from './itemLogic';
 
 type Pattern = 'steady' | 'variable' | 'seasonal';
@@ -69,7 +68,7 @@ interface PayBasis {
 
 export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom }) {
   const t = useT();
-  const router = useRouter();
+  const leave = useLeaveToChecklist();
   const { colors, pairing } = useTheme();
   const fmt = useSetupFormat();
   const freqWord = useFreqWord();
@@ -238,10 +237,9 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
       if (saved !== null) stepIds.push(saved.stepId);
     }
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupPayBills.pay.toast' }, stepIds });
-    router.replace(SETUP_HOME);
+    leave();
   };
 
-  const leave = (): void => router.replace(SETUP_HOME);
   const label = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
   const heading = { ...textRole(pairing, 'sheetTitle'), color: colors.ink };
 

@@ -27,7 +27,7 @@ import { ProgressBar } from '@/ui/ProgressBar';
 import { Text } from '@/ui/Text';
 import type { NetAnswerPort } from '../../safetyNet/ports';
 import { RadioRow, useSetupFormat } from './itemFields';
-import { SETUP_HOME, SetupItemFrame } from './SetupItemFrame';
+import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
 
 /** Saves the account that holds the net on its Grow goal and returns the undo step id. Bound in SetupItemRoutes (useEditGoal). */
 export type SetNetAccount = (goal: SavingsGoalRow, accountId: string, ownerId: string) => string;
@@ -38,6 +38,7 @@ const GROW_NET = '/grow/safety-net' as Href;
 export function NetSetup({ answer, setAccount }: { answer: NetAnswerPort; setAccount: SetNetAccount }) {
   const t = useT();
   const router = useRouter();
+  const leave = useLeaveToChecklist();
   const { colors, pairing } = useTheme();
   const fmt = useSetupFormat();
   const rc = useRecordContext();
@@ -73,10 +74,9 @@ export function NetSetup({ answer, setAccount }: { answer: NetAnswerPort; setAcc
     }
   }
 
-  const leave = (): void => router.replace(SETUP_HOME);
   const done = (stepId: string | null): void => {
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.net.toast' }, stepId });
-    router.replace(SETUP_HOME);
+    leave();
   };
 
   const save = (): void => {

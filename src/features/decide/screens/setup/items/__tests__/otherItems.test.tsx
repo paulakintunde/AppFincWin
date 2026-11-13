@@ -13,8 +13,9 @@ import { RulesSetup } from '../RulesSetup';
 jest.setTimeout(60000);
 
 const mockReplace = jest.fn();
+const mockDismissTo = jest.fn();
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, push: mockPush, back: jest.fn() }) }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, push: mockPush, back: jest.fn() }) }));
 jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn(), hapticWarning: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
 const mockShowToast = jest.fn();
@@ -129,7 +130,7 @@ describe('DebtsSetup (D34)', () => {
     await fireEvent.changeText(screen.getByLabelText('Due day of the month'), '12');
     await fireEvent.press(screen.getByText('Save debts'));
     expect(saveDueDay).toHaveBeenCalledWith(expect.objectContaining({ id: 'd1' }), 12, 'u1');
-    expect(mockReplace).toHaveBeenCalledWith('/decide/setup');
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide/setup');
   });
 
   it('"No other debts" sets the flag when saved', async () => {
@@ -144,7 +145,7 @@ describe('DebtsSetup (D34)', () => {
     await wrap(<DebtsSetup saveDueDay={jest.fn(() => 'x')} />);
     await fireEvent.changeText(screen.getByLabelText('Due day of the month'), '40');
     await fireEvent.press(screen.getByText('Save debts'));
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockDismissTo).not.toHaveBeenCalled();
   });
 });
 
@@ -182,7 +183,7 @@ describe('RulesSetup (D36)', () => {
     expect(screen.getByTestId('rules-none')).toHaveTextContent('No rules. Answers still keep your safety net.');
     await fireEvent.press(screen.getByText('Save rules'));
     expect(mockSetAnswered).toHaveBeenCalledWith({ flag: 'no_rules', on: true });
-    expect(mockReplace).toHaveBeenCalledWith('/decide/setup');
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide/setup');
   });
 
   it('with a rule on, saving clears the flag and the none line is not shown', async () => {

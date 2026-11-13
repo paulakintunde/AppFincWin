@@ -37,7 +37,7 @@ import { footerFactsOf } from '../../home/useHomeFacts';
 import { useSetupFacts } from '../useSetupProgress';
 import { RadioRow, useSetupFormat } from './itemFields';
 import { askedAccounts, choiceOfUse, previousMonthOf, recordChecks, accountUseOfChoice, USE_CHOICES, type UseChoice } from './othersLogic';
-import { SETUP_HOME, SetupItemFrame } from './SetupItemFrame';
+import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
 
 const ACTIVITY = '/activity' as Href;
 const IMPORT = '/import' as Href;
@@ -73,6 +73,7 @@ function fallbackWaiver(item: ReadinessItem): ReadinessWaiver | null {
 export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const t = useT();
   const router = useRouter();
+  const leave = useLeaveToChecklist();
   const { colors, pairing } = useTheme();
   const fmt = useSetupFormat();
   const rc = useRecordContext();
@@ -93,7 +94,6 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const footer = footerFactsOf(v3.inputs);
 
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
-  const leave = (): void => router.replace(SETUP_HOME);
   // C-5: "Save and close" with items still open says what is open, then leaves; with none open it leaves silently as before.
   const saveAndClose = (): void => {
     if (fixRows.length > 0) showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.records.stillOpen', params: { count: fixRows.length } } });

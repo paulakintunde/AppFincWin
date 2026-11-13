@@ -22,7 +22,7 @@ import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { DayField, RadioRow, useSetupFormat } from './itemFields';
 import { dueDayEdits, hasBadDueDay } from './othersLogic';
-import { SETUP_HOME, SetupItemFrame } from './SetupItemFrame';
+import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
 
 /** Saves a due day on a Grow debt and returns the undo step id. Bound in src/shell/decide/SetupItemRoutes.tsx (useSaveGrowDebt). */
 export type SaveDueDay = (debt: DebtRow, day: number, ownerId: string) => string;
@@ -32,6 +32,7 @@ const GROW_DEBTS = '/grow?segment=debts' as Href;
 export function DebtsSetup({ saveDueDay }: { saveDueDay: SaveDueDay }) {
   const t = useT();
   const router = useRouter();
+  const leave = useLeaveToChecklist();
   const { colors, pairing } = useTheme();
   const fmt = useSetupFormat();
   const rc = useRecordContext();
@@ -65,9 +66,8 @@ export function DebtsSetup({ saveDueDay }: { saveDueDay: SaveDueDay }) {
     }
     const flagStep = flags.set({ flag: 'no_debts', on: noOtherOn });
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.debts.toast' }, stepId: lastStep ?? flagStep?.stepId ?? null });
-    router.replace(SETUP_HOME);
+    leave();
   };
-  const leave = (): void => router.replace(SETUP_HOME);
 
   return (
     <SetupItemFrame

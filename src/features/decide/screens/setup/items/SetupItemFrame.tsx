@@ -12,7 +12,7 @@
 // a draft, so a figure only stays once it was saved by a sheet or by the primary.
 import React, { useEffect, useRef } from 'react';
 import { AccessibilityInfo, findNodeHandle, Pressable, StyleSheet, View } from 'react-native';
-import type { Href } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -24,6 +24,16 @@ import { Text } from '@/ui/Text';
 
 /** The checklist every item returns to. */
 export const SETUP_HOME = '/decide/setup' as Href;
+
+/**
+ * 06.1-50 (C-6): how every item leaves, on save, "Save and close" and Back. It pops back to the one checklist already in the stack
+ * instead of stacking another copy (which made Back look dead). When the checklist is not in the stack (a deep link straight to an
+ * item), expo-router's dismissTo replaces the current screen with it, so the user still lands on one checklist.
+ */
+export function useLeaveToChecklist(): () => void {
+  const router = useRouter();
+  return () => router.dismissTo(SETUP_HOME);
+}
 
 export interface SetupItemFrameProps {
   /** The item name, e.g. "Pay and payday". */

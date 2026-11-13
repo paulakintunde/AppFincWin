@@ -10,8 +10,9 @@ import { RecordsSetup, type RecordsWrites } from '../RecordsSetup';
 jest.setTimeout(60000);
 
 const mockReplace = jest.fn();
+const mockDismissTo = jest.fn();
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, push: mockPush, back: jest.fn() }) }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, push: mockPush, back: jest.fn() }) }));
 jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn(), hapticWarning: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
 const mockShowToast = jest.fn();
@@ -82,7 +83,7 @@ describe('RecordsSetup readiness list (06.1-45)', () => {
     expect(screen.getByText('Done')).toBeTruthy();
     await press(screen.getByText('Done'));
     expect(mockShowToast).not.toHaveBeenCalled();
-    expect(mockReplace).toHaveBeenCalledTimes(1);
+    expect(mockDismissTo).toHaveBeenCalledTimes(1);
   });
 
   it('an open bill item is named with its fix and answers; Done is not offered while it is open (GQ2)', async () => {
@@ -136,7 +137,7 @@ describe('RecordsSetup readiness list (06.1-45)', () => {
     const closes = screen.getAllByText('Save and close');
     await press(closes[closes.length - 1]!);
     expect(mockShowToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.records.stillOpen', params: { count: 2 } } });
-    expect(mockReplace).toHaveBeenCalledTimes(1);
+    expect(mockDismissTo).toHaveBeenCalledTimes(1);
   });
 
   it('a brand-new person still sees the No records yet variant', async () => {
