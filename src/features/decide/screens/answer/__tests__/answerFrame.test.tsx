@@ -1,6 +1,6 @@
 // 06.1-14 (audit F2, D-15): reading order, legal block, first-caveat rule, equal options, motion and text fit, on engine-run fixtures.
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -10,6 +10,13 @@ import { expectFits } from '@/test/textFitMatrix';
 import { wrap } from '@/test/stepProps';
 import { AnswerFrame, type AnswerAction, type AnswerFrameProps } from '../AnswerFrame';
 import { AnswerLoading } from '../AnswerLoading';
+import { ActionBar } from '../ActionBar';
+import { MoreDetailRows } from '../MoreDetailRows';
+import { WhatYouToldCard } from '../WhatYouToldCard';
+import { FactActions } from '../FactActions';
+import { ReadinessFixList } from '../ReadinessFixList';
+import { readinessFixRows } from '../../logic/readinessFixes';
+import { LINK_HIT_SLOP } from '@/ui/pressFeedback';
 import { optionOrder } from '../OptionChips';
 import { freeHelpUrl } from '../FactLines';
 import { LEDGER_CASES, ledgerRun, notReadyRun, viewOf, type LedgerScenario, type Run } from './fixtures';
@@ -307,3 +314,92 @@ describe('loading state (06.1-49, A-ANS-2)', () => {
     expect(StyleSheet.flatten(screen.getByTestId('answer-loading-screen').props.style).paddingTop).toBe(62);
   });
 });
+
+describe('06.1-62 (H-1): every answer tap shows it landed', () => {
+  const originalOS = Platform.OS;
+  const setOS = (os: 'ios' | 'android') => Object.defineProperty(Platform, 'OS', { configurable: true, get: () => os });
+  afterEach(() => setOS(originalOS as 'ios' | 'android'));
+  const ripple = (n: { props: Record<string, unknown> }) => n.props.nativeForegroundAndroid;
+  const flat = (n: { props: { style?: unknown } }) => StyleSheet.flatten(n.props.style as never) as Record<string, unknown>;
+
+  it('CB-3: the action bar pads with insets.bottom (48 inset gives 56)', async () => {
+    await render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top: 24, bottom: 48, left: 0, right: 0 } }}>
+        <ThemeProvider>
+          <ActionBar onBought={noop} onSaveFor={noop} onNotBuying={noop} />
+        </ThemeProvider>
+      </SafeAreaProvider>,
+    );
+    expect(flat(screen.getByTestId('answer-actions')).paddingBottom).toBe(56);
+  });
+
+  it('CB-3: inside the frame the bar clears the inset too; with no bar the content does', async () => {
+    const shown = await frame(ledgerRun('N04'));
+    expect(flat(screen.getByTestId('answer-actions')).paddingBottom).toBe(34 + 8);
+    await shown.unmount();
+    await frame(ledgerRun('N04'), { status: 'loading', evaluation: null });
+    expect(screen.queryByTestId('answer-actions')).toBeNull();
+    // the scroll view carries the frame's content padding
+    let scroll = screen.getByTestId('answer-topbar').parent;
+    while (scroll && scroll.type !== 'RCTScrollView') scroll = scroll.parent;
+    const content = StyleSheet.flatten((scroll?.props as { contentContainerStyle?: never } | undefined)?.contentContainerStyle) as Record<string, unknown> | undefined;
+    expect(content?.paddingBottom).toBe(22 + 34);
+  });
+
+  it('CB-6: Back, New check, the legal link and "not buying" reach 52 dp tall', async () => {
+    await frame(ledgerRun('N04'));
+    for (const id of ['answer-back', 'answer-new-check', 'answer-cant-see']) expect(screen.getByTestId(id).props.hitSlop).toEqual(LINK_HIT_SLOP);
+    const notBuying = screen.getByRole('button', { name: en.decide.screens.answerActions.bar.notBuying });
+    expect(notBuying.props.hitSlop).toEqual(LINK_HIT_SLOP);
+    expect(44 + LINK_HIT_SLOP.top + LINK_HIT_SLOP.bottom).toBeGreaterThanOrEqual(48);
+  });
+
+  it('CB-5: on Android the top bar, the action bar and the When chips ripple', async () => {
+    setOS('android');
+    await frame(ledgerRun('N04'));
+    for (const id of ['answer-back', 'answer-new-check', 'answer-cant-see']) expect(ripple(screen.getByTestId(id))).toBeDefined();
+    expect(ripple(screen.getByRole('button', { name: en.decide.screens.answerActions.bar.bought }))).toBeDefined();
+    expect(ripple(screen.getByRole('button', { name: en.decide.screens.answerActions.bar.notBuying }))).toBeDefined();
+    for (const radio of screen.getAllByRole('radio')) expect(ripple(radio)).toBeDefined();
+    for (const tab of screen.getAllByRole('tab')) expect(ripple(tab)).toBeDefined();
+  });
+
+  it('CB-5: on iOS there is no ripple and the rest look is unchanged', async () => {
+    setOS('ios');
+    await frame(ledgerRun('N04'));
+    expect(ripple(screen.getByTestId('answer-back'))).toBeUndefined();
+    expect(flat(screen.getByTestId('answer-back')).opacity).toBeUndefined();
+  });
+
+  it('CB-5: More detail rows and What you told rows ripple on Android', async () => {
+    setOS('android');
+    await wrap(
+      <>
+        <MoreDetailRows runningValue="none" showStops={false} giveMoreCount={0} showHelp={false} showSideBySide={false} onOpen={noop} />
+        <WhatYouToldCard kindLabel="A thing" priceLine="$10" runningLine="none" skipped={[]} onEdit={noop} />
+      </>,
+    );
+    expect(ripple(screen.getByTestId('answer-detail-running'))).toBeDefined();
+    expect(ripple(screen.getByTestId('answer-detail-worked'))).toBeDefined();
+    for (const step of [1, 2, 3]) expect(ripple(screen.getByTestId(`answer-told-${step}`))).toBeDefined();
+  });
+
+  it('CB-6: fact Fix links and readiness fix links carry the link slop and a ripple', async () => {
+    setOS('android');
+    const nr = notReadyRun();
+    const asOf = nr.inputs.asOf;
+    const rows = readinessFixRows(nr.evaluation.result.readiness?.items ?? [], asOf);
+    expect(rows.length).toBeGreaterThan(0);
+    await wrap(
+      <>
+        <FactActions code="some_fact" missing item="the rent" onChoose={noop} />
+        <ReadinessFixList rows={rows} asOf={asOf} money={(m) => String(m)} date={(d) => d} monthName={(ym) => ym} onFix={noop} onChoice={noop} />
+      </>,
+    );
+    for (const id of ['answer-fix-some_fact', 'readiness-fix-0']) {
+      expect(screen.getByTestId(id).props.hitSlop).toEqual(LINK_HIT_SLOP);
+      expect(ripple(screen.getByTestId(id))).toBeDefined();
+    }
+  });
+});
+

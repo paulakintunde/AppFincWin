@@ -8,6 +8,7 @@ import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
+import { usePressFeedback } from '@/ui/pressFeedback';
 
 export type DetailRow = 'running' | 'monthAfter' | 'fullCost' | 'stops' | 'everyDate' | 'monthByMonth' | 'worked' | 'giveMore' | 'help' | 'sideBySide';
 
@@ -26,6 +27,8 @@ export interface MoreDetailRowsProps {
 export function MoreDetailRows({ runningValue, showStops, giveMoreCount, showHelp, showSideBySide, onOpen }: MoreDetailRowsProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
+  // 06.1-62 (CB-5): each row shows a press at once.
+  const press = usePressFeedback('row');
   const rows: { key: DetailRow; label: string; value?: string }[] = [
     { key: 'running', label: t('decide.screens.answer.runningRow'), value: runningValue },
     { key: 'fullCost', label: t('decide.screens.answer.fullCost') },
@@ -50,7 +53,8 @@ export function MoreDetailRows({ runningValue, showStops, giveMoreCount, showHel
           accessibilityRole="button"
           accessibilityLabel={row.value === undefined ? row.label : `${row.label}. ${row.value}`}
           onPress={() => onOpen(row.key)}
-          style={styles.row}
+          android_ripple={press.android_ripple}
+          style={({ pressed }) => [styles.row, press.pressedStyle(pressed)]}
         >
           <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{row.label}</Text>
           {row.value !== undefined ? <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{row.value}</Text> : null}

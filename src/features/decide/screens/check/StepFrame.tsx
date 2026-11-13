@@ -12,6 +12,7 @@ import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
+import { LINK_HIT_SLOP, usePressFeedback } from '@/ui/pressFeedback';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { SegmentBar } from './SegmentBar';
@@ -72,13 +73,15 @@ export function StepFrame({ step, title, why, meta, direction = 'fwd', kindLabel
     t('decide.screens.stepper.segRunning'),
   ];
   const label = { ...textRole(pairing, 'label'), fontSize: fontSize.meta };
+  // 06.1-62 (CB-5 / CB-6): the Back chevron and "See the answer now" show a press at once. The chevron keeps its larger 8 dp slop.
+  const press = usePressFeedback('row');
 
   return (
     <Screen scroll form>
       <Animated.View testID="step-frame" entering={entering} style={styles.body}>
         <View style={styles.top}>
           {/* 06.1-49 (A-ST-3, D20): a back chevron (the Row.tsx rotated-border convention, no icon library); "Back" for screen readers. */}
-          <Pressable testID="step-back" accessibilityRole="button" accessibilityLabel={t('decide.screens.common.a11y.back')} onPress={onBack} hitSlop={space.gapSm} style={[styles.target, styles.backTarget]}>
+          <Pressable testID="step-back" accessibilityRole="button" accessibilityLabel={t('decide.screens.common.a11y.back')} onPress={onBack} hitSlop={space.gapSm} android_ripple={press.android_ripple} style={({ pressed }) => [styles.target, styles.backTarget, press.pressedStyle(pressed)]}>
             <View testID="step-back-chevron" style={[styles.chevron, { borderColor: colors.accent }]} />
           </Pressable>
           <Text style={{ ...label, color: colors.inkMuted, flexShrink: 1, textAlign: 'right' }}>{meta}</Text>
@@ -96,7 +99,14 @@ export function StepFrame({ step, title, why, meta, direction = 'fwd', kindLabel
         <View style={styles.actions}>
           <Pill variant="primary" label={step === 3 ? t('decide.screens.stepper.seeAnswer') : t('decide.screens.common.next')} disabled={nextDisabled} onPress={onNext} />
           {onSeeNow === undefined ? null : (
-            <Pressable testID="see-now" accessibilityRole="link" onPress={onSeeNow} style={styles.target}>
+            <Pressable
+              testID="see-now"
+              accessibilityRole="link"
+              onPress={onSeeNow}
+              hitSlop={LINK_HIT_SLOP}
+              android_ripple={press.android_ripple}
+              style={({ pressed }) => [styles.target, press.pressedStyle(pressed)]}
+            >
               <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.stepper.seeAnswerNow')}</Text>
             </Pressable>
           )}

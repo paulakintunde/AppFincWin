@@ -167,7 +167,8 @@ export function AnswerFrame({
 
   return (
     <View testID="answer-frame" style={[styles.frame, { backgroundColor: colors.canvas, paddingTop: insets.top }]}>
-      <ScrollView contentContainerStyle={styles.content}>
+      {/* 06.1-62 (CB-3): with no action bar the last line (the legal link) must clear the Android nav bar too; the bar pads itself. */}
+      <ScrollView contentContainerStyle={[styles.content, showActions ? null : { paddingBottom: space.screenH + insets.bottom }]}>
         <AnswerTopBar {...top} />
         {offlineDate !== null ? <OfflineCard date={offlineDate} onRetry={retry} /> : null}
         {body}

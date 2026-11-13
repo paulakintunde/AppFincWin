@@ -9,6 +9,7 @@ import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
+import { LINK_HIT_SLOP, usePressFeedback } from '@/ui/pressFeedback';
 import { Text } from '@/ui/Text';
 
 export type FactActionChoice =
@@ -36,9 +37,11 @@ export interface FactActionsProps {
 export function FactActions({ code, values = {}, missing = false, item = '', onChoose }: FactActionsProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
+  // 06.1-62 (CB-5 / CB-6): links show a press at once and reach 52 dp tall.
+  const press = usePressFeedback('row');
   const text = (key: string): string => String(t(key as never));
   const link = (testID: string, label: string, choice: FactActionChoice, a11y?: string) => (
-    <Pressable testID={testID} accessibilityRole="link" accessibilityLabel={a11y ?? label} onPress={() => onChoose(choice)} style={styles.link}>
+    <Pressable testID={testID} accessibilityRole="link" accessibilityLabel={a11y ?? label} onPress={() => onChoose(choice)} hitSlop={LINK_HIT_SLOP} android_ripple={press.android_ripple} style={({ pressed }) => [styles.link, press.pressedStyle(pressed)]}>
       <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{label}</Text>
     </Pressable>
   );

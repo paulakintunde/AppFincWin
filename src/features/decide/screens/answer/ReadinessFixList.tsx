@@ -9,6 +9,7 @@ import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
+import { LINK_HIT_SLOP, usePressFeedback } from '@/ui/pressFeedback';
 import { Text } from '@/ui/Text';
 import type { ReadinessFixRow, WaiverChoice } from '../logic/readinessFixes';
 
@@ -59,6 +60,8 @@ function choiceLabel(row: ReadinessFixRow, c: WaiverChoice, monthName: (ym: Year
 export function ReadinessFixList({ rows, asOf, money, date, monthName, onFix, onChoice }: ReadinessFixListProps) {
   const t = useT() as unknown as T;
   const { colors, pairing } = useTheme();
+  // 06.1-62 (CB-5 / CB-6): links show a press at once and reach 52 dp tall.
+  const press = usePressFeedback('row');
   return (
     <View testID="readiness-list" style={styles.list}>
       {rows.map((row, i) => {
@@ -68,7 +71,7 @@ export function ReadinessFixList({ rows, asOf, money, date, monthName, onFix, on
             <Text accessible style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
               {itemSentence(row.item, asOf, { money, date, monthName }, t)}
             </Text>
-            <Pressable testID={`readiness-fix-${i}`} accessibilityRole="link" accessibilityLabel={fixLabel} onPress={() => onFix(row)} style={styles.link}>
+            <Pressable testID={`readiness-fix-${i}`} accessibilityRole="link" accessibilityLabel={fixLabel} onPress={() => onFix(row)} hitSlop={LINK_HIT_SLOP} android_ripple={press.android_ripple} style={({ pressed }) => [styles.link, press.pressedStyle(pressed)]}>
               <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{fixLabel}</Text>
             </Pressable>
             {row.choices.length > 0 ? (

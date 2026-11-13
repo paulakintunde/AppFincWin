@@ -6,6 +6,7 @@ import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { SegmentedControl } from '@/ui/SegmentedControl';
+import { LINK_HIT_SLOP, usePressFeedback } from '@/ui/pressFeedback';
 import { Text } from '@/ui/Text';
 
 export type PayMode = 'cash' | 'plan';
@@ -28,6 +29,8 @@ export interface AnswerTopBarProps {
 export function AnswerTopBar({ name, priceText, pay, when, dateText = null, onBack, onNewCheck, onPay, onWhen }: AnswerTopBarProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
+  // 06.1-62 (CB-5 / CB-6): Back, New check and the When chips show a press at once; the two links reach 52 dp tall.
+  const press = usePressFeedback('row');
   const whenOptions: { key: WhenChoice; label: string }[] = [
     { key: 'today', label: t('decide.screens.answer.frame.whenToday') },
     { key: 'payday', label: t('decide.screens.answer.frame.whenPayday') },
@@ -36,10 +39,10 @@ export function AnswerTopBar({ name, priceText, pay, when, dateText = null, onBa
   return (
     <View testID="answer-topbar" style={styles.wrap}>
       <View style={styles.row}>
-        <Pressable testID="answer-back" accessibilityRole="button" accessibilityLabel={t('decide.screens.common.a11y.back')} onPress={onBack} style={styles.target}>
+        <Pressable testID="answer-back" accessibilityRole="button" accessibilityLabel={t('decide.screens.common.a11y.back')} onPress={onBack} hitSlop={LINK_HIT_SLOP} android_ripple={press.android_ripple} style={({ pressed }) => [styles.target, press.pressedStyle(pressed)]}>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.common.back')}</Text>
         </Pressable>
-        <Pressable testID="answer-new-check" accessibilityRole="link" onPress={onNewCheck} style={styles.target}>
+        <Pressable testID="answer-new-check" accessibilityRole="link" onPress={onNewCheck} hitSlop={LINK_HIT_SLOP} android_ripple={press.android_ripple} style={({ pressed }) => [styles.target, press.pressedStyle(pressed)]}>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.common.newCheck')}</Text>
         </Pressable>
       </View>
@@ -65,7 +68,12 @@ export function AnswerTopBar({ name, priceText, pay, when, dateText = null, onBa
               accessibilityRole="radio"
               accessibilityState={{ checked: selected }}
               onPress={() => onWhen(o.key)}
-              style={[styles.chip, { backgroundColor: selected ? colors.surface : colors.fill1, borderColor: selected ? colors.accent : 'transparent' }]}
+              android_ripple={press.android_ripple}
+              style={({ pressed }) => [
+                styles.chip,
+                { backgroundColor: selected ? colors.surface : colors.fill1, borderColor: selected ? colors.accent : 'transparent' },
+                press.pressedStyle(pressed),
+              ]}
             >
               <Text scale="capped" style={{ ...textRole(pairing, 'label'), color: selected ? colors.accent : colors.inkDim }}>
                 {o.label}
@@ -83,5 +91,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   target: { minHeight: space.touchMin, minWidth: space.touchMin, justifyContent: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
-  chip: { minHeight: space.touchMin, paddingHorizontal: space.cardPad, borderRadius: 999, borderWidth: 2, justifyContent: 'center' },
+  chip: { minHeight: space.touchMin, paddingHorizontal: space.cardPad, borderRadius: 999, borderWidth: 2, justifyContent: 'center', overflow: 'hidden' },
 });

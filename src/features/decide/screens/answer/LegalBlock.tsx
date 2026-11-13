@@ -7,6 +7,7 @@ import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
+import { LINK_HIT_SLOP, usePressFeedback } from '@/ui/pressFeedback';
 import type { Line } from '../logic/sayResult';
 
 export interface LegalBlockProps {
@@ -20,6 +21,8 @@ export interface LegalBlockProps {
 export function LegalBlock({ basis, caveat, caveatFigures, onCantSee }: LegalBlockProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
+  // 06.1-62 (CB-5 / CB-6): links show a press at once and reach 52 dp tall.
+  const press = usePressFeedback('row');
   const body = { ...textRole(pairing, 'body'), color: colors.inkDim };
   return (
     <View testID="answer-legal" style={styles.block}>
@@ -41,7 +44,7 @@ export function LegalBlock({ basis, caveat, caveatFigures, onCantSee }: LegalBlo
       <Text testID="answer-caveat-line" style={body}>
         {t('legal.decideAnswer.caveat')}
       </Text>
-      <Pressable testID="answer-cant-see" accessibilityRole="button" onPress={onCantSee} style={styles.link}>
+      <Pressable testID="answer-cant-see" accessibilityRole="button" onPress={onCantSee} hitSlop={LINK_HIT_SLOP} android_ripple={press.android_ripple} style={({ pressed }) => [styles.link, press.pressedStyle(pressed)]}>
         <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('legal.decideAnswer.cantSeeLink')}</Text>
       </Pressable>
       <Text testID="answer-footer" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>

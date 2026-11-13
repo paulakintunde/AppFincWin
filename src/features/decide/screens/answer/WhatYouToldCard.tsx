@@ -10,6 +10,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { StateBadge } from '@/ui/StateBadge';
 import { Text } from '@/ui/Text';
+import { usePressFeedback } from '@/ui/pressFeedback';
 
 export type ToldStep = 1 | 2 | 3;
 
@@ -28,6 +29,8 @@ export interface WhatYouToldCardProps {
 export function WhatYouToldCard({ kindLabel, priceLine, runningLine, skipped, onEdit }: WhatYouToldCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
+  // 06.1-62 (CB-5): each row shows a press at once.
+  const press = usePressFeedback('row');
   const rows: { step: ToldStep; label: string; value: string }[] = [
     { step: 1, label: t('decide.screens.answer.told.kind'), value: kindLabel ?? '' },
     { step: 2, label: t('decide.screens.answer.told.priceAndPay'), value: priceLine },
@@ -45,7 +48,8 @@ export function WhatYouToldCard({ kindLabel, priceLine, runningLine, skipped, on
           accessibilityRole="button"
           accessibilityLabel={`${row.label}. ${row.value}`}
           onPress={() => onEdit(row.step)}
-          style={styles.row}
+          android_ripple={press.android_ripple}
+          style={({ pressed }) => [styles.row, press.pressedStyle(pressed)]}
         >
           <View style={styles.text}>
             <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{row.label}</Text>
