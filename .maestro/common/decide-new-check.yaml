@@ -12,7 +12,7 @@ appId: com.fincwin.app
       ITEM: ${ITEM}
       PRICE: ${PRICE}
 - extendedWaitUntil:
-    visible: "Step [123] of 3|How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet|I bought it"
+    visible: "Step [123] of 3|How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet.*|I bought it"
     timeout: 20000
 - runFlow:
     when:

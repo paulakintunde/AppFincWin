@@ -4,7 +4,7 @@
 appId: com.fincwin.app
 ---
 - extendedWaitUntil:
-    visible: "How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet|I bought it"
+    visible: "How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet.*|I bought it"
     timeout: 20000
 - runFlow:
     when:
@@ -25,11 +25,11 @@ appId: com.fincwin.app
             TARGET: "Not set yet"
       - tapOn: "Not set yet"
 - extendedWaitUntil:
-    visible: "Not ready yet|I bought it"
+    visible: "Not ready yet.*|I bought it"
     timeout: 20000
 - runFlow:
     when:
-      visible: "Not ready yet"
+      visible: "Not ready yet.*"
     commands:
       - runFlow:
           file: scroll-to.yaml

@@ -14,9 +14,11 @@ appId: com.fincwin.app
       - tapOn: "Select all"
       - eraseText: 5
 - inputText: ${ITEM}
-# A price already in the field reads "Price, <amount>"; clear it the same way
-- runFlow:
-    when:
+# A price already in the field reads "Price, <amount>"; clear it the same way. 06.1-51: repeated, because on the emulator
+# the controlled field sometimes kept a digit after the erase (a "1" left from 180 turned 9000 into 19000).
+- repeat:
+    times: 3
+    while:
       visible: "Price, .*"
     commands:
       - longPressOn: "Price, .*"
@@ -25,8 +27,12 @@ appId: com.fincwin.app
             visible: "Select all"
           commands:
             - tapOn: "Select all"
-            - eraseText: 5
-- tapOn: "Price"
+      - eraseText: 20
+# 06.1-51: tap the price field itself (its text, below the label). Tapping the "Price" label closed the keyboard, so the
+# price was never typed. The empty field has no "Price" label in the tree, only its "0.00" hint.
+- tapOn:
+    text: "[0-9][0-9.,]*"
+    below: "Price"
 - inputText: ${PRICE}
 - tapOn: "When\\?"
 - runFlow:

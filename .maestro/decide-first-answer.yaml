@@ -56,7 +56,7 @@ name: Decide first answer (UX-11)
 - tapOn: "Check it"
 - evalScript: ${output.taps = output.taps + 1}
 - extendedWaitUntil:
-    visible: "How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet|I bought it"
+    visible: "How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet.*|I bought it"
     timeout: 20000
 # 6. The one-time intro card (D-120), when this account has not seen it
 - runFlow:
@@ -81,12 +81,12 @@ name: Decide first answer (UX-11)
       - tapOn: "Not set yet"
       - evalScript: ${output.taps = output.taps + 1}
 - extendedWaitUntil:
-    visible: "Not ready yet|I bought it"
+    visible: "Not ready yet.*|I bought it"
     timeout: 20000
 # 8-12. Not ready: answer from quick estimates (ask, don't block), three amounts, close the keyboard, See the answer now
 - runFlow:
     when:
-      visible: "Not ready yet"
+      visible: "Not ready yet.*"
     commands:
       - evalScript: ${output.quick = true}
       - tapOn: "Answer from quick estimates"

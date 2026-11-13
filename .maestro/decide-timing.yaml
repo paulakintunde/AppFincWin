@@ -70,6 +70,8 @@ name: Decide timing (G-2)
     file: common/scroll-to.yaml
     env:
       TARGET: "Next"
+# 06.1-51: let the swipe's scroll stop first; a tap during the fling only stops the scroll and Next is never pressed
+- waitForAnimationToEnd
 - evalScript: ${output.t1 = Date.now()}
 - tapOn: "Next"
 - extendedWaitUntil:
