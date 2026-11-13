@@ -4,6 +4,8 @@
  * Draft copy, signed under D-08. Unlocking lives only here (D-14, D-20).
  */
 export const safetyNet = {
+  // 06.1-58 (DN-11): the settings screen's own title, so it is not a second "Safety net" beside Setup > Safety net.
+  settingsTitle: 'Safety net settings',
   settings: {
     title: 'Safety net',
     sub: 'Money kept for emergencies. Set in Grow.',
@@ -12,7 +14,9 @@ export const safetyNet = {
     tileLockedA11y: 'Locked, no answer spends it',
     tileUnlockedA11y: 'Unlocked, answers may use it',
     inNow: '{{amount}} in it now',
-    legend: '{{amount}} in it · Goal: {{size}}, set in Grow',
+    // 06.1-58 (A-SN-1): the amount is said once, as the display figure; the legend under it names the two parts.
+    legendInIt: 'In it now',
+    legendGoal: 'Goal {{amount}}, set in Grow',
     lockSwitch: 'Safety net locked',
     lockSub: 'Answers never spend it. Answers that would need it say Not yet.',
     beforeTitle: 'Before you unlock it',

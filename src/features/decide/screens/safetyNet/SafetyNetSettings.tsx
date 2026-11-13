@@ -2,6 +2,9 @@
 // Grow's flagged goal; this screen shows how much is in it, whether answers may use it, and switches that. Locking is immediate
 // (a plain toast); unlocking is behind the D52 confirm (an outline button here, the accent Unlock only inside the confirm).
 // decide_may_use is read defensively: absent means locked.
+// 06.1-58 (A-SN-1, DN-11): the padlock draws the state it names (closed when locked); the amount is said once, as a display figure
+// with a two-line legend (in it now / goal); the lock row's sub-line sits beside its switch; the screen has its own title, "Safety
+// net settings", so it is not a second "Safety net" next to Setup > Safety net.
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
@@ -61,7 +64,7 @@ export function SafetyNetSettings({ net, answer }: SafetyNetSettingsProps): Reac
   };
 
   const card = [styles.card, { backgroundColor: colors.surface }, shadows.card];
-  const title = t('decide.screens.safetyNet.settings.title');
+  const title = t('decide.screens.safetyNet.settingsTitle');
 
   if (row === null) {
     return (
@@ -93,30 +96,32 @@ export function SafetyNetSettings({ net, answer }: SafetyNetSettingsProps): Reac
               accessibilityLabel={tileA11y}
               style={[styles.tile, { backgroundColor: categorySwatch.blue.tint }]}
             >
-              <LockGlyphAnimated locked={locked} color={categorySwatch.blue.color} />
+              <LockGlyphAnimated testID="net-lock" locked={locked} color={categorySwatch.blue.color} />
             </View>
             <View style={styles.tileText}>
               <Text testID="net-word" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
                 {word}
               </Text>
-              <Text style={{ ...textRole(pairing, 'body'), color: colors.inkMuted }}>
-                {t('decide.screens.safetyNet.settings.inNow', { amount: money.amount(saved) })}
-              </Text>
             </View>
           </View>
-          {size !== null ? (
-            <>
-              <ProgressBar percent={goalPercent(saved, size)} variant="thick" tone="blue" accessibilityLabel={`${goalPercent(saved, size)}%`} />
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
-                {t('decide.screens.safetyNet.settings.legend', { amount: money.amount(saved), size: money.amount(size) })}
+          <View testID="net-figure" accessible accessibilityLabel={t('decide.screens.safetyNet.settings.inNow', { amount: money.amount(saved) })}>
+            <Text style={{ ...textRole(pairing, 'display'), color: colors.ink }}>{money.amount(saved)}</Text>
+            <Text testID="net-legend-in" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+              {t('decide.screens.safetyNet.settings.legendInIt')}
+            </Text>
+            {size !== null ? (
+              <Text testID="net-legend-goal" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+                {t('decide.screens.safetyNet.settings.legendGoal', { amount: money.amount(size) })}
               </Text>
-            </>
+            ) : null}
+          </View>
+          {size !== null ? (
+            <ProgressBar percent={goalPercent(saved, size)} variant="thick" tone="blue" accessibilityLabel={`${goalPercent(saved, size)}%`} />
           ) : null}
         </View>
 
         <View style={card}>
-          <ToggleRow label={t('decide.screens.safetyNet.settings.lockSwitch')} value={locked} onChange={onSwitch} />
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('decide.screens.safetyNet.settings.lockSub')}</Text>
+          <ToggleRow label={t('decide.screens.safetyNet.settings.lockSwitch')} sub={t('decide.screens.safetyNet.settings.lockSub')} value={locked} onChange={onSwitch} />
         </View>
 
         {locked ? (
