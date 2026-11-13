@@ -473,6 +473,7 @@ export function DecideHome() {
           formatMoney={money}
           recordsUpTo={inputs?.recordsAsOf == null ? null : dateText(inputs.recordsAsOf)}
           recordMonths={footer.months}
+          wholeUnit={10 ** currencyExponent(currency)}
           onRecords={() => go('/decide/setup/records')}
         />
 

@@ -415,8 +415,8 @@ describe('Your month (CO-D-57, UX-30, UX-29)', () => {
     mockPicture = { ...mockPicture!, monthEnd: minorUnits(-12_000), usual: { comesIn: minorUnits(300_000), goesOut: minorUnits(312_000), left: minorUnits(-12_000) } };
     await wrap(<DecideHome />);
     expect(screen.getByTestId('month-lead').props.accessibilityLabel).toBe('$120 short in October, after this month’s plans');
-    expect(screen.getByTestId('bar-down-SHORT')).toBeTruthy();
-    expect(screen.getAllByText('SHORT').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('stacked-seg-short', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByText(/Short \$120$/, { includeHiddenElements: true })).toBeTruthy();
   });
 });
 

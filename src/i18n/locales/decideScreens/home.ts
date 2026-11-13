@@ -88,6 +88,7 @@ export const home = {
     barA11y: 'Comes in {{moneyIn}}, goes out {{costs}}, left {{left}}',
     // 06.1-56 (A-HOME-6): the usual/low switch says what each leaves; the stacked bar's legend has two lines.
     leftSub: '{{amount}} left',
+    shortSub: '{{amount}} short',
     legendIn: 'Comes in {{amount}}',
     legendOut: 'Goes out {{costs}} · Left {{left}}',
     legendOutShort: 'Goes out {{costs}} · Short {{left}}',
