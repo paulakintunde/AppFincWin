@@ -220,6 +220,17 @@ export interface StepCheck {
   finish(from: StepNumber, prepare?: (c: CheckV2) => CheckV2): void;
 }
 
+/**
+ * 06.1-78 (from 06.1-53): the furthest step a draft has reached, for the column the open-check sheet resumes from. It is the larger
+ * of the stored value and the steps visited, so it only moves forward (it used to be written back unchanged and stayed at 1).
+ */
+export function furthestStepOf(stored: number, check: CheckV2): StepNumber {
+  const raw = check.layerAnswers[KEY_VISITED];
+  const visited = Array.isArray(raw) ? raw.filter((n): n is number => typeof n === 'number' && Number.isFinite(n)) : [];
+  const top = Math.max(stored, ...visited);
+  return top >= 3 ? 3 : top <= 1 ? 1 : 2;
+}
+
 /** `fallbackRow` is a check that exists only optimistically (just created, not yet in the list); the stored row wins once it arrives. */
 export function useStepCheck(id: string, fallbackRow: DecideCheckRow | null = null): StepCheck {
   usePerfMount('step.mount'); // 06.1-72: perf builds only
@@ -248,7 +259,7 @@ export function useStepCheck(id: string, fallbackRow: DecideCheckRow | null = nu
     if (next === null || current === null) return;
     held.current = null;
     perfMark('step.flush:start'); // 06.1-72: perf builds only
-    doSave({ id, name: current.name, inputs: toStoredV2(next) as Record<string, unknown>, furthestStep: current.furthest_step });
+    doSave({ id, name: current.name, inputs: toStoredV2(next) as Record<string, unknown>, furthestStep: furthestStepOf(current.furthest_step, next) });
     perfMark('step.flush:end');
   }, [id]);
 
