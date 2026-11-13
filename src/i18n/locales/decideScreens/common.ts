@@ -56,6 +56,14 @@ export const common = {
     lengthRange: 'The length goes from 1 to 120 months.',
     dayRange: 'The day goes from 1 to 31.',
   },
+  // 06.1-52 (G-5): the NeedLine under a disabled button says what is still needed. Statements, never orders.
+  need: {
+    kind: 'A kind is needed to go on.',
+    priceAboveZero: 'A price above zero is needed.',
+    amount: 'No amount yet.',
+    stillSaving: 'This check is still saving. It opens here once it is saved.',
+    loading: 'Your records are still loading.',
+  },
   toast: {
     added: 'Added: {{item}}.',
     removed: 'Removed: {{item}}.',

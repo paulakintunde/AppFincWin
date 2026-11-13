@@ -94,6 +94,7 @@ export const DRAFT_COPY_KEYS = [
   'money.customCurrency.error.valueInvalid',
   'money.amountInput.error.empty',
   'money.amountInput.error.invalid',
+  'money.amountInput.error.digitsOnly',
   'money.amountInput.error.ambiguousSeparator',
   'money.amountInput.error.tooManyDecimals_zero',
   'money.amountInput.error.tooManyDecimals_one',

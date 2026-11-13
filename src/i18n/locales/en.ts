@@ -213,6 +213,8 @@ const en = {
       error: {
         empty: 'Type an amount.',
         invalid: 'That isn’t an amount.',
+        // 06.1-52 (C-10): {{example}} is 1,200.50 in the region's own marks.
+        digitsOnly: 'Digits only, like 1200 or {{example}}.',
         ambiguousSeparator: 'That doesn’t match how amounts are written here — try {{example}}.',
         tooManyDecimals_zero: 'No decimal places here.',
         tooManyDecimals_one: 'Up to {{count}} decimal place here.',

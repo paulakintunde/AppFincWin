@@ -33,10 +33,60 @@ describe('MoneyInput', () => {
     );
     await fireEvent.changeText(getByLabelText('Loan amount'), '12.5');
     expect(onChange).toHaveBeenLastCalledWith(1250);
-    await fireEvent.changeText(getByLabelText('Loan amount'), 'abc');
+    // 06.1-52: a half-typed grouping is not an error yet; it waits for the blur.
+    await fireEvent.changeText(getByLabelText('Loan amount'), '1,2');
     expect(onChange).toHaveBeenLastCalledWith(null);
-    // The parser error waits for the blur.
-    expect(queryByText(/amount/i)).toBeNull();
+    expect(queryByText(/match how amounts/i)).toBeNull();
+  });
+
+  it('06.1-52 (C-10): text no more typing can fix shows the digits-only line at once, and empty text shows none', async () => {
+    const onChange = jest.fn();
+    const { getByLabelText, getByText, queryByText } = await wrap(
+      <MoneyInput value={null} currency="USD" onChange={onChange} label="Loan" accessibilityLabel="Loan amount" />,
+    );
+    const input = getByLabelText('Loan amount');
+    await fireEvent.changeText(input, '12a');
+    expect(onChange).toHaveBeenLastCalledWith(null);
+    expect(getByText('Digits only, like 1200 or 1,200.50.')).toBeTruthy();
+    await fireEvent.changeText(input, '');
+    expect(queryByText(/Digits only/)).toBeNull();
+    await fireEvent.changeText(input, '$150');
+    expect(onChange).toHaveBeenLastCalledWith(15000);
+    expect(queryByText(/Digits only/)).toBeNull();
+    await fireEvent.changeText(input, '£150');
+    expect(onChange).toHaveBeenLastCalledWith(null);
+    expect(getByText('Digits only, like 1200 or 1,200.50.')).toBeTruthy();
+  });
+
+  it('06.1-52 (X-4): on blur a whole amount rests as 9,000, a fractional one keeps its decimals; the value is unchanged', async () => {
+    const onChange = jest.fn();
+    const { getByLabelText } = await wrap(
+      <MoneyInput value={null} currency="USD" onChange={onChange} label="Loan" accessibilityLabel="Loan amount" />,
+    );
+    const input = getByLabelText('Loan amount');
+    await fireEvent.changeText(input, '9000.00');
+    await fireEvent(input, 'blur');
+    expect(getByLabelText('Loan amount').props.value).toBe('9,000');
+    expect(onChange).toHaveBeenLastCalledWith(900000);
+    await fireEvent.changeText(input, '$9000.5');
+    await fireEvent(input, 'blur');
+    expect(getByLabelText('Loan amount').props.value).toBe('9,000.50');
+    expect(onChange).toHaveBeenLastCalledWith(900050);
+  });
+
+  it('06.1-52 (X-4): prefix shows the currency symbol and suffix the trailing word', async () => {
+    const { getByTestId, queryByTestId, rerender } = await wrap(
+      <MoneyInput value={null} currency="USD" onChange={jest.fn()} label="Rent" accessibilityLabel="Rent" prefix="symbol" suffix="a month" />,
+    );
+    expect(getByTestId('money-symbol')).toHaveTextContent('$');
+    expect(getByTestId('money-suffix')).toHaveTextContent('a month');
+    await rerender(
+      <ThemeProvider>
+        <MoneyInput value={null} currency="USD" onChange={jest.fn()} label="Rent" accessibilityLabel="Rent" />
+      </ThemeProvider>,
+    );
+    expect(queryByTestId('money-symbol')).toBeNull();
+    expect(queryByTestId('money-suffix')).toBeNull();
   });
 
   it('WR-D05: a parent reset to null clears the text; a null answer to its own report keeps it', async () => {
@@ -75,7 +125,8 @@ describe('MoneyInput', () => {
     await fireEvent.changeText(input, 'abc');
     await fireEvent(input, 'blur');
     expect(onChange).toHaveBeenLastCalledWith(null);
-    expect(getByText(/amount/i)).toBeTruthy();
+    // 06.1-52 (C-10): the invalid-text error now reads digits only.
+    expect(getByText(/Digits only/)).toBeTruthy();
   });
 });
 

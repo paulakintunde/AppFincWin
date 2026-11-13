@@ -114,4 +114,68 @@ describe('useAmountParser', () => {
       'Up to 3 decimal places here.'
     );
   });
+  describe('06.1-52 (C-10): the field’s own currency marker and grouping', () => {
+    it.each([
+      ['$150', 15000],
+      ['150 $', 15000],
+      [' $1,200.50 ', 120050],
+      ['1,200.50', 120050],
+      ['USD 150', 15000],
+    ])('en-US USD: %j parses to %d', async (text, minor) => {
+      mockDevice(enUS);
+      const { result } = await renderHook(() => useAmountParser());
+      expect(result.current.parse(text, 'USD')).toEqual({ ok: true, value: minor });
+    });
+
+    it('de-DE: "€12,50" parses to 1250', async () => {
+      mockDevice(enUS);
+      const { result } = await renderHook(() => useAmountParser('DE'));
+      expect(result.current.parse('€12,50', 'EUR')).toEqual({ ok: true, value: 1250 });
+      expect(result.current.parse('12,50 €', 'EUR')).toEqual({ ok: true, value: 1250 });
+    });
+
+    it('T-06.1-52-01: another currency’s symbol still fails ("£150" for USD, "$150" for CAD)', async () => {
+      mockDevice(enUS);
+      const { result } = await renderHook(() => useAmountParser());
+      expect(result.current.parse('£150', 'USD')).toEqual({ ok: false, error: 'invalid', maxDecimals: 2 });
+      expect(result.current.parse('$150', 'CAD')).toEqual({ ok: false, error: 'invalid', maxDecimals: 2 });
+      expect(result.current.parse('CA$150', 'CAD')).toEqual({ ok: true, value: 15000 });
+      expect(result.current.parse('abc', 'USD')).toEqual({ ok: false, error: 'invalid', maxDecimals: 2 });
+      expect(result.current.parse('$$150', 'USD')).toEqual({ ok: false, error: 'invalid', maxDecimals: 2 });
+    });
+
+    it('a custom code Intl cannot read keeps only the code as a marker', async () => {
+      mockDevice(enUS);
+      const { result } = await renderHook(() => useAmountParser());
+      expect(result.current.parse('GLD 5', 'GLD', 0)).toEqual({ ok: true, value: 5 });
+      expect(result.current.parse('5', 'gold', 0)).toEqual({ ok: true, value: 5 });
+    });
+
+    it('the invalid message reads digits only, with the region’s own marks', async () => {
+      mockDevice(enUS);
+      const { result } = await renderHook(() => useAmountParser());
+      expect(result.current.errorMessage({ ok: false, error: 'invalid', maxDecimals: 2 })).toBe('Digits only, like 1200 or 1,200.50.');
+      expect(result.current.errorMessage({ ok: false, error: 'invalid', maxDecimals: 0 })).toBe('Digits only, like 1200 or 1,200.');
+      const de = await renderHook(() => useAmountParser('DE'));
+      expect(de.result.current.errorMessage({ ok: false, error: 'invalid', maxDecimals: 2 })).toBe('Digits only, like 1200 or 1.200,50.');
+    });
+  });
+
+  describe('06.1-52 (X-4): toDisplayText', () => {
+    it.each([
+      ['US', 'USD', 900000, '9,000'],
+      ['US', 'USD', 900050, '9,000.50'],
+      ['US', 'USD', 5, '0.05'],
+      ['US', 'USD', 0, '0'],
+      ['US', 'USD', -123456789, '1,234,567.89'],
+      ['DE', 'EUR', 120050, '1.200,50'],
+      ['JP', 'JPY', 1200000, '1,200,000'],
+      ['IN', 'INR', 123456700, '12,34,567'],
+    ])('%s %s %d reads %s and parses back', async (region, code, minor, text) => {
+      mockDevice(enUS);
+      const { result } = await renderHook(() => useAmountParser(region));
+      expect(result.current.toDisplayText(minor, code)).toBe(text);
+      expect(result.current.parse(text, code)).toEqual({ ok: true, value: Math.abs(minor) });
+    });
+  });
 });
