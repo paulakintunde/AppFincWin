@@ -13,6 +13,7 @@ import type { Evaluation, Prepared, V3Inputs } from '@/engine/decide/v3';
 import { useDecideChecks, useDecideLinks, useDecideSettings, useDecideSnapshot } from './decide';
 import { useDecideAnswers } from './decideAnswers';
 import { useRecurringDismissals } from './recurringDismissals';
+import { DECIDE_READ_STALE_MS, DecideReadStaleContext } from './decideStale';
 
 export interface DecideV3State {
   status: 'loading' | 'error' | 'ready';
@@ -98,8 +99,15 @@ const READ_NAMES = ['settings', 'answers', 'dismissals', 'checks', 'links'] as c
 // outside a scope (tests, other screens) the hook runs on its own as before. Both give the same state for the same cache.
 const DecideV3Context = createContext<DecideV3State | null>(null);
 
-/** Runs useDecideV3 once and hands its state to every useDecideV3 below it. */
+/**
+ * Runs useDecideV3 once and hands its state to every useDecideV3 below it. 06.1-78 (G-72-2): the scope also holds every read
+ * below it (its own included) fresh for DECIDE_READ_STALE_MS, so the record-context reads do not refetch when a Decide screen mounts.
+ */
 export function DecideV3Scope({ children }: { children: ReactNode }) {
+  return createElement(DecideReadStaleContext.Provider, { value: DECIDE_READ_STALE_MS }, createElement(DecideV3ScopeRun, null, children));
+}
+
+function DecideV3ScopeRun({ children }: { children: ReactNode }) {
   const state = useDecideV3Live();
   return createElement(DecideV3Context.Provider, { value: state }, children);
 }

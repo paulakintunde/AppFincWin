@@ -3,6 +3,7 @@
 // answered_net_not_set_at. Reads only, plus the device flag write.
 import { useCallback, useEffect, useState } from 'react';
 import { useDecideSettings } from '@/data/queries/decide';
+import { DECIDE_READ_STALE_MS } from '@/data/queries/decideStale';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useIsOnline } from '@/data/sync/useIsOnline';
 import { useT } from '@/i18n';
@@ -29,7 +30,7 @@ export function useFirstAnswerGate(): FirstAnswerGateState {
   const userId = rc.userId ?? undefined;
   const householdId = rc.householdId ?? undefined;
   const settings = useDecideSettings(userId);
-  const goals = useSavingsGoalRows(userId, householdId);
+  const goals = useSavingsGoalRows(userId, householdId, { staleTime: DECIDE_READ_STALE_MS }); // 06.1-78 (G-72-2)
   const isOnline = useIsOnline(); // 06.1-72: the online flag only
   const version = introVersion(t);
   // undefined = not read yet; null = never seen

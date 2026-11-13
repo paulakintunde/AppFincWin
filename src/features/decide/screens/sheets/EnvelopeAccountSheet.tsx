@@ -8,6 +8,7 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useAccounts } from '@/data/queries/accounts';
+import { DECIDE_READ_STALE_MS } from '@/data/queries/decideStale';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { holdsMoney } from '@/features/record/accounts/accountUseSuggest';
@@ -46,7 +47,7 @@ function EnvelopeAccountForm({ goalId, onClose, setAccount }: EnvelopeAccountShe
   const rc = useRecordContext();
   const userId = rc.userId ?? undefined;
   const householdId = rc.householdId ?? undefined;
-  const goalsQ = useSavingsGoalRows(userId, householdId);
+  const goalsQ = useSavingsGoalRows(userId, householdId, { staleTime: DECIDE_READ_STALE_MS }); // 06.1-78 (G-72-2)
   const accountsQ = useAccounts(householdId);
 
   const goal = goalsQ.data?.find((g) => g.id === goalId && g.deleted_at === null) ?? null;

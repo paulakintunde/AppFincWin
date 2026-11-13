@@ -11,6 +11,7 @@
 import { useHouseholdId } from '@/data/queries/household';
 import { useMoneyPrefs } from '@/data/queries/moneyPrefs';
 import { useHouseholdHorizon, useRecordPrefs, useSampleExists } from '@/data/queries/recordPrefs';
+import { useDecideReadStale } from '@/data/queries/decideStale';
 import { regionWeekStart } from '@/engine/money';
 import { localDateIn } from '@/engine/time';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -42,11 +43,15 @@ export function useRecordContext(): RecordContext {
   const { status, user } = useAuth();
   const userId = user?.id ?? null;
   const householdQuery = useHouseholdId(userId ?? undefined);
-  const prefsQuery = useMoneyPrefs(userId ?? undefined);
+  // 06.1-78 (G-72-2): inside a Decide screen these reads stay fresh for Decide's five minutes, so the answer's mount does not
+  // refetch them; a write still refetches its keys at once. Elsewhere `read` is undefined and the app default applies.
+  const staleTime = useDecideReadStale();
+  const read = staleTime === undefined ? undefined : { staleTime };
+  const prefsQuery = useMoneyPrefs(userId ?? undefined, read);
   const { prefs } = prefsQuery;
-  const recordPrefs = useRecordPrefs(userId ?? undefined).prefs;
-  const { horizonMonth } = useHouseholdHorizon(householdQuery.data ?? undefined);
-  const { hasSamples } = useSampleExists(householdQuery.data ?? undefined);
+  const recordPrefs = useRecordPrefs(userId ?? undefined, read).prefs;
+  const { horizonMonth } = useHouseholdHorizon(householdQuery.data ?? undefined, read);
+  const { hasSamples } = useSampleExists(householdQuery.data ?? undefined, read);
   const timeZone = getDeviceTimeZone();
   const today = todayIn(timeZone);
   const weekStart: 0 | 1 = recordPrefs.week_start ?? regionWeekStart(getDeviceRegion(prefs.region)) ?? 1;
