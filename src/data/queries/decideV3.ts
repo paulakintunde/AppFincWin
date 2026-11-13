@@ -5,8 +5,8 @@ import { useCallback, useMemo } from 'react';
 import type { DecideLinkRow } from '@/db/decideLinks';
 import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
 import { classifyReadError, type DbErrorKind } from '@/db/errors';
-import { computeV3, preparedV3 } from '@/features/decide/snapshot/v3/computeV3';
-import { settingsSourceOf } from '@/features/decide/snapshot/v3/settingsSource';
+import { emptyCheckEvaluation, preparedV3 } from '@/features/decide/snapshot/v3/computeV3';
+import { liveBridgeCheckIds, settingsSourceOf, type SettingsSourceInput } from '@/features/decide/snapshot/v3/settingsSource';
 import type { V3SettingsSource } from '@/features/decide/snapshot/v3/types';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import type { Evaluation, Prepared, V3Inputs } from '@/engine/decide/v3';
@@ -56,6 +56,39 @@ export function planLiveOf(links: readonly DecideLinkRow[], source: SnapshotSour
   };
 }
 
+export interface SharedSettingsDeps {
+  source: SnapshotSource;
+  settings: SettingsSourceInput['settings'];
+  answers: SettingsSourceInput['answers'];
+  dismissals: SettingsSourceInput['dismissals'];
+  checks: SettingsSourceInput['checks'];
+  links: readonly DecideLinkRow[];
+}
+
+interface SharedSettings {
+  settings: SettingsSourceInput['settings'];
+  answers: SettingsSourceInput['answers'];
+  dismissals: SettingsSourceInput['dismissals'];
+  bridge: string;
+  v3: V3SettingsSource | null;
+}
+
+// 06.1-46 (B-1): one settings source per data version, shared by every useDecideV3 mounted at once, so preparedV3 (keyed on
+// the source and settings identities) builds once instead of once per hook. Checks reach the settings only through the live
+// bridge ids, so they key by that list, not the rows: a draft save that changes only a check's stored inputs keeps the
+// same object. One entry per snapshot source, held weakly (a dropped source frees it).
+const sharedSettings = new WeakMap<SnapshotSource, SharedSettings>();
+
+export function sharedSettingsSource(deps: SharedSettingsDeps): V3SettingsSource | null {
+  const planLive = planLiveOf(deps.links, deps.source);
+  const bridge = liveBridgeCheckIds({ checks: deps.checks, planLive }).join(',');
+  const hit = sharedSettings.get(deps.source);
+  if (hit !== undefined && hit.settings === deps.settings && hit.answers === deps.answers && hit.dismissals === deps.dismissals && hit.bridge === bridge) return hit.v3;
+  const v3 = settingsSourceOf({ settings: deps.settings, answers: deps.answers, dismissals: deps.dismissals, checks: deps.checks, planLive });
+  sharedSettings.set(deps.source, { settings: deps.settings, answers: deps.answers, dismissals: deps.dismissals, bridge, v3 });
+  return v3;
+}
+
 const NO_CHECKS: readonly { id: string }[] = [];
 const READ_NAMES = ['settings', 'answers', 'dismissals', 'checks', 'links'] as const;
 
@@ -92,10 +125,11 @@ export function useDecideV3(): DecideV3State {
   const linkRows = links.data;
   const computed = useMemo(() => {
     if (source === null || missing || settingsRow === undefined || answerRows === undefined || dismissalRows === undefined || checkRows === undefined || linkRows === undefined) return null;
-    const v3 = settingsSourceOf({ settings: settingsRow, answers: answerRows, dismissals: dismissalRows, checks: checkRows, planLive: planLiveOf(linkRows, source) });
-    // ENG-13 / APP-03 (05.4-33): one build; the evaluation is judged on the same prepared inputs.
+    const v3 = sharedSettingsSource({ source, settings: settingsRow, answers: answerRows, dismissals: dismissalRows, checks: checkRows, links: linkRows });
+    // ENG-13 / APP-03 (05.4-33): one build; the evaluation is judged on the same prepared inputs. 06.1-46 (B-1): the same
+    // (source, v3) identities across hooks, so one prepare and one empty-check judge per data version.
     const held = preparedV3(source, v3);
-    return { inputs: held.inputs, prepared: held.prepared, evaluation: computeV3(source, v3, {}), source, v3 };
+    return { inputs: held.inputs, prepared: held.prepared, evaluation: emptyCheckEvaluation(source, v3), source, v3 };
   }, [source, missing, settingsRow, answerRows, dismissalRows, checkRows, linkRows]);
 
   const retrySnapshot = snapshot.retry;

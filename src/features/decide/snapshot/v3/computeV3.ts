@@ -18,6 +18,7 @@ import {
   type V3Inputs,
 } from '@/engine/decide/v3';
 import { currencyCode } from '@/engine/money';
+import { perfMark } from '@/features/decide/perf/perfMarks';
 import { buildDecideSnapshot, type SnapshotSource } from '../buildSnapshot';
 import { parseCheckInputs } from '../checkInputs';
 import { inHomeCurrency } from '../checkCurrency';
@@ -60,6 +61,8 @@ export interface PreparedV3 {
 interface PreparedEntry extends PreparedV3 {
   readonly v3: V3SettingsSource | null;
   readonly uses: Readonly<Record<string, AccountUse>> | undefined;
+  /** 06.1-46 (B-1): the empty-check evaluation, judged once per entry on first ask and shared by every hook. */
+  empty?: Evaluation;
 }
 
 // 05.4 ENG-13 / APP-03 (05.4-33): build and prepare once per data change. The read hooks memoise `source` and the settings
@@ -72,11 +75,32 @@ export function preparedV3(source: SnapshotSource, v3: V3SettingsSource | null, 
   const list = preparedBySource.get(source) ?? [];
   const hit = list.find((e) => e.v3 === v3 && e.uses === uses);
   if (hit !== undefined) return hit;
+  return preparedMiss(source, v3, uses, list);
+}
+
+function preparedMiss(
+  source: SnapshotSource,
+  v3: V3SettingsSource | null,
+  uses: Readonly<Record<string, AccountUse>> | undefined,
+  list: PreparedEntry[]
+): PreparedEntry {
+  perfMark('decide.prepare:start'); // 06.1-46: a miss is the whole build; a hit costs nothing
   const built = buildDecideSnapshot(source);
   const inputs = buildV3Inputs(source, v3, built, uses);
   const entry: PreparedEntry = { v3, uses, built, inputs, prepared: prepare(inputs) };
+  perfMark('decide.prepare:end');
   preparedBySource.set(source, [entry, ...list].slice(0, PREPARED_PER_SOURCE));
   return entry;
+}
+
+/**
+ * 06.1-46 (B-1): the evaluation of an empty check (the home and setup reading), judged once per prepared entry and shared by
+ * every hook that asks with the same source and settings. Equal to `computeV3(source, v3, {})`.
+ */
+export function emptyCheckEvaluation(source: SnapshotSource, v3: V3SettingsSource | null): Evaluation {
+  const entry = preparedV3(source, v3) as PreparedEntry;
+  if (entry.empty === undefined) entry.empty = computeV3(source, v3, {});
+  return entry.empty;
 }
 
 /** Judges one stored check on the held Prepared (per key press: only the check-dependent part runs). */

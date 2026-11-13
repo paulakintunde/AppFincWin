@@ -5,7 +5,7 @@ import { join } from 'path';
 
 const DIR = join(__dirname, '..');
 const FORBIDDEN = [/supabase/i, /\.from\(/, /AsyncStorage/, /SecureStore/, /\bfetch\(/];
-const ALLOWED_IMPORT = /^(@\/engine\/decide\/v3|@\/engine\/money|@\/engine\/payoff|@\/engine\/recurring|\.\.\/(buildSnapshot|conversion|types|checkInputs|checkCurrency)|@\/db\/(decideSettings|decideAnswers|recurringDismissals)|@\/features\/income\/notPay|@\/features\/grow\/connect|\.\/[\w-]+)$/; // the three db row types settingsSource reads (import type only); notPay is the pure not-pay key check; 06 D-02: grow/connect is the one path from Grow into Decide; 06 D-02: grow/connect is the one path from Grow into Decide
+const ALLOWED_IMPORT = /^(@\/engine\/decide\/v3|@\/engine\/money|@\/engine\/payoff|@\/engine\/recurring|\.\.\/(buildSnapshot|conversion|types|checkInputs|checkCurrency)|@\/db\/(decideSettings|decideAnswers|recurringDismissals)|@\/features\/income\/notPay|@\/features\/grow\/connect|@\/features\/decide\/perf\/perfMarks|\.\/[\w-]+)$/; // 06.1-46: perfMarks is the dev-only timing harness (no storage, no data). The three db row types settingsSource reads (import type only); notPay is the pure not-pay key check; 06 D-02: grow/connect is the one path from Grow into Decide; 06 D-02: grow/connect is the one path from Grow into Decide
 const COPY_FIELD = /^(accounts|transactions|rows|series|envelopes|goals|pots|debts|balance|balances)$/i;
 
 /** Problems found in one source text; [] = clean. */

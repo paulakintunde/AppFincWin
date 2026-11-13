@@ -40,7 +40,7 @@ export interface SettingsSourceInput {
 }
 
 /** Pitfall 9: a held-back bridge counts only while its check is bought, not deleted, and its plan is still live. */
-function liveBridgeCheckIds(input: SettingsSourceInput): string[] {
+export function liveBridgeCheckIds(input: Pick<SettingsSourceInput, 'checks' | 'planLive'>): string[] {
   return input.checks.filter((c) => c.status === 'bought' && c.deleted_at === null && input.planLive(c.id)).map((c) => c.id);
 }
 
