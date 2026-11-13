@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06.1 device walk merged (plans 73 rescoped for DB-1, 75-80 new; OQ answers locked) (51/78); wave 21 running: 73, 53, 54, 55, 63, 76"
+stopped_at: "Phase 06.1 wave 21 closed (57/78): 53, 54, 55, 63, 73, 76 done; 73 left G-73-1 (Decide home re-renders under the answer screen) open; wave 22 next: 72, 56, 77"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:
