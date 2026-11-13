@@ -5,11 +5,14 @@ import { AppState } from 'react-native';
 import { QueryClient } from '@tanstack/react-query';
 import type { PersistedClient } from '@tanstack/react-query-persist-client';
 import type { LargeSecureStore } from '@/services/supabase/largeSecureStore';
+import { addBreadcrumb } from '@sentry/react-native';
 import {
   createEncryptedPersister,
   flushPersist,
   persister,
+  persistOptions,
   startPersistOnBackground,
+  startThrottledPersist,
   WRITES_OVERFLOW_PREFIX,
 } from '../cache/persister';
 
@@ -122,5 +125,73 @@ describe('B-5 throttled persister wrapper', () => {
     }
     stop();
     await flushPersist();
+  });
+
+  it('06.1-73: persistLater runs the dehydrate once, when the scheduled save fires, for a burst of cache events', async () => {
+    jest.useFakeTimers();
+    const p = createEncryptedPersister(fakeStorage() as unknown as LargeSecureStore, 1000);
+    const build = jest.fn(() => client(5));
+    for (let i = 0; i < 25; i++) {
+      p.persistLater(build);
+      await jest.advanceTimersByTimeAsync(24);
+    }
+    expect(build).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(build).toHaveBeenCalledTimes(1);
+    expect(mockBasePersist).toHaveBeenCalledTimes(1);
+  });
+
+  it('06.1-73: persistNow saves the given client at once and drops a pending build; removeClient drops it too', async () => {
+    jest.useFakeTimers();
+    const p = createEncryptedPersister(fakeStorage() as unknown as LargeSecureStore, 1000);
+    const build = jest.fn(() => client(1));
+    p.persistLater(build);
+    await p.persistNow(client(9));
+    expect((mockBasePersist.mock.calls[0]![0] as PersistedClient).timestamp).toBe(9);
+    await jest.advanceTimersByTimeAsync(2000);
+    expect(build).not.toHaveBeenCalled();
+    p.persistLater(build);
+    await p.removeClient();
+    await jest.advanceTimersByTimeAsync(2000);
+    expect(build).not.toHaveBeenCalled();
+    expect(mockBasePersist).toHaveBeenCalledTimes(1);
+  });
+
+  it('06.1-73: a build that throws skips the save instead of breaking the chain', async () => {
+    const p = createEncryptedPersister(fakeStorage() as unknown as LargeSecureStore, 0);
+    p.persistLater(() => {
+      throw new Error('dehydrate failed');
+    });
+    await p.flush();
+    expect(mockBasePersist).not.toHaveBeenCalled();
+    await p.persistClient(client(3));
+    expect(mockBasePersist).toHaveBeenCalledTimes(1);
+  });
+
+  it('06.1-73: startThrottledPersist dehydrates once per window for many cache events, with the persist options', async () => {
+    jest.useFakeTimers();
+    const p = createEncryptedPersister(fakeStorage() as unknown as LargeSecureStore, 1000);
+    const qc = new QueryClient();
+    const stop = startThrottledPersist(qc, p, persistOptions);
+    for (let i = 0; i < 30; i++) qc.setQueryData(['k', i], i);
+    await jest.advanceTimersByTimeAsync(1000);
+    expect(mockBasePersist).toHaveBeenCalledTimes(1);
+    const saved = mockBasePersist.mock.calls[0]![0] as PersistedClient;
+    expect(saved.buster).toBe(persistOptions.buster);
+    expect(saved.clientState.queries).toHaveLength(30);
+    stop();
+    qc.setQueryData(['k', 99], 1);
+    await jest.advanceTimersByTimeAsync(2000);
+    expect(mockBasePersist).toHaveBeenCalledTimes(1);
+  });
+
+  it('06.1-73: each save leaves one persist breadcrumb with numbers only', async () => {
+    (addBreadcrumb as jest.Mock).mockClear();
+    const p = createEncryptedPersister(fakeStorage() as unknown as LargeSecureStore, 0);
+    await p.persistClient(client(1));
+    const crumbs = (addBreadcrumb as jest.Mock).mock.calls.map((c) => c[0] as { category: string; message: string; data: Record<string, unknown> });
+    const saved = crumbs.filter((b) => b.category === 'persist' && b.message === 'saved');
+    expect(saved).toHaveLength(1);
+    for (const v of Object.values(saved[0]!.data)) expect(typeof v).toBe('number');
   });
 });
