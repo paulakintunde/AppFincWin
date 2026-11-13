@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06.1 wave 13 done: 30 (FIN-22 long plans, FIN-23 UK/EU APR; LL/AP cases approved) complete (39/42); next wave 14 (plan 32)"
+stopped_at: "Phase 06.1 gap plans 43-61 planned and checked (0 blockers; 4 warnings fixed); plan 32 closed (Task 2 folded into 61); 40/61; next wave 15 (43, 46, 48)"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:
