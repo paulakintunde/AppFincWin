@@ -1,7 +1,7 @@
 // 06.1-11: the one hook every answer, stepper and sheet uses to reach the v3 engine. It rides on useDecideV3 so nothing is read
 // twice: the Prepared is built once per data change (APP-05) and typing a price re-runs only judgeCheck. The bigint-carrying
 // Evaluation lives in memory only and is never put in a React Query cache. Engine reached through the barrel only.
-import { useCallback, useMemo } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef } from 'react';
 import {
   cashTimeline,
   insteadFutures,
@@ -19,6 +19,7 @@ import {
 } from '@/engine/decide/v3';
 import type { DbErrorKind } from '@/db/errors';
 import { useDecideV3, type DecideV3State } from '@/data/queries/decideV3';
+import { perfMark } from '@/features/decide/perf/perfMarks';
 
 export interface CheckEngine {
   status: DecideV3State['status'];
@@ -40,6 +41,24 @@ export interface CheckEngine {
 /** D-02: home buying stays hidden; a property check is not judged. */
 const isHomeKind = (check: CheckV2): boolean => check.itemType.kind === 'preset' && check.itemType.value === 'property';
 
+const NO_DAYS: readonly LocalDate[] = [];
+/** Identity-keyed: a Prepared and a judged check object give one pay-day list for as long as both live. */
+const paydayCache = new WeakMap<Prepared, WeakMap<CheckV2, readonly LocalDate[]>>();
+function paydaysOf(prepared: Prepared, judged: CheckV2): readonly LocalDate[] {
+  let byCheck = paydayCache.get(prepared);
+  if (byCheck === undefined) {
+    byCheck = new WeakMap();
+    paydayCache.set(prepared, byCheck);
+  }
+  const hit = byCheck.get(judged);
+  if (hit !== undefined) return hit;
+  const days = new Set<string>();
+  for (const row of cashTimeline(prepared, judged).rows) if (row.kind === 'pay') days.add(row.date);
+  const list = [...days].sort() as LocalDate[];
+  byCheck.set(judged, list);
+  return list;
+}
+
 export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string }): CheckEngine {
   const state = useDecideV3();
   const prepared: Prepared | null = state.prepared;
@@ -54,17 +73,32 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
     return hit === undefined ? check : { ...check, volatileCover: hit.bool_value };
   }, [check, checkId, answers]);
 
+  // 06.1-47 (B-6, ANR): the shown verdict judges a deferred copy of the check, so a keystroke renders the field at once and the
+  // judge runs in a background render that React drops if the next keystroke arrives first. The on-demand extras below
+  // (both, judgeOn, timeline, readyDate) still use the live check: they run only when the user asks for them.
+  const deferredJudged = useDeferredValue(judged);
   const evaluation = useMemo<Evaluation | null>(() => {
-    if (prepared === null || judged === null) return null;
-    return (judged.quickLines ?? []).length > 0 ? judgeWithQuickLines(prepared, judged) : judgeCheck(prepared, judged);
-  }, [prepared, judged]);
+    if (prepared === null || deferredJudged === null) return null;
+    return (deferredJudged.quickLines ?? []).length > 0 ? judgeWithQuickLines(prepared, deferredJudged) : judgeCheck(prepared, deferredJudged);
+  }, [prepared, deferredJudged]);
+
+  // 06.1-47: the end of the Check it -> answer timing, once per check id (the start is marked by Decide home's Check it).
+  const markedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (evaluation === null) return;
+    const key = checkId ?? '';
+    if (markedFor.current === key) return;
+    markedFor.current = key;
+    perfMark('decide.answer:end');
+  }, [evaluation, checkId]);
 
   const both = useCallback((): BothResults | null => (prepared === null || judged === null ? null : judgeBoth(prepared, judged)), [prepared, judged]);
+  // futures extends the shown evaluation, so it reads the same (deferred) check the evaluation was judged on.
   const futures = useCallback((): Futures | null => {
-    if (evaluation === null || evaluation.purchase === null || judged === null) return null;
+    if (evaluation === null || evaluation.purchase === null || deferredJudged === null) return null;
     const { result, month, funds, purchase } = evaluation;
-    return insteadFutures({ result, month, funds, purchase, userRate: null, years: 1, check: { price: judged.price, value: judged.value } });
-  }, [evaluation, judged]);
+    return insteadFutures({ result, month, funds, purchase, userRate: null, years: 1, check: { price: deferredJudged.price, value: deferredJudged.value } });
+  }, [evaluation, deferredJudged]);
   const readyDate = useCallback((saved: number): LocalDate | null => (prepared === null || judged === null ? null : saveForItReadyDate(prepared, judged, saved)), [prepared, judged]);
   const timeline = useCallback((): CashTimeline | null => (prepared === null || judged === null ? null : cashTimeline(prepared, judged)), [prepared, judged]);
 
@@ -76,12 +110,9 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
     },
     [prepared, judged]
   );
-  const paydays = useCallback((): readonly LocalDate[] => {
-    if (prepared === null || judged === null) return [];
-    const days = new Set<string>();
-    for (const row of cashTimeline(prepared, judged).rows) if (row.kind === 'pay') days.add(row.date);
-    return [...days].sort() as LocalDate[];
-  }, [prepared, judged]);
+  // 06.1-47 (B-7): the 90-day pay-day list is built at most once per Prepared and check (paydaysOf). It stays lazy (nothing
+  // runs until an answer asks), and every later call returns the same array, so AnswerScreen re-renders no longer walk the cash path.
+  const paydays = useCallback((): readonly LocalDate[] => (prepared === null || judged === null ? NO_DAYS : paydaysOf(prepared, judged)), [prepared, judged]);
 
   return { status: state.status, errorKind: state.errorKind, missingReads: state.missingReads, refetch: state.refetch, evaluation, both, futures, readyDate, timeline, judgeOn, paydays };
 }

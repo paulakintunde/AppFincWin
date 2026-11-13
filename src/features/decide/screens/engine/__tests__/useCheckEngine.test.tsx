@@ -1,6 +1,6 @@
 // 06.1-11: useCheckEngine and useMonthPicture over the mocked reads (as decideV3.test): calm per-keystroke judging, quick lines,
 // the hidden home kind, and offline/error states. Spies sit on the engine barrel, which computeV3 and the hooks both import.
-import { renderHook } from '@testing-library/react-native';
+import { act, renderHook } from '@testing-library/react-native';
 import { EMPTY_DECIDE_SETTINGS } from '@/db/decideSettings';
 import { demoSource } from '@/features/decide/__tests__/helpers/demoScenario';
 import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
@@ -13,7 +13,7 @@ import { useMonthPicture } from '../useMonthPicture';
 
 jest.mock('@/engine/decide/v3', () => {
   const actual = jest.requireActual('@/engine/decide/v3');
-  return { ...actual, prepare: jest.fn(actual.prepare), judgeCheck: jest.fn(actual.judgeCheck), judgeWithQuickLines: jest.fn(actual.judgeWithQuickLines) };
+  return { ...actual, prepare: jest.fn(actual.prepare), judgeCheck: jest.fn(actual.judgeCheck), judgeWithQuickLines: jest.fn(actual.judgeWithQuickLines), cashTimeline: jest.fn(actual.cashTimeline) };
 });
 
 type Q = { data: unknown; isError: boolean; error?: unknown; refetch: jest.Mock };
@@ -48,6 +48,7 @@ function ready(): void {
 const judgeMock = engine.judgeCheck as jest.Mock;
 const prepareMock = engine.prepare as jest.Mock;
 const quickMock = engine.judgeWithQuickLines as jest.Mock;
+const timelineMock = engine.cashTimeline as jest.Mock;
 
 beforeEach(() => {
   ready();
@@ -82,6 +83,31 @@ describe('useCheckEngine', () => {
     expect(later).not.toBeNull();
     expect(later!.result.purchaseDate).toBe(days[0]);
     expect(result.current.evaluation!.result.purchaseDate).not.toBe(days[0]);
+  });
+
+  it('06.1-47 (B-6): the verdict follows a deferred check and settles on the last typed price', async () => {
+    const { result, rerender } = await renderHook(({ c }: { c: CheckV2 }) => useCheckEngine(c), { initialProps: { c: checkOnce(20000) } });
+    await rerender({ c: checkOnce(90000) });
+    await act(async () => {});
+    const last = judgeMock.mock.calls[judgeMock.mock.calls.length - 1]!;
+    expect(last[1].price).toEqual(checkOnce(90000).price);
+    // the settled evaluation equals a direct judge of the typed check on the same Prepared
+    const actual = jest.requireActual('@/engine/decide/v3');
+    expect(result.current.evaluation).toEqual(actual.judgeCheck(last[0], checkOnce(90000)));
+  });
+
+  it('06.1-47 (B-7): paydays is built once per prepared and check and returns the same array', async () => {
+    const check = checkOnce(20000);
+    const { result, rerender } = await renderHook(({ c }: { c: CheckV2 }) => useCheckEngine(c), { initialProps: { c: check } });
+    timelineMock.mockClear();
+    const first = result.current.paydays();
+    expect(result.current.paydays()).toBe(first);
+    expect(timelineMock).toHaveBeenCalledTimes(1);
+    // re-renders with the same check (as AnswerScreen does) keep the list
+    await rerender({ c: check });
+    await rerender({ c: check });
+    expect(result.current.paydays()).toBe(first);
+    expect(timelineMock).toHaveBeenCalledTimes(1);
   });
 
   it('judgeOn and paydays are empty for a home-kind check', async () => {
