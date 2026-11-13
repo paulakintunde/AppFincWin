@@ -106,6 +106,7 @@ const GEOMETRY_HEIGHT: { path: string; count: number; reason: string }[] = [
   { path: 'screens/check/StepFrame.tsx', count: 1, reason: 'back chevron glyph (no text)' },
   { path: 'screens/setup/SetupBanner.tsx', count: 1, reason: 'collapse chevron glyph (no text)' },
   { path: 'screens/setup/SetupChecklist.tsx', count: 1, reason: 'back chevron glyph (no text)' },
+  { path: 'screens/setup/items/SetupItemFrame.tsx', count: 1, reason: 'back chevron glyph (no text), 06.1-65 DN-12' },
   { path: '@/ui/CheckRow.tsx', count: 4, reason: 'checkbox and remove glyphs (no text)' },
 ];
 

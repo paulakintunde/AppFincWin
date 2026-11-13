@@ -15,7 +15,7 @@ jest.setTimeout(60000);
 const mockReplace = jest.fn();
 const mockDismissTo = jest.fn();
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, push: mockPush, back: jest.fn() }) }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, push: mockPush, back: jest.fn(), canGoBack: () => false }) }));
 jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn(), hapticWarning: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
 const mockShowToast = jest.fn();
@@ -146,6 +146,34 @@ describe('DebtsSetup (D34)', () => {
     await fireEvent.changeText(screen.getByLabelText('Due day of the month'), '40');
     await fireEvent.press(screen.getByText('Save debts'));
     expect(mockDismissTo).not.toHaveBeenCalled();
+  });
+
+  it('06.1-65 (FQ4): a typed due day + Save and close saves it once, then leaves', async () => {
+    const saveDueDay = jest.fn(() => 'step-day');
+    await wrap(<DebtsSetup saveDueDay={saveDueDay} />);
+    await fireEvent.changeText(screen.getByLabelText('Due day of the month'), '12');
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    expect(saveDueDay).toHaveBeenCalledTimes(1);
+    expect(saveDueDay).toHaveBeenCalledWith(expect.objectContaining({ id: 'd1' }), 12, 'u1');
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide/setup');
+  });
+
+  it('06.1-65 (FQ4): a due day that is not a day of the month + Save and close stays open', async () => {
+    const saveDueDay = jest.fn(() => 'x');
+    await wrap(<DebtsSetup saveDueDay={saveDueDay} />);
+    await fireEvent.changeText(screen.getByLabelText('Due day of the month'), '40');
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    expect(saveDueDay).not.toHaveBeenCalled();
+    expect(mockDismissTo).not.toHaveBeenCalled();
+  });
+
+  it('06.1-65: nothing changed + Save and close writes nothing and leaves', async () => {
+    const saveDueDay = jest.fn(() => 'x');
+    await wrap(<DebtsSetup saveDueDay={saveDueDay} />);
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    expect(saveDueDay).not.toHaveBeenCalled();
+    expect(mockSetAnswered).not.toHaveBeenCalled();
+    expect(mockDismissTo).toHaveBeenCalledWith('/decide/setup');
   });
 });
 

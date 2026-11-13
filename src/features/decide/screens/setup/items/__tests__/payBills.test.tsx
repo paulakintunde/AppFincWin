@@ -1,5 +1,5 @@
 // 06.1-24: setup items 1 and 2. Regular bills (Not regular + Undo, the total, These are right sets the flag once, Save and close writes no
-// flag) and Pay and payday (the four ways to count pay appear unchosen). The pure rules are covered too.
+// flag) and Pay and payday (the four ways to count pay appear unchosen; 06.1-65: Save and close saves a changed answer). The pure rules are covered too.
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import { wrap } from '@/test/stepProps';
@@ -10,7 +10,7 @@ import { PaySetup } from '../PaySetup';
 
 const mockReplace = jest.fn();
 const mockDismissTo = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, back: jest.fn(), push: jest.fn() }) }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, back: jest.fn(), push: jest.fn(), canGoBack: () => false }) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
 jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
@@ -207,11 +207,12 @@ describe('PaySetup (D32)', () => {
     expect(mockSaveStep).toHaveBeenCalledWith(expect.objectContaining({ patch: { tax_set_aside_bp: null } }));
   });
 
-  it('"Save and close" returns without saving anything', async () => {
+  it('06.1-65 (FQ4): "Save and close" saves the changed answer, then leaves', async () => {
     await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
     await fireEvent.press(screen.getByText('About the same'));
     await fireEvent.press(screen.getByTestId('item-save-close'));
-    expect(mockSaveStep).not.toHaveBeenCalled();
+    expect(mockSaveStep).toHaveBeenCalledTimes(1);
+    expect(mockSaveStep).toHaveBeenCalledWith(expect.objectContaining({ patch: expect.objectContaining({ income_pattern: 'steady', income_pattern_confirmed: true }) }));
     expect(mockSetAnswered).not.toHaveBeenCalled();
     expect(mockDismissTo).toHaveBeenCalledWith('/decide/setup');
   });

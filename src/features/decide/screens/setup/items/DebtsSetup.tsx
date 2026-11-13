@@ -22,7 +22,7 @@ import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { DayField, RadioRow, useSetupFormat } from './itemFields';
 import { dueDayEdits, hasBadDueDay } from './othersLogic';
-import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
+import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
 /** Saves a due day on a Grow debt and returns the undo step id. Bound in src/shell/decide/SetupItemRoutes.tsx (useSaveGrowDebt). */
 export type SaveDueDay = (debt: DebtRow, day: number, ownerId: string) => string;
@@ -32,7 +32,7 @@ const GROW_DEBTS = '/grow?segment=debts' as Href;
 export function DebtsSetup({ saveDueDay }: { saveDueDay: SaveDueDay }) {
   const t = useT();
   const router = useRouter();
-  const leave = useLeaveToChecklist();
+  const leave = useLeaveItem();
   const { colors, pairing } = useTheme();
   const fmt = useSetupFormat();
   const rc = useRecordContext();
@@ -57,8 +57,11 @@ export function DebtsSetup({ saveDueDay }: { saveDueDay: SaveDueDay }) {
   const bad = hasBadDueDay(typed);
   const label = { ...textRole(pairing, 'label'), fontSize: fontSize.meta };
 
-  const save = (): void => {
-    if (!canWrite || userId === undefined) return;
+  // 06.1-65 (FQ4): a typed due day that differs from Grow's, or a changed "no other debts" answer, is saved by "Save and close".
+  const dirty = bad || dueDayEdits(rows, typed).length > 0 || (noOther !== null && noOther !== ((settings?.answered_no_debts_at ?? null) !== null));
+
+  const save = (): boolean => {
+    if (!canWrite || userId === undefined) return false;
     let lastStep: string | null = null;
     for (const edit of dueDayEdits(rows, typed)) {
       const debt = rows.find((d) => d.id === edit.id);
@@ -66,7 +69,7 @@ export function DebtsSetup({ saveDueDay }: { saveDueDay: SaveDueDay }) {
     }
     const flagStep = flags.set({ flag: 'no_debts', on: noOtherOn });
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.debts.toast' }, stepId: lastStep ?? flagStep?.stepId ?? null });
-    leave();
+    return true;
   };
 
   return (
@@ -75,9 +78,9 @@ export function DebtsSetup({ saveDueDay }: { saveDueDay: SaveDueDay }) {
       why={t('decide.screens.setupOthers.debts.why')}
       primaryLabel={t('decide.screens.setupOthers.debts.save')}
       primaryDisabled={!canWrite || bad}
-      onPrimary={save}
-      onBack={leave}
-      onSaveAndClose={leave}
+      onSave={save}
+      onLeave={leave}
+      dirty={dirty}
     >
       <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.setupOthers.debts.fromGrow')}</Text>
       {rows.length === 0 ? <Text testID="debts-empty" style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.screens.setupOthers.debts.empty')}</Text> : null}

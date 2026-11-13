@@ -7,8 +7,9 @@
 //  - No pay found: amount and day fields.
 //  - "It changes" / "It changes with the seasons": four ways to count it, none chosen for the person.
 //  - Other money coming in: rows with I spend it / It's kept, and + Add other income.
-//  - Save pay details creates the pay series when there is none, saves the answers that changed, and returns to the checklist.
-//  - Save and close returns without saving what is still on screen; what a sheet already saved stays.
+//  - Save pay details creates the pay series when there is none, saves the answers that changed, and goes back to where Pay was
+//    opened from (06.1-65 FQ1).
+//  - 06.1-65 (FQ4): Save and close runs the same save when something on the page changed; what a sheet already saved stays.
 //
 // 06.1-54 (G-6, C-3, A-SU-4, C-21, DC-8): "How are you paid?" (the six D-17 answers as chips) sits first; "Salary or wages" is
 // pre-picked only when a steady pay series or payer was found and nothing is stored (owner GQ4). Save pay details writes
@@ -45,7 +46,7 @@ import { NeedLine } from '@/features/decide/screens/ui/NeedLine';
 import { setAsideFromText, setAsidePatch, setAsideText, showsSetAside } from '@/features/decide/screens/logic/taxSetAside';
 import { DayPicker, RadioRow, useFreqWord, useSetupFormat } from './itemFields';
 import { OtherIncomeSheet, PayEditSheet, type OtherIncomeValues, type PayEditValues } from './PaySheets';
-import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
+import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 import { anchorWithDay, dayOf, nextDateOnDay, type EditSeriesFrom } from './itemLogic';
 
 type Pattern = 'steady' | 'variable' | 'seasonal';
@@ -129,7 +130,7 @@ interface PayBasis {
 
 export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom }) {
   const t = useT();
-  const leave = useLeaveToChecklist();
+  const leave = useLeaveItem();
   const { colors, pairing } = useTheme();
   const fmt = useSetupFormat();
   const freqWord = useFreqWord();
@@ -286,8 +287,22 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
     patcher.patch([{ series, attributes: { counts_as: counts } }]);
   };
 
-  const save = (): void => {
-    if (!canSave) return;
+  // 06.1-65 (FQ4): the person changed something on this page that is not stored yet, so "Save and close" saves it first. Only
+  // answers the person touched count (a figure still at its stored value, or never picked, is not a change).
+  const dirty =
+    draftPay !== null ||
+    emptyAmount !== null ||
+    emptyDay !== null ||
+    (pickedTypes !== null && !sameTypes(pickedTypes, stored?.income_types)) ||
+    (pattern !== null && pattern !== (stored?.income_pattern ?? null)) ||
+    (method !== null && method !== (stored?.variable_method ?? null)) ||
+    (spread !== null && spread !== (stored?.spread_months ?? null)) ||
+    (steady !== null && steady !== (stored?.steady_amount ?? null)) ||
+    (hold !== null && hold !== (stored?.hold_months ?? null)) ||
+    (showsAside && (asideBad || setAsidePatch(asideText, stored?.tax_set_aside_bp) !== undefined));
+
+  const save = (): boolean => {
+    if (!canSave) return false;
     const stepIds: string[] = [];
     if (toCreate !== null) {
       const id = createSalary(toCreate);
@@ -317,7 +332,7 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
       if (saved !== null) stepIds.push(saved.stepId);
     }
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupPayBills.pay.toast' }, stepIds });
-    leave();
+    return true;
   };
 
   const label = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
@@ -329,9 +344,9 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
       why={t('decide.screens.setupPayBills.pay.why')}
       primaryLabel={t('decide.screens.setupPayBills.pay.save')}
       primaryDisabled={!canSave}
-      onPrimary={save}
-      onBack={leave}
-      onSaveAndClose={leave}
+      onSave={save}
+      onLeave={leave}
+      dirty={dirty}
       footer={<NeedLine text={need === null ? null : t(`decide.screens.setupPayBills.pay.need.${need}`)} />}
     >
       <Text style={heading}>{t('income.paid.title')}</Text>

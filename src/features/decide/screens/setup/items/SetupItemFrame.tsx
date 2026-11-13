@@ -1,16 +1,19 @@
 // 06.1-24 (D32 to D37 frame): the one frame every setup item screen sits in. Plan 24 builds items 1 and 2 on it; plan 25 builds items
 // 3 to 6 on the same props, so keep it generic.
 //
-//   top row    Back (left), "Save and close" (right: goes back to the checklist and keeps whatever was already saved)
+//   top row    Back chevron (left), "Save and close" (right)
 //   title      the item name, in place of "Step x of y" (items are not in order); screen-reader focus lands here
 //   why        "Why we ask:" + the reason
 //   children   the item's own content
 //   primary    named for what it saves ("Save pay details"); a light haptic plays on press
 //   footer     optional, under the primary (a note, a link)
 //
-// The frame writes nothing. Each item decides what the primary does and what "Save and close" leaves behind: nothing is held in
-// a draft, so a figure only stays once it was saved by a sheet or by the primary.
-import React, { useEffect, useRef } from 'react';
+// The frame writes nothing itself. Each item passes `onSave` (its save, without leaving) and `onLeave` (useLeaveItem).
+// 06.1-65 (FQ4, CC-6): the primary and "Save and close" run the same `onSave`. "Save and close" saves only when the item says it
+// has unsaved input (`dirty`); with nothing typed it just closes. Dirty input the item cannot save yet (primary disabled) keeps
+// the item open, where its NeedLine says what is missing. `onSave` returning false (or resolving false) keeps the item open too.
+// 06.1-65 (DN-12, DB-12): Back is the checklist's chevron with a 48 dp target, not the word Back at 32 x 44.
+import React, { useCallback, useEffect, useRef } from 'react';
 import { AccessibilityInfo, findNodeHandle, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { usePerfMount } from '@/features/decide/perf/perfMarks';
@@ -23,18 +26,27 @@ import { Pill } from '@/ui/Pill';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 
-/** The checklist every item returns to. */
+/** The checklist a deep-linked item lands on when there is nothing to go back to. */
 export const SETUP_HOME = '/decide/setup' as Href;
 
+/** 06.1-65 (DN-12 / DB-12): the Back target, larger than the 44 dp minimum, as the device walk asked. */
+export const ITEM_BACK_TARGET = 48;
+
 /**
- * 06.1-50 (C-6): how every item leaves, on save, "Save and close" and Back. It pops back to the one checklist already in the stack
- * instead of stacking another copy (which made Back look dead). When the checklist is not in the stack (a deep link straight to an
- * item), expo-router's dismissTo replaces the current screen with it, so the user still lands on one checklist.
+ * 06.1-65 (FQ1, CN-2): how every item leaves, on Back, on save and on "Save and close". It goes back to the screen it was opened
+ * from (the checklist, the answer or Decide home). Only with no history (a deep link straight to an item) does it land on the
+ * checklist, through dismissTo, so there is still exactly one checklist (06.1-50 C-6). It never pushes another item or checklist.
  */
-export function useLeaveToChecklist(): () => void {
+export function useLeaveItem(): () => void {
   const router = useRouter();
-  return () => router.dismissTo(SETUP_HOME);
+  return useCallback(() => {
+    if (router.canGoBack()) router.back();
+    else router.dismissTo(SETUP_HOME);
+  }, [router]);
 }
+
+/** What an item's save returns: false keeps the item open (nothing saved, or a message to read first). */
+export type ItemSaveResult = boolean | void;
 
 export interface SetupItemFrameProps {
   /** The item name, e.g. "Pay and payday". */
@@ -43,15 +55,20 @@ export interface SetupItemFrameProps {
   why: string;
   primaryLabel: string;
   primaryDisabled?: boolean;
-  onPrimary: () => void;
-  onBack: () => void;
-  onSaveAndClose: () => void;
+  /** The item's save, without leaving. Run by the primary and, when `dirty`, by "Save and close". */
+  onSave: () => ItemSaveResult | Promise<ItemSaveResult>;
+  /** Leaves the item (useLeaveItem): Back, and after a save that did not return false. */
+  onLeave: () => void;
+  /** True when something typed on this page is not saved yet. Every write made in a sheet is already saved. */
+  dirty?: boolean;
+  /** "Save and close" with nothing unsaved; defaults to `onLeave`. */
+  onSaveAndClose?: () => void;
   /** Drawn under the primary button. */
   footer?: React.ReactNode;
   children: React.ReactNode;
 }
 
-export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = false, onPrimary, onBack, onSaveAndClose, footer, children }: SetupItemFrameProps) {
+export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = false, onSave, onLeave, dirty = false, onSaveAndClose, footer, children }: SetupItemFrameProps) {
   usePerfMount('setupItem.mount'); // 06.1-72: perf builds only
   const t = useT();
   const { colors, pairing } = useTheme();
@@ -62,15 +79,35 @@ export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = fal
     if (handle !== null) AccessibilityInfo.setAccessibilityFocus(handle);
   }, []);
 
+  const saveThenLeave = (): void => {
+    const result = onSave();
+    if (result instanceof Promise) {
+      void result.then((r) => {
+        if (r !== false) onLeave();
+      });
+    } else if (result !== false) {
+      onLeave();
+    }
+  };
+  const saveAndClose = (): void => {
+    if (!dirty) {
+      (onSaveAndClose ?? onLeave)();
+      return;
+    }
+    // Typed input that cannot be saved yet: stay, the item's NeedLine names what is missing.
+    if (primaryDisabled) return;
+    saveThenLeave();
+  };
+
   const label = { ...textRole(pairing, 'label'), fontSize: fontSize.meta };
   return (
     <Screen scroll form>
       <View testID="setup-item-frame" style={styles.body}>
         <View style={styles.top}>
-          <Pressable testID="item-back" accessibilityRole="button" accessibilityLabel={t('decide.screens.common.a11y.back')} onPress={onBack} style={styles.target}>
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.common.back')}</Text>
+          <Pressable testID="item-back" accessibilityRole="button" accessibilityLabel={t('decide.screens.common.a11y.back')} onPress={onLeave} hitSlop={space.gapSm} style={styles.backTarget}>
+            <View testID="item-back-chevron" style={[styles.chevron, { borderColor: colors.accent }]} />
           </Pressable>
-          <Pressable testID="item-save-close" accessibilityRole="button" onPress={onSaveAndClose} style={styles.target}>
+          <Pressable testID="item-save-close" accessibilityRole="button" onPress={saveAndClose} style={styles.target}>
             <Text style={{ ...textRole(pairing, 'label'), color: colors.accent, textAlign: 'right' }}>{t('decide.screens.common.saveAndClose')}</Text>
           </Pressable>
         </View>
@@ -89,7 +126,7 @@ export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = fal
             disabled={primaryDisabled}
             onPress={() => {
               hapticLight();
-              onPrimary();
+              saveThenLeave();
             }}
           />
           {footer}
@@ -103,5 +140,8 @@ const styles = StyleSheet.create({
   body: { gap: space.gapMd, paddingBottom: space.sheetPadBottom },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd },
   target: { minHeight: space.touchMin, justifyContent: 'center' },
+  backTarget: { minHeight: ITEM_BACK_TARGET, minWidth: ITEM_BACK_TARGET, justifyContent: 'center', alignItems: 'flex-start' },
+  // The checklist's chevron (Row.tsx's, turned to point left).
+  chevron: { width: 10, height: 10, borderTopWidth: 2, borderRightWidth: 2, marginLeft: 4, transform: [{ rotate: '-135deg' }] },
   actions: { gap: space.gapSm },
 });

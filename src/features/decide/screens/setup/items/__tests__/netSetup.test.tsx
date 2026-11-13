@@ -7,7 +7,8 @@ import { NetSetup } from '../NetSetup';
 
 jest.setTimeout(60000);
 
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: jest.fn(), dismissTo: jest.fn(), push: jest.fn(), back: jest.fn() }) }));
+const mockBack = jest.fn();
+jest.mock('expo-router', () => ({ useRouter: () => ({ replace: jest.fn(), dismissTo: jest.fn(), push: jest.fn(), back: mockBack, canGoBack: () => true }) }));
 jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn(), hapticWarning: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
@@ -27,6 +28,7 @@ const save = () => screen.getByLabelText('Save safety net');
 
 beforeEach(() => {
   mockGoals = [];
+  mockBack.mockClear();
 });
 
 describe('NetSetup need line (06.1-53 C-21)', () => {
@@ -58,5 +60,59 @@ describe('NetSetup need line (06.1-53 C-21)', () => {
     mockGoals = [{ id: 'g1', household_id: 'h1', is_safety_net: true, deleted_at: null, account_id: null, decide_may_use: false }];
     await wrap(<NetSetup answer={jest.fn()} setAccount={jest.fn(() => 'x')} />);
     expect(screen.queryByText(NEED)).toBeNull();
+  });
+});
+
+describe('NetSetup Save and close (06.1-65 FQ4)', () => {
+  it('a typed amount + Save and close goes through the first-answer write once, then goes back', async () => {
+    const answer = jest.fn(() => ({ status: 'saved', stepId: 's1' }));
+    await wrap(<NetSetup answer={answer as never} setAccount={jest.fn(() => 'x')} />);
+    const field = screen.getByLabelText('Set an amount');
+    await fireEvent.changeText(field, '500');
+    await fireEvent(field, 'blur');
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    expect(answer).toHaveBeenCalledTimes(1);
+    expect(answer).toHaveBeenCalledWith(expect.objectContaining({ kind: 'amount', amount: 50000 }));
+    expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('an amount of zero + Save and close stays open with the need line', async () => {
+    const answer = jest.fn();
+    await wrap(<NetSetup answer={answer} setAccount={jest.fn(() => 'x')} />);
+    const field = screen.getByLabelText('Set an amount');
+    await fireEvent.changeText(field, '0');
+    await fireEvent(field, 'blur');
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    expect(answer).not.toHaveBeenCalled();
+    expect(mockBack).not.toHaveBeenCalled();
+    expect(screen.getByTestId('need-line').props.children).toBe(NEED);
+  });
+
+  it('another currency on save keeps the item open', async () => {
+    const answer = jest.fn(() => ({ status: 'other_currency' }));
+    await wrap(<NetSetup answer={answer as never} setAccount={jest.fn(() => 'x')} />);
+    const field = screen.getByLabelText('Set an amount');
+    await fireEvent.changeText(field, '500');
+    await fireEvent(field, 'blur');
+    await fireEvent.press(save());
+    expect(answer).toHaveBeenCalledTimes(1);
+    expect(mockBack).not.toHaveBeenCalled();
+  });
+
+  it('nothing typed + Save and close writes nothing and goes back', async () => {
+    const answer = jest.fn();
+    await wrap(<NetSetup answer={answer} setAccount={jest.fn(() => 'x')} />);
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    expect(answer).not.toHaveBeenCalled();
+    expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('with a net, an unchanged account + Save leaves with no write', async () => {
+    mockGoals = [{ id: 'g1', household_id: 'h1', is_safety_net: true, deleted_at: null, account_id: null, decide_may_use: false }];
+    const setAccount = jest.fn(() => 'x');
+    await wrap(<NetSetup answer={jest.fn()} setAccount={setAccount} />);
+    await fireEvent.press(save());
+    expect(setAccount).not.toHaveBeenCalled();
+    expect(mockBack).toHaveBeenCalledTimes(1);
   });
 });

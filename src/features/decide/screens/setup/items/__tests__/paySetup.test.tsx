@@ -12,7 +12,7 @@ import { setupFactsFrom } from '../../useSetupProgress';
 import { PaySetup, firstNeed, sameTypes, toggledTypes, unmarkedPaySeries } from '../PaySetup';
 
 const mockDismissTo = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ replace: jest.fn(), dismissTo: mockDismissTo, back: jest.fn(), push: jest.fn() }) }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ replace: jest.fn(), dismissTo: mockDismissTo, back: jest.fn(), push: jest.fn(), canGoBack: () => false }) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
 jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
 // setupFactsFrom is pure; its module's read hooks are not used here.
@@ -261,6 +261,34 @@ describe('PaySetup fields (A-SU-4, C-21)', () => {
     await fireEvent.press(screen.getByTestId('day-picker'));
     await fireEvent.press(screen.getByLabelText('15th'));
     expect(screen.getByTestId('need-line')).toHaveTextContent('An account is still needed.');
+  });
+
+  it('06.1-65 (FQ4): a typed amount and day + Save and close writes the pay once and leaves', async () => {
+    await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
+    await fireEvent.changeText(screen.getByLabelText('How much lands in your account?'), '2500');
+    await fireEvent.press(screen.getByTestId('day-picker'));
+    await fireEvent.press(screen.getByLabelText('15th'));
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    expect(mockConfirm).toHaveBeenCalledTimes(1);
+    expect(mockConfirm).toHaveBeenCalledWith(expect.objectContaining({ series: expect.objectContaining({ amount: 250000, anchor_date: '2026-12-15' }) }));
+    expect(mockDismissTo).toHaveBeenCalledTimes(1);
+  });
+
+  it('06.1-65 (FQ4): an amount with no day + Save and close stays open and says the day is needed', async () => {
+    await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
+    await fireEvent.changeText(screen.getByLabelText('How much lands in your account?'), '2500');
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockDismissTo).not.toHaveBeenCalled();
+    expect(screen.getByTestId('need-line')).toHaveTextContent('A pay day is still needed.');
+  });
+
+  it('06.1-65: nothing typed + Save and close writes nothing and leaves', async () => {
+    await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockSaveStep).not.toHaveBeenCalled();
+    expect(mockDismissTo).toHaveBeenCalledTimes(1);
   });
 });
 

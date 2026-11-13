@@ -32,7 +32,7 @@ import { useMoneyRules, useRuleCrossings } from '../../home/useHomeCards';
 import { rulesFactsOf } from '../../home/useHomeFacts';
 import { rulesOnCount } from './othersLogic';
 import { useSetupFormat } from './itemFields';
-import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
+import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
 const SAVED_KEY = 'decide.screens.sheetsHome.rule.savedToast';
 const GROW = '/grow' as Href;
@@ -50,7 +50,7 @@ interface RuleRowModel {
 export function RulesSetup() {
   const t = useT();
   const router = useRouter();
-  const leave = useLeaveToChecklist();
+  const leave = useLeaveItem();
   const { colors, pairing } = useTheme();
   const fmt = useSetupFormat();
   const rc = useRecordContext();
@@ -130,8 +130,9 @@ export function RulesSetup() {
 
   const onCount = rulesOnCount(rules.dsrLine, rules.doc, v3.inputs === null ? null : v3.inputs.limits.lines.filter((l) => l.on).length);
 
-  const saveRules = (): void => {
-    if (userId === '') return;
+  // 06.1-65: every switch and sheet writes at once, so nothing on this page is left unsaved and "Save and close" just closes.
+  const saveRules = (): boolean => {
+    if (userId === '') return false;
     if (onCount === 0) {
       const done = flags.set({ flag: 'no_rules', on: true });
       showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.rules.none' }, stepId: done?.stepId ?? null });
@@ -139,7 +140,7 @@ export function RulesSetup() {
       flags.set({ flag: 'no_rules', on: false, noUndo: true });
       showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.rules.toast', params: { count: onCount } } });
     }
-    leave();
+    return true;
   };
 
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
@@ -149,9 +150,8 @@ export function RulesSetup() {
       why={t('decide.screens.setupOthers.rules.why')}
       primaryLabel={t('decide.screens.setupOthers.rules.save')}
       primaryDisabled={userId === ''}
-      onPrimary={saveRules}
-      onBack={leave}
-      onSaveAndClose={leave}
+      onSave={saveRules}
+      onLeave={leave}
     >
       <View style={styles.list}>
         {rows.map((row) => (

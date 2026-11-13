@@ -28,7 +28,7 @@ import { Text } from '@/ui/Text';
 import type { NetAnswerPort } from '../../safetyNet/ports';
 import { NeedLine } from '../../ui/NeedLine';
 import { RadioRow, useSetupFormat } from './itemFields';
-import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
+import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
 /** Saves the account that holds the net on its Grow goal and returns the undo step id. Bound in SetupItemRoutes (useEditGoal). */
 export type SetNetAccount = (goal: SavingsGoalRow, accountId: string, ownerId: string) => string;
@@ -39,7 +39,7 @@ const GROW_NET = '/grow/safety-net' as Href;
 export function NetSetup({ answer, setAccount }: { answer: NetAnswerPort; setAccount: SetNetAccount }) {
   const t = useT();
   const router = useRouter();
-  const leave = useLeaveToChecklist();
+  const leave = useLeaveItem();
   const { colors, pairing } = useTheme();
   const fmt = useSetupFormat();
   const rc = useRecordContext();
@@ -75,28 +75,33 @@ export function NetSetup({ answer, setAccount }: { answer: NetAnswerPort; setAcc
     }
   }
 
-  const done = (stepId: string | null): void => {
+  const done = (stepId: string | null): true => {
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.net.toast' }, stepId });
-    leave();
+    return true;
   };
 
-  const save = (): void => {
-    if (!canWrite || userId === undefined) return;
+  // 06.1-65 (FQ4): the save the primary and "Save and close" share; false keeps the item open (nothing saved, or the
+  // other-currency message to read).
+  const save = (): boolean => {
+    if (!canWrite || userId === undefined) return false;
     if (net !== null) {
       const changed = picked !== null && picked !== (net.account_id ?? null);
-      done(changed ? setAccount(net, picked, userId) : null);
-      return;
+      return done(changed ? setAccount(net, picked, userId) : null);
     }
     if (notSet) {
       const outcome = answer({ kind: 'not_set' });
-      done(outcome.status === 'not_set' ? outcome.stepId : null);
-      return;
+      return done(outcome.status === 'not_set' ? outcome.stepId : null);
     }
-    if (amount === null || amount <= 0) return;
+    if (amount === null || amount <= 0) return false;
     const outcome = answer({ kind: 'amount', amount, currency, name: t('decide.screens.setupOthers.net.title') });
-    if (outcome.status === 'other_currency') setOtherCurrency(true);
-    else done('stepId' in outcome ? outcome.stepId : null);
+    if (outcome.status === 'other_currency') {
+      setOtherCurrency(true);
+      return false;
+    }
+    return done('stepId' in outcome ? outcome.stepId : null);
   };
+  // A different account picked, "Not set yet" chosen, or an amount typed: "Save and close" saves it first.
+  const dirty = net !== null ? picked !== null && picked !== (net.account_id ?? null) : notSet || amount !== null;
 
   const ready = canWrite && (net !== null || notSet || (amount !== null && amount > 0));
   // 06.1-53 (C-21 net): with no net yet and "Not set yet" not chosen, Save waits for an amount above zero and says so.
@@ -109,10 +114,10 @@ export function NetSetup({ answer, setAccount }: { answer: NetAnswerPort; setAcc
       why={t('decide.screens.setupOthers.net.why')}
       primaryLabel={t('decide.screens.setupOthers.net.save')}
       primaryDisabled={!ready}
-      onPrimary={save}
+      onSave={save}
       footer={<NeedLine text={needAmount ? t('decide.screens.setupOthers.net.need.amount') : null} />}
-      onBack={leave}
-      onSaveAndClose={leave}
+      onLeave={leave}
+      dirty={dirty}
     >
       {net !== null ? (
         <>

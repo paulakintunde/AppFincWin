@@ -31,11 +31,11 @@ import { Text } from '@/ui/Text';
 import { BillSheet, type BillValues } from './BillSheets';
 import { useFreqWord, useSetupFormat } from './itemFields';
 import { anchorWithDay, buildBillRows, nextDateOnDay, regularCount, regularMonthlyTotal, type BillRow, type EditSeriesFrom } from './itemLogic';
-import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
+import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
 export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom }) {
   const t = useT();
-  const leave = useLeaveToChecklist();
+  const leave = useLeaveItem();
   const { colors, pairing } = useTheme();
   const stacked = useShouldStack();
   const fmt = useSetupFormat();
@@ -129,15 +129,17 @@ export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom 
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupPayBills.billAdd.toast' }, stepId });
   };
 
-  const right = (): void => {
-    if (!canWrite) return;
+  // 06.1-65: every edit here is saved by its sheet at once, so nothing on the page is left unsaved and "Save and close" just
+  // closes. "These are right" (the primary) is an answer, not a save of typed input.
+  const right = (): boolean => {
+    if (!canWrite) return false;
     const done = flags.set({ flag: 'bills_right', on: true });
     showToast({
       kind: 'ordinary',
       text: { key: 'decide.screens.setupPayBills.bills.toast', params: { count: regularCount(rows) } },
       stepId: done?.stepId ?? null,
     });
-    leave();
+    return true;
   };
 
   const label = { ...textRole(pairing, 'label'), fontSize: fontSize.meta };
@@ -148,9 +150,8 @@ export function BillsSetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom 
       why={t('decide.screens.setupPayBills.bills.why')}
       primaryLabel={t('decide.screens.setupPayBills.bills.right')}
       primaryDisabled={!canWrite}
-      onPrimary={right}
-      onBack={leave}
-      onSaveAndClose={leave}
+      onSave={right}
+      onLeave={leave}
     >
       {rows.length > 0 ? (
         <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.screens.setupPayBills.bills.lead')}</Text>

@@ -37,7 +37,7 @@ import { footerFactsOf } from '../../home/useHomeFacts';
 import { useSetupFacts } from '../useSetupProgress';
 import { RadioRow, useSetupFormat } from './itemFields';
 import { askedAccounts, choiceOfUse, previousMonthOf, recordChecks, accountUseOfChoice, USE_CHOICES, type UseChoice } from './othersLogic';
-import { SetupItemFrame, useLeaveToChecklist } from './SetupItemFrame';
+import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
 const ACTIVITY = '/activity' as Href;
 const IMPORT = '/import' as Href;
@@ -73,7 +73,7 @@ function fallbackWaiver(item: ReadinessItem): ReadinessWaiver | null {
 export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const t = useT();
   const router = useRouter();
-  const leave = useLeaveToChecklist();
+  const leave = useLeaveItem();
   const { colors, pairing } = useTheme();
   const fmt = useSetupFormat();
   const rc = useRecordContext();
@@ -95,8 +95,13 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
 
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
   // C-5: "Save and close" with items still open says what is open, then leaves; with none open it leaves silently as before.
-  const saveAndClose = (): void => {
+  // 06.1-65: every write here is made at once (account use, answers), so nothing is left unsaved; the primary and "Save and close"
+  // both say what is still open, then leave.
+  const sayStillOpen = (): void => {
     if (fixRows.length > 0) showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.records.stillOpen', params: { count: fixRows.length } } });
+  };
+  const saveAndClose = (): void => {
+    sayStillOpen();
     leave();
   };
 
@@ -134,7 +139,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   // Not loaded yet: show the frame with the primary off, so nothing flickers between the two variants.
   if (facts === null) {
     return (
-      <SetupItemFrame title={t('decide.screens.setupOthers.records.title')} why={t('decide.screens.setupOthers.records.why')} primaryLabel={t('decide.screens.common.saveAndClose')} primaryDisabled onPrimary={leave} onBack={leave} onSaveAndClose={leave}>
+      <SetupItemFrame title={t('decide.screens.setupOthers.records.title')} why={t('decide.screens.setupOthers.records.why')} primaryLabel={t('decide.screens.common.saveAndClose')} primaryDisabled onSave={() => undefined} onLeave={leave}>
         <View />
       </SetupItemFrame>
     );
@@ -163,7 +168,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
 
   if (brandNew) {
     return (
-      <SetupItemFrame title={t('decide.screens.setupOthers.records.title')} why={t('decide.screens.setupOthers.records.why')} primaryLabel={t('decide.screens.common.saveAndClose')} onPrimary={leave} onBack={leave} onSaveAndClose={leave}>
+      <SetupItemFrame title={t('decide.screens.setupOthers.records.title')} why={t('decide.screens.setupOthers.records.why')} primaryLabel={t('decide.screens.common.saveAndClose')} onSave={() => undefined} onLeave={leave}>
         <View testID="records-empty" style={styles.block}>
           <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{t('decide.screens.setupOthers.records.emptyTitle')}</Text>
           <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.screens.setupOthers.records.emptyBody')}</Text>
@@ -184,8 +189,8 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
       title={t('decide.screens.setupOthers.records.title')}
       why={t('decide.screens.setupOthers.records.why')}
       primaryLabel={allDone ? t('decide.screens.common.done') : t('decide.screens.common.saveAndClose')}
-      onPrimary={saveAndClose}
-      onBack={leave}
+      onSave={sayStillOpen}
+      onLeave={leave}
       onSaveAndClose={saveAndClose}
     >
       <View style={styles.block}>
