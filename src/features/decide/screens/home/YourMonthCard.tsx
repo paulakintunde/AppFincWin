@@ -3,6 +3,8 @@
  * which is homeFigure, so the home and every answer start from the same number), then COMES IN / GOES OUT / LEFT for a usual month or
  * the low month, and the Records row. The back arrows step to earlier months from the records; those months show what the records
  * say and have no usual/low switch. A month below zero grows its bar downward and says "short" in words, never colour alone.
+ * 06.1-55 (A-HOME-1, DS-11): this month's headline carries "after this month's plans" and the tiles carry "A usual month" or
+ * "Your low month", so a short headline over a positive LEFT tile is two labelled figures, not one contradicting the other.
  * Presentational: the engine's picture and bars come in as props.
  */
 import React, { useState } from 'react';
@@ -85,6 +87,10 @@ export function YourMonthCard(props: YourMonthCardProps) {
   const leadColor = short ? stateColors.short.color : colors.ink;
   const max = shown === null ? 0 : Math.max(shown.comesIn, shown.goesOut, Math.abs(shown.left));
   const canGoBack = back < bars.length;
+  // 06.1-55 (A-HOME-1): this month's headline is left after this month's plans; the tiles are a usual (or the low) month. Each is
+  // labelled, so the two figures never read as one. A past month's headline and tiles are that month's own records: no labels.
+  const leadWords = t(short ? 'decide.screens.home.month.shortIn' : 'decide.screens.home.month.leftIn', { month: name });
+  const leadA11y = lead === null ? '' : past === null ? `${formatMoney(Math.abs(lead))} ${leadWords}, ${t('decide.screens.home.month.leadLabel')}` : `${formatMoney(Math.abs(lead))} ${leadWords}`;
 
   const step = (to: number): void => {
     hapticSelection();
@@ -122,14 +128,25 @@ export function YourMonthCard(props: YourMonthCardProps) {
       </View>
 
       {lead === null ? null : (
-        <View testID="month-lead" accessible accessibilityLabel={`${formatMoney(Math.abs(lead))} ${t(short ? 'decide.screens.home.month.shortIn' : 'decide.screens.home.month.leftIn', { month: name })}`} style={styles.lead}>
+        <View testID="month-lead" accessible accessibilityLabel={leadA11y} style={styles.lead}>
           <View style={styles.leadRow}>
             {short ? <StateGlyph name="sDown" color={stateColors.short.color} size={22} /> : null}
             <Text style={{ ...textRole(pairing, 'display'), color: leadColor, fontVariant: ['tabular-nums'] }}>{formatMoney(Math.abs(lead))}</Text>
           </View>
-          <Text style={{ ...textRole(pairing, 'body'), color: leadColor }}>{t(short ? 'decide.screens.home.month.shortIn' : 'decide.screens.home.month.leftIn', { month: name })}</Text>
+          <Text style={{ ...textRole(pairing, 'body'), color: leadColor }}>{leadWords}</Text>
+          {past === null ? (
+            <Text testID="month-lead-label" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+              {t('decide.screens.home.month.leadLabel')}
+            </Text>
+          ) : null}
           {past === null ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{t('decide.screens.home.month.expected')}</Text> : null}
         </View>
+      )}
+
+      {shown === null || past !== null ? null : (
+        <Text testID="month-tiles-label" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+          {t(basis === 'low' ? 'decide.screens.home.month.tilesLow' : 'decide.screens.home.month.tilesUsual')}
+        </Text>
       )}
 
       {shown === null ? null : (
@@ -137,7 +154,11 @@ export function YourMonthCard(props: YourMonthCardProps) {
           testID="month-bars"
           accessible
           accessibilityRole="image"
-          accessibilityLabel={t('decide.screens.home.month.barA11y', { moneyIn: formatMoney(shown.comesIn), costs: formatMoney(shown.goesOut), left: formatMoney(shown.left) })}
+          accessibilityLabel={
+            past === null
+              ? `${t(basis === 'low' ? 'decide.screens.home.month.tilesLow' : 'decide.screens.home.month.tilesUsual')}: ${t('decide.screens.home.month.barA11y', { moneyIn: formatMoney(shown.comesIn), costs: formatMoney(shown.goesOut), left: formatMoney(shown.left) })}`
+              : t('decide.screens.home.month.barA11y', { moneyIn: formatMoney(shown.comesIn), costs: formatMoney(shown.goesOut), left: formatMoney(shown.left) })
+          }
           style={styles.chart}
         >
           <Column label={t('decide.screens.home.month.comesIn')} value={shown.comesIn} amount={formatMoney(shown.comesIn)} color={colors.accent} max={max} />
