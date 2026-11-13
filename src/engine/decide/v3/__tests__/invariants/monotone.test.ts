@@ -103,6 +103,50 @@ describe('end-to-end monotonicity through evaluate()', () => {
     expect(run(withLine(inputs, line), check).code).toBe('monthly_short');
   });
 
+  // Seed -1745555528 (path 1324): D-68 read the plan's last PAYING period, and the level payment is rounded up to the cent, so a
+  // tiny dearer plan could clear a week early. 13 weekly payments, the first one week out: $1.18 at 0% pays 11 x 10c + 8c (12
+  // payments, the last on day 84, inside the 90 days, judged by cash) while $1.00 pays 12 x 8c + 4c (13 payments, the 13th on day
+  // 91, outside). The window now counts the payments the person chose (13), so both are outside and both get the monthly test.
+  const weekly13 = (apr: string) => ({
+    plan: { cadence: { unit: 'week' as const, every: 1 }, count: 13, apr: percent(apr), firstPayment: { kind: 'one_period' as const } },
+    purpose: null,
+    emergency: false,
+  });
+
+  it('I9 pinned: $1.18 vs $1.00 over 13 weekly 0% payments, Sam with a short usual month (seed -1745555528)', () => {
+    const inputs = inputsOfPerson('sam', { everydayPct: 129, balancePct: 50, unspentMode: 'keep', unspentPct: 0, emergency: 186_375, extras: [] });
+    const hi = run(inputs, checkOf(118, weekly13('0')));
+    const lo = run(inputs, checkOf(100, weekly13('0')));
+    expect(codeRank(lo.code)).toBeGreaterThanOrEqual(codeRank(hi.code));
+    expect([hi.code, hi.variant]).toEqual(['monthly_short', 'month_already_short']);
+    expect([lo.code, lo.variant]).toEqual(['monthly_short', 'month_already_short']);
+    expect(hi.facts.map((f) => f.code)).not.toContain('short_plan_from_cash');
+  });
+
+  it('I9 pinned: $1.19 vs $1.00 over 13 weekly 9% payments, Riley (seed -1745555528, path 1324)', () => {
+    const inputs = inputsOfPerson('riley', { everydayPct: 135, balancePct: 100, unspentMode: 'keep', unspentPct: 0, emergency: 3_744_409, extras: [] });
+    const hi = run(inputs, checkOf(119, weekly13('9')));
+    const lo = run(inputs, checkOf(100, weekly13('9')));
+    expect(codeRank(lo.code)).toBeGreaterThanOrEqual(codeRank(hi.code));
+    expect([hi.code, hi.variant]).toEqual(['monthly_short', 'month_already_short']);
+    expect([lo.code, lo.variant]).toEqual(['monthly_short', 'month_already_short']);
+    expect(hi.facts.map((f) => f.code)).not.toContain('short_plan_from_cash');
+  });
+
+  // Owner decision 2026-11-12, "rounding only": the count is read only when the early finish comes from the engine's own round-up.
+  // A quoted payment larger than the engine's (L-09) really clears the plan early, so it keeps its real last payment: $300 over 13
+  // weekly 0% payments, the first one week out, quoted at $30 pays off in 10 (the last on day 70, inside the 90 days) while the
+  // 13th chosen payment would fall on day 91. D-68 still judges it by cash, as before PR #108.
+  it('D-68 pinned: a quoted payment that clears the plan inside 90 days is still judged by cash (Sam, $300, quote $30)', () => {
+    const inputs = inputsOfPerson('sam', { everydayPct: 129, balancePct: 50, unspentMode: 'keep', unspentPct: 0, emergency: 186_375, extras: [] });
+    const shape = weekly13('0');
+    const quoted = run(inputs, checkOf(30_000, { ...shape, plan: { ...shape.plan, quotedPayment: mu(3_000) } }));
+    expect([quoted.code, quoted.variant]).toEqual(['fits_unspent', 'month_short_moderate']);
+    expect(quoted.facts.map((f) => f.code)).toContain('short_plan_from_cash');
+    // Without the quote the engine's own payment runs all 13 weeks, past the window: the monthly test.
+    expect(run(inputs, checkOf(30_000, shape)).code).toBe('monthly_short');
+  });
+
   it('I10 a new monthly bill never helps', () => {
     fc.assert(
       fc.property(inputsArb, checkArb, fc.integer({ min: 100, max: 500_000 }), (inputs, check, amount) => {
