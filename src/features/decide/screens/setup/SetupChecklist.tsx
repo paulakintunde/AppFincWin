@@ -42,7 +42,7 @@ export interface SetupChecklistProps {
   currency: string;
   /** Opens an item screen. */
   onOpen: (route: Href) => void;
-  /** Leaves setup for Decide home (shown instead of Continue once everything is done). */
+  /** Leaves setup for Decide home: the top-bar Back in every state, and the "Back to Decide" button once everything is done. */
   onBack: () => void;
 }
 
@@ -53,6 +53,12 @@ export function SetupChecklist({ progress, currency, onOpen, onBack }: SetupChec
   const next = progress.next;
   return (
     <View testID="setup-checklist" style={styles.page}>
+      {/* 06.1-50 (A-SU-1): the checklist can always be left with one tap, not only once all six are done. Same chevron as StepFrame. */}
+      <View style={styles.top}>
+        <Pressable testID="checklist-back" accessibilityRole="button" accessibilityLabel={t('decide.screens.common.a11y.back')} onPress={onBack} hitSlop={space.gapSm} style={styles.backTarget}>
+          <View style={[styles.chevron, { borderColor: colors.accent }]} />
+        </Pressable>
+      </View>
       <View style={styles.titleBlock}>
         <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
           {t(progress.allDone ? 'decide.screens.setup.checklist.doneTitle' : 'decide.screens.setup.checklist.title')}
@@ -116,6 +122,10 @@ export function SetupChecklist({ progress, currency, onOpen, onBack }: SetupChec
 
 const styles = StyleSheet.create({
   page: { gap: space.groupGap },
+  top: { flexDirection: 'row', alignItems: 'center' },
+  backTarget: { minHeight: space.touchMin, minWidth: space.touchMin, justifyContent: 'center', alignItems: 'flex-start' },
+  // Row.tsx's chevron turned to point left (as in StepFrame).
+  chevron: { width: 10, height: 10, borderTopWidth: 2, borderRightWidth: 2, marginLeft: 4, transform: [{ rotate: '-135deg' }] },
   titleBlock: { gap: space.gapSm },
   count: { gap: space.gapSm },
   list: { borderRadius: radii.card, overflow: 'hidden' },
