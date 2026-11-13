@@ -260,7 +260,7 @@ describe('Your month (CO-D-57, UX-30, UX-29)', () => {
     await wrap(<DecideHome />);
     const lead = screen.getByTestId('month-lead');
     const dollars = Math.round(Math.abs(home) / 100).toLocaleString('en-US');
-    expect(lead.props.accessibilityLabel).toBe(`$${dollars} ${home < 0 ? 'short in' : 'left in'} October`);
+    expect(lead.props.accessibilityLabel).toBe(`$${dollars} ${home < 0 ? 'short in' : 'left in'} October, after this month’s plans`);
   });
 
   it('shows Usual month and Low month, the Records row and the date of the records', async () => {
@@ -283,7 +283,7 @@ describe('Your month (CO-D-57, UX-30, UX-29)', () => {
   it('a negative month grows down and says short in words', async () => {
     mockPicture = { ...mockPicture!, monthEnd: minorUnits(-12_000), usual: { comesIn: minorUnits(300_000), goesOut: minorUnits(312_000), left: minorUnits(-12_000) } };
     await wrap(<DecideHome />);
-    expect(screen.getByTestId('month-lead').props.accessibilityLabel).toBe('$120 short in October');
+    expect(screen.getByTestId('month-lead').props.accessibilityLabel).toBe('$120 short in October, after this month’s plans');
     expect(screen.getByTestId('bar-down-SHORT')).toBeTruthy();
     expect(screen.getAllByText('SHORT').length).toBeGreaterThan(0);
   });
