@@ -27,6 +27,7 @@ import { RouteErrorBoundary } from '@/ui/RouteErrorBoundary';
 import { Screen } from '@/ui/Screen';
 import { perfEnabled } from '@/features/decide/perf/perfMarks';
 import { probeCommit } from '@/data/perf/cacheProbe';
+import { DecideV3Scope } from '@/data/queries/decideV3';
 
 // D-10: mounted after the consent redirect, so a reminder tap routes only after sign-in and consent.
 function DecideNotificationObserver({ enabled }: { enabled: boolean }) {
@@ -68,16 +69,18 @@ export default function AppLayout() {
                 // 06.1-73 (DB-1): screens two or more below the top stop re-rendering until they are near the top again.
                 // On Fabric the screen directly below the top is never frozen (react-native-screens), so Back shows it at once.
                 screenOptions={{ headerShown: false, animation, freezeOnBlur: true }}
-                screenLayout={({ children, route }) =>
+                screenLayout={({ children, route }) => {
+                  // 06.1-72 (G-73-1): each Decide screen runs the Decide reads once, shared by all its hooks.
+                  const body = DECIDE_OPEN && route.name.startsWith('decide/') ? <DecideV3Scope>{children}</DecideV3Scope> : children;
                   // 06.1-73: perf builds count each outer screen's commits (route name only).
-                  perfEnabled() ? (
+                  return perfEnabled() ? (
                     <Profiler id={`stack.${route.name}`} onRender={probeCommit}>
-                      <SwipeBack enabled={isSwipeBackRoute(route.name)}>{children}</SwipeBack>
+                      <SwipeBack enabled={isSwipeBackRoute(route.name)}>{body}</SwipeBack>
                     </Profiler>
                   ) : (
-                    <SwipeBack enabled={isSwipeBackRoute(route.name)}>{children}</SwipeBack>
-                  )
-                }
+                    <SwipeBack enabled={isSwipeBackRoute(route.name)}>{body}</SwipeBack>
+                  );
+                }}
               >
                 <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
                 <Stack.Screen name="accounts/index" />

@@ -21,6 +21,7 @@ import { availableTabs, isTabAvailable } from '@/shell/tabBar/availableTabs';
 import { isTabId } from '@/shell/tabBar/tabs';
 import { perfEnabled } from '@/features/decide/perf/perfMarks';
 import { probeCommit } from '@/data/perf/cacheProbe';
+import { DecideV3Scope } from '@/data/queries/decideV3';
 
 export default function TabsLayout() {
   const rc = useRecordContext();
@@ -41,12 +42,14 @@ export default function TabsLayout() {
         // write on the emulator). It renders again, with the latest data, when it is focused.
         screenOptions={{ headerShown: false, animation: 'none', freezeOnBlur: true }}
         screenLayout={({ children, route, navigation }) => {
+          // 06.1-72 (G-73-1): Decide home's hooks share one run of the Decide reads.
+          const content = DECIDE_OPEN && route.name === 'decide' ? <DecideV3Scope>{children}</DecideV3Scope> : children;
           const screen = isTabId(route.name) ? (
             <TabSlideIn tab={route.name} navigation={navigation}>
-              {children}
+              {content}
             </TabSlideIn>
           ) : (
-            children
+            content
           );
           // 06.1-73: perf builds count each tab's commits (route name only); otherwise the screen renders as before.
           return perfEnabled() ? (

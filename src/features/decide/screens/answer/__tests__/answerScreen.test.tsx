@@ -91,6 +91,7 @@ jest.mock('@/data/queries/decide', () => ({
 }));
 jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ inputs: mockState.inputs ?? mockState.run.inputs, status: 'ready' }) }));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => ({ isOnline: mockState.online }) }));
+jest.mock('@/data/sync/useIsOnline', () => ({ useIsOnline: () => mockState.online }));
 jest.mock('../../engine/useMonthPicture', () => ({ useMonthPicture: () => ({ picture: null, bars: [] }) }));
 jest.mock('../../engine/useCheckEngine', () => ({
   useCheckEngine: () => ({

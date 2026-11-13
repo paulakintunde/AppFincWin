@@ -47,6 +47,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
 jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ status: mockStatus, inputs: mockInputs, refetch: jest.fn() }) }));
 jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: [] }) }));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => ({ isOnline: mockOnline }) }));
+jest.mock('@/data/sync/useIsOnline', () => ({ useIsOnline: () => mockOnline }));
 jest.mock('../../engine/useMonthPicture', () => ({ useMonthPicture: () => ({ picture: mockPicture, bars: mockBars }) }));
 jest.mock('../useNewCheck', () => ({
   ...jest.requireActual('../useNewCheck'),

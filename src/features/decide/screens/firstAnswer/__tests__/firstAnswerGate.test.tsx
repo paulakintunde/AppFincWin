@@ -21,6 +21,7 @@ jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: mo
 jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockRows, isError: false, refetch: mockRefetchGoals }) }));
 jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ source: null, v3: null, inputs: { recordsAsOf: '2026-11-01' } }) }));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => ({ isOnline: mockOnline }) }));
+jest.mock('@/data/sync/useIsOnline', () => ({ useIsOnline: () => mockOnline }));
 jest.mock('@/features/grow/safetyNet/netPreview', () => ({ essentialMonthOf: () => null }));
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', today: '2026-11-12' }) }));
 jest.mock('@/features/decide/hints/decideHints', () => ({

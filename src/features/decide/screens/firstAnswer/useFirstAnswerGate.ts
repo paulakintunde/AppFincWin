@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useDecideSettings } from '@/data/queries/decide';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
-import { useSyncStatus } from '@/data/sync/useSyncStatus';
+import { useIsOnline } from '@/data/sync/useIsOnline';
 import { useT } from '@/i18n';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { loadIntroSeenVersion, markIntroSeen as storeIntroSeen } from '../../hints/decideHints';
@@ -30,7 +30,7 @@ export function useFirstAnswerGate(): FirstAnswerGateState {
   const householdId = rc.householdId ?? undefined;
   const settings = useDecideSettings(userId);
   const goals = useSavingsGoalRows(userId, householdId);
-  const sync = useSyncStatus();
+  const isOnline = useIsOnline(); // 06.1-72: the online flag only
   const version = introVersion(t);
   // undefined = not read yet; null = never seen
   const [stored, setStored] = useState<string | null | undefined>(undefined);
@@ -55,7 +55,7 @@ export function useFirstAnswerGate(): FirstAnswerGateState {
   const readFailed = settings.isError || goals.isError;
   const loading = userId === undefined || stored === undefined || (!readFailed && (settings.data === undefined || goals.data === undefined));
   const nothingCached = !readFailed && (settings.data === undefined || goals.data === undefined);
-  const offline = loading && !sync.isOnline && nothingCached;
+  const offline = loading && !isOnline && nothingCached;
   const { refetch: refetchSettings } = settings;
   const { refetch: refetchGoals } = goals;
   const retry = useCallback((): void => {

@@ -17,7 +17,7 @@ import { queryKeys } from '@/data/keys';
 import { useAccounts } from '@/data/queries/accounts';
 import { useDecideChecks } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
-import { useSyncStatus } from '@/data/sync/useSyncStatus';
+import { useIsOnline } from '@/data/sync/useIsOnline';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { TransactionRow } from '@/db/rows';
 import { freeHelpFor, type CheckV2, type Evaluation, type LocalDate, type PayV2, type ReadinessItem, type ReadinessWaiver } from '@/engine/decide/v3';
@@ -135,7 +135,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
   const engine = useCheckEngine(check, { checkId: id });
   const { picture, bars } = useMonthPicture();
   const v3 = useDecideV3();
-  const sync = useSyncStatus();
+  const isOnline = useIsOnline(); // 06.1-72: the online flag only, not the per-fetch last-synced time
   const accounts = useAccounts(rc.householdId ?? undefined);
   const { markSeen } = useMarkCheckSeen();
   const history = useRecordCheckHistory(rc.userId ?? '');
@@ -226,7 +226,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
     country: v3.inputs?.region ?? rc.region,
   };
   const frameStatus = engine.status === 'error' ? 'error' : engine.status === 'loading' ? 'loading' : 'ready';
-  const offlineDate = !sync.isOnline && engine.status === 'ready' ? fmt.formatDate(result?.recordsAsOf ?? today) : null;
+  const offlineDate = !isOnline && engine.status === 'ready' ? fmt.formatDate(result?.recordsAsOf ?? today) : null;
 
   const edit = (next: (c: CheckV2) => CheckV2): void => {
     step.update(next);

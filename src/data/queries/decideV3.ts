@@ -1,7 +1,7 @@
 // 05.2 D-18/D-19: first production caller of computeV3; 05.3 reuses it for home and the check.
 // The inputs are composed from the reads that already exist (snapshot, settings, answers, dismissals, checks and their
 // plan links), never copied (05.1 D-53). Built in memory with useMemo; the bigint-carrying Evaluation is never cached.
-import { useCallback, useMemo } from 'react';
+import { createContext, createElement, useCallback, useContext, useMemo, type ReactNode } from 'react';
 import type { DecideLinkRow } from '@/db/decideLinks';
 import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
 import { classifyReadError, type DbErrorKind } from '@/db/errors';
@@ -92,7 +92,26 @@ export function sharedSettingsSource(deps: SharedSettingsDeps): V3SettingsSource
 const NO_CHECKS: readonly { id: string }[] = [];
 const READ_NAMES = ['settings', 'answers', 'dismissals', 'checks', 'links'] as const;
 
+// 06.1-72 (G-73-1): one useDecideV3 per screen. Decide home ran it in about seven hooks at once (the home, the month picture, the
+// open checks, the rule crossings, the new check, the setup facts, Something changed?), each with its own 17-read snapshot and
+// record context, so every cache event re-ran all of them. A screen mounted inside <DecideV3Scope> reads the scope's one copy;
+// outside a scope (tests, other screens) the hook runs on its own as before. Both give the same state for the same cache.
+const DecideV3Context = createContext<DecideV3State | null>(null);
+
+/** Runs useDecideV3 once and hands its state to every useDecideV3 below it. */
+export function DecideV3Scope({ children }: { children: ReactNode }) {
+  const state = useDecideV3Live();
+  return createElement(DecideV3Context.Provider, { value: state }, children);
+}
+
 export function useDecideV3(): DecideV3State {
+  const scoped = useContext(DecideV3Context);
+  // A component is either always inside a scope or never (the scope sits in the screen's layout), so the hook order is stable.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return scoped ?? useDecideV3Live();
+}
+
+function useDecideV3Live(): DecideV3State {
   const rc = useRecordContext();
   const userId = rc.userId ?? undefined;
   const householdId = rc.householdId ?? undefined;
@@ -150,5 +169,12 @@ export function useDecideV3(): DecideV3State {
   }, [retrySnapshot]);
 
   const status: DecideV3State['status'] = failed ? 'error' : judged === null ? 'loading' : 'ready';
-  return { status, inputs: judged?.inputs ?? null, evaluation: judged?.evaluation ?? null, source: judged?.source ?? null, v3: judged?.v3 ?? null, prepared: judged?.prepared ?? null, errorKind, missingReads, refetch };
+  // 06.1-72: the same object while nothing in it changed, so a scope's consumers (and memos keyed on the state) skip a render.
+  const missingKey = missingReads.join(',');
+  return useMemo(
+    () => ({ status, inputs: judged?.inputs ?? null, evaluation: judged?.evaluation ?? null, source: judged?.source ?? null, v3: judged?.v3 ?? null, prepared: judged?.prepared ?? null, errorKind, missingReads, refetch }),
+    // missingKey stands for missingReads, which is rebuilt each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [status, judged, errorKind, missingKey, refetch]
+  );
 }

@@ -12,7 +12,7 @@ import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-nativ
 import { useIsFocused, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCategories } from '@/data/queries/categories';
 import { useDecideV3 } from '@/data/queries/decideV3';
-import { useSyncStatus } from '@/data/sync/useSyncStatus';
+import { useIsOnline } from '@/data/sync/useIsOnline';
 import type { LocalDate, PayV2, QuickLine } from '@/engine/decide/v3';
 import { currencyCode, currencyExponent, minorUnits } from '@/engine/money';
 import { perfMark } from '@/features/decide/perf/perfMarks';
@@ -108,7 +108,7 @@ export function DecideHome() {
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const v3 = useDecideV3();
-  const sync = useSyncStatus();
+  const isOnline = useIsOnline(); // 06.1-72: the online flag only, not the per-fetch last-synced time
   const { picture, bars } = useMonthPicture();
   const inputs = v3.inputs;
   const currency = inputs?.currency ?? rc.homeCurrency;
@@ -293,7 +293,7 @@ export function DecideHome() {
   const footer = useMemo(() => footerFactsOf(inputs), [inputs]);
 
   const go = (href: string): void => router.push(href as Href);
-  const offlineDate = !sync.isOnline ? dateText(inputs?.recordsAsOf ?? rc.today) : null;
+  const offlineDate = !isOnline ? dateText(inputs?.recordsAsOf ?? rc.today) : null;
   const openModel = openId === null ? null : (openRows.find((r) => r.id === openId) ?? null);
   const openRow = openId === null ? null : (openChecks.find((r) => r.id === openId) ?? null);
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
