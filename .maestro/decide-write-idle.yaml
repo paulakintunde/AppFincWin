@@ -1,0 +1,83 @@
+# 06.1-73 (DB-1 / H-11b): does a tap land in the idle window after a write? One check is made (a write: the check row),
+# the answer is awaited, Decide home is reopened, and then "Past decisions" is tapped about 5 s, 20 s and 60 s after the
+# answer showed. Each tap prints, on its own line:
+#   TIMING tap_after_write_<n> = <ms from the tap to "Your decisions" showing> at=<ms since the answer showed>
+# A dev build on the emulator: the 06.1-73 target is a first change within 3 s for a tap made 5 s after the write.
+# Writes one check ("desk lamp", 25) per run on the test account; it stays as a draft check (listed in the 06.1-73 SUMMARY).
+# Android: the keyboard is closed by a label tap and pages scroll by swipes (common/ flows), never the built-in
+# keyboard or scroll-until commands. Waits use an optional wait for text that never shows.
+appId: com.fincwin.app
+name: Decide write then idle taps (06.1-73)
+---
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+# The first Decide open after a launch is slow on a dev build (DP-12), so this waits rather than asserts.
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 90000
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "desk lamp"
+      PRICE: "25"
+- runFlow: common/decide-gate.yaml
+- evalScript: ${output.written = Date.now()}
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible:
+      id: "past-pill"
+    timeout: 120000
+
+# Tap 1: about 5 s after the answer
+- extendedWaitUntil:
+    visible: "06173 never shown"
+    timeout: 5000
+    optional: true
+- evalScript: ${output.at1 = Date.now() - output.written}
+- evalScript: ${output.t1 = Date.now()}
+- tapOn:
+    id: "past-pill"
+- extendedWaitUntil:
+    visible: "Your decisions"
+    timeout: 180000
+- evalScript: "${console.log('TIMING tap_after_write_1 = ' + (Date.now() - output.t1) + ' ms at=' + output.at1)}"
+- back
+- extendedWaitUntil:
+    visible:
+      id: "past-pill"
+    timeout: 180000
+
+# Tap 2: about 20 s after the answer
+- extendedWaitUntil:
+    visible: "06173 never shown"
+    timeout: 10000
+    optional: true
+- evalScript: ${output.at2 = Date.now() - output.written}
+- evalScript: ${output.t2 = Date.now()}
+- tapOn:
+    id: "past-pill"
+- extendedWaitUntil:
+    visible: "Your decisions"
+    timeout: 180000
+- evalScript: "${console.log('TIMING tap_after_write_2 = ' + (Date.now() - output.t2) + ' ms at=' + output.at2)}"
+- back
+- extendedWaitUntil:
+    visible:
+      id: "past-pill"
+    timeout: 180000
+
+# Tap 3: about 60 s after the answer
+- extendedWaitUntil:
+    visible: "06173 never shown"
+    timeout: 35000
+    optional: true
+- evalScript: ${output.at3 = Date.now() - output.written}
+- evalScript: ${output.t3 = Date.now()}
+- tapOn:
+    id: "past-pill"
+- extendedWaitUntil:
+    visible: "Your decisions"
+    timeout: 180000
+- evalScript: "${console.log('TIMING tap_after_write_3 = ' + (Date.now() - output.t3) + ' ms at=' + output.at3)}"
+- runFlow: common/to-tabs.yaml

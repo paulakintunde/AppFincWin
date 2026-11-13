@@ -9,7 +9,11 @@ jest.mock('@sentry/react-native', () => ({ addBreadcrumb: jest.fn() }));
 const writeCrumbs = () =>
   (addBreadcrumb as jest.Mock).mock.calls
     .map((c) => c[0] as { category: string; message: string; data: Record<string, unknown> })
-    .filter((b) => b.category === 'write');
+    .filter((b) => b.category === 'write' && b.message === 'settled');
+const startCrumbs = () =>
+  (addBreadcrumb as jest.Mock).mock.calls
+    .map((c) => c[0] as { category: string; message: string; data: Record<string, unknown> })
+    .filter((b) => b.category === 'write' && b.message === 'start');
 
 describe('F-2 write timing breadcrumbs', () => {
   afterEach(() => {
@@ -54,5 +58,28 @@ describe('F-2 write timing breadcrumbs', () => {
     const m = queryClient.getMutationCache().build(queryClient, { mutationFn: async () => 1 });
     await m.execute(undefined);
     expect(writeCrumbs()[0]!.data.key).toBe('unknown');
+  });
+
+  it('06.1-73: each write adds one start crumb with the key name and the pending count only', async () => {
+    const m = queryClient.getMutationCache().build(queryClient, {
+      mutationKey: ['decide-checks', 'save'],
+      mutationFn: async () => 'ok',
+    });
+    await m.execute({ id: 'secret-id', price: 98765 });
+    const crumbs = startCrumbs();
+    expect(crumbs).toHaveLength(1);
+    expect(Object.keys(crumbs[0]!.data).sort()).toEqual(['key', 'pending']);
+    expect(crumbs[0]!.data.key).toBe('decide-checks');
+    expect(typeof crumbs[0]!.data.pending).toBe('number');
+    expect(JSON.stringify(crumbs[0])).not.toContain('secret-id');
+    expect(JSON.stringify(crumbs[0])).not.toContain('98765');
+  });
+
+  it('06.1-73: a throwing breadcrumb never fails the write', async () => {
+    (addBreadcrumb as jest.Mock).mockImplementationOnce(() => {
+      throw new Error('sentry down');
+    });
+    const m = queryClient.getMutationCache().build(queryClient, { mutationKey: ['x'], mutationFn: async () => 7 });
+    await expect(m.execute(undefined)).resolves.toBe(7);
   });
 });

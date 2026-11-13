@@ -12,6 +12,22 @@ export const queryClient = new QueryClient({
   // (the 'net' breadcrumb in timeoutFetch is the send side). Key name, ms, status and failure count only: never the
   // variables, amounts or ids.
   mutationCache: new MutationCache({
+    // 06.1-73 (H-11b): the start crumb; with the 'net' send crumb and the settled crumb below a write's whole path is
+    // visible. Key name and the pending-write count only.
+    onMutate: (_variables, mutation) => {
+      try {
+        addBreadcrumb({
+          category: 'write',
+          message: 'start',
+          data: {
+            key: String(mutation.options.mutationKey?.[0] ?? 'unknown'),
+            pending: queryClient.getMutationCache().getAll().filter((m) => m.state.status === 'pending').length,
+          },
+        });
+      } catch {
+        // telemetry only
+      }
+    },
     onSettled: (_data, error, _variables, _context, mutation) => {
       // A breadcrumb must never turn a landed write into a failed one: a throw here would reject the mutation.
       try {
