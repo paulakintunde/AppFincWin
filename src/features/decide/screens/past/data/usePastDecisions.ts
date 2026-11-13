@@ -106,6 +106,8 @@ export interface PastDecisionsModel {
   decisions: DecideCheckRow[];
   linksByCheck: ReadonlyMap<string, DecideLinkRow[]>;
   linesByCheck: ReadonlyMap<string, TransactionRow[]>;
+  /** 06.1-77 (DS-17): true while the linked lines for the current links are still being read (not on a failed read). */
+  linesLoading: boolean;
   goalByCheck: ReadonlyMap<string, SavingsGoalRow>;
   goalLines: TransactionRow[];
   ctx: PastContext;
@@ -176,7 +178,9 @@ export function usePastDecisions(): PastDecisionsModel {
     }
     return { transactionIds: [...new Set(transactionIds)].sort(), seriesIds: [...new Set(seriesIds)].sort() };
   }, [linksByCheck]);
-  const lineRows = useLinkedLines(hid, PAST_LINES_KEY, ids).data;
+  const lineQuery = useLinkedLines(hid, PAST_LINES_KEY, ids);
+  const lineRows = lineQuery.data;
+  const linesLoading = lineRows === undefined && !lineQuery.isError;
 
   const linesByCheck = useMemo(() => {
     const out = new Map<string, TransactionRow[]>();
@@ -212,6 +216,7 @@ export function usePastDecisions(): PastDecisionsModel {
     decisions,
     linksByCheck,
     linesByCheck,
+    linesLoading,
     goalByCheck,
     goalLines: goalLines ?? [],
     ctx,

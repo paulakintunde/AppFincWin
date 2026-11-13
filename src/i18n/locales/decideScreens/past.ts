@@ -48,5 +48,13 @@ export const past = {
     notFoundTitle: 'This decision isn’t here',
     notFoundBody: 'It may have been removed on another device.',
     historyA11y: 'What Decide said on {{date}}: {{word}}',
+    // 06.1-77 (DS-17): the records' up-front figure while the lines "I bought it" added are still loading.
+    upFrontLoading: 'Loading…',
+  },
+  // 06.1-77 (DC-4, OQ-77-1 A): Remove keeps the record "I bought it" added, says so, and links to it in Activity.
+  remove: {
+    recordStays: 'The {{amount}} in your records stays.',
+    recordStaysPlan: 'The {{amount}} and its planned payments in your records stay.',
+    recordLink: 'In your records',
   },
 } as const;

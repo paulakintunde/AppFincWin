@@ -2,6 +2,9 @@
 // check history (newest first), "See the check as it was" (a read-only answer), and "Remove from decisions" (danger text, Undo toast).
 // The history read fails soft: when the table cannot be read nothing is listed and no error shows (10 is not in production yet).
 // 06.1-63 (CC-3): Remove asks first, in a confirm sheet with the existing confirm copy (it says what is kept); Undo stays on the toast.
+// 06.1-77 (DS-17): "What your records show so far · Up front" shows the up-front amount "I bought it" added as soon as its line is
+// read (a loading word while it is read), not a dash until the 30-day look-back. (DC-4, OQ-77-1 A): Remove names the amount that
+// stays in the records and links to it in Activity, on that month.
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useCheckHistory } from '@/data/queries/decideHistory';
@@ -12,6 +15,11 @@ import { canUse } from '@/features/decide/entitlements';
 import { METHOD_LABEL } from '@/features/decide/screens/logic/codeMaps';
 import { compareEstimate } from '@/features/decide/journal/estimateActual';
 import { finalPriceOf, parseCheckInputs } from '@/features/decide/snapshot/checkInputs';
+import type { DecideLinkRow } from '@/db/decideLinks';
+import type { LinkedLine } from '@/features/decide/journal/estimateActual';
+import { monthOf } from '@/engine/time';
+import { setSelectedMonth } from '@/state/activityFocus';
+import { Row } from '@/ui/Row';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -22,7 +30,7 @@ import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Pill } from '@/ui/Pill';
 import { StateBadge, type StateBadgeShape } from '@/ui/StateBadge';
 import { Text } from '@/ui/Text';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { AboutSheet } from '../answer/info/AboutSheet';
 import { AsCheckedAnswer, readStoredResult } from './AsCheckedAnswer';
 import { estimateInputFor, localDateOf, usePastDecisions } from './data/usePastDecisions';
@@ -32,6 +40,24 @@ import { stateForVerdict } from '../logic/stateForVerdict';
 type T = (key: string, params?: Record<string, string | number>) => string;
 
 const DASH = '—';
+
+/**
+ * 06.1-77: the up-front rows "I bought it" wrote for this decision (its live written day_one transaction links), read from the
+ * linked lines. total is their home amount (null while one is missing or none was written); month is the first one's month.
+ */
+export function writtenDayOne(
+  links: readonly DecideLinkRow[] | undefined,
+  lines: readonly LinkedLine[]
+): { total: number | null; month: string | null; expected: number; withPayments: boolean } {
+  const live = (links ?? []).filter((l) => l.source === 'written' && l.deleted_at === null);
+  const ids = new Set(live.filter((l) => l.entity === 'transactions' && l.role === 'day_one').map((l) => l.target_id));
+  const withPayments = live.some((l) => l.role === 'payment');
+  const found = lines.filter((l) => ids.has(l.id) && l.status !== 'skipped');
+  const known = found.length > 0 && found.every((l) => l.amount !== null);
+  const total = known ? found.reduce((sum, l) => sum + Math.abs(l.amount ?? 0), 0) : null;
+  const first = [...found].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))[0];
+  return { total, month: first === undefined ? null : monthOf(first.date), expected: ids.size, withPayments };
+}
 
 /** The chip word and state for one history row, or null when its code is one this build does not know. */
 function chipOf(row: DecideCheckHistoryRow, once: boolean): { word: string; tone: ReturnType<typeof stateForVerdict> } | null {
@@ -90,7 +116,24 @@ export function DecisionDetailScreen({ id }: { id: string | null }) {
   const rows = history ?? [];
   const name = decision.name || t('decide.quick.unnamed');
 
-  const confirm = del.confirmCopy(decision, writtenCount(model.linksByCheck.get(decision.id)));
+  const links = model.linksByCheck.get(decision.id);
+  const dayOne = writtenDayOne(links, input?.lines ?? []);
+  const kept = decision.status === 'bought' && dayOne.total !== null ? { amount: whole(dayOne.total), withPayments: dayOne.withPayments } : null;
+  const confirm = del.confirmCopy(decision, writtenCount(links), kept);
+  const keptMonth = kept !== null ? dayOne.month : null;
+  const upFrontNow =
+    latest !== null && latest.dayOneActual !== null
+      ? whole(latest.dayOneActual)
+      : dayOne.total !== null
+        ? whole(dayOne.total)
+        : dayOne.expected > 0 && model.linesLoading
+          ? t('decide.screens.past.detail.upFrontLoading')
+          : DASH;
+  const openRecords = (month: string) => {
+    setConfirming(false);
+    setSelectedMonth(month);
+    router.navigate('/activity' as Href);
+  };
   const onRemove = () => {
     setConfirming(false);
     del.deleteDecision(decision, goalList);
@@ -130,10 +173,7 @@ export function DecisionDetailScreen({ id }: { id: string | null }) {
                 <LabelValueRow label={t('decide.screens.past.detail.upFront')} value={whole(input.estimateDayOne)} />
                 <LabelValueRow label={t('decide.screens.past.detail.running')} value={whole(input.estimateMonthly)} />
                 <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.past.detail.recordsSoFar')}</Text>
-                <LabelValueRow
-                  label={t('decide.screens.past.detail.upFront')}
-                  value={latest !== null && latest.dayOneActual !== null ? whole(latest.dayOneActual) : DASH}
-                />
+                <LabelValueRow label={t('decide.screens.past.detail.upFront')} value={upFrontNow} />
                 <LabelValueRow
                   label={t('decide.screens.past.detail.running')}
                   value={latest !== null && latest.monthlyActual !== null ? whole(latest.monthlyActual) : DASH}
@@ -186,7 +226,11 @@ export function DecisionDetailScreen({ id }: { id: string | null }) {
         destructive
         onConfirm={onRemove}
         onCancel={() => setConfirming(false)}
-      />
+      >
+        {keptMonth !== null ? (
+          <Row label={t('decide.screens.past.remove.recordLink')} dense chevron onPress={() => openRecords(keptMonth)} />
+        ) : null}
+      </ConfirmSheet>
     </DetailScreen>
   );
 }
