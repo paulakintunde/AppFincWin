@@ -53,7 +53,7 @@ const TX_DATA = [{ id: 't1', note: 'Groceries at Market', original_amount: 1234 
 async function saveWith(client: QueryClient, buster = CACHE_SCHEMA_VERSION) {
   await persistQueryClientSave({
     queryClient: client,
-    persister: createEncryptedPersister(),
+    persister: createEncryptedPersister(undefined, 0),
     dehydrateOptions: persistOptions.dehydrateOptions,
     buster,
   });
@@ -104,7 +104,7 @@ describe('encrypted query cache persister', () => {
     const fresh = new QueryClient();
     await persistQueryClientRestore({
       queryClient: fresh,
-      persister: createEncryptedPersister(),
+      persister: createEncryptedPersister(undefined, 0),
       maxAge: CACHE_MAX_AGE_MS,
       buster: CACHE_SCHEMA_VERSION,
     });
@@ -120,7 +120,7 @@ describe('encrypted query cache persister', () => {
     const fresh = new QueryClient();
     await persistQueryClientRestore({
       queryClient: fresh,
-      persister: createEncryptedPersister(),
+      persister: createEncryptedPersister(undefined, 0),
       maxAge: CACHE_MAX_AGE_MS,
       // A buster guaranteed different from whatever CACHE_SCHEMA_VERSION currently is (D-15).
       buster: `not-${CACHE_SCHEMA_VERSION}`,
@@ -145,7 +145,7 @@ describe('encrypted query cache persister', () => {
     const fresh = new QueryClient();
     await persistQueryClientRestore({
       queryClient: fresh,
-      persister: createEncryptedPersister(),
+      persister: createEncryptedPersister(undefined, 0),
       maxAge: CACHE_MAX_AGE_MS,
       buster: CACHE_SCHEMA_VERSION,
     });
@@ -167,7 +167,7 @@ describe('encrypted query cache persister', () => {
     const fresh = new QueryClient();
     await persistQueryClientRestore({
       queryClient: fresh,
-      persister: createEncryptedPersister(),
+      persister: createEncryptedPersister(undefined, 0),
       maxAge: CACHE_MAX_AGE_MS,
       buster: CACHE_SCHEMA_VERSION,
     });
@@ -198,7 +198,7 @@ describe('encrypted query cache persister', () => {
     const fresh = new QueryClient();
     await persistQueryClientRestore({
       queryClient: fresh,
-      persister: createEncryptedPersister(),
+      persister: createEncryptedPersister(undefined, 0),
       maxAge: CACHE_MAX_AGE_MS,
       buster: CACHE_SCHEMA_VERSION,
     });
@@ -220,7 +220,7 @@ describe('encrypted query cache persister', () => {
     const fresh = new QueryClient();
     await persistQueryClientRestore({
       queryClient: fresh,
-      persister: createEncryptedPersister(),
+      persister: createEncryptedPersister(undefined, 0),
       maxAge: CACHE_MAX_AGE_MS,
       buster: CACHE_SCHEMA_VERSION,
     });

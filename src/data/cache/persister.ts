@@ -224,11 +224,34 @@ function chunkMutations(mutations: Mutations, maxBytes: number) {
   return { chunks, oversizedSingle };
 }
 
+/**
+ * B-5 (06.1-48): the persister handed to persistQueryClient, plus two extras. `flush` writes a scheduled save now (no-op
+ * when none is pending); `persistNow` saves the given client at once, replacing any scheduled save.
+ */
+export type EncryptedPersister = Persister & {
+  flush: () => Promise<void>;
+  persistNow: (client: PersistedClient) => Promise<void>;
+};
+
+/**
+ * B-5 (06.1-48): the throttle wraps the WHOLE save, not only the base write. persistClient fires on every cache event (about
+ * 25 in 0.6 s on a device), and the mutation stringify, overflow clean-up, dev byte log and encryption used to run on each
+ * one before the base persister's own throttle. Now persistClient only keeps the latest client and schedules one trailing
+ * save after `throttleTime`; the base persister runs unthrottled (throttleTime 0) so there is one throttle, not two.
+ * Saves never overlap (a chain), and a throttleTime of 0 saves at once. Queued writes are not put at risk by the window:
+ * startPersistOnBackground saves at once when the app leaves the foreground, and removeClient cancels a scheduled save.
+ */
 export function createEncryptedPersister(
   storage: LargeSecureStore = new LargeSecureStore(),
   throttleTime = 1000
-): Persister {
-  const base = createBasePersister(storage, throttleTime);
+): EncryptedPersister {
+  const base = createBasePersister(storage, 0);
+
+  let latest: PersistedClient | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let chain: Promise<void> = Promise.resolve();
+  // How many overflow rows the last save left on disk; unknown until this instance has saved or removed once.
+  let lastChunks: number | 'unknown' = 'unknown';
 
   // Removes overflow rows from index `start` upward (stops at the first gap).
   async function removeOverflowFrom(start: number): Promise<void> {
@@ -239,37 +262,72 @@ export function createEncryptedPersister(
     }
   }
 
+  async function save(client: PersistedClient): Promise<void> {
+    const mutations = client.clientState.mutations;
+    const mutationBytes = mutations.length > 0 ? utf8Length(JSON.stringify(mutations)) : 0;
+    let toSave: WithChunks = client;
+    let chunkCount = 0;
+    if (mutationBytes > MAX_PERSIST_BYTES - MAIN_ROW_RESERVE_BYTES) {
+      const { chunks, oversizedSingle } = chunkMutations(mutations, MAX_PERSIST_BYTES);
+      chunkCount = chunks.length;
+      for (let i = 0; i < chunks.length; i++) {
+        await storage.setItem(WRITES_OVERFLOW_PREFIX + i, JSON.stringify(chunks[i]));
+      }
+      addBreadcrumb({
+        category: 'persist',
+        message: 'queued writes over budget',
+        data: { mutations: mutations.length, chunks: chunks.length, bytes: mutationBytes, oversizedSingle },
+      });
+      toSave = { ...client, clientState: { queries: [], mutations: [] }, writesChunks: chunks.length };
+    }
+    if (__DEV__) {
+      const bytes = utf8Length(serializeWithFetchTimes(toSave));
+      console.log(`[persist] bytes=${bytes} queries=${toSave.clientState.queries.length} mutations=${mutations.length}`);
+    }
+    await base.persistClient(toSave);
+    // Stale overflow rows go after the main row is written, so a kill in between never leaves a main row pointing at
+    // removed chunks. Storage is only read when an earlier save may have left rows past the new count.
+    if (lastChunks === 'unknown' || lastChunks > chunkCount) await removeOverflowFrom(chunkCount);
+    lastChunks = chunkCount;
+  }
+
+  function flush(): Promise<void> {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    const client = latest;
+    latest = null;
+    if (!client) return chain;
+    chain = chain.then(() => save(client)).catch(() => undefined);
+    return chain;
+  }
+
   return {
-    persistClient: async (client: PersistedClient) => {
-      const mutations = client.clientState.mutations;
-      const mutationBytes = mutations.length > 0 ? utf8Length(JSON.stringify(mutations)) : 0;
-      let toSave: WithChunks = client;
-      if (mutationBytes > MAX_PERSIST_BYTES - MAIN_ROW_RESERVE_BYTES) {
-        const { chunks, oversizedSingle } = chunkMutations(mutations, MAX_PERSIST_BYTES);
-        for (let i = 0; i < chunks.length; i++) {
-          await storage.setItem(WRITES_OVERFLOW_PREFIX + i, JSON.stringify(chunks[i]));
-        }
-        await removeOverflowFrom(chunks.length);
-        addBreadcrumb({
-          category: 'persist',
-          message: 'queued writes over budget',
-          data: { mutations: mutations.length, chunks: chunks.length, bytes: mutationBytes, oversizedSingle },
-        });
-        toSave = { ...client, clientState: { queries: [], mutations: [] }, writesChunks: chunks.length };
-      } else {
-        await removeOverflowFrom(0);
-      }
-      if (__DEV__) {
-        const bytes = utf8Length(serializeWithFetchTimes(toSave));
-        console.log(
-          `[persist] bytes=${bytes} queries=${toSave.clientState.queries.length} mutations=${mutations.length}`
-        );
-      }
-      await base.persistClient(toSave);
+    persistClient: (client: PersistedClient) => {
+      latest = client;
+      if (throttleTime <= 0) return flush();
+      timer ??= setTimeout(() => {
+        timer = null;
+        void flush();
+      }, throttleTime);
+      return Promise.resolve();
+    },
+    flush,
+    persistNow: (client: PersistedClient) => {
+      latest = client;
+      return flush();
     },
     removeClient: async () => {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      latest = null;
+      await chain;
       await base.removeClient();
       await removeOverflowFrom(0);
+      lastChunks = 0;
     },
     restoreClient: async () => {
       const restored = (await base.restoreClient()) as WithChunks | undefined;
@@ -288,6 +346,11 @@ export function createEncryptedPersister(
 }
 
 export const persister = createEncryptedPersister();
+
+/** B-5 (06.1-48): writes the main persister's scheduled save now; resolves at once when nothing is pending. */
+export function flushPersist(): Promise<void> {
+  return persister.flush();
+}
 
 export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
   persister,
@@ -324,19 +387,16 @@ export function resumeRestoredMutations(queryClient: QueryClient): Promise<void>
   return Promise.all(pending.map((m) => m.continue().catch(() => undefined))).then(() => undefined);
 }
 
-let immediate: Persister | null = null;
-
 /**
- * D-77 (R9): the main persister throttles writes to once a second, so a write queued less than a second before the OS
- * kills the app could be lost. This saves the client now, through an unthrottled persister over the same encrypted storage,
- * key and serializer (no new store). Errors are swallowed: a failed flush leaves the throttled write to land as before.
+ * D-77 (R9): the main persister throttles saves to once a second, so a write queued less than a second before the OS kills
+ * the app could be lost. This dehydrates the client now and saves it at once through the main persister (replacing any
+ * scheduled save, so an older snapshot never lands after it). Errors are swallowed: the throttled save remains the fallback.
  */
 export async function flushPersistedClient(qc: QueryClient): Promise<void> {
   try {
-    immediate ??= createEncryptedPersister(new LargeSecureStore(), 0);
     await persistQueryClientSave({
       queryClient: qc,
-      persister: immediate,
+      persister: { ...persister, persistClient: persister.persistNow },
       buster: CACHE_SCHEMA_VERSION,
       dehydrateOptions: persistOptions.dehydrateOptions,
     });
@@ -351,7 +411,11 @@ export async function flushPersistedClient(qc: QueryClient): Promise<void> {
  */
 export function startPersistOnBackground(qc: QueryClient): () => void {
   const sub = AppState.addEventListener('change', (state) => {
-    if (state === 'background' || state === 'inactive') setTimeout(() => void flushPersistedClient(qc), 0);
+    if (state !== 'background' && state !== 'inactive') return;
+    // B-5: the scheduled save lands now (flushPersist); the next tick then saves the client as it is, after any screen's
+    // own AppState handler has queued its write.
+    void flushPersist();
+    setTimeout(() => void flushPersistedClient(qc), 0);
   });
   return () => sub.remove();
 }
