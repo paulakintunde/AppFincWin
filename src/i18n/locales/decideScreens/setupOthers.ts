@@ -93,5 +93,9 @@ export const setupOthers = {
     notComplete: 'Not complete',
     accountFor: 'What is {{name}} for?',
     accountA11y: '{{name}}, {{status}}',
+    openTitle: 'What’s still open',
+    envelopesRow_one: 'Envelopes and goals: 1 not linked',
+    envelopesRow_other: 'Envelopes and goals: {{count}} not linked',
+    stillOpen: 'Records still open: {{count}} to finish.',
   },
 } as const;

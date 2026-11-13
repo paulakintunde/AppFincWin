@@ -8,6 +8,7 @@ import { useEditGoal } from '@/data/mutations/growGoals';
 import { useSaveGrowDebt } from '@/data/mutations/growDebts';
 import { useEditSeriesFrom } from '@/data/mutations/recurringSeries';
 import { useSafetyNetAnswer } from '@/data/mutations/safetyNetAnswer';
+import { useSkipOccurrence } from '@/data/mutations/transactions';
 import { BillsSetup } from '@/features/decide/screens/setup/items/BillsSetup';
 import { DebtsSetup } from '@/features/decide/screens/setup/items/DebtsSetup';
 import { NetSetup } from '@/features/decide/screens/setup/items/NetSetup';
@@ -44,6 +45,17 @@ export function SetupRulesRoute() {
   return <RulesSetup />;
 }
 
+// 06.1-45 (G-1, C-4): Records lists the readiness items with their fixes, so it needs Grow's goal writer (envelope account, D-54)
+// and the line skip, both bound here as on the answer route.
 export function SetupRecordsRoute() {
-  return <RecordsSetup />;
+  const goal = useEditGoal();
+  const skipper = useSkipOccurrence();
+  return (
+    <RecordsSetup
+      writes={{
+        setEnvelopeAccount: (row, accountId, ownerId) => goal.edit(row, { account_id: accountId }, ownerId, 0),
+        skipLine: (row, ownerId) => skipper.skip(row, ownerId),
+      }}
+    />
+  );
 }

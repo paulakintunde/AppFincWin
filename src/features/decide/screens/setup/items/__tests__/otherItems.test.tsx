@@ -61,6 +61,10 @@ jest.mock('../../useSetupProgress', () => ({ useSetupFacts: () => ({ loading: mo
 const mockSaveUse = jest.fn((..._a: unknown[]) => ({ stepId: 'step-use' }));
 jest.mock('@/data/mutations/accountUse', () => ({ useSaveAccountUse: () => ({ save: mockSaveUse }) }));
 jest.mock('@/features/record/accounts/AccountUseSheet', () => ({ AccountUseSheet: () => null }));
+// 06.1-45: Records now reads the answer writer and the query cache for the readiness list.
+jest.mock('@/data/mutations/decideAnswers', () => ({ useSaveDecideAnswer: () => ({ save: jest.fn(() => null) }) }));
+jest.mock('@tanstack/react-query', () => ({ ...jest.requireActual('@tanstack/react-query'), useQueryClient: () => ({ getQueriesData: () => [] }) }));
+const RECORDS_WRITES = { setEnvelopeAccount: jest.fn(() => 'step'), skipLine: jest.fn(() => null) };
 
 const facts = (over: Partial<SetupFacts> = {}): SetupFacts => ({
   hasPay: true, payAmountMinor: 320000, payDay: 15, billsRightAnswered: true, billsCount: 3, billsMonthlyMinor: 100000,
@@ -205,14 +209,14 @@ describe('RulesSetup (D36)', () => {
 
 describe('RecordsSetup (D37, D37b)', () => {
   it('Done is active only when all three checks hold', async () => {
-    await wrap(<RecordsSetup />);
+    await wrap(<RecordsSetup writes={RECORDS_WRITES} />);
     expect(screen.getByText('Done')).toBeTruthy();
     expect(screen.queryByText('Save and close', { exact: true })).toBeTruthy(); // the frame's top-right link stays
   });
 
   it('an 11-day-old newest entry leaves the button as Save and close and names the open check', async () => {
     mockFacts = facts({ newestEntryThisMonth: '2026-11-09' });
-    await wrap(<RecordsSetup />);
+    await wrap(<RecordsSetup writes={RECORDS_WRITES} />);
     expect(screen.queryByText('Done')).toBeNull();
     expect(screen.getAllByText('Save and close').length).toBe(2);
     expect(screen.getByTestId('check-this')).toHaveTextContent(/Not complete/);
@@ -221,7 +225,7 @@ describe('RecordsSetup (D37, D37b)', () => {
   it('open accounts show the plain four choices and write a plain choice through Accounts', async () => {
     mockFacts = facts({ accountsAllHaveUse: false });
     mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: null, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [] }] };
-    await wrap(<RecordsSetup />);
+    await wrap(<RecordsSetup writes={RECORDS_WRITES} />);
     for (const label of ['Everyday spending', 'Savings or goals', 'Safety net', 'Not used for spending']) expect(screen.getByLabelText(label)).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Not used for spending'));
     expect(mockSaveUse).toHaveBeenCalledWith({ account: expect.objectContaining({ id: 'a1' }), use: { kind: 'untouched' } });
@@ -230,7 +234,7 @@ describe('RecordsSetup (D37, D37b)', () => {
   it('a person with no records sees the empty variant and a way to quick estimates', async () => {
     mockFacts = facts({ lastMonthComplete: false, newestEntryThisMonth: null, accountsAllHaveUse: false });
     mockInputs = { accounts: [], months: [] };
-    await wrap(<RecordsSetup />);
+    await wrap(<RecordsSetup writes={RECORDS_WRITES} />);
     expect(screen.getByTestId('records-empty')).toBeTruthy();
     await fireEvent.press(screen.getByText('Answer from quick estimates for now'));
     expect(mockPush).toHaveBeenCalledWith('/decide/setup/quick-estimates');
