@@ -21,7 +21,6 @@ import {
   type LocalDate,
   type PayV2,
   type QuickLine,
-  type UsdRate,
 } from '@/engine/decide/v3';
 import { minorUnits } from '@/engine/money';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -87,8 +86,8 @@ export interface RouteContext {
   readonly currency: string;
   readonly country: string | null;
   readonly subdivision?: string | null;
-  readonly thresholds?: HomeThresholds | null;
-  readonly usdRate?: UsdRate | null;
+  /** 06.1-56 (CN-6): the loaded engine thresholds (built from the stored rates); routing waits for them. */
+  readonly thresholds: HomeThresholds;
 }
 
 export type NewCheckRoute = 'blocked' | `/decide/check/kind?id=${string}` | `/decide/check/price?id=${string}` | `/decide/answer/${string}`;
@@ -110,9 +109,7 @@ export function routeFor(check: CheckV2, ctx: RouteContext): NewCheckRoute {
     kind,
     payMode: ctx.payMode === 'plan' || check.pay.mode === 'plan' || readsAsPlan(ctx.text) ? 'plan' : 'once',
     whole: minorUnits(wholeWithTax(check, ctx)),
-    currency: ctx.currency,
-    usdRate: ctx.usdRate ?? null,
-    thresholds: ctx.thresholds ?? null,
+    thresholds: ctx.thresholds,
   });
   if (!big) return `/decide/answer/${ctx.id}`;
   return kind === null ? `/decide/check/kind?id=${ctx.id}` : `/decide/check/price?id=${ctx.id}`;
@@ -148,19 +145,20 @@ export function useNewCheck(): NewCheck {
   const start = useCallback(
     (fields: NewCheckFields): NewCheckRoute | 'unavailable' | 'loading' => {
       if (pending) return 'unavailable';
-      if (rc.userId === null || rc.householdId === null) return 'loading';
+      // 06.1-56 (H-9, CN-6): the route waits for the loaded inputs (thresholds, region, subdivision), so it never depends on load state.
       const inputs = v3.inputs;
-      const country = inputs?.region ?? rc.region;
+      if (rc.userId === null || rc.householdId === null || inputs === null) return 'loading';
+      const country = inputs.region ?? rc.region;
       const check = buildCheck(fields, { country, nextPayday: picture?.payday ?? null });
       const id = Crypto.randomUUID();
       const route = routeFor(check, {
         id,
         text: fields.text,
         payMode: fields.payMode,
-        currency: inputs?.currency ?? rc.homeCurrency,
+        currency: inputs.currency,
         country,
-        subdivision: inputs?.regionSubdivision ?? null,
-        thresholds: inputs?.thresholds ?? null,
+        subdivision: inputs.regionSubdivision ?? null,
+        thresholds: inputs.thresholds,
       });
       if (route === 'blocked') return route;
       setPending(true);
@@ -177,7 +175,7 @@ export function useNewCheck(): NewCheck {
       router.push(route as never);
       return route;
     },
-    [rc.userId, rc.householdId, rc.region, rc.homeCurrency, pending, v3.inputs, picture, create, router],
+    [rc.userId, rc.householdId, rc.region, pending, v3.inputs, picture, create, router],
   );
 
   return { pending, start };

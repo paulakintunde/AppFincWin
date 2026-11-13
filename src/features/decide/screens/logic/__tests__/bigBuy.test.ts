@@ -41,7 +41,8 @@ describe('isLargePrice (D-09: over the engine band-6 edge)', () => {
 });
 
 describe('isBigBuy (D-09)', () => {
-  const small = { whole: minorUnits(18_000), currency: 'USD', usdRate: null } as const;
+  const usd = homeThresholds('USD', null);
+  const small = { whole: minorUnits(18_000), thresholds: usd } as const;
 
   it('a small cash buy of an everyday or tech kind goes straight to the answer', () => {
     expect(isBigBuy({ ...small, kind: 'tech', payMode: 'once' })).toBe(false);
@@ -62,7 +63,27 @@ describe('isBigBuy (D-09)', () => {
   });
 
   it('a large price opens the stepper; the $3,500 laptop in cash does not', () => {
-    expect(isBigBuy({ whole: minorUnits(350_000), currency: 'USD', usdRate: null, kind: 'tech', payMode: 'once' })).toBe(false);
-    expect(isBigBuy({ whole: minorUnits(900_000), currency: 'USD', usdRate: null, kind: 'tech', payMode: 'once' })).toBe(true);
+    expect(isBigBuy({ whole: minorUnits(350_000), thresholds: usd, kind: 'tech', payMode: 'once' })).toBe(false);
+    expect(isBigBuy({ whole: minorUnits(900_000), thresholds: usd, kind: 'tech', payMode: 'once' })).toBe(true);
+  });
+
+  // 06.1-56 (H-9, CN-6): the route reads only the loaded thresholds, so cold and warm starts agree.
+  it('routes the same item the same way with the same loaded thresholds, cold or warm', () => {
+    const rate = { num: 2n, den: 1n };
+    const cold = homeThresholds('XTS', rate);
+    const warm = homeThresholds('XTS', rate);
+    const edge = Number(cold.bandEdges[4]);
+    for (const whole of [edge - 1, edge, edge + 1]) {
+      const a = isBigBuy({ whole: minorUnits(whole), thresholds: cold, kind: 'tech', payMode: 'once' });
+      const b = isBigBuy({ whole: minorUnits(whole), thresholds: warm, kind: 'tech', payMode: 'once' });
+      expect(a).toBe(b);
+    }
+    expect(isBigBuy({ whole: minorUnits(edge), thresholds: cold, kind: 'tech', payMode: 'once' })).toBe(false);
+  });
+
+  it('GBP edges come from the loaded thresholds, not the US$ number', () => {
+    const gbp = homeThresholds('GBP', null);
+    expect(isBigBuy({ whole: minorUnits(450_000), thresholds: gbp, kind: 'tech', payMode: 'once' })).toBe(true);
+    expect(isBigBuy({ whole: minorUnits(450_000), thresholds: usd, kind: 'tech', payMode: 'once' })).toBe(false);
   });
 });

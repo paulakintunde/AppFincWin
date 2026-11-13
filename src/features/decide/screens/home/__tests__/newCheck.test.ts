@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react-native';
-import { toStoredV2 } from '@/engine/decide/v3';
+import { homeThresholds, toStoredV2 } from '@/engine/decide/v3';
 import { buildCheck, routeFor, useNewCheck, type NewCheckFields } from '../useNewCheck';
 
 const mockCreate = jest.fn();
@@ -7,10 +7,11 @@ const mockPush = jest.fn();
 let mockRegion: string | null = 'US';
 let mockCurrency = 'USD';
 let mockUserId: string | null = 'u1';
+let mockInputs: unknown = null;
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
 jest.mock('@/data/mutations/decideChecks', () => ({ useCreateCheck: () => ({ create: mockCreate, pendingIds: [], pendingRows: [] }) }));
-jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ inputs: null, prepared: null }) }));
+jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ inputs: mockInputs, prepared: null }) }));
 jest.mock('../../engine/useMonthPicture', () => ({ useMonthPicture: () => ({ picture: { payday: '2026-11-15' }, bars: [] }) }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: mockUserId, householdId: 'h1', homeCurrency: mockCurrency, region: mockRegion, today: '2026-11-11' }),
@@ -27,7 +28,8 @@ const fields = (over: Partial<NewCheckFields>): NewCheckFields => ({
 });
 const ctx = { country: 'US', nextPayday: '2026-11-15' };
 const route = (f: NewCheckFields, currency = 'USD', country: string | null = 'US') =>
-  routeFor(buildCheck(f, { country, nextPayday: '2026-11-15' }), { id: 'k1', text: f.text, payMode: f.payMode, currency, country });
+  routeFor(buildCheck(f, { country, nextPayday: '2026-11-15' }), { id: 'k1', text: f.text, payMode: f.payMode, currency, country, thresholds: homeThresholds(currency, null) });
+const loadedInputs = (currency = 'USD', region: string | null = 'US') => ({ currency, region, regionSubdivision: null, thresholds: homeThresholds(currency, null) });
 
 describe('buildCheck (D-12, D-21)', () => {
   it('stores purpose want, never asks about an emergency, and carries quick lines', () => {
@@ -98,6 +100,32 @@ describe('useNewCheck (T-06.1-21-01, T-06.1-21-02)', () => {
     mockRegion = 'US';
     mockCurrency = 'USD';
     mockUserId = 'u1';
+    mockInputs = loadedInputs();
+  });
+
+  it('06.1-56 (H-9, CN-6): returns loading and writes nothing while the engine inputs are not loaded', async () => {
+    mockInputs = null;
+    const { result } = await renderHook(() => useNewCheck());
+    let r: unknown;
+    await act(async () => {
+      r = result.current.start(fields({ text: 'laptop', price: 350_000 }));
+    });
+    expect(r).toBe('loading');
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('06.1-56 (CN-6): routes with the loaded region and thresholds, not the device region', async () => {
+    mockRegion = 'US';
+    mockInputs = loadedInputs('GBP', 'GB');
+    const { result } = await renderHook(() => useNewCheck());
+    let r: unknown;
+    await act(async () => {
+      // 4,500 GBP with tax included is over the GBP band-6 edge; the stepper opens on the kind step (Piano reads no kind)
+      r = result.current.start(fields({ text: 'Piano', price: 450_000 }));
+    });
+    expect(r).toBe('/decide/check/kind?id=new-id');
+    expect(mockCreate.mock.calls[0]![0].inputs.taxIncluded).toBe(true);
   });
 
   it('06.1-52 (C-18): returns loading and writes nothing before the user is loaded', async () => {
