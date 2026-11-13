@@ -1,6 +1,8 @@
 // 06.1-19 (D13, D-24, FIN-28, UX-41): step 3, running costs and what stops. Lines start from a matching recorded bill, else from the
 // dated "quick estimates" table (prefillRunningCosts); each can be switched off, re-timed and edited. A card lists costs that stop
 // when you buy and the sale of the old one. The total shows a monthly figure and what a usual month leaves, from the engine.
+// 06.1-55 (A-RC-1): the before/after line compares a usual month (the month picture's usual LEFT) with a usual month once the
+// costs start (afterBuy.usualMonth), never this month after plans against a usual month.
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
@@ -24,6 +26,7 @@ import { DatePickerSheet } from '../sheets/DatePickerSheet';
 import { HowOftenSheet, type HowOftenValue } from '../sheets/HowOftenSheet';
 import { SaleSheet } from '../sheets/SaleSheet';
 import { useCheckEngine } from '../engine/useCheckEngine';
+import { useMonthPicture } from '../engine/useMonthPicture';
 import { CheckNotFound } from '../ui/CheckNotFound';
 import { NeedLine } from '../ui/NeedLine';
 import { StepFrame } from './StepFrame';
@@ -60,6 +63,7 @@ export function CostsStep({ id }: { id: string }) {
   const data = useStepData();
   const fmt = useMoneyFormatter(false, data.currency);
   const engine = useCheckEngine(step.check, { checkId: id });
+  const { picture } = useMonthPicture();
   const addOwn = useOwnAdd(step);
   const { check, name, status } = step;
   const [often, setOften] = useState<string | null>(null);
@@ -144,10 +148,11 @@ export function CostsStep({ id }: { id: string }) {
   const monthly = parts.reduce((a, p) => a + p.value, 0);
   const percents = wholePercents(parts.map((p) => p.value));
   const legend = parts.map((p, i) => t('decide.screens.stepper.running.percentLegend', { name: p.name, percent: percents[i] ?? 0 })).join(' · ');
-  const after = engine.evaluation?.result.afterBuy ?? null;
-  const left = after?.before ?? null;
-  const afterFigure = after === null ? null : (after.usualMonth ?? after.month);
-  const share = left !== null && left > 0 ? Math.round((monthly * 100) / left) : null;
+  // 06.1-55 (A-RC-1): a usual month against a usual month. before is the month picture's usual LEFT (no purchase); after is the
+  // engine's usual month once the costs (and any plan payment) start. With either missing there is no line, never a mixed pair.
+  const before = picture?.usual?.left ?? null;
+  const afterFigure = engine.evaluation?.result.afterBuy.usualMonth ?? null;
+  const share = before !== null && before > 0 ? Math.round((monthly * 100) / Number(before)) : null;
 
   const sale = check.replaces?.sale ?? null;
   const stops = check.replaces?.stops ?? [];
@@ -279,8 +284,10 @@ export function CostsStep({ id }: { id: string }) {
               {share === null ? null : <Text style={small}>{t('decide.screens.stepper.running.totalShare', { percent: share })}</Text>}
             </>
           )}
-          {left === null || afterFigure === null ? null : (
-            <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('decide.screens.stepper.running.totalAfter', { left: money(left), after: money(afterFigure) })}</Text>
+          {before === null || afterFigure === null ? null : (
+            <Text testID="costs-total-after" style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+              {t('decide.screens.stepper.running.totalAfter', { before: money(before), after: money(afterFigure) })}
+            </Text>
           )}
           <Text style={small}>{t('decide.screens.stepper.running.totalQuick')}</Text>
           <Text style={small}>{t('decide.screens.stepper.running.yearlyNote')}</Text>

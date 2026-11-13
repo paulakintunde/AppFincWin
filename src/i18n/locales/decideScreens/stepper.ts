@@ -78,7 +78,7 @@ export const stepper = {
     addStop: '+ Add a cost that stops',
     totalTitle: 'About {{monthly}} a month',
     totalShare: '{{percent}}% of what a usual month leaves',
-    totalAfter: 'A usual month leaves {{left}} today. After this, about {{after}}.',
+    totalAfter: 'A usual month leaves {{before}} today. With these costs, about {{after}}.',
     totalQuick: 'These amounts are quick estimates until you change them.',
     yearlyNote: 'Yearly costs are shown as a monthly amount.',
     noneOn: 'No running costs are switched on.',
