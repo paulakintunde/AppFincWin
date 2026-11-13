@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06.1 flow audit done (code 58 + device 75 findings, FQ1-FQ10); wave 20 done: 52 (need lines, stepper never stuck), 62 (press feedback, keyboard taps) (51/72); next wave 21 after device findings merge"
+stopped_at: "Phase 06.1 device walk merged (plans 73 rescoped for DB-1, 75-80 new; OQ answers locked) (51/78); wave 21 running: 73, 53, 54, 55, 63, 76"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:
