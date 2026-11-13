@@ -35,18 +35,22 @@ import { useAccountBalances } from './activity';
 import { useCategories } from './categories';
 import { useCustomCurrencies } from './customCurrencies';
 import { useFxLatest } from './fxLatest';
+import { DECIDE_READ_STALE_MS } from './decideStale';
 import { useRecurringSeries } from './recurringSeries';
 
 export const DECIDE_LOOKBACK_MONTHS = 12;
 export const DECIDE_UPCOMING_MONTHS = 120; // pending one-offs dated after this month (05-06)
-/** 06.1-46 (B-9): Decide's history and upcoming reads stay fresh for 5 minutes; a transaction write still invalidates them at once. */
-export const DECIDE_READ_STALE_MS = 5 * 60_000;
+export { DECIDE_READ_STALE_MS } from './decideStale';
+/** 06.1-72: the observer options Decide passes to the shared reads it uses. */
+const DECIDE_READ = { staleTime: DECIDE_READ_STALE_MS } as const;
 
 export function useDecideChecks(userId?: string, householdId?: string): UseQueryResult<DecideCheckRow[]> {
   return useQuery({
     queryKey: queryKeys.decideChecks(userId ?? '', householdId ?? ''),
     queryFn: () => fetchDecideChecks(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
+    // 06.1-72 (G-73-1): a Decide-only read; a write still invalidates it at once.
+    staleTime: DECIDE_READ_STALE_MS,
   });
 }
 
@@ -66,6 +70,8 @@ export function useOpenChecks(userId?: string, householdId?: string): UseQueryRe
     queryKey: queryKeys.decideChecks(userId ?? '', householdId ?? ''),
     queryFn: () => fetchDecideChecks(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
+    // 06.1-72 (G-73-1): a Decide-only read; a write still invalidates it at once.
+    staleTime: DECIDE_READ_STALE_MS,
     select: selectOpenChecks,
   });
 }
@@ -75,22 +81,26 @@ export function useDecideSettings(userId?: string): UseQueryResult<DecideSetting
     queryKey: queryKeys.decideSettings(userId ?? ''),
     queryFn: () => fetchDecideSettings(supabase, userId as string),
     enabled: Boolean(userId),
+    // 06.1-72 (G-73-1): a Decide-only read; a write still invalidates it at once.
+    staleTime: DECIDE_READ_STALE_MS,
   });
 }
 
-export function useDebts(householdId?: string): UseQueryResult<DebtRow[]> {
+export function useDebts(householdId?: string, opts?: { staleTime?: number }): UseQueryResult<DebtRow[]> {
   return useQuery({
     queryKey: queryKeys.debts(householdId ?? ''),
     queryFn: () => fetchDebts(supabase, householdId as string),
     enabled: Boolean(householdId),
+    ...opts, // only a given staleTime: an explicit undefined would replace the app default
   });
 }
 
-export function useStatementPeriods(householdId?: string): UseQueryResult<StatementPeriodRow[]> {
+export function useStatementPeriods(householdId?: string, opts?: { staleTime?: number }): UseQueryResult<StatementPeriodRow[]> {
   return useQuery({
     queryKey: queryKeys.statementPeriods(householdId ?? ''),
     queryFn: () => fetchStatementPeriods(supabase, householdId as string),
     enabled: Boolean(householdId),
+    ...opts, // only a given staleTime: an explicit undefined would replace the app default
   });
 }
 
@@ -105,6 +115,8 @@ export function useDecideLinks(
     queryKey: [...queryKeys.decideLinks(userId ?? '', householdId ?? ''), checkIds.join(',')],
     queryFn: () => fetchDecideLinks(supabase, checkIds),
     enabled: Boolean(userId) && Boolean(householdId),
+    // 06.1-72 (G-73-1): a Decide-only read; a write still invalidates it at once.
+    staleTime: DECIDE_READ_STALE_MS,
     // 06.1-46 (B-3): a new check changes the key; keep the last links while it loads so Decide never drops back to loading.
     placeholderData: keepPreviousData,
   });
@@ -132,15 +144,18 @@ export function useDecideChanges(userId?: string, householdId?: string) {
     queryKey: queryKeys.decideChanges(userId ?? '', householdId ?? ''),
     queryFn: () => fetchDecideChanges(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
+    // 06.1-72 (G-73-1): a Decide-only read; a write still invalidates it at once.
+    staleTime: DECIDE_READ_STALE_MS,
   });
 }
 
 /** D-34: savings goals. */
-export function useSavingsGoals(userId?: string, householdId?: string) {
+export function useSavingsGoals(userId?: string, householdId?: string, opts?: { staleTime?: number }) {
   return useQuery({
     queryKey: queryKeys.savingsGoals(userId ?? '', householdId ?? ''),
     queryFn: () => fetchSavingsGoals(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
+    ...opts, // only a given staleTime: an explicit undefined would replace the app default
   });
 }
 
@@ -320,34 +335,40 @@ export function useDecideSnapshot(): DecideSnapshotState {
     placeholderData: upcomingFallback,
     staleTime: DECIDE_READ_STALE_MS,
   });
-  const accountsQuery = useAccounts(hhId);
+  // 06.1-72 (G-73-1): every read here is held fresh for DECIDE_READ_STALE_MS, so a Decide screen that mounts (the answer over
+  // Decide home) does not refetch the reads home already holds once they pass the app's 60 s default. A write still
+  // invalidates its keys at once (an invalidated read is stale whatever its staleTime), and other screens keep the default.
+  const accountsQuery = useAccounts(hhId, DECIDE_READ);
   const allAccounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
-  const { balances } = useAccountBalances(hh, allAccounts);
+  const { balances } = useAccountBalances(hh, allAccounts, DECIDE_READ);
   // Same key as useAccountBalances' read (shared, not refetched): only here for its error and loaded state.
   const balanceRead = useQuery({
     queryKey: queryKeys.accountBalances(hh ?? ''),
     queryFn: () => fetchAccountBalances(supabase, hh as string),
     enabled,
+    staleTime: DECIDE_READ_STALE_MS,
   });
-  const seriesQuery = useRecurringSeries(hhId);
+  const seriesQuery = useRecurringSeries(hhId, DECIDE_READ);
   const fxQuery = useFxLatest();
-  const categoriesQuery = useCategories(userKey);
-  const customQuery = useCustomCurrencies(userKey);
+  const categoriesQuery = useCategories(userKey, DECIDE_READ);
+  const customQuery = useCustomCurrencies(userKey, DECIDE_READ);
   const settingsQuery = useDecideSettings(userKey);
-  const debtsQuery = useDebts(hhId);
-  const goalsQuery = useSavingsGoals(userKey, hhId);
-  const periodsQuery = useStatementPeriods(hhId);
+  const debtsQuery = useDebts(hhId, DECIDE_READ);
+  const goalsQuery = useSavingsGoals(userKey, hhId, DECIDE_READ);
+  const periodsQuery = useStatementPeriods(hhId, DECIDE_READ);
   const changesQuery = useDecideChanges(userKey, hhId);
   const checksQuery = useDecideChecks(userKey, hhId);
   const paymentQuery = useQuery({
     queryKey: queryKeys.decidePaymentLinks(userId ?? '', hh ?? ''),
     queryFn: () => fetchPaymentLinks(supabase, hh as string),
     enabled: enabled && Boolean(userId),
+    staleTime: DECIDE_READ_STALE_MS,
   });
   const writtenQuery = useQuery({
     queryKey: queryKeys.decideWrittenRowLinks(userId ?? '', hh ?? ''),
     queryFn: () => fetchWrittenRowLinks(supabase, hh as string),
     enabled: enabled && Boolean(userId),
+    staleTime: DECIDE_READ_STALE_MS,
   });
   // 05.4-35 (D-19, D-142): the state or province for the tax lookup. A required read like the others, so an answer never flips from
   // "no tax" to "tax" when it lands. null = not set.
@@ -355,6 +376,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
     queryKey: queryKeys.regionSubdivision(userId ?? ''),
     queryFn: () => fetchRegionSubdivision(supabase, userId as string),
     enabled: enabled && Boolean(userId),
+    staleTime: DECIDE_READ_STALE_MS,
   });
 
   const reads = [
