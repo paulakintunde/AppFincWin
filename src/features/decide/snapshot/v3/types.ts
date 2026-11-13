@@ -45,7 +45,7 @@ export interface V3SettingsSource {
 }
 
 export interface V3AnswerLite {
-  kind: 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover';
+  kind: 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover' | 'readiness_waiver';
   key: string;
   amount: number | null;
   bool_value: boolean | null;
