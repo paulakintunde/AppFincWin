@@ -9,7 +9,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, type Href } from 'expo-router';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { useCreateCheck, useMarkCheckSeen } from '@/data/mutations/decideChecks';
+import { useCreateCheck, useMarkCheckSeen, useSaveCheckAnswer } from '@/data/mutations/decideChecks';
 import { useRecordCheckHistory } from '@/data/mutations/decideHistory';
 import { useSaveDecideAnswer } from '@/data/mutations/decideAnswers';
 import { useSetDecideAnswered } from '@/data/mutations/decideSetup';
@@ -142,6 +142,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
   const isOnline = useIsOnline(); // 06.1-72: the online flag only, not the per-fetch last-synced time
   const accounts = useAccounts(rc.householdId ?? undefined, { staleTime: DECIDE_READ_STALE_MS }); // 06.1-72: no refetch on the answer's mount
   const { markSeen } = useMarkCheckSeen();
+  const { save: saveAnswer } = useSaveCheckAnswer(); // 06.1-78: stores the shown answer, so the open-checks row leaves Draft
   const history = useRecordCheckHistory(rc.userId ?? '');
   const answered = useSetDecideAnswered(rc.userId ?? '');
   const qc = useQueryClient();
@@ -162,7 +163,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
   useAnswerEffects({
     row,
     result: gated ? result : null,
-    writes: { markSeen, recordHistory: (a) => history.mutate(a) },
+    writes: { markSeen, recordHistory: (a) => history.mutate(a), saveAnswer },
   });
 
   // A side picked on the compare screen, applied once per pick. 06.1-63 (CN-13): Compare now returns to this same answer with a new

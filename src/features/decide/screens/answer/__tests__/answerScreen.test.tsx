@@ -34,11 +34,13 @@ jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: []
 jest.mock('@/features/decide/screens/ui/CheckNotFound', () => ({ CheckNotFound: () => null }));
 
 const mockMarkSeen = jest.fn(() => true);
+const mockSaveAnswer = jest.fn(() => true);
 const mockHistory = jest.fn(() => true);
 const mockAnswered = jest.fn();
 const mockPending: { rows: unknown[] } = { rows: [] };
 jest.mock('@/data/mutations/decideChecks', () => ({
   useMarkCheckSeen: () => ({ markSeen: mockMarkSeen }),
+  useSaveCheckAnswer: () => ({ save: mockSaveAnswer }),
   useCreateCheck: () => ({ pendingRows: mockPending.rows }),
 }));
 jest.mock('@/data/mutations/decideHistory', () => ({ useRecordCheckHistory: () => ({ mutate: mockHistory }) }));
@@ -334,6 +336,17 @@ describe('analytics, seen and history (CMP-F03, CO-D-124)', () => {
     expect((mockHistory.mock.calls[0] as unknown as [{ checkId: string }])[0].checkId).toBe('c1');
   });
 
+  it('06.1-78: stores the shown answer once, so the open check on Decide home leaves Draft', async () => {
+    const run = ledgerRun('N02');
+    load(run);
+    const view = await open();
+    view.rerender(<AnswerScreen id="c1" renderGate={noGate} writes={writes} />);
+    expect(mockSaveAnswer).toHaveBeenCalledTimes(1);
+    const [row, seen] = mockSaveAnswer.mock.calls[0] as unknown as [{ id: string }, { v: number; code: string }];
+    expect(row.id).toBe('c1');
+    expect(seen).toMatchObject({ v: 3, code: run.evaluation.result.code });
+  });
+
   it('a not-ready answer is neither counted nor remembered', async () => {
     load(notReadyRun());
     await open();
@@ -341,6 +354,7 @@ describe('analytics, seen and history (CMP-F03, CO-D-124)', () => {
     expect(mockTrack).not.toHaveBeenCalled();
     expect(mockMarkSeen).not.toHaveBeenCalled();
     expect(mockHistory).not.toHaveBeenCalled();
+    expect(mockSaveAnswer).not.toHaveBeenCalled();
   });
 });
 
