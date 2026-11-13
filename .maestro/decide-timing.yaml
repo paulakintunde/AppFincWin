@@ -1,0 +1,104 @@
+# 06.1-47 G-2: device timings for the owner's slow Decide steps, for the plan 51 Pixel 6 recheck. Each is measured with
+# evalScript Date.now() around one tap and printed on its own log line, prefixed with the word in capitals and a name:
+#   checkit_answer  Check it (a small buy: headphones 180) until the answer body shows the not-ready card or the verdict card
+#   write_settle    the same Check it until the "waiting to save" notice (answer-notice-unsaved_changes) is gone
+#   stepper_next    the stepper's Next from step 2 to step 3 (used car 9000)
+#   setup_pay       the setup checklist's Pay row until the Pay and payday screen shows
+# Best run signed in as a test account that has already met the first-answer gate (intro card, safety-net question), so the
+# timed answer is the answer itself. If the gate shows, it is passed by common/decide-gate.yaml and the checkit_answer line
+# says "gated" (the figure then times the gate card, not the answer). Writes two checks (headphones, used car).
+# Ceilings asserted here are loose emulator limits (15 s, 30 s, 8 s, 8 s). The Pixel 6 targets (under 2 s, 5 s, 1 s, 1 s)
+# are judged in plan 51 from the printed lines. Android: the keyboard is closed by a label tap (the hide-keyboard command sends Back),
+# and pages scroll with common/scroll-to.yaml swipes, not the built-in scroll-until command.
+appId: com.fincwin.app
+name: Decide timing (G-2)
+---
+- runFlow: common/to-tabs.yaml
+- evalScript: ${output.gated = false}
+- tapOn: "Decide, tab, .*"
+- assertVisible: "Can I afford it\\?"
+
+# 1. Check it -> answer, and Check it -> the write settled
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "headphones"
+      PRICE: "180"
+# decide-type-check taps Check it as its last step, so the clock starts as that tap returns. Maestro waits for the tap to
+# settle before returning, so this slightly undercounts; plan 51 reads the figure with that in mind.
+- evalScript: ${output.t0 = Date.now()}
+- extendedWaitUntil:
+    visible: "How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet.*|I bought it"
+    timeout: 20000
+- runFlow:
+    when:
+      notVisible: "How Decide answers|Do you have a safety net\\? About how much\\?"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "answer-not-ready|answer-verdict"
+          timeout: 20000
+- evalScript: ${output.checkitAnswer = Date.now() - output.t0}
+- runFlow:
+    when:
+      visible: "How Decide answers|Do you have a safety net\\? About how much\\?"
+    commands:
+      - evalScript: ${output.gated = true}
+      - runFlow: common/decide-gate.yaml
+- extendedWaitUntil:
+    notVisible:
+      id: "answer-notice-unsaved_changes"
+    timeout: 90000
+- evalScript: ${output.writeSettle = Date.now() - output.t0}
+- evalScript: "${console.log('TIMING checkit_answer=' + output.checkitAnswer + (output.gated ? ' gated' : ''))}"
+- evalScript: "${console.log('TIMING write_settle=' + output.writeSettle)}"
+
+# 2. Stepper Next, step 2 -> step 3 ("used car" reads as Car, so the stepper opens on step 2)
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- assertVisible: "Can I afford it\\?"
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "used car"
+      PRICE: "9000"
+- extendedWaitUntil:
+    visible: "Price and how you pay"
+    timeout: 15000
+- assertVisible: "Step 2 of 3"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Next"
+- evalScript: ${output.t1 = Date.now()}
+- tapOn: "Next"
+- extendedWaitUntil:
+    visible: "Step 3 of 3"
+    timeout: 20000
+- evalScript: ${output.stepperNext = Date.now() - output.t1}
+- evalScript: "${console.log('TIMING stepper_next=' + output.stepperNext)}"
+
+# 3. Setup checklist -> Pay (the checklist is /decide/setup; its Pay row opens /decide/setup/pay)
+- runFlow: common/to-tabs.yaml
+- openLink: "fincwin://decide/setup"
+- extendedWaitUntil:
+    visible:
+      id: "setup-checklist"
+    timeout: 20000
+- evalScript: ${output.t2 = Date.now()}
+- tapOn:
+    id: "setup-row-pay"
+- extendedWaitUntil:
+    visible:
+      id: "setup-item-frame"
+    timeout: 20000
+- assertVisible: "Pay and payday"
+- evalScript: ${output.setupPay = Date.now() - output.t2}
+- evalScript: "${console.log('TIMING setup_pay=' + output.setupPay)}"
+
+# Loose emulator ceilings; the device targets are judged in plan 51
+- assertTrue: ${output.checkitAnswer <= 15000}
+- assertTrue: ${output.writeSettle <= 30000}
+- assertTrue: ${output.stepperNext <= 8000}
+- assertTrue: ${output.setupPay <= 8000}
+- runFlow: common/to-tabs.yaml

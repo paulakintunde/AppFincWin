@@ -4,7 +4,7 @@
  * money rules, Something changed? and the footer. Check it builds a draft check and routes it (useNewCheck): a big buy to the
  * stepper, everything else to the answer, a home nowhere (D-02). The examples fill the fields only (D-15).
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCategories } from '@/data/queries/categories';
@@ -12,6 +12,7 @@ import { useDecideV3 } from '@/data/queries/decideV3';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import type { LocalDate, PayV2, QuickLine } from '@/engine/decide/v3';
 import { currencyCode, currencyExponent, minorUnits } from '@/engine/money';
+import { perfMark } from '@/features/decide/perf/perfMarks';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { TabRootScreen } from '@/shell/screen/TabRootScreen';
@@ -123,7 +124,16 @@ export function DecideHome() {
   const nextPayday = picture?.payday ?? null;
   const fields: NewCheckFields = useMemo(() => ({ text, price, when, payMode, plan, purpose, quickLines }), [text, price, when, payMode, plan, purpose, quickLines]);
   const country = inputs?.region ?? rc.region;
-  const draft = useMemo(() => buildCheck(fields, { country, nextPayday }), [fields, country, nextPayday]);
+  // 06.1-47 (B-6, ANR): the previews (the "Reads as" line, the tax note and the draft the sheets judge) follow deferred copies
+  // of the typed words and price, so a keystroke paints the field first and the parse runs in a background render React can
+  // drop. The fields themselves and Check it always use the live values.
+  const deferredText = useDeferredValue(text);
+  const deferredPrice = useDeferredValue(price);
+  const previewFields: NewCheckFields = useMemo(
+    () => ({ text: deferredText, price: deferredPrice, when, payMode, plan, purpose, quickLines }),
+    [deferredText, deferredPrice, when, payMode, plan, purpose, quickLines],
+  );
+  const draft = useMemo(() => buildCheck(previewFields, { country, nextPayday }), [previewFields, country, nextPayday]);
 
   const home = isHomeWords(text);
   const kind = readKind(text);
@@ -132,19 +142,19 @@ export function DecideHome() {
 
   const parsed = useMemo(
     () =>
-      parseQuick(text, (s) => {
+      parseQuick(deferredText, (s) => {
         const r = parser.parse(s, currency);
         return r.ok ? r.value : null;
       }),
-    [text, parser, currency],
+    [deferredText, parser, currency],
   );
-  const methodWord = payMode === 'plan' || (parsed !== null && readsAsPlan(text)) ? t('decide.screens.common.installments') : t('decide.screens.common.cash');
+  const methodWord = payMode === 'plan' || (parsed !== null && readsAsPlan(deferredText)) ? t('decide.screens.common.installments') : t('decide.screens.common.cash');
   const reads: ReadsAs | null =
-    parsed !== null && price === null && !home
+    parsed !== null && deferredPrice === null && !isHomeWords(deferredText)
       ? { name: parsed.name, priceText: money(parsed.price), whenText: when === 'today' ? t('decide.screens.home.check.today') : when === 'payday' && nextPayday !== null ? dateText(nextPayday) : typeof when === 'object' ? dateText(when.date) : t('decide.screens.home.check.today'), payText: methodWord }
       : null;
 
-  const tax = taxNoteFor({ price: price ?? parsed?.price ?? null, country, subdivision: inputs?.regionSubdivision ?? null });
+  const tax = taxNoteFor({ price: deferredPrice ?? parsed?.price ?? null, country, subdivision: inputs?.regionSubdivision ?? null });
   const taxNote = tax === null ? null : tax.kind === 'unknown' ? t('decide.v3.notice.tax_not_included') : t('decide.v3.fact.tax_estimate', { amount: money(tax.amount), percent: tax.percent });
 
   const todayText = fmt.formatDate(rc.today, 'short');
@@ -152,6 +162,7 @@ export function DecideHome() {
 
   const check = (): void => {
     if (!ready) return;
+    perfMark('decide.answer:start'); // 06.1-47: Check it -> answer timing; the end is marked in useCheckEngine
     newCheck.start(fields);
   };
 

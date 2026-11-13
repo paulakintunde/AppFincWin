@@ -1,10 +1,11 @@
 import React from 'react';
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 import { homeFigure, monthPicture, pastMonthBars, prepare, type MonthPicture } from '@/engine/decide/v3';
 import { inputsOf, monthOf, v3Line, v3Series } from '@/engine/decide/v3/__tests__/helpers/fixtures';
 import { minorUnits } from '@/engine/money';
 import { QUICK_LINE_KINDS } from '../../sheets/quickLineKinds';
 import { wrap } from '@/test/stepProps';
+import * as quickParse from '../../../quickParse';
 import { DecideHome } from '../DecideHome';
 
 jest.setTimeout(60000);
@@ -59,6 +60,10 @@ jest.mock('../AddRuleSheet', () => ({ AddRuleSheet: () => null }));
 jest.mock('../OpenCheckSheet', () => ({ OpenCheckSheet: () => null }));
 jest.mock('../../sheets/DatePickerSheet', () => ({ DatePickerSheet: () => null }));
 jest.mock('../../sheets/InstallmentPlanSheet', () => ({ InstallmentPlanSheet: () => null }));
+jest.mock('../../../quickParse', () => {
+  const actual = jest.requireActual('../../../quickParse');
+  return { ...actual, parseQuick: jest.fn(actual.parseQuick) };
+});
 jest.mock('../../sheets/QuickEstimateSheet', () => {
   const R = jest.requireActual('react');
   const { Pressable, Text: RNText } = jest.requireActual('react-native');
@@ -161,6 +166,25 @@ describe('Check it (APP-09, D-02)', () => {
     await fireEvent.press(screen.getByText('Used car $9,000'));
     expect(screen.getByLabelText('What is it?').props.value).toBe('Used car');
     expect(mockStart).not.toHaveBeenCalled();
+  });
+
+  it('06.1-47 (B-6): 20 quick keystrokes parse fewer than 20 times, and Check it gets the full live text', async () => {
+    await wrap(<DecideHome />);
+    const parseMock = quickParse.parseQuick as jest.Mock;
+    parseMock.mockClear();
+    const word = 'Noise cancelling hea'; // 20 characters
+    expect(word).toHaveLength(20);
+    await act(async () => {
+      for (let i = 1; i <= word.length; i += 1) await fireEvent.changeText(screen.getByLabelText('What is it?'), word.slice(0, i));
+    });
+    expect(parseMock.mock.calls.length).toBeLessThan(20);
+    // the preview settles on the last text, and the field itself shows it live
+    expect(parseMock.mock.calls[parseMock.mock.calls.length - 1]![0]).toBe(word);
+    expect(screen.getByLabelText('What is it?').props.value).toBe(word);
+    await type('Price', '180');
+    await fireEvent.press(screen.getByLabelText('Check it'));
+    expect(mockStart).toHaveBeenCalledTimes(1);
+    expect(mockStart.mock.calls[0]![0]).toMatchObject({ text: word });
   });
 
   it('shows Reads as chips for one field with a price after the words, and a tap applies them', async () => {
