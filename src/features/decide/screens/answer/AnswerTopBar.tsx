@@ -36,10 +36,10 @@ export function AnswerTopBar({ name, priceText, pay, when, dateText = null, onBa
   return (
     <View testID="answer-topbar" style={styles.wrap}>
       <View style={styles.row}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t('decide.screens.common.a11y.back')} onPress={onBack} style={styles.target}>
+        <Pressable testID="answer-back" accessibilityRole="button" accessibilityLabel={t('decide.screens.common.a11y.back')} onPress={onBack} style={styles.target}>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.common.back')}</Text>
         </Pressable>
-        <Pressable accessibilityRole="link" onPress={onNewCheck} style={styles.target}>
+        <Pressable testID="answer-new-check" accessibilityRole="link" onPress={onNewCheck} style={styles.target}>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.common.newCheck')}</Text>
         </Pressable>
       </View>

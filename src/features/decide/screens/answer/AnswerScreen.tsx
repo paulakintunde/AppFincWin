@@ -38,6 +38,7 @@ import { InstallmentPlanSheet } from '../sheets/InstallmentPlanSheet';
 import { estimatesCanAnswer, readinessFixRows, type ReadinessFixRow, type WaiverChoice } from '../logic/readinessFixes';
 import { KEY_SKIPPED, countsLikeOf, kindOf, lineNamesOf, ownKindsOf, stepHref, useStepCheck, useStepData, type BuiltInKind } from '../check/useStepCheck';
 import { AnswerFrame, type AnswerAction, type AnswerCheckView } from './AnswerFrame';
+import { AnswerLoading } from './AnswerLoading';
 import type { PayMode, WhenChoice } from './AnswerTopBar';
 import { FactActions, type FactActionChoice } from './FactActions';
 import { MoreDetailRows, type DetailRow } from './MoreDetailRows';
@@ -196,7 +197,8 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
   const canUseEstimates = useMemo(() => inputsNow !== null && estimatesCanAnswer(inputsNow), [inputsNow]);
 
   if (step.status === 'not_found' || (step.status === 'ready' && row === null && !checks.isLoading)) return <CheckNotFound />;
-  if (step.status === 'loading' || check === null || row === null) return null;
+  // 06.1-49 (A-ANS-2): no check yet, so no top bar; the loading state, never a blank screen.
+  if (step.status === 'loading' || check === null || row === null) return <AnswerLoading />;
   if (!gated) return <>{renderGate(() => setGated(true))}</>;
 
   const paydays = engine.paydays();

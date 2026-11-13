@@ -5,12 +5,13 @@ import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { Evaluation, LocalDate, Purpose, YearMonth } from '@/engine/decide/v3';
 import { money as makeMoney } from '@/engine/money';
-import { space } from '@/theme/layout';
+import { space, useScreenInsets } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Text } from '@/ui/Text';
 import { ActionBar } from './ActionBar';
+import { AnswerLoadingBody } from './AnswerLoading';
 import { AnswerTopBar, type AnswerTopBarProps, type PayMode, type WhenChoice } from './AnswerTopBar';
 import { FactLines } from './FactLines';
 import type { ReadinessFixRow, WaiverChoice } from '../logic/readinessFixes';
@@ -93,6 +94,8 @@ export function AnswerFrame({
   onReadinessChoice,
 }: AnswerFrameProps) {
   const { colors, pairing } = useTheme();
+  // 06.1-49 (A-ANS-1, C-7): the frame starts below the status bar, so Back and New check are never drawn under it.
+  const insets = useScreenInsets();
   const fmt = useMoneyFormatter(said.showCents ?? true, said.currency);
   const result = status === 'ready' ? (evaluation?.result ?? null) : null;
   const lines = useSaid(result, said);
@@ -157,10 +160,13 @@ export function AnswerFrame({
         <LegalBlock basis={lines.basis} caveat={lines.caveat} caveatFigures={lines.caveatFigures} onCantSee={onCantSee} />
       </>
     );
+  } else {
+    // 06.1-49 (A-ANS-2): loading, or ready with the deferred evaluation not in yet. Never a blank body.
+    body = <AnswerLoadingBody />;
   }
 
   return (
-    <View testID="answer-frame" style={[styles.frame, { backgroundColor: colors.canvas }]}>
+    <View testID="answer-frame" style={[styles.frame, { backgroundColor: colors.canvas, paddingTop: insets.top }]}>
       <ScrollView contentContainerStyle={styles.content}>
         <AnswerTopBar {...top} />
         {offlineDate !== null ? <OfflineCard date={offlineDate} onRetry={retry} /> : null}
@@ -175,6 +181,6 @@ export function AnswerFrame({
 
 const styles = StyleSheet.create({
   frame: { flex: 1 },
-  content: { padding: space.screenH, gap: space.groupGap },
+  content: { padding: space.screenH, gap: space.groupGap, flexGrow: 1 },
   group: { gap: space.gapSm },
 });

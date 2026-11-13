@@ -1,12 +1,15 @@
 // 06.1-14 (audit F2, D-15): reading order, legal block, first-caveat rule, equal options, motion and text fit, on engine-run fixtures.
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { fireEvent, screen, within } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider } from '@/theme/ThemeProvider';
 import en from '@/i18n/locales/en';
 import { stateColors } from '@/theme/tokens';
 import { expectFits } from '@/test/textFitMatrix';
 import { wrap } from '@/test/stepProps';
 import { AnswerFrame, type AnswerAction, type AnswerFrameProps } from '../AnswerFrame';
+import { AnswerLoading } from '../AnswerLoading';
 import { optionOrder } from '../OptionChips';
 import { freeHelpUrl } from '../FactLines';
 import { LEDGER_CASES, ledgerRun, notReadyRun, viewOf, type LedgerScenario, type Run } from './fixtures';
@@ -248,5 +251,59 @@ describe('no placeholder or code is ever printed (APP-10)', () => {
     await frame(ledgerRun('N09'));
     expect(screen.getByTestId('answer-verdict-badge')).toBeTruthy();
     expect(JSON.stringify(screen.toJSON())).not.toMatch(/\{\{/);
+  });
+});
+
+describe('top bar inside the safe area (06.1-49, A-ANS-1, C-7)', () => {
+  const at48 = { frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top: 48, bottom: 34, left: 0, right: 0 } };
+
+  it('the frame is padded by the status bar inset, so Back and New check are not under it', async () => {
+    const r = ledgerRun('N04');
+    await render(
+      <SafeAreaProvider initialMetrics={at48}>
+        <ThemeProvider>
+          <AnswerFrame check={viewOf(r)} evaluation={r.evaluation} said={{ currency: r.inputs.currency, today: r.inputs.asOf }} onAction={noop} onOption={noop} onCantSee={noop} />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+    expect(StyleSheet.flatten(screen.getByTestId('answer-frame').props.style).paddingTop).toBe(48);
+  });
+
+  it('Back and New check respond to a tap and keep 44 pt targets', async () => {
+    const { actions } = await frame(ledgerRun('N04'));
+    await fireEvent.press(screen.getByTestId('answer-back'));
+    await fireEvent.press(screen.getByTestId('answer-new-check'));
+    expect(actions).toEqual([{ kind: 'back' }, { kind: 'newCheck' }]);
+    for (const id of ['answer-back', 'answer-new-check']) {
+      const s = StyleSheet.flatten(screen.getByTestId(id).props.style);
+      expect(s.minHeight).toBeGreaterThanOrEqual(44);
+      expect(s.minWidth).toBeGreaterThanOrEqual(44);
+    }
+  });
+});
+
+describe('loading state (06.1-49, A-ANS-2)', () => {
+  it('status loading shows the top bar and "Working out the answer", never a blank body', async () => {
+    const { actions } = await frame(ledgerRun('N04'), { status: 'loading', evaluation: null });
+    expect(screen.getByTestId('answer-topbar')).toBeTruthy();
+    expect(screen.getByTestId('answer-loading')).toBeTruthy();
+    const text = screen.getByText(en.decide.screens.answer.loading);
+    expect(text.props.accessibilityLiveRegion).toBe('polite');
+    expect(screen.queryByTestId('answer-verdict')).toBeNull();
+    expect(screen.queryByTestId('answer-actions')).toBeNull();
+    await fireEvent.press(screen.getByTestId('answer-back'));
+    expect(actions).toEqual([{ kind: 'back' }]);
+  });
+
+  it('a ready status with no evaluation yet (deferred) also shows the loading state', async () => {
+    await frame(ledgerRun('N04'), { status: 'ready', evaluation: null });
+    expect(screen.getByTestId('answer-loading')).toBeTruthy();
+  });
+
+  it('AnswerLoading on its own (no check yet) has no top bar but the same text', async () => {
+    await wrap(<AnswerLoading />);
+    expect(screen.queryByTestId('answer-topbar')).toBeNull();
+    expect(screen.getByText(en.decide.screens.answer.loading)).toBeTruthy();
+    expect(StyleSheet.flatten(screen.getByTestId('answer-loading-screen').props.style).paddingTop).toBe(62);
   });
 });

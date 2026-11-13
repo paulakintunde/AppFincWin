@@ -15,6 +15,8 @@ export const answer = {
     actionsA11y: 'What you did with this answer',
     helpLinkA11y: '{{name}}. Opens a website outside the app',
   },
+  /** 06.1-49 (A-ANS-2): shown from Check it until the answer is worked out. */
+  loading: 'Working out the answer…',
   payA11y: 'How you pay',
   whenA11y: 'When',
   editSteps: 'Edit steps',
