@@ -4,6 +4,7 @@
 // SheetOverlayProvider (D-16). Multi-step flows (Decide check, import, onboarding) are
 // outer-stack screens (D-12).
 import { Redirect, Stack, usePathname } from 'expo-router';
+import { Profiler } from 'react';
 import { Platform, View } from 'react-native';
 import { SwipeBack } from '@/features/navigation/SwipeBack';
 import { isSwipeBackRoute } from '@/features/navigation/swipeBackGesture';
@@ -24,6 +25,8 @@ import { ShellLayoutProvider } from '@/shell/layout/ShellLayoutProvider';
 import { SheetOverlayProvider } from '@/ui/sheetOverlay';
 import { RouteErrorBoundary } from '@/ui/RouteErrorBoundary';
 import { Screen } from '@/ui/Screen';
+import { perfEnabled } from '@/features/decide/perf/perfMarks';
+import { probeCommit } from '@/data/perf/cacheProbe';
 
 // D-10: mounted after the consent redirect, so a reminder tap routes only after sign-in and consent.
 function DecideNotificationObserver({ enabled }: { enabled: boolean }) {
@@ -62,8 +65,19 @@ export default function AppLayout() {
           <FabProvider>
             <View style={{ flex: 1 }}>
               <Stack
-                screenOptions={{ headerShown: false, animation }}
-                screenLayout={({ children, route }) => <SwipeBack enabled={isSwipeBackRoute(route.name)}>{children}</SwipeBack>}
+                // 06.1-73 (DB-1): screens two or more below the top stop re-rendering until they are near the top again.
+                // On Fabric the screen directly below the top is never frozen (react-native-screens), so Back shows it at once.
+                screenOptions={{ headerShown: false, animation, freezeOnBlur: true }}
+                screenLayout={({ children, route }) =>
+                  // 06.1-73: perf builds count each outer screen's commits (route name only).
+                  perfEnabled() ? (
+                    <Profiler id={`stack.${route.name}`} onRender={probeCommit}>
+                      <SwipeBack enabled={isSwipeBackRoute(route.name)}>{children}</SwipeBack>
+                    </Profiler>
+                  ) : (
+                    <SwipeBack enabled={isSwipeBackRoute(route.name)}>{children}</SwipeBack>
+                  )
+                }
               >
                 <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
                 <Stack.Screen name="accounts/index" />

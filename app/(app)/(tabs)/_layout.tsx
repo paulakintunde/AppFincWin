@@ -2,6 +2,7 @@
 // unstable-native-tabs). backBehavior 'none' because BackHistoryProvider owns cross-tab back.
 // Detail screens are OUTER-stack siblings of this group, so they cover the bar and the FAB. The
 // first-account gate lives here so neither Home nor Activity renders without an account.
+import { Profiler } from 'react';
 import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { StyleSheet, View } from 'react-native';
@@ -18,6 +19,8 @@ import { TabBar } from '@/shell/tabBar/TabBar';
 import { TabSlideIn } from '@/shell/tabBar/TabSlideIn';
 import { availableTabs, isTabAvailable } from '@/shell/tabBar/availableTabs';
 import { isTabId } from '@/shell/tabBar/tabs';
+import { perfEnabled } from '@/features/decide/perf/perfMarks';
+import { probeCommit } from '@/data/perf/cacheProbe';
 
 export default function TabsLayout() {
   const rc = useRecordContext();
@@ -34,16 +37,26 @@ export default function TabsLayout() {
       <Tabs
         backBehavior="none"
         tabBar={(props) => <TabBar {...props} />}
-        screenOptions={{ headerShown: false, animation: 'none' }}
-        screenLayout={({ children, route, navigation }) =>
-          isTabId(route.name) ? (
+        // 06.1-73 (DB-1): an unfocused tab no longer re-renders on every cache change (27-28 hidden Home commits per Decide
+        // write on the emulator). It renders again, with the latest data, when it is focused.
+        screenOptions={{ headerShown: false, animation: 'none', freezeOnBlur: true }}
+        screenLayout={({ children, route, navigation }) => {
+          const screen = isTabId(route.name) ? (
             <TabSlideIn tab={route.name} navigation={navigation}>
               {children}
             </TabSlideIn>
           ) : (
             children
-          )
-        }
+          );
+          // 06.1-73: perf builds count each tab's commits (route name only); otherwise the screen renders as before.
+          return perfEnabled() ? (
+            <Profiler id={`tab.${route.name}`} onRender={probeCommit}>
+              {screen}
+            </Profiler>
+          ) : (
+            screen
+          );
+        }}
       >
         {availableTabs().map((id) => (
           <Tabs.Screen key={id} name={id} />
