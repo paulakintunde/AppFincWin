@@ -3,11 +3,16 @@
  * records changed since it was last looked at the sheet says so. Rows: See today's answer, Edit the check, Save for it in Grow,
  * Mark as not buying, and Delete (a danger text row with no dialog: an undoable soft delete and a toast). A draft check leads
  * with "Choose how to pay", which opens the installment plan sheet; nothing is written until the plan is used.
+ *
+ * 06.1-53 (C-22, DB-11): on a draft the greyed Save for it in Grow and Mark as not buying say they wait for an answer; once the check
+ * has an answer they are live. H-8: "Edit the check" opens the stepper where a big-buy draft stopped, else the Price step (OQ-53-1 A);
+ * "Save for it in Grow" opens the same Save for it screen the answer uses (no goal is made from here); a greyed "See today's answer"
+ * says a price is needed; a chosen plan shows a toast; a draft says what it still needs in one line.
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
-import { useNotBuying, useSaveForIt } from '@/data/mutations/decideOutcome';
+import { useNotBuying } from '@/data/mutations/decideOutcome';
 import { useRemoveDecision, useSaveCheckDraft } from '@/data/mutations/decideChecks';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { readStoredCheck, toStoredV2, type CheckV2, type LocalDate, type PayV2 } from '@/engine/decide/v3';
@@ -20,9 +25,11 @@ import { hapticLight } from '@/ui/haptics';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
+import { firstStepFor, KEY_KIND, KEY_VISITED, stepHref, type StepNumber } from '../check/useStepCheck';
 import { useCheckEngine } from '../engine/useCheckEngine';
 import { DatePickerSheet } from '../sheets/DatePickerSheet';
 import { InstallmentPlanSheet } from '../sheets/InstallmentPlanSheet';
+import { NeedLine } from '../ui/NeedLine';
 import type { OpenCheckRowModel } from './homeCardsModel';
 import { useRowBadge } from './OpenChecksCard';
 
@@ -38,14 +45,19 @@ export interface OpenCheckSheetProps {
   onDismiss: () => void;
 }
 
-/** A default monthly amount for "Save for it": the target spread over the months to the ready date, 6 when there is none. */
-export function defaultMonthly(target: number, readyBy: string | null, today: string): number {
-  let months = 6;
-  if (readyBy !== null && /^\d{4}-\d{2}/.test(readyBy)) {
-    const gap = (Number(readyBy.slice(0, 4)) - Number(today.slice(0, 4))) * 12 + (Number(readyBy.slice(5, 7)) - Number(today.slice(5, 7)));
-    months = Math.min(24, Math.max(1, gap));
-  }
-  return Math.max(1, Math.ceil(target / months));
+const clampStep = (n: number): StepNumber => (n >= 3 ? 3 : n <= 1 ? 1 : 2);
+
+/**
+ * H-8 / OQ-53-1 A: where "Edit the check" opens. A big-buy draft (a kind was picked, a plan was chosen, or the stepper was visited)
+ * resumes at the furthest step it reached; every other check opens the Price step, with its kind kept. furthest_step is read with
+ * the stepper's visited list, since the stepper records its progress there.
+ */
+export function editTarget(row: Pick<DecideCheckRow, 'name' | 'furthest_step'>, check: CheckV2, draft: boolean): StepNumber {
+  const raw = check.layerAnswers[KEY_VISITED];
+  const visited = Array.isArray(raw) ? raw.filter((n): n is number => typeof n === 'number') : [];
+  const big = typeof check.layerAnswers[KEY_KIND] === 'string' || check.pay.mode === 'plan' || visited.length > 0 || row.furthest_step >= 2;
+  if (!draft || !big) return 2;
+  return clampStep(Math.max(row.furthest_step, ...visited, firstStepFor(check, row.name)));
 }
 
 export function OpenCheckSheet(props: OpenCheckSheetProps) {
@@ -59,7 +71,6 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
   const badge = useRowBadge(model);
   const stored = useMemo<CheckV2>(() => readStoredCheck(row.inputs).check, [row.inputs]);
   const engine = useCheckEngine(stored, { checkId: row.id });
-  const { save: saveForIt } = useSaveForIt();
   const { pass } = useNotBuying();
   const { remove } = useRemoveDecision();
   const draftSave = useSaveCheckDraft();
@@ -76,25 +87,27 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
     .filter((x): x is string => x !== null)
     .join(' · ');
 
-  const open = (pathname: string) => {
+  const go = (href: Href) => {
     hapticLight();
     onDismiss();
-    router.push({ pathname, params: { id: row.id } } as Href);
+    router.push(href);
   };
+  const open = (pathname: string) => go({ pathname, params: { id: row.id } } as Href);
 
   const evaluation = engine.evaluation;
-  const canSave = evaluation !== null && evaluation.purchase !== null;
+  // DB-11: a check with an answer has Save for it and Mark as not buying live; a draft waits for one (C-22).
+  const answered = !model.draft;
+  const noPrice = model.draft && model.price === null;
+  const notFinished = !model.draft
+    ? null
+    : model.price === null
+      ? t('decide.screens.sheetsHome.openCheck.notFinished.price')
+      : model.payNotChosen
+        ? t('decide.screens.sheetsHome.openCheck.notFinished.pay')
+        : null;
 
-  const doSave = () => {
-    if (evaluation === null || evaluation.purchase === null) return;
-    const target = stored.pay.mode === 'plan' ? evaluation.purchase.dayOne : evaluation.purchase.whole;
-    if (!Number.isSafeInteger(target) || target <= 0) return;
-    const readyBy = evaluation.result.readyBy;
-    const readyText = readyBy === null ? null : readyBy.kind === 'date' ? readyBy.date : `${readyBy.month}-01`;
-    hapticLight();
-    onDismiss();
-    void saveForIt({ check: row, v3: stored, evaluation, monthly: defaultMonthly(target, readyText, today), currency, today });
-  };
+  // H-8 (CC-4, CF-5): the same Save for it screen the answer opens, with its amount and Undo; nothing is written from this sheet.
+  const doSave = () => open('/decide/save/[id]');
 
   const doNotBuying = () => {
     if (evaluation === null) return;
@@ -114,6 +127,8 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
     draftSave.save({ id: row.id, name: row.name, inputs: toStoredV2({ ...stored, pay }) as Record<string, unknown>, furthestStep: row.furthest_step });
     setPlanOpen(false);
     onDismiss();
+    // H-8 (CC-9): the choice is said. A draft save carries no undo step; the plan can be changed from the same row.
+    showToast({ kind: 'ordinary', text: { key: 'decide.screens.sheetsHome.openCheck.payChosen.plan', params: { name: row.name } }, stepId: null });
   };
 
   const actionRow = (key: string, label: string, onPress: () => void, opts?: { danger?: boolean; disabled?: boolean }) => (
@@ -136,6 +151,11 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
       <SheetHeader title={title} cancelLabel={t('decide.screens.common.close')} onCancel={onDismiss} />
       <SheetScroll contentContainerStyle={styles.column}>
         <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{stateLine}</Text>
+        {notFinished === null ? null : (
+          <Text testID="open-check-not-finished" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkDim }}>
+            {notFinished}
+          </Text>
+        )}
         {model.changed ? (
           <View accessibilityLiveRegion="polite">
             <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{t('decide.screens.sheetsHome.openCheck.changed')}</Text>
@@ -143,10 +163,12 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
         ) : null}
         <View>
           {model.draft ? actionRow('pay', t('decide.screens.sheetsHome.openCheck.choosePay'), () => setPlanOpen(true)) : null}
-          {actionRow('see', t('decide.screens.sheetsHome.openCheck.seeToday'), () => open('/decide/answer/[id]'), { disabled: model.draft && model.price === null })}
-          {actionRow('edit', t('decide.screens.sheetsHome.openCheck.edit'), () => open('/decide/check/[id]'))}
-          {actionRow('save', t('decide.screens.sheetsHome.openCheck.saveForIt'), doSave, { disabled: !canSave || model.draft })}
-          {actionRow('pass', t('decide.screens.sheetsHome.openCheck.notBuying'), doNotBuying, { disabled: evaluation === null || model.draft })}
+          {actionRow('see', t('decide.screens.sheetsHome.openCheck.seeToday'), () => open('/decide/answer/[id]'), { disabled: noPrice })}
+          <NeedLine testID="need-line-see" text={noPrice ? t('decide.screens.sheetsHome.openCheck.need.price') : null} />
+          {actionRow('edit', t('decide.screens.sheetsHome.openCheck.edit'), () => go(stepHref(editTarget(row, stored, model.draft), row.id)))}
+          {actionRow('save', t('decide.screens.sheetsHome.openCheck.saveForIt'), doSave, { disabled: !answered })}
+          {actionRow('pass', t('decide.screens.sheetsHome.openCheck.notBuying'), doNotBuying, { disabled: !answered || evaluation === null })}
+          <NeedLine testID="need-line-answer" text={answered ? null : t('decide.screens.sheetsHome.openCheck.need.answerFirst')} />
           {actionRow('delete', t('decide.screens.common.delete'), doDelete, { danger: true })}
         </View>
       </SheetScroll>

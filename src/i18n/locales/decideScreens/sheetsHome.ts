@@ -45,6 +45,18 @@ export const sheetsHome = {
     saveForIt: 'Save for it in Grow',
     notBuying: 'Mark as not buying',
     choosePay: 'Choose how to pay',
+    // 06.1-53 (C-22, H-8): why a row is greyed, what a draft still needs, and the toast after a plan is chosen.
+    need: {
+      answerFirst: 'Available once the check has an answer.',
+      price: 'A price is needed to see an answer.',
+    },
+    notFinished: {
+      price: 'Not finished: price',
+      pay: 'Not finished: how to pay',
+    },
+    payChosen: {
+      plan: 'Installments saved for {{name}}.',
+    },
   },
   rule: {
     answersCheck: 'Answers check this rule',
