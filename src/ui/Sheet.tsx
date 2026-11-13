@@ -130,6 +130,8 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   const dismissibleRef = useRef(dismissible);
   const dirtyRef = useRef(dirty);
   const [discardOpen, setDiscardOpen] = useState(false);
+  // H-13: true while a drag has sent the panel off screen; the backdrop then takes no taps.
+  const [leaving, setLeaving] = useState(false);
   const visibleRef = useRef(visible);
   const durationRef = useRef(motion.duration);
   useEffect(() => {
@@ -200,37 +202,62 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
     };
   }, [visible, id]);
 
-  const requestDismiss = useCallback((_source: SheetDismissSource) => {
-    if (dismissingRef.current) return;
-    if (!dismissibleRef.current) return;
-    if (dirtyRef.current) {
-      setDiscardOpen(true);
-      return;
-    }
-    onDismissRef.current();
-  }, []);
+  /**
+   * H-13 (DB-3/DB-4): the one restore path. Every route that leaves the sheet open after a dismiss
+   * request (backdrop, Back, drag, blocked drag, Keep editing) brings the panel back to 0 and the
+   * backdrop back to its opacity, so a backdrop can never stay on screen without its panel. A panel
+   * that never reached the screen gets the full open slide again. A fresh animation is set even when
+   * the value already reads 0, so the native view is re-synced to it.
+   */
+  const keepEditing = useCallback(() => {
+    if (!visibleRef.current) return;
+    setLeaving(false);
+    const neverShown = translateY.value >= sheetHeight.value;
+    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
+    translateY.value = withTiming(0, { duration: neverShown ? DURATION.sheetUp : DURATION.sheetDrag, easing: EASING });
+    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
+    backdrop.value = withTiming(BACKDROP_OPACITY, { duration: DURATION.backdrop, easing: Easing.ease });
+  }, [translateY, sheetHeight, backdrop]);
+
+  const requestDismiss = useCallback(
+    (_source: SheetDismissSource) => {
+      if (dismissingRef.current) return;
+      if (!dismissibleRef.current) {
+        keepEditing();
+        return;
+      }
+      if (dirtyRef.current) {
+        keepEditing();
+        setDiscardOpen(true);
+        return;
+      }
+      // DB-14: a clean sheet's close request goes to the owner in the same press handler.
+      onDismissRef.current();
+    },
+    [keepEditing],
+  );
 
   const onDragDismiss = useCallback(() => {
     hapticSelection();
     dismissingRef.current = true;
+    setLeaving(true);
     clearDismissTimer();
     dismissTimerRef.current = setTimeout(() => {
       dismissTimerRef.current = null;
       dismissingRef.current = false;
       requestDismiss('drag');
       // Pitfall 5: if the owner kept the sheet open, bring it back instead of leaving an invisible Modal.
-      requestAnimationFrame(() => {
-        if (!visibleRef.current) return;
-        translateY.value = withTiming(0, { duration: DURATION.sheetDrag, easing: EASING });
-        backdrop.value = withTiming(BACKDROP_OPACITY, { duration: DURATION.backdrop, easing: Easing.ease });
-      });
+      requestAnimationFrame(keepEditing);
     }, durationRef.current(SHEET_DISMISS_DELAY));
-  }, [requestDismiss, clearDismissTimer, translateY, backdrop]);
+  }, [requestDismiss, clearDismissTimer, keepEditing]);
 
   // A dirty sheet dragged past the threshold snaps back (canDragDismiss) and asks instead.
   const onBlockedDismiss = useCallback(() => {
-    if (dirtyRef.current && dismissibleRef.current) setDiscardOpen(true);
-  }, []);
+    if (dirtyRef.current && dismissibleRef.current) {
+      keepEditing();
+      setDiscardOpen(true);
+    }
+  }, [keepEditing]);
 
   const pan = useMemo(
     () =>
@@ -298,6 +325,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
 
   // Drop a stale prompt when the owner closes the sheet or it stops being dirty (state adjusted during render, not in an effect).
   if ((!visible || !dirty) && discardOpen) setDiscardOpen(false);
+  if (!visible && leaving) setLeaving(false);
 
   if (!visible) {
     return null;
@@ -317,6 +345,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
         <Pressable
           testID="sheet-backdrop"
           style={styles.backdrop}
+          pointerEvents={leaving ? 'none' : 'auto'}
           accessibilityRole="button"
           accessibilityLabel={t('a11y.close')}
           onPress={() => requestDismiss('backdrop')}
@@ -380,7 +409,10 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
             {dirty ? (
               <DiscardPrompt
                 visible={discardOpen}
-                onKeep={() => setDiscardOpen(false)}
+                onKeep={() => {
+                  setDiscardOpen(false);
+                  keepEditing();
+                }}
                 onDiscard={() => {
                   setDiscardOpen(false);
                   (onDiscardRef.current ?? onDismissRef.current)();
