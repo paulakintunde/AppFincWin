@@ -2,10 +2,12 @@
 // useCheckEngine().both(): each side carries its own engine verdict and its own figures. The two columns share one style set; neither
 // is highlighted or ordered as the better one (T-06.1-20-01). The Interest and fees row is always drawn, "None" for cash (T-06.1-20-02).
 // Above 1.3x text scale the two sides stack. Reached from the answer's "Cash and installments side by side".
+// 06.1-63 (CB-4, CN-8): drawn in DetailScreen, so the title "Cash or installments" sits in the header with a Back and the insets.
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import type { BothResults, CheckV2, Evaluation } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
+import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { space } from '@/theme/layout';
 import { useFontScale } from '@/theme/FontScaleProvider';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -131,11 +133,8 @@ export function CompareScreen({ check, currency, engine, onSeeAnswer, onCantSee 
   );
 
   return (
-    <View testID="compare-screen" style={[styles.screen, { backgroundColor: colors.canvas }]}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
-          {k('title')}
-        </Text>
+    <DetailScreen title={k('title')}>
+      <View testID="compare-screen" style={styles.content}>
         <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{plan === null ? k('noPlan') : k('sub')}</Text>
         {cash === null ? (
           <Text testID="compare-not-ready" style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
@@ -174,8 +173,8 @@ export function CompareScreen({ check, currency, engine, onSeeAnswer, onCantSee 
           ) : null}
         </View>
         <LegalBlock basis={null} caveat={null} caveatFigures={[]} onCantSee={onCantSee} />
-      </ScrollView>
-    </View>
+      </View>
+    </DetailScreen>
   );
 }
 
@@ -186,8 +185,7 @@ function signed(f: DetailFormat, n: number, spoken: boolean, t: ReturnType<typeo
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  content: { padding: space.screenH, gap: space.gapMd },
+  content: { paddingTop: space.groupGap, gap: space.gapMd },
   rowGroup: { gap: space.gapSm, paddingVertical: space.gapSm, borderTopWidth: StyleSheet.hairlineWidth },
   cells: { flexDirection: 'row', gap: space.gapMd },
   cellsStacked: { gap: space.gapSm },

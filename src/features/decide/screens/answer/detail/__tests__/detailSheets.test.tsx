@@ -22,6 +22,18 @@ import { aheadMonths, MonthByMonthSheet } from '../MonthByMonthSheet';
 jest.setTimeout(30000);
 
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
+// 06.1-63: CompareScreen sits in DetailScreen (needs a navigator for its Back and title focus); here the frame shows its title.
+jest.mock('@/shell/screen/DetailScreen', () => ({
+  DetailScreen: ({ title, children }: { title: string; children: React.ReactNode }) => {
+    const { Text, View } = jest.requireActual('react-native');
+    return (
+      <View>
+        <Text accessibilityRole="header">{title}</Text>
+        {children}
+      </View>
+    );
+  },
+}));
 jest.mock('@/ui/Sheet', () => {
   const { View } = require('react-native');
   return {

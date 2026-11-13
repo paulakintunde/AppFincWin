@@ -1,17 +1,82 @@
 // 06.1-28 (D-05, ARC-11): one Decide in the routes. Every new route sits inside the DECIDE_OPEN gate, and every old path redirects.
 import fs from 'fs';
 import path from 'path';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { wrap } from '@/test/stepProps';
+import { BoughtRoute, SaveForItRoute } from '../ActionRoutes';
 
 const mockRedirect = jest.fn();
 let mockParams: Record<string, string | string[] | undefined> = {};
+const mockRouter = { dismissTo: jest.fn(), back: jest.fn(), replace: jest.fn() };
 jest.mock('expo-router', () => ({
   Redirect: ({ href }: { href: unknown }) => {
     mockRedirect(href);
     return null;
   },
   useLocalSearchParams: () => mockParams,
+  useRouter: () => mockRouter,
 }));
+
+// 06.1-63: the Bought and Save for it route binders. Their data hooks are mocked at the edge; the screens are stand-ins that show
+// which callbacks the route hands them.
+type MockChecks = { data: unknown[] | undefined; isLoading: boolean; isError: boolean };
+const mockData: { checks: MockChecks; engine: { status: 'loading' | 'error' | 'ready'; evaluation: unknown }; accounts: { data: unknown[] | undefined; isError: boolean } } = {
+  checks: { data: [], isLoading: false, isError: false },
+  engine: { status: 'ready', evaluation: {} },
+  accounts: { data: [], isError: false },
+};
+jest.mock('@/services/supabase', () => ({ supabase: {} }));
+jest.mock('@/features/record/useRecordContext', () => ({
+  useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: true, today: '2026-11-12', timeZone: 'UTC' }),
+}));
+jest.mock('@/data/queries/decide', () => ({ useDecideChecks: () => mockData.checks }));
+jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => mockData.accounts }));
+jest.mock('@/features/decide/screens/engine/useCheckEngine', () => ({
+  useCheckEngine: () => ({ status: mockData.engine.status, evaluation: mockData.engine.evaluation, readyDate: () => null }),
+}));
+jest.mock('@/engine/decide/v3', () => ({ ...jest.requireActual('@/engine/decide/v3'), readStoredCheck: (inputs: unknown) => ({ check: inputs }) }));
+jest.mock('@/ui/money/useMoneyFormatter', () => ({ useMoneyFormatter: () => ({ formatMoney: () => '$1', formatDate: (d: string) => d }) }));
+jest.mock('@/data/mutations/decideGoAhead', () => ({ useGoAheadV3: () => ({ goAhead: jest.fn() }) }));
+jest.mock('@/data/mutations/runningCostBills', () => ({ useAddRunningCostBill: () => ({ add: jest.fn() }) }));
+jest.mock('@/shell/screen/DetailScreen', () => ({
+  DetailScreen: ({ title, children }: { title: string; children: React.ReactNode }) => {
+    const { Text, View } = jest.requireActual('react-native');
+    return (
+      <View>
+        <Text testID="detail-title">{title}</Text>
+        {children}
+      </View>
+    );
+  },
+}));
+const mockBoughtProps = jest.fn();
+const mockSaveProps = jest.fn();
+jest.mock('@/features/decide/screens/actions/BoughtScreen', () => {
+  const { Text } = jest.requireActual('react-native');
+  return {
+    BoughtScreen: (p: { onDone: () => void; accountsLoading?: boolean }) => {
+      mockBoughtProps(p);
+      return (
+        <Text testID="bought-screen" onPress={p.onDone} />
+      );
+    },
+  };
+});
+jest.mock('@/features/decide/screens/actions/SaveForItScreen', () => {
+  const { Text, View } = jest.requireActual('react-native');
+  return {
+    SaveForItScreen: (p: { onBackToDecide: () => void; onBackToAnswer: () => void; onSeeInGrow: (id: string) => void }) => {
+      mockSaveProps(p);
+      return (
+        <View>
+          <Text testID="save-to-decide" onPress={p.onBackToDecide} />
+          <Text testID="save-to-answer" onPress={p.onBackToAnswer} />
+          <Text testID="save-to-grow" onPress={() => p.onSeeInGrow('g1')} />
+        </View>
+      );
+    },
+  };
+});
 jest.mock('@/shell/decide/SetupChecklistRoute', () => {
   const R = jest.requireActual('react');
   const { Text } = jest.requireActual('react-native');
@@ -61,6 +126,10 @@ const OLD_ROUTES = ['decide/check/[id]', 'decide/settings', 'decide/open', 'deci
 beforeEach(() => {
   mockRedirect.mockClear();
   mockParams = {};
+  jest.clearAllMocks();
+  mockData.checks = { data: [{ id: ID, name: 'Laptop', inputs: { v: 2 }, deleted_at: null }], isLoading: false, isError: false };
+  mockData.engine = { status: 'ready', evaluation: {} };
+  mockData.accounts = { data: [], isError: false };
 });
 
 describe('06.1-28 routes are inside the Decide gate', () => {
@@ -147,5 +216,84 @@ describe('06.1-28 old paths redirect', () => {
     mockParams = params;
     await renderRoute('decide/setup/index');
     expect(mockRedirect).not.toHaveBeenCalled();
+  });
+});
+
+describe('06.1-63 Bought and Save for it routes (CN-7 / CF-7, CN-12, CB-9, DC-2, DN-7)', () => {
+  const routes = [
+    ['Bought', () => <BoughtRoute id={ID} />, 'I bought it'],
+    ['Save for it', () => <SaveForItRoute id={ID} />, 'Save for it'],
+  ] as const;
+
+  it.each(routes)('%s: while the checks load it shows the loading line in its frame, never the error card', async (_n, el, title) => {
+    mockData.checks = { data: undefined, isLoading: true, isError: false };
+    await wrap(el());
+    expect(screen.getByTestId('answer-loading')).toBeTruthy();
+    expect(screen.getByTestId('detail-title').props.children).toBe(title);
+    expect(screen.queryByTestId('action-away')).toBeNull();
+  });
+
+  it.each(routes)('%s: while the engine loads it shows the loading line, never the error card (DC-2)', async (_n, el) => {
+    mockData.engine = { status: 'loading', evaluation: null };
+    await wrap(el());
+    expect(screen.getByTestId('answer-loading')).toBeTruthy();
+    expect(screen.queryByTestId('action-away')).toBeNull();
+  });
+
+  it.each(routes)('%s: a check that is not there shows "isn\'t here", not the error card', async (_n, el) => {
+    mockData.checks = { data: [], isLoading: false, isError: false };
+    await wrap(el());
+    expect(screen.getByText('not-found')).toBeTruthy();
+    expect(screen.queryByTestId('action-away')).toBeNull();
+    expect(screen.queryByTestId('answer-loading')).toBeNull();
+  });
+
+  it.each(routes)('%s: a real engine failure shows the error card in its frame; Back to Decide goes home (DN-7)', async (_n, el, title) => {
+    mockData.engine = { status: 'error', evaluation: null };
+    await wrap(el());
+    expect(screen.getByTestId('action-away')).toBeTruthy();
+    expect(screen.getByTestId('detail-title').props.children).toBe(title);
+    await fireEvent.press(screen.getByText('Back to Decide'));
+    expect(mockRouter.dismissTo).toHaveBeenCalledWith('/decide');
+    expect(mockRouter.back).not.toHaveBeenCalled();
+  });
+
+  it.each(routes)('%s: a failed checks read with nothing cached shows the error card', async (_n, el) => {
+    mockData.checks = { data: undefined, isLoading: false, isError: true };
+    await wrap(el());
+    expect(screen.getByTestId('action-away')).toBeTruthy();
+  });
+
+  it('Bought: done (Back to Decide after Added to records) goes to Decide home', async () => {
+    await wrap(<BoughtRoute id={ID} />);
+    await fireEvent.press(screen.getByTestId('bought-screen'));
+    expect(mockRouter.dismissTo).toHaveBeenCalledWith('/decide');
+    expect(mockRouter.back).not.toHaveBeenCalled();
+  });
+
+  it('Bought: accounts still loading are passed as loading, and only everyday accounts in the home currency are offered', async () => {
+    mockData.accounts = { data: undefined, isError: false };
+    await wrap(<BoughtRoute id={ID} />);
+    expect(mockBoughtProps.mock.calls.at(-1)?.[0]).toMatchObject({ accounts: [], accountsLoading: true });
+    mockData.accounts = {
+      data: [
+        { id: 'a1', name: 'Everyday', kind: 'checking', currency: 'USD', deleted_at: null, archived_at: null },
+        { id: 'a2', name: 'Card', kind: 'credit', currency: 'USD', deleted_at: null, archived_at: null },
+        { id: 'a3', name: 'Euro', kind: 'cash', currency: 'EUR', deleted_at: null, archived_at: null },
+      ],
+      isError: false,
+    };
+    await wrap(<BoughtRoute id={ID} />);
+    expect(mockBoughtProps.mock.calls.at(-1)?.[0]).toMatchObject({ accounts: [{ id: 'a1', name: 'Everyday' }], accountsLoading: false });
+  });
+
+  it('Save for it: Back to Decide goes home, Back to the answer goes back, See it in Grow replaces with the goal', async () => {
+    await wrap(<SaveForItRoute id={ID} />);
+    await fireEvent.press(screen.getByTestId('save-to-decide'));
+    expect(mockRouter.dismissTo).toHaveBeenCalledWith('/decide');
+    await fireEvent.press(screen.getByTestId('save-to-answer'));
+    expect(mockRouter.back).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByTestId('save-to-grow'));
+    expect(mockRouter.replace).toHaveBeenCalledWith('/grow/goal/g1');
   });
 });
