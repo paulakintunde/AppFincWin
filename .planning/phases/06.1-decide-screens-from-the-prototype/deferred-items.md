@@ -11,3 +11,6 @@
 
 ## Open checks never leave Draft (found by 06.1-56, routed to 06.1-78)
 `useSaveCheckAnswer` is the only writer of `answer_v3`, and nothing in the app calls it, so every open check on Decide home stays "Draft" (DS-12 answered state). Fix in 06.1-78: call it from the answer screen once the answer is shown (once per check/inputs, idempotent), so the open-checks row shows the answered state. No schema change.
+
+## decideTextFit static guard fails on files outside 06.1-72 (found by 06.1-72, 2026-11-13)
+`src/features/decide/__tests__/decideTextFit.test.ts` rule T (numberOfLines on system copy: BoughtScreen.tsx, EnvelopeAccountSheet.tsx) and rule F (fixed text heights: StepFrame.tsx, YourMonthCard.tsx, SetupBanner.tsx, SetupChecklist.tsx) fail on the branch head. 06.1-72 touched none of these files; they come from the parallel 56/77 work. Route to the plan that owns each file (56 for YourMonthCard/SetupBanner/SetupChecklist, 77 for BoughtScreen) or 06.1-74.

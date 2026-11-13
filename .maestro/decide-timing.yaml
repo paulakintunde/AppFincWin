@@ -108,8 +108,9 @@ name: Decide timing (G-2)
 - evalScript: "${console.log('TIMING stepper_back=' + output.stepperBack)}"
 
 # 06.1-72 (DP-14, DP-8, DP-9): Past decisions, the Add a rule sheet and the safety-net settings, each from Decide home.
-# Decide home is opened by link, not by Back: on the emulator a Back press queued behind a busy JS thread can land after the
-# tab bar shows and leave the app.
+# Back to the tabs, then Decide home by link: on the emulator a Back press queued behind a busy JS thread can land after the
+# tab bar shows and leave the app, and the link brings it back (a link alone does not leave a pushed screen).
+- runFlow: common/to-tabs.yaml
 - openLink: "fincwin://decide"
 - extendedWaitUntil:
     visible:
@@ -124,6 +125,7 @@ name: Decide timing (G-2)
     timeout: 60000
 - evalScript: ${output.pastOpen = Date.now() - output.t7}
 - evalScript: "${console.log('TIMING past_open=' + output.pastOpen)}"
+- runFlow: common/to-tabs.yaml
 - openLink: "fincwin://decide"
 - extendedWaitUntil:
     visible:
