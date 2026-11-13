@@ -46,9 +46,23 @@ describe('setupProgress', () => {
 
   it('net: a sized goal, or the "Not set yet" flag, ticks it', () => {
     expect(item(base, 'net').done).toBe(false);
-    expect(item(f({ netSizeMinor: 500000 }), 'net').status).toEqual({ key: 'netDone', values: { amountMinor: 500000 } });
+    expect(item(f({ netSizeMinor: 500000 }), 'net').status).toEqual({ key: 'netDone', values: { savedMinor: 0, amountMinor: 500000 } });
     expect(item(f({ netNotSetAnswered: true }), 'net').status.key).toBe('netNotSet');
     expect(item(f({ netSizeMinor: 1, netNotSetAnswered: true }), 'net').status.key).toBe('netDone');
+  });
+
+  it('06.1-54 (A-SU-2): an open Pay row says whether how-you-are-paid or the pay itself is missing', () => {
+    expect(item(f({ payAmountMinor: 320000, payDay: 15 }), 'pay')).toEqual({ id: 'pay', done: false, status: { key: 'payOpenHowPaid', values: {} } });
+    expect(item(f({ payAmountMinor: 320000, payDay: 15, payTypesSet: false }), 'pay').status.key).toBe('payOpenHowPaid');
+    expect(item(base, 'pay').status).toEqual({ key: 'payOpenNoPay', values: {} });
+    expect(item(f({ payTypesSet: true }), 'pay').status.key).toBe('payOpenNoPay');
+    // a series with types set but no profile cannot happen; types set with a series is done
+    expect(item(f({ payAmountMinor: 320000, payTypesSet: true }), 'pay').status.key).toBe('payOpenNoPay');
+  });
+
+  it('06.1-54 (A-SU-3): a done net row carries the money in the net and the goal', () => {
+    expect(item(f({ netSizeMinor: 500000, netSavedMinor: 5000 }), 'net').status).toEqual({ key: 'netDone', values: { savedMinor: 5000, amountMinor: 500000 } });
+    expect(item(f({ netSizeMinor: 500000, netSavedMinor: null }), 'net').status.values).toEqual({ savedMinor: 0, amountMinor: 500000 });
   });
 
   it('rules: a rule that is on, or the "No rules" flag', () => {

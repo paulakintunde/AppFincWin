@@ -160,7 +160,7 @@ describe('SetupChecklist', () => {
   it('shows the other status lines: a debt due day, a sized net, no rules, no debts, records done', async () => {
     await checklist({ ...ALL, noDebtsAnswered: false, debts: [{ name: 'Car loan', dueDay: 3 }], netSizeMinor: 500000, noRulesAnswered: true, recordsUpTo: '2026-11-20' });
     expect(screen.getByText('Done · Car loan, due on the 3rd')).toBeTruthy();
-    expect(screen.getByText('Done · $5,000, set in Grow')).toBeTruthy();
+    expect(screen.getByText('$0 in it · goal $5,000')).toBeTruthy();
     expect(screen.getByText('Done · no rules')).toBeTruthy();
     expect(screen.getByText('Done · records up to Nov 20, 2026')).toBeTruthy();
   });

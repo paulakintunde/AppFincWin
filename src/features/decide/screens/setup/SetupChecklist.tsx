@@ -1,5 +1,8 @@
 // 06.1-17 (D31): the Decide setup checklist. Six rows with their status, a count with the same segmented bar as the banner, and one
 // button that goes to the next open item. Presentational: progress, the item routes and navigation come in as props.
+// 06.1-54 (C-20): while the settings and records are read it says so, and a failed read shows the error card; neither state shows a
+// count or "Back to Decide". (DS-20): the checklist's bar is drawn still, from the same done count as the words, so a count never
+// sits beside an empty bar.
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
@@ -12,8 +15,8 @@ import { StateGlyph, type StateGlyphName } from '@/ui/glyphs/StateGlyph';
 import { Pill } from '@/ui/Pill';
 import { StateBadge } from '@/ui/StateBadge';
 import { Text } from '@/ui/Text';
-import type { SetupItemId, SetupProgress } from '../logic/setupProgress';
-import { SetupBar } from './SetupBanner';
+import { ErrorCard } from '../answer/StatusCards';
+import { SETUP_ORDER, type SetupItemId, type SetupProgress } from '../logic/setupProgress';
 import { useSetupText } from './useSetupText';
 
 const TILE = 40;
@@ -37,8 +40,35 @@ const TILE_GLYPH: Record<SetupItemId, StateGlyphName> = {
   records: 'view',
 };
 
+const SEGMENT_HEIGHT = 4;
+
+/** DS-20: six segments, one per item, accent when done; no animation, so the fill is there on the first frame with data. */
+function ChecklistBar({ done }: { done: number }) {
+  const t = useT();
+  const { colors } = useTheme();
+  return (
+    <View
+      testID="setup-bar"
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={t('decide.screens.setup.banner.barA11y', { count: done })}
+      accessibilityValue={{ min: 0, max: SETUP_ORDER.length, now: done }}
+      style={styles.bar}
+    >
+      {SETUP_ORDER.map((id, i) => (
+        <View
+          key={id}
+          testID={i < done ? 'setup-segment-filled' : 'setup-segment-empty'}
+          style={[styles.segment, { backgroundColor: i < done ? colors.accent : colors.line4 }]}
+        />
+      ))}
+    </View>
+  );
+}
+
 export interface SetupChecklistProps {
-  progress: SetupProgress;
+  /** 06.1-54 (C-20): `loading` and `error` come with the progress from useSetupProgress; absent = read. */
+  progress: SetupProgress & { loading?: boolean; error?: boolean; retry?: () => void };
   currency: string;
   /** Opens an item screen. */
   onOpen: (route: Href) => void;
@@ -49,8 +79,10 @@ export interface SetupChecklistProps {
 export function SetupChecklist({ progress, currency, onOpen, onBack }: SetupChecklistProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const text = useSetupText(currency);
-  const next = progress.next;
+  // No items = nothing read yet (useSetupProgress's empty progress): loading, or the error card once a read failed.
+  const unread = progress.items.length === 0;
+  const failed = unread && progress.error === true;
+  const retry = progress.retry;
   return (
     <View testID="setup-checklist" style={styles.page}>
       {/* 06.1-50 (A-SU-1): the checklist can always be left with one tap, not only once all six are done. Same chevron as StepFrame. */}
@@ -59,6 +91,26 @@ export function SetupChecklist({ progress, currency, onOpen, onBack }: SetupChec
           <View style={[styles.chevron, { borderColor: colors.accent }]} />
         </Pressable>
       </View>
+      {failed ? (
+        <ErrorCard item={t('decide.screens.setup.checklist.title')} onRetry={() => retry?.()} />
+      ) : unread ? (
+        <Text testID="setup-loading" accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
+          {t('decide.screens.setup.checklist.loading')}
+        </Text>
+      ) : (
+        <ChecklistBody progress={progress} currency={currency} onOpen={onOpen} onBack={onBack} />
+      )}
+    </View>
+  );
+}
+
+function ChecklistBody({ progress, currency, onOpen, onBack }: SetupChecklistProps) {
+  const t = useT();
+  const { colors, pairing } = useTheme();
+  const text = useSetupText(currency);
+  const next = progress.next;
+  return (
+    <>
       <View style={styles.titleBlock}>
         <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
           {t(progress.allDone ? 'decide.screens.setup.checklist.doneTitle' : 'decide.screens.setup.checklist.title')}
@@ -69,7 +121,7 @@ export function SetupChecklist({ progress, currency, onOpen, onBack }: SetupChec
       </View>
       <View style={styles.count}>
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('decide.screens.setup.checklist.progress', { count: progress.doneCount })}</Text>
-        <SetupBar done={progress.doneCount} />
+        <ChecklistBar done={progress.doneCount} />
       </View>
       <View style={[styles.list, { backgroundColor: colors.surface }]}>
         {progress.items.map((item) => {
@@ -116,7 +168,7 @@ export function SetupChecklist({ progress, currency, onOpen, onBack }: SetupChec
       ) : (
         <Pill variant="primary" label={t('decide.screens.common.backToDecide')} onPress={onBack} />
       )}
-    </View>
+    </>
   );
 }
 
@@ -128,6 +180,8 @@ const styles = StyleSheet.create({
   chevron: { width: 10, height: 10, borderTopWidth: 2, borderRightWidth: 2, marginLeft: 4, transform: [{ rotate: '-135deg' }] },
   titleBlock: { gap: space.gapSm },
   count: { gap: space.gapSm },
+  bar: { flexDirection: 'row', gap: SEGMENT_HEIGHT },
+  segment: { flex: 1, minHeight: SEGMENT_HEIGHT, borderRadius: SEGMENT_HEIGHT / 2 },
   list: { borderRadius: radii.card, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, padding: space.cardPad, minHeight: 64 },
   tile: { width: TILE, minHeight: TILE, borderRadius: radii.glyphTile + 3, alignItems: 'center', justifyContent: 'center' },

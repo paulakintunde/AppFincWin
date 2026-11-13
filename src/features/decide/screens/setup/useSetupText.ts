@@ -39,7 +39,7 @@ export function useSetupText(currency: string): SetupText {
         case 'debtsDone':
           return t(`${base}debtsDone`, { debt: String(v.debt), ordinal: ordinal(Number(v.day)) });
         case 'netDone':
-          return t(`${base}netDone`, { amount: amount(Number(v.amountMinor)) });
+          return t(`${base}netDone`, { saved: amount(Number(v.savedMinor)), amount: amount(Number(v.amountMinor)) });
         case 'rulesDone':
           return t(`${base}rulesDone`, { count: Number(v.count) });
         case 'recordsOpenItems': {
@@ -60,6 +60,10 @@ export function useSetupText(currency: string): SetupText {
           return t('decide.screens.setup.status.billsNone');
         case 'rulesOpen':
           return t('decide.screens.setup.status.rulesOpen');
+        case 'payOpenHowPaid':
+          return t('decide.screens.setup.status.payOpenHowPaid');
+        case 'payOpenNoPay':
+          return t('decide.screens.setup.status.payOpenNoPay');
         case 'recordsOpen':
         case 'recordsDone':
           return t(`${base}${item.status.key}`, { date: fmt.formatDate(String(v.date), 'medium') });

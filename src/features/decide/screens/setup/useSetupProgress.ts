@@ -9,6 +9,10 @@ import { setupProgress, type SetupFacts, type SetupProgress } from '../logic/set
 
 export interface SetupProgressState extends SetupProgress {
   loading: boolean;
+  /** 06.1-54 (C-20): a read failed with nothing cached; the checklist shows the error card, never a count. */
+  error: boolean;
+  /** Reads again after an error. */
+  retry: () => void;
   /** The currency the minor-unit figures in the status lines are in. */
   currency: string;
   /** The date the progress was judged on. */
@@ -18,6 +22,8 @@ export interface SetupProgressState extends SetupProgress {
 const EMPTY: SetupProgress = { items: [], doneCount: 0, next: null, allDone: false };
 const NO_DAY = '';
 const NO_ITEMS: readonly ReadinessItem[] = [];
+/** No settings row yet: every setup flag is unanswered. */
+const NO_SETTINGS = { answered_no_debts_at: null, answered_net_not_set_at: null, answered_no_rules_at: null, answered_bills_right_at: null } as const;
 
 function previousMonth(today: string): string {
   const y = Number(today.slice(0, 4));
@@ -54,6 +60,7 @@ export function setupFactsFrom(
   const sized = inputs.safetyNet?.size ?? null;
   return {
     hasPay: pay !== undefined && inputs.profile !== null,
+    payTypesSet: inputs.profile !== null,
     payAmountMinor: pay ? Number(pay.amount) : null,
     payDay: pay ? Number(pay.anchorDate.slice(8, 10)) : null,
     billsRightAnswered: flags.billsRight,
@@ -62,6 +69,8 @@ export function setupFactsFrom(
     debts: inputs.debts.map((d) => ({ name: debtNames.get(d.id) ?? '', dueDay: d.dueDay ?? null })),
     noDebtsAnswered: flags.noDebts,
     netSizeMinor: sized !== null && Number(sized) > 0 ? Number(sized) : null,
+    // A-SU-3: the money in the net (the same figure the safety-net screen shows), else the emergency fund.
+    netSavedMinor: inputs.safetyNet != null ? Number(inputs.safetyNet.saved) : inputs.emergency !== null ? Number(inputs.emergency.amount) : null,
     netNotSetAnswered: flags.netNotSet,
     rulesOn: inputs.limits.lines.filter((l) => l.on).length,
     noRulesAnswered: flags.noRules,
@@ -76,6 +85,9 @@ export function setupFactsFrom(
 
 export interface SetupFactsState {
   loading: boolean;
+  /** 06.1-54 (C-20): a read failed with nothing cached. */
+  error: boolean;
+  retry: () => void;
   facts: SetupFacts | null;
   currency: string;
   today: string;
@@ -85,12 +97,17 @@ export interface SetupFactsState {
 export function useSetupFacts(): SetupFactsState {
   const rc = useRecordContext();
   const v3 = useDecideV3();
-  const settings = useDecideSettings(rc.userId ?? undefined).data ?? null;
+  const settingsQuery = useDecideSettings(rc.userId ?? undefined);
+  // 06.1-54 (C-20): undefined = not read yet; null = read, and there is no settings row yet (every flag unanswered).
+  const settingsRead = settingsQuery.data;
   const debts = useDebts(rc.householdId ?? undefined).data;
   const inputs = v3.inputs;
   const evaluation = v3.evaluation;
+  const error = v3.status === 'error' || (settingsRead === undefined && settingsQuery.isError);
+  const retry = v3.refetch;
   return useMemo(() => {
-    if (inputs === null || settings === null) return { loading: true, facts: null, currency: inputs?.currency ?? 'USD', today: inputs?.asOf ?? NO_DAY };
+    if (inputs === null || settingsRead === undefined) return { loading: !error, error, retry, facts: null, currency: inputs?.currency ?? 'USD', today: inputs?.asOf ?? NO_DAY };
+    const settings = settingsRead ?? NO_SETTINGS;
     const names = new Map((debts ?? []).map((d) => [d.id, d.name]));
     const under = new Set((evaluation?.month.notices ?? []).filter((n) => n.code === 'month_looks_under_logged').map((n) => String(n.values.month)));
     const facts = setupFactsFrom(
@@ -106,14 +123,14 @@ export function useSetupFacts(): SetupFactsState {
       // 06.1-45 (C-4): the same named items the answer screen shows; Records is done only when none is open.
       evaluation?.result.readiness?.items ?? NO_ITEMS,
     );
-    return { loading: false, facts, currency: inputs.currency, today: inputs.asOf };
-  }, [inputs, evaluation, settings, debts]);
+    return { loading: false, error: false, retry, facts, currency: inputs.currency, today: inputs.asOf };
+  }, [inputs, evaluation, settingsRead, debts, error, retry]);
 }
 
 export function useSetupProgress(): SetupProgressState {
-  const { loading, facts, currency, today } = useSetupFacts();
+  const { loading, error, retry, facts, currency, today } = useSetupFacts();
   return useMemo(() => {
-    if (facts === null) return { ...EMPTY, loading, currency, today };
-    return { ...setupProgress(facts, today), loading, currency, today };
-  }, [loading, facts, currency, today]);
+    if (facts === null) return { ...EMPTY, loading, error, retry, currency, today };
+    return { ...setupProgress(facts, today), loading, error, retry, currency, today };
+  }, [loading, error, retry, facts, currency, today]);
 }

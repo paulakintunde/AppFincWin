@@ -2,6 +2,8 @@
 // gathers the facts from the records is outside this folder (setup/useSetupProgress.ts). Money is minor units; the screens format it.
 // 06.1-45 (G-1, C-4, A-SU-2): Records is done only when D-11 holds AND the engine names no open readiness item (owner GQ2), and every
 // open row says why it is open.
+// 06.1-54 (A-SU-2, A-SU-3): an open Pay row says whether how-you-are-paid or the pay itself is missing; a done Safety net row says
+// the amount in the net first, with the goal second.
 import type { ReadinessItem } from '@/engine/decide/v3';
 
 export type SetupItemId = 'pay' | 'bills' | 'debts' | 'net' | 'rules' | 'records';
@@ -19,6 +21,8 @@ export interface SetupDebtFact {
 export interface SetupFacts {
   /** A confirmed pay series and an income profile are both present. */
   hasPay: boolean;
+  /** 06.1-54: how you are paid is stored (the income profile exists). Absent = false. */
+  payTypesSet?: boolean;
   payAmountMinor: number | null;
   payDay: number | null;
   /** The "These bills are right" flag (D-23). */
@@ -30,6 +34,8 @@ export interface SetupFacts {
   noDebtsAnswered: boolean;
   /** A flagged safety-net goal with a size. */
   netSizeMinor: number | null;
+  /** 06.1-54 (A-SU-3): the money in the safety net now; absent or null = none known (said as 0). */
+  netSavedMinor?: number | null;
   /** The "Not set yet" flag (D-23). */
   netNotSetAnswered: boolean;
   /** Rules the person saved that are switched on. */
@@ -83,7 +89,9 @@ export function loggedLately(newest: string | null, today: string): boolean {
 function payItem(f: SetupFacts): SetupItem {
   return f.hasPay
     ? { id: 'pay', done: true, status: { key: 'payDone', values: { amountMinor: f.payAmountMinor ?? 0, day: f.payDay ?? 0 } } }
-    : { id: 'pay', done: false, status: { key: 'open', values: {} } };
+    : f.payAmountMinor !== null && f.payTypesSet !== true
+      ? { id: 'pay', done: false, status: { key: 'payOpenHowPaid', values: {} } }
+      : { id: 'pay', done: false, status: { key: 'payOpenNoPay', values: {} } };
 }
 
 function billsItem(f: SetupFacts): SetupItem {
@@ -109,7 +117,9 @@ function debtsItem(f: SetupFacts): SetupItem {
 }
 
 function netItem(f: SetupFacts): SetupItem {
-  if (f.netSizeMinor !== null) return { id: 'net', done: true, status: { key: 'netDone', values: { amountMinor: f.netSizeMinor } } };
+  if (f.netSizeMinor !== null) {
+    return { id: 'net', done: true, status: { key: 'netDone', values: { savedMinor: f.netSavedMinor ?? 0, amountMinor: f.netSizeMinor } } };
+  }
   return f.netNotSetAnswered
     ? { id: 'net', done: true, status: { key: 'netNotSet', values: {} } }
     : { id: 'net', done: false, status: { key: 'open', values: {} } };

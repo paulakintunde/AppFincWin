@@ -19,6 +19,8 @@ export const setup = {
   },
   checklist: {
     title: 'Decide setup',
+    // 06.1-54 (C-20): shown until the settings and records are read; never a count.
+    loading: 'Loading your setup…',
     sub: 'Answers rest on these. Do them in any order. Each one saves as you go.',
     doneTitle: 'Setup done',
     doneSub: 'Decide uses all of these. Each one can change at any time.',
@@ -43,7 +45,8 @@ export const setup = {
     debtsOpen: '{{count}} to finish · {{debt}} has no due day',
     debtsDone: 'Done · {{debt}}, due on the {{ordinal}}',
     debtsNone: 'Done · no other debts',
-    netDone: 'Done · {{amount}}, set in Grow',
+    // 06.1-54 (A-SU-3): the money in the net first, the goal second.
+    netDone: '{{saved}} in it · goal {{amount}}',
     netNotSet: 'Done · not set yet',
     rulesDone_one: 'Done · {{count}} rule',
     rulesDone_other: 'Done · {{count}} rules',
@@ -56,6 +59,9 @@ export const setup = {
     billsOpen_other: '{{count}} bills to confirm',
     billsNone: 'No bills found yet',
     rulesOpen: 'No rules set yet',
+    // 06.1-54 (A-SU-2): why Pay is still open.
+    payOpenHowPaid: 'How you’re paid isn’t set yet',
+    payOpenNoPay: 'No pay set yet',
     open: 'Not done yet',
   },
   done: {
