@@ -1,8 +1,10 @@
 # 06.1-73 (DB-1 / H-11b): does a tap land in the idle window after a write? One check is made (a write: the check row),
-# the answer is awaited, Decide home is reopened, and then "Past decisions" is tapped about 5 s, 20 s and 60 s after the
-# answer showed. Each tap prints, on its own line:
-#   TIMING tap_after_write_<n> = <ms from the tap to "Your decisions" showing> at=<ms since the answer showed>
-# A dev build on the emulator: the 06.1-73 target is a first change within 3 s for a tap made 5 s after the write.
+# the answer and the write settling are awaited, Back returns to Decide home, and then "Past decisions" is tapped about
+# 5 s, 20 s and 60 s after the write settled. Each tap prints, on its own line:
+#   TIMING tap_after_write_<n> = <ms from the tap to "Your decisions" showing> at=<ms since the write settled>
+# The clock starts when the write has settled (the answer's waiting-to-save notice is gone); Back to Decide home is timed
+# too (back_after_write). A dev build on the emulator: the 06.1-73 target is a first change within 3 s for a tap made 5 s
+# after the write.
 # Writes one check ("desk lamp", 25) per run on the test account; it stays as a draft check (listed in the 06.1-73 SUMMARY).
 # Android: the keyboard is closed by a label tap and pages scroll by swipes (common/ flows), never the built-in
 # keyboard or scroll-until commands. Waits use an optional wait for text that never shows.
@@ -21,15 +23,20 @@ name: Decide write then idle taps (06.1-73)
       ITEM: "desk lamp"
       PRICE: "25"
 - runFlow: common/decide-gate.yaml
+# The write has settled when the answer's "waiting to save" notice is gone (as in decide-timing.yaml's write_settle).
+- extendedWaitUntil:
+    notVisible:
+      id: "answer-notice-unsaved_changes"
+    timeout: 180000
 - evalScript: ${output.written = Date.now()}
-- runFlow: common/to-tabs.yaml
-- tapOn: "Decide, tab, .*"
+- back
 - extendedWaitUntil:
     visible:
       id: "past-pill"
-    timeout: 120000
+    timeout: 180000
+- evalScript: "${console.log('TIMING back_after_write = ' + (Date.now() - output.written) + ' ms')}"
 
-# Tap 1: about 5 s after the answer
+# Tap 1: about 5 s after the write settled
 - extendedWaitUntil:
     visible: "06173 never shown"
     timeout: 5000
@@ -48,7 +55,7 @@ name: Decide write then idle taps (06.1-73)
       id: "past-pill"
     timeout: 180000
 
-# Tap 2: about 20 s after the answer
+# Tap 2: about 20 s after the write settled
 - extendedWaitUntil:
     visible: "06173 never shown"
     timeout: 10000
@@ -67,7 +74,7 @@ name: Decide write then idle taps (06.1-73)
       id: "past-pill"
     timeout: 180000
 
-# Tap 3: about 60 s after the answer
+# Tap 3: about 60 s after the write settled
 - extendedWaitUntil:
     visible: "06173 never shown"
     timeout: 35000
