@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06.1 gap wave 15 done: 43 (readiness answers reach engine), 46 (one Decide calc per data version), 48 (persister throttle, write timing) (43/61); next wave 16 (44, 47)"
+stopped_at: "Phase 06.1 gap wave 16 done: 44 (Not ready card names items, F-1 loop closed), 47 (deferred typing, shared links read, timing flow) (45/61); next wave 17 (45, 49)"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:
