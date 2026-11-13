@@ -10,13 +10,14 @@ import { EnvelopeAccountSheet } from '../EnvelopeAccountSheet';
 jest.setTimeout(30000);
 
 const mockEdit = jest.fn((..._args: unknown[]) => 'step-1');
+/** The shell binds Grow's useEditGoal the same way (AnswerRoute). */
+const setAccount = (goal: unknown, accountId: string, ownerId: string): string => mockEdit(goal, { account_id: accountId }, ownerId, 0) as string;
 let mockAccounts: unknown[] = [];
 let mockGoals: unknown[] = [];
 let mockUserId: string | null = 'user-1';
 
 jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
-jest.mock('@/data/mutations/growGoals', () => ({ useEditGoal: () => ({ edit: mockEdit, remove: jest.fn() }) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
 jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockGoals }) }));
 jest.mock('@/features/record/useRecordContext', () => ({
@@ -51,12 +52,12 @@ beforeEach(() => {
 
 describe('EnvelopeAccountSheet', () => {
   it('renders nothing when hidden', async () => {
-    await wrap(<EnvelopeAccountSheet goalId="g-env" visible={false} onClose={jest.fn()} />);
+    await wrap(<EnvelopeAccountSheet goalId="g-env" visible={false} onClose={jest.fn()} setAccount={setAccount} />);
     expect(screen.queryByText('Which account holds Holiday?')).toBeNull();
   });
 
   it('lists only live money accounts as 44 px+ buttons named by the account', async () => {
-    await wrap(<EnvelopeAccountSheet goalId="g-env" visible onClose={jest.fn()} />);
+    await wrap(<EnvelopeAccountSheet goalId="g-env" visible onClose={jest.fn()} setAccount={setAccount} />);
     expect(await screen.findByText('Which account holds Holiday?')).toBeTruthy();
     const every = screen.getByLabelText('Everyday');
     expect(every.props.accessibilityRole).toBe('button');
@@ -68,7 +69,7 @@ describe('EnvelopeAccountSheet', () => {
 
   it('tapping an account saves only account_id, toasts with undo, taps a light haptic and closes', async () => {
     const onClose = jest.fn();
-    await wrap(<EnvelopeAccountSheet goalId="g-env" visible onClose={onClose} />);
+    await wrap(<EnvelopeAccountSheet goalId="g-env" visible onClose={onClose} setAccount={setAccount} />);
     await fireEvent.press(await screen.findByLabelText('Savings'));
     expect(mockEdit).toHaveBeenCalledTimes(1);
     expect(mockEdit).toHaveBeenCalledWith(GOAL, { account_id: 'a-save' }, 'user-1', 0);
@@ -83,14 +84,14 @@ describe('EnvelopeAccountSheet', () => {
 
   it('with no accounts shows one line and no list', async () => {
     mockAccounts = [];
-    await wrap(<EnvelopeAccountSheet goalId="g-env" visible onClose={jest.fn()} />);
+    await wrap(<EnvelopeAccountSheet goalId="g-env" visible onClose={jest.fn()} setAccount={setAccount} />);
     expect(await screen.findByText('No accounts yet.')).toBeTruthy();
     expect(screen.queryAllByRole('button').filter((b) => b.props.accessibilityLabel === 'Everyday')).toHaveLength(0);
   });
 
   it('writes nothing when the goal is gone', async () => {
     mockGoals = [];
-    await wrap(<EnvelopeAccountSheet goalId="g-env" visible onClose={jest.fn()} />);
+    await wrap(<EnvelopeAccountSheet goalId="g-env" visible onClose={jest.fn()} setAccount={setAccount} />);
     await fireEvent.press(await screen.findByLabelText('Everyday'));
     expect(mockEdit).not.toHaveBeenCalled();
     expect(showToast).not.toHaveBeenCalled();
@@ -98,7 +99,7 @@ describe('EnvelopeAccountSheet', () => {
 
   it('writes nothing when nobody is signed in', async () => {
     mockUserId = null;
-    await wrap(<EnvelopeAccountSheet goalId="g-env" visible onClose={jest.fn()} />);
+    await wrap(<EnvelopeAccountSheet goalId="g-env" visible onClose={jest.fn()} setAccount={setAccount} />);
     await fireEvent.press(await screen.findByLabelText('Everyday'));
     expect(mockEdit).not.toHaveBeenCalled();
     expect(showToast).not.toHaveBeenCalled();

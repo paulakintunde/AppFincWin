@@ -1,13 +1,15 @@
 /**
  * 06.1-43 (G-1, audit C-4; D-54): which account holds this envelope? The one fix for an envelope readiness item: an envelope is
  * never waived, it is linked. Lists the household's live money accounts; tapping one saves only `account_id` on the goal through
- * Grow's own writer (useEditGoal), shows the usual undo toast and closes. With no accounts it shows one line and no list.
+ * Grow's own writer, shows the usual undo toast and closes. With no accounts it shows one line and no list.
+ * 06.1-44: the writer comes in as a prop from the shell (as NetSetup's does); the decide feature may not import Grow's goal writes,
+ * which reach the exchange-rate fetch door (depcruise fx-fetch-never-from-reads).
  */
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useEditGoal } from '@/data/mutations/growGoals';
 import { useAccounts } from '@/data/queries/accounts';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
+import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { holdsMoney } from '@/features/record/accounts/accountUseSuggest';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
@@ -25,7 +27,12 @@ export interface EnvelopeAccountSheetProps {
   goalId: string;
   visible: boolean;
   onClose: () => void;
+  /** Grow's goal writer, bound by the shell: saves only account_id and returns the undo step id. */
+  setAccount: SetEnvelopeAccount;
 }
+
+/** Saves `accountId` as the goal's account (patch `{ account_id }` only) and returns the undo step id. */
+export type SetEnvelopeAccount = (goal: SavingsGoalRow, accountId: string, ownerId: string) => string;
 
 const ROW_HEIGHT = 52;
 
@@ -33,7 +40,7 @@ export function EnvelopeAccountSheet(props: EnvelopeAccountSheetProps) {
   return props.visible ? <EnvelopeAccountForm {...props} /> : null;
 }
 
-function EnvelopeAccountForm({ goalId, onClose }: EnvelopeAccountSheetProps) {
+function EnvelopeAccountForm({ goalId, onClose, setAccount }: EnvelopeAccountSheetProps) {
   const t = useT() as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
@@ -41,7 +48,6 @@ function EnvelopeAccountForm({ goalId, onClose }: EnvelopeAccountSheetProps) {
   const householdId = rc.householdId ?? undefined;
   const goalsQ = useSavingsGoalRows(userId, householdId);
   const accountsQ = useAccounts(householdId);
-  const { edit } = useEditGoal();
 
   const goal = goalsQ.data?.find((g) => g.id === goalId && g.deleted_at === null) ?? null;
   const accounts = useMemo(
@@ -54,7 +60,7 @@ function EnvelopeAccountForm({ goalId, onClose }: EnvelopeAccountSheetProps) {
     if (goal === null || userId === undefined) return;
     hapticLight();
     // D-54: the patch names account_id only.
-    const stepId = edit(goal, { account_id: accountId }, userId, 0);
+    const stepId = setAccount(goal, accountId, userId);
     showToast({ kind: 'ordinary', text: { key: 'grow.goals.detail.accountSavedToast', params: { account: accountName } }, stepId });
     onClose();
   };

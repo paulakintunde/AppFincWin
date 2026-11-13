@@ -4,28 +4,38 @@
 // AnswerFrame with the More-detail rows, "What you told Decide", the fact action buttons and every detail and info sheet. Pay mode
 // and date change in place on the stored draft; nothing navigates. Offline it answers from the cached records with "Records up to";
 // an error shows no figure.
+// 06.1-44 (G-1, C-1, C-2): a not-ready answer names each item with its fix and one-tap answers. An answer is saved as a readiness
+// waiver (or the pending line is skipped) with one Undo; the screen re-judges from the answers cache and stays put.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, type Href } from 'expo-router';
+import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useCreateCheck, useMarkCheckSeen } from '@/data/mutations/decideChecks';
 import { useRecordCheckHistory } from '@/data/mutations/decideHistory';
+import { useSaveDecideAnswer } from '@/data/mutations/decideAnswers';
 import { useSetDecideAnswered } from '@/data/mutations/decideSetup';
+import { queryKeys } from '@/data/keys';
 import { useAccounts } from '@/data/queries/accounts';
 import { useDecideChecks } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import type { DecideCheckRow } from '@/db/decideChecks';
-import { freeHelpFor, type CheckV2, type Evaluation, type LocalDate, type PayV2 } from '@/engine/decide/v3';
+import type { TransactionRow } from '@/db/rows';
+import { freeHelpFor, type CheckV2, type Evaluation, type LocalDate, type PayV2, type ReadinessItem, type ReadinessWaiver } from '@/engine/decide/v3';
 import { money as makeMoney } from '@/engine/money';
 import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
 import { openNewCheck } from '@/features/decide/screens/logic/checkHref';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { pushOnce } from '@/shell/navigation/pushOnce';
+import { showToast } from '@/state/undoToast';
+import { hapticLight } from '@/ui/haptics';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { useCheckEngine } from '../engine/useCheckEngine';
 import { useMonthPicture } from '../engine/useMonthPicture';
 import { DatePickerSheet } from '../sheets/DatePickerSheet';
+import { EnvelopeAccountSheet, type SetEnvelopeAccount } from '../sheets/EnvelopeAccountSheet';
 import { InstallmentPlanSheet } from '../sheets/InstallmentPlanSheet';
+import { estimatesCanAnswer, readinessFixRows, type ReadinessFixRow, type WaiverChoice } from '../logic/readinessFixes';
 import { KEY_SKIPPED, countsLikeOf, kindOf, lineNamesOf, ownKindsOf, stepHref, useStepCheck, useStepData, type BuiltInKind } from '../check/useStepCheck';
 import { AnswerFrame, type AnswerAction, type AnswerCheckView } from './AnswerFrame';
 import type { PayMode, WhenChoice } from './AnswerTopBar';
@@ -65,6 +75,10 @@ type SheetKey = 'later' | 'cheaper' | 'fullCost' | 'monthAfter' | 'stops' | 'eve
 /** The writes the shell binds (useNotBuying reaches the rate-fetch door, which features/decide may not import). */
 export interface AnswerWrites {
   notBuying: (a: { row: DecideCheckRow; evaluation: Evaluation }) => string | null;
+  /** 06.1-44 (D-54): Grow's goal writer for the envelope fix (features/decide may not import Grow's goal writes). */
+  setEnvelopeAccount: SetEnvelopeAccount;
+  /** 06.1-44: skips a pending line (the shell binds useSkipOccurrence, whose write path reaches the rate-fetch door). Returns the undo step id. */
+  skipLine: (row: TransactionRow, ownerId: string) => string | null;
 }
 
 export interface AnswerScreenProps {
@@ -77,7 +91,26 @@ export interface AnswerScreenProps {
 }
 
 const NO_ROWS: readonly DecideCheckRow[] = [];
+const NO_ITEMS: readonly ReadinessItem[] = [];
 const asHref = (path: string): Href => path as Href;
+
+/** The pending line a "It didn't happen" answer skips, from any cached transactions list of the household; null when not cached. */
+function cachedPendingLine(qc: QueryClient, householdId: string, lineId: string): TransactionRow | null {
+  for (const [, data] of qc.getQueriesData<unknown>({ queryKey: queryKeys.transactionsRoot(householdId) })) {
+    if (!Array.isArray(data)) continue;
+    const hit = (data as TransactionRow[]).find((r) => r !== null && typeof r === 'object' && r.id === lineId);
+    if (hit !== undefined && hit.deleted_at == null && hit.status === 'pending') return hit;
+  }
+  return null;
+}
+
+/** With the line not cached, the same occurrence is answered by its waiver instead (the engine accepts it when no line can be skipped). */
+function fallbackWaiver(item: ReadinessItem): ReadinessWaiver | null {
+  if (item.seriesId === null || item.date === null) return null;
+  if (item.kind === 'bill') return { kind: 'didnt_happen', seriesId: item.seriesId, date: item.date };
+  if (item.kind === 'pay') return { kind: 'no_pay', seriesId: item.seriesId, date: item.date };
+  return null;
+}
 
 function leave(): void {
   if (router.canGoBack()) router.back();
@@ -106,6 +139,9 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
   const { markSeen } = useMarkCheckSeen();
   const history = useRecordCheckHistory(rc.userId ?? '');
   const answered = useSetDecideAnswered(rc.userId ?? '');
+  const qc = useQueryClient();
+  const answers = useSaveDecideAnswer(rc.userId ?? '', rc.householdId ?? '');
+  const [envelopeId, setEnvelopeId] = useState<string | null>(null);
 
   const [gated, setGated] = useState(false);
   // An installments side from the compare screen opens the plan sheet on arrival.
@@ -153,6 +189,11 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
     [currency, today, rc.showCents, names, evaluation]
   );
   const lines = useSaid(result, said);
+  // 06.1-44 (C-2): the named items, one row each, and (D-57, C-1) whether quick estimates can count at all.
+  const readinessItems = result?.readiness?.items ?? NO_ITEMS;
+  const rows = useMemo(() => readinessFixRows(readinessItems, today), [readinessItems, today]);
+  const inputsNow = v3.inputs;
+  const canUseEstimates = useMemo(() => inputsNow !== null && estimatesCanAnswer(inputsNow), [inputsNow]);
 
   if (step.status === 'not_found' || (step.status === 'ready' && row === null && !checks.isLoading)) return <CheckNotFound />;
   if (step.status === 'loading' || check === null || row === null) return null;
@@ -222,9 +263,42 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
         pushOnce(asHref('/decide/setup'));
         return;
       case 'fromEstimates':
+        // C-1: reachable only while estimates can count; the card shows no such control otherwise.
+        if (!canUseEstimates) return;
         pushOnce(asHref(`/decide/setup/quick-estimates?returnTo=${encodeURIComponent(`/decide/answer/${id}`)}`));
         return;
     }
+  };
+
+  const saveWaiver = (waiver: ReadinessWaiver): void => {
+    const saved = answers.save({ kind: 'readiness_waiver', waiver, at: today });
+    if (saved === null) return;
+    hapticLight();
+    showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.notReady.saved' }, stepId: saved.stepId });
+  };
+  const onReadinessChoice = (fixRow: ReadinessFixRow, choice: WaiverChoice): void => {
+    if (choice.waiver !== null) {
+      saveWaiver(choice.waiver);
+      return;
+    }
+    // markSkipped: skip the pending line itself when it is cached; otherwise answer the occurrence by its waiver.
+    const line = choice.lineId === null || rc.householdId === null ? null : cachedPendingLine(qc, rc.householdId, choice.lineId);
+    if (line !== null && rc.userId !== null) {
+      const stepId = writes.skipLine(line, rc.userId);
+      if (stepId === null) return;
+      hapticLight();
+      showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.notReady.saved' }, stepId });
+      return;
+    }
+    const fallback = fallbackWaiver(fixRow.item);
+    if (fallback !== null) saveWaiver(fallback);
+  };
+  const onReadinessFix = (fixRow: ReadinessFixRow): void => {
+    if (fixRow.fix.kind === 'linkEnvelope') {
+      if (fixRow.fix.envelopeId !== null) setEnvelopeId(fixRow.fix.envelopeId);
+      return;
+    }
+    pushOnce(asHref('/activity'));
   };
 
   const onOption = (key: OptionKey): void => {
@@ -299,7 +373,7 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
   const runningLine = runningMonthly > 0 ? t('decide.screens.answer.told.runningMonthly', { monthly: money(runningMonthly) }) : t('decide.screens.answer.told.runningNone');
   const runningValue = runningMonthly > 0 ? t('decide.screens.answer.runningSome', { monthly: money(runningMonthly) }) : t('decide.screens.answer.runningNone');
 
-  const giveMoreCount = result === null ? 0 : (result.confidence.nextStep !== null ? 1 : 0) + lines.missing.length + lines.readiness.length;
+  const giveMoreCount = result === null ? 0 : (result.confidence.nextStep !== null ? 1 : 0) + lines.missing.length + rows.length;
   const country = view.country ?? null;
   const showHelp = result !== null && result.facts.some((f) => f.code === 'free_help') && freeHelpFor(country) !== null;
 
@@ -370,6 +444,10 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
         onOption={onOption}
         onCantSee={() => setSheet('about')}
         renderAfterFact={renderAfterFact}
+        readinessRows={rows}
+        canUseEstimates={canUseEstimates}
+        onReadinessFix={onReadinessFix}
+        onReadinessChoice={onReadinessChoice}
       >
         {body}
       </AnswerFrame>
@@ -452,6 +530,8 @@ export function AnswerScreen({ id, side = null, renderGate, writes }: AnswerScre
           onClose={closeSheet}
         />
       ) : null}
+      {/* D-54: an envelope is linked to the account that holds it, never waived. */}
+      <EnvelopeAccountSheet goalId={envelopeId ?? ''} visible={envelopeId !== null} onClose={() => setEnvelopeId(null)} setAccount={writes.setEnvelopeAccount} />
       {sheet === 'help' ? <FreeHelpSheet country={country} onClose={closeSheet} /> : null}
       {sheet === 'about' ? <AboutSheet result={result} country={country} said={{ currency, today }} recordsUpTo={recordsUpTo} onClose={closeSheet} /> : null}
       <InstallmentPlanSheet
