@@ -10,6 +10,8 @@ import { minorUnits } from '@/engine/money';
 export type TaxNote =
   | { readonly kind: 'estimate'; readonly amount: number; readonly percent: string }
   | { readonly kind: 'unknown' }
+  /** 06.1-56 (A-HOME-5): the region adds tax and there is no price yet. */
+  | { readonly kind: 'added' }
   | null;
 
 /** A scaled Percent (10 decimal places) as text: 7.5, 22.9, 0. */
@@ -24,6 +26,7 @@ export function taxNoteFor(input: { price: number | null; country: string | null
   if (input.country !== null && INCLUDED_COUNTRIES.includes(input.country)) return null;
   const lookup = lookupTaxDefault({ country: input.country, subdivision: input.subdivision });
   if (lookup.kind === 'unknown') return { kind: 'unknown' };
-  if (lookup.kind !== 'add' || input.price === null || input.price <= 0) return null;
+  if (lookup.kind !== 'add') return null;
+  if (input.price === null || input.price <= 0) return { kind: 'added' };
   return { kind: 'estimate', amount: Number(salesTaxOf(minorUnits(input.price), lookup.percent)), percent: percentTextOf(lookup.percent) };
 }

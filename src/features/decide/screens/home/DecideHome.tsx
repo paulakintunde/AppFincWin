@@ -3,10 +3,13 @@
  * while setup is open, the offline or error card, the Check it card (always on screen), example chips, Your month, Open checks, Your
  * money rules, Something changed? and the footer. Check it builds a draft check and routes it (useNewCheck): a big buy to the
  * stepper, everything else to the answer, a home nowhere (D-02). The examples fill the fields only (D-15).
+ * 06.1-56 (G-8, H-9): laid out as the prototype (D01/D02): no FAB on this tab, keyboard taps pass through to Check it, short dates on
+ * the When? chips, an example scrolls the card into view, the card starts fresh once a check's route opens, and Check it waits for
+ * the engine inputs so the stepper-or-answer route never depends on load state.
  */
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { useIsFocused, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useCategories } from '@/data/queries/categories';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
@@ -15,7 +18,9 @@ import { currencyCode, currencyExponent, minorUnits } from '@/engine/money';
 import { perfMark } from '@/features/decide/perf/perfMarks';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
+import { useHideFab } from '@/shell/fab/FabProvider';
 import { TabRootScreen } from '@/shell/screen/TabRootScreen';
+import type { TabRootScrollHandle } from '@/shell/screen/useTabRootChrome';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
@@ -60,6 +65,17 @@ const EXAMPLES: readonly { key: 'headphones' | 'laptop' | 'usedCar'; whole: numb
   { key: 'usedCar', whole: 9000 },
 ];
 
+/** 06.1-56 (A-HOME-4): short dates for the When? chips and the open-check rows ("Thu, Nov 12", "Nov 15"), built once per locale. */
+function shortDateFormatters(locale: string): { weekday: (d: string) => string; dayMonth: (d: string) => string } {
+  const weekday = new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const dayMonth = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const at = (d: string): number => Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10)));
+  return { weekday: (d) => weekday.format(at(d)), dayMonth: (d) => dayMonth.format(at(d)) };
+}
+
+/** Space left above the check card when an example scrolls it into view. */
+const SCROLL_MARGIN = 8;
+
 const planItemKind = (kind: ItemKind | null): PlanItemKind => (kind === 'car' ? 'car' : kind === 'tech' ? 'laptop' : 'other');
 
 function PastPill({ count, onPress }: { count: number; onPress: () => void }) {
@@ -99,10 +115,14 @@ export function DecideHome() {
   const fmt = useMoneyFormatter(false, currency);
   const parser = useAmountParser();
   const newCheck = useNewCheck();
+  // 06.1-56 (A-HOME-3): the prototype has no + Add button on Decide; it is hidden while this tab is focused.
+  const isFocused = useIsFocused();
+  useHideFab('decide', isFocused);
 
   const money = useCallback((n: number): string => fmt.formatMoney({ amount: minorUnits(n), currency: currencyCode(currency) }), [fmt, currency]);
   const moneySpoken = useCallback((n: number): string => fmt.formatMoneyA11y({ amount: minorUnits(n), currency: currencyCode(currency) }), [fmt, currency]);
   const dateText = useCallback((d: string): string => fmt.formatDate(d), [fmt]);
+  const short = useMemo(() => shortDateFormatters(fmt.locale), [fmt.locale]);
 
   // ── the check being typed ─────────────────────────────────────────────────────────────────────────────────────────
   const textRef = useRef<TextInputInstance | null>(null);
@@ -143,6 +163,8 @@ export function DecideHome() {
   const kind = readKind(text);
   const kindWord = kind === null || kind === 'home' ? null : t(`decide.screens.stepper.kind.${kind}`);
   const ready = text.trim() !== '' && price !== null && price > 0 && !home;
+  // 06.1-56 (H-9, CN-6): Check it waits for the engine inputs, so the route uses the loaded thresholds and region only.
+  const inputsLoading = inputs === null;
   // 06.1-52 (C-18, G-5): the NeedLine under Check it names the one missing part; home words have their own note.
   const needHint: string | null =
     newCheck.pending || home
@@ -157,7 +179,7 @@ export function DecideHome() {
               ? t('decide.screens.home.need.price')
               : t('decide.screens.home.need.priceUnread');
   const recordsLoaded = rc.userId !== null && rc.householdId !== null;
-  const hint = needHint ?? (loadingTap && !recordsLoaded ? t('decide.screens.common.need.loading') : null);
+  const hint = needHint ?? ((loadingTap && !recordsLoaded) || (ready && inputsLoading) ? t('decide.screens.common.need.loading') : null);
 
   const parsed = useMemo(
     () =>
@@ -174,15 +196,53 @@ export function DecideHome() {
       : null;
 
   const tax = taxNoteFor({ price: deferredPrice ?? parsed?.price ?? null, country, subdivision: inputs?.regionSubdivision ?? null });
-  const taxNote = tax === null ? null : tax.kind === 'unknown' ? t('decide.v3.notice.tax_not_included') : t('decide.v3.fact.tax_estimate', { amount: money(tax.amount), percent: tax.percent });
+  const taxNote =
+    tax === null
+      ? null
+      : tax.kind === 'unknown'
+        ? t('decide.screens.home.check.taxNotIncluded')
+        : tax.kind === 'added'
+          ? t('decide.screens.home.check.taxAdded')
+          : t('decide.screens.home.check.taxEstimate', { amount: money(tax.amount) });
 
-  const todayText = fmt.formatDate(rc.today, 'short');
-  const paydayText = nextPayday !== null && nextPayday >= rc.today ? dateText(nextPayday) : null;
+  const todayText = short.weekday(rc.today);
+  const paydayText = nextPayday !== null && nextPayday >= rc.today ? short.dayMonth(nextPayday) : null;
+
+  // 06.1-56 (H-9, FQ3, CC-1): once a new check's route opens, the card starts fresh and keeps none of the last check's choices,
+  // so coming back and tapping Check it makes no duplicate.
+  const startFresh = (): void => {
+    setText('');
+    setPrice(null);
+    setPriceText('');
+    setWhen('today');
+    setPayMode('once');
+    setPlan(null);
+    setPurpose(null);
+    setQuickLines([]);
+    setMoreOpen(false);
+  };
 
   const check = (): void => {
-    if (!ready) return;
+    if (!ready || inputsLoading) return;
     perfMark('decide.answer:start'); // 06.1-47: Check it -> answer timing; the end is marked in useCheckEngine
-    setLoadingTap(newCheck.start(fields) === 'loading');
+    const result = newCheck.start(fields);
+    setLoadingTap(result === 'loading');
+    if (typeof result === 'string' && result.startsWith('/decide/')) startFresh();
+  };
+
+  // 06.1-56 (DB-10): an example fills the form and brings the check card into view, so the tap never looks dead.
+  const scrollHandle = useRef<TabRootScrollHandle | null>(null);
+  const layout = useRef({ body: 0, card: 0 });
+  const onBodyLayout = useCallback((e: LayoutChangeEvent): void => {
+    layout.current.body = e.nativeEvent.layout.y;
+  }, []);
+  const onCardLayout = useCallback((e: LayoutChangeEvent): void => {
+    layout.current.card = e.nativeEvent.layout.y;
+  }, []);
+  const fillExample = (name: string, amount: number): void => {
+    setText(name);
+    setPrice(amount);
+    scrollHandle.current?.scrollTo(layout.current.body + layout.current.card - SCROLL_MARGIN);
   };
 
   const focusWhat = (): void => textRef.current?.focus();
@@ -242,8 +302,15 @@ export function DecideHome() {
     <TabRootScreen
       eyebrow={t('decide.screens.home.kicker')}
       title={t('decide.screens.home.title')}
+      titleRole="display"
       trailing={<PastPill count={pastCount} onPress={() => go('/decide/past')} />}
       hideSyncLine
+      // 06.1-56 (UX-11, CB-1): a tap on Check it with the keyboard open starts the check on the first tap.
+      keyboardShouldPersistTaps="handled"
+      // 06.1-56 (DS-21): the compact header sits in the layout under its own status-bar backdrop, so it stays put and nothing is
+      // drawn under the status bar when an example fills the form.
+      compactInFlow
+      scrollHandle={scrollHandle}
       overlay={
         <>
           <DatePickerSheet
@@ -321,7 +388,7 @@ export function DecideHome() {
         </>
       }
     >
-      <View style={styles.body}>
+      <View style={styles.body} onLayout={onBodyLayout}>
         <Text style={small}>{t('decide.screens.home.subtitle')}</Text>
 
         <SetupBanner
@@ -337,6 +404,7 @@ export function DecideHome() {
         {offlineDate !== null ? <OfflineCard date={offlineDate} onRetry={v3.refetch} /> : null}
         {v3.status === 'error' && offlineDate === null ? <ErrorCard item={text.trim()} onRetry={v3.refetch} /> : null}
 
+        <View testID="check-card-slot" onLayout={onCardLayout}>
         <CheckCard
           text={text}
           onText={setText}
@@ -353,7 +421,7 @@ export function DecideHome() {
           onPickDate={() => setDatePick({ current: typeof when === 'object' ? when.date : null, set: (d) => setWhen({ date: d }) })}
           todayText={todayText}
           paydayText={paydayText}
-          pickedText={typeof when === 'object' ? dateText(when.date) : null}
+          pickedText={typeof when === 'object' ? short.dayMonth(when.date) : null}
           reads={reads}
           onApplyReads={() => {
             if (parsed === null) return;
@@ -378,10 +446,11 @@ export function DecideHome() {
               formatMoney={money}
             />
           }
-          disabled={!ready || newCheck.pending}
+          disabled={!ready || newCheck.pending || inputsLoading}
           onCheck={check}
           hint={hint}
         />
+        </View>
 
         <View style={styles.examples}>
           <Text style={small}>{t('decide.screens.home.examples.title')}</Text>
@@ -390,14 +459,7 @@ export function DecideHome() {
               const amount = e.whole * 10 ** currencyExponent(currency);
               const name = t(`decide.screens.home.examples.${e.key}`);
               return (
-                <Chip
-                  key={e.key}
-                  label={`${name} ${money(amount)}`}
-                  onPress={() => {
-                    setText(name);
-                    setPrice(amount);
-                  }}
-                />
+                <Chip key={e.key} label={`${name} ${money(amount)}`} onPress={() => fillExample(name, amount)} />
               );
             })}
           </View>
@@ -414,7 +476,7 @@ export function DecideHome() {
           onRecords={() => go('/decide/setup/records')}
         />
 
-        <OpenChecksCard rows={openRows} formatMoney={money} formatMoneySpoken={moneySpoken} formatDate={dateText} today={rc.today} onOpen={setOpenId} onAddPurchase={focusWhat} />
+        <OpenChecksCard rows={openRows} formatMoney={money} formatMoneySpoken={moneySpoken} formatDate={short.dayMonth} today={rc.today} onOpen={setOpenId} onAddPurchase={focusWhat} />
 
         <MoneyRulesCard
           netLocked={rulesFacts.netLocked}

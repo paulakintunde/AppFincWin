@@ -1,5 +1,7 @@
 /**
- * 06.1-21 (D01, APP-09, D-02): the Check it card on Decide home. "What is it?", "Price", "When?", the More details slot and the
+ * 06.1-21 (D01, APP-09, D-02): the Check it card on Decide home. 06.1-56 (A-HOME-2, -4, -5, X-4): When? is one row of three compact
+ * choices with short dates; the price leads with the currency symbol and the tax note sits at the right of its label.
+ * "What is it?", "Price", "When?", the More details slot and the
  * primary Check it pill. The pill is always on screen; until the item and a price are there it is dimmed with a hint, and for
  * home words it stays dimmed under the home note (no check is created). While one field holds a price after the words, the
  * "Reads as" chips show what was understood and each applies it. Presentational: the fields and rules come in as props.
@@ -15,7 +17,7 @@ import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { TextInput, type TextInput as TextInputInstance } from '@/ui/TextInput';
-import { RadioDot } from '@/ui/RadioDot';
+import { ACCENT_TINT_OPACITY } from '@/theme/tokens';
 import { hapticSelection } from '@/ui/haptics';
 import { NeedLine } from '../ui/NeedLine';
 import type { WhenChoice } from './useNewCheck';
@@ -61,7 +63,11 @@ export interface CheckCardProps {
   onPriceText?: (text: string) => void;
 }
 
-function Radio({ label, sub, selected, onPress, testID }: { label: string; sub: string; selected: boolean; onPress: () => void; testID: string }) {
+/**
+ * 06.1-56 (A-HOME-2, D01): one compact "When?" choice. Three sit in one row (Today · the next payday · Pick a date), each a word
+ * over a short date, so Check it stays above the fold. A radio in a radio group; selected is the Chip's accent tint.
+ */
+function WhenChip({ label, sub, selected, onPress, testID }: { label: string; sub: string; selected: boolean; onPress: () => void; testID: string }) {
   const { colors, pairing } = useTheme();
   return (
     <Pressable
@@ -73,13 +79,15 @@ function Radio({ label, sub, selected, onPress, testID }: { label: string; sub: 
         hapticSelection();
         onPress();
       }}
-      style={[styles.radio, { backgroundColor: selected ? colors.accentTint1 : colors.fill6, borderColor: selected ? colors.accent : 'transparent' }]}
+      style={[styles.when, { backgroundColor: colors.fill1, borderColor: selected ? colors.accent : 'transparent' }]}
     >
-      <RadioDot selected={selected} />
-      <View style={styles.radioText}>
-        <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{label}</Text>
-        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{sub}</Text>
-      </View>
+      {selected ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.accent, opacity: ACCENT_TINT_OPACITY, borderRadius: radii.card }]} /> : null}
+      <Text numberOfLines={2} style={{ ...textRole(pairing, 'label'), fontWeight: '700', color: selected ? colors.accent : colors.ink, textAlign: 'center' }}>
+        {label}
+      </Text>
+      <Text numberOfLines={2} style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted, textAlign: 'center' }}>
+        {sub}
+      </Text>
     </Pressable>
   );
 }
@@ -121,6 +129,7 @@ export function CheckCard({ onWhatRef, ...props }: CheckCardProps) {
       </View>
 
       <View style={styles.group}>
+        {/* 06.1-56 (A-HOME-5, X-4): the field leads with the currency symbol; the tax note is a short note at the right of the label. */}
         <MoneyInput
           label={t('decide.screens.home.check.priceLabel')}
           accessibilityLabel={t('decide.screens.home.check.priceLabel')}
@@ -128,13 +137,16 @@ export function CheckCard({ onWhatRef, ...props }: CheckCardProps) {
           value={props.price}
           onChange={props.onPrice}
           onTextChange={props.onPriceText}
+          prefix="symbol"
           zeroHint
+          labelAccessory={
+            props.taxNote === null ? undefined : (
+              <Text testID="check-tax-note" style={[small, styles.taxNote]}>
+                {props.taxNote}
+              </Text>
+            )
+          }
         />
-        {props.taxNote === null ? null : (
-          <Text testID="check-tax-note" style={small}>
-            {props.taxNote}
-          </Text>
-        )}
       </View>
 
       {props.reads === null ? null : (
@@ -151,13 +163,13 @@ export function CheckCard({ onWhatRef, ...props }: CheckCardProps) {
 
       <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.home.check.whenLabel')} style={styles.group}>
         <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.home.check.whenLabel')}</Text>
-        <View style={styles.radios}>
-          <Radio testID="when-today" label={t('decide.screens.home.check.today')} sub={props.todayText} selected={props.when === 'today'} onPress={() => props.onWhen('today')} />
+        <View testID="when-row" style={styles.whenRow}>
+          <WhenChip testID="when-today" label={t('decide.screens.home.check.today')} sub={props.todayText} selected={props.when === 'today'} onPress={() => props.onWhen('today')} />
           {props.paydayText === null ? null : (
-            <Radio testID="when-payday" label={props.paydayText} sub={t('decide.screens.home.check.nextPayday')} selected={props.when === 'payday'} onPress={() => props.onWhen('payday')} />
+            <WhenChip testID="when-payday" label={props.paydayText} sub={t('decide.screens.home.check.nextPayday')} selected={props.when === 'payday'} onPress={() => props.onWhen('payday')} />
           )}
-          <Radio
-            testID="when-pick"
+          <WhenChip
+            testID="when-date"
             label={picked && props.pickedText !== null ? props.pickedText : t('decide.screens.common.pickDate')}
             sub={t('decide.screens.home.check.anyDay')}
             selected={picked}
@@ -187,7 +199,7 @@ const styles = StyleSheet.create({
   input: { flex: 1, minHeight: space.touchMin, padding: 0 },
   kind: { borderRadius: radii.pill, paddingHorizontal: space.gapMd, minHeight: 28, justifyContent: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
-  radios: { gap: space.gapSm },
-  radio: { minHeight: space.touchMin + 8, borderRadius: radii.card, borderWidth: 1.5, paddingHorizontal: space.cardPad, paddingVertical: space.gapSm, flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
-  radioText: { flexShrink: 1, flexGrow: 1 },
+  whenRow: { flexDirection: 'row', gap: space.gapSm },
+  when: { flex: 1, minHeight: space.touchMin + 8, borderRadius: radii.card, borderWidth: 1.5, paddingHorizontal: space.gapSm, paddingVertical: 6, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  taxNote: { flex: 1, textAlign: 'right' },
 });

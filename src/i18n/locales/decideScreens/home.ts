@@ -21,8 +21,13 @@ export const home = {
     anyDay: 'Any day',
     moreDetails: 'More details',
     moreDetailsSub: 'How you pay, quick estimates · optional',
-    moreDetailsOpen_one: '{{method}} · {{count}} quick estimate',
-    moreDetailsOpen_other: '{{method}} · {{count}} quick estimates',
+    // 06.1-56 (CS-6): the collapsed More details row names what is set, joined by ' · '.
+    quickCount_one: '{{count}} quick estimate',
+    quickCount_other: '{{count}} quick estimates',
+    // 06.1-56 (A-HOME-5, X-4): the short note at the right of the Price label.
+    taxAdded: 'Tax is added for you',
+    taxEstimate: 'About {{amount}} tax added',
+    taxNotIncluded: 'Tax not included',
     checkIt: 'Check it',
     readsAs: 'Reads as',
   },
@@ -41,8 +46,8 @@ export const home = {
   moreDetails: {
     howYouPay: 'How you pay',
     needOrWant: 'Need or want?',
-    need: 'A need',
-    want: 'A want',
+    need: 'Need',
+    want: 'Want',
     notSet: 'Not set',
     needOrWantNote: 'This changes only the order of the options, never the answer.',
     quickEstimates: 'Quick estimates',
@@ -81,6 +86,11 @@ export const home = {
     explainLow: 'The lowest month in your records: what came in, less what went out.',
     recordsRow: 'Records up to {{date}} · {{count}} of 3 months',
     barA11y: 'Comes in {{moneyIn}}, goes out {{costs}}, left {{left}}',
+    // 06.1-56 (A-HOME-6): the usual/low switch says what each leaves; the stacked bar's legend has two lines.
+    leftSub: '{{amount}} left',
+    legendIn: 'Comes in {{amount}}',
+    legendOut: 'Goes out {{costs}} · Left {{left}}',
+    legendOutShort: 'Goes out {{costs}} · Short {{left}}',
     earlierA11y: 'Earlier month',
     laterA11y: 'Later month',
   },

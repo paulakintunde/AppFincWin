@@ -14,7 +14,6 @@ import { DURATION, EASING, useReduceMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
-import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { Text } from '@/ui/Text';
 import { hapticSelection } from '@/ui/haptics';
 import { QUICK_LINE_KINDS, type QuickLineKind } from '../sheets/quickLineKinds';
@@ -59,8 +58,15 @@ export function MoreDetails(props: MoreDetailsProps) {
   const fade = useAnimatedStyle(() => ({ opacity: progress.value }));
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
 
-  const method = props.payMode === 'plan' ? t('decide.screens.common.installments') : t('decide.screens.common.cash');
-  const sub = props.quickLines.length > 0 ? t('decide.screens.home.check.moreDetailsOpen', { method, count: props.quickLines.length }) : t('decide.screens.home.check.moreDetailsSub');
+  // 06.1-56 (H-9, CS-6): the collapsed row names the choices that are set ("Installments · Need · 1 quick estimate"); none set reads
+  // as the plain sub-line, so a fresh card never looks pre-filled.
+  const maybeParts: (string | null)[] = [
+    props.payMode === 'plan' ? t('decide.screens.common.installments') : null,
+    props.purpose === 'need' ? t('decide.screens.home.moreDetails.need') : props.purpose === 'want' ? t('decide.screens.home.moreDetails.want') : null,
+    props.quickLines.length > 0 ? t('decide.screens.home.check.quickCount', { count: props.quickLines.length }) : null,
+  ];
+  const setParts = maybeParts.filter((x): x is string => x !== null);
+  const sub = setParts.length > 0 ? setParts.join(' · ') : t('decide.screens.home.check.moreDetailsSub');
 
   const lineText = (l: QuickLine): string => {
     const kindWord = t(`decide.screens.home.moreDetails.${TILE_KEY[l.kind]}`);
@@ -93,15 +99,32 @@ export function MoreDetails(props: MoreDetailsProps) {
         <Animated.View testID="more-details-body" style={[styles.body, fade]}>
           <View style={styles.group}>
             <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.home.moreDetails.howYouPay')}</Text>
-            <SegmentedToggle
-              accessibilityLabel={t('decide.screens.home.moreDetails.howYouPay')}
-              value={props.payMode === 'plan' ? 'plan' : 'cash'}
-              onChange={(key) => props.onPay(key === 'plan' ? 'plan' : 'once')}
-              options={[
-                { key: 'cash', label: t('decide.screens.common.cash') },
-                { key: 'plan', label: t('decide.screens.common.installments') },
-              ]}
-            />
+            {/* 06.1-56 (A-HOME-10): Cash | Installments, a white pill on the soft track (the prototype's segmented control). */}
+            <View testID="pay-toggle" accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.home.moreDetails.howYouPay')} style={[styles.track, { backgroundColor: colors.fill6 }]}>
+              {(['once', 'plan'] as const).map((mode) => {
+                const selected = props.payMode === mode;
+                const label = mode === 'plan' ? t('decide.screens.common.installments') : t('decide.screens.common.cash');
+                return (
+                  <Pressable
+                    key={mode}
+                    testID={`pay-${mode}`}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={label}
+                    onPress={() => {
+                      if (selected) return;
+                      hapticSelection();
+                      props.onPay(mode);
+                    }}
+                    style={[styles.segment, selected ? { backgroundColor: colors.surface } : null]}
+                  >
+                    <Text numberOfLines={2} style={{ ...textRole(pairing, 'label'), fontWeight: selected ? '700' : '500', color: selected ? colors.ink : colors.inkDim, textAlign: 'center' }}>
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
 
           <View style={styles.group}>
@@ -152,7 +175,7 @@ export function MoreDetails(props: MoreDetailsProps) {
                     hapticSelection();
                     props.onAddQuick(kind);
                   }}
-                  style={[styles.tile, { borderColor: colors.line4, opacity: props.quickFull ? 0.5 : 1 }]}
+                  style={[styles.tile, { borderColor: colors.line4, backgroundColor: colors.surface, opacity: props.quickFull ? 0.5 : 1 }]}
                 >
                   <Text style={{ ...textRole(pairing, 'label'), fontWeight: '600', color: colors.accent }}>{`+ ${t(`decide.screens.home.moreDetails.${TILE_KEY[kind]}`)}`}</Text>
                 </Pressable>
@@ -173,8 +196,11 @@ const styles = StyleSheet.create({
   body: { gap: space.gapMd },
   group: { gap: space.gapSm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
-  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
-  tile: { minHeight: space.touchMin, borderRadius: radii.card, borderWidth: 1.5, borderStyle: 'dashed', paddingHorizontal: space.cardPad, justifyContent: 'center' },
+  // 06.1-56 (A-HOME-10): a 2x2 grid of equal tiles, text only (icons wait for the app-life phase).
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: space.gapSm },
+  tile: { width: '48.5%', minHeight: space.touchMin + 8, borderRadius: radii.card, borderWidth: 1.5, borderStyle: 'dashed', paddingHorizontal: space.gapMd, alignItems: 'center', justifyContent: 'center' },
+  track: { flexDirection: 'row', borderRadius: radii.pill, padding: 3, gap: 3 },
+  segment: { flex: 1, minHeight: space.touchMin - 4, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.gapSm },
   line: { borderRadius: radii.card, flexDirection: 'row', alignItems: 'center' },
   lineMain: { flexShrink: 1, flexGrow: 1, minHeight: space.touchMin, paddingHorizontal: space.cardPad, justifyContent: 'center' },
   chevron: { width: 8, height: 8, borderTopWidth: 2, borderRightWidth: 2, marginRight: 4 },

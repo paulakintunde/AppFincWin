@@ -21,16 +21,24 @@ let mockInputs: unknown = null;
 let mockProgress = { items: [], doneCount: 0, next: 'pay', allDone: false, loading: false, currency: 'USD', today: '2026-10-03' };
 let mockOpenRows: unknown[] = [];
 let mockUserId: string | null = 'u1';
+let mockFocused = true;
+const mockHideFab = jest.fn();
+const mockScrollTo = jest.fn();
+let mockTabProps: Record<string, unknown> = {};
 
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, setParams: jest.fn() }), useLocalSearchParams: () => ({}) }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, setParams: jest.fn() }), useLocalSearchParams: () => ({}), useIsFocused: () => mockFocused }));
+jest.mock('@/shell/fab/FabProvider', () => ({ useHideFab: (...a: unknown[]) => mockHideFab(...a) }));
 jest.mock('@/shell/screen/TabRootScreen', () => {
   const R = jest.requireActual('react');
   const { View, Text: RNText } = jest.requireActual('react-native');
   return {
-    TabRootScreen: (p: { title: string; eyebrow?: string; trailing?: React.ReactNode; overlay?: React.ReactNode; children?: React.ReactNode }) =>
-      R.createElement(View, null, R.createElement(RNText, null, p.eyebrow), R.createElement(RNText, null, p.title), p.trailing, p.children, p.overlay),
+    TabRootScreen: (p: { title: string; eyebrow?: string; trailing?: React.ReactNode; overlay?: React.ReactNode; children?: React.ReactNode; scrollHandle?: { current: unknown } }) => {
+      mockTabProps = p as unknown as Record<string, unknown>;
+      if (p.scrollHandle) p.scrollHandle.current = { scrollTo: mockScrollTo };
+      return R.createElement(View, null, R.createElement(RNText, { testID: 'tab-title' }, p.eyebrow), R.createElement(RNText, null, p.title), p.trailing, p.children, p.overlay);
+    },
   };
 });
 jest.mock('@/features/record/useRecordContext', () => ({
@@ -60,7 +68,16 @@ jest.mock('../RuleEditSheet', () => ({ RuleEditSheet: () => null }));
 jest.mock('../AddRuleSheet', () => ({ AddRuleSheet: () => null }));
 jest.mock('../OpenCheckSheet', () => ({ OpenCheckSheet: () => null }));
 jest.mock('../../sheets/DatePickerSheet', () => ({ DatePickerSheet: () => null }));
-jest.mock('../../sheets/InstallmentPlanSheet', () => ({ InstallmentPlanSheet: () => null }));
+jest.mock('../../sheets/InstallmentPlanSheet', () => {
+  const R = jest.requireActual('react');
+  const { Pressable, Text: RNText } = jest.requireActual('react-native');
+  return {
+    InstallmentPlanSheet: (p: { visible: boolean; onUse: (pay: unknown) => void }) =>
+      p.visible
+        ? R.createElement(Pressable, { testID: 'mock-plan-use', onPress: () => p.onUse({ mode: 'plan', months: 12, aprBp: 0, firstDate: null }) }, R.createElement(RNText, null, 'plan'))
+        : null,
+  };
+});
 jest.mock('../../../quickParse', () => {
   const actual = jest.requireActual('../../../quickParse');
   return { ...actual, parseQuick: jest.fn(actual.parseQuick) };
@@ -104,11 +121,14 @@ function engineFixture() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockStart.mockReset();
   mockPending = false;
   mockOnline = true;
   mockStatus = 'ready';
   mockOpenRows = [];
   mockUserId = 'u1';
+  mockFocused = true;
+  mockTabProps = {};
   mockProgress = { items: [], doneCount: 0, next: 'pay', allDone: false, loading: false, currency: 'USD', today: '2026-10-03' };
   const { inputs, prepared } = engineFixture();
   mockInputs = inputs;
@@ -204,7 +224,118 @@ describe('Check it (APP-09, D-02)', () => {
     expect(screen.getByTestId('when-payday')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('when-payday'));
     expect(screen.getByTestId('when-payday').props.accessibilityState.checked).toBe(true);
-    expect(screen.getByTestId('when-pick')).toBeTruthy();
+    expect(screen.getByTestId('when-date')).toBeTruthy();
+  });
+
+  it('06.1-56 (A-HOME-2, A-HOME-4): When? is one row of three chips with short dates, never a numeric date', async () => {
+    await wrap(<DecideHome />);
+    const row = screen.getByTestId('when-row');
+    expect(row.props.style).toMatchObject({ flexDirection: 'row' });
+    for (const id of ['when-today', 'when-payday', 'when-date']) expect(screen.getByTestId(id)).toBeTruthy();
+    // 2026-10-03 is a Saturday: "Sat, Oct 3"; the payday reads month and day only
+    expect(screen.getByTestId('when-today').props.accessibilityLabel).toBe('Today. Sat, Oct 3');
+    const payday = String(screen.getByTestId('when-payday').props.accessibilityLabel);
+    expect(payday).toMatch(/^[A-Z][a-z]{2} \d{1,2}\. Next payday$/);
+    expect(JSON.stringify(screen.toJSON())).not.toMatch(/\d{1,2}\/\d{1,2}\/\d{2}/);
+  });
+
+  it('06.1-56 (UX-11, CB-1): keyboard taps pass through, and one press on Check it with the price focused starts the check', async () => {
+    await wrap(<DecideHome />);
+    expect(mockTabProps.keyboardShouldPersistTaps).toBe('handled');
+    await type('What is it?', 'Headphones');
+    const priceField = screen.getByLabelText('Price');
+    await fireEvent(priceField, 'focus');
+    await fireEvent.changeText(priceField, '180');
+    await fireEvent.press(screen.getByLabelText('Check it'));
+    expect(mockStart).toHaveBeenCalledTimes(1);
+  });
+
+  it('06.1-56 (A-HOME-3): hides the + Add button while the Decide tab is focused, and not when it is not', async () => {
+    await wrap(<DecideHome />);
+    expect(mockHideFab).toHaveBeenLastCalledWith('decide', true);
+    mockFocused = false;
+    mockHideFab.mockClear();
+    await wrap(<DecideHome />);
+    expect(mockHideFab).toHaveBeenLastCalledWith('decide', false);
+  });
+
+  it('06.1-56 (X-3, A-HOME-5): the title uses the display role; the price leads with the currency symbol and a short tax note', async () => {
+    await wrap(<DecideHome />);
+    expect(mockTabProps.titleRole).toBe('display');
+    expect(screen.getByTestId('check-tax-note')).toHaveTextContent('Tax not included');
+    expect(JSON.stringify(screen.toJSON())).toMatch(/"\$"/);
+  });
+
+  it('06.1-56 (DB-10, DS-21): an example fills the form, scrolls the card into view and keeps the in-flow header', async () => {
+    await wrap(<DecideHome />);
+    expect(mockTabProps.compactInFlow).toBe(true);
+    await fireEvent(screen.getByTestId('check-card-slot'), 'layout', { nativeEvent: { layout: { x: 0, y: 200, width: 300, height: 400 } } });
+    await fireEvent.press(screen.getByText('Used car $9,000'));
+    expect(screen.getByLabelText('What is it?').props.value).toBe('Used car');
+    expect(mockScrollTo).toHaveBeenCalledTimes(1);
+    expect(mockScrollTo.mock.calls[0]![0]).toBe(192);
+    expect(mockTabProps.compactInFlow).toBe(true);
+    expect(screen.getByTestId('tab-title')).toBeTruthy();
+  });
+});
+
+describe('06.1-56 (H-9): home starts fresh and routes the same way', () => {
+  it('FQ3 / CC-1: after Check it opens a route the card is empty, and one more Check it makes no second create', async () => {
+    mockStart.mockReturnValue('/decide/answer/new-id');
+    await wrap(<DecideHome />);
+    await type('What is it?', 'Headphones');
+    await type('Price', '180');
+    await fireEvent.press(screen.getByTestId('when-payday'));
+    await fireEvent.press(screen.getByTestId('more-details-row'));
+    await fireEvent.press(screen.getByText('Need'));
+    await fireEvent.press(screen.getByLabelText('Check it'));
+    expect(mockStart).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText('What is it?').props.value).toBe('');
+    expect(screen.getByTestId('when-today').props.accessibilityState.checked).toBe(true);
+    expect(screen.queryByTestId('more-details-body')).toBeNull();
+    expect(screen.getByText('How you pay, quick estimates · optional')).toBeTruthy();
+    expect(screen.getByLabelText('Check it').props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(screen.getByLabelText('Check it'));
+    expect(mockStart).toHaveBeenCalledTimes(1);
+    mockStart.mockReset();
+  });
+
+  it('a blocked or loading start keeps what was typed', async () => {
+    mockStart.mockReturnValue('blocked');
+    await wrap(<DecideHome />);
+    await type('What is it?', 'Headphones');
+    await type('Price', '180');
+    await fireEvent.press(screen.getByLabelText('Check it'));
+    expect(screen.getByLabelText('What is it?').props.value).toBe('Headphones');
+    mockStart.mockReset();
+  });
+
+  it('CS-6: the collapsed More details row names the choices that are set', async () => {
+    await wrap(<DecideHome />);
+    expect(screen.getByText('How you pay, quick estimates · optional')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('more-details-row'));
+    await fireEvent.press(screen.getByTestId('pay-plan'));
+    await fireEvent.press(screen.getByTestId('mock-plan-use'));
+    await fireEvent.press(screen.getByText('Need'));
+    await fireEvent.press(screen.getByTestId('quick-tile-expense'));
+    await fireEvent.press(screen.getByTestId('mock-quick-add'));
+    await fireEvent.press(screen.getByTestId('more-details-row'));
+    expect(screen.getByText('Installments · Need · 1 quick estimate')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('more-details-row'));
+    await fireEvent.press(screen.getByText('Want'));
+    await fireEvent.press(screen.getByTestId('pay-once'));
+    expect(screen.getByText('Want · 1 quick estimate')).toBeTruthy();
+  });
+
+  it('CN-6: Check it waits for the engine inputs and says the records are still loading', async () => {
+    mockInputs = null;
+    await wrap(<DecideHome />);
+    await type('What is it?', 'Laptop');
+    await type('Price', '1200');
+    expect(screen.getByLabelText('Check it').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByTestId('check-it-hint')).toHaveTextContent('Your records are still loading.');
+    await fireEvent.press(screen.getByLabelText('Check it'));
+    expect(mockStart).not.toHaveBeenCalled();
   });
 });
 
@@ -233,7 +364,7 @@ describe('More details (D02, D-12, D-21)', () => {
     await fireEvent.press(screen.getByTestId('quick-tile-expense'));
     await fireEvent.press(screen.getByTestId('mock-quick-add'));
     expect(screen.getByTestId('quick-line-q1')).toBeTruthy();
-    await fireEvent.press(screen.getByText('A want'));
+    await fireEvent.press(screen.getByText('Want'));
     await fireEvent.press(screen.getByText('Laptop $3,500'));
     await fireEvent.press(screen.getByLabelText('Check it'));
     const started = mockStart.mock.calls[0]![0];

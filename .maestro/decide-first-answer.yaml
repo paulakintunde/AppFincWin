@@ -45,9 +45,8 @@ name: Decide first answer (UX-11)
 - tapOn: "Price"
 - evalScript: ${output.taps = output.taps + 1}
 - inputText: "199"
-# 4. Close the keyboard (hideKeyboard sends Back on Android, which leaves Decide)
-- tapOn: "When\\?"
-- evalScript: ${output.taps = output.taps + 1}
+# 4. 06.1-56 (UX-11, CB-1): no keyboard-close tap. Decide home passes taps through with the keyboard open, so the first tap on
+#    Check it starts the check.
 # 5. Check it (a small buy goes straight to the answer, D-09)
 - runFlow:
     file: common/scroll-to.yaml
