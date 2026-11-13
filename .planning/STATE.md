@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06.1 wave 21 closed (57/78): 53, 54, 55, 63, 73, 76 done; 73 left G-73-1 (Decide home re-renders under the answer screen) open; wave 22 next: 72, 56, 77"
+stopped_at: "Phase 06.1 wave 22 closed (60/78): 72, 56, 77 done; wave 23 next: 64, 65, 78 (78 also takes furthest_step and open-check answered state)"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:
