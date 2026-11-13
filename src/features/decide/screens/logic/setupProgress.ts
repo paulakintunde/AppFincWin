@@ -1,5 +1,8 @@
 // 06.1-17 (D-10, D-11, D-23): the six Decide setup items and when each is done. Pure: facts in, progress out. The hook that
 // gathers the facts from the records is outside this folder (setup/useSetupProgress.ts). Money is minor units; the screens format it.
+// 06.1-45 (G-1, C-4, A-SU-2): Records is done only when D-11 holds AND the engine names no open readiness item (owner GQ2), and every
+// open row says why it is open.
+import type { ReadinessItem } from '@/engine/decide/v3';
 
 export type SetupItemId = 'pay' | 'bills' | 'debts' | 'net' | 'rules' | 'records';
 
@@ -41,11 +44,17 @@ export interface SetupFacts {
   accountsAllHaveUse: boolean;
   /** The date the records run up to, for the open line. */
   recordsUpTo: string | null;
+  /** 06.1-45: how many readiness items the engine names as open (envelopes included). */
+  readinessOpen: number;
+  /** 06.1-45: the first open readiness item, named on the Records row; null when none is open. */
+  readinessFirst: ReadinessItem | null;
 }
 
 export interface SetupStatus {
   key: string;
   values: Record<string, string | number>;
+  /** 06.1-45: recordsOpenItems only: the first open readiness item, said as a second line (judged as of values.asOf). */
+  first?: ReadinessItem | null;
 }
 
 export interface SetupItem {
@@ -80,7 +89,9 @@ function payItem(f: SetupFacts): SetupItem {
 function billsItem(f: SetupFacts): SetupItem {
   return f.billsRightAnswered
     ? { id: 'bills', done: true, status: { key: 'billsDone', values: { count: f.billsCount, monthlyMinor: f.billsMonthlyMinor } } }
-    : { id: 'bills', done: false, status: { key: 'open', values: {} } };
+    : f.billsCount > 0
+      ? { id: 'bills', done: false, status: { key: 'billsOpen', values: { count: f.billsCount } } }
+      : { id: 'bills', done: false, status: { key: 'billsNone', values: {} } };
 }
 
 function debtsItem(f: SetupFacts): SetupItem {
@@ -108,15 +119,18 @@ function rulesItem(f: SetupFacts): SetupItem {
   if (f.rulesOn > 0) return { id: 'rules', done: true, status: { key: 'rulesDone', values: { count: f.rulesOn } } };
   return f.noRulesAnswered
     ? { id: 'rules', done: true, status: { key: 'rulesNone', values: {} } }
-    : { id: 'rules', done: false, status: { key: 'open', values: {} } };
+    : { id: 'rules', done: false, status: { key: 'rulesOpen', values: {} } };
 }
 
 function recordsItem(f: SetupFacts, today: string): SetupItem {
   const date = f.recordsUpTo ?? today;
-  const done = f.lastMonthComplete && loggedLately(f.newestEntryThisMonth, today) && f.accountsAllHaveUse;
-  return done
-    ? { id: 'records', done: true, status: { key: 'recordsDone', values: { date } } }
-    : { id: 'records', done: false, status: { key: 'recordsOpen', values: { date } } };
+  // D-11 plus (GQ2) no open readiness item: the checklist can never say done while an answer says not ready.
+  const done = f.lastMonthComplete && loggedLately(f.newestEntryThisMonth, today) && f.accountsAllHaveUse && f.readinessOpen === 0;
+  if (done) return { id: 'records', done: true, status: { key: 'recordsDone', values: { date } } };
+  if (f.readinessOpen > 0) {
+    return { id: 'records', done: false, status: { key: 'recordsOpenItems', values: { count: f.readinessOpen, asOf: today }, first: f.readinessFirst } };
+  }
+  return { id: 'records', done: false, status: { key: 'recordsOpen', values: { date } } };
 }
 
 /** The six items in order, how many are done and which comes next. Month count never holds the banner open (D-11). */

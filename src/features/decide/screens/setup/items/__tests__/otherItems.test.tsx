@@ -65,7 +65,8 @@ jest.mock('@/features/record/accounts/AccountUseSheet', () => ({ AccountUseSheet
 const facts = (over: Partial<SetupFacts> = {}): SetupFacts => ({
   hasPay: true, payAmountMinor: 320000, payDay: 15, billsRightAnswered: true, billsCount: 3, billsMonthlyMinor: 100000,
   debts: [], noDebtsAnswered: false, netSizeMinor: null, netNotSetAnswered: false, rulesOn: 0, noRulesAnswered: false,
-  lastMonthComplete: true, newestEntryThisMonth: '2026-11-10', accountsAllHaveUse: true, recordsUpTo: '2026-11-10', ...over,
+  lastMonthComplete: true, newestEntryThisMonth: '2026-11-10', accountsAllHaveUse: true, recordsUpTo: '2026-11-10',
+  readinessOpen: 0, readinessFirst: null, ...over,
 });
 
 const debt = (over: Record<string, unknown> = {}) => ({

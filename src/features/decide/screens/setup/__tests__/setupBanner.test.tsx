@@ -22,6 +22,7 @@ const NONE: SetupFacts = {
   netSizeMinor: null, netNotSetAnswered: false,
   rulesOn: 0, noRulesAnswered: false,
   lastMonthComplete: false, newestEntryThisMonth: null, accountsAllHaveUse: false, recordsUpTo: '2026-11-15',
+  readinessOpen: 0, readinessFirst: null,
 };
 const FOUR: SetupFacts = {
   ...NONE, hasPay: true, payAmountMinor: 250000, payDay: 25, billsRightAnswered: true, billsCount: 3, billsMonthlyMinor: 120000,
@@ -177,6 +178,24 @@ describe('SetupChecklist', () => {
     await checklist({ ...NONE, billsRightAnswered: true, billsCount: 1, billsMonthlyMinor: 5000 });
     expect(screen.getByText('Done · 1 bill, $50 a month')).toBeTruthy();
     expect(screen.getAllByText('Not done yet').length).toBeGreaterThan(0);
+  });
+
+  it('06.1-45 (A-SU-2, C-4): open rows say why; Records names its first open readiness item', async () => {
+    const first = {
+      kind: 'bill' as const, code: 'past_month_missing' as const, month: '2026-10', seriesId: 's1', envelopeId: null, lineId: null,
+      name: 'Netflix', amount: 1199 as never, date: '2026-10-03',
+    };
+    await checklist({ ...NONE, billsCount: 3, lastMonthComplete: true, accountsAllHaveUse: true, newestEntryThisMonth: TODAY, readinessOpen: 2, readinessFirst: first });
+    expect(screen.getByText('3 bills to confirm')).toBeTruthy();
+    expect(screen.getByText('No rules set yet')).toBeTruthy();
+    expect(screen.getByText('2 to finish\nNetflix, $11.99 due Oct 3, 2026, isn’t in your records yet.')).toBeTruthy();
+    expect(screen.queryByTestId('setup-done-records')).toBeNull();
+  });
+
+  it('06.1-45: no bills found yet, and one open item with no first named', async () => {
+    await checklist({ ...NONE, readinessOpen: 1 });
+    expect(screen.getByText('No bills found yet')).toBeTruthy();
+    expect(screen.getByText('1 to finish')).toBeTruthy();
   });
 
   it('fits at large text', async () => {

@@ -151,6 +151,7 @@ const SOME: SetupFacts = {
   netSizeMinor: null, netNotSetAnswered: true,
   rulesOn: 3, noRulesAnswered: false,
   lastMonthComplete: false, newestEntryThisMonth: null, accountsAllHaveUse: false, recordsUpTo: '2026-11-15',
+  readinessOpen: 0, readinessFirst: null,
 };
 
 const METRICS = (width: number) => ({ frame: { x: 0, y: 0, width, height: 874 }, insets: { top: 62, bottom: 34, left: 0, right: 0 } });

@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useDebts, useDecideSettings } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
-import type { V3Account, V3Inputs, V3Series } from '@/engine/decide/v3';
+import type { ReadinessItem, V3Account, V3Inputs, V3Series } from '@/engine/decide/v3';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { setupProgress, type SetupFacts, type SetupProgress } from '../logic/setupProgress';
 
@@ -17,6 +17,7 @@ export interface SetupProgressState extends SetupProgress {
 
 const EMPTY: SetupProgress = { items: [], doneCount: 0, next: null, allDone: false };
 const NO_DAY = '';
+const NO_ITEMS: readonly ReadinessItem[] = [];
 
 function previousMonth(today: string): string {
   const y = Number(today.slice(0, 4));
@@ -41,6 +42,7 @@ export function setupFactsFrom(
   flags: { noDebts: boolean; netNotSet: boolean; noRules: boolean; billsRight: boolean },
   debtNames: ReadonlyMap<string, string>,
   underLoggedMonths: ReadonlySet<string>,
+  readinessItems: readonly ReadinessItem[] = NO_ITEMS,
 ): SetupFacts {
   const today = inputs.asOf;
   const thisMonth = today.slice(0, 7);
@@ -67,6 +69,8 @@ export function setupFactsFrom(
     newestEntryThisMonth: dates.length > 0 ? (dates[dates.length - 1] as string) : null,
     accountsAllHaveUse: (inputs.accounts ?? []).filter(everydayCapable).every((a) => a.use !== null),
     recordsUpTo: inputs.recordsAsOf ?? null,
+    readinessOpen: readinessItems.length,
+    readinessFirst: readinessItems[0] ?? null,
   };
 }
 
@@ -99,6 +103,8 @@ export function useSetupFacts(): SetupFactsState {
       },
       names,
       under,
+      // 06.1-45 (C-4): the same named items the answer screen shows; Records is done only when none is open.
+      evaluation?.result.readiness?.items ?? NO_ITEMS,
     );
     return { loading: false, facts, currency: inputs.currency, today: inputs.asOf };
   }, [inputs, evaluation, settings, debts]);

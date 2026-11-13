@@ -5,6 +5,9 @@ import { useT } from '@/i18n';
 import { formatOrdinal } from '@/i18n/ordinal';
 import { money } from '@/engine/money';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
+import type { LocalDate } from '@/engine/decide/v3';
+import { itemSentence } from '../answer/ReadinessFixList';
+import { monthNameOf } from '../home/YourMonthCard';
 import type { SetupItem, SetupItemId } from '../logic/setupProgress';
 
 export interface SetupText {
@@ -39,6 +42,24 @@ export function useSetupText(currency: string): SetupText {
           return t(`${base}netDone`, { amount: amount(Number(v.amountMinor)) });
         case 'rulesDone':
           return t(`${base}rulesDone`, { count: Number(v.count) });
+        case 'recordsOpenItems': {
+          // 06.1-45 (A-SU-2): the count, then the first open item in the same sentence the answer screen uses.
+          const head = t(`${base}recordsOpenItems`, { count: Number(v.count) });
+          const first = item.status.first ?? null;
+          if (first === null) return head;
+          const sentence = itemSentence(first, String(v.asOf) as LocalDate, {
+            money: amount,
+            date: (d) => fmt.formatDate(d, 'medium'),
+            monthName: (ym) => monthNameOf(ym, fmt.locale),
+          }, t as unknown as (key: string, params?: Record<string, string | number>) => string);
+          return `${head}\n${sentence}`;
+        }
+        case 'billsOpen':
+          return t(`${base}billsOpen`, { count: Number(v.count) });
+        case 'billsNone':
+          return t('decide.screens.setup.status.billsNone');
+        case 'rulesOpen':
+          return t('decide.screens.setup.status.rulesOpen');
         case 'recordsOpen':
         case 'recordsDone':
           return t(`${base}${item.status.key}`, { date: fmt.formatDate(String(v.date), 'medium') });

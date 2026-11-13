@@ -1,3 +1,4 @@
+import type { ReadinessItem } from '@/engine/decide/v3';
 import { loggedLately, setupProgress, SETUP_ORDER, type SetupFacts } from '../setupProgress';
 
 const TODAY = '2026-11-20';
@@ -8,6 +9,7 @@ const base: SetupFacts = {
   netSizeMinor: null, netNotSetAnswered: false,
   rulesOn: 0, noRulesAnswered: false,
   lastMonthComplete: false, newestEntryThisMonth: null, accountsAllHaveUse: false, recordsUpTo: null,
+  readinessOpen: 0, readinessFirst: null,
 };
 const f = (over: Partial<SetupFacts>): SetupFacts => ({ ...base, ...over });
 const item = (facts: SetupFacts, id: string) => setupProgress(facts, TODAY).items.find((i) => i.id === id)!;
@@ -28,6 +30,7 @@ describe('setupProgress', () => {
 
   it('bills: done only on the "These bills are right" flag', () => {
     expect(item(f({ billsCount: 4 }), 'bills').done).toBe(false);
+    expect(item(base, 'bills').status).toEqual({ key: 'billsNone', values: {} });
     expect(item(f({ billsRightAnswered: true, billsCount: 4, billsMonthlyMinor: 90000 }), 'bills').status).toEqual({ key: 'billsDone', values: { count: 4, monthlyMinor: 90000 } });
   });
 
@@ -49,9 +52,13 @@ describe('setupProgress', () => {
   });
 
   it('rules: a rule that is on, or the "No rules" flag', () => {
-    expect(item(base, 'rules').done).toBe(false);
+    expect(item(base, 'rules')).toEqual({ id: 'rules', done: false, status: { key: 'rulesOpen', values: {} } });
     expect(item(f({ rulesOn: 2 }), 'rules').status).toEqual({ key: 'rulesDone', values: { count: 2 } });
     expect(item(f({ noRulesAnswered: true }), 'rules').status.key).toBe('rulesNone');
+  });
+
+  it('06.1-45 (A-SU-2): bills open with 3 says 3 bills to confirm', () => {
+    expect(item(f({ billsCount: 3 }), 'bills')).toEqual({ id: 'bills', done: false, status: { key: 'billsOpen', values: { count: 3 } } });
   });
 
   describe('records (D-11)', () => {
@@ -69,6 +76,21 @@ describe('setupProgress', () => {
     });
     it('the date falls back to today when records have no date', () => {
       expect(item(f({ recordsUpTo: null }), 'records').status.values).toEqual({ date: TODAY });
+    });
+    it('06.1-45 (C-4, GQ2): D-11 true with 1 open readiness item is not done, and names the item', () => {
+      const bill: ReadinessItem = {
+        kind: 'bill', code: 'past_month_missing', month: '2026-10', seriesId: 's1', envelopeId: null, lineId: null, name: 'Netflix', amount: 1199 as ReadinessItem['amount'], date: '2026-10-03',
+      };
+      const r = item(f({ ...ok, newestEntryThisMonth: '2026-11-19', readinessOpen: 1, readinessFirst: bill }), 'records');
+      expect(r).toEqual({ id: 'records', done: false, status: { key: 'recordsOpenItems', values: { count: 1, asOf: TODAY }, first: bill } });
+      const p = setupProgress(f({ ...ok, newestEntryThisMonth: '2026-11-19', readinessOpen: 1, readinessFirst: bill }), TODAY);
+      expect(p.doneCount).toBe(0);
+    });
+    it('06.1-45 (C-4): D-11 true with 0 readiness items is done', () => {
+      expect(item(f({ ...ok, newestEntryThisMonth: '2026-11-19', readinessOpen: 0 }), 'records').done).toBe(true);
+    });
+    it('06.1-45: open readiness items lead the reason even when D-11 also fails', () => {
+      expect(item(f({ readinessOpen: 2, readinessFirst: null }), 'records').status).toEqual({ key: 'recordsOpenItems', values: { count: 2, asOf: TODAY }, first: null });
     });
     it('loggedLately handles null and today', () => {
       expect(loggedLately(null, TODAY)).toBe(false);

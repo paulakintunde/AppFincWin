@@ -50,6 +50,12 @@ export const setup = {
     rulesNone: 'Done · no rules',
     recordsOpen: 'Up to {{date}} · add what you spent since',
     recordsDone: 'Done · records up to {{date}}',
+    recordsOpenItems_one: '1 to finish',
+    recordsOpenItems_other: '{{count}} to finish',
+    billsOpen_one: '1 bill to confirm',
+    billsOpen_other: '{{count}} bills to confirm',
+    billsNone: 'No bills found yet',
+    rulesOpen: 'No rules set yet',
     open: 'Not done yet',
   },
   done: {
