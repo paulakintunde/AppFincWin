@@ -58,7 +58,7 @@ import { billsHeldTotal, cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit
 import { costlyDebt, costlyFacts, debtFacts } from '../debts';
 import { depletionFacts, monthAlreadyShort, monthShortTier, planTotal } from '../depletion';
 import { askFact, borrowingFacts, cashFits, cashSoon, isExpensive, saveVsBorrow, saveVsBorrowFact, type PlanRate } from '../borrowing';
-import { paymentsInRange } from '../plan/schedule';
+import { lastPaymentBefore, paymentsInRange } from '../plan/schedule';
 import { afterBuyBlock, firstPaymentLater } from '../afterBuy';
 import { emergencyOf } from '../funds/emergency';
 import { NO_NET, fitVariant, netDip, spareSavings, type ResolvedNet } from '../safetyNet';
@@ -735,7 +735,7 @@ function billFacts(funds: Funds): Fact[] {
 function planReadyBy(month: MonthModel, p: Purchase, asOf: string, spare: number | null, judged: ReadyBy | null): ReadyBy | null {
   const s = p.schedule as NonNullable<Purchase['schedule']>;
   const firstNow = firstPaymentsToday(s, p.share, asOf);
-  const inside = p.runningMonthly === 0 && paymentsInRange(s, asOf, addDays(asOf, CASH_PATH_DAYS_V3)).length === s.lastPaying;
+  const inside = p.runningMonthly === 0 && lastPaymentBefore(s, addDays(asOf, CASH_PATH_DAYS_V3));
   const first = s.firstDate > asOf ? myPart(minorFromBigInt(BigInt(s.payment) + BigInt(s.fees.perPeriod), 'planReadyBy'), p.share) : 0;
   const need = inside ? planTotal(p.dayOne, s, p.share, firstNow) : p.dayOne + first;
   // Spare money that already covers it adds no wait of its own (a payday wait stays the payday).

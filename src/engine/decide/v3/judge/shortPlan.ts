@@ -15,7 +15,8 @@
  *
  * So D-68 applies only when ALL of these hold:
  *  1. the purchase is a plan with no running monthly cost;
- *  2. every payment is dated before asOf + 90 days (the same days 0..89 the cash path reads);
+ *  2. the plan's last payment is dated before asOf + 90 days (the same days 0..89 the cash path reads). The last payment is
+ *     the count the person chose, unless a larger quoted payment really clears the plan early (lastPaymentBefore);
  *  3. the monthly part does not fit (monthly_short, or not_yet for a lean-month earner) and the usual month is known;
  *  4. the one-off ladder, run for the plan's whole cost (my share: deposit, fees and every payment once, the interest line's
  *     total), is a cash fit: fits_month or fits_unspent. The cash check inside it is the prepared 90-day path (JudgeInput.cash,
@@ -29,7 +30,7 @@ import type { MinorUnits } from '../../../money/types';
 import { CASH_PATH_DAYS_V3 } from '../constants';
 import { addDays } from '../dates';
 import { planTotal } from '../depletion';
-import { paymentsInRange } from '../plan/schedule';
+import { lastPaymentBefore } from '../plan/schedule';
 import type { Code, Funds, MonthModel, Purchase, V3Inputs } from '../types';
 import { firstPaymentsToday } from './purchase';
 
@@ -68,7 +69,7 @@ export function shortPlanByCash<J extends ShortPlanJudge, O extends { readonly c
   if (s === null || p.runningMonthly !== 0) return null;
   if (mon === null || (mon.code !== 'monthly_short' && mon.code !== 'not_yet') || j.month.typicalLeft === null) return null;
   const asOf = j.inputs.asOf;
-  if (paymentsInRange(s, asOf, addDays(asOf, CASH_PATH_DAYS_V3)).length !== s.lastPaying) return null;
+  if (!lastPaymentBefore(s, addDays(asOf, CASH_PATH_DAYS_V3))) return null;
   const total = planTotal(p.dayOne, s, p.share, firstPaymentsToday(s, p.share, asOf));
   const one = oneOff({ ...j, purchase: { ...p, dayOne: total } }, { unspent, envelope: j.funds.ownEnvelope });
   return one.code === 'fits_month' || one.code === 'fits_unspent' ? { total, one } : null;
