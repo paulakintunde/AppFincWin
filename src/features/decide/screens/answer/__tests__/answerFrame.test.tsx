@@ -403,3 +403,64 @@ describe('06.1-62 (H-1): every answer tap shows it landed', () => {
   });
 });
 
+
+describe('06.1-66 (H-5): the same parts every time', () => {
+  const controls = (): number => screen.queryAllByRole('radio').length + screen.queryAllByRole('tab').length;
+
+  it('CS-11 / CB-8: pay and When show only with a verdict; not on Not ready, loading or error', async () => {
+    await frame(ledgerRun('N04'));
+    expect(controls()).toBeGreaterThan(0);
+    await frame(notReadyRun());
+    expect(controls()).toBe(0);
+    await frame(ledgerRun('N04'), { status: 'loading', evaluation: null });
+    expect(controls()).toBe(0);
+    await frame(ledgerRun('N04'), { status: 'error' });
+    expect(controls()).toBe(0);
+  });
+
+  it('CB-7: the payday chip is its short date with a spoken name; absent with no payday', async () => {
+    const r = ledgerRun('N04');
+    await frame(r, { check: { ...viewOf(r), paydayText: 'Nov 15' } });
+    expect(screen.getByText('Nov 15')).toBeTruthy();
+    expect(screen.getByLabelText('Next payday, Nov 15')).toBeTruthy();
+    await frame(r);
+    expect(screen.queryByTestId('answer-when-payday')).toBeNull();
+    expect(screen.queryByText(en.decide.screens.answer.frame.whenPayday)).toBeNull();
+  });
+
+  it('FQ6: Not ready carries the slot, then the two exits, which report their actions', async () => {
+    const { actions } = await frame(notReadyRun(), { children: <WhatYouToldCard kindLabel={null} priceLine="$200.00 up front, cash" runningLine={null} skipped={[]} onEdit={noop} /> });
+    const ids = screen
+      .getAllByTestId(/^answer-(not-ready|told|not-ready-exits)$/)
+      .map((n) => String(n.props.testID));
+    expect(ids).toEqual(['answer-not-ready', 'answer-told', 'answer-not-ready-exits']);
+    expect(screen.queryByTestId('answer-told-1')).toBeNull();
+    expect(screen.queryByTestId('answer-told-3')).toBeNull();
+    await fireEvent.press(screen.getByText(en.decide.screens.answerActions.bar.notBuying));
+    await fireEvent.press(screen.getByText(en.decide.screens.answer.notReady.deleteCheck));
+    expect(actions).toEqual([{ kind: 'notBuying' }, { kind: 'deleteCheck' }]);
+  });
+
+  it('FQ8: a decided check shows the outcome line and its Past link in place of the action bar', async () => {
+    const r = ledgerRun('N04');
+    const { actions } = await frame(r, { check: { ...viewOf(r), outcome: 'Bought on Nov 12.' } });
+    expect(screen.getByTestId('answer-outcome')).toBeTruthy();
+    expect(screen.getByText('Bought on Nov 12.')).toBeTruthy();
+    expect(screen.queryByTestId('answer-actions')).toBeNull();
+    await fireEvent.press(screen.getByText(en.decide.screens.answer.outcome.pastLink));
+    expect(actions).toEqual([{ kind: 'openPast' }]);
+  });
+
+  it('FQ8: a decided Not ready check shows the outcome line and no exits', async () => {
+    const r = notReadyRun();
+    await frame(r, { check: { ...viewOf(r), outcome: 'Not buying, Nov 12.' } });
+    expect(screen.getByTestId('answer-outcome')).toBeTruthy();
+    expect(screen.queryByTestId('answer-not-ready-exits')).toBeNull();
+  });
+
+  it('an open check still has the action bar and no outcome line', async () => {
+    await frame(ledgerRun('N04'));
+    expect(screen.getByTestId('answer-actions')).toBeTruthy();
+    expect(screen.queryByTestId('answer-outcome')).toBeNull();
+  });
+});

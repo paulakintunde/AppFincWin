@@ -1,9 +1,12 @@
 // 06.1-14 (CO-D-64 (4), CO-D-119, UX-01, UX-29): the one answer layout every N board and D20/D21 uses. Reading order, for the eye and the
 // screen reader alike: top bar, notices (unsaved first, only when sent), verdict card, fact lines, options, the "More detail" slot, basis
 // sentence, first caveat only, caveat line, "What this can't see", footer, and last the action bar. Pure composition; nothing is written.
+// 06.1-66 (H-5): the same parts every time. Not ready (readiness not met, or the engine's "More needed" ask, OQ-66-2) is one layout:
+// the first item, the slot ("What you told Decide"), then "I'm not buying it" and "Delete this check" (FQ6); no pay or When controls
+// and no buy or save until there is a verdict (CS-11). A decided check shows its outcome line in place of the action bar (FQ8).
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import type { Evaluation, LocalDate, Purpose, YearMonth } from '@/engine/decide/v3';
+import type { Evaluation, LocalDate, Purpose, Result, YearMonth } from '@/engine/decide/v3';
 import { money as makeMoney } from '@/engine/money';
 import { space, useScreenInsets } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -18,7 +21,7 @@ import type { ReadinessFixRow, WaiverChoice } from '../logic/readinessFixes';
 import type { Line } from '../logic/sayResult';
 import { LegalBlock } from './LegalBlock';
 import { OptionChips, type OptionKey } from './OptionChips';
-import { ErrorCard, NotReadyCard, OfflineCard } from './StatusCards';
+import { ErrorCard, NotReadyCard, NotReadyExits, OfflineCard, OutcomeLine } from './StatusCards';
 import { VerdictCard } from './VerdictCard';
 import { useSaid, type UseSaidOptions } from './useSaid';
 
@@ -32,7 +35,9 @@ export type AnswerAction =
   | { kind: 'notBuying' }
   | { kind: 'retry' }
   | { kind: 'finishSetup' }
-  | { kind: 'fromEstimates' };
+  | { kind: 'fromEstimates' }
+  | { kind: 'deleteCheck' }
+  | { kind: 'openPast' };
 
 /** What the frame needs to know about the check, already written for the screen. */
 export interface AnswerCheckView {
@@ -46,6 +51,15 @@ export interface AnswerCheckView {
   options: readonly OptionKey[];
   /** V3Inputs.region, for the free-help link. */
   country?: string | null;
+  /** 06.1-66 (CB-7): the next payday as a short date; null hides the payday chip. */
+  paydayText?: string | null;
+  /** 06.1-66 (FQ8): set once the check is decided ("Bought on Nov 12."); the action bar and the Not ready exits give way to it. */
+  outcome?: string | null;
+}
+
+/** 06.1-66 (OQ-66-2, DS-2): readiness not met and the engine's "More needed" ask are the same not-ready state, never a verdict (D-52). */
+export function isNotReady(result: Result | null): boolean {
+  return result !== null && (result.readiness?.ready === false || result.code === 'needs_input');
 }
 
 export interface AnswerFrameProps {
@@ -106,33 +120,46 @@ export function AnswerFrame({
     pay: check.pay,
     when: check.when,
     dateText: check.dateText ?? null,
+    paydayText: check.paydayText ?? null,
     onBack: () => onAction({ kind: 'back' }),
     onNewCheck: () => onAction({ kind: 'newCheck' }),
     onPay: (mode) => onAction({ kind: 'pay', mode }),
     onWhen: (when) => onAction({ kind: 'when', when }),
   };
   const retry = (): void => onAction({ kind: 'retry' });
+  const outcome = check.outcome ?? null;
 
   let body: React.ReactNode = null;
   let showActions = false;
   if (status === 'error') {
     body = <ErrorCard item={check.name} onRetry={retry} />;
-  } else if (result !== null && result.readiness?.ready === false) {
+  } else if (result !== null && isNotReady(result)) {
     // D-52: a not-ready result is never a verdict.
-    // 06.1-44 (C-1): quick estimates only when they can count; otherwise the card names each item with its fix and answers.
+    // 06.1-44 (C-1): quick estimates only when they can count; otherwise the card names the item with its fix and answers.
+    // 06.1-66 (OQ-66-1): the first item only; a "More needed" ask with no readiness row names its first missing figure.
+    const firstMissing = lines.missing[0];
     body = (
-      <NotReadyCard
-        rows={readinessRows}
-        canUseEstimates={canUseEstimates}
-        asOf={said.today as LocalDate}
-        money={(minor) => fmt.formatMoney(makeMoney(minor, said.currency))}
-        date={(d) => fmt.formatDate(d)}
-        monthName={monthNameIn(fmt.locale)}
-        onFix={(row) => onReadinessFix?.(row)}
-        onChoice={(row, choice) => onReadinessChoice?.(row, choice)}
-        onFinishSetup={() => onAction({ kind: 'finishSetup' })}
-        onFromEstimates={() => onAction({ kind: 'fromEstimates' })}
-      />
+      <>
+        <NotReadyCard
+          rows={readinessRows}
+          missing={readinessRows.length === 0 && firstMissing !== undefined ? { text: firstMissing.text, after: renderAfterFact?.(firstMissing, lines.facts.length) ?? null } : null}
+          canUseEstimates={canUseEstimates}
+          asOf={said.today as LocalDate}
+          money={(minor) => fmt.formatMoney(makeMoney(minor, said.currency))}
+          date={(d) => fmt.formatDate(d)}
+          monthName={monthNameIn(fmt.locale)}
+          onFix={(row) => onReadinessFix?.(row)}
+          onChoice={(row, choice) => onReadinessChoice?.(row, choice)}
+          onFinishSetup={() => onAction({ kind: 'finishSetup' })}
+          onFromEstimates={() => onAction({ kind: 'fromEstimates' })}
+        />
+        {children !== undefined ? (
+          <View testID="answer-detail" style={styles.group}>
+            {children}
+          </View>
+        ) : null}
+        {outcome === null ? <NotReadyExits onNotBuying={() => onAction({ kind: 'notBuying' })} onDelete={() => onAction({ kind: 'deleteCheck' })} /> : null}
+      </>
     );
   } else if (result !== null) {
     // D-68: a short plan judged by cash reads the one-off rows, like a payment made once.
@@ -149,7 +176,7 @@ export function AnswerFrame({
             ))}
           </View>
         ) : null}
-        <VerdictCard code={result.code} variant={result.variant} once={once} values={lines.verdictValues} lead={lines.afterBuy.lead?.text ?? null} boughtOn={lines.afterBuy.boughtOn?.text ?? null} />
+        <VerdictCard code={result.code} variant={result.variant} once={once} values={lines.verdictValues} lead={lines.afterBuy.lead?.text ?? null} boughtOn={outcome === null ? (lines.afterBuy.boughtOn?.text ?? null) : null} />
         <FactLines facts={[...lines.facts, ...lines.missing]} country={check.country ?? null} renderAfter={renderAfterFact} />
         <OptionChips present={check.options} purpose={check.purpose} onOption={onOption} />
         {children !== undefined ? (
@@ -165,15 +192,19 @@ export function AnswerFrame({
     body = <AnswerLoadingBody />;
   }
 
+  const showOutcome = outcome !== null && result !== null;
+  const showBar = showActions || showOutcome;
   return (
     <View testID="answer-frame" style={[styles.frame, { backgroundColor: colors.canvas, paddingTop: insets.top }]}>
       {/* 06.1-62 (CB-3): with no action bar the last line (the legal link) must clear the Android nav bar too; the bar pads itself. */}
-      <ScrollView contentContainerStyle={[styles.content, showActions ? null : { paddingBottom: space.screenH + insets.bottom }]}>
-        <AnswerTopBar {...top} />
+      <ScrollView contentContainerStyle={[styles.content, showBar ? null : { paddingBottom: space.screenH + insets.bottom }]}>
+        <AnswerTopBar {...top} showControls={showActions} />
         {offlineDate !== null ? <OfflineCard date={offlineDate} onRetry={retry} /> : null}
         {body}
       </ScrollView>
-      {showActions ? (
+      {showOutcome ? (
+        <OutcomeLine text={outcome} onOpenPast={() => onAction({ kind: 'openPast' })} />
+      ) : showActions ? (
         <ActionBar onBought={() => onAction({ kind: 'bought' })} onSaveFor={() => onAction({ kind: 'saveFor' })} onNotBuying={() => onAction({ kind: 'notBuying' })} />
       ) : null}
     </View>

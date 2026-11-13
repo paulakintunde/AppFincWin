@@ -23,6 +23,8 @@ export interface ReadinessFixListProps {
   monthName: (ym: YearMonth) => string;
   onFix: (row: ReadinessFixRow) => void;
   onChoice: (row: ReadinessFixRow, choice: WaiverChoice) => void;
+  /** 06.1-66 (OQ-66-1): the answer's Not ready card names its one row "First: …" (more may follow). Absent = plain sentences. */
+  leadFirst?: boolean;
 }
 
 type T = (key: string, params?: Record<string, string | number>) => string;
@@ -57,7 +59,7 @@ function choiceLabel(row: ReadinessFixRow, c: WaiverChoice, monthName: (ym: Year
   return t(`${K}.choice.${c.key}`);
 }
 
-export function ReadinessFixList({ rows, asOf, money, date, monthName, onFix, onChoice }: ReadinessFixListProps) {
+export function ReadinessFixList({ rows, asOf, money, date, monthName, onFix, onChoice, leadFirst = false }: ReadinessFixListProps) {
   const t = useT() as unknown as T;
   const { colors, pairing } = useTheme();
   // 06.1-62 (CB-5 / CB-6): links show a press at once and reach 52 dp tall.
@@ -66,10 +68,11 @@ export function ReadinessFixList({ rows, asOf, money, date, monthName, onFix, on
     <View testID="readiness-list" style={styles.list}>
       {rows.map((row, i) => {
         const fixLabel = row.fix.kind === 'linkEnvelope' ? t(`${K}.fix.envelope`) : t(`${K}.fix.records`, { monthName: monthName(row.fix.month) });
+        const sentence = itemSentence(row.item, asOf, { money, date, monthName }, t);
         return (
           <View key={row.id} testID={`readiness-row-${i}`} style={styles.row}>
             <Text accessible style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
-              {itemSentence(row.item, asOf, { money, date, monthName }, t)}
+              {leadFirst && i === 0 ? t(`${K}.first`, { item: sentence }) : sentence}
             </Text>
             <Pressable testID={`readiness-fix-${i}`} accessibilityRole="link" accessibilityLabel={fixLabel} onPress={() => onFix(row)} hitSlop={LINK_HIT_SLOP} android_ripple={press.android_ripple} style={({ pressed }) => [styles.link, press.pressedStyle(pressed)]}>
               <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{fixLabel}</Text>

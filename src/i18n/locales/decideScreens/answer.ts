@@ -11,6 +11,8 @@ export const answer = {
     whenGroup: 'When you buy',
     whenToday: 'Today',
     whenPayday: 'Next payday',
+    // 06.1-66 (CB-7, A-ANS-4): the payday chip shows its short date; the screen reader hears what the date is.
+    whenPaydayA11y: 'Next payday, {{date}}',
     optionsA11y: 'Other ways to look at it',
     actionsA11y: 'What you did with this answer',
     helpLinkA11y: '{{name}}. Opens a website outside the app',
@@ -90,10 +92,13 @@ export const answer = {
     pay_arrival_question: 'when your pay arrives',
   },
   notReady: {
+    // 06.1-66 (OQ-66-1, DN-10): no count. Decide finds some items only after earlier ones are done, so the card names the first
+    // item and says more may follow.
     title: 'Not ready yet',
-    // 06.1-44 (G-1, C-2): one short lead line; the named items sit in the list below it.
-    title_one: 'Not ready yet: 1 thing to finish',
-    title_other: 'Not ready yet: {{count}} things to finish',
+    first: 'First: {{item}}',
+    moreMayFollow: 'More may follow once this is done.',
+    // 06.1-66 (FQ6): the second exit on the Not ready page, with Undo.
+    deleteCheck: 'Delete this check',
     finishSetup: 'Finish setup',
     fromEstimates: 'Answer from quick estimates',
     item: {
@@ -123,6 +128,15 @@ export const answer = {
     },
     saved: 'Answer saved.',
   },
+  // 06.1-66 (FQ8, CC-2): a decided check shows what happened and links to its entry in Past decisions; no buy or save buttons.
+  outcome: {
+    bought: 'Bought on {{date}}.',
+    waiting: 'Saving for it since {{date}}.',
+    passed: 'Not buying, {{date}}.',
+    pastLink: 'See it in Past decisions',
+  },
+  // 06.1-66 (FQ5, CS-8): the safety-net question was put away unanswered; this line opens it again.
+  netLine: 'Safety net: not answered yet.',
   worked: {
     title: 'How this was worked out',
     sub: 'From your own records. Nothing here is a guess about you.',

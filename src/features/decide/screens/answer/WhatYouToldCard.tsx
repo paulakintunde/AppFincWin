@@ -1,6 +1,8 @@
 // 06.1-23 (D21 / D21b): "What you told Decide", shown when the check came through the stepper. Kind, Price and how you pay, and
 // Running costs; each row reopens its step. A step the person skipped keeps its pre-filled values, marked "pre-filled, not checked",
 // and the answer says once that it uses quick estimates. Pure view: props in, taps out.
+// 06.1-66 (CS-2, CS-3, DC-1): shown on every answer (home path and stepper path, verdict and Not ready), with only the rows that
+// apply: Kind when one was picked, Running costs when any are counted. Each row says "Change" (the price row opens the Price step).
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { CAVEAT_KEYS } from '@/engine/decide/v3';
@@ -19,8 +21,8 @@ export interface WhatYouToldCardProps {
   kindLabel: string | null;
   /** "{{amount}} up front, cash" or "{{monthly}} a month on a plan", already written. */
   priceLine: string;
-  /** "{{monthly}} a month" or "none counted", already written. */
-  runningLine: string;
+  /** "{{monthly}} a month", already written; null leaves the row out (none counted). */
+  runningLine: string | null;
   /** The steps the person went past without opening (L0.skipped_steps). */
   skipped: readonly ToldStep[];
   onEdit: (step: ToldStep) => void;
@@ -31,10 +33,11 @@ export function WhatYouToldCard({ kindLabel, priceLine, runningLine, skipped, on
   const { colors, pairing } = useTheme();
   // 06.1-62 (CB-5): each row shows a press at once.
   const press = usePressFeedback('row');
+  const change = t('decide.screens.common.change');
   const rows: { step: ToldStep; label: string; value: string }[] = [
-    { step: 1, label: t('decide.screens.answer.told.kind'), value: kindLabel ?? '' },
+    ...(kindLabel === null ? [] : [{ step: 1 as const, label: t('decide.screens.answer.told.kind'), value: kindLabel }]),
     { step: 2, label: t('decide.screens.answer.told.priceAndPay'), value: priceLine },
-    { step: 3, label: t('decide.screens.answer.told.running'), value: runningLine },
+    ...(runningLine === null ? [] : [{ step: 3 as const, label: t('decide.screens.answer.told.running'), value: runningLine }]),
   ];
   return (
     <View testID="answer-told" accessibilityLabel={t('decide.screens.answer.told.title')} style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -46,7 +49,7 @@ export function WhatYouToldCard({ kindLabel, priceLine, runningLine, skipped, on
           key={row.step}
           testID={`answer-told-${row.step}`}
           accessibilityRole="button"
-          accessibilityLabel={`${row.label}. ${row.value}`}
+          accessibilityLabel={`${row.label}. ${row.value}. ${change}`}
           onPress={() => onEdit(row.step)}
           android_ripple={press.android_ripple}
           style={({ pressed }) => [styles.row, press.pressedStyle(pressed)]}
@@ -56,6 +59,9 @@ export function WhatYouToldCard({ kindLabel, priceLine, runningLine, skipped, on
             <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{row.value}</Text>
           </View>
           {skipped.includes(row.step) ? <StateBadge tone="notYet" shape="sClock" label={t('decide.screens.common.prefilled')} testID={`answer-told-prefilled-${row.step}`} /> : null}
+          <Text testID={`answer-told-change-${row.step}`} style={{ ...textRole(pairing, 'label'), color: colors.accent }}>
+            {change}
+          </Text>
         </Pressable>
       ))}
       {skipped.length > 0 ? (
