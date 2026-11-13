@@ -9,6 +9,13 @@ export const stepper = {
   segPrice: 'Price',
   segRunning: 'Running costs',
   segKindDone: 'Kind: {{kind}}',
+  segPriceDone: 'Price: {{price}}',
+  // 06.1-57 (A-ST-2, DB-9): the visible crumb under a done segment, and what a screen reader hears on it.
+  crumb: {
+    kind: '✓ Kind: {{kind}}',
+    price: '✓ Price: {{price}}',
+    a11y: 'Step {{step}}, {{name}}, done. Change it.',
+  },
   itemPrice: '{{item}} · {{price}}',
   seeAnswer: 'See the answer',
   seeAnswerNow: 'See the answer now',
@@ -29,6 +36,7 @@ export const stepper = {
     otherSub: 'Anything else',
     addOwn: 'Add your own',
     addOwnSub: 'A kind that is not listed',
+    readFrom: 'Read from the words: {{kind}}',
   },
   price: {
     title: 'Price and how you pay',
@@ -53,6 +61,7 @@ export const stepper = {
     tradeInSub: 'It lowers the up-front amount.',
     addOneOff: '+ Add a one-off cost',
     upFrontTitle: 'Up front',
+    taxNotAdded: 'Tax not added',
     planDetails: 'Plan details',
     planUpFrontNote: 'Sales tax and one-off fees are part of the amount borrowed, so only the cash down is paid on the day.',
   },

@@ -1,6 +1,7 @@
 // 06.1-19 (D11, D11H, D-02, D-09): step 1, the kind. A 2-column radio grid (Everyday, Tech, Car, Home, Other, own kinds, and a
 // dashed "Add your own"). Home shows the home note and keeps Next disabled; there are no home cost screens. This step is skipped
 // when the words already read as a kind that is not Home. Everything is saved to the check as a draft.
+// 06.1-57 (A-ST-5): "Read from the words: Car" shows while the kind is the one the typed words gave and the user has not picked one.
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -19,7 +20,7 @@ import { KindTile } from './KindTile';
 import { StepFrame } from './StepFrame';
 import { isStillSaving, StepStillSaving } from './StepStillSaving';
 import { useOwnAdd } from './ownAdds';
-import { firstStepFor, kindOf, ownKindsOf, useStepCheck, useStepData, useStepNav, withKind, type StepKind } from './useStepCheck';
+import { firstStepFor, KEY_KIND, kindOf, ownKindsOf, useStepCheck, useStepData, useStepNav, withKind, type StepKind } from './useStepCheck';
 
 const BUILT_IN = ['everyday', 'tech', 'car', 'home', 'other'] as const;
 
@@ -52,6 +53,7 @@ export function KindStep({ id }: { id: string }) {
   const kind = kindOf(check, name);
   const own = ownKindsOf(check);
   const isHome = kind === 'home';
+  const readFromWords = kind !== null && typeof check.layerAnswers[KEY_KIND] !== 'string';
   const price = check.price === null ? '' : fmt.formatMoney({ amount: check.price, currency: data.currency as never });
   const meta = price === '' ? name : t('decide.screens.stepper.itemPrice', { item: name, price });
   const pick = (k: StepKind): void => step.update((c) => withKind(c, k));
@@ -66,7 +68,6 @@ export function KindStep({ id }: { id: string }) {
         meta={meta}
         direction={dir === 'back' ? 'back' : 'fwd'}
         onBack={nav.back}
-        onJump={() => undefined}
         onNext={() => router.replace(nav.to(2))}
         nextDisabled={kind === null || isHome}
         onSeeNow={() => {
@@ -74,6 +75,11 @@ export function KindStep({ id }: { id: string }) {
           nav.seeAnswer();
         }}
       >
+        {readFromWords ? (
+          <Text testID="kind-read-from" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+            {t('decide.screens.stepper.kind.readFrom', { kind: label(kind) })}
+          </Text>
+        ) : null}
         <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.stepper.kind.groupA11y')} style={styles.grid}>
           {BUILT_IN.map((k) => (
             <KindTile key={k} testID={`kind-${k}`} title={t(`decide.screens.stepper.kind.${k}`)} sub={t(`decide.screens.stepper.kind.${k}Sub`)} selected={kind === k} onPress={() => pick(k)} />

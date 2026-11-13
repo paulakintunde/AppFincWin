@@ -1,4 +1,6 @@
 // 06.1-19 (D11): one kind tile in the 2-column radio grid. 112 minimum height; the dashed one adds an own kind.
+// 06.1-57 (A-ST-5): the text sits at the top of every tile, so the names in a row share one baseline whatever the sub-line wraps to.
+// No clamp: at 2.0x a name or sub-line wraps and the tile grows. No glyph slot (icons wait for the app-life phase).
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { hapticSelection } from '@/ui/haptics';
@@ -46,6 +48,6 @@ export function KindTile({ title, sub, selected = false, dashed = false, onPress
 }
 
 const styles = StyleSheet.create({
-  tile: { flexBasis: '47%', flexGrow: 1, minHeight: 112, borderRadius: radii.card, borderWidth: 1.5, padding: space.cardPad, justifyContent: 'flex-end' },
+  tile: { flexBasis: '47%', flexGrow: 1, minHeight: 112, borderRadius: radii.card, borderWidth: 1.5, padding: space.cardPad, justifyContent: 'flex-start' },
   text: { gap: 4 },
 });
