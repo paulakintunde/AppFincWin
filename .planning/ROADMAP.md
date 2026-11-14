@@ -28,7 +28,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 05.4: Decide safety patch** (INSERTED) - Decide never says "Fits" when a careful person would say "careful": safety net, overdraft, debt minimums, tax, after-purchase figure; plain confidence sentence replaces Rough/Fair/Firm
 - [ ] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
 - [x] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies (completed 2026-11-11)
-- [ ] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
+- [x] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide, reading test round 2, public switch-on. Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
@@ -1251,7 +1251,7 @@ Plans:
 **Goal:** Testers use the new Decide screens, built from the owner's clickable prototype (https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR, the design standard, as in Phase 6 D-04), on the v3 engine and the connection points that exist on main. Every prototype Decide screen (D01-D53, answers N02-N26) replaces today's tester screens in one release with Grow; old 05.x Decide screens deleted; home buying hidden; household left to 08.1 (06.1-CONTEXT D-01..D-06).
 **Requirements**: FIN-20, FIN-21, FIN-22, FIN-23, FIN-24, FIN-28, FIN-29, FIN-31; ENG-26 (Activity and Grow half), ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-20, UX-21 (renderer), UX-38, UX-41, UX-42, UX-43; CMP-F12 (layout), F14, F15; ARC-11, ARC-24, ARC-25; QA-01 (prototype is the design), QA-02/QA-03 (non-household cases); BO-09; the non-household rows of 08.1-CARRY-OVER-FROM-05.4.md (list in 06.1-01-PLAN.md). FIN-20/22/23 return to 08.1 if their cases are not approved by release (D-26).
 **Depends on:** Phase 6: Grow plans 06-05, 06-06 and 06-10 on main (connection points, RPCs, Decide feed; 06.1-CONTEXT D-30). Wave 1 (plans 01-07, 41, 42) can be built now; plan 08 gates the rest. Household parts stay hidden until Phase 8.
-**Plans:** 82/83 plans executed
+**Plans:** 83/83 plans executed
 
 Plans:
 - [x] 06.1-01-PLAN.md — Scope split (D-04) and prototype inventory (D-27); seven state colour tokens + contrast tests + CLAUDE.md (D-16); ROADMAP requirement lines
@@ -1287,7 +1287,7 @@ Plans:
 - [x] 06.1-31-PLAN.md — [BLOCKING] Push the 06.1 schema to production (human-gated)
 - [x] 06.1-32-PLAN.md — Maestro flows, text-fit and reading order, full suite, owner device pass (Task 2 folded into 06.1-61)
 - [x] 06.1-33-PLAN.md — D-08 wording sign-off and lock (signed 2026-11-14)
-- [ ] 06.1-34-PLAN.md — Release with Grow: OTA or preview APK (D-06, D-29)
+- [x] 06.1-34-PLAN.md — Release with Grow: OTA or preview APK (D-06, D-29) (preview APK 051b0232, 2026-11-14)
 - [x] 06.1-35-PLAN.md — Info sheets: About this answer, Give it more to go on, Free help, How this was worked out
 - [x] 06.1-36-PLAN.md — Delete the old Decide code: shell hosts, folders, shims, old tests; fix guards (D-05)
 - [x] 06.1-37-PLAN.md — Prune old Decide copy from en.ts; copy-guard exemptions and coverage thresholds
