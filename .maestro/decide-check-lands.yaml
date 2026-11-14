@@ -97,15 +97,16 @@ name: Decide Check it and Edit the check land on the check (06.1-78)
                 duration: 300
             - waitForAnimationToEnd
       # Short swipes: the examples sit just under the check card, and a long swipe can carry them past the screen.
+      # 06.1-61: slow, short swipes (no fling), so the example row under the check card is not carried past the screen
       - repeat:
-          times: 8
+          times: 12
           while:
             notVisible: 'Used car \$.*'
           commands:
             - swipe:
-                start: "50%,70%"
-                end: "50%,50%"
-                duration: 400
+                start: "50%,62%"
+                end: "50%,52%"
+                duration: 900
             - waitForAnimationToEnd
       - tapOn: 'Used car \$.*'
       - runFlow:
