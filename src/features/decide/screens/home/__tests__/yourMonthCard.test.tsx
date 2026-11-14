@@ -134,6 +134,26 @@ describe('YourMonthCard layout (06.1-56, A-HOME-6)', () => {
     expect(screen.getByText('Comes in $5,000\nGoes out $4,107 · Left $893', { includeHiddenElements: true })).toBeTruthy();
   });
 
+  it('06.1-81: the legend, the switch and the spoken figures add up once rounded (left is rounded in minus rounded out)', async () => {
+    // $4,999.60 in, $4,107.40 out, $892.20 left: rounded on their own they read $5,000 in, $4,107 out and $892 left, one unit off.
+    const near = { comesIn: mu(499960), goesOut: mu(410740), left: mu(89220) };
+    const shortNear = { month: '2026-09', comesIn: mu(420040), goesOut: mu(430060), left: mu(-10020) };
+    await renderCard({ picture: { ...picture, usual: near, low: shortNear } as unknown as MonthPicture });
+    expect(screen.getByText('Comes in $5,000\nGoes out $4,107 · Left $893', { includeHiddenElements: true })).toBeTruthy();
+    await openMore();
+    expect(screen.getByLabelText('Usual month, $893 left')).toBeTruthy();
+    // $4,200.40 in, $4,300.60 out: $4,200 in and $4,301 out read $101 short, never $100.
+    await fireEvent.press(screen.getByLabelText('Low month, $101 short'));
+    expect(screen.getByText('Comes in $4,200\nGoes out $4,301 · Short $101', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('06.1-81: a past month’s headline and figures add up once rounded too', async () => {
+    await renderCard({ bars: [{ month: '2026-10', comesIn: mu(499960), goesOut: mu(410740), left: mu(89220) }] as unknown as MonthBar[] });
+    await fireEvent.press(screen.getByTestId('month-earlier'));
+    expect(screen.getByTestId('month-lead').props.accessibilityLabel).toBe('$893 left in October');
+    expect(screen.getByTestId('month-bars').props.accessibilityLabel).toBe('Comes in $5,000, goes out $4,107, left $893');
+  });
+
   it('a short month stacks what comes in and the shortfall, and says Short', async () => {
     await renderCard();
     await openMore();

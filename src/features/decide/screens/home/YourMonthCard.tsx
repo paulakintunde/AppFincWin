@@ -87,25 +87,30 @@ export function YourMonthCard(props: YourMonthCardProps) {
   const { picture, bars } = props;
   const unit = props.wholeUnit ?? 1;
   // 06.1-56 (A-HOME-6): whole currency units on this card, never cents.
-  const formatMoney = (minor: number): string => props.formatMoney(Math.sign(minor) * Math.round(Math.abs(minor) / unit) * unit);
+  const whole = (minor: number): number => Math.sign(minor) * Math.round(Math.abs(minor) / unit) * unit;
+  const formatMoney = (minor: number): string => props.formatMoney(whole(minor));
+  // 06.1-81 (review item 4): in and out are rounded to whole units, and left is the rounded in minus the rounded out, so the three
+  // figures on the card always add up (rounded on its own, left could be one unit off). Integer minor units throughout.
+  const tiles = (b: { comesIn: unknown; goesOut: unknown }): { comesIn: number; goesOut: number; left: number } => {
+    const comesIn = whole(Number(b.comesIn));
+    const goesOut = whole(Number(b.goesOut));
+    return { comesIn, goesOut, left: comesIn - goesOut };
+  };
 
   const past = back > 0 ? (bars[bars.length - back] ?? null) : null;
   const month = past === null ? props.thisMonth : past.month;
   const name = props.monthName(month);
 
-  // The lead is the month picture's figure for this month, or the records' own figure for a past month.
-  const lead = past === null ? (picture === null ? null : Number(picture.monthEnd)) : Number(past.left);
+  // The lead is the month picture's figure for this month, or the records' own figure for a past month (its rounded tiles' left).
+  const lead = past === null ? (picture === null ? null : Number(picture.monthEnd)) : tiles(past).left;
   const shown =
     past !== null
-      ? { comesIn: Number(past.comesIn), goesOut: Number(past.goesOut), left: Number(past.left) }
+      ? tiles(past)
       : picture === null
         ? null
         : (basis === 'low' ? picture.low : picture.usual) === null
           ? null
-          : (() => {
-              const b = (basis === 'low' ? picture.low : picture.usual)!;
-              return { comesIn: Number(b.comesIn), goesOut: Number(b.goesOut), left: Number(b.left) };
-            })();
+          : tiles((basis === 'low' ? picture.low : picture.usual)!);
   const short = lead !== null && lead < 0;
   const leadColor = short ? stateColors.short.color : colors.ink;
   const canGoBack = back < bars.length;
@@ -115,9 +120,9 @@ export function YourMonthCard(props: YourMonthCardProps) {
   const leadA11y = lead === null ? '' : past === null ? `${formatMoney(Math.abs(lead))} ${leadWords}, ${t('decide.screens.home.month.leadLabel')}` : `${formatMoney(Math.abs(lead))} ${leadWords}`;
 
   const recordCount = Math.max(0, Math.min(RECORD_MONTHS, props.recordMonths));
-  const leftSub = (b: { left: unknown } | null): string | null => {
+  const leftSub = (b: { comesIn: unknown; goesOut: unknown } | null): string | null => {
     if (b === null) return null;
-    const left = Number(b.left);
+    const { left } = tiles(b);
     return t(left < 0 ? 'decide.screens.home.month.shortSub' : 'decide.screens.home.month.leftSub', { amount: formatMoney(Math.abs(left)) });
   };
 
