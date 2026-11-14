@@ -1250,7 +1250,7 @@ Plans:
 **Goal:** Testers use the new Decide screens, built from the owner's clickable prototype (https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR, the design standard, as in Phase 6 D-04), on the v3 engine and the connection points that exist on main. Every prototype Decide screen (D01-D53, answers N02-N26) replaces today's tester screens in one release with Grow; old 05.x Decide screens deleted; home buying hidden; household left to 08.1 (06.1-CONTEXT D-01..D-06).
 **Requirements**: FIN-20, FIN-21, FIN-22, FIN-23, FIN-24, FIN-28, FIN-29, FIN-31; ENG-26 (Activity and Grow half), ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-20, UX-21 (renderer), UX-38, UX-41, UX-42, UX-43; CMP-F12 (layout), F14, F15; ARC-11, ARC-24, ARC-25; QA-01 (prototype is the design), QA-02/QA-03 (non-household cases); BO-09; the non-household rows of 08.1-CARRY-OVER-FROM-05.4.md (list in 06.1-01-PLAN.md). FIN-20/22/23 return to 08.1 if their cases are not approved by release (D-26).
 **Depends on:** Phase 6: Grow plans 06-05, 06-06 and 06-10 on main (connection points, RPCs, Decide feed; 06.1-CONTEXT D-30). Wave 1 (plans 01-07, 41, 42) can be built now; plan 08 gates the rest. Household parts stay hidden until Phase 8.
-**Plans:** 74/79 plans executed
+**Plans:** 76/79 plans executed
 
 Plans:
 - [x] 06.1-01-PLAN.md — Scope split (D-04) and prototype inventory (D-27); seven state colour tokens + contrast tests + CLAUDE.md (D-16); ROADMAP requirement lines
@@ -1321,7 +1321,7 @@ Plans:
 - [x] 06.1-66-PLAN.md — [flow audit H-5] The answer shows the same parts every time (FQ5, FQ6, FQ8)
 - [x] 06.1-67-PLAN.md — [flow audit H-6] The answer: short line first (FQ9)
 - [x] 06.1-68-PLAN.md — [flow audit H-7] Answers you give show at once and can be taken back (FQ7)
-- [ ] 06.1-71-PLAN.md — [flow audit H-10] Fix links land on the thing to fix (FQ10, OQ-71-1)
+- [x] 06.1-71-PLAN.md — [flow audit H-10] Fix links land on the thing to fix (FQ10, OQ-71-1)
 - [x] 06.1-72-PLAN.md — [flow audit H-11a] Screen speed (stepper, setup Pay, answer)
 - [x] 06.1-73-PLAN.md — [flow audit H-11b] Write speed and the post-write busy JS thread (DB-1)
 - [x] 06.1-74-PLAN.md — [flow audit] Owner Pixel 6 recheck P1 (checkpoint)
@@ -1329,7 +1329,7 @@ Plans:
 - [x] 06.1-76-PLAN.md — [flow audit H-13] Sheets never leave a blocking backdrop; toast Dismiss
 - [x] 06.1-77-PLAN.md — [flow audit H-14] I bought it saves a paid purchase, once (OQ-77-1/2)
 - [x] 06.1-78-PLAN.md — [flow audit H-15] Check it lands on the check, never the Home tab
-- [ ] 06.1-79-PLAN.md — [flow audit H-16] Figures that agree across screens (OQ-79-1/2)
+- [x] 06.1-79-PLAN.md — [flow audit H-16] Figures that agree across screens (OQ-79-1/2)
 - [x] 06.1-80-PLAN.md — [flow audit H-17] Home sheet add, change, delete (OQ-80-1)
 - [x] 06.1-81 (quick) — [independent review] fixes for the review of the flow-audit fixes and plan 74's gap rows (no PLAN file; see 06.1-81-SUMMARY.md)
 
