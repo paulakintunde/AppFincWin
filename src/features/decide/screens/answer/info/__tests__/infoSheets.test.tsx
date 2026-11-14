@@ -46,15 +46,13 @@ describe('AboutSheet', () => {
 
 describe('GiveMoreSheet', () => {
   const line = (code: string, text: string) => ({ key: `k.${code}`, code, text });
-  it('has no sure or surer, links each missing figure and offers a reminder only when given a date', async () => {
+  it('has no sure or surer and links each missing figure; no "Remind me" (06.1-67, FQ9)', async () => {
     const opened: string[] = [];
     await wrap(
       <GiveMoreSheet
         nextStep={line('add_records', 'More months of records give this more to go on.')}
         readiness={[line('past_month_missing', 'A past month is missing.')]}
         missing={[line('no_income_figures', 'No regular income is set up yet.')]}
-        remindOn="2026-12-01"
-        onRemind={noop}
         onOpenMissing={(c) => opened.push(c)}
         onClose={noop}
       />
@@ -62,12 +60,12 @@ describe('GiveMoreSheet', () => {
     expect(screen.queryByText(/\bsurer?\b/i)).toBeNull();
     fireEvent.press(screen.getByTestId('give-more-missing'));
     expect(opened).toEqual(['no_income_figures']);
-    expect(screen.getByTestId('give-more-remind')).toBeTruthy();
+    expect(screen.queryByText(/Remind me/)).toBeNull();
   });
 
-  it('shows no reminder without a date', async () => {
-    await wrap(<GiveMoreSheet nextStep={line('add_records', 'x')} readiness={[]} missing={[]} onOpenMissing={noop} onClose={noop} />);
-    expect(screen.queryByTestId('give-more-remind')).toBeNull();
+  it('says nothing is missing when the list is empty', async () => {
+    await wrap(<GiveMoreSheet nextStep={null} readiness={[]} missing={[]} onOpenMissing={noop} onClose={noop} />);
+    expect(screen.getByTestId('give-more-none')).toBeTruthy();
   });
 });
 

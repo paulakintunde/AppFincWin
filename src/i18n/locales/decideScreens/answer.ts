@@ -56,7 +56,10 @@ export const answer = {
     nextTitle: 'Next step',
     readinessTitle: 'In your records',
     missingTitle: 'Missing figures',
-    remind: 'Remind me on {{date}}',
+    // 06.1-67 (H-6, CS-4): the one inline line on an answer with missing figures; its More opens this sheet with the full list.
+    // "Remind me on {{date}}" was removed (FQ9) and returns with the reminders work.
+    missingShort_one: 'One figure is missing.',
+    missingShort_other: '{{count}} figures are missing.',
     none: 'Nothing is missing from your records right now.',
   },
   netLocked: {
