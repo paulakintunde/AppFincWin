@@ -25,14 +25,16 @@ jest.mock('@/services/supabase', () => ({
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => `id-${++mockUuid}`) }));
 jest.mock('expo-haptics', () => ({
   notificationAsync: jest.fn(async () => undefined),
+  impactAsync: jest.fn(async () => undefined),
   NotificationFeedbackType: { Success: 'success', Warning: 'warning' },
+  ImpactFeedbackStyle: { Light: 'light' },
 }));
 jest.mock('@/data/sync/failedWrites', () => ({ recordFailedWrite: jest.fn(async () => undefined) }));
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { recordFailedWrite } = require('@/data/sync/failedWrites') as { recordFailedWrite: jest.Mock };
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const Haptics = require('expo-haptics') as { notificationAsync: jest.Mock };
+const Haptics = require('expo-haptics') as { notificationAsync: jest.Mock; impactAsync: jest.Mock };
 
 const base = { householdId: 'h1', ownerId: 'u1', homeCurrency: 'GBP', timeZone: 'Europe/London', month: '2026-10' };
 
@@ -71,6 +73,7 @@ beforeEach(() => {
   resetToastForTests();
   recordFailedWrite.mockClear();
   Haptics.notificationAsync.mockClear();
+  Haptics.impactAsync.mockClear();
 });
 
 describe('useCloneMonth', () => {
@@ -95,7 +98,9 @@ describe('useCloneMonth', () => {
     expect(undo).toMatchObject({ id: stepId, label_key: 'cloned', label_params: { n: 3 } });
     expect(undo.ops as unknown[]).toHaveLength(3);
     expect(getToast()?.stepId).toBe(stepId);
-    expect(Haptics.notificationAsync).toHaveBeenCalled();
+    // 06.2 D-20: a bulk save is a light tap, not a milestone.
+    expect(Haptics.impactAsync).toHaveBeenCalledWith('light');
+    expect(Haptics.notificationAsync).not.toHaveBeenCalled();
   });
 
   it('a cloned month never copies one-off', async () => {
