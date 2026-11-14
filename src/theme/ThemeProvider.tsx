@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ACCENTS, DEFAULT_ACCENT, type AccentKey } from './accents';
 import { FONT_PAIRINGS, type FontPairingKey, type FontWeight } from './fonts';
-import { colors } from './tokens';
+import { colors, pageTint, pageTintBar } from './tokens';
 import { DEFAULT_PAIRING, readThemeCache, writeThemeCache } from './themeCache';
 
 export interface ThemeContextValue {
@@ -9,7 +9,8 @@ export interface ThemeContextValue {
   ready: boolean;
   accent: AccentKey;
   pairing: FontPairingKey;
-  colors: typeof colors & { accent: string };
+  /** 06.2 D-22/D-27: canvas and tabBar are the accent's pale page tint, not the static colors.canvas fallback. */
+  colors: Omit<typeof colors, 'canvas' | 'tabBar'> & { canvas: string; tabBar: string; accent: string };
   fonts: { display: string; body: Record<FontWeight, string> };
   setAccent: (key: AccentKey) => void;
   setPairing: (key: FontPairingKey) => void;
@@ -53,7 +54,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       ready,
       accent,
       pairing,
-      colors: { ...colors, accent: ACCENTS[accent] },
+      colors: { ...colors, canvas: pageTint[accent], tabBar: pageTintBar[accent], accent: ACCENTS[accent] },
       fonts: {
         display: FONT_PAIRINGS[pairing].display,
         body: FONT_PAIRINGS[pairing].body,
