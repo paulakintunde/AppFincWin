@@ -54,3 +54,6 @@ The Not ready card shows two sentences: "First: <item> …" and "More may follow
 - `.maestro/common/decide-quick-estimates.yaml` line 15 taps "Before your records are ready\. Round numbers are fine\." to close the keyboard; tap "Round numbers are fine\." instead.
 - `.maestro/decide-safety-net.yaml` line 18 waits for "Money kept for emergencies\. Set in Grow\." (now behind Why?); wait on `id: net-word`.
 - 06.1-61 should grep every .maestro flow for text moved behind Why?/More by plans 59, 60 and 67.
+
+## Resolved by 06.1-67 (2026-11-13)
+- Not ready card caveat (from 06.1-59): "More may follow once this is done." now opens under the card's MoreRow (`answer-not-ready-more`). The `ROUTED_TO_67` exception is gone from oneLineBudget.test.tsx; the card reads as one sentence. notReadyCard and answerScreen tests open the row first.
