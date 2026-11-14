@@ -141,6 +141,33 @@ try {
     const depcruise = run('npx depcruise src --config .dependency-cruiser.cjs');
     expect('depcruise output names crosscheck-independent', depcruise.output.includes('crosscheck-independent'));
   }
+
+  console.log('Probe 7: engine clock (ENG-16)');
+  writeProbe('src/engine/__gate_probe__/clock.ts', 'export const t = Date.now();\n');
+  {
+    const eslint = run('npx eslint src/engine/__gate_probe__/clock.ts');
+    expect('eslint fails on Date.now in engine', eslint.status !== 0);
+    expect('eslint output names no-restricted-properties', eslint.output.includes('no-restricted-properties'));
+  }
+
+  console.log('Probe 8: engine randomness (ENG-16)');
+  writeProbe('src/engine/__gate_probe__/random.ts', 'export const r = Math.random();\n');
+  {
+    const eslint = run('npx eslint src/engine/__gate_probe__/random.ts');
+    expect('eslint fails on Math.random in engine', eslint.status !== 0);
+    expect('eslint output names no-restricted-properties', eslint.output.includes('no-restricted-properties'));
+  }
+
+  console.log('Probe 9: banned wording in the catalogue (CMP-F09)');
+  writeProbe(
+    'src/i18n/locales/__gate_probe__.ts',
+    "export default { decide: { v3: { probe: 'You should wait.' } } };\n"
+  );
+  {
+    const eslint = run('npx eslint src/i18n/locales/__gate_probe__.ts');
+    expect('eslint fails on a banned sentence', eslint.status !== 0);
+    expect('eslint output names fincwin/copy-guard', eslint.output.includes('fincwin/copy-guard'));
+  }
 } finally {
   cleanup();
 }
