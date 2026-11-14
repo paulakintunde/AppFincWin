@@ -54,3 +54,23 @@ did not forward it on 2026-11-05. Budget: judgeCheck p95 under 8 ms. The Record-
 (`__DEV__` is false), by design.
 
 When done, stop Metro's node process by its port (stopping the shell task leaves node running).
+
+## Nightly (05.5)
+
+`.github/workflows/maestro-nightly.yml` builds a debug dev client, boots an Android emulator (API 34, x86_64, KVM) on `ubuntu-latest`, runs the core flows and uploads a JUnit report (`maestro-report.xml`) and `metro.log`. The flow list is written once, in `scripts/maestro-core-flows.mjs` (`--list` prints it, `--check` confirms the files exist).
+
+**The 16 core flows**
+
+| Flow | Comes from |
+|---|---|
+| back-stays-short, record-as-bought, save-offline | main (05.4) |
+| decide-bought, decide-check-lands, decide-first-answer, decide-safety-net, decide-save-for-it, decide-stepper-loan, decide-timing, decide-waiver, decide-write-idle | 06.1 (Decide screens) |
+| save-plan-undo, not-buying-undo, delete-plan-undo, check-periodic | 05.5-22 |
+
+**Switched off (D-22).** The job runs on manual dispatch only, and its first step fails with a plain message until the secret `MAESTRO_ACCOUNT_READY` is `yes`. To switch it on:
+
+1. Write `.maestro/common/sign-in.yaml` (the shared sign-in subflow each flow starts with) for the chosen account.
+2. Set the repository secret `MAESTRO_ACCOUNT_READY=yes`, and the build secrets `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (public values).
+3. Add `schedule: [{ cron: '37 5 * * *' }]` under `on:` (after nightly 03:17, release-gate 04:23, mutation-full 04:41).
+
+**Safety.** The robot runs against the one production project. The sign-in account must be a dedicated sample account that is not in `docs/ops/decide-testers.json` or `docs/ops/decide-never-on.json`, and every flow undoes its own writes. Secrets are passed only through `env:` and are never printed.

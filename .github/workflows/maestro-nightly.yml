@@ -1,0 +1,66 @@
+name: Maestro nightly
+# APP-13: the core Maestro flows on an Android emulator. Schedules fire only from main.
+on:
+  workflow_dispatch: {}
+# 05.5 D-22: no schedule until the owner picks the sign-in account.
+# To switch on, add: schedule: [{ cron: '37 5 * * *' }]  (after nightly 03:17, release-gate 04:23, mutation-full 04:41)
+permissions:
+  contents: read
+concurrency:
+  group: maestro-nightly
+  cancel-in-progress: false
+jobs:
+  core-flows:
+    name: core-flows
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      MAESTRO_ACCOUNT_READY: ${{ secrets.MAESTRO_ACCOUNT_READY }}
+    steps:
+      - name: Sign-in account chosen
+        run: test "$MAESTRO_ACCOUNT_READY" = "yes" || { echo "05.5 D-22 - the owner has not picked the nightly sign-in account. See docs/ops/maestro.md, section Nightly."; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v4.4.0 (v4)
+        with: { node-version: 24, cache: npm }
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1 (v4)
+        with: { distribution: temurin, java-version: 17 }
+      - run: npm ci --legacy-peer-deps
+      - name: Check core flows exist
+        run: node scripts/maestro-core-flows.mjs --check
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Build the debug dev client
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          npx expo prebuild --platform android --no-install
+          cd android && ./gradlew assembleDebug --no-daemon
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+      - name: Start Metro
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+        run: npx expo start --dev-client --port 8081 > metro.log 2>&1 &
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0 (v2)
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          script: |
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb reverse tcp:8081 tcp:8081
+            maestro test $(node scripts/maestro-core-flows.mjs --list | tr '\n' ' ') --format junit --output maestro-report.xml
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: maestro-report
+          path: |
+            maestro-report.xml
+            metro.log
+          retention-days: 14
