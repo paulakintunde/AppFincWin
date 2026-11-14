@@ -96,7 +96,7 @@ describe('Row (06.2 D-09)', () => {
         label="Groceries"
         leading={<IconTile icon="groceries" color={colors.ink} tint={colors.fill1} testID="tile" />}
         amount="$42.00"
-        status={<RNText testID="badge">Over</RNText>}
+        status={<RNText testID="badge">{"Over"}</RNText>}
         chevron
         onPress={jest.fn()}
       />,
@@ -116,7 +116,7 @@ describe('Row (06.2 D-09)', () => {
   });
 
   it('a pressable row speaks title, second line, amount and status word as one sentence', async () => {
-    await setup(<Row label="Card" sublabel="Due 3 Mar" amount="$300.00" status={<RNText>Due</RNText>} statusText="Due soon" onPress={jest.fn()} />);
+    await setup(<Row label="Card" sublabel="Due 3 Mar" amount="$300.00" status={<RNText>{"Due"}</RNText>} statusText="Due soon" onPress={jest.fn()} />);
     expect(screen.getByRole('button').props.accessibilityLabel).toBe('Card, Due 3 Mar, $300.00, Due soon');
   });
 
