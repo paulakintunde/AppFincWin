@@ -4,14 +4,18 @@
 # so at least one offer shows. Run signed in as a test account with an everyday account.
 appId: com.fincwin.app
 name: Decide I bought it
+# 06.1 pre-device check: the price can be set with `-e PRICE=9000` (a 9,000 cash car asks to confirm spare money first; since
+# 06.1-84 the shared gate answers that on the answer itself with "That's right").
+env:
+  PRICE: "2500"
 ---
 - runFlow:
     file: common/decide-new-check.yaml
     env:
       ITEM: "used car"
-      # 06.1-61: 2,500, not 9,000. On the test account a cash buy above this month's room asks to confirm spare money first
-      # (unspent_not_confirmed, gap row G-61-2), which a flow cannot answer; a car still brings running-cost offers.
-      PRICE: "2500"
+      # 06.1-61: 2,500 by default. A 9,000 cash buy above this month's room asks to confirm spare money first
+      # (unspent_not_confirmed, G-61-2); since 06.1-84 common/decide-gate answers it, so `-e PRICE=9000` runs that path.
+      PRICE: ${PRICE}
 - runFlow:
     file: common/scroll-to.yaml
     env:

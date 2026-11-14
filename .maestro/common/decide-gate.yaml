@@ -69,6 +69,23 @@ appId: com.fincwin.app
               id: "answer-fix-account_use_question"
           commands:
             - runFlow: decide-account-use.yaml
+      # 06.1-84 (G-61-2): "Your spare money hasn't been confirmed yet" is answered on the answer: Fix opens the spare-money sheet
+      # and "That's right" saves the app's own figure (Undo on the toast and in History, "Unspent money confirmed")
+      - runFlow:
+          when:
+            visible:
+              id: "answer-fix-unspent_not_confirmed"
+          commands:
+            - evalScript: "${console.log('SPARE-MONEY confirming from the answer')}"
+            - tapOn:
+                id: "answer-fix-unspent_not_confirmed"
+            - extendedWaitUntil:
+                visible: "That.s right"
+                timeout: 30000
+            - tapOn: "That.s right"
+            - extendedWaitUntil:
+                visible: "Saved: your spare money\\."
+                timeout: 20000
       # the answered row reads "Saved, updating…" until Decide judges again; wait for it to go before the next item
       - extendedWaitUntil:
           notVisible:
