@@ -49,6 +49,7 @@
  *   home.accounts.seeAll are Claude-drafted, awaiting review.
  */
 import { EXCHANGE_RATE_API_ATTRIBUTION } from '../mandatedCopy';
+import { appLife } from './appLife';
 import { decideScreens } from './decideScreens';
 
 const en = {
@@ -3244,6 +3245,8 @@ const en = {
     swatch: '{{colour}} colour',
     dismiss: 'Dismiss',
   },
+  // 06.2: App life words (calm and confident); area files owned per plan
+  appLife: appLife,
 } as const;
 
 export default en;
