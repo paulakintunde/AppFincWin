@@ -25,4 +25,8 @@ export const status = {
   updatedAgo_one: 'Updated 1 day ago',
   updatedAgo_other: 'Updated {{count}} days ago',
   cleared: 'Cleared',
+  // 06.2-05: the three Decide-state words the shared status map needs (D-12).
+  fits: 'Fits',
+  tight: 'Tight',
+  short: 'Short',
 } as const;
