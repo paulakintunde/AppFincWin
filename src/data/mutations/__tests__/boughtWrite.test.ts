@@ -1,6 +1,6 @@
 // 05.3-13 (DSV-13): golden suite for buildBoughtWrite. Fixed mint counter, frozen today.
-import { buildBoughtWrite, isBoughtRefusal, type BoughtContext } from '../boughtWrite';
-import type { Purchase, Schedule, Result } from '@/engine/decide/v3';
+import { buildBoughtWrite, endSeriesOf, isBoughtRefusal, type BoughtContext } from '../boughtWrite';
+import type { Purchase, Schedule, Result, StoppedCost } from '@/engine/decide/v3';
 
 const TODAY = '2026-10-18';
 const SOLE = { weights: [1], myIndex: 0 };
@@ -226,5 +226,40 @@ describe('buildBoughtWrite', () => {
   it('isBoughtRefusal is false for ordinary errors', () => {
     expect(isBoughtRefusal(new Error('x'))).toBe(false);
     expect(isBoughtRefusal('x')).toBe(false);
+  });
+});
+
+// 05.5-13 (ARC-23): costs that stop end the real Activity bill through the stop path's own fields.
+describe('costs that stop (ARC-23)', () => {
+  const bill = (id: string, stopDate: string): StoppedCost =>
+    ({ id: `s-${id}`, amount: 8000, everyMonths: 1, stopDate, source: { kind: 'bill', seriesId: id } }) as StoppedCost;
+  const everyday = { id: 'e1', amount: 5000, everyMonths: 1, stopDate: '2026-11-20', source: { kind: 'everyday', categoryId: null } } as StoppedCost;
+  const gym = { id: 'gym', version: 4, anchor_date: '2026-01-05', end_date: null };
+
+  it('a stopping bill ends the day before its stop date with end_reason stopped', () => {
+    expect(endSeriesOf([bill('gym', '2026-11-20')], [gym])).toEqual([
+      { id: 'gym', expected_version: 4, end_date: '2026-11-19', end_reason: 'stopped' },
+    ]);
+  });
+
+  it('buildBoughtWrite carries it in endSeries', () => {
+    const w = buildBoughtWrite({ purchase: purchase(), result, ctx, mint: counter(), stops: [bill('gym', '2026-11-20')], recorded: [gym] });
+    expect(w.endSeries).toHaveLength(1);
+    expect(w.endSeries[0]).toMatchObject({ id: 'gym', end_reason: 'stopped' });
+  });
+
+  it('an everyday stop writes no series change', () => {
+    expect(endSeriesOf([everyday], [gym])).toEqual([]);
+    expect(build(purchase()).endSeries).toEqual([]);
+  });
+
+  it('a bill already ended on or before that day is not written again; an unrecorded bill is skipped', () => {
+    expect(endSeriesOf([bill('gym', '2026-11-20')], [{ ...gym, end_date: '2026-11-10' }])).toEqual([]);
+    expect(endSeriesOf([bill('nope', '2026-11-20')], [gym])).toEqual([]);
+  });
+
+  it('the same bill named twice ends once; a stop before the anchor ends on the anchor', () => {
+    expect(endSeriesOf([bill('gym', '2026-11-20'), bill('gym', '2026-12-20')], [gym])).toHaveLength(1);
+    expect(endSeriesOf([bill('gym', '2026-01-01')], [gym])[0].end_date).toBe('2026-01-05');
   });
 });
