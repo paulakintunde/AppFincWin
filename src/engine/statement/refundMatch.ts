@@ -6,6 +6,7 @@
  * assignment is greedy and one-to-one.
  */
 import { normaliseDescription } from '../categorize/guessCategory';
+import { daysBetween } from '../time/calendar';
 import { nameSimilarity } from './duplicates';
 
 export const REFUND_LOOKBACK_DAYS = 120;
@@ -37,12 +38,6 @@ export interface RefundMatch {
   purchaseId: string;
   merchant: string;
   categoryId: string | null;
-}
-
-function daysBetween(a: string, b: string): number {
-  const [ya, ma, da] = a.split('-').map(Number) as [number, number, number];
-  const [yb, mb, db] = b.split('-').map(Number) as [number, number, number];
-  return Math.round((Date.UTC(yb, mb - 1, db) - Date.UTC(ya, ma - 1, da)) / 86_400_000);
 }
 
 function stripRefundWords(name: string): string {

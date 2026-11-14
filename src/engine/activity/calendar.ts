@@ -3,7 +3,7 @@
  * leading blanks per week start, each day once, up to 3 category dots and the
  * day's net. Trailing blanks pad the grid to a multiple of 7.
  */
-import { daysInMonth } from '../recurring/schedule';
+import { daysInMonth } from '../time/calendar';
 import { netOf, type GroupRow } from './groups';
 import { firstWeekdayOffset } from './weeks';
 

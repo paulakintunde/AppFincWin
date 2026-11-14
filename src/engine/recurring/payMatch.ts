@@ -7,6 +7,7 @@
  * module), and rows already flagged as likely duplicates via
  * `excludeIndexes` so an import never offers both at once.
  */
+import { daysBetween } from '../time/calendar';
 import { nameSimilarity } from '../statement/duplicates';
 
 export interface PendingOccurrence {
@@ -41,19 +42,6 @@ export interface PayMatch {
 export const PAY_MATCH_BEFORE_DAYS = 3;
 export const PAY_MATCH_AFTER_DAYS = 7;
 const NAME_SIMILARITY_MIN = 0.6;
-
-function parseLocalDateParts(s: string): { year: number; month: number; day: number } {
-  const [year, month, day] = s.split('-').map(Number) as [number, number, number];
-  return { year, month, day };
-}
-
-function daysBetween(a: string, b: string): number {
-  const pa = parseLocalDateParts(a);
-  const pb = parseLocalDateParts(b);
-  const ta = Date.UTC(pa.year, pa.month - 1, pa.day);
-  const tb = Date.UTC(pb.year, pb.month - 1, pb.day);
-  return Math.round((tb - ta) / 86_400_000);
-}
 
 interface Candidate {
   rowIndex: number;
