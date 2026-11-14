@@ -101,11 +101,11 @@ export const home = {
   },
   // 06.1-79 (DS-10, OQ-79-2 A): one months-of-records count everywhere (home, Records setup), the one the answer's basis line uses.
   records: {
-    complete: '{{monthsUsed}} of {{monthsTotal}} months complete enough to use.',
+    complete: 'Months complete enough to use: {{monthsUsed}} of {{monthsTotal}}.', // 06.1-83: the count never sits before a counted word
   },
   changedChip: 'Changed: {{change}} · Reset',
   changedChipResetA11y: 'Reset the change: {{change}}',
   // 06.1-59 (G-10): the two footer sentences moved into the "How this was worked out" sheet the footer row opens.
-  footerRecords: 'Answers use {{months}} months of pay and {{count}} spending entries.',
+  footerRecords: 'Answers use your recorded months of pay and spending.', // 06.1-83 (owner, 2026-11-14): no count
   footerUpdates: 'Every answer updates when you change them in Activity or Grow.',
 } as const;

@@ -373,7 +373,9 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
     expect(keys.filter((k) => resolve(k) === undefined)).toEqual([]);
     // and the other way: every v3 leaf is reachable from a table
     const reachable = new Set<string>(keys);
-    expect(v3.filter((l) => !reachable.has(l.path)).map((l) => l.path)).toEqual([]);
+    // 06.1-83: an _one leaf is its reachable key at a count of 1 (sayResult passes the count), so its base must be reachable.
+    const base = (path: string): string => (path.endsWith('_one') ? path.slice(0, -4) : path);
+    expect(v3.filter((l) => !reachable.has(base(l.path))).map((l) => l.path)).toEqual([]);
   });
 
   it('I26 v3 banned words', () => {

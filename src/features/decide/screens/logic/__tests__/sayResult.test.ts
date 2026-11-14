@@ -230,7 +230,8 @@ describe('sayResult: every engine code reads as one filled sentence (D-18, UX-19
       ...Object.keys(copy.fact).filter((k) => !factCodes.includes(k)).map((k) => `decide.v3.fact.${k}`),
       ...Object.keys(copy.notice).filter((k) => !noticeCodes.includes(k)).map((k) => `decide.v3.notice.${k}`),
     ];
-    expect(want.filter((k) => !reached.has(k))).toEqual([]);
+    // 06.1-83: an _one key is the same line at a count of 1; its base key is the one copyKeyFor reaches.
+    expect(want.filter((k) => !reached.has(k.endsWith('_one') ? k.slice(0, -4) : k))).toEqual([]);
   });
 
   it('numbers become money unless plain; dates and months go through deps.date; at_todays_rate names the currency (FIN-24)', () => {
@@ -366,6 +367,48 @@ describe('sayResult: the Result in reading order', () => {
   it('bought today or on the purchase date (D-42)', () => {
     expect(sayResult(result(), deps).afterBuy.boughtOn?.key).toBe(AFTER_BUY_KEYS.boughtToday);
     expect(sayResult(result({ purchaseDate: '2026-12-24' }), deps).afterBuy.boughtOn?.text).toBe('If you buy it on <2026-12-24>.');
+  });
+});
+
+// ------------------------------------------------------------------ 06.1-83: one forms
+
+describe('sayResult: a line with an _one form reads it at a count of 1 (06.1-83)', () => {
+  /** i18next's rule for English: a numeric count of 1 picks `${key}_one` when it exists, else the base key. */
+  const pluralT = (key: string, values?: Readonly<Record<string, string | number>>): string => {
+    const one = values !== undefined && values['count'] === 1 && template(`${key}_one`) !== null;
+    const raw = template(one ? `${key}_one` : key);
+    if (raw === null) return key;
+    if (values === undefined) return raw;
+    return raw.replace(/\{\{(\w+)\}\}/g, (m, k: string) => (values[k] === undefined ? m : String(values[k])));
+  };
+  const pd: SayDeps = { ...deps, t: pluralT };
+
+  it('a count of 1 reads the one form; any other count reads the many form', () => {
+    expect(sayCode('fact', { code: 'net_refill', values: { months: 1 } } as Fact, pd).text).toBe('Refilled in about a month from spare money.');
+    expect(sayCode('fact', { code: 'net_refill', values: { months: 4 } } as Fact, pd).text).toBe('Refilled in about 4 months from spare money.');
+    expect(sayCode('notice', { code: 'unspent_stale', values: { days: 1 } } as Notice, pd).text).toBe('Your spare money was confirmed a day ago.');
+    expect(sayCode('fact', { code: 'quick_lines_counted', values: { count: 1 } } as Fact, pd).text).toBe('This answer counts one quick estimate you added for this check only.');
+  });
+
+  it('the count is the blank before the counted word, so a money blank earlier in the line is not it', () => {
+    const one = sayCode('fact', { code: 'net_lasts', values: { shortfall: 15000, months: 1 } } as Fact, pd);
+    expect(one.text).toBe('Covering a $150.00 shortfall each month, your safety net would last about a month.');
+    expect(one.key).toBe(FACT_KEYS.net_lasts);
+  });
+
+  it('no count is passed when the key has no one form, or the counted blank does not hold a number', () => {
+    const seen: (Readonly<Record<string, string | number>> | undefined)[] = [];
+    const spy: SayDeps = { ...pd, t: (key, values) => (seen.push(values), pluralT(key, values)) };
+    sayCode('fact', { code: 'net_two_months', values: { twoMonths: 100000 } } as Fact, spy);
+    expect(seen.at(-1)?.['count']).toBeUndefined();
+    // an _one sibling, but the template has no counted blank
+    const noBlank: SayDeps = { ...spy, t: (key, values) => (seen.push(values), key.endsWith('_one') ? 'one' : 'About {{months}}.'), exists: () => true };
+    sayCode('fact', { code: 'net_refill', values: { months: 1 } } as Fact, noBlank);
+    expect(seen.at(-1)?.['count']).toBeUndefined();
+    // an _one sibling and a counted blank, but its value is not a number
+    const textBlank: SayDeps = { ...spy, t: (key, values) => (seen.push(values), 'In {{months}} months.'), exists: () => true };
+    sayCode('fact', { code: 'net_refill', values: { months: '2026-11' } } as unknown as Fact, textBlank);
+    expect(seen.at(-1)?.['count']).toBeUndefined();
   });
 });
 

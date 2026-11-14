@@ -401,7 +401,7 @@ export function DecideHome() {
               currency={currency}
               sources={workedSources}
               recordsUpTo={inputs?.recordsAsOf == null ? null : dateText(inputs.recordsAsOf)}
-              note={`${t('decide.screens.home.footerRecords', { months: recordMonths.used, count: recordMonths.entries })} ${t('decide.screens.home.footerUpdates')}`}
+              note={`${t('decide.screens.home.footerRecords')} ${t('decide.screens.home.footerUpdates')}`}
               onClose={() => setWorkedOpen(false)}
             />
           ) : null}

@@ -282,7 +282,7 @@ name: Decide boards capture (06.1-61)
       - repeat:
           times: 8
           while:
-            notVisible: "(?i)(mug|used car|laptop) b61, .*|See all .* open checks"
+            notVisible: "(?i)(mug|used car|laptop) b61, .*|See all.* open checks"
           commands:
             - swipe:
                 start: "50%,75%"

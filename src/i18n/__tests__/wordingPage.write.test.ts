@@ -241,7 +241,33 @@ const SCREEN_AREAS: readonly [string, string][] = [
 
 /** A placeholder followed by a counted word (a plain or no-break space, at most one word between), on a key with no _one / _other form: it can read "1 months". */
 const COUNTED_WORD = /\{\{(\w+)\}\}[ \u00a0](?:[a-z]+[ \u00a0])?(months|payments|days|entries|times|steps|changes|lines|weeks|years|goals|bills|rules|checks|items|answers|estimates)\b/;
-const pluralRisk = (key: string, text: string): boolean => !/_(one|other|zero|few|many|two)$/.test(key) && COUNTED_WORD.test(text);
+/**
+ * 06.1-83: true when the line can read "1 months": the blank before the counted word holds a whole number (its sample is digits,
+ * not money or a date), the key is not itself a plural form, and it has no `_one` sibling (the base key is then the many form).
+ */
+const pluralRisk = (key: string, text: string, keys: ReadonlySet<string>): boolean => {
+  if (/_(one|other|zero|few|many|two)$/.test(key) || keys.has(`${key}_one`)) return false;
+  const blank = COUNTED_WORD.exec(text)?.[1];
+  return blank !== undefined && /^\d+$/.test(SAMPLE_VALUES[blank] ?? '0');
+};
+
+/**
+ * 06.1-83 (owner, 2026-11-14): lines that keep a number before a counted word because that number is never 1. The engine's copy
+ * contract (src/engine tests) needs the number in each of them, and some of the text is pinned there too, so neither the number nor
+ * the sentence can change from the locale alone. Listed on the page with the reason.
+ */
+const KEPT_COUNT: Readonly<Record<string, string>> = {
+  'decide.v3.basis.partial': 'Kept: the months Decide looks for is always 3 (CONFIDENCE_MIN_MONTHS). An engine test pins this sentence.',
+  'decide.v3.basis.records': 'Kept: always 3 months or more (fewer reads the partial line). An engine test pins this sentence.',
+  'decide.v3.basis.recordsWithReason.user_said_cover': 'Kept: always 3 months or more (fewer reads the partial line).',
+  'decide.v3.basis.recordsWithReason.quick_estimates': 'Kept: always 3 months or more (fewer reads the partial line).',
+  'decide.v3.basis.recordsWithReason.pay_missed': 'Kept: always 3 months or more (fewer reads the partial line).',
+  'decide.v3.basis.recordsWithReason.close_to_line': 'Kept: always 3 months or more (fewer reads the partial line).',
+  'decide.v3.caveat.few_months': 'Kept: the months Decide looks for is always 3.',
+  'decide.v3.caveat.long_plan': 'Kept: shown only on plans longer than 12 months.',
+  'decide.v3.notice.history_window_12': 'Kept: always 12 months.',
+  'decide.v3.fact.line_crossed_tenths': 'Kept: a multiplier, not a count (1.5 times your monthly income). An engine test pins “times your monthly income”.',
+};
 
 const REGION_NAME: Record<string, string> = { US: 'United States', GB: 'United Kingdom', CA: 'Canada' };
 
@@ -307,6 +333,8 @@ interface Page {
   readonly worked: number;
   readonly pageRows: readonly Row[];
   readonly draftIds: readonly string[];
+  /** 06.1-83: keys that can still read "1 months" (none once the owner's plural decision is in). */
+  readonly pluralKeys: readonly string[];
   readonly groups: Record<string, number>;
 }
 
@@ -381,7 +409,10 @@ function buildPage(): Page {
   const areaRows = SCREEN_AREAS.map(([area, title]) => ({ area, title, rows: screenRows.filter((r) => r.key.startsWith(`decide.screens.${area}.`)) }));
   const unplaced = screenRows.filter((r) => !SCREEN_AREAS.some(([a]) => r.key.startsWith(`decide.screens.${a}.`)));
   if (unplaced.length > 0) areaRows.push({ area: 'other', title: 'Other screen lines', rows: unplaced });
-  const plural = pageRows.filter((r) => pluralRisk(r.key, r.text));
+  const pageKeys = new Set(pageRows.map((r) => r.key));
+  const pluralAll = pageRows.filter((r) => pluralRisk(r.key, r.text, pageKeys));
+  const plural = pluralAll.filter((r) => KEPT_COUNT[r.key] === undefined);
+  const kept = pluralAll.filter((r) => KEPT_COUNT[r.key] !== undefined);
 
   // Groups for the counts table and the contents list: [anchor, title, lines].
   const answerRows = lockedRows.filter((r) => !r.key.startsWith('decide.screens.'));
@@ -481,8 +512,10 @@ function buildPage(): Page {
 
   // 11. Plural check
   parts.push(`<h2 id="plural">Lines that can read “1 months” <small>(${plural.length})</small></h2>`);
-  parts.push(`<p class="lbl">A number blank followed by a counted word, with no one / many form. With a count of 1 these read “1 months”.</p>`);
+  parts.push(`<p class="lbl">A number blank followed by a counted word, with no one / many form. With a count of 1 these read “1 months”. A line with a one form (an _one key) reads “a month” or “one payment” at 1 and is not listed.</p>`);
   parts.push(table(plural));
+  parts.push(`<h3>Kept with a number that is never 1 <small>(${kept.length})</small></h3>`);
+  parts.push(`<table>${kept.map((r) => `<tr><td><div class="k">${esc(r.key)}</div></td><td>${esc(r.text)}<div class="dec">${esc(KEPT_COUNT[r.key] ?? '')}</div></td></tr>`).join('')}</table>`);
 
   // 12. Removed
   parts.push(`<h2 id="removed">Removed <small>(${removed.length})</small></h2>`);
@@ -496,12 +529,12 @@ function buildPage(): Page {
   const html = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Decide wording review (D-08)</title><style>${CSS}</style>${parts.join('\n')}`;
   const groups: Record<string, number> = Object.fromEntries(toc.map(([id, , n]) => [id, Number(n.split(' ')[0])]));
   for (const a of areaRows) groups[`screens.${a.area}`] = a.rows.length;
-  return { html, counts, worked: worked.length, pageRows, draftIds: drafts.ids, groups };
+  return { html, counts, worked: worked.length, pageRows, draftIds: drafts.ids, groups, pluralKeys: plural.map((r) => r.key) };
 }
 
 (WRITE ? describe : describe.skip)('wording review page (WORDING_WRITE=1)', () => {
   it('writes reports/wording/decide-v3.html', () => {
-    const { html, counts, worked, pageRows, draftIds, groups } = buildPage();
+    const { html, counts, worked, pageRows, draftIds, groups, pluralKeys } = buildPage();
     expect(html).not.toMatch(/<script/i);
     expect(html).toContain('Lines written from your own words');
     expect(counts.Total).toBe(pageRows.length);
@@ -513,6 +546,8 @@ function buildPage(): Page {
     for (const id of ['BR-16', 'SN-16', 'SN-17', 'SN-18', 'SN-19', 'SN-20', 'SN-21', 'SN-22', 'SN-23', 'SN-24']) expect(draftIds).toContain(id);
     // 06.1-83: SN-18 stays a draft, marked as routed to the engine maths review.
     expect(html).toContain('Routed to engine maths review (owner, 2026-11-14)');
+    // 06.1-83: no line can read “1 months” (one forms, no count, or a number that is never 1, listed as kept).
+    expect(pluralKeys).toEqual([]);
     // Every blank on the page reads filled.
     const noSample = new Set<string>();
     for (const r of pageRows) for (const p of placeholdersOf(r.text)) if (SAMPLE_VALUES[p] === undefined) noSample.add(`${p} (${r.key})`);

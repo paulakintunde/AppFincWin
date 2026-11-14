@@ -55,7 +55,9 @@ export const answerActions = {
     amountRow: 'Amount',
     dateRow: 'Date',
     planRow: 'Payments',
-    planSummary: '{{up}} up front, then {{count}} payments',
+    // 06.1-83: one / many forms, so a single payment never reads as 1 payments.
+    planSummary_one: '{{up}} up front, then one payment',
+    planSummary_other: '{{up}} up front, then {{count}} payments',
     noAccount: 'An everyday account is needed to add this to your records.',
     loadingAccounts: 'Loading your accounts…',
   },

@@ -63,7 +63,7 @@ describe('YourMonthCard short line first (06.1-59, G-10)', () => {
     expect(screen.getByTestId('month-basis')).toBeTruthy();
     expect(screen.getByText('A usual month from your records: what comes in, less what goes out.')).toBeTruthy();
     expect(screen.getByText('Records up to Nov 5')).toBeTruthy();
-    expect(screen.getByTestId('month-records-complete')).toHaveTextContent('2 of 3 months complete enough to use.');
+    expect(screen.getByTestId('month-records-complete')).toHaveTextContent('Months complete enough to use: 2 of 3.');
   });
 
   it('a past month with no records date has nothing behind More, so no More row', async () => {
@@ -197,7 +197,7 @@ describe('YourMonthCard layout (06.1-56, A-HOME-6)', () => {
     await openMore();
     expect(screen.getByText('Records up to Nov 5')).toBeTruthy();
     expect(screen.getByTestId('month-records-fill').props.style).toEqual(expect.arrayContaining([expect.objectContaining({ width: '67%' })]));
-    expect(screen.getByTestId('month-records').props.accessibilityLabel).toBe('Records up to Nov 5. 2 of 3 months complete enough to use.');
+    expect(screen.getByTestId('month-records').props.accessibilityLabel).toBe('Records up to Nov 5. Months complete enough to use: 2 of 3.');
     await fireEvent.press(screen.getByTestId('month-records'));
     expect(onRecords).toHaveBeenCalled();
   });
@@ -206,7 +206,7 @@ describe('YourMonthCard layout (06.1-56, A-HOME-6)', () => {
   it('the records row says the answer’s count: 1 of 3 complete enough to use, with a third of the bar', async () => {
     await renderCard({ recordsUpTo: 'Nov 5', recordMonths: 1 });
     await openMore();
-    expect(screen.getByTestId('month-records-complete')).toHaveTextContent('1 of 3 months complete enough to use.');
+    expect(screen.getByTestId('month-records-complete')).toHaveTextContent('Months complete enough to use: 1 of 3.');
     expect(screen.queryByText(/3 of 3/)).toBeNull();
     expect(screen.getByTestId('month-records-fill').props.style).toEqual(expect.arrayContaining([expect.objectContaining({ width: '33%' })]));
   });
@@ -214,7 +214,7 @@ describe('YourMonthCard layout (06.1-56, A-HOME-6)', () => {
   it('more months used than three: n of n, a full bar', async () => {
     await renderCard({ recordsUpTo: 'Nov 5', recordMonths: 6, recordMonthsTotal: 6 });
     await openMore();
-    expect(screen.getByTestId('month-records-complete')).toHaveTextContent('6 of 6 months complete enough to use.');
+    expect(screen.getByTestId('month-records-complete')).toHaveTextContent('Months complete enough to use: 6 of 6.');
     expect(screen.getByTestId('month-records-fill').props.style).toEqual(expect.arrayContaining([expect.objectContaining({ width: '100%' })]));
   });
 

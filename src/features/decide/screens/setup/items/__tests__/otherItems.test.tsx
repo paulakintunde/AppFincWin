@@ -305,7 +305,7 @@ describe('RecordsSetup (D37, D37b)', () => {
     mockEvaluation = { result: { confidence: { basis: { kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-11-10' } } }, month: { monthsUsed: ['2026-08', '2026-10'] } };
     await wrap(<RecordsSetup writes={RECORDS_WRITES} />);
     await fireEvent.press(screen.getByTestId('records-more'));
-    expect(screen.getByTestId('months-so-far')).toHaveTextContent('2 of 3 months complete enough to use.');
+    expect(screen.getByTestId('months-so-far')).toHaveTextContent('Months complete enough to use: 2 of 3.');
   });
 
   it('Done is active only when all three checks hold', async () => {
