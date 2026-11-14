@@ -243,7 +243,7 @@ const SCREEN_AREAS: readonly [string, string][] = [
 const COUNTED_WORD = /\{\{(\w+)\}\}[ \u00a0](?:[a-z]+[ \u00a0])?(months|payments|days|entries|times|steps|changes|lines|weeks|years|goals|bills|rules|checks|items|answers|estimates)\b/;
 const pluralRisk = (key: string, text: string): boolean => !/_(one|other|zero|few|many|two)$/.test(key) && COUNTED_WORD.test(text);
 
-const REGION_NAME: Record<string, string> = { US: 'United States', GB: 'United Kingdom', CA: 'Canada', EU: 'EU countries (one table for all 27)' };
+const REGION_NAME: Record<string, string> = { US: 'United States', GB: 'United Kingdom', CA: 'Canada' };
 
 function templateHtml(): { html: string; lines: number } {
   const t = RUNNING_COST_TEMPLATES;
@@ -252,7 +252,6 @@ function templateHtml(): { html: string; lines: number } {
   const body = regions
     .map(([region, ls]) => {
       const cur = t.currencies[region];
-      const draft = ls.some((l) => l.draft === true);
       lines += ls.length;
       const rows = ls
         .map((l) => {
@@ -263,11 +262,11 @@ function templateHtml(): { html: string; lines: number } {
           return `<tr><td>${esc(label)}<div class="k">${esc(l.key)}</div></td><td>${esc(fig)}</td></tr>`;
         })
         .join('');
-      const badge = draft ? '<span class="b new">Draft: approve, change or remove</span>' : '<span class="b same">From the decide spec (D13)</span>';
+      const badge = region === 'US' ? '<span class="b same">From the decide spec (D13)</span>' : '<span class="b same">Approved by the owner, 2026-11-14</span>';
       return `<h3>${esc(REGION_NAME[region] ?? region)} · ${esc(cur)} ${badge}</h3><table>${rows}</table>`;
     })
     .join('');
-  const intro = `<p class="lbl">Car running costs filled in on the Running costs step when no recorded bill matches; the screen calls them “quick estimates”. Figures as of ${esc(t.asOf)}. A country with no table gets empty lines, switched off. Every figure can be changed on the step. Removing a country here gives its users empty lines.</p>`;
+  const intro = `<p class="lbl">Car running costs filled in on the Running costs step when no recorded bill matches; the screen calls them “quick estimates”. Figures as of ${esc(t.asOf)}. A country with no table gets empty lines, switched off, for the user to fill in. EU countries have no table (removed 2026-11-14). Every figure can be changed on the step.</p>`;
   return { html: intro + body, lines };
 }
 

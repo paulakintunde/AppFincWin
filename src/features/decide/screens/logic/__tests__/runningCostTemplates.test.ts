@@ -14,20 +14,25 @@ describe('prefillRunningCosts', () => {
       ['registration', 15600, 12, true, 'quick_estimate'],
       ['value_loss', 0, 12, false, 'quick_estimate'],
     ]);
-    expect(out.every((o) => !o.draft && o.line.start === '2026-11-11' && o.line.end === null)).toBe(true);
+    expect(out.every((o) => o.line.start === '2026-11-11' && o.line.end === null)).toBe(true);
   });
 
-  it('marks the other country tables as drafts', () => {
-    for (const [country, currency] of [['GB', 'GBP'], ['CA', 'CAD'], ['DE', 'EUR']] as const) {
-      const out = prefillRunningCosts({ ...base, country, currency });
-      expect(out[0]?.draft).toBe(true);
-      expect(out[0]?.line.amount).toBeGreaterThan(0);
+  it('fills the approved UK and Canada tables (06.1-83)', () => {
+    expect(prefillRunningCosts({ ...base, country: 'GB', currency: 'GBP' }).map((o) => o.line.amount)).toEqual([6000, 9000, 40000, 19000, 0]);
+    expect(prefillRunningCosts({ ...base, country: 'CA', currency: 'CAD' }).map((o) => o.line.amount)).toEqual([15000, 14000, 80000, 12000, 0]);
+  });
+
+  it('has no EU table: an EU country starts from zero, switched-off lines (06.1-83)', () => {
+    expect(Object.keys(RUNNING_COST_TEMPLATES.kinds.car).sort()).toEqual(['CA', 'GB', 'US']);
+    for (const country of ['DE', 'FR', 'IE']) {
+      const out = prefillRunningCosts({ ...base, country, currency: 'EUR' });
+      expect(out.every((o) => o.line.amount === 0 && !o.line.on && o.source === 'quick_estimate')).toBe(true);
     }
   });
 
   it('takes a matching recorded bill first, with its own amount and how often', () => {
     const out = prefillRunningCosts({ ...base, bills: [bill({ amount: 8000, everyMonths: 3 })] });
-    expect(out[0]).toMatchObject({ key: 'insurance', source: 'records', billId: 'b1', draft: false });
+    expect(out[0]).toMatchObject({ key: 'insurance', source: 'records', billId: 'b1' });
     expect(out[0]?.line).toMatchObject({ amount: 8000, everyMonths: 3, on: true });
     expect(out[1]?.source).toBe('quick_estimate');
   });
@@ -52,7 +57,7 @@ describe('prefillRunningCosts', () => {
     for (const input of [{ ...base, country: 'JP', currency: 'JPY' }, { ...base, country: null }, { ...base, country: 'GB', currency: 'USD' }]) {
       const out = prefillRunningCosts(input);
       expect(out).toHaveLength(5);
-      expect(out.every((o) => o.line.amount === 0 && !o.line.on && !o.draft)).toBe(true);
+      expect(out.every((o) => o.line.amount === 0 && !o.line.on)).toBe(true);
     }
   });
 
@@ -69,7 +74,8 @@ describe('prefillRunningCosts', () => {
 describe('templateRegionOf', () => {
   it('maps countries to table regions', () => {
     expect(templateRegionOf('US')).toBe('US');
-    expect(templateRegionOf('FR')).toBe('EU');
+    expect(templateRegionOf('GB')).toBe('GB');
+    expect(templateRegionOf('FR')).toBeNull();
     expect(templateRegionOf('JP')).toBeNull();
     expect(templateRegionOf(null)).toBeNull();
   });

@@ -3,13 +3,14 @@
  * amount and how often; otherwise a small dated table of round figures by kind and country fills in, labelled "quick estimates"
  * on screen. A country (or currency) with no table gets lines with amount 0, switched off, for the user to type. Only cars have a
  * table; other kinds pre-fill nothing. Pure: no data layer, no React.
- * The US figures come from the decide spec (D13). Every other table is a draft for the owner's review on the wording page (plan 33).
+ * The US figures come from the decide spec (D13). The UK and Canada tables were approved by the owner on 2026-11-14 (06.1-83); the
+ * EU table was removed then, so EU users (like any other country) start from switched-off lines and fill in their own.
  */
-import { INCLUDED_COUNTRIES, type RunningCostLine } from '@/engine/decide/v3';
+import type { RunningCostLine } from '@/engine/decide/v3';
 import { minorUnits, type MinorUnits } from '@/engine/money';
 
 export type TemplateKey = 'insurance' | 'fuel' | 'maintenance' | 'registration' | 'value_loss';
-export type TemplateRegion = 'US' | 'GB' | 'CA' | 'EU';
+export type TemplateRegion = 'US' | 'GB' | 'CA';
 
 export interface TemplateLine {
   readonly key: TemplateKey;
@@ -18,32 +19,34 @@ export interface TemplateLine {
   readonly everyMonths: 1 | 12;
   readonly amount: MinorUnits;
   readonly on: boolean;
-  /** True until the owner has reviewed the figure on the wording page (plan 33). */
-  readonly draft?: true;
 }
 
 const m = (n: number): MinorUnits => minorUnits(n);
-const line = (key: TemplateKey, labelKey: TemplateLine['labelKey'], everyMonths: 1 | 12, amount: number, on: boolean, draft: boolean): TemplateLine =>
-  draft ? { key, labelKey, everyMonths, amount: m(amount), on, draft: true } : { key, labelKey, everyMonths, amount: m(amount), on };
+const line = (key: TemplateKey, labelKey: TemplateLine['labelKey'], everyMonths: 1 | 12, amount: number, on: boolean): TemplateLine => ({
+  key,
+  labelKey,
+  everyMonths,
+  amount: m(amount),
+  on,
+});
 
-const carLines = (insurance: number, fuel: number, maintenance: number, registration: number, draft: boolean): readonly TemplateLine[] =>
+const carLines = (insurance: number, fuel: number, maintenance: number, registration: number): readonly TemplateLine[] =>
   Object.freeze([
-    line('insurance', 'insurance', 1, insurance, true, draft),
-    line('fuel', 'fuel', 1, fuel, true, draft),
-    line('maintenance', 'maintenance', 12, maintenance, true, draft),
-    line('registration', 'registration', 12, registration, true, draft),
-    line('value_loss', 'lossOfValue', 12, 0, false, draft),
+    line('insurance', 'insurance', 1, insurance, true),
+    line('fuel', 'fuel', 1, fuel, true),
+    line('maintenance', 'maintenance', 12, maintenance, true),
+    line('registration', 'registration', 12, registration, true),
+    line('value_loss', 'lossOfValue', 12, 0, false),
   ]);
 
 export const RUNNING_COST_TEMPLATES = Object.freeze({
   asOf: '2026-11',
-  currencies: Object.freeze({ US: 'USD', GB: 'GBP', CA: 'CAD', EU: 'EUR' } as const),
+  currencies: Object.freeze({ US: 'USD', GB: 'GBP', CA: 'CAD' } as const),
   kinds: Object.freeze({
     car: Object.freeze({
-      US: carLines(14000, 12000, 60000, 15600, false),
-      GB: carLines(6000, 9000, 40000, 19000, true),
-      CA: carLines(15000, 14000, 80000, 12000, true),
-      EU: carLines(6000, 10000, 50000, 20000, true),
+      US: carLines(14000, 12000, 60000, 15600),
+      GB: carLines(6000, 9000, 40000, 19000),
+      CA: carLines(15000, 14000, 80000, 12000),
     }),
   }),
 });
@@ -81,15 +84,13 @@ export interface PrefilledLine {
   readonly key: TemplateKey;
   readonly labelKey: TemplateLine['labelKey'];
   readonly source: 'records' | 'quick_estimate';
-  readonly draft: boolean;
   readonly billId: string | null;
   readonly line: RunningCostLine;
 }
 
 export function templateRegionOf(country: string | null): TemplateRegion | null {
   if (country === null) return null;
-  if (country === 'US' || country === 'GB' || country === 'CA') return country;
-  return INCLUDED_COUNTRIES.includes(country) ? 'EU' : null;
+  return country === 'US' || country === 'GB' || country === 'CA' ? country : null;
 }
 
 function words(text: string): string[] {
@@ -120,8 +121,8 @@ export function prefillRunningCosts(input: PrefillInput): PrefilledLine[] {
     const hit = matchingBill(tpl.key, input.bills);
     const id = `rc:${tpl.key}`;
     if (hit !== null) {
-      return { key: tpl.key, labelKey: tpl.labelKey, source: 'records', draft: false, billId: hit.bill.id, line: { id, amount: m(hit.bill.amount), everyMonths: hit.every, start: input.start, end: null, on: true } };
+      return { key: tpl.key, labelKey: tpl.labelKey, source: 'records', billId: hit.bill.id, line: { id, amount: m(hit.bill.amount), everyMonths: hit.every, start: input.start, end: null, on: true } };
     }
-    return { key: tpl.key, labelKey: tpl.labelKey, source: 'quick_estimate', draft: table !== null && tpl.draft === true, billId: null, line: { id, amount: tpl.amount, everyMonths: tpl.everyMonths, start: input.start, end: null, on: tpl.on } };
+    return { key: tpl.key, labelKey: tpl.labelKey, source: 'quick_estimate', billId: null, line: { id, amount: tpl.amount, everyMonths: tpl.everyMonths, start: input.start, end: null, on: tpl.on } };
   });
 }
