@@ -82,9 +82,9 @@ describe('Sheet under Reduce Motion', () => {
   });
 
   // RNTL 14 has no UNSAFE_getAllByType: the host Modal is the element carrying onRequestClose.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const backOf = (screen: { root: any }): (() => void) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const walk = (el: any): any => {
       if (el?.props?.onRequestClose) return el;
       for (const c of el?.children ?? []) {
