@@ -6,6 +6,7 @@
 // and no buy or save until there is a verdict (CS-11). A decided check shows its outcome line in place of the action bar (FQ8).
 // 06.1-68 (CF-3): while the verdict is being worked out again it dims and says "Updating…"; (CB-11) answered readiness rows read
 // "Saved, updating…" until the engine drops them.
+// 06.1-79 (DN-4 residual): the "Updating…" line keeps its one-line slot (opacity and text change only), so the answer never shifts.
 // 06.1-67 (H-6, DS-3): short line first. One notice above the verdict (splitNotices: the one that changes the answer most); the
 // verdict, the first fact, one short missing-figures line whose More opens Give it more to go on, then Why? for every other fact
 // and notice (FactLines).
@@ -195,11 +196,22 @@ export function AnswerFrame({
             </Text>
           </View>
         ) : null}
-        {updating ? (
-          <Text testID="answer-updating" accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
-            {t('decide.screens.answer.updating')}
+        {/* 06.1-79 (DN-4 residual): the "Updating…" line keeps its one line of space whether or not it shows, so the verdict and its
+            rows never move when an update starts or lands (a tap right after cannot land on the wrong row). Out of an update the line
+            holds a no-break space, is see-through and hidden from screen readers; the change of text is what the live region reads. */}
+        <View
+          testID="answer-updating-slot"
+          accessibilityElementsHidden={!updating}
+          importantForAccessibility={updating ? 'auto' : 'no-hide-descendants'}
+        >
+          <Text
+            testID={updating ? 'answer-updating' : undefined}
+            accessibilityLiveRegion="polite"
+            style={[{ ...textRole(pairing, 'label'), color: colors.inkDim }, updating ? null : styles.updatingIdle]}
+          >
+            {updating ? t('decide.screens.answer.updating') : NO_BREAK_SPACE}
           </Text>
-        ) : null}
+        </View>
         <View testID="answer-verdict-area" accessibilityState={{ busy: updating }} style={[styles.verdict, updating ? styles.updating : null]}>
           <VerdictCard code={result.code} variant={result.variant} once={once} values={lines.verdictValues} lead={lines.afterBuy.lead?.text ?? null} boughtOn={outcome === null ? (lines.afterBuy.boughtOn?.text ?? null) : null} />
           <FactLines
@@ -244,10 +256,14 @@ export function AnswerFrame({
   );
 }
 
+/** 06.1-79: holds the Updating… line's one line of height while no update runs. */
+const NO_BREAK_SPACE = String.fromCharCode(0xa0);
+
 const styles = StyleSheet.create({
   frame: { flex: 1 },
   content: { padding: space.screenH, gap: space.groupGap, flexGrow: 1 },
   group: { gap: space.gapSm },
   verdict: { gap: space.groupGap },
   updating: { opacity: UPDATING_OPACITY },
+  updatingIdle: { opacity: 0 },
 });

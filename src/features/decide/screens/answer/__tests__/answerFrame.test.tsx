@@ -126,6 +126,35 @@ describe('AnswerFrame reading order (CO-D-64 (4), CO-D-119)', () => {
   });
 });
 
+// 06.1-79 (DN-4 residual, routed from 06.1-67): the "Updating…" line keeps its one-line slot, so the verdict never shifts when an
+// update starts or lands. The same Text is always there; only its opacity and its text change.
+describe('Updating… slot (06.1-79, DN-4)', () => {
+  const slotLine = () => screen.getByTestId('answer-updating-slot', { includeHiddenElements: true }).children[0] as unknown as { props: Record<string, unknown> };
+  const order = (): string[] => screen.getAllByTestId(/^answer-(updating-slot|verdict-area)$/, { includeHiddenElements: true }).map((n) => String(n.props.testID));
+
+  it('out of an update: one see-through line holding a no-break space, hidden from screen readers, right above the verdict', async () => {
+    await frame(ledgerRun('N04'), { updating: false });
+    const slot = screen.getByTestId('answer-updating-slot', { includeHiddenElements: true });
+    expect(slot.props.accessibilityElementsHidden).toBe(true);
+    expect(slot.props.importantForAccessibility).toBe('no-hide-descendants');
+    expect(slotLine().props.children).toBe(String.fromCharCode(0xa0));
+    expect(StyleSheet.flatten(slotLine().props.style as never)).toMatchObject({ opacity: 0 });
+    expect(screen.queryByTestId('answer-updating')).toBeNull();
+    expect(order()).toEqual(['answer-updating-slot', 'answer-verdict-area']);
+  });
+
+  it('during an update: the same line shows "Updating…", read by the live region, in the same place', async () => {
+    await frame(ledgerRun('N04'), { updating: true });
+    const slot = screen.getByTestId('answer-updating-slot', { includeHiddenElements: true });
+    expect(slot.props.accessibilityElementsHidden).toBe(false);
+    expect(slot.props.importantForAccessibility).toBe('auto');
+    expect(screen.getByTestId('answer-updating')).toHaveTextContent(en.decide.screens.answer.updating);
+    expect(slotLine().props.accessibilityLiveRegion).toBe('polite');
+    expect(StyleSheet.flatten(slotLine().props.style as never)).not.toMatchObject({ opacity: 0 });
+    expect(order()).toEqual(['answer-updating-slot', 'answer-verdict-area']);
+  });
+});
+
 describe('verdict card (D-16, D-18, UX-09)', () => {
   it.each(SCENARIOS)('%s: the badge carries a word and the card is tinted by the state, not the screen', async (s) => {
     await frame(ledgerRun(s));
