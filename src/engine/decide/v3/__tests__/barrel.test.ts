@@ -194,6 +194,7 @@ export const V3_RUNTIME_EXPORTS = [
   'visibleLayerAnswers',
   'withLiveEmergency',
   'withQuickLines', // 06.1 D-21
+  'withQuickLinesPrepared', // audit fix 261114
 ] as const;
 
 // Compile-only: tsc fails if any of these types leaves the barrel.

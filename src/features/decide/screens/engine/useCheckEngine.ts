@@ -8,6 +8,7 @@ import {
   judgeBoth,
   judgeCheck,
   judgeWithQuickLines,
+  withQuickLinesPrepared,
   saveForItReadyDate,
   type BothResults,
   type CashTimeline,
@@ -61,6 +62,26 @@ function paydaysOf(prepared: Prepared, judged: CheckV2): readonly LocalDate[] {
   return list;
 }
 
+interface Folded {
+  readonly prepared: Prepared;
+  readonly check: CheckV2;
+}
+/** Identity-keyed like paydaysOf: the quick lines are folded in once per Prepared and judged check. */
+const foldedCache = new WeakMap<Prepared, WeakMap<CheckV2, Folded>>();
+function foldedOf(prepared: Prepared, judged: CheckV2): Folded {
+  let byCheck = foldedCache.get(prepared);
+  if (byCheck === undefined) {
+    byCheck = new WeakMap();
+    foldedCache.set(prepared, byCheck);
+  }
+  const hit = byCheck.get(judged);
+  if (hit !== undefined) return hit;
+  const f = withQuickLinesPrepared(prepared, judged);
+  const out: Folded = { prepared: f.prepared, check: f.check };
+  byCheck.set(judged, out);
+  return out;
+}
+
 export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string }): CheckEngine {
   // 06.1-72: perf builds time this hook's first mount (answer.mount) and its first judge (answer.firstJudge); no-ops otherwise.
   usePerfMount('answer.mount');
@@ -101,15 +122,28 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
     perfMark('decide.answer:end');
   }, [evaluation, checkId]);
 
-  const both = useCallback((): BothResults | null => (prepared === null || judged === null ? null : judgeBoth(prepared, judged)), [prepared, judged]);
+  // Quick-estimate audit fix (problem 3): both ways to pay, the ready date, the cash path and the pay days read the same
+  // quick lines as the answer. Folded lazily, at most once per Prepared and check (foldedOf).
+  const folded = useCallback((): Folded | null => (prepared === null || judged === null ? null : foldedOf(prepared, judged)), [prepared, judged]);
+
+  const both = useCallback((): BothResults | null => {
+    const f = folded();
+    return f === null ? null : judgeBoth(f.prepared, f.check);
+  }, [folded]);
   // futures extends the shown evaluation, so it reads the same (deferred) check the evaluation was judged on.
   const futures = useCallback((): Futures | null => {
     if (evaluation === null || evaluation.purchase === null || deferredJudged === null) return null;
     const { result, month, funds, purchase } = evaluation;
     return insteadFutures({ result, month, funds, purchase, userRate: null, years: 1, check: { price: deferredJudged.price, value: deferredJudged.value } });
   }, [evaluation, deferredJudged]);
-  const readyDate = useCallback((saved: number): LocalDate | null => (prepared === null || judged === null ? null : saveForItReadyDate(prepared, judged, saved)), [prepared, judged]);
-  const timeline = useCallback((): CashTimeline | null => (prepared === null || judged === null ? null : cashTimeline(prepared, judged)), [prepared, judged]);
+  const readyDate = useCallback((saved: number): LocalDate | null => {
+    const f = folded();
+    return f === null ? null : saveForItReadyDate(f.prepared, f.check, saved);
+  }, [folded]);
+  const timeline = useCallback((): CashTimeline | null => {
+    const f = folded();
+    return f === null ? null : cashTimeline(f.prepared, f.check);
+  }, [folded]);
 
   const judgeOn = useCallback(
     (date: LocalDate): Evaluation | null => {
@@ -121,7 +155,10 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
   );
   // 06.1-47 (B-7): the 90-day pay-day list is built at most once per Prepared and check (paydaysOf). It stays lazy (nothing
   // runs until an answer asks), and every later call returns the same array, so AnswerScreen re-renders no longer walk the cash path.
-  const paydays = useCallback((): readonly LocalDate[] => (prepared === null || judged === null ? NO_DAYS : paydaysOf(prepared, judged)), [prepared, judged]);
+  const paydays = useCallback((): readonly LocalDate[] => {
+    const f = folded();
+    return f === null ? NO_DAYS : paydaysOf(f.prepared, f.check);
+  }, [folded]);
 
   // 06.1-68 (CF-3): the verdict on screen is a step behind while the deferred copy has not caught up; the frame dims it and says so.
   const updating = deferredJudged !== judged;

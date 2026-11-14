@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(37);
+select extensions.plan(38);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -183,6 +183,12 @@ select extensions.is(public.record_decide_outcome('c9700000-0000-0000-0000-00000
   '{"verdict":"adjust","wait_monthly":20000,"ready_by":"2099-01-01","goal":{"id":"e9700000-0000-0000-0000-000000000004","name":"Big","currency":"USD","target":60000}}'::jsonb,
   '{"id":"59700000-0000-0000-0000-000000000013","label_key":"planSaved","label_params":{}}'::jsonb) ->> 'status',
   'applied', 'D-22 (owner 2026-11-12): a target above the typed price (tax and fees) is accepted');
+
+-- Audit fix 261114 (migration 20261114000100): Undo of an "I answered this" choice goes through apply_patches.
+select extensions.is((select public.apply_patches(jsonb_build_array(jsonb_build_object(
+    'entity', 'decide_settings', 'id', ds.id, 'expectedVersion', ds.version, 'patch', '{"answered_no_debts_at": null}'::jsonb))) ->> 'status'
+  from public.decide_settings ds where ds.user_id = '11111111-1111-1111-1111-111111111111'),
+  'applied', '261114: undo of answered_no_debts_at through apply_patches is applied');
 
 select * from extensions.finish();
 rollback;

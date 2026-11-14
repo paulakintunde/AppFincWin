@@ -3,7 +3,7 @@
  * Never imports recurring/detect: a series reaches here only after the user confirmed it.
  */
 import { minorUnits, type MinorUnits } from '../../../money/types';
-import { addDays, addYearMonths, cadenceDatesBetween, yearMonthOf } from '../dates';
+import { addDays, addMonthsClamped, addYearMonths, cadenceDatesBetween, yearMonthOf } from '../dates';
 import { SERIES_DRIFT_DIVISOR, SERIES_DRIFT_LAST } from '../constants';
 import type { Cadence, SeriesRole, V3Line, V3Month, V3Series, YearMonth } from '../types';
 
@@ -109,6 +109,20 @@ export function liveSeriesOf(
     if (s.role !== role || !s.confirmed || s.status === 'dismissed') return false;
     const end = effectiveEnd(s, today);
     return end === null || onDate <= end;
+  });
+}
+
+/**
+ * Pay series that count as the usual month's pay on `asOf`: live, not a one-time line the usual month leaves out
+ * (a longer-than-monthly cadence marked 'excluded', the same rule bills follow in month/typical.ts), and already
+ * paying within a month (a job that starts in March is not this month's usual pay).
+ */
+export function usualPayOf(series: readonly V3Series[], asOf: string): readonly V3Series[] {
+  const within = addMonthsClamped(asOf, 1);
+  return liveSeriesOf(series, asOf, 'pay').filter((s) => {
+    const longer = s.cadence.unit === 'month' && s.cadence.every > 1;
+    if (longer && s.typicalChoice === 'excluded') return false;
+    return s.anchorDate <= within;
   });
 }
 
