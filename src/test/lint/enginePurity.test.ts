@@ -5,8 +5,8 @@
 // ESLint 9 loads eslint.config.js with a dynamic import, which jest's VM sandbox rejects
 // (needs --experimental-vm-modules). So the ESLint API runs in one plain node child process
 // and jest asserts on the JSON it prints.
-const path = require('path');
-const { execFileSync } = require('child_process');
+import { execFileSync } from 'child_process';
+import path from 'path';
 
 const ROOT = path.resolve(__dirname, '../../..');
 const RULES = ['no-restricted-properties', 'no-restricted-syntax'];

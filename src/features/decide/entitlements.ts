@@ -10,7 +10,27 @@ export const PRO_CANDIDATES = [
 
 export type ProFeature = (typeof PRO_CANDIDATES)[number];
 
-export function canUse(feature: ProFeature): boolean {
-  void feature;
-  return true;
+/** APP-18: never paid. The safety net and the confidence sentence are safety, not features. */
+export const ALWAYS_FREE = ['safetyNet', 'confidenceSentence', 'answer', 'footer'] as const;
+
+export type AlwaysFree = (typeof ALWAYS_FREE)[number];
+
+/** APP-18: one switch per Pro candidate; all off until Phase 9 turns them on. */
+export const PRO_SWITCHES: Readonly<Record<ProFeature, boolean>> = {
+  multipleOpenChecks: false,
+  setbacks: false,
+  decisionJournal: false,
+  payoffComparisons: false,
+};
+
+export function canUseWith(
+  switches: Readonly<Record<ProFeature, boolean>>,
+  feature: ProFeature,
+  isPro: boolean,
+): boolean {
+  return !switches[feature] || isPro;
+}
+
+export function canUse(feature: ProFeature, isPro = false): boolean {
+  return canUseWith(PRO_SWITCHES, feature, isPro);
 }
