@@ -60,7 +60,9 @@ jest.mock('@/data/mutations/decideChecks', () => ({
   useSaveCheckDraft: () => ({ save: mockSave }),
   useCreateCheck: () => ({ create: jest.fn(), pendingIds: mockPendingIds, pendingRows: mockPending }),
 }));
-jest.mock('../../engine/useCheckEngine', () => ({ useCheckEngine: () => ({ evaluation: null, readyDate: () => null }) }));
+// 06.1-82: the evaluation the price step reads its plan payment from; null in every other test.
+let mockEvaluation: unknown = null;
+jest.mock('../../engine/useCheckEngine', () => ({ useCheckEngine: () => ({ evaluation: mockEvaluation, readyDate: () => null }) }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 
 const baseInputs = (over: Record<string, unknown> = {}) => ({ currency: 'USD', region: 'US', regionSubdivision: 'CA', series: [], debts: [], ...over });
@@ -80,6 +82,7 @@ beforeEach(() => {
   mockInputs = baseInputs();
   mockPending = [];
   mockPendingIds = [];
+  mockEvaluation = null;
   mockSave.mockClear();
   mockReplace.mockClear();
   mockPush.mockClear();
@@ -171,6 +174,15 @@ describe('PriceStep', () => {
     await fireEvent.press(screen.getByTestId('set-region'));
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/you', params: { focus: 'region' } });
     expect(mockPush).not.toHaveBeenCalledWith('/you');
+  });
+
+  it('06.1-82 (G-61-11): a plan shows its payment alone; running costs are not added into it', async () => {
+    const plan = { mode: 'plan', cadence: { unit: 'month', every: 1 }, count: 12, termMonths: 12, apr: null, fees: { setup: 0, perPeriod: 0, end: 0 }, deposit: 0, tradeIn: 0, quotedPayment: null, firstPayment: null, deferredInterestTerm: false };
+    seed('Laptop', { ...checkOnce(493_400), pay: plan } as unknown as CheckV2);
+    mockEvaluation = { purchase: { monthly: 73417, runningMonthly: 32300 } };
+    await wrap(<PriceStep id={ID} />);
+    expect(await screen.findByText(/down · \$411(\.17)? a month$/)).toBeTruthy();
+    expect(screen.queryByText(/\$734/)).toBeNull();
   });
 
   it('shows a price that is too large inline and keeps Next disabled', async () => {
