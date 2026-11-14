@@ -10,13 +10,11 @@ import { YOU_ROW_ICON, type YouRowId } from '../components/youRowIcons';
 const selection = Haptics.selectionAsync as jest.Mock;
 
 async function renderRow() {
-  const utils = render(
+  return render(
     <ThemeProvider>
       <HapticsRow />
     </ThemeProvider>
   );
-  await act(async () => {});
-  return utils;
 }
 
 beforeEach(() => {
@@ -39,7 +37,7 @@ describe('HapticsRow (D-21, D-28)', () => {
 
   it('shows the haptics icon tile', async () => {
     const { getByTestId } = await renderRow();
-    expect(getByTestId('you-tile-haptics')).toBeTruthy();
+    expect(getByTestId('you-tile-haptics', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('turning it off silences haptics and gives no tick', async () => {
