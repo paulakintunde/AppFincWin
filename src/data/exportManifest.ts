@@ -33,7 +33,7 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     // 06
     'interest_rate',
   ],
-  categories: ['id', 'owner_id', 'builtin_key', 'name', 'color_key', 'is_system', 'archived_at', 'monthly_cap', 'created_at', 'updated_at'],
+  categories: ['id', 'owner_id', 'builtin_key', 'name', 'color_key', 'is_system', 'archived_at', 'monthly_cap', 'icon_key', 'created_at', 'updated_at'],
   category_rules: [
     'id', 'scope', 'owner_id', 'household_id', 'created_by', 'keyword', 'keyword_norm', 'category_id', 'target_builtin_key',
     'target_name', 'deleted_at', 'created_at', 'updated_at',

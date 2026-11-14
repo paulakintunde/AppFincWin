@@ -40,6 +40,7 @@ import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { showToast } from '@/state/undoToast';
+import { ICONS } from '@/ui/icons/iconData';
 import { writeClient } from './writeClient';
 import { acceptIfAlreadyApplied, upsertRow } from './cacheRows';
 import { newStepId, recordUndoStepSafely } from './undoCapture';
@@ -48,7 +49,7 @@ type CategoryList = WithPending<CategoryRow>[];
 
 export interface AddCategoryVars {
   ownerId: string;
-  row: { id: string; name: string; color_key: CategoryColorKey; monthly_cap?: number | null };
+  row: { id: string; name: string; color_key: CategoryColorKey; monthly_cap?: number | null; icon_key?: string | null };
   stepId: string;
 }
 
@@ -110,6 +111,7 @@ export function registerCategoryMutations(qc: QueryClient): void {
         archived_at: null,
         monthly_cap: vars.row.monthly_cap ?? null,
         is_sample: false,
+        icon_key: vars.row.icon_key ?? null,
         version: 1,
         updated_by: null,
         created_at: now,
@@ -298,12 +300,24 @@ function assertEditable(row: CategoryRow): void {
   if (row.is_system) throw new TypeError('a system category cannot be edited or archived');
 }
 
+/**
+ * 06.2-17 (D-07): a category icon is a name from FincWin's own set (a key of ICONS) or null for the letter tile.
+ * Anything else (an emoji, free text, a name we do not draw) throws before any write; the server's shape check is the backstop.
+ */
+export function assertIconKey(iconKey: string | null): void {
+  if (iconKey === null) return;
+  if (typeof iconKey !== 'string' || !Object.prototype.hasOwnProperty.call(ICONS, iconKey)) {
+    throw new RangeError('category icon: not an icon in our set');
+  }
+}
+
 export function useAddCategory(): {
   add(input: {
     ownerId: string;
     name: string;
     colorKey: CategoryColorKey;
     monthlyCap?: number | null;
+    iconKey?: string | null;
   }): { id: string; stepId: string };
 } {
   const mutation = useMutation<CategoryRow, unknown, AddCategoryVars>({
@@ -312,6 +326,7 @@ export function useAddCategory(): {
   });
   return {
     add(input) {
+      if (input.iconKey !== undefined) assertIconKey(input.iconKey);
       const id = Crypto.randomUUID();
       const stepId = newStepId();
       mutation.mutate({
@@ -321,6 +336,7 @@ export function useAddCategory(): {
           name: input.name,
           color_key: input.colorKey,
           ...(input.monthlyCap != null ? { monthly_cap: input.monthlyCap } : {}),
+          ...(input.iconKey != null ? { icon_key: input.iconKey } : {}),
         },
         stepId,
       });
@@ -337,7 +353,10 @@ function useEditMutation() {
 }
 
 export function useEditCategory(): {
-  edit(row: CategoryRow, patch: { name?: string; colorKey?: CategoryColorKey; monthlyCap?: number | null }): string;
+  edit(
+    row: CategoryRow,
+    patch: { name?: string; colorKey?: CategoryColorKey; monthlyCap?: number | null; iconKey?: string | null }
+  ): string;
 } {
   const mutation = useEditMutation();
   return {
@@ -356,6 +375,11 @@ export function useEditCategory(): {
       if (patch.monthlyCap !== undefined) {
         dbPatch.monthly_cap = patch.monthlyCap;
         before.monthly_cap = row.monthly_cap;
+      }
+      if (patch.iconKey !== undefined) {
+        assertIconKey(patch.iconKey);
+        dbPatch.icon_key = patch.iconKey;
+        before.icon_key = row.icon_key ?? null;
       }
       if (Object.keys(dbPatch).length === 0) throw new RangeError('edit category: nothing to change');
       const stepId = newStepId();
