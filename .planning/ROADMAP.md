@@ -1342,7 +1342,7 @@ Plans:
 ### Phase 06.2: App life (INSERTED)
 
 **Goal:** The app stops feeling bland without becoming game-like ("calm and confident"). Every row carries an icon from FincWin's own icon set, drawn in the tab-icon style; states read by colour, shape and word together; spacing, rows and icon tiles snap to one small set of sizes; quiet motion and one-meaning haptics mark the moments that matter (save, answer, goal reached, debt cleared); the page background is a very pale tint of the user's theme colour behind white cards, with contrast checked. Overview keeps its structure and order; each card gets better inside. Built from the owner-approved plan "Bringing life to the app, calmly" (2026-11-05) and boards L01-L08b (06.2-CONTEXT D-01..D-24).
-**Requirements**: TBD (mapped at planning; UX and design-system rows touched by the icon set, cues, motion and haptics)
+**Requirements**: DSG-01, DSG-02, DSG-04, DSG-07; FND-06, FND-07; NAV-06; HOME-03; REC-11
 **Depends on:** Phase 06.1 (merged to main 2026-11-14 at 9472c6f3). Started now by the owner (2026-11-14), beside 05.5 and the Phase 8 revision; screens it shares with them are listed in 06.2-CONTEXT.
 **Success Criteria** (what must be TRUE):
   1. No category, account or settings row shows a letter or a CSS-drawn arrow: each shows an icon from the app's own set (SVG, 16/20/24) in a 36 or 48 tile, with the letter kept only as a fallback for an icon not yet drawn.
@@ -1352,7 +1352,33 @@ Plans:
   5. Haptics follow one meaning each (light tap = saved / answer shown; warning = over cap or short; success = goal reached, debt cleared, import done only, never for "fits"; error = a real failed save; tick = choosing), none on tab change, and a Haptics switch in You turns them off.
   6. The page background is a very pale tint of the chosen theme colour, cards stay white, and the contrast tests pass for every theme colour; CLAUDE.md's "complete palette" rule is updated to allow it.
   7. Empty screens show a 48 icon tile, one heading, one sentence and one button; saving an entry fades it in with a short tint, a toast with Undo and a light tap.
-**Plans:** TBD
+**Plans:** 24 plans
+
+Plans:
+- [ ] 06.2-01-PLAN.md — Icon set generated from the boards (check:icons in CI), Glyph, IconTile, icon maps, six spacing steps / row heights / tile sizes (D-03, D-05, D-07..D-10, D-29) (W1)
+- [ ] 06.2-02-PLAN.md — Four pale page tints per theme colour, clearer card edge, live swap, contrast tests (D-22, D-27) (W1)
+- [ ] 06.2-03-PLAN.md — Haptics by meaning behind a default-ON Haptics switch store; clone/mark monthly to a light tap (D-20, D-21, D-28) (W1)
+- [ ] 06.2-04-PLAN.md — appLife copy namespace (area files per plan) and copy guard (W1)
+- [ ] 06.2-05-PLAN.md — One status map + StatusBadge; SectionHeader (D-12..D-14, D-24) (W2)
+- [ ] 06.2-06-PLAN.md — Motion kit (steps, once per session, FadeIn, FadeSwap, calm-motion guard) + lottie-react-native and play-once AnimatedIcon with safe fallback (D-15, D-17, D-25) (W2)
+- [ ] 06.2-07-PLAN.md — Row at 52/64 with slots and a real arrow; EmptyState tile + sentence + one button (D-09, D-24) (W2)
+- [ ] 06.2-08-PLAN.md — Five milestone Lottie files generated from the board drawings; MilestoneIcon (D-19, D-25) (W3)
+- [ ] 06.2-09-PLAN.md — ProgressRing 36/124 (fills once per session) and StatTile (D-24) (W3)
+- [ ] 06.2-10-PLAN.md — Activity rows: category icons, exception badges, over-cap cue, swipe icons (D-07, D-12..D-14) (W3)
+- [ ] 06.2-12-PLAN.md — Activity calendar: spend-sized dots, bill-due clock, day sheet (L03) (W3)
+- [ ] 06.2-13-PLAN.md — Home inside its cards: bar by stretch once per session, card fade, real quick-action and account icons, due-soon/overdue badges (D-02, D-18) (W3)
+- [ ] 06.2-11-PLAN.md — Activity save moment (fade + wash, light tap, Undo toast), 28 day headers, over-cap wiring (L02, D-20) (W4)
+- [ ] 06.2-14-PLAN.md — Toasts to the kit (icon, 48, time-left bar) and Error haptic for a real failed save (D-20) (W4)
+- [ ] 06.2-15-PLAN.md — You grouped with accent tiles and current values; Haptics switch row (D-21, D-28) (W4)
+- [ ] 06.2-16-PLAN.md — Accounts: type icons, negative balance cue, empty state (W4)
+- [ ] 06.2-17-PLAN.md — Migration: categories.icon_key (additive, checked), cache version 10, export manifest (D-07) (W4)
+- [ ] 06.2-18-PLAN.md — Empty screens: Activity (first-entry icon), no-match, History, Coming up, past decisions (D-24, HOME-03) (W5)
+- [ ] 06.2-19-PLAN.md — Categories: icons everywhere and an icon picker for custom categories (D-07) (W5)
+- [ ] 06.2-20-PLAN.md — Grow goals and safety net: ring tiles, large ring, goal-reached icon + one Success haptic (D-19, D-20) (W5)
+- [ ] 06.2-21-PLAN.md — Grow debts and investing: debt-cleared moment, line draws once, values fade, arrow + word cues (W5)
+- [ ] 06.2-22-PLAN.md — Decide home open checks as rows with the state icon tile; answer haptics (answer boards unchanged) (D-23) (W5)
+- [ ] 06.2-23-PLAN.md — Import: import-done icon + one Success haptic; review tags on the status map (D-12, D-20) (W5)
+- [ ] 06.2-24-PLAN.md — Phase close: haptics rename sweep + guard, spacing snapped to six steps + guard, proposed CLAUDE.md / layout.ts doc edits, full gate (D-08..D-11, D-20, D-22) (W6)
 
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
