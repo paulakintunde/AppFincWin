@@ -98,15 +98,14 @@ describe('the item sentences (C-2)', () => {
   it('DS-1: a goal row says it is a Grow goal, with why it matters behind Why?', async () => {
     await card([ITEMS.envelope as ReadinessItem], false);
     expect(screen.getByText('First: Holiday (a Grow goal) has no account yet.')).toBeTruthy();
-    expect(screen.queryByTestId('readiness-why-text-0')).toBeNull();
+    expect(screen.queryByTestId('readiness-why-0-body')).toBeNull();
     const why = screen.getByTestId('readiness-why-0');
     expect(why.props.accessibilityState).toEqual(expect.objectContaining({ expanded: false }));
     await press(why);
-    expect(screen.getByTestId('readiness-why-text-0')).toHaveTextContent('Decide sets goal money aside before it answers, so it needs the account that holds it.');
+    expect(screen.getByTestId('readiness-why-0-body')).toHaveTextContent('Decide sets goal money aside before it answers, so it needs the account that holds it.');
     expect(screen.getByTestId('readiness-why-0').props.accessibilityState).toEqual(expect.objectContaining({ expanded: true }));
     await press(screen.getByText('Less'));
-    expect(screen.queryByTestId('readiness-why-text-0')).toBeNull();
-    // other kinds carry no Why?
+    expect(screen.queryByTestId('readiness-why-0-body')).toBeNull();
   });
 
   it('DS-1: rows that are not goals carry no Why?', async () => {

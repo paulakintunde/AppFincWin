@@ -3,7 +3,7 @@
 // "Which account?" and never an answer (D-54). Presentational: rows and formatters in, taps out, so Records setup (plan 45) can reuse it.
 // 06.1-68 (H-7, CB-11, CF-2): a row the person just answered reads "Saved, updating…" at once with its choices off (no second
 // answer while the first saves), until the engine's list drops it. DS-1: a goal row says it is a Grow goal, with the reason behind Why?.
-import React, { useState } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { LocalDate, ReadinessItem, YearMonth } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
@@ -14,6 +14,7 @@ import { Pill } from '@/ui/Pill';
 import { LINK_HIT_SLOP, usePressFeedback } from '@/ui/pressFeedback';
 import { Text } from '@/ui/Text';
 import type { ReadinessFixRow, WaiverChoice } from '../logic/readinessFixes';
+import { WhyLine } from '../ui/WhyLine';
 
 export interface ReadinessFixListProps {
   rows: readonly ReadinessFixRow[];
@@ -35,34 +36,6 @@ type T = (key: string, params?: Record<string, string | number>) => string;
 const K = 'decide.screens.answer.notReady';
 const R = 'decide.screens.answer.readiness';
 const NO_ANSWERED: ReadonlySet<string> = new Set();
-
-/** DS-1: why a goal with no account stops the answer, one tap away (short line first). */
-function GoalWhy({ index }: { index: number }) {
-  const t = useT() as unknown as T;
-  const { colors, pairing } = useTheme();
-  const press = usePressFeedback('row');
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <Pressable
-        testID={`readiness-why-${index}`}
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        onPress={() => setOpen((o) => !o)}
-        hitSlop={LINK_HIT_SLOP}
-        android_ripple={press.android_ripple}
-        style={({ pressed }) => [styles.link, press.pressedStyle(pressed)]}
-      >
-        <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{open ? t(`${R}.whyLess`) : t(`${R}.why`)}</Text>
-      </Pressable>
-      {open ? (
-        <Text testID={`readiness-why-text-${index}`} style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
-          {t(`${R}.goalWhy`)}
-        </Text>
-      ) : null}
-    </>
-  );
-}
 
 /** The one sentence that names the item. */
 export function itemSentence(item: ReadinessItem, asOf: LocalDate, f: Pick<ReadinessFixListProps, 'money' | 'date' | 'monthName'>, t: T): string {
@@ -118,7 +91,7 @@ export function ReadinessFixList({ rows, asOf, money, date, monthName, onFix, on
               </Text>
             ) : (
               <>
-                {row.item.kind === 'envelopes' ? <GoalWhy index={i} /> : null}
+                {row.item.kind === 'envelopes' ? <WhyLine testID={`readiness-why-${i}`}>{t(`${R}.goalWhy`)}</WhyLine> : null}
                 <Pressable testID={`readiness-fix-${i}`} accessibilityRole="link" accessibilityLabel={fixLabel} onPress={() => onFix(row)} hitSlop={LINK_HIT_SLOP} android_ripple={press.android_ripple} style={({ pressed }) => [styles.link, press.pressedStyle(pressed)]}>
                   <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{fixLabel}</Text>
                 </Pressable>

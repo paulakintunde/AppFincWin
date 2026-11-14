@@ -127,13 +127,11 @@ export const answer = {
     saved: 'Answer saved.',
   },
   // 06.1-68 (H-7, CB-11, CF-2): an answered readiness row reads this at once, with its choices off, until the engine agrees.
-  // DS-1: a goal row says it is a Grow goal; why it matters sits behind "Why?".
+  // DS-1: a goal row says it is a Grow goal; why it matters sits behind the shared Why? link (06.1-59 WhyLine).
   readiness: {
     savedUpdating: 'Saved, updating…',
     goalNoAccount: '{{envelope}} (a Grow goal) has no account yet.',
     goalNoAccountNoName: 'A Grow goal has no account yet.',
-    why: 'Why?',
-    whyLess: 'Less',
     goalWhy: 'Decide sets goal money aside before it answers, so it needs the account that holds it.',
   },
   // 06.1-68 (CF-3): shown over the dimmed verdict while it is worked out again.
