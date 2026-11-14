@@ -29,6 +29,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
 - [x] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies (completed 2026-11-11)
 - [ ] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
+- [ ] **Phase 06.2: App life** (INSERTED) - Calm, confident life for the whole app: our own icon set on every row, colour + shape + word status cues, tidy spacing and row sizes, quiet motion and haptics by meaning at key moments, a pale theme-tinted background behind white cards; Overview keeps its structure
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide, reading test round 2, public switch-on. Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
@@ -1338,6 +1339,21 @@ Plans:
 - [x] 06.1-84-PLAN.md — [gap G-61] blank sheet panel after a screen change, spare money confirm on the answer, replayed history write, price field and step bar a11y
 - [x] 06.1-85-PLAN.md — [gap G-PD] spare-money figure from the as-given reading, unexplained-money ask answerable on the answer, Price label (engine root fix routed to 05.5)
 
+### Phase 06.2: App life (INSERTED)
+
+**Goal:** The app stops feeling bland without becoming game-like ("calm and confident"). Every row carries an icon from FincWin's own icon set, drawn in the tab-icon style; states read by colour, shape and word together; spacing, rows and icon tiles snap to one small set of sizes; quiet motion and one-meaning haptics mark the moments that matter (save, answer, goal reached, debt cleared); the page background is a very pale tint of the user's theme colour behind white cards, with contrast checked. Overview keeps its structure and order; each card gets better inside. Built from the owner-approved plan "Bringing life to the app, calmly" (2026-11-05) and boards L01-L08b (06.2-CONTEXT D-01..D-24).
+**Requirements**: TBD (mapped at planning; UX and design-system rows touched by the icon set, cues, motion and haptics)
+**Depends on:** Phase 06.1 (merged to main 2026-11-14 at 9472c6f3). Started now by the owner (2026-11-14), beside 05.5 and the Phase 8 revision; screens it shares with them are listed in 06.2-CONTEXT.
+**Success Criteria** (what must be TRUE):
+  1. No category, account or settings row shows a letter or a CSS-drawn arrow: each shows an icon from the app's own set (SVG, 16/20/24) in a 36 or 48 tile, with the letter kept only as a fallback for an icon not yet drawn.
+  2. Every status (fits, tight, over, not yet, due soon, over cap, pending, on track, behind, reached) shows colour, a shape and a word from one shared map; Decide state colours appear only in badges and amounts; everyday spending is never red.
+  3. Spacing uses the six steps 4/8/12/16/22/28, rows are 52 or 64 tall, icon tiles are 36 or 48, and tap areas stay at least 44 (iPhone) / 48 (Android); CLAUDE.md and the layout.ts "do not round" rule are updated to say so.
+  4. Motion stays within 0.1-0.26 s (bars and rings 0.55 s, once per session), nothing loops, bounces, counts up on Decide or throws confetti; with Reduce Motion on, movement becomes a quick fade; the This-month bar animates by stretch (scaleX), not width.
+  5. Haptics follow one meaning each (light tap = saved / answer shown; warning = over cap or short; success = goal reached, debt cleared, import done only, never for "fits"; error = a real failed save; tick = choosing), none on tab change, and a Haptics switch in You turns them off.
+  6. The page background is a very pale tint of the chosen theme colour, cards stay white, and the contrast tests pass for every theme colour; CLAUDE.md's "complete palette" rule is updated to allow it.
+  7. Empty screens show a 48 icon tile, one heading, one sentence and one button; saving an entry fades it in with a short tint, a toast with Undo and a light tap.
+**Plans:** TBD
+
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
 **Depends on**: Phase 6, and Phase 08.2 (Decide fix plan: built after the re-audit so charts include the household view and the health score agrees with Decide; ARC-21)
@@ -1546,7 +1562,7 @@ Ideas parked outside the active phases. Promote one with `/gsd-review-backlog`. 
 ## Progress
 
 **Execution Order:**
-Phases execute in this order: 0 → 1 → 2 → 2.2 → 2.1 → 2.3 → 3 → 03.1 → 4* → 5 → 05.1 → 05.2 → (05.3 stopped) → 05.4 → 05.5 → 6 → 8 → 08.1 → 08.2 → 7 → 9 → 10 → 11
+Phases execute in this order: 0 → 1 → 2 → 2.2 → 2.1 → 2.3 → 3 → 03.1 → 4* → 5 → 05.1 → 05.2 → (05.3 stopped) → 05.4 → 05.5 → 6 → 06.1 → 06.2 → 8 → 08.1 → 08.2 → 7 → 9 → 10 → 11
 The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (7) runs after 08.2. Two agreed phases are not inserted yet: home buying (FIN-30), after 08.2, and an optional 06.1 for the Activity views. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08).
 *Phase 4 has no data-layer dependency and may run concurrently with Phases 1-3 if parallel workstreams are available.
 2.2 runs before 2.1 because it changes the import commit path that 2.1's plans build on; 2.1 is replanned after 2.2 (STATE.md Blockers).
@@ -1568,6 +1584,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.4 Decide safety patch | 55/55 | Ready to merge (43 and 45 follow up on main, D-182) |  |
 | 05.5 One shared money model | 0/TBD | Not started | - |
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
+| 06.2 App life | 0/TBD | Not started (context gathered 2026-11-14) | - |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
