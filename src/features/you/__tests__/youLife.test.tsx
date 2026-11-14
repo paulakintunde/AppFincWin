@@ -6,6 +6,7 @@ import { getHapticsEnabled, setHapticsEnabled } from '@/ui/hapticsSetting';
 import { ICONS } from '@/ui/icons/iconData';
 import { HapticsRow } from '../components/HapticsRow';
 import { YOU_ROW_ICON, type YouRowId } from '../components/youRowIcons';
+import { expectFits, expectTargets } from '@/test/textFitMatrix';
 
 const selection = Haptics.selectionAsync as jest.Mock;
 
@@ -59,6 +60,14 @@ describe('HapticsRow (D-21, D-28)', () => {
     });
     expect(getHapticsEnabled()).toBe(true);
     expect(selection).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('HapticsRow fit (R6)', () => {
+  it('keeps its text whole and its switch a 44+ target', async () => {
+    await renderRow();
+    expectFits();
+    expectTargets('Haptics');
   });
 });
 

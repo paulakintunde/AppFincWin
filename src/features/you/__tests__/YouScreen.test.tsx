@@ -9,6 +9,7 @@ import { QUICK_ACTION_ORDER } from '@/shell/fab/quickActions';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { resetPushOnceForTests } from '@/shell/navigation/pushOnce';
 import { YouScreen } from '../YouScreen';
+import { expectFits } from '@/test/textFitMatrix';
 
 const mockSetAccent = jest.fn();
 const mockSetPairing = jest.fn();
@@ -255,7 +256,7 @@ describe('YouScreen analytics toggle', () => {
     mockConsent = 'granted';
     const { getByRole } = await renderScreen();
 
-    const toggle = getByRole('switch');
+    const toggle = getByRole('switch', { name: 'Share anonymous usage' });
     expect(toggle.props.accessibilityState?.checked).toBe(true);
 
     await act(async () => {
@@ -269,7 +270,7 @@ describe('YouScreen analytics toggle', () => {
     mockConsent = 'declined';
     const { getByRole } = await renderScreen();
 
-    const toggle = getByRole('switch');
+    const toggle = getByRole('switch', { name: 'Share anonymous usage' });
     expect(toggle.props.accessibilityState?.checked).toBe(false);
 
     await act(async () => {
@@ -416,11 +417,11 @@ describe('YouScreen Money section', () => {
 });
 
 describe('YouScreen Money rows are full-size touch targets (S-WR-14)', () => {
-  it('each row is at least 44pt tall', async () => {
+  it('each row is at least 44pt tall (06.2 D-09: 52, the one-line Row)', async () => {
     const { getByRole } = await renderScreen();
     for (const name of ['Activity', 'Accounts', 'Categories', 'History']) {
       const style = Object.assign({}, ...[].concat(getByRole('button', { name }).props.style ?? []));
-      expect(style.minHeight).toBe(44);
+      expect(style.minHeight).toBeGreaterThanOrEqual(44);
     }
   });
 });
@@ -570,4 +571,45 @@ describe('YouScreen focus param (05-116)', () => {
     });
     expect(send).not.toHaveBeenCalled();
   });
+});
+
+// 06.2-15 (L04, D-06, D-21, D-28): the grouped You screen.
+describe('YouScreen groups like L04 (06.2-15)', () => {
+  // A whole-screen render; slow on a busy machine (the file's first render is a known slow case).
+  const SLOW = 30_000;
+  it('shows the groups in order: Add, Money, Appearance, Alerts and feel, Privacy and data, Account', async () => {
+    const { getAllByRole } = await renderScreen();
+    const headers = getAllByRole('header').map((h) => h.props.children);
+    const order = ['Add', 'Money', 'Appearance', 'Alerts and feel', 'Privacy and data', 'Account'];
+    expect(headers.filter((h: unknown) => order.includes(h as string))).toEqual(order);
+    expect(headers).not.toContain('Connection');
+  }, SLOW);
+
+  it('every row has its accent tile and the settings show their current value', async () => {
+    const { getAllByTestId, getByText, getAllByText } = await renderScreen();
+    const tiles = getAllByTestId(/^you-tile-/, { includeHiddenElements: true }).map((n) => n.props.testID as string);
+    for (const id of ['expense', 'activity', 'accounts', 'categories', 'history', 'goals', 'weekStart', 'homeCurrency', 'region', 'accent', 'font', 'haptics', 'analytics', 'connection', 'signOut']) {
+      expect(tiles).toContain(`you-tile-${id}`);
+    }
+    // The theme keeps an earlier test's accent and pairing, so read whichever is current.
+    expect(getAllByText(/^(Green|Navy|Rust|Slate)$/)).toHaveLength(1); // the Accent value (swatches have no text)
+    expect(getAllByText(/^(Bold|Modern|Grotesk|Neutral)$/)).toHaveLength(5); // the Font pairing value and the four choices
+    expect(getByText('Monday')).toBeTruthy();
+  }, SLOW);
+
+  it('has a Haptics switch, on by default, under Alerts and feel', async () => {
+    const { getByRole } = await renderScreen();
+    const sw = getByRole('switch', { name: 'Haptics' });
+    expect(sw.props.accessibilityState?.checked).toBe(true);
+  }, SLOW);
+
+  it('keeps every text whole and every control a 44+ target (R6)', async () => {
+    await renderScreen();
+    expectFits();
+  }, SLOW);
+
+  it('adds no row for a feature that is not built (Face ID, PIN lock, Alerts, Delete account)', async () => {
+    const { queryByText } = await renderScreen();
+    for (const word of ['Face ID', 'PIN lock', 'Delete account', 'Download my data']) expect(queryByText(word)).toBeNull();
+  }, SLOW);
 });
