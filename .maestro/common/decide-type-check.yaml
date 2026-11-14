@@ -14,8 +14,8 @@ appId: com.fincwin.app
       - tapOn: "Select all"
       - eraseText: 5
 - inputText: ${ITEM}
-# A price already in the field reads "Price, <amount>"; clear it the same way (".+": since 06.1-84 the empty field reads
-# "Price, ", which ".*" also matched, so the loop ran 3 times for nothing). 06.1-51: repeated, because on the emulator
+# A price already in the field reads "Price, <amount>"; clear it the same way (".+": 06.1-84 made the empty field read
+# "Price, ", which ".*" also matched; since 06.1-85 it reads "Price"). 06.1-51: repeated, because on the emulator
 # the controlled field sometimes kept a digit after the erase (a "1" left from 180 turned 9000 into 19000).
 - repeat:
     times: 3
