@@ -66,12 +66,12 @@ describe('haptics switch store (D-21, D-28)', () => {
     expect(getHapticsEnabled()).toBe(false);
   });
 
-  it('useHapticsEnabled returns [enabled, setEnabled] and re-renders on change', () => {
-    const { result } = renderHook(() => useHapticsEnabled());
+  it('useHapticsEnabled returns [enabled, setEnabled] and re-renders on change', async () => {
+    const { result } = await renderHook(() => useHapticsEnabled());
     expect(result.current[0]).toBe(true);
-    act(() => result.current[1](false));
+    await act(async () => result.current[1](false));
     expect(result.current[0]).toBe(false);
-    act(() => setHapticsEnabled(true));
+    await act(async () => setHapticsEnabled(true));
     expect(result.current[0]).toBe(true);
   });
 
