@@ -81,6 +81,9 @@ describe('pay type rules', () => {
     expect(firstNeed({ ...base, hasPay: false, amount: 250000, day: 15 })).toBe('account');
     expect(firstNeed({ ...base, countDone: false })).toBe('count');
     expect(firstNeed(base)).toBeNull();
+    // 06.1-81: with no pay picked, the amount, day and account are never asked for.
+    expect(firstNeed({ ...base, types: ['none'], hasPay: false })).toBeNull();
+    expect(firstNeed({ ...base, types: ['none'], hasPay: false, countDone: false })).toBe('count');
   });
 
   it('finds the largest live income series with no income kind, never a bill, a saving or a stopped one', () => {
@@ -185,6 +188,35 @@ describe('PaySetup found pay (A-SU-4)', () => {
     expect(mockShowToast).toHaveBeenCalledWith(expect.objectContaining({ stepIds: ['step-mark', 'step-save'] }));
   });
 
+  it('06.1-81: with only "Pension or benefits" picked, Save never marks the unmarked series as pay', async () => {
+    mockIncome = { ...mockIncome, series: [unmarked], found: null };
+    await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
+    await fireEvent.press(screen.getByLabelText('Salary or wages'));
+    await fireEvent.press(screen.getByLabelText('Pension or benefits'));
+    await fireEvent.press(screen.getByText('Save pay details'));
+    expect(mockPatch).not.toHaveBeenCalled();
+    expect(lastPatch()).toEqual({ income_types: ['pension_or_benefits'] });
+  });
+
+  it('06.1-81: with "No fixed income right now" picked, Save never marks the unmarked series and makes no pay series', async () => {
+    mockIncome = { ...mockIncome, series: [unmarked], found: { payer: 'Globex', amount: 280000, day: 25, currency: 'USD', key: 'globex' } };
+    await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
+    await fireEvent.press(screen.getByLabelText('No fixed income right now'));
+    await fireEvent.press(screen.getByText('Save pay details'));
+    expect(mockPatch).not.toHaveBeenCalled();
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(lastPatch()).toEqual({ income_types: ['none'] });
+  });
+
+  it('06.1-81: with "Salary or wages" among several picks, Save still marks the unmarked series as pay', async () => {
+    mockIncome = { ...mockIncome, series: [unmarked], found: null };
+    await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
+    await fireEvent.press(screen.getByLabelText('Pension or benefits'));
+    await fireEvent.press(screen.getByText('Save pay details'));
+    expect(mockPatch).toHaveBeenCalledWith([{ series: unmarked, attributes: { income_kind: 'salary', counts_as: 'available' } }]);
+    expect(lastPatch()).toEqual({ income_types: ['salary_or_wages', 'pension_or_benefits'] });
+  });
+
   it('keeps a stored counts_as and still saves when the marking writes nothing', async () => {
     mockPatch.mockReturnValueOnce(null);
     mockIncome = { ...mockIncome, series: [{ ...unmarked, counts_as: 'kept' }], settings: { income_types: ['salary_or_wages'] } };
@@ -281,6 +313,27 @@ describe('PaySetup fields (A-SU-4, C-21)', () => {
     expect(mockConfirm).not.toHaveBeenCalled();
     expect(mockDismissTo).not.toHaveBeenCalled();
     expect(screen.getByTestId('need-line')).toHaveTextContent('A pay day is still needed.');
+  });
+
+  it('06.1-81: "No fixed income right now" saves with no amount or day, and the line never asks for them', async () => {
+    await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
+    expect(screen.getByTestId('need-line')).toHaveTextContent('An amount is still needed.');
+    await fireEvent.press(screen.getByLabelText('No fixed income right now'));
+    expect(screen.queryByTestId('need-line')).toBeNull();
+    await fireEvent.press(screen.getByText('Save pay details'));
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(lastPatch()).toEqual({ income_types: ['none'] });
+    expect(mockDismissTo).toHaveBeenCalledTimes(1);
+  });
+
+  it('06.1-81: a stored "none" with a half-typed amount still saves and makes no pay series', async () => {
+    mockIncome = { ...mockIncome, settings: { income_types: ['none'] } };
+    await wrap(<PaySetup editSeriesFrom={editSeriesFrom} />);
+    await fireEvent.changeText(screen.getByLabelText('How much lands in your account?'), '2500');
+    expect(screen.queryByTestId('need-line')).toBeNull();
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    expect(mockConfirm).not.toHaveBeenCalled();
+    expect(mockDismissTo).toHaveBeenCalledTimes(1);
   });
 
   it('06.1-65: nothing typed + Save and close writes nothing and leaves', async () => {

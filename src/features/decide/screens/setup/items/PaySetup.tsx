@@ -113,7 +113,8 @@ type NeedPart = 'howPaid' | 'amount' | 'day' | 'account' | 'count';
 /** C-21: the first part Save pay details still waits for, in page order; null when none of these holds it. */
 export function firstNeed(f: { types: readonly string[]; hasPay: boolean; hasBasis: boolean; amount: number | null; day: number | null; countDone: boolean }): NeedPart | null {
   if (f.types.length === 0) return 'howPaid';
-  if (!f.hasPay) {
+  // 06.1-81: "No fixed income right now" needs no amount, day or account.
+  if (!f.hasPay && !f.types.includes('none')) {
     if (f.hasBasis) return 'account';
     if (!validAmount(f.amount)) return 'amount';
     return f.day === null ? 'day' : 'account';
@@ -194,12 +195,16 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
         ? { amount: basis.amount, day: basis.day, accountId: basis.accountId }
         : emptyPay;
   const hasPay = salary !== null || toCreate !== null;
+  // 06.1-81 (review items 1, 2): "No fixed income right now" saves with no pay, and no series is made or marked as pay. An
+  // unmarked income series is marked as pay only when "Salary or wages" is among the picks.
+  const noPay = types.includes('none');
+  const marksPay = types.includes('salary_or_wages');
 
   const changes = pattern === 'variable' || pattern === 'seasonal';
   const followUpDone =
     method === 'match' || (method === 'spread' && spread !== null) || (method === 'steady' && validAmount(steady)) || (method === 'balance' && hold !== null);
   const countDone = !changes || (method !== null && followUpDone);
-  const canSave = canWrite && types.length > 0 && hasPay && countDone && !asideBad;
+  const canSave = canWrite && types.length > 0 && (hasPay || noPay) && countDone && !asideBad;
   // C-21: the first part still missing, in the order the page asks for them. The set-aside range has its own line by the field.
   const showsFound = basis !== null && (salary !== null || basis.accountId !== null);
   const need: NeedPart | null = canSave || !canWrite ? null : firstNeed({ types, hasPay, hasBasis: basis !== null, amount: emptyAmount, day: emptyDay, countDone });
@@ -304,11 +309,11 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
   const save = (): boolean => {
     if (!canSave) return false;
     const stepIds: string[] = [];
-    if (toCreate !== null) {
+    if (toCreate !== null && !noPay) {
       const id = createSalary(toCreate);
       if (id !== null) stepIds.push(id);
     }
-    if (unmarked !== null) {
+    if (unmarked !== null && marksPay) {
       const marking = patcher.patch([{ series: unmarked, attributes: { income_kind: 'salary', counts_as: unmarked.counts_as ?? 'available' } }]);
       if (marking !== null) stepIds.push(marking.stepId);
     }
