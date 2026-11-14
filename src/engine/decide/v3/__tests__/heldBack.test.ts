@@ -6,7 +6,7 @@ import { minorUnits } from '../../../money/types';
 import { evaluate } from '../evaluate';
 import { buildFunds } from '../funds/build';
 import { heldBackForBills, wholeMonthsBetween } from '../heldBack';
-import { buildMonthModel } from '../month/model';
+import { buildMonthModel } from '../../../month/model/model';
 import type { V3Inputs, V3Series } from '../types';
 import { checkOnce, inputsOf, monthOf, v3Line, v3Series } from './helpers/fixtures';
 

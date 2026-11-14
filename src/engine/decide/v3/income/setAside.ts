@@ -21,8 +21,8 @@
 import { divideHalfUp } from '../../../money/rounding';
 import { minorUnits, type MinorUnits } from '../../../money/types';
 import { yearMonthOf } from '../dates';
-import { planOf } from '../month/incomeProfile';
-import { seriesIndex } from '../month/series';
+import { planOf } from '../../../month/model/incomeProfile';
+import { seriesIndex } from '../../../month/model/series';
 import type { Fact, V3Inputs, V3Line, V3Month, V3Series } from '../types';
 
 /** 60%: the most the decide_settings.tax_set_aside_bp column holds. */

@@ -1,6 +1,6 @@
 // 06.1-11 (CO-D-57): the month picture and the past-month bars on the same Prepared the home answer uses.
 import { useMemo } from 'react';
-import { monthPicture, pastMonthBars, type MonthBar, type MonthPicture } from '@/engine/decide/v3';
+import { monthPicture, pastMonthBars, type MonthBar, type MonthPicture } from '@/engine/month';
 import { useDecideV3 } from '@/data/queries/decideV3';
 
 export function useMonthPicture(): { picture: MonthPicture | null; bars: MonthBar[] } {

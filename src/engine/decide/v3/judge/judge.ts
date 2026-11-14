@@ -66,8 +66,8 @@ import { isKeptSavingsAccount } from '../funds/unlockedGoals';
 import { isTight, isTightOneOff, monthlySpendingOf, tightFact, tightFloor } from '../tight';
 import { noLimitFacts, otherOverdrawnFacts, overdraftUseFacts, type OverdraftCtx } from '../overdraft';
 import { withReason } from '../confidence/reasons';
-import { dependsOnMonths, expectedFor, isLeanMonth, leanRun, seasonEveryday } from '../month/incomePattern';
-import { seasonalReadyMonth } from '../month/seasonWalk';
+import { dependsOnMonths, expectedFor, isLeanMonth, leanRun, seasonEveryday } from '../../../month/model/incomePattern';
+import { seasonalReadyMonth } from '../../../month/model/seasonWalk';
 import type {
   Band,
   Code,

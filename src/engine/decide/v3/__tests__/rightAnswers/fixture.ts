@@ -8,7 +8,7 @@ import { percent } from '../../../../payoff/types';
 import type { AccountUse, Cadence, CheckV2, FirstPayment, PayV2, QuickLine, ReadinessWaiver, Replaces, V3Account, V3Debt, V3Inputs, V3Line, V3Month, V3Series } from '../../types';
 import { addMonthsClamped, cadenceDate } from '../../dates';
 import { buildFunds } from '../../funds/build';
-import { buildMonthModel } from '../../month/model';
+import { buildMonthModel } from '../../../../month/model/model';
 import { checkOnce, inputsOf, monthOf, v3Line, v3Series } from '../helpers/fixtures';
 import type { RightAnswerFixture } from './schema';
 

@@ -7,7 +7,7 @@ import * as fc from 'fast-check';
 import * as fs from 'fs';
 import * as path from 'path';
 import { evaluate } from '../../evaluate';
-import { buildMonthModel } from '../../month/model';
+import { buildMonthModel } from '../../../../month/model/model';
 import { toCheckV2, toV3Inputs } from '../golden/adapter';
 import { generateHistories, historyArb, SHADOW_AS_OF, SHADOW_SEED, steadyOf } from './generate';
 import { generateNearLineHistories, withoutRefundLinks, NEAR_LINE_SEED } from './generateNearLine';

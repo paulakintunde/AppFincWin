@@ -15,10 +15,10 @@ import { minorUnits, type MinorUnits } from '../../../money/types';
 import { minorFromBigInt } from '../../../payoff/types';
 import { MATCH_DAYS, UNSPENT_DRIFT_PERCENT_DIVISOR, UNSPENT_STALE_DAYS } from '../constants';
 import { addDays, addMonthsClamped, addYearMonths, dayOfMonth, daysBetween, daysInYearMonth, yearMonthOf } from '../dates';
-import type { DueDrops } from '../month/dueDrops';
-import { classifyLine, liveSeriesOf, seriesIndex, seriesOccurrences } from '../month/series';
-import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from '../month/settle';
-import { erestOf } from '../month/thisMonth';
+import type { DueDrops } from '../../../month/model/dueDrops';
+import { classifyLine, liveSeriesOf, seriesIndex, seriesOccurrences } from '../../../month/model/series';
+import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from '../../../month/model/settle';
+import { erestOf } from '../../../month/model/thisMonth';
 import type { HeldBridge, IncomeProfile, UnspentAnchor, UnspentBreakdown, UnspentState, V3Line, V3Month, V3Series } from '../types';
 
 const FN = 'unspent';

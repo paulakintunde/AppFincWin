@@ -3,7 +3,8 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { fireEvent, screen } from '@testing-library/react-native';
-import { cashTimeline, judgeBoth, judgeCheck, prepare, verdictRowFor, type CashTimeline, type LocalDate, type MonthBar } from '@/engine/decide/v3';
+import { cashTimeline, judgeBoth, judgeCheck, prepare, verdictRowFor, type CashTimeline, type LocalDate } from '@/engine/decide/v3';
+import { type MonthBar } from '@/engine/month';
 import en from '@/i18n/locales/en';
 import { wrap } from '@/test/stepProps';
 import { toEngineInputs } from '@/engine/decide/v3/__tests__/rightAnswers/fixture';
