@@ -6,6 +6,9 @@
 // Auto-dismiss timing comes from `toastDurationMs`, which returns null while a screen reader
 // is on (C-CR-02): the toast then stays until the user dismisses it.
 // Item 7 (C-WR-05): Undo is offered only when the toast carries a real step id.
+// 06.2-14 (L06): the host picks the toast's icon, passes its duration and shownAt so the time-left bar shows the time
+// left, keys the toast by id so a replaced toast fades out (DURATION.toastOut) before the next rises in, and mounts
+// useFailedSaveHaptic once (D-20: the Error haptic for a save that really failed).
 import React, { useEffect, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
@@ -18,6 +21,9 @@ import { space, useScreenInsets } from '@/theme/layout';
 import { useSheetCount } from '@/state/sheetStack';
 import { useToastSlot } from '@/shell/fab/useShellPositions';
 import { ToastView } from '@/ui/ToastView';
+import { toastIconFor } from './toastIcon';
+import { useFailedSaveHaptic } from '@/ui/useFailedSaveHaptic';
+import { DURATION } from '@/theme/motion';
 import { conflictText, stepLabel } from './undoCopy';
 
 // S-CR-04: undoLabelText emits `undo.labelUnnamed.<key>` for a step with no name (a Phase 1
@@ -123,6 +129,9 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
   const floor = useToastFloor();
   const { reportHeight } = slot;
   const [screenReader, setScreenReader] = useState(false);
+  // D-20: one Error haptic when a save really fails (the failed-writes list grows). Mounted once, in every host; the
+  // hook itself fires once per growth no matter how many hosts are mounted (see useFailedSaveHaptic).
+  useFailedSaveHaptic();
 
   useEffect(() => {
     let live = true;
@@ -150,13 +159,19 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
         label !== null &&
         ctx.userId !== null &&
         ctx.householdId !== null));
+  // The same duration drives the auto-dismiss timer and the time-left bar; null (screen reader on) means neither.
+  const durationMs = kind === null ? null : toastDurationMs(kind, screenReader, canUndo);
   useEffect(() => {
-    if (!active || toastId === null || kind === null) return undefined;
-    const ms = toastDurationMs(kind, screenReader, canUndo);
-    if (ms === null) return undefined;
-    const timer = setTimeout(() => dismissToast(toastId), Math.max(0, ms - (Date.now() - shownAt)));
+    if (!active || toastId === null || durationMs === null) return undefined;
+    const timer = setTimeout(() => dismissToast(toastId), Math.max(0, durationMs - (Date.now() - shownAt)));
     return () => clearTimeout(timer);
-  }, [toastId, kind, screenReader, active, shownAt, canUndo]);
+  }, [toastId, durationMs, active, shownAt]);
+
+  // L06 "one at a time": when a new toast replaces one still on screen, the old fades out (ToastView's exiting fade)
+  // and the new one waits DURATION.toastOut before it rises in. Derived from the previous id during render.
+  const [ids, setIds] = useState<{ current: number | null; previous: number | null }>({ current: null, previous: null });
+  if (ids.current !== toastId) setIds({ current: toastId, previous: ids.current });
+  const replacing = toastId !== null && ids.current === toastId && ids.previous !== null;
 
   // The app-layer toast feeds the FAB lift; clear it when the toast goes or this host stops being the visible one.
   const reporting = placement === 'app' && active && toastId !== null;
@@ -242,12 +257,17 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
       onLayout={placement === 'app' ? (e) => reportHeight(e.nativeEvent.layout.height) : undefined}
     >
       <ToastView
+        key={toast.id}
         message={message}
         actionLabel={canUndo ? t('undo.action') : undefined}
         onAction={canUndo ? onUndo : undefined}
         onDismiss={() => dismissToast(toast.id)}
         dismissLabel={t('a11y.dismiss')}
         tone={toast.tone}
+        icon={toastIconFor(toast)}
+        durationMs={durationMs}
+        shownAt={toast.shownAt}
+        enterDelayMs={replacing ? DURATION.toastOut : 0}
       />
     </View>
   );

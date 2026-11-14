@@ -21,7 +21,12 @@ jest.mock('@/services/supabase', () => ({
     return mockActiveClient;
   },
 }));
-jest.mock('@/data/sync/failedWrites', () => ({ recordFailedWrite: jest.fn(async () => undefined) }));
+// 06.2-14: the host mounts useFailedSaveHaptic, which reads and subscribes to the failed-writes list.
+jest.mock('@/data/sync/failedWrites', () => ({
+  recordFailedWrite: jest.fn(async () => undefined),
+  getFailedWrites: () => [],
+  subscribeFailedWrites: () => () => undefined,
+}));
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 47, bottom: 12, left: 0, right: 0 }),
