@@ -1,12 +1,14 @@
 // A group header in the Activity list (ACT-06..ACT-08): label left, count, signed net right.
 // The net comes from the engine's netOf via the item; nothing is summed here.
+// 06.2 L02 / D-14: the header line is 28 tall; a spending day reads '−' in ink (never red), money in reads '+' in
+// the accent.
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { money } from '@/engine/money';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space } from '@/theme/layout';
+import { space, step } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import type { ActivityItem } from './activitySections';
@@ -37,7 +39,11 @@ export function GroupHeader({ item, month, homeCurrency, formatter }: GroupHeade
       ? t('activity.group.weekRange', { month: shortMonth(month, formatter.locale), from: item.range.from, to: item.range.to })
       : null;
   const net = formatter.formatMoney(money(item.net, homeCurrency));
-  const netText = item.net > 0 ? `+${net}` : net;
+  // Spoken: the formatter's own signed figure (screen readers say a hyphen minus reliably).
+  const netSpoken = item.net > 0 ? `+${net}` : net;
+  // Shown (D-14): the size with a true minus for spending and a plus for money in.
+  const size = formatter.formatMoney(money(Math.abs(item.net), homeCurrency));
+  const netText = item.net > 0 ? `+${size}` : item.net < 0 ? `−${size}` : size;
   const spoken = range === null ? label : `${label}, ${range}`;
   const labelRole = textRole(pairing, 'label');
   // 06 device check: a group of only transfers or skipped lines counts nothing (netOf leaves them
@@ -49,7 +55,7 @@ export function GroupHeader({ item, month, homeCurrency, formatter }: GroupHeade
     <View
       accessible
       accessibilityRole="header"
-      accessibilityLabel={counted ? t('activity.group.a11y', { label: spoken, count: item.count, amount: netText }) : spoken}
+      accessibilityLabel={counted ? t('activity.group.a11y', { label: spoken, count: item.count, amount: netSpoken }) : spoken}
       style={styles.row}
     >
       <View style={styles.left}>
@@ -59,7 +65,7 @@ export function GroupHeader({ item, month, homeCurrency, formatter }: GroupHeade
       </View>
       {counted ? (
         <View style={styles.right}>
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...labelRole, color: item.kind === 'in' && item.net > 0 ? colors.accent : colors.ink }}>{netText}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ ...labelRole, color: item.net > 0 ? colors.accent : colors.ink }}>{netText}</Text>
           {item.unconvertedCount > 0 ? (
             <Text style={{ ...labelRole, color: colors.inkMuted }}>
               {t('activity.group.unconverted', { count: item.unconvertedCount })}
@@ -74,9 +80,11 @@ export function GroupHeader({ item, month, homeCurrency, formatter }: GroupHeade
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: space.gapMd,
+    // 06.2 L02: the day line itself is at least 28 tall, under the group gap.
+    minHeight: step.section + space.groupGap + space.gapSm,
     paddingTop: space.groupGap,
     paddingBottom: space.gapSm,
   },

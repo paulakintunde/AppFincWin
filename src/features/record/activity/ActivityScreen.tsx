@@ -44,6 +44,9 @@ import { BulkBar } from './BulkBar';
 import { CloneMonthSheet } from './CloneMonthSheet';
 import { FilterSheet } from './FilterSheet';
 import { GroupHeader } from './GroupHeader';
+import { NewRowWash } from './NewRowWash';
+import { overCapRows } from './overCapRows';
+import { peekJustSaved, takeJustSaved } from '@/state/justSaved';
 import { monthRefreshKeys } from './refreshKeys';
 import { formatMonthLabel } from './MonthSwitcher';
 import { DecideMonthBannerView } from './DecideMonthBannerView';
@@ -155,6 +158,10 @@ export function ActivityScreen({
   useHideFab('bulkSelect', selection.active);
 
   const categories = useCategoryLookup(rc.userId ?? undefined);
+  // 06.2 D-12 / L02: the over-cap cue, worked out once per month view from the whole month (not the filtered or
+  // searched subset), so narrowing the list never moves the badge.
+  const monthRows = vm.monthView.rows;
+  const overCap = useMemo(() => overCapRows(monthRows, categories.all), [monthRows, categories.all]);
   const { remove: bulkRemove } = useBulkDelete();
   const { markPaid: bulkMarkPaid } = useBulkMarkPaid();
   const { markUnpaid: bulkMarkUnpaid } = useBulkMarkUnpaid();
@@ -306,6 +313,7 @@ export function ActivityScreen({
       onSwipeUnpay={() => rowActions.unpay(row)}
       onSwipeDelete={() => flow.requestDelete(row)}
       cardPosition={cardPosition}
+      overCapBy={overCap.get(row.id) ?? null}
       balanceNote={vm.balanceNotes.get(row.id)}
       incomeChip={v3 && isIncomeRow(row) ? incomeChipState(row, rulesByKey, seriesById) : null}
       onIncomeChipPress={(r) => setIncomeSheet({ row: r, newPayer: incomeChipState(r, rulesByKey, seriesById).state === 'new' })}
@@ -348,7 +356,7 @@ export function ActivityScreen({
         />
       );
     }
-    return renderActivityRow(item.row, cardPosition);
+    return <JustSavedRow rowId={item.row.id}>{renderActivityRow(item.row, cardPosition)}</JustSavedRow>;
   };
 
   const calendar = vm.view === 'calendar';
@@ -684,6 +692,22 @@ export function ActivityScreen({
       />
     </View>
   );
+}
+
+/**
+ * 06.2 L02 save moment: a row saved a moment ago (markJustSaved in the entry sheet) washes once when it first shows;
+ * every other row, and every row of a list that just loaded, renders plainly. The mark is read during render without
+ * being used up (a render may run twice) and used up after the first commit, so the wash plays once. FlashList reuses
+ * this cell for other rows, so the decision follows the row id, not the mount.
+ */
+function JustSavedRow({ rowId, children }: { rowId: string; children: React.ReactNode }) {
+  const [wash, setWash] = useState<{ id: string; on: boolean }>(() => ({ id: rowId, on: peekJustSaved(rowId) }));
+  if (wash.id !== rowId) setWash({ id: rowId, on: peekJustSaved(rowId) });
+  useEffect(() => {
+    takeJustSaved(rowId);
+  }, [rowId]);
+  const on = wash.id === rowId && wash.on;
+  return on ? <NewRowWash testID={`new-row-wash-${rowId}`}>{children}</NewRowWash> : <>{children}</>;
 }
 
 const styles = StyleSheet.create({
