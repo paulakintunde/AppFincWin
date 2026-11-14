@@ -60,7 +60,7 @@ describe('appLife copy guard', () => {
 
   it('uses only allowed {{placeholder}} names', () => {
     const offenders = strings.flatMap((l) =>
-      [...l.value.matchAll(PLACEHOLDER)].map((m) => m[1]).filter((name) => !ALLOWED_PLACEHOLDERS.has(name)).map((name) => `${l.path}: ${name}`)
+      [...l.value.matchAll(PLACEHOLDER)].map((m) => m[1] ?? "").filter((name) => !ALLOWED_PLACEHOLDERS.has(name)).map((name) => `${l.path}: ${name}`)
     );
     expect(offenders).toEqual([]);
   });
@@ -102,7 +102,7 @@ describe('appLife copy guard rules catch what they should', () => {
 
   it('flags an emoji and an unknown placeholder', () => {
     expect(EMOJI.test('Goal reached \u{1F389}')).toBe(true);
-    const names = [...'Saved {{item}}'.matchAll(PLACEHOLDER)].map((m) => m[1]);
+    const names = [...'Saved {{item}}'.matchAll(PLACEHOLDER)].map((m) => m[1] ?? "");
     expect(names.filter((n) => !ALLOWED_PLACEHOLDERS.has(n))).toEqual(['item']);
   });
 
