@@ -1250,7 +1250,7 @@ Plans:
 **Goal:** Testers use the new Decide screens, built from the owner's clickable prototype (https://claude.ai/artifact/Jr7VLAStJiDuPxte9vsSgR, the design standard, as in Phase 6 D-04), on the v3 engine and the connection points that exist on main. Every prototype Decide screen (D01-D53, answers N02-N26) replaces today's tester screens in one release with Grow; old 05.x Decide screens deleted; home buying hidden; household left to 08.1 (06.1-CONTEXT D-01..D-06).
 **Requirements**: FIN-20, FIN-21, FIN-22, FIN-23, FIN-24, FIN-28, FIN-29, FIN-31; ENG-26 (Activity and Grow half), ENG-29 (running costs); APP-09, APP-13 (loan, waiver and safety-net flows), APP-24, APP-25, APP-29; UX-03, UX-11, UX-13, UX-16, UX-20, UX-21 (renderer), UX-38, UX-41, UX-42, UX-43; CMP-F12 (layout), F14, F15; ARC-11, ARC-24, ARC-25; QA-01 (prototype is the design), QA-02/QA-03 (non-household cases); BO-09; the non-household rows of 08.1-CARRY-OVER-FROM-05.4.md (list in 06.1-01-PLAN.md). FIN-20/22/23 return to 08.1 if their cases are not approved by release (D-26).
 **Depends on:** Phase 6: Grow plans 06-05, 06-06 and 06-10 on main (connection points, RPCs, Decide feed; 06.1-CONTEXT D-30). Wave 1 (plans 01-07, 41, 42) can be built now; plan 08 gates the rest. Household parts stay hidden until Phase 8.
-**Plans:** 79/82 plans executed
+**Plans:** 82/83 plans executed
 
 Plans:
 - [x] 06.1-01-PLAN.md — Scope split (D-04) and prototype inventory (D-27); seven state colour tokens + contrast tests + CLAUDE.md (D-16); ROADMAP requirement lines
@@ -1285,7 +1285,7 @@ Plans:
 - [x] 06.1-30-PLAN.md — FIN-22 and FIN-23 behind owner approval (D-26)
 - [x] 06.1-31-PLAN.md — [BLOCKING] Push the 06.1 schema to production (human-gated)
 - [x] 06.1-32-PLAN.md — Maestro flows, text-fit and reading order, full suite, owner device pass (Task 2 folded into 06.1-61)
-- [ ] 06.1-33-PLAN.md — D-08 wording sign-off and lock
+- [x] 06.1-33-PLAN.md — D-08 wording sign-off and lock (signed 2026-11-14)
 - [ ] 06.1-34-PLAN.md — Release with Grow: OTA or preview APK (D-06, D-29)
 - [x] 06.1-35-PLAN.md — Info sheets: About this answer, Give it more to go on, Free help, How this was worked out
 - [x] 06.1-36-PLAN.md — Delete the old Decide code: shell hosts, folders, shims, old tests; fix guards (D-05)
@@ -1313,7 +1313,7 @@ Plans:
 - [x] 06.1-58-PLAN.md — [gap G-9] G-9 (A-SU-5, A-SU-6, A-SN-1, A-SH-1..3)
 - [x] 06.1-59-PLAN.md — [gap G-10] G-10, part 1 of 2 (owner finding 4, audit section D, home rows)
 - [x] 06.1-60-PLAN.md — [gap G-10] G-10, part 2 of 2
-- [ ] 06.1-61-PLAN.md — [gap G-11] G-11 (Tasks 1-2 done; Task 3 owner Pixel 6 pass open)
+- [x] 06.1-61-PLAN.md — [gap G-11] G-11 (Task 3 owner Pixel 6 pass deferred to the post-05.5 test audit)
 - [x] 06.1-62-PLAN.md — [flow audit H-1] Every tap shows it landed (press feedback, keyboard-tap prop, answer bar inset)
 - [x] 06.1-63-PLAN.md — [flow audit H-2] After a decision: Bought, Save for it, Compare, Past
 - [x] 06.1-64-PLAN.md — [flow audit H-3] Back returns to the answer you came from (FQ2)
@@ -1335,6 +1335,7 @@ Plans:
 - [x] 06.1-82-PLAN.md — [gap G-61] four device-pass fixes: None on the card ask, plan payment not double-counted, no Not ready for a decided check's own goal, Save for it when it fits now
 - [x] 06.1-83-PLAN.md — [owner wording] plurals dropped, Region row, 3,000 in amount boxes, SetupDone removed, If you buy it today, close to your limit, UK/CA cost tables, EU removed
 - [x] 06.1-84-PLAN.md — [gap G-61] blank sheet panel after a screen change, spare money confirm on the answer, replayed history write, price field and step bar a11y
+- [x] 06.1-85-PLAN.md — [gap G-PD] spare-money figure from the as-given reading, unexplained-money ask answerable on the answer, Price label (engine root fix routed to 05.5)
 
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
