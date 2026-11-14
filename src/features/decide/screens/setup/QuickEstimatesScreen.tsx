@@ -29,7 +29,7 @@ import { Text } from '@/ui/Text';
 import { useSettledLabel } from '@/ui/useSettledLabel';
 import { MAX_INPUT_MINOR } from '../../snapshot/checkInputs';
 import { stampSettingsPatch } from '../../settingsPatch';
-import type { DecideSettingsPatch, DecideSettingsRow } from '@/db/decideSettings';
+import type { DecideSettingsRow } from '@/db/decideSettings';
 import { NeedLine } from '../ui/NeedLine';
 import { WhyLine } from '../ui/WhyLine';
 import { useLeaveItem } from './items/SetupItemFrame';
@@ -74,11 +74,6 @@ export interface QuickEstimatesScreenProps {
   today: string;
   /** The stored settings, so a figure typed in another currency clears the rest in the same patch (CR-B01). */
   stored: DecideSettingsRow | null;
-  /**
-   * No longer called (06.1-65 CC-7): the screen writes through the undoable setup save so the toast can offer Undo. Kept optional
-   * while QuickEstimatesRoute (06.1-64's file this wave) still passes it; drop it there next.
-   */
-  onSave?: (patch: DecideSettingsPatch) => void;
   /** Called after the save, outside save mode; the route sends the person to the answer or home. */
   onDone: () => void;
 }
