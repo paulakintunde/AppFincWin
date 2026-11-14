@@ -18,7 +18,7 @@ describe('month picture identity (D-04)', () => {
         const p = prepare(inputs);
         expect(monthPicture(p).leftAfterPlans).toBe(homeFigure(p));
       }),
-      fcRuns(200, SEED),
+      { numRuns: fcRuns(200), seed: SEED },
     );
   });
 
@@ -29,7 +29,7 @@ describe('month picture identity (D-04)', () => {
         if (usual === null) return;
         expect(Number(usual.goesOut)).toBe(Number(usual.comesIn) - Number(usual.left));
       }),
-      fcRuns(200, SEED),
+      { numRuns: fcRuns(200), seed: SEED },
     );
   });
 });
