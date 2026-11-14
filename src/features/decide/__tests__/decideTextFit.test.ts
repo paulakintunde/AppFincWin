@@ -92,7 +92,6 @@ const NUMBER_ALLOW: { path: string; kind: NumberKind; count: number; reason: str
   { path: '@/ui/LabelValueRow.tsx', kind: 'user-name', count: 1, reason: 'valueLines is passed only for user-typed values' },
   { path: '@/features/record/accounts/AccountUseList.tsx', kind: 'figure', count: 1, reason: 'rule N setup account balance, shrinks to its line' },
   { path: 'screens/actions/BoughtScreen.tsx', kind: 'user-name', count: 1, reason: 'the item name the user typed, two lines then ellipsis' },
-  { path: 'screens/sheets/EnvelopeAccountSheet.tsx', kind: 'user-name', count: 1, reason: 'account name the user typed, one line then ellipsis' },
 ];
 
 

@@ -2,8 +2,9 @@
 // plus the harvested 05.3-52 zero-hint tests (D-157).
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import * as deviceLocale from '@/services/locale/deviceLocale';
 import { MoneyInput } from '../MoneyInput';
 
@@ -160,5 +161,41 @@ describe('MoneyInput zero hint', () => {
     expect(given.getByLabelText('Price').props.placeholder).toBe('Add amount');
     const none = await wrap(<MoneyInput value={null} currency="USD" onChange={jest.fn()} label="Other" accessibilityLabel="Other" />);
     expect(none.getByLabelText('Other').props.placeholder).toBeUndefined();
+  });
+  // 06.1-61 (plan 51 item 6): the empty price field is announced by its name, before any amount is typed.
+  it('the empty field carries its label for screen readers, with no value yet', async () => {
+    const view = await wrap(
+      <MoneyInput value={null} currency="USD" onChange={jest.fn()} label="Price" accessibilityLabel="Price" prefix="symbol" zeroHint labelAccessory={<Pressable accessibilityLabel="Why?" />} />,
+    );
+    const field = view.getByLabelText('Price');
+    expect(field.props.value).toBe('');
+    expect(field.props.accessibilityLabel).toBe('Price');
+    expect(field.props.accessibilityValue).toBeUndefined();
+    await fireEvent.changeText(field, '180');
+    await fireEvent(field, 'blur');
+    expect(view.getByLabelText('Price').props.accessibilityLabel).toBe('Price');
+  });
+
+  // 06.1-61: a fixed-width amount field grows with the OS font scale (to the 2x cap), so "$156.00" is not cut at 2x.
+  it('an amount field width follows the font scale up to the 2x cap', async () => {
+    const widthAt = async (scale: number): Promise<number> => {
+      const view = await render(
+        <FontScaleProvider value={scale}>
+          <ThemeProvider>
+            <MoneyInput value={15_600} currency="USD" onChange={jest.fn()} label="Registration" accessibilityLabel="Registration amount" prefix="symbol" amountField={{ width: 120 }} />
+          </ThemeProvider>
+        </FontScaleProvider>,
+      );
+      // the field's outer host View carries the width
+      await view.findByLabelText('Registration amount');
+      const root = view.toJSON() as { props: { style?: unknown } } | null;
+      const width = (StyleSheet.flatten(root?.props.style as never) as { width?: number } | undefined)?.width;
+      await view.unmount();
+      return width ?? -1;
+    };
+    expect(await widthAt(1)).toBe(120);
+    expect(await widthAt(1.5)).toBe(180);
+    expect(await widthAt(2)).toBe(240);
+    expect(await widthAt(3)).toBe(240);
   });
 });

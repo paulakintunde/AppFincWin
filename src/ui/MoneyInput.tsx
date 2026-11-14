@@ -20,6 +20,8 @@ import type { TextInput as TextInputInstance } from '@/ui/TextInput';
 import { Text } from '@/ui/Text';
 import { SURFACE_ON_INK_OPACITY } from '@/ui/Chip';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useFontScale } from '@/theme/FontScaleProvider';
+import { effectiveScale } from '@/theme/fontScale';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { useAmountParser } from '@/ui/money/useAmountParser';
@@ -45,7 +47,7 @@ export interface MoneyInputProps {
   onBlur?: () => void;
   /** 05-85 (D-70, rule I): a control after the label, as its next flex sibling (an info button). */
   labelAccessory?: React.ReactNode;
-  /** 05-101 (D-87, R16.3): the running-cost Amount field: no label, a 44-high pill, 1.5px dashed line4 while empty, solid line1 on fill6 with an amount. `width` undefined fills the row. */
+  /** 05-101 (D-87, R16.3): the running-cost Amount field: no label, a 44-high pill, 1.5px dashed line4 while empty, solid line1 on fill6 with an amount. `width` undefined fills the row. 06.1-61: `width` is at the default font size and grows with the OS font scale (to the 2x body cap), as the typed text does. */
   amountField?: { width?: number };
   /** 05-101: the input instance, so a row press can focus it. */
   inputRef?: React.Ref<TextInputInstance>;
@@ -67,6 +69,7 @@ const FOCUS_RING = 2; // D-95
 
 export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, zeroHint = false, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef, tone = 'light', boxed = false, prefix, suffix, onTextChange }: MoneyInputProps) {
   const { colors, pairing } = useTheme();
+  const fontScale = useFontScale();
   const dark = tone === 'dark' && !amountField;
   const [focused, setFocused] = useState(false);
   const labelColor = dark ? colors.inkSoft1 : colors.inkDim;
@@ -160,7 +163,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
   }
 
   return (
-    <View style={amountField?.width === undefined ? undefined : { width: amountField.width }}>
+    <View style={amountField?.width === undefined ? undefined : { width: amountField.width * effectiveScale(fontScale, 'body') }}>
       {compact || amountField ? null : labelAccessory ? (
         <View style={styles.labelRow}>
           <View style={styles.labelText}>

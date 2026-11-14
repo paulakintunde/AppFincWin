@@ -224,7 +224,7 @@ export function CostsStep({ id }: { id: string }) {
                   patchLine(l.id, { on: v });
                 }}
               />
-              <View style={styles.rowBetween}>
+              <View testID={`cost-line-${l.id}`} style={styles.costLine}>
                 <View style={styles.often}>
                   <Chip label={everyLabel(l.everyMonths)} accessibilityLabel={`${t('decide.screens.common.howOften')}, ${everyLabel(l.everyMonths)}`} onPress={() => setOften(l.id)} />
                   {cleared || l.everyMonths === 1 ? null : (
@@ -367,6 +367,8 @@ const styles = StyleSheet.create({
   often: { flexShrink: 1, gap: 2 },
   card: { borderRadius: space.cardPad, borderWidth: 1, padding: space.cardPad, gap: space.gapSm },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd },
+  // 06.1-61: at a large font the amount field moves under the How often pill rather than squeezing it ("yearl").
+  costLine: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd },
   touch: { minHeight: space.touchMin },
   link: { minHeight: space.touchMin, justifyContent: 'center', alignSelf: 'flex-start' },
 });

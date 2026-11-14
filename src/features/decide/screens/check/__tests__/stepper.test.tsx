@@ -595,6 +595,25 @@ describe('06.1-57 (G-8 part 2): the stepper to the prototype', () => {
     expect(screen.getByTestId('stacked-bar').props.accessibilityLabel).toMatch(/a month\. Insurance \d+%/);
   });
 
+  // 06.1-61 (plan 51 item 5, "yearl"): the How often pill shows its whole label. Nothing between the pill and its cost line
+  // fixes a width, and the line wraps, so at a large font the amount field moves under the pill instead of squeezing it.
+  it('the yearly pill shows "yearly" in full and its cost line wraps rather than squeezing it', async () => {
+    seed('Used car');
+    await wrap(<CostsStep id={ID} />);
+    const row = await screen.findByTestId('cost-rc:maintenance');
+    const pill = within(row).getByLabelText('How often, yearly');
+    expect(within(pill).getByText('yearly')).toBeTruthy();
+    const line = within(row).getByTestId('cost-line-rc:maintenance');
+    expect(StyleSheet.flatten(line.props.style)).toMatchObject({ flexDirection: 'row', flexWrap: 'wrap' });
+    for (let node = pill.parent; node && node !== line; node = node.parent) {
+      const st = StyleSheet.flatten(node.props.style) as { width?: unknown; maxWidth?: unknown } | undefined;
+      expect(st?.width).toBeUndefined();
+      expect(st?.maxWidth).toBeUndefined();
+    }
+    const text = within(pill).getByText('yearly');
+    expect(text.props.numberOfLines).toBeUndefined();
+  });
+
   it('A-ST-6: a yearly line says what it is a month', async () => {
     seed('Used car');
     await wrap(<CostsStep id={ID} />);

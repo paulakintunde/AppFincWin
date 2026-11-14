@@ -85,9 +85,8 @@ function EnvelopeAccountForm({ goalId, onClose, setAccount }: EnvelopeAccountShe
                 onPress={() => pick(a.id, a.name)}
                 style={({ pressed }) => [styles.row, { borderBottomColor: colors.line2 }, pressed && styles.pressed]}
               >
-                <Text style={labelStyle} numberOfLines={1} ellipsizeMode="tail">
-                  {a.name}
-                </Text>
+                {/* 06.1-61 (D-76 rule T): a long account name wraps; the row grows from its minimum height. */}
+                <Text style={labelStyle}>{a.name}</Text>
               </Pressable>
             ))}
           </View>
