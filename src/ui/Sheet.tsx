@@ -6,6 +6,12 @@
  * INSIDE the parent's children (sibling Modals are dropped on iOS, 02.3 Pattern 4). Open sheets register
  * in the sheetStack store (D-28/D-29); Android back, the backdrop and a drag only ever close the top one
  * because each Modal handles its own request.
+ *
+ * 06.1-81 (G-78-2, G-74-2): the panel's first layout is the proof that it is on screen in the Modal's window. Until then the
+ * backdrop takes no taps, and at that layout the open slide is set again, so an open slide that started before the Modal's window
+ * was attached (its frames lost, the panel left below the screen with no dim) still brings the panel up. While the panel has not
+ * laid out yet, Android Back also reaches the sheet through BackHandler (the Modal's own onRequestClose may not be live yet), so
+ * a Back pressed during the opening closes the sheet instead of being lost.
  */
 import React, {
   createContext,
@@ -20,6 +26,7 @@ import React, {
 } from 'react';
 import {
   AccessibilityInfo,
+  BackHandler,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -146,6 +153,8 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   const [discardOpen, setDiscardOpen] = useState(false);
   // H-13: true while a drag has sent the panel off screen; the backdrop then takes no taps.
   const [leaving, setLeaving] = useState(false);
+  // 06.1-81 (G-78-2): true once the panel has laid out in this open; the backdrop takes taps only then.
+  const [laidOut, setLaidOut] = useState(false);
   const visibleRef = useRef(visible);
   const durationRef = useRef(motion.duration);
   useEffect(() => {
@@ -233,6 +242,20 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
     backdrop.value = withTiming(BACKDROP_OPACITY, { duration: DURATION.backdrop, easing: Easing.ease });
   }, [translateY, sheetHeight, backdrop]);
 
+  /**
+   * 06.1-81 (G-78-2): the panel is on screen in the Modal's window now. The open slide is set again (from where it is), so a slide
+   * whose frames went to a view that was not attached yet still ends at 0 with the dim on; then the backdrop takes taps. A sheet
+   * that is already leaving (a drag) is left alone.
+   */
+  const onFirstLayout = useCallback(() => {
+    setLaidOut(true);
+    if (!visibleRef.current || dismissingRef.current) return;
+    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
+    translateY.value = withTiming(0, { duration: DURATION.sheetUp, easing: EASING });
+    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
+    backdrop.value = withTiming(BACKDROP_OPACITY, { duration: DURATION.backdrop, easing: Easing.ease });
+  }, [translateY, backdrop]);
+
   const requestDismiss = useCallback(
     (_source: SheetDismissSource) => {
       if (dismissingRef.current) return;
@@ -250,6 +273,17 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
     },
     [keepEditing],
   );
+
+  // 06.1-81 (G-74-2): while the panel has not laid out, the Modal's window may not have focus yet and a Back would go to the screen
+  // under it. The sheet takes it here and closes (or asks, when dirty), as the Modal's own Back does once it is live.
+  useEffect(() => {
+    if (!visible || laidOut || Platform.OS !== 'android') return undefined;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      requestDismiss('back');
+      return true;
+    });
+    return () => sub.remove();
+  }, [visible, laidOut, requestDismiss]);
 
   const onDragDismiss = useCallback(() => {
     hapticSelection();
@@ -340,6 +374,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   // Drop a stale prompt when the owner closes the sheet or it stops being dirty (state adjusted during render, not in an effect).
   if ((!visible || !dirty) && discardOpen) setDiscardOpen(false);
   if (!visible && leaving) setLeaving(false);
+  if (!visible && laidOut) setLaidOut(false);
 
   if (!visible) {
     return null;
@@ -359,7 +394,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
         <Pressable
           testID="sheet-backdrop"
           style={styles.backdrop}
-          pointerEvents={leaving ? 'none' : 'auto'}
+          pointerEvents={leaving || !laidOut ? 'none' : 'auto'}
           accessibilityRole="button"
           accessibilityLabel={t('a11y.close')}
           onPress={() => requestDismiss('backdrop')}
@@ -379,6 +414,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
             onLayout={(e: LayoutChangeEvent) => {
               // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
               sheetHeight.value = e.nativeEvent.layout.height;
+              if (!laidOut) onFirstLayout();
             }}
             style={[
               styles.container,

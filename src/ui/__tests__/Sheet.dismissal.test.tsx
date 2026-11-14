@@ -10,6 +10,7 @@ import { DURATION } from '@/theme/motion';
 import { colors } from '@/theme/tokens';
 import { Sheet } from '../Sheet';
 import { SHEET_DISMISS_DELAY } from '../sheetDrag';
+import { layOutSheets } from '@/test/sheetLayout';
 
 jest.setTimeout(30000);
 
@@ -81,6 +82,7 @@ describe('Sheet dirty dismissal', () => {
 
   it('backdrop tap asks instead of closing', async () => {
     const { screen, onDismiss } = await mount(true);
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     expect(onDismiss).not.toHaveBeenCalled();
     expect(screen.getByText('Discard changes?', { hidden: true })).toBeTruthy();
@@ -95,6 +97,7 @@ describe('Sheet dirty dismissal', () => {
 
   it('Keep editing hides the prompt without dismissing', async () => {
     const { screen, onDismiss } = await mount(true);
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     await fireEvent.press(screen.getByText('Keep editing', { hidden: true }));
     expect(screen.queryByText('Discard changes?', { hidden: true })).toBeNull();
@@ -112,6 +115,7 @@ describe('Sheet dirty dismissal', () => {
     await act(async () => modalsOf(screen)[0].props.onRequestClose());
     const backdrops = screen.getAllByTestId('sheet-backdrop', { hidden: true });
     expect(backdrops).toHaveLength(2);
+    await layOutSheets();
     await fireEvent.press(backdrops[1]!);
     expect(screen.queryByText('Discard changes?', { hidden: true })).toBeNull();
     expect(onDismiss).not.toHaveBeenCalled();
@@ -119,6 +123,7 @@ describe('Sheet dirty dismissal', () => {
 
   it('Discard dismisses the edit sheet exactly once', async () => {
     const { screen, onDismiss } = await mount(true);
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     await fireEvent.press(screen.getByText('Discard', { hidden: true }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
@@ -131,6 +136,7 @@ describe('Sheet dirty dismissal', () => {
       drag(120);
       await advance(SHEET_DISMISS_DELAY + 1);
       expect(onDismiss).toHaveBeenCalledTimes(1);
+      await layOutSheets();
       await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
       expect(onDismiss).toHaveBeenCalledTimes(2);
       expect(screen.queryByText('Discard changes?', { hidden: true })).toBeNull();
@@ -140,6 +146,7 @@ describe('Sheet dirty dismissal', () => {
 
   it('puts Discard as a danger button right of Keep editing', async () => {
     const { screen } = await mount(true);
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     const keep = screen.getByText('Keep editing', { hidden: true });
     const discard = screen.getByText('Discard', { hidden: true });
@@ -152,6 +159,7 @@ describe('Sheet dirty dismissal', () => {
   it('renders the prompt as a nested Modal so the stack holds two sheets', async () => {
     const { screen } = await mount(true);
     expect(getSheetStack()).toHaveLength(1);
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     expect(getSheetStack()).toHaveLength(2);
     expect(modalsOf(screen)).toHaveLength(2);
@@ -178,6 +186,7 @@ describe('Sheet onDiscard, single-fire dismissal, fling, prompt reset', () => {
   it('Discard calls onDiscard instead of onDismiss', async () => {
     const onDiscard = jest.fn();
     const { screen, onDismiss } = await mountTree({ dirty: true, onDiscard });
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     await fireEvent.press(screen.getByText('Discard', { hidden: true }));
     expect(onDiscard).toHaveBeenCalledTimes(1);
@@ -188,6 +197,7 @@ describe('Sheet onDiscard, single-fire dismissal, fling, prompt reset', () => {
     const { screen, onDismiss } = await mountTree({});
     drag(120);
     await advance(20);
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     await act(async () => modalsOf(screen)[0].props.onRequestClose());
     expect(onDismiss).not.toHaveBeenCalled();
@@ -214,6 +224,7 @@ describe('Sheet onDiscard, single-fire dismissal, fling, prompt reset', () => {
     await screen.rerender(tree({ onDismiss, visible: false }));
     await screen.rerender(tree({ onDismiss, visible: true }));
     await advance(DURATION.sheetUp + 50);
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     expect(onDismiss).toHaveBeenCalledTimes(2);
   });
@@ -233,6 +244,7 @@ describe('Sheet onDiscard, single-fire dismissal, fling, prompt reset', () => {
     const onDismiss = jest.fn();
     const screen = await render(tree({ onDismiss, dirty: true }));
     await advance(DURATION.sheetUp + 50);
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     expect(screen.getByText('Discard changes?', { hidden: true })).toBeTruthy();
     await screen.rerender(tree({ onDismiss, dirty: false }));

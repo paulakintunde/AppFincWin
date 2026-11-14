@@ -14,6 +14,7 @@ import { GoalCalculator } from '../record/GoalCalculator';
 import { GrowthIllustration } from '../record/GrowthIllustration';
 import { useRecordLinks } from '../record/useRecordLinks';
 import { CalculatorsScreen } from '../typed/CalculatorsScreen';
+import { layOutSheets } from '@/test/sheetLayout';
 
 jest.setTimeout(60000);
 
@@ -208,6 +209,7 @@ describe('GoalCalculator (GC02, D-17)', () => {
     expect(mockSaveGoal).not.toHaveBeenCalled();
 
     await fireEvent.press(screen.getByText('Make this the plan'));
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     expect(mockSaveGoal).not.toHaveBeenCalled();
 

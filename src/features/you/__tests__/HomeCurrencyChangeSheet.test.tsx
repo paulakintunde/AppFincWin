@@ -3,6 +3,7 @@ import { render, fireEvent, act } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { getToast, dismissToast, resetToastForTests } from '@/state/undoToast';
 import { HomeCurrencyChangeSheet } from '../components/HomeCurrencyChangeSheet';
+import { layOutSheets } from '@/test/sheetLayout';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -98,6 +99,7 @@ describe('HomeCurrencyChangeSheet', () => {
 describe('HomeCurrencyChangeSheet dismissal', () => {
   it('closes from the backdrop when idle', async () => {
     const { getByLabelText } = await renderSheet();
+    await layOutSheets();
     await fireEvent.press(getByLabelText('Close', { hidden: true }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -105,6 +107,7 @@ describe('HomeCurrencyChangeSheet dismissal', () => {
   it('ignores the backdrop while pending (dismissible=false), without a no-op onDismiss', async () => {
     mockPending = true;
     const { getByLabelText } = await renderSheet();
+    await layOutSheets();
     await fireEvent.press(getByLabelText('Close', { hidden: true }));
     expect(onClose).not.toHaveBeenCalled();
   });

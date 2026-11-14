@@ -7,7 +7,7 @@
  * Modal opens, so no END arrives) and check that every keep-editing route restores it.
  */
 import React from 'react';
-import { Keyboard, Platform, Pressable, StyleSheet, Text } from 'react-native';
+import { BackHandler, Keyboard, Platform, Pressable, StyleSheet, Text } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { State } from 'react-native-gesture-handler';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
@@ -18,6 +18,7 @@ import { DURATION } from '@/theme/motion';
 import { resetSheetStackForTests } from '@/state/sheetStack';
 import { Sheet } from '../Sheet';
 import { SHEET_DISMISS_DELAY } from '../sheetDrag';
+import { layOutSheets } from '@/test/sheetLayout';
 
 jest.setTimeout(30000);
 
@@ -102,6 +103,7 @@ describe('Sheet: no backdrop without its panel (H-13)', () => {
     await advance(DURATION.sheetUp + 50);
     await strandPanel(300);
     expect(translateOf(screen)).toBeGreaterThan(0);
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     expect(screen.getByText('Discard changes?', { hidden: true })).toBeTruthy();
     await keepEditing(screen);
@@ -129,11 +131,13 @@ describe('Sheet: no backdrop without its panel (H-13)', () => {
     const screen = await render(tree({ onDismiss }));
     await advance(50); // the open slide is still running
     // The backdrop tap of a still-clean sheet closes it in the same handler (DB-14); this owner keeps it open.
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
     // A finger held still while the panel slides up reads as a drag and stops the slide part way.
     await strandPanel(400);
     await screen.rerender(tree({ onDismiss, dirty: true }));
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     await keepEditing(screen);
     expect(translateOf(screen)).toBe(0);
@@ -166,6 +170,7 @@ describe('Sheet: no backdrop without its panel (H-13)', () => {
     const onDiscard = jest.fn();
     const screen = await render(tree({ dirty: true, onDismiss, onDiscard }));
     await advance(DURATION.sheetUp + 50);
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     await fireEvent.press(screen.getByText('Discard', { hidden: true }));
     expect(onDiscard).toHaveBeenCalledTimes(1);
@@ -175,6 +180,7 @@ describe('Sheet: no backdrop without its panel (H-13)', () => {
 
     // A clean sheet dragged away: while it slides out its backdrop takes no taps.
     await screen.rerender(tree({ onDismiss, onDiscard }));
+    await layOutSheets();
     await advance(DURATION.sheetUp + 50);
     expect(screen.getByTestId('sheet-backdrop', { hidden: true }).props.pointerEvents).toBe('auto');
     fireGestureHandler(getByGestureTestId('sheet-drag'), [
@@ -200,8 +206,90 @@ describe('Sheet: no backdrop without its panel (H-13)', () => {
       modalsOf(screen)[0].props.onRequestClose();
       expect(onDismiss).toHaveBeenCalledTimes(1); // no timer or animation wait
     });
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     expect(onDismiss).toHaveBeenCalledTimes(2);
+  });
+
+  // 06.1-81 (G-78-2): on the emulator the open-check sheet was left as a Modal holding only its gesture root and a full-screen
+  // backdrop: no dim, no panel, and every tap swallowed. The open slide had run before the Modal's window was attached, so the
+  // panel stayed below the screen. The backdrop now takes taps only once the panel has laid out, and that layout sets the slide again.
+  it('G-78-2: a panel that never lays out never leaves a pointer-catching backdrop', async () => {
+    const onDismiss = jest.fn();
+    const screen = await render(tree({ onDismiss }));
+    await advance(5000);
+    expect(screen.getByTestId('sheet-backdrop', { hidden: true }).props.pointerEvents).toBe('none');
+    await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
+    expect(onDismiss).not.toHaveBeenCalled();
+  });
+
+  it('G-78-2: the first layout brings a stranded panel up with its dim, then the backdrop takes taps', async () => {
+    const onDismiss = jest.fn();
+    const screen = await render(tree({ onDismiss }));
+    // The lost open slide: the panel is still below the screen when the Modal's window shows.
+    await strandPanel(5000);
+    expect(translateOf(screen)).toBeGreaterThan(0);
+    await layOutSheets();
+    await advance(DURATION.sheetUp + 50);
+    expect(translateOf(screen)).toBe(0);
+    expect(getAnimatedStyle(screen.getByTestId('sheet-backdrop-fill', { hidden: true })).opacity).toBeGreaterThan(0);
+    expect(screen.getByTestId('sheet-backdrop', { hidden: true }).props.pointerEvents).toBe('auto');
+    // A later layout (keyboard, content) does not replay the slide.
+    await strandPanel(100);
+    await layOutSheets();
+    await advance(DURATION.sheetUp + 50);
+    expect(translateOf(screen)).toBe(100);
+    await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('G-78-2: a closed and reopened sheet waits for its new panel’s layout before the backdrop takes taps', async () => {
+    const onDismiss = jest.fn();
+    const screen = await render(tree({ onDismiss }));
+    await layOutSheets();
+    expect(screen.getByTestId('sheet-backdrop', { hidden: true }).props.pointerEvents).toBe('auto');
+    await screen.rerender(tree({ visible: false, onDismiss }));
+    await screen.rerender(tree({ onDismiss }));
+    expect(screen.getByTestId('sheet-backdrop', { hidden: true }).props.pointerEvents).toBe('none');
+  });
+
+  // 06.1-81 (G-74-2): a Back pressed while the sheet is still opening (before its Modal's window takes Back) reached the screen
+  // under it and was lost, and then the sheet appeared. Until the panel lays out the sheet takes Back through BackHandler.
+  it('G-74-2: Android Back while the sheet is opening closes it; once it has laid out the Modal handles Back', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const listeners: (() => boolean)[] = [];
+    const remove = jest.fn();
+    jest.spyOn(BackHandler, 'addEventListener').mockImplementation(((_name: string, h: () => boolean) => {
+      listeners.push(h);
+      return { remove };
+    }) as never);
+    const onDismiss = jest.fn();
+    await render(tree({ onDismiss }));
+    expect(listeners).toHaveLength(1);
+    let handled = false;
+    await act(async () => {
+      handled = listeners[0]!();
+    });
+    expect(handled).toBe(true);
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+    await layOutSheets();
+    expect(remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('G-74-2: Back while a dirty sheet is opening asks first, as the Modal’s Back does', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const listeners: (() => boolean)[] = [];
+    jest.spyOn(BackHandler, 'addEventListener').mockImplementation(((_name: string, h: () => boolean) => {
+      listeners.push(h);
+      return { remove: jest.fn() };
+    }) as never);
+    const onDismiss = jest.fn();
+    const screen = await render(tree({ dirty: true, onDismiss }));
+    await act(async () => {
+      listeners[0]!();
+    });
+    expect(screen.getByText('Discard changes?', { hidden: true })).toBeTruthy();
+    expect(onDismiss).not.toHaveBeenCalled();
   });
 
   it('a sheet that cannot be dismissed keeps its panel in view on Back', async () => {
