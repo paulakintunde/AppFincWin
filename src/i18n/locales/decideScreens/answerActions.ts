@@ -17,6 +17,8 @@ export const answerActions = {
     toGo: '{{amount}} to go',
     readyBy: 'Ready by {{readyMonth}}',
     noReadyDate: 'No ready date yet. The amount is spread over twelve months.',
+    // 06.1-82 (G-61-10): the engine's ready date is today, so there is no date to save towards. For plan 33's wording sign-off.
+    fitsNow: 'The money for it is there today. The amount is spread over twelve months.',
     upFrontOnly: 'Only the up-front part is saved for.',
     make: 'Make the goal',
     changeAmount: 'Change the amount',

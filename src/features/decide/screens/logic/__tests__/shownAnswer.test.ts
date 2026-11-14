@@ -1,6 +1,7 @@
 // 06.1-82: what the answer screen shows of an evaluation. G-61-8 (an answered "None" leaves the debts ask out), G-61-3 (a decided
 // check's own Grow goal does not make its answer Not ready) and G-61-11 (the plan payment without the running costs).
 import type { Evaluation, ReadinessItem } from '@/engine/decide/v3';
+import { minorUnits } from '@/engine/money';
 import { planPaymentOf, shownEvaluation } from '../shownAnswer';
 
 const envItem = (envelopeId: string): ReadinessItem => ({
@@ -89,13 +90,13 @@ describe('shownEvaluation', () => {
 
 describe('planPaymentOf', () => {
   it('G-61-11: the plan payment is the monthly less the running costs', () => {
-    expect(planPaymentOf({ monthly: 73417, runningMonthly: 32300 })).toBe(41117);
+    expect(planPaymentOf({ monthly: minorUnits(73417), runningMonthly: minorUnits(32300) })).toBe(41117);
   });
   it('with no running costs it is the monthly', () => {
-    expect(planPaymentOf({ monthly: 41117, runningMonthly: 0 })).toBe(41117);
+    expect(planPaymentOf({ monthly: minorUnits(41117), runningMonthly: minorUnits(0) })).toBe(41117);
   });
   it('never below zero, and null with no purchase', () => {
-    expect(planPaymentOf({ monthly: 100, runningMonthly: 300 })).toBe(0);
+    expect(planPaymentOf({ monthly: minorUnits(100), runningMonthly: minorUnits(300) })).toBe(0);
     expect(planPaymentOf(null)).toBeNull();
     expect(planPaymentOf(undefined)).toBeNull();
   });

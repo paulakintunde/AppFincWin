@@ -1143,10 +1143,10 @@ describe('06.1-82: device-check gaps G-61-8, G-61-11, G-61-3', () => {
 
   it('G-61-11: "Price and how you pay" shows the plan payment alone; running costs are their own row', async () => {
     const base = ledgerRun('N09');
+    const plan = { mode: 'plan', cadence: { unit: 'month', every: 1 }, count: 12, termMonths: 12, apr: null, fees: { setup: 0, perPeriod: 0, end: 0 }, deposit: 0, tradeIn: 0, quotedPayment: null, firstPayment: null, deferredInterestTerm: false };
     const purchase = { ...(base.evaluation.purchase as NonNullable<Evaluation['purchase']>), monthly: 73417 as never, runningMonthly: 32300 as never };
-    load(base, { evaluation: { ...base.evaluation, purchase } });
+    load(base, { check: { ...base.check, pay: plan as unknown as CheckV2['pay'] }, evaluation: { ...base.evaluation, purchase } });
     await open();
-    expect(base.check.pay.mode).toBe('plan');
     const told = within(screen.getByTestId('answer-told-2'));
     expect(told.getByText('$411.17 a month on a plan')).toBeTruthy();
     expect(screen.queryByText('$734.17 a month on a plan')).toBeNull();
