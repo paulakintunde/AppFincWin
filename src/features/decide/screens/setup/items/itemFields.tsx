@@ -181,7 +181,7 @@ export function RadioRow({ label, selected, onPress }: { label: string; selected
     <Pressable
       accessibilityRole="radio"
       accessibilityLabel={label}
-      accessibilityState={{ selected }}
+      accessibilityState={{ selected, checked: selected }}
       onPress={() => {
         hapticSelection();
         onPress();

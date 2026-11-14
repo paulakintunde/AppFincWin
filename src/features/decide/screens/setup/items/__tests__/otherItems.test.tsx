@@ -63,9 +63,11 @@ const mockSaveUse = jest.fn((..._a: unknown[]) => ({ stepId: 'step-use' }));
 jest.mock('@/data/mutations/accountUse', () => ({ useSaveAccountUse: () => ({ save: mockSaveUse }) }));
 jest.mock('@/features/record/accounts/AccountUseSheet', () => ({ AccountUseSheet: () => null }));
 // 06.1-45: Records now reads the answer writer and the query cache for the readiness list.
-jest.mock('@/data/mutations/decideAnswers', () => ({ useSaveDecideAnswer: () => ({ save: jest.fn(() => null) }) }));
+jest.mock('@/data/mutations/decideAnswers', () => ({ useSaveDecideAnswer: () => ({ save: jest.fn(() => null) }), useRemoveDecideAnswer: () => ({ remove: jest.fn(() => ({ stepId: 'step' })) }) }));
+// 06.1-68: Records reads the live answers for "Answers you gave".
+jest.mock('@/data/queries/decideAnswers', () => ({ useDecideAnswers: () => ({ data: [] }) }));
 jest.mock('@tanstack/react-query', () => ({ ...jest.requireActual('@tanstack/react-query'), useQueryClient: () => ({ getQueriesData: () => [] }) }));
-const RECORDS_WRITES = { setEnvelopeAccount: jest.fn(() => 'step'), skipLine: jest.fn(() => null) };
+const RECORDS_WRITES = { setEnvelopeAccount: jest.fn(() => 'step'), skipLine: jest.fn(() => null), clearEnvelopeAccount: jest.fn(() => 'step') };
 
 const facts = (over: Partial<SetupFacts> = {}): SetupFacts => ({
   hasPay: true, payAmountMinor: 320000, payDay: 15, billsRightAnswered: true, billsCount: 3, billsMonthlyMinor: 100000,

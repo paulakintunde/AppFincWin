@@ -57,6 +57,8 @@ export function SetupRecordsRoute() {
       writes={{
         setEnvelopeAccount: (row, accountId, ownerId) => goal.edit(row, { account_id: accountId }, ownerId, 0),
         skipLine: (row, ownerId) => skipper.skip(row, ownerId),
+        // 06.1-68 (DC-11): Remove on a goal link in "Answers you gave" takes only the account off (Undo through the goal step).
+        clearEnvelopeAccount: (row, ownerId) => goal.edit(row, { account_id: null }, ownerId, 0),
       }}
     />
   );

@@ -11,18 +11,25 @@
 // 06.1-65 (CF-8): while the facts load, "Checking your records…" sits under the disabled primary. (CN-5 a): "From quick estimates"
 // passes the answer's returnTo on when Records was opened with one; with no check in view it opens quick estimates in save mode,
 // which comes back here. (CC-7): rough figures in use are listed with Clear (one Undo).
+// 06.1-68 (FQ7, CC-5, DC-11): "Answers you gave" lists every readiness answer and goal-to-account link, each with Remove (Undo);
+// a goal link also has Change (the Which account? sheet). (DS-14): an account-use pick shows at once, before the reads catch up,
+// and each choice is announced checked.
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useT } from '@/i18n';
 import { useSaveAccountUse } from '@/data/mutations/accountUse';
-import { useSaveDecideAnswer } from '@/data/mutations/decideAnswers';
+import { useRemoveDecideAnswer, useSaveDecideAnswer } from '@/data/mutations/decideAnswers';
 import { useSaveSetupStep } from '@/data/mutations/decideSetup';
 import { queryKeys } from '@/data/keys';
 import { useAccounts } from '@/data/queries/accounts';
 import { useDecideSettings } from '@/data/queries/decide';
+import { useDecideAnswers } from '@/data/queries/decideAnswers';
+import { DECIDE_READ_STALE_MS } from '@/data/queries/decideStale';
 import { useDecideV3 } from '@/data/queries/decideV3';
+import { useSavingsGoalRows } from '@/data/queries/growGoals';
+import type { SavingsGoalRow } from '@/db/savingsGoals';
 import type { AccountRow, TransactionRow } from '@/db/rows';
 import type { LocalDate, ReadinessItem, ReadinessWaiver } from '@/engine/decide/v3';
 import { AccountUseSheet } from '@/features/record/accounts/AccountUseSheet';
@@ -48,6 +55,7 @@ import { QUICK_SAVE_MODE } from '../QuickEstimatesScreen';
 import { DECIDE_HOME_PATH, safeReturnTo } from '../safeReturnTo';
 import { useSetupFacts } from '../useSetupProgress';
 import { RadioRow, useSetupFormat } from './itemFields';
+import { givenLines, type GivenLine } from './answersGiven';
 import { askedAccounts, choiceOfUse, previousMonthOf, recordChecks, accountUseOfChoice, USE_CHOICES, type UseChoice } from './othersLogic';
 import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
@@ -63,6 +71,14 @@ export interface RecordsWrites {
   setEnvelopeAccount: SetEnvelopeAccount;
   /** Skips a pending line (useSkipOccurrence); returns the undo step id, or null when nothing was written. */
   skipLine: (row: TransactionRow, ownerId: string) => string | null;
+  /** 06.1-68 (DC-11): takes a goal's account link off (Grow's goal writer, account_id null only); returns the undo step id. */
+  clearEnvelopeAccount: (goal: SavingsGoalRow, ownerId: string) => string;
+}
+
+/** 06.1-68 (DS-14): a pick made here, shown until the stored use moves off the value it had when tapped. */
+interface UsePick {
+  readonly choice: UseChoice;
+  readonly from: UseChoice | null;
 }
 
 /** The pending line a "It didn't happen" answer skips, from any cached transactions list of the household; null when not cached. */
@@ -121,6 +137,23 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const envelopesOpen = fixRows.filter((r) => r.item.kind === 'envelopes').length;
 
   const asked = useMemo(() => (v3.inputs === null ? [] : askedAccounts(v3.inputs.accounts ?? [])), [v3.inputs]);
+  // DS-14: a pick is drawn at once. It is dropped once the stored use moves off the value it had at the tap (the write landed, or
+  // something else changed it), so a later Undo shows the stored value again. Kept in step during render, no effect.
+  const [picks, setPicks] = useState<ReadonlyMap<string, UsePick>>(() => new Map());
+  let livePicks: Map<string, UsePick> | null = null;
+  for (const [id, p] of picks) {
+    const stored = asked.find((a) => a.id === id);
+    if (stored !== undefined && choiceOfUse(stored.use) === p.from) continue;
+    livePicks ??= new Map(picks);
+    livePicks.delete(id);
+  }
+  if (livePicks !== null) setPicks(livePicks);
+  const pickOf = (id: string): UseChoice | undefined => (livePicks ?? picks).get(id)?.choice;
+
+  // FQ7 (CC-5), DC-11: the answers given, from the live answers and the goals linked to an account.
+  const answersQ = useDecideAnswers(rc.userId ?? undefined, rc.householdId ?? undefined);
+  const goalsQ = useSavingsGoalRows(rc.userId ?? undefined, rc.householdId ?? undefined, { staleTime: DECIDE_READ_STALE_MS });
+  const remover = useRemoveDecideAnswer(rc.userId ?? '', rc.householdId ?? '');
   const rowOf = (id: string): AccountRow | undefined => (accountsQ.data ?? []).find((a) => a.id === id);
   const footer = footerFactsOf(v3.inputs);
 
@@ -239,8 +272,66 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
       return;
     }
     const result = saver.save({ account: row, use });
-    if (result !== null) showToast({ kind: 'ordinary', text: { key: 'decide.accountUse.toastSaved' }, stepId: result.stepId });
+    if (result === null) return;
+    const from = choiceOfUse(asked.find((a) => a.id === accountId)?.use ?? null);
+    if (from !== choice) setPicks((prev) => new Map(prev).set(accountId, { choice, from }));
+    showToast({ kind: 'ordinary', text: { key: 'decide.accountUse.toastSaved' }, stepId: result.stepId });
   };
+
+  const seriesNames = new Map((v3.inputs?.series ?? []).map((x) => [x.id, x.name ?? '']));
+  const accountNames = new Map((accountsQ.data ?? []).filter((a) => a.deleted_at == null).map((a) => [a.id, a.name]));
+  const given = givenLines(
+    answersQ.data ?? [],
+    goalsQ.data ?? [],
+    {
+      date: (d) => fmt.date(d),
+      monthName: (ym) => monthNameOf(ym, fmt.locale),
+      seriesName: (id) => seriesNames.get(id) ?? '',
+      accountName: (id) => accountNames.get(id) ?? '',
+    },
+    t as unknown as (key: string, params?: Record<string, string | number>) => string,
+  );
+  const removeGiven = (line: GivenLine): void => {
+    if (rc.userId === null) return;
+    const stepId = line.kind === 'waiver' ? remover.remove(line.row).stepId : writes.clearEnvelopeAccount(line.goal, rc.userId);
+    hapticLight();
+    showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.records.answerRemoved' }, stepId });
+  };
+  const changeLabel = t('decide.screens.common.change');
+  const removeLabel = t('decide.screens.setupOthers.records.answerRemove');
+  const answersGiven =
+    given.length === 0 ? null : (
+      <View testID="records-given" style={styles.block}>
+        <Text accessibilityRole="header" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.setupOthers.records.answersGiven')}</Text>
+        {given.map((line) => (
+          <View key={`${line.kind}-${line.id}`} testID={`given-${line.id}`} style={styles.row2}>
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 1 }}>{line.text}</Text>
+            <View style={styles.givenActions}>
+              {line.kind === 'goal' ? (
+                <Pressable
+                  testID={`given-change-${line.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${changeLabel}, ${line.text}`}
+                  onPress={() => setEnvelopeId(line.goal.id)}
+                  style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+                >
+                  <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{changeLabel}</Text>
+                </Pressable>
+              ) : null}
+              <Pressable
+                testID={`given-remove-${line.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${removeLabel}, ${line.text}`}
+                onPress={() => removeGiven(line)}
+                style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+              >
+                <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{removeLabel}</Text>
+              </Pressable>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
 
   const choiceLabel = (c: UseChoice): string => t(`decide.screens.setupOthers.records.accountUse.${c}`);
 
@@ -366,6 +457,8 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
         </View>
       ) : null}
 
+      {answersGiven}
+
       {roughRow}
 
       <View style={styles.block}>
@@ -383,7 +476,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
           <SheetScroll contentContainerStyle={styles.sheetBody}>
             {asked.map((a) => {
               const row = rowOf(a.id);
-              const current = choiceOfUse(a.use);
+              const current = pickOf(a.id) ?? choiceOfUse(a.use);
               const name = row?.name ?? '';
               return (
                 <View key={a.id} testID={`account-${a.id}`} style={styles.block}>
@@ -419,4 +512,5 @@ const styles = StyleSheet.create({
   checkBody: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: space.gapMd },
   checkText: { flex: 1, gap: space.gapSm / 2 },
   sheetBody: { gap: space.gapMd, paddingBottom: space.gapMd },
+  givenActions: { flexDirection: 'row', gap: space.gapMd },
 });

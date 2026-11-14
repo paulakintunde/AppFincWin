@@ -47,7 +47,13 @@ jest.mock('@/features/record/accounts/AccountUseSheet', () => {
   return { AccountUseSheet: ({ account }: { account: { id: string } }) => <Text testID="account-use-sheet">{account.id}</Text> };
 });
 const mockSaveAnswer = jest.fn((..._a: unknown[]) => ({ stepId: 'step-answer' }) as { stepId: string } | null);
-jest.mock('@/data/mutations/decideAnswers', () => ({ useSaveDecideAnswer: () => ({ save: mockSaveAnswer }) }));
+const mockRemoveAnswer = jest.fn((..._a: unknown[]) => ({ stepId: 'step-removed' }));
+jest.mock('@/data/mutations/decideAnswers', () => ({ useSaveDecideAnswer: () => ({ save: mockSaveAnswer }), useRemoveDecideAnswer: () => ({ remove: mockRemoveAnswer }) }));
+// 06.1-68 (FQ7, DC-11): the live answers and the goals the "Answers you gave" list reads.
+let mockAnswers: unknown[] = [];
+jest.mock('@/data/queries/decideAnswers', () => ({ useDecideAnswers: () => ({ data: mockAnswers }) }));
+let mockGoals: unknown[] = [];
+jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockGoals }) }));
 let mockCached: [unknown, unknown][] = [];
 jest.mock('@tanstack/react-query', () => ({ ...jest.requireActual('@tanstack/react-query'), useQueryClient: () => ({ getQueriesData: () => mockCached }) }));
 jest.mock('../../../sheets/EnvelopeAccountSheet', () => {
@@ -75,7 +81,7 @@ const PENDING_BILL = item({ seriesId: 's-gym', name: 'Gym', amount: 4000 as Read
 const ENVELOPE = item({ kind: 'envelopes', code: 'envelopes_unconfirmed', month: '2026-11', seriesId: null, envelopeId: 'goal-trip', name: 'Trip', amount: null, date: null });
 const ENVELOPE2 = item({ kind: 'envelopes', code: 'envelopes_unconfirmed', month: '2026-11', seriesId: null, envelopeId: 'goal-car', name: 'Car', amount: null, date: null });
 
-let writes: RecordsWrites & { skipLine: jest.Mock; setEnvelopeAccount: jest.Mock };
+let writes: RecordsWrites & { skipLine: jest.Mock; setEnvelopeAccount: jest.Mock; clearEnvelopeAccount: jest.Mock };
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -86,7 +92,9 @@ beforeEach(() => {
   mockCached = [];
   mockAccountRows = [];
   mockInputs = { accounts: [], months: [{ month: '2026-10', full: true, lines: [{}] }] };
-  writes = { skipLine: jest.fn(() => 'step-skip'), setEnvelopeAccount: jest.fn(() => 'step-env') };
+  writes = { skipLine: jest.fn(() => 'step-skip'), setEnvelopeAccount: jest.fn(() => 'step-env'), clearEnvelopeAccount: jest.fn(() => 'step-unlink') };
+  mockAnswers = [];
+  mockGoals = [];
 });
 
 async function press(node: Parameters<typeof fireEvent.press>[0]) {
@@ -305,5 +313,155 @@ describe('RecordsSetup rows, badges and the accounts sheet (06.1-58 A-SU-5, DS-1
     expect(screen.getByText('What is Everyday for?')).toBeTruthy();
     await press(screen.getByText('Close'));
     expect(screen.queryByText('What is Everyday for?')).toBeNull();
+  });
+});
+
+describe('06.1-68 (FQ7, CC-5, DC-11): Answers you gave', () => {
+  const S1 = '11111111-1111-4111-8111-111111111111';
+  const S2 = '22222222-2222-4222-8222-222222222222';
+  const answer = (id: string, key: string, created: string, over: Record<string, unknown> = {}) => ({
+    id, household_id: 'h1', created_by: 'u1', kind: 'readiness_waiver', key, amount: null, bool_value: null, on_date: '2026-11-10',
+    check_id: null, deleted_at: null, version: 1, created_at: created, updated_at: created, ...over,
+  });
+  const goal = (id: string, name: string, over: Record<string, unknown> = {}) => ({
+    id, household_id: 'h1', created_by: 'u1', check_id: null, name, currency: 'USD', target: 100000, monthly_amount: null, ready_by: null,
+    opening_saved: 0, kind: 'pot', account_id: 'a2', is_safety_net: false, done_at: null, is_sample: false, deleted_at: null, version: 1,
+    created_at: '2026-11-01T00:00:00Z', updated_at: '2026-11-01T00:00:00Z', ...over,
+  });
+  const NO_PAY = answer('ans-1', `no-pay:${S2}:2026-10-16`, '2026-11-10T09:00:00Z');
+  const PAID = answer('ans-2', `paid-by-other:${S1}:2026-10-03`, '2026-11-12T09:00:00Z');
+
+  beforeEach(() => {
+    mockInputs = { accounts: [], series: [{ id: S1, name: 'Netflix' }], months: [{ month: '2026-10', full: true, lines: [{}] }] };
+    mockAccountRows = [{ id: 'a2', name: 'Joint', kind: 'savings' }];
+  });
+
+  it('with nothing given the section is not shown', async () => {
+    await wrap(<RecordsSetup writes={writes} />);
+    expect(screen.queryByTestId('records-given')).toBeNull();
+    expect(screen.queryByText('Answers you gave')).toBeNull();
+  });
+
+  it('lists live readiness answers newest first, in plain words; deleted and unreadable rows are left out', async () => {
+    mockAnswers = [
+      NO_PAY,
+      PAID,
+      answer('ans-3', 'income-elsewhere', '2026-11-11T09:00:00Z', { deleted_at: '2026-11-12T00:00:00Z' }),
+      answer('ans-4', 'not-a-waiver', '2026-11-13T09:00:00Z'),
+      { ...answer('ans-5', 'x', '2026-11-13T09:00:00Z'), kind: 'volatile_cover' },
+    ];
+    await wrap(<RecordsSetup writes={writes} />);
+    expect(screen.getByText('Answers you gave')).toBeTruthy();
+    const lines = screen.getAllByTestId(/^given-ans-\d$/);
+    expect(lines.map((n) => n.props.testID)).toEqual(['given-ans-2', 'given-ans-1']);
+    expect(lines[0]).toHaveTextContent(/^Netflix, due Oct 3, 2026: someone else paid it/);
+    expect(lines[1]).toHaveTextContent(/^Oct 16, 2026 income: didn’t happen/);
+    // waivers have no Change
+    expect(screen.queryByTestId('given-change-ans-2')).toBeNull();
+  });
+
+  it('Remove soft-deletes through the answers writer and shows "Answer removed." with its Undo step', async () => {
+    mockAnswers = [NO_PAY, PAID];
+    await wrap(<RecordsSetup writes={writes} />);
+    const remove = screen.getByTestId('given-remove-ans-1');
+    expect(remove.props.accessibilityLabel).toBe('Remove, Oct 16, 2026 income: didn’t happen');
+    await press(remove);
+    expect(mockRemoveAnswer).toHaveBeenCalledWith(expect.objectContaining({ id: 'ans-1', key: `no-pay:${S2}:2026-10-16` }));
+    expect(mockShowToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.records.answerRemoved' }, stepId: 'step-removed' });
+  });
+
+  it('every waiver kind reads in its own words', async () => {
+    mockAnswers = [
+      answer('w1', `didnt-happen:${S1}:2026-10-03`, '2026-11-09T00:00:00Z'),
+      answer('w2', `didnt-happen:${S2}:2026-10-04`, '2026-11-08T00:00:00Z'),
+      answer('w3', `paid-by-other:${S2}:2026-10-05`, '2026-11-07T00:00:00Z'),
+      answer('w4', `always-other:${S1}`, '2026-11-06T00:00:00Z'),
+      answer('w5', `always-other:${S2}`, '2026-11-05T00:00:00Z'),
+      answer('w6', `no-pay:${S1}:2026-10-06`, '2026-11-04T00:00:00Z'),
+      answer('w7', 'income-elsewhere', '2026-11-03T00:00:00Z'),
+      answer('w8', 'nothing-to-add:2026-10', '2026-11-02T00:00:00Z'),
+      answer('w9', 'month-complete:2026-09', '2026-11-01T00:00:00Z'),
+      answer('w0', 'start-from:2026-08', '2026-11-01T00:00:00Z'),
+    ];
+    await wrap(<RecordsSetup writes={writes} />);
+    const text = (id: string) => screen.getByTestId(`given-${id}`);
+    expect(text('w1')).toHaveTextContent(/^Netflix, due Oct 3, 2026: didn’t happen/);
+    expect(text('w2')).toHaveTextContent(/^A bill due Oct 4, 2026: didn’t happen/);
+    expect(text('w3')).toHaveTextContent(/^A bill due Oct 5, 2026: someone else paid it/);
+    expect(text('w4')).toHaveTextContent(/^Netflix: someone else always pays it/);
+    expect(text('w5')).toHaveTextContent(/^A bill: someone else always pays it/);
+    expect(text('w6')).toHaveTextContent(/^Netflix, Oct 6, 2026: no pay that time/);
+    expect(text('w7')).toHaveTextContent(/^Income comes in elsewhere/);
+    expect(text('w8')).toHaveTextContent(/^October: nothing more to add/);
+    expect(text('w9')).toHaveTextContent(/^September: all recorded/);
+    expect(text('w0')).toHaveTextContent(/^Records begin in August/);
+  });
+
+  it('DC-11: a goal linked to an account shows with Change (Which account?) and Remove (unlinks, Undo)', async () => {
+    mockGoals = [
+      goal('g-trip', 'Trip'),
+      goal('g-net', 'Safety net', { is_safety_net: true }),
+      goal('g-none', 'Car', { account_id: null }),
+      goal('g-gone', 'Old', { deleted_at: '2026-11-02T00:00:00Z' }),
+      goal('g-done', 'Done one', { done_at: '2026-11-02T00:00:00Z' }),
+      goal('g-lost', 'Lost', { account_id: 'a-missing' }),
+    ];
+    await wrap(<RecordsSetup writes={writes} />);
+    expect(screen.getByTestId('given-g-trip')).toHaveTextContent(/^Trip \(a Grow goal\): kept in Joint/);
+    for (const id of ['g-net', 'g-none', 'g-gone', 'g-done', 'g-lost']) expect(screen.queryByTestId(`given-${id}`)).toBeNull();
+    await press(screen.getByTestId('given-change-g-trip'));
+    expect(screen.getByTestId('envelope-sheet')).toHaveTextContent('g-trip');
+    await press(screen.getByTestId('given-remove-g-trip'));
+    expect(writes.clearEnvelopeAccount).toHaveBeenCalledWith(expect.objectContaining({ id: 'g-trip' }), 'u1');
+    expect(mockShowToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.records.answerRemoved' }, stepId: 'step-unlink' });
+  });
+});
+
+describe('06.1-68 (DS-14): account-use radios show the pick at once', () => {
+  const ROWS = [{ id: 'a1', name: 'Everyday', kind: 'checking' }];
+  const open = async () => {
+    mockFacts = { ...DONE_FACTS, accountsAllHaveUse: false };
+    mockAccountRows = ROWS;
+    const view = await wrap(<RecordsSetup writes={writes} />);
+    await press(screen.getByTestId('check-accounts'));
+    return view;
+  };
+  const again = async (view: Awaited<ReturnType<typeof open>>) => {
+    await act(async () => {
+      view.rerender(<RecordsSetup writes={writes} />);
+    });
+  };
+  const radio = (label: string) => screen.getByRole('radio', { name: label });
+
+  it('the tapped choice is checked right after the tap, before the stored use catches up', async () => {
+    mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: null, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [{}] }] };
+    await open();
+    expect(radio('Not used for spending').props.accessibilityState).toEqual({ selected: false, checked: false });
+    await press(radio('Not used for spending'));
+    expect(radio('Not used for spending').props.accessibilityState).toEqual({ selected: true, checked: true });
+    expect(screen.getAllByRole('radio').filter((n) => n.props.accessibilityState.checked)).toHaveLength(1);
+  });
+
+  it('a save that writes nothing draws no pick', async () => {
+    mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: null, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [{}] }] };
+    await open();
+    mockSaveUse.mockReturnValueOnce(null as never);
+    await press(radio('Not used for spending'));
+    expect(screen.getAllByRole('radio').filter((n) => n.props.accessibilityState.checked)).toHaveLength(0);
+    expect(mockShowToast).not.toHaveBeenCalled();
+  });
+
+  it('once the stored use moves, the stored value shows (so a later Undo shows the old one)', async () => {
+    mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: null, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [{}] }] };
+    const view = await open();
+    await press(radio('Not used for spending'));
+    // the write lands
+    mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: { kind: 'untouched' }, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [{}] }] };
+    await again(view);
+    expect(radio('Not used for spending').props.accessibilityState.checked).toBe(true);
+    // Undo puts the old (no use) back: nothing is checked
+    mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: null, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [{}] }] };
+    await again(view);
+    expect(screen.getAllByRole('radio').filter((n) => n.props.accessibilityState.checked)).toHaveLength(0);
   });
 });
