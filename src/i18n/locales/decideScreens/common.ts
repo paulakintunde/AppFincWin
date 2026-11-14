@@ -30,12 +30,20 @@ export const common = {
   amount: 'Amount',
   howOften: 'How often',
   perMonth: 'a month',
+  // 06.1-59 (G-10, owner decision 4): the shared disclosure controls. A card keeps one short line; reasons sit behind Why?,
+  // figures and caveats behind More. Both read Less while open.
+  why: 'Why?',
+  more: 'More',
+  less: 'Less',
   a11y: {
     back: 'Back',
     close: 'Close',
     stepProgress: 'Step {{step}} of 3, {{stepName}}',
     setupProgress: '{{count}} of 6 done',
     amountMonthly: '{{name}}, amount, {{amount}} a month',
+    // 06.1-59 (G-10): spoken hints on the closed Why? link and More row.
+    whyHint: 'Shows the reason',
+    moreHint: 'Shows more detail',
   },
   offline: {
     title: 'Offline. Using records up to {{date}}.',
