@@ -39,7 +39,7 @@ describe('settingsSourceOf', () => {
   });
 
   it('06 D-02: does not copy the interim safety-net columns or the reserve account (the Grow goal is the one store)', () => {
-    const off = run({ settings: settings({ safety_net_protect: false, safety_net_size: 250000, safety_net_locked: false, reserve_account_id: 'acc' }) })!;
+    const off = run({ settings: settings({ reserve_account_id: 'acc' }) })!;
     expect(Object.keys(off).filter((k) => k.startsWith('safety_net_') || k === 'reserve_account_id')).toEqual([]);
   });
 

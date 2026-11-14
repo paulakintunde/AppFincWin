@@ -39,7 +39,8 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // 06 waves 12-13: Grow shapes changed again after that bump -- bumped 6 -> 7.
 // 06.1 wave 5: decide_settings answered_*_at and tax_set_aside_bp, check history and new keys -- bumped 7 -> 8.
 // 06.1-31: savings goals now select decide_may_use (20261111000100 in production) -- bumped 8 -> 9.
-export const CACHE_SCHEMA_VERSION = '9';
+// 05.5-21: decide_settings lost share_pct and the three interim safety-net columns -- bumped 9 -> 10.
+export const CACHE_SCHEMA_VERSION = '10';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's

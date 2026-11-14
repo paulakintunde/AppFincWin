@@ -24,7 +24,6 @@ export interface DecideSettingsRow {
   steady_amount: number | null;
   spread_months: number | null;
   hold_months: 1 | 2 | 3 | null;
-  share_pct: number | null;
   detail: 'short' | 'full' | null;
   remind_plan: boolean | null;
   remind_unspent: boolean | null;
@@ -32,9 +31,6 @@ export interface DecideSettingsRow {
   everyday_override: number | null;
   everyday_override_at: string | null;
   month_marks: Record<string, 'normal' | 'out' | 'half'> | null;
-  safety_net_protect: boolean; // 05.4 D-33 interim, removed in 05.5 (BO-07 item 3): hold the safety net back, default true
-  safety_net_size: number | null; // 05.4 D-33 interim: null = starter size
-  safety_net_locked: boolean; // 05.4 D-61 interim: the safety net is locked by default
   // 06.1 (20261111000100): D-23 'I answered this' stamps and FIN-20 tax set-aside (basis points, 0 to 6000)
   answered_no_debts_at: string | null;
   answered_net_not_set_at: string | null;
@@ -61,7 +57,7 @@ export interface DecideSettingsRow {
 
 export const DECIDE_SETTINGS_COLUMNS =
   'id, user_id, currency, rough_income, rough_spending, reserve, dsr_line, housing_line, unsecured_multiple, investing_floor, saving_floor, basis_override, ' +
-  'income_types, income_pattern, income_pattern_confirmed, variable_method, steady_amount, spread_months, hold_months, share_pct, detail, remind_plan, remind_unspent, setup_done_at, everyday_override, everyday_override_at, month_marks, custom_options, unspent_anchor, unspent_anchor_at, reserve_account_id, reserve_goal, rough_saving, rough_debt, rough_invest, rough_as_of, unexplained_amount, unexplained_use, unexplained_at, refine_last_at, refine_snooze_until, safety_net_protect, safety_net_size, safety_net_locked, answered_no_debts_at, answered_net_not_set_at, answered_no_rules_at, answered_bills_right_at, tax_set_aside_bp, version, updated_at';
+  'income_types, income_pattern, income_pattern_confirmed, variable_method, steady_amount, spread_months, hold_months, detail, remind_plan, remind_unspent, setup_done_at, everyday_override, everyday_override_at, month_marks, custom_options, unspent_anchor, unspent_anchor_at, reserve_account_id, reserve_goal, rough_saving, rough_debt, rough_invest, rough_as_of, unexplained_amount, unexplained_use, unexplained_at, refine_last_at, refine_snooze_until, answered_no_debts_at, answered_net_not_set_at, answered_no_rules_at, answered_bills_right_at, tax_set_aside_bp, version, updated_at';
 
 export type DecideSettingsPatch = Partial<Omit<DecideSettingsRow, 'id' | 'user_id' | 'version' | 'updated_at'>>;
 
@@ -83,7 +79,6 @@ export const DECIDE_SETTINGS_PATCH_KEYS = [
   'steady_amount',
   'spread_months',
   'hold_months',
-  'share_pct',
   'detail',
   'remind_plan',
   'remind_unspent',
@@ -105,9 +100,6 @@ export const DECIDE_SETTINGS_PATCH_KEYS = [
   'unexplained_at',
   'refine_last_at',
   'refine_snooze_until',
-  'safety_net_protect',
-  'safety_net_size',
-  'safety_net_locked',
   'answered_no_debts_at',
   'answered_net_not_set_at',
   'answered_no_rules_at',
@@ -134,7 +126,6 @@ export const EMPTY_DECIDE_SETTINGS: Omit<DecideSettingsRow, 'user_id'> = {
   steady_amount: null,
   spread_months: null,
   hold_months: null,
-  share_pct: null,
   detail: null,
   remind_plan: null,
   remind_unspent: null,
@@ -143,9 +134,6 @@ export const EMPTY_DECIDE_SETTINGS: Omit<DecideSettingsRow, 'user_id'> = {
   everyday_override_at: null,
   month_marks: null,
   custom_options: null,
-  safety_net_protect: true,
-  safety_net_size: null,
-  safety_net_locked: true, // 05.4 D-61: locked by default
   answered_no_debts_at: null,
   answered_net_not_set_at: null,
   answered_no_rules_at: null,
