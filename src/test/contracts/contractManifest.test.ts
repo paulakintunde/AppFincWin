@@ -65,7 +65,7 @@ describe('BO-07 contract manifest (frozen)', () => {
     for (const f of readdirSync(dir).filter((n) => /^bo07\..*\.contract\.test\.ts$/.test(n))) {
       const src = readFileSync(join(dir, f), 'utf8');
       for (const m of src.matchAll(/test\.todo\((['"`])((?:\\.|(?!\1).)*)\1\)/g)) {
-        const title = m[2].replace(/\\(['"`])/g, '$1');
+        const title = (m[2] ?? '').replace(/\\(['"`])/g, '$1');
         if (!known.has(title)) unlisted.push(`${f}: ${title}`);
       }
     }

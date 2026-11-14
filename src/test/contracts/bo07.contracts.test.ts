@@ -44,7 +44,7 @@ describe('BO-07 point 2: goal (owner Grow)', () => {
   it('GoalPoint has exactly its 13 keys', () => {
     expect(goalExact).toBe(true);
     const [p] = goalPointsOf([goalRow], [], identity);
-    expect(sorted(p)).toEqual([...GOAL_KEYS].sort());
+    expect(sorted(p ?? {})).toEqual([...GOAL_KEYS].sort());
   });
 
   it('goalPointsOf returns target, saved, monthlyAmount, readyBy, upFrontOnly and linkedCheckId as stored', () => {
