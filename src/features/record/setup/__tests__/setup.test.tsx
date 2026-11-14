@@ -63,6 +63,8 @@ let mockAccounts: { data?: { archived_at: string | null }[]; isLoading: boolean;
   isLoading: false,
   isError: false,
 };
+// 06.1-72: the app layouts wrap Decide screens in DecideV3Scope; here it only passes its children through.
+jest.mock('@/data/queries/decideV3', () => ({ DecideV3Scope: ({ children }: { children: unknown }) => children }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => mockAccounts }));
 
 jest.mock('../../../../../app/_layout', () => {
@@ -121,8 +123,11 @@ describe('SetupAccountScreen', () => {
     expect(getByText('Add the account you use most. More can be added later.')).toBeTruthy();
     expect(mockSheetProps!.mode).toEqual({ kind: 'new', context: 'onboarding' });
     fireEvent.press(getByText('sheet'));
-    // quick-261106-bf2 (owner 2026-11-06): DECIDE_OPEN is true, so rough figures come next (05-23 D-03).
-    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/setup/rough', params: { accountId: 'acc-new' } });
+    // Owner 2026-11-11: onboarding order is account -> quick estimates -> import history (the estimates return to /setup/history).
+    expect(mockReplace).toHaveBeenCalledWith({
+      pathname: '/decide/setup/quick-estimates',
+      params: { returnTo: '/setup/history?accountId=acc-new' },
+    });
   });
 
   it('S-WR-11: Cancel closes the sheet and offers a way to You (sign out or delete) and back to the sheet', async () => {

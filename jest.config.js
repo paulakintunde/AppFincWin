@@ -44,6 +44,8 @@ for (const f of ['money', 'decide', 'payoff', 'split', 'recurring', 'csv', 'cate
 for (const d of ['src/features/decide/snapshot', 'src/features/decide/journal', 'src/features/grow/connect']) {
   if (hasSource(d)) coverageThreshold[`./${d}/`] = FULL;
 }
+// 06.1: pure Decide screen rules (06.1-43: readinessFixes.ts, the readiness fix model, is held to 100% by this folder entry)
+if (hasSource('src/features/decide/screens/logic')) coverageThreshold['./src/features/decide/screens/logic/'] = FULL;
 
 // 05-35: pure chart geometry (D-26, D-31)
 if (fs.existsSync('src/features/decide/charts/chartGeometry.ts')) coverageThreshold['./src/features/decide/charts/chartGeometry.ts'] = FULL;

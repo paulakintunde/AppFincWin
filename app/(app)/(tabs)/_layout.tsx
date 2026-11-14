@@ -2,6 +2,7 @@
 // unstable-native-tabs). backBehavior 'none' because BackHistoryProvider owns cross-tab back.
 // Detail screens are OUTER-stack siblings of this group, so they cover the bar and the FAB. The
 // first-account gate lives here so neither Home nor Activity renders without an account.
+import { Profiler } from 'react';
 import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { StyleSheet, View } from 'react-native';
@@ -18,6 +19,17 @@ import { TabBar } from '@/shell/tabBar/TabBar';
 import { TabSlideIn } from '@/shell/tabBar/TabSlideIn';
 import { tabRoutes } from '@/shell/tabBar/availableTabs';
 import { isTabId } from '@/shell/tabBar/tabs';
+import { perfEnabled } from '@/features/decide/perf/perfMarks';
+import { probeCommit } from '@/data/perf/cacheProbe';
+import { DecideV3Scope } from '@/data/queries/decideV3';
+
+// 06.1-78 (H-15): the Tabs get Screen elements only. A null child (the old grow fallback once Grow opened) made expo-router log
+// "Layout children must be of type Screen" on every render. Built once: availability is a build switch, not state.
+// 06-15: grow.tsx exists before the tab opens (D-03); href null keeps it unlisted and unlinkable while TAB_AVAILABILITY.grow is off.
+// tabRoutes() is one list with no null entries, visible tabs first.
+const TAB_SCREENS = tabRoutes().map(({ name, hidden }) =>
+  hidden ? <Tabs.Screen key={name} name={name} options={{ href: null }} /> : <Tabs.Screen key={name} name={name} />
+);
 
 export default function TabsLayout() {
   const rc = useRecordContext();
@@ -34,22 +46,30 @@ export default function TabsLayout() {
       <Tabs
         backBehavior="none"
         tabBar={(props) => <TabBar {...props} />}
-        screenOptions={{ headerShown: false, animation: 'none' }}
-        screenLayout={({ children, route, navigation }) =>
-          isTabId(route.name) ? (
+        // 06.1-73 (DB-1): an unfocused tab no longer re-renders on every cache change (27-28 hidden Home commits per Decide
+        // write on the emulator). It renders again, with the latest data, when it is focused.
+        screenOptions={{ headerShown: false, animation: 'none', freezeOnBlur: true }}
+        screenLayout={({ children, route, navigation }) => {
+          // 06.1-72 (G-73-1): Decide home's hooks share one run of the Decide reads.
+          const content = DECIDE_OPEN && route.name === 'decide' ? <DecideV3Scope>{children}</DecideV3Scope> : children;
+          const screen = isTabId(route.name) ? (
             <TabSlideIn tab={route.name} navigation={navigation}>
-              {children}
+              {content}
             </TabSlideIn>
           ) : (
-            children
-          )
-        }
+            content
+          );
+          // 06.1-73: perf builds count each tab's commits (route name only); otherwise the screen renders as before.
+          return perfEnabled() ? (
+            <Profiler id={`tab.${route.name}`} onRender={probeCommit}>
+              {screen}
+            </Profiler>
+          ) : (
+            screen
+          );
+        }}
       >
-        {/* 06-15: grow.tsx exists before the tab opens (D-03); href null keeps it unlisted and unlinkable while TAB_AVAILABILITY.grow is off.
-            One list with no null entries: a null child makes expo-router warn "Layout children must be of type Screen". */}
-        {tabRoutes().map(({ name, hidden }) =>
-          hidden ? <Tabs.Screen key={name} name={name} options={{ href: null }} /> : <Tabs.Screen key={name} name={name} />
-        )}
+        {TAB_SCREENS}
       </Tabs>
       <Fab />
       <FabQuickMenu />

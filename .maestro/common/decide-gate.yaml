@@ -1,0 +1,97 @@
+# 06.1-32 shared: after Check it or See the answer, get through whatever stands before the answer on this account:
+# the one-time intro card (D-120), the first-answer safety-net question (D-14), and, on an account whose records are not
+# ready, plan 44's Not ready card (ask, don't block). On a ready account none of these show and nothing is tapped.
+# 06.1-61:
+# - FQ5: the intro card and the safety-net question count as seen once swiped away, so either may be missing on a later
+#   run; each is handled only when it shows.
+# - Not ready: on a brand-new account (no earlier month) the card offers "Answer from quick estimates" and that is used.
+#   On an account with earlier months the card has no such link (C-1). Each named item is answered with its one-tap choice,
+#   or a goal's "Which account?" is set to the first account, until the answer shows. At most 4 items.
+appId: com.fincwin.app
+---
+- extendedWaitUntil:
+    visible: "How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet.*|I bought it"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "How Decide answers"
+    commands:
+      - runFlow:
+          file: scroll-to.yaml
+          env:
+            TARGET: "Got it"
+      - tapOn: "Got it"
+- runFlow:
+    when:
+      visible: "Do you have a safety net\\? About how much\\?"
+    commands:
+      - runFlow:
+          file: scroll-to.yaml
+          env:
+            TARGET: "Not set yet"
+      - tapOn: "Not set yet"
+- extendedWaitUntil:
+    visible: "Not ready yet.*|I bought it"
+    timeout: 20000
+# A brand-new account: quick estimates
+- runFlow:
+    when:
+      visible: "Answer from quick estimates"
+    commands:
+      - tapOn: "Answer from quick estimates"
+      - runFlow: decide-quick-estimates.yaml
+# An account with earlier months: answer the named items one at a time
+- repeat:
+    times: 4
+    while:
+      visible: "Not ready yet.*"
+    commands:
+      - runFlow:
+          when:
+            visible: "It didn.t happen|No pay that time|Nothing more for .*|Records begin in .*"
+          commands:
+            - tapOn: "It didn.t happen|No pay that time|Nothing more for .*|Records begin in .*"
+      - runFlow:
+          when:
+            visible: "Which account\\?"
+          commands:
+            - tapOn: "Which account\\?"
+            - extendedWaitUntil:
+                visible: "Which account holds .*"
+                timeout: 15000
+            - tapOn:
+                text: ".+"
+                childOf:
+                  id: "sheet-scroll"
+      - runFlow:
+          when:
+            visible:
+              id: "answer-fix-account_use_question"
+          commands:
+            - runFlow: decide-account-use.yaml
+      # 06.1-84 (G-61-2): "Your spare money hasn't been confirmed yet" is answered on the answer: Fix opens the spare-money sheet
+      # and "That's right" saves the app's own figure (Undo on the toast and in History, "Unspent money confirmed")
+      - runFlow:
+          when:
+            visible:
+              id: "answer-fix-unspent_not_confirmed"
+          commands:
+            - evalScript: "${console.log('SPARE-MONEY confirming from the answer')}"
+            - tapOn:
+                id: "answer-fix-unspent_not_confirmed"
+            - extendedWaitUntil:
+                visible: "That.s right"
+                timeout: 30000
+            - tapOn: "That.s right"
+            - extendedWaitUntil:
+                visible: "Saved: your spare money\\."
+                timeout: 20000
+      # the answered row reads "Saved, updating…" until Decide judges again; wait for it to go before the next item
+      - extendedWaitUntil:
+          notVisible:
+            id: "readiness-saved-0"
+          timeout: 60000
+- extendedWaitUntil:
+    visible:
+      id: "answer-verdict"
+    timeout: 20000

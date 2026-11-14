@@ -3,8 +3,8 @@
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
-import { wrap } from '@/features/decide/check/steps/__tests__/helpers/stepProps';
-import { goal as goalFixture } from '@/features/decide/past/__tests__/helpers/pastFixtures';
+import { wrap } from '@/test/stepProps';
+import { goal as goalFixture } from '@/test/pastFixtures';
 import { UseAsSafetyNetSheet } from '../UseAsSafetyNetSheet';
 
 jest.setTimeout(30000);

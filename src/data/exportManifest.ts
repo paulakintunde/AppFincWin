@@ -87,6 +87,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'bucket', 'account_id', 'color_key',
     // 06
     'is_safety_net', 'locked', 'protect', 'up_front_only', 'icon', 'net_confirmed_at',
+    // 06.1
+    'decide_may_use',
   ],
   decide_settings: [
     'id', 'user_id', 'currency', 'rough_income', 'rough_spending', 'reserve', 'dsr_line', 'housing_line', 'unsecured_multiple',
@@ -99,6 +101,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'refine_last_at', 'refine_snooze_until',
     'custom_options', // 05.3-81
     'safety_net_protect', 'safety_net_size', 'safety_net_locked', // 05.4 D-33 / D-61 interim, removed in 05.5
+    // 06.1 (D-23, FIN-20)
+    'answered_no_debts_at', 'answered_net_not_set_at', 'answered_no_rules_at', 'answered_bills_right_at', 'tax_set_aside_bp',
   ],
   recurring_dismissals: ['id', 'household_id', 'payee_key', 'direction', 'dismissed_at', 'created_by', 'deleted_at', 'created_at', 'updated_at'],
   income_payer_prompts: [
@@ -113,6 +117,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'id', 'holding_id', 'household_id', 'created_by', 'kind', 'amount', 'units', 'local_date', 'note', 'deleted_at', 'created_at',
     'updated_at',
   ],
+  // 06.1 CO-D-64 (6): what Decide said on a date, owner-private, in export and erased with the check and the account
+  decide_check_history: ['id', 'check_id', 'created_by', 'said_on', 'code', 'variant', 'result', 'created_at'],
   decide_answers: [
     'id', 'household_id', 'created_by', 'kind', 'key', 'amount', 'bool_value', 'on_date', 'check_id', 'deleted_at', 'created_at', 'updated_at',
   ],

@@ -1,0 +1,627 @@
+{
+  "topic": "rate-convention",
+  "cases": [
+    {
+      "id": "AP-01",
+      "topic": "rate-convention",
+      "persona": "Lena in the UK, a published lender example: £10,000 over 5 years at 6.6% APR (FIN-23)",
+      "situation": "Lena lives in the UK (region GB). She looks at a £10,000 loan over 60 monthly payments at 6.6% APR, the representative example Tesco Bank publishes. A usual month: pay £3,000, bills £1,200 and everyday spending £800 (£480 of it on essentials), so it leaves £1,000; £1,000 is free this month. Her safety net holds £1,680, its full size. Today is 15 November 2026 and the first payment is on 15 December 2026.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "GBP",
+        "region": {
+          "country": "GB",
+          "subdivision": null
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 1000000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 60,
+            "apr": "6.6",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuy": {
+          "month": 100000,
+          "usualMonth": 80476
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "rate_convention_effective",
+          "interest_is_a_cost",
+          "save_vs_borrow"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Lender quote (Tesco Bank, tescobank.com/loans, read 2026-11-12): \"Representative 6.6% APR, based on a loan amount of £10,000, over 5 years, at a Fixed Annual Interest Rate of 6.4084% (nominal). This would give you a monthly repayment of £195.23 and a total amount repayable of £11,713.80.\" UK lenders quote an APR that already includes monthly compounding: the monthly rate r is the one where (1 + r)^12 = 1.066, r = 0.534032% (6.4084% a year, exactly the bank's nominal rate). £10,000 over 60 months at that rate is £195.2326, which the engine rounds up to £195.24 (it always rounds a payment up, so it never shows less than the lender; 1p over the quote). Today the engine reads 6.6% as 6.6% / 12 = 0.55% a month and shows £196.14, 91p a month and about £54 over the loan more than the lender. The usual month then leaves £1,000 - £195.24 = £804.76 (today £803.86). The interest is about £1,714 (17% of the amount, over the 10% line), so the answer stays \"Fits only by borrowing\". The fact line says the APR was read the way UK lenders quote it.",
+      "fixIds": [
+        "FIN-23",
+        "FIN-05"
+      ],
+      "plannerNote": "Before 06.1-30 the engine gave: fits_by_borrowing, usualMonth 80386 (payment £196.14). With FIN-23: payment £195.24, usualMonth 80476.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-23: APPROVE AP-01..AP-06 with the UK/EU reading applied ONLY when the region is set to the UK or an EU country. Pounds/euros with no region set stay as today (BR-01 unchanged).\" and \"Rounding up (one penny over the lender's quote) is fine.\"",
+      "expertNote": null
+    },
+    {
+      "id": "AP-02",
+      "topic": "rate-convention",
+      "persona": "Lena in Germany, a published lender example: €10,000 over 36 months at 9.09% (FIN-23)",
+      "situation": "Lena lives in Germany (region DE). She looks at a €10,000 loan over 36 monthly payments at 9.09% APR (effektiver Jahreszins), Consorsbank's representative example. A usual month: pay €3,000, bills €1,200 and everyday spending €800 (€480 of it on essentials), so it leaves €1,000; €1,000 is free this month. Her safety net holds €1,680, its full size. Today is 15 November 2026 and the first payment is on 15 December 2026.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "EUR",
+        "region": {
+          "country": "DE",
+          "subdivision": null
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 1000000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 36,
+            "apr": "9.09",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuy": {
+          "month": 100000,
+          "usualMonth": 68324
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "rate_convention_effective",
+          "interest_is_a_cost",
+          "save_vs_borrow"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Lender quote (Consorsbank / BNP Paribas, consorsfinanz.de/kredit, read 2026-11-12): \"Repräsentatives Beispiel gemäß § 17 Abs. 4 PAngV: Nettodarlehensbetrag 10.000,00 €, effektiver Jahreszins 9,09 %, Sollzinssatz 8,73 %, monatliche Rate 316,75 €, Laufzeit 36 Monate, Gesamtbetrag 11.403,00 €.\" The monthly rate r with (1 + r)^12 = 1.0909 is 0.727659% (8.73% a year, the bank's Sollzins). €10,000 over 36 months is €316.7511, rounded up to €316.76 (1 cent over the quote). Today the engine reads 9.09% / 12 and shows €318.42, €1.66 a month and about €60 over the loan more. The usual month leaves €1,000 - €316.76 = €683.24 (today €681.58). Interest about €1,403 (14%, over the 10% line): still \"Fits only by borrowing\".",
+      "fixIds": [
+        "FIN-23",
+        "FIN-05"
+      ],
+      "plannerNote": "Before 06.1-30 the engine gave: fits_by_borrowing, usualMonth 68158 (payment €318.42). With FIN-23: payment €316.76, usualMonth 68324.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-23: APPROVE AP-01..AP-06 with the UK/EU reading applied ONLY when the region is set to the UK or an EU country. Pounds/euros with no region set stay as today (BR-01 unchanged).\" and \"Rounding up (one penny over the lender's quote) is fine.\"",
+      "expertNote": null
+    },
+    {
+      "id": "AP-03",
+      "topic": "rate-convention",
+      "persona": "Lena in the US: $10,000 over 60 months at 7.9% (FIN-23, unchanged)",
+      "situation": "Lena lives in the US (region US, no state set). She looks at a $10,000 loan over 60 monthly payments at 7.9% APR. A usual month: pay $3,000, bills $1,200 and everyday spending $800 ($480 of it on essentials), so it leaves $1,000; $1,000 is free this month. Her safety net holds $1,680, its full size. Today is 15 November 2026 and the first payment is on 15 December 2026.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": {
+          "country": "US",
+          "subdivision": null
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 1000000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 60,
+            "apr": "7.9",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuy": {
+          "month": 100000,
+          "usualMonth": 79771
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "interest_is_a_cost",
+          "save_vs_borrow"
+        ],
+        "mustNotHaveFacts": [
+          "rate_convention_effective"
+        ]
+      },
+      "why": "US lenders quote APR as a nominal yearly rate (Truth in Lending: the monthly rate times 12), so nothing changes: 7.9% / 12 = 0.6583% a month, $10,000 over 60 months is $202.2899, rounded up to $202.29. The usual month leaves $1,000 - $202.29 = $797.71. Interest $2,137.05 (21%): \"Fits only by borrowing\". No rate-convention line. Canada is read the same way.",
+      "fixIds": [
+        "FIN-23",
+        "FIN-05"
+      ],
+      "plannerNote": "The engine before 06.1-30 already gave exactly this answer.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-23: APPROVE AP-01..AP-06 with the UK/EU reading applied ONLY when the region is set to the UK or an EU country. Pounds/euros with no region set stay as today (BR-01 unchanged).\" and \"Rounding up (one penny over the lender's quote) is fine.\"",
+      "expertNote": null
+    },
+    {
+      "id": "AP-04",
+      "topic": "rate-convention",
+      "persona": "Lena in the UK: £1,200 over 12 months at 0% (FIN-23, unchanged)",
+      "situation": "Lena lives in the UK (region GB). She looks at a £1,200 TV on 12 monthly payments at 0%. A usual month: pay £3,000, bills £1,200 and everyday spending £800 (£480 of it on essentials), so it leaves £1,000; £1,000 is free this month. Her safety net holds £1,680, its full size. Today is 15 November 2026 and the first payment is on 15 December 2026.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "GBP",
+        "region": {
+          "country": "GB",
+          "subdivision": null
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 120000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 100000,
+          "usualMonth": 90000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [
+          "rate_convention_effective",
+          "interest_is_a_cost"
+        ]
+      },
+      "why": "At 0% there is no interest to compound, so both readings give £1,200 / 12 = £100 a month. The usual month leaves £1,000 - £100 = £900: \"Fits\". No rate-convention line, because nothing changed.",
+      "fixIds": [
+        "FIN-23"
+      ],
+      "plannerNote": "The engine before 06.1-30 already gave exactly this answer.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-23: APPROVE AP-01..AP-06 with the UK/EU reading applied ONLY when the region is set to the UK or an EU country. Pounds/euros with no region set stay as today (BR-01 unchanged).\" and \"Rounding up (one penny over the lender's quote) is fine.\"",
+      "expertNote": null
+    },
+    {
+      "id": "AP-05",
+      "topic": "rate-convention",
+      "persona": "Lena in the UK: £520 over 52 weekly payments at 19.9% APR (FIN-23)",
+      "situation": "Lena lives in the UK (region GB). She looks at a £520 laptop on 52 weekly payments at 19.9% APR, the first on 22 November 2026, a week after buying. A usual month: pay £3,000, bills £1,200 and everyday spending £800 (£480 of it on essentials), so it leaves £1,000; £1,000 is free this month. Her safety net holds £1,680, its full size. Today is 15 November 2026 and the first payment is on 15 December 2026.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "GBP",
+        "region": {
+          "country": "GB",
+          "subdivision": null
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 52000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 52,
+            "apr": "19.9",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-11-22",
+            "every": "week"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 97808,
+          "usualMonth": 95251
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "rate_convention_effective",
+          "interest_is_a_cost"
+        ],
+        "mustNotHaveFacts": [
+          "save_vs_borrow"
+        ]
+      },
+      "why": "No published weekly quote was found, so this case uses the UK formula only (the APR is a yearly rate with the compounding inside: CONC App 1.2). The weekly rate r with (1 + r)^52 = 1.199 is 0.349625%. £520 over 52 weeks is £10.9540, rounded up to £10.96; about £10.96 x 52 / 12 = £47.49 a month, so the usual month leaves £1,000 - £47.49 = £952.51. This month has two payments (22 and 29 November): £1,000 - £21.92 = £978.08. The interest is about £49.92, 9.6% of the £520, under the 10% line, and 19.9% is under the 20% line, so cash would fit and the plan is not expensive: \"Fits\" (fits_month). Today the engine reads 19.9% / 52 a week and shows £11.05 a week, interest £54.41 (10.5%, over the line), so today's answer is \"Fits, but borrowing costs more\" (fits_by_borrowing, borrowing_costs_more). This is the one case where the rule changes the answer, not only the figures.",
+      "fixIds": [
+        "FIN-23",
+        "FIN-05"
+      ],
+      "plannerNote": "Before 06.1-30 the engine gave: fits_by_borrowing / borrowing_costs_more, month 97790, usualMonth 95212 (payment £11.05). With FIN-23: fits_month, month 97808, usualMonth 95251.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-23: APPROVE AP-01..AP-06 with the UK/EU reading applied ONLY when the region is set to the UK or an EU country. Pounds/euros with no region set stay as today (BR-01 unchanged).\" and \"Rounding up (one penny over the lender's quote) is fine.\"",
+      "expertNote": null
+    },
+    {
+      "id": "AP-06",
+      "topic": "rate-convention",
+      "persona": "Lena in pounds with no region set: the Tesco example again (FIN-23, unchanged)",
+      "situation": "Lena keeps her money in pounds but has not set her region. She looks at the same £10,000 loan over 60 monthly payments at 6.6% APR as AP-01. A usual month: pay £3,000, bills £1,200 and everyday spending £800 (£480 of it on essentials), so it leaves £1,000; £1,000 is free this month. Her safety net holds £1,680, its full size. Today is 15 November 2026 and the first payment is on 15 December 2026.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "GBP",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 48000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "current",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 168000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 168000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 1000000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 60,
+            "apr": "6.6",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_by_borrowing",
+        "variant": null,
+        "afterBuy": {
+          "month": 100000,
+          "usualMonth": 80386
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "interest_is_a_cost",
+          "save_vs_borrow"
+        ],
+        "mustNotHaveFacts": [
+          "rate_convention_effective"
+        ]
+      },
+      "why": "The rule follows the region, not the currency (see the open question). With no region set, 6.6% is read as today: 6.6% / 12 a month, £196.14 a month (91p over the lender's £195.23), and the usual month leaves £803.86. \"Fits only by borrowing\". No rate-convention line. Keeping this case as it is also keeps the approved BR-01 (pounds, no region, 39.9% over 36 months) unchanged.",
+      "fixIds": [
+        "FIN-23"
+      ],
+      "plannerNote": "The engine before 06.1-30 already gave exactly this answer.",
+      "status": "approved",
+      "approvedAt": "2026-11-12",
+      "ownerReason": "Owner, 2026-11-12 (D-26, chat popup): \"FIN-23: APPROVE AP-01..AP-06 with the UK/EU reading applied ONLY when the region is set to the UK or an EU country. Pounds/euros with no region set stay as today (BR-01 unchanged).\" and \"Rounding up (one penny over the lender's quote) is fine.\"",
+      "expertNote": null
+    }
+  ]
+}

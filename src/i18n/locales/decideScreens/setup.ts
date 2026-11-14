@@ -1,0 +1,97 @@
+/**
+ * 06.1-05 (D-18): Decide setup banner (D30, three states), checklist (D31) and the quick-estimates first
+ * answer (D39). Owner plans: 17, then 39 (in turn). The six items' own screens are in setupPayBills.ts and setupOthers.ts;
+ * the first-answer safety-net question (D-14) is in safetyNet.ts. Draft copy, signed under D-08.
+ * Item 5 is "Your money rules" (D-19). The setup done screen (D38) was removed in 06.1-83 (unreachable since 06.1-64).
+ */
+export const setup = {
+  banner: {
+    newTitle: 'Set up Decide',
+    // 06.1-59 (G-10): one sentence in view; the second sits behind Why?.
+    newSub: '6 short steps, about 4 minutes.',
+    newWhy: 'Until then, answers use quick estimates.',
+    start: 'Start setup',
+    checkFirst: 'Check a price first',
+    rowTitle: 'Decide setup · {{count}} of 6 done',
+    // 06.1-59 (G-10): no longer drawn on the started row; the row's tap opens the next item and its spoken label names it.
+    rowNext: 'Next: {{next}} · about 1 minute',
+    rowA11y: 'Decide setup, {{count}} of 6 done. Next: {{next}}.',
+    // 06.1-59 (G-10): the title and its one sentence, split.
+    doneTitle: 'Setup done',
+    doneSub: 'Answers use your records.',
+    doneLink: 'See what Decide uses',
+    barA11y: '{{count}} of 6 steps done',
+    // 06.1-56 (A-HOME-9): the chevron that makes the started row a slim pill for this session.
+    collapseA11y: 'Make the setup row smaller',
+  },
+  checklist: {
+    title: 'Decide setup',
+    // 06.1-54 (C-20): shown until the settings and records are read; never a count.
+    loading: 'Loading your setup…',
+    sub: 'Answers rest on these. Do them in any order. Each one saves as you go.',
+    doneTitle: 'Setup done',
+    doneSub: 'Decide uses all of these. Each one can change at any time.',
+    progress: '{{count}} of 6 done',
+    note: 'Nothing here moves money. You can change any of it later.',
+    continue: 'Continue: {{next}}',
+    statusDone: 'Done',
+    rowA11y: '{{item}}. {{status}}.',
+  },
+  items: {
+    pay: 'Pay and payday',
+    bills: 'Regular bills',
+    debts: 'Debts',
+    net: 'Safety net',
+    rules: 'Your money rules',
+    records: 'Records',
+  },
+  status: {
+    payDone: 'Done · {{amount}} on the {{ordinal}}',
+    billsDone_one: 'Done · {{count}} bill, {{monthly}} a month',
+    billsDone_other: 'Done · {{count}} bills, {{monthly}} a month',
+    debtsOpen: '{{count}} to finish · {{debt}} has no due day',
+    debtsDone: 'Done · {{debt}}, due on the {{ordinal}}',
+    debtsNone: 'Done · no other debts',
+    // 06.1-54 (A-SU-3): the money in the net first, the goal second.
+    netDone: '{{saved}} in it · goal {{amount}}',
+    netNotSet: 'Done · not set yet',
+    rulesDone_one: 'Done · {{count}} rule',
+    rulesDone_other: 'Done · {{count}} rules',
+    rulesNone: 'Done · no rules',
+    recordsOpen: 'Up to {{date}} · add what you spent since',
+    recordsDone: 'Done · records up to {{date}}',
+    recordsOpenItems_one: '1 to finish',
+    recordsOpenItems_other: '{{count}} to finish',
+    billsOpen_one: '1 bill to confirm',
+    billsOpen_other: '{{count}} bills to confirm',
+    billsNone: 'No bills found yet',
+    rulesOpen: 'No rules set yet',
+    // 06.1-54 (A-SU-2): why Pay is still open.
+    payOpenHowPaid: 'How you’re paid isn’t set yet',
+    payOpenNoPay: 'No pay set yet',
+    open: 'Not done yet',
+  },
+  quick: {
+    title: 'A first answer from three estimates',
+    // 06.1-60 (G-10): the old two-sentence sub is split; the first half opens under Why?, the second is the fields' hint.
+    sub: 'Before your records are ready.',
+    hint: 'Round numbers are fine.',
+    income: 'About how much comes in each month?',
+    bills: 'About how much goes on bills?',
+    everyday: 'About how much on everyday spending?',
+    live: 'A usual month leaves about {{left}} by these estimates.',
+    liveShort: 'A usual month is about {{short}} short by these estimates.',
+    see: 'See the answer now',
+    foot: 'Quick estimates count only until your records cover a full month.',
+    // 06.1-65 (CC-7): the save toast (with Undo) and the name in History ('Saved · Quick estimates').
+    saved: 'Quick estimates saved.',
+    stepName: 'Quick estimates',
+    // 06.1-58 (A-SU-6): the line under the disabled button names the first figure still missing.
+    need: {
+      income: 'What comes in each month is still needed.',
+      bills: 'What goes on bills is still needed.',
+      everyday: 'Everyday spending is still needed.',
+      aboveZero: 'Bills and everyday spending need to come to more than 0.',
+    },
+  },
+} as const;

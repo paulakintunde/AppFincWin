@@ -49,6 +49,12 @@ export { saveForItReadyDate } from './fullCost/saveForIt';
 export { stoppedCostFlows, saleFlows } from './fullCost/replaces';
 // 05.4 FIN-09 (05.4-24, D-22..D-24): Decide Home's month figure, the same one every answer's afterBuy starts from (screens in 08.1).
 export { homeFigure, monthAfterPlans } from './afterBuy';
+// 06.1 CO-D-57: built by 06.1 to the 05.5 month-picture contract
+export { monthPicture, pastMonthBars } from './month/picture';
+export type { MonthPicture, MonthBar } from './month/picture';
+// 06.1 UX-38 (D55)
+export { cashTimeline } from './cash/timeline';
+export type { CashTimeline, TimelineRow } from './cash/timeline';
 export type { Prepared } from './prepare';
 export { unspentSum } from './funds/build';
 export type { Evaluation } from './evaluate';
@@ -79,3 +85,6 @@ export { roundForShadow, roundSig2, SHADOW_CODES_MAX } from './shadow/round';
 export type { ShadowRound } from './shadow/round';
 export { shadowRun } from './shadow/run';
 export type { ShadowAnswer, ShadowRun } from './shadow/run';
+// 06.1 D-21: quick-estimate lines for one check only
+export { withQuickLines, judgeWithQuickLines } from './quick/overlay';
+export type { QuickOverlay } from './quick/overlay';

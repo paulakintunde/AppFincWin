@@ -6,10 +6,12 @@ import { fetchRecurringSeries } from '@/db/recurringSeries';
 import { supabase } from '@/services/supabase';
 import { queryKeys } from '../keys';
 
-export function useRecurringSeries(householdId?: string) {
+/** 06.1-72: a caller may hold the read fresh for longer (Decide's reads use DECIDE_READ_STALE_MS). */
+export function useRecurringSeries(householdId?: string, opts?: { staleTime?: number }) {
   return useQuery({
     queryKey: queryKeys.recurringSeries(householdId ?? ''),
     queryFn: () => fetchRecurringSeries(supabase, householdId as string),
     enabled: Boolean(householdId),
+    ...opts, // only a given staleTime: an explicit undefined would replace the app default
   });
 }

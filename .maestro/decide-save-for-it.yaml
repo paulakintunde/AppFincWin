@@ -1,0 +1,49 @@
+# 06.1-32 APP-13 (N18, N18S, D-22): an answer -> Save for it -> Make the goal -> Goal made -> See it in Grow. Nothing moves
+# money: the goal lives in Grow. Run signed in as a test account; the made goal is undone at the end of the flow
+# (06.1-61: through Profile > History, Undo to here) so the account keeps no goal.
+appId: com.fincwin.app
+name: Decide save for it
+---
+- runFlow:
+    file: common/decide-new-check.yaml
+    env:
+      ITEM: "laptop"
+      PRICE: "1500"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Save for it"
+- tapOn: "Save for it"
+- extendedWaitUntil:
+    visible: "A goal for .*"
+    timeout: 15000
+- assertVisible: "A savings goal in Grow, linked to this check\\."
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Make the goal"
+- tapOn: "Make the goal"
+- extendedWaitUntil:
+    visible: "Goal made"
+    timeout: 20000
+- assertVisible: "The goal for .* is in Grow\\. The check now waits for it\\."
+- tapOn: "See it in Grow"
+# 06.1-61: See it in Grow opens the goal itself (06.1-63), not the Grow tab
+- extendedWaitUntil:
+    visible:
+      id: "goal-saved"
+    timeout: 30000
+- assertVisible: "This goal follows its Decide check\\..*"
+# Back returns to the check's answer, which now shows its outcome line (FQ8) and no buy or save buttons
+- back
+- extendedWaitUntil:
+    visible:
+      id: "answer-outcome"
+    timeout: 30000
+- assertVisible: "Saving for it since .*"
+- assertNotVisible: "Save for it"
+# Clean up: Undo the goal through History (the Goal made screen and its Undo are behind us now)
+- runFlow:
+    file: common/undo-latest.yaml
+    env:
+      UNDO_NAME: "Plan saved · laptop"

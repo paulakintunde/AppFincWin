@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { Chip } from '../Chip';
 
@@ -56,5 +56,36 @@ describe('Chip dark tone', () => {
     expect(flat(picked.getByText('24 months')).color).toBe(INK);
     expect(flat(picked.getByLabelText('24 months')).backgroundColor).toBe(SURFACE);
     expect(picked.queryByTestId('accent-tint')).toBeNull();
+  });
+});
+
+describe('Chip press feedback (06.1-62)', () => {
+  it('keeps the resting look: fill1 background, no dim until pressed, presses still reach onPress', async () => {
+    const onPress = jest.fn();
+    const s = await render(
+      <ThemeProvider>
+        <Chip label="Food" onPress={onPress} />
+      </ThemeProvider>
+    );
+    const chip = s.getByLabelText('Food');
+    const style = StyleSheet.flatten(chip.props.style as never) as Record<string, unknown>;
+    expect(style.backgroundColor).toBe('#F1EFE8');
+    expect(style.minHeight).toBe(44);
+    expect(style.opacity).toBeUndefined();
+    await fireEvent.press(chip);
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('06.1-65 (CB-15): disabled says so to screen readers and does not press', async () => {
+    const onPress = jest.fn();
+    const r = await render(
+      <ThemeProvider>
+        <Chip label="Not set" disabled onPress={onPress} />
+      </ThemeProvider>
+    );
+    const chip = r.getByRole('button');
+    expect(chip.props.accessibilityState).toMatchObject({ disabled: true });
+    await fireEvent.press(chip);
+    expect(onPress).not.toHaveBeenCalled();
   });
 });

@@ -46,6 +46,8 @@ import { FilterSheet } from './FilterSheet';
 import { GroupHeader } from './GroupHeader';
 import { monthRefreshKeys } from './refreshKeys';
 import { formatMonthLabel } from './MonthSwitcher';
+import { DecideMonthBannerView } from './DecideMonthBannerView';
+import type { DecideMonthBanner } from './monthFilter';
 import { RecurringReviewSheet } from './RecurringReviewSheet';
 import { HowArePaidCard } from './HowArePaidCard';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
@@ -78,6 +80,10 @@ export interface ActivityScreenProps {
   debtId?: string | null;
   /** Clears the debt filter (the route drops its parameter). */
   onClearDebt?: () => void;
+  /** 06.1-71 (FQ10): opened from Decide (route `?month=&why=`): the month to show and what Decide is missing there. */
+  decideBanner?: DecideMonthBanner | null;
+  /** Clears the Decide banner (the route drops month and why). */
+  onClearDecideBanner?: () => void;
 }
 
 type BulkHint = 'selectFirst' | 'nothingToMarkPaid' | 'nothingToMarkUnpaid' | 'tooMany';
@@ -89,7 +95,15 @@ const BULK_HINT_KEYS = {
   tooMany: 'activity.bulkTooMany',
 } as const satisfies Record<BulkHint, string>;
 
-export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth, debtId = null, onClearDebt }: ActivityScreenProps) {
+export function ActivityScreen({
+  onOpenAccounts,
+  onOpenHistory,
+  initialMonth,
+  debtId = null,
+  onClearDebt,
+  decideBanner = null,
+  onClearDecideBanner,
+}: ActivityScreenProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const vm = useActivityViewModel({ initialMonth, supportedViews: SUPPORTED_VIEWS, debtId });
@@ -108,6 +122,24 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth, de
     accountName,
   });
   const flow = useRowFlow(rowActions, month);
+  // 06.1-71 (FQ10): arriving from Decide opens the month it names, once per arrival (Activity stays mounted as a tab, so a route
+  // parameter cannot only seed the first render). The user can move months freely after; the banner shows on its month only.
+  // Moving to another month after arriving drops the parameters, so the same link opens the month again next time.
+  const bannerMonth = decideBanner?.month ?? null;
+  const setMonth = vm.setMonth;
+  const bannerApplied = useRef<string | null>(null);
+  useEffect(() => {
+    if (bannerMonth !== null && bannerApplied.current === bannerMonth && month !== bannerMonth) onClearDecideBanner?.();
+  }, [bannerMonth, month, onClearDecideBanner]);
+  useEffect(() => {
+    if (bannerMonth === null) {
+      bannerApplied.current = null;
+      return;
+    }
+    if (bannerApplied.current === bannerMonth) return;
+    bannerApplied.current = bannerMonth;
+    setMonth(bannerMonth);
+  }, [bannerMonth, setMonth]);
   // 05.2-30 (D-01): income chips, the income sheet and the refund tags exist only with the Decide switch on.
   const { v3 } = useDecideAccess();
   const payerRules = useIncomePayerPrompts(v3 ? (rc.householdId ?? undefined) : undefined);
@@ -399,6 +431,7 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth, de
           }}
           unpaidOnly={filter.unpaidOnly}
           onClearUnpaid={() => vm.setFilter({ ...filter, unpaidOnly: false })}
+
           offerCard={
             <>
               <HowArePaidCard />
@@ -408,6 +441,14 @@ export function ActivityScreen({ onOpenAccounts, onOpenHistory, initialMonth, de
             </>
           }
         />
+        {/* 06.1-71 (FQ10): above the list, on the month Decide named only. */}
+        {decideBanner !== null && decideBanner.month === month && !vm.searchOpen ? (
+          <DecideMonthBannerView
+            banner={decideBanner}
+            monthName={formatMonthLabel(decideBanner.month, formatter.locale)}
+            onClear={() => onClearDecideBanner?.()}
+          />
+        ) : null}
       </View>
     </>
   );

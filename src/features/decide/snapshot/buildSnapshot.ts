@@ -97,6 +97,7 @@ export interface GoalSource {
   protect?: boolean;
   up_front_only?: boolean;
   net_confirmed_at?: string | null;
+  decide_may_use?: boolean; // 06.1 D-20: Decide's own unlock for answers; absent = locked
 }
 
 // structurally identical to src/db/decideChanges.ts (05-38)

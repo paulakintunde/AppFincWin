@@ -24,6 +24,10 @@ export interface V3SettingsSource {
   series_extra: Record<string, V3SeriesExtra>;
   dismissals: string[];
   own_lines: unknown[];
+  /** 06.1-22 (FIN-07): the "keep at least" money-left-each-month rule when it is on; absent or null = none. */
+  tight_line?: number | null;
+  /** 06.1 FIN-20 (D-26): decide_settings.tax_set_aside_bp, the share of freelance pay put aside for tax (2500 = 25%); absent or null = none. */
+  tax_set_aside_bp?: number | null;
   custom_options: unknown;
   // 05.2 (names equal the migration columns). Optional so an old cached row or fixture reads as null / empty.
   income_pattern?: 'steady' | 'variable' | 'seasonal' | null;
@@ -41,7 +45,7 @@ export interface V3SettingsSource {
 }
 
 export interface V3AnswerLite {
-  kind: 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover';
+  kind: 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover' | 'readiness_waiver';
   key: string;
   amount: number | null;
   bool_value: boolean | null;

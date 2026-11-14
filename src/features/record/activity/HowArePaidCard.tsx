@@ -17,7 +17,7 @@ import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { getIncomeCardDismissedAt, incomeCardIsDismissed, setIncomeCardDismissedAt } from './activityViewPrefs';
 
-export const SETUP_STANDALONE_HREF = '/decide/setup?mode=standalone' as Href;
+export const SETUP_STANDALONE_HREF = '/decide/setup/pay' as Href;
 
 function IncomeCard({ userId }: { userId: string }) {
   const t = useT();

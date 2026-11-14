@@ -126,4 +126,35 @@ describe('useTabRootChrome scrollToTop', () => {
     await renderWithShellProviders(<WithRef handle={null} />);
     expect(() => captured?.scrollToTop()).not.toThrow();
   });
+
+  // 06.1-56 (DB-10): a screen can scroll its own view to an offset through scrollHandle.
+  function WithHandle({ handle, outer }: { handle: Handle | null; outer: React.RefObject<{ scrollTo(y: number): void } | null> }) {
+    const chrome = useTabRootChrome({ title: 'Decide', scrollHandle: outer });
+    // eslint-disable-next-line react-hooks/refs
+    return handle ? <Stub ref={chrome.scrollRef as unknown as React.Ref<Handle>} handle={handle} /> : null;
+  }
+
+  it('scrollHandle scrolls the view to an offset, never below 0, and tolerates an empty ref', async () => {
+    const handle = { scrollTo: jest.fn() };
+    const outer = React.createRef<{ scrollTo(y: number): void }>();
+    await renderWithShellProviders(<WithHandle handle={handle} outer={outer} />);
+    outer.current?.scrollTo(240);
+    expect(handle.scrollTo).toHaveBeenCalledWith({ y: 240, animated: true });
+    outer.current?.scrollTo(-10);
+    expect(handle.scrollTo).toHaveBeenLastCalledWith({ y: 0, animated: true });
+    const empty = React.createRef<{ scrollTo(y: number): void }>();
+    await renderWithShellProviders(<WithHandle handle={null} outer={empty} />);
+    expect(() => empty.current?.scrollTo(10)).not.toThrow();
+  });
+});
+
+describe('useTabRootChrome titleRole (06.1-56, X-3)', () => {
+  it('draws the large title in the display role when asked, and the heading role by default', async () => {
+    await renderWithShellProviders(<Probe title="Can I afford it?" titleRole="display" />);
+    const big = StyleSheet.flatten(screen.getAllByText('Can I afford it?')[0]!.props.style);
+    expect(big.fontSize).toBe(34);
+    resetShellStores();
+    await renderWithShellProviders(<Probe title="Overview" />);
+    expect(StyleSheet.flatten(screen.getAllByText('Overview')[0]!.props.style).fontSize).toBe(26);
+  });
 });

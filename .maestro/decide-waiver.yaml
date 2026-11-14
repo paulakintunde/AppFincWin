@@ -1,0 +1,71 @@
+# 06.1-32 APP-13 (ask, don't block, D-43 / N21): an answer that asks about a figure it does not have still shows in full. The
+# ask sits under the answer with its own answers (here the debts ask: "Add it" or "None"); a missing figure is its own row with
+# a Fix link. Choosing "None" (the waiver: the plan's draft said "Skip for now"; the real key is decide.v3.factAction.none) keeps
+# the answer, its basis and its footer on screen. Run signed in as a test account with no debts recorded.
+appId: com.fincwin.app
+name: Decide waiver (ask, don't block)
+---
+- runFlow:
+    file: common/decide-new-check.yaml
+    env:
+      ITEM: "concert tickets"
+      PRICE: "150"
+# The answer is there before anything is answered
+- assertVisible:
+    id: "answer-verdict"
+# 06.1-61: facts after the first and most notices open under the answer's Why? since 06.1-67; open it first.
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Why\\?"
+- runFlow:
+    when:
+      visible:
+        id: "answer-facts-why"
+    commands:
+      - tapOn:
+          id: "answer-facts-why"
+# The ask (or a missing-figure row) under the answer
+# Pre-device check (06.1-82 G-61-8): once "None" has been answered on this account the debts ask is no longer shown, and the
+# answer may have no Fix row either, so the search for them is bounded but not asserted.
+- repeat:
+    times: 6
+    while:
+      notVisible: ".*Do you have (any|one)\\?|Fix(: .*)?|FincWin is a planning tool, not a lender\\."
+    commands:
+      - swipe:
+          start: "50%,75%"
+          end: "50%,35%"
+          duration: 400
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      notVisible: ".*Do you have (any|one)\\?"
+    commands:
+      - evalScript: "${console.log('WAIVER no debts ask on this answer (None already answered, or debts recorded)')}"
+- runFlow:
+    when:
+      visible: ".*Do you have (any|one)\\?"
+    commands:
+      - tapOn: "None"
+      # 06.1-61: the answer re-judges after the choice (rows ignore taps while it updates, 06.1-67), so the ask goes once the
+      # update lands, not at once
+      - extendedWaitUntil:
+          notVisible: ".*Do you have (any|one)\\?"
+          timeout: 60000
+- runFlow:
+    when:
+      visible: "Fix(: .*)?"
+    commands:
+      # a missing figure never blocks: Fix is a link under the answer, not a gate
+      - assertVisible:
+          id: "answer-facts"
+# Still the answer: basis and footer below it
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "FincWin is a planning tool, not a lender\\."
+- assertVisible:
+    id: "answer-basis"
+- assertVisible:
+    id: "answer-footer"

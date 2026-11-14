@@ -1,0 +1,203 @@
+# 06.1-32 UX-11 / APP-13: a new user's first answer, timed and tap-counted by the flow.
+# Best run signed in as a FRESH test account that has never opened Decide (no records, intro not yet seen, no safety net).
+# On an account that has already seen the intro or has records, the steps it does not meet are skipped and not counted, and
+# the logged figure is labelled "not a fresh user" by whoever records it.
+# Target 60 s / 8 taps (logged); hard limit 90 s / 12 taps (asserted). Typing is not a tap. Counted: every tap a person makes.
+# Not counted: the long press + Select all that clears a field Decide home kept from an earlier check (a fresh account's
+# fields are empty).
+# 06.1-61:
+# - No keyboard-close taps. Decide home (06.1-56) and quick estimates (06.1-58) keep taps with the keyboard open, so the first
+#   tap on Check it and on See the answer now presses it. A fresh user's quick-estimates path is then 11 taps.
+# - Plan 44's Not ready card: on a brand-new account (no earlier month) it offers "Answer from quick estimates", used here.
+#   On an account with earlier months it has no such link; each named item is answered with its one-tap choice (or a goal's
+#   "Which account?" is set to the first account), one tap each, until the answer shows. Logged as "named items N".
+# Words are the real decide.screens / legal.decideIntro keys in src/i18n/locales (not the plan's draft wording).
+appId: com.fincwin.app
+name: Decide first answer (UX-11)
+---
+- runFlow: common/to-tabs.yaml
+- evalScript: ${output.taps = 0}
+- evalScript: ${output.quick = false}
+- evalScript: ${output.items = 0}
+- evalScript: ${output.t0 = Date.now()}
+# 1. Decide tab
+- tapOn: "Decide, tab, .*"
+- evalScript: ${output.taps = output.taps + 1}
+- assertVisible: "Can I afford it\\?"
+# Decide home keeps its scroll position: back to the top, where the check card is (not a person's tap).
+- repeat:
+    times: 10
+    while:
+      notVisible:
+        id: "check-what"
+    commands:
+      - swipe:
+          start: "50%,30%"
+          end: "50%,85%"
+          duration: 300
+      - waitForAnimationToEnd
+# 2. What is it? (cleared first if it holds an earlier entry; not counted)
+- tapOn:
+    id: "check-what"
+- evalScript: ${output.taps = output.taps + 1}
+- longPressOn:
+    id: "check-what"
+- runFlow:
+    when:
+      visible: "Select all"
+    commands:
+      - tapOn: "Select all"
+      - eraseText: 5
+- inputText: "headphones"
+# 3. Price (cleared first if it holds an earlier amount; not counted). The empty field reads "Price" and shows its "0.00"
+#    hint; the tap lands on the field itself, below the label. 06.1-84 made it read "Price, "; since 06.1-85 it reads "Price"
+#    again (".+" below still needs an amount).
+- repeat:
+    times: 3
+    while:
+      visible: "Price, .+"
+    commands:
+      - longPressOn: "Price, .+"
+      - runFlow:
+          when:
+            visible: "Select all"
+          commands:
+            - tapOn: "Select all"
+      - eraseText: 20
+- tapOn:
+    text: "[0-9][0-9.,]*"
+    below: "Price"
+- evalScript: ${output.taps = output.taps + 1}
+- inputText: "199"
+# 4. Check it (a small buy goes straight to the answer, D-09). The keyboard is still open and covers the lower screen, so the
+#    page is swiped from above it (a swipe is not a tap) until Check it shows; the first tap on it starts the check.
+- repeat:
+    times: 6
+    while:
+      notVisible: "Check it"
+    commands:
+      - swipe:
+          start: "50%,55%"
+          end: "50%,25%"
+          duration: 400
+      - waitForAnimationToEnd
+- tapOn: "Check it"
+- evalScript: ${output.taps = output.taps + 1}
+- extendedWaitUntil:
+    visible: "How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet.*|I bought it"
+    timeout: 30000
+# 5. The one-time intro card (D-120), when this account has not seen it
+- runFlow:
+    when:
+      visible: "How Decide answers"
+    commands:
+      - runFlow:
+          file: common/scroll-to.yaml
+          env:
+            TARGET: "Got it"
+      - tapOn: "Got it"
+      - evalScript: ${output.taps = output.taps + 1}
+# 6. The first-answer safety-net question (D-14): Not set yet
+- runFlow:
+    when:
+      visible: "Do you have a safety net\\? About how much\\?"
+    commands:
+      - runFlow:
+          file: common/scroll-to.yaml
+          env:
+            TARGET: "Not set yet"
+      - tapOn: "Not set yet"
+      - evalScript: ${output.taps = output.taps + 1}
+- extendedWaitUntil:
+    visible: "Not ready yet.*|I bought it"
+    timeout: 30000
+# 7-11. Not ready on a brand-new account: answer from quick estimates (ask, don't block), three amounts, See the answer now
+- runFlow:
+    when:
+      visible: "Answer from quick estimates"
+    commands:
+      - evalScript: ${output.quick = true}
+      - tapOn: "Answer from quick estimates"
+      - evalScript: ${output.taps = output.taps + 1}
+      - extendedWaitUntil:
+          visible: "A first answer from three estimates"
+          timeout: 15000
+      - tapOn: "About how much comes in each month\\?"
+      - evalScript: ${output.taps = output.taps + 1}
+      - inputText: "3000"
+      - tapOn: "About how much goes on bills\\?"
+      - evalScript: ${output.taps = output.taps + 1}
+      - inputText: "1200"
+      - tapOn: "About how much on everyday spending\\?"
+      - evalScript: ${output.taps = output.taps + 1}
+      - inputText: "800"
+      - assertVisible: "A usual month leaves about .* by these estimates\\."
+      - runFlow:
+          file: common/scroll-to.yaml
+          env:
+            TARGET: "See the answer now"
+      - tapOn: "See the answer now"
+      - evalScript: ${output.taps = output.taps + 1}
+# 7+. Not ready on an account with earlier months: each named item, one tap each (no quick-estimates link here)
+- repeat:
+    times: 4
+    while:
+      visible: "Not ready yet.*"
+    commands:
+      - runFlow:
+          when:
+            visible: "It didn.t happen|No pay that time|Nothing more for .*|Records begin in .*"
+          commands:
+            - tapOn: "It didn.t happen|No pay that time|Nothing more for .*|Records begin in .*"
+            - evalScript: ${output.taps = output.taps + 1}
+            - evalScript: ${output.items = output.items + 1}
+      - runFlow:
+          when:
+            visible: "Which account\\?"
+          commands:
+            - tapOn: "Which account\\?"
+            - evalScript: ${output.taps = output.taps + 1}
+            - extendedWaitUntil:
+                visible: "Which account holds .*"
+                timeout: 15000
+            - tapOn:
+                text: ".+"
+                childOf:
+                  id: "sheet-scroll"
+            - evalScript: ${output.taps = output.taps + 1}
+            - evalScript: ${output.items = output.items + 1}
+      - runFlow:
+          when:
+            visible:
+              id: "answer-fix-account_use_question"
+          commands:
+            - runFlow: common/decide-account-use.yaml
+            - evalScript: ${output.taps = output.taps + 4}
+            - evalScript: ${output.items = output.items + 1}
+      # the answered row reads "Saved, updating…" until Decide judges again; wait for it to go before the next item
+      - extendedWaitUntil:
+          notVisible:
+            id: "readiness-saved-0"
+          timeout: 60000
+# The answer
+- extendedWaitUntil:
+    visible:
+      id: "answer-verdict"
+    timeout: 30000
+- evalScript: ${output.ms = Date.now() - output.t0}
+- evalScript: "${console.log('UX-11 first answer = ' + output.ms + ' ms, ' + output.taps + ' taps, quick-estimates path ' + output.quick + ', named items ' + output.items + ' (target 60000 ms / 8 taps; limit 90000 ms / 12 taps)')}"
+# On the quick-estimates path the basis line names them (decide.v3.basis.quickEstimates)
+- runFlow:
+    when:
+      true: ${output.quick}
+    commands:
+      - runFlow:
+          file: common/scroll-to.yaml
+          env:
+            TARGET: "Based on your quick estimates, not your records\\.|.*and your quick estimates\\."
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "FincWin is a planning tool, not a lender\\."
+- assertTrue: ${output.ms <= 90000}
+- assertTrue: ${output.taps <= 12}

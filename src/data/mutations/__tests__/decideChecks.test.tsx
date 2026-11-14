@@ -26,6 +26,7 @@ import {
   useRetryCheckCreate,
   useRemoveDecision,
   useSaveCheckDraft,
+  resetDeletedChecksForTests,
   type CreateCheckVars,
 } from '../decideChecks';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
@@ -140,6 +141,7 @@ beforeEach(() => {
   clearVersionChains();
   resetToastForTests();
   recordFailedWrite.mockClear();
+  resetDeletedChecksForTests();
   dismissFailedWrite.mockClear();
   insertUndoStep.mockClear();
 });
@@ -327,6 +329,46 @@ describe('useSaveCheckDraft', () => {
     expect(toast).not.toHaveBeenCalled();
     expect(qc.getQueryData<DecideCheckRow[]>(KEY)).toEqual([]);
     toast.mockRestore();
+  });
+
+  // 06.1-81 (G-74-1): after a check was deleted on this device, a late stepper draft save came back "not found" (the deleted row
+  // was not readable to the D-77 probe) and Home said "couldn't save: The item was removed elsewhere". A save for a check this
+  // device deleted is dropped without a trace; a not-found for any other check is still parked.
+  it('G-74-1: a late draft save for a check deleted on this device is dropped silently, even when the server says not found', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [check('gone-1', { version: 3 })]);
+    fake.respondWith(ok([check('gone-1', { deleted_at: '2026-10-02T00:00:00Z', version: 4 })]));
+    fake.respondWith(ok([]));
+    fake.respondWith(ok(null));
+    const toast = jest.spyOn(undoToast, 'showToast');
+    const abandon = await renderHook(() => useAbandonCheck(), { wrapper: wrapper(qc) });
+    const save = await renderHook(() => useSaveCheckDraft(), { wrapper: wrapper(qc) });
+
+    abandon.result.current.abandon(check('gone-1', { version: 3 }));
+    save.result.current.save({ id: 'gone-1', name: 'Laptop', inputs: {}, furthestStep: 2 });
+    await waitFor(() => expect(qc.getMutationCache().getAll().every((m) => m.state.status !== 'pending')).toBe(true));
+
+    expect(recordFailedWrite).not.toHaveBeenCalled();
+    expect(toast.mock.calls.filter(([t]) => (t as { kind?: string }).kind === 'refusal')).toHaveLength(0);
+    toast.mockRestore();
+  });
+
+  it('G-74-1: the same holds for a check deleted from the open-check sheet (useRemoveDecision), and other checks still park', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [check('gone-2', { version: 3 }), check('live-2')]);
+    fake.respondWith(ok([check('gone-2', { deleted_at: '2026-10-02T00:00:00Z', version: 4 })]));
+    fake.respondWith(ok([]));
+    fake.respondWith(ok(null));
+    fake.respondWith(ok([]));
+    fake.respondWith(ok(null));
+    const remove = await renderHook(() => useRemoveDecision(), { wrapper: wrapper(qc) });
+    const save = await renderHook(() => useSaveCheckDraft(), { wrapper: wrapper(qc) });
+
+    remove.result.current.remove(check('gone-2', { version: 3 }));
+    save.result.current.save({ id: 'gone-2', name: 'Laptop', inputs: {}, furthestStep: 2 });
+    save.result.current.save({ id: 'live-2', name: 'Phone', inputs: {}, furthestStep: 1 });
+    await waitFor(() => expect(recordFailedWrite).toHaveBeenCalledTimes(1));
+    expect(recordFailedWrite.mock.calls[0]![0]).toMatchObject({ entityId: 'live-2', kind: 'not-found' });
   });
 });
 
@@ -539,6 +581,17 @@ describe('useSaveCheckAnswer', () => {
 
     expect(result.current.save(check('k1', { answer_v3: { ...seen, lineFacts: ['a', 'b'] } }), seen)).toBe(false);
     expect(fake.calls.filter((c) => c.method === 'update')).toHaveLength(1);
+  });
+
+  it('06.1-81: the same answer for edited inputs is written, so the stored fingerprint follows the edit', async () => {
+    const { fake, qc } = setup();
+    const before = { ...seen, inputsKey: 'k-old' };
+    qc.setQueryData(KEY, [check('k1', { answer_v3: before })]);
+    fake.respondWith(ok([check('k1', { answer_v3: { ...seen, inputsKey: 'k-new' }, version: 2 })]));
+    const { result } = await renderHook(() => useSaveCheckAnswer(), { wrapper: wrapper(qc) });
+
+    expect(result.current.save(check('k1', { answer_v3: before }), { ...seen, inputsKey: 'k-new' })).toBe(true);
+    await waitFor(() => expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ answer_v3: { ...seen, inputsKey: 'k-new' } }));
   });
 
   it('registers a default under its own key so a paused write resumes', () => {

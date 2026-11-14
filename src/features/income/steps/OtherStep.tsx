@@ -19,7 +19,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { hapticSelection } from '@/ui/haptics';
-import type { SetupStepBodyProps, SetupStepHandle } from '@/features/decide/setup/steps/types';
+import type { SetupStepBodyProps, SetupStepHandle } from '@/features/income/stepTypes';
 import { useIncomeContext } from '../useIncomeContext';
 import { liveSeriesOfKind, payableAccounts, pausedIncomeSeries } from '../seriesHelpers';
 import { Caption, ChipRow, Intro, PausedSeriesList, SeriesStatusLink, Stack, Why, useReportReady, useCopy } from './shared';

@@ -29,6 +29,7 @@ export const space = {
   gapSm: 8,
   gapMd: 12,
   pillPadV: 15,
+  /** Prototype 44 px target rule. Text links reach 52 dp tall through LINK_HIT_SLOP (src/ui/pressFeedback.ts, 06.1-62 CB-6). */
   touchMin: 44,
   /** Entry-sheet field rows (dense variant). */
   rowPadDense: 13,

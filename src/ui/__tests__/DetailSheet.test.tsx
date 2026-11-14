@@ -4,6 +4,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { DetailSheet, DetailRow } from '../DetailSheet';
 import { ConfirmSheet } from '../ConfirmSheet';
+import { layOutSheets } from '@/test/sheetLayout';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -50,6 +51,7 @@ describe('DetailSheet', () => {
     const { getAllByRole } = await wrap(
       <DetailSheet visible onDismiss={onDismiss} accessibilityLabel="Details" title="Coffee" />,
     );
+    await layOutSheets();
     await fireEvent.press(getAllByRole('button', { hidden: true })[0]!);
     expect(onDismiss).toHaveBeenCalled();
   });

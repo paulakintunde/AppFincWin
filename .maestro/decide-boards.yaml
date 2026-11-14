@@ -1,0 +1,303 @@
+# 06.1-61 (G-11, A-NR, A-ANS-5): a screenshot walk of the Decide boards this test account can reach, for the side-by-side
+# comparison with the prototype's qa-shots. Shots are named board-<id> (takeScreenshot writes <name>.png in the folder
+# Maestro runs from, or under --test-output-dir).
+#   board-N02     a small buy that fits (mug b61, 12), the answer top; board-N02-lower the rest of it
+#   board-N19     I bought it (the Add to your records screen)      board-N19S  Added to records; then Undo
+#   board-N09     a big buy through the stepper with a plan (used car b61, 9,000, 24 months at 9 %)
+#   board-D21     What you told Decide, on that answer
+#   board-N18     Save for it (A goal for …)                        board-N18S  Goal made; then Undo
+#   board-D47     Past decisions (with entries, when the account has any); board-D48 the first entry's detail
+#   board-FQ8     a decided check's outcome line: the laptop's answer after its goal is made (Saving for it since ...)
+# Writes on the signed-in test account: three checks (mug b61, used car b61, laptop b61). The purchase and the goal are undone
+# on their own screens (Undo) or, for the goal, through Profile > History. The three checks are deleted at the end from their open-check sheets. Nothing else changes.
+# Android: no hide-keyboard (it sends Back) and no built-in scroll-until; pages scroll with common/scroll-to.yaml.
+appId: com.fincwin.app
+name: Decide boards capture (06.1-61)
+---
+- extendedWaitUntil:
+    visible:
+      id: "tab-bar"
+    timeout: 90000
+- runFlow: common/to-tabs.yaml
+
+# N02: a small buy that fits
+- runFlow:
+    file: common/decide-new-check.yaml
+    env:
+      ITEM: "mug b61"
+      PRICE: "12"
+- waitForAnimationToEnd
+- takeScreenshot: board-N02
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "FincWin is a planning tool, not a lender\\."
+- takeScreenshot: board-N02-lower
+
+# N19 / N19S: I bought it, Add to records, then Undo
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "I bought it"
+- tapOn: "I bought it"
+- extendedWaitUntil:
+    visible: "Add to your records"
+    timeout: 30000
+- waitForAnimationToEnd
+- takeScreenshot: board-N19
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Add to records"
+- tapOn: "Add to records"
+- extendedWaitUntil:
+    visible: "Added to records"
+    timeout: 60000
+- waitForAnimationToEnd
+- takeScreenshot: board-N19S
+- runFlow:
+    when:
+      visible: "Not this one"
+    commands:
+      - tapOn: "Not this one"
+- tapOn: "Undo"
+- extendedWaitUntil:
+    visible: "Undone\\. Nothing was added\\."
+    timeout: 60000
+- evalScript: "${console.log('BOARD N19S purchase undone')}"
+- tapOn: "Back to Decide"
+
+# N09 + D21: a used car on a 24-month plan through the stepper
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 60000
+- repeat:
+    times: 10
+    while:
+      notVisible:
+        id: "check-what"
+    commands:
+      - swipe:
+          start: "50%,30%"
+          end: "50%,85%"
+          duration: 300
+      - waitForAnimationToEnd
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "used car b61"
+      PRICE: "9000"
+- extendedWaitUntil:
+    visible: "Step 2 of 3"
+    timeout: 60000
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Installments"
+- runFlow:
+    file: common/open-sheet.yaml
+    env:
+      TAP: "Installments"
+      EXPECT: "Installment plan"
+# the panel can still be sliding in; wait for the length chips before the tap
+- extendedWaitUntil:
+    visible: "24.months"
+    timeout: 30000
+- waitForAnimationToEnd
+- tapOn: "24.months"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Rate, % a year"
+- tapOn: "Rate, % a year"
+- inputText: "9"
+- tapOn: "Length"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Use this plan"
+- tapOn: "Use this plan"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Next"
+- tapOn: "Next"
+- extendedWaitUntil:
+    visible: "Step 3 of 3"
+    timeout: 30000
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "See the answer"
+- tapOn: "See the answer"
+- runFlow: common/decide-gate.yaml
+- waitForAnimationToEnd
+- takeScreenshot: board-N09
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "What you told Decide"
+- takeScreenshot: board-D21
+
+# N18 / N18S: Save for it on a laptop, Make the goal, then Undo
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 60000
+- repeat:
+    times: 10
+    while:
+      notVisible:
+        id: "check-what"
+    commands:
+      - swipe:
+          start: "50%,30%"
+          end: "50%,85%"
+          duration: 300
+      - waitForAnimationToEnd
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "laptop b61"
+      PRICE: "1500"
+- extendedWaitUntil:
+    visible: "Step [123] of 3|How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet.*|I bought it"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: "Step [123] of 3"
+    commands:
+      - repeat:
+          times: 3
+          while:
+            notVisible: "See the answer"
+          commands:
+            - runFlow:
+                file: common/scroll-to.yaml
+                env:
+                  TARGET: "Next|See the answer"
+            - runFlow:
+                when:
+                  notVisible: "See the answer"
+                commands:
+                  - tapOn: "Next"
+                  - waitForAnimationToEnd
+      - tapOn: "See the answer"
+- runFlow: common/decide-gate.yaml
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Save for it"
+- tapOn: "Save for it"
+- extendedWaitUntil:
+    visible: "A goal for .*"
+    timeout: 30000
+- waitForAnimationToEnd
+- takeScreenshot: board-N18
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Make the goal"
+- tapOn: "Make the goal"
+- extendedWaitUntil:
+    visible: "Goal made"
+    timeout: 60000
+- waitForAnimationToEnd
+- takeScreenshot: board-N18S
+# FQ8: the goal, then Back to the check's answer, which now shows its outcome line
+- tapOn: "See it in Grow"
+- extendedWaitUntil:
+    visible:
+      id: "goal-saved"
+    timeout: 30000
+- back
+- extendedWaitUntil:
+    visible:
+      id: "answer-outcome"
+    timeout: 30000
+- waitForAnimationToEnd
+- takeScreenshot: board-FQ8
+# Undo the goal through History (Goal made and its Undo are behind us)
+- runFlow:
+    file: common/undo-latest.yaml
+    env:
+      UNDO_NAME: "(?i)Plan saved · laptop b61"
+- evalScript: "${console.log('BOARD N18S and FQ8 captured; goal undone through History')}"
+
+# D47 / D48: Past decisions, then its first entry
+- runFlow: common/to-tabs.yaml
+- openLink: "fincwin://decide"
+- extendedWaitUntil:
+    visible:
+      id: "past-pill"
+    timeout: 60000
+- tapOn:
+    id: "past-pill"
+- extendedWaitUntil:
+    visible: "Your decisions|No decisions yet"
+    timeout: 60000
+- waitForAnimationToEnd
+- takeScreenshot: board-D47
+- evalScript: ${output.d48 = 'no entries on this account'}
+- runFlow:
+    when:
+      visible:
+        id: "past-row-.*"
+    commands:
+      - tapOn:
+          id: "past-row-.*"
+          index: 0
+      - extendedWaitUntil:
+          visible: "Checked .*|What Decide counted"
+          timeout: 60000
+      - waitForAnimationToEnd
+      - takeScreenshot: board-D48
+      - evalScript: ${output.d48 = 'captured'}
+- evalScript: "${console.log('BOARD D48 ' + output.d48)}"
+
+# Clean up: delete the three b61 checks from their open-check sheets
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 60000
+- evalScript: ${output.deleted = 0}
+- repeat:
+    times: 4
+    commands:
+      - repeat:
+          times: 10
+          while:
+            notVisible:
+              id: "check-what"
+          commands:
+            - swipe:
+                start: "50%,30%"
+                end: "50%,85%"
+                duration: 300
+            - waitForAnimationToEnd
+      - repeat:
+          times: 8
+          while:
+            notVisible: "(?i)(mug|used car|laptop) b61, .*|See all.* open checks"
+          commands:
+            - swipe:
+                start: "50%,75%"
+                end: "50%,35%"
+                duration: 400
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "(?i)(mug|used car|laptop) b61, .*"
+          commands:
+            - tapOn: "(?i)(mug|used car|laptop) b61, .*"
+            - extendedWaitUntil:
+                visible: "Edit the check"
+                timeout: 30000
+            - tapOn: "Delete"
+            - waitForAnimationToEnd
+            - evalScript: ${output.deleted = output.deleted + 1}
+- evalScript: "${console.log('CLEANUP boards deleted=' + output.deleted)}"

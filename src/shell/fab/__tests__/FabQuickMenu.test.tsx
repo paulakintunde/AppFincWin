@@ -3,6 +3,7 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { renderWithShellProviders, resetShellStores } from '@/shell/__tests__/testUtils';
 import { FabProvider, useFab, useProvideQuickAction, type FabContextValue } from '../FabProvider';
 import { FabQuickMenu } from '../FabQuickMenu';
+import { layOutSheets } from '@/test/sheetLayout';
 
 jest.mock('@/features/auth/AuthProvider', () => ({
   useAuth: () => ({ status: 'signedIn' }),
@@ -95,6 +96,7 @@ describe('FabQuickMenu', () => {
     try {
       await setup();
       await open();
+      await layOutSheets();
       await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
       expect(holder.current?.quickMenuOpen).toBe(false);
       await act(async () => {

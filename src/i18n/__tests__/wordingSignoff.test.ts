@@ -104,7 +104,7 @@ describe('sign-off mechanism (D-153)', () => {
 
 describe('wording lock (D-15, active once signed)', () => {
   (isSigned ? it : it.skip)('locked Decide wording matches the owner’s sign-off', () => {
-    expect(signoff.by).toBe('owner');
+    expect(signoff.by).toMatch(/^(owner|.+ \(owner\))$/); // 06.1-33: signed as "Paul (owner)"
     expect(signoff.signedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(signed).not.toBeNull();
     const now = lockedLeaves(en);

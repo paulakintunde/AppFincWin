@@ -41,7 +41,7 @@ jest.mock('@/db/undoLog', () => ({ insertUndoStep: jest.fn(async () => undefined
 jest.mock('@/services/locale/deviceLocale', () => ({ getDeviceTimeZone: () => 'UTC' }));
 // buildGoalsModel is pure; its module's read hooks are not used here.
 jest.mock('@/data/queries/growGoals', () => ({}));
-jest.mock('@/features/decide/past/usePastDecisions', () => ({}));
+jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({}));
 
 const { recordFailedWrite } = require('@/data/sync/failedWrites') as { recordFailedWrite: jest.Mock };
 const { insertUndoStep } = require('@/db/undoLog') as { insertUndoStep: jest.Mock };

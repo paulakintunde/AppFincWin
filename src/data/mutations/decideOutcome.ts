@@ -20,6 +20,7 @@ import {
 } from '@/data/sync/writeErrors';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { showToast } from '@/state/undoToast';
+import type { CheckV2, Evaluation } from '@/engine/decide/v3';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { recordWrittenVersion } from '@/data/sync/versionChain';
 import { writeClient } from './writeClient';
@@ -189,8 +190,7 @@ async function scheduleCooling(checkId: string, coolingOff: boolean): Promise<vo
   }
 }
 
-export function useWaitAndSave(): {
-  save(args: {
+type WaitSaveArgs = {
     check: CheckRef;
     verdict: VerdictState;
     currency: string;
@@ -201,14 +201,16 @@ export function useWaitAndSave(): {
     coolingOff: boolean;
     /** 05.3-68: the everyday account the plan pot is linked to. */
     accountId?: string | null;
-  }): Promise<{ reminder: 'set' | 'off' | 'none'; stepId: string }>;
-} {
+};
+type WaitSaveResult = { reminder: 'set' | 'off' | 'none'; stepId: string; goalId: string | null };
+
+function useWaitSaveCore(): { save(args: WaitSaveArgs): Promise<WaitSaveResult> } {
   const mutation = useOutcomeMutation();
   return {
     async save(args) {
       const { check } = args;
       const earlier = inFlight.get(check.id);
-      if (earlier) return { reminder: 'none', stepId: earlier };
+      if (earlier) return { reminder: 'none', stepId: earlier, goalId: null };
       const fallbackName = typeof check.inputs.name === 'string' ? check.inputs.name : '';
       const goal: DecideWaitGoal | null =
         args.goalTarget !== null && args.goalTarget > 0
@@ -239,14 +241,100 @@ export function useWaitAndSave(): {
       });
       getAnalytics().track('decision_recorded', { decision: 'wait' });
       void scheduleCooling(check.id, args.coolingOff);
-      if (args.readyBy === null) return { reminder: 'none', stepId };
+      const goalId = goal?.id ?? null;
+      if (args.readyBy === null) return { reminder: 'none', stepId, goalId };
       try {
         const result = await reminders.scheduleWaitReminder(check.id, args.readyBy, args.today);
-        return { reminder: result.scheduled ? 'set' : 'off', stepId };
+        return { reminder: result.scheduled ? 'set' : 'off', stepId, goalId };
       } catch {
         // A refused or failing scheduler still leaves the decision saved.
-        return { reminder: 'off', stepId };
+        return { reminder: 'off', stepId, goalId };
       }
+    },
+  };
+}
+
+export function useWaitAndSave(): {
+  save(args: WaitSaveArgs): Promise<{ reminder: 'set' | 'off' | 'none'; stepId: string }>;
+} {
+  const core = useWaitSaveCore();
+  return {
+    async save(args) {
+      const { reminder, stepId } = await core.save(args);
+      return { reminder, stepId };
+    },
+  };
+}
+
+/**
+ * 06.1 D-22: the whole amount of a cash check, or only the up-front part (dayOne, my share) of a plan. The server bounds the
+ * target to the check's stored price (06.1-10), so a plan's up-front part can never exceed it. null when nothing is to be saved.
+ */
+export function saveForItTarget(check: CheckV2, evaluation: Evaluation): number | null {
+  const purchase = evaluation.purchase;
+  if (purchase === null) return null;
+  const n = check.pay.mode === 'plan' ? purchase.dayOne : purchase.whole;
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}
+
+/** The date the reminder fires: the engine's date, or the first of its month. */
+function readyByOf(evaluation: Evaluation): string | null {
+  const r = evaluation.result.readyBy;
+  if (r === null) return null;
+  return r.kind === 'date' ? r.date : `${r.month}-01`;
+}
+
+/**
+ * 06.1 D-22: "Save for it" on a v3 check. One outcome call makes the locked goal linked to the check and moves the check to
+ * waiting; the server records ONE undo step that reverses both. Returns the goal id for "See it in Grow".
+ */
+export function useSaveForIt(): {
+  save(args: {
+    check: CheckRef;
+    v3: CheckV2;
+    evaluation: Evaluation;
+    /** What the user puts aside each month (minor units). */
+    monthly: number;
+    currency: string;
+    today: string;
+    coolingOff?: boolean;
+    accountId?: string | null;
+  }): Promise<{ reminder: 'set' | 'off' | 'none'; stepId: string; goalId: string | null }>;
+} {
+  const core = useWaitSaveCore();
+  return {
+    save(args) {
+      return core.save({
+        check: args.check,
+        verdict: args.evaluation.result.legacyState,
+        currency: args.currency,
+        monthlyAmount: args.monthly,
+        readyBy: readyByOf(args.evaluation),
+        today: args.today,
+        goalTarget: saveForItTarget(args.v3, args.evaluation),
+        coolingOff: args.coolingOff ?? false,
+        accountId: args.accountId ?? null,
+      });
+    },
+  };
+}
+
+/** 06.1: "I'm not buying it" - the pass outcome with one Undo and the confirming toast. */
+export function useNotBuying(): {
+  pass(args: { check: CheckRef; evaluation: Evaluation; coolingOff?: boolean }): string | null;
+} {
+  const inner = usePass();
+  return {
+    pass(args) {
+      const stepId = inner.pass({ check: args.check, verdict: args.evaluation.result.legacyState, coolingOff: args.coolingOff ?? false });
+      if (stepId !== null) {
+        showToast({
+          kind: 'ordinary',
+          text: { key: 'decide.screens.answerActions.notBuyingToast' },
+          stepId,
+        });
+      }
+      return stepId;
     },
   };
 }

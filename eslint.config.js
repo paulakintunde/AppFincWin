@@ -22,6 +22,8 @@ module.exports = [
       'support.js',
       'doc-page.js',
       'screens/**',
+      // Planning docs and design boards (e.g. .planning/phases/*/design/*.js) are not app code.
+      '.planning/**',
     ],
   },
   ...expoConfig,

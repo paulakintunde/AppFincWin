@@ -32,6 +32,8 @@ import {
   type Limits,
   type MonthMark,
   type PayArrival,
+  type ReadinessWaiver,
+  type SkippedOccurrence,
   type TypedEstimates,
   type SeriesRole,
   type UnexplainedAnswer,
@@ -54,6 +56,7 @@ import { buildDecideSnapshot, type SnapshotSource } from '../buildSnapshot';
 import { convertFloored, makeConverter } from '../conversion';
 import type { SnapshotResult } from '../types';
 import { engineIncomeTypes } from './settingsSource';
+import { waiverOfAnswer } from './waiverKeys';
 import type { V3SeriesExtra, V3SettingsSource } from './types';
 
 type Obj = Record<string, unknown>;
@@ -148,6 +151,11 @@ function limitsOf(v3: V3SettingsSource | null, legacy: Limits): Limits {
   }
   return { lines: [...legacy.lines, ...own] };
 }
+
+/** 06.1-22 FIN-07: the keep-at-least line as minor units; anything unreadable or negative is none. */
+const tightLineOf = (x: unknown) => { const n = moneyOf(x); return n === null ? null : minorUnits(n); };
+/** 06.1 FIN-20 (D-26): the typed share as whole basis points inside the column's 0 .. 6000; anything else reads as none. */
+const taxSetAsideBpOf = (x: unknown): number | null => (typeof x === 'number' && Number.isInteger(x) && x >= 0 && x <= 6000 ? x : null);
 
 function cadenceOf(x: unknown): Cadence | null {
   if (!isRec(x)) return null;
@@ -299,6 +307,29 @@ function expectedIncomeOf(answers: readonly AnswerLite[]): ExpectedMonthIncome[]
   });
 }
 
+/** 06.1-43 (G-1, C-2; 05.3 D-28): readiness answers, in stored order. A malformed stored row is skipped, never thrown. */
+function waiversOf(answers: readonly AnswerLite[]): ReadinessWaiver[] {
+  return answers.flatMap((a): ReadinessWaiver[] => {
+    const w = waiverOfAnswer(a);
+    return w === null ? [] : [w];
+  });
+}
+
+/**
+ * 06.1-43 (G-1, C-2): a skipped occurrence of a series settles its due silently (a record, not an answer). One per series and
+ * date, sorted by series id then date (plain string order). The skipped rows still never become month lines.
+ */
+function skippedOf(rows: SnapshotSource['rows']): SkippedOccurrence[] {
+  const sep = String.fromCharCode(1); // below every id and date character, so a shorter id sorts first
+  const seen = new Map<string, SkippedOccurrence>();
+  for (const r of rows) {
+    if (r.deleted_at !== null || r.status !== 'skipped' || r.recurring_series_id === null) continue;
+    seen.set(`${r.recurring_series_id}${sep}${r.local_date}`, { seriesId: r.recurring_series_id, date: r.local_date });
+  }
+  // The default sort is plain UTF-16 code unit order (never localeCompare).
+  return [...seen.keys()].sort().map((k) => seen.get(k) as SkippedOccurrence);
+}
+
 /** D-38, Pitfall 9: a held-back bridge counts only while its check is in the live set. */
 function heldBridgesOf(answers: readonly AnswerLite[], live: ReadonlySet<string>): HeldBridge[] {
   return answers.flatMap((a): HeldBridge[] => {
@@ -420,13 +451,14 @@ export function buildV3Inputs(
     if (prev === undefined || r.local_date >= prev.local_date) landing.set(r.goal_id, r);
   }
   const envelopes: Envelope[] = envelopesOf(goalPointsOf(goalRows, source.rows, toHome)).map((e) => ({ ...e, accountId: e.accountId ?? landing.get(e.id)?.account_id ?? null }));
-  const accounts: V3Account[] = source.accounts.flatMap((a) => {
+  const accounts: V3Account[] = source.accounts.flatMap((a): V3Account[] => {
     if (a.deleted_at !== null || a.archived_at !== null) return [];
-    // 05.2 F-05: only money accounts are V3 accounts. This mirrors holdsMoney in setup/accountUseSuggest.ts, so the account-use
+    // 05.2 F-05: only money accounts are V3 accounts. This mirrors holdsMoney in record/accounts/accountUseSuggest.ts, so the account-use
     // step and the unspent step count the same accounts. Cards and loans are debts, handled on the Loans step.
     if (a.kind === 'credit' || a.kind === 'loan') return [];
     const balance = toHome(source.balances[a.id] ?? 0, a.currency);
-    if (balance === null) return [];
+    // 05.4 ENG-17 (CO-D-114): an account no rate converts still reaches the engine (noRate), so account_no_rate can name it; it counts nowhere.
+    if (balance === null) return [{ id: a.id, balance: minorUnits(0), use: null, noRate: true }];
     // 05.4-35 (FIN-03): the limit is in the account's currency; converted at the latest stored rate, rounded DOWN (D-91) so it never
     // overstates the room. No rate converts it -> no limit (cautious). The rate is passed as stored; null stays null (ARC-25).
     const limit = moneyOf(a.overdraft_limit);
@@ -572,7 +604,11 @@ export function buildV3Inputs(
   const everyday = moneyOf(v3?.everyday_override);
   // 06 D-02 (ARC-13, FIN-16): the safety net and its fund come only from the flagged Grow goal. No flagged goal = null (the engine's
   // defaults apply). The interim decide_settings columns and the typed reserve are no longer read: one store.
-  const { safetyNet, emergency } = safetyNetInputsOf(safetyNetPointOf(goalRows, source.rows, toHome, home));
+  const netFromGrow = safetyNetInputsOf(safetyNetPointOf(goalRows, source.rows, toHome, home));
+  const emergency = netFromGrow.emergency;
+  const netGoalRow = source.goals.find((g) => g.is_safety_net === true && g.deleted_at === null);
+  // 06.1 D-20: answers may use the net only when Decide's unlock says so (Grow's own locked flag is not read here)
+  const safetyNet = netFromGrow.safetyNet === null ? null : { ...netFromGrow.safetyNet, locked: !(netGoalRow?.decide_may_use === true) };
   const subdivision = source.regionSubdivision;
 
   return {
@@ -598,10 +634,14 @@ export function buildV3Inputs(
     payArrivals: payArrivalsOf(answers),
     expectedIncome: expectedIncomeOf(answers),
     heldBridges: heldBridgesOf(answers, new Set(v3?.live_bridge_check_ids ?? [])),
+    waivers: waiversOf(answers), // 06.1-43 (G-1): the user's readiness answers
+    skipped: skippedOf(source.rows), // 06.1-43 (G-1): skipped occurrences settle their dues
     unsavedWrites: unsavedOf(source.unsavedWrites), // D-127: the D-113 note only, never the sums
     provisionalRates,
     recordsAsOf: source.recordsAsOf ?? null, // ENG-14, D-126: the oldest real server fetch, null when unknown
     safetyNet,
+    tightLine: tightLineOf(v3?.tight_line),
+    taxSetAsideBp: taxSetAsideBpOf(v3?.tax_set_aside_bp), // 06.1 FIN-20 (D-26)
     factLines: true, // D-08: on by default; the switch's storage and screen are 08.1
     // D-142: the stored state or province passes with whatever country `region` resolved to (even from the device); the engine's
     // tax table knows only real country-and-state pairs, so a mismatch adds no tax and says so. No country -> null.

@@ -1,0 +1,43 @@
+# 06.1-32 shared: on Decide home, type ${ITEM} and ${PRICE} into the check card and press Check it.
+# Each field is cleared first (long press > Select all), because Decide home keeps what was typed before.
+# The keyboard is closed by tapping the "When?" label (hideKeyboard sends Back on Android, which leaves Decide).
+appId: com.fincwin.app
+---
+- tapOn:
+    id: "check-what"
+- longPressOn:
+    id: "check-what"
+- runFlow:
+    when:
+      visible: "Select all"
+    commands:
+      - tapOn: "Select all"
+      - eraseText: 5
+- inputText: ${ITEM}
+# A price already in the field reads "Price, <amount>"; clear it the same way (".+": 06.1-84 made the empty field read
+# "Price, ", which ".*" also matched; since 06.1-85 it reads "Price"). 06.1-51: repeated, because on the emulator
+# the controlled field sometimes kept a digit after the erase (a "1" left from 180 turned 9000 into 19000).
+- repeat:
+    times: 3
+    while:
+      visible: "Price, .+"
+    commands:
+      - longPressOn: "Price, .+"
+      - runFlow:
+          when:
+            visible: "Select all"
+          commands:
+            - tapOn: "Select all"
+      - eraseText: 20
+# 06.1-51: tap the price field itself (its text, below the label). Tapping the "Price" label closed the keyboard, so the
+# price was never typed. The empty field has no "Price" label in the tree, only its "0.00" hint.
+- tapOn:
+    text: "[0-9][0-9.,]*"
+    below: "Price"
+- inputText: ${PRICE}
+- tapOn: "When\\?"
+- runFlow:
+    file: scroll-to.yaml
+    env:
+      TARGET: "Check it"
+- tapOn: "Check it"

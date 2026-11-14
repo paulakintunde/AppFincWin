@@ -11,10 +11,12 @@
 import { useHouseholdId } from '@/data/queries/household';
 import { useMoneyPrefs } from '@/data/queries/moneyPrefs';
 import { useHouseholdHorizon, useRecordPrefs, useSampleExists } from '@/data/queries/recordPrefs';
+import { useDecideReadStale } from '@/data/queries/decideStale';
 import { regionWeekStart } from '@/engine/money';
 import { localDateIn } from '@/engine/time';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { getDeviceRegion, getDeviceTimeZone } from '@/services/locale/deviceLocale';
+import { heldRead } from '@/services/locale/deviceReadCache';
 
 export interface RecordContext {
   ready: boolean;
@@ -31,17 +33,27 @@ export interface RecordContext {
   samplePromptAnswered: boolean;
 }
 
+/**
+ * 06.1-72 (G-73-2): today's local date in `timeZone`, held for a second. localDateIn builds two Intl.DateTimeFormat objects per
+ * call and this hook runs in nearly every Decide hook of every render (10.7 s of 06.1-73's profile).
+ */
+const todayIn = heldRead((timeZone: string): string => localDateIn(new Date(), timeZone));
+
 export function useRecordContext(): RecordContext {
   const { status, user } = useAuth();
   const userId = user?.id ?? null;
   const householdQuery = useHouseholdId(userId ?? undefined);
-  const prefsQuery = useMoneyPrefs(userId ?? undefined);
+  // 06.1-78 (G-72-2): inside a Decide screen these reads stay fresh for Decide's five minutes, so the answer's mount does not
+  // refetch them; a write still refetches its keys at once. Elsewhere `read` is undefined and the app default applies.
+  const staleTime = useDecideReadStale();
+  const read = staleTime === undefined ? undefined : { staleTime };
+  const prefsQuery = useMoneyPrefs(userId ?? undefined, read);
   const { prefs } = prefsQuery;
-  const recordPrefs = useRecordPrefs(userId ?? undefined).prefs;
-  const { horizonMonth } = useHouseholdHorizon(householdQuery.data ?? undefined);
-  const { hasSamples } = useSampleExists(householdQuery.data ?? undefined);
+  const recordPrefs = useRecordPrefs(userId ?? undefined, read).prefs;
+  const { horizonMonth } = useHouseholdHorizon(householdQuery.data ?? undefined, read);
+  const { hasSamples } = useSampleExists(householdQuery.data ?? undefined, read);
   const timeZone = getDeviceTimeZone();
-  const today = localDateIn(new Date(), timeZone);
+  const today = todayIn(timeZone);
   const weekStart: 0 | 1 = recordPrefs.week_start ?? regionWeekStart(getDeviceRegion(prefs.region)) ?? 1;
 
   // I-05 (W6-13 WR-07): `ready` is a decision input (a new account's default currency, the

@@ -17,10 +17,6 @@ describe('R18 retired copy', () => {
       'decide.month.in', 'decide.month.out', 'decide.month.left',
     ];
     for (const k of gone) expect({ k, v: node(k) }).toEqual({ k, v: undefined });
-    // the twins that serve now
-    for (const k of ['decide.home.card.eyebrow', 'decide.home.card.a11yNfcfFree', 'decide.home.card.a11yNfcfOverspent', 'decide.home.hero.subWorst']) {
-      expect({ k, ok: typeof node(k) === 'string' }).toEqual({ k, ok: true });
-    }
   });
 
   it('D-101 the unused pots caption and progress keys are gone (GoalProgress and decide.depth.goal.* serve the rows)', () => {

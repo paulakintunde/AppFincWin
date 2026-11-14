@@ -4,6 +4,8 @@
  * `<name>:end`; the harness keeps the durations only (no amounts, no inputs) and `perfReport` gives the median and p95 over
  * the last 30 of each name (the verdict, the details and E4). The device budgets are checked in 05-26.
  */
+import { useEffect, useState } from 'react';
+
 export const PERF_WINDOW = 30;
 
 export interface PerfStat {
@@ -64,6 +66,35 @@ export function perfReport(): Record<string, PerfStat> {
   for (const [name, list] of samples) report[name] = statOf(list);
   console.log('[perf]', JSON.stringify(report));
   return report;
+}
+
+/**
+ * 06.1-72: one log line per timed name, `PERF <name> median=<ms> p95=<ms> n=<count>` (whole milliseconds, names only, never
+ * an amount or an input), so a device run's logcat carries where each step's milliseconds went. Nothing when the harness is off.
+ */
+export function perfDump(): string[] {
+  if (!perfEnabled()) return [];
+  const lines: string[] = [];
+  for (const name of [...samples.keys()].sort()) {
+    const s = statOf(samples.get(name)!);
+    lines.push(`PERF ${name} median=${Math.round(s.median)} p95=${Math.round(s.p95)} n=${s.count}`);
+  }
+  for (const line of lines) console.log(line);
+  return lines;
+}
+
+/**
+ * 06.1-72: times a component's first mount, from its first render to its first committed effect, under `<name>`. Call it at
+ * the top of the component (or hook). A no-op unless EXPO_PUBLIC_PERF=1.
+ */
+export function usePerfMount(name: string): void {
+  // a state initialiser runs on the first render only: the start of the mount.
+  useState(() => perfMark(`${name}:start`));
+  useEffect(() => {
+    perfMark(`${name}:end`);
+    // the first commit only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }
 
 /** Clears every sample (a test seam, and a fresh run on device). */

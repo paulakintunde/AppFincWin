@@ -7,8 +7,8 @@ import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { minorUnits } from '@/engine/money';
 import { sofaInputs, demoSource } from '@/features/decide/__tests__/helpers/demoScenario';
 import { SETTINGS } from '@/features/decide/snapshot/v3/__tests__/growScenarios';
-import { wrap } from '@/features/decide/check/steps/__tests__/helpers/stepProps';
-import { goal as goalFixture } from '@/features/decide/past/__tests__/helpers/pastFixtures';
+import { wrap } from '@/test/stepProps';
+import { goal as goalFixture } from '@/test/pastFixtures';
 import type { GoalsRead } from '@/features/grow/goals/useGoalsRead';
 import { FirstOpenNetSheet, resetFirstOpenNetDismissal } from '../FirstOpenNetSheet';
 import { NetMonthSheet } from '../NetMonthSheet';
@@ -102,7 +102,7 @@ jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => mockV3 }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', today: '2026-10-03', userId: 'u1', householdId: 'h1', ready: true, timeZone: 'UTC' }),
 }));
-jest.mock('@/features/decide/past/usePastDecisions', () => ({
+jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({
   usePastContext: () => ({
     userId: 'u1',
     householdId: 'h1',

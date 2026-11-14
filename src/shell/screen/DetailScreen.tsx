@@ -17,9 +17,11 @@ export interface DetailScreenProps {
   right?: React.ReactNode;
   scroll?: boolean;
   children?: React.ReactNode;
+  /** 06.1-62 (CB-2): opt-in, so a tap on a button with the keyboard open lands first time. Absent keeps the default; ignored without a scroll view. */
+  keyboardShouldPersistTaps?: 'handled' | 'always' | 'never';
 }
 
-export function DetailScreen({ title, right, scroll, children }: DetailScreenProps): React.JSX.Element {
+export function DetailScreen({ title, right, scroll, children, keyboardShouldPersistTaps }: DetailScreenProps): React.JSX.Element {
   const { colors } = useTheme();
   const insets = useScreenInsets();
   const titleRef = useRef<TextRef>(null);
@@ -30,6 +32,7 @@ export function DetailScreen({ title, right, scroll, children }: DetailScreenPro
       <SyncProblemLine />
       {scroll !== false ? (
         <ScrollView
+          keyboardShouldPersistTaps={keyboardShouldPersistTaps}
           contentContainerStyle={{
             paddingHorizontal: space.screenH,
             paddingBottom: insets.bottom + space.groupGap,

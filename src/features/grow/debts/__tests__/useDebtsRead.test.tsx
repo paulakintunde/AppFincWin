@@ -10,7 +10,7 @@ let mockError = false;
 jest.mock('@/data/queries/decide', () => ({
   useDebts: () => ({ data: mockRows, isError: mockError, refetch: jest.fn() }),
 }));
-jest.mock('@/features/decide/past/usePastDecisions', () => ({
+jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({
   usePastContext: () => ({ userId: 'u1', householdId: 'h1', today: '2026-11-05', ctx: {} }),
 }));
 

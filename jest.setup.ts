@@ -11,6 +11,14 @@ jest.mock('@react-native-community/netinfo', () =>
   require('@react-native-community/netinfo/jest/netinfo-mock.js')
 );
 
+// 06.1-72: device reads (time zone, locale, today) are held for a second in the app; tests change mocked device values between
+// calls, so the hold is off in every suite (deviceReadCache.test turns it on for its own cases).
+jest.mock('./src/services/locale/deviceReadCache', () => {
+  const actual = jest.requireActual<typeof import('./src/services/locale/deviceReadCache')>('./src/services/locale/deviceReadCache');
+  actual.setDeviceReadTtl(0);
+  return actual;
+});
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require('react-native-reanimated').setUpTests();
 
