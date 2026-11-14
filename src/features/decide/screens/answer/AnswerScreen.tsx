@@ -404,7 +404,8 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
       if (fixRow.fix.envelopeId !== null) setEnvelopeId(fixRow.fix.envelopeId);
       return;
     }
-    pushOnce(asHref('/activity'));
+    // 06.1-71 (FQ10, CN-9): Activity on the item's month, with a banner naming what is missing there.
+    pushOnce(asHref(`/activity?month=${fixRow.fix.month}&why=${fixRow.item.kind}`));
   };
 
   const onOption = (key: OptionKey): void => {

@@ -639,11 +639,12 @@ describe('the Not ready card on the answer screen (06.1-44, G-1, C-1, C-2)', () 
     expect(mockSave).toHaveBeenLastCalledWith({ kind: 'readiness_waiver', waiver: { kind: 'no_pay', seriesId: 's-pay', date: '2026-10-03' }, at: '2026-11-05' });
   });
 
-  it('the records fix opens Activity; the envelope fix opens Which account? for that envelope (D-54)', async () => {
+  it('the records fix opens Activity on that month; the envelope fix opens Which account? for that envelope (D-54)', async () => {
     notReadyWith([BILL]);
     const view = await open();
     await press(screen.getByText('Records for October'));
-    expect(mockPush).toHaveBeenCalledWith('/activity');
+    // 06.1-71 (FQ10, CN-9): the month and what is missing travel to Activity's banner.
+    expect(mockPush).toHaveBeenCalledWith('/activity?month=2026-10&why=bill');
     expect(screen.queryByTestId('envelope-sheet')).toBeNull();
     notReadyWith([ENVELOPE]);
     await act(async () => {

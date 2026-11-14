@@ -915,3 +915,44 @@ describe('06-37 D-38: Activity filtered to one debt', () => {
     expect(screen.queryByLabelText('Filter: Auto loan. Opens filters.')).toBeNull();
   });
 });
+
+describe('06.1-71 (FQ10, CN-9): Activity opened from Decide on a month', () => {
+  it('opens the named month and says what Decide is missing there', async () => {
+    const screen = await renderScreen({ decideBanner: { month: '2026-08', why: 'bill' }, onClearDecideBanner: jest.fn() });
+    expect(getSelectedMonth()).toBe('2026-08');
+    expect(within(screen.getByTestId('activity-decide-banner')).getByText('August 2026: Decide is missing a bill.')).toBeTruthy();
+  });
+
+  it.each([
+    ['pay', 'a pay day'],
+    ['spending', 'everyday spending'],
+    ['late_start', 'the start of the month'],
+    ['month', 'some entries'],
+    ['recent', 'an entry from the last 10 days'],
+  ] as const)('names %s as "%s"', async (why, what) => {
+    const screen = await renderScreen({ decideBanner: { month: '2026-09', why }, onClearDecideBanner: jest.fn() });
+    expect(within(screen.getByTestId('activity-decide-banner')).getByText(`September 2026: Decide is missing ${what}.`)).toBeTruthy();
+  });
+
+  it('Clear asks the route to drop the month and reason', async () => {
+    const onClear = jest.fn();
+    const screen = await renderScreen({ decideBanner: { month: '2026-09', why: 'pay' }, onClearDecideBanner: onClear });
+    await fireEvent.press(screen.getByLabelText('Clear, Decide note for September 2026'));
+    expect(onClear).toHaveBeenCalled();
+  });
+
+  it('moving to another month drops the banner parameters', async () => {
+    const onClear = jest.fn();
+    await renderScreen({ decideBanner: { month: '2026-09', why: 'pay' }, onClearDecideBanner: onClear });
+    expect(onClear).not.toHaveBeenCalled();
+    await act(async () => {
+      requestActivityFocus({ month: '2026-10', filter: EMPTY_FILTER });
+    });
+    expect(onClear).toHaveBeenCalled();
+  });
+
+  it('without the parameters there is no banner', async () => {
+    const screen = await renderScreen();
+    expect(screen.queryByTestId('activity-decide-banner')).toBeNull();
+  });
+});

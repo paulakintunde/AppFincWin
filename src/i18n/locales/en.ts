@@ -986,6 +986,20 @@ const en = {
       clear: 'Clear filters',
       apply: 'Show results',
     },
+    // 06.1-71 (H-10, FQ10): opened from Decide's "Records for <month>": the month and what Decide is missing there.
+    decideBanner: {
+      missing: '{{month}}: Decide is missing {{what}}.',
+      clear: 'Clear',
+      clearA11y: 'Clear, Decide note for {{month}}',
+      what: {
+        bill: 'a bill',
+        pay: 'a pay day',
+        spending: 'everyday spending',
+        late_start: 'the start of the month',
+        month: 'some entries',
+        recent: 'an entry from the last 10 days',
+      },
+    },
   },
   accounts: {
     compact: { overdrawn: 'Overdrawn', overLimit: 'Over limit' },

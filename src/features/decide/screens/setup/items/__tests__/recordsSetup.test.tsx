@@ -124,9 +124,9 @@ describe('RecordsSetup readiness list (06.1-45)', () => {
     await press(screen.getByText('Someone else paid it'));
     expect(mockSaveAnswer).toHaveBeenCalledWith({ kind: 'readiness_waiver', waiver: { kind: 'paid_by_other', seriesId: 's-netflix', date: '2026-10-03' }, at: '2026-11-20' });
     expect(mockShowToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.screens.answer.notReady.saved' }, stepId: 'step-answer' });
-    // the records fix opens Activity
+    // 06.1-71 (FQ10): the records fix opens Activity on the item's month, with the reason for the banner
     await press(screen.getByTestId('readiness-fix-0'));
-    expect(mockPush).toHaveBeenCalledWith('/activity');
+    expect(mockPush).toHaveBeenCalledWith('/activity?month=2026-10&why=bill');
   });
 
   it('a pending line is skipped through the shell writer when cached, else answered by its waiver', async () => {
@@ -275,8 +275,11 @@ describe('RecordsSetup rows, badges and the accounts sheet (06.1-58 A-SU-5, DS-1
     await press(screen.getByTestId('records-more'));
     expect(screen.getByTestId('records-last-why')).toHaveTextContent(/Not all of October is in your records yet\./);
     expect(screen.getByTestId('records-this-why')).toHaveTextContent(/Newest entry Nov 2, 2026\. Decide needs one from the last 10 days\./);
+    // 06.1-71 (FQ10, CN-9): "Records for October" opens October in Activity; "add since" opens this month.
     await press(screen.getByTestId('last-fix'));
-    expect(mockPush).toHaveBeenCalledWith('/activity');
+    expect(mockPush).toHaveBeenCalledWith('/activity?month=2026-10&why=month');
+    await press(screen.getByTestId('add-since'));
+    expect(mockPush).toHaveBeenCalledWith('/activity?month=2026-11&why=recent');
     await press(screen.getByText('Check again'));
     expect(mockRetry).toHaveBeenCalledTimes(1);
   });

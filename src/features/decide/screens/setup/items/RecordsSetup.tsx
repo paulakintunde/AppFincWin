@@ -64,6 +64,8 @@ import { askedAccounts, choiceOfUse, previousMonthOf, recordChecks, accountUseOf
 import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
 const ACTIVITY = '/activity' as Href;
+/** 06.1-71 (FQ10, CN-9): Activity on a month, with a banner naming what Decide is missing there. */
+const activityFor = (month: string, why: string): Href => `/activity?month=${month}&why=${why}` as Href;
 const IMPORT = '/import' as Href;
 const QUICK_ESTIMATES = '/decide/setup/quick-estimates';
 const NO_ITEMS: readonly ReadinessItem[] = [];
@@ -202,7 +204,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
       if (fixRow.fix.envelopeId !== null) setEnvelopeId(fixRow.fix.envelopeId);
       return;
     }
-    router.push(ACTIVITY);
+    router.push(activityFor(fixRow.fix.month, fixRow.item.kind));
   };
 
   // CN-5 (a): from an answer (a safe returnTo), quick estimates go back to it; with no check in view they save and come back here.
@@ -405,7 +407,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
               testID="last-fix"
               accessibilityRole="link"
               accessibilityLabel={t('decide.screens.setupOthers.records.lastMonthFix', { month: monthName })}
-              onPress={() => router.push(ACTIVITY)}
+              onPress={() => router.push(activityFor(previousMonthOf(today), 'month'))}
               style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
             >
               <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.setupOthers.records.lastMonthFix', { month: monthName })}</Text>
@@ -420,7 +422,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
               testID="add-since"
               accessibilityRole="link"
               accessibilityLabel={t('decide.screens.setupOthers.records.addSince')}
-              onPress={() => router.push(ACTIVITY)}
+              onPress={() => router.push(activityFor(today.slice(0, 7), 'recent'))}
               style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
             >
               <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.setupOthers.records.addSince')}</Text>

@@ -372,6 +372,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   up: '$500.00', // 06.1 wave 6
   used: '$500.00',
   value: '40',
+  what: 'a bill', // 06.1-71: Activity's Decide banner
   word: 'Fits', // 06.1 wave 6
   zero: '$0.00',
 });
