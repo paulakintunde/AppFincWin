@@ -1,6 +1,6 @@
 // 05.5-03 (D-14, CMP-F09): walks every `en` leaf through the per-sentence guard.
-// Report mode by default: existing hits do not fail the run. Plan 05.5-07 fills the allowlist from the post-06.1 report
-// and sets COPY_GUARD_ENFORCE on by default. COPY_GUARD_REPORT=<file> writes the inventory as JSON.
+// Enforced (05.5-07): every violation must be on the dated allowlist and no entry may be stale.
+// COPY_GUARD_REPORT=<file> writes the inventory as JSON.
 import fs from 'fs';
 import path from 'path';
 
@@ -53,7 +53,7 @@ describe('copy guard over the en catalogue (05.5-03)', () => {
     expect(true).toBe(true);
   });
 
-  (process.env.COPY_GUARD_ENFORCE === '1' ? it : it.skip)('has every violation on the allowlist', () => {
+  it('has every violation on the allowlist', () => {
     const open = violations.filter((v) => !isAllowed(v, list)).map((v) => `${v.path} [${v.rule}]: ${v.sentence}`);
     expect(open).toEqual([]);
   });

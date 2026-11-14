@@ -1,5 +1,181 @@
 {
   "dated": "2026-11-13",
   "emptyBy": "before any public release (CMP-F09)",
-  "entries": []
+  "entries": [
+    {
+      "path": "income.method.title",
+      "sentenceHash": "b092df11",
+      "rule": "banned:should",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "income.method.optionSteadyDesc",
+      "sentenceHash": "9c33f324",
+      "rule": "banned:unspent",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "income.method.exampleSteady",
+      "sentenceHash": "bd7ff443",
+      "rule": "banned:unspent",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "income.method.balanceQuestion",
+      "sentenceHash": "e01f807d",
+      "rule": "banned:should",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "income.method.why",
+      "sentenceHash": "44fdc4a4",
+      "rule": "banned:better",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "income.other.chipRent",
+      "sentenceHash": "91f31f72",
+      "rule": "banned:room",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.screens.common.error.message",
+      "sentenceHash": "6d3a2d3f",
+      "rule": "banned:safe",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.screens.stepper.kind.why",
+      "sentenceHash": "04ffab99",
+      "rule": "banned:you can",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.screens.setup.checklist.note",
+      "sentenceHash": "a12f6eba",
+      "rule": "banned:you can",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.screens.setupPayBills.pay.otherSub",
+      "sentenceHash": "bb17f252",
+      "rule": "banned:room",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.screens.setupPayBills.otherIncome.sub",
+      "sentenceHash": "afd35e0a",
+      "rule": "banned:room",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.screens.safetyNet.settings.beforeLockAgain",
+      "sentenceHash": "ea6945f8",
+      "rule": "banned:you can",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.setup.accountUse.targetEmergency",
+      "sentenceHash": "05f96e75",
+      "rule": "banned:emergency fund",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.accountUse.keptEmergency",
+      "sentenceHash": "59b11a95",
+      "rule": "banned:emergency fund",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.accountUse.warnFollows",
+      "sentenceHash": "7b98f7a3",
+      "rule": "banned:emergency fund",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.accountUse.editRowEffect",
+      "sentenceHash": "f9a1c5bb",
+      "rule": "banned:unspent",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.emergencySheet.toastSaved",
+      "sentenceHash": "8976d31a",
+      "rule": "banned:emergency fund",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.emergencySheet.toastSavedAccount",
+      "sentenceHash": "9a0e7adc",
+      "rule": "banned:emergency fund",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.emergencySheet.toastRemoved",
+      "sentenceHash": "40375a41",
+      "rule": "banned:emergency fund",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.delete.boughtBody_one",
+      "sentenceHash": "106bb259",
+      "rule": "banned:go ahead",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.delete.boughtBody_other",
+      "sentenceHash": "a26ea23d",
+      "rule": "banned:go ahead",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.warn.monthTitle",
+      "sentenceHash": "7c2dc715",
+      "rule": "banned:overspent",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "decide.section.direction.better",
+      "sentenceHash": "27a6f6af",
+      "rule": "banned:better",
+      "dated": "2026-11-14",
+      "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
+    },
+    {
+      "path": "legal.decideAnswer.footer",
+      "sentenceHash": "9ddf8ab7",
+      "rule": "banned:lender",
+      "dated": "2026-11-14",
+      "reason": "negated disclaimer"
+    },
+    {
+      "path": "legal.decideAbout.what.planningInfo",
+      "sentenceHash": "b9ab87d7",
+      "rule": "banned:advice",
+      "dated": "2026-11-14",
+      "reason": "negated disclaimer"
+    }
+  ]
 }
