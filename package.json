@@ -112,6 +112,8 @@
     "reviewed:diff": "node scripts/reviewed-diff.mjs",
     "check:decide-switch": "node scripts/decide-switch-check.mjs",
     "check:cache-version": "node scripts/check-cache-version.mjs",
+    "icons:extract": "node scripts/icons/extract-board-icons.mjs",
+    "check:icons": "node scripts/icons/extract-board-icons.mjs --check",
     "shadow:report": "node scripts/shadow-report.mjs",
     "wording:page": "node scripts/wording-page.mjs"
   },

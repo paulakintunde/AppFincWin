@@ -47,6 +47,8 @@ jobs:
         run: npm run check:decide-switch -- --static
       - name: Cache version check (APP-07)
         run: npm run check:cache-version && node --test scripts/__tests__/check-cache-version.test.mjs
+      - name: Icon set matches the boards (06.2 D-29)
+        run: npm run check:icons
       - name: Mutation part plan and merged-score gate (05.4-43, D-172)
         run: node --test scripts/__tests__/mutation-shards.test.mjs scripts/__tests__/mutation-merge.test.mjs
       - name: Service-role key never referenced by client code (ENV-04)
