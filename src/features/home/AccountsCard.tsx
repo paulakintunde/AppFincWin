@@ -1,6 +1,8 @@
 // HOME-04 / D-22 / D-32: Home's Accounts summary. Same balances and 'Waiting for a rate' handling
 // as the Accounts screen (AccountBalanceBlock does the work). First 6 active accounts; a tap
 // pushes the detail over the tab bar. No active accounts: the card is absent.
+// 06.2 (D-10, ranked change 9): each row leads with a 36 IconTile carrying the account-type icon in the accent on
+// the accent tint, and ends in the set's arrowRight (16). The balance colour is AccountBalanceBlock's (plan 16, D-14).
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { type Href } from "expo-router";
@@ -11,24 +13,25 @@ import {
   AccountBalanceBlock,
   useCompactBalance,
 } from "@/features/record/accounts/AccountBalanceBlock";
-import { useRecordContext } from "@/features/record/useRecordContext";
 import { pushOnce } from "@/shell/navigation/pushOnce";
-import { useMoneyFormatter } from "@/ui/money/useMoneyFormatter";
+import { accentTintOver } from "@/ui/EmptyState";
+import { Glyph } from "@/ui/icons/Glyph";
+import { IconTile } from "@/ui/icons/IconTile";
+import { iconForAccountKind } from "@/ui/icons/iconFor";
 import { useT } from "@/i18n";
 import { useTheme } from "@/theme/ThemeProvider";
-import { PRESSED_OPACITY, radii, size, space } from "@/theme/layout";
+import { PRESSED_OPACITY, iconSize, radii, space, tile } from "@/theme/layout";
 import { FONT_PAIRINGS } from "@/theme/fonts";
-import { ACCENT_TINT_OPACITY, shadows } from "@/theme/tokens";
+import { shadows } from "@/theme/tokens";
 import { fontSize, textRole } from "@/theme/typography";
 
 export const HOME_ACCOUNTS_CAP = 6;
 
-// UI-SPEC prototype-literal exceptions (Home): heading padding 18/20/6, 7px chevron, 13px row gap
+// UI-SPEC prototype-literal exceptions (Home): heading padding 18/20/6, 13px row gap
 // (matches Coming up). The card's end space comes from the tab root's FAB clearance.
 const ROW_GAP = 13;
 const HEADING_PAD_TOP = 18;
 const HEADING_PAD_BOTTOM = 6;
-const CHEVRON = 7;
 
 function AccountTile({
   account,
@@ -45,14 +48,9 @@ function AccountTile({
   const { colors, pairing } = useTheme();
   const kind = t(`accounts.kind.${account.kind}`);
   const compact = useCompactBalance(account, balance, homeCurrency);
-  const rc = useRecordContext();
-  const { locale } = useMoneyFormatter(rc.showCents);
-  const initial =
-    Array.from(account.name.trim())[0]?.toLocaleUpperCase(locale) ?? "?";
   const label = [account.name, kind, compact.label]
     .filter((p): p is string => p !== null && p !== "")
     .join(", ");
-  const cash = account.kind === "cash";
   const sub =
     account.currency !== homeCurrency ? `${kind} · ${account.currency}` : kind;
   return (
@@ -66,34 +64,13 @@ function AccountTile({
         pressed ? { opacity: PRESSED_OPACITY } : null,
       ]}
     >
-      <View
-        style={[styles.tile, { backgroundColor: colors.fill1 }]}
-        importantForAccessibility="no-hide-descendants"
-        accessibilityElementsHidden
-      >
-        {cash ? (
-          <View
-            testID="accent-tint"
-            pointerEvents="none"
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: colors.accent,
-                opacity: ACCENT_TINT_OPACITY,
-                borderRadius: radii.glyphTile,
-              },
-            ]}
-          />
-        ) : null}
-        <Text
-          style={{
-            ...textRole(pairing, "label"),
-            color: cash ? colors.accent : colors.inkDim,
-          }}
-        >
-          {initial}
-        </Text>
-      </View>
+      <IconTile
+        icon={iconForAccountKind(account.kind)}
+        size={tile.row}
+        color={colors.accent}
+        tint={accentTintOver(colors.fill1, colors.accent)}
+        testID={`account-tile-${account.id}`}
+      />
       <View style={styles.text}>
         <Text style={{ ...textRole(pairing, "bodyStrong"), color: colors.ink }}>
           {account.name}
@@ -114,11 +91,7 @@ function AccountTile({
         homeCurrency={homeCurrency}
         compact
       />
-      <View
-        style={[styles.chevron, { borderColor: colors.inkSoft3 }]}
-        importantForAccessibility="no-hide-descendants"
-        accessibilityElementsHidden
-      />
+      <Glyph name="arrowRight" size={iconSize.inline} color={colors.inkFaint} />
     </Pressable>
   );
 }
@@ -238,8 +211,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.cardPadLg,
   },
   tile: {
-    width: size.homeAccountTile,
-    height: size.homeAccountTile,
+    width: tile.row,
+    height: tile.row,
     borderRadius: radii.glyphTile,
     alignItems: "center",
     justifyContent: "center",
@@ -249,13 +222,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: space.cardPad,
     borderRadius: radii.glyphTile,
-  },
-  chevron: {
-    width: CHEVRON,
-    height: CHEVRON,
-    borderTopWidth: 1.5,
-    borderRightWidth: 1.5,
-    transform: [{ rotate: "45deg" }],
   },
   seeAll: {
     minHeight: space.touchMin,

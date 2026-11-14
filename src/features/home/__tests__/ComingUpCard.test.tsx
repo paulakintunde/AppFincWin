@@ -85,6 +85,7 @@ async function draw(over: Partial<React.ComponentProps<typeof ComingUpCard>> = {
         state="ready"
         {...h}
         {...over}
+        today={over.today ?? '2026-09-10'}
       />
       </FontScaleProvider>
     </ThemeProvider>
@@ -97,13 +98,14 @@ beforeEach(() => {
 });
 
 describe('ComingUpCard', () => {
-  it('renders the rows in order with overdue flagged in danger', async () => {
-    const { getByLabelText, getByText } = await draw();
-    expect(getByLabelText(/^Electric, .*, overdue, was due 2026-09-02$/)).toBeTruthy();
+  it('renders the rows in order with overdue flagged by the Overdue badge (06.2 D-12)', async () => {
+    const { getByLabelText, getByTestId } = await draw();
+    expect(getByLabelText(/^Electric, .*, Overdue 8 days, was due 2026-09-02$/)).toBeTruthy();
     expect(getByLabelText(/^Rent, .*, due 2026-09-28$/)).toBeTruthy();
     expect(getByLabelText(/^Gym, .*, due 2026-09-29$/)).toBeTruthy();
-    const overdue = getByText('Overdue');
-    expect(StyleSheet.flatten(overdue.props.style).color).toBe(base.danger);
+    const overdue = getByTestId('coming-up-badge-r0', { includeHiddenElements: true });
+    expect(overdue.props.accessibilityLabel).toBe('Overdue 8 days');
+    expect(StyleSheet.flatten(overdue.props.style).backgroundColor).not.toBe(base.danger);
   });
 
   it('offers Pay on recorded rows only', async () => {
