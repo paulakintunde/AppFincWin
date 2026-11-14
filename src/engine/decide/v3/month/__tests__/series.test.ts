@@ -9,6 +9,7 @@ import {
   seriesDrift,
   seriesIndex,
   seriesOccurrences,
+  usualPayOf,
 } from '../series';
 
 function ser(over: Partial<V3Series> & { id: string }): V3Series {
@@ -253,5 +254,18 @@ describe('L-06 seriesDrift ties', () => {
     const m = (lines: V3Line[]): V3Month => ({ month: '2026-04', full: true, mark: null, lines });
     expect(seriesDrift([rent], [m([a, b])])[0]?.suggested).toBe(210000);
     expect(seriesDrift([rent], [m([b, a])])[0]?.suggested).toBe(210000);
+  });
+});
+
+describe('usualPayOf (audit fix 261114: quick income in the usual month)', () => {
+  const asOf = '2026-11-14';
+  const monthly = ser({ id: 'pay', role: 'pay', anchorDate: '2026-11-28' });
+  it('leaves out a one-time pay the usual month excludes, and keeps a monthly pay that starts within a month', () => {
+    const once = ser({ id: 'once', role: 'pay', cadence: { unit: 'month', every: 12 }, anchorDate: '2026-12-01', endDate: '2026-12-01', typicalChoice: 'excluded' });
+    expect(usualPayOf([monthly, once], asOf).map((s) => s.id)).toEqual(['pay']);
+  });
+  it('leaves out pay that starts more than a month away', () => {
+    const march = ser({ id: 'march', role: 'pay', anchorDate: '2027-03-01' });
+    expect(usualPayOf([march, monthly], asOf).map((s) => s.id)).toEqual(['pay']);
   });
 });

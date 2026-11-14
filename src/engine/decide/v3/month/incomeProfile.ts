@@ -36,6 +36,7 @@ import {
   paymentsPerYear,
   seriesIndex,
   seriesOccurrences,
+  usualPayOf,
 } from "./series";
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from "./settle";
 
@@ -428,7 +429,7 @@ export function typicalIncome(input: IncomeInput): {
   const { asOf, series, profile, typedEstimates, custom } = input;
   const plan = planOf(profile);
   const reasons = new Set<ReasonCode>();
-  const pay = liveSeriesOf(series, asOf, "pay");
+  const pay = usualPayOf(series, asOf);
   const hasConfirmedIncome = pay.length > 0;
   let payGap: PayGap | null = null;
   // 05.4 FIN-15: each pay series counts at the lower of its set-up amount and the middle of its last arrivals.

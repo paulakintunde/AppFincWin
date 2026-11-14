@@ -3,7 +3,8 @@
  */
 import { minorUnits } from '../../../../money/types';
 import { judgeCheck, prepare } from '../../prepare';
-import { judgeWithQuickLines, withQuickFacts, withQuickLines } from '../../quick/overlay';
+import { cashTimeline } from '../../cash/timeline';
+import { judgeWithQuickLines, withQuickFacts, withQuickLines, withQuickLinesPrepared } from '../../quick/overlay';
 import type { CheckV2, Envelope, Fact, QuickLine, V3Account, V3Inputs } from '../../types';
 import { ASOF, checkOnce, inputsOf } from '../helpers/fixtures';
 import { toEngineInputs } from '../rightAnswers/fixture';
@@ -231,5 +232,15 @@ describe('judgeWithQuickLines', () => {
     const { inputs, check } = toEngineInputs((cases.get('QL-03') as NonNullable<ReturnType<typeof cases.get>>).fixture);
     const prepared = prepare(deepFreeze(inputs));
     expect(() => judgeWithQuickLines(prepared, deepFreeze(check))).not.toThrow();
+  });
+});
+
+describe('withQuickLinesPrepared (audit fix 261114: every answer part reads the quick lines)', () => {
+  it('gives the same prepared back with no quick lines, and a cash path that carries a quick expense with one', () => {
+    const prepared = prepare(inputsOf({ balance: mu(500_000) }));
+    expect(withQuickLinesPrepared(prepared, checkOnce(10_000)).prepared).toBe(prepared);
+    const f = withQuickLinesPrepared(prepared, withLines([expense({ everyMonths: 0, date: null, amount: mu(7_000) })]));
+    expect(f.counted).toBe(1);
+    expect(cashTimeline(f.prepared, f.check).rows.length).toBeGreaterThan(cashTimeline(prepared, checkOnce(10_000)).rows.length);
   });
 });
