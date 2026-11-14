@@ -60,3 +60,6 @@ The Not ready card shows two sentences: "First: <item> …" and "More may follow
 
 ## DN-4 residual: "Updating…" line shifts the answer (found by 06.1-67, routed to 06.1-79)
 Rows now ignore taps while updating, but the "Updating…" line appears above the verdict and leaves when the update lands, so content jumps and a tap can land on the wrong row right after. Reserve that line's space (fixed slot, opacity change only) so the answer never shifts. Small layout fix in AnswerFrame.
+
+## "1 months" plural (found by 06.1-79, routed to 06.1-33)
+`home.footerRecords` ("Answers use {{months}} months of pay…") has no plural form; with the answer's own count it can read "1 months". Add _one/_other forms during the wording sign-off.
