@@ -8,7 +8,8 @@
  *
  * 06.1-52 (C-10): text that more typing cannot fix (a letter, too many decimals, too large) shows its error as it is
  * typed; a half-typed grouping ('1,2' on the way to '1,200') waits for the blur. 06.1-52 (X-4): once the field loses
- * focus a figure rests grouped, with no fraction on a whole amount ('9,000'); the reported value is unchanged.
+ * focus a figure rests grouped, with no fraction on a whole amount ('9,000'); the reported value is unchanged. 06.1-83: a pre-filled
+ * amount, or one the parent sets, shows the same way from the start, so it reads '3,000' while editing too.
  *
  * WR-D05: a value the parent resets to null from outside clears the text and the error. A null the parent sends back in
  * answer to this field's own report (a 0 or an over-limit figure it normalises to null) keeps the typed text.
@@ -75,7 +76,8 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
   const labelColor = dark ? colors.inkSoft1 : colors.inkDim;
   const parser = useAmountParser();
   const speaker = useMoneyFormatter(false);
-  const [text, setText] = useState(() => (value === null ? '' : parser.toInputText(value, currency)));
+  // 06.1-83 (owner, 2026-11-14): a pre-filled or outside amount shows as it rests after a blur ('3,000'), so it never reads '3000.00' while editing.
+  const [text, setText] = useState(() => (value === null ? '' : parser.toDisplayText(value, currency)));
   const [error, setError] = useState<string | null>(null);
 
   // True for the one render that follows this field's own report: a value arriving then is the parent's answer to it.
@@ -87,7 +89,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
     if (answering) setAnswering(false);
     if (value !== null) {
       const parsed = parser.parse(text, currency);
-      if (!parsed.ok || parsed.value !== value) setText(parser.toInputText(value, currency));
+      if (!parsed.ok || parsed.value !== value) setText(parser.toDisplayText(value, currency));
     } else if (!answering) {
       if (text !== '') setText('');
       setError(null);

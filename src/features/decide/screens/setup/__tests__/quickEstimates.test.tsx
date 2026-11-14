@@ -205,9 +205,9 @@ describe('QuickEstimatesScreen pre-fill, need line and first tap (06.1-58 A-SU-6
 
   it('starts from the saved rough figures: income, the spending sum in bills and everyday at 0', async () => {
     await setup({ stored: STORED });
-    expect(screen.getByLabelText(INCOME).props.value).toBe('3000.00');
-    expect(screen.getByLabelText(BILLS).props.value).toBe('2000.00');
-    expect(screen.getByLabelText(EVERYDAY).props.value).toBe('0.00');
+    expect(screen.getByLabelText(INCOME).props.value).toBe('3,000');
+    expect(screen.getByLabelText(BILLS).props.value).toBe('2,000');
+    expect(screen.getByLabelText(EVERYDAY).props.value).toBe('0');
     expect(screen.getByText('A usual month leaves about $1,000 by these estimates.')).toBeTruthy();
     expect(screen.queryByTestId('quick-need')).toBeNull();
     await act(async () => {
@@ -217,7 +217,7 @@ describe('QuickEstimatesScreen pre-fill, need line and first tap (06.1-58 A-SU-6
 
   it('a null saved figure stays empty', async () => {
     await setup({ stored: { ...STORED, rough_spending: null } as typeof STORED });
-    expect(screen.getByLabelText(INCOME).props.value).toBe('3000.00');
+    expect(screen.getByLabelText(INCOME).props.value).toBe('3,000');
     expect(screen.getByLabelText(BILLS).props.value).toBe('');
     expect(screen.getByLabelText(EVERYDAY).props.value).toBe('');
   });
@@ -235,7 +235,7 @@ describe('QuickEstimatesScreen pre-fill, need line and first tap (06.1-58 A-SU-6
     await act(async () => {
       rerender(<QuickEstimatesScreen currency="USD" today="2026-11-11" stored={STORED} onDone={onDone} />);
     });
-    expect(screen.getByLabelText(INCOME).props.value).toBe('3000.00');
+    expect(screen.getByLabelText(INCOME).props.value).toBe('3,000');
   });
 
   it('once something is typed, late settings change nothing', async () => {
