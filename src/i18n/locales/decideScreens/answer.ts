@@ -109,8 +109,6 @@ export const answer = {
       spending: 'No everyday spending is recorded for {{monthName}} yet.',
       spendingNow: 'Nothing spent is recorded since {{date}}.',
       lateStart: '{{monthName}} isn’t fully recorded yet.',
-      envelopes: '{{envelope}} isn’t linked to an account.',
-      envelopesNoName: 'An envelope isn’t linked to an account.',
     },
     fix: {
       records: 'Records for {{monthName}}',
@@ -127,6 +125,23 @@ export const answer = {
       startFrom: 'Records begin in {{monthName}}',
     },
     saved: 'Answer saved.',
+  },
+  // 06.1-68 (H-7, CB-11, CF-2): an answered readiness row reads this at once, with its choices off, until the engine agrees.
+  // DS-1: a goal row says it is a Grow goal; why it matters sits behind "Why?".
+  readiness: {
+    savedUpdating: 'Saved, updating…',
+    goalNoAccount: '{{envelope}} (a Grow goal) has no account yet.',
+    goalNoAccountNoName: 'A Grow goal has no account yet.',
+    why: 'Why?',
+    whyLess: 'Less',
+    goalWhy: 'Decide sets goal money aside before it answers, so it needs the account that holds it.',
+  },
+  // 06.1-68 (CF-3): shown over the dimmed verdict while it is worked out again.
+  updating: 'Updating…',
+  // 06.1-68 (CF-4, CC-8): the answers given under a fact line, each with Undo.
+  fact: {
+    noneSaved: 'Saved: no other debts.',
+    coverChanged: 'Answer changed.',
   },
   // 06.1-66 (FQ8, CC-2): a decided check shows what happened and links to its entry in Past decisions; no buy or save buttons.
   outcome: {

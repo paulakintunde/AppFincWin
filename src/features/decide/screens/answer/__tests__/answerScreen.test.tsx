@@ -2,7 +2,7 @@
 // frame, rows, cards and sheets are the real ones. Covers the gate, the crossed-rule haptic, "pre-filled, not checked", in-place pay and
 // date changes, error and offline, the analytics payload, and the missing-figure Fix rows.
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import type { CheckV2, Evaluation } from '@/engine/decide/v3';
 import { wrap } from '@/test/stepProps';
@@ -36,7 +36,7 @@ jest.mock('@/features/decide/screens/ui/CheckNotFound', () => ({ CheckNotFound: 
 const mockMarkSeen = jest.fn(() => true);
 const mockSaveAnswer = jest.fn(() => true);
 const mockHistory = jest.fn(() => true);
-const mockAnswered = jest.fn();
+const mockAnswered = jest.fn((..._a: unknown[]): { stepId: string } | null => ({ stepId: 'step-none' }));
 const mockPending: { rows: unknown[] } = { rows: [] };
 const mockRemove = jest.fn((..._a: unknown[]) => 'step-del');
 jest.mock('@/data/mutations/decideChecks', () => ({
@@ -83,6 +83,9 @@ const mockState = {
   update: jest.fn(),
   flush: jest.fn(),
   refetch: jest.fn(),
+  // 06.1-68: the engine's "updating" flag and the live answers (decide_answers, not deleted).
+  updating: false,
+  answers: [] as { kind: string; key: string }[],
 };
 
 jest.mock('@/features/record/useRecordContext', () => ({
@@ -95,7 +98,7 @@ jest.mock('@/data/queries/decide', () => ({
     data: mockList.rows ?? [{ id: 'c1', name: 'Laptop', created_by: 'u1', household_id: 'h1', version: 1, inputs: {}, deleted_at: null, last_seen_state: null, last_seen_basis: null }],
   }),
 }));
-jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ inputs: mockState.inputs ?? mockState.run.inputs, status: 'ready' }) }));
+jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ inputs: mockState.inputs ?? mockState.run.inputs, status: 'ready', v3: { answers: mockState.answers } }) }));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => ({ isOnline: mockState.online }) }));
 jest.mock('@/data/sync/useIsOnline', () => ({ useIsOnline: () => mockState.online }));
 jest.mock('../../engine/useMonthPicture', () => ({ useMonthPicture: () => ({ picture: null, bars: [] }) }));
@@ -112,6 +115,7 @@ jest.mock('../../engine/useCheckEngine', () => ({
     timeline: () => null,
     judgeOn: () => null,
     paydays: () => mockPaydays.list,
+    updating: mockState.updating,
   }),
 }));
 jest.mock('../../check/useStepCheck', () => ({
@@ -133,7 +137,17 @@ jest.mock('../../firstAnswer/useFirstAnswerGate', () => ({ useNetUnanswered: () 
 jest.mock('../../sheets/DatePickerSheet', () => ({ DatePickerSheet: () => null }));
 jest.mock('../../sheets/InstallmentPlanSheet', () => {
   const { Text } = jest.requireActual('react-native');
-  return { InstallmentPlanSheet: ({ visible }: { visible: boolean }) => (visible ? <Text testID="plan-sheet" /> : null) };
+  // 06.1-68: "plan-use" stands in for "Use this plan" with a typed plan name.
+  type MockProps = { visible: boolean; onUse: (pay: unknown, name: string | null) => void };
+  return {
+    InstallmentPlanSheet: ({ visible, onUse }: MockProps) =>
+      visible ? (
+        <>
+          <Text testID="plan-sheet" />
+          <Text testID="plan-use" onPress={() => onUse({ mode: 'plan', count: 24 }, 'Car loan')} />
+        </>
+      ) : null,
+  };
 });
 
 const writes = { notBuying: jest.fn(() => 'step-1'), setEnvelopeAccount: jest.fn(() => 'step-env'), skipLine: (...a: unknown[]) => mockSkip(...a) };
@@ -145,6 +159,8 @@ function load(run: Run, over: Partial<typeof mockState> = {}): void {
   mockState.status = 'ready';
   mockState.online = true;
   mockState.inputs = undefined;
+  mockState.updating = false;
+  mockState.answers = [];
   Object.assign(mockState, over);
 }
 
@@ -811,5 +827,163 @@ describe('06.1-63 (CN-13): a side picked on Compare comes back to this same answ
     const next = (mockState.update.mock.calls[0] as [(c: CheckV2) => CheckV2])[0](run.check);
     expect(next.pay).toEqual({ mode: 'once' });
     expect(mockState.flush).toHaveBeenCalled();
+  });
+});
+
+describe('06.1-68 (H-7): answers show at once and can be taken back', () => {
+  const S1 = '11111111-1111-4111-8111-111111111111';
+  const S2 = '22222222-2222-4222-8222-222222222222';
+  const ITEM_BASE = { code: 'past_month_missing', month: '2026-10', seriesId: null, envelopeId: null, lineId: null, name: null, amount: null, date: null } as const;
+  const BILL = { ...ITEM_BASE, kind: 'bill', seriesId: S1, name: 'Netflix', amount: 1199, date: '2026-10-03' } as const;
+  const PAY = { ...ITEM_BASE, kind: 'pay', seriesId: S2, name: 'Salary', amount: 250000, date: '2026-10-03' } as const;
+  const LINE = { id: 'l-net', household_id: 'h1', local_date: '2026-10-03', version: 2, name: 'Netflix', status: 'pending', deleted_at: null };
+  const KEY = `paid-by-other:${S1}:2026-10-03`;
+
+  function notReadyWith(items: readonly unknown[], answers: { kind: string; key: string }[] = []): void {
+    const run = notReadyRun();
+    const evaluation = withResult(run, (r) => ({ ...r, readiness: { ready: false, missing: ['past_month_missing'], items: items as never, waived: [] } }));
+    const months = [{ ...(ledgerRun('N02').inputs.months[0] as object), month: '2026-10' }];
+    load(run, { evaluation, inputs: { ...run.inputs, months: months as never }, answers });
+  }
+  const press = async (node: Parameters<typeof fireEvent.press>[0]): Promise<void> => {
+    await act(async () => {
+      fireEvent.press(node);
+    });
+  };
+  const again = async (view: Awaited<ReturnType<typeof open>>): Promise<void> => {
+    await act(async () => {
+      view.rerender(<AnswerScreen id="c1" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
+    });
+  };
+
+  it('CB-11 / CF-2: a tap reads "Saved, updating…" at once, the other choices are off, and the next item is First', async () => {
+    notReadyWith([BILL, PAY]);
+    await open();
+    await press(within(screen.getByTestId('readiness-row-0')).getByText('Someone else paid it'));
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('readiness-saved-0')).toHaveTextContent('Saved, updating…');
+    const row0 = within(screen.getByTestId('readiness-row-0'));
+    const other = row0.getByRole('button', { name: 'Someone else always pays it' });
+    expect(other.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
+    // T-06.1-68-01: a second tap writes nothing
+    await press(other);
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(within(screen.getByTestId('readiness-row-1')).getByText(/^First: Salary/)).toBeTruthy();
+  });
+
+  it('the row leaves once the engine drops it; the next item is the only one shown', async () => {
+    notReadyWith([BILL, PAY]);
+    const view = await open();
+    await press(within(screen.getByTestId('readiness-row-0')).getByText('Someone else paid it'));
+    notReadyWith([PAY], [{ kind: 'readiness_waiver', key: KEY }]);
+    await again(view);
+    expect(screen.queryByText('Saved, updating…')).toBeNull();
+    expect(screen.getByText(/^First: Salary/)).toBeTruthy();
+    expect(screen.queryByTestId('readiness-row-1')).toBeNull();
+  });
+
+  it('Undo (the answer gone from the live answers after it was seen) brings the row back open', async () => {
+    notReadyWith([BILL, PAY]);
+    const view = await open();
+    await press(within(screen.getByTestId('readiness-row-0')).getByText('Someone else paid it'));
+    // the answer lands in the cache, but the engine still names the bill
+    notReadyWith([BILL, PAY], [{ kind: 'readiness_waiver', key: KEY }]);
+    await again(view);
+    expect(screen.getByTestId('readiness-saved-0')).toBeTruthy();
+    // Undo soft-deletes it: the live answers no longer hold the key
+    notReadyWith([BILL, PAY], []);
+    await again(view);
+    expect(screen.queryByText('Saved, updating…')).toBeNull();
+    expect(screen.getByText(/^First: Netflix/)).toBeTruthy();
+    const pill = within(screen.getByTestId('readiness-row-0')).getByRole('button', { name: 'Someone else paid it' });
+    expect(pill.props.accessibilityState).toEqual(expect.objectContaining({ disabled: false }));
+  });
+
+  it('a skipped line shows at once and comes back open when the line is pending again (Undo)', async () => {
+    mockCache.lists = [[['transactions', 'h1', '2026-10'], [LINE]]];
+    notReadyWith([{ ...BILL, lineId: 'l-net' }]);
+    const view = await open();
+    await press(screen.getByText('It didn’t happen'));
+    expect(mockSkip).toHaveBeenCalledWith(LINE, 'u1');
+    expect(screen.getByTestId('readiness-saved-0')).toBeTruthy();
+    // the skip lands (the line is no longer pending), then Undo puts it back
+    mockCache.lists = [[['transactions', 'h1', '2026-10'], [{ ...LINE, status: 'skipped' }]]];
+    await again(view);
+    expect(screen.getByTestId('readiness-saved-0')).toBeTruthy();
+    mockCache.lists = [[['transactions', 'h1', '2026-10'], [LINE]]];
+    await again(view);
+    await again(view);
+    expect(screen.queryByTestId('readiness-saved-0')).toBeNull();
+  });
+
+  it('an answer that writes nothing does not mark the row', async () => {
+    notReadyWith([PAY]);
+    mockSave.mockReturnValueOnce(null);
+    await open();
+    await press(screen.getByText('Income comes in elsewhere'));
+    expect(screen.queryByTestId('readiness-saved-0')).toBeNull();
+  });
+
+  it('CF-3: while the engine is updating, the verdict dims and says "Updating…"', async () => {
+    load(ledgerRun('N02'), { updating: true });
+    const view = await open();
+    expect(screen.getByTestId('answer-updating')).toHaveTextContent('Updating…');
+    const area = screen.getByTestId('answer-verdict-area');
+    expect(area.props.accessibilityState).toEqual(expect.objectContaining({ busy: true }));
+    expect(StyleSheet.flatten(area.props.style).opacity).toBeLessThan(1);
+    mockState.updating = false;
+    await again(view);
+    expect(screen.queryByTestId('answer-updating')).toBeNull();
+    expect(StyleSheet.flatten(screen.getByTestId('answer-verdict-area').props.style).opacity).toBeUndefined();
+  });
+
+  it('CF-4: None on the debts question shows "Saved: no other debts." with its Undo step', async () => {
+    const run = ledgerRun('N02');
+    load(run, { evaluation: withResult(run, (r) => ({ ...r, facts: [{ code: 'ask_debts_not_recorded', values: { kind: 'all' } }, ...r.facts] })) });
+    await open();
+    await press(screen.getByText('None'));
+    expect(mockAnswered).toHaveBeenCalledWith({ flag: 'no_debts', on: true });
+    expect(mockToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.screens.answer.fact.noneSaved' }, stepId: 'step-none' });
+  });
+
+  it('CF-4: None already saved shows no toast', async () => {
+    const run = ledgerRun('N02');
+    load(run, { evaluation: withResult(run, (r) => ({ ...r, facts: [{ code: 'ask_debts_not_recorded', values: { kind: 'all' } }, ...r.facts] })) });
+    mockAnswered.mockReturnValueOnce(null);
+    await open();
+    await press(screen.getByText('None'));
+    expect(mockToast).not.toHaveBeenCalled();
+  });
+
+  it('CC-8: Change my answer flips the cover answer with "Answer changed." and an Undo that puts it back', async () => {
+    const run = ledgerRun('N02');
+    load(run, {
+      evaluation: withResult(run, (r) => ({ ...r, facts: [{ code: 'rests_on_your_answer', values: { monthly: 5000, months: 6 } }, ...r.facts] })),
+      check: { ...run.check, volatileCover: true },
+    });
+    await open();
+    await press(screen.getByText('Change my answer'));
+    const flip = (mockState.update.mock.calls[0] as [(c: CheckV2) => CheckV2])[0];
+    expect(flip({ ...run.check, volatileCover: true }).volatileCover).toBe(false);
+    const toast = mockToast.mock.calls[0]?.[0] as { kind: string; text: { key: string }; onUndo: () => void };
+    expect(toast).toEqual(expect.objectContaining({ kind: 'ordinary', text: { key: 'decide.screens.answer.fact.coverChanged' } }));
+    await act(async () => {
+      toast.onUndo();
+    });
+    const back = (mockState.update.mock.calls[1] as [(c: CheckV2) => CheckV2])[0];
+    expect(back({ ...run.check, volatileCover: false }).volatileCover).toBe(true);
+  });
+
+  it('a plan named in the plan sheet is stored as L0.plan_name with the pay change, in one update', async () => {
+    const run = ledgerRun('N02');
+    load(run);
+    await wrap(<AnswerScreen id="c1" side="installments" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
+    await press(screen.getByTestId('plan-use'));
+    expect(mockState.update).toHaveBeenCalledTimes(1);
+    const next = (mockState.update.mock.calls[0] as [(c: CheckV2) => CheckV2])[0](run.check);
+    expect(next.pay).toEqual({ mode: 'plan', count: 24 });
+    expect(next.layerAnswers['L0.plan_name']).toBe('Car loan');
+    expect(next.layerAnswers).not.toHaveProperty('plan_name');
+    expect(mockState.flush).toHaveBeenCalledTimes(1);
   });
 });

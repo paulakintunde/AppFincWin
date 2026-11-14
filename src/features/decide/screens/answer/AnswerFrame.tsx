@@ -4,11 +4,14 @@
 // 06.1-66 (H-5): the same parts every time. Not ready (readiness not met, or the engine's "More needed" ask, OQ-66-2) is one layout:
 // the first item, the slot ("What you told Decide"), then "I'm not buying it" and "Delete this check" (FQ6); no pay or When controls
 // and no buy or save until there is a verdict (CS-11). A decided check shows its outcome line in place of the action bar (FQ8).
+// 06.1-68 (CF-3): while the verdict is being worked out again it dims and says "Updating…"; (CB-11) answered readiness rows read
+// "Saved, updating…" until the engine drops them.
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { Evaluation, LocalDate, Purpose, Result, YearMonth } from '@/engine/decide/v3';
 import { money as makeMoney } from '@/engine/money';
-import { space, useScreenInsets } from '@/theme/layout';
+import { PRESSED_OPACITY, space, useScreenInsets } from '@/theme/layout';
+import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -82,9 +85,15 @@ export interface AnswerFrameProps {
   canUseEstimates?: boolean;
   onReadinessFix?: (row: ReadinessFixRow) => void;
   onReadinessChoice?: (row: ReadinessFixRow, choice: WaiverChoice) => void;
+  /** 06.1-68 (CF-3): the shown verdict is a step behind the check in hand (useCheckEngine.updating). Absent = false. */
+  updating?: boolean;
+  /** 06.1-68 (CB-11): readiness rows answered on this screen and not yet dropped by the engine. Absent = none. */
+  answeredRows?: ReadonlySet<string>;
 }
 
 const NO_ROWS: readonly ReadinessFixRow[] = [];
+/** 06.1-68 (CF-3): how far the verdict dims while it updates (the same step the pressed state uses). */
+const UPDATING_OPACITY = PRESSED_OPACITY;
 
 /** "November" for 2026-11, in the device locale (the same words YourMonthCard uses). */
 function monthNameIn(locale: string): (ym: YearMonth) => string {
@@ -106,7 +115,10 @@ export function AnswerFrame({
   canUseEstimates = false,
   onReadinessFix,
   onReadinessChoice,
+  updating = false,
+  answeredRows,
 }: AnswerFrameProps) {
+  const t = useT();
   const { colors, pairing } = useTheme();
   // 06.1-49 (A-ANS-1, C-7): the frame starts below the status bar, so Back and New check are never drawn under it.
   const insets = useScreenInsets();
@@ -150,6 +162,7 @@ export function AnswerFrame({
           monthName={monthNameIn(fmt.locale)}
           onFix={(row) => onReadinessFix?.(row)}
           onChoice={(row, choice) => onReadinessChoice?.(row, choice)}
+          answered={answeredRows}
           onFinishSetup={() => onAction({ kind: 'finishSetup' })}
           onFromEstimates={() => onAction({ kind: 'fromEstimates' })}
         />
@@ -176,8 +189,15 @@ export function AnswerFrame({
             ))}
           </View>
         ) : null}
-        <VerdictCard code={result.code} variant={result.variant} once={once} values={lines.verdictValues} lead={lines.afterBuy.lead?.text ?? null} boughtOn={outcome === null ? (lines.afterBuy.boughtOn?.text ?? null) : null} />
-        <FactLines facts={[...lines.facts, ...lines.missing]} country={check.country ?? null} renderAfter={renderAfterFact} />
+        {updating ? (
+          <Text testID="answer-updating" accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
+            {t('decide.screens.answer.updating')}
+          </Text>
+        ) : null}
+        <View testID="answer-verdict-area" accessibilityState={{ busy: updating }} style={[styles.verdict, updating ? styles.updating : null]}>
+          <VerdictCard code={result.code} variant={result.variant} once={once} values={lines.verdictValues} lead={lines.afterBuy.lead?.text ?? null} boughtOn={outcome === null ? (lines.afterBuy.boughtOn?.text ?? null) : null} />
+          <FactLines facts={[...lines.facts, ...lines.missing]} country={check.country ?? null} renderAfter={renderAfterFact} />
+        </View>
         <OptionChips present={check.options} purpose={check.purpose} onOption={onOption} />
         {children !== undefined ? (
           <View testID="answer-detail" style={styles.group}>
@@ -215,4 +235,6 @@ const styles = StyleSheet.create({
   frame: { flex: 1 },
   content: { padding: space.screenH, gap: space.groupGap, flexGrow: 1 },
   group: { gap: space.gapSm },
+  verdict: { gap: space.groupGap },
+  updating: { opacity: UPDATING_OPACITY },
 });

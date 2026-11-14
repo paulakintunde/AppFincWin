@@ -77,7 +77,10 @@ export interface NotReadyCardProps extends Omit<ReadinessFixListProps, 'rows'> {
 export function NotReadyCard({ rows, missing = null, canUseEstimates, onFinishSetup, onFromEstimates, ...list }: NotReadyCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const first = rows.slice(0, 1);
+  // 06.1-68 (CB-11): a row just answered stays in view as "Saved, updating…" over the next open row until the engine drops it.
+  const answered = list.answered;
+  const openAt = answered === undefined ? 0 : rows.findIndex((r) => !answered.has(r.id));
+  const first = answered === undefined ? rows.slice(0, 1) : rows.filter((r, i) => answered.has(r.id) || i === openAt);
   const hasItem = first.length > 0 || missing !== null;
   return (
     <Card testID="answer-not-ready">

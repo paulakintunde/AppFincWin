@@ -10,6 +10,9 @@
 // rows that apply; Not ready (readiness or "More needed", OQ-66-2) keeps it with "I'm not buying it" and "Delete this check" (FQ6);
 // pay and When only with a verdict; the payday chip is a short date or absent; a decided check shows its outcome line (FQ8); the
 // first-answer gate sits over the frame's loading state (FQ5), and an unanswered safety-net question is one line that opens it.
+// 06.1-68 (H-7): a readiness answer changes its row at once ("Saved, updating…", choices off) until the engine agrees
+// (useAnsweredRows); the verdict dims with "Updating…" while it is worked out again; "None" and "Change answer" toast with Undo; a
+// plan named in the plan sheet is stored with its pay change in one write (L0.plan_name, 06.1-57).
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { router, type Href } from 'expo-router';
@@ -38,6 +41,7 @@ import { showToast } from '@/state/undoToast';
 import { hapticLight } from '@/ui/haptics';
 import { Row } from '@/ui/Row';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
+import { waiverAnswerKey } from '@/features/decide/snapshot/v3/waiverKeys';
 import { useCheckEngine } from '../engine/useCheckEngine';
 import { useMonthPicture } from '../engine/useMonthPicture';
 import { DatePickerSheet } from '../sheets/DatePickerSheet';
@@ -45,6 +49,7 @@ import { EnvelopeAccountSheet, type SetEnvelopeAccount } from '../sheets/Envelop
 import { InstallmentPlanSheet } from '../sheets/InstallmentPlanSheet';
 import { estimatesCanAnswer, readinessFixRows, type ReadinessFixRow, type WaiverChoice } from '../logic/readinessFixes';
 import { useNetUnanswered } from '../firstAnswer/useFirstAnswerGate';
+import { withPlanName } from '../check/planName';
 import { KEY_SKIPPED, countsLikeOf, kindOf, lineNamesOf, ownKindsOf, stepHref, useStepCheck, useStepData, type BuiltInKind } from '../check/useStepCheck';
 import { AnswerFrame, isNotReady, type AnswerAction, type AnswerCheckView } from './AnswerFrame';
 import { AnswerLoading } from './AnswerLoading';
@@ -53,6 +58,7 @@ import { FactActions, type FactActionChoice } from './FactActions';
 import { MoreDetailRows, type DetailRow } from './MoreDetailRows';
 import type { OptionKey } from './OptionChips';
 import { useAnswerEffects } from './useAnswerEffects';
+import { useAnsweredRows, type AnsweredBy } from './useAnsweredRows';
 import { useSaid, type UseSaidOptions } from './useSaid';
 import { WhatYouToldCard, type ToldStep } from './WhatYouToldCard';
 import { BuyLaterSheet } from './detail/BuyLaterSheet';
@@ -126,6 +132,17 @@ function cachedPendingLine(qc: QueryClient, householdId: string, lineId: string)
   }
   return null;
 }
+
+/** The decide_answers key a waiver is stored under; '' when it cannot be built (then only the engine's list clears the row). */
+function safeWaiverKey(w: ReadinessWaiver): string {
+  try {
+    return waiverAnswerKey(w);
+  } catch {
+    return '';
+  }
+}
+
+const NO_KEYS: ReadonlySet<string> = new Set();
 
 /** With the line not cached, the same occurrence is answered by its waiver instead (the engine accepts it when no line can be skipped). */
 function fallbackWaiver(item: ReadinessItem): ReadinessWaiver | null {
@@ -242,6 +259,16 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
   const rows = useMemo(() => readinessFixRows(readinessItems, today), [readinessItems, today]);
   const inputsNow = v3.inputs;
   const canUseEstimates = useMemo(() => inputsNow !== null && estimatesCanAnswer(inputsNow), [inputsNow]);
+  // 06.1-68 (CB-11, CF-2): rows answered here show at once; they leave when the engine drops them or the answer is taken back.
+  const rowIds = useMemo(() => (result === null ? null : rows.map((r) => r.id)), [result, rows]);
+  const liveAnswers = v3.v3?.answers;
+  const waiverKeys = useMemo(
+    () => (liveAnswers === undefined ? NO_KEYS : new Set(liveAnswers.filter((a) => a.kind === 'readiness_waiver').map((a) => a.key))),
+    [liveAnswers]
+  );
+  const householdId = rc.householdId;
+  const linePending = useCallback((lineId: string): boolean => householdId !== null && cachedPendingLine(qc, householdId, lineId) !== null, [qc, householdId]);
+  const { answered: answeredRows, mark: markAnswered } = useAnsweredRows({ rowIds, waiverKeys, linePending });
 
   if (step.status === 'not_found' || (step.status === 'ready' && row === null && !checks.isLoading)) return <CheckNotFound />;
   // 06.1-49 (A-ANS-2): no check yet, so no top bar; the loading state, never a blank screen.
@@ -274,9 +301,10 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     step.flush();
   };
   const setPurchaseDate = (d: LocalDate | null): void => edit((c) => ({ ...c, purchaseDate: d }));
-  const usePlan = (planPay: Extract<PayV2, { mode: 'plan' }>): void => {
+  // 06.1-68 (from 06.1-57): the plan and its name in one step.update, so one write carries both (L0.plan_name, never a bare key).
+  const usePlan = (planPay: Extract<PayV2, { mode: 'plan' }>, planName: string | null = null): void => {
     setSheet(null);
-    edit((c) => ({ ...c, pay: planPay }));
+    edit((c) => withPlanName({ ...c, pay: planPay }, planName));
   };
   const closeSheet = (): void => setSheet(null);
 
@@ -333,15 +361,18 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     }
   };
 
-  const saveWaiver = (waiver: ReadinessWaiver): void => {
+  const saveWaiver = (rowId: string, waiver: ReadinessWaiver): void => {
     const saved = answers.save({ kind: 'readiness_waiver', waiver, at: today });
     if (saved === null) return;
+    markAnswered(rowId, { waiverKey: safeWaiverKey(waiver) });
     hapticLight();
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.notReady.saved' }, stepId: saved.stepId });
   };
   const onReadinessChoice = (fixRow: ReadinessFixRow, choice: WaiverChoice): void => {
+    // T-06.1-68-01: one answer per row; its choices are off from the first tap until the engine agrees.
+    if (answeredRows.has(fixRow.id)) return;
     if (choice.waiver !== null) {
-      saveWaiver(choice.waiver);
+      saveWaiver(fixRow.id, choice.waiver);
       return;
     }
     // markSkipped: skip the pending line itself when it is cached; otherwise answer the occurrence by its waiver.
@@ -349,12 +380,14 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     if (line !== null && rc.userId !== null) {
       const stepId = writes.skipLine(line, rc.userId);
       if (stepId === null) return;
+      const by: AnsweredBy = { lineId: line.id };
+      markAnswered(fixRow.id, by);
       hapticLight();
       showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.notReady.saved' }, stepId });
       return;
     }
     const fallback = fallbackWaiver(fixRow.item);
-    if (fallback !== null) saveWaiver(fallback);
+    if (fallback !== null) saveWaiver(fixRow.id, fallback);
   };
   const onReadinessFix = (fixRow: ReadinessFixRow): void => {
     if (fixRow.fix.kind === 'linkEnvelope') {
@@ -386,12 +419,22 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
       case 'setDueDay':
         pushOnce(asHref('/decide/setup/debts'));
         return;
-      case 'none':
-        answered.set({ flag: 'no_debts', on: true });
+      case 'none': {
+        // 06.1-68 (CF-4): the answer shows it landed, with Undo (the flag's own undo step).
+        const saved = answered.set({ flag: 'no_debts', on: true });
+        if (saved === null) return;
+        hapticLight();
+        showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.fact.noneSaved' }, stepId: saved.stepId });
         return;
-      case 'changeAnswer':
+      }
+      case 'changeAnswer': {
+        // 06.1-68 (CC-8): the answer is on the check itself, so Undo puts the earlier value back on the check (a local undo).
+        const before = check.volatileCover ?? null;
         edit((c) => ({ ...c, volatileCover: c.volatileCover === false }));
+        hapticLight();
+        showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.fact.coverChanged' }, onUndo: () => edit((c) => ({ ...c, volatileCover: before })) });
         return;
+      }
       case 'unlockNet':
         pushOnce(asHref('/decide/safety-net'));
         return;
@@ -434,7 +477,9 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
   const runningLine = runningMonthly > 0 ? t('decide.screens.answer.told.runningMonthly', { monthly: money(runningMonthly) }) : null;
   const runningValue = runningMonthly > 0 ? t('decide.screens.answer.runningSome', { monthly: money(runningMonthly) }) : t('decide.screens.answer.runningNone');
 
-  const giveMoreCount = result === null ? 0 : (result.confidence.nextStep !== null ? 1 : 0) + lines.missing.length + rows.length;
+  // 06.1-68 (CF-2): an answered row no longer counts as something to give, before the engine catches up.
+  const openRows = rows.filter((r) => !answeredRows.has(r.id)).length;
+  const giveMoreCount = result === null ? 0 : (result.confidence.nextStep !== null ? 1 : 0) + lines.missing.length + openRows;
   const country = view.country ?? null;
   const showHelp = result !== null && result.facts.some((f) => f.code === 'free_help') && freeHelpFor(country) !== null;
 
@@ -524,6 +569,8 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         canUseEstimates={canUseEstimates}
         onReadinessFix={onReadinessFix}
         onReadinessChoice={onReadinessChoice}
+        updating={engine.updating}
+        answeredRows={answeredRows}
       >
         {body}
       </AnswerFrame>

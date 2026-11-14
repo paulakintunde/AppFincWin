@@ -82,7 +82,7 @@ describe('the item sentences (C-2)', () => {
     ['spending', 'No everyday spending is recorded for October yet.'],
     ['spendingNow', 'Nothing spent is recorded since D11-01.'],
     ['lateStart', 'September isn’t fully recorded yet.'],
-    ['envelope', 'Holiday isn’t linked to an account.'],
+    ['envelope', 'Holiday (a Grow goal) has no account yet.'],
   ])('%s reads as one sentence, one accessibility stop', async (key, text) => {
     await card([ITEMS[key] as ReadinessItem], false);
     const node = screen.getByText(`First: ${text}`);
@@ -92,7 +92,78 @@ describe('the item sentences (C-2)', () => {
 
   it('an envelope with no name still says what is missing', async () => {
     await card([{ ...(ITEMS.envelope as ReadinessItem), name: null }], false);
-    expect(screen.getByText('First: An envelope isn’t linked to an account.')).toBeTruthy();
+    expect(screen.getByText('First: A Grow goal has no account yet.')).toBeTruthy();
+  });
+
+  it('DS-1: a goal row says it is a Grow goal, with why it matters behind Why?', async () => {
+    await card([ITEMS.envelope as ReadinessItem], false);
+    expect(screen.getByText('First: Holiday (a Grow goal) has no account yet.')).toBeTruthy();
+    expect(screen.queryByTestId('readiness-why-text-0')).toBeNull();
+    const why = screen.getByTestId('readiness-why-0');
+    expect(why.props.accessibilityState).toEqual(expect.objectContaining({ expanded: false }));
+    await press(why);
+    expect(screen.getByTestId('readiness-why-text-0')).toHaveTextContent('Decide sets goal money aside before it answers, so it needs the account that holds it.');
+    expect(screen.getByTestId('readiness-why-0').props.accessibilityState).toEqual(expect.objectContaining({ expanded: true }));
+    await press(screen.getByText('Less'));
+    expect(screen.queryByTestId('readiness-why-text-0')).toBeNull();
+    // other kinds carry no Why?
+  });
+
+  it('DS-1: rows that are not goals carry no Why?', async () => {
+    await card([ITEMS.bill as ReadinessItem], false);
+    expect(screen.queryByTestId('readiness-why-0')).toBeNull();
+  });
+});
+
+describe('06.1-68 (CB-11, CF-2): an answered row shows at once', () => {
+  async function answeredCard(items: readonly ReadinessItem[], answeredIdx: readonly number[]) {
+    const rows = readinessFixRows(items, ASOF);
+    const answered = new Set(answeredIdx.map((i) => (rows[i] as ReadinessFixRow).id));
+    const calls: [ReadinessFixRow, WaiverChoice][] = [];
+    await wrap(
+      <NotReadyCard
+        rows={rows}
+        canUseEstimates={false}
+        asOf={ASOF}
+        {...fmt}
+        answered={answered}
+        onFix={() => undefined}
+        onChoice={(r, c) => calls.push([r, c])}
+        onFinishSetup={() => undefined}
+        onFromEstimates={() => undefined}
+      />
+    );
+    await screen.findByTestId('answer-not-ready');
+    return calls;
+  }
+
+  it('the answered row reads "Saved, updating…", its choices are off, and the next open row is named First', async () => {
+    const calls = await answeredCard([ITEMS.bill, ITEMS.pay] as ReadinessItem[], [0]);
+    expect(screen.getByTestId('readiness-saved-0')).toHaveTextContent('Saved, updating…');
+    expect(screen.queryByTestId('readiness-fix-0')).toBeNull();
+    const row0 = within(screen.getByTestId('readiness-row-0'));
+    for (const label of ['It didn’t happen', 'Someone else paid it']) {
+      const pill = row0.getByRole('button', { name: label });
+      expect(pill.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
+      await press(pill);
+    }
+    expect(calls).toHaveLength(0);
+    // the row sentence drops "First:", which moves to the next open item
+    expect(row0.getByText('Netflix, $11.99 due D10-03, isn’t in your records yet.')).toBeTruthy();
+    expect(within(screen.getByTestId('readiness-row-1')).getByText(/^First: Salary/)).toBeTruthy();
+  });
+
+  it('with no answered rows the card is as before: the first row only', async () => {
+    await answeredCard([ITEMS.bill, ITEMS.pay] as ReadinessItem[], []);
+    expect(screen.queryByTestId('readiness-saved-0')).toBeNull();
+    expect(screen.queryByTestId('readiness-row-1')).toBeNull();
+    expect(screen.getByText(/^First: Netflix/)).toBeTruthy();
+  });
+
+  it('when every row is answered, each reads "Saved, updating…" and none is named First', async () => {
+    await answeredCard([ITEMS.bill] as ReadinessItem[], [0]);
+    expect(screen.getByTestId('readiness-saved-0')).toBeTruthy();
+    expect(screen.queryByText(/^First:/)).toBeNull();
   });
 });
 
@@ -184,7 +255,8 @@ describe('fixes and answers', () => {
   it('D-54: an envelope row offers only "Which account?" and no answer', async () => {
     const { calls, rows } = await card([ITEMS.envelope as ReadinessItem], false);
     const row = screen.getByTestId('readiness-row-0');
-    expect(within(row).queryAllByRole('button')).toHaveLength(0);
+    // no answer buttons: the only button is DS-1's Why? disclosure (06.1-68)
+    expect(within(row).queryAllByRole('button').map((n) => n.props.testID)).toEqual(['readiness-why-0']);
     await press(within(row).getByText('Which account?'));
     expect(calls.fix).toEqual([rows[0]]);
     expect(rows[0]?.fix).toEqual({ kind: 'linkEnvelope', envelopeId: 'g1' });

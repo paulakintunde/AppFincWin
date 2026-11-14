@@ -36,6 +36,8 @@ export interface CheckEngine {
   judgeOn: (date: LocalDate) => Evaluation | null;
   /** 06.1-23: the pay days inside the 90-day cash path, in date order; empty while loading. */
   paydays: () => readonly LocalDate[];
+  /** 06.1-68 (CF-3): true while the shown verdict is judged on an older copy of the check than the one now in hand (the deferred judge lags). */
+  updating: boolean;
 }
 
 /** D-02: home buying stays hidden; a property check is not judged. */
@@ -121,5 +123,8 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
   // runs until an answer asks), and every later call returns the same array, so AnswerScreen re-renders no longer walk the cash path.
   const paydays = useCallback((): readonly LocalDate[] => (prepared === null || judged === null ? NO_DAYS : paydaysOf(prepared, judged)), [prepared, judged]);
 
-  return { status: state.status, errorKind: state.errorKind, missingReads: state.missingReads, refetch: state.refetch, evaluation, both, futures, readyDate, timeline, judgeOn, paydays };
+  // 06.1-68 (CF-3): the verdict on screen is a step behind while the deferred copy has not caught up; the frame dims it and says so.
+  const updating = deferredJudged !== judged;
+
+  return { status: state.status, errorKind: state.errorKind, missingReads: state.missingReads, refetch: state.refetch, evaluation, both, futures, readyDate, timeline, judgeOn, paydays, updating };
 }
