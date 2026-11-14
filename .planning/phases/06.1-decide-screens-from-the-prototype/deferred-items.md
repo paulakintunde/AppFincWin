@@ -38,7 +38,8 @@ Method note G-78-1: device walks must run on a frozen worktree or a preview buil
 ## For 06.1-68 (from 06.1-57)
 - The plan name key is `L0.plan_name` (`KEY_PLAN_NAME` in `src/features/decide/screens/check/planName.ts`, with `withPlanName`), not a bare `plan_name`: the stored-check reader drops any answer key without a layer prefix. The answer's `usePlan(pay, planName)` should call `withPlanName({ ...c, pay }, planName)` in the same `step.update`.
 
-## Plan 74 gap rows (2026-11-13), routed to 06.1-80
+## Plan 74 gap rows (2026-11-13), routed to 06.1-80; resolved by 06.1-81, not 80 (2026-11-13)
+**Resolved by 06.1-81 (not plan 80):** G-78-2, G-74-2 and G-74-1 below were fixed in quick plan 06.1-81 (see 06.1-81-SUMMARY.md). G-78-2: the backdrop takes taps only after the panel's first layout, and that layout sets the open slide again. G-74-2: until the panel lays out, Android Back reaches the sheet through BackHandler and closes it (or asks, when dirty). G-74-1: a draft save for a check deleted on this device that comes back not-found is dropped silently; other rows still park. The device repro (4 of 16 opens) still needs a Pixel/emulator round.
 - **G-78-2 (blocker, reproduced 4/16 on emulator):** open-check sheet loses its panel; only `sheet-gesture-root` and `sheet-backdrop` stay mounted and swallow taps; Android Back clears it. Fix in `src/ui/Sheet.tsx` (mount/animation race; the backdrop must never outlive or precede the panel). Add a test that a sheet whose panel failed to lay out does not leave a pointer-catching backdrop.
 - **G-74-2:** a Back pressed while a sheet is still opening can be lost and the sheet then appears. Same Sheet.tsx area.
 - **G-74-1 (trust):** after deleting a check, a late stepper draft save fails and Home shows red "2 changes couldn't save: The item was removed elsewhere before this change saved." A save for a deleted check must be dropped silently (or cancelled on delete), never reported as a failure.
