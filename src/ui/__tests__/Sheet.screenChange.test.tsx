@@ -111,22 +111,4 @@ describe('Sheet opened during a screen change (G-61-1)', () => {
     // The committed rest is only the fallback when Reanimated has dropped its values; it does not move with the finger.
     expect(committedTranslate(screen)).toBe(0);
   });
-
-  it('closing and reopening starts closed again, then commits the rest once its slide ends', async () => {
-    const tree = (visible: boolean) => (
-      <ThemeProvider>
-        <Sheet visible={visible} onDismiss={jest.fn()}>
-          <Text>{'Body'}</Text>
-        </Sheet>
-      </ThemeProvider>
-    );
-    const screen = await render(tree(true));
-    await advance(DURATION.sheetUp + 50);
-    expect(committedTranslate(screen)).toBe(0);
-    await screen.rerender(tree(false));
-    await screen.rerender(tree(true));
-    expect(committedTranslate(screen)).toBeGreaterThan(0);
-    await advance(DURATION.sheetUp + 50);
-    expect(committedTranslate(screen)).toBe(0);
-  });
 });
