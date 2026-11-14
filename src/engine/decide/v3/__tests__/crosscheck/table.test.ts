@@ -4,7 +4,7 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront, saleNow, replacesDates, plainFreed, withTaxSetAside, plainSetAsideMonthly, plainSetAsideBp, plainPeriodRate, plainPlanPayment, plainMonthOf, plainReadsEffective, basisPoints, PLAIN_RATE_SCALE } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront, saleNow, replacesDates, plainFreed, withTaxSetAside, plainSetAsideMonthly, plainSetAsideBp, plainPeriodRate, plainPlanPayment, plainMonthOf, plainReadsEffective, basisPoints, PLAIN_RATE_SCALE, plainCashReady, plainShortWait } from './plain';
 import { EXPENSIVE_INTEREST_BP } from './rules';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
@@ -378,7 +378,7 @@ describe('05.4-51 drafts: the D-65 tiers SN-21..SN-24 and the deposit-and-today 
   };
   it.each(['SN-21', 'SN-22', 'SN-23', 'SN-24'])('%s: the engine and the plain calculator give the expected tier and facts', (id) => {
     const c = byId(id);
-    expect(c.status).toBe('draft');
+    expect(c.status).toBe('approved'); // 06.1-33: the owner approved SN-21..SN-24 as written (2026-11-14)
     const { inputs, check } = toEngineInputs(c.fixture);
     const r = evaluate(inputs, check).result;
     expect({ code: r.code, variant: r.variant, readyBy: r.readyBy }).toEqual({ code: c.expected.code, variant: c.expected.variant, readyBy: null });
@@ -703,6 +703,81 @@ describe('05.4-19 regression: the D-47 hold-back survives the D-56 month-end cap
     expect(plainAnswer(f).code).toBe('not_yet');
     const { inputs, check } = toEngineInputs(f);
     expect(pick(evaluate(inputs, check)).code).toBe('not_yet');
+  });
+});
+
+describe('regression: a dip inside the overdraft does not wait for payday (D-80, I13; crosscheck seed 224530963, path 1873)', () => {
+  // Pay $5,773.20 monthly, next 1 November; $2,063.78 in checking with a $6,533.95 overdraft; a $6,350.52 bill every 3 months,
+  // due 7 December. Paying the $1,412.70 at once is Not yet, ready in November (counted as 30 November, 46 days: not a short
+  // wait). The path dips below $0 but never past the overdraft limit, and after the 1 November pay it dips again (the December
+  // bill), so the pay is not the ready date. The 60-month plan at 19.99% is "Only by borrowing", with no "costs more" line.
+  const f: RightAnswerFixture = {
+    asOf: '2026-10-15', currency: 'USD', region: null,
+    pay: { amount: 577_320, cadence: 'monthly', nextDate: '2026-11-01', setupAmount: null, lastThree: null },
+    usualMonth: { bills: 119_332, everyday: 186_647, essentialEveryday: 93_323 },
+    thisMonth: { received: 577_320, billsPaid: 119_332, billsDue: 0, everydaySoFar: 182_914 },
+    historyMonths: 5, quickEstimates: null, recordsAsOf: null,
+    accounts: [{ id: 'a1', kind: 'checking', name: 'Main', balance: 206_378, overdraftLimit: 653_395, overdraftRate: '0', use: 'everyday' }],
+    safetyNet: null,
+    bills: [{ id: 'long', amount: 635_052, everyMonths: 3, nextDue: '2026-12-07', lastPaid: '2026-09-07', paidBy: 'me' }],
+    debts: [], userLine: null, factLines: false,
+    check: {
+      price: 141_270, taxPercent: '0', taxIncluded: null, oneOffFees: 0,
+      pay: { mode: 'plan', months: 60, apr: '19.99', fees: 2_254, deposit: 7_063, firstPaymentDate: '2026-11-15' },
+    },
+  };
+  const once: RightAnswerFixture = { ...f, check: { ...f.check, pay: { mode: 'once' } } };
+  it('paying at once: ready in November (a month, not the 1 November pay), so not a short wait', () => {
+    const low = plainPath(once, upFront(once)).reduce((m, x) => (x.balance < m ? x.balance : m), 0n);
+    expect(low < 0n && low >= -overdraftRoom(once)).toBe(true);
+    expect(plainCashReady(once)).toEqual({ month: '2026-11' });
+    expect(plainShortWait(once)).toBe(false);
+    const e = toEngineInputs(once);
+    expect(pick(evaluate(e.inputs, e.check))).toMatchObject({ code: 'not_yet', variant: 'not_covered', readyBy: '2026-11' });
+  });
+  it('the plan: plain and engine both say "Only by borrowing", with no "costs more" line', () => {
+    const { inputs, check } = toEngineInputs(f);
+    const got = pick(evaluate(inputs, check));
+    expect({ code: got.code, variant: got.variant }).toEqual({ code: 'fits_by_borrowing', variant: null });
+    const p = plainAnswer(f);
+    expect({ code: p.code, variant: p.variant }).toEqual({ code: 'fits_by_borrowing', variant: null });
+  });
+});
+
+describe('regression: a sale after the buy day does not make the net lend this month\'s own hole (D-35, D-56; crosscheck seed 482693972, path 9124)', () => {
+  // 1 November, records synced 31 October, nothing logged yet (fresh records). Pay $3,004.64 lands today; the usual bills
+  // ($1,654.95) and everyday spending ($1,409.78) leave the month $60.09 short. $57.14 in checking, so the month ends $2.95 below 0.
+  // A $8,992.58 item (tax included) plus a $5 fee, paid at once, with $8,743.50 from a sale arriving 4 November. The net
+  // (protection off, $14,605.76 saved, $180.27 of it a goal) lends $8,817.31: the price less the $180.27 extra savings. With the
+  // sale on the path, every day stays at or above $0 with that loan, so the $2.95 hole is already inside the month's -$60.09 and is
+  // not lent a second time. The month after the buy is -$60.09 - $8,817.31 = -$8,877.40 on both sides.
+  const f: RightAnswerFixture = {
+    asOf: '2026-11-01', currency: 'USD', region: { country: 'CA', subdivision: 'QC' },
+    pay: { amount: 300_464, cadence: 'monthly', nextDate: '2026-11-01', setupAmount: null, lastThree: null },
+    usualMonth: { bills: 165_495, everyday: 140_978, essentialEveryday: 70_489 },
+    thisMonth: { received: 0, billsPaid: 0, billsDue: 0, everydaySoFar: 0 },
+    historyMonths: 5, quickEstimates: null, recordsAsOf: '2026-10-31',
+    accounts: [
+      { id: 'a1', kind: 'checking', name: 'Main', balance: 5_714, overdraftLimit: null, overdraftRate: null, use: 'everyday' },
+      { id: 'n1', kind: 'savings', name: 'Safety net', balance: 1_478_603, overdraftLimit: null, overdraftRate: null, use: 'emergency' },
+    ],
+    safetyNet: { protect: false, size: 585_277, saved: 1_460_576, locked: false },
+    bills: [], debts: [], userLine: null, factLines: false,
+    check: {
+      price: 899_258, taxPercent: '8.25', taxIncluded: true, oneOffFees: 500, pay: { mode: 'once' }, closingPercent: '0',
+      replaces: { stops: [], sale: { amount: 874_350, arrives: '2026-11-04', paysDebtId: null } },
+    },
+    goals: [{ id: 'goal1', name: 'Goal', saved: 18_027, target: 36_054, monthly: null, locked: false, accountId: 'n1' }],
+  };
+  it('records are fresh and nothing is logged yet, so the fresh-records branch answers', () => {
+    expect(recordsFresh(f)).toBe(true);
+  });
+  it('plain and engine: Dips into your safety net, month after the buy -$8,877.40 (not -$8,880.35)', () => {
+    const { inputs, check } = toEngineInputs(f);
+    const got = pick(evaluate(inputs, check));
+    expect({ code: got.code, month: got.afterBuy?.month }).toEqual({ code: 'fits_uses_net', month: -887_740 });
+    const p = plainAnswer(f);
+    expect({ code: p.code, afterBuy: p.afterBuy }).toEqual({ code: 'fits_uses_net', afterBuy: -887_740 });
   });
 });
 

@@ -58,7 +58,7 @@ import { billsHeldTotal, cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit
 import { costlyDebt, costlyFacts, debtFacts } from '../debts';
 import { depletionFacts, monthAlreadyShort, monthShortTier, planTotal } from '../depletion';
 import { askFact, borrowingFacts, cashFits, cashSoon, isExpensive, saveVsBorrow, saveVsBorrowFact, type PlanRate } from '../borrowing';
-import { paymentsInRange } from '../plan/schedule';
+import { lastPaymentBefore, paymentsInRange } from '../plan/schedule';
 import { afterBuyBlock, firstPaymentLater } from '../afterBuy';
 import { emergencyOf } from '../funds/emergency';
 import { NO_NET, fitVariant, netDip, spareSavings, type ResolvedNet } from '../safetyNet';
@@ -339,8 +339,11 @@ export function oneOffPart(
   const part = ladder(p, j.month, available, 0, net, later, sale, savedFor);
   if (j.cash.kind === 'ok') return part;
   if (j.cash.kind === 'net') {
+    if (part.code === 'needs_input') return part;
+    // I51: a purchase that waits anyway takes nothing from the net, so it is judged on the check the net's money carried (the payday
+    // date and the not-covered month as with no net); otherwise any money in the net, even 1 cent, would change the wait.
+    if (part.code === 'not_yet') return oneOffPart({ ...j, cash: j.cash.before }, available);
     // 05.4 FIN-02 (D-35): the 90-day path stays above 0 only with the net's money, so any fit dips into it.
-    if (part.code === 'not_yet' || part.code === 'needs_input') return part;
     // What the purchase adds to the dip is what it takes from the net; a dip that is there without it is not the purchase's.
     return { ...part, code: 'fits_uses_net', cashNet: j.cash.added };
   }
@@ -732,7 +735,7 @@ function billFacts(funds: Funds): Fact[] {
 function planReadyBy(month: MonthModel, p: Purchase, asOf: string, spare: number | null, judged: ReadyBy | null): ReadyBy | null {
   const s = p.schedule as NonNullable<Purchase['schedule']>;
   const firstNow = firstPaymentsToday(s, p.share, asOf);
-  const inside = p.runningMonthly === 0 && paymentsInRange(s, asOf, addDays(asOf, CASH_PATH_DAYS_V3)).length === s.lastPaying;
+  const inside = p.runningMonthly === 0 && lastPaymentBefore(s, addDays(asOf, CASH_PATH_DAYS_V3));
   const first = s.firstDate > asOf ? myPart(minorFromBigInt(BigInt(s.payment) + BigInt(s.fees.perPeriod), 'planReadyBy'), p.share) : 0;
   const need = inside ? planTotal(p.dayOne, s, p.share, firstNow) : p.dayOne + first;
   // Spare money that already covers it adds no wait of its own (a payday wait stays the payday).
@@ -959,8 +962,10 @@ export function judge(j: JudgeInput): Result {
   // 05.4 FIN-07 / D-40: the floor a tight answer is under. Not under a D-63 / D-65 month-short headline (it reads after the tight body).
   if (variant === 'tight' && !monthAlreadyShort(month.typicalLeft)) facts.push(tightFact(tightFloor(spend, line)));
   // D-28, D-38: below 0 with no overdraft limit recorded is Not yet, and the answer asks about it.
-  if (code === 'not_yet' && (j.overdraft?.floor ?? 0) === 0 && (j.cash.kind === 'payday' || j.cash.kind === 'not_covered')) {
-    facts.push(...noLimitFacts(j.inputs.accounts, j.cash.shortBy, readyBy));
+  // I51: a one-off that waits took nothing from the net, so it reads the check the net's money carried.
+  const failed = j.cash.kind === 'net' && one.code === 'not_yet' ? j.cash.before : j.cash;
+  if (code === 'not_yet' && (j.overdraft?.floor ?? 0) === 0 && (failed.kind === 'payday' || failed.kind === 'not_covered')) {
+    facts.push(...noLimitFacts(j.inputs.accounts, failed.shortBy, readyBy));
   }
   // 05.4 D-61: a locked net is left out of the answer, and a Not yet says so.
   const goalsKept = j.funds.lockedNamedSaved ?? 0;

@@ -1057,6 +1057,10 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
   const money = monthEnd + laterMoney(f) + brought;
   const low = buyDay(f) !== f.asOf || usualMonthShort(f) || runningDates(f).length > 0 || replacesDates(f).length > 0 ? pathLowest(f, cost) : money;
   const margin = (low < money ? low : money) + net.above;
+  // Crosscheck seed 482693972, path 9124 (D-35, D-56): the money test decides fits vs Not yet, but the net lends only what the
+  // day-by-day path needs. The money test leaves out a sale that lands after the buy day, so a month that already ends a little below
+  // 0 would lend that hole a second time (it is already inside this month's figure); the path has the sale on its real date.
+  const pathMargin = low + net.above;
   // 05.4-24: on Dips into your safety net the spare money still in the account and the extra savings it uses are named (D-44), so
   // only the month's money and the net money come off the month figure.
   const room = maxC(0n, usualLeft);
@@ -1070,7 +1074,7 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
     // 05.4-27 (crosscheck seed 37): the net lends only what the money ladder still needs: this month's room, the earlier money (with its
     // sign) and the extra savings come first, and a price past all of them and the net is Not yet, as on a day with records.
     const dips = margin + net.lend >= 0n && rest <= sitting + usualRaw - thisMonth + net.above + net.lend;
-    return { code: dips ? 'fits_uses_net' : 'not_yet', variant: net.off ? 'protection_off' : null, afterBuy: dips ? netDipFigure(usualLeft, cost, need, purchaseMargin(f, margin, pathLowest), net) : Number(after) };
+    return { code: dips ? 'fits_uses_net' : 'not_yet', variant: net.off ? 'protection_off' : null, afterBuy: dips ? netDipFigure(usualLeft, cost, need, purchaseMargin(f, pathMargin, pathLowest), net) : Number(after) };
   }
   // D-40: free money is what sits plus this month's room; with the money above the net's size, less the purchase, it is what is left.
   const tight = plainTightOnce(f, sitting + usualRaw + net.above + laterMoney(f) - cost);
@@ -1083,7 +1087,7 @@ function freshAnswer(f: RightAnswerFixture, cost: Cents): PlainAnswer {
     // SN-07). The money test can pass while the ladder is short when stopped costs bring money back by the purchase date.
     if (rest > earlier + net.lend) return { code: 'not_yet', variant: null, afterBuy: Number(after) };
     const need = maxC(0n, rest - maxC(0n, sitting + usualRaw - thisMonth) - net.above);
-    return { code: 'fits_uses_net', variant: net.off ? 'protection_off' : null, afterBuy: netDipFigure(usualLeft, cost, need, purchaseMargin(f, margin, pathLowest), net) };
+    return { code: 'fits_uses_net', variant: net.off ? 'protection_off' : null, afterBuy: netDipFigure(usualLeft, cost, need, purchaseMargin(f, pathMargin, pathLowest), net) };
   }
   return { code: 'fits_unspent', variant: fitVariant(net, rest > earlier - net.above, carriesCostlyDebt(f, rest), tight), afterBuy: Number(usualLeft - fromMonth) };
 }
@@ -1642,8 +1646,10 @@ export function plainCashReady(f: RightAnswerFixture): { date: string } | { mont
   if (usual <= 0n) return null;
   const n = short <= 0n ? 1n : maxC(1n, (short + usual - 1n) / usual);
   const month = plusMonths(`${f.asOf.slice(0, 7)}-01`, Number(n)).slice(0, 7);
-  // a path that never goes below $0 waits for the money alone: the month. One that dips waits for the pay too (the later of them).
-  const dips = path.some((x) => x.balance + above < 0n);
+  // a path that never goes past the overdraft limit waits for the money alone: the month (a dip inside the overdraft is not
+  // covered by waiting for the pay). One that goes past the limit waits for the pay too (the later of them). Crosscheck seed
+  // 224530963, path 1873.
+  const dips = path.some((x) => x.balance + above < -overdraftRoom(f));
   return dips && pay !== undefined && pay >= `${month}-01` ? { date: pay } : { month };
 }
 

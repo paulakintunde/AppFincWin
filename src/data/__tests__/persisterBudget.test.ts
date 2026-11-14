@@ -260,5 +260,20 @@ describe('F-11 persisted cache budget', () => {
       expect(log.mock.calls.filter((c) => String(c[0]).startsWith('[persist]'))).toHaveLength(0);
       log.mockRestore();
     });
+
+    it('a burst of cache changes saves (and logs) at most twice, with the last client winning', async () => {
+      const log = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+      g.__DEV__ = true;
+      const p = createEncryptedPersister(new LargeSecureStore(), 40);
+      const calls = Array.from({ length: 30 }, (_, i) => p.persistClient(client([query(['a'], `v${i}`)], [])));
+      await Promise.all(calls);
+      await new Promise((done) => setTimeout(done, 120));
+      const lines = log.mock.calls.map((c) => String(c[0])).filter((l) => l.startsWith('[persist]'));
+      expect(lines.length).toBeGreaterThanOrEqual(1);
+      expect(lines.length).toBeLessThanOrEqual(2);
+      const restored = await p.restoreClient();
+      expect(restored?.clientState.queries[0]?.state.data).toBe('v29');
+      log.mockRestore();
+    });
   });
 });

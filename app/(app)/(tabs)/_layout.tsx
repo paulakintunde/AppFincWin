@@ -17,7 +17,7 @@ import { Fab } from '@/shell/fab/Fab';
 import { FabQuickMenu } from '@/shell/fab/FabQuickMenu';
 import { TabBar } from '@/shell/tabBar/TabBar';
 import { TabSlideIn } from '@/shell/tabBar/TabSlideIn';
-import { availableTabs, isTabAvailable } from '@/shell/tabBar/availableTabs';
+import { tabRoutes } from '@/shell/tabBar/availableTabs';
 import { isTabId } from '@/shell/tabBar/tabs';
 import { perfEnabled } from '@/features/decide/perf/perfMarks';
 import { probeCommit } from '@/data/perf/cacheProbe';
@@ -25,11 +25,11 @@ import { DecideV3Scope } from '@/data/queries/decideV3';
 
 // 06.1-78 (H-15): the Tabs get Screen elements only. A null child (the old grow fallback once Grow opened) made expo-router log
 // "Layout children must be of type Screen" on every render. Built once: availability is a build switch, not state.
-// 06-15: grow.tsx exists before the tab opens (D-03); href null keeps it unlisted and unlinkable until TAB_AVAILABILITY.grow is on.
-const TAB_SCREENS = [
-  ...availableTabs().map((id) => <Tabs.Screen key={id} name={id} />),
-  ...(isTabAvailable('grow') ? [] : [<Tabs.Screen key="grow" name="grow" options={{ href: null }} />]),
-];
+// 06-15: grow.tsx exists before the tab opens (D-03); href null keeps it unlisted and unlinkable while TAB_AVAILABILITY.grow is off.
+// tabRoutes() is one list with no null entries, visible tabs first.
+const TAB_SCREENS = tabRoutes().map(({ name, hidden }) =>
+  hidden ? <Tabs.Screen key={name} name={name} options={{ href: null }} /> : <Tabs.Screen key={name} name={name} />
+);
 
 export default function TabsLayout() {
   const rc = useRecordContext();
