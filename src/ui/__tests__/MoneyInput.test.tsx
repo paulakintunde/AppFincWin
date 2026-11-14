@@ -177,8 +177,9 @@ describe('MoneyInput zero hint', () => {
     expect(field.props.value).toBe('');
     expect(field.props.placeholderTextColor).toBe(INK_MUTED);
     expect(field.props.accessibilityLabel).toBe('Target');
-    // 06.1-84 (G-61-6): an empty value object, never none (see the type-then-clear case below).
-    expect(field.props.accessibilityValue).toEqual({ text: '' });
+    // 06.1-84 (G-61-6): a value object, never none (see the type-then-clear case below). 06.1-85 (G-PD-4): its text is null, not
+    // '', so Android names it "Price", not "Price, ".
+    expect(field.props.accessibilityValue).toEqual({ text: null });
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -204,7 +205,7 @@ describe('MoneyInput zero hint', () => {
     const field = view.getByLabelText('Price');
     expect(field.props.value).toBe('');
     expect(field.props.accessibilityLabel).toBe('Price');
-    expect(field.props.accessibilityValue).toEqual({ text: '' });
+    expect(field.props.accessibilityValue).toEqual({ text: null });
     await fireEvent.changeText(field, '180');
     await fireEvent(field, 'blur');
     expect(view.getByLabelText('Price').props.accessibilityLabel).toBe('Price');
@@ -225,7 +226,7 @@ describe('MoneyInput zero hint', () => {
     await fireEvent.changeText(view.getByLabelText('Price'), '');
     await fireEvent(view.getByLabelText('Price'), 'blur');
     expect(view.getByLabelText('Price').props.accessibilityLabel).toBe('Price');
-    expect(view.getByLabelText('Price').props.accessibilityValue).toEqual({ text: '' });
+    expect(view.getByLabelText('Price').props.accessibilityValue).toEqual({ text: null });
   });
 
   // 06.1-61: a fixed-width amount field grows with the OS font scale (to the 2x cap), so "$156.00" is not cut at 2x.

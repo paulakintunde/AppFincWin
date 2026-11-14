@@ -4,7 +4,7 @@
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
-import { unspentSum, type CheckV2, type Evaluation } from '@/engine/decide/v3';
+import { prepare, unspentSum, type CheckV2, type Evaluation, type Prepared } from '@/engine/decide/v3';
 import { wrap } from '@/test/stepProps';
 import { AnswerScreen } from '../AnswerScreen';
 import { ledgerRun, notReadyRun, type Run } from './fixtures';
@@ -50,7 +50,10 @@ const mockSaveStep = jest.fn((..._a: unknown[]): { stepId: string } | null => ({
 jest.mock('@/data/mutations/decideSetup', () => ({
   useSetDecideAnswered: () => ({ set: mockAnswered }),
   useSaveSetupStep: () => ({ save: (...a: unknown[]) => mockSaveStep(...a) }),
+  useSaveUnexplainedAnswer: () => ({ save: (...a: unknown[]) => mockSaveUnexplained(...a) }),
 }));
+// 06.1-85 (G-PD-2): the unexplained money answer's writer (decide_settings unexplained_amount/use/at).
+const mockSaveUnexplained = jest.fn((..._a: unknown[]): { stepId: string } | null => ({ stepId: 'step-unexplained' }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [{ id: 'a1', name: 'Everyday', deleted_at: null }] }) }));
 // 06.1-44: the readiness answer writers and the cached transactions the skip reads.
 const mockSave = jest.fn((..._a: unknown[]): { id: string; stepId: string } | null => ({ id: 'ans-1', stepId: 'step-ans' }));
@@ -107,7 +110,21 @@ jest.mock('@/data/queries/decide', () => ({
     data: mockList.rows ?? [{ id: 'c1', name: 'Laptop', created_by: 'u1', household_id: 'h1', version: 1, inputs: {}, deleted_at: null, last_seen_state: null, last_seen_basis: null }],
   }),
 }));
-jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ inputs: mockState.inputs ?? mockState.run.inputs, status: 'ready', v3: { answers: mockState.answers } }) }));
+// 06.1-85: the engine's held Prepared, as useDecideV3 gives it (one prepare per inputs object).
+const mockPrepared = new WeakMap<object, Prepared>();
+const mockPreparedOf = (inputs: Run['inputs']): Prepared => {
+  const hit = mockPrepared.get(inputs);
+  if (hit !== undefined) return hit;
+  const made = prepare(inputs);
+  mockPrepared.set(inputs, made);
+  return made;
+};
+jest.mock('@/data/queries/decideV3', () => ({
+  useDecideV3: () => {
+    const inputs = mockState.inputs ?? mockState.run.inputs;
+    return { inputs, prepared: mockPreparedOf(inputs), status: 'ready', v3: { answers: mockState.answers } };
+  },
+}));
 jest.mock('@/data/sync/useSyncStatus', () => ({ useSyncStatus: () => ({ isOnline: mockState.online }) }));
 jest.mock('@/data/sync/useIsOnline', () => ({ useIsOnline: () => mockState.online }));
 jest.mock('../../engine/useMonthPicture', () => ({ useMonthPicture: () => ({ picture: null, bars: [] }) }));
@@ -477,9 +494,14 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
   // 06.1-84 (G-61-2): Records has nothing that confirms spare money, so this Fix could never get an answer. It opens a sheet on the
   // answer that names the app's figure; "That's right" or the person's own figure is saved (unspent_anchor, today) with Undo.
   describe('Your spare money hasn’t been confirmed yet (G-61-2)', () => {
+    // 06.1-85: the first prepare of a fixture is cold (module load); warm it outside the 5 s test budget.
+    beforeAll(() => {
+      prepare(ledgerRun('N02').inputs);
+    }, 30_000);
     const spareRun = (): { run: Run; total: number; held: number } => {
       const run = ledgerRun('N02');
-      const sum = unspentSum(run.inputs, run.evaluation.month);
+      const p = prepare(run.inputs);
+      const sum = unspentSum(p.inputs, (p.readings[0] as Prepared['readings'][number]).month);
       return { run, total: sum.total, held: sum.heldBack };
     };
 
@@ -498,7 +520,7 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
       });
       expect(mockSaveStep).toHaveBeenCalledWith({
         labelKey: 'unspentConfirmed',
-        patch: { unspent_anchor: total + held, unspent_anchor_at: '2026-11-05' },
+        patch: { unspent_anchor: total + held, unspent_anchor_at: run.inputs.asOf },
       });
       expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ text: { key: 'decide.screens.answer.spare.saved' }, stepId: 'step-spare' }));
       expect(screen.queryByText('Your spare money')).toBeNull();
@@ -522,8 +544,91 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
       });
       expect(mockSaveStep).toHaveBeenCalledWith({
         labelKey: 'unspentConfirmed',
-        patch: { unspent_anchor: 120000 + held, unspent_anchor_at: '2026-11-05' },
+        patch: { unspent_anchor: 120000 + held, unspent_anchor_at: run.inputs.asOf },
       });
+    });
+  });
+
+  // 06.1-85 (G-PD-2): "What is the $X for ...?" had no answer anywhere (its Fix opened the setup checklist). Ask, don't block: the
+  // Fix opens a sheet on the answer with the four answers; one tap saves the amount asked and the use, with Undo.
+  describe('What is the $X for? (G-PD-2)', () => {
+    /** The ask as the engine sends it: the question, and the notice its amount is read from. */
+    const asksUnexplained = (run: Run): Evaluation => {
+      const e = asks(run, ['unexplained_money_question']);
+      return { ...e, result: { ...e.result, notices: [...e.result.notices, { code: 'unexplained_money', values: { amount: 50_000 } }] } };
+    };
+    /** N02 with spare money confirmed far below the engine's figure, so the engine asks about the rest. */
+    const askRun = (): { run: Run; inputs: Run['inputs']; asked: number } => {
+      const run = ledgerRun('N02');
+      const inputs = { ...run.inputs, unspent: { amount: 0 as Run['inputs']['balance'], at: run.inputs.asOf } };
+      const p = prepare(inputs);
+      const asked = Math.max(...p.readings.map((r) => r.funds.unexplained ?? 0));
+      return { run, inputs, asked };
+    };
+
+    it('the engine asks it on this fixture', () => {
+      const { inputs, asked } = askRun();
+      expect(asked).toBeGreaterThan(inputs.thresholds.unspentDrift);
+    });
+
+    it('Fix opens the sheet, not the setup checklist; Someone else’s money saves the amount asked with Undo', async () => {
+      const { run, inputs, asked } = askRun();
+      load(run, { inputs, evaluation: asksUnexplained(run) });
+      await open();
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('answer-fix-unexplained_money_question'));
+      });
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(screen.getByTestId('unexplained-sheet')).toBeTruthy();
+      expect(screen.getByText(/^Your everyday accounts hold about \$[0-9,.]+ more than your records explain\. What is it for\?$/)).toBeTruthy();
+      for (const label of ['Spare money', 'An envelope or goal', 'Set aside for a bill']) expect(screen.getByText(label)).toBeTruthy();
+      await act(async () => {
+        fireEvent.press(screen.getByText('Someone else’s money'));
+      });
+      expect(mockSaveUnexplained).toHaveBeenCalledWith({ amount: asked, use: 'someone_elses', at: inputs.asOf });
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ text: { key: 'decide.screens.answer.unexplained.saved' }, stepId: 'step-unexplained' }));
+      expect(screen.queryByTestId('unexplained-sheet')).toBeNull();
+    });
+
+    it('an answer that writes nothing (the same as before) closes the sheet with no toast', async () => {
+      const { run, inputs } = askRun();
+      mockSaveUnexplained.mockReturnValueOnce(null);
+      load(run, { inputs, evaluation: asksUnexplained(run) });
+      await open();
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('answer-fix-unexplained_money_question'));
+      });
+      await act(async () => {
+        fireEvent.press(screen.getByText('Spare money'));
+      });
+      expect(mockSaveUnexplained).toHaveBeenCalledWith(expect.objectContaining({ use: 'spare' }));
+      expect(mockToast).not.toHaveBeenCalled();
+      expect(screen.queryByTestId('unexplained-sheet')).toBeNull();
+    });
+
+    it('Cancel closes it with nothing saved', async () => {
+      const { run, inputs } = askRun();
+      load(run, { inputs, evaluation: asksUnexplained(run) });
+      await open();
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('answer-fix-unexplained_money_question'));
+      });
+      await act(async () => {
+        fireEvent.press(screen.getByText('Cancel'));
+      });
+      expect(screen.queryByTestId('unexplained-sheet')).toBeNull();
+      expect(mockSaveUnexplained).not.toHaveBeenCalled();
+    });
+
+    it('with no money left to explain, Fix opens no sheet and goes nowhere', async () => {
+      const run = ledgerRun('N02');
+      load(run, { evaluation: asksUnexplained(run) });
+      await open();
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('answer-fix-unexplained_money_question'));
+      });
+      expect(screen.queryByTestId('unexplained-sheet')).toBeNull();
+      expect(mockPush).not.toHaveBeenCalled();
     });
   });
 
