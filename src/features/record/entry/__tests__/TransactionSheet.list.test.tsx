@@ -5,7 +5,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { serialiseDraft, type ListItem } from '@/engine/entryList';
 import { getToast, resetToastForTests } from '@/state/undoToast';
-import { hapticLight, hapticSuccess } from '@/ui/haptics';
+import { hapticLight, hapticSuccess, hapticTap } from '@/ui/haptics';
 import { entryDraftKey } from '../useEntryDraft';
 import { TransactionSheet } from '../TransactionSheet';
 
@@ -19,6 +19,7 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 jest.mock('@/ui/haptics', () => ({
   hapticLight: jest.fn(),
+  hapticTap: jest.fn(),
   hapticSuccess: jest.fn(),
   hapticWarning: jest.fn(),
   hapticSelection: jest.fn(),
@@ -279,7 +280,11 @@ describe('Save with a list', () => {
     expect(items.map((i) => i.amountMinor)).toEqual([300, 400]);
     expect(ctx).toMatchObject({ householdId: 'h1', ownerId: 'u1', homeCurrency: 'GBP', transferCategoryId: 'tc' });
     expect(getToast()).toMatchObject({ stepId: 'bulk-step', text: { key: 'undo.label.addedMany', params: { count: 2 } } });
-    expect(hapticSuccess).toHaveBeenCalled();
+    // 06.2 D-20: saving a list is a light tap, never Success.
+    expect(hapticTap).toHaveBeenCalledTimes(1);
+    expect(hapticSuccess).not.toHaveBeenCalled();
+    // 06.2-11 L02: the new rows' ids go to the Activity wash
+    expect(typeof (mockBulkSave.mock.calls[0] as unknown[])[2]).toBe('function');
     expect(onClose).toHaveBeenCalled();
     await waitFor(async () => expect(await AsyncStorage.getItem(entryDraftKey('u1', 'h1'))).toBeNull());
   });

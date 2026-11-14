@@ -26,6 +26,17 @@ const mockAddTransfer = jest.fn(() => ({ transferId: 'tr1', stepId: 'tr-step' })
 const mockEditTransfer = jest.fn((): string | null => 'tre-step');
 const mockRemoveTransfer = jest.fn(() => 'trd-step');
 const mockTrack = jest.fn();
+// 06.2-11 (L02, D-20): the save moment marks the new rows and gives one light tap.
+const mockMarkJustSaved = jest.fn();
+const mockTap = jest.fn();
+jest.mock('@/state/justSaved', () => ({
+  ...jest.requireActual('@/state/justSaved'),
+  markJustSaved: (...a: unknown[]) => mockMarkJustSaved(...a),
+}));
+jest.mock('@/ui/haptics', () => ({
+  ...jest.requireActual('@/ui/haptics'),
+  hapticTap: () => mockTap(),
+}));
 let mockLegs: TransactionRow[] = [];
 let mockLegsRead: Record<string, unknown> = { isPending: false, fetchStatus: 'idle', isError: false, isSuccess: true };
 let mockRegion = 'GB';
@@ -790,5 +801,46 @@ describe('TransactionSheet: keypad, toggles, notes and wording (REC-20)', () => 
       const { queryByText } = await open({ kind: 'new', direction: 'in' });
       expect(queryByText('Income type')).toBeNull();
     });
+  });
+});
+
+describe('06.2-11 save moment (L02, D-20)', () => {
+  it('a new expense marks its row for the Activity wash and gives one light tap', async () => {
+    const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out' });
+    await typeAmount(getByLabelText, '4.20');
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Tea');
+    await fireEvent.press(getByText('Save expense'));
+    expect(mockMarkJustSaved).toHaveBeenCalledWith(['new-id']);
+    expect(mockTap).toHaveBeenCalledTimes(1);
+  });
+
+  it('a save that crosses a cap gives the cap warning instead of the tap (one haptic per save)', async () => {
+    mockCheckCap.mockReturnValueOnce(true);
+    const { getByLabelText, getByText } = await open({ kind: 'new', direction: 'out' });
+    await typeAmount(getByLabelText, '4.20');
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Tea');
+    await fireEvent.press(getByText('Save expense'));
+    expect(mockMarkJustSaved).toHaveBeenCalledWith(['new-id']);
+    expect(mockTap).not.toHaveBeenCalled();
+  });
+
+  it('a new transfer marks both legs and gives one light tap', async () => {
+    mockAddTransfer.mockReturnValueOnce({ transferId: 'tr1', stepId: 'tr-step', legIds: ['leg-out', 'leg-in'] } as never);
+    const { getByText, getByLabelText } = await open({ kind: 'new', direction: 'out' });
+    await fireEvent.press(getByText('Transfer'));
+    await fireEvent.press(getByLabelText('To account'));
+    await fireEvent.press(getByLabelText('Savings'));
+    await typeAmount(getByLabelText, '10');
+    await fireEvent.press(getByText('Add transfer'));
+    expect(mockMarkJustSaved).toHaveBeenCalledWith(['leg-out', 'leg-in']);
+    expect(mockTap).toHaveBeenCalledTimes(1);
+  });
+
+  it('an edit is not a new row: no mark and no save tap', async () => {
+    const { getByLabelText, getByText } = await open({ kind: 'edit', row: row() });
+    await fireEvent.changeText(getByLabelText('What is it for?'), 'Renamed');
+    await fireEvent.press(getByText('Save changes'));
+    expect(mockMarkJustSaved).not.toHaveBeenCalled();
+    expect(mockTap).not.toHaveBeenCalled();
   });
 });

@@ -19,6 +19,7 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 jest.mock('@/ui/haptics', () => ({
   hapticLight: jest.fn(),
+  hapticTap: jest.fn(),
   hapticSuccess: jest.fn(),
   hapticWarning: jest.fn(),
   hapticSelection: jest.fn(),

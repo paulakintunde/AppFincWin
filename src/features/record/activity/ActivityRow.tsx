@@ -31,6 +31,7 @@ import { SwipeRow, type SwipeAction } from '@/ui/SwipeRow';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { IncomeTagChip, type IncomeChipState } from './IncomeTagChip';
 import { RefundTag, type RefundTagModel } from './RefundTag';
+import { WashUnderlay } from './NewRowWash';
 
 /** Where a row sits in its run of rows: a section is one grouped card (UI-SPEC list-row cards). */
 export type CardPosition = CardPositionOf;
@@ -61,6 +62,14 @@ export function cardStyle(position: CardPosition, c: Pick<typeof ThemeColours, '
   };
   const separator: ViewStyle = position === 'first' ? {} : { borderTopWidth: 2, borderTopColor: c.line4 };
   return { ...base, ...corners, ...separator, ...shadows.edge };
+}
+
+/** The card's outer corners only (the same radii cardStyle gives), for a layer drawn inside the card. */
+export function cardCorners(position: CardPosition): ViewStyle {
+  if (position === 'only') return { borderRadius: radii.card };
+  const top = position === 'first' ? radii.card : 0;
+  const bottom = position === 'last' ? radii.card : 0;
+  return { borderTopLeftRadius: top, borderTopRightRadius: top, borderBottomLeftRadius: bottom, borderBottomRightRadius: bottom };
 }
 
 export interface ActivityRowProps {
@@ -302,6 +311,8 @@ export function ActivityRow({
 
   const card = (
     <View testID={`activity-card-${row.id}`} style={[styles.card, cardStyle(cardPosition, colors)]}>
+      {/* 06.2 L02: inside a NewRowWash the fits tint sits under the content and clears; elsewhere nothing. */}
+      <WashUnderlay style={cardCorners(cardPosition)} />
       {extras === null ? (
         mainPress
       ) : (
