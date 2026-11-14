@@ -58,6 +58,43 @@ export const OTHER_KEYS: readonly string[] = [
   'sync.failedSheet.reason.copyNotSaved',
 ];
 
+/**
+ * 06.1-33 (D-08): lines outside the locked groups that the review page also shows, reviewed but never locked (as D-151).
+ * The undo and History lines 06.1 added. The page writer also lists any other undo / History / sync line that is new or changed
+ * since the baseline, so a later plan's line still reaches the page without an edit here.
+ */
+export const OTHER_KEYS_061: readonly string[] = [
+  'undo.label.safetyNetUnlocked',
+  'undo.label.safetyNetLocked',
+];
+
+/** Prefixes of the outside-the-lock lines shown in the page's undo and History section. */
+export const UNDO_HISTORY_PREFIXES = ['undo.', 'history.', 'sync.'] as const;
+
+/**
+ * 06.1-33: the lines 06.1 decisions changed inside decide.v3 and legal.decide*, by topic, for the page's "Changed for 06.1"
+ * section. Every key must be in en.ts and in the locked groups (the page writer checks).
+ */
+export const CHANGED_061: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  'D-19: “Your money rules”, each item a rule': [
+    'decide.v3.fact.line_crossed',
+    'decide.v3.fact.line_crossed_percent',
+    'decide.v3.fact.line_crossed_money',
+    'decide.v3.fact.line_crossed_tenths',
+    'decide.v3.fact.tight_floor_user_line',
+    'decide.screens.sheetsHome.rulesCard.title',
+    'decide.screens.setup.items.rules',
+    'decide.screens.setup.status.rulesDone_one',
+    'decide.screens.setup.status.rulesDone_other',
+    'decide.screens.setupOthers.rules.title',
+  ],
+  'D-21: quick estimates counted for this check': ['decide.v3.fact.quick_lines_counted', 'decide.v3.fact.quick_savings_counted'],
+  'FIN-20: tax kept aside from pay': ['decide.v3.fact.tax_set_aside'],
+  'FIN-22: long plans and the savings line': ['decide.v3.fact.lean_bridge_long', 'decide.v3.fact.lean_bridge_net_long'],
+  'FIN-23: how lenders in your country quote the APR': ['decide.v3.fact.rate_convention_effective', 'decide.v3.fact.rate_convention_effective_eu'],
+  'Grow: the three goal facts (D-05, D-06, D-22)': ['decide.v3.fact.locked_goals_kept', 'decide.v3.fact.net_and_goals_kept', 'decide.v3.fact.unlocked_goals_counted'],
+});
+
 /** Every leaf string under `node`, keyed by its dotted path. */
 export function leaves(node: unknown, prefix: string, out: Leaves = {}): Leaves {
   if (typeof node === 'string') {
@@ -293,6 +330,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   dueDate: '1 March',
   envelope: 'Holiday',
   everyday: '$410.00',
+  example: '1,200.50', // 06.1-52: an amount in the region's own marks
   extra: '$100.00',
   figure: 'your everyday spending',
   frequency: 'Monthly', // 06.1-24

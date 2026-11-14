@@ -20,7 +20,23 @@ import { corpus } from '../../engine/decide/v3/__tests__/reviewed/corpus';
 import { esc, sayLine } from '../../engine/decide/v3/__tests__/reviewed/page';
 import { loadCases } from '../../engine/decide/v3/__tests__/rightAnswers/loader';
 import { toEngineInputs } from '../../engine/decide/v3/__tests__/rightAnswers/fixture';
-import { DECISION_MAP, fillSample, leaves, type Leaves, LOCKED_ROOTS, lockedLeaves, OTHER_KEYS, placeholdersOf, readSigned, readSignoff } from './wordingScope';
+import { RUNNING_COST_TEMPLATES, type TemplateLine } from '../../features/decide/screens/logic/runningCostTemplates';
+import {
+  CHANGED_061,
+  DECISION_MAP,
+  fillSample,
+  leaves,
+  type Leaves,
+  LOCKED_ROOTS,
+  lockedLeaves,
+  OTHER_KEYS,
+  OTHER_KEYS_061,
+  placeholdersOf,
+  readSigned,
+  readSignoff,
+  SAMPLE_VALUES,
+  UNDO_HISTORY_PREFIXES,
+} from './wordingScope';
 
 const ROOT = join(__dirname, '..', '..', '..');
 const OUT_DIR = join(ROOT, 'reports', 'wording');
@@ -178,7 +194,7 @@ const GROUPS: readonly [string, (k: string) => boolean][] = [
   ['Under every answer', (k) => k.startsWith('legal.decideAnswer.')],
   ['About this answer (sheet)', (k) => k.startsWith('legal.decideAbout.')],
   ['How Decide answers (one-time card)', (k) => k.startsWith('legal.decideIntro.')],
-  ['Other Decide lines', () => true],
+  ['Other Decide lines', (k) => !k.startsWith('decide.screens.')],
 ];
 
 const BADGE: Record<Status | 'Removed', string> = { New: 'new', Changed: 'chg', Same: 'same', Removed: 'rem' };
@@ -193,11 +209,87 @@ function rowHtml(r: Row): string {
 
 const table = (rows: readonly Row[]): string => `<table>${rows.map(rowHtml).join('')}</table>`;
 
-function section(title: string, rows: readonly Row[]): string {
+function section(title: string, rows: readonly Row[], level: 'h2' | 'h3' = 'h2', id?: string): string {
   const changed = rows.filter((r) => r.status !== 'Same');
   const same = rows.filter((r) => r.status === 'Same');
   const sameHtml = same.length === 0 ? '' : `<details><summary>${same.length} the same as before</summary>${table(same)}</details>`;
-  return `<h2>${esc(title)} <small>(${changed.length} new or changed, ${same.length} the same)</small></h2>${changed.length > 0 ? table(changed) : ''}${sameHtml}`;
+  const idAttr = id === undefined ? '' : ` id="${id}"`;
+  return `<${level}${idAttr}>${esc(title)} <small>(${changed.length} new or changed, ${same.length} the same)</small></${level}>${changed.length > 0 ? table(changed) : ''}${sameHtml}`;
+}
+
+const rowOf = (key: string, text: string, old: string | undefined): Row => ({ key, text, old, status: old === undefined ? 'New' : old === text ? 'Same' : 'Changed' });
+
+// ---------------------------------------------------------------- 06.1-33: new screens, running costs, draft cases
+
+/** decide.screens area files, in the order a user meets them (src/i18n/locales/decideScreens/index.ts). */
+const SCREEN_AREAS: readonly [string, string][] = [
+  ['common', 'Shared pieces (common.ts)'],
+  ['home', 'Decide home (home.ts)'],
+  ['sheetsHome', 'Sheets from Decide home (sheetsHome.ts)'],
+  ['stepper', 'The check steps: item, price, how you pay, running costs (stepper.ts)'],
+  ['answer', 'The answer (answer.ts)'],
+  ['answerDetail', 'Answer details (answerDetail.ts)'],
+  ['answerActions', 'Bought it, save for it, not now (answerActions.ts)'],
+  ['setup', 'Setup banner, checklist and quick estimates (setup.ts)'],
+  ['setupPayBills', 'Setup: pay and bills (setupPayBills.ts)'],
+  ['setupOthers', 'Setup: the other items (setupOthers.ts)'],
+  ['sheetsInput', 'Input sheets (sheetsInput.ts)'],
+  ['sheetsCosts', 'Cost sheets (sheetsCosts.ts)'],
+  ['past', 'Past decisions (past.ts)'],
+  ['safetyNet', 'Safety net (safetyNet.ts)'],
+];
+
+/** A placeholder followed by a counted word (a plain or no-break space, at most one word between), on a key with no _one / _other form: it can read "1 months". */
+const COUNTED_WORD = /\{\{(\w+)\}\}[ \u00a0](?:[a-z]+[ \u00a0])?(months|payments|days|entries|times|steps|changes|lines|weeks|years|goals|bills|rules|checks|items|answers|estimates)\b/;
+const pluralRisk = (key: string, text: string): boolean => !/_(one|other|zero|few|many|two)$/.test(key) && COUNTED_WORD.test(text);
+
+const REGION_NAME: Record<string, string> = { US: 'United States', GB: 'United Kingdom', CA: 'Canada', EU: 'EU countries (one table for all 27)' };
+
+function templateHtml(): { html: string; lines: number } {
+  const t = RUNNING_COST_TEMPLATES;
+  let lines = 0;
+  const regions = Object.entries(t.kinds.car) as [keyof typeof t.currencies, readonly TemplateLine[]][];
+  const body = regions
+    .map(([region, ls]) => {
+      const cur = t.currencies[region];
+      const draft = ls.some((l) => l.draft === true);
+      lines += ls.length;
+      const rows = ls
+        .map((l) => {
+          const label = say(`decide.screens.stepper.running.${l.labelKey}`);
+          const how = say(`decide.screens.stepper.running.${l.everyMonths === 1 ? 'monthly' : 'yearly'}`);
+          const perMonth = l.everyMonths === 1 ? '' : ` (about ${money(Math.round(l.amount / l.everyMonths), cur)} a month)`;
+          const fig = l.on ? `${money(l.amount, cur)} ${how}${perMonth}` : 'Off and empty; the user types it';
+          return `<tr><td>${esc(label)}<div class="k">${esc(l.key)}</div></td><td>${esc(fig)}</td></tr>`;
+        })
+        .join('');
+      const badge = draft ? '<span class="b new">Draft: approve, change or remove</span>' : '<span class="b same">From the decide spec (D13)</span>';
+      return `<h3>${esc(REGION_NAME[region] ?? region)} · ${esc(cur)} ${badge}</h3><table>${rows}</table>`;
+    })
+    .join('');
+  const intro = `<p class="lbl">Car running costs filled in on the Running costs step when no recorded bill matches; the screen calls them “quick estimates”. Figures as of ${esc(t.asOf)}. A country with no table gets empty lines, switched off. Every figure can be changed on the step. Removing a country here gives its users empty lines.</p>`;
+  return { html: intro + body, lines };
+}
+
+function draftCasesHtml(): { html: string; ids: string[] } {
+  const drafts = loadCases().filter((c) => c.status === 'draft');
+  const ids = drafts.map((c) => c.id);
+  const html = drafts
+    .map((c) => {
+      const { inputs, check } = toEngineInputs(c.fixture);
+      const r = evaluate(inputs, check).result;
+      const w = workedAnswer(`${c.id} ${c.persona}`, inputs, check, r);
+      const exp = c.expected;
+      const expKind = `${exp.code}${exp.variant === null ? '' : `.${exp.variant}`}`;
+      const match = w.kind === expKind ? 'The app gives this answer today.' : `The app gives ${w.kind} today, not the expected ${expKind}.`;
+      const m = exp.afterBuy.month;
+      const left = m === null ? '' : ` Left that month: ${money(m, inputs.currency)}.`;
+      const must = exp.mustHaveFacts.length > 0 ? ` Must show: ${exp.mustHaveFacts.join(', ')}.` : '';
+      const mustNot = exp.mustNotHaveFacts.length > 0 ? ` Must not show: ${exp.mustNotHaveFacts.join(', ')}.` : '';
+      return `<div class="ans" id="case-${esc(c.id)}"><div><span class="b new">Draft</span> <b>${esc(c.id)}</b> · ${esc(c.persona)}</div><p>${esc(c.situation)}</p><div class="lbl">Expected: ${esc(expKind)}.${esc(left + must + mustNot)} ${esc(match)}</div><div class="lbl">What the answer reads like:</div><div class="chip">${esc(w.chip)}</div><div>${esc(w.title)}</div><div>${esc(w.body)}</div><ul>${w.lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul><details><summary>Why this is the right answer</summary><p>${esc(c.why)}</p></details></div>`;
+    })
+    .join('');
+  return { html, ids };
 }
 
 const CSS =
@@ -205,7 +297,16 @@ const CSS =
 
 // ---------------------------------------------------------------- the page
 
-function buildPage(): { html: string; counts: Record<string, number>; worked: number } {
+interface Page {
+  readonly html: string;
+  readonly counts: Record<string, number>;
+  readonly worked: number;
+  readonly pageRows: readonly Row[];
+  readonly draftIds: readonly string[];
+  readonly groups: Record<string, number>;
+}
+
+function buildPage(): Page {
   const base = baseRef();
   const oldEn = enAt(base);
   const oldAll = leaves(oldEn, '');
@@ -215,25 +316,30 @@ function buildPage(): { html: string; counts: Record<string, number>; worked: nu
   const baseLabel = signed !== null ? `the signed copy of ${signoff.signedAt ?? 'an unknown date'}` : `main at ${base.slice(0, 8)} (the merge base with origin/main)`;
 
   const now = lockedLeaves(en);
-  const lockedRows: Row[] = Object.keys(now).map((key) => {
-    const text = now[key] as string;
-    const old = lockedBase[key];
-    return { key, text, old, status: old === undefined ? 'New' : old === text ? 'Same' : 'Changed' };
-  });
-  const otherRows: Row[] = OTHER_KEYS.map((key) => {
-    const text = enLeaves[key] as string;
-    const old = oldAll[key];
-    return { key, text, old, status: old === undefined ? 'New' : old === text ? 'Same' : 'Changed' };
-  });
+  const lockedRows: Row[] = Object.keys(now).map((key) => rowOf(key, now[key] as string, lockedBase[key]));
+  const isLocked = (k: string): boolean => LOCKED_ROOTS.some((r) => k.startsWith(`${r}.`));
+  const isUndoHistory = (k: string): boolean => UNDO_HISTORY_PREFIXES.some((p) => k.startsWith(p));
+  // Undo and History lines: plan 05.4-06's 48 (D-151), 06.1's own, and any other one that is new or changed since the baseline.
+  const otherKeys: string[] = [...OTHER_KEYS, ...OTHER_KEYS_061];
+  for (const k of Object.keys(enLeaves).sort()) if (isUndoHistory(k) && !otherKeys.includes(k) && oldAll[k] !== enLeaves[k]) otherKeys.push(k);
+  const otherRows: Row[] = otherKeys.map((key) => rowOf(key, enLeaves[key] as string, oldAll[key]));
+  // Every other line outside the locked groups that is new or changed since the baseline (e.g. You > Region, Activity's banner).
+  const elsewhereRows: Row[] = Object.keys(enLeaves)
+    .filter((k) => !isLocked(k) && !isUndoHistory(k) && !otherKeys.includes(k) && oldAll[k] !== enLeaves[k])
+    .sort()
+    .map((key) => rowOf(key, enLeaves[key] as string, oldAll[key]));
   const removed = Object.keys(lockedBase)
-    .filter((k) => now[k] === undefined && LOCKED_ROOTS.some((r) => k.startsWith(`${r}.`)))
+    .filter((k) => now[k] === undefined && isLocked(k))
     .concat(Object.keys(oldAll).filter((k) => k.startsWith('legal.decideFooter')))
     .filter((k, i, a) => a.indexOf(k) === i && enLeaves[k] === undefined)
     .sort();
   // Strings outside the locked groups that this phase retired (the old footer) come from the main baseline.
   const removedText = (k: string): string => lockedBase[k] ?? oldAll[k] ?? '';
+  const removedElsewhere = Object.keys(oldAll)
+    .filter((k) => enLeaves[k] === undefined && !isLocked(k) && !removed.includes(k))
+    .sort();
 
-  const pageRows = [...lockedRows, ...otherRows];
+  const pageRows = [...lockedRows, ...otherRows, ...elsewhereRows];
   const counts = {
     New: pageRows.filter((r) => r.status === 'New').length,
     Changed: pageRows.filter((r) => r.status === 'Changed').length,
@@ -256,23 +362,58 @@ function buildPage(): { html: string; counts: Record<string, number>; worked: nu
   }
   const worked = [...seen.values()].sort((a, b) => a.kind.localeCompare(b.kind) || a.chip.localeCompare(b.chip));
 
-  const parts: string[] = [];
-  parts.push(`<h1>Decide wording review (D-15)</h1>`);
-  parts.push(
-    `<p>Every string on this page is new, changed or kept since ${esc(baseLabel)}. It covers Decide’s answers and the lines around them, the About sheet and intro card, and the 48 new undo and History lines on other screens. Strings with blanks show an example with sample figures. A <b>D-number</b> beside a line is the decision it follows. Screens come in 08.1.</p>`
-  );
-  parts.push(
-    `<table class="counts"><tr><td>New</td><td><b>${counts.New}</b></td></tr><tr><td>Changed</td><td><b>${counts.Changed}</b></td></tr><tr><td>Same as before</td><td>${counts.Same}</td></tr><tr><td>Removed</td><td>${counts.Removed}</td></tr><tr><td>Strings on the page</td><td>${counts.Total}</td></tr><tr><td>Worked answers</td><td>${worked.length}</td></tr><tr><td>Money-help names</td><td>${Object.keys(FREE_HELP).length}</td></tr></table>`
-  );
-  parts.push(`<p>Signed: ${signoff.signedAt === null ? 'not yet. The owner signs before Grow starts (D-150).' : esc(`${signoff.signedAt} by ${signoff.by ?? '?'}`)}</p>`);
+  // 06.1-33 pieces
+  const changed061 = Object.entries(CHANGED_061).map(([topic, keys]) => ({
+    topic,
+    rows: keys.map((key) => {
+      const text = now[key];
+      if (text === undefined) throw new Error(`wording page: ${key} (${topic}) is not a locked string in en.ts`);
+      return rowOf(key, text, lockedBase[key]);
+    }),
+  }));
+  const drafts = draftCasesHtml();
+  const templates = templateHtml();
+  const screenRows = lockedRows.filter((r) => r.key.startsWith('decide.screens.'));
+  const areaRows = SCREEN_AREAS.map(([area, title]) => ({ area, title, rows: screenRows.filter((r) => r.key.startsWith(`decide.screens.${area}.`)) }));
+  const unplaced = screenRows.filter((r) => !SCREEN_AREAS.some(([a]) => r.key.startsWith(`decide.screens.${a}.`)));
+  if (unplaced.length > 0) areaRows.push({ area: 'other', title: 'Other screen lines', rows: unplaced });
+  const plural = pageRows.filter((r) => pluralRisk(r.key, r.text));
 
-  // 1. Lines written from the owner's own words
+  // Groups for the counts table and the contents list: [anchor, title, lines].
+  const answerRows = lockedRows.filter((r) => !r.key.startsWith('decide.screens.'));
   const own = lockedRows.filter((r) => DECISION_MAP[r.key] !== undefined).sort((a, b) => {
     const da = Number((DECISION_MAP[a.key]?.id ?? '').replace(/\D/g, ''));
     const db = Number((DECISION_MAP[b.key]?.id ?? '').replace(/\D/g, ''));
     return da - db || a.key.localeCompare(b.key);
   });
-  parts.push(`<h2>Lines written from your own words <small>(${own.length})</small></h2>`);
+  const toc: [string, string, string][] = [
+    ['own', 'Lines written from your own words', `${own.length} lines`],
+    ['changed061', 'Changed for 06.1', `${changed061.reduce((n, t) => n + t.rows.length, 0)} lines`],
+    ['drafts', 'Draft cases to approve', `${drafts.ids.length} cases (${drafts.ids.join(', ')})`],
+    ['templates', 'Running-cost quick estimates', `${templates.lines} figures in ${Object.keys(RUNNING_COST_TEMPLATES.kinds.car).length} countries`],
+    ['worked', 'What a whole answer reads like', `${worked.length} answers`],
+    ['screens', 'New screens (decide.screens)', `${screenRows.length} lines`],
+    ['answers', 'Answer wording (decide.v3, legal.decide*)', `${answerRows.length} lines`],
+    ['help', 'Money-help names', `${Object.keys(FREE_HELP).length} names`],
+    ['undo', 'Undo and History lines', `${otherRows.length} lines`],
+    ['elsewhere', 'Other screens changed in 06.1', `${elsewhereRows.length} lines`],
+    ['plural', 'Lines that can read “1 months”', `${plural.length} lines`],
+    ['removed', 'Removed', `${removed.length} locked lines, ${removedElsewhere.length} elsewhere`],
+  ];
+
+  const parts: string[] = [];
+  parts.push(`<h1>Decide wording review (D-08, D-15)</h1>`);
+  parts.push(
+    `<p>Every string on this page is new, changed or kept since ${esc(baseLabel)}. It covers Decide’s answers and the lines around them, the new Decide screens (06.1), the About sheet and intro card, the undo and History lines, the running-cost quick estimates and the draft right-answer cases. Strings with blanks show an example with sample figures. A <b>D-number</b> beside a line is the decision it follows. Lines under decide.v3, legal.decide* and decide.screens are locked once you sign; the undo, History and other-screen lines are reviewed, not locked.</p>`
+  );
+  parts.push(
+    `<table class="counts"><tr><td>New</td><td><b>${counts.New}</b></td></tr><tr><td>Changed</td><td><b>${counts.Changed}</b></td></tr><tr><td>Same as before</td><td>${counts.Same}</td></tr><tr><td>Removed</td><td>${counts.Removed}</td></tr><tr><td>Strings on the page</td><td>${counts.Total}</td></tr><tr><td>Worked answers</td><td>${worked.length}</td></tr><tr><td>Money-help names</td><td>${Object.keys(FREE_HELP).length}</td></tr></table>`
+  );
+  parts.push(`<p>Signed: ${signoff.signedAt === null ? 'not yet.' : esc(`${signoff.signedAt} by ${signoff.by ?? '?'}`)}</p>`);
+  parts.push(`<h2>Contents</h2><table>${toc.map(([id, title, n]) => `<tr><td><a href="#${id}">${esc(title)}</a></td><td>${esc(n)}</td></tr>`).join('')}</table>`);
+
+  // 1. Lines written from the owner's own words
+  parts.push(`<h2 id="own">Lines written from your own words <small>(${own.length})</small></h2>`);
   parts.push(
     `<table>${own
       .map((r) => {
@@ -283,10 +424,23 @@ function buildPage(): { html: string; counts: Record<string, number>; worked: nu
       .join('')}</table>`
   );
 
-  // 2. Whole answers
-  parts.push(`<h2>What a whole answer reads like <small>(${worked.length}, one per headline kind)</small></h2>`);
+  // 2. Changed for 06.1
+  parts.push(`<h2 id="changed061">Changed for 06.1 <small>(by decision)</small></h2>`);
+  for (const t of changed061) parts.push(`<h3>${esc(t.topic)}</h3>${table(t.rows)}`);
+
+  // 3. Draft right-answer cases
+  parts.push(`<h2 id="drafts">Draft cases to approve <small>(${drafts.ids.length})</small></h2>`);
+  parts.push(`<p class="lbl">For each case: approve it as the right answer, or say what should change. The answer is built by the app from the case’s figures.</p>`);
+  parts.push(drafts.html);
+
+  // 4. Running-cost quick estimates
+  parts.push(`<h2 id="templates">Running-cost quick estimates <small>(car, by country)</small></h2>`);
+  parts.push(templates.html);
+
+  // 5. Whole answers
+  parts.push(`<h2 id="worked">What a whole answer reads like <small>(${worked.length}, one per headline kind)</small></h2>`);
   parts.push(
-    `<p class="lbl">Built from the saved answers and the approved right-answer cases, with their real figures. The screen (08.1) fills the body’s figures; a figure marked * is a sample. Every answer also ends with the three lines under it, shown once here: “${esc(say('legal.decideAnswer.caveat'))}” · “${esc(say('legal.decideAnswer.cantSeeLink'))}” · “${esc(say('legal.decideAnswer.footer'))}”</p>`
+    `<p class="lbl">Built from the saved answers and the approved right-answer cases, with their real figures. A figure marked * is a sample. Every answer also ends with the three lines under it, shown once here: “${esc(say('legal.decideAnswer.caveat'))}” · “${esc(say('legal.decideAnswer.cantSeeLink'))}” · “${esc(say('legal.decideAnswer.footer'))}”</p>`
   );
   for (const w of worked) {
     parts.push(
@@ -294,42 +448,71 @@ function buildPage(): { html: string; counts: Record<string, number>; worked: nu
     );
   }
 
-  // 3. Every string, grouped
-  const left = new Set(lockedRows.map((r) => r.key));
+  // 6. New screens, by area file
+  parts.push(`<h2 id="screens">New screens (decide.screens) <small>(${screenRows.length}, by area file)</small></h2>`);
+  for (const a of areaRows) if (a.rows.length > 0) parts.push(section(a.title, a.rows, 'h3'));
+
+  // 7. Answer wording, grouped
+  parts.push(`<h2 id="answers">Answer wording (decide.v3, legal.decide*) <small>(${answerRows.length})</small></h2>`);
+  const left = new Set(answerRows.map((r) => r.key));
   for (const [title, test] of GROUPS) {
-    const rows = lockedRows.filter((r) => left.has(r.key) && test(r.key));
+    const rows = answerRows.filter((r) => left.has(r.key) && test(r.key));
     for (const r of rows) left.delete(r.key);
-    if (rows.length > 0) parts.push(section(title, rows));
+    if (rows.length > 0) parts.push(section(title, rows, 'h3'));
   }
 
-  // 4. Free-help names (engine table, not en.ts)
-  parts.push(`<h2>Money-help names <small>(${Object.keys(FREE_HELP).length}, from the FREE_HELP table)</small></h2>`);
+  // 8. Free-help names (engine table, not en.ts)
+  parts.push(`<h2 id="help">Money-help names <small>(${Object.keys(FREE_HELP).length}, from the FREE_HELP table)</small></h2>`);
   parts.push(
     `<table>${Object.entries(FREE_HELP)
-      .map(([cc, e]) => `<tr><td><span class="b new">New</span><div class="k">${esc(cc)}</div></td><td>${esc(e.name)} · ${esc(e.url)}<div class="ex">Line: ${esc(say('decide.v3.fact.free_help').replace('{{name}}', e.name))}</div></td></tr>`)
+      .map(([cc, e]) => `<tr><td><div class="k">${esc(cc)}</div></td><td>${esc(e.name)} · ${esc(e.url)}<div class="ex">Line: ${esc(say('decide.v3.fact.free_help').replace('{{name}}', e.name))}</div></td></tr>`)
       .join('')}</table>`
   );
 
-  // 5. Other screens (D-151)
-  parts.push(section('Other screens: undo and History lines (reviewed, not locked, D-151)', otherRows));
+  // 9. Undo and History lines (D-151 and 06.1)
+  parts.push(section('Undo and History lines (reviewed, not locked)', otherRows, 'h2', 'undo'));
 
-  // 6. Removed
-  parts.push(`<h2>Removed <small>(${removed.length})</small></h2>`);
+  // 10. Other screens changed in 06.1
+  parts.push(section('Other screens changed in 06.1 (reviewed, not locked)', elsewhereRows, 'h2', 'elsewhere'));
+
+  // 11. Plural check
+  parts.push(`<h2 id="plural">Lines that can read “1 months” <small>(${plural.length})</small></h2>`);
+  parts.push(`<p class="lbl">A number blank followed by a counted word, with no one / many form. With a count of 1 these read “1 months”.</p>`);
+  parts.push(table(plural));
+
+  // 12. Removed
+  parts.push(`<h2 id="removed">Removed <small>(${removed.length})</small></h2>`);
   parts.push(`<table>${removed.map((k) => `<tr><td><span class="b rem">Removed</span><div class="k">${esc(k)}</div></td><td>${esc(removedText(k))}</td></tr>`).join('')}</table>`);
+  if (removedElsewhere.length > 0) {
+    parts.push(
+      `<details><summary>${removedElsewhere.length} lines removed outside the locked groups (old screens)</summary><table>${removedElsewhere.map((k) => `<tr><td><div class="k">${esc(k)}</div></td><td>${esc(oldAll[k] ?? '')}</td></tr>`).join('')}</table></details>`
+    );
+  }
 
-  const html = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Decide wording review (D-15)</title><style>${CSS}</style>${parts.join('\n')}`;
-  return { html, counts, worked: worked.length };
+  const html = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Decide wording review (D-08)</title><style>${CSS}</style>${parts.join('\n')}`;
+  const groups: Record<string, number> = Object.fromEntries(toc.map(([id, , n]) => [id, Number(n.split(' ')[0])]));
+  for (const a of areaRows) groups[`screens.${a.area}`] = a.rows.length;
+  return { html, counts, worked: worked.length, pageRows, draftIds: drafts.ids, groups };
 }
 
 (WRITE ? describe : describe.skip)('wording review page (WORDING_WRITE=1)', () => {
   it('writes reports/wording/decide-v3.html', () => {
-    const { html, counts, worked } = buildPage();
+    const { html, counts, worked, pageRows, draftIds, groups } = buildPage();
     expect(html).not.toMatch(/<script/i);
     expect(html).toContain('Lines written from your own words');
-    expect(counts.Total).toBe(Object.keys(lockedLeaves(en)).length + OTHER_KEYS.length);
+    expect(counts.Total).toBe(pageRows.length);
     expect(worked).toBeGreaterThan(0);
+    // 06.1-33 completeness: every locked string (all LOCKED_ROOTS, decide.screens included) is on the page by its dotted key.
+    const missing = Object.keys(lockedLeaves(en)).filter((k) => !html.includes(`<div class="k">${esc(k)}</div>`));
+    expect(missing).toEqual([]);
+    // The draft right-answer cases the owner approves (BR-16, SN-16..SN-24).
+    for (const id of ['BR-16', 'SN-16', 'SN-17', 'SN-18', 'SN-19', 'SN-20', 'SN-21', 'SN-22', 'SN-23', 'SN-24']) expect(draftIds).toContain(id);
+    // Every blank on the page reads filled.
+    const noSample = new Set<string>();
+    for (const r of pageRows) for (const p of placeholdersOf(r.text)) if (SAMPLE_VALUES[p] === undefined) noSample.add(`${p} (${r.key})`);
+    expect([...noSample]).toEqual([]);
     mkdirSync(OUT_DIR, { recursive: true });
     writeFileSync(OUT, html, 'utf8');
-    console.log(`wording page: ${OUT}\n${JSON.stringify({ ...counts, worked })}`);
+    console.log(`wording page: ${OUT}\n${JSON.stringify({ ...counts, worked, groups })}`);
   }, 600000);
 });
