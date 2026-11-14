@@ -311,6 +311,9 @@ export function registerDecideCheckMutations(qc: QueryClient): void {
     onError: async (err: unknown, vars: SaveCheckDraftVars) => {
       const cls = classifySettledWriteError(err);
       if (cls !== 'rejected' && cls !== 'not-found') return;
+      // 06.1-81 (G-74-1): a late stepper save for a check this device deleted is stale, not a failure: nothing is parked and
+      // Home says nothing. A not-found for any other check is still parked below.
+      if (cls === 'not-found' && deletedHere.has(vars.id)) return;
       // A decided or deleted check cannot take a draft: refetch and park the failure, no toast.
       void qc.invalidateQueries({ queryKey: ['decide-checks'] });
       await recordFailedWrite({
@@ -553,12 +556,25 @@ function cacheOf(row: DecideCheckRow): CheckCacheKey {
   return { userId: row.created_by, householdId: row.household_id };
 }
 
+/**
+ * 06.1-81 (G-74-1): the checks deleted on this device in this session. A draft save the stepper still sends for one of them (its
+ * debounce or its unmount flush lands after the delete) comes back "not found" when the server cannot read the deleted row; that
+ * save is dropped without a trace instead of being reported as "removed elsewhere". Session-only: a restart forgets it.
+ */
+const deletedHere = new Set<string>();
+
+/** Tests only: forget the checks deleted so far, so one case's delete does not quiet another's failure. */
+export function resetDeletedChecksForTests(): void {
+  deletedHere.clear();
+}
+
 /** DCU-04 / A5: abandoning an open check is one undo step. Returns the step id for the toast's Undo. */
 export function useAbandonCheck(): { abandon(row: DecideCheckRow, reason?: 'cleared' | 'deleted'): string } {
   const mutation = useEditCheckMutation();
   return {
     abandon(row, reason = 'deleted') {
       const stepId = newStepId();
+      deletedHere.add(row.id);
       mutation.mutate({
         id: row.id,
         ownerId: row.created_by,
@@ -640,6 +656,7 @@ export function useRemoveDecision(): { remove(row: DecideCheckRow, goal?: Saving
   return {
     remove(row, goal) {
       const stepId = newStepId();
+      deletedHere.add(row.id); // 06.1-81 (G-74-1): the open-check sheet deletes through here too
       const liveGoal = goal && goal.check_id === row.id && goal.deleted_at === null ? goal : null;
       mutation.mutate({
         id: row.id,
