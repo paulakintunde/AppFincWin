@@ -277,7 +277,7 @@ export const DECISION_MAP: Readonly<Record<string, Decision>> = Object.freeze({
   'decide.v3.afterBuy.monthOver': SHORT,
   'decide.v3.afterBuy.usualMonthOver': SHORT,
   'decide.v3.caveat.large_for_month': d('D-118', 'A big purchase costs at least one usual month’s money in.'),
-  'decide.v3.caveat.close_to_line': d('D-121', '"Close to the line" shows on every tight answer.'),
+  'decide.v3.caveat.close_to_line': d('D-121', '"Close to your limit" shows on every tight answer.'),
   'legal.decideIntro.title': INTRO,
   'legal.decideIntro.works': INTRO,
   'legal.decideIntro.figures': INTRO,

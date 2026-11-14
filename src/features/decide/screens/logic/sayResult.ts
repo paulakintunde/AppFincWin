@@ -55,7 +55,7 @@ export interface SayDeps {
   /** A 'YYYY-MM-DD' date or a 'YYYY-MM' month, as the screen writes it. */
   date(localDate: string): string;
   readonly currency: string;
-  /** The check date: a purchase dated today reads "Bought today." (D-42). */
+  /** The check date: a purchase dated today reads "If you buy it today." (D-42, 06.1-83). */
   readonly today: LocalDate;
   readonly names: SayNames;
   /** Set: a line with a gap is dropped and reported here. Unset: the gap throws. */

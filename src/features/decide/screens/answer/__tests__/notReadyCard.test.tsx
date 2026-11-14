@@ -188,9 +188,9 @@ describe('the lead line (06.1-66 OQ-66-1, DN-10: no count)', () => {
     expect(screen.getByTestId('answer-not-ready-more')).toBeTruthy();
   });
 
-  it('DS-4: the card never says "Bought today."', async () => {
+  it('DS-4: the card never says "If you buy it today."', async () => {
     await card([ITEMS.pay, ITEMS.bill] as ReadinessItem[], false);
-    expect(screen.queryByText(/Bought today/)).toBeNull();
+    expect(screen.queryByText(/If you buy it today/)).toBeNull();
     expect(screen.queryByText(/Bought on/)).toBeNull();
   });
 
@@ -282,7 +282,7 @@ describe('06.1-66 (OQ-66-2, DS-2): one layout for Not ready yet and More needed'
     expect(screen.queryByText('More may follow once this is done.')).toBeNull();
     await press(screen.getByTestId('answer-not-ready-more'));
     expect(screen.getByText('More may follow once this is done.')).toBeTruthy();
-    expect(screen.queryByText(/Bought today/)).toBeNull();
+    expect(screen.queryByText(/If you buy it today/)).toBeNull();
   });
 
   it('a readiness row comes before a missing figure', async () => {

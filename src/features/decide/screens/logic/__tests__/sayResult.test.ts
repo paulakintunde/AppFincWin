@@ -365,7 +365,7 @@ describe('sayResult: the Result in reading order', () => {
 
   it('bought today or on the purchase date (D-42)', () => {
     expect(sayResult(result(), deps).afterBuy.boughtOn?.key).toBe(AFTER_BUY_KEYS.boughtToday);
-    expect(sayResult(result({ purchaseDate: '2026-12-24' }), deps).afterBuy.boughtOn?.text).toBe('Bought on <2026-12-24>.');
+    expect(sayResult(result({ purchaseDate: '2026-12-24' }), deps).afterBuy.boughtOn?.text).toBe('If you buy it on <2026-12-24>.');
   });
 });
 

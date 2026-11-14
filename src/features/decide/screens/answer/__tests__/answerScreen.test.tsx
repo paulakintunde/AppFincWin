@@ -448,13 +448,13 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
       fireEvent.press(screen.getByTestId('answer-not-ready-more'));
     });
     expect(screen.getByText('More may follow once this is done.')).toBeTruthy();
-    // No verdict, no buy or save, no pay or When controls, and never "Bought today." (DS-4).
+    // No verdict, no buy or save, no pay or When controls, and never "If you buy it today." (DS-4).
     expect(screen.queryByTestId('answer-verdict')).toBeNull();
     expect(screen.queryByTestId('answer-actions')).toBeNull();
     expect(screen.queryByText('I bought it')).toBeNull();
     expect(screen.queryByText('Cash')).toBeNull();
     expect(screen.queryByText('Today')).toBeNull();
-    expect(screen.queryByText(/Bought today/)).toBeNull();
+    expect(screen.queryByText(/If you buy it today/)).toBeNull();
     expect(screen.getByTestId('answer-told')).toBeTruthy();
     expect(screen.getByTestId('answer-not-ready-exits')).toBeTruthy();
     await act(async () => {

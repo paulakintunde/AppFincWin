@@ -100,7 +100,7 @@ describe('UX-19 Decide v3 sentence rule', () => {
     expect(numbersIn('1 month is a start; 3 to 6 months is common.')).toBe(2);
     expect(numbersIn('At {{rate}}%, the next 90 days below {{zero}} cost about {{cost}}.')).toBe(4);
     expect(numbersIn('After your pay on {{date}}, {{account}} would still be {{below}}.')).toBe(1);
-    expect(wordsIn('This is close to the line.')).toBe(6);
+    expect(wordsIn('This is close to your limit.')).toBe(6);
     expect(sentences('One. Two? Three!')).toEqual(['One.', 'Two?', 'Three!']);
   });
 

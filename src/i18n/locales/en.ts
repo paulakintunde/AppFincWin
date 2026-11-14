@@ -158,7 +158,7 @@ const en = {
       fromPhoneOption: 'From this phone',
       subdivision: 'State or province',
       notSet: 'Not set',
-      sub: 'Decide uses it to estimate sales tax.',
+      sub: 'Decide uses it to estimate sales tax and to write amounts.',
     },
     homeCurrency: {
       label: 'Home currency',
@@ -2324,8 +2324,9 @@ const en = {
         usualMonth: 'A usual month would leave about {{amount}} once payments start.',
         usualMonthOver: 'A usual month would be about {{amount}} short once payments start.',
         // 05.4 D-42 (05.4-26): when it is to be bought, on every answer (Result.purchaseDate); placement is 08.1.
-        boughtOn: 'Bought on {{date}}.',
-        boughtToday: 'Bought today.',
+        // 06.1-83 (owner, 2026-11-14): the answer's date line says when it would be bought, not that it was.
+        boughtOn: 'If you buy it on {{date}}.',
+        boughtToday: 'If you buy it today.',
       },
       // 05.4 FIN-27 (CMP-F24, D-21): tax is always an estimate; an example loan or mortgage rate is labelled and never stored.
       tax: {
@@ -2350,7 +2351,7 @@ const en = {
           user_said_cover: 'Based on {{months}} months of your records, up to {{date}}, and on what you said about covering it.',
           quick_estimates: 'Based on {{months}} months of your records, up to {{date}}, and your quick estimates.',
           pay_missed: 'Based on {{months}} months of your records, up to {{date}}, leaving out pay that hasn’t arrived.',
-          close_to_line: 'Based on {{months}} months of your records, up to {{date}}. This is close to the line.',
+          close_to_line: 'Based on {{months}} months of your records, up to {{date}}. This is close to your limit.',
         },
       },
       // 05.4 FIN-25: at most one next step, stated as a fact.
@@ -2398,7 +2399,7 @@ const en = {
         no_debts_recorded: 'No debts are recorded. A card balance, loan or pay-later plan not added here isn’t counted.',
         few_months: 'This uses {{months}} of the {{lookedFor}} months of records Decide looks for. One unusual month moves it a lot.',
         irregular_income: 'Your income changes from month to month. This counts your lower months.',
-        close_to_line: 'This is close to the line. A small change in any figure can change the answer.',
+        close_to_line: 'This is close to your limit. A small change in any figure can change the answer.',
         expected_bills: 'Some bills this month are expected, not yet confirmed paid.',
         shared_money: 'Money in {{account}} may be planned by someone else too.', // UX-21 interim couples note; emitted from Phase 8
         rate_estimated: 'This rate is FincWin’s estimate from the payment, not the rate on your agreement.',
