@@ -49,3 +49,8 @@ The Not ready card shows two sentences: "First: <item> …" and "More may follow
 
 ## Resolved by 06.1-68 (2026-11-13)
 - For 06.1-68 (from 06.1-57): the answer's plan sheet now calls `usePlan(pay, planName)`, which writes `withPlanName({ ...c, pay }, planName)` in one `step.update` (`L0.plan_name`, never a bare key). Commit 67c21eec.
+
+## Maestro text moved by 06.1-60 (routed to 06.1-61)
+- `.maestro/common/decide-quick-estimates.yaml` line 15 taps "Before your records are ready\. Round numbers are fine\." to close the keyboard; tap "Round numbers are fine\." instead.
+- `.maestro/decide-safety-net.yaml` line 18 waits for "Money kept for emergencies\. Set in Grow\." (now behind Why?); wait on `id: net-word`.
+- 06.1-61 should grep every .maestro flow for text moved behind Why?/More by plans 59, 60 and 67.
