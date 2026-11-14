@@ -143,7 +143,13 @@ name: Decide timing (G-2)
     timeout: 60000
 - evalScript: ${output.ruleSheetOpen = Date.now() - output.t8}
 - evalScript: "${console.log('TIMING rule_sheet_open=' + output.ruleSheetOpen)}"
-- tapOn: "Close"  # 06.1-58: the Add a rule sheet says Close
+# 06.1-61: close the Add a rule sheet with Back. A "Close" text tap can match the full-screen backdrop (its label is also
+# "Close") and land in the middle of the panel, leaving the sheet open.
+- back
+- extendedWaitUntil:
+    notVisible:
+      id: "sheet-container"
+    timeout: 30000
 - waitForAnimationToEnd
 - runFlow:
     file: common/scroll-to.yaml

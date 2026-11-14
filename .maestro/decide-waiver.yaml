@@ -13,6 +13,18 @@ name: Decide waiver (ask, don't block)
 # The answer is there before anything is answered
 - assertVisible:
     id: "answer-verdict"
+# 06.1-61: facts after the first and most notices open under the answer's Why? since 06.1-67; open it first.
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Why\\?"
+- runFlow:
+    when:
+      visible:
+        id: "answer-facts-why"
+    commands:
+      - tapOn:
+          id: "answer-facts-why"
 # The ask (or a missing-figure row) under the answer
 - runFlow:
     file: common/scroll-to.yaml
@@ -23,7 +35,11 @@ name: Decide waiver (ask, don't block)
       visible: ".*Do you have (any|one)\\?"
     commands:
       - tapOn: "None"
-      - assertNotVisible: ".*Do you have (any|one)\\?"
+      # 06.1-61: the answer re-judges after the choice (rows ignore taps while it updates, 06.1-67), so the ask goes once the
+      # update lands, not at once
+      - extendedWaitUntil:
+          notVisible: ".*Do you have (any|one)\\?"
+          timeout: 60000
 - runFlow:
     when:
       visible: "Fix(: .*)?"

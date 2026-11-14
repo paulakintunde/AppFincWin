@@ -1,0 +1,29 @@
+# 06.1-61 shared: tap ${TAP} to open a sheet and wait until its panel is on screen with ${EXPECT} in it. On the emulator a sheet
+# sometimes opens or settles with no panel, leaving only its backdrop (G-78-2, still seen after 06.1-81; gap row G-61-1). When
+# that happens, Back clears it (06.1-81 G-74-2) and the tap is tried again, at most 3 times. Each retry is logged.
+appId: com.fincwin.app
+---
+- tapOn: ${TAP}
+- extendedWaitUntil:
+    visible: ${EXPECT}
+    timeout: 30000
+    optional: true
+- waitForAnimationToEnd
+- repeat:
+    times: 3
+    while:
+      notVisible:
+        id: "sheet-container"
+    commands:
+      - evalScript: "${console.log('G-78-2 sheet with no panel after tapping ' + TAP + '; Back and try again')}"
+      - back
+      - waitForAnimationToEnd
+      - tapOn: ${TAP}
+      - extendedWaitUntil:
+          visible: ${EXPECT}
+          timeout: 30000
+          optional: true
+      - waitForAnimationToEnd
+- assertVisible:
+    id: "sheet-container"
+- assertVisible: ${EXPECT}

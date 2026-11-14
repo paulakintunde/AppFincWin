@@ -9,7 +9,9 @@ name: Decide I bought it
     file: common/decide-new-check.yaml
     env:
       ITEM: "used car"
-      PRICE: "9000"
+      # 06.1-61: 2,500, not 9,000. On the test account a cash buy above this month's room asks to confirm spare money first
+      # (unspent_not_confirmed, gap row G-61-2), which a flow cannot answer; a car still brings running-cost offers.
+      PRICE: "2500"
 - runFlow:
     file: common/scroll-to.yaml
     env:

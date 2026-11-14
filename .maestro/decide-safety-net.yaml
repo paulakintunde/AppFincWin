@@ -13,8 +13,9 @@ name: Decide safety net
       TARGET: "Safety net, .*Opens the safety net"
 - tapOn:
     id: "money-rules-net"
+# 06.1-61: "Money kept for emergencies. Set in Grow." is behind Why? since 06.1-60; wait for the page title or its empty state.
 - extendedWaitUntil:
-    visible: "Money kept for emergencies\\. Set in Grow\\.|No safety net yet"
+    visible: "Safety net settings|No safety net yet"
     timeout: 15000
 - runFlow:
     when:
@@ -23,7 +24,8 @@ name: Decide safety net
       - tapOn: "Set an amount"
       - tapOn: "About how much"
       - inputText: "2000"
-      - tapOn: "Money kept for emergencies. Answers keep it out of what counts as spare."
+      # 06.1-61: no keyboard-close tap (the helper sentence is behind Why? since 06.1-60; the page keeps taps with the
+      # keyboard open)
       - tapOn: "Save and see the answer"
 - extendedWaitUntil:
     visible:

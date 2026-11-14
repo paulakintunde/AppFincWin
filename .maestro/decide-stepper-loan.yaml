@@ -22,12 +22,17 @@ name: Decide stepper loan
     file: common/scroll-to.yaml
     env:
       TARGET: "Installments"
-- tapOn: "Installments"
-# The installment plan sheet
+- runFlow:
+    file: common/open-sheet.yaml
+    env:
+      TAP: "Installments"
+      EXPECT: "Installment plan"
+# the panel can still be sliding in; wait for the length chips before the tap
 - extendedWaitUntil:
-    visible: "Installment plan"
-    timeout: 10000
-- tapOn: "24 months"
+    visible: "24.months"
+    timeout: 30000
+- waitForAnimationToEnd
+- tapOn: "24.months"
 - runFlow:
     file: common/scroll-to.yaml
     env:
@@ -40,9 +45,9 @@ name: Decide stepper loan
     file: common/scroll-to.yaml
     env:
       TARGET: "Use this plan"
-- assertVisible: ".* a month for 24 months"
+- assertVisible: ".*a.month.for.24.months"
 - tapOn: "Use this plan"
-- assertVisible: ".* down · .* a month"
+- assertVisible: ".*down.·.*a.month"
 - runFlow:
     file: common/scroll-to.yaml
     env:
@@ -58,6 +63,18 @@ name: Decide stepper loan
       TARGET: "See the answer"
 - tapOn: "See the answer"
 - runFlow: common/decide-gate.yaml
+# 06.1-61: facts after the first and most notices open under the answer's Why? since 06.1-67; open it first.
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Why\\?"
+- runFlow:
+    when:
+      visible:
+        id: "answer-facts-why"
+    commands:
+      - tapOn:
+          id: "answer-facts-why"
 # The interest line (decide.v3.fact.interest_is_a_cost or the plan verdict's interest sentence)
 - runFlow:
     file: common/scroll-to.yaml
