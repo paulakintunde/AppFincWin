@@ -144,7 +144,8 @@ describe('MoneyInput zero hint', () => {
     expect(field.props.value).toBe('');
     expect(field.props.placeholderTextColor).toBe(INK_MUTED);
     expect(field.props.accessibilityLabel).toBe('Target');
-    expect(field.props.accessibilityValue).toBeUndefined();
+    // 06.1-84 (G-61-6): an empty value object, never none (see the type-then-clear case below).
+    expect(field.props.accessibilityValue).toEqual({ text: '' });
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -170,10 +171,28 @@ describe('MoneyInput zero hint', () => {
     const field = view.getByLabelText('Price');
     expect(field.props.value).toBe('');
     expect(field.props.accessibilityLabel).toBe('Price');
-    expect(field.props.accessibilityValue).toBeUndefined();
+    expect(field.props.accessibilityValue).toEqual({ text: '' });
     await fireEvent.changeText(field, '180');
     await fireEvent(field, 'blur');
     expect(view.getByLabelText('Price').props.accessibilityLabel).toBe('Price');
+  });
+
+  // 06.1-84 (G-61-6): on Android, React Native's setAccessibilityValue(null) clears the whole content description and does not
+  // rebuild it from the label, so a field that went from "5" back to empty lost its name ("Price"). The value is never removed:
+  // an empty field sends an empty value text, which keeps the label in the description.
+  it('type then clear: the field keeps a value object, so its name is not wiped', async () => {
+    function Controlled() {
+      const [v, setV] = React.useState<number | null>(null);
+      return <MoneyInput value={v} currency="USD" onChange={setV} label="Price" accessibilityLabel="Price" zeroHint />;
+    }
+    const view = await wrap(<Controlled />);
+    const field = view.getByLabelText('Price');
+    await fireEvent.changeText(field, '5');
+    expect(view.getByLabelText('Price').props.accessibilityValue?.text).toMatch(/5/);
+    await fireEvent.changeText(view.getByLabelText('Price'), '');
+    await fireEvent(view.getByLabelText('Price'), 'blur');
+    expect(view.getByLabelText('Price').props.accessibilityLabel).toBe('Price');
+    expect(view.getByLabelText('Price').props.accessibilityValue).toEqual({ text: '' });
   });
 
   // 06.1-61: a fixed-width amount field grows with the OS font scale (to the 2x cap), so "$156.00" is not cut at 2x.

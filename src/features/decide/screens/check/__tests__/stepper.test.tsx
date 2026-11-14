@@ -260,7 +260,9 @@ describe('StepFrame motion and progress', () => {
     seed('Used car');
     await wrap(<PriceStep id={ID} />);
     const bar = await screen.findByTestId('segment-bar');
-    expect(bar.props.accessibilityValue.text).toBe('Step 2 of 3, Price');
+    // 06.1-84 (G-61-13): the label says it once; a value text with the same words made TalkBack read it twice.
+    expect(bar.props.accessibilityLabel).toBe('Step 2 of 3, Price');
+    expect(bar.props.accessibilityValue?.text).toBeUndefined();
     expect(screen.getByText('Step 2 of 3')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('segment-1'));
     expect(JSON.stringify(mockReplace.mock.calls.at(-1))).toContain('/decide/check/kind');
