@@ -33,7 +33,8 @@ jest.mock('@/data/queries/decide', () => ({
   useDebts: () => ({ data: mockDebts }),
 }));
 let mockInputs: unknown = null;
-jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ inputs: mockInputs, source: null, v3: null }) }));
+let mockEvaluation: unknown = null;
+jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ inputs: mockInputs, evaluation: mockEvaluation, source: null, v3: null }) }));
 jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: [] }) }));
 let mockAccounts: unknown[] = [];
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
@@ -87,6 +88,7 @@ beforeEach(() => {
   mockSettings = {};
   mockDebts = [debt()];
   mockInputs = null;
+  mockEvaluation = null;
   mockAccounts = [{ id: 'a1', name: 'Everyday', kind: 'checking', currency: 'USD', deleted_at: null, archived_at: null }];
   mockGoals = [];
   mockDoc = { v: 1, rules: [] };
@@ -297,6 +299,15 @@ describe('RulesSetup (D36)', () => {
 });
 
 describe('RecordsSetup (D37, D37b)', () => {
+  // 06.1-79 (DS-10, OQ-79-2 A): three months marked full, the answer uses two; Records says the answer's count, as home does.
+  it('the months line is the answer’s count of months complete enough to use, not the full-month count', async () => {
+    mockInputs = { accounts: [], months: ['2026-08', '2026-09', '2026-10'].map((month) => ({ month, full: true, lines: [] })) };
+    mockEvaluation = { result: { confidence: { basis: { kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-11-10' } } }, month: { monthsUsed: ['2026-08', '2026-10'] } };
+    await wrap(<RecordsSetup writes={RECORDS_WRITES} />);
+    await fireEvent.press(screen.getByTestId('records-more'));
+    expect(screen.getByTestId('months-so-far')).toHaveTextContent('2 of 3 months complete enough to use.');
+  });
+
   it('Done is active only when all three checks hold', async () => {
     await wrap(<RecordsSetup writes={RECORDS_WRITES} />);
     expect(screen.getByText('Done')).toBeTruthy();

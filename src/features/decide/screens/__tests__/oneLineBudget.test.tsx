@@ -5,7 +5,7 @@
 import React from 'react';
 import { fireEvent, screen, within } from '@testing-library/react-native';
 import type { TestInstance as ReactTestInstance } from 'test-renderer';
-import { monthPicture, pastMonthBars, prepare, toStoredV2, type CheckV2, type MonthPicture, type ReadinessItem } from '@/engine/decide/v3';
+import { judgeCheck, monthPicture, pastMonthBars, prepare, toStoredV2, type CheckV2, type MonthPicture, type ReadinessItem } from '@/engine/decide/v3';
 import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series } from '@/engine/decide/v3/__tests__/helpers/fixtures';
 import { minorUnits } from '@/engine/money';
 import { home } from '@/i18n/locales/decideScreens/home';
@@ -62,7 +62,9 @@ jest.mock('@/shell/screen/TabRootScreen', () => {
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', region: 'US', today: '2026-10-03' }),
 }));
-jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ status: 'ready', inputs: mockInputs, refetch: jest.fn() }) }));
+// 06.1-79 (DS-10): home's months count reads the evaluation the answer's basis line reads.
+let mockV3Evaluation: unknown = null;
+jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ status: 'ready', inputs: mockInputs, evaluation: mockV3Evaluation, refetch: jest.fn() }) }));
 jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: [] }) }));
 jest.mock('@/data/sync/useIsOnline', () => ({ useIsOnline: () => true }));
 jest.mock('../engine/useMonthPicture', () => ({ useMonthPicture: () => ({ picture: mockPicture, bars: mockBars }) }));
@@ -206,6 +208,7 @@ beforeEach(() => {
   mockGoalRows = [];
   const { inputs, prepared } = engineFixture();
   mockInputs = inputs;
+  mockV3Evaluation = judgeCheck(prepared, checkOnce(10_000));
   mockPicture = monthPicture(prepared);
   mockBars = pastMonthBars(prepared);
 });

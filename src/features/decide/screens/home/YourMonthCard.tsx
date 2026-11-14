@@ -9,6 +9,7 @@
  * what comes in) with a two-line legend, whole currency units, a "$X left" sub-line under each of Usual month / Low month, and a
  * records row with a thin n-of-3 bar and a chevron.
  * 06.1-59 (G-10, section D): the headline is the card's one line in view; the switch, explainer and records row open under More.
+ * 06.1-79 (DS-10, OQ-79-2 A): the records row's count is the months complete enough to use, the count the answer's basis line uses.
  * Presentational: the engine's picture and bars come in as props.
  */
 import React, { useState } from 'react';
@@ -35,14 +36,16 @@ export interface YourMonthCardProps {
   formatMoney: (minor: number) => string;
   /** The records date as text; null hides the Records row. */
   recordsUpTo: string | null;
-  /** How many full months the records cover, shown as "n of 3". */
+  /** 06.1-79 (DS-10, OQ-79-2 A): the months complete enough to use, the count the answer uses (recordMonthsOf), shown as "n of 3". */
   recordMonths: number;
+  /** The months Decide looks for (3, or more when more are used). Absent = 3. */
+  recordMonthsTotal?: number;
   onRecords: () => void;
   /** 06.1-56 (A-HOME-6): one whole currency unit in minor units (100 for USD, 1 for JPY); figures on the card are rounded to it. */
   wholeUnit?: number;
 }
 
-/** The records row's bar is n of this many months. */
+/** The records row's bar is n of this many months when no total comes in. */
 const RECORD_MONTHS = 3;
 
 /** A month's long name from a 'YYYY-MM' string, in the device language. */
@@ -119,7 +122,10 @@ export function YourMonthCard(props: YourMonthCardProps) {
   const leadWords = t(short ? 'decide.screens.home.month.shortIn' : 'decide.screens.home.month.leftIn', { month: name });
   const leadA11y = lead === null ? '' : past === null ? `${formatMoney(Math.abs(lead))} ${leadWords}, ${t('decide.screens.home.month.leadLabel')}` : `${formatMoney(Math.abs(lead))} ${leadWords}`;
 
-  const recordCount = Math.max(0, Math.min(RECORD_MONTHS, props.recordMonths));
+  const recordTotal = Math.max(1, props.recordMonthsTotal ?? RECORD_MONTHS);
+  const recordCount = Math.max(0, Math.min(recordTotal, props.recordMonths));
+  const recordsDate = props.recordsUpTo === null ? '' : t('decide.screens.home.month.recordsRow', { date: props.recordsUpTo });
+  const recordsComplete = t('decide.screens.home.records.complete', { monthsUsed: recordCount, monthsTotal: recordTotal });
   const leftSub = (b: { comesIn: unknown; goesOut: unknown } | null): string | null => {
     if (b === null) return null;
     const { left } = tiles(b);
@@ -241,7 +247,7 @@ export function YourMonthCard(props: YourMonthCardProps) {
             <Pressable
               testID="month-records"
               accessibilityRole="button"
-              accessibilityLabel={t('decide.screens.home.month.recordsRow', { date: props.recordsUpTo, count: recordCount })}
+              accessibilityLabel={`${recordsDate}. ${recordsComplete}`}
               onPress={() => {
                 hapticSelection();
                 props.onRecords();
@@ -249,11 +255,12 @@ export function YourMonthCard(props: YourMonthCardProps) {
               style={[styles.records, { borderTopColor: colors.line1 }]}
             >
               <View style={styles.recordsText}>
-                <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
-                  {t('decide.screens.home.month.recordsRow', { date: props.recordsUpTo, count: recordCount })}
+                <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{recordsDate}</Text>
+                <Text testID="month-records-complete" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+                  {recordsComplete}
                 </Text>
                 <View testID="month-records-bar" style={[styles.recordsTrack, { backgroundColor: colors.line4 }]}>
-                  <View testID="month-records-fill" style={[styles.recordsFill, { width: `${Math.round((recordCount / RECORD_MONTHS) * 100)}%`, backgroundColor: colors.accent }]} />
+                  <View testID="month-records-fill" style={[styles.recordsFill, { width: `${Math.round((recordCount / recordTotal) * 100)}%`, backgroundColor: colors.accent }]} />
                 </View>
               </View>
               <View style={[styles.recordsChevron, { borderColor: colors.inkFaint, transform: [{ rotate: '45deg' }] }]} />

@@ -87,7 +87,8 @@ export const home = {
     low: 'Low month',
     explainUsual: 'A usual month from your records: what comes in, less what goes out.',
     explainLow: 'The lowest month in your records: what came in, less what went out.',
-    recordsRow: 'Records up to {{date}} · {{count}} of 3 months',
+    // 06.1-79 (DS-10, OQ-79-2 A): the date alone; the month count is records.complete, the count the answer uses.
+    recordsRow: 'Records up to {{date}}',
     barA11y: 'Comes in {{moneyIn}}, goes out {{costs}}, left {{left}}',
     // 06.1-56 (A-HOME-6): the usual/low switch says what each leaves; the stacked bar's legend has two lines.
     leftSub: '{{amount}} left',
@@ -97,6 +98,10 @@ export const home = {
     legendOutShort: 'Goes out {{costs}} · Short {{left}}',
     earlierA11y: 'Earlier month',
     laterA11y: 'Later month',
+  },
+  // 06.1-79 (DS-10, OQ-79-2 A): one months-of-records count everywhere (home, Records setup), the one the answer's basis line uses.
+  records: {
+    complete: '{{monthsUsed}} of {{monthsTotal}} months complete enough to use.',
   },
   changedChip: 'Changed: {{change}} · Reset',
   changedChipResetA11y: 'Reset the change: {{change}}',

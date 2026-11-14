@@ -40,6 +40,7 @@ import { HowWorkedOutSheet } from '../answer/info/HowWorkedOutSheet';
 import { ErrorCard, OfflineCard } from '../answer/StatusCards';
 import { useMonthPicture } from '../engine/useMonthPicture';
 import { isHomeWords, readKind, readsAsPlan, type ItemKind } from '../logic/kindWords';
+import { recordMonthsOf } from '../logic/recordMonths';
 import { DatePickerSheet } from '../sheets/DatePickerSheet';
 import { InstallmentPlanSheet, type PlanItemKind } from '../sheets/InstallmentPlanSheet';
 import { QuickEstimateSheet } from '../sheets/QuickEstimateSheet';
@@ -60,7 +61,7 @@ import { SomethingChanged } from './SomethingChanged';
 import { taxNoteFor } from './taxNote';
 import { buildCheck, useNewCheck, type NewCheckFields, type WhenChoice } from './useNewCheck';
 import { useMoneyRules, useOpenCheckRows, useRuleCrossings } from './useHomeCards';
-import { footerFactsOf, rulesFactsOf, usePastCount, useSetupDoneSeen, workedSourcesOf } from './useHomeFacts';
+import { rulesFactsOf, usePastCount, useSetupDoneSeen, workedSourcesOf } from './useHomeFacts';
 import { monthNameOf, YourMonthCard } from './YourMonthCard';
 
 const MAX_QUICK_LINES = 8;
@@ -296,7 +297,8 @@ export function DecideHome() {
   const [ruleTarget, setRuleTarget] = useState<RuleTarget | null>(null);
   const [addRuleOpen, setAddRuleOpen] = useState(false);
   const rulesFacts = useMemo(() => rulesFactsOf(inputs), [inputs]);
-  const footer = useMemo(() => footerFactsOf(inputs), [inputs]);
+  // 06.1-79 (DS-10, OQ-79-2 A): the months the answer uses, and the spending entries in them; the same count as the answer's basis.
+  const recordMonths = useMemo(() => recordMonthsOf(inputs, v3.evaluation), [inputs, v3.evaluation]);
   // 06.1-59 (G-10): the footer row opens the answer's "How this was worked out" sheet; the sources sentence lives there now.
   const [workedOpen, setWorkedOpen] = useState(false);
   const workedSources = useMemo(() => workedSourcesOf(inputs), [inputs]);
@@ -399,7 +401,7 @@ export function DecideHome() {
               currency={currency}
               sources={workedSources}
               recordsUpTo={inputs?.recordsAsOf == null ? null : dateText(inputs.recordsAsOf)}
-              note={`${t('decide.screens.home.footerRecords', { months: footer.months, count: footer.entries })} ${t('decide.screens.home.footerUpdates')}`}
+              note={`${t('decide.screens.home.footerRecords', { months: recordMonths.used, count: recordMonths.entries })} ${t('decide.screens.home.footerUpdates')}`}
               onClose={() => setWorkedOpen(false)}
             />
           ) : null}
@@ -494,7 +496,8 @@ export function DecideHome() {
           monthName={(ym) => monthNameOf(ym, fmt.locale)}
           formatMoney={money}
           recordsUpTo={inputs?.recordsAsOf == null ? null : dateText(inputs.recordsAsOf)}
-          recordMonths={footer.months}
+          recordMonths={recordMonths.used}
+          recordMonthsTotal={recordMonths.total}
           wholeUnit={10 ** currencyExponent(currency)}
           onRecords={() => go('/decide/setup/records')}
         />

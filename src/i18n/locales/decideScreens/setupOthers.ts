@@ -88,8 +88,6 @@ export const setupOthers = {
     },
     moreMonthsQ: 'Have more months on a bank statement?',
     importStatement: 'Import a statement',
-    progress: '{{count}} of 3 months so far.',
-    progressDone: '3 of 3 months. Every answer uses all three.',
     checkAgain: 'Check again',
     openNote: 'Records stays open until last month is complete and this month is up to date.',
     emptyTitle: 'No records yet',

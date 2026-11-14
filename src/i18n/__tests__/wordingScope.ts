@@ -327,6 +327,8 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   monthlyInterest: '$62.00',
   monthName: 'November',
   months: '4',
+  monthsTotal: '3',
+  monthsUsed: '1',
   monthsAfter: '3',
   more: '$412.00',
   n: '3', // 06.1 wave 6

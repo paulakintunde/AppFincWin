@@ -53,6 +53,7 @@ import { monthNameOf } from '../../home/YourMonthCard';
 import { readinessFixRows, type ReadinessFixRow, type WaiverChoice } from '../../logic/readinessFixes';
 import { EnvelopeAccountSheet, type SetEnvelopeAccount } from '../../sheets/EnvelopeAccountSheet';
 import { footerFactsOf } from '../../home/useHomeFacts';
+import { recordMonthsOf } from '../../logic/recordMonths';
 import { MoreRow } from '../../ui/MoreRow';
 import { NeedLine } from '../../ui/NeedLine';
 import { QUICK_SAVE_MODE } from '../QuickEstimatesScreen';
@@ -128,7 +129,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const fmt = useSetupFormat();
   const rc = useRecordContext();
   const { facts, today, currency, retry } = useSetupFacts();
-  const params = useLocalSearchParams<{ returnTo?: string }>();
+  const params = useLocalSearchParams<{ returnTo?: string; account?: string }>();
   const settings = useDecideSettings(rc.userId ?? undefined).data ?? null;
   const setupSaver = useSaveSetupStep(rc.userId ?? '');
   const v3 = useDecideV3();
@@ -155,6 +156,15 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
     livePicks.delete(id);
   }
   if (livePicks !== null) setPicks(livePicks);
+  // 06.1-71 (DN-6): opened from the answer's "What is <account> for?" Fix (?account=<id>), the accounts sheet opens once on arrival
+  // with that account first. Kept in step during render, like the picks above.
+  const focusAccount = typeof params.account === 'string' ? params.account : null;
+  const [autoOpened, setAutoOpened] = useState<string | null>(null);
+  if (focusAccount !== null && autoOpened !== focusAccount && asked.some((a) => a.id === focusAccount)) {
+    setAutoOpened(focusAccount);
+    setAccountsOpen(true);
+  }
+  const sheetAccounts = focusAccount === null ? asked : [...asked.filter((a) => a.id === focusAccount), ...asked.filter((a) => a.id !== focusAccount)];
   const pickOf = (id: string): UseChoice | undefined => (livePicks ?? picks).get(id)?.choice;
 
   // FQ7 (CC-5), DC-11: the answers given, from the live answers and the goals linked to an account.
@@ -163,6 +173,8 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const remover = useRemoveDecideAnswer(rc.userId ?? '', rc.householdId ?? '');
   const rowOf = (id: string): AccountRow | undefined => (accountsQ.data ?? []).find((a) => a.id === id);
   const footer = footerFactsOf(v3.inputs);
+  // 06.1-79 (DS-10, OQ-79-2 A): the months count shown is the one the answer uses, as on Decide home.
+  const used = recordMonthsOf(v3.inputs, v3.evaluation ?? null);
 
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
   // C-5: "Save and close" with items still open says what is open, then leaves; with none open it leaves silently as before.
@@ -445,7 +457,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
         <Text testID="records-last-why" style={small}>{lastWhy}</Text>
         <Text testID="records-this-why" style={small}>{thisWhy}</Text>
         <Text testID="months-so-far" style={small}>
-          {footer.months >= 3 ? t('decide.screens.setupOthers.records.progressDone') : t('decide.screens.setupOthers.records.progress', { count: footer.months })}
+          {t('decide.screens.home.records.complete', { monthsUsed: used.used, monthsTotal: used.total })}
         </Text>
         {!allDone ? <Text style={small}>{t('decide.screens.setupOthers.records.openNote')}</Text> : null}
       </MoreRow>
@@ -494,7 +506,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
         <Sheet visible onDismiss={() => setAccountsOpen(false)} accessibilityLabel={t('decide.screens.setupOthers.records.accounts')}>
           <SheetHeader title={t('decide.screens.setupOthers.records.accounts')} cancelLabel={t('decide.screens.common.close')} onCancel={() => setAccountsOpen(false)} />
           <SheetScroll contentContainerStyle={styles.sheetBody}>
-            {asked.map((a) => {
+            {sheetAccounts.map((a) => {
               const row = rowOf(a.id);
               const current = pickOf(a.id) ?? choiceOfUse(a.use);
               const name = row?.name ?? '';
