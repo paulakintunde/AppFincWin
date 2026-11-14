@@ -10,7 +10,7 @@ import type { NewTransaction, PaymentType } from '@/db/rows';
 import { mutationKeys, WRITE_SCOPE } from '@/data/keys';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
-import { hapticSuccess } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { registerBatchInsert, type BatchInsertVars } from './batchInsert';
 import { newStepId } from './undoCapture';
 
@@ -68,7 +68,7 @@ export function useCloneMonth(): {
         stepId,
       });
       showToast({ kind: 'ordinary', text: undoLabelText('cloned', { n }), stepId });
-      hapticSuccess();
+      hapticTap();
       return stepId;
     },
   };

@@ -26,7 +26,7 @@ import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
-import { hapticSuccess } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { writeClient } from './writeClient';
 import { suggestionToSeries } from './recurringSeries';
 
@@ -127,7 +127,7 @@ export function useMarkMonthly(): {
       undo: { id: stepId, labelKey: 'markedMonthly', labelParams: { n: items.length } },
     });
     showToast({ kind: 'ordinary', text: undoLabelText('markedMonthly', { n: items.length }), stepId });
-    hapticSuccess();
+    hapticTap();
     return stepId;
   };
 
