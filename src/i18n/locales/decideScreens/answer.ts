@@ -146,6 +146,18 @@ export const answer = {
     noOverdraftSaved: 'Saved: no overdraft on {{account}}.',
     coverChanged: 'Answer changed.',
   },
+  // 06.1-84 (G-61-2): "Your spare money hasn't been confirmed yet" is answered here: the app's figure, or the person's own.
+  spare: {
+    title: 'Your spare money',
+    figure: 'From your records: {{amount}}.',
+    what: 'What your everyday accounts hold after this month’s bills and everyday spending.',
+    noFigure: 'This can’t be worked out from your records yet. Type what you have spare now.',
+    right: 'That’s right',
+    own: 'Use my own figure',
+    ownLabel: 'Your spare money now',
+    useOwn: 'Use this figure',
+    saved: 'Saved: your spare money.',
+  },
   // 06.1-66 (FQ8, CC-2): a decided check shows what happened and links to its entry in Past decisions; no buy or save buttons.
   outcome: {
     bought: 'Bought on {{date}}.',
