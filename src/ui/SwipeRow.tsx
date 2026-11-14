@@ -1,7 +1,8 @@
 /**
  * Swipe-to-act row wrapper (CONTEXT D-27, UI-SPEC 4, Confirmed Decision 10; REQ ACT-14).
  * Wraps any row in ReanimatedSwipeable with an 88px action zone on each side that
- * carries a word, not an icon. A full swipe commits the action, fires hapticLight and
+ * carries a word, and (06.2 L02) an optional 16 icon above it. A full swipe commits the action, fires the light
+ * tap haptic (hapticLight is hapticTap, 06.2-03) and
  * closes the row. Disabled in bulk-select mode. Every swipe action is also exposed as
  * an accessibility action, so the gesture is never the only route. Phase 3 adopts this.
  *
@@ -20,6 +21,8 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { hapticLight } from '@/ui/haptics';
+import { Glyph } from '@/ui/icons/Glyph';
+import type { IconName } from '@/ui/icons/iconData';
 
 export const SWIPE_ACTION_WIDTH = 88; // UI-SPEC Confirmed Decision 10; the minimum, a longer label grows its zone
 
@@ -35,6 +38,8 @@ export interface SwipeAction {
   a11yLabel: string;
   tone: 'positive' | 'danger';
   onCommit: () => void;
+  /** 06.2 L02: a 16 icon drawn above the word in the word's colour; the word always shows (D-06). */
+  icon?: IconName;
 }
 
 export interface SwipeRowProps {
@@ -74,6 +79,7 @@ function ActionZone({
       accessibilityElementsHidden
       style={[styles.zone, { width, backgroundColor, alignItems: align === 'left' ? 'flex-start' : 'flex-end' }]}
     >
+      {action.icon !== undefined ? <Glyph name={action.icon} size={16} color={colors.surface} testID={`swipe-icon-${action.icon}`} /> : null}
       <Text
         numberOfLines={1}
         onTextLayout={(e) => {
@@ -163,6 +169,7 @@ const styles = StyleSheet.create({
   zone: {
     minHeight: space.touchMin,
     justifyContent: 'center',
+    gap: 2,
     paddingHorizontal: ZONE_PAD,
   },
 });
