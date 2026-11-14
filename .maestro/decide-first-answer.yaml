@@ -50,13 +50,13 @@ name: Decide first answer (UX-11)
       - eraseText: 5
 - inputText: "headphones"
 # 3. Price (cleared first if it holds an earlier amount; not counted). The empty field reads "Price" and shows its "0.00"
-#    hint; the tap lands on the field itself, below the label.
+#    hint; the tap lands on the field itself, below the label. Since 06.1-84 the empty field reads "Price, " (".+" below).
 - repeat:
     times: 3
     while:
-      visible: "Price, .*"
+      visible: "Price, .+"
     commands:
-      - longPressOn: "Price, .*"
+      - longPressOn: "Price, .+"
       - runFlow:
           when:
             visible: "Select all"

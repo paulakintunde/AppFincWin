@@ -26,10 +26,23 @@ name: Decide waiver (ask, don't block)
       - tapOn:
           id: "answer-facts-why"
 # The ask (or a missing-figure row) under the answer
+# Pre-device check (06.1-82 G-61-8): once "None" has been answered on this account the debts ask is no longer shown, and the
+# answer may have no Fix row either, so the search for them is bounded but not asserted.
+- repeat:
+    times: 6
+    while:
+      notVisible: ".*Do you have (any|one)\\?|Fix(: .*)?|FincWin is a planning tool, not a lender\\."
+    commands:
+      - swipe:
+          start: "50%,75%"
+          end: "50%,35%"
+          duration: 400
+      - waitForAnimationToEnd
 - runFlow:
-    file: common/scroll-to.yaml
-    env:
-      TARGET: ".*Do you have (any|one)\\?|Fix(: .*)?"
+    when:
+      notVisible: ".*Do you have (any|one)\\?"
+    commands:
+      - evalScript: "${console.log('WAIVER no debts ask on this answer (None already answered, or debts recorded)')}"
 - runFlow:
     when:
       visible: ".*Do you have (any|one)\\?"
