@@ -142,6 +142,8 @@ export const answer = {
   // 06.1-68 (CF-4, CC-8): the answers given under a fact line, each with Undo.
   fact: {
     noneSaved: 'Saved: no other debts.',
+    // 06.1-71 (CB-12): "No overdraft" sets the account's overdraft limit to 0 in place, with Undo.
+    noOverdraftSaved: 'Saved: no overdraft on {{account}}.',
     coverChanged: 'Answer changed.',
   },
   // 06.1-66 (FQ8, CC-2): a decided check shows what happened and links to its entry in Past decisions; no buy or save buttons.

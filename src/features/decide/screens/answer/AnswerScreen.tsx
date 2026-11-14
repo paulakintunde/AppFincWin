@@ -30,7 +30,7 @@ import { useDecideV3 } from '@/data/queries/decideV3';
 import { DECIDE_READ_STALE_MS } from '@/data/queries/decideStale';
 import { useIsOnline } from '@/data/sync/useIsOnline';
 import type { DecideCheckRow } from '@/db/decideChecks';
-import type { TransactionRow } from '@/db/rows';
+import type { AccountRow, TransactionRow } from '@/db/rows';
 import { freeHelpFor, type CheckV2, type Evaluation, type LocalDate, type PayV2, type ReadinessItem, type ReadinessWaiver } from '@/engine/decide/v3';
 import { money as makeMoney } from '@/engine/money';
 import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
@@ -99,6 +99,11 @@ export interface AnswerWrites {
   setEnvelopeAccount: SetEnvelopeAccount;
   /** 06.1-44: skips a pending line (the shell binds useSkipOccurrence, whose write path reaches the rate-fetch door). Returns the undo step id. */
   skipLine: (row: TransactionRow, ownerId: string) => string | null;
+  /**
+   * 06.1-71 (CB-12): "No overdraft" sets the account's overdraft limit to 0 in place (the shell binds useEditAccount, whose write
+   * path reaches the rate-fetch door). Returns the undo step id, or null when the write went with no undo step.
+   */
+  setNoOverdraft: (account: AccountRow, ownerId: string) => string | null;
 }
 
 export interface AnswerScreenProps {
@@ -227,6 +232,13 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
   // A side picked on the compare screen, applied once per pick. 06.1-63 (CN-13): Compare now returns to this same answer with a new
   // `side` (dismissTo), so a changed cash side applies again: cash judges as paid once.
   const sideDone = useRef<'cash' | 'installments' | null>(null);
+  // 06.1-71 (CB-12): accounts whose "No overdraft" is on its way; one goes once its fact is gone, so after an Undo it can be answered again.
+  const noOverdraftSent = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (result === null) return;
+    const open = new Set(result.facts.filter((f) => f.code === 'no_overdraft_limit').map((f) => f.values['accountId']));
+    for (const accountId of noOverdraftSent.current) if (!open.has(accountId)) noOverdraftSent.current.delete(accountId);
+  }, [result]);
   useEffect(() => {
     if (side === null || sideDone.current === side || check === null || !gated) return;
     sideDone.current = side;
@@ -419,13 +431,36 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     return result?.facts.filter((f) => f.code === code)[nth]?.values ?? {};
   };
   const missingCodes = new Set(lines.missing.map((l) => l.code));
+  // 06.1-71 (DN-6): "What is <account> for?" opens Setup > Records with that account's choice open (06.1-58's accounts sheet); Back
+  // returns here (from=answer). When only the safety net's account is unknown, the question is which account holds it: Safety net.
+  const accountUseFix = (): Href => {
+    const notices = result?.notices ?? [];
+    const unstated = notices.find((n) => n.code === 'account_use_unknown')?.values['accountId'];
+    if (typeof unstated === 'string') return withFromAnswer({ pathname: '/decide/setup/records', params: { account: unstated } } as unknown as Href);
+    if (notices.some((n) => n.code === 'fund_account_unknown')) return withFromAnswer(asHref('/decide/setup/net'));
+    return withFromAnswer(asHref('/decide/setup/records'));
+  };
   const factOffset = lines.facts.length;
   const onFactChoice = (choice: FactActionChoice): void => {
     switch (choice.kind) {
       case 'addLimit':
-      case 'noOverdraft':
         pushOnce(asHref(choice.accountId === null ? '/accounts' : `/accounts/${choice.accountId}`));
         return;
+      case 'noOverdraft': {
+        // 06.1-71 (CB-12): the answer is recorded in place (limit 0) with Undo, and the user stays on the answer; the fact goes once
+        // the engine judges again. With the account not loaded (or no user), the account opens instead, as before.
+        const account = choice.accountId === null ? undefined : (accounts.data ?? []).find((a) => a.id === choice.accountId && a.deleted_at == null);
+        if (account === undefined || rc.userId === null) {
+          pushOnce(asHref(choice.accountId === null ? '/accounts' : `/accounts/${choice.accountId}`));
+          return;
+        }
+        if (noOverdraftSent.current.has(account.id)) return; // T-06.1-71-02: one write per account while the fact is still shown
+        noOverdraftSent.current.add(account.id);
+        const stepId = writes.setNoOverdraft(account, rc.userId);
+        hapticLight();
+        showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.fact.noOverdraftSaved', params: { account: account.name } }, stepId });
+        return;
+      }
       case 'addIt':
       case 'setDueDay':
         pushOnce(asHref('/decide/setup/debts'));
@@ -451,6 +486,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         return;
       case 'fixMissing':
         if (PRICE_STEP_FIXES.has(choice.code)) pushOnce(withFromAnswer(stepHref(2, id, 'back')));
+        else if (choice.code === 'account_use_question') pushOnce(accountUseFix());
         else pushOnce(asHref(FIX_ROUTE[choice.code] ?? '/decide/setup'));
         return;
     }

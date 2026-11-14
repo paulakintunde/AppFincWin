@@ -476,3 +476,40 @@ describe('06.1-68 (DS-14): account-use radios show the pick at once', () => {
     expect(screen.getAllByRole('radio').filter((n) => n.props.accessibilityState.checked)).toHaveLength(0);
   });
 });
+
+describe('06.1-71 (DN-6): opened from the answer on one account', () => {
+  const twoAccounts = () => ({
+    accounts: [
+      { id: 'acc-chk', kind: 'checking', use: null, balance: 0 },
+      { id: 'acc-cash', kind: 'cash', use: null, balance: 0 },
+    ],
+    months: [{ month: '2026-10', full: true, lines: [{}] }],
+  });
+
+  it('?account=<id> opens the accounts sheet once, with that account first', async () => {
+    mockInputs = twoAccounts();
+    mockAccountRows = [
+      { id: 'acc-chk', name: 'Checking', deleted_at: null },
+      { id: 'acc-cash', name: 'Cash', deleted_at: null },
+    ];
+    mockParams = { account: 'acc-cash', from: 'answer' };
+    await wrap(<RecordsSetup writes={writes} />);
+    const cash = screen.getByTestId('account-acc-cash');
+    const chk = screen.getByTestId('account-acc-chk');
+    expect(cash).toBeTruthy();
+    expect(screen.getByText('What is Cash for?')).toBeTruthy();
+    const ids = screen.getAllByTestId(/^account-acc-/).map((n) => n.props.testID);
+    expect(ids).toEqual(['account-acc-cash', 'account-acc-chk']);
+    expect(chk).toBeTruthy();
+    // Close does not open it again.
+    await press(screen.getByText('Close'));
+    expect(screen.queryByTestId('account-acc-cash')).toBeNull();
+  });
+
+  it('an account it does not ask about leaves the sheet closed', async () => {
+    mockInputs = twoAccounts();
+    mockParams = { account: 'acc-other' };
+    await wrap(<RecordsSetup writes={writes} />);
+    expect(screen.queryByTestId('account-acc-cash')).toBeNull();
+  });
+});

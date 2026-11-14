@@ -150,7 +150,13 @@ jest.mock('../../sheets/InstallmentPlanSheet', () => {
   };
 });
 
-const writes = { notBuying: jest.fn(() => 'step-1'), setEnvelopeAccount: jest.fn(() => 'step-env'), skipLine: (...a: unknown[]) => mockSkip(...a) };
+const mockNoOverdraft = jest.fn((..._a: unknown[]): string | null => 'step-od');
+const writes = {
+  notBuying: jest.fn(() => 'step-1'),
+  setEnvelopeAccount: jest.fn(() => 'step-env'),
+  skipLine: (...a: unknown[]) => mockSkip(...a),
+  setNoOverdraft: (...a: unknown[]) => mockNoOverdraft(...a),
+};
 
 function load(run: Run, over: Partial<typeof mockState> = {}): void {
   mockState.run = run;
@@ -457,6 +463,28 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
     expect(mockPush).toHaveBeenCalledWith('/decide/setup/pay');
   });
 
+  it('06.1-71 (DN-6): Fix next to What is <account> for? opens Setup > Records on that account, from=answer', async () => {
+    const run = ledgerRun('N02');
+    const ev = asks(run, ['account_use_question']);
+    load(run, { evaluation: { ...ev, result: { ...ev.result, notices: [...ev.result.notices, { code: 'account_use_unknown', values: { accountId: 'a1', count: 1 } }] } } });
+    await open();
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('answer-fix-account_use_question'));
+    });
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/setup/records', params: { account: 'a1', from: 'answer' } });
+  });
+
+  it('06.1-71: with only the safety net’s account unknown, Fix opens Safety net', async () => {
+    const run = ledgerRun('N02');
+    const ev = asks(run, ['account_use_question']);
+    load(run, { evaluation: { ...ev, result: { ...ev.result, notices: [...ev.result.notices, { code: 'fund_account_unknown', values: {} }] } } });
+    await open();
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('answer-fix-account_use_question'));
+    });
+    expect(mockPush).toHaveBeenCalledWith('/decide/setup/net?from=answer');
+  });
+
   it('a price fix opens the price step of this check', async () => {
     const run = ledgerRun('N02');
     load(run, { evaluation: asks(run, ['no_price']) });
@@ -468,15 +496,49 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/decide/check/price', params: { id: 'c1', dir: 'back', from: 'answer' } });
   });
 
-  it('no overdraft limit offers Add limit and No overdraft, both opening that account', async () => {
+  it('06.1-71 (CB-12): No overdraft records a 0 limit in place with Undo and stays on the answer', async () => {
     const run = ledgerRun('N05');
     load(run);
     await open();
-    expect(screen.getByText('Add limit')).toBeTruthy();
+    mockNoOverdraft.mockClear();
     await act(async () => {
       fireEvent.press(screen.getByText('No overdraft'));
     });
+    expect(mockNoOverdraft).toHaveBeenCalledTimes(1);
+    expect(mockNoOverdraft).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }), 'u1');
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockToast).toHaveBeenCalledWith({
+      kind: 'ordinary',
+      text: { key: 'decide.screens.answer.fact.noOverdraftSaved', params: { account: 'Everyday' } },
+      stepId: 'step-od',
+    });
+    // T-06.1-71-02: a second tap while the fact still shows writes nothing more.
+    await act(async () => {
+      fireEvent.press(screen.getByText('No overdraft'));
+    });
+    expect(mockNoOverdraft).toHaveBeenCalledTimes(1);
+  });
+
+  it('06.1-71: Add limit still opens that account', async () => {
+    const run = ledgerRun('N05');
+    load(run);
+    await open();
+    await act(async () => {
+      fireEvent.press(screen.getByText('Add limit'));
+    });
     expect(mockPush).toHaveBeenCalledWith('/accounts/a1');
+    expect(mockNoOverdraft).not.toHaveBeenCalled();
+  });
+
+  it('06.1-71: No overdraft for an account that is not loaded opens the accounts instead', async () => {
+    const run = ledgerRun('N05');
+    load(run, { evaluation: withResult(run, (r) => ({ ...r, facts: r.facts.map((f) => (f.code === 'no_overdraft_limit' ? { ...f, values: { ...f.values, accountId: 'gone' } } : f)) })) });
+    await open();
+    await act(async () => {
+      fireEvent.press(screen.getByText('No overdraft'));
+    });
+    expect(mockNoOverdraft).not.toHaveBeenCalled();
+    expect(mockPush).toHaveBeenCalledWith('/accounts/gone');
   });
 
   it('None on the debts question records that the person has none', async () => {
