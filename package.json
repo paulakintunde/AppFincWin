@@ -79,6 +79,7 @@
     "jest-expo": "~57.0.5",
     "squawk-cli": "2.66.0",
     "supabase": "2.117.0",
+    "svgpath": "^2.6.0",
     "test-renderer": "^1.3.0",
     "typescript": "~6.0.3"
   },
@@ -114,7 +115,8 @@
     "check:decide-switch": "node scripts/decide-switch-check.mjs",
     "check:cache-version": "node scripts/check-cache-version.mjs",
     "icons:extract": "node scripts/icons/extract-board-icons.mjs",
-    "check:icons": "node scripts/icons/extract-board-icons.mjs --check",
+    "check:icons": "node scripts/icons/extract-board-icons.mjs --check && node scripts/icons/build-lottie.mjs --check",
+    "icons:lottie": "node scripts/icons/build-lottie.mjs",
     "shadow:report": "node scripts/shadow-report.mjs",
     "wording:page": "node scripts/wording-page.mjs"
   },
