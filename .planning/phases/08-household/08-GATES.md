@@ -44,3 +44,11 @@ The plans were written from merge-base `0b7c97ae`, before Grow merged.
 - 08-28 -> `.planning/phases/08.1-decide-rebuild-on-real-data/08.1-CARRY-OVER-08-28.md`
 - 08-29 -> `.planning/phases/08.1-decide-rebuild-on-real-data/08.1-CARRY-OVER-08-29.md`
 - Grow's "Create from Decide" follow-up -> 08.1.
+
+## 05.5 handoff (2026-11-14)
+
+Written by plan 05.5-06. Source: `.planning/phases/05.5-one-shared-money-model/05.5-GATE.md` and `05.5-CONTEXT.md` (D-09, D-21).
+
+1. **Gate (e): push order.** 05.5 Band A, `20261113000100_decide_rule_caps_to_categories.sql`, is pushed before 08-27 or any `20261120*` push. If `npx supabase migration list --linked` already shows any `2026112*` applied, Band A is re-dated to the next minute after the latest applied file (05.5-GATE.md records the new name). Add Band A to the 08-27 gate list. Phase 8's `20261120000100..000900` push second; 05.5 Band B (`20261121000100`, `20261121000200`, `20261121000300`) pushes last, after the 05.5 release is installed.
+2. **share_pct removal moved to 05.5.** Phase 8's planned migration `20261120001100_decide_settings_share_from_household.sql` and pgTAP `112_*` are no longer Phase 8 or 08.1 work. 05.5 Band B `20261121000300` drops `decide_settings.share_pct` (with `safety_net_protect`, `safety_net_size`, `safety_net_locked`). Household's share rules start clean. `08.1-CARRY-OVER-08-29.md` carries the matching note. Phase 8 `20261120001100` is not used. Confirm the ROADMAP Phase 8 success criterion 9 wording (the share_pct part) in the revision round.
+3. **Where the plugs live.** `countsForMe` is at `src/engine/month/countsForMe.ts`. The BO-07 contract tests are the todo files `src/engine/month/__tests__/bo07.*.contract.test.ts`. When 08-25 turns a todo on, it keeps the exact test title, because 05.5's frozen manifest (`src/test/contracts/contractManifest.test.ts`) pins the titles.
