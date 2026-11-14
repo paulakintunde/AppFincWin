@@ -14,6 +14,7 @@ jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/features/record/entry/pickers/DateField', () => ({ DateField: () => null }));
 jest.mock('@/data/mutations/decideChanges', () => ({
   useAddChange: () => ({ add: jest.fn(() => ({ id: 'c1', stepId: 'step-1' })) }),
+  useEditChange: () => ({ edit: jest.fn(() => 'step-3') }),
   useRemoveChange: () => ({ remove: jest.fn(() => 'step-2') }),
 }));
 jest.mock('@/data/queries/decide', () => ({ useDecideChanges: () => ({ data: [] }) }));

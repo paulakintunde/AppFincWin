@@ -20,6 +20,7 @@ const mockAdd = jest.fn(() => ({ id: 'c1', stepId: 'step-1' }));
 const mockRemove = jest.fn(() => 'step-2');
 jest.mock('@/data/mutations/decideChanges', () => ({
   useAddChange: () => ({ add: mockAdd }),
+  useEditChange: () => ({ edit: jest.fn(() => 'step-3') }),
   useRemoveChange: () => ({ remove: mockRemove }),
 }));
 jest.mock('@/data/queries/decide', () => ({ useDecideChanges: () => ({ data: [] }) }));
@@ -334,12 +335,26 @@ describe('Something changed? (D53)', () => {
     expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ kind: 'ordinary', stepId: 'step-1' }));
   });
 
-  it('shows a Changed chip with Reset', async () => {
+  it('shows a Changed line with Change and Reset (06.1-80, DC-10)', async () => {
     const onReset = jest.fn();
-    await wrap(<ChangedChips changes={[{ id: 'c1', text: 'Gym stopped' }]} onReset={onReset} />);
-    expect(screen.getByText('Changed: Gym stopped · Reset')).toBeTruthy();
-    await fireEvent.press(screen.getByTestId('changed-chip-c1'));
+    const onChange = jest.fn();
+    await wrap(
+      <ChangedChips
+        changes={[
+          { id: 'c1', line: 'Changed: Gym stopped', spoken: 'Gym stopped', editable: true },
+          { id: 'c2', line: 'Changed: Old row', spoken: 'Old row', editable: false },
+        ]}
+        onReset={onReset}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByText('Changed: Gym stopped')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Reset the change: Gym stopped'));
     expect(onReset).toHaveBeenCalledWith('c1');
+    await fireEvent.press(screen.getByLabelText('Change, Gym stopped'));
+    expect(onChange).toHaveBeenCalledWith('c1');
+    expect(screen.queryByLabelText('Change, Old row')).toBeNull();
+    expect(screen.getByLabelText('Reset the change: Old row')).toBeTruthy();
   });
 });
 

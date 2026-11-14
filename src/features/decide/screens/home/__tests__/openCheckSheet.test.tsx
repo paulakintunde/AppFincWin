@@ -393,3 +393,23 @@ describe("OpenCheckSheet layout (06.1-58 A-SH-1, D46)", () => {
     );
   });
 });
+
+describe("OpenCheckSheet Delete (06.1-80, DC-9)", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("Delete closes the sheet and shows Deleted: <name>. at once, naming the step and the check so Undo can bring it back", async () => {
+    const onDismiss = await renderSheet(rowOf(small()), modelOf({ draft: false, code: "fits_month" }));
+    await fireEvent.press(screen.getByLabelText("Delete"));
+    expect(onDismiss).toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledTimes(1);
+    expect(showToast).toHaveBeenCalledWith({
+      kind: "destructive",
+      text: {
+        key: "decide.screens.sheetsHome.openCheck.deleted",
+        params: { name: "Used car", undoLabel: "decisionDeleted" },
+      },
+      stepId: "step-del",
+      target: { entity: "decide_checks", id: "c1" },
+    });
+  });
+});

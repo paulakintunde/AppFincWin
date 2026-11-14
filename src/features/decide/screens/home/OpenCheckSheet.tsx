@@ -12,6 +12,10 @@
  * 06.1-58 (A-SH-1, D46): the state is a badge (glyph plus word) over the price, date and what it leaves, with "Checked <date>" on
  * its own line; the records-changed note sits in a notYet tint box; the actions are one grouped card, rows split by a hairline rule,
  * each with a chevron except Delete (a danger row that opens nothing). The NeedLines and H-8 actions are unchanged.
+ *
+ * 06.1-80 (DC-9): Delete shows "Deleted: <name>." at once, with Undo. The delete is the soft delete useRemoveDecision writes as one
+ * decisionDeleted step; the toast names that label (`undoLabel`) and the check (`target`), so Undo clears deleted_at and the check
+ * comes back with its inputs untouched.
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -130,7 +134,12 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
     hapticLight();
     const stepId = remove(row);
     onDismiss();
-    showToast({ kind: 'destructive', text: { key: 'decide.screens.common.toast.deleted', params: { item: row.name } }, stepId });
+    showToast({
+      kind: 'destructive',
+      text: { key: 'decide.screens.sheetsHome.openCheck.deleted', params: { name: row.name, undoLabel: 'decisionDeleted' } },
+      stepId,
+      target: { entity: 'decide_checks', id: row.id },
+    });
   };
 
   const usePlan = (pay: Extract<PayV2, { mode: 'plan' }>) => {

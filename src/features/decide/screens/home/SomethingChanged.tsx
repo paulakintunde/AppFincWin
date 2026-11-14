@@ -4,10 +4,13 @@
  * shows on home as a "Changed: ... · Reset" chip while it is in force; Reset removes it, also with Undo.
  * 06.1-58 (A-SH-3): each choice sits in a grouped card with the accent tint on the chosen row; the home row has a chevron, since it
  * opens the sheet. Still user-led: nothing is chosen for the person and nothing is written before Save.
+ * 06.1-80 (DC-10, DS-19): each saved change's home line has "Change" beside "Reset". Change opens the same sheet filled with the
+ * saved values; Save writes only the fields that moved (useEditChange), with Undo. A one-off cost has an optional name; home then
+ * reads "Changed: <name> <amount>". Every toast here names its undo step (`undoLabel`), so the toast host offers Undo.
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useAddChange, useRemoveChange } from '@/data/mutations/decideChanges';
+import { useAddChange, useEditChange, useRemoveChange } from '@/data/mutations/decideChanges';
 import { useDecideChanges } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
@@ -26,9 +29,20 @@ import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
+import { TextInput } from '@/ui/TextInput';
 import { StateGlyph } from '@/ui/glyphs/StateGlyph';
 import { OptionCard, OptionRow } from './OptionCard';
-import { changeRowOf, isActiveChange, leftWithChange, type ChangeEntry } from './homeCardsModel';
+import {
+  changeFormOf,
+  changePatchOf,
+  changeRowOf,
+  isActiveChange,
+  leftWithChange,
+  isWrittenLabel,
+  ownChangeName,
+  type ChangeEntry,
+  type ChangeFormValues,
+} from './homeCardsModel';
 
 export interface BillChoice {
   id: string;
@@ -38,6 +52,9 @@ export interface BillChoice {
 }
 
 const CHEV = 16;
+const NAME_MAX = 40;
+/** Stands in for the amount when a label template is matched against a stored name. */
+const AMOUNT_MARK = '\u0001';
 
 type Kind = 'pay' | 'bill' | 'oneOff';
 
@@ -51,22 +68,26 @@ export interface SomethingChangedSheetProps {
   usualPay: number | null;
   formatMoney: (minor: number) => string;
   formatDate: (date: string) => string;
-  onSave: (entry: ChangeEntry) => void;
+  /** `name` is the one-off's own name, trimmed; '' when none was given (and for pay and bill changes). */
+  onSave: (entry: ChangeEntry, name: string) => void;
   onDismiss: () => void;
+  /** 06.1-80 (DC-10): a saved change being changed; the form opens with its values. Absent or null when adding. */
+  initial?: ChangeFormValues | null;
 }
 
 export function SomethingChangedSheet(props: SomethingChangedSheetProps) {
   return props.visible ? <ChangedForm {...props} /> : null;
 }
 
-function ChangedForm({ bills, currency, today, usualLeft, usualPay, formatMoney, formatDate, onSave, onDismiss }: SomethingChangedSheetProps) {
+function ChangedForm({ bills, currency, today, usualLeft, usualPay, formatMoney, formatDate, onSave, onDismiss, initial = null }: SomethingChangedSheetProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const [kind, setKind] = useState<Kind | null>(null);
-  const [amount, setAmount] = useState<number | null>(null);
-  const [billId, setBillId] = useState<string | null>(null);
-  const [status, setStatus] = useState<'stopped' | 'paused'>('stopped');
-  const [date, setDate] = useState(today);
+  const [kind, setKind] = useState<Kind | null>(initial?.kind ?? null);
+  const [amount, setAmount] = useState<number | null>(initial?.amount ?? null);
+  const [billId, setBillId] = useState<string | null>(initial?.billId ?? null);
+  const [status, setStatus] = useState<'stopped' | 'paused'>(initial?.status ?? 'stopped');
+  const [date, setDate] = useState(initial?.date ?? today);
+  const [name, setName] = useState(initial?.name ?? '');
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
   const bill = bills.find((b) => b.id === billId) ?? null;
 
@@ -78,6 +99,13 @@ function ChangedForm({ bills, currency, today, usualLeft, usualPay, formatMoney,
         : kind === 'oneOff' && amount !== null && amount > 0
           ? { kind: 'oneOff', amount, date }
           : null;
+
+  const ownName = kind === 'oneOff' ? name.trim() : '';
+  // Adding: anything chosen counts. Changing: only a value that moved from the saved one.
+  const dirty =
+    initial === null
+      ? kind !== null
+      : kind !== initial.kind || amount !== initial.amount || billId !== initial.billId || status !== initial.status || date !== initial.date || name !== initial.name;
 
   const left = entry === null ? null : leftWithChange(entry, usualLeft, usualPay);
   const live =
@@ -91,7 +119,7 @@ function ChangedForm({ bills, currency, today, usualLeft, usualPay, formatMoney,
   const title = t('decide.screens.sheetsHome.changed.title');
 
   return (
-    <Sheet visible onDismiss={onDismiss} accessibilityLabel={title} dirty={kind !== null}>
+    <Sheet visible onDismiss={onDismiss} accessibilityLabel={title} dirty={dirty}>
       <SheetHeader title={title} cancelLabel={t('decide.screens.sheetsHome.rule.close')} onCancel={onDismiss} />
       <SheetScroll contentContainerStyle={styles.column}>
         <Text style={small}>{t('decide.screens.sheetsHome.changed.sub')}</Text>
@@ -122,6 +150,21 @@ function ChangedForm({ bills, currency, today, usualLeft, usualPay, formatMoney,
             accessibilityLabel={t(kind === 'pay' ? 'decide.screens.sheetsHome.changed.newAmount' : 'decide.screens.common.amount')}
             boxed
           />
+        ) : null}
+
+        {kind === 'oneOff' ? (
+          <View style={styles.field}>
+            <Text style={small}>{t('decide.screens.sheetsHome.changed.nameLabel')}</Text>
+            <TextInput
+              testID="changed-name"
+              value={name}
+              onChangeText={setName}
+              accessibilityLabel={t('decide.screens.sheetsHome.changed.nameLabel')}
+              maxLength={NAME_MAX}
+              autoCapitalize="sentences"
+              style={[styles.box, { backgroundColor: colors.fill6, color: colors.ink }, textRole(pairing, 'body')]}
+            />
+          </View>
         ) : null}
 
         {kind === 'bill' ? (
@@ -170,31 +213,59 @@ function ChangedForm({ bills, currency, today, usualLeft, usualPay, formatMoney,
         ) : null}
 
         <View accessibilityLiveRegion="polite">{live === '' ? null : <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{live}</Text>}</View>
-        <Pill label={t('decide.screens.sheetsHome.changed.save')} variant="primary" disabled={entry === null} onPress={() => (entry === null ? undefined : onSave(entry))} />
+        <Pill label={t('decide.screens.sheetsHome.changed.save')} variant="primary" disabled={entry === null} onPress={() => (entry === null ? undefined : onSave(entry, ownName))} />
       </SheetScroll>
     </Sheet>
   );
 }
 
-// ── the chip ──────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── the home lines ────────────────────────────────────────────────────────────────────────────────────────────────
 
-export function ChangedChips({ changes, onReset }: { changes: readonly { id: string; text: string }[]; onReset: (id: string) => void }) {
+export interface ChangedLine {
+  id: string;
+  /** The visible line ("Changed: Gym stopped", "Changed: Car repair $900"). */
+  line: string;
+  /** The change in a few words, for the buttons' spoken labels. */
+  spoken: string;
+  /** False when the saved change cannot be opened again in the sheet (no Change button). */
+  editable: boolean;
+}
+
+/** 06.1-80 (DC-10): one line per saved change, with Change (when it can be opened again) and Reset beside it. */
+export function ChangedChips({ changes, onReset, onChange }: { changes: readonly ChangedLine[]; onReset: (id: string) => void; onChange: (id: string) => void }) {
   const t = useT();
   const { colors, pairing } = useTheme();
   if (changes.length === 0) return null;
+  const link = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, fontWeight: '600' as const, color: colors.accent };
   return (
     <View style={styles.chips}>
       {changes.map((c) => (
-        <Pressable
-          key={c.id}
-          testID={`changed-chip-${c.id}`}
-          accessibilityRole="button"
-          accessibilityLabel={t('decide.screens.home.changedChipResetA11y', { change: c.text })}
-          onPress={() => onReset(c.id)}
-          style={[styles.chip, { backgroundColor: colors.fill1 }]}
-        >
-          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.ink }}>{t('decide.screens.home.changedChip', { change: c.text })}</Text>
-        </Pressable>
+        <View key={c.id} testID={`changed-chip-${c.id}`} style={[styles.chip, { backgroundColor: colors.fill1 }]}>
+          <Text style={[styles.grow, { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.ink }]}>{c.line}</Text>
+          {c.editable ? (
+            <Pressable
+              testID={`changed-change-${c.id}`}
+              accessibilityRole="button"
+              accessibilityLabel={t('decide.screens.sheetsHome.changed.changeA11y', { change: c.spoken })}
+              onPress={() => {
+                hapticSelection();
+                onChange(c.id);
+              }}
+              style={styles.link}
+            >
+              <Text style={link}>{t('decide.screens.sheetsHome.changed.change')}</Text>
+            </Pressable>
+          ) : null}
+          <Pressable
+            testID={`changed-reset-${c.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={t('decide.screens.home.changedChipResetA11y', { change: c.spoken })}
+            onPress={() => onReset(c.id)}
+            style={styles.link}
+          >
+            <Text style={link}>{t('decide.screens.sheetsHome.changed.reset')}</Text>
+          </Pressable>
+        </View>
       ))}
     </View>
   );
@@ -212,8 +283,11 @@ export function SomethingChanged() {
   const series = useRecurringSeries(rc.householdId ?? undefined).data;
   const v3 = useDecideV3();
   const { add } = useAddChange();
+  const { edit } = useEditChange();
   const { remove } = useRemoveChange();
   const [open, setOpen] = useState(false);
+  // 06.1-80 (DC-10): the saved change being changed, with the form it opens with.
+  const [editing, setEditing] = useState<{ row: DecideChangeRow; form: ChangeFormValues } | null>(null);
 
   const thisMonth = rc.today.slice(0, 7);
   const active = useMemo<DecideChangeRow[]>(() => (rows ?? []).filter((r) => isActiveChange(r, thisMonth)), [rows, thisMonth]);
@@ -228,29 +302,43 @@ export function SomethingChanged() {
   const usualLeft = month?.typicalLeft ?? null;
   const usualPay = month?.typicalIncome ?? null;
 
+  const oneOffLabel = (amount: number) => t('decide.screens.sheetsHome.changed.chipOneOff', { amount: money(amount) });
+  const billLabel = (bill: string, status: 'stopped' | 'paused') =>
+    t(status === 'stopped' ? 'decide.screens.sheetsHome.changed.chipStopped' : 'decide.screens.sheetsHome.changed.chipPaused', { bill });
   const label = (e: ChangeEntry): string =>
-    e.kind === 'pay'
-      ? t('decide.screens.sheetsHome.changed.chipPay', { amount: money(e.amount) })
-      : e.kind === 'bill'
-        ? t(e.status === 'stopped' ? 'decide.screens.sheetsHome.changed.chipStopped' : 'decide.screens.sheetsHome.changed.chipPaused', { bill: e.name })
-        : t('decide.screens.sheetsHome.changed.chipOneOff', { amount: money(e.amount) });
+    e.kind === 'pay' ? t('decide.screens.sheetsHome.changed.chipPay', { amount: money(e.amount) }) : e.kind === 'bill' ? billLabel(e.name, e.status) : oneOffLabel(e.amount);
+  const oneOffTemplate = t('decide.screens.sheetsHome.changed.chipOneOff', { amount: AMOUNT_MARK });
+  const isOneOffLabel = (name: string) => isWrittenLabel(name, oneOffTemplate, AMOUNT_MARK);
+  const formOf = (row: DecideChangeRow) => changeFormOf(row, { today: rc.today, usualPay, bills, billLabel, isOneOffLabel });
 
-  const save = (entry: ChangeEntry) => {
+  const close = () => {
+    setOpen(false);
+    setEditing(null);
+  };
+
+  const save = (entry: ChangeEntry, ownName: string) => {
     if (rc.userId === null || rc.householdId === null) return;
-    const name = label(entry);
+    // DS-19: a named one-off stores its own name; otherwise the shown label, as before.
+    const name = entry.kind === 'oneOff' && ownName !== '' ? ownName : label(entry);
     const draft = changeRowOf(entry, name, usualPay);
+    const params = { change: name, date: fmt.formatDate(entry.kind === 'oneOff' ? entry.date : entry.from), name };
+    if (editing !== null) {
+      const patch = changePatchOf(editing.row, draft);
+      close();
+      if (Object.keys(patch).length === 0) return;
+      const stepId = edit(editing.row, patch);
+      hapticLight();
+      showToast({ kind: 'ordinary', text: { key: 'decide.screens.sheetsHome.changed.toast', params: { ...params, undoLabel: 'changeEdited' } }, stepId });
+      return;
+    }
     const { stepId } = add({
       householdId: rc.householdId,
       ownerId: rc.userId,
       change: { kind: draft.kind, name: draft.name, monthly_amount: draft.monthly_amount, currency: rc.homeCurrency, start_month: draft.start_month, end_month: draft.end_month },
     });
     hapticLight();
-    showToast({
-      kind: 'ordinary',
-      text: { key: 'decide.screens.sheetsHome.changed.toast', params: { change: name, date: fmt.formatDate(entry.kind === 'oneOff' ? entry.date : entry.from) } },
-      stepId,
-    });
-    setOpen(false);
+    showToast({ kind: 'ordinary', text: { key: 'decide.screens.sheetsHome.changed.toast', params: { ...params, undoLabel: 'changeAdded' } }, stepId });
+    close();
   };
 
   const reset = (id: string) => {
@@ -258,15 +346,31 @@ export function SomethingChanged() {
     if (row === undefined) return;
     const stepId = remove(row);
     hapticLight();
-    showToast({ kind: 'ordinary', text: { key: 'decide.screens.sheetsHome.changed.resetToast' }, stepId });
+    showToast({
+      kind: 'ordinary',
+      text: { key: 'decide.screens.sheetsHome.changed.resetToast', params: { undoLabel: 'changeDeleted', ...(row.name === null ? {} : { name: row.name }) } },
+      stepId,
+    });
   };
+
+  const change = (id: string) => {
+    const row = active.find((r) => r.id === id);
+    const form = row === undefined ? null : formOf(row);
+    if (row === undefined || form === null) return;
+    setEditing({ row, form });
+  };
+
+  const lines: ChangedLine[] = active.map((r) => {
+    const own = ownChangeName(r, isOneOffLabel);
+    const plain = r.name ?? money(Math.abs(r.monthly_amount));
+    return own === null
+      ? { id: r.id, line: t('decide.screens.sheetsHome.changed.line', { change: plain }), spoken: plain, editable: formOf(r) !== null }
+      : { id: r.id, line: t('decide.screens.sheetsHome.changed.lineNamed', { name: own, amount: money(r.monthly_amount) }), spoken: own, editable: true };
+  });
 
   return (
     <View style={styles.column}>
-      <ChangedChips
-        changes={active.map((r) => ({ id: r.id, text: r.name ?? money(Math.abs(r.monthly_amount)) }))}
-        onReset={reset}
-      />
+      <ChangedChips changes={lines} onReset={reset} onChange={change} />
       <Pressable
         testID="something-changed-row"
         accessibilityRole="button"
@@ -284,7 +388,9 @@ export function SomethingChanged() {
         <StateGlyph name="chev" color={colors.inkFaint} size={CHEV} />
       </Pressable>
       <SomethingChangedSheet
-        visible={open}
+        key={editing?.row.id ?? 'new'}
+        visible={open || editing !== null}
+        initial={editing?.form ?? null}
         bills={bills}
         currency={rc.homeCurrency}
         today={rc.today}
@@ -293,7 +399,7 @@ export function SomethingChanged() {
         formatMoney={money}
         formatDate={(d) => fmt.formatDate(d)}
         onSave={save}
-        onDismiss={() => setOpen(false)}
+        onDismiss={close}
       />
     </View>
   );
@@ -302,7 +408,10 @@ export function SomethingChanged() {
 const styles = StyleSheet.create({
   column: { gap: space.gapSm, paddingBottom: space.gapSm },
   grow: { flexShrink: 1, flexGrow: 1 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
-  chip: { minHeight: space.touchMin, borderRadius: radii.pill, paddingHorizontal: space.gapMd, justifyContent: 'center' },
+  chips: { gap: space.gapSm },
+  chip: { minHeight: space.touchMin, borderRadius: radii.card, paddingLeft: space.gapMd, flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
+  link: { minHeight: space.touchMin, minWidth: space.touchMin, paddingHorizontal: space.gapSm, alignItems: 'center', justifyContent: 'center' },
+  field: { gap: space.gapSm },
+  box: { minHeight: space.touchMin, borderRadius: radii.card, paddingHorizontal: space.gapMd },
   homeRow: { minHeight: 52, borderRadius: radii.card, paddingHorizontal: space.cardPad, paddingVertical: space.gapSm, flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
 });

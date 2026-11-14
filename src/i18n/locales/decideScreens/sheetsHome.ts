@@ -62,6 +62,8 @@ export const sheetsHome = {
     payChosen: {
       plan: 'Installments saved for {{name}}.',
     },
+    // 06.1-80 (DC-9): the delete toast; it carries Undo, which brings the check back with its inputs.
+    deleted: 'Deleted: {{name}}.',
   },
   rule: {
     // 06.1-58 (A-SH-2): the dismiss button, the percent chips and Other, and the Other field's range.
@@ -157,6 +159,13 @@ export const sheetsHome = {
     noBills: 'No monthly bills are recorded.',
     statusQ: 'What happened to it',
     userLed: 'Nothing changes until you save.',
+    // 06.1-80 (DS-19, DC-10): a one-off cost can carry a name, and each saved change has Change and Reset on its home line.
+    nameLabel: 'Name (optional)',
+    line: 'Changed: {{change}}',
+    lineNamed: 'Changed: {{name}} {{amount}}',
+    change: 'Change',
+    changeA11y: 'Change, {{change}}',
+    reset: 'Reset',
   },
   // 06.1-43 (D-54, audit C-4): the envelope readiness fix. An envelope is never waived; it says which account holds it.
   envelopeAccount: {

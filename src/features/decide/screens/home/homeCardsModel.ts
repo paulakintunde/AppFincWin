@@ -144,6 +144,102 @@ export function leftWithChange(entry: ChangeEntry, usualLeft: number | null, usu
   return null;
 }
 
+/** The stored parts of a decide_changes row this model reads. */
+export interface ChangeRowShape {
+  readonly kind: 'income' | 'spending';
+  readonly name: string | null;
+  readonly monthly_amount: number;
+  readonly start_month: string;
+  readonly end_month: string | null;
+}
+
+/** A one-off cost as the sheet writes it: spending, positive, in one month only. */
+export function isOneOffRow(row: ChangeRowShape): boolean {
+  return row.kind === 'spending' && row.monthly_amount > 0 && row.end_month === row.start_month;
+}
+
+/**
+ * Whether a stored name is a label the app wrote from `template`, a translated label with `marker` where the amount goes ("One-off
+ * #"). The amount part only has to look like money (a digit, no word of four letters or more), so a label written under an
+ * older money format still counts.
+ */
+export function isWrittenLabel(name: string, template: string, marker: string): boolean {
+  const at = template.indexOf(marker);
+  if (at < 0) return name === template;
+  const prefix = template.slice(0, at);
+  const suffix = template.slice(at + marker.length);
+  if (name.length <= prefix.length + suffix.length || !name.startsWith(prefix) || !name.endsWith(suffix)) return false;
+  const amount = name.slice(prefix.length, name.length - suffix.length);
+  return /\d/.test(amount) && !/\p{L}{4,}/u.test(amount);
+}
+
+/**
+ * 06.1-80 (DS-19): the name the person gave a one-off cost, or null. A one-off saved with no name stores the shown label ("One-off
+ * $9"), so a stored name that is such a label (`isOneOffLabel`) is no name.
+ */
+export function ownChangeName(row: ChangeRowShape, isOneOffLabel: (name: string) => boolean): string | null {
+  if (!isOneOffRow(row) || row.name === null) return null;
+  const name = row.name.trim();
+  return name === '' || isOneOffLabel(name) ? null : name;
+}
+
+/** The Something changed form, as the sheet holds it. */
+export interface ChangeFormValues {
+  readonly kind: 'pay' | 'bill' | 'oneOff';
+  readonly amount: number | null;
+  readonly billId: string | null;
+  readonly status: 'stopped' | 'paused';
+  /** 'YYYY-MM-DD' */
+  readonly date: string;
+  /** The one-off's own name; '' for none. */
+  readonly name: string;
+}
+
+export interface ChangeFormContext {
+  /** 'YYYY-MM-DD' */
+  readonly today: string;
+  readonly usualPay: number | null;
+  readonly bills: readonly { id: string; name: string }[];
+  /** The stored label of a stopped or paused bill ("Gym stopped"). */
+  readonly billLabel: (billName: string, status: 'stopped' | 'paused') => string;
+  readonly isOneOffLabel: (name: string) => boolean;
+}
+
+/**
+ * 06.1-80 (DC-10): the form a saved change opens with when "Change" is pressed, or null when the row is not one this sheet can
+ * write again unchanged (an ended pay change, a bill that is no longer listed, an older row of another shape). Rows only keep a
+ * month, so the date is today in the change's own month, else the 1st. Pay is stored as the difference from a usual month's pay,
+ * so the amount shown is that pay plus the difference.
+ */
+export function changeFormOf(row: ChangeRowShape, ctx: ChangeFormContext): ChangeFormValues | null {
+  const date = row.start_month === ctx.today.slice(0, 7) ? ctx.today : `${row.start_month}-01`;
+  const base = { billId: null, status: 'stopped' as const, date, name: '' };
+  if (isOneOffRow(row)) return { ...base, kind: 'oneOff', amount: row.monthly_amount, name: ownChangeName(row, ctx.isOneOffLabel) ?? '' };
+  if (row.end_month !== null) return null;
+  if (row.kind === 'income') {
+    const pay = (ctx.usualPay ?? 0) + row.monthly_amount;
+    return { ...base, kind: 'pay', amount: pay > 0 ? pay : null };
+  }
+  if (row.monthly_amount >= 0) return null;
+  for (const bill of ctx.bills) {
+    for (const status of ['stopped', 'paused'] as const) {
+      if (ctx.billLabel(bill.name, status) === row.name) return { ...base, kind: 'bill', amount: null, billId: bill.id, status };
+    }
+  }
+  return null;
+}
+
+/** The fields of a stored row that differ from the new draft; empty when nothing changed. */
+export function changePatchOf(row: ChangeRowShape, draft: ChangeRowDraft): Partial<ChangeRowDraft> {
+  const patch: { -readonly [K in keyof ChangeRowDraft]?: ChangeRowDraft[K] } = {};
+  if (draft.kind !== row.kind) patch.kind = draft.kind;
+  if (draft.name !== row.name) patch.name = draft.name;
+  if (draft.monthly_amount !== row.monthly_amount) patch.monthly_amount = draft.monthly_amount;
+  if (draft.start_month !== row.start_month) patch.start_month = draft.start_month;
+  if (draft.end_month !== row.end_month) patch.end_month = draft.end_month;
+  return patch;
+}
+
 /** A change still in force: not deleted, and not ended before this month. */
 export function isActiveChange(row: { deleted_at: string | null; end_month: string | null }, thisMonth: string): boolean {
   return row.deleted_at === null && (row.end_month === null || row.end_month >= thisMonth);
