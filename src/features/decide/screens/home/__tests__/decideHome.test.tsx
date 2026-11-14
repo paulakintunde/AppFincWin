@@ -263,7 +263,7 @@ describe('Check it (APP-09, D-02)', () => {
   it('06.1-56 (X-3, A-HOME-5): the title uses the display role; the price leads with the currency symbol and a short tax note', async () => {
     await wrap(<DecideHome />);
     expect(mockTabProps.titleRole).toBe('display');
-    expect(screen.getByTestId('check-tax-note')).toHaveTextContent('Tax not included');
+    expect(screen.getByTestId('check-tax-note')).toHaveTextContent('Tax not added');
     expect(JSON.stringify(screen.toJSON())).toMatch(/"\$"/);
   });
 
@@ -397,6 +397,7 @@ describe('Your month (CO-D-57, UX-30, UX-29)', () => {
 
   it('shows Usual month and Low month, the Records row and the date of the records', async () => {
     await wrap(<DecideHome />);
+    await fireEvent.press(screen.getByTestId('month-more'));
     expect(screen.getByText('Usual month')).toBeTruthy();
     await fireEvent.press(screen.getByText('Low month'));
     expect(screen.getByText('The lowest month in your records: what came in, less what went out.')).toBeTruthy();

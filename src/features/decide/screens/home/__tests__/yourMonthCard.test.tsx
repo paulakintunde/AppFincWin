@@ -46,6 +46,32 @@ function renderCard(over: Partial<React.ComponentProps<typeof YourMonthCard>> = 
   );
 }
 
+/** 06.1-59 (G-10): the usual/low switch, its explainer and the records row sit behind the card's More row. */
+const openMore = async (): Promise<void> => {
+  await fireEvent.press(screen.getByTestId('month-more'));
+};
+
+describe('YourMonthCard short line first (06.1-59, G-10)', () => {
+  it('shows the headline and the bar; the switch, explainer and records row open under More', async () => {
+    await renderCard({ recordsUpTo: 'Nov 5', recordMonths: 2 });
+    expect(screen.getByTestId('month-lead')).toBeTruthy();
+    expect(screen.getByTestId('month-bars')).toBeTruthy();
+    expect(screen.queryByTestId('month-basis')).toBeNull();
+    expect(screen.queryByText('A usual month from your records: what comes in, less what goes out.')).toBeNull();
+    expect(screen.queryByTestId('month-records')).toBeNull();
+    await openMore();
+    expect(screen.getByTestId('month-basis')).toBeTruthy();
+    expect(screen.getByText('A usual month from your records: what comes in, less what goes out.')).toBeTruthy();
+    expect(screen.getByText('Records up to Nov 5 · 2 of 3 months')).toBeTruthy();
+  });
+
+  it('a past month with no records date has nothing behind More, so no More row', async () => {
+    await renderCard();
+    await fireEvent.press(screen.getByTestId('month-earlier'));
+    expect(screen.queryByTestId('month-more')).toBeNull();
+  });
+});
+
 describe('YourMonthCard labels (A-HOME-1)', () => {
   it('labels the headline as after this month\'s plans and the tiles as a usual month', async () => {
     await renderCard();
@@ -71,6 +97,7 @@ describe('YourMonthCard labels (A-HOME-1)', () => {
 
   it('the tiles label follows the usual/low switch', async () => {
     await renderCard();
+    await openMore();
     await fireEvent.press(screen.getByText('Low month'));
     expect(screen.getByTestId('month-tiles-label').props.children).toBe('Your low month');
     expect(screen.getByTestId('month-bars').props.accessibilityLabel).toMatch(/^Your low month: /);
@@ -109,6 +136,7 @@ describe('YourMonthCard layout (06.1-56, A-HOME-6)', () => {
 
   it('a short month stacks what comes in and the shortfall, and says Short', async () => {
     await renderCard();
+    await openMore();
     await fireEvent.press(screen.getByText('Low month'));
     expect(screen.getByTestId('stacked-seg-in', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByTestId('stacked-seg-short', { includeHiddenElements: true })).toBeTruthy();
@@ -117,12 +145,14 @@ describe('YourMonthCard layout (06.1-56, A-HOME-6)', () => {
 
   it('shows no cents anywhere on the card for amounts that are whole once rounded', async () => {
     await renderCard({ recordsUpTo: 'Nov 5' });
+    await openMore();
     expect(screen.queryAllByText(/\.\d\d/, { includeHiddenElements: true })).toHaveLength(0);
     expect(screen.queryAllByText(/\.00/, { includeHiddenElements: true })).toHaveLength(0);
   });
 
   it('the usual/low switch says what each month leaves under its word', async () => {
     await renderCard();
+    await openMore();
     expect(screen.getByText('$893 left')).toBeTruthy();
     expect(screen.getByText('$100 short')).toBeTruthy();
     expect(screen.getByLabelText('Usual month, $893 left').props.accessibilityState.checked).toBe(true);
@@ -134,6 +164,7 @@ describe('YourMonthCard layout (06.1-56, A-HOME-6)', () => {
 
   it('a picture with no low month shows the word with no sub-line', async () => {
     await renderCard({ picture: { ...picture, low: null } as unknown as MonthPicture });
+    await openMore();
     expect(screen.getByLabelText('Low month')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Low month'));
     expect(screen.queryByTestId('month-bars')).toBeNull();
@@ -142,6 +173,7 @@ describe('YourMonthCard layout (06.1-56, A-HOME-6)', () => {
   it('the records row has an n-of-3 bar and a chevron, and opens the records', async () => {
     const onRecords = jest.fn();
     await renderCard({ recordsUpTo: 'Nov 5', recordMonths: 2, onRecords });
+    await openMore();
     expect(screen.getByText('Records up to Nov 5 · 2 of 3 months')).toBeTruthy();
     expect(screen.getByTestId('month-records-fill').props.style).toEqual(expect.arrayContaining([expect.objectContaining({ width: '67%' })]));
     await fireEvent.press(screen.getByTestId('month-records'));

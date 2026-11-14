@@ -6,6 +6,7 @@
 export const home = {
   kicker: 'DECIDE',
   title: 'Can I afford it?',
+  // 06.1-59 (G-10): the subtitle now sits behind the header's Why? link.
   subtitle: 'Judged on what comes in and goes out of your accounts, not just the price.',
   pastDecisions: 'Past decisions',
   pastDecisionsA11y_one: 'Past decisions, {{count}} to look back on',
@@ -27,7 +28,9 @@ export const home = {
     // 06.1-56 (A-HOME-5, X-4): the short note at the right of the Price label.
     taxAdded: 'Tax is added for you',
     taxEstimate: 'About {{amount}} tax added',
-    taxNotIncluded: 'Tax not included',
+    // 06.1-59 (G-10, section D): the kept short note matches the stepper's "Tax not added"; the reason sits behind Why?.
+    taxNotIncluded: 'Tax not added',
+    taxWhy: 'Tax is added once your region is set.',
     checkIt: 'Check it',
     readsAs: 'Reads as',
   },
@@ -97,6 +100,7 @@ export const home = {
   },
   changedChip: 'Changed: {{change}} · Reset',
   changedChipResetA11y: 'Reset the change: {{change}}',
+  // 06.1-59 (G-10): the two footer sentences moved into the "How this was worked out" sheet the footer row opens.
   footerRecords: 'Answers use {{months}} months of pay and {{count}} spending entries.',
   footerUpdates: 'Every answer updates when you change them in Activity or Grow.',
 } as const;

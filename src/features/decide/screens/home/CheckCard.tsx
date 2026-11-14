@@ -5,6 +5,7 @@
  * primary Check it pill. The pill is always on screen; until the item and a price are there it is dimmed with a hint, and for
  * home words it stays dimmed under the home note (no check is created). While one field holds a price after the words, the
  * "Reads as" chips show what was understood and each applies it. Presentational: the fields and rules come in as props.
+ * 06.1-59 (G-10, section D): the tax note stays short ("Tax not added"); its reason sits behind Why? under the field.
  */
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -20,6 +21,7 @@ import { TextInput, type TextInput as TextInputInstance } from '@/ui/TextInput';
 import { ACCENT_TINT_OPACITY } from '@/theme/tokens';
 import { hapticSelection } from '@/ui/haptics';
 import { NeedLine } from '../ui/NeedLine';
+import { WhyLine } from '../ui/WhyLine';
 import type { WhenChoice } from './useNewCheck';
 
 export interface ReadsAs {
@@ -42,6 +44,8 @@ export interface CheckCardProps {
   currency: string;
   /** The note at the right of the price: tax is added, included, or needs a region. null = none. */
   taxNote: string | null;
+  /** 06.1-59 (G-10): the reason behind the tax note, behind a Why? link under the field; null = none. */
+  taxWhy?: string | null;
   when: WhenChoice;
   onWhen: (when: 'today' | 'payday') => void;
   onPickDate: () => void;
@@ -128,7 +132,7 @@ export function CheckCard({ onWhatRef, ...props }: CheckCardProps) {
         ) : null}
       </View>
 
-      <View style={styles.group}>
+      <View testID="check-price-group" style={styles.group}>
         {/* 06.1-56 (A-HOME-5, X-4): the field leads with the currency symbol; the tax note is a short note at the right of the label. */}
         <MoneyInput
           label={t('decide.screens.home.check.priceLabel')}
@@ -147,6 +151,7 @@ export function CheckCard({ onWhatRef, ...props }: CheckCardProps) {
             )
           }
         />
+        {props.taxWhy == null ? null : <WhyLine testID="check-tax-why">{props.taxWhy}</WhyLine>}
       </View>
 
       {props.reads === null ? null : (

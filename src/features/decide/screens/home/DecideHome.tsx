@@ -6,6 +6,9 @@
  * 06.1-56 (G-8, H-9): laid out as the prototype (D01/D02): no FAB on this tab, keyboard taps pass through to Check it, short dates on
  * the When? chips, an example scrolls the card into view, the card starts fresh once a check's route opens, and Check it waits for
  * the engine inputs so the stepper-or-answer route never depends on load state.
+ * 06.1-59 (G-10, section D, owner decision 4): one short line per card. The subtitle sits behind the header's Why?, the tax note's
+ * reason behind a Why? under the price, and the footer keeps only the legal line plus a "How this was worked out" row that opens the
+ * answer's sheet with the sources sentence in it.
  */
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
@@ -21,10 +24,11 @@ import { useT } from '@/i18n';
 import { useHideFab } from '@/shell/fab/FabProvider';
 import { TabRootScreen } from '@/shell/screen/TabRootScreen';
 import type { TabRootScrollHandle } from '@/shell/screen/useTabRootChrome';
-import { space } from '@/theme/layout';
+import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
+import { StateGlyph } from '@/ui/glyphs/StateGlyph';
 import { hapticSelection } from '@/ui/haptics';
 import { useAmountParser } from '@/ui/money/useAmountParser';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -32,6 +36,7 @@ import { Text } from '@/ui/Text';
 import type { TextInput as TextInputInstance } from '@/ui/TextInput';
 import { showToast } from '@/state/undoToast';
 import { parseQuick } from '../../quickParse';
+import { HowWorkedOutSheet } from '../answer/info/HowWorkedOutSheet';
 import { ErrorCard, OfflineCard } from '../answer/StatusCards';
 import { useMonthPicture } from '../engine/useMonthPicture';
 import { isHomeWords, readKind, readsAsPlan, type ItemKind } from '../logic/kindWords';
@@ -41,6 +46,7 @@ import { QuickEstimateSheet } from '../sheets/QuickEstimateSheet';
 import type { QuickLineKind } from '../sheets/quickLineKinds';
 import { SetupBanner } from '../setup/SetupBanner';
 import { SETUP_ROUTES } from '../setup/SetupChecklist';
+import { WhyLine } from '../ui/WhyLine';
 import { useSetupProgress } from '../setup/useSetupProgress';
 import { useSetupText } from '../setup/useSetupText';
 import { AddRuleSheet } from './AddRuleSheet';
@@ -54,7 +60,7 @@ import { SomethingChanged } from './SomethingChanged';
 import { taxNoteFor } from './taxNote';
 import { buildCheck, useNewCheck, type NewCheckFields, type WhenChoice } from './useNewCheck';
 import { useMoneyRules, useOpenCheckRows, useRuleCrossings } from './useHomeCards';
-import { footerFactsOf, rulesFactsOf, usePastCount, useSetupDoneSeen } from './useHomeFacts';
+import { footerFactsOf, rulesFactsOf, usePastCount, useSetupDoneSeen, workedSourcesOf } from './useHomeFacts';
 import { monthNameOf, YourMonthCard } from './YourMonthCard';
 
 const MAX_QUICK_LINES = 8;
@@ -291,6 +297,9 @@ export function DecideHome() {
   const [addRuleOpen, setAddRuleOpen] = useState(false);
   const rulesFacts = useMemo(() => rulesFactsOf(inputs), [inputs]);
   const footer = useMemo(() => footerFactsOf(inputs), [inputs]);
+  // 06.1-59 (G-10): the footer row opens the answer's "How this was worked out" sheet; the sources sentence lives there now.
+  const [workedOpen, setWorkedOpen] = useState(false);
+  const workedSources = useMemo(() => workedSourcesOf(inputs), [inputs]);
 
   const go = (href: string): void => router.push(href as Href);
   const offlineDate = !isOnline ? dateText(inputs?.recordsAsOf ?? rc.today) : null;
@@ -384,12 +393,24 @@ export function DecideHome() {
             onOpenGrow={() => go('/grow')}
             onDismiss={() => setRuleTarget(null)}
           />
+          {workedOpen && picture !== null ? (
+            <HowWorkedOutSheet
+              picture={picture}
+              currency={currency}
+              sources={workedSources}
+              recordsUpTo={inputs?.recordsAsOf == null ? null : dateText(inputs.recordsAsOf)}
+              note={`${t('decide.screens.home.footerRecords', { months: footer.months, count: footer.entries })} ${t('decide.screens.home.footerUpdates')}`}
+              onClose={() => setWorkedOpen(false)}
+            />
+          ) : null}
           <AddRuleSheet visible={addRuleOpen} doc={rules.doc} currency={currency} categories={categoryList} crossings={crossings} save={rules.save} onDismiss={() => setAddRuleOpen(false)} />
         </>
       }
     >
       <View style={styles.body} onLayout={onBodyLayout}>
-        <Text style={small}>{t('decide.screens.home.subtitle')}</Text>
+        <View testID="home-header">
+          <WhyLine testID="home-why">{t('decide.screens.home.subtitle')}</WhyLine>
+        </View>
 
         <SetupBanner
           progress={setupProgress}
@@ -416,6 +437,7 @@ export function DecideHome() {
           onPriceText={setPriceText}
           currency={currency}
           taxNote={taxNote}
+          taxWhy={tax?.kind === 'unknown' ? t('decide.screens.home.check.taxWhy') : null}
           when={when}
           onWhen={setWhen}
           onPickDate={() => setDatePick({ current: typeof when === 'object' ? when.date : null, set: (d) => setWhen({ date: d }) })}
@@ -494,10 +516,21 @@ export function DecideHome() {
 
         <SomethingChanged />
 
-        <View style={styles.footer}>
-          <Text testID="home-footer-records" style={small}>
-            {t('decide.screens.home.footerRecords', { months: footer.months, count: footer.entries })} {t('decide.screens.home.footerUpdates')}
-          </Text>
+        <View testID="home-footer" style={styles.footer}>
+          {picture === null ? null : (
+            <Pressable
+              testID="home-footer-worked"
+              accessibilityRole="button"
+              onPress={() => {
+                hapticSelection();
+                setWorkedOpen(true);
+              }}
+              style={({ pressed }) => [styles.workedRow, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+            >
+              <Text style={{ ...textRole(pairing, 'label'), fontWeight: '600', color: colors.accent, flexShrink: 1 }}>{t('decide.screens.answer.worked.title')}</Text>
+              <StateGlyph name="chev" color={colors.accent} size={16} />
+            </Pressable>
+          )}
           <Text testID="home-footer-legal" style={small}>
             {t('legal.decideAnswer.footer')}
           </Text>
@@ -512,6 +545,7 @@ const styles = StyleSheet.create({
   examples: { gap: space.gapSm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
   footer: { gap: space.gapSm },
+  workedRow: { minHeight: space.touchMin, flexDirection: 'row', alignItems: 'center', gap: space.gapSm, alignSelf: 'flex-start' },
   pill: { minHeight: space.touchMin, borderRadius: 999, borderWidth: 1.5, paddingHorizontal: space.gapMd, flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
   badge: { minWidth: 22, minHeight: 22, borderRadius: 11, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
 });

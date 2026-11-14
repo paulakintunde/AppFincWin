@@ -66,7 +66,8 @@ describe('SetupBanner', () => {
   it('state 2: one-line row, count, next item, spoken label, bar value', async () => {
     const { onStart } = await banner(FOUR);
     expect(screen.getByText('Decide setup · 4 of 6 done')).toBeTruthy();
-    expect(screen.getByText('Next: Debts · about 1 minute')).toBeTruthy();
+    // 06.1-59 (G-10): the next item is not drawn; the row's tap opens it and its spoken label names it.
+    expect(screen.queryByText('Next: Debts · about 1 minute')).toBeNull();
     const row = screen.getByTestId('setup-banner-row');
     expect(row.props.accessibilityLabel).toBe('Decide setup, 4 of 6 done. Next: Debts.');
     expect(row.props.accessibilityRole).toBe('button');
@@ -79,7 +80,8 @@ describe('SetupBanner', () => {
   it('state 3: says setup is done once, marks it seen, then renders nothing', async () => {
     const onSeeUses = jest.fn();
     await banner(ALL, { userId: 'u1', onSeeUses });
-    expect(screen.getByText('Setup done. Answers use your records.')).toBeTruthy();
+    expect(screen.getByText('Setup done')).toBeTruthy();
+    expect(screen.getByText('Answers use your records.')).toBeTruthy();
     await fireEvent.press(screen.getByText('See what Decide uses'));
     expect(mockMarkSeen).toHaveBeenCalledWith('u1');
     expect(onSeeUses).toHaveBeenCalled();
@@ -103,7 +105,7 @@ describe('SetupBanner', () => {
   it('state 2 with no next item names none', async () => {
     const p = { ...setupProgress(FOUR, TODAY), next: null };
     await wrap(<SetupBanner progress={p} onStart={jest.fn()} onCheckFirst={jest.fn()} setupDoneSeen={false} itemName={itemName} />);
-    expect(screen.getByText('Next:  · about 1 minute')).toBeTruthy();
+    expect(screen.getByTestId('setup-banner-row').props.accessibilityLabel).toBe('Decide setup, 4 of 6 done. Next: .');
   });
 
   it.each([

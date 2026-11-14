@@ -8,6 +8,7 @@
  * 06.1-56 (A-HOME-6): as the prototype: "‹ November ›" between the arrows, one stacked horizontal bar (goes out and left, together
  * what comes in) with a two-line legend, whole currency units, a "$X left" sub-line under each of Usual month / Low month, and a
  * records row with a thin n-of-3 bar and a chevron.
+ * 06.1-59 (G-10, section D): the headline is the card's one line in view; the switch, explainer and records row open under More.
  * Presentational: the engine's picture and bars come in as props.
  */
 import React, { useState } from 'react';
@@ -22,6 +23,7 @@ import { StateGlyph } from '@/ui/glyphs/StateGlyph';
 import { hapticSelection } from '@/ui/haptics';
 import { StackedBar } from '@/ui/StackedBar';
 import { Text } from '@/ui/Text';
+import { MoreRow } from '../ui/MoreRow';
 
 export interface YourMonthCardProps {
   picture: MonthPicture | null;
@@ -119,6 +121,8 @@ export function YourMonthCard(props: YourMonthCardProps) {
     return t(left < 0 ? 'decide.screens.home.month.shortSub' : 'decide.screens.home.month.leftSub', { amount: formatMoney(Math.abs(left)) });
   };
 
+  const hasMore = (past === null && picture !== null) || props.recordsUpTo !== null;
+
   const step = (to: number): void => {
     hapticSelection();
     setBack(to);
@@ -212,40 +216,46 @@ export function YourMonthCard(props: YourMonthCardProps) {
         </View>
       )}
 
-      {past === null && picture !== null ? (
-        <>
-          <View testID="month-basis" accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.home.month.title')} style={[styles.track, { backgroundColor: colors.fill6 }]}>
-            <BasisOption label={t('decide.screens.home.month.usual')} sub={leftSub(picture.usual)} selected={basis === 'usual'} onPress={() => setBasis('usual')} />
-            <BasisOption label={t('decide.screens.home.month.low')} sub={leftSub(picture.low)} selected={basis === 'low'} onPress={() => setBasis('low')} />
-          </View>
-          <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
-            {t(basis === 'low' ? 'decide.screens.home.month.explainLow' : 'decide.screens.home.month.explainUsual')}
-          </Text>
-        </>
-      ) : null}
+      {hasMore ? (
+        // 06.1-59 (G-10, section D): the headline and the bar stay; the usual/low switch, its explainer and the records row sit
+        // behind More.
+        <MoreRow testID="month-more">
+          {past === null && picture !== null ? (
+            <>
+              <View testID="month-basis" accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.home.month.title')} style={[styles.track, { backgroundColor: colors.fill6 }]}>
+                <BasisOption label={t('decide.screens.home.month.usual')} sub={leftSub(picture.usual)} selected={basis === 'usual'} onPress={() => setBasis('usual')} />
+                <BasisOption label={t('decide.screens.home.month.low')} sub={leftSub(picture.low)} selected={basis === 'low'} onPress={() => setBasis('low')} />
+              </View>
+              <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+                {t(basis === 'low' ? 'decide.screens.home.month.explainLow' : 'decide.screens.home.month.explainUsual')}
+              </Text>
+            </>
+          ) : null}
 
-      {props.recordsUpTo === null ? null : (
-        <Pressable
-          testID="month-records"
-          accessibilityRole="button"
-          accessibilityLabel={t('decide.screens.home.month.recordsRow', { date: props.recordsUpTo, count: recordCount })}
-          onPress={() => {
-            hapticSelection();
-            props.onRecords();
-          }}
-          style={[styles.records, { borderTopColor: colors.line1 }]}
-        >
-          <View style={styles.recordsText}>
-            <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
-              {t('decide.screens.home.month.recordsRow', { date: props.recordsUpTo, count: recordCount })}
-            </Text>
-            <View testID="month-records-bar" style={[styles.recordsTrack, { backgroundColor: colors.line4 }]}>
-              <View testID="month-records-fill" style={[styles.recordsFill, { width: `${Math.round((recordCount / RECORD_MONTHS) * 100)}%`, backgroundColor: colors.accent }]} />
-            </View>
-          </View>
-          <View style={[styles.recordsChevron, { borderColor: colors.inkFaint, transform: [{ rotate: '45deg' }] }]} />
-        </Pressable>
-      )}
+          {props.recordsUpTo === null ? null : (
+            <Pressable
+              testID="month-records"
+              accessibilityRole="button"
+              accessibilityLabel={t('decide.screens.home.month.recordsRow', { date: props.recordsUpTo, count: recordCount })}
+              onPress={() => {
+                hapticSelection();
+                props.onRecords();
+              }}
+              style={[styles.records, { borderTopColor: colors.line1 }]}
+            >
+              <View style={styles.recordsText}>
+                <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
+                  {t('decide.screens.home.month.recordsRow', { date: props.recordsUpTo, count: recordCount })}
+                </Text>
+                <View testID="month-records-bar" style={[styles.recordsTrack, { backgroundColor: colors.line4 }]}>
+                  <View testID="month-records-fill" style={[styles.recordsFill, { width: `${Math.round((recordCount / RECORD_MONTHS) * 100)}%`, backgroundColor: colors.accent }]} />
+                </View>
+              </View>
+              <View style={[styles.recordsChevron, { borderColor: colors.inkFaint, transform: [{ rotate: '45deg' }] }]} />
+            </Pressable>
+          )}
+        </MoreRow>
+      ) : null}
     </View>
   );
 }

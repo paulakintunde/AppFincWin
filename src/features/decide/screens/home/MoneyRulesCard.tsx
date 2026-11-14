@@ -4,6 +4,7 @@
  * Grow, and each rule the user set, each a 52+ high row. "+ Add your own rule" opens the add sheet. A rule is a rule, never a line.
  * 06.1-56 (A-HOME-8): each row is the rule's name over a short sub-line, with its own figure at the right ("36%", "$200"). On or
  * Off is in the spoken label only; a rule that is off draws its figure in the faint ink.
+ * 06.1-59 (G-10, section D): the title stays; the intro sentence sits behind Why?.
  */
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -15,6 +16,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { StateGlyph } from '@/ui/glyphs/StateGlyph';
 import { hapticSelection } from '@/ui/haptics';
 import { Text } from '@/ui/Text';
+import { WhyLine } from '../ui/WhyLine';
 import { debtPercentOf, type StoredRule } from './homeCardsModel';
 
 export type RuleTarget =
@@ -118,7 +120,7 @@ export function MoneyRulesCard(props: MoneyRulesCardProps) {
       <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
         {t('decide.screens.sheetsHome.rulesCard.title')}
       </Text>
-      <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{t('decide.screens.sheetsHome.rulesCard.sub')}</Text>
+      <WhyLine testID="money-rules-why">{t('decide.screens.sheetsHome.rulesCard.sub')}</WhyLine>
       <Pressable
         testID="money-rules-net"
         accessibilityRole="button"

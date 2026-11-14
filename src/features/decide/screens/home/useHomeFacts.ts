@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { V3Inputs, V3Series } from '@/engine/decide/v3';
 import { loadSetupDoneSeen } from '@/features/decide/hints/decideHints';
+import type { WorkedSources } from '../answer/info/HowWorkedOutSheet';
 import { deltaFor, usePastDecisions } from '../past/data/usePastDecisions';
 import { lookBackOf } from '../past/lookBack';
 
@@ -43,6 +44,21 @@ export function footerFactsOf(inputs: V3Inputs | null): FooterFacts {
   if (inputs === null) return { months: 0, entries: 0 };
   const full = inputs.months.filter((m) => m.full);
   return { months: full.length, entries: full.reduce((n, m) => n + m.lines.filter((l) => l.role === 'spending').length, 0) };
+}
+
+/**
+ * 06.1-59 (G-10): the sources the "How this was worked out" sheet lists, read the same way the answer reads them, so Decide home's
+ * footer row opens the same sheet with the same rows.
+ */
+export function workedSourcesOf(inputs: V3Inputs | null): WorkedSources {
+  const firstMonth = inputs?.months[0]?.month ?? null;
+  return {
+    activityFrom: firstMonth === null ? null : `${firstMonth}-01`,
+    activityTo: inputs === null ? null : (inputs.recordsAsOf ?? inputs.asOf),
+    netSize: inputs?.safetyNet?.size ?? null,
+    netLocked: inputs?.safetyNet?.locked ?? true,
+    rulesCount: inputs?.limits.lines.length ?? 0,
+  };
 }
 
 /** The count on the Past decisions pill: decisions with a look-back to read. */

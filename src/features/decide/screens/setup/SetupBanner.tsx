@@ -3,6 +3,8 @@
 // (per device) and then renders nothing. Presentational: progress comes in as a prop.
 // 06.1-56 (A-HOME-9, D01s): the started row has a collapse chevron. Collapsed, it is a slim pill with the count and the bar, and a
 // tap opens it again. The choice lasts for the app session (not stored): setup stays in view, only smaller.
+// 06.1-59 (G-10, section D): one short line per state. The started row shows the count and the bar; its tap opens the next item and
+// its spoken label names it. The new card's second sentence sits behind Why?; the done note is a title over one sentence.
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -17,6 +19,7 @@ import { StateGlyph } from '@/ui/glyphs/StateGlyph';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { SETUP_ORDER, type SetupItemId, type SetupProgress } from '../logic/setupProgress';
+import { WhyLine } from '../ui/WhyLine';
 
 const TILE = 48;
 
@@ -95,7 +98,8 @@ export function SetupBanner({ progress, onStart, onCheckFirst, onSeeUses, setupD
     if (setupDoneSeen || markedSeen) return null;
     return (
       <View testID="setup-banner-done" style={[styles.card, { backgroundColor: colors.surface }]}>
-        <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.setup.banner.doneTitle')}</Text>
+        <Text accessibilityRole="header" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.setup.banner.doneTitle')}</Text>
+        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.screens.setup.banner.doneSub')}</Text>
         <Pill
           variant="secondary"
           label={t('decide.screens.setup.banner.doneLink')}
@@ -118,10 +122,11 @@ export function SetupBanner({ progress, onStart, onCheckFirst, onSeeUses, setupD
             <StateGlyph name="checkbuy" color={colors.accent} size={26} />
           </View>
           <View style={styles.headText}>
-            <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{t('decide.screens.setup.banner.newTitle')}</Text>
+            <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{t('decide.screens.setup.banner.newTitle')}</Text>
             <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.screens.setup.banner.newSub')}</Text>
           </View>
         </View>
+        <WhyLine testID="setup-banner-why">{t('decide.screens.setup.banner.newWhy')}</WhyLine>
         <SetupBar done={0} />
         <View style={styles.actions}>
           <Pill
@@ -171,7 +176,6 @@ export function SetupBanner({ progress, onStart, onCheckFirst, onSeeUses, setupD
       >
         <View style={styles.rowText}>
           <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.setup.banner.rowTitle', { count: progress.doneCount })}</Text>
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('decide.screens.setup.banner.rowNext', { next })}</Text>
           <SetupBar done={progress.doneCount} />
         </View>
         <StateGlyph name="chev" color={colors.inkMuted} size={18} />

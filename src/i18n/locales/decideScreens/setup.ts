@@ -7,13 +7,18 @@
 export const setup = {
   banner: {
     newTitle: 'Set up Decide',
-    newSub: '6 short steps, about 4 minutes. Until then, answers use quick estimates.',
+    // 06.1-59 (G-10): one sentence in view; the second sits behind Why?.
+    newSub: '6 short steps, about 4 minutes.',
+    newWhy: 'Until then, answers use quick estimates.',
     start: 'Start setup',
     checkFirst: 'Check a price first',
     rowTitle: 'Decide setup · {{count}} of 6 done',
+    // 06.1-59 (G-10): no longer drawn on the started row; the row's tap opens the next item and its spoken label names it.
     rowNext: 'Next: {{next}} · about 1 minute',
     rowA11y: 'Decide setup, {{count}} of 6 done. Next: {{next}}.',
-    doneTitle: 'Setup done. Answers use your records.',
+    // 06.1-59 (G-10): the title and its one sentence, split.
+    doneTitle: 'Setup done',
+    doneSub: 'Answers use your records.',
     doneLink: 'See what Decide uses',
     barA11y: '{{count}} of 6 steps done',
     // 06.1-56 (A-HOME-9): the chevron that makes the started row a slim pill for this session.

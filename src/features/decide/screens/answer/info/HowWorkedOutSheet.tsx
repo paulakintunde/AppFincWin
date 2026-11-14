@@ -1,6 +1,7 @@
 // 06.1-35 (CO-D-57, D57): "How this was worked out". The month picture's lines in order (balance on the day, after bills due before
 // payday, expected at month end), the unused overdraft on its own line, then where the figures came from. Figures are read from
 // the engine's MonthPicture, never recomputed here.
+// 06.1-59 (G-10): Decide home's footer row opens this same sheet; the footer's sources sentence comes in as `note`.
 import React from 'react';
 import { useT } from '@/i18n';
 import type { MonthPicture } from '@/engine/decide/v3';
@@ -25,10 +26,12 @@ export interface HowWorkedOutSheetProps {
   currency: string;
   sources: WorkedSources;
   recordsUpTo?: string | null;
+  /** 06.1-59 (G-10): a line under the sources, e.g. Decide home's "Answers use … months of pay …". null = none. */
+  note?: string | null;
   onClose: () => void;
 }
 
-export function HowWorkedOutSheet({ picture, currency, sources, recordsUpTo = null, onClose }: HowWorkedOutSheetProps) {
+export function HowWorkedOutSheet({ picture, currency, sources, recordsUpTo = null, note = null, onClose }: HowWorkedOutSheetProps) {
   const t = useT();
   const { formatMoney, formatDate } = useMoneyFormatter(true);
   const m = (minor: number): string => formatMoney(makeMoney(minor, currency));
@@ -55,6 +58,7 @@ export function HowWorkedOutSheet({ picture, currency, sources, recordsUpTo = nu
         <LabelValueRow label={t('decide.screens.answer.worked.netAndGoals')} sub={t('decide.screens.answer.worked.fromGrow')} value={net} />
         <LabelValueRow label={t('decide.screens.answer.worked.rules')} value={t('decide.screens.answer.worked.rulesCount', { count: sources.rulesCount })} />
       </Block>
+      {note !== null ? <Body testID="worked-note" muted>{note}</Body> : null}
       {recordsUpTo !== null ? <Body muted>{t('decide.screens.answer.worked.recordsDate', { date: recordsUpTo })}</Body> : null}
       <Body muted>{t('legal.decideAnswer.footer')}</Body>
     </InfoSheet>
