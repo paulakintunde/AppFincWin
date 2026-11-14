@@ -297,7 +297,7 @@ describe('one short line per card on Decide home (06.1-59, G-10)', () => {
     expect(within(screen.getByTestId('home-footer')).getByText(LEGAL)).toBeTruthy();
   });
 
-  it('Not ready card: one sentence in view, apart from the "More may follow" caveat routed to the answer plan (06.1-67)', async () => {
+  it('Not ready card: one sentence in view; "More may follow" opens under its More row (06.1-67)', async () => {
     const item: ReadinessItem = {
       kind: 'bill', code: 'past_month_missing', month: '2026-10', seriesId: 's-net', envelopeId: null, lineId: 'l-net', name: 'Netflix',
       amount: minorUnits(1199), date: '2026-10-03',
@@ -317,12 +317,12 @@ describe('one short line per card on Decide home (06.1-59, G-10)', () => {
       />,
     );
     await screen.findByTestId('answer-not-ready');
-    // 06.1-68 owns StatusCards.tsx in this wave; moving this caveat behind More is routed to 06.1-67 (H-6, the answer's short
-    // line first). When it moves, this exception goes and the card must still read as one sentence.
-    const ROUTED_TO_67: readonly string[] = [answer.notReady.moreMayFollow];
     const shown = sentences('answer-not-ready');
-    expect(shown.filter((s) => !ROUTED_TO_67.includes(s)).length).toBeLessThanOrEqual(1);
+    expect(shown.length).toBeLessThanOrEqual(1);
     expect(shown[0]).toMatch(/^First: Netflix/);
+    expect(shown).not.toContain(answer.notReady.moreMayFollow);
+    await fireEvent.press(screen.getByTestId('answer-not-ready-more'));
+    expect(await screen.findByText(answer.notReady.moreMayFollow)).toBeTruthy();
   });
 });
 

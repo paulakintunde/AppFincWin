@@ -6,6 +6,9 @@
 // and no buy or save until there is a verdict (CS-11). A decided check shows its outcome line in place of the action bar (FQ8).
 // 06.1-68 (CF-3): while the verdict is being worked out again it dims and says "Updating…"; (CB-11) answered readiness rows read
 // "Saved, updating…" until the engine drops them.
+// 06.1-67 (H-6, DS-3): short line first. One notice above the verdict (splitNotices: the one that changes the answer most); the
+// verdict, the first fact, one short missing-figures line whose More opens Give it more to go on, then Why? for every other fact
+// and notice (FactLines).
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { Evaluation, LocalDate, Purpose, Result, YearMonth } from '@/engine/decide/v3';
@@ -22,6 +25,7 @@ import { AnswerTopBar, type AnswerTopBarProps, type PayMode, type WhenChoice } f
 import { FactLines } from './FactLines';
 import type { ReadinessFixRow, WaiverChoice } from '../logic/readinessFixes';
 import type { Line } from '../logic/sayResult';
+import { splitNotices } from '../logic/answerLines';
 import { LegalBlock } from './LegalBlock';
 import { OptionChips, type OptionKey } from './OptionChips';
 import { ErrorCard, NotReadyCard, NotReadyExits, OfflineCard, OutcomeLine } from './StatusCards';
@@ -40,7 +44,9 @@ export type AnswerAction =
   | { kind: 'finishSetup' }
   | { kind: 'fromEstimates' }
   | { kind: 'deleteCheck' }
-  | { kind: 'openPast' };
+  | { kind: 'openPast' }
+  /** 06.1-67 (CS-4): the missing-figures line's More: open Give it more to go on. */
+  | { kind: 'giveMore' };
 
 /** What the frame needs to know about the check, already written for the screen. */
 export interface AnswerCheckView {
@@ -178,15 +184,15 @@ export function AnswerFrame({
     // D-68: a short plan judged by cash reads the one-off rows, like a payment made once.
     const once = check.pay === 'cash' || result.facts.some((f) => f.code === 'short_plan_from_cash');
     showActions = true;
+    // DS-3: at most one notice above the verdict; the rest open under the facts' Why?.
+    const notices = splitNotices(lines.notices);
     body = (
       <>
-        {lines.notices.length > 0 ? (
+        {notices.lead !== null ? (
           <View testID="answer-notices" style={styles.group}>
-            {lines.notices.map((n, i) => (
-              <Text key={`${n.code}-${i}`} testID={`answer-notice-${n.code}`} style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
-                {n.text}
-              </Text>
-            ))}
+            <Text testID={`answer-notice-${notices.lead.code}`} style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
+              {notices.lead.text}
+            </Text>
           </View>
         ) : null}
         {updating ? (
@@ -196,7 +202,14 @@ export function AnswerFrame({
         ) : null}
         <View testID="answer-verdict-area" accessibilityState={{ busy: updating }} style={[styles.verdict, updating ? styles.updating : null]}>
           <VerdictCard code={result.code} variant={result.variant} once={once} values={lines.verdictValues} lead={lines.afterBuy.lead?.text ?? null} boughtOn={outcome === null ? (lines.afterBuy.boughtOn?.text ?? null) : null} />
-          <FactLines facts={[...lines.facts, ...lines.missing]} country={check.country ?? null} renderAfter={renderAfterFact} />
+          <FactLines
+            facts={lines.facts}
+            notices={notices.rest}
+            missingCount={lines.missing.length}
+            onMissingMore={() => onAction({ kind: 'giveMore' })}
+            country={check.country ?? null}
+            renderAfter={renderAfterFact}
+          />
         </View>
         <OptionChips present={check.options} purpose={check.purpose} onOption={onOption} />
         {children !== undefined ? (

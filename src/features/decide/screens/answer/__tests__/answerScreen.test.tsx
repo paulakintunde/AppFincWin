@@ -437,6 +437,10 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
     expect(screen.getAllByText('Fix')).toHaveLength(1);
     expect(screen.getByTestId('answer-fix-no_income_figures')).toBeTruthy();
     expect(screen.getByText(/^First: /)).toBeTruthy();
+    // 06.1-67 (G-10): the caveat opens under the card's More row.
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('answer-not-ready-more'));
+    });
     expect(screen.getByText('More may follow once this is done.')).toBeTruthy();
     // No verdict, no buy or save, no pay or When controls, and never "Bought today." (DS-4).
     expect(screen.queryByTestId('answer-verdict')).toBeNull();
@@ -490,6 +494,11 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
     const run = ledgerRun('N05');
     load(run);
     await open();
+    // 06.1-67 (CS-1): every fact after the first opens under Why?.
+    expect(screen.queryByTestId('answer-unlock-net')).toBeNull();
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('answer-facts-why'));
+    });
     await act(async () => {
       fireEvent.press(screen.getByTestId('answer-unlock-net'));
     });
@@ -556,6 +565,10 @@ describe('the Not ready card on the answer screen (06.1-44, G-1, C-1, C-2)', () 
     expect(screen.getByText('Not ready yet')).toBeTruthy();
     expect(screen.queryByText(/things? to finish/)).toBeNull();
     expect(screen.getByText(/^First: Netflix, \$11\.99 due .*, isn’t in your records yet\.$/)).toBeTruthy();
+    // 06.1-67 (G-10): the caveat opens under the card's More row.
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('answer-not-ready-more'));
+    });
     expect(screen.getByText('More may follow once this is done.')).toBeTruthy();
     expect(screen.queryByTestId('readiness-row-1')).toBeNull();
     expect(screen.queryByText(/quick estimates/i)).toBeNull();
@@ -985,5 +998,50 @@ describe('06.1-68 (H-7): answers show at once and can be taken back', () => {
     expect(next.layerAnswers['L0.plan_name']).toBe('Car loan');
     expect(next.layerAnswers).not.toHaveProperty('plan_name');
     expect(mockState.flush).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('06.1-67 (H-6): the answer, short line first', () => {
+  const tap = async (node: Parameters<typeof fireEvent.press>[0]): Promise<void> => {
+    await act(async () => {
+      fireEvent.press(node);
+    });
+  };
+
+  it('DN-4: Full cost, with tax opens the Full cost sheet, never a stepper step', async () => {
+    load(ledgerRun('N02'));
+    await open();
+    await tap(screen.getByTestId('answer-detail-fullCost'));
+    expect(screen.getByTestId('fullcost-item')).toBeTruthy();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('DN-4: while the answer updates, a tap on a More detail row opens nothing', async () => {
+    load(ledgerRun('N02'), { updating: true });
+    await open();
+    await tap(screen.getByTestId('answer-detail-fullCost'));
+    await tap(screen.getByTestId('answer-detail-running'));
+    expect(screen.queryByTestId('fullcost-item')).toBeNull();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('CS-4 / CS-5: the missing-figures line opens Give it more to go on, which lists as many lines as its row counts', async () => {
+    const run = ledgerRun('N02');
+    load(run, { evaluation: withResult(run, (r) => ({ ...r, missing: ['everyday_unknown', 'records_look_behind'] as never })) });
+    await open();
+    const row = screen.getByTestId('answer-detail-giveMore');
+    const counted = Number(/^(\d+)/.exec(String(row.props.accessibilityLabel))?.[1]);
+    await tap(screen.getByTestId('answer-missing-more'));
+    const listed = [...screen.queryAllByTestId('give-more-next'), ...screen.queryAllByTestId('give-more-readiness'), ...screen.queryAllByTestId('give-more-missing')];
+    expect(screen.getAllByTestId('give-more-missing')).toHaveLength(2);
+    expect(listed).toHaveLength(counted);
+    expect(screen.queryByText(/Remind me/)).toBeNull();
+  });
+
+  it('CS-7: Running costs and Side by side carry the chevron; the rows that open a sheet do not', async () => {
+    load(ledgerRun('N02'));
+    await open();
+    const chevrons = screen.getAllByTestId(/^answer-detail-.+-chevron$/).map((n) => String(n.props.testID));
+    expect(chevrons).toEqual(['answer-detail-running-chevron', 'answer-detail-sideBySide-chevron']);
   });
 });

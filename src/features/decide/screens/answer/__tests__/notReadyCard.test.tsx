@@ -172,6 +172,9 @@ describe('the lead line (06.1-66 OQ-66-1, DN-10: no count)', () => {
     expect(screen.getByText('Not ready yet')).toBeTruthy();
     expect(screen.queryByText(/thing/)).toBeNull();
     expect(screen.getByText('First: Netflix, $11.99 due D10-03, isn’t in your records yet.')).toBeTruthy();
+    // 06.1-67 (G-10): the caveat opens under the card's More row.
+    expect(screen.queryByText('More may follow once this is done.')).toBeNull();
+    await press(screen.getByTestId('answer-not-ready-more'));
     expect(screen.getByText('More may follow once this is done.')).toBeTruthy();
   });
 
@@ -275,6 +278,9 @@ describe('06.1-66 (OQ-66-2, DS-2): one layout for Not ready yet and More needed'
     expect(screen.getByText('Not ready yet')).toBeTruthy();
     expect(within(screen.getByTestId('answer-not-ready-missing')).getByText('First: To compare, add your income figures.')).toBeTruthy();
     expect(screen.getByTestId('fix-link')).toBeTruthy();
+    // 06.1-67 (G-10): the caveat opens under the card's More row.
+    expect(screen.queryByText('More may follow once this is done.')).toBeNull();
+    await press(screen.getByTestId('answer-not-ready-more'));
     expect(screen.getByText('More may follow once this is done.')).toBeTruthy();
     expect(screen.queryByText(/Bought today/)).toBeNull();
   });

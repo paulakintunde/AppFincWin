@@ -1,6 +1,7 @@
 // 06.1-14 (APP-10, D-52): the offline, error and not-ready cards. One card look. The error card never says "not found" and shows
 // no figure; the not-ready card lists what is missing and never reads like a verdict. 06.1-44: the not-ready card names each item.
 // 06.1-66: the Not ready exits (FQ6) and the outcome line of a decided check (FQ8).
+// 06.1-67 (G-10, routed from 06.1-59): the Not ready card keeps one sentence in view; "More may follow" opens under a More row.
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
@@ -13,6 +14,7 @@ import { Pill } from '@/ui/Pill';
 import { LINK_HIT_SLOP, usePressFeedback } from '@/ui/pressFeedback';
 import { Text } from '@/ui/Text';
 import type { ReadinessFixRow } from '../logic/readinessFixes';
+import { MoreRow } from '../ui/MoreRow';
 import { ReadinessFixList, type ReadinessFixListProps } from './ReadinessFixList';
 
 function Card({ testID, children }: { testID: string; children: React.ReactNode }) {
@@ -97,11 +99,7 @@ export function NotReadyCard({ rows, missing = null, canUseEstimates, onFinishSe
           {missing.after}
         </View>
       ) : null}
-      {hasItem ? (
-        <Text testID="answer-not-ready-more" style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>
-          {t('decide.screens.answer.notReady.moreMayFollow')}
-        </Text>
-      ) : null}
+      {hasItem ? <MoreRow testID="answer-not-ready-more">{t('decide.screens.answer.notReady.moreMayFollow')}</MoreRow> : null}
       {canUseEstimates ? (
         <>
           <Pill variant="primary" label={t('decide.screens.answer.notReady.fromEstimates')} onPress={onFromEstimates} />

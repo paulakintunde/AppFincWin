@@ -13,6 +13,8 @@
 // 06.1-68 (H-7): a readiness answer changes its row at once ("Saved, updating…", choices off) until the engine agrees
 // (useAnsweredRows); the verdict dims with "Updating…" while it is worked out again; "None" and "Change answer" toast with Undo; a
 // plan named in the plan sheet is stored with its pay change in one write (L0.plan_name, 06.1-57).
+// 06.1-67 (H-6): the missing-figures line opens Give it more to go on, whose row count reads the sheet's own list (CS-5); the More
+// detail rows hold still and take no tap while the answer updates (DN-4); "Full cost, with tax" opens the Full cost sheet.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { router, type Href } from 'expo-router';
@@ -48,6 +50,7 @@ import { useMonthPicture } from '../engine/useMonthPicture';
 import { DatePickerSheet } from '../sheets/DatePickerSheet';
 import { EnvelopeAccountSheet, type SetEnvelopeAccount } from '../sheets/EnvelopeAccountSheet';
 import { InstallmentPlanSheet } from '../sheets/InstallmentPlanSheet';
+import { giveMoreCount as countGiveMore } from '../logic/answerLines';
 import { estimatesCanAnswer, readinessFixRows, type ReadinessFixRow, type WaiverChoice } from '../logic/readinessFixes';
 import { useNetUnanswered } from '../firstAnswer/useFirstAnswerGate';
 import { withPlanName } from '../check/planName';
@@ -353,6 +356,9 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         goDecideHome(router);
         return;
       }
+      case 'giveMore':
+        setSheet('giveMore');
+        return;
       case 'openPast':
         // 06.1-66 (FQ8): a decided check's Past decisions entry has the check's own id.
         pushOnce(asHref(`/decide/past/${id}`));
@@ -481,9 +487,9 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
   const runningLine = runningMonthly > 0 ? t('decide.screens.answer.told.runningMonthly', { monthly: money(runningMonthly) }) : null;
   const runningValue = runningMonthly > 0 ? t('decide.screens.answer.runningSome', { monthly: money(runningMonthly) }) : t('decide.screens.answer.runningNone');
 
-  // 06.1-68 (CF-2): an answered row no longer counts as something to give, before the engine catches up.
-  const openRows = rows.filter((r) => !answeredRows.has(r.id)).length;
-  const giveMoreCount = result === null ? 0 : (result.confidence.nextStep !== null ? 1 : 0) + lines.missing.length + openRows;
+  // 06.1-67 (CS-5): the count is the number of lines the sheet lists (one helper for both). Answered readiness rows (06.1-68) sit on
+  // the Not ready card, which has no More detail rows.
+  const giveMoreCount = result === null ? 0 : countGiveMore(lines);
   const country = view.country ?? null;
   const showHelp = result !== null && result.facts.some((f) => f.code === 'free_help') && freeHelpFor(country) !== null;
 
@@ -552,6 +558,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
           giveMoreCount={giveMoreCount}
           showHelp={showHelp}
           showSideBySide={check.price !== null}
+          updating={engine.updating}
           onOpen={onOpenRow}
         />
       </>
