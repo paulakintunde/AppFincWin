@@ -79,6 +79,24 @@ export const size = {
   homeAccountTile: 34,
 } as const;
 
+/**
+ * 06.2 D-08: the six named spacing steps. Gaps between groups are at least twice the gaps inside them.
+ */
+export const step = {
+  // hair: icon to its word; tight: chips in a row, tiles in a grid; row: inside a card, icon to text;
+  // card: card padding; edge: screen edge; section: between cards and groups.
+  hair: 4, tight: 8, row: 12, card: 16, edge: 22, section: 28,
+} as const;
+
+/** 06.2 D-09: rows have two heights only, one line and two lines. */
+export const rowHeight = { one: 52, two: 64 } as const;
+
+/** 06.2 D-10: icon tiles are 36 (every list row) and 48 (quick actions, empty screens). */
+export const tile = { row: 36, big: 48 } as const;
+
+/** 06.2 D-05: icon sizes. 16 beside a word in chips and badges, 20 in a row tile, 24 in a big tile. */
+export const iconSize = { inline: 16, row: 20, big: 24 } as const;
+
 export interface ScreenInsets {
   top: number;
   headerTop: number;
