@@ -151,6 +151,60 @@ describe('Add rule and Something changed (D50, D53, A-SH-3)', () => {
     expect(screen.getByText('Close')).toBeTruthy();
   });
 
+  it('Add rule (OQ-80-1 A): a kind already on the list is not offered, so adding never fills that rule', async () => {
+    const save = jest.fn(() => 's');
+    const largest = { id: 'own_largest', kind: 'largest' as const, on: false, value: 90_000, categoryId: null };
+    await wrap(<AddRuleSheet visible doc={{ v: 1, rules: [largest] }} currency="USD" categories={[{ id: 'food', name: 'Food' }]} crossings={() => []} save={save} onDismiss={jest.fn()} />);
+    expect(screen.queryByTestId('add-rule-kind-largest')).toBeNull();
+    expect(screen.queryByText('Already added')).toBeNull();
+    for (const id of ['category_cap', 'category_share', 'keep']) expect(screen.getByTestId(`add-rule-kind-${id}`)).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Keep at least'));
+    const field = screen.getByLabelText('Value');
+    await fireEvent.changeText(field, '300');
+    await fireEvent(field, 'blur');
+    await fireEvent.press(screen.getByLabelText('Add rule'));
+    expect(save).toHaveBeenCalledTimes(1);
+    // The largest-purchase rule is kept exactly as it was; the new rule is added beside it.
+    expect(save.mock.calls[0]).toEqual([
+      { doc: { v: 1, rules: [largest, { id: 'own_keep', kind: 'keep', on: true, value: 30_000, categoryId: null }] } },
+      'ruleAdded',
+    ]);
+  });
+
+  it('Add rule (DB-13): when off, a NeedLine under it says why, and goes once the rule is ready', async () => {
+    await wrap(<AddRuleSheet visible doc={EMPTY_RULES} currency="USD" categories={[{ id: 'food', name: 'Food' }]} crossings={() => []} save={jest.fn()} onDismiss={jest.fn()} />);
+    expect(screen.getByLabelText('Add rule').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByTestId('add-rule-need')).toHaveTextContent('A kind and a value are needed.');
+    await fireEvent.press(screen.getByLabelText('Spending in one category at most'));
+    expect(screen.getByTestId('add-rule-need')).toHaveTextContent('A kind and a value are needed.');
+    const field = screen.getByLabelText('Value');
+    await fireEvent.changeText(field, '200');
+    await fireEvent(field, 'blur');
+    expect(screen.getByTestId('add-rule-need')).toHaveTextContent('A category is needed.');
+    await fireEvent.press(screen.getByLabelText('Food'));
+    expect(screen.getByLabelText('Add rule').props.accessibilityState.disabled).toBe(false);
+    expect(screen.queryByTestId('add-rule-need')).toBeNull();
+  });
+
+  it('Add rule (DB-13): at the cap the cap line is the reason, with no NeedLine', async () => {
+    const five = { v: 1 as const, rules: [1, 2, 3, 4, 5].map((n) => ({ id: `own_category_cap_${n}`, kind: 'category_cap' as const, on: true, value: n, categoryId: 'c' })) };
+    await wrap(<AddRuleSheet visible doc={five} currency="USD" categories={[]} crossings={() => []} save={jest.fn()} onDismiss={jest.fn()} />);
+    expect(screen.getByText('Up to 5 of your own rules.')).toBeTruthy();
+    expect(screen.queryByTestId('add-rule-need')).toBeNull();
+  });
+
+  it('Add rule: the toast carries the rule step’s Undo label', async () => {
+    const { showToast } = jest.requireMock('@/state/undoToast') as { showToast: jest.Mock };
+    const save = jest.fn(() => 'step-7');
+    await wrap(<AddRuleSheet visible doc={EMPTY_RULES} currency="USD" categories={[]} crossings={() => []} save={save} onDismiss={jest.fn()} />);
+    await fireEvent.press(screen.getByLabelText('Largest single purchase'));
+    const field = screen.getByLabelText('Value');
+    await fireEvent.changeText(field, '500');
+    await fireEvent(field, 'blur');
+    await fireEvent.press(screen.getByLabelText('Add rule'));
+    expect(showToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.screens.sheetsHome.addRule.toast', params: { undoLabel: 'ruleAdded' } }, stepId: 'step-7' });
+  });
+
   it('Something changed: grouped cards with the tint on the chosen rows, and still nothing chosen for the person', async () => {
     const onSave = jest.fn();
     await wrap(

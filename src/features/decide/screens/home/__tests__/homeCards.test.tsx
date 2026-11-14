@@ -213,7 +213,7 @@ describe('RuleEditSheet', () => {
     expect(hapticWarning).toHaveBeenCalledTimes(1);
     expect(hapticLight).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith(
-      expect.objectContaining({ tone: 'warning', stepId: 'step-9', text: { key: 'decide.screens.sheetsHome.rule.crosses', params: { count: 1, item: 'Headphones' } } }),
+      expect.objectContaining({ tone: 'warning', stepId: 'step-9', text: { key: 'decide.screens.sheetsHome.rule.crosses', params: { count: 1, item: 'Headphones', undoLabel: 'ruleEdited' } } }),
     );
   });
 

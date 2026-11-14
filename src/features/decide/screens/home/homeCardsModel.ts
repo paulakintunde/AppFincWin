@@ -9,8 +9,20 @@
  * Up to 5 of the user's own rules (keep, largest and category rules together), matching the engine's own-line limit (D-12).
  */
 
-import { MAX_RULE_PERCENT } from '@/features/decide/snapshot/v3/rulesDoc';
+import { kindTaken, MAX_RULE_PERCENT, type OwnRuleKind, type RulesDoc } from '@/features/decide/snapshot/v3/rulesDoc';
 export * from '@/features/decide/snapshot/v3/rulesDoc';
+
+/** The kinds "Add a rule" can list, in the order it lists them. */
+export const ADD_RULE_KINDS: readonly OwnRuleKind[] = ['category_cap', 'category_share', 'largest', 'keep'];
+
+/**
+ * 06.1-80 (DC-7, OQ-80-1 A): the kinds "Add your own rule" offers. A kind already on the list (Keep at least or Largest single
+ * purchase, on or off) is left out: it is changed from its own row, so adding never quietly fills a rule that is already there.
+ * Category rules can repeat, so they are always offered.
+ */
+export function kindsOffered(doc: RulesDoc): OwnRuleKind[] {
+  return ADD_RULE_KINDS.filter((k) => !kindTaken(doc, k));
+}
 
 /** The debt share as stored text ("30") to whole percent; null when off or unreadable. */
 export function debtPercentOf(dsrLine: string | null): number | null {

@@ -4,6 +4,8 @@
  * pre-selected. The save goes through commitRule, the same crossing check as editing.
  * 06.1-58 (A-SH-3): the kinds sit in one grouped card; the chosen kind has the accent tint as well as the filled dot. The dismiss
  * button says Close.
+ * 06.1-80 (DC-7, OQ-80-1 A): only kinds not already on the list are offered (kindsOffered), so "Add rule" always adds a rule and
+ * never quietly fills one that is there. DB-13: when "Add rule" is off below the cap, a NeedLine under it says what is missing.
  */
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -18,9 +20,10 @@ import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Stepper } from '@/ui/Stepper';
 import { Text } from '@/ui/Text';
+import { NeedLine } from '../ui/NeedLine';
 import { commitRule, type RuleLabel } from './commitRule';
 import { OptionCard, OptionRow } from './OptionCard';
-import { canAddRule, kindTaken, newRuleId, upsertRule, type Crossing, type OwnRuleKind, type RulesDoc } from './homeCardsModel';
+import { canAddRule, kindsOffered, newRuleId, upsertRule, type Crossing, type OwnRuleKind, type RulesDoc } from './homeCardsModel';
 import type { RulesPatch } from './useHomeCards';
 
 export interface AddRuleSheetProps {
@@ -33,12 +36,12 @@ export interface AddRuleSheetProps {
   onDismiss: () => void;
 }
 
-const KINDS: readonly { kind: OwnRuleKind; title: string; sub: string }[] = [
-  { kind: 'category_cap', title: 'category', sub: 'categorySub' },
-  { kind: 'category_share', title: 'categoryShare', sub: 'categoryShareSub' },
-  { kind: 'largest', title: 'largest', sub: 'largestSub' },
-  { kind: 'keep', title: 'keep', sub: 'keepSub' },
-];
+const COPY: Readonly<Record<OwnRuleKind, { title: string; sub: string }>> = {
+  category_cap: { title: 'category', sub: 'categorySub' },
+  category_share: { title: 'categoryShare', sub: 'categoryShareSub' },
+  largest: { title: 'largest', sub: 'largestSub' },
+  keep: { title: 'keep', sub: 'keepSub' },
+};
 
 export function AddRuleSheet(props: AddRuleSheetProps) {
   return props.visible ? <AddRuleForm {...props} /> : null;
@@ -52,42 +55,42 @@ function AddRuleForm({ doc, currency, categories, crossings, save, onDismiss }: 
   const [amount, setAmount] = useState<number | null>(null);
   const [percentValue, setPercentValue] = useState(10);
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
-  const needsCategory = kind === 'category_cap' || kind === 'category_share';
+  const offered = kindsOffered(doc);
+  // A kind that left the list while the sheet was open (added elsewhere) counts as not chosen.
+  const chosen = kind !== null && offered.includes(kind) ? kind : null;
+  const needsCategory = chosen === 'category_cap' || chosen === 'category_share';
   const open = canAddRule(doc);
-  const ready = open && kind !== null && (!needsCategory || categoryId !== null) && (kind === 'category_share' || (amount !== null && amount > 0));
+  const hasValue = chosen === 'category_share' || (amount !== null && amount > 0);
+  const ready = open && chosen !== null && (!needsCategory || categoryId !== null) && hasValue;
+  // DB-13: the reason "Add rule" is off. At the cap the cap line says it, so no NeedLine.
+  const need = !open || ready ? null : chosen !== null && hasValue && needsCategory ? t('decide.screens.sheetsHome.addRule.needCategory') : t('decide.screens.sheetsHome.addRule.need');
 
   const add = () => {
-    if (!ready || kind === null) return;
-    const value = kind === 'category_share' ? percentValue : (amount ?? 0);
-    const next = upsertRule(doc, { id: newRuleId(kind, doc), kind, on: true, value, categoryId: needsCategory ? categoryId : null });
+    if (!ready || chosen === null) return;
+    const value = chosen === 'category_share' ? percentValue : (amount ?? 0);
+    const next = upsertRule(doc, { id: newRuleId(chosen, doc), kind: chosen, on: true, value, categoryId: needsCategory ? categoryId : null });
     commitRule({ patch: { doc: next }, label: 'ruleAdded', crossings, save, doneKey: 'decide.screens.sheetsHome.addRule.toast' });
     onDismiss();
   };
 
   const title = t('decide.screens.sheetsHome.addRule.title');
   return (
-    <Sheet visible onDismiss={onDismiss} accessibilityLabel={title} dirty={kind !== null}>
+    <Sheet visible onDismiss={onDismiss} accessibilityLabel={title} dirty={chosen !== null}>
       <SheetHeader title={title} cancelLabel={t('decide.screens.sheetsHome.rule.close')} onCancel={onDismiss} />
       <SheetScroll contentContainerStyle={styles.column}>
         <Text style={small}>{t('decide.screens.sheetsHome.addRule.kindQ')}</Text>
         <OptionCard label={t('decide.screens.sheetsHome.addRule.kindQ')} testID="add-rule-kinds">
-          {KINDS.map((k, i) => {
-            const taken = kindTaken(doc, k.kind);
-            const label = t(`decide.screens.sheetsHome.addRule.${k.title}` as never);
-            return (
-              <OptionRow
-                key={k.kind}
-                testID={`add-rule-kind-${k.kind}`}
-                first={i === 0}
-                title={label}
-                sub={taken ? t('decide.screens.sheetsHome.addRule.taken') : t(`decide.screens.sheetsHome.addRule.${k.sub}` as never)}
-                accessibilityLabel={taken ? `${label}, ${t('decide.screens.sheetsHome.addRule.taken')}` : label}
-                selected={kind === k.kind}
-                disabled={taken}
-                onPress={() => setKind(k.kind)}
-              />
-            );
-          })}
+          {offered.map((k, i) => (
+            <OptionRow
+              key={k}
+              testID={`add-rule-kind-${k}`}
+              first={i === 0}
+              title={t(`decide.screens.sheetsHome.addRule.${COPY[k].title}` as never)}
+              sub={t(`decide.screens.sheetsHome.addRule.${COPY[k].sub}` as never)}
+              selected={chosen === k}
+              onPress={() => setKind(k)}
+            />
+          ))}
         </OptionCard>
 
         {needsCategory ? (
@@ -105,7 +108,7 @@ function AddRuleForm({ doc, currency, categories, crossings, save, onDismiss }: 
           </>
         ) : null}
 
-        {kind === 'category_share' ? (
+        {chosen === 'category_share' ? (
           <Stepper
             value={percentValue}
             step={1}
@@ -117,7 +120,7 @@ function AddRuleForm({ doc, currency, categories, crossings, save, onDismiss }: 
             decrementLabel={t('decide.screens.sheetsHome.rule.debt.lessA11y')}
             incrementLabel={t('decide.screens.sheetsHome.rule.debt.moreA11y')}
           />
-        ) : kind !== null ? (
+        ) : chosen !== null ? (
           <MoneyInput
             value={amount}
             currency={currency}
@@ -132,6 +135,7 @@ function AddRuleForm({ doc, currency, categories, crossings, save, onDismiss }: 
           {t('decide.screens.sheetsHome.addRule.cap')}
         </Text>
         <Pill label={t('decide.screens.sheetsHome.addRule.add')} variant="primary" disabled={!ready} onPress={add} />
+        <NeedLine testID="add-rule-need" text={need} />
       </SheetScroll>
     </Sheet>
   );

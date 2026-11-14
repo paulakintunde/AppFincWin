@@ -123,9 +123,11 @@ export const sheetsHome = {
     value: 'Value',
     add: 'Add rule',
     toast: 'Rule added.',
-    taken: 'Already added',
     percent: 'Share of pay',
     noCategories: 'No categories yet.',
+    // 06.1-80 (DB-13, OQ-80-1): why "Add rule" is off, under it. Kinds already on the list are not offered, so "Already added" went.
+    need: 'A kind and a value are needed.',
+    needCategory: 'A category is needed.',
   },
   changed: {
     title: 'Something changed?',
