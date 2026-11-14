@@ -8,7 +8,7 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const ROOT = process.cwd();
-const FOLDERS = ['money', 'decide', 'payoff', 'split'].map((f) => join(ROOT, 'src/engine', f));
+const FOLDERS = ['money', 'decide', 'payoff', 'split', 'month'].map((f) => join(ROOT, 'src/engine', f));
 
 // Matches: /* istanbul ignore next -- reason: some written reason of 10+ chars */
 // or the c8 equivalent, on any of the recognised ignore kinds.

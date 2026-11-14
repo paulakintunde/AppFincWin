@@ -9,6 +9,9 @@ export default {
     'src/engine/decide/v3/**/*.ts',
     '!src/engine/decide/v3/**/__tests__/**',
     '!**/*.d.ts',
+    // 05.5 ARC-12: the shared month module
+    'src/engine/month/**/*.ts',
+    '!src/engine/month/**/__tests__/**',
     // Shared: old-engine root files that v3 source imports
     'src/engine/decide/bisectCore.ts',
     'src/engine/decide/cardRule.ts',
