@@ -2,7 +2,28 @@ import { act, renderHook } from '@testing-library/react-native';
 import { queryKeys } from '@/data/keys';
 import { resetActivityFocusForTests } from '@/state/activityFocus';
 import { monthRefreshKeys } from '@/features/record/activity/refreshKeys';
+import { minorUnits } from '@/engine/money';
+import { prepare } from '@/engine/decide/v3/prepare';
+import { monthPicture } from '@/engine/month';
+import { inputsOf, monthOf as v3Month, v3Line } from '@/engine/decide/v3/__tests__/helpers/fixtures';
 import { useHomeViewModel } from '../useHomeViewModel';
+
+const preparedFixture = prepare(
+  inputsOf({
+    months: [
+      ...['2026-08', '2026-09'].map((m) =>
+        v3Month(m, [
+          v3Line({ id: `p-${m}`, date: `${m}-25`, amount: 300_000, role: 'income' }),
+          v3Line({ id: `e-${m}`, date: `${m}-12`, amount: 100_000 }),
+        ]),
+      ),
+      v3Month('2026-10', [], { full: false }),
+    ],
+    balance: minorUnits(250_000),
+  }),
+);
+const mockDecide = { prepared: preparedFixture as typeof preparedFixture | null };
+jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => mockDecide }));
 
 const mock = {
   rc: {
@@ -143,5 +164,18 @@ describe('useHomeViewModel', () => {
     const { result } = await renderHook(() => useHomeViewModel());
     expect(result.current.loading).toBe(true);
     expect(result.current.accountsLoading).toBe(true);
+  });
+
+  it('05.5-14: afterPlans is the month picture figure for the current month, null for a past month or no picture', async () => {
+    const { result } = await renderHook(() => useHomeViewModel());
+    expect(result.current.afterPlans).toEqual({ left: monthPicture(preparedFixture).leftAfterPlans });
+    await act(async () => result.current.setMonth('2026-09'));
+    expect(result.current.afterPlans).toBeNull();
+    await act(async () => result.current.setMonth('2026-10'));
+    mockDecide.prepared = null;
+    await act(async () => undefined);
+    const again = await renderHook(() => useHomeViewModel());
+    expect(again.result.current.afterPlans).toBeNull();
+    mockDecide.prepared = preparedFixture;
   });
 });

@@ -104,6 +104,7 @@ export function HomeScreen() {
         homeCurrency={rc.homeCurrency}
         currentMonth={monthOf(rc.today)}
         state={vm.dataState}
+        afterPlans={vm.afterPlans}
       />
       <ComingUpCard
         items={vm.comingUp}

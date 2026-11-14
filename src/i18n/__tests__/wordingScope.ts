@@ -68,6 +68,17 @@ export const OTHER_KEYS_061: readonly string[] = [
   'undo.label.safetyNetLocked',
 ];
 
+/**
+ * 05.5-14 (D-19, D-05): Home's small "left after the month's plans" line. Shown on the review page, never locked; unsigned until
+ * the owner signs them in 05.5-23.
+ */
+export const OTHER_KEYS_0555: readonly string[] = [
+  'home.month.afterPlans',
+  'home.month.afterPlansShort',
+  'home.month.headlineWithPlansA11y',
+  'home.month.headlineWithPlansShortA11y',
+];
+
 /** Prefixes of the outside-the-lock lines shown in the page's undo and History section. */
 export const UNDO_HISTORY_PREFIXES = ['undo.', 'history.', 'sync.'] as const;
 
@@ -304,6 +315,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   above: '$1,200.00',
   account: 'Everyday',
   after: '$640.00',
+  afterPlans: '$150.00',
   amount: '$250.00',
   answer: 'fits, $231.00 left that month',
   apr: '24.9',
