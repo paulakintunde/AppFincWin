@@ -24,7 +24,7 @@ describe('useAnswerEffects (06.1-47, B-2)', () => {
   it('writes seen and history once across 5 re-renders with new-but-equal results', async () => {
     const base = ledgerRun('N02').evaluation.result;
     const w = writes();
-    const { rerender } = await renderHook(({ result, ws }: { result: Result; ws: AnswerEffectWrites }) => useAnswerEffects({ row: { ...ROW }, result, writes: ws }), {
+    const { rerender } = await renderHook(({ result, ws }: { result: Result; ws: AnswerEffectWrites }) => useAnswerEffects({ row: { ...ROW }, result, writes: ws, inputsKey: 'k1' }), {
       initialProps: { result: copy(base), ws: { ...w } },
     });
     for (let i = 0; i < 5; i += 1) await rerender({ result: copy(base), ws: { ...w } });
@@ -39,7 +39,7 @@ describe('useAnswerEffects (06.1-47, B-2)', () => {
     const second = ledgerRun('N09').evaluation.result;
     expect(second.code).not.toBe(first.code);
     const w = writes();
-    const { rerender } = await renderHook(({ result }: { result: Result }) => useAnswerEffects({ row: ROW, result, writes: w }), { initialProps: { result: first } });
+    const { rerender } = await renderHook(({ result }: { result: Result }) => useAnswerEffects({ row: ROW, result, writes: w, inputsKey: 'k1' }), { initialProps: { result: first } });
     await rerender({ result: copy(second) });
     await rerender({ result: copy(second) });
     await rerender({ result: copy(second) });
@@ -50,7 +50,7 @@ describe('useAnswerEffects (06.1-47, B-2)', () => {
 
   it('nothing is written while the result is loading', async () => {
     const w = writes();
-    await renderHook(() => useAnswerEffects({ row: ROW, result: null, writes: w }));
+    await renderHook(() => useAnswerEffects({ row: ROW, result: null, writes: w, inputsKey: 'k1' }));
     expect(w.markSeen).not.toHaveBeenCalled();
     expect(w.recordHistory).not.toHaveBeenCalled();
   });
@@ -59,17 +59,17 @@ describe('useAnswerEffects (06.1-47, B-2)', () => {
     const base = ledgerRun('N02').evaluation.result;
     expect(base.code).not.toBe('needs_input');
     const w = writes();
-    const { rerender } = await renderHook(({ result }: { result: Result }) => useAnswerEffects({ row: ROW, result, writes: w }), { initialProps: { result: copy(base) } });
+    const { rerender } = await renderHook(({ result }: { result: Result }) => useAnswerEffects({ row: ROW, result, writes: w, inputsKey: 'k1' }), { initialProps: { result: copy(base) } });
     for (let i = 0; i < 4; i += 1) await rerender({ result: copy(base) });
     expect(w.saveAnswer).toHaveBeenCalledTimes(1);
-    expect(w.saveAnswer).toHaveBeenCalledWith(ROW, expect.objectContaining({ v: 3, code: base.code, variant: base.variant }));
+    expect(w.saveAnswer).toHaveBeenCalledWith(ROW, expect.objectContaining({ v: 3, code: base.code, variant: base.variant, inputsKey: 'k1' }));
   });
 
-  it('06.1-78: a changed answer is stored again, once', async () => {
+  it('06.1-78: with nothing stored yet, a changed answer is stored again, once', async () => {
     const first = ledgerRun('N02').evaluation.result;
     const second = ledgerRun('N09').evaluation.result;
     const w = writes();
-    const { rerender } = await renderHook(({ result }: { result: Result }) => useAnswerEffects({ row: ROW, result, writes: w }), { initialProps: { result: first } });
+    const { rerender } = await renderHook(({ result }: { result: Result }) => useAnswerEffects({ row: ROW, result, writes: w, inputsKey: 'k1' }), { initialProps: { result: first } });
     await rerender({ result: copy(second) });
     await rerender({ result: copy(second) });
     expect(w.saveAnswer).toHaveBeenCalledTimes(2);
@@ -79,10 +79,10 @@ describe('useAnswerEffects (06.1-47, B-2)', () => {
   it('06.1-78: an ask, a not-ready answer and a loading answer are not stored', async () => {
     const base = ledgerRun('N02').evaluation.result;
     const w = writes();
-    await renderHook(() => useAnswerEffects({ row: ROW, result: { ...base, code: 'needs_input' } as Result, writes: w }));
-    await renderHook(() => useAnswerEffects({ row: ROW, result: { ...base, readiness: { ...(base.readiness ?? {}), ready: false } } as Result, writes: w }));
-    await renderHook(() => useAnswerEffects({ row: ROW, result: null, writes: w }));
-    await renderHook(() => useAnswerEffects({ row: null, result: base, writes: w }));
+    await renderHook(() => useAnswerEffects({ row: ROW, result: { ...base, code: 'needs_input' } as Result, writes: w, inputsKey: 'k1' }));
+    await renderHook(() => useAnswerEffects({ row: ROW, result: { ...base, readiness: { ...(base.readiness ?? {}), ready: false } } as Result, writes: w, inputsKey: 'k1' }));
+    await renderHook(() => useAnswerEffects({ row: ROW, result: null, writes: w, inputsKey: 'k1' }));
+    await renderHook(() => useAnswerEffects({ row: null, result: base, writes: w, inputsKey: 'k1' }));
     expect(w.saveAnswer).not.toHaveBeenCalled();
   });
 
@@ -92,10 +92,69 @@ describe('useAnswerEffects (06.1-47, B-2)', () => {
     w.saveAnswer.mockImplementation(() => {
       throw new Error('offline');
     });
-    await renderHook(() => useAnswerEffects({ row: ROW, result: base, writes: w }));
+    await renderHook(() => useAnswerEffects({ row: ROW, result: base, writes: w, inputsKey: 'k1' }));
     expect(w.markSeen).toHaveBeenCalledTimes(1);
     const bare = { markSeen: jest.fn(() => true), recordHistory: jest.fn(() => true) };
-    await renderHook(() => useAnswerEffects({ row: ROW, result: base, writes: bare }));
+    await renderHook(() => useAnswerEffects({ row: ROW, result: base, writes: bare, inputsKey: 'k1' }));
     expect(bare.markSeen).toHaveBeenCalledTimes(1);
+  });
+
+  // 06.1-81 (review item 3, owner RV-3): keep the first answer. answer_v3 is stored when the check has none, and again only after
+  // its inputs were edited (the inputs fingerprint moved); never on a recompute at reopen, and never once the check is decided.
+  describe('06.1-81: keep the first answer', () => {
+    const first = ledgerRun('N02').evaluation.result;
+    const second = ledgerRun('N09').evaluation.result;
+    const storedFrom = (r: Result, inputsKey?: string) => ({ v: 3, code: r.code, variant: r.variant, readyBy: r.readyBy, unspentAfter: null, lineFacts: [], ...(inputsKey === undefined ? {} : { inputsKey }) });
+    const rowWith = (over: Record<string, unknown>) => ({ ...ROW, status: 'open', ...over }) as unknown as DecideCheckRow;
+
+    it('a reopened check whose answer was recomputed differently keeps the stored answer', async () => {
+      const w = writes();
+      await renderHook(() => useAnswerEffects({ row: rowWith({ answer_v3: storedFrom(first, 'k1') }), result: second, writes: w, inputsKey: 'k1' }));
+      expect(w.saveAnswer).not.toHaveBeenCalled();
+      expect(w.markSeen).toHaveBeenCalledTimes(1);
+    });
+
+    it('an answer stored before fingerprints is kept on reopen too', async () => {
+      const w = writes();
+      await renderHook(() => useAnswerEffects({ row: rowWith({ answer_v3: storedFrom(first) }), result: second, writes: w, inputsKey: 'k1' }));
+      expect(w.saveAnswer).not.toHaveBeenCalled();
+    });
+
+    it('an answer stored for other inputs (the check was edited) is replaced, with the new fingerprint', async () => {
+      const w = writes();
+      const row = rowWith({ answer_v3: storedFrom(first, 'k0') });
+      await renderHook(() => useAnswerEffects({ row, result: second, writes: w, inputsKey: 'k1' }));
+      expect(w.saveAnswer).toHaveBeenCalledTimes(1);
+      expect(w.saveAnswer).toHaveBeenCalledWith(row, expect.objectContaining({ code: second.code, inputsKey: 'k1' }));
+    });
+
+    it('an edit made on the open answer stores the new answer once, also over an answer stored before fingerprints', async () => {
+      const w = writes();
+      const row = rowWith({ answer_v3: storedFrom(first) });
+      const { rerender } = await renderHook(({ result, inputsKey }: { result: Result; inputsKey: string | null }) => useAnswerEffects({ row, result, writes: w, inputsKey }), {
+        initialProps: { result: first, inputsKey: 'k1' as string | null },
+      });
+      expect(w.saveAnswer).not.toHaveBeenCalled();
+      // The judge lags the edit: nothing is stored while the shown answer is for the old inputs.
+      await rerender({ result: first, inputsKey: null });
+      expect(w.saveAnswer).not.toHaveBeenCalled();
+      await rerender({ result: copy(second), inputsKey: 'k2' });
+      await rerender({ result: copy(second), inputsKey: 'k2' });
+      expect(w.saveAnswer).toHaveBeenCalledTimes(1);
+      expect(w.saveAnswer).toHaveBeenCalledWith(row, expect.objectContaining({ code: second.code, inputsKey: 'k2' }));
+    });
+
+    it('a check with no stored answer leaves Draft: the shown answer is stored with its fingerprint', async () => {
+      const w = writes();
+      await renderHook(() => useAnswerEffects({ row: rowWith({ answer_v3: null }), result: first, writes: w, inputsKey: 'k1' }));
+      expect(w.saveAnswer).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ code: first.code, inputsKey: 'k1' }));
+    });
+
+    it.each(['bought', 'waiting', 'passed'])('a %s check never has its answer stored or replaced', async (status) => {
+      const w = writes();
+      await renderHook(() => useAnswerEffects({ row: rowWith({ status, answer_v3: null }), result: first, writes: w, inputsKey: 'k1' }));
+      await renderHook(() => useAnswerEffects({ row: rowWith({ status, answer_v3: storedFrom(first, 'k0') }), result: second, writes: w, inputsKey: 'k1' }));
+      expect(w.saveAnswer).not.toHaveBeenCalled();
+    });
   });
 });

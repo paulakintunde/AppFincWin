@@ -411,7 +411,7 @@ describe('analytics, seen and history (CMP-F03, CO-D-124)', () => {
     expect(mockSaveAnswer).toHaveBeenCalledTimes(1);
     const [row, seen] = mockSaveAnswer.mock.calls[0] as unknown as [{ id: string }, { v: number; code: string }];
     expect(row.id).toBe('c1');
-    expect(seen).toMatchObject({ v: 3, code: run.evaluation.result.code });
+    expect(seen).toMatchObject({ v: 3, code: run.evaluation.result.code, inputsKey: expect.stringMatching(/^[0-9a-z]+-[0-9a-f]{8}$/) });
   });
 
   it('a not-ready answer is neither counted nor remembered', async () => {

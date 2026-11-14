@@ -33,6 +33,7 @@ import { freeHelpFor, type CheckV2, type Evaluation, type LocalDate, type PayV2,
 import { money as makeMoney } from '@/engine/money';
 import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
 import { openNewCheck } from '@/features/decide/screens/logic/checkHref';
+import { checkInputsKey } from '@/features/decide/screens/logic/checkInputsKey';
 import { goDecideHome, withFromAnswer } from '@/features/decide/screens/logic/decideNav';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
@@ -210,11 +211,14 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
   const today = data.today as LocalDate;
   const money = useCallback((minor: number): string => fmt.formatMoney(makeMoney(minor, currency)), [fmt, currency]);
 
+  // 06.1-81 (RV-3): the inputs the shown answer was judged on; null while the deferred judge still shows older inputs.
+  const inputsKey = useMemo(() => (check === null || engine.updating ? null : checkInputsKey(check)), [check, engine.updating]);
   // D-14: the safety-net question and intro come before any verdict. Hooks above run either way; the verdict mounts after.
   useAnswerEffects({
     row,
     result: gated ? result : null,
     writes: { markSeen, recordHistory: (a) => history.mutate(a), saveAnswer },
+    inputsKey,
   });
 
   // A side picked on the compare screen, applied once per pick. 06.1-63 (CN-13): Compare now returns to this same answer with a new

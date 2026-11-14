@@ -595,7 +595,9 @@ export function useMarkCheckSeen(): { markSeen(row: DecideCheckRow, state: SeenS
   };
 }
 
-// 05.3 D-16: the only writer of answer_v3. Called on "Check it" and by the record flow; never from a recompute or a refund link (D-13).
+// 05.3 D-16: the only writer of answer_v3; never from a recompute or a refund link (D-13). 06.1-81 (owner RV-3, keep the first
+// answer): the answer screen calls it when the check has no stored answer yet and after its inputs were edited (the stored
+// inputsKey differs), never on reopen with the same inputs and never once the check is decided (useAnswerEffects).
 export function useSaveCheckAnswer(): { save(row: DecideCheckRow, seen: StoredSeenV3): boolean } {
   const mutation = useMutation<EditCheckResult, unknown, EditCheckVars>({
     mutationKey: mutationKeys.saveCheckAnswer,
@@ -622,6 +624,7 @@ function sameStoredAnswer(a: StoredSeenV3, b: StoredSeenV3): boolean {
     a.code === b.code &&
     a.variant === b.variant &&
     a.unspentAfter === b.unspentAfter &&
+    a.inputsKey === b.inputsKey &&
     JSON.stringify(a.readyBy) === JSON.stringify(b.readyBy) &&
     a.lineFacts.length === b.lineFacts.length &&
     a.lineFacts.every((f, i) => f === b.lineFacts[i])

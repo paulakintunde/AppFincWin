@@ -541,6 +541,17 @@ describe('useSaveCheckAnswer', () => {
     expect(fake.calls.filter((c) => c.method === 'update')).toHaveLength(1);
   });
 
+  it('06.1-81: the same answer for edited inputs is written, so the stored fingerprint follows the edit', async () => {
+    const { fake, qc } = setup();
+    const before = { ...seen, inputsKey: 'k-old' };
+    qc.setQueryData(KEY, [check('k1', { answer_v3: before })]);
+    fake.respondWith(ok([check('k1', { answer_v3: { ...seen, inputsKey: 'k-new' }, version: 2 })]));
+    const { result } = await renderHook(() => useSaveCheckAnswer(), { wrapper: wrapper(qc) });
+
+    expect(result.current.save(check('k1', { answer_v3: before }), { ...seen, inputsKey: 'k-new' })).toBe(true);
+    await waitFor(() => expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ answer_v3: { ...seen, inputsKey: 'k-new' } }));
+  });
+
   it('registers a default under its own key so a paused write resumes', () => {
     const qc = new QueryClient();
     registerDecideCheckMutations(qc);

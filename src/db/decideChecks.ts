@@ -17,6 +17,11 @@ export interface StoredSeenV3 {
   readyBy: { kind: 'date'; date: string } | { kind: 'month'; month: string } | null;
   unspentAfter: number | null;
   lineFacts: string[];
+  /**
+   * 06.1-81: the fingerprint of the inputs this answer was judged on (checkInputsKey). A stored answer is replaced only when the
+   * inputs were edited, never by a recompute on newer records (owner RV-3). Absent on answers stored before 06.1-81.
+   */
+  inputsKey?: string;
 }
 
 export interface DecideCheckRow {
