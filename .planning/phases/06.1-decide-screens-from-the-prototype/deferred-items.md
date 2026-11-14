@@ -69,3 +69,33 @@ Rows now ignore taps while updating, but the "Updating…" line appears above th
 - QuickEstimatesRoute dead onSave binding (from 06.1-65): the route no longer passes `onSave` or binds `useUpdateDecideSettings`, and the screen's optional `onSave` prop is gone. **Not done:** removing the unreachable `SetupDone` component and its `decide.screens.setup.done.*` strings touches about a dozen files outside 61 (hints, home facts, banner, checklist, oneLineBudget and textFitMatrix tests, locale). Routed to 06.1-33 (wording sign-off, which owns the strings) as gap row G-61-4.
 - Maestro text moved by 06.1-59/60/67: `common/decide-quick-estimates.yaml` and `decide-first-answer.yaml` no longer tap a sentence to close the keyboard (06.1-56/58 keep taps with the keyboard open); `decide-safety-net.yaml` waits for "Safety net settings|No safety net yet" and drops the helper-sentence tap; `decide-stepper-loan.yaml` and `decide-waiver.yaml` open the answer's Why? (`answer-facts-why`) before looking for a fact. Every other flow's tapped or awaited text was checked against the locale files.
 - decideTextFit (from 06.1-72): passes on the branch head. The EnvelopeAccountSheet account name no longer has numberOfLines (allowlist entry removed); the StepFrame / SetupChecklist / SetupBanner / YourMonthCard / SetupItemFrame chevrons are allowlisted as "chevron glyph (no text)" (a66fbec1, 9e543e63).
+
+## 06.1 close-out (2026-11-14)
+Owner direction: close the phase fast. Device testing and the remaining gaps go to a post-05.5 test audit (Pixel 6) and an audit-fix
+round after it. The wording is signed (06.1-33, hash 8611378a…); any change to a locked Decide string in these rounds needs a new sign-off.
+
+### To 05.5 (engine)
+- **G-PD-2 root fix:** compute unexplained money only from the as-given reading (not the thin-history reading). This changes engine
+  output, so it needs a `DECIDE_ENGINE_REVISION` bump. Until then a thin-history account that confirms spare money is asked "What is
+  the $X for?" once (06.1-85-SUMMARY.md).
+- **SN-18:** still draft; owner routed it to the engine maths review.
+- **Same-day roll-forward (06.1-85-SUMMARY.md):** lines dated on the anchor day are not rolled forward (`l.date <= anchor.at`). So a
+  same-day "I bought it" recorded after a confirm does not reduce the confirmed spare money until it is confirmed again.
+- **Reviewed-answers page helper:** `sayLine` in `src/engine/decide/v3/__tests__/reviewed/page.ts` ignores `_one` forms, so the
+  reviewed-answers page can show the many form for a count of 1.
+
+### To the post-05.5 test audit (Pixel 6)
+- 06.1-61 Task 3 owner device pass: steps 1-9 and the 17 "needs Pixel" walk rows (06.1-61-SUMMARY.md).
+- G-61-1 recheck on device (a sheet opened during a screen change shows only its backdrop; 06.1-81 code fix not yet device-proven).
+- Real Pixel 6 timings (the 72/73/74 numbers were accepted for now).
+- DN-1, DB-1 and DP-1 rechecks.
+
+### To the audit-fix round
+- G-61-5 (Back lost just after a sheet closes / on the open plan sheet), G-61-7 (font-size change restarts Decide at Home),
+  G-61-9 (verdict area keeps "busy" in TalkBack), G-61-15 (decide-check-lands chip scroll; record-as-bought undo).
+- G-PD-1, G-PD-3.
+- `record-as-bought` Maestro flow red.
+- decide-bought 9000 stepper subflow.
+- Undo/History label "Unspent money confirmed": signed as-is in 06.1-33; reword in the audit (contains "unspent").
+- Emulator test-data cleanup (spare Google test account, production; see 06.1-61 and 06.1-85 summaries).
+- The owner's own-account test items: the headphones 180 check and the used car 9000 draft.
