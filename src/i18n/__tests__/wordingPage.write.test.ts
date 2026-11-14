@@ -270,6 +270,9 @@ function templateHtml(): { html: string; lines: number } {
   return { html: intro + body, lines };
 }
 
+/** 06.1-83 (owner, 2026-11-14): draft cases the owner sent on instead of approving here. They stay draft; no engine change. */
+const ROUTED_CASES: Readonly<Record<string, string>> = { 'SN-18': 'Routed to engine maths review (owner, 2026-11-14). Stays a draft; not for approval on this page.' };
+
 function draftCasesHtml(): { html: string; ids: string[] } {
   const drafts = loadCases().filter((c) => c.status === 'draft');
   const ids = drafts.map((c) => c.id);
@@ -284,8 +287,10 @@ function draftCasesHtml(): { html: string; ids: string[] } {
       const m = exp.afterBuy.month;
       const left = m === null ? '' : ` Left that month: ${money(m, inputs.currency)}.`;
       const must = exp.mustHaveFacts.length > 0 ? ` Must show: ${exp.mustHaveFacts.join(', ')}.` : '';
+      const routedNote = ROUTED_CASES[c.id];
+      const routed = routedNote === undefined ? '' : `<div class="dec">${esc(routedNote)}</div>`;
       const mustNot = exp.mustNotHaveFacts.length > 0 ? ` Must not show: ${exp.mustNotHaveFacts.join(', ')}.` : '';
-      return `<div class="ans" id="case-${esc(c.id)}"><div><span class="b new">Draft</span> <b>${esc(c.id)}</b> · ${esc(c.persona)}</div><p>${esc(c.situation)}</p><div class="lbl">Expected: ${esc(expKind)}.${esc(left + must + mustNot)} ${esc(match)}</div><div class="lbl">What the answer reads like:</div><div class="chip">${esc(w.chip)}</div><div>${esc(w.title)}</div><div>${esc(w.body)}</div><ul>${w.lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul><details><summary>Why this is the right answer</summary><p>${esc(c.why)}</p></details></div>`;
+      return `<div class="ans" id="case-${esc(c.id)}"><div><span class="b new">Draft</span> <b>${esc(c.id)}</b> · ${esc(c.persona)}</div>${routed}<p>${esc(c.situation)}</p><div class="lbl">Expected: ${esc(expKind)}.${esc(left + must + mustNot)} ${esc(match)}</div><div class="lbl">What the answer reads like:</div><div class="chip">${esc(w.chip)}</div><div>${esc(w.title)}</div><div>${esc(w.body)}</div><ul>${w.lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul><details><summary>Why this is the right answer</summary><p>${esc(c.why)}</p></details></div>`;
     })
     .join('');
   return { html, ids };
@@ -506,6 +511,8 @@ function buildPage(): Page {
     expect(missing).toEqual([]);
     // The draft right-answer cases the owner approves (BR-16, SN-16..SN-24).
     for (const id of ['BR-16', 'SN-16', 'SN-17', 'SN-18', 'SN-19', 'SN-20', 'SN-21', 'SN-22', 'SN-23', 'SN-24']) expect(draftIds).toContain(id);
+    // 06.1-83: SN-18 stays a draft, marked as routed to the engine maths review.
+    expect(html).toContain('Routed to engine maths review (owner, 2026-11-14)');
     // Every blank on the page reads filled.
     const noSample = new Set<string>();
     for (const r of pageRows) for (const p of placeholdersOf(r.text)) if (SAMPLE_VALUES[p] === undefined) noSample.add(`${p} (${r.key})`);
