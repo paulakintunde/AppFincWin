@@ -1,8 +1,8 @@
 /**
- * 06.1-05 (D-18): Decide setup banner (D30, three states), checklist (D31), setup done (D38) and the quick-estimates first
+ * 06.1-05 (D-18): Decide setup banner (D30, three states), checklist (D31) and the quick-estimates first
  * answer (D39). Owner plans: 17, then 39 (in turn). The six items' own screens are in setupPayBills.ts and setupOthers.ts;
  * the first-answer safety-net question (D-14) is in safetyNet.ts. Draft copy, signed under D-08.
- * Item 5 is "Your money rules" (D-19). D-03 keeps the third line off D38.
+ * Item 5 is "Your money rules" (D-19). The setup done screen (D38) was removed in 06.1-83 (unreachable since 06.1-64).
  */
 export const setup = {
   banner: {
@@ -70,12 +70,6 @@ export const setup = {
     payOpenHowPaid: 'How you’re paid isn’t set yet',
     payOpenNoPay: 'No pay set yet',
     open: 'Not done yet',
-  },
-  done: {
-    title: 'Done',
-    sub: 'Decide now uses your records.',
-    netAndGoals: 'Savings goals and your safety net live in Grow',
-    loans: 'Loans live in Grow',
   },
   quick: {
     title: 'A first answer from three estimates',
