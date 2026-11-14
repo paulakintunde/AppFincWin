@@ -32,7 +32,8 @@ export function SegmentBar({ step, names, labels, onJump }: SegmentBarProps) {
   const text = t('decide.screens.common.a11y.stepProgress', { step, stepName: names[step - 1] ?? '' });
   const label = { ...textRole(pairing, 'label'), fontSize: fontSize.meta };
   return (
-    <View testID="segment-bar" accessibilityRole="progressbar" accessibilityLabel={text} accessibilityValue={{ min: 1, max: 3, now: step, text }} style={styles.row}>
+    // 06.1-84 (G-61-13): the words are the label only; the same words as value text were read twice ("Step 2 of 3, Price, Step 2 of 3, Price").
+    <View testID="segment-bar" accessibilityRole="progressbar" accessibilityLabel={text} accessibilityValue={{ min: 1, max: 3, now: step }} style={styles.row}>
       {([1, 2, 3] as const).map((n) => {
         const done = n < step;
         const now = n === step;
