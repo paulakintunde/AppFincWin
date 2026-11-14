@@ -6,6 +6,7 @@
  * offered (D-56).
  */
 import { normaliseDescription } from '../categorize/guessCategory';
+import { AMOUNT_TOLERANCE_DIVISOR } from '../money/tolerance';
 import { daysBetween } from '../time/calendar';
 import type { RecurringFreq } from './schedule';
 
@@ -68,7 +69,7 @@ export function lowerMedian(values: readonly number[]): number {
 /** Integer-maths 10% check: |a - median| * 10 <= |median|. */
 function amountsWithinTolerance(amounts: readonly number[], median: number): boolean {
   const absMedian = Math.abs(median);
-  return amounts.every((a) => Math.abs(a - median) * 10 <= absMedian);
+  return amounts.every((a) => Math.abs(a - median) * AMOUNT_TOLERANCE_DIVISOR <= absMedian);
 }
 
 interface Group {
