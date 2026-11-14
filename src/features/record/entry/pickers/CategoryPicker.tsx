@@ -4,6 +4,7 @@ import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Row } from '@/ui/Row';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
+import { iconForCategory } from '@/ui/icons/iconFor';
 import { useT } from '@/i18n';
 import type { CategoryRow } from '@/db/rows';
 import type { CategoryUsageResult } from '@/engine/categorize';
@@ -68,7 +69,7 @@ export function CategoryPicker({ visible, categories, selectedId, onSelect, onCl
               dense
               sublabel={sub?.text}
               sublabelTone={sub?.tone}
-              leading={<CategoryGlyph colorKey={category.color_key} letter={name.charAt(0).toUpperCase()} />}
+              leading={<CategoryGlyph colorKey={category.color_key} icon={iconForCategory(category)} letter={name.charAt(0).toUpperCase()} />}
               value={category.id === selectedId ? '✓' : undefined}
               selected={category.id === selectedId}
               accessibilityLabel={name}
