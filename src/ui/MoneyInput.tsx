@@ -15,7 +15,7 @@
  * answer to this field's own report (a 0 or an over-limit figure it normalises to null) keeps the typed text.
  */
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type AccessibilityValue } from 'react-native';
 import { TextInput } from '@/ui/TextInput';
 import type { TextInput as TextInputInstance } from '@/ui/TextInput';
 import { Text } from '@/ui/Text';
@@ -67,6 +67,9 @@ export interface MoneyInputProps {
 const COMPACT_MIN_WIDTH = 128;
 const AMOUNT_BORDER = 1.5; // R16.3
 const FOCUS_RING = 2; // D-95
+
+/** 06.1-85 (G-PD-4): the empty field's value: a key with no text (see accessibilityValue below). RN types text as string only. */
+const EMPTY_VALUE = { text: null } as unknown as AccessibilityValue;
 
 export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, zeroHint = false, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef, tone = 'light', boxed = false, prefix, suffix, onTextChange }: MoneyInputProps) {
   const { colors, pairing } = useTheme();
@@ -220,8 +223,10 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
           inputMode="decimal"
           accessibilityLabel={accessibilityLabel}
           // 06.1-84 (G-61-6): never no value. On Android setAccessibilityValue(null) wipes the content description and does not
-          // rebuild it from the label, so a cleared field lost its name; an empty value text keeps the label.
-          accessibilityValue={{ text: spoken ?? '' }}
+          // rebuild it from the label, so a cleared field lost its name. 06.1-85 (G-PD-4): an empty field sends text: null, not ''.
+          // updateViewContentDescription still runs (the map has the key) and rebuilds from the label, but adds a value only when it is
+          // a string, so the name is "Price", not "Price, " (an '' text was joined in with ", ").
+          accessibilityValue={spoken === undefined ? EMPTY_VALUE : { text: spoken }}
           placeholder={hint}
           editable={!readOnly}
           // 05.3-44/52: inkFaint fails 4.5:1 on fill1 and fill6; inkMuted passes on every light ground the field sits on.
