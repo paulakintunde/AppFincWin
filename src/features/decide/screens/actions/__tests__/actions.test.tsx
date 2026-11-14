@@ -86,6 +86,28 @@ describe('SaveForItScreen', () => {
     expect(await screen.findByText(a.goalMade.title)).toBeTruthy();
   });
 
+  it('06.1-82 (G-61-10): an item that already fits shows no same-day ready date; the amount is spread over twelve months', async () => {
+    await wrap(<SaveForItScreen {...props({ readyDate: () => TODAY })} />);
+    const target = saveForItTarget(r.check, r.evaluation) as number;
+    expect(screen.queryByText(a.goal.readyBy.replace('{{readyMonth}}', `on ${TODAY}`))).toBeNull();
+    expect(screen.getByText(a.goal.fitsNow)).toBeTruthy();
+    expect(screen.getByText(a.goal.monthly.replace('{{monthly}}', fmt(Math.ceil(target / 12))))).toBeTruthy();
+    await fireEvent.press(screen.getByText(a.goal.make));
+    expect(mockSave.mock.calls[0][0].monthly).toBe(Math.ceil(target / 12));
+  });
+
+  it('06.1-82 (G-61-10): the amount sheet of an item that already fits names no same-day date', async () => {
+    await wrap(<SaveForItScreen {...props({ readyDate: () => TODAY })} />);
+    await fireEvent.press(screen.getByText(a.goal.changeAmount));
+    expect(screen.getAllByRole('radio').length).toBeGreaterThan(1);
+    expect(screen.queryByText(`on ${TODAY}`, { exact: false })).toBeNull();
+  });
+
+  it('06.1-82 (G-61-10): a ready date before today reads the same as today', async () => {
+    await wrap(<SaveForItScreen {...props({ readyDate: () => '2026-11-01' })} />);
+    expect(screen.getByText(a.goal.fitsNow)).toBeTruthy();
+  });
+
   it('Change the amount uses the picked monthly amount', async () => {
     await wrap(<SaveForItScreen {...props()} />);
     await fireEvent.press(screen.getByText(a.goal.changeAmount));

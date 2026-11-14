@@ -42,6 +42,7 @@ import { dealerFeesOf, withDealerFees } from './oneOffPresets';
 import { useOwnAdd } from './ownAdds';
 import { withPlanName } from './planName';
 import { upFrontOf } from './upFront';
+import { planPaymentOf } from '../logic/shownAnswer';
 import { kindOf, oneOffsOf, ownKindsOf, type BuiltInKind, useStepCheck, useStepData, useStepNav, withPrefill, type StepNumber } from './useStepCheck';
 
 /** You, scrolled to its Region row. */
@@ -111,7 +112,8 @@ export function PriceStep({ id }: { id: string }) {
   const isPlan = check.pay.mode === 'plan';
   const deposit = check.pay.mode === 'plan' ? check.pay.deposit : 0;
   const upFront = isPlan ? deposit : up.cash;
-  const monthly = engine.evaluation?.purchase?.monthly ?? null;
+  // 06.1-82 (G-61-11): the plan payment alone; running costs are step 3's, never added into this step's figure.
+  const monthly = planPaymentOf(engine.evaluation?.purchase);
   const itemPrice = price === null ? name : t('decide.screens.stepper.itemPrice', { item: name, price: money(price) });
   const shownTax = taxText ?? (check.taxPercent === null ? '' : percentText(check.taxPercent));
   const dealer = dealerFeesOf(check);

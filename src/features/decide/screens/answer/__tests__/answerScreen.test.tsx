@@ -92,7 +92,12 @@ jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: true, region: 'US', today: '2026-11-05' }),
 }));
 const mockList: { rows: unknown[] | null } = { rows: null };
+// 06.1-82: the settings row (answered flags) and the savings goals (check_id) the answer reads.
+const mockSettings: { row: Record<string, unknown> | null } = { row: null };
+const mockGoals: { rows: unknown[] } = { rows: [] };
 jest.mock('@/data/queries/decide', () => ({
+  useDecideSettings: () => ({ data: mockSettings.row }),
+  useSavingsGoals: () => ({ data: mockGoals.rows }),
   useDecideChecks: () => ({
     isLoading: false,
     data: mockList.rows ?? [{ id: 'c1', name: 'Laptop', created_by: 'u1', household_id: 'h1', version: 1, inputs: {}, deleted_at: null, last_seen_state: null, last_seen_basis: null }],
@@ -207,6 +212,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockPending.rows = [];
   mockList.rows = null;
+  mockSettings.row = null;
+  mockGoals.rows = [];
   mockCache.lists = [];
   mockNet.unanswered = false;
   mockPaydays.list = ['2026-11-20'];
@@ -1106,5 +1113,88 @@ describe('06.1-67 (H-6): the answer, short line first', () => {
     await open();
     const chevrons = screen.getAllByTestId(/^answer-detail-.+-chevron$/).map((n) => String(n.props.testID));
     expect(chevrons).toEqual(['answer-detail-running-chevron', 'answer-detail-sideBySide-chevron']);
+  });
+});
+
+describe('06.1-82: device-check gaps G-61-8, G-61-11, G-61-3', () => {
+  const ask = (run: Run) => withResult(run, (r) => ({ ...r, facts: [{ code: 'ask_debts_not_recorded', values: { kind: 'card' } }, ...r.facts] }));
+
+  it('G-61-8: with "None" already answered the debts ask is not shown, so it never sits unanswerable', async () => {
+    const run = ledgerRun('N02');
+    load(run, { evaluation: ask(run) });
+    mockSettings.row = { answered_no_debts_at: '2026-11-01T00:00:00Z' };
+    await open();
+    expect(screen.queryByTestId('answer-fact-actions-ask_debts_not_recorded')).toBeNull();
+    expect(screen.queryByText('No card is recorded. Do you have one?')).toBeNull();
+    expect(screen.getByTestId('answer-verdict')).toBeTruthy();
+  });
+
+  it('G-61-8: not answered yet, the ask shows and None records it', async () => {
+    const run = ledgerRun('N02');
+    load(run, { evaluation: ask(run) });
+    mockSettings.row = { answered_no_debts_at: null };
+    await open();
+    expect(screen.getByTestId('answer-fact-actions-ask_debts_not_recorded')).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(screen.getByText('None'));
+    });
+    expect(mockAnswered).toHaveBeenCalledWith({ flag: 'no_debts', on: true });
+  });
+
+  it('G-61-11: "Price and how you pay" shows the plan payment alone; running costs are their own row', async () => {
+    const base = ledgerRun('N09');
+    const plan = { mode: 'plan', cadence: { unit: 'month', every: 1 }, count: 12, termMonths: 12, apr: null, fees: { setup: 0, perPeriod: 0, end: 0 }, deposit: 0, tradeIn: 0, quotedPayment: null, firstPayment: null, deferredInterestTerm: false };
+    const purchase = { ...(base.evaluation.purchase as NonNullable<Evaluation['purchase']>), monthly: 73417 as never, runningMonthly: 32300 as never };
+    load(base, { check: { ...base.check, pay: plan as unknown as CheckV2['pay'] }, evaluation: { ...base.evaluation, purchase } });
+    await open();
+    const told = within(screen.getByTestId('answer-told-2'));
+    expect(told.getByText('$411.17 a month on a plan')).toBeTruthy();
+    expect(screen.queryByText('$734.17 a month on a plan')).toBeNull();
+  });
+
+  const envelopeReadiness = (run: Run, goalId: string): Evaluation =>
+    withResult(run, (r) => ({
+      ...r,
+      readiness: {
+        ready: false,
+        missing: ['envelopes_unconfirmed'],
+        items: [{ kind: 'envelopes', code: 'envelopes_unconfirmed', month: '2026-11', seriesId: null, envelopeId: goalId, lineId: null, name: 'laptop', amount: null, date: null }],
+        waived: [],
+      },
+    }));
+  const waiting = [{ id: 'c1', name: 'Laptop', created_by: 'u1', household_id: 'h1', version: 2, inputs: {}, deleted_at: null, status: 'waiting', decided_at: '2026-11-12T15:00:00Z', updated_at: '2026-11-12T15:00:00Z' }];
+
+  it('G-61-3: a decided check is not Not ready because of the goal Save for it made for it', async () => {
+    const run = ledgerRun('N02');
+    load(run, { evaluation: envelopeReadiness(run, 'g1') });
+    mockList.rows = waiting;
+    mockGoals.rows = [{ id: 'g1', check_id: 'c1', deleted_at: null }];
+    await open();
+    expect(screen.queryByTestId('answer-not-ready')).toBeNull();
+    expect(screen.getByTestId('answer-verdict')).toBeTruthy();
+    expect(screen.getByText('Saving for it since Nov 12.')).toBeTruthy();
+  });
+
+  it('G-61-3: another goal with no account still makes it Not ready', async () => {
+    const run = ledgerRun('N02');
+    load(run, { evaluation: envelopeReadiness(run, 'g2') });
+    mockList.rows = waiting;
+    mockGoals.rows = [{ id: 'g1', check_id: 'c1', deleted_at: null }, { id: 'g2', check_id: null, deleted_at: null }];
+    await open();
+    expect(screen.getByTestId('answer-not-ready')).toBeTruthy();
+  });
+
+  it('G-61-3: an open check keeps the Not ready card, and a deleted goal is not its own', async () => {
+    const run = ledgerRun('N02');
+    load(run, { evaluation: envelopeReadiness(run, 'g1') });
+    mockGoals.rows = [{ id: 'g1', check_id: 'c1', deleted_at: null }];
+    const view = await open();
+    expect(screen.getByTestId('answer-not-ready')).toBeTruthy();
+    mockList.rows = waiting;
+    mockGoals.rows = [{ id: 'g1', check_id: 'c1', deleted_at: '2026-11-12T16:00:00Z' }];
+    await act(async () => {
+      view.rerender(<AnswerScreen id="c1" renderGate={noGate} renderNetQuestion={renderNetQuestion} writes={writes} />);
+    });
+    expect(screen.getByTestId('answer-not-ready')).toBeTruthy();
   });
 });

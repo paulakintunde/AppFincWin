@@ -57,7 +57,11 @@ export function SaveForItScreen({ check, v3, evaluation, readyDate, currency, to
   const saver = useSaveForIt();
   const undoer = useUndo();
   const target = saveForItTarget(v3, evaluation);
-  const ready = useMemo(() => readyDate(0), [readyDate]);
+  const readyOn = useMemo(() => readyDate(0), [readyDate]);
+  // 06.1-82 (G-61-10): a ready date of today (or earlier) means it already fits: there is no date to save towards, so no same-day
+  // "Ready by"; the amount is spread over twelve months, as with no ready date, and the card says the money is there today.
+  const fitsNow = readyOn !== null && readyOn <= today;
+  const ready = fitsNow ? null : readyOn;
   const initial = target === null ? 0 : defaultMonthly(target, today, ready);
   const [monthly, setMonthly] = useState<number | null>(null);
   const [sheet, setSheet] = useState(false);
@@ -169,7 +173,13 @@ export function SaveForItScreen({ check, v3, evaluation, readyDate, currency, to
           <Text style={label}>{t('decide.screens.answerActions.goal.sub')}</Text>
           <Text style={body}>{t('decide.screens.answerActions.goal.toGo', { amount: formatMoney(target) })}</Text>
           <Text style={body}>{t('decide.screens.answerActions.goal.monthly', { monthly: formatMoney(amount) })}</Text>
-          <Text style={body}>{readyText === null ? t('decide.screens.answerActions.goal.noReadyDate') : t('decide.screens.answerActions.goal.readyBy', { readyMonth: readyText })}</Text>
+          <Text style={body}>
+            {readyText !== null
+              ? t('decide.screens.answerActions.goal.readyBy', { readyMonth: readyText })
+              : fitsNow
+                ? t('decide.screens.answerActions.goal.fitsNow')
+                : t('decide.screens.answerActions.goal.noReadyDate')}
+          </Text>
           {v3.pay.mode === 'plan' ? <Text style={label}>{t('decide.screens.answerActions.goal.upFrontOnly')}</Text> : null}
         </View>
         <Pill variant="primary" label={t('decide.screens.answerActions.goal.make')} pending={pending} onPress={() => void make()} />

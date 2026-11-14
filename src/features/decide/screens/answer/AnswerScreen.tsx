@@ -25,7 +25,7 @@ import { useSaveDecideAnswer } from '@/data/mutations/decideAnswers';
 import { useSetDecideAnswered } from '@/data/mutations/decideSetup';
 import { queryKeys } from '@/data/keys';
 import { useAccounts } from '@/data/queries/accounts';
-import { useDecideChecks } from '@/data/queries/decide';
+import { useDecideChecks, useDecideSettings, useSavingsGoals } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { DECIDE_READ_STALE_MS } from '@/data/queries/decideStale';
 import { useIsOnline } from '@/data/sync/useIsOnline';
@@ -52,6 +52,7 @@ import { EnvelopeAccountSheet, type SetEnvelopeAccount } from '../sheets/Envelop
 import { InstallmentPlanSheet } from '../sheets/InstallmentPlanSheet';
 import { giveMoreCount as countGiveMore } from '../logic/answerLines';
 import { estimatesCanAnswer, readinessFixRows, type ReadinessFixRow, type WaiverChoice } from '../logic/readinessFixes';
+import { planPaymentOf, shownEvaluation } from '../logic/shownAnswer';
 import { useNetUnanswered } from '../firstAnswer/useFirstAnswerGate';
 import { withPlanName } from '../check/planName';
 import { KEY_SKIPPED, countsLikeOf, kindOf, lineNamesOf, ownKindsOf, stepHref, useStepCheck, useStepData, type BuiltInKind } from '../check/useStepCheck';
@@ -119,6 +120,7 @@ export interface AnswerScreenProps {
 
 const NO_ROWS: readonly DecideCheckRow[] = [];
 const NO_ITEMS: readonly ReadinessItem[] = [];
+const NO_IDS: readonly string[] = [];
 const asHref = (path: string): Href => path as Href;
 
 /** 06.1-66 (CB-7, FQ8): "Nov 15" for a stored day, in the device locale. */
@@ -168,9 +170,14 @@ function leave(): void {
   else goDecideHome(router);
 }
 
+/** 06.1-66 (FQ8): a check that is bought, saved for or not being bought. */
+function isDecided(row: DecideCheckRow): boolean {
+  return row.status === 'bought' || row.status === 'waiting' || row.status === 'passed';
+}
+
 /** 06.1-66 (FQ8, CC-2): what happened to a decided check, dated; null while it is open. */
 function outcomeOf(row: DecideCheckRow, t: ReturnType<typeof useT>, shortMoment: (iso: string) => string): string | null {
-  if (row.status !== 'bought' && row.status !== 'waiting' && row.status !== 'passed') return null;
+  if (!isDecided(row)) return null;
   const date = shortMoment(row.decided_at ?? row.updated_at);
   return String(t(`decide.screens.answer.outcome.${row.status}` as never, { date } as never));
 }
@@ -213,7 +220,18 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
   // An installments side from the compare screen opens the plan sheet on arrival.
   const [sheet, setSheet] = useState<SheetKey | null>(side === 'installments' ? 'plan' : null);
   const [datePick, setDatePick] = useState<{ current: LocalDate | null; set: (d: LocalDate) => void } | null>(null);
-  const evaluation = engine.evaluation;
+  // 06.1-82: what this screen shows of the engine's answer. G-61-8: once "None" is answered on the debts ask it is not asked again.
+  // G-61-3: a decided check's own Grow goal (made by Save for it, no account yet) does not make that check's answer Not ready.
+  const settings = useDecideSettings(rc.userId ?? undefined);
+  const goals = useSavingsGoals(rc.userId ?? undefined, rc.householdId ?? undefined, { staleTime: DECIDE_READ_STALE_MS });
+  const noDebtsAnswered = (settings.data?.answered_no_debts_at ?? null) !== null;
+  const decided = row !== null && isDecided(row);
+  const goalRows = goals.data;
+  const ownGoalIds = useMemo(
+    () => (!decided || goalRows === undefined ? NO_IDS : goalRows.filter((g) => g.check_id === id && g.deleted_at == null).map((g) => g.id)),
+    [decided, goalRows, id]
+  );
+  const evaluation = useMemo(() => shownEvaluation(engine.evaluation, { noDebtsAnswered, ownGoalIds }), [engine.evaluation, noDebtsAnswered, ownGoalIds]);
   const result = engine.status === 'ready' && evaluation !== null ? evaluation.result : null;
   const currency = data.currency;
   const today = data.today as LocalDate;
@@ -519,7 +537,8 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
   const runningMonthly = evaluation?.purchase?.runningMonthly ?? 0;
   const priceLine =
     check.pay.mode === 'plan'
-      ? t('decide.screens.answer.told.onPlan', { monthly: money(evaluation?.purchase?.monthly ?? 0) })
+      ? // 06.1-82 (G-61-11): the plan payment alone; running costs have their own row, so they are never counted twice here.
+        t('decide.screens.answer.told.onPlan', { monthly: money(planPaymentOf(evaluation?.purchase) ?? 0) })
       : t('decide.screens.answer.told.upFrontCash', { amount: money(check.price ?? 0) });
   const runningLine = runningMonthly > 0 ? t('decide.screens.answer.told.runningMonthly', { monthly: money(runningMonthly) }) : null;
   const runningValue = runningMonthly > 0 ? t('decide.screens.answer.runningSome', { monthly: money(runningMonthly) }) : t('decide.screens.answer.runningNone');
