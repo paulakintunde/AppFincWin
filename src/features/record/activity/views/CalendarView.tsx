@@ -1,9 +1,12 @@
 // The Calendar view (ACT-06, ACT-16, UI-SPEC 1 Calendar): a 7-column month grid in week-start
 // order (one row container per week, flex cells, so seven columns fit at any width). A day with
 // activity sits on a soft tile with one dot coloured by the sign of the day net; 44px minimum cells. Tapping a day selects it
-// (accent ring) and lists its lines below with the day net. Cells and nets come from the
+// (accent ring) and opens the day sheet with its lines and the day net. Cells and nets come from the
 // engine calendarCells; the caller passes the already filtered/searched rows, and bulk select
 // is not offered here.
+// 06.2-12 (L03): the dot grows with what was spent that day (three sizes, same colour, size also spoken), a day with an
+// unpaid bill shows the 16 slate clock, a legend under the grid names the sizes and the clock, and the selected day opens
+// CalendarDaySheet instead of the old inline list.
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -17,8 +20,21 @@ import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
+import { stateColors } from '@/theme/tokens';
+import { Glyph } from '@/ui/icons/Glyph';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { ActivityRow } from '../ActivityRow';
+import { CalendarDaySheet } from './CalendarDaySheet';
+import {
+  BAND_HIGH_MAJOR,
+  BAND_LOW_MAJOR,
+  DOT_DIAMETER,
+  dayHasBillDue,
+  daySpentMinor,
+  dotBand,
+  minorPerMajorOf,
+  type DotBand,
+} from './calendarDots';
 
 export interface CalendarViewProps {
   month: string;
@@ -27,11 +43,19 @@ export interface CalendarViewProps {
   today: string;
   onRowPress: (row: ActivityRowView) => void;
   renderRow?: (row: ActivityRowView) => React.ReactNode;
-  /** Reports the y of the selected-day detail inside this view, so the caller can scroll to it. */
+  /**
+   * Reported the y of the selected-day detail so the caller could scroll to it. Kept for compatibility but no longer
+   * called: the L03 day sheet (06.2-12) replaced the inline list, so ActivityScreen's scroll helper is a no-op now
+   * (plan 24 removes the prop if it stays unused).
+   */
   onDetailLayout?: (y: number) => void;
 }
 
 const COLUMNS = 7;
+/** The dot drawn on an active day with nothing spent (money in only): today's dot, unchanged. */
+const PLAIN_DOT = 5;
+/** The slate clock on a day with a bill due (L03). */
+const CLOCK_SIZE = 16;
 
 /** A YYYY-MM-DD local date as "Oct 14", never shifted by the device zone. */
 function shortDay(date: string, locale: string): string {
@@ -44,11 +68,21 @@ function weekdayInitial(dow: number, locale: string): string {
   return new Intl.DateTimeFormat(locale, { weekday: 'narrow', timeZone: 'UTC' }).format(Date.UTC(2023, 0, 1 + dow));
 }
 
-export function CalendarView({ month, weekStart, rows, today, onRowPress, renderRow, onDetailLayout }: CalendarViewProps) {
+/** The day sheet title, "Sunday, Nov 8", never shifted by the device zone. */
+function longDay(date: string, locale: string): string {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number];
+  return new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(
+    Date.UTC(y, m - 1, d)
+  );
+}
+
+export function CalendarView({ month, weekStart, rows, today, onRowPress, renderRow }: CalendarViewProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const formatter = useMoneyFormatter(rc.showCents);
+  // The legend and the spoken band edges read in whole units ("Under $50"), whatever the cents setting.
+  const wholeFormatter = useMoneyFormatter(false);
   const categories = useCategoryLookup(rc.userId ?? undefined);
   const accounts = useAccounts(rc.householdId ?? undefined).data;
   const [selected, setSelected] = useState<string | null>(null);
@@ -77,29 +111,63 @@ export function CalendarView({ month, weekStart, rows, today, onRowPress, render
     return net > 0 ? `+${text}` : text;
   };
 
+  const rowsByDate = useMemo(() => {
+    const map = new Map<string, ActivityRowView[]>();
+    for (const r of rows) {
+      const list = map.get(r.local_date);
+      if (list === undefined) map.set(r.local_date, [r]);
+      else list.push(r);
+    }
+    return map;
+  }, [rows]);
+
+  const minorPerMajor = minorPerMajorOf(rc.homeCurrency);
+  const lowText = wholeFormatter.formatMoney(money(BAND_LOW_MAJOR * minorPerMajor, rc.homeCurrency));
+  const highText = wholeFormatter.formatMoney(money(BAND_HIGH_MAJOR * minorPerMajor, rc.homeCurrency));
+  const bandA11y = (band: DotBand): string | null =>
+    band === 'small'
+      ? t('appLife.calendar.spentUnderA11y', { amount: lowText })
+      : band === 'medium'
+        ? t('appLife.calendar.spentBetweenA11y', { low: lowText, high: highText })
+        : band === 'large'
+          ? t('appLife.calendar.spentOverA11y', { amount: highText })
+          : null;
+
   const labelStyle = { ...textRole(pairing, 'label'), color: colors.inkMuted };
   const selectedCell = cells.find((c) => c.kind === 'day' && c.date === selected);
-  const selectedRows = selected === null ? [] : rows.filter((r) => r.local_date === selected);
+  const selectedRows = selected === null ? [] : (rowsByDate.get(selected) ?? []);
 
-  const lines = selectedRows.map((row, index) => {
-    if (renderRow !== undefined) return <React.Fragment key={row.id}>{renderRow(row)}</React.Fragment>;
+  const sheetRow = (row: ActivityRowView, index: number, all: readonly ActivityRowView[]): React.ReactNode => {
+    if (renderRow !== undefined) return renderRow(row);
     return (
       <ActivityRow
-        key={row.id}
         row={row}
         categories={categories}
         accountName={accountName}
         formatter={formatter}
         homeCurrency={rc.homeCurrency}
         today={today}
-        cardPosition={
-          selectedRows.length === 1 ? 'only' : index === 0 ? 'first' : index === selectedRows.length - 1 ? 'last' : 'middle'
-        }
+        cardPosition={all.length === 1 ? 'only' : index === 0 ? 'first' : index === all.length - 1 ? 'last' : 'middle'}
         onPress={onRowPress}
         onMarkPaid={onRowPress}
       />
     );
-  });
+  };
+
+  const legendText = { ...textRole(pairing, 'label'), color: colors.inkMuted };
+  const legendWord = (band: Exclude<DotBand, 'none'>): string =>
+    band === 'small'
+      ? t('appLife.calendar.under', { amount: lowText })
+      : band === 'medium'
+        ? t('appLife.calendar.between', { low: lowText, high: highText })
+        : t('appLife.calendar.over', { amount: highText });
+  const legendLabel = [
+    t('appLife.calendar.legendA11y'),
+    legendWord('small'),
+    legendWord('medium'),
+    legendWord('large'),
+    t('appLife.calendar.billDue'),
+  ].join(', ');
 
   return (
     <View>
@@ -118,13 +186,19 @@ export function CalendarView({ month, weekStart, rows, today, onRowPress, render
             }
             const isSelected = selected === cell.date;
             const active = cell.count > 0;
-            const label = !active
+            const dayRows = rowsByDate.get(cell.date) ?? [];
+            const band = dotBand(daySpentMinor(dayRows), minorPerMajor);
+            const billDue = dayHasBillDue(dayRows);
+            const base = !active
               ? t('activity.calendar.cellEmptyA11y', { date: shortDay(cell.date, formatter.locale) })
               : t('activity.calendar.cellA11y', {
                   count: cell.count,
                   date: shortDay(cell.date, formatter.locale),
                   amount: signed(cell.net),
                 });
+            const spoken = [base, bandA11y(band), billDue ? t('appLife.calendar.billDueA11y') : null];
+            const label = spoken.filter((part): part is string => part !== null).join(', ');
+            const diameter = band === 'none' ? (active ? PLAIN_DOT : 0) : DOT_DIAMETER[band];
             return (
               <View key={cell.key} style={styles.flexCell}>
                 <Pressable
@@ -143,7 +217,15 @@ export function CalendarView({ month, weekStart, rows, today, onRowPress, render
                 >
                   <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{cell.day}</Text>
                   <View style={styles.dots}>
-                    {active ? <View testID="calendar-dot" style={[styles.dot, { backgroundColor: netColor(cell.net) }]} /> : null}
+                    {diameter > 0 ? (
+                      <View
+                        testID="calendar-dot"
+                        style={{ width: diameter, height: diameter, borderRadius: diameter / 2, backgroundColor: netColor(cell.net) }}
+                      />
+                    ) : null}
+                    {billDue ? (
+                      <Glyph testID="calendar-bill-due" name="stateDue" size={CLOCK_SIZE} color={stateColors.notYet.color} />
+                    ) : null}
                   </View>
                 </Pressable>
               </View>
@@ -151,23 +233,34 @@ export function CalendarView({ month, weekStart, rows, today, onRowPress, render
           })}
         </View>
       ))}
-      {selected !== null && selectedCell !== undefined && selectedCell.kind === 'day' ? (
-        <View style={styles.detail} onLayout={(e) => onDetailLayout?.(e.nativeEvent.layout.y)}>
-          <View style={styles.detailHeader}>
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>
-              {t('activity.calendar.dayHeading', { date: formatter.formatDate(selected, 'medium') })}
-            </Text>
-            {selectedCell.count > 0 ? (
-              <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{signed(selectedCell.net)}</Text>
-            ) : null}
+      <View testID="calendar-legend" accessible accessibilityLabel={legendLabel} style={styles.legend}>
+        {(['small', 'medium', 'large'] as const).map((band) => (
+          <View key={band} style={styles.legendItem}>
+            <View
+              style={{
+                width: DOT_DIAMETER[band],
+                height: DOT_DIAMETER[band],
+                borderRadius: DOT_DIAMETER[band] / 2,
+                backgroundColor: colors.inkMuted,
+              }}
+            />
+            <Text style={legendText}>{legendWord(band)}</Text>
           </View>
-          {selectedRows.length === 0 ? (
-            <Text style={{ ...textRole(pairing, 'body'), color: colors.inkMuted }}>{t('activity.calendar.empty')}</Text>
-          ) : (
-            lines
-          )}
+        ))}
+        <View style={styles.legendItem}>
+          <Glyph name="stateDue" size={CLOCK_SIZE} color={stateColors.notYet.color} />
+          <Text style={legendText}>{t('appLife.calendar.billDue')}</Text>
         </View>
-      ) : null}
+      </View>
+      <CalendarDaySheet
+        visible={selected !== null}
+        date={selected}
+        title={selected === null ? '' : longDay(selected, formatter.locale)}
+        netText={selectedCell !== undefined && selectedCell.kind === 'day' && selectedCell.count > 0 ? signed(selectedCell.net) : null}
+        rows={selectedRows}
+        renderRow={sheetRow}
+        onClose={() => setSelected(null)}
+      />
     </View>
   );
 }
@@ -183,8 +276,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: radii.glyphTile,
   },
-  dots: { flexDirection: 'row', height: 5, marginTop: 2 },
-  dot: { width: 5, height: 5, borderRadius: 2.5 },
-  detail: { marginTop: space.groupGap, gap: 8 },
-  detailHeader: { flexDirection: 'row', justifyContent: 'space-between' },
+  dots: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: CLOCK_SIZE, marginTop: 2 },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 6, marginTop: space.gapSm },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });

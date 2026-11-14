@@ -13,6 +13,7 @@ import { ACTIVITY_VIEW_KEY } from '../activityViewPrefs';
 import { getSelectedMonth, requestActivityFocus, resetActivityFocusForTests } from '@/state/activityFocus';
 import { EMPTY_FILTER } from '@/engine/activity';
 import { FAB_CLEARANCE } from '@/shell/fab/useShellPositions';
+import { layOutSheets } from '@/test/sheetLayout';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -225,7 +226,8 @@ describe('ActivityScreen sync line at rest (G5, D-15)', () => {
 });
 
 describe('ActivityScreen', () => {
-  it('calendar view scrolls the selected day detail into view', async () => {
+  // 06.2-12 (L03): a tapped day opens the day sheet in place of the inline list, so the screen no longer scrolls to it.
+  it('calendar view opens the day sheet for a tapped day and does not scroll', async () => {
     await AsyncStorage.setItem(ACTIVITY_VIEW_KEY, JSON.stringify({ view: 'calendar', sort: 'newest' }));
     mockRows = [row({ id: 'g', name: 'Coffee' })];
     const screen = await renderScreen();
@@ -233,11 +235,10 @@ describe('ActivityScreen', () => {
     const scrollTo = jest.fn();
     const spy = jest.spyOn(ScrollView.prototype, 'scrollTo').mockImplementation(scrollTo);
     await fireEvent.press(screen.getByLabelText(/^Sep 20, 1 line/));
-    const detail = screen.getByText('Sep 20, 2026').parent!.parent!;
-    await act(async () => {
-      detail.props.onLayout({ nativeEvent: { layout: { x: 0, y: 321, width: 100, height: 50 } } });
-    });
-    expect(scrollTo).toHaveBeenCalledWith({ y: 321, animated: true });
+    await layOutSheets();
+    expect(screen.getByTestId('calendar-day-sheet')).toBeTruthy();
+    expect(screen.getByText('Sunday, Sep 20')).toBeTruthy();
+    expect(scrollTo).not.toHaveBeenCalledWith(expect.objectContaining({ y: expect.any(Number), animated: true }));
     spy.mockRestore();
     await AsyncStorage.removeItem(ACTIVITY_VIEW_KEY);
   });
