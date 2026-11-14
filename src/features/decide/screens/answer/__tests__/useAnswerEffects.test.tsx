@@ -114,9 +114,38 @@ describe('useAnswerEffects (06.1-47, B-2)', () => {
       expect(w.markSeen).toHaveBeenCalledTimes(1);
     });
 
-    it('an answer stored before fingerprints is kept on reopen too', async () => {
+    // 06.1-81 re-review C: an answer stored before fingerprints carries no inputsKey and no time, and row.updated_at moves on every
+    // write (draft saves, seen state, the answer itself), so nothing tells an edit made in the stepper before this reopen from a
+    // recompute on newer records. Such an answer is stored again once, with the fingerprint of the inputs it is shown for; from
+    // then on the keep-the-first-answer rule applies as for any fingerprinted answer.
+    it('an answer stored before fingerprints, for a check edited in the stepper before reopening, is replaced with the shown answer', async () => {
       const w = writes();
-      await renderHook(() => useAnswerEffects({ row: rowWith({ answer_v3: storedFrom(first) }), result: second, writes: w, inputsKey: 'k1' }));
+      const row = rowWith({ answer_v3: storedFrom(first) });
+      await renderHook(() => useAnswerEffects({ row, result: second, writes: w, inputsKey: 'k2' }));
+      expect(w.saveAnswer).toHaveBeenCalledTimes(1);
+      expect(w.saveAnswer).toHaveBeenCalledWith(row, expect.objectContaining({ code: second.code, inputsKey: 'k2' }));
+    });
+
+    it('an answer stored before fingerprints that matches the shown answer is stamped with its fingerprint, once', async () => {
+      const w = writes();
+      const row = rowWith({ answer_v3: storedFrom(first) });
+      const { rerender } = await renderHook(({ result }: { result: Result }) => useAnswerEffects({ row, result, writes: w, inputsKey: 'k1' }), {
+        initialProps: { result: first },
+      });
+      await rerender({ result: copy(first) });
+      expect(w.saveAnswer).toHaveBeenCalledTimes(1);
+      expect(w.saveAnswer).toHaveBeenCalledWith(row, expect.objectContaining({ code: first.code, inputsKey: 'k1' }));
+    });
+
+    it('once stamped, a reopen with the same inputs keeps the stored answer', async () => {
+      const w = writes();
+      await renderHook(() => useAnswerEffects({ row: rowWith({ answer_v3: storedFrom(first, 'k1') }), result: second, writes: w, inputsKey: 'k1' }));
+      expect(w.saveAnswer).not.toHaveBeenCalled();
+    });
+
+    it('a decided check with an answer stored before fingerprints is never touched', async () => {
+      const w = writes();
+      await renderHook(() => useAnswerEffects({ row: rowWith({ status: 'bought', answer_v3: storedFrom(first) }), result: second, writes: w, inputsKey: 'k2' }));
       expect(w.saveAnswer).not.toHaveBeenCalled();
     });
 
@@ -128,9 +157,9 @@ describe('useAnswerEffects (06.1-47, B-2)', () => {
       expect(w.saveAnswer).toHaveBeenCalledWith(row, expect.objectContaining({ code: second.code, inputsKey: 'k1' }));
     });
 
-    it('an edit made on the open answer stores the new answer once, also over an answer stored before fingerprints', async () => {
+    it('an edit made on the open answer stores the new answer once', async () => {
       const w = writes();
-      const row = rowWith({ answer_v3: storedFrom(first) });
+      const row = rowWith({ answer_v3: storedFrom(first, 'k1') });
       const { rerender } = await renderHook(({ result, inputsKey }: { result: Result; inputsKey: string | null }) => useAnswerEffects({ row, result, writes: w, inputsKey }), {
         initialProps: { result: first, inputsKey: 'k1' as string | null },
       });
@@ -142,6 +171,20 @@ describe('useAnswerEffects (06.1-47, B-2)', () => {
       await rerender({ result: copy(second), inputsKey: 'k2' });
       expect(w.saveAnswer).toHaveBeenCalledTimes(1);
       expect(w.saveAnswer).toHaveBeenCalledWith(row, expect.objectContaining({ code: second.code, inputsKey: 'k2' }));
+    });
+
+    it('over an answer stored before fingerprints: stamped on open, then the edit is stored too', async () => {
+      const w = writes();
+      const row = rowWith({ answer_v3: storedFrom(first) });
+      const { rerender } = await renderHook(({ result, inputsKey }: { result: Result; inputsKey: string | null }) => useAnswerEffects({ row, result, writes: w, inputsKey }), {
+        initialProps: { result: first, inputsKey: 'k1' as string | null },
+      });
+      await rerender({ result: first, inputsKey: null });
+      await rerender({ result: copy(second), inputsKey: 'k2' });
+      await rerender({ result: copy(second), inputsKey: 'k2' });
+      expect(w.saveAnswer).toHaveBeenCalledTimes(2);
+      expect(w.saveAnswer).toHaveBeenNthCalledWith(1, row, expect.objectContaining({ code: first.code, inputsKey: 'k1' }));
+      expect(w.saveAnswer).toHaveBeenNthCalledWith(2, row, expect.objectContaining({ code: second.code, inputsKey: 'k2' }));
     });
 
     it('a check with no stored answer leaves Draft: the shown answer is stored with its fingerprint', async () => {

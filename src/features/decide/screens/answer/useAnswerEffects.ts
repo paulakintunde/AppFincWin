@@ -16,7 +16,7 @@ export interface AnswerEffectWrites {
   /**
    * 06.1-78: useSaveCheckAnswer().save, the only writer of answer_v3. Without it every open check on Decide home stays "Draft".
    * It skips a write when the stored answer is already the same, so calling it again is harmless. 06.1-81: called only when the
-   * check has no stored answer or its inputs were edited (see useAnswerEffects).
+   * check has no stored answer, its inputs were edited, or (once) its answer predates fingerprints (see useAnswerEffects).
    */
   saveAnswer?: (row: DecideCheckRow, seen: StoredSeenV3) => boolean;
 }
@@ -74,8 +74,12 @@ export function useAnswerEffects({ row, result, writes, inputsKey }: UseAnswerEf
   // 06.1-78 / 06.1-81 (owner RV-3, keep the first answer): answer_v3 is the answer the person was shown, so Decide home's
   // open-checks row leaves Draft and "Changed since you looked" compares the new answer with it. It is stored:
   //  - when the check has no stored answer yet;
-  //  - when the inputs were edited: the stored fingerprint differs from the one the shown answer was judged on, or (for an answer
-  //    stored before fingerprints) the inputs moved while this answer was open.
+  //  - when the inputs were edited: the stored fingerprint differs from the one the shown answer was judged on;
+  //  - once over an answer stored before fingerprints (re-review C). It has no inputsKey and no time of its own, and row.updated_at
+  //    moves on every write (draft saves, seen state, the answer itself), so an edit made in the stepper before this reopen cannot
+  //    be told from a recompute on newer records. It is stored again with the fingerprint of the inputs it is shown for (the same
+  //    answer just gains its fingerprint); a stale answer for older inputs would otherwise never be replaced, and Home would say
+  //    "Changed since you looked" about an answer the person has just looked at. From then on the rule above applies.
   // It is never replaced because reopening recomputed a different answer on newer records (D-13), and never once the check is
   // bought, waiting or passed. A not-ready answer and an ask are not stored (the row stays a draft for them).
   const seen = ready && result !== null && code !== 'needs_input' ? seenOf(result) : null;
@@ -83,14 +87,10 @@ export function useAnswerEffects({ row, result, writes, inputsKey }: UseAnswerEf
   const stored = row?.answer_v3 ?? null;
   const storedKey = stored === null ? 'none' : (stored.inputsKey ?? 'legacy');
   const decided = row !== null && DECIDED.has(row.status);
-  // The inputs the first settled answer of this check was judged on, while this answer stays open.
-  const firstKey = useRef<{ id: string; key: string } | null>(null);
   const saved = useRef<string | null>(null);
   useEffect(() => {
     if (id === null || row === null || seen === null || seenKey === null || inputsKey === null || decided) return;
-    if (firstKey.current?.id !== id) firstKey.current = { id, key: inputsKey };
-    const editedHere = firstKey.current.key !== inputsKey;
-    const due = storedKey === 'none' || (storedKey === 'legacy' ? editedHere : storedKey !== inputsKey);
+    const due = storedKey === 'none' || storedKey === 'legacy' || storedKey !== inputsKey;
     if (!due) return;
     const key = `${id}|${inputsKey}|${seenKey}`;
     if (saved.current === key) return;
