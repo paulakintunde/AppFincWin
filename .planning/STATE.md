@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06.2 App life wave 2 closed (7/24): 05 status map, 06 motion kit + Lottie 7.3.8, 07 Row + EmptyState; next wave 3: 08 milestone Lottie files, 09 ProgressRing + StatTile, 10 Activity rows, 12 calendar, 13 Home"
+stopped_at: "Phase 06.2 App life wave 3 closed (12/24): 08 milestone Lottie, 09 ProgressRing + StatTile, 10 Activity rows, 12 calendar, 13 Home; next wave 4: 11 Activity save moment, 14 toasts, 15 You, 16 Accounts, 17 categories.icon_key migration (owner-gated prod push)"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:
