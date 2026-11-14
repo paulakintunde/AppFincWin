@@ -12,6 +12,7 @@ import { registerTransactionMutations } from './transactions';
 import { registerImportFinalizeMutations } from './importFinalize';
 import { registerCustomCurrencyMutations } from './customCurrencies';
 import { registerMoneyPrefsMutations } from './moneyPrefs';
+import { registerRegionSubdivisionMutations } from './regionSubdivision';
 import { registerPatchMutations } from './patches';
 import { registerUndoMutations } from './undo';
 import { registerCategoryMutations } from './categories';
@@ -57,6 +58,8 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerAccountMutations(qc);
   registerCustomCurrencyMutations(qc);
   registerMoneyPrefsMutations(qc);
+  // 06.1-71: You > Region's state or province.
+  registerRegionSubdivisionMutations(qc);
   // 02-16: bulk actions and undo/rollback. The remaining unregistered keys (categories,
   // recurring series, transfers, saveImportProfile) land with their own plans.
   registerPatchMutations(qc);

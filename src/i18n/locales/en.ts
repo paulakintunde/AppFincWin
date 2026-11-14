@@ -151,6 +151,15 @@ const en = {
       monday: 'Monday',
       sunday: 'Sunday',
     },
+    // 06.1-71 (CN-10, OQ-71-1 B): the country, and the state or province in the US and Canada, for Decide's sales tax estimate.
+    region: {
+      label: 'Region',
+      fromPhone: '{{country}}, from this phone',
+      fromPhoneOption: 'From this phone',
+      subdivision: 'State or province',
+      notSet: 'Not set',
+      sub: 'Decide uses it to estimate sales tax.',
+    },
     homeCurrency: {
       label: 'Home currency',
       confirmTitle: 'Change home currency to {{code}}?',

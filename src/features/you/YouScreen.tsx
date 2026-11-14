@@ -3,7 +3,7 @@
 // resolves), the ANL-02 analytics toggle, the D-13/ENV-03 connection indicator, and the D-15
 // sign-out row. The destructive colour stays reserved for the confirm-dialog copy only — the
 // row label itself is plain ink (00-UI-SPEC.md Color).
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, type RefObject } from 'react';
 import { router, useLocalSearchParams, useNavigation, type Href } from 'expo-router';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, View, type HostInstance, type LayoutChangeEvent } from 'react-native';
@@ -31,6 +31,7 @@ import { FontPairingSwitcher } from './components/FontPairingSwitcher';
 import { AnalyticsToggle } from './components/AnalyticsToggle';
 import { WeekStartRow } from './components/WeekStartRow';
 import { HomeCurrencyRow } from './components/HomeCurrencyRow';
+import { RegionRow } from './components/RegionRow';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { DevSyncProbe } from './components/DevSyncProbe';
 
@@ -80,14 +81,16 @@ export function YouScreen() {
 
   // 05-116 (D-96): "Exchange rates" in the Needs a look sheet opens You with ?focus=currencies. From the row's layout
   // event (once), scroll the row into view and move screen-reader focus to it.
+  // 06.1-71 (CN-10, OQ-71-1 B): Decide's "Set your region" opens You with ?focus=region, the same way, on the Region row.
   const { focus } = useLocalSearchParams<{ focus?: string }>();
   const scrollRef = useRef<ScrollView>(null);
   const currencyRowRef = useRef<View>(null);
-  const focusedCurrencies = useRef(false);
-  const onCurrencyRowLayout = (_event: LayoutChangeEvent): void => {
-    if (focus !== 'currencies' || focusedCurrencies.current) return;
-    focusedCurrencies.current = true;
-    const row = currencyRowRef.current;
+  const regionRowRef = useRef<View>(null);
+  const focusedRow = useRef(false);
+  const focusRowOnLayout = (target: 'currencies' | 'region', rowRef: RefObject<View | null>): void => {
+    if (focus !== target || focusedRow.current) return;
+    focusedRow.current = true;
+    const row = rowRef.current;
     const scroll = scrollRef.current;
     // getInnerViewRef is on the runtime ScrollView but missing from the shipped typings.
     const inner = (scroll as unknown as { getInnerViewRef?: () => unknown } | null)?.getInnerViewRef?.();
@@ -96,6 +99,8 @@ export function YouScreen() {
     }
     focusAccessibility(row as HostInstance | null);
   };
+  const onCurrencyRowLayout = (_event: LayoutChangeEvent): void => focusRowOnLayout('currencies', currencyRowRef);
+  const onRegionRowLayout = (_event: LayoutChangeEvent): void => focusRowOnLayout('region', regionRowRef);
 
   // D-85: the tab root You was opened from (the last tab in the back history), else Activity.
   const originHref = (() => {
@@ -186,6 +191,7 @@ export function YouScreen() {
         ))}
         <WeekStartRow />
         <HomeCurrencyRow rowRef={currencyRowRef} onRowLayout={onCurrencyRowLayout} />
+        <RegionRow rowRef={regionRowRef} onRowLayout={onRegionRowLayout} />
       </SettingsGroup>
 
       <SettingsGroup title={t('you.section.appearance')}>

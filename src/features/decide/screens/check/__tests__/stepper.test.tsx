@@ -167,6 +167,10 @@ describe('PriceStep', () => {
     await fireEvent.press(screen.getByTestId('tax-why'));
     expect(screen.getByText('Tax not included. Set your region to add it.')).toBeTruthy();
     expect(screen.getByText('Set your region')).toBeTruthy();
+    // 06.1-71 (CN-10, OQ-71-1 B): the link opens You scrolled to its Region row, not the bare You root.
+    await fireEvent.press(screen.getByTestId('set-region'));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: '/you', params: { focus: 'region' } });
+    expect(mockPush).not.toHaveBeenCalledWith('/you');
   });
 
   it('shows a price that is too large inline and keeps Next disabled', async () => {

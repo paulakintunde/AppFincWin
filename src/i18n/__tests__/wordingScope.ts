@@ -283,6 +283,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   cost: '$4.10',
   costs: '$2,350.00',
   count: '3',
+  country: 'Canada', // 06.1-71: You > Region
   covered: '7',
   currency: 'EUR',
   date: '15 November',

@@ -105,6 +105,8 @@ export const mutationKeys = {
   addCustomCurrency: ['custom-currencies', 'add'] as const,
   editCustomCurrency: ['custom-currencies', 'edit'] as const,
   updateMoneyPrefs: ['money-prefs', 'update'] as const,
+  // 06.1-71 (OQ-71-1 B): the state or province for the sales tax estimate (profiles.region_subdivision), set on You > Region.
+  updateRegionSubdivision: ['region-subdivision', 'update'] as const,
   // Phase 2 (Record)
   addCategory: ['categories', 'add'] as const,
   editCategory: ['categories', 'edit'] as const,

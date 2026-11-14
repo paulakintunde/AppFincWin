@@ -44,6 +44,9 @@ import { withPlanName } from './planName';
 import { upFrontOf } from './upFront';
 import { kindOf, oneOffsOf, ownKindsOf, type BuiltInKind, useStepCheck, useStepData, useStepNav, withPrefill, type StepNumber } from './useStepCheck';
 
+/** You, scrolled to its Region row. */
+const YOU_REGION = { pathname: '/you', params: { focus: 'region' } } as never;
+
 /** A typed rate: up to two digits and four decimals; anything else is not taken. */
 const TAX_TEXT = /^\d{0,2}([.,]\d{0,4})?$/;
 const TAX_VALUE = /^\d{1,2}(\.\d{1,4})?$/;
@@ -237,7 +240,8 @@ export function PriceStep({ id }: { id: string }) {
             {!included && up.unknownRegion ? (
               <View testID="tax-not-included" style={[styles.soft, { backgroundColor: colors.fill6 }]}>
                 <Text style={small}>{t('decide.v3.notice.tax_not_included')}</Text>
-                <Pressable accessibilityRole="link" onPress={() => router.push('/you' as never)} style={styles.link}>
+                {/* 06.1-71 (CN-10, OQ-71-1 B): You, scrolled to the Region row, where the state or province is set. */}
+                <Pressable testID="set-region" accessibilityRole="link" onPress={() => router.push(YOU_REGION)} style={styles.link}>
                   <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.stepper.price.setRegion')}</Text>
                 </Pressable>
               </View>
