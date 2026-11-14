@@ -18,11 +18,12 @@ import { divideHalfUp } from '../../../money/rounding';
 import type { MinorUnits } from '../../../money/types';
 import { minorFromBigInt, rateDenominator, ZERO_PERCENT, type PeriodsPerYear, type Percent } from '../../../payoff/types';
 import { myPart, resolveShare, type ResolvedShare } from '../../share';
-import { purchaseFlows } from '../cash/path';
-import type { DatedFlow } from '../cash/path';
+import { asOutflow, outflow, purchaseFlowsLabelled } from '../cash/path';
+import type { DatedFlow, LabelledFlow } from '../cash/path';
 import { percentText } from '../adapters/inputsV2';
 import { addDays, yearMonthOf } from '../dates';
-import { amortBase, countFromTerm, monthlyEquivalentOf, scaledApr } from '../plan/cadence';
+import { amortBase, countFromTerm, monthlyEquivalentOf } from '../plan/cadence';
+import { effectiveAprArea, periodicRateFor } from '../plan/rateConvention';
 import { planCard, salesTaxOf, type PlanCard } from '../plan/planCard';
 import { checkQuoted, scoredPayment, type QuotedCheck } from '../plan/quoted';
 import { buildSchedule, paymentsInRange } from '../plan/schedule';
@@ -115,7 +116,7 @@ interface ExtraSpec {
 
 /** How the level payments run, so a larger payment can be walked to its own last paying period (L-09). */
 interface PayoffWalk {
-  /** Rate per period, already scaled for the cadence (scaledApr). */
+  /** Rate per period, already scaled for the cadence (periodicRateFor, 06.1 FIN-23). */
   readonly rate: bigint;
   readonly base: PeriodsPerYear;
   /** true: the first payment falls on the day, before any interest (annuity-due). */
@@ -305,6 +306,8 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
     const financed = mb(financedBig < 0n ? 0n : financedBig);
     const quoteOnly = pay.apr === null;
     const aprUsed = pay.apr ?? ZERO_PERCENT;
+    // 06.1 FIN-23 (owner D-26, 2026-11-12): with the region set to the UK or an EU country, a typed APR is read as lenders there quote it.
+    const country = ctx.region?.country ?? null;
     const out = buildSchedule({
       asOf: ctx.asOf,
       financed,
@@ -313,6 +316,7 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
       count,
       firstPayment: pay.firstPayment,
       fees: pay.fees,
+      country,
     });
     if (!out.ok) return nothing([out.missing]);
     let sched = out.schedule;
@@ -335,7 +339,7 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
     } else if (quoted.kind === 'matches' || quoted.kind === 'differs') {
       const scored = scoredPayment(sched.payment, quoted.quoted);
       if (scored !== null && scored > sched.payment) {
-        const walk: PayoffWalk = { rate: scaledApr(aprUsed, pay.cadence), base: amortBase(pay.cadence), due: pay.firstPayment?.kind !== 'one_period' };
+        const walk: PayoffWalk = { rate: periodicRateFor(aprUsed, pay.cadence, country), base: amortBase(pay.cadence), due: pay.firstPayment?.kind !== 'one_period' };
         sched = withPayment(sched, BigInt(scored), 'quoted', walk);
       }
       if (quoted.kind === 'differs') {
@@ -346,6 +350,9 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
       }
     }
     if (pay.deferredInterestTerm) facts.push({ code: 'deferred_interest_term', values: {} });
+    // 06.1 FIN-23: the line shows only on a plan whose typed rate it changed (a typed APR above 0%, region UK or EU).
+    const area = effectiveAprArea(country);
+    if (area !== null && aprUsed > 0n) facts.push({ code: 'rate_convention_effective', values: { area } });
     schedule = sched;
 
     // A first payment dated today is part of day one (P); purchaseCashFlows removes it from the dated schedule flows.
@@ -394,14 +401,24 @@ export function purchaseCashFlows(
   days: number,
   buyDate: LocalDate = asOf
 ): DatedFlow[] {
+  return purchaseCashFlowsLabelled(purchase, asOf, days, buyDate).map(asOutflow);
+}
+
+/** 06.1 UX-38: purchaseCashFlows with labels (signed, money out negative); purchaseCashFlows is this with the labels dropped. */
+export function purchaseCashFlowsLabelled(
+  purchase: Pick<Purchase, 'dayOne' | 'schedule' | 'share' | 'runningCosts'>,
+  asOf: LocalDate,
+  days: number,
+  buyDate: LocalDate
+): LabelledFlow[] {
   const s = purchase.schedule;
   // L-03: the first payment due today is taken out of the day-one flow and put back by purchaseFlows, both as the same
   // myPart, so the two cancel and the total on asOf is exactly dayOne. There is no clamp: a clamp would hide a negative
   // remainder and make the cash path disagree with the ladder (buildPurchase already floors dayOne itself at 0).
   const dayOne = BigInt(purchase.dayOne) - BigInt(firstPaymentsToday(s, purchase.share, asOf));
-  const flows = purchaseFlows({ dayOne: mb(dayOne), schedule: s, share: purchase.share }, asOf, days, dayOneDate(buyDate, asOf, days));
+  const flows = purchaseFlowsLabelled({ dayOne: mb(dayOne), schedule: s, share: purchase.share }, asOf, days, dayOneDate(buyDate, asOf, days));
   // 05.4 BO-05 (VC-02, I69): each running cost on its own dates from its start, my share of it, applied once.
-  for (const f of runningCostOutflows(purchase.runningCosts ?? [], asOf, days)) flows.push({ date: f.date, amount: myPart(f.amount, purchase.share) });
+  for (const f of runningCostOutflows(purchase.runningCosts ?? [], asOf, days)) flows.push(outflow(f.date, myPart(f.amount, purchase.share), 'running_cost'));
   return flows;
 }
 

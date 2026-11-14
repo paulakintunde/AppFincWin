@@ -151,6 +151,10 @@ jest.mock('@/data/queries/currencyOptions', () => ({
 jest.mock('@/data/mutations/homeCurrency', () => ({
   useChangeHomeCurrency: () => ({ change: jest.fn(), pending: false }),
 }));
+// 06.1-71: the Region row's writes and read (RegionRow.test.tsx covers them).
+jest.mock('@/data/mutations/moneyPrefs', () => ({ useUpdateMoneyPrefs: () => ({ setRegion: jest.fn() }) }));
+jest.mock('@/data/mutations/regionSubdivision', () => ({ useSetRegionSubdivision: () => jest.fn() }));
+jest.mock('@/data/queries/regionSubdivision', () => ({ useRegionSubdivision: () => null }));
 
 async function renderScreen() {
   return render(
@@ -392,14 +396,14 @@ describe('YouScreen Money section', () => {
     ]);
   });
 
-  it('D-101 You Money lists Pots after History', async () => {
+  it('You Money lists Goals after History (owner 2026-11-11)', async () => {
     const { getByText, getByRole, getAllByRole } = await renderScreen();
     const at = (n: string) => getAllByRole('button').indexOf(getByRole('button', { name: n }));
-    expect(at('Pots')).toBe(at('History') + 1);
+    expect(at('Goals')).toBe(at('History') + 1);
     await act(async () => {
-      fireEvent.press(getByText('Pots'));
+      fireEvent.press(getByText('Goals'));
     });
-    expect(mockRouterPush).toHaveBeenLastCalledWith('/decide/pots');
+    expect(mockRouterPush).toHaveBeenLastCalledWith('/grow?segment=goals');
   });
 
   it('D-101 the Add group has no Pots action', async () => {
@@ -540,6 +544,22 @@ describe('YouScreen focus param (05-116)', () => {
       fireEvent(getByLabelText('Home currency'), 'layout', layout);
     });
     expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('06.1-71 (CN-10): Set your region opens You focused on the Region row', async () => {
+    mockSearch = { focus: 'region' };
+    const send = jest.spyOn(AccessibilityInfo, 'sendAccessibilityEvent').mockImplementation(() => {});
+    const { getByLabelText, getByTestId } = await renderScreen();
+    expect(getByLabelText('Region, United Kingdom')).toBeTruthy();
+    await act(async () => {
+      fireEvent(getByLabelText('Home currency'), 'layout', layout);
+    });
+    expect(send).not.toHaveBeenCalled();
+    await act(async () => {
+      fireEvent(getByTestId('you-region'), 'layout', layout);
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledWith(expect.anything(), 'focus');
   });
 
   it('D-96 without the focus param the currency row takes no focus', async () => {

@@ -2,7 +2,7 @@
 import React from 'react';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import type { RecurringSeriesRow } from '@/db/rows';
-import { wrap } from '@/features/decide/check/steps/__tests__/helpers/stepProps';
+import { wrap } from '@/test/stepProps';
 import { SeriesStatusHost } from '../SeriesStatusSheet';
 import { openSeriesStatus, resetSeriesStatusHostForTests } from '../seriesStatusHost';
 

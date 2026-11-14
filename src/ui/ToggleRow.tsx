@@ -25,9 +25,11 @@ export interface ToggleRowProps {
   accessibilityHint?: string;
   /** When the spoken label differs from the visible one (05-126: "This is for housing, {{name}}"). */
   accessibilityLabel?: string;
+  /** 06.1-58 (A-SN-1): a short line under the label, beside the switch (the label and it read as one row). */
+  sub?: string;
 }
 
-export function ToggleRow({ label, value, onChange, disabled = false, accessibilityHint, accessibilityLabel }: ToggleRowProps) {
+export function ToggleRow({ label, value, onChange, disabled = false, accessibilityHint, accessibilityLabel, sub }: ToggleRowProps) {
   const { colors, pairing } = useTheme();
   const scoped = useReadOnlyScope();
   const inert = disabled || scoped;
@@ -35,13 +37,20 @@ export function ToggleRow({ label, value, onChange, disabled = false, accessibil
     <Pressable
       accessibilityRole="switch"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityHint={accessibilityHint}
+      accessibilityHint={accessibilityHint ?? sub}
       accessibilityState={{ checked: value, disabled: inert }}
       disabled={inert}
       onPress={() => onChange(!value)}
       style={[styles.row, { opacity: disabled ? 0.5 : 1 }]}
     >
-      <Text style={[{ ...textRole(pairing, 'body'), color: colors.ink }, styles.label]}>{label}</Text>
+      {sub === undefined ? (
+        <Text style={[{ ...textRole(pairing, 'body'), color: colors.ink }, styles.label]}>{label}</Text>
+      ) : (
+        <View style={styles.label}>
+          <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{label}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{sub}</Text>
+        </View>
+      )}
       <View
         style={[
           styles.track,

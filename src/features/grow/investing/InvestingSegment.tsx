@@ -9,7 +9,7 @@ import type { Href } from 'expo-router';
 import { useEditHolding } from '@/data/mutations/growHoldings';
 import { useDecideSettings } from '@/data/queries/decide';
 import { useHoldingLotRows, useHoldingRows } from '@/data/queries/growHoldings';
-import { DeletableRow } from '@/features/decide/ui/DeletableRow';
+import { DeletableRow } from '@/ui/DeletableRow';
 import { AccTile } from '@/features/grow/ui/AccTile';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';

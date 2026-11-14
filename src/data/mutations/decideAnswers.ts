@@ -30,6 +30,8 @@ import { writeClient } from './writeClient';
 import { acceptIfAlreadyApplied, upsertRow } from './cacheRows';
 import { newStepId, recordUndoStepSafely } from './undoCapture';
 import { checkAnswerKey, expectedIncomeKey, payArrivalKey } from './decideAnswerKeys';
+import { waiverAnswerKey } from '@/features/decide/snapshot/v3/waiverKeys';
+import type { ReadinessWaiver } from '@/engine/decide/v3';
 
 type AnswerList = WithPending<DecideAnswerRow>[];
 
@@ -42,7 +44,9 @@ export type AnswerInput =
   | { kind: 'pay_arrival'; seriesId: string; payDate: string; arrived: boolean }
   | { kind: 'expected_income'; month: string; amount: number; at: string }
   | { kind: 'held_bridge'; checkId: string; amount: number }
-  | { kind: 'volatile_cover'; checkId: string; covers: boolean };
+  | { kind: 'volatile_cover'; checkId: string; covers: boolean }
+  // 06.1-43 (G-1): a readiness answer; `at` is the local date it was given (stored as on_date).
+  | { kind: 'readiness_waiver'; waiver: ReadinessWaiver; at: string };
 
 export interface InsertAnswerVars {
   mode: 'insert';
@@ -256,6 +260,9 @@ function shapeOf(a: AnswerInput): Shape {
       return { kind: a.kind, key: checkAnswerKey(a.checkId), amount: requireAmount(a.amount), bool_value: null, on_date: null, check_id: a.checkId };
     case 'volatile_cover':
       return { kind: a.kind, key: checkAnswerKey(a.checkId), amount: null, bool_value: a.covers, on_date: null, check_id: a.checkId };
+    case 'readiness_waiver':
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(a.at)) throw new RangeError('save answer: at must be YYYY-MM-DD');
+      return { kind: a.kind, key: waiverAnswerKey(a.waiver), amount: null, bool_value: null, on_date: a.at, check_id: null };
   }
 }
 

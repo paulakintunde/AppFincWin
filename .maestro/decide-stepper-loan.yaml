@@ -1,0 +1,90 @@
+# 06.1-32 APP-13: a used car on a plan goes through the big-buy stepper (D-09), the installment plan sheet, then the answer
+# shows the plan's interest line and the legal footer. Run signed in as a test account; the first-answer gate (intro, net
+# question, quick estimates on an account that is not ready) is passed by common/decide-gate.yaml. Writes one check.
+# Words are the real decide.screens / decide.v3 keys in src/i18n/locales.
+appId: com.fincwin.app
+name: Decide stepper loan
+---
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- assertVisible: "Can I afford it\\?"
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "used car"
+      PRICE: "9000"
+# "used car" reads as Car, so the stepper opens on step 2 (price and how you pay)
+- extendedWaitUntil:
+    visible: "Price and how you pay"
+    timeout: 15000
+- assertVisible: "Step 2 of 3"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Installments"
+- runFlow:
+    file: common/open-sheet.yaml
+    env:
+      TAP: "Installments"
+      EXPECT: "Installment plan"
+# the panel can still be sliding in; wait for the length chips before the tap
+- extendedWaitUntil:
+    visible: "24.months"
+    timeout: 30000
+- waitForAnimationToEnd
+- tapOn: "24.months"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Rate, % a year"
+- tapOn: "Rate, % a year"
+- inputText: "9"
+# close the keyboard on the sheet's own label (hideKeyboard sends Back, which would close the sheet)
+- tapOn: "Length"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Use this plan"
+- assertVisible: ".*a.month.for.24.months"
+- tapOn: "Use this plan"
+- assertVisible: ".*down.·.*a.month"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Next"
+- tapOn: "Next"
+# Step 3: running costs, then the answer
+- extendedWaitUntil:
+    visible: "Step 3 of 3"
+    timeout: 10000
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "See the answer"
+- tapOn: "See the answer"
+- runFlow: common/decide-gate.yaml
+# 06.1-61: facts after the first and most notices open under the answer's Why? since 06.1-67; open it first.
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Why\\?"
+- runFlow:
+    when:
+      visible:
+        id: "answer-facts-why"
+    commands:
+      - tapOn:
+          id: "answer-facts-why"
+# The interest line (decide.v3.fact.interest_is_a_cost or the plan verdict's interest sentence)
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: ".*in interest.*"
+# The legal footer (legal.decideAnswer.footer) above the action bar
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "FincWin is a planning tool, not a lender\\."
+- assertVisible:
+    id: "answer-footer"
+- assertVisible: "I bought it"

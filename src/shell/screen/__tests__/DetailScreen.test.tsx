@@ -78,3 +78,38 @@ describe('DetailScreen', () => {
     expect(screen.getByRole('header', { name: 'Barclays' })).toBeTruthy();
   });
 });
+
+type ScrollJson = { type: string; props: Record<string, unknown>; children?: unknown[] | null };
+function findScroll(node: unknown): ScrollJson | null {
+  if (!node || typeof node === 'string') return null;
+  if (Array.isArray(node)) {
+    for (const n of node) {
+      const hit = findScroll(n);
+      if (hit) return hit;
+    }
+    return null;
+  }
+  const j = node as ScrollJson;
+  if (j.type === 'RCTScrollView') return j;
+  return findScroll(j.children ?? null);
+}
+
+describe('DetailScreen keyboardShouldPersistTaps (06.1-62, CB-2)', () => {
+  it('passes the opt-in prop to the scroll view', async () => {
+    const r = await renderWithShellProviders(<DetailScreen title="Quick" keyboardShouldPersistTaps="handled" />);
+    expect(findScroll(r.toJSON())?.props.keyboardShouldPersistTaps).toBe('handled');
+  });
+
+  it('leaves the default unchanged when the prop is absent', async () => {
+    const r = await renderWithShellProviders(<DetailScreen title="Quick" />);
+    const scroll = findScroll(r.toJSON());
+    expect(scroll).not.toBeNull();
+    expect(scroll?.props.keyboardShouldPersistTaps).toBeUndefined();
+  });
+
+  it('has no scroll view to pass it to when scroll is false', async () => {
+    const r = await renderWithShellProviders(<DetailScreen title="Quick" scroll={false} keyboardShouldPersistTaps="handled" />);
+    expect(findScroll(r.toJSON())).toBeNull();
+  });
+});
+

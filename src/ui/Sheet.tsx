@@ -6,6 +6,19 @@
  * INSIDE the parent's children (sibling Modals are dropped on iOS, 02.3 Pattern 4). Open sheets register
  * in the sheetStack store (D-28/D-29); Android back, the backdrop and a drag only ever close the top one
  * because each Modal handles its own request.
+ *
+ * 06.1-81 (G-78-2, G-74-2): the panel's first layout is the proof that it is on screen in the Modal's window. Until then the
+ * backdrop takes no taps, and at that layout the open slide is set again, so an open slide that started before the Modal's window
+ * was attached (its frames lost, the panel left below the screen with no dim) still brings the panel up. While the panel has not
+ * laid out yet, Android Back also reaches the sheet through BackHandler (the Modal's own onRequestClose may not be live yet), so
+ * a Back pressed during the opening closes the sheet instead of being lost.
+ *
+ * 06.1-84 (G-61-1): the slide and the dim used to exist only in Reanimated's props registry; React kept committing the first
+ * render's closed position (translateY = window height, dim 0). Reanimated 4.5 hands a settled animation's values back to React
+ * from a 500 ms JS interval and drops registry entries older than 2 s before collecting those older than 1 s, so a JS thread
+ * busy for about 1.5 s right after the slide (a Decide screen mounting with its reads) lost them, and the next React commit of
+ * the panel put it back below the screen with no dim. Once a slide to rest has finished, the sheet now commits the rest
+ * position itself (`atRest`), so React's own props always show the panel; before that it commits closed, so nothing flashes.
  */
 import React, {
   createContext,
@@ -20,6 +33,7 @@ import React, {
 } from 'react';
 import {
   AccessibilityInfo,
+  BackHandler,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -91,6 +105,9 @@ interface SheetGesture {
 }
 const SheetGestureContext = createContext<SheetGesture | null>(null);
 
+/** DB-5: a keyboard report shorter than this (dp) is a floating toolbar, not a docked keyboard. */
+export const KEYBOARD_MIN_DP = 100;
+
 /**
  * Android: a transparent Modal is its own window that adjustResize does not shrink under
  * SDK 57 edge-to-edge, and KeyboardAvoidingView has no `behavior` there, so the keyboard
@@ -100,10 +117,21 @@ const SheetGestureContext = createContext<SheetGesture | null>(null);
  */
 function useAndroidKeyboardHeight(): number {
   const [kb, setKb] = useState(0);
+  const lastRef = useRef(0);
   useEffect(() => {
     if (Platform.OS !== 'android') return undefined;
-    const show = Keyboard.addListener('keyboardDidShow', (e) => setKb(e.endCoordinates.height));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setKb(0));
+    // DB-5: one pad change per show and per hide. A repeat didShow with the same height keeps the
+    // same state (no second layout), and a floating keyboard toolbar (under KEYBOARD_MIN_DP) is no
+    // keyboard at all: padding by it moved the sheet's buttons ~63 px on every focus and blur.
+    const set = (h: number) => {
+      if (lastRef.current === h) return;
+      lastRef.current = h;
+      setKb(h);
+    };
+    const show = Keyboard.addListener('keyboardDidShow', (e) =>
+      set(e.endCoordinates.height < KEYBOARD_MIN_DP ? 0 : e.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener('keyboardDidHide', () => set(0));
     return () => {
       show.remove();
       hide.remove();
@@ -130,6 +158,12 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   const dismissibleRef = useRef(dismissible);
   const dirtyRef = useRef(dirty);
   const [discardOpen, setDiscardOpen] = useState(false);
+  // H-13: true while a drag has sent the panel off screen; the backdrop then takes no taps.
+  const [leaving, setLeaving] = useState(false);
+  // 06.1-81 (G-78-2): true once the panel has laid out in this open; the backdrop takes taps only then.
+  const [laidOut, setLaidOut] = useState(false);
+  // 06.1-84 (G-61-1): true once a slide to rest has finished in this open; React then commits the rest position itself.
+  const [atRest, setAtRest] = useState(false);
   const visibleRef = useRef(visible);
   const durationRef = useRef(motion.duration);
   useEffect(() => {
@@ -157,6 +191,23 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
     canDragDismiss.value = dismissible && !dirty;
   }, [dismissible, dirty, canDragDismiss]);
 
+  // Counts opens, so a slide's end that arrives after the sheet was closed and opened again is not taken for the new open.
+  const openSeq = useRef(0);
+  const markAtRest = useCallback((seq: number) => {
+    if (visibleRef.current && seq === openSeq.current) setAtRest(true);
+  }, []);
+  /** A slide to rest (0) whose end tells React the panel is up (G-61-1). */
+  const slideUp = useCallback(
+    (duration: number) => {
+      const seq = openSeq.current;
+      return withTiming(0, { duration, easing: EASING }, (finished) => {
+        'worklet';
+        if (finished) scheduleOnRN(markAtRest, seq);
+      });
+    },
+    [markAtRest],
+  );
+
   const clearDismissTimer = useCallback(() => {
     if (dismissTimerRef.current !== null) {
       clearTimeout(dismissTimerRef.current);
@@ -177,12 +228,13 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
     if (!visible) return;
     clearDismissTimer();
     dismissingRef.current = false;
+    openSeq.current += 1;
     // Reset on every open: a drag leaves translateY at 110%.
     translateY.value = height;
     backdrop.value = 0;
     scrollY.value = 0;
-    translateY.value = withTiming(0, { duration: DURATION.sheetUp, easing: EASING });
-    backdrop.value = withTiming(BACKDROP_OPACITY, { duration: DURATION.backdrop, easing: Easing.ease });
+    translateY.value = slideUp(durationRef.current(DURATION.sheetUp));
+    backdrop.value = withTiming(BACKDROP_OPACITY, { duration: durationRef.current(DURATION.backdrop), easing: Easing.ease });
     if (accessibilityLabel) AccessibilityInfo.announceForAccessibility(accessibilityLabel);
     // Re-run on open only; a rotation while open should not replay the slide.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -200,37 +252,87 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
     };
   }, [visible, id]);
 
-  const requestDismiss = useCallback((_source: SheetDismissSource) => {
-    if (dismissingRef.current) return;
-    if (!dismissibleRef.current) return;
-    if (dirtyRef.current) {
-      setDiscardOpen(true);
-      return;
-    }
-    onDismissRef.current();
-  }, []);
+  /**
+   * H-13 (DB-3/DB-4): the one restore path. Every route that leaves the sheet open after a dismiss
+   * request (backdrop, Back, drag, blocked drag, Keep editing) brings the panel back to 0 and the
+   * backdrop back to its opacity, so a backdrop can never stay on screen without its panel. A panel
+   * that never reached the screen gets the full open slide again. A fresh animation is set even when
+   * the value already reads 0, so the native view is re-synced to it.
+   */
+  const keepEditing = useCallback(() => {
+    if (!visibleRef.current) return;
+    setLeaving(false);
+    const neverShown = translateY.value >= sheetHeight.value;
+    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
+    translateY.value = slideUp(durationRef.current(neverShown ? DURATION.sheetUp : DURATION.sheetDrag));
+    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
+    backdrop.value = withTiming(BACKDROP_OPACITY, { duration: durationRef.current(DURATION.backdrop), easing: Easing.ease });
+  }, [translateY, sheetHeight, backdrop, slideUp]);
+
+  /**
+   * 06.1-81 (G-78-2): the panel is on screen in the Modal's window now. The open slide is set again (from where it is), so a slide
+   * whose frames went to a view that was not attached yet still ends at 0 with the dim on; then the backdrop takes taps. A sheet
+   * that is already leaving (a drag) is left alone.
+   */
+  const onFirstLayout = useCallback(() => {
+    setLaidOut(true);
+    if (!visibleRef.current || dismissingRef.current) return;
+    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
+    translateY.value = slideUp(durationRef.current(DURATION.sheetUp));
+    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
+    backdrop.value = withTiming(BACKDROP_OPACITY, { duration: durationRef.current(DURATION.backdrop), easing: Easing.ease });
+  }, [translateY, backdrop, slideUp]);
+
+  const requestDismiss = useCallback(
+    (_source: SheetDismissSource) => {
+      if (dismissingRef.current) return;
+      if (!dismissibleRef.current) {
+        keepEditing();
+        return;
+      }
+      if (dirtyRef.current) {
+        keepEditing();
+        setDiscardOpen(true);
+        return;
+      }
+      // DB-14: a clean sheet's close request goes to the owner in the same press handler.
+      onDismissRef.current();
+    },
+    [keepEditing],
+  );
+
+  // 06.1-81 (G-74-2): while the panel has not laid out, the Modal's window may not have focus yet and a Back would go to the screen
+  // under it. The sheet takes it here and closes (or asks, when dirty), as the Modal's own Back does once it is live.
+  useEffect(() => {
+    if (!visible || laidOut || Platform.OS !== 'android') return undefined;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      requestDismiss('back');
+      return true;
+    });
+    return () => sub.remove();
+  }, [visible, laidOut, requestDismiss]);
 
   const onDragDismiss = useCallback(() => {
     hapticSelection();
     dismissingRef.current = true;
+    setLeaving(true);
     clearDismissTimer();
     dismissTimerRef.current = setTimeout(() => {
       dismissTimerRef.current = null;
       dismissingRef.current = false;
       requestDismiss('drag');
       // Pitfall 5: if the owner kept the sheet open, bring it back instead of leaving an invisible Modal.
-      requestAnimationFrame(() => {
-        if (!visibleRef.current) return;
-        translateY.value = withTiming(0, { duration: DURATION.sheetDrag, easing: EASING });
-        backdrop.value = withTiming(BACKDROP_OPACITY, { duration: DURATION.backdrop, easing: Easing.ease });
-      });
+      requestAnimationFrame(keepEditing);
     }, durationRef.current(SHEET_DISMISS_DELAY));
-  }, [requestDismiss, clearDismissTimer, translateY, backdrop]);
+  }, [requestDismiss, clearDismissTimer, keepEditing]);
 
   // A dirty sheet dragged past the threshold snaps back (canDragDismiss) and asks instead.
   const onBlockedDismiss = useCallback(() => {
-    if (dirtyRef.current && dismissibleRef.current) setDiscardOpen(true);
-  }, []);
+    if (dirtyRef.current && dismissibleRef.current) {
+      keepEditing();
+      setDiscardOpen(true);
+    }
+  }, [keepEditing]);
 
   const pan = useMemo(
     () =>
@@ -298,6 +400,9 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
 
   // Drop a stale prompt when the owner closes the sheet or it stops being dirty (state adjusted during render, not in an effect).
   if ((!visible || !dirty) && discardOpen) setDiscardOpen(false);
+  if (!visible && leaving) setLeaving(false);
+  if (!visible && laidOut) setLaidOut(false);
+  if (!visible && atRest) setAtRest(false);
 
   if (!visible) {
     return null;
@@ -312,11 +417,12 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
         <Animated.View
           testID="sheet-backdrop-fill"
           pointerEvents="none"
-          style={[styles.backdrop, { backgroundColor: colors.ink }, backdropStyle]}
+          style={[styles.backdrop, { backgroundColor: colors.ink }, backdropStyle, atRest ? styles.dimAtRest : null]}
         />
         <Pressable
           testID="sheet-backdrop"
           style={styles.backdrop}
+          pointerEvents={leaving || !laidOut ? 'none' : 'auto'}
           accessibilityRole="button"
           accessibilityLabel={t('a11y.close')}
           onPress={() => requestDismiss('backdrop')}
@@ -336,6 +442,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
             onLayout={(e: LayoutChangeEvent) => {
               // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
               sheetHeight.value = e.nativeEvent.layout.height;
+              if (!laidOut) onFirstLayout();
             }}
             style={[
               styles.container,
@@ -351,6 +458,8 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
                 paddingTop: space.sheetCornerPad,
                 paddingBottom: space.sheetPadBottom + insets.bottom + keyboardHeight,
               },
+              // G-61-1: after the panel's slide has ended, React commits the rest; Reanimated's live values (a drag) still apply on top.
+              atRest ? styles.panelAtRest : null,
             ]}
           >
             {/* Grab handle: a 44px hit area pulled up into the corner padding and back down, so the
@@ -380,7 +489,10 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
             {dirty ? (
               <DiscardPrompt
                 visible={discardOpen}
-                onKeep={() => setDiscardOpen(false)}
+                onKeep={() => {
+                  setDiscardOpen(false);
+                  keepEditing();
+                }}
                 onDiscard={() => {
                   setDiscardOpen(false);
                   (onDiscardRef.current ?? onDismissRef.current)();
@@ -500,6 +612,12 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
+  },
+  dimAtRest: {
+    opacity: BACKDROP_OPACITY,
+  },
+  panelAtRest: {
+    transform: [{ translateY: 0 }],
   },
   promptColumn: {
     gap: space.groupGap,

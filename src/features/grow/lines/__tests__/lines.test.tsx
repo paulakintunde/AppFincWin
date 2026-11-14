@@ -5,7 +5,7 @@ import path from 'path';
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import { minorUnits } from '@/engine/money';
-import { wrap } from '@/features/decide/check/steps/__tests__/helpers/stepProps';
+import { wrap } from '@/test/stepProps';
 import type { GoalsRead } from '@/features/grow/goals/useGoalsRead';
 import { GrowLinesScreen, isWholeAmount } from '../GrowLinesScreen';
 
@@ -47,7 +47,7 @@ jest.mock('@/engine/decide', () => ({
   ...jest.requireActual('@/engine/decide'),
   prepareContext: () => ({ ok: true, context: { limits: { dsrLine: 36n * 10n ** 10n, investingFloor: 15_000, savingFloor: 10_000 } } }),
 }));
-jest.mock('@/features/decide/home/homeCardModel', () => ({ monthBreakdown: () => ({ income: 500_000, debts: 50_000 }) }));
+jest.mock('@/features/grow/lines/monthBreakdown', () => ({ monthBreakdown: () => ({ income: 500_000, debts: 50_000 }) }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', today: '2026-11-05', userId: 'u1', householdId: 'h1', ready: true, timeZone: 'UTC' }),
 }));

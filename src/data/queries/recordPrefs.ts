@@ -9,31 +9,39 @@ import { fetchSampleDataExists } from '@/db/samples';
 import { supabase } from '@/services/supabase';
 import { queryKeys } from '../keys';
 
+/** 06.1-78 (G-72-2): the observer's freshness; a Decide screen passes five minutes, undefined keeps the app default. */
+export interface ReadOpts {
+  staleTime?: number;
+}
+
 export const DEFAULT_RECORD_PREFS: RecordPrefsRow = { week_start: null, sample_prompt_answered_at: null };
 
-export function useRecordPrefs(userId?: string): { prefs: RecordPrefsRow; loading: boolean; isSuccess: boolean } {
+export function useRecordPrefs(userId?: string, opts?: ReadOpts): { prefs: RecordPrefsRow; loading: boolean; isSuccess: boolean } {
   const query = useQuery({
     queryKey: queryKeys.recordPrefs(userId ?? ''),
     queryFn: async () => (await fetchRecordPrefs(supabase, userId as string)) ?? DEFAULT_RECORD_PREFS,
     enabled: Boolean(userId),
+    ...(opts?.staleTime === undefined ? {} : { staleTime: opts.staleTime }),
   });
   return { prefs: query.data ?? DEFAULT_RECORD_PREFS, loading: query.isLoading, isSuccess: query.isSuccess };
 }
 
-export function useHouseholdHorizon(householdId?: string): { horizonMonth: string | null; isSuccess: boolean } {
+export function useHouseholdHorizon(householdId?: string, opts?: ReadOpts): { horizonMonth: string | null; isSuccess: boolean } {
   const query = useQuery({
     queryKey: queryKeys.householdHorizon(householdId ?? ''),
     queryFn: () => fetchHouseholdHorizon(supabase, householdId as string),
     enabled: Boolean(householdId),
+    ...(opts?.staleTime === undefined ? {} : { staleTime: opts.staleTime }),
   });
   return { horizonMonth: query.data ?? null, isSuccess: query.isSuccess };
 }
 
-export function useSampleExists(householdId?: string): { hasSamples: boolean; isSuccess: boolean } {
+export function useSampleExists(householdId?: string, opts?: ReadOpts): { hasSamples: boolean; isSuccess: boolean } {
   const query = useQuery({
     queryKey: queryKeys.sampleExists(householdId ?? ''),
     queryFn: () => fetchSampleDataExists(supabase, householdId as string),
     enabled: Boolean(householdId),
+    ...(opts?.staleTime === undefined ? {} : { staleTime: opts.staleTime }),
   });
   return { hasSamples: query.data ?? false, isSuccess: query.isSuccess };
 }

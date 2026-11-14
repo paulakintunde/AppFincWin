@@ -4,6 +4,7 @@
 // SheetOverlayProvider (D-16). Multi-step flows (Decide check, import, onboarding) are
 // outer-stack screens (D-12).
 import { Redirect, Stack, usePathname } from 'expo-router';
+import { Profiler } from 'react';
 import { Platform, View } from 'react-native';
 import { SwipeBack } from '@/features/navigation/SwipeBack';
 import { isSwipeBackRoute } from '@/features/navigation/swipeBackGesture';
@@ -24,6 +25,9 @@ import { ShellLayoutProvider } from '@/shell/layout/ShellLayoutProvider';
 import { SheetOverlayProvider } from '@/ui/sheetOverlay';
 import { RouteErrorBoundary } from '@/ui/RouteErrorBoundary';
 import { Screen } from '@/ui/Screen';
+import { perfEnabled } from '@/features/decide/perf/perfMarks';
+import { probeCommit } from '@/data/perf/cacheProbe';
+import { DecideV3Scope } from '@/data/queries/decideV3';
 
 // D-10: mounted after the consent redirect, so a reminder tap routes only after sign-in and consent.
 function DecideNotificationObserver({ enabled }: { enabled: boolean }) {
@@ -62,8 +66,21 @@ export default function AppLayout() {
           <FabProvider>
             <View style={{ flex: 1 }}>
               <Stack
-                screenOptions={{ headerShown: false, animation }}
-                screenLayout={({ children, route }) => <SwipeBack enabled={isSwipeBackRoute(route.name)}>{children}</SwipeBack>}
+                // 06.1-73 (DB-1): screens two or more below the top stop re-rendering until they are near the top again.
+                // On Fabric the screen directly below the top is never frozen (react-native-screens), so Back shows it at once.
+                screenOptions={{ headerShown: false, animation, freezeOnBlur: true }}
+                screenLayout={({ children, route }) => {
+                  // 06.1-72 (G-73-1): each Decide screen runs the Decide reads once, shared by all its hooks.
+                  const body = DECIDE_OPEN && route.name.startsWith('decide/') ? <DecideV3Scope>{children}</DecideV3Scope> : children;
+                  // 06.1-73: perf builds count each outer screen's commits (route name only).
+                  return perfEnabled() ? (
+                    <Profiler id={`stack.${route.name}`} onRender={probeCommit}>
+                      <SwipeBack enabled={isSwipeBackRoute(route.name)}>{body}</SwipeBack>
+                    </Profiler>
+                  ) : (
+                    <SwipeBack enabled={isSwipeBackRoute(route.name)}>{body}</SwipeBack>
+                  );
+                }}
               >
                 <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
                 <Stack.Screen name="accounts/index" />
@@ -74,9 +91,6 @@ export default function AppLayout() {
                 <Stack.Screen name="import" />
                 <Stack.Screen name="setup/account" />
                 <Stack.Screen name="setup/history" />
-                {/* 05.2-32: per-account gate (decide_v3) is inside the route, so it is not behind DECIDE_OPEN. */}
-                <Stack.Screen name="decide/setup" />
-                <Stack.Screen name="decide/settings" />
                 {/* 06-13 (D-21): the Calculators page and its four typed calculators; not behind the Decide gate. */}
                 <Stack.Screen name="grow/calculators/index" />
                 <Stack.Screen name="grow/calculators/loan" />
@@ -96,10 +110,31 @@ export default function AppLayout() {
                 <Stack.Screen name="grow/lines" />
                 {/* quick-261025-f46: today's Decide screens stay unreachable, deep links included, while DECIDE_OPEN is false. */}
                 <Stack.Protected guard={DECIDE_OPEN}>
+                  {/* 06.1-28 (D-05): the one Decide. Old paths (check/[id], settings, open, changes, lines, pots, setup/rough, setup/first-check) are redirect files. */}
                   <Stack.Screen name="setup/rough" />
                   <Stack.Screen name="setup/first-check" />
                   <Stack.Screen name="decide/check/[id]" />
-                  <Stack.Screen name="decide/past" />
+                  {/* 06.1-64 (H-3, from 06.1-57): no native iOS edge swipe on the steps; the steps replace each other, so it would pop past
+                      them. Their own Back rule (useStepNav) applies instead. */}
+                  <Stack.Screen name="decide/check/kind" options={{ gestureEnabled: false }} />
+                  <Stack.Screen name="decide/check/price" options={{ gestureEnabled: false }} />
+                  <Stack.Screen name="decide/check/costs" options={{ gestureEnabled: false }} />
+                  <Stack.Screen name="decide/answer/[id]" />
+                  <Stack.Screen name="decide/compare/[id]" />
+                  <Stack.Screen name="decide/save/[id]" />
+                  <Stack.Screen name="decide/bought/[id]" />
+                  <Stack.Screen name="decide/safety-net" />
+                  <Stack.Screen name="decide/setup/index" />
+                  <Stack.Screen name="decide/setup/pay" />
+                  <Stack.Screen name="decide/setup/bills" />
+                  <Stack.Screen name="decide/setup/debts" />
+                  <Stack.Screen name="decide/setup/net" />
+                  <Stack.Screen name="decide/setup/rules" />
+                  <Stack.Screen name="decide/setup/records" />
+                  <Stack.Screen name="decide/setup/quick-estimates" />
+                  <Stack.Screen name="decide/settings" />
+                  <Stack.Screen name="decide/past/index" />
+                  <Stack.Screen name="decide/past/[id]" />
                   <Stack.Screen name="decide/open" />
                   <Stack.Screen name="decide/changes" />
                   <Stack.Screen name="decide/lines" />
@@ -115,7 +150,7 @@ export default function AppLayout() {
               <SampleBanner />
               <UndoToastHost />
               {/* WR-D13: a reminder tap routes only once consent is on record; a missing profile is not consent.
-                  quick-261025-f46: while Decide is closed a reminder tap must not push /decide/check/[id]. */}
+                  quick-261025-f46: while Decide is closed a reminder tap must not push /decide/check/[id] (a redirect to the answer). */}
               <DecideNotificationObserver enabled={DECIDE_OPEN && consentAnswered({ loading, consent })} />
               <SampleClearPrompts />
               <DeviceHomeCurrencyDefault />

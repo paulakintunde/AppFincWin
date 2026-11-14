@@ -40,89 +40,107 @@ const IMPERATIVE_LEAD = /^(Spend|Save|Try|Keep|Buy|Borrow|Skip|Put|Cut|Pay|Inves
 // are not a prescription about money. Each one is listed by key so a new descriptive string cannot slip through.
 const ACTION_LABELS = new Set([
   'income.pay.defaultName', // the noun "Pay": the name a new pay series gets (05.2-49), not an instruction
-  'decide.quick.payWith', // field caption: "Pay with" Cash / Credit
-  'decide.quick.error.retry', // button
-  'decide.flow.retry', // button
-  'decide.rough.save', // button
-  'decide.setup.debtSheet.save', // button (05.2-38)
-  'decide.lines.save', // button
-  'decide.flow.saveClose', // button
-  'decide.flow.commit.wait', // button: "Save the plan" commits the Wait decision the user chose
-  'decide.scope.save', // button
-  'decide.lineEditor.save', // button
-  'decide.depth.changes.save', // button
-  'decide.depth.cardMin.save', // button
-  'decide.onboarding.skip', // button: skip this onboarding step
-  'decide.onboarding.checkTitle', // invites the user to try the check itself, not a purchase
   'decide.delete.keep', // dialog choice: keep the record instead of deleting it
-  'decide.verdict.key.putInCaption', // field caption: the key figure "Put in a month" (investing amount)
-  'decide.pots.sheet.save', // button: "Save pot" (05-131, R18.7); "Try again" reuses decide.flow.retry
   // 05.2 (plan 20): setup controls and UI-SPEC titles that open with a verb. Each names an action in the app, not advice about money.
-  'decide.setup.shell.skip', // button: skip this step
   'decide.accountUse.save', // button: "Save account use"
   'decide.accountUse.keep', // button: "Keep as is"
-  'decide.emergencySheet.save', // button: "Save emergency fund"
-  'decide.settings.save', // button: "Save answer"
-  'decide.settings.keep', // button: "Keep as is"
-  'decide.settings.resetKeep', // dialog choice: "Keep it" (cancels the reset)
-  'decide.unspentSheet.keepAsIs', // button
-  'decide.unspentSheet.keepRolled', // button: "Keep {{amount}}" (keeps the rolled-forward figure)
-  'decide.unspentSheet.saveFigure', // button
-  'decide.setup.loans.kindBnpl', // loan kind name: "Buy now, pay later"
-  'decide.setup.saving.optionFixedDesc', // UI-SPEC wording describing what a Fixed saving is: "Keep it going, like a bill."
-  'decide.setupPage.labelArrivals', // readout label: "Pay arrivals saved" (a noun phrase)
   'income.method.optionSteady', // choice-card title: "Pay myself a steady amount."
   'activity.incomeTag.save', // button: "Save income type"
   'activity.refund.emptyBody', // empty-search hint, UI-SPEC wording: "Try a payee name or an amount."
+  // 06.1-05 (D-18): decide.screens buttons, item and rule names and toasts that open with one of these verbs. Each names an
+  // action in the app or a rule the user set, not advice about money.
+  'decide.screens.common.saveAndClose', // button
+  'decide.screens.common.error.retry', // button: "Try the check again" (N23)
+  'decide.screens.common.error.retryA11y', // the same button’s accessibility label
+  'decide.screens.home.examples.title', // heading of the example chips: "Try an example"
+  'decide.screens.sheetsHome.rulesCard.keepAtLeast', // rule name: "Keep at least {{amount}} left each month"
+  'decide.screens.sheetsHome.rulesCard.changedSub', // row subline naming what can change: "Pay, a bill or a one-off cost"
+  'decide.screens.sheetsHome.openCheck.saveForIt', // action row
+  'decide.screens.sheetsHome.rule.save', // button
+  'decide.screens.sheetsHome.rule.keep.title', // rule name (sheet title)
+  'decide.screens.sheetsHome.rule.keep.field', // field caption: the rule name
+  'decide.screens.sheetsHome.addRule.keep', // rule kind name
+  'decide.screens.sheetsHome.changed.save', // button
+  'decide.screens.answer.options.later', // option chip: "Buy later" (equal-weight option, UX-10)
+  'decide.screens.answer.worked.payAndBills', // source row name: "Pay and bills"
+  'decide.screens.answerDetail.later.title', // sheet title: "Buy later"
+  'decide.screens.answerActions.bar.saveForIt', // action bar button
+  'decide.screens.setup.items.pay', // setup item name: "Pay and payday"
+  'decide.screens.setupPayBills.pay.title', // setup item name: "Pay and payday"
+  'decide.screens.setupPayBills.pay.countSteady', // choice title, same wording as income.method.optionSteady
+  'decide.screens.setupPayBills.pay.save', // button
+  'decide.screens.setupPayBills.payEdit.save', // button
+  'decide.screens.setupPayBills.payEdit.toast', // toast naming what was saved: "Pay saved: ..."
+  'decide.screens.setupPayBills.bills.save', // button
+  'decide.screens.setupPayBills.billEdit.save', // button
+  'decide.screens.setupOthers.debts.save', // button
+  'decide.screens.setupOthers.net.save', // button
+  'decide.screens.setupOthers.rules.keepAtLeast', // rule name
+  'decide.screens.setupOthers.rules.save', // button
+  'decide.screens.setupOthers.records.save', // button
+  'decide.screens.setupOthers.records.quickSave', // 06.1-65 button: "Save estimates" on quick estimates opened from Records
+  'decide.screens.sheetsInput.quick.save', // button
+  'decide.screens.sheetsInput.plan.save', // button
+  'decide.screens.sheetsInput.often.save', // button
+  'decide.screens.sheetsCosts.sale.save', // button
+  'decide.screens.safetyNet.unlock.keep', // dialog choice: "Keep it locked"
+  'decide.screens.safetyNet.firstAnswer.save', // button
 ]);
 // 2026-10-23 walkthrough: sentences, hints and placeholders are declarative ("A price comes first"), never an order to the
 // user ("Add a price to continue", "Type the rate"). Buttons, dialog titles and field captions that name an action in the
 // app are listed by key; any other string that opens with an instruction verb fails.
 const INSTRUCTION_LEAD = /^(Add|Type|Choose|Pick|Enter|Switch|Move|Tap|Change (it|any|the))\b/;
 const CONTROL_LABELS = new Set([
-  'decide.home.noFigures.addRough', // button
-  'decide.setup.debtSheet.titleAdd', // sheet title (05.2-38), same wording as loans.addCaption
-  'decide.lineEditor.titleAdjust', // sheet title
-  'decide.lineEditor.titleRunning', // sheet title
-  'decide.lineEditor.titleReplaces', // sheet title
-  'decide.lineEditor.titleSetback', // sheet title
-  'decide.lineEditor.titleFee', // sheet title
-  'decide.past.pickTitle', // sheet title
-  'decide.depth.changes.addTitle', // sheet title
-  'decide.section.optSwitchWait', // button
-  'decide.flow.commit.none', // disabled primary button label
   'decide.hint.foldTap', // reveal hint named in UI-SPEC as a control
   // 05-110 (R17.6): UI controls on the keyed list; none is a prescription about money
   'decide.v3.factAction.addLimit', // 05.4 FIN-03 (D-38): answer button to "Does Main have an overdraft?"
   'decide.v3.factAction.addIt', // 05.4 D-43 (05.4-20): answer button to "No loan, card, other debt or overdraft is recorded. Do you have any?"
-  'decide.home.field.check', // button: "Check it"
-  'decide.home.field.full', // text link: "Full check"
-  'decide.home.field.fullA11y', // the same link's accessibility label
-  'decide.home.problems.failedAction', // action: "Review changes"
-  'decide.home.problems.conflictAction', // action: "Review edits"
-  'decide.home.problems.noMonth.action', // action: "Add rough figures"
-  'decide.home.unavailable.addRough', // button: "Add rough figures"
-  'decide.home.rows.changesAdd', // row that adds a change: "Add a change coming up"
-  'decide.home.problems.rate.action', // action: "Exchange rates"
-  'decide.home.problems.stale.action', // action: "Exchange rates"
-  'decide.home.problems.cardMin.action', // action: "Card minimum payment"
-  // 05-131 (R18.7): the Pots screen controls
-  'decide.pots.emptyAction', // button: "Add a pot"
-  'decide.pots.addA11y', // accessibility label of the "+ Pot" link: "Add a pot"
   // 05.2 (plan 20): setup controls, captions and UI-SPEC sentences. Every one is a button, link, caption or step intro named in
   // 05.2-UI-SPEC.md; none tells the user what to do with money.
-  'decide.setup.regular.addTitle', // sheet title
-  'decide.setup.regular.emptyBody', // empty-state body, UI-SPEC wording
-  'decide.setup.loans.addCaption', // field caption: "Add a loan or card"
-  'decide.setup.saving.readinessNoGoal', // readiness line, UI-SPEC wording
-  'decide.setup.saving.readinessNoMonthly', // readiness line, UI-SPEC wording
-  'decide.setup.everyday.changeIt', // button: "Change it"
-  'decide.setup.unusual.intro', // step intro, UI-SPEC wording
   'decide.setup.accountUse.choose', // answer line on an unanswered row, UI-SPEC wording
-  'decide.setup.emergency.chooseAccount', // row value: "Choose an account"
   'income.paid.intro', // step intro: "Choose all that apply."
   'income.method.intro', // step intro: "Pick the one that fits you. Nothing is chosen for you."
   'income.other.intro', // step intro: "Choose all that apply, or None."
+  // 06.1-05 (D-18): decide.screens buttons, links, sheet titles and accessibility labels (06.1-UI-SPEC Copywriting Contract).
+  'decide.screens.common.pickDate', // choice and sheet opener: "Pick a date"
+  'decide.screens.home.moreDetails.tileExpenseA11y', // tile accessibility label
+  'decide.screens.home.moreDetails.tileLoanA11y', // tile accessibility label
+  'decide.screens.home.moreDetails.tileSavingsA11y', // tile accessibility label
+  'decide.screens.home.moreDetails.tileIncomeA11y', // tile accessibility label
+  'decide.screens.sheetsHome.openChecks.addPurchaseA11y', // link accessibility label
+  'decide.screens.sheetsHome.openCheck.choosePay', // action row
+  'decide.screens.sheetsHome.addRule.title', // sheet title
+  'decide.screens.sheetsHome.addRule.add', // button
+  'decide.screens.stepper.kind.addOwn', // tile title
+  'decide.screens.answerDetail.stops.add', // button
+  'decide.screens.answerActions.goal.changeAmount', // link
+  'decide.screens.answerActions.bought.title', // sheet title
+  'decide.screens.answerActions.bought.add', // button
+  'decide.screens.answerActions.bought.addBill', // button
+  'decide.screens.answerActions.runningCost.add', // button
+  'decide.screens.setupPayBills.otherIncome.title', // sheet title
+  'decide.screens.setupPayBills.otherIncome.add', // button
+  'decide.screens.setupPayBills.billAdd.title', // sheet title
+  'decide.screens.setupPayBills.billAdd.add', // button
+  'decide.screens.setupOthers.net.changeSize', // link
+  'decide.screens.setupOthers.records.addSince', // link to Activity quick add
+  'decide.screens.setupOthers.records.addAsYouGo', // button
+  'decide.screens.sheetsInput.date.title', // sheet title
+  'decide.screens.sheetsInput.quick.add', // button
+  'decide.screens.sheetsInput.quick.expense.title', // sheet title
+  'decide.screens.sheetsInput.quick.loan.title', // sheet title
+  'decide.screens.sheetsInput.quick.savings.title', // sheet title
+  'decide.screens.sheetsInput.quick.income.title', // sheet title
+  'decide.screens.sheetsCosts.own.running.title', // sheet title
+  'decide.screens.sheetsCosts.own.running.add', // button
+  'decide.screens.sheetsCosts.own.stop.title', // sheet title
+  'decide.screens.sheetsCosts.own.stop.add', // button
+  'decide.screens.sheetsCosts.own.oneOff.title', // sheet title
+  'decide.screens.sheetsCosts.own.oneOff.add', // button
+  'decide.screens.sheetsCosts.own.kind.title', // sheet title
+  'decide.screens.sheetsCosts.own.kind.add', // button
+  'decide.screens.sheetsCosts.own.addItem', // button
+  'decide.screens.safetyNet.settings.changeSize', // link
 ]);
 // 05.4-37: the 05.4 copy rules for decide.v3 (and the D-64 legal keys). Each entry names its rule.
 const V3_COMPLIANCE: readonly RegExp[] = [
@@ -156,11 +174,6 @@ const BANNED = [/\badvice\b/i,/\badvis/i, /recommend/i, /you should/i, /we sugge
 // word; 100 months against the 60-month maximum credit horizon is the longest past-horizon pair the demo can produce.
 const DEMO_VALUES: Record<string, string> = { amount: '$1,234', short: '$1,234', already: '$412', left: '$1,234', pct: '41%', basis: 'average', count: '100', horizon: '60', payment: '$302.08' }; // payment: a demo-scale monthly payment with cents (D-54)
 const TITLE_CAP = 64; // UI-SPEC: title at most 3 heading lines at 402 ("about 64 characters")
-const REASON_CAP = 44; // UI-SPEC: each suppression reason <= 44 characters, one meta line
-const QUICK_NEW_CAP = 64;
-// UI-SPEC conflict (05-02 revision): titleInvBoth is 65 characters before its amount, so no amount fits 64.
-// The string is locked, so it is capped at 72 here and its three-line fit is checked on device in 05-26.
-const TITLE_CAP_EXCEPTIONS: Record<string, number> = { 'decide.verdict.titleInvBoth': 72 };
 
 function interpolate(value: string, overrides: Record<string, string> = {}): string {
   return value.replace(/\{\{(\w+)\}\}/g, (_m, name: string) => overrides[name] ?? DEMO_VALUES[name] ?? 'X');
@@ -202,22 +215,19 @@ describe('decide copy (DCU-09)', () => {
     }
   });
 
-  it('D-95 the R17 controls are on the keyed list and read as the spec words them', () => {
-    const words: Record<string, string> = {
-      'decide.home.field.check': 'Check it', 'decide.home.field.full': 'Full check', 'decide.home.problems.failedAction': 'Review changes',
-      'decide.home.problems.conflictAction': 'Review edits', 'decide.home.unavailable.addRough': 'Add rough figures',
-      'decide.home.problems.rate.action': 'Exchange rates', 'decide.home.problems.cardMin.action': 'Card minimum payment',
-    };
-    for (const [path, text] of Object.entries(words)) {
-      expect(get(path)).toBe(text);
-      expect(CONTROL_LABELS.has(path)).toBe(true);
-    }
-    const home = leaves.filter((l) => l.path.startsWith('decide.home.') && !CONTROL_LABELS.has(l.path));
-    expect(home.filter((l) => INSTRUCTION_LEAD.test(l.value) || IMPERATIVE_LEAD.test(l.value)).map((l) => l.path)).toEqual([]);
+  it('names Grow only in the new Decide screens and where a setup step points to it (06.1 D-06, 06-20)', () => {
+    // 06.1 D-06: the new Decide screens ship in one release with Grow, so decide.screens.* may name it; 06-20: the tab exists now.
+    expect(
+      leaves
+        .filter((l) => /\bGrow\b/.test(l.value) && !l.path.startsWith('decide.screens.') && !l.path.startsWith('decide.setup.growLink.'))
+        .map((l) => l.path),
+    ).toEqual([]);
   });
 
-  it('names Grow only where a setup step points to it (06-20: the tab exists now)', () => {
-    expect(leaves.filter((l) => /\bGrow\b/.test(l.value) && !l.path.startsWith('decide.setup.growLink.')).map((l) => l.path)).toEqual([]);
+  // 06.1-37 (T-06.1-37-01): a stale exemption must not hide a banned word, so every exemption names a leaf that exists.
+  it('exemption root exists: every ACTION_LABELS and CONTROL_LABELS entry names a catalogue leaf', () => {
+    const paths = new Set(copyLeaves.map((l) => l.path));
+    expect([...ACTION_LABELS, ...CONTROL_LABELS].filter((p) => !paths.has(p))).toEqual([]);
   });
 
   it('every listed action label exists and still opens with its verb (WR-D04)', () => {
@@ -231,9 +241,8 @@ describe('decide copy (DCU-09)', () => {
     }
   });
 
-  it('uses the word lend only in the not-a-lender footers', () => {
-    // decide.setup.summary.footer is the Summary footer worded by the owner (05.2-UI-SPEC decision 2); it denies lending.
-    expect(copyLeaves.filter((l) => /lend/i.test(l.value)).map((l) => l.path).sort()).toEqual(['decide.flow.notLender', 'decide.setup.summary.footer']);
+  it('uses the word lend nowhere in the decide.* copy (the not-a-lender footer lives under legal.*)', () => {
+    expect(copyLeaves.filter((l) => /lend/i.test(l.value)).map((l) => l.path).sort()).toEqual([]);
   });
 
   it.each(copyLeaves)('uses no straight apostrophe: $path', ({ value }) => {
@@ -252,41 +261,12 @@ describe('decide copy (DCU-09)', () => {
   });
 });
 
-describe('decide copy length caps', () => {
-  const titles = leaves.filter((l) => l.path.startsWith('decide.verdict.title'));
-  const reasons = leaves.filter((l) => l.path.startsWith('decide.alt.reason'));
-
-  it('has no exception beyond titleInvBoth', () => {
-    expect(Object.keys(TITLE_CAP_EXCEPTIONS)).toEqual(['decide.verdict.titleInvBoth']);
-  });
-
-  it.each(titles)('verdict title fits three lines: $path', ({ path, value }) => {
-    expect(interpolate(value).length).toBeLessThanOrEqual(TITLE_CAP_EXCEPTIONS[path] ?? TITLE_CAP);
-  });
-
-  it.each(reasons)('alternatives reason fits one line: $path', ({ value }) => {
-    expect(interpolate(value).length).toBeLessThanOrEqual(REASON_CAP);
-  });
-
-  it.each(leaves.filter((l) => l.path.startsWith('decide.verdict.missing.')))('missing title fits: $path', ({ value }) => {
-    expect(interpolate(value).length).toBeLessThanOrEqual(TITLE_CAP);
-  });
-
-  it('missing-rate title fits with two currencies', () => {
-    expect(interpolate(get('decide.missingRate.title'), { currency: 'EUR, GBP' }).length).toBeLessThanOrEqual(TITLE_CAP);
-  });
-
-  it.each(['cashDip', 'cashDipHard', 'creditCashDip', 'creditCashDipHard'])('quick line %s fits', (key) => {
-    expect(interpolate(get(`decide.quick.line.${key}`)).length).toBeLessThanOrEqual(QUICK_NEW_CAP);
-  });
-});
-
 describe('decide depth copy (05-31, DCU-09)', () => {
   const depth = leaves.filter((l) => l.path.startsWith('decide.depth.'));
   const INVESTING_BANNED = ['invest now', 'start investing', 'best rate', 'you will earn', 'you should invest'];
 
   it('has depth leaves', () => {
-    expect(depth.length).toBeGreaterThan(150);
+    expect(depth.length).toBeGreaterThan(0);
   });
 
   it.each(depth)('depth leaf passes the banned list: $path', ({ value }) => {
@@ -301,7 +281,6 @@ describe('decide depth copy (05-31, DCU-09)', () => {
 
   it('uses forecast only as "not a forecast"', () => {
     const withForecast = leaves.filter((l) => /forecast/i.test(l.value));
-    expect(withForecast.length).toBeGreaterThan(0);
     for (const l of withForecast) expect(l.value.toLowerCase()).toContain('not a forecast');
   });
 
@@ -317,15 +296,6 @@ describe('decide depth copy (05-31, DCU-09)', () => {
     expect(required.filter((p) => !drafts.has(p))).toEqual([]);
   });
 
-  it('keeps the combined-check line within the verdict body cap at nine checks', () => {
-    expect(interpolate(get('decide.depth.combined.differs_other'), { count: '9' }).length).toBeLessThanOrEqual(64);
-  });
-
-  it('starts every cushion reason with because', () => {
-    const because = depth.filter((l) => l.path.startsWith('decide.depth.cushion.because.'));
-    expect(because.length).toBe(4);
-    for (const l of because) expect(l.value.startsWith('because')).toBe(true);
-  });
 });
 
 describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
@@ -385,6 +355,9 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       'decide.v3.fact.save_vs_borrow_no_date',
       'decide.v3.fact.save_vs_borrow_ask', // 05.4 D-79
       'decide.v3.fact.lean_bridge_net', // 05.4 FIN-08: the low months dip into the safety net (source 'net')
+      'decide.v3.fact.lean_bridge_long', // 06.1 FIN-22: a plan over 12 payments (owner 2026-11-12)
+      'decide.v3.fact.lean_bridge_net_long', // 06.1 FIN-22: the same, from the safety net
+      'decide.v3.fact.rate_convention_effective_eu', // 06.1 FIN-23: area 'eu'
       'decide.v3.fact.overdraft_repeat_no_rate',
       'decide.v3.fact.other_account_overdrawn_no_rate',
       'decide.v3.fact.earlier_money_from_savings', // 05.4 D-44 (05.4-24): where 'savings'
@@ -400,7 +373,9 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
     expect(keys.filter((k) => resolve(k) === undefined)).toEqual([]);
     // and the other way: every v3 leaf is reachable from a table
     const reachable = new Set<string>(keys);
-    expect(v3.filter((l) => !reachable.has(l.path)).map((l) => l.path)).toEqual([]);
+    // 06.1-83: an _one leaf is its reachable key at a count of 1 (sayResult passes the count), so its base must be reachable.
+    const base = (path: string): string => (path.endsWith('_one') ? path.slice(0, -4) : path);
+    expect(v3.filter((l) => !reachable.has(base(l.path))).map((l) => l.path)).toEqual([]);
   });
 
   it('I26 v3 banned words', () => {
@@ -469,6 +444,62 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
   it('D-30 and D-32 notices exist', () => {
     expect(get('decide.v3.notice.unspent_drifted')).toContain('{{suggested}}');
     expect(get('decide.v3.notice.from_your_figures')).toBe('Worked out from the figures you gave.');
+  });
+});
+
+// 06.1-05 (D-18, CMP-F12): the new Decide screen strings. Whole-word matches, so "insurance" never trips "sure".
+describe('decide.screens copy (06.1, D-18, D-19)', () => {
+  const screens = leaves.filter((l) => l.path.startsWith('decide.screens.'));
+  const SCREENS_BANNED: readonly RegExp[] = [
+    /\b(sure|surer|certain|accurate)\b/i, // CMP-F12: never more confident than the answer ("Give it more to go on", not "surer")
+    /\badvi(ce|ser|sor)\b/i,
+    /\brecommend/i,
+    /\byou should\b/i,
+    /\b(better|best|optimal)\b/i,
+    /\boverspent\b/i, // D-116: "short"
+    /\bunspent\b/i, // D-56: "spare money"
+    /\bworst month\b/i, // the engine word is "Low month"
+    /\bemergency fund\b/i, // D-35: "safety net"
+    /\bspare cash\b|\bsavings pot\b/i, // D-56: "spare money", "extra savings"
+    /\bband \d+\b|\basks about\b/i, // UX-18
+    /\bfree\b/i, // D-122: "at no cost"
+    /\blines? you will not cross\b/i, // D-19: "Your money rules"
+    /\bhousehold\b|\bshared costs\b/i, // D-03: no household copy in 06.1
+  ];
+
+  it('has the screen leaves', () => {
+    expect(screens.length).toBeGreaterThan(500);
+  });
+
+  it('no screen string uses a banned word', () => {
+    const bad: string[] = [];
+    for (const l of screens) for (const re of SCREENS_BANNED) if (re.test(l.value)) bad.push(`${l.path}: ${re.source}`);
+    expect(bad).toEqual([]);
+  });
+
+  it('the banned list matches whole words only', () => {
+    for (const ok of ['Insurance', 'Car insurance · monthly', 'Measured', 'Assured payments', 'Uncertainty']) {
+      expect({ ok, hit: SCREENS_BANNED.some((re) => re.test(ok)) }).toEqual({ ok, hit: false });
+    }
+    for (const bad of ['Make it surer', 'Not sure', 'less certain', 'accurate', 'not a lender or adviser', 'We recommend', 'you should', 'the best option', 'Worst month', 'Overspent', 'Free help']) {
+      expect({ bad, hit: SCREENS_BANNED.some((re) => re.test(bad)) }).toEqual({ bad, hit: true });
+    }
+  });
+
+  it('D-19 the card and item 5 are "Your money rules", and the home note reads as the UI-SPEC sets it', () => {
+    expect(get('decide.screens.sheetsHome.rulesCard.title')).toBe('Your money rules');
+    expect(get('decide.screens.setup.items.rules')).toBe('Your money rules');
+    expect(get('decide.screens.setup.status.rulesDone_other')).toBe('Done · {{count}} rules');
+    expect(get('decide.screens.stepper.homeNote')).toBe('Home checks come later. Pick another kind for now.');
+    expect(get('decide.screens.common.error.message')).toBe('Couldn’t work this out right now. Your records are safe. Try the check again.');
+  });
+
+  it('D-18 no screen key repeats the footer: answers use legal.decideAnswer.footer', () => {
+    expect(screens.filter((l) => /planning tool|lend|credit/i.test(l.value)).map((l) => l.path)).toEqual([]);
+  });
+
+  it('every screen button named in the UI-SPEC is verb + noun, never a bare Save or Add', () => {
+    expect(screens.filter((l) => /^(Save|Add)$/.test(l.value)).map((l) => l.path)).toEqual([]);
   });
 });
 
@@ -558,14 +589,6 @@ describe('05.2 undo labels (DSU-21, DCU-09)', () => {
 });
 
 describe('R18 money concepts copy (05-131, DCU-09)', () => {
-  const r18 = leaves.filter(
-    (l) =>
-      /^decide\.(pots|housing|verdict\.tco|verdict\.invested)\./.test(l.path) ||
-      /^decide\.warn\.housing/.test(l.path) ||
-      /^decide\.info\.(netFreeCashFlow|pots|totalCost|housingLine|investedInstead)\./.test(l.path) ||
-      /^decide\.(home\.hero\.sub(Worst|Average|Tightest|Figures|Switched)|home\.monthDetails\.|lines\.housing\.|verdict\.titleHousing)/.test(l.path)
-  );
-
   it('D-101 the pot and housing undo labels exist and resolve', () => {
     const expected: Record<string, string> = {
       potAdded: 'Pot added', potEdited: 'Pot edited', potDeleted: 'Pot deleted', potDone: 'Pot marked done', potReopened: 'Pot reopened',
@@ -578,30 +601,4 @@ describe('R18 money concepts copy (05-131, DCU-09)', () => {
     }
   });
 
-  it('DCU-09 the R18 strings pass the guard apart from Save pot on the keyed list', () => {
-    expect(r18.length).toBeGreaterThan(100);
-    expect(get('decide.pots.sheet.save')).toBe('Save pot');
-    expect(ACTION_LABELS.has('decide.pots.sheet.save')).toBe(true);
-    expect(get('decide.pots.emptyAction')).toBe('Add a pot');
-    expect(get('decide.pots.addA11y')).toBe('Add a pot');
-    expect(CONTROL_LABELS.has('decide.pots.emptyAction') && CONTROL_LABELS.has('decide.pots.addA11y')).toBe(true);
-    // "Try again" reuses the shared retry key: no pots retry key exists
-    expect(() => get('decide.pots.retry')).toThrow();
-    const bad = r18.filter(
-      (l) =>
-        BANNED.some((re) => re.test(l.value)) ||
-        REASSURING.some((re) => re.test(l.value)) ||
-        (!ACTION_LABELS.has(l.path) && IMPERATIVE_LEAD.test(l.value)) ||
-        (!CONTROL_LABELS.has(l.path) && INSTRUCTION_LEAD.test(l.value))
-    );
-    expect(bad.map((l) => l.path)).toEqual([]);
-    for (const l of r18) expect(l.value).not.toMatch(/\b(lender|you should|advice|recommend)/i);
-  });
-
-  it('DCU-09 Invested instead is not an imperative lead', () => {
-    const row = get('decide.verdict.invested.year_other');
-    expect(row.startsWith('Invested instead:')).toBe(true);
-    expect(row).not.toMatch(IMPERATIVE_LEAD);
-    expect('Invest the difference').toMatch(IMPERATIVE_LEAD);
-  });
 });

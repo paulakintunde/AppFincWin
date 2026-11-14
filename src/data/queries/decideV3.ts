@@ -1,18 +1,19 @@
 // 05.2 D-18/D-19: first production caller of computeV3; 05.3 reuses it for home and the check.
 // The inputs are composed from the reads that already exist (snapshot, settings, answers, dismissals, checks and their
 // plan links), never copied (05.1 D-53). Built in memory with useMemo; the bigint-carrying Evaluation is never cached.
-import { useCallback, useMemo } from 'react';
+import { createContext, createElement, useCallback, useContext, useMemo, type ReactNode } from 'react';
 import type { DecideLinkRow } from '@/db/decideLinks';
 import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
 import { classifyReadError, type DbErrorKind } from '@/db/errors';
-import { computeV3, preparedV3 } from '@/features/decide/snapshot/v3/computeV3';
-import { settingsSourceOf } from '@/features/decide/snapshot/v3/settingsSource';
+import { emptyCheckEvaluation, preparedV3, withUnsaved } from '@/features/decide/snapshot/v3/computeV3';
+import { liveBridgeCheckIds, settingsSourceOf, type SettingsSourceInput } from '@/features/decide/snapshot/v3/settingsSource';
 import type { V3SettingsSource } from '@/features/decide/snapshot/v3/types';
 import { useRecordContext } from '@/features/record/useRecordContext';
-import type { Evaluation, V3Inputs } from '@/engine/decide/v3';
+import type { Evaluation, Prepared, V3Inputs } from '@/engine/decide/v3';
 import { useDecideChecks, useDecideLinks, useDecideSettings, useDecideSnapshot } from './decide';
 import { useDecideAnswers } from './decideAnswers';
 import { useRecurringDismissals } from './recurringDismissals';
+import { DECIDE_READ_STALE_MS, DecideReadStaleContext } from './decideStale';
 
 export interface DecideV3State {
   status: 'loading' | 'error' | 'ready';
@@ -21,6 +22,8 @@ export interface DecideV3State {
   /** 06-16: the inputs the evaluation was built from, so Grow can re-judge Decide's open checks with a different safety-net size. Read only. */
   source?: SnapshotSource | null;
   v3?: V3SettingsSource | null;
+  /** 06.1-11: the engine's held Prepared (the same object preparedV3 cached), so a check is judged per keystroke without a second prepare. Never put in a query cache. */
+  prepared: Prepared | null;
   /** APP-10 (05.4-33): the kind of the first failed read with nothing cached; null unless status is 'error'. Never 'not_found' for a network failure. */
   errorKind: DbErrorKind | null;
   /** APP-01 (05.4-33): the reads with nothing cached yet, by name, for the 08.1 offline card. */
@@ -54,10 +57,69 @@ export function planLiveOf(links: readonly DecideLinkRow[], source: SnapshotSour
   };
 }
 
+export interface SharedSettingsDeps {
+  source: SnapshotSource;
+  settings: SettingsSourceInput['settings'];
+  answers: SettingsSourceInput['answers'];
+  dismissals: SettingsSourceInput['dismissals'];
+  checks: SettingsSourceInput['checks'];
+  links: readonly DecideLinkRow[];
+}
+
+interface SharedSettings {
+  settings: SettingsSourceInput['settings'];
+  answers: SettingsSourceInput['answers'];
+  dismissals: SettingsSourceInput['dismissals'];
+  bridge: string;
+  v3: V3SettingsSource | null;
+}
+
+// 06.1-46 (B-1): one settings source per data version, shared by every useDecideV3 mounted at once, so preparedV3 (keyed on
+// the source and settings identities) builds once instead of once per hook. Checks reach the settings only through the live
+// bridge ids, so they key by that list, not the rows: a draft save that changes only a check's stored inputs keeps the
+// same object. One entry per snapshot source, held weakly (a dropped source frees it).
+const sharedSettings = new WeakMap<SnapshotSource, SharedSettings>();
+
+export function sharedSettingsSource(deps: SharedSettingsDeps): V3SettingsSource | null {
+  const planLive = planLiveOf(deps.links, deps.source);
+  const bridge = liveBridgeCheckIds({ checks: deps.checks, planLive }).join(',');
+  const hit = sharedSettings.get(deps.source);
+  if (hit !== undefined && hit.settings === deps.settings && hit.answers === deps.answers && hit.dismissals === deps.dismissals && hit.bridge === bridge) return hit.v3;
+  const v3 = settingsSourceOf({ settings: deps.settings, answers: deps.answers, dismissals: deps.dismissals, checks: deps.checks, planLive });
+  sharedSettings.set(deps.source, { settings: deps.settings, answers: deps.answers, dismissals: deps.dismissals, bridge, v3 });
+  return v3;
+}
+
 const NO_CHECKS: readonly { id: string }[] = [];
 const READ_NAMES = ['settings', 'answers', 'dismissals', 'checks', 'links'] as const;
 
+// 06.1-72 (G-73-1): one useDecideV3 per screen. Decide home ran it in about seven hooks at once (the home, the month picture, the
+// open checks, the rule crossings, the new check, the setup facts, Something changed?), each with its own 17-read snapshot and
+// record context, so every cache event re-ran all of them. A screen mounted inside <DecideV3Scope> reads the scope's one copy;
+// outside a scope (tests, other screens) the hook runs on its own as before. Both give the same state for the same cache.
+const DecideV3Context = createContext<DecideV3State | null>(null);
+
+/**
+ * Runs useDecideV3 once and hands its state to every useDecideV3 below it. 06.1-78 (G-72-2): the scope also holds every read
+ * below it (its own included) fresh for DECIDE_READ_STALE_MS, so the record-context reads do not refetch when a Decide screen mounts.
+ */
+export function DecideV3Scope({ children }: { children: ReactNode }) {
+  return createElement(DecideReadStaleContext.Provider, { value: DECIDE_READ_STALE_MS }, createElement(DecideV3ScopeRun, null, children));
+}
+
+function DecideV3ScopeRun({ children }: { children: ReactNode }) {
+  const state = useDecideV3Live();
+  return createElement(DecideV3Context.Provider, { value: state }, children);
+}
+
 export function useDecideV3(): DecideV3State {
+  const scoped = useContext(DecideV3Context);
+  // A component is either always inside a scope or never (the scope sits in the screen's layout), so the hook order is stable.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return scoped ?? useDecideV3Live();
+}
+
+function useDecideV3Live(): DecideV3State {
   const rc = useRecordContext();
   const userId = rc.userId ?? undefined;
   const householdId = rc.householdId ?? undefined;
@@ -90,10 +152,20 @@ export function useDecideV3(): DecideV3State {
   const linkRows = links.data;
   const computed = useMemo(() => {
     if (source === null || missing || settingsRow === undefined || answerRows === undefined || dismissalRows === undefined || checkRows === undefined || linkRows === undefined) return null;
-    const v3 = settingsSourceOf({ settings: settingsRow, answers: answerRows, dismissals: dismissalRows, checks: checkRows, planLive: planLiveOf(linkRows, source) });
-    // ENG-13 / APP-03 (05.4-33): one build; the evaluation is judged on the same prepared inputs.
-    return { inputs: preparedV3(source, v3).inputs, evaluation: computeV3(source, v3, {}), source, v3 };
+    const v3 = sharedSettingsSource({ source, settings: settingsRow, answers: answerRows, dismissals: dismissalRows, checks: checkRows, links: linkRows });
+    // ENG-13 / APP-03 (05.4-33): one build; the evaluation is judged on the same prepared inputs. 06.1-46 (B-1): the same
+    // (source, v3) identities across hooks, so one prepare and one empty-check judge per data version.
+    const held = preparedV3(source, v3);
+    return { prepared: held.prepared, source, v3 };
   }, [source, missing, settingsRow, answerRows, dismissalRows, checkRows, linkRows]);
+  // 06.1-46 (B-2): the live waiting-write count is laid over at judge time, so a count change re-judges only; the per-keystroke
+  // judges read the same overlaid Prepared.
+  const unsaved = snapshot.unsavedWrites ?? 0;
+  const judged = useMemo(() => {
+    if (computed === null) return null;
+    const prepared = withUnsaved(computed.prepared, unsaved);
+    return { ...computed, prepared, inputs: prepared.inputs, evaluation: emptyCheckEvaluation(computed.source, computed.v3, unsaved) };
+  }, [computed, unsaved]);
 
   const retrySnapshot = snapshot.retry;
   const refetchers = reads.map((q) => q.refetch);
@@ -104,6 +176,13 @@ export function useDecideV3(): DecideV3State {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retrySnapshot]);
 
-  const status: DecideV3State['status'] = failed ? 'error' : computed === null ? 'loading' : 'ready';
-  return { status, inputs: computed?.inputs ?? null, evaluation: computed?.evaluation ?? null, source: computed?.source ?? null, v3: computed?.v3 ?? null, errorKind, missingReads, refetch };
+  const status: DecideV3State['status'] = failed ? 'error' : judged === null ? 'loading' : 'ready';
+  // 06.1-72: the same object while nothing in it changed, so a scope's consumers (and memos keyed on the state) skip a render.
+  const missingKey = missingReads.join(',');
+  return useMemo(
+    () => ({ status, inputs: judged?.inputs ?? null, evaluation: judged?.evaluation ?? null, source: judged?.source ?? null, v3: judged?.v3 ?? null, prepared: judged?.prepared ?? null, errorKind, missingReads, refetch }),
+    // missingKey stands for missingReads, which is rebuilt each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [status, judged, errorKind, missingKey, refetch]
+  );
 }

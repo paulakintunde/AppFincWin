@@ -7,11 +7,15 @@ import { queryKeys } from '../keys';
 
 export { useGoalLines } from './decide';
 
-/** Every live goal row of the household (goals, Wait pots, the safety net), oldest first. */
-export function useSavingsGoalRows(userId?: string, householdId?: string): UseQueryResult<SavingsGoalRow[]> {
+/**
+ * Every live goal row of the household (goals, Wait pots, the safety net), oldest first. 06.1-78 (G-72-2): `opts.staleTime` is the
+ * observer's freshness (the answer's reads pass five minutes); undefined keeps the app default.
+ */
+export function useSavingsGoalRows(userId?: string, householdId?: string, opts?: { staleTime?: number }): UseQueryResult<SavingsGoalRow[]> {
   return useQuery({
     queryKey: queryKeys.savingsGoals(userId ?? '', householdId ?? ''),
     queryFn: () => fetchSavingsGoals(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
+    ...(opts?.staleTime === undefined ? {} : { staleTime: opts.staleTime }),
   });
 }

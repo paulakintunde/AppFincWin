@@ -13,9 +13,11 @@ import { useTabRootChrome, type TabRootChromeOptions } from './useTabRootChrome'
 export interface TabRootScreenProps extends TabRootChromeOptions {
   overlay?: React.ReactNode;
   children?: React.ReactNode;
+  /** 06.1-62 (CB-1): opt-in, so a tap on a button with the keyboard open lands first time. Absent keeps the default. */
+  keyboardShouldPersistTaps?: 'handled' | 'always' | 'never';
 }
 
-export function TabRootScreen({ overlay, children, ...options }: TabRootScreenProps): React.JSX.Element {
+export function TabRootScreen({ overlay, children, keyboardShouldPersistTaps, ...options }: TabRootScreenProps): React.JSX.Element {
   const { colors } = useTheme();
   const insets = useScreenInsets();
   const chrome = useTabRootChrome(options);
@@ -30,6 +32,7 @@ export function TabRootScreen({ overlay, children, ...options }: TabRootScreenPr
         scrollEventThrottle={chrome.scrollEventThrottle}
         refreshControl={chrome.refreshControl}
         contentContainerStyle={{ paddingBottom: FAB_CLEARANCE }}
+        keyboardShouldPersistTaps={keyboardShouldPersistTaps}
       >
         {chrome.largeHeader}
         {children}

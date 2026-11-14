@@ -29,6 +29,8 @@ export interface SavingsGoalRow {
   up_front_only?: boolean;
   icon?: 'calendar' | 'laptop' | 'phone' | 'camera' | 'savings' | 'housing' | 'transport' | 'headphones' | null;
   net_confirmed_at?: string | null;
+  // 06.1 (20261111000100) D-20: Decide-only 'answers may use it' flag on the safety net. Read-only: only set_net_answer_use writes it.
+  decide_may_use?: boolean;
   done_at: string | null;
   is_sample: boolean;
   deleted_at: string | null;
@@ -38,7 +40,7 @@ export interface SavingsGoalRow {
 }
 
 export const SAVINGS_GOAL_COLUMNS =
-  'id, household_id, created_by, check_id, name, currency, target, monthly_amount, ready_by, opening_saved, kind, bucket, account_id, color_key, is_safety_net, locked, protect, up_front_only, icon, net_confirmed_at, done_at, is_sample, deleted_at, version, created_at, updated_at';
+  'id, household_id, created_by, check_id, name, currency, target, monthly_amount, ready_by, opening_saved, kind, bucket, account_id, color_key, is_safety_net, locked, decide_may_use, protect, up_front_only, icon, net_confirmed_at, done_at, is_sample, deleted_at, version, created_at, updated_at';
 
 /**
  * A pot as a client inserts it: home currency, a target and a month end are required by the shape check.

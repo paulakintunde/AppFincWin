@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { useT } from '@/i18n';
-import { DeletableRow } from '@/features/decide/ui/DeletableRow';
+import { DeletableRow } from '@/ui/DeletableRow';
 import type { GoalPoint } from '@/features/grow/connect';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { ProgressBar } from '@/features/grow/ui/ProgressBar';

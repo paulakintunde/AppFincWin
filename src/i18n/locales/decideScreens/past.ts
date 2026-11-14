@@ -1,0 +1,60 @@
+/**
+ * 06.1-05 (D-18): Past decisions (D47 / N20) and a past decision (D48). Owner plan: 27. Draft copy, signed under D-08.
+ * The look-back compares records; it is never a score.
+ */
+export const past = {
+  list: {
+    title: 'Your decisions',
+    sub: 'A look back at what you bought. Just for you: not a score.',
+    lookBack: 'Look back',
+    lookBackItem: '{{item}} · bought {{date}}',
+    costQ: 'Did it cost what you expected?',
+    expected: 'Expected',
+    recordsShow: 'Your records show',
+    difference: 'Difference',
+    more: '{{amount}} more',
+    less: '{{amount}} less',
+    same: 'The same',
+    extraQ: 'Was the extra {{amount}} on the same day part of it?',
+    yes: 'Yes, count it',
+    no: 'No',
+    saved: 'Saved',
+    savedToast: 'Saved to your decisions.',
+    leftOutToast: 'Saved. The {{amount}} is left out.',
+    bought: 'Bought {{date}}',
+    lookBackIn: 'look back in {{month}}',
+    notBought: 'Not bought',
+    savedAsPlan: 'saved as a plan',
+    notBuying: 'Not buying',
+    howCloseLater: 'After 3 look-backs, Decide shows how close its estimates usually are.',
+    howClose: 'Over {{count}} look-backs, Decide’s estimates were within {{percent}}% of your records.',
+    emptyTitle: 'No decisions yet',
+    emptyBody: 'When you mark a check as bought or not buying, it shows here.',
+  },
+  detail: {
+    checked: 'Checked {{date}}',
+    bought: 'Bought {{date}} · {{method}} {{amount}}',
+    counted: 'What Decide counted',
+    recordsSoFar: 'What your records show so far',
+    upFront: 'Up front',
+    running: 'Running costs',
+    runningLater: 'look back in {{month}}, after 3 months',
+    saidOn: 'What Decide said on {{date}}',
+    asItWas: 'See the check as it was',
+    remove: 'Remove from decisions',
+    removedToast: 'Removed from your decisions.',
+    asChecked: 'As checked on {{date}}',
+    asCheckedUnreadable: 'This saved answer can’t be shown.',
+    notFoundTitle: 'This decision isn’t here',
+    notFoundBody: 'It may have been removed on another device.',
+    historyA11y: 'What Decide said on {{date}}: {{word}}',
+    // 06.1-77 (DS-17): the records' up-front figure while the lines "I bought it" added are still loading.
+    upFrontLoading: 'Loading…',
+  },
+  // 06.1-77 (DC-4, OQ-77-1 A): Remove keeps the record "I bought it" added, says so, and links to it in Activity.
+  remove: {
+    recordStays: 'The {{amount}} in your records stays.',
+    recordStaysPlan: 'The {{amount}} and its planned payments in your records stay.',
+    recordLink: 'In your records',
+  },
+} as const;

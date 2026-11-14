@@ -3,11 +3,13 @@
 // SecureStore (WHEN_UNLOCKED_THIS_DEVICE_ONLY) — no new crypto code, per Don't Hand-Roll.
 import { AppState } from 'react-native';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { dehydrate } from '@tanstack/react-query';
 import { persistQueryClientSave } from '@tanstack/react-query-persist-client';
 import type { PersistedClient, Persister, PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
 import type { Mutation, Query, QueryClient } from '@tanstack/react-query';
 import { addBreadcrumb } from '@sentry/react-native';
-import { LargeSecureStore } from '@/services/supabase/largeSecureStore';
+import { LargeSecureStore, lastSetTiming } from '@/services/supabase/largeSecureStore';
+import { probeDehydrate, probeSave } from '@/data/perf/cacheProbe';
 
 // Kept under the fincwin: prefix so wipeDeviceData's AsyncStorage sweep (src/services/storage/wipe.ts)
 // catches the persisted blob even if the registered wipe handler below somehow does not run.
@@ -35,7 +37,9 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // 06-20 phase gate: later Grow plans changed persisted shapes after that bump -- bumped 4 -> 5.
 // 06-30: transactions gained debt_id (D-33) -- bumped 5 -> 6.
 // 06 waves 12-13: Grow shapes changed again after that bump -- bumped 6 -> 7.
-export const CACHE_SCHEMA_VERSION = '7';
+// 06.1 wave 5: decide_settings answered_*_at and tax_set_aside_bp, check history and new keys -- bumped 7 -> 8.
+// 06.1-31: savings goals now select decide_may_use (20261111000100 in production) -- bumped 8 -> 9.
+export const CACHE_SCHEMA_VERSION = '9';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's
@@ -185,6 +189,17 @@ export function carryQueuedWrites(
   return { timestamp: now, buster, clientState: { queries: [], mutations } };
 }
 
+// 06.1-73: the last serialise's ms (read by the 'persist' breadcrumb and the probe).
+let lastSerializeMs = 0;
+let lastSerializedChars = 0;
+function timedSerialize(client: PersistedClient): string {
+  const start = Date.now();
+  const out = serializeWithFetchTimes(client);
+  lastSerializeMs = Date.now() - start;
+  lastSerializedChars = out.length;
+  return out;
+}
+
 function createBasePersister(storage: LargeSecureStore, throttleTime: number) {
   // storage is typed as LargeSecureStore only to give callers autocomplete/defaulting;
   // createAsyncStoragePersister's storage param wants the AsyncStorage-shaped
@@ -193,7 +208,7 @@ function createBasePersister(storage: LargeSecureStore, throttleTime: number) {
     storage,
     key: QUERY_CACHE_KEY,
     throttleTime,
-    serialize: serializeWithFetchTimes,
+    serialize: timedSerialize,
     deserialize: deserializeWithFetchTimes,
   });
 }
@@ -223,45 +238,39 @@ function chunkMutations(mutations: Mutations, maxBytes: number) {
 }
 
 /**
- * 06 device check: the whole save (overflow rows, dev log, encrypted write) runs at most once per
- * `interval`, with the latest client winning. Only the base write used to be throttled, so every
- * cache event still ran the overflow check and, in dev, a full extra serialise for the log line. A
- * burst of events at start-up then drained as one `[persist]` line about every second while idle.
- * Same contract as the library's asyncThrottle: a call made while one is already waiting returns
- * at once and its client is folded into the waiting save.
+ * B-5 (06.1-48): the persister handed to persistQueryClient, plus two extras. `flush` writes a scheduled save now (no-op
+ * when none is pending); `persistNow` saves the given client at once, replacing any scheduled save.
  */
-export function throttleLatest<A>(fn: (arg: A) => Promise<void>, interval: number): (arg: A) => Promise<void> {
-  if (interval <= 0) return fn;
-  let nextAt = 0;
-  let latest: A | undefined;
-  let running = false;
-  let scheduled = false;
-  const wait = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
-  return async (arg: A) => {
-    latest = arg;
-    if (scheduled) return;
-    scheduled = true;
-    while (running) await wait(interval);
-    while (Date.now() < nextAt) await wait(nextAt - Date.now());
-    scheduled = false;
-    running = true;
-    try {
-      await fn(latest as A);
-    } catch {
-      // A failed save is retried by the next cache change, as before.
-    } finally {
-      nextAt = Date.now() + interval;
-      running = false;
-    }
-  };
-}
+export type EncryptedPersister = Persister & {
+  flush: () => Promise<void>;
+  persistNow: (client: PersistedClient) => Promise<void>;
+  /**
+   * 06.1-73 (DB-1): marks the cache dirty. `build` (the dehydrate) runs once, when the scheduled save fires, instead of on
+   * every cache event; a later call before that only replaces `build`.
+   */
+  persistLater: (build: () => PersistedClient) => void;
+};
 
+/**
+ * B-5 (06.1-48): the throttle wraps the WHOLE save, not only the base write. persistClient fires on every cache event (about
+ * 25 in 0.6 s on a device), and the mutation stringify, overflow clean-up, dev byte log and encryption used to run on each
+ * one before the base persister's own throttle. Now persistClient only keeps the latest client and schedules one trailing
+ * save after `throttleTime`; the base persister runs unthrottled (throttleTime 0) so there is one throttle, not two.
+ * Saves never overlap (a chain), and a throttleTime of 0 saves at once. Queued writes are not put at risk by the window:
+ * startPersistOnBackground saves at once when the app leaves the foreground, and removeClient cancels a scheduled save.
+ */
 export function createEncryptedPersister(
   storage: LargeSecureStore = new LargeSecureStore(),
   throttleTime = 1000
-): Persister {
-  // The throttle wraps the whole save below, so the base write itself is not throttled again.
+): EncryptedPersister {
   const base = createBasePersister(storage, 0);
+
+  let latest: PersistedClient | null = null;
+  let latestBuild: (() => PersistedClient) | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let chain: Promise<void> = Promise.resolve();
+  // How many overflow rows the last save left on disk; unknown until this instance has saved or removed once.
+  let lastChunks: number | 'unknown' = 'unknown';
 
   // Removes overflow rows from index `start` upward (stops at the first gap).
   async function removeOverflowFrom(start: number): Promise<void> {
@@ -272,37 +281,111 @@ export function createEncryptedPersister(
     }
   }
 
+  async function save(client: PersistedClient): Promise<void> {
+    const mutations = client.clientState.mutations;
+    const mutationBytes = mutations.length > 0 ? utf8Length(JSON.stringify(mutations)) : 0;
+    let toSave: WithChunks = client;
+    let chunkCount = 0;
+    if (mutationBytes > MAX_PERSIST_BYTES - MAIN_ROW_RESERVE_BYTES) {
+      const { chunks, oversizedSingle } = chunkMutations(mutations, MAX_PERSIST_BYTES);
+      chunkCount = chunks.length;
+      for (let i = 0; i < chunks.length; i++) {
+        await storage.setItem(WRITES_OVERFLOW_PREFIX + i, JSON.stringify(chunks[i]));
+      }
+      addBreadcrumb({
+        category: 'persist',
+        message: 'queued writes over budget',
+        data: { mutations: mutations.length, chunks: chunks.length, bytes: mutationBytes, oversizedSingle },
+      });
+      toSave = { ...client, clientState: { queries: [], mutations: [] }, writesChunks: chunks.length };
+    }
+    await base.persistClient(toSave);
+    // 06.1-73: the dev byte log reads the size the save just measured, instead of serialising the whole client a second time.
+    if (__DEV__) {
+      console.log(`[persist] bytes=${lastSerializedChars} queries=${toSave.clientState.queries.length} mutations=${mutations.length}`);
+    }
+    // 06.1-73: numbers only (ms and sizes), never the cache contents. A breadcrumb must never fail a save.
+    try {
+      addBreadcrumb({
+        category: 'persist',
+        message: 'saved',
+        data: {
+          serializeMs: lastSerializeMs,
+          encryptMs: lastSetTiming.encryptMs,
+          storeMs: lastSetTiming.storeMs,
+          bytes: lastSerializedChars,
+          queries: toSave.clientState.queries.length,
+          mutations: mutations.length,
+        },
+      });
+      probeSave(lastSerializeMs, lastSetTiming.encryptMs, lastSetTiming.storeMs, lastSerializedChars);
+    } catch {
+      // telemetry only
+    }
+    // Stale overflow rows go after the main row is written, so a kill in between never leaves a main row pointing at
+    // removed chunks. Storage is only read when an earlier save may have left rows past the new count.
+    if (lastChunks === 'unknown' || lastChunks > chunkCount) await removeOverflowFrom(chunkCount);
+    lastChunks = chunkCount;
+  }
+
+  function schedule(): Promise<void> {
+    if (throttleTime <= 0) return flush();
+    timer ??= setTimeout(() => {
+      timer = null;
+      void flush();
+    }, throttleTime);
+    return Promise.resolve();
+  }
+
+  function flush(): Promise<void> {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    const build = latestBuild;
+    latestBuild = null;
+    let client = latest;
+    latest = null;
+    if (!client && build) {
+      try {
+        client = build();
+      } catch {
+        client = null;
+      }
+    }
+    if (!client) return chain;
+    chain = chain.then(() => save(client)).catch(() => undefined);
+    return chain;
+  }
+
   return {
-    persistClient: throttleLatest(async (client: PersistedClient) => {
-      const mutations = client.clientState.mutations;
-      const mutationBytes = mutations.length > 0 ? utf8Length(JSON.stringify(mutations)) : 0;
-      let toSave: WithChunks = client;
-      if (mutationBytes > MAX_PERSIST_BYTES - MAIN_ROW_RESERVE_BYTES) {
-        const { chunks, oversizedSingle } = chunkMutations(mutations, MAX_PERSIST_BYTES);
-        for (let i = 0; i < chunks.length; i++) {
-          await storage.setItem(WRITES_OVERFLOW_PREFIX + i, JSON.stringify(chunks[i]));
-        }
-        await removeOverflowFrom(chunks.length);
-        addBreadcrumb({
-          category: 'persist',
-          message: 'queued writes over budget',
-          data: { mutations: mutations.length, chunks: chunks.length, bytes: mutationBytes, oversizedSingle },
-        });
-        toSave = { ...client, clientState: { queries: [], mutations: [] }, writesChunks: chunks.length };
-      } else {
-        await removeOverflowFrom(0);
-      }
-      if (__DEV__) {
-        const bytes = utf8Length(serializeWithFetchTimes(toSave));
-        console.log(
-          `[persist] bytes=${bytes} queries=${toSave.clientState.queries.length} mutations=${mutations.length}`
-        );
-      }
-      await base.persistClient(toSave);
-    }, throttleTime),
+    persistClient: (client: PersistedClient) => {
+      latest = client;
+      latestBuild = null;
+      return schedule();
+    },
+    persistLater: (build: () => PersistedClient) => {
+      latestBuild = build;
+      latest = null;
+      void schedule();
+    },
+    flush,
+    persistNow: (client: PersistedClient) => {
+      latest = client;
+      latestBuild = null;
+      return flush();
+    },
     removeClient: async () => {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      latest = null;
+      latestBuild = null;
+      await chain;
       await base.removeClient();
       await removeOverflowFrom(0);
+      lastChunks = 0;
     },
     restoreClient: async () => {
       const restored = (await base.restoreClient()) as WithChunks | undefined;
@@ -321,6 +404,11 @@ export function createEncryptedPersister(
 }
 
 export const persister = createEncryptedPersister();
+
+/** B-5 (06.1-48): writes the main persister's scheduled save now; resolves at once when nothing is pending. */
+export function flushPersist(): Promise<void> {
+  return persister.flush();
+}
 
 export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
   persister,
@@ -344,6 +432,34 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
 };
 
 /**
+ * 06.1-73 (DB-1): replaces persistQueryClient's own subscription, which dehydrated the WHOLE client on every cache event
+ * (54 dehydrates for 2 saves across one Decide check on the emulator) before the throttle. Cache events only mark the cache
+ * dirty here; the dehydrate runs once per throttle window, inside the scheduled save, with the same dehydrateOptions and
+ * buster. Saves at once on backgrounding (startPersistOnBackground) and persistNow are unchanged. Returns an unsubscribe.
+ */
+export function startThrottledPersist(
+  qc: QueryClient,
+  target: EncryptedPersister = persister,
+  options: Pick<PersistQueryClientOptions, 'buster' | 'dehydrateOptions'> = persistOptions
+): () => void {
+  const build = (): PersistedClient => {
+    const start = Date.now();
+    const clientState = dehydrate(qc, options.dehydrateOptions);
+    probeDehydrate(Date.now() - start, clientState.queries.length);
+    return { buster: options.buster ?? '', timestamp: Date.now(), clientState };
+  };
+  const onEvent = (type: string) => {
+    if (type === 'added' || type === 'removed' || type === 'updated') target.persistLater(build);
+  };
+  const offQueries = qc.getQueryCache().subscribe((event) => onEvent(event.type));
+  const offMutations = qc.getMutationCache().subscribe((event) => onEvent(event.type));
+  return () => {
+    offQueries();
+    offMutations();
+  };
+}
+
+/**
  * WR-A13: replays every restored, still-pending write in its original order. query-core's
  * resumePausedMutations only picks up `isPaused` mutations, so a write that was in flight
  * when the app died would otherwise sit restored-but-idle forever. Mutation.continue() runs
@@ -357,19 +473,16 @@ export function resumeRestoredMutations(queryClient: QueryClient): Promise<void>
   return Promise.all(pending.map((m) => m.continue().catch(() => undefined))).then(() => undefined);
 }
 
-let immediate: Persister | null = null;
-
 /**
- * D-77 (R9): the main persister throttles writes to once a second, so a write queued less than a second before the OS
- * kills the app could be lost. This saves the client now, through an unthrottled persister over the same encrypted storage,
- * key and serializer (no new store). Errors are swallowed: a failed flush leaves the throttled write to land as before.
+ * D-77 (R9): the main persister throttles saves to once a second, so a write queued less than a second before the OS kills
+ * the app could be lost. This dehydrates the client now and saves it at once through the main persister (replacing any
+ * scheduled save, so an older snapshot never lands after it). Errors are swallowed: the throttled save remains the fallback.
  */
 export async function flushPersistedClient(qc: QueryClient): Promise<void> {
   try {
-    immediate ??= createEncryptedPersister(new LargeSecureStore(), 0);
     await persistQueryClientSave({
       queryClient: qc,
-      persister: immediate,
+      persister: { ...persister, persistClient: persister.persistNow },
       buster: CACHE_SCHEMA_VERSION,
       dehydrateOptions: persistOptions.dehydrateOptions,
     });
@@ -384,7 +497,11 @@ export async function flushPersistedClient(qc: QueryClient): Promise<void> {
  */
 export function startPersistOnBackground(qc: QueryClient): () => void {
   const sub = AppState.addEventListener('change', (state) => {
-    if (state === 'background' || state === 'inactive') setTimeout(() => void flushPersistedClient(qc), 0);
+    if (state !== 'background' && state !== 'inactive') return;
+    // B-5: the scheduled save lands now (flushPersist); the next tick then saves the client as it is, after any screen's
+    // own AppState handler has queued its write.
+    void flushPersist();
+    setTimeout(() => void flushPersistedClient(qc), 0);
   });
   return () => sub.remove();
 }

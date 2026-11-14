@@ -21,6 +21,7 @@ import { Chip } from '../Chip';
 import { SwatchDot } from '../SwatchDot';
 import { CategoryGlyph } from '../CategoryGlyph';
 import { AmountDisplay } from '../AmountDisplay';
+import { layOutSheets } from '@/test/sheetLayout';
 
 // DSG-03 pattern (src/theme/__tests__/screenInsets.test.tsx): mock the insets rather
 // than wrapping in SafeAreaProvider, so Sheet's useScreenInsets() call resolves.
@@ -80,6 +81,7 @@ describe('Sheet', () => {
         <Text>{'Content'}</Text>
       </Sheet>
     );
+    await layOutSheets();
     fireEvent.press(getByLabelText('Close', { hidden: true }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });

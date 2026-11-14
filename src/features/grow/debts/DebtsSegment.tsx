@@ -8,7 +8,7 @@ import type { Href } from 'expo-router';
 import { useAccounts } from '@/data/queries/accounts';
 import { useRemoveDebt } from '@/data/mutations/debts';
 import type { DebtRow } from '@/db/debts';
-import { DeletableRow } from '@/features/decide/ui/DeletableRow';
+import { DeletableRow } from '@/ui/DeletableRow';
 import { extraStartDate, oneOffDate, useRecordDebtOneOff, useSaveDebtPlan } from '@/data/mutations/growDebts';
 import type { PayoffOrder } from '@/engine/payoff';
 import { useT } from '@/i18n';

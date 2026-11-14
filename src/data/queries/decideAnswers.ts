@@ -3,11 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchDecideAnswers } from '@/db/decideAnswers';
 import { supabase } from '@/services/supabase';
 import { queryKeys } from '../keys';
+import { DECIDE_READ_STALE_MS } from './decideStale';
 
 export function useDecideAnswers(userId?: string, householdId?: string) {
   return useQuery({
     queryKey: queryKeys.decideAnswers(userId ?? '', householdId ?? ''),
     queryFn: () => fetchDecideAnswers(supabase, userId as string, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
+    // 06.1-72 (G-73-1): a Decide-only read; a write still invalidates it at once.
+    staleTime: DECIDE_READ_STALE_MS,
   });
 }

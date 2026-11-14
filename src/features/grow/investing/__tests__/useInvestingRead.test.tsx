@@ -13,7 +13,7 @@ jest.mock('@/data/queries/growHoldings', () => ({
   useHoldingRows: () => ({ data: mockHoldings, isError: mockError, refetch: jest.fn() }),
   useHoldingLotRows: () => ({ data: mockLots, isError: false, refetch: jest.fn() }),
 }));
-jest.mock('@/features/decide/past/usePastDecisions', () => ({
+jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({
   usePastContext: () => ({
     userId: 'u1',
     householdId: 'h1',

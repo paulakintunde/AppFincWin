@@ -7,6 +7,7 @@ import { serialiseDraft, type DraftForm, type ListItem } from '@/engine/entryLis
 import { resetToastForTests } from '@/state/undoToast';
 import { entryDraftKey } from '../useEntryDraft';
 import { TransactionSheet } from '../TransactionSheet';
+import { layOutSheets } from '@/test/sheetLayout';
 
 // 06-37: OccurrenceActions marks goal lines paid through useGoalLinePay; these sheets never open a goal line.
 jest.mock('@/features/grow/goals/useGoalLinePay', () => ({ useGoalLinePay: () => ({ pay: jest.fn(() => true) }) }));
@@ -248,6 +249,7 @@ describe('new entry: accidental dismissal keeps a draft (D-25)', () => {
   it('backdrop with a typed amount closes without asking and stores the form', async () => {
     const { onClose, queryByText } = await open();
     await typeAmount('9.50');
+    await layOutSheets();
     await fireEvent.press(backdrop());
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(queryByText('Discard changes?')).toBeNull();
@@ -260,6 +262,7 @@ describe('new entry: accidental dismissal keeps a draft (D-25)', () => {
     await seed([listItem('s1')], null);
     const { onClose } = await open();
     await fireEvent.press(await screen.findByText('Continue list'));
+    await layOutSheets();
     await fireEvent.press(backdrop());
     expect(onClose).toHaveBeenCalledTimes(1);
     await waitFor(async () => expect((await stored()).items).toHaveLength(1));
@@ -375,6 +378,7 @@ describe('new entry: accidental dismissal keeps a draft (D-25)', () => {
 describe('editing an existing entry (D-33)', () => {
   it('closes at once when nothing changed', async () => {
     const { onClose } = await open({ kind: 'edit', row: editRow });
+    await layOutSheets();
     await fireEvent.press(backdrop());
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -382,12 +386,14 @@ describe('editing an existing entry (D-33)', () => {
   it('asks Discard changes? when the name changed; Keep editing keeps it, Discard closes', async () => {
     const { onClose } = await open({ kind: 'edit', row: editRow });
     await fireEvent.changeText(screen.getByLabelText('What is it for?'), 'Coffee beans');
+    await layOutSheets();
     await fireEvent.press(backdrop());
     expect(await screen.findByText('Discard changes?')).toBeTruthy();
     expect(onClose).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByText('Keep editing'));
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByDisplayValue('Coffee beans')).toBeTruthy();
+    await layOutSheets();
     await fireEvent.press(backdrop());
     await fireEvent.press(await screen.findByText('Discard'));
     expect(onClose).toHaveBeenCalledTimes(1);

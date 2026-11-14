@@ -1,11 +1,12 @@
 // 05.2-19: useDecideV3 composes the existing reads into V3Inputs and one Evaluation. The read hooks are mocked, so this
 // proves composition, status and the plan-live rule, not Supabase.
+import React from 'react';
 import { renderHook } from '@testing-library/react-native';
 import type { DecideLinkRow } from '@/db/decideLinks';
 import { EMPTY_DECIDE_SETTINGS } from '@/db/decideSettings';
 import { demoSource } from '@/features/decide/__tests__/helpers/demoScenario';
 import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
-import { planLiveOf, useDecideV3 } from '../decideV3';
+import { DecideV3Scope, planLiveOf, useDecideV3 } from '../decideV3';
 
 const TODAY = '2026-10-03';
 type Q = { data: unknown; isError: boolean; error?: unknown; refetch: jest.Mock };
@@ -166,3 +167,20 @@ describe('planLiveOf (Pitfall 9)', () => {
     expect(live([])).toBe(true);
   });
 });
+
+describe('06.1-72 DecideV3Scope (G-73-1)', () => {
+  it('gives every useDecideV3 below it the one state the scope built', async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => <DecideV3Scope>{children}</DecideV3Scope>;
+    const { result } = await renderHook(() => [useDecideV3(), useDecideV3()] as const, { wrapper });
+    expect(result.current[0].status).toBe('ready');
+    expect(result.current[1]).toBe(result.current[0]);
+  });
+
+  it('keeps the same state object across a render where nothing changed', async () => {
+    const { result, rerender } = await renderHook(() => useDecideV3());
+    const first = result.current;
+    await rerender({});
+    expect(result.current).toBe(first);
+  });
+});
+

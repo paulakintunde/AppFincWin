@@ -1417,9 +1417,9 @@
       "fixIds": [
         "FIN-01"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-14",
+      "ownerReason": "Owner (2026-11-14, 06.1-33 wording sign-off): approved as written on the Decide wording review page (reports/wording/decide-v3.html), reply \"signed\".",
       "expertNote": null,
       "plannerNote": "From the plan-18 audit (Maya $60). Restated in 05.4-51 with the D-58 saving field: the $200 saving on the 6th (not moved yet) replaces the earlier workaround of a $200 bill already paid (bills $1,400 -> $1,200, everyday account $2,050 -> $2,250), so the usual month and October's $740 are unchanged. Hand move-by (D-58, D-67): $66.67 by 2 November; with no saving the account alone stays about $133.33 above $0 and there is no move-by line, and at $500 the move-by is $506.67 with the saving against $306.67 without (20,000 more, the persona Maya's audit figure). Engine (05.4-51 rules): fits_month, null, month 74000, move_money_by {6667, 2026-11-02}, cash ok with its low point 93,333 on 2026-11-04. Hand, plain calculator and engine agree."
     },
@@ -1515,9 +1515,9 @@
         "FIN-01",
         "ENG-03"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-14",
+      "ownerReason": "Owner (2026-11-14, 06.1-33 wording sign-off): approved as written on the Decide wording review page (reports/wording/decide-v3.html), reply \"signed\".",
       "expertNote": null,
       "plannerNote": "Engine (05.4-47 rules): fits_unspent, extra_savings, split [month $300, extra_savings $200], extra_savings_used {20000, 50000}, move_money_by {20000, 2026-11-23}, net_two_months {480000}. The plan drafted variant null; D-62 (owner, after the plan) gives the extra_savings headline, so the case states it."
     },
@@ -1719,9 +1719,9 @@
         "FIN-01",
         "ENG-03"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-14",
+      "ownerReason": "Owner (2026-11-14, 06.1-33 wording sign-off): approved as written on the Decide wording review page (reports/wording/decide-v3.html), reply \"signed\".",
       "expertNote": null,
       "plannerNote": "Engine (05.4-47 rules): not_yet, payday, readyBy 2026-12-01, facts net_locked, no net_used. The plan drafted the variant as the engine's; it is payday."
     },
@@ -1817,9 +1817,9 @@
         "FIN-01",
         "ENG-03"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-14",
+      "ownerReason": "Owner (2026-11-14, 06.1-33 wording sign-off): approved as written on the Decide wording review page (reports/wording/decide-v3.html), reply \"signed\".",
       "expertNote": null,
       "plannerNote": "Engine (05.4-47 rules): fits_uses_net, null, afterBuy.month -20000, facts net_used, wait_keeps_net. Same fixture as approved SN-15 (which now states locked: false)."
     },
@@ -1917,9 +1917,9 @@
       "fixIds": [
         "FIN-01"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-14",
+      "ownerReason": "Owner (2026-11-14, 06.1-33 wording sign-off): approved as written on the Decide wording review page (reports/wording/decide-v3.html), reply \"signed\".",
       "expertNote": null,
       "plannerNote": "Engine (05.4-51 rules, plan 50 tier fixture 'small'): fits_unspent / month_short_small, month_short_fits {price 6000, money 435000, short 30000}; no net_lasts or net_lasts_without while locked. Hand, plain calculator (plainTier) and engine agree; table.test pins it."
     },
@@ -2017,9 +2017,9 @@
       "fixIds": [
         "FIN-01"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-14",
+      "ownerReason": "Owner (2026-11-14, 06.1-33 wording sign-off): approved as written on the Decide wording review page (reports/wording/decide-v3.html), reply \"signed\".",
       "expertNote": null,
       "plannerNote": "Engine (05.4-51 rules, plan 50 tier fixture 'moderate'): fits_unspent / month_short_moderate, money_lasts_shorter {months 14, monthsAfter 11}. Hand, plain calculator and engine agree; table.test pins it."
     },
@@ -2118,9 +2118,9 @@
       "fixIds": [
         "FIN-01"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-14",
+      "ownerReason": "Owner (2026-11-14, 06.1-33 wording sign-off): approved as written on the Decide wording review page (reports/wording/decide-v3.html), reply \"signed\".",
       "expertNote": null,
       "plannerNote": "Engine (05.4-51 rules, plan 50 tier fixture 'moderateExtra'): fits_unspent / month_short_moderate_extra, split month 0 + unspent_earlier 35000 + extra_savings 165000, money_lasts_shorter {14, 7}, extra_savings_used {used 165000, above 400000}. Hand, plain calculator and engine agree; table.test pins it."
     },
@@ -2218,9 +2218,9 @@
       "fixIds": [
         "FIN-01"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-14",
+      "ownerReason": "Owner (2026-11-14, 06.1-33 wording sign-off): approved as written on the Decide wording review page (reports/wording/decide-v3.html), reply \"signed\".",
       "expertNote": null,
       "plannerNote": "Engine (05.4-51 rules, plan 50 tier fixture 'large'): not_yet / month_already_short, net_locked, readyBy null, no net_lasts. Hand, plain calculator and engine agree; table.test pins it."
     },

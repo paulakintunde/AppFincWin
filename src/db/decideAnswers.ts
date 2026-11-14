@@ -4,7 +4,8 @@
 import { NotFoundError, VersionConflictError, toDbError } from './errors';
 import { assertAllowedKeys, type DbClient } from './rows';
 
-export type DecideAnswerKind = 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover';
+// 06.1-43 (G-1): readiness_waiver = a readiness answer (migration 20261030000200; keys in features/decide/snapshot/v3/waiverKeys.ts).
+export type DecideAnswerKind = 'pay_arrival' | 'expected_income' | 'held_bridge' | 'volatile_cover' | 'readiness_waiver';
 
 export interface DecideAnswerRow {
   id: string;

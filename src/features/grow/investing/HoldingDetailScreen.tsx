@@ -9,7 +9,7 @@ import { useAccountBalances } from '@/data/queries/activity';
 import { convertLatest } from '@/data/queries/fxConvert';
 import { useHoldingLotRows, useHoldingRows } from '@/data/queries/growHoldings';
 import type { HoldingLotRow } from '@/db/holdingLots';
-import { usePastContext } from '@/features/decide/past/usePastDecisions';
+import { usePastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { LineChart } from '@/features/grow/ui/LineChart';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { StateBadge } from '@/features/grow/ui/StateBadge';

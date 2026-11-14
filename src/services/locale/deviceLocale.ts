@@ -17,17 +17,26 @@
 // zone tiebreak fired -- the locale tag and separators can no longer be read off the device's
 // own keyboard (that reflects the *device's* region, not an arbitrary override one), so both
 // are derived from Intl for the resolved region instead.
+import { useMemo } from 'react';
 import { getCalendars, getLocales, useCalendars, useLocales, type Locale } from 'expo-localization';
 import type { LocaleSeparators } from '@/engine/money';
+import { heldRead } from './deviceReadCache';
 import { resolveRegion } from './resolveRegion';
 
 const FALLBACK_LOCALE = 'en-US';
 const FALLBACK_TIME_ZONE = 'UTC';
 
-/** The device's own reported time zone, defensively tolerant of an unmocked/empty read. */
+/**
+ * The device's own reported time zone, defensively tolerant of an unmocked/empty read. 06.1-72 (G-73-2): held for a second
+ * (deviceReadCache), because render paths read it many times a second and each read is a native call.
+ */
+const heldTimeZone = heldRead((_: null): string | undefined => (getCalendars() ?? [])[0]?.timeZone ?? undefined);
 function deviceTimeZone(): string | undefined {
-  return (getCalendars() ?? [])[0]?.timeZone ?? undefined;
+  return heldTimeZone(null);
 }
+
+/** 06.1-72 (G-73-2): the device's first locale, held for a second like the time zone. */
+const heldLocale = heldRead((_: null): Locale | undefined => getLocales()[0]);
 
 /** languageCode[-script]-regionCode when the device reports a region, else languageTag. */
 function regionLocaleTag(locale: Locale | undefined): string {
@@ -107,12 +116,12 @@ function resolveLocale(locale: Locale | undefined, timeZone: string | undefined,
 
 /** @param regionOverride RD-02: the user's own in-app region preference (profiles.region), when set. */
 export function getDeviceLocale(regionOverride?: string | null): string {
-  return resolveLocale(getLocales()[0], deviceTimeZone(), regionOverride).tag;
+  return resolveLocale(heldLocale(null), deviceTimeZone(), regionOverride).tag;
 }
 
 /** @param regionOverride RD-02: the user's own in-app region preference (profiles.region), when set. */
 export function getDeviceSeparators(regionOverride?: string | null): LocaleSeparators | undefined {
-  return resolveLocale(getLocales()[0], deviceTimeZone(), regionOverride).separators;
+  return resolveLocale(heldLocale(null), deviceTimeZone(), regionOverride).separators;
 }
 
 /**
@@ -122,7 +131,7 @@ export function getDeviceSeparators(regionOverride?: string | null): LocaleSepar
 export function getDeviceRegion(regionOverride?: string | null): string | undefined {
   return resolveRegion({
     override: regionOverride,
-    deviceRegion: getLocales()[0]?.regionCode,
+    deviceRegion: heldLocale(null)?.regionCode,
     timeZone: deviceTimeZone(),
   });
 }
@@ -148,6 +157,10 @@ export function useDeviceLocale(regionOverride?: string | null): DeviceLocale {
   const locales = useLocales();
   const calendars = useCalendars();
   const timeZone = calendars[0]?.timeZone ?? FALLBACK_TIME_ZONE;
-  const { tag, separators } = resolveLocale(locales[0], timeZone, regionOverride);
-  return { locale: tag, timeZone, separators };
+  const locale = locales[0];
+  // 06.1-72 (G-73-2): resolved once per device locale, zone and override, not on every render (useLocales keeps its list).
+  return useMemo(() => {
+    const { tag, separators } = resolveLocale(locale, timeZone, regionOverride);
+    return { locale: tag, timeZone, separators };
+  }, [locale, timeZone, regionOverride]);
 }

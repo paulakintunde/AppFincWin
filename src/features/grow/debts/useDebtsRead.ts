@@ -19,7 +19,7 @@ import {
   type PlanDebt,
   type StrategyResult,
 } from '@/engine/payoff';
-import { usePastContext } from '@/features/decide/past/usePastDecisions';
+import { usePastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { debtPointOf, type DebtPoint } from '../connect';
 import { dueDateOf } from '../connect/debtPoint';
 

@@ -28,6 +28,16 @@ const TOAST_PAD_H = 18;
 const TOAST_GAP = 14;
 const RISE_DISTANCE = 14;
 const CONTROL_HIT_SLOP = { top: 12, bottom: 12, left: 8, right: 8 };
+/**
+ * DB-12: the Dismiss target is a 48 x 48 dp box around the 12 dp glyph. Negative margins give the
+ * box back to the row, so the toast's size and the glyph's place do not change. It reaches 8 dp into
+ * the gap on its left (as the old hitSlop did) and the rest to its right, over the toast's own padding.
+ */
+const DISMISS_TARGET = 48;
+const GLYPH = 12;
+const DISMISS_LEFT = 8;
+const DISMISS_RIGHT = DISMISS_TARGET - GLYPH - DISMISS_LEFT;
+const DISMISS_V = (DISMISS_TARGET - GLYPH) / 2;
 
 export interface ToastViewProps {
   message: string;
@@ -81,8 +91,7 @@ export function ToastView({ message, actionLabel, onAction, onDismiss, dismissLa
         accessibilityRole="button"
         accessibilityLabel={dismissLabel}
         onPress={onDismiss}
-        hitSlop={CONTROL_HIT_SLOP}
-        style={styles.control}
+        style={styles.dismiss}
       >
         <CloseGlyph color={colors.surface} />
       </Pressable>
@@ -104,6 +113,16 @@ const styles = StyleSheet.create({
   },
   control: {
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dismiss: {
+    width: DISMISS_TARGET,
+    height: DISMISS_TARGET,
+    marginVertical: -DISMISS_V,
+    marginLeft: -DISMISS_LEFT,
+    marginRight: -DISMISS_RIGHT,
+    paddingLeft: DISMISS_LEFT,
+    alignItems: 'flex-start',
     justifyContent: 'center',
   },
 });

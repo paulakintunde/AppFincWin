@@ -12,7 +12,7 @@ import type { HoldingLotRow } from '@/db/holdingLots';
 import type { HoldingRow, HoldingType } from '@/db/holdings';
 import { gainPercentTenths, holdingGain, isValueStale, replayLots, totalGain } from '@/engine/grow';
 import { divideHalfUp, minorUnits, type MinorUnits } from '@/engine/money';
-import { usePastContext, type PastContext } from '@/features/decide/past/usePastDecisions';
+import { usePastContext, type PastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import type { ToHome } from '../connect';
 import { holdingLotEntries } from './lotEntries';
 

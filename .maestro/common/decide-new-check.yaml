@@ -1,0 +1,41 @@
+# 06.1-32 shared: start a check from Decide home with ${ITEM} and ${PRICE}. A small buy goes to the answer; a big one (a car,
+# a plan, a large price, D-09) opens the stepper, which this walks with its defaults (Next, then See the answer). Ends on the
+# answer, past the gate (decide-gate.yaml).
+appId: com.fincwin.app
+---
+- runFlow: to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- assertVisible: "Can I afford it\\?"
+- runFlow:
+    file: decide-type-check.yaml
+    env:
+      ITEM: ${ITEM}
+      PRICE: ${PRICE}
+- extendedWaitUntil:
+    visible: "Step [123] of 3|How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet.*|I bought it"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Step [12] of 3"
+    commands:
+      - repeat:
+          times: 2
+          while:
+            notVisible: "Step 3 of 3"
+          commands:
+            - runFlow:
+                file: scroll-to.yaml
+                env:
+                  TARGET: "Next"
+            - tapOn: "Next"
+            - waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Step 3 of 3"
+    commands:
+      - runFlow:
+          file: scroll-to.yaml
+          env:
+            TARGET: "See the answer"
+      - tapOn: "See the answer"
+- runFlow: decide-gate.yaml

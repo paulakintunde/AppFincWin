@@ -7,6 +7,7 @@ import { TransactionSheet } from '../TransactionSheet';
 import { RepeatsField } from '../RepeatsField';
 import type { RepeatsValue } from '../recurringForm';
 import { EditScopePrompt } from '../EditScopePrompt';
+import { layOutSheets } from '@/test/sheetLayout';
 
 // 06-37: OccurrenceActions marks goal lines paid through useGoalLinePay; these sheets never open a goal line.
 jest.mock('@/features/grow/goals/useGoalLinePay', () => ({ useGoalLinePay: () => ({ pay: jest.fn(() => true) }) }));
@@ -466,6 +467,7 @@ describe('Repeats sheet discard (G2, D-26, D-27)', () => {
     const { screen, calls } = await harness();
     await openAndType(screen);
     expect(calls.at(-1)).toEqual({ freq: 'monthly', end: { kind: 'count', count: 5 } });
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     expect(screen.getByText('Discard changes?', { hidden: true })).toBeTruthy();
     await fireEvent.press(screen.getByText('Discard', { hidden: true }));
@@ -477,6 +479,7 @@ describe('Repeats sheet discard (G2, D-26, D-27)', () => {
   it('Keep editing keeps the typed count and the sheet open', async () => {
     const { screen, calls } = await harness();
     await openAndType(screen);
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     await fireEvent.press(screen.getByText('Keep editing', { hidden: true }));
     expect(calls.at(-1)).toEqual({ freq: 'monthly', end: { kind: 'count', count: 5 } });
@@ -495,6 +498,7 @@ describe('Repeats sheet discard (G2, D-26, D-27)', () => {
   it('opening and closing without typing never asks', async () => {
     const { screen, calls } = await harness();
     await fireEvent.press(screen.getByLabelText('Repeats'));
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     expect(screen.queryByText('Discard changes?', { hidden: true })).toBeNull();
     expect(calls).toHaveLength(0);
