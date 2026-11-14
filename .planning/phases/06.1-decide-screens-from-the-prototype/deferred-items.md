@@ -63,3 +63,9 @@ Rows now ignore taps while updating, but the "Updating…" line appears above th
 
 ## "1 months" plural (found by 06.1-79, routed to 06.1-33)
 `home.footerRecords` ("Answers use {{months}} months of pay…") has no plural form; with the answer's own count it can read "1 months". Add _one/_other forms during the wording sign-off.
+
+## Resolved by 06.1-61 (2026-11-13)
+- Found during 06.1-32 (tab labels): `.maestro/back-stays-short.yaml` (already fixed by 06.1-74) and `.maestro/save-offline.yaml` (lines 7 and 28) now tap `"Activity, tab, 2 of [0-9]"`. No flow carries "2 of 3".
+- QuickEstimatesRoute dead onSave binding (from 06.1-65): the route no longer passes `onSave` or binds `useUpdateDecideSettings`, and the screen's optional `onSave` prop is gone. **Not done:** removing the unreachable `SetupDone` component and its `decide.screens.setup.done.*` strings touches about a dozen files outside 61 (hints, home facts, banner, checklist, oneLineBudget and textFitMatrix tests, locale). Routed to 06.1-33 (wording sign-off, which owns the strings) as gap row G-61-4.
+- Maestro text moved by 06.1-59/60/67: `common/decide-quick-estimates.yaml` and `decide-first-answer.yaml` no longer tap a sentence to close the keyboard (06.1-56/58 keep taps with the keyboard open); `decide-safety-net.yaml` waits for "Safety net settings|No safety net yet" and drops the helper-sentence tap; `decide-stepper-loan.yaml` and `decide-waiver.yaml` open the answer's Why? (`answer-facts-why`) before looking for a fact. Every other flow's tapped or awaited text was checked against the locale files.
+- decideTextFit (from 06.1-72): passes on the branch head. The EnvelopeAccountSheet account name no longer has numberOfLines (allowlist entry removed); the StepFrame / SetupChecklist / SetupBanner / YourMonthCard / SetupItemFrame chevrons are allowlisted as "chevron glyph (no text)" (a66fbec1, 9e543e63).
