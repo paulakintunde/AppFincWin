@@ -4,17 +4,12 @@
  * seen on this device. Nothing here writes, and nothing is computed that the engine owns.
  */
 import { useEffect, useMemo, useState } from 'react';
-import type { V3Inputs, V3Series } from '@/engine/decide/v3';
+import type { V3Inputs } from '@/engine/decide/v3';
 import { loadSetupDoneSeen } from '@/features/decide/hints/decideHints';
 import type { WorkedSources } from '../answer/info/HowWorkedOutSheet';
 import { deltaFor, usePastDecisions } from '../past/data/usePastDecisions';
 import { lookBackOf } from '../past/lookBack';
-
-/** A monthly figure for a series: weekly amounts are spread over a 52-week year (the same rule as the setup reads). */
-function monthlyMinor(s: V3Series): number {
-  const every = Math.max(1, s.cadence.every);
-  return s.cadence.unit === 'month' ? Math.round(Number(s.amount) / every) : Math.round((Number(s.amount) * 52) / 12 / every);
-}
+import { growRulesOf } from '../logic/rulesShown';
 
 export interface RulesFacts {
   /** null = no safety net recorded yet. */
@@ -23,15 +18,11 @@ export interface RulesFacts {
   investing: number | null;
 }
 
-/** Exported for tests. */
+/** Exported for tests. 06.1-79: Grow's saving and investing come from the same helper the checklist's rule count reads. */
 export function rulesFactsOf(inputs: V3Inputs | null): RulesFacts {
   if (inputs === null) return { netLocked: null, saving: null, investing: null };
-  const sum = (role: V3Series['role']): number | null => {
-    const live = inputs.series.filter((s) => s.role === role && s.status === 'live');
-    return live.length === 0 ? null : live.reduce((total, s) => total + monthlyMinor(s), 0);
-  };
   const net = inputs.safetyNet ?? null;
-  return { netLocked: net === null ? null : net.locked !== false, saving: sum('saving'), investing: sum('investing') };
+  return { netLocked: net === null ? null : net.locked !== false, ...growRulesOf(inputs) };
 }
 
 export interface FooterFacts {

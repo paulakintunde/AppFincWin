@@ -5,6 +5,7 @@
  * 06.1-56 (A-HOME-8): each row is the rule's name over a short sub-line, with its own figure at the right ("36%", "$200"). On or
  * Off is in the spoken label only; a rule that is off draws its figure in the faint ink.
  * 06.1-59 (G-10, section D): the title stays; the intro sentence sits behind Why?.
+ * 06.1-79 (DS-8, OQ-79-1 A): the rows come from rulesShown, the list Setup > Your money rules shows too; Grow's rows say "Set in Grow".
  */
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -16,6 +17,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { StateGlyph } from '@/ui/glyphs/StateGlyph';
 import { hapticSelection } from '@/ui/haptics';
 import { Text } from '@/ui/Text';
+import { rulesShown } from '../logic/rulesShown';
 import { WhyLine } from '../ui/WhyLine';
 import { debtPercentOf, type StoredRule } from './homeCardsModel';
 
@@ -86,23 +88,31 @@ export function MoneyRulesCard(props: MoneyRulesCardProps) {
   const netText = t(props.netLocked === false ? 'decide.screens.sheetsHome.rulesCard.netUnlocked' : 'decide.screens.sheetsHome.rulesCard.netLocked');
 
   const pct = (n: number): string => t('decide.screens.sheetsHome.rulesCard.percentValue', { percent: String(n) });
-  const rows: RuleRowModel[] = [];
-  const debt = debtPercentOf(props.dsrLine);
-  rows.push({
-    key: 'debt',
-    title: t('decide.screens.sheetsHome.rule.debt.title'),
-    sub: t('decide.screens.sheetsHome.rule.debt.sub'),
-    value: debt === null ? null : pct(debt),
-    on: debt !== null,
-    target: { kind: 'debt' },
-  });
-  if (props.investing !== null) {
-    rows.push({ key: 'investing', title: t('decide.screens.sheetsHome.rule.investing.title'), sub: t('decide.screens.sheetsHome.rule.investing.sub'), value: props.formatMoney(props.investing), on: true, target: { kind: 'investing', amount: props.investing } });
-  }
-  if (props.saving !== null) {
-    rows.push({ key: 'saving', title: t('decide.screens.sheetsHome.rule.saving.title'), sub: t('decide.screens.sheetsHome.rule.saving.sub'), value: props.formatMoney(props.saving), on: true, target: { kind: 'saving', amount: props.saving } });
-  }
-  for (const rule of props.rules) {
+  // 06.1-79 (DS-8, OQ-79-1 A): the same rules, in the same order, as Setup > Your money rules (rulesShown). Grow's regular saving
+  // and investing are rules set in Grow: their sub-line says so and their sheet links to Grow.
+  const shown = rulesShown({ debtPercent: debtPercentOf(props.dsrLine), rules: props.rules, saving: props.saving, investing: props.investing });
+  const rows: RuleRowModel[] = shown.map((r): RuleRowModel => {
+    if (r.kind === 'debt') {
+      return {
+        key: 'debt',
+        title: t('decide.screens.sheetsHome.rule.debt.title'),
+        sub: t('decide.screens.sheetsHome.rule.debt.sub'),
+        value: r.percent === null ? null : pct(r.percent),
+        on: r.on,
+        target: { kind: 'debt' },
+      };
+    }
+    if (r.kind === 'saving' || r.kind === 'investing') {
+      return {
+        key: r.key,
+        title: t(r.kind === 'saving' ? 'decide.screens.sheetsHome.rule.saving.title' : 'decide.screens.sheetsHome.rule.investing.title'),
+        sub: t('decide.screens.setupOthers.rules.fromGrow'),
+        value: props.formatMoney(r.amount),
+        on: true,
+        target: { kind: r.kind, amount: r.amount },
+      };
+    }
+    const rule = r.rule;
     const category = props.categoryName(rule.categoryId ?? '');
     const [title, sub, value] =
       rule.kind === 'keep'
@@ -112,8 +122,8 @@ export function MoneyRulesCard(props: MoneyRulesCardProps) {
           : rule.kind === 'category_cap'
             ? [t('decide.screens.sheetsHome.rulesCard.categoryTitle', { category }), t('decide.screens.sheetsHome.addRule.categorySub'), props.formatMoney(rule.value)]
             : [t('decide.screens.sheetsHome.rulesCard.categoryTitle', { category }), t('decide.screens.sheetsHome.addRule.categoryShareSub'), pct(rule.value)];
-    rows.push({ key: rule.id, title, sub, value, on: rule.on, target: { kind: 'stored', rule } });
-  }
+    return { key: rule.id, title, sub, value, on: rule.on, target: { kind: 'stored', rule } };
+  });
 
   return (
     <View testID="money-rules-card" style={[styles.card, { backgroundColor: colors.surface }]}>

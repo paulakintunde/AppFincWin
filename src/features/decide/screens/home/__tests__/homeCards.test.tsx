@@ -6,6 +6,7 @@ import { showToast } from '@/state/undoToast';
 import { wrap } from '@/test/stepProps';
 import { AddRuleSheet } from '../AddRuleSheet';
 import { changeRowOf, leftWithChange, newlyCrossing, readRulesDoc, withRulesDoc, EMPTY_RULES, type OpenCheckRowModel, type RulesDoc } from '../homeCardsModel';
+import { rulesShown } from '../../logic/rulesShown';
 import { MoneyRulesCard } from '../MoneyRulesCard';
 import { OpenChecksCard } from '../OpenChecksCard';
 import { RuleEditSheet } from '../RuleEditSheet';
@@ -179,6 +180,20 @@ describe('MoneyRulesCard', () => {
     expect(screen.getByTestId('money-rule-own_largest').props.accessibilityLabel).toBe('Largest single purchase, $500, Off. Opens the rule');
     await fireEvent.press(screen.getByTestId('money-rule-own_keep'));
     expect(rulesProps.onEdit).toHaveBeenCalledWith({ kind: 'stored', rule: rules[0] });
+  });
+
+  // 06.1-79 (DS-8, OQ-79-1 A): home and Setup > Your money rules show the same rules from rulesShown, in its order.
+  it("lists the rules rulesShown gives, in its order; Grow's saving says Set in Grow and opens its read-only sheet", async () => {
+    const rules = [{ id: 'own_keep', kind: 'keep' as const, on: true, value: 30_000, categoryId: null }];
+    await wrap(<MoneyRulesCard {...rulesProps} saving={80_000} rules={rules} />);
+    const shown = rulesShown({ debtPercent: 30, rules, saving: 80_000, investing: 20_000 }).map((r) => r.key);
+    const onCard = screen.getAllByTestId(/^money-rule-(?!value-)/).map((n) => String(n.props.testID).replace('money-rule-', ''));
+    expect(onCard).toEqual(shown);
+    expect(shown).toEqual(['debt', 'saving', 'investing', 'own_keep']);
+    expect(screen.getByTestId('money-rule-saving')).toHaveTextContent(/Saving at least.*Set in Grow.*\$800/);
+    expect(screen.getByTestId('money-rule-saving').props.accessibilityLabel).toBe('Saving at least, $800, On. Opens the rule');
+    await fireEvent.press(screen.getByTestId('money-rule-saving'));
+    expect(rulesProps.onEdit).toHaveBeenCalledWith({ kind: 'saving', amount: 80_000 });
   });
 
   it('the debt share switched off has no figure and says Off in its label', async () => {

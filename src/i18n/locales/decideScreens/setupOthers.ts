@@ -39,6 +39,8 @@ export const setupOthers = {
     accountA11y: '{{account}} holds the safety net',
     noAccounts: 'There is no account to hold it yet.',
     toast: 'Saved: safety net.',
+    // 06.1-79 (DS-9): shown while the net, its accounts or what is in it are still being read, never a $0.
+    loading: 'Checking your safety net…',
     otherCurrency: 'This safety net is in another currency. The size changes in Grow.',
     need: {
       amount: 'An amount above zero is needed.',
@@ -57,8 +59,8 @@ export const setupOthers = {
     cap: 'Up to 5 of your own rules.',
     // 06.1-65 (CB-15): under a rule's disabled value chip at the cap. Counts saved rules, on or off.
     capBeside: 'Five of your own rules are saved, the most Decide keeps.',
-    growNote: 'Saving at least {{saving}} and investing at least {{investing}}',
-    growNoteSub: 'These are your regular saving and investing. They change in Grow.',
+    // 06.1-79 (DS-8, OQ-79-1 A): Grow's regular saving and investing are rules in both lists, marked where they are set.
+    fromGrow: 'Set in Grow',
     none: 'No rules. Answers still keep your safety net.',
     save: 'Save rules',
     on: 'On',

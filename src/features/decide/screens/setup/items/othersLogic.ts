@@ -1,8 +1,6 @@
 // 06.1-25: the pure rules behind setup items 3 to 6 (Debts, Safety net, Your money rules, Records). No React, no I/O. Money stays in
 // integer minor units.
 import type { AccountUse, V3Account } from '@/engine/decide/v3';
-import type { RulesDoc } from '@/features/decide/snapshot/v3/rulesDoc';
-import { debtPercentOf } from '../../home/homeCardsModel';
 import { loggedLately, type SetupFacts } from '../../logic/setupProgress';
 
 /** A due day is a whole number 1..31 (the same bound Grow's writer checks). */
@@ -35,12 +33,12 @@ export function hasBadDueDay(typed: Readonly<Record<string, string>>): boolean {
 }
 
 /**
- * How many rules are on. Both the debt share column and the user's own rules count, and so do the engine's lines when the inputs
- * are ready (owner decision 2026-11-11: old limit lines count as rules for this item).
+ * How many rules are on. The shown rules count (the debt share, Grow's saving and investing, the user's own rules: rulesShown), and
+ * so do the engine's lines when the inputs are ready (owner decision 2026-11-11: old limit lines count as rules for this item).
+ * 06.1-79 (DS-8): `inputsOn` is rulesOnOf(inputs), the checklist's own count, so the page and the checklist never disagree.
  */
-export function rulesOnCount(dsrLine: string | null, doc: RulesDoc, engineLinesOn: number | null): number {
-  const own = (debtPercentOf(dsrLine) !== null ? 1 : 0) + doc.rules.filter((r) => r.on).length;
-  return Math.max(own, engineLinesOn ?? 0);
+export function rulesOnCount(shownOn: number, inputsOn: number | null): number {
+  return Math.max(shownOn, inputsOn ?? 0);
 }
 
 export interface RecordChecks {

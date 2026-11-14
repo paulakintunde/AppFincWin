@@ -5,6 +5,7 @@
 //  - With a net: what is in it, its size from Grow, "Which account holds it?", the lock row, the size line.
 //  - Without one: "Set an amount" or "Not set yet", written through the first-answer net write (useSafetyNetAnswer, plan 12), which
 //    the route binds and hands in as `answer`; "Not set yet" stamps the D-23 flag and keeps the item ticked.
+//  - 06.1-79 (DS-9): until the goal rows, the accounts and Grow's goal read are in, only "Checking your safety net…" shows.
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
@@ -26,6 +27,7 @@ import { MoneyInput } from '@/ui/MoneyInput';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { Text } from '@/ui/Text';
 import type { NetAnswerPort } from '../../safetyNet/ports';
+import { NeedLine } from '../../ui/NeedLine';
 import { RadioRow, useSetupFormat } from './itemFields';
 import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
@@ -53,7 +55,8 @@ export function NetSetup({ answer, setAccount }: { answer: NetAnswerPort; setAcc
   const net = goalsQ.data?.find((g) => g.is_safety_net === true && g.deleted_at === null) ?? null;
   const point = read.model.safetyNet;
   const size = point !== null && point.size !== null && point.size > 0 ? Number(point.size) : null;
-  const saved = point === null ? 0 : Number(point.saved);
+  // 06.1-79 (DS-9): what is in the net is Grow's figure once read; never a 0 standing in for a figure not read yet.
+  const saved = point === null ? null : Number(point.saved);
   const locked = net?.decide_may_use !== true;
   const holders = useMemo(() => (accountsQ.data ?? []).filter((a) => a.deleted_at === null && a.archived_at === null && holdsMoney(a.kind)), [accountsQ.data]);
 
@@ -64,6 +67,25 @@ export function NetSetup({ answer, setAccount }: { answer: NetAnswerPort; setAcc
   const accountId = picked ?? net?.account_id ?? null;
   const canWrite = userId !== undefined && householdId !== undefined;
   const label = { ...textRole(pairing, 'label'), fontSize: fontSize.meta };
+  // 06.1-79 (DS-9): the goal rows, the accounts or Grow's read of what is in the net are not in yet. The page says it is checking,
+  // with no figure, no account radios and no "Set an amount" (a net still loading is not a missing net).
+  const loading = goalsQ.data === undefined || accountsQ.data === undefined || read.status === 'loading';
+
+  if (loading) {
+    return (
+      <SetupItemFrame
+        title={t('decide.screens.setupOthers.net.title')}
+        why={t('decide.screens.setupOthers.net.why')}
+        primaryLabel={t('decide.screens.setupOthers.net.save')}
+        primaryDisabled
+        onSave={() => false}
+        onLeave={leave}
+        footer={<NeedLine testID="net-loading" text={t('decide.screens.setupOthers.net.loading')} />}
+      >
+        <View />
+      </SetupItemFrame>
+    );
+  }
 
   let starter: number | null = null;
   if (v3.source != null) {
@@ -120,13 +142,15 @@ export function NetSetup({ answer, setAccount }: { answer: NetAnswerPort; setAcc
     >
       {net !== null ? (
         <>
-          <View style={styles.block}>
-            <Text testID="net-in-now" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>
-              {t('decide.screens.setupOthers.net.inNow', { amount: fmt.money(saved, currency) })}
-              {size !== null ? ` · ${t('decide.screens.setupOthers.net.goal', { size: fmt.money(size, currency) })}` : ''}
-            </Text>
-            {size !== null ? <ProgressBar percent={goalPercent(saved, size)} variant="thick" tone="blue" accessibilityLabel={`${goalPercent(saved, size)}%`} /> : null}
-          </View>
+          {saved !== null ? (
+            <View style={styles.block}>
+              <Text testID="net-in-now" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>
+                {t('decide.screens.setupOthers.net.inNow', { amount: fmt.money(saved, currency) })}
+                {size !== null ? ` · ${t('decide.screens.setupOthers.net.goal', { size: fmt.money(size, currency) })}` : ''}
+              </Text>
+              {size !== null ? <ProgressBar percent={goalPercent(saved, size)} variant="thick" tone="blue" accessibilityLabel={`${goalPercent(saved, size)}%`} /> : null}
+            </View>
+          ) : null}
           <View style={styles.block}>
             <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.setupOthers.net.whichAccount')}</Text>
             {holders.length === 0 ? <Text style={{ ...label, color: colors.warn1 }}>{t('decide.screens.setupOthers.net.noAccounts')}</Text> : null}

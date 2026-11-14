@@ -50,8 +50,9 @@ jest.mock('../../../home/useHomeCards', () => ({
   useMoneyRules: () => ({ dsrLine: mockDsr, doc: mockDoc, save: mockRuleSave }),
   useRuleCrossings: () => () => [],
 }));
+let mockGrow: { saving: number | null; investing: number | null } = { saving: null, investing: null };
 jest.mock('../../../home/useHomeFacts', () => ({
-  rulesFactsOf: () => ({ netLocked: null, saving: 15000, investing: 20000 }),
+  rulesFactsOf: () => ({ netLocked: null, ...mockGrow }),
   footerFactsOf: (i: { months: { full: boolean; lines: unknown[] }[] } | null) => ({ months: i === null ? 0 : i.months.filter((m) => m.full).length, entries: i === null ? 0 : i.months.reduce((n, m) => n + m.lines.length, 0) }),
 }));
 jest.mock('../../../home/RuleEditSheet', () => ({ RuleEditSheet: () => null }));
@@ -90,6 +91,7 @@ beforeEach(() => {
   mockGoals = [];
   mockDoc = { v: 1, rules: [] };
   mockDsr = null;
+  mockGrow = { saving: null, investing: null };
   mockFacts = facts();
 });
 
@@ -102,9 +104,10 @@ describe('pure rules', () => {
   });
 
   it('counts rules on, including old engine lines', () => {
-    expect(rulesOnCount(null, { v: 1, rules: [] }, null)).toBe(0);
-    expect(rulesOnCount('36', { v: 1, rules: [{ id: 'own_keep', kind: 'keep', on: true, value: 5, categoryId: null }] }, null)).toBe(2);
-    expect(rulesOnCount(null, { v: 1, rules: [] }, 1)).toBe(1);
+    expect(rulesOnCount(0, null)).toBe(0);
+    expect(rulesOnCount(2, null)).toBe(2);
+    expect(rulesOnCount(0, 1)).toBe(1);
+    expect(rulesOnCount(3, 1)).toBe(3);
   });
 
   it('D-11: the this-month check holds at 10 days and fails at 11', () => {
@@ -258,6 +261,31 @@ describe('RulesSetup (D36)', () => {
     await wrap(<RulesSetup />);
     await fireEvent.press(screen.getByLabelText('Debt payments at most'));
     expect(mockRuleSave).toHaveBeenCalledWith({ dsrLine: '36' }, 'ruleEdited');
+  });
+
+  // 06.1-79 (DS-8, OQ-79-1 A): the device showed "Saving at least $800" as On on Decide home while this page said "No rules".
+  it("Grow's regular saving is a rule here too: set in Grow, a link to Grow, no switch, and no \"No rules\" line", async () => {
+    mockGrow = { saving: 80000, investing: null };
+    await wrap(<RulesSetup />);
+    expect(screen.getByTestId('rule-saving')).toHaveTextContent(/Saving at least.*\$800/);
+    expect(screen.getByTestId('rule-saving-from-grow')).toHaveTextContent('Set in Grow');
+    expect(screen.queryByTestId('rule-investing')).toBeNull();
+    expect(screen.queryByTestId('rules-none')).toBeNull();
+    await fireEvent.press(screen.getByTestId('rule-saving-open-grow'));
+    expect(mockPush).toHaveBeenCalledWith('/grow');
+    await fireEvent.press(screen.getByText('Save rules'));
+    expect(mockSetAnswered).toHaveBeenCalledWith({ flag: 'no_rules', on: false });
+    expect(mockShowToast).toHaveBeenCalledWith(expect.objectContaining({ text: { key: 'decide.screens.setupOthers.rules.toast', params: { count: 1 } } }));
+  });
+
+  it('a stored Keep at least sits once, with its value, and Largest stays a Not set row', async () => {
+    mockDoc = { v: 1, rules: [{ id: 'own_keep', kind: 'keep', on: true, value: 30000, categoryId: null }] };
+    mockGrow = { saving: null, investing: 5000 };
+    await wrap(<RulesSetup />);
+    expect(screen.getAllByTestId('rule-keep')).toHaveLength(1);
+    expect(screen.getByTestId('rule-keep')).toHaveTextContent(/\$300 left a month/);
+    expect(screen.getByTestId('rule-largest')).toHaveTextContent(/Not set/);
+    expect(screen.getByTestId('rule-investing-from-grow')).toHaveTextContent('Set in Grow');
   });
 
   it('says rule, never line', async () => {

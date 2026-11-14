@@ -6,11 +6,12 @@
 //  - Keep at least and Largest single purchase have no value until the person gives one, so their switch opens the sheet.
 //  - Saving the rules with all of them off sets the no-rules flag, says "No rules. Answers still keep your safety net.", and keeps
 //    the item ticked; any rule on clears the flag.
-//  - Saving and investing at least are the person's regular saving series in Grow, shown as a note and never as engine rules.
+//  - Saving and investing at least are the person's regular saving series in Grow. 06.1-79 (DS-8, OQ-79-1 A): they show as rules
+//    set in Grow, the same rows as Decide home's card (rulesShown), with a link to Grow and no switch; they count as rules on.
 //  - 06.1-65 (CB-15): at the five-rule cap, the value chip of a rule not stored yet is disabled and the cap line sits under it.
 //    (CF-9): the "N rules on" toast carries the step id of the no-rules clear, so it has Undo like every other setup toast.
 import React, { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useT } from '@/i18n';
 import { useSetDecideAnswered } from '@/data/mutations/decideSetup';
@@ -18,7 +19,7 @@ import { useCategories } from '@/data/queries/categories';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { showToast } from '@/state/undoToast';
-import { radii, space } from '@/theme/layout';
+import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
@@ -27,17 +28,24 @@ import { Text } from '@/ui/Text';
 import { ToggleRow } from '@/ui/ToggleRow';
 import { AddRuleSheet } from '../../home/AddRuleSheet';
 import { commitRule } from '../../home/commitRule';
-import { canAddRule, DEBT_DEFAULT, debtPercentOf, upsertRule, type StoredRule } from '../../home/homeCardsModel';
+import { canAddRule, DEBT_DEFAULT, debtPercentOf, kindTaken, upsertRule, type StoredRule } from '../../home/homeCardsModel';
 import type { RuleTarget } from '../../home/MoneyRulesCard';
 import { RuleEditSheet } from '../../home/RuleEditSheet';
 import { useMoneyRules, useRuleCrossings } from '../../home/useHomeCards';
 import { rulesFactsOf } from '../../home/useHomeFacts';
+import { rulesOnOf, rulesShown, shownOnCount } from '../../logic/rulesShown';
 import { rulesOnCount } from './othersLogic';
 import { useSetupFormat } from './itemFields';
 import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
 const SAVED_KEY = 'decide.screens.sheetsHome.rule.savedToast';
 const GROW = '/grow' as Href;
+
+interface GrowRowModel {
+  key: 'saving' | 'investing';
+  label: string;
+  value: string;
+}
 
 interface RuleRowModel {
   key: string;
@@ -70,50 +78,60 @@ export function RulesSetup() {
   const money = useCallback((minor: number): string => fmt.money(minor, currency), [fmt, currency]);
   const facts = useMemo(() => rulesFactsOf(v3.inputs), [v3.inputs]);
 
-  const keep = rules.doc.rules.find((r) => r.kind === 'keep') ?? null;
-  const largest = rules.doc.rules.find((r) => r.kind === 'largest') ?? null;
   const debtPercent = debtPercentOf(rules.dsrLine);
   const roomForOne = canAddRule(rules.doc);
-
-  const rows: RuleRowModel[] = [
-    {
-      key: 'debt',
-      label: t('decide.screens.setupOthers.rules.debtAtMost'),
-      value: debtPercent === null ? t('decide.screens.setupOthers.rules.notSet') : t('decide.screens.setupOthers.rules.debtValue', { percent: String(debtPercent) }),
-      on: debtPercent !== null,
-      target: { kind: 'debt' },
-      needsValue: false,
-    },
-    {
-      key: 'keep',
-      label: t('decide.screens.setupOthers.rules.keepAtLeast'),
-      value: keep === null ? t('decide.screens.setupOthers.rules.notSet') : t('decide.screens.setupOthers.rules.keepValue', { amount: money(keep.value) }),
-      on: keep !== null && keep.on,
-      target: { kind: 'stored', rule: keep ?? newRule('keep') },
-      needsValue: keep === null,
-    },
-    {
-      key: 'largest',
-      label: t('decide.screens.setupOthers.rules.largest'),
-      value: largest === null ? t('decide.screens.setupOthers.rules.notSet') : money(largest.value),
-      on: largest !== null && largest.on,
-      target: { kind: 'stored', rule: largest ?? newRule('largest') },
-      needsValue: largest === null,
-    },
-    ...rules.doc.rules
-      .filter((r) => r.kind === 'category_cap' || r.kind === 'category_share')
-      .map((r): RuleRowModel => ({
-        key: r.id,
-        label:
-          r.kind === 'category_cap'
+  // 06.1-79 (DS-8, OQ-79-1 A): the same rules, in the same order, as Decide home's rules card. Grow's saving and investing show as
+  // rules set in Grow (no switch here; a link opens Grow). Keep at least and Largest single purchase also show as "Not set" rows
+  // until the person gives them a value, so they can be switched on from here.
+  const shown = rulesShown({ debtPercent, rules: rules.doc.rules, saving: facts.saving, investing: facts.investing });
+  const ownRow = (r: StoredRule): RuleRowModel => {
+    const kindKey = r.kind === 'keep' || r.kind === 'largest' ? r.kind : r.id;
+    const label =
+      r.kind === 'keep'
+        ? t('decide.screens.setupOthers.rules.keepAtLeast')
+        : r.kind === 'largest'
+          ? t('decide.screens.setupOthers.rules.largest')
+          : r.kind === 'category_cap'
             ? t('decide.screens.sheetsHome.rulesCard.categoryAtMost', { category: categoryName(r.categoryId ?? ''), amount: money(r.value) })
-            : t('decide.screens.sheetsHome.rulesCard.categoryShare', { category: categoryName(r.categoryId ?? ''), percent: String(r.value) }),
-        value: r.on ? t('decide.screens.setupOthers.rules.on') : t('decide.screens.setupOthers.rules.off'),
+            : t('decide.screens.sheetsHome.rulesCard.categoryShare', { category: categoryName(r.categoryId ?? ''), percent: String(r.value) });
+    const value =
+      r.kind === 'keep'
+        ? t('decide.screens.setupOthers.rules.keepValue', { amount: money(r.value) })
+        : r.kind === 'largest'
+          ? money(r.value)
+          : r.on
+            ? t('decide.screens.setupOthers.rules.on')
+            : t('decide.screens.setupOthers.rules.off');
+    return { key: kindKey, label, value, on: r.on, target: { kind: 'stored', rule: r }, needsValue: false };
+  };
+  const notSetRow = (kind: 'keep' | 'largest'): RuleRowModel => ({
+    key: kind,
+    label: t(kind === 'keep' ? 'decide.screens.setupOthers.rules.keepAtLeast' : 'decide.screens.setupOthers.rules.largest'),
+    value: t('decide.screens.setupOthers.rules.notSet'),
+    on: false,
+    target: { kind: 'stored', rule: newRule(kind) },
+    needsValue: true,
+  });
+  const rows: RuleRowModel[] = [];
+  const growRows: GrowRowModel[] = [];
+  for (const r of shown) {
+    if (r.kind === 'debt') {
+      rows.push({
+        key: 'debt',
+        label: t('decide.screens.setupOthers.rules.debtAtMost'),
+        value: r.percent === null ? t('decide.screens.setupOthers.rules.notSet') : t('decide.screens.setupOthers.rules.debtValue', { percent: String(r.percent) }),
         on: r.on,
-        target: { kind: 'stored', rule: r },
+        target: { kind: 'debt' },
         needsValue: false,
-      })),
-  ];
+      });
+    } else if (r.kind === 'saving' || r.kind === 'investing') {
+      growRows.push({ key: r.key, label: t(r.kind === 'saving' ? 'decide.screens.sheetsHome.rule.saving.title' : 'decide.screens.sheetsHome.rule.investing.title'), value: money(r.amount) });
+    } else {
+      rows.push(ownRow(r.rule));
+    }
+  }
+  if (!kindTaken(rules.doc, 'keep')) rows.push(notSetRow('keep'));
+  if (!kindTaken(rules.doc, 'largest')) rows.push(notSetRow('largest'));
 
   const save = useCallback((patch: Parameters<typeof rules.save>[0], label: Parameters<typeof rules.save>[1]) => rules.save(patch, label), [rules]);
 
@@ -130,7 +148,7 @@ export function RulesSetup() {
     }
   };
 
-  const onCount = rulesOnCount(rules.dsrLine, rules.doc, v3.inputs === null ? null : v3.inputs.limits.lines.filter((l) => l.on).length);
+  const onCount = rulesOnCount(shownOnCount(shown), v3.inputs === null ? null : rulesOnOf(v3.inputs));
 
   // 06.1-65: every switch and sheet writes at once, so nothing on this page is left unsaved and "Save and close" just closes.
   const saveRules = (): boolean => {
@@ -182,14 +200,28 @@ export function RulesSetup() {
       </View>
       <Pill variant="secondary" label={t('decide.screens.setupOthers.rules.addOwn')} disabled={!roomForOne} onPress={() => setAdding(true)} />
       {!roomForOne ? <Text style={small}>{t('decide.screens.setupOthers.rules.cap')}</Text> : null}
-      {facts.saving !== null || facts.investing !== null ? (
-        <View testID="rules-grow-note" style={styles.block}>
-          <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
-            {t('decide.screens.setupOthers.rules.growNote', { saving: money(facts.saving ?? 0), investing: money(facts.investing ?? 0) })}
+      {growRows.map((g) => (
+        <View key={g.key} testID={`rule-${g.key}`} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line2 }]}>
+          <View style={styles.growHead}>
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 1 }}>{g.label}</Text>
+            <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, fontVariant: ['tabular-nums'] }}>{g.value}</Text>
+          </View>
+          <Text testID={`rule-${g.key}-from-grow`} style={small}>
+            {t('decide.screens.setupOthers.rules.fromGrow')}
           </Text>
-          <Text style={small}>{t('decide.screens.setupOthers.rules.growNoteSub')}</Text>
+          <Pressable
+            testID={`rule-${g.key}-open-grow`}
+            accessibilityRole="link"
+            accessibilityLabel={t(g.key === 'saving' ? 'decide.screens.sheetsHome.rule.saving.open' : 'decide.screens.sheetsHome.rule.investing.open')}
+            onPress={() => router.push(GROW)}
+            style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+          >
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.ink, textDecorationLine: 'underline' }}>
+              {t(g.key === 'saving' ? 'decide.screens.sheetsHome.rule.saving.open' : 'decide.screens.sheetsHome.rule.investing.open')}
+            </Text>
+          </Pressable>
         </View>
-      ) : null}
+      ))}
       {onCount === 0 ? (
         <Text testID="rules-none" style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
           {t('decide.screens.setupOthers.rules.none')}
@@ -225,5 +257,6 @@ const styles = StyleSheet.create({
   list: { gap: space.gapMd },
   card: { borderRadius: radii.card, borderWidth: 1.5, paddingHorizontal: space.cardPad, paddingVertical: space.gapSm, gap: space.gapSm },
   chipRow: { flexDirection: 'row' },
-  block: { gap: 2 },
+  growHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.gapMd },
+  link: { minHeight: space.touchMin, justifyContent: 'center' },
 });

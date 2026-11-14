@@ -16,10 +16,12 @@ jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', region: 'US', today: '2026-11-20' }),
 }));
 jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ inputs: null, source: null, v3: null }) }));
-jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
-let mockGoals: unknown[] = [];
+let mockAccounts: unknown[] | undefined = [];
+jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
+let mockGoals: unknown[] | undefined = [];
 jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockGoals }) }));
-jest.mock('@/features/grow/goals/useGoalsRead', () => ({ useGoalsRead: () => ({ model: { safetyNet: null } }) }));
+let mockRead: { status?: string; model: { safetyNet: unknown } } = { model: { safetyNet: null } };
+jest.mock('@/features/grow/goals/useGoalsRead', () => ({ useGoalsRead: () => mockRead }));
 jest.mock('@/ui/ProgressBar', () => ({ ProgressBar: () => null }));
 jest.mock('@/features/grow/safetyNet/netPreview', () => ({ essentialMonthOf: () => 0 }));
 
@@ -28,7 +30,54 @@ const save = () => screen.getByLabelText('Save safety net');
 
 beforeEach(() => {
   mockGoals = [];
+  mockAccounts = [];
+  mockRead = { model: { safetyNet: null } };
   mockBack.mockClear();
+});
+
+// 06.1-79 (DS-9): a figure still loading is never shown as fact. The device showed "$0 in it now" with no account picked while the
+// checklist said Done, then "$50 in it now" on the next visit.
+describe('NetSetup while its reads load (06.1-79 DS-9)', () => {
+  const NET = { id: 'g1', household_id: 'h1', is_safety_net: true, deleted_at: null, account_id: 'a2', decide_may_use: false };
+  const ACCOUNTS = [
+    { id: 'a1', name: 'Everyday', kind: 'checking', currency: 'USD', deleted_at: null, archived_at: null },
+    { id: 'a2', name: 'Rainy day', kind: 'savings', currency: 'USD', deleted_at: null, archived_at: null },
+  ];
+
+  it.each([
+    ['the goal rows', () => { mockGoals = undefined; }],
+    ['the accounts', () => { mockGoals = [NET]; mockAccounts = undefined; }],
+    ["Grow's read of what is in the net", () => { mockGoals = [NET]; mockAccounts = ACCOUNTS; mockRead = { status: 'loading', model: { safetyNet: null } }; }],
+  ])('while %s load: the checking line only, no $0, no radios, no "Set an amount", Save off', async (_what, arrange) => {
+    arrange();
+    await wrap(<NetSetup answer={jest.fn()} setAccount={jest.fn(() => 'x')} />);
+    expect(screen.getByTestId('net-loading').props.children).toBe('Checking your safety net…');
+    expect(screen.queryByTestId('net-in-now')).toBeNull();
+    expect(screen.queryByText(/\$0/)).toBeNull();
+    expect(screen.queryByRole('radio')).toBeNull();
+    expect(screen.queryByLabelText('Set an amount')).toBeNull();
+    expect(save().props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('once loaded: the saved account is selected and the amount is what is in it', async () => {
+    mockGoals = [NET];
+    mockAccounts = ACCOUNTS;
+    mockRead = { status: 'ready', model: { safetyNet: { goalId: 'g1', size: 100000, saved: 5000, accountId: 'a2' } } };
+    await wrap(<NetSetup answer={jest.fn()} setAccount={jest.fn(() => 'x')} />);
+    expect(screen.queryByTestId('net-loading')).toBeNull();
+    expect(screen.getByTestId('net-in-now')).toHaveTextContent('$50 in it now · Goal $1,000, set in Grow');
+    expect(screen.getByLabelText('Rainy day').props.accessibilityState).toMatchObject({ checked: true });
+    expect(screen.getByLabelText('Everyday').props.accessibilityState).toMatchObject({ checked: false });
+  });
+
+  it('loaded, but Grow has no figure for the net (a failed read): no amount line rather than $0', async () => {
+    mockGoals = [NET];
+    mockAccounts = ACCOUNTS;
+    mockRead = { status: 'error', model: { safetyNet: null } };
+    await wrap(<NetSetup answer={jest.fn()} setAccount={jest.fn(() => 'x')} />);
+    expect(screen.queryByTestId('net-in-now')).toBeNull();
+    expect(screen.queryByText(/\$0/)).toBeNull();
+  });
 });
 
 describe('NetSetup need line (06.1-53 C-21)', () => {

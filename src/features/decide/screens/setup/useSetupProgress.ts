@@ -5,6 +5,7 @@ import { useDebts, useDecideSettings } from '@/data/queries/decide';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import type { ReadinessItem, V3Account, V3Inputs } from '@/engine/decide/v3';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import { rulesOnOf } from '../logic/rulesShown';
 import { setupProgress, type SetupFacts, type SetupProgress } from '../logic/setupProgress';
 import { decideBillSetOf, decideBillsTotal, type DecideBillSet } from './items/itemLogic';
 
@@ -68,7 +69,8 @@ export function setupFactsFrom(
     // A-SU-3: the money in the net (the same figure the safety-net screen shows), else the emergency fund.
     netSavedMinor: inputs.safetyNet != null ? Number(inputs.safetyNet.saved) : inputs.emergency !== null ? Number(inputs.emergency.amount) : null,
     netNotSetAnswered: flags.netNotSet,
-    rulesOn: inputs.limits.lines.filter((l) => l.on).length,
+    // 06.1-79 (DS-8, OQ-79-1 A): Grow's saving and investing count as rules on, as both rules lists show them.
+    rulesOn: rulesOnOf(inputs),
     noRulesAnswered: flags.noRules,
     lastMonthComplete: last !== undefined && last.full && !underLoggedMonths.has(prev),
     newestEntryThisMonth: dates.length > 0 ? (dates[dates.length - 1] as string) : null,
