@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
-import { colors } from '@/theme/tokens';
+import { pageTint } from '@/theme/tokens';
 import { Screen } from '@/ui/Screen';
 
 // DSG-03 (on-device acceptance, Pixel 9 / Android forced edge-to-edge): scrolled content must
@@ -33,7 +33,8 @@ describe('Screen scroll: top safe-area applied to the scroll viewport', () => {
     // The wrapper, not the scroll content, owns the status-bar inset.
     expect(root?.type).not.toBe('RCTScrollView');
     expect(outer.paddingTop).toBe(47);
-    expect(outer.backgroundColor).toBe(colors.canvas);
+    // 06.2 D-22: the band reads the context page tint (default accent green), not the static #F6F4EE.
+    expect(outer.backgroundColor).toBe(pageTint.green);
   });
 
   it('keeps only headerExtra (not insets.top) as scroll-content top padding, so resting layout is unchanged', async () => {

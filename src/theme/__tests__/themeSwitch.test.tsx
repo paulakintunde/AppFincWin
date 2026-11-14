@@ -5,6 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider, useTheme, type ThemeContextValue } from '../ThemeProvider';
 import { THEME_CACHE_KEY } from '../themeCache';
 import { FONT_PAIRINGS } from '../fonts';
+import { ACCENT_KEYS } from '../accents';
+import { pageTint, pageTintBar } from '../tokens';
 
 let mountCount = 0;
 
@@ -24,6 +26,8 @@ function Consumer({ themeRef }: { themeRef: React.MutableRefObject<ThemeContextV
       <Text testID="ready">{String(theme.ready)}</Text>
       <Text testID="accent">{theme.colors.accent}</Text>
       <Text testID="display">{theme.fonts.display}</Text>
+      <Text testID="canvas">{theme.colors.canvas}</Text>
+      <Text testID="tabBar">{theme.colors.tabBar}</Text>
     </>
   );
 }
@@ -163,5 +167,35 @@ describe('useTheme', () => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
     await expect(render(<Bare />)).rejects.toThrow('useTheme must be used within a ThemeProvider');
     spy.mockRestore();
+  });
+});
+
+describe('06.2 D-22/D-27 page tint follows the accent', () => {
+  it('defaults to the green page tint', async () => {
+    const { getByTestId } = await setup();
+    expect(getByTestId('canvas').props.children).toBe(pageTint.green);
+    expect(getByTestId('tabBar').props.children).toBe(pageTintBar.green);
+  });
+
+  it('re-tints canvas and tab bar live for each accent, with no remount', async () => {
+    const { getByTestId, themeRef } = await setup();
+    for (const key of ACCENT_KEYS) {
+      await act(() => {
+        themeRef.current?.setAccent(key);
+      });
+      expect(getByTestId('canvas').props.children).toBe(pageTint[key]);
+      expect(getByTestId('tabBar').props.children).toBe(pageTintBar[key]);
+    }
+    expect(mountCount).toBe(1);
+  });
+
+  it('keeps cards white on every tint', async () => {
+    const { themeRef } = await setup();
+    for (const key of ACCENT_KEYS) {
+      await act(() => {
+        themeRef.current?.setAccent(key);
+      });
+      expect(themeRef.current?.colors.surface).toBe('#FFFFFF');
+    }
   });
 });
