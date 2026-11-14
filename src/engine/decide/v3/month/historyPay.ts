@@ -18,7 +18,7 @@ import { addDays, addYearMonths, dayOfMonth, daysInYearMonth, yearMonthOf } from
 import type { IncomeProfile, LocalDate, V3Inputs } from '../types';
 import { recordedIncomeByMonth } from './incomePattern';
 import { eligibility, planOf } from './incomeProfile';
-import { liveSeriesOf, seriesIndex } from './series';
+import { seriesIndex, usualPayOf } from './series';
 
 export interface HistoryPay {
   /** The usual payday (day of month, 1..31). */
@@ -38,7 +38,7 @@ function irregular(p: IncomeProfile): boolean {
 
 export function historyPay(inputs: V3Inputs): HistoryPay | null {
   const { asOf, profile } = inputs;
-  if (liveSeriesOf(inputs.series, asOf, 'pay').length > 0) return null;
+  if (usualPayOf(inputs.series, asOf).length > 0) return null;
   if (profile === null || !irregular(profile)) return null;
   const current = yearMonthOf(asOf);
   const byMonth = recordedIncomeByMonth({ asOf, history: inputs.months, series: inputs.series, profile, custom: inputs.custom });
