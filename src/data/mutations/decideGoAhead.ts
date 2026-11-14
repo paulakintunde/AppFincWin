@@ -208,6 +208,13 @@ function stepByCadence(first: string, c: Cadence, i: number): string {
   return d;
 }
 
+const DAY_MS = 86_400_000;
+const utcDay = (d: string): number => Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10))) / DAY_MS;
+/** 'YYYY-MM-DD' moved by a whole number of days (calendar days, no time zone involved). */
+function shiftDays(d: string, days: number): string {
+  return days === 0 ? d : new Date((utcDay(d) + days) * DAY_MS).toISOString().slice(0, 10);
+}
+
 /**
  * Pure adapter (replaces the old Assessment input): the rows and series that "I bought it" writes for a v3 check, in the shape
  * recordDecideGo takes. Cash: one paid row of the whole price with tax and one-off fees (my share, exactly Purchase.whole)
@@ -249,6 +256,10 @@ export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, account
   };
 
   const sched = purchase.schedule;
+  // 06.1-81 (review item 6): the schedule's first payment is spaced from today (the engine's day). A purchase the Bought screen
+  // dates earlier moves the first payment back by the same number of days, so it keeps its spacing from the purchase; the rest
+  // follow the plan's cadence from there. Rows on or before today are still written as paid (06.1-77).
+  const first = sched === null ? '' : shiftDays(sched.firstDate, utcDay(date) - utcDay(ctx.today));
   if (check.pay.mode === 'once' || sched === null) {
     if (purchase.whole > 0) addRow(-purchase.whole, date, 'day_one');
   } else {
@@ -274,19 +285,19 @@ export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, account
             category_id: purchase.financed ? (ctx.debtCategoryId ?? null) : null,
             payment_type: null,
             freq,
-            anchor_date: sched.firstDate,
+            anchor_date: first,
             time_zone: ctx.timeZone,
             end_date: null,
             occurrence_count: runOfRegular,
           });
           seriesRoles.push('payment');
         } else if (runOfRegular === 1) {
-          addRow(-regular, sched.firstDate, 'payment');
+          addRow(-regular, first, 'payment');
         }
-        if (runOfRegular < n) addRow(-last, occurrenceDate(sched.firstDate, freq, runOfRegular), 'payment');
+        if (runOfRegular < n) addRow(-last, occurrenceDate(first, freq, runOfRegular), 'payment');
       } else {
         // A cadence the series machinery cannot repeat: one pending row per payment.
-        for (let i = 0; i < n; i++) addRow(-(i === n - 1 ? last : regular), stepByCadence(sched.firstDate, sched.cadence, i), 'payment');
+        for (let i = 0; i < n; i++) addRow(-(i === n - 1 ? last : regular), stepByCadence(first, sched.cadence, i), 'payment');
       }
     }
   }

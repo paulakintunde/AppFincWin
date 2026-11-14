@@ -107,6 +107,47 @@ describe('goAheadInputOfV3', () => {
     expect(payments.every((r) => r.local_date > '2026-10-03')).toBe(true);
   });
 
+  // 06.1-81 (review item 6): a plan bought on an earlier day (the Bought screen's date) moves its first payment by the same number
+  // of days, so it keeps its spacing from the purchase; the rest follow the plan's cadence from there. Rows on or before today are
+  // paid; later ones stay pending.
+  it('a back-dated plan moves its payment rows with the purchase, and the past ones are paid', () => {
+    const check = checkPlan(60000, { cadence: { unit: 'month', every: 2 }, count: 3, apr: percent('0'), deposit: mu(6000), firstPayment: { kind: 'one_period' } });
+    const ev = evaluate(inputsOf({ balance: mu(900000) }), check);
+    expect(ev.result.purchaseDate).toBe('2026-10-03');
+    const planned = goAheadInputOfV3(check, ev, 'acc1', mkCtx());
+    const pay = (w: typeof planned) => w.rows.filter((_, i) => w.decision.row_roles[i] === 'payment');
+    expect(pay(planned).map((r) => r.local_date)).toEqual(['2026-12-03', '2027-02-03', '2027-04-03']);
+    // Bought 2026-08-03: 61 days before the planned day, so the first payment is 61 days before 2026-12-03.
+    const w = goAheadInputOfV3(check, ev, 'acc1', mkCtx({ date: '2026-08-03' }));
+    expect(w.rows[0]).toMatchObject({ local_date: '2026-08-03', status: 'paid' });
+    expect(pay(w).map((r) => [r.local_date, r.status])).toEqual([
+      ['2026-10-03', 'paid'],
+      ['2026-12-03', 'pending'],
+      ['2027-02-03', 'pending'],
+    ]);
+    // The amounts and the decision (roles, estimates) are unchanged.
+    expect(pay(w).map((r) => r.original_amount)).toEqual(pay(planned).map((r) => r.original_amount));
+    expect(w.decision).toEqual(planned.decision);
+  });
+
+  it('a back-dated monthly plan starts its payment series the same days earlier', () => {
+    const check = checkPlan(1200000, { cadence: { unit: 'month', every: 1 }, count: 24, apr: percent('0'), deposit: mu(200000), firstPayment: { kind: 'one_period' } });
+    const ev = evaluate(inputsOf({ balance: mu(900000) }), check);
+    expect(ev.purchase!.schedule!.firstDate).toBe('2026-11-03');
+    const w = goAheadInputOfV3(check, ev, 'acc1', mkCtx({ date: '2026-09-23' }));
+    expect(w.series[0]).toMatchObject({ anchor_date: '2026-10-24', freq: 'monthly' });
+  });
+
+  it('a plan planned for a later day but bought today keeps the payments the answer showed (they are spaced from today)', () => {
+    const base = checkPlan(60000, { cadence: { unit: 'month', every: 2 }, count: 3, apr: percent('0'), firstPayment: { kind: 'one_period' } });
+    const later = { ...base, purchaseDate: '2026-10-13' } as typeof base;
+    const ev = evaluate(inputsOf({ balance: mu(900000) }), later);
+    expect(ev.result.purchaseDate).toBe('2026-10-13');
+    expect(ev.purchase!.schedule!.firstDate).toBe('2026-12-03');
+    const w = goAheadInputOfV3(later, ev, 'acc1', mkCtx());
+    expect(w.rows.filter((_, i) => w.decision.row_roles[i] === 'payment').map((r) => r.local_date)).toEqual(['2026-12-03', '2027-02-03', '2027-04-03']);
+  });
+
   it('used-car plan: the deposit on the day, then a payment series from the first payment date that adds up to the card', () => {
     const check = checkPlan(1200000, {
       cadence: { unit: 'month', every: 1 },
