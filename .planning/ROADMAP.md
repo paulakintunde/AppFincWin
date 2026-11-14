@@ -1352,13 +1352,13 @@ Plans:
   5. Haptics follow one meaning each (light tap = saved / answer shown; warning = over cap or short; success = goal reached, debt cleared, import done only, never for "fits"; error = a real failed save; tick = choosing), none on tab change, and a Haptics switch in You turns them off.
   6. The page background is a very pale tint of the chosen theme colour, cards stay white, and the contrast tests pass for every theme colour; CLAUDE.md's "complete palette" rule is updated to allow it.
   7. Empty screens show a 48 icon tile, one heading, one sentence and one button; saving an entry fades it in with a short tint, a toast with Undo and a light tap.
-**Plans:** 24 plans
+**Plans:** 4/24 plans executed
 
 Plans:
-- [ ] 06.2-01-PLAN.md — Icon set generated from the boards (check:icons in CI), Glyph, IconTile, icon maps, six spacing steps / row heights / tile sizes (D-03, D-05, D-07..D-10, D-29) (W1)
-- [ ] 06.2-02-PLAN.md — Four pale page tints per theme colour, clearer card edge, live swap, contrast tests (D-22, D-27) (W1)
-- [ ] 06.2-03-PLAN.md — Haptics by meaning behind a default-ON Haptics switch store; clone/mark monthly to a light tap (D-20, D-21, D-28) (W1)
-- [ ] 06.2-04-PLAN.md — appLife copy namespace (area files per plan) and copy guard (W1)
+- [x] 06.2-01-PLAN.md — Icon set generated from the boards (check:icons in CI), Glyph, IconTile, icon maps, six spacing steps / row heights / tile sizes (D-03, D-05, D-07..D-10, D-29) (W1)
+- [x] 06.2-02-PLAN.md — Four pale page tints per theme colour, clearer card edge, live swap, contrast tests (D-22, D-27) (W1)
+- [x] 06.2-03-PLAN.md — Haptics by meaning behind a default-ON Haptics switch store; clone/mark monthly to a light tap (D-20, D-21, D-28) (W1)
+- [x] 06.2-04-PLAN.md — appLife copy namespace (area files per plan) and copy guard (W1)
 - [ ] 06.2-05-PLAN.md — One status map + StatusBadge; SectionHeader (D-12..D-14, D-24) (W2)
 - [ ] 06.2-06-PLAN.md — Motion kit (steps, once per session, FadeIn, FadeSwap, calm-motion guard) + lottie-react-native and play-once AnimatedIcon with safe fallback (D-15, D-17, D-25) (W2)
 - [ ] 06.2-07-PLAN.md — Row at 52/64 with slots and a real arrow; EmptyState tile + sentence + one button (D-09, D-24) (W2)

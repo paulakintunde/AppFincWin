@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06.1 82/83: 33 signed, 61 closed (device pass deferred to post-05.5 test audit), 85 done; next: merge main, PR #102 to main, then 34 ship (preview APK)"
+stopped_at: "Phase 06.2 App life wave 1 closed (4/24): 01 icons, 02 page tints, 03 haptics, 04 copy; next wave 2: 05 status map, 06 motion kit + Lottie, 07 Row + EmptyState"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:
