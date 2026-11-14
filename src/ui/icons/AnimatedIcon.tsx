@@ -118,10 +118,12 @@ export interface AnimatedIconProps {
   still: IconName;
   color: string;
   size?: 24 | 48;
+  /** 06.2-08: theme colour for named Lottie layers (keypaths), set at runtime so no colour is baked into the file. */
+  colorFilters?: { keypath: string; color: string }[];
   testID?: string;
 }
 
-export function AnimatedIcon({ source, still, color, size = 24, testID }: AnimatedIconProps) {
+export function AnimatedIcon({ source, still, color, size = 24, colorFilters, testID }: AnimatedIconProps) {
   const { reduced } = useMotion();
   const [token] = useState<object>(() => ({}));
   const [failed, setFailed] = useState(false);
@@ -165,6 +167,7 @@ export function AnimatedIcon({ source, still, color, size = 24, testID }: Animat
           loop={false}
           speed={1}
           style={{ width: size, height: size }}
+          colorFilters={colorFilters}
           onAnimationFinish={() => releaseSlot(token)}
           testID={testID ? `${testID}-lottie` : undefined}
         />
