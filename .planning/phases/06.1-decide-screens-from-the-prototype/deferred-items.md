@@ -57,3 +57,6 @@ The Not ready card shows two sentences: "First: <item> …" and "More may follow
 
 ## Resolved by 06.1-67 (2026-11-13)
 - Not ready card caveat (from 06.1-59): "More may follow once this is done." now opens under the card's MoreRow (`answer-not-ready-more`). The `ROUTED_TO_67` exception is gone from oneLineBudget.test.tsx; the card reads as one sentence. notReadyCard and answerScreen tests open the row first.
+
+## DN-4 residual: "Updating…" line shifts the answer (found by 06.1-67, routed to 06.1-79)
+Rows now ignore taps while updating, but the "Updating…" line appears above the verdict and leaves when the update lands, so content jumps and a tap can land on the wrong row right after. Reserve that line's space (fixed slot, opacity change only) so the answer never shifts. Small layout fix in AnswerFrame.
