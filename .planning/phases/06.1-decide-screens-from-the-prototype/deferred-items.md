@@ -45,3 +45,6 @@ Method note G-78-1: device walks must run on a frozen worktree or a preview buil
 
 ## Not ready card caveat still in view (found by 06.1-59, routed to 06.1-67)
 The Not ready card shows two sentences: "First: <item> …" and "More may follow once this is done." The G-10 rule moves the caveat behind a `MoreRow` (`src/features/decide/screens/ui/MoreRow.tsx`). 06.1-59 did not change it because 06.1-68 owns `StatusCards.tsx`, `notReadyCard.test.tsx` and `answerScreen.test.tsx` in the same wave, and those tests assert the caveat is visible. 06.1-67 (H-6, the answer's short line first) should move it. Then drop the `ROUTED_TO_67` exception in `src/features/decide/screens/__tests__/oneLineBudget.test.tsx` and update the three test files.
+
+## Resolved by 06.1-68 (2026-11-13)
+- For 06.1-68 (from 06.1-57): the answer's plan sheet now calls `usePlan(pay, planName)`, which writes `withPlanName({ ...c, pay }, planName)` in one `step.update` (`L0.plan_name`, never a bare key). Commit 67c21eec.
