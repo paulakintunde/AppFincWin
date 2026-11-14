@@ -158,6 +158,17 @@ export const answer = {
     useOwn: 'Use this figure',
     saved: 'Saved: your spare money.',
   },
+  // 06.1-85 (G-PD-2): "What is the $X for?" answered where it is asked (decide_settings unexplained_amount/use/at).
+  unexplained: {
+    title: 'Money your records don’t explain',
+    body: 'Your everyday accounts hold about {{amount}} more than your records explain. What is it for?',
+    note: 'Only spare money counts toward what you buy.',
+    spare: 'Spare money',
+    envelope: 'An envelope or goal',
+    bill: 'Set aside for a bill',
+    someone: 'Someone else’s money',
+    saved: 'Saved: what the money is for.',
+  },
   // 06.1-66 (FQ8, CC-2): a decided check shows what happened and links to its entry in Past decisions; no buy or save buttons.
   outcome: {
     bought: 'Bought on {{date}}.',

@@ -22,7 +22,7 @@ import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useCreateCheck, useMarkCheckSeen, useRemoveDecision, useSaveCheckAnswer } from '@/data/mutations/decideChecks';
 import { useRecordCheckHistory } from '@/data/mutations/decideHistory';
 import { useSaveDecideAnswer } from '@/data/mutations/decideAnswers';
-import { useSaveSetupStep, useSetDecideAnswered } from '@/data/mutations/decideSetup';
+import { useSaveSetupStep, useSaveUnexplainedAnswer, useSetDecideAnswered } from '@/data/mutations/decideSetup';
 import { queryKeys } from '@/data/keys';
 import { useAccounts } from '@/data/queries/accounts';
 import { useDecideChecks, useDecideSettings, useSavingsGoals } from '@/data/queries/decide';
@@ -31,7 +31,7 @@ import { DECIDE_READ_STALE_MS } from '@/data/queries/decideStale';
 import { useIsOnline } from '@/data/sync/useIsOnline';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { AccountRow, TransactionRow } from '@/db/rows';
-import { freeHelpFor, unspentSum, type CheckV2, type Evaluation, type LocalDate, type PayV2, type ReadinessItem, type ReadinessWaiver } from '@/engine/decide/v3';
+import { freeHelpFor, type CheckV2, type Evaluation, type LocalDate, type PayV2, type ReadinessItem, type ReadinessWaiver } from '@/engine/decide/v3';
 import { money as makeMoney } from '@/engine/money';
 import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
 import { openNewCheck } from '@/features/decide/screens/logic/checkHref';
@@ -62,6 +62,8 @@ import type { PayMode, WhenChoice } from './AnswerTopBar';
 import { FactActions, type FactActionChoice } from './FactActions';
 import { MoreDetailRows, type DetailRow } from './MoreDetailRows';
 import { SpareMoneySheet } from './SpareMoneySheet';
+import { UnexplainedMoneySheet, type UnexplainedUse } from './UnexplainedMoneySheet';
+import { spareAnchorPatch, spareSumOf, unexplainedAsk } from '../logic/spareMoney';
 import type { OptionKey } from './OptionChips';
 import { useAnswerEffects } from './useAnswerEffects';
 import { useAnsweredRows, type AnsweredBy } from './useAnsweredRows';
@@ -88,11 +90,12 @@ const FIX_ROUTE: Readonly<Record<string, string>> = {
   everyday_unknown: '/decide/setup/bills',
   records_look_behind: '/decide/setup/records',
   // unspent_not_confirmed is answered on this screen (SpareMoneySheet, 06.1-84 G-61-2): Records has nothing that confirms it.
+  // unexplained_money_question too (UnexplainedMoneySheet, 06.1-85 G-PD-2): nothing else in the app answers it.
 };
 /** Missing figures that belong to the price and payment steps of this check. */
 const PRICE_STEP_FIXES: ReadonlySet<string> = new Set(['no_price', 'price_too_large', 'plan_count_missing', 'first_payment_not_chosen', 'pause_interest_not_answered', 'plan_rate_missing', 'first_payment_passed']);
 
-type SheetKey = 'later' | 'cheaper' | 'fullCost' | 'monthAfter' | 'stops' | 'everyDate' | 'monthByMonth' | 'worked' | 'giveMore' | 'help' | 'about' | 'plan' | 'spare';
+type SheetKey = 'later' | 'cheaper' | 'fullCost' | 'monthAfter' | 'stops' | 'everyDate' | 'monthByMonth' | 'worked' | 'giveMore' | 'help' | 'about' | 'plan' | 'spare' | 'unexplained';
 
 /** The writes the shell binds (useNotBuying reaches the rate-fetch door, which features/decide may not import). */
 export interface AnswerWrites {
@@ -207,6 +210,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
   const history = useRecordCheckHistory(rc.userId ?? '');
   const answered = useSetDecideAnswered(rc.userId ?? '');
   const setupSaver = useSaveSetupStep(rc.userId ?? '');
+  const unexplainedSaver = useSaveUnexplainedAnswer(rc.userId ?? '');
   const qc = useQueryClient();
   const answers = useSaveDecideAnswer(rc.userId ?? '', rc.householdId ?? '');
   const [envelopeId, setEnvelopeId] = useState<string | null>(null);
@@ -241,12 +245,11 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
 
   // 06.1-84 (G-61-2): the app's spare money figure, worked out only while its sheet is open (the engine's own sum, no new maths).
   // What is saved is the figure the person read plus the money held back for bridges, so it reads back as that same figure.
-  const spareInputs = v3.inputs;
-  const spareMonth = evaluation?.month ?? null;
-  const spare = useMemo(
-    () => (sheet !== 'spare' || spareInputs === null || spareMonth === null ? null : unspentSum(spareInputs, spareMonth)),
-    [sheet, spareInputs, spareMonth]
-  );
+  // 06.1-85 (G-PD-2): read from the engine's held Prepared (its as-given reading), not from whichever reading won for this check.
+  const prepared = v3.prepared;
+  const spare = useMemo(() => (sheet !== 'spare' || prepared === null ? null : spareSumOf(prepared)), [sheet, prepared]);
+  // 06.1-85 (G-PD-2): the unexplained money the engine asks about, and the amount its answer carries.
+  const unexplained = useMemo(() => (sheet !== 'unexplained' || prepared === null ? null : unexplainedAsk(prepared)), [sheet, prepared]);
 
   // 06.1-81 (RV-3): the inputs the shown answer was judged on; null while the deferred judge still shows older inputs.
   const inputsKey = useMemo(() => (check === null || engine.updating ? null : checkInputsKey(check)), [check, engine.updating]);
@@ -359,12 +362,21 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
   const confirmSpare = (figure: number): void => {
     const saved = setupSaver.save({
       labelKey: 'unspentConfirmed',
-      patch: { unspent_anchor: figure + (spare?.heldBack ?? 0), unspent_anchor_at: today },
+      patch: prepared === null ? { unspent_anchor: figure + (spare?.heldBack ?? 0), unspent_anchor_at: today } : spareAnchorPatch(prepared, figure, spare?.heldBack ?? 0),
     });
     setSheet(null);
     if (saved === null) return;
     hapticLight();
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.spare.saved' }, stepId: saved.stepId });
+  };
+
+  const answerUnexplained = (use: UnexplainedUse): void => {
+    setSheet(null);
+    if (unexplained === null || prepared === null) return;
+    const saved = unexplainedSaver.save({ amount: unexplained.amount, use, at: prepared.inputs.asOf });
+    if (saved === null) return;
+    hapticLight();
+    showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.unexplained.saved' }, stepId: saved.stepId });
   };
 
   const onAction = (action: AnswerAction): void => {
@@ -528,6 +540,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         if (PRICE_STEP_FIXES.has(choice.code)) pushOnce(withFromAnswer(stepHref(2, id, 'back')));
         else if (choice.code === 'account_use_question') pushOnce(accountUseFix());
         else if (choice.code === 'unspent_not_confirmed') setSheet('spare');
+        else if (choice.code === 'unexplained_money_question') setSheet('unexplained');
         else pushOnce(asHref(FIX_ROUTE[choice.code] ?? '/decide/setup'));
         return;
     }
@@ -761,6 +774,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         onConfirm={confirmSpare}
         onDismiss={closeSheet}
       />
+      <UnexplainedMoneySheet amount={unexplained === null ? null : money(unexplained.shown)} onAnswer={answerUnexplained} onDismiss={closeSheet} />
       {sheet === 'help' ? <FreeHelpSheet country={country} onClose={closeSheet} /> : null}
       {sheet === 'about' ? <AboutSheet result={result} country={country} said={{ currency, today }} recordsUpTo={recordsUpTo} onClose={closeSheet} /> : null}
       <InstallmentPlanSheet
