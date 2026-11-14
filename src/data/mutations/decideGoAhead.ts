@@ -259,7 +259,10 @@ export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, account
   // 06.1-81 (review item 6): the schedule's first payment is spaced from today (the engine's day). A purchase the Bought screen
   // dates earlier moves the first payment back by the same number of days, so it keeps its spacing from the purchase; the rest
   // follow the plan's cadence from there. Rows on or before today are still written as paid (06.1-77).
-  const first = sched === null ? '' : shiftDays(sched.firstDate, utcDay(date) - utcDay(ctx.today));
+  // Re-review A: only the kinds spaced from the purchase ('today', 'one_period') move. A 'deferred' first payment is a date the
+  // user picked, so it keeps that date; moving it could mark payments that were never made as paid.
+  const userPickedFirst = check.pay.mode === 'plan' && check.pay.firstPayment?.kind === 'deferred';
+  const first = sched === null ? '' : userPickedFirst ? sched.firstDate : shiftDays(sched.firstDate, utcDay(date) - utcDay(ctx.today));
   if (check.pay.mode === 'once' || sched === null) {
     if (purchase.whole > 0) addRow(-purchase.whole, date, 'day_one');
   } else {

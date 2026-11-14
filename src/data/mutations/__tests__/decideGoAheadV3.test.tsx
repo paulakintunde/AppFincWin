@@ -138,6 +138,25 @@ describe('goAheadInputOfV3', () => {
     expect(w.series[0]).toMatchObject({ anchor_date: '2026-10-24', freq: 'monthly' });
   });
 
+  // 06.1-81 re-review A: a deferred first payment is a date the user picked ("first payment on 15 Jan"). Back-dating the purchase
+  // must not move it, or payments that were never made would be written as paid.
+  it('a back-dated plan with a deferred first payment keeps the date the user picked', () => {
+    const check = checkPlan(60000, { cadence: { unit: 'month', every: 2 }, count: 3, apr: percent('0'), deposit: mu(6000), firstPayment: { kind: 'deferred', firstDate: '2026-11-20', interestDuringPause: false } });
+    const ev = evaluate(inputsOf({ balance: mu(900000) }), check);
+    expect(ev.purchase!.schedule!.firstDate).toBe('2026-11-20');
+    const planned = goAheadInputOfV3(check, ev, 'acc1', mkCtx());
+    const w = goAheadInputOfV3(check, ev, 'acc1', mkCtx({ date: '2026-08-03' }));
+    const pay = (x: typeof w) => x.rows.filter((_, i) => x.decision.row_roles[i] === 'payment');
+    expect(w.rows[0]).toMatchObject({ local_date: '2026-08-03', status: 'paid' });
+    expect(pay(w).map((r) => [r.local_date, r.status])).toEqual([
+      ['2026-11-20', 'pending'],
+      ['2027-01-20', 'pending'],
+      ['2027-03-20', 'pending'],
+    ]);
+    expect(pay(w).map((r) => r.local_date)).toEqual(pay(planned).map((r) => r.local_date));
+    expect(w.decision).toEqual(planned.decision);
+  });
+
   it('a plan planned for a later day but bought today keeps the payments the answer showed (they are spaced from today)', () => {
     const base = checkPlan(60000, { cadence: { unit: 'month', every: 2 }, count: 3, apr: percent('0'), firstPayment: { kind: 'one_period' } });
     const later = { ...base, purchaseDate: '2026-10-13' } as typeof base;
