@@ -83,7 +83,7 @@ describe('FadeIn and FadeSwap under Reduce Motion (06.2 D-17)', () => {
     mockAccessibilityInfo(true);
     await render(
       <FadeIn testID="fade-reduced">
-        <Text>Body</Text>
+        <Text>{'Body'}</Text>
       </FadeIn>,
     );
     await waitFor(() => expect(screen.getByTestId('fade-reduced')).toBeTruthy());
@@ -99,12 +99,12 @@ describe('FadeIn and FadeSwap under Reduce Motion (06.2 D-17)', () => {
     try {
       const view = await render(
         <FadeSwap value="a" testID="swap-reduced">
-          <Text>a</Text>
+          <Text>{'a'}</Text>
         </FadeSwap>,
       );
       await view.rerender(
         <FadeSwap value="b" testID="swap-reduced">
-          <Text>b</Text>
+          <Text>{'b'}</Text>
         </FadeSwap>,
       );
       await act(() => {

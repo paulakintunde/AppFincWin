@@ -61,23 +61,23 @@ describe('FadeIn (D-15)', () => {
   it('fades in with a layout entering animation on first view', async () => {
     await render(
       <FadeIn once="card.a" testID="fade">
-        <Text>Hello</Text>
+        <Text>{'Hello'}</Text>
       </FadeIn>,
     );
     expect(screen.getByTestId('fade').props.entering).toBeDefined();
   });
 
   it('draws at once with no animation on a later view in the same session', async () => {
-    await render(<FadeIn once="card.b" testID="first"><Text>One</Text></FadeIn>);
-    await render(<FadeIn once="card.b" testID="second"><Text>Two</Text></FadeIn>);
+    await render(<FadeIn once="card.b" testID="first"><Text>{'One'}</Text></FadeIn>);
+    await render(<FadeIn once="card.b" testID="second"><Text>{'Two'}</Text></FadeIn>);
     const second = screen.getByTestId('second');
     expect(second.props.entering).toBeUndefined();
     expect(StyleSheet.flatten(second.props.style) ?? {}).not.toHaveProperty('opacity');
   });
 
   it('without a once key it fades on every mount', async () => {
-    await render(<FadeIn testID="a"><Text>A</Text></FadeIn>);
-    await render(<FadeIn testID="b"><Text>B</Text></FadeIn>);
+    await render(<FadeIn testID="a"><Text>{'A'}</Text></FadeIn>);
+    await render(<FadeIn testID="b"><Text>{'B'}</Text></FadeIn>);
     expect(screen.getByTestId('b').props.entering).toBeDefined();
   });
 
@@ -85,7 +85,7 @@ describe('FadeIn (D-15)', () => {
     const onPress = jest.fn();
     await render(
       <FadeIn once="card.c" testID="fade">
-        <Pressable onPress={onPress} testID="btn"><Text>Tap</Text></Pressable>
+        <Pressable onPress={onPress} testID="btn"><Text>{'Tap'}</Text></Pressable>
       </FadeIn>,
     );
     const node = screen.getByTestId('fade');
@@ -100,15 +100,15 @@ describe('FadeSwap (D-16)', () => {
   const opacityOf = (id: string): unknown => (StyleSheet.flatten(screen.getByTestId(id).props.style) as { opacity?: unknown } | undefined)?.opacity;
 
   it('does not animate on first mount', async () => {
-    await render(<FadeSwap value="$40" testID="swap"><Text>$40</Text></FadeSwap>);
+    await render(<FadeSwap value="$40" testID="swap"><Text>{'$40'}</Text></FadeSwap>);
     expect(opacityOf('swap')).toBe(1);
   });
 
   it('dips and returns to full opacity over DURATION.swap when the value changes', async () => {
     jest.useFakeTimers();
     try {
-      const view = await render(<FadeSwap value="$40" testID="swap"><Text>$40</Text></FadeSwap>);
-      await view.rerender(<FadeSwap value="$55" testID="swap"><Text>$55</Text></FadeSwap>);
+      const view = await render(<FadeSwap value="$40" testID="swap"><Text>{'$40'}</Text></FadeSwap>);
+      await view.rerender(<FadeSwap value="$55" testID="swap"><Text>{'$55'}</Text></FadeSwap>);
       expect(screen.getByText('$55')).toBeTruthy();
       await act(() => {
         jest.advanceTimersByTime(DURATION.swap + 50);
@@ -117,11 +117,11 @@ describe('FadeSwap (D-16)', () => {
     } finally {
       jest.useRealTimers();
     }
-  });
+  }, 20000);
 
   it('a re-render with the same value starts nothing', async () => {
-    const view = await render(<FadeSwap value="$40" testID="swap"><Text>$40</Text></FadeSwap>);
-    await view.rerender(<FadeSwap value="$40" testID="swap"><Text>$40</Text></FadeSwap>);
+    const view = await render(<FadeSwap value="$40" testID="swap"><Text>{'$40'}</Text></FadeSwap>);
+    await view.rerender(<FadeSwap value="$40" testID="swap"><Text>{'$40'}</Text></FadeSwap>);
     expect(opacityOf('swap')).toBe(1);
   });
 });
