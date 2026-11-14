@@ -5,6 +5,7 @@
 // 06.1-57 (A-ST-2, X-3, DB-9): the segments carry visible names and done crumbs ("✓ Kind: Car", "✓ Price: $10,020"); the title uses
 // the display face (the prototype's H1: 26, line height 1.12). The Android in-app edge swipe (SwipeBack) follows the same Back rule
 // as the chevron and the system Back, through setSwipeBackInterceptor, so it never skips past a step to Decide home.
+// 06.1-60 (X-5, G-10): "Why we ask" is a Why? link (WhyLine) under the title; the reason opens in place.
 import React, { useCallback, useEffect, useRef } from 'react';
 import { AccessibilityInfo, BackHandler, findNodeHandle, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -19,6 +20,7 @@ import { Pill } from '@/ui/Pill';
 import { LINK_HIT_SLOP, usePressFeedback } from '@/ui/pressFeedback';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
+import { WhyLine } from '../ui/WhyLine';
 import { SegmentBar } from './SegmentBar';
 import type { StepNumber } from './useStepCheck';
 
@@ -113,10 +115,8 @@ export function StepFrame({ step, title, why, meta, direction = 'fwd', kindLabel
         <Text ref={titleRef} accessibilityRole="header" style={{ ...textRole(pairing, 'display'), fontSize: fontSize.heading, lineHeight: Math.round(fontSize.heading * TITLE_LINE), color: colors.ink }}>
           {title}
         </Text>
-        <Text style={{ ...label, color: colors.inkMuted }}>
-          <Text style={{ ...label, color: colors.inkDim }}>{t('decide.screens.common.whyWeAsk')} </Text>
-          {why}
-        </Text>
+        {/* 06.1-60 (X-5, G-10): the reason sits behind a Why? link under the title, one tap away. */}
+        <WhyLine testID="step-why">{why}</WhyLine>
         {children}
         <View style={styles.actions}>
           <Pill variant="primary" label={step === 3 ? t('decide.screens.stepper.seeAnswer') : t('decide.screens.common.next')} disabled={nextDisabled} onPress={onNext} />

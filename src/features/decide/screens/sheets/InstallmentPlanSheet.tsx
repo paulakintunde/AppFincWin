@@ -10,6 +10,9 @@
  * money fields and '%' on the rate; length chips 12 / 24 / 36 / 48 for a car and for any other kind (shorter sets stay for tech
  * and small items); the example rate shows as the rate field's value with an "example" tag beside it until the user types, and
  * typing replaces it (the text is selected on focus). The example is still never written to pay.apr.
+ * 06.1-60 (G-10, owner decision 4): the result "$527.22 a month for 12 months" is the sheet's one line. The intro and each field's
+ * helper (amount borrowed, rate, fees, quoted payment) open under that field's Why?; the interest sentence and the APR line open
+ * under a More in the result card. The "example" tag beside the rate stays in view.
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -40,7 +43,9 @@ import { useIsDirty } from '@/ui/useIsDirty';
 import { useSettledLabel } from '@/ui/useSettledLabel';
 import { parseWholeInRange } from '@/ui/wholeNumberField';
 import { PLAN_NAME_MAX, planNameOf } from '../check/planName';
+import { MoreRow } from '../ui/MoreRow';
 import { NeedLine } from '../ui/NeedLine';
+import { WhyLine } from '../ui/WhyLine';
 import { addDaysTo, addMonthsTo } from './dateMath';
 import { Field, FieldLabel, Note } from './sheetUi';
 
@@ -232,7 +237,7 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
     <Sheet visible onDismiss={onDismiss} accessibilityLabel={title} dirty={dirty}>
       <SheetHeader title={title} cancelLabel={t('decide.screens.common.cancel')} onCancel={onDismiss} />
       <SheetScroll contentContainerStyle={styles.column}>
-        <Note>{t('decide.screens.sheetsInput.plan.sub')}</Note>
+        <WhyLine testID="plan-why">{t('decide.screens.sheetsInput.plan.sub')}</WhyLine>
 
         <FieldLabel>{t('decide.screens.sheetsInput.plan.name')}</FieldLabel>
         <Field value={d.name} onChangeText={(name) => set({ name })} accessibilityLabel={t('decide.screens.sheetsInput.plan.name')} maxLength={PLAN_NAME_MAX} />
@@ -245,13 +250,12 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
           accessibilityLabel={t('decide.screens.sheetsInput.plan.cashDown')}
           prefix="symbol"
         />
-        <Note>{t('decide.v3.plan.feesVary')}</Note>
 
         <View accessible accessibilityLabel={`${t('decide.screens.sheetsInput.plan.borrowed')}, ${formatMoney(borrowed)}`} style={styles.readOnly}>
           <FieldLabel>{t('decide.screens.sheetsInput.plan.borrowed')}</FieldLabel>
           <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{formatMoney(borrowed)}</Text>
-          <Note>{t('decide.screens.sheetsInput.plan.borrowedSub')}</Note>
         </View>
+        <WhyLine testID="plan-borrowed-why">{t('decide.screens.sheetsInput.plan.borrowedSub')}</WhyLine>
 
         <FieldLabel>{t('decide.screens.sheetsInput.plan.length')}</FieldLabel>
         <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.sheetsInput.plan.length')} style={styles.chips}>
@@ -321,9 +325,10 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
           ) : null}
         </View>
         {rateBad ? <Note tone="warn">{t('decide.screens.common.fieldError.rateRange')}</Note> : null}
-        {usingExample ? <Note>{t('decide.v3.tax.exampleRate')}</Note> : null}
+        {usingExample ? <WhyLine testID="plan-rate-why">{t('decide.v3.tax.exampleRate')}</WhyLine> : null}
 
         <FieldLabel>{t('decide.screens.sheetsInput.plan.fees')}</FieldLabel>
+        <WhyLine testID="plan-fees-why">{t('decide.v3.plan.feesVary')}</WhyLine>
         <MoneyInput value={d.setup} currency={currency} onChange={(setup) => set({ setup })} label={t('decide.screens.sheetsInput.plan.feeSetup')} accessibilityLabel={t('decide.screens.sheetsInput.plan.feeSetup')} prefix="symbol" />
         <MoneyInput value={d.perPeriod} currency={currency} onChange={(perPeriod) => set({ perPeriod })} label={t('decide.screens.sheetsInput.plan.feeEach')} accessibilityLabel={t('decide.screens.sheetsInput.plan.feeEach')} prefix="symbol" />
         <MoneyInput value={d.end} currency={currency} onChange={(end) => set({ end })} label={t('decide.screens.sheetsInput.plan.feeEnd')} accessibilityLabel={t('decide.screens.sheetsInput.plan.feeEnd')} prefix="symbol" />
@@ -369,7 +374,7 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
           accessibilityLabel={t('decide.screens.sheetsInput.plan.quoted')}
           prefix="symbol"
         />
-        <Note>{t('decide.screens.sheetsInput.plan.quotedNote')}</Note>
+        <WhyLine testID="plan-quoted-why">{t('decide.screens.sheetsInput.plan.quotedNote')}</WhyLine>
 
         {card !== null && months !== null ? (
           <View style={[styles.card, { backgroundColor: colors.fill6 }]}>
@@ -379,10 +384,15 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
             <Text style={small}>
               {t('decide.screens.sheetsInput.plan.resultSub', { interest: formatMoney(card.interest), date: formatDate(card.firstDate), until: formatDate(card.endDate) })}
             </Text>
-            {Number(card.interest) > 0 ? (
-              <Text style={small}>{t('decide.v3.fact.interest_is_a_cost', { interest: formatMoney(card.interest), total: formatMoney(card.total) })}</Text>
+            {/* 06.1-60 (G-10): the interest sentence and the APR line open under More, under the result. */}
+            {Number(card.interest) > 0 || usingExample ? (
+              <MoreRow testID="plan-result-more">
+                {Number(card.interest) > 0 ? (
+                  <Text style={small}>{t('decide.v3.fact.interest_is_a_cost', { interest: formatMoney(card.interest), total: formatMoney(card.total) })}</Text>
+                ) : null}
+                {usingExample ? <Text style={small}>{t('decide.v3.plan.estimatedRate')}</Text> : null}
+              </MoreRow>
             ) : null}
-            {usingExample ? <Text style={small}>{t('decide.v3.plan.estimatedRate')}</Text> : null}
           </View>
         ) : null}
 

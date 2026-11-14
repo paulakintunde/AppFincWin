@@ -161,7 +161,11 @@ describe('PriceStep', () => {
     mockInputs = baseInputs({ region: null, regionSubdivision: null });
     seed('Laptop');
     await wrap(<PriceStep id={ID} />);
-    expect(await screen.findByText('Tax not included. Set your region to add it.')).toBeTruthy();
+    // 06.1-60 (G-10): "Tax not added" stays on the Up front card; the full notice and its link open under the tax switch's Why?.
+    expect(await screen.findByTestId('tax-not-added')).toBeTruthy();
+    expect(screen.queryByText('Tax not included. Set your region to add it.')).toBeNull();
+    await fireEvent.press(screen.getByTestId('tax-why'));
+    expect(screen.getByText('Tax not included. Set your region to add it.')).toBeTruthy();
     expect(screen.getByText('Set your region')).toBeTruthy();
   });
 

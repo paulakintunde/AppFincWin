@@ -6,6 +6,8 @@
 // $408 a month"). One-off costs start with two preset rows: dealer fees (a switch; on opens an empty amount, only a typed amount
 // counts) and the trade-in (the sale sheet). The Up front card shows the price once when nothing is added to it; with tax or fees
 // it lists the price, each addition and the total. A plan's name from the plan sheet is written with the pay change, in one write.
+// 06.1-60 (G-10, owner decision 4): the title "Price and how you pay" is the step's one line. The reason, the tax sub-lines (under the
+// tax switch), "The answer shows both…" and the plan's up-front note each open under a Why?; NeedLines and warnings stay in view.
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
@@ -31,6 +33,7 @@ import { SaleSheet } from '../sheets/SaleSheet';
 import { Field, FieldLabel, Note } from '../sheets/sheetUi';
 import { CheckNotFound } from '../ui/CheckNotFound';
 import { NeedLine } from '../ui/NeedLine';
+import { WhyLine } from '../ui/WhyLine';
 import { WaterfallCard, type WaterfallLine } from '../ui/WaterfallCard';
 import { useCheckEngine } from '../engine/useCheckEngine';
 import { StepFrame } from './StepFrame';
@@ -223,25 +226,28 @@ export function PriceStep({ id }: { id: string }) {
                 maxLength={7}
               />
               {estimate !== null && check.taxPercent === null ? <Note>{t('decide.screens.stepper.price.taxEstimate')}</Note> : null}
-              {estimate !== null ? <Note>{t('decide.screens.stepper.price.taxCheck')}</Note> : null}
-              {up.unknownRegion ? (
-                <View testID="tax-not-included" style={[styles.soft, { backgroundColor: colors.fill6 }]}>
-                  <Text style={small}>{t('decide.v3.notice.tax_not_included')}</Text>
-                  <Pressable accessibilityRole="link" onPress={() => router.push('/you' as never)} style={styles.link}>
-                    <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.stepper.price.setRegion')}</Text>
-                  </Pressable>
-                </View>
-              ) : null}
             </View>
           )}
 
           <ToggleRow label={t('decide.screens.stepper.price.includesTax')} value={included} onChange={(v) => step.update((c) => ({ ...c, taxIncluded: v }))} />
-          <Text style={small}>{t('decide.screens.stepper.price.includesTaxSub')}</Text>
+          {/* 06.1-60 (G-10): the tax sub-lines sit under the switch's Why?; "Tax not added" stays in view on the Up front card. */}
+          <WhyLine testID="tax-why">
+            <Text style={small}>{t('decide.screens.stepper.price.includesTaxSub')}</Text>
+            {!included && estimate !== null ? <Text style={small}>{t('decide.screens.stepper.price.taxCheck')}</Text> : null}
+            {!included && up.unknownRegion ? (
+              <View testID="tax-not-included" style={[styles.soft, { backgroundColor: colors.fill6 }]}>
+                <Text style={small}>{t('decide.v3.notice.tax_not_included')}</Text>
+                <Pressable accessibilityRole="link" onPress={() => router.push('/you' as never)} style={styles.link}>
+                  <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.stepper.price.setRegion')}</Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </WhyLine>
         </Card>
 
         <Card testID="pay-card">
           <Text style={strong}>{t('decide.screens.stepper.price.howPay')}</Text>
-          <Text style={small}>{t('decide.screens.stepper.price.howPaySub')}</Text>
+          <WhyLine testID="pay-why">{t('decide.screens.stepper.price.howPaySub')}</WhyLine>
           <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.stepper.price.howPay')} style={styles.payRow}>
             <View style={styles.payCell}>
               <ChoiceCard
@@ -331,7 +337,7 @@ export function PriceStep({ id }: { id: string }) {
               {t('decide.screens.stepper.price.taxNotAdded')}
             </Text>
           ) : null}
-          {isPlan ? <Text style={small}>{t('decide.screens.stepper.price.planUpFrontNote')}</Text> : null}
+          {isPlan ? <WhyLine testID="up-front-why">{t('decide.screens.stepper.price.planUpFrontNote')}</WhyLine> : null}
         </Card>
       </StepFrame>
 

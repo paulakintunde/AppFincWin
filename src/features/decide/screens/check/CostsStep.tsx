@@ -6,6 +6,8 @@
 // 06.1-57 (A-ST-6, X-4): the running costs are one card, a row per cost (switch and name, then how often, "about $50 a month" for a
 // line that is not monthly, and the amount with the currency sign). The legend shows once (StackedBar draws it); the bar's spoken
 // label carries the total and each share. The Price crumb on the segment bar is the up-front figure step 2 shows.
+// 06.1-60 (G-10, owner decision 4): the total card keeps "About $323 a month" with the usual-to-usual line as its second line; the
+// intro ("Quick estimates for this kind…") and the two notes under the total open under one More.
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
@@ -31,6 +33,7 @@ import { SaleSheet } from '../sheets/SaleSheet';
 import { useCheckEngine } from '../engine/useCheckEngine';
 import { useMonthPicture } from '../engine/useMonthPicture';
 import { CheckNotFound } from '../ui/CheckNotFound';
+import { MoreRow } from '../ui/MoreRow';
 import { NeedLine } from '../ui/NeedLine';
 import { StepFrame } from './StepFrame';
 import { isStillSaving, StepStillSaving } from './StepStillSaving';
@@ -200,7 +203,6 @@ export function CostsStep({ id }: { id: string }) {
         onJump={(n) => router.replace(nav.to(n, 'back'))}
         onNext={() => finishNow(3)}
       >
-        <Text style={small}>{t('decide.screens.stepper.running.sub')}</Text>
         <View testID="running-card" style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line1 }]}>
           <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.stepper.running.startTitle')}</Text>
 
@@ -301,8 +303,12 @@ export function CostsStep({ id }: { id: string }) {
               {t('decide.screens.stepper.running.totalAfter', { before: money(before), after: money(afterFigure) })}
             </Text>
           )}
-          <Text style={small}>{t('decide.screens.stepper.running.totalQuick')}</Text>
-          <Text style={small}>{t('decide.screens.stepper.running.yearlyNote')}</Text>
+          {/* 06.1-60 (G-10): the three notes open under More; the total and the usual-to-usual line stay in view. */}
+          <MoreRow testID="costs-more">
+            <Text style={small}>{t('decide.screens.stepper.running.sub')}</Text>
+            <Text style={small}>{t('decide.screens.stepper.running.totalQuick')}</Text>
+            <Text style={small}>{t('decide.screens.stepper.running.yearlyNote')}</Text>
+          </MoreRow>
         </View>
       </StepFrame>
 

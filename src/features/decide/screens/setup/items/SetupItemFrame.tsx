@@ -3,7 +3,7 @@
 //
 //   top row    Back chevron (left), "Save and close" (right)
 //   title      the item name, in place of "Step x of y" (items are not in order); screen-reader focus lands here
-//   why        "Why we ask:" + the reason
+//   why        a Why? link (06.1-60, X-5); the reason opens in place under it
 //   children   the item's own content
 //   primary    named for what it saves ("Save pay details"); a light haptic plays on press
 //   footer     optional, under the primary (a note, a link)
@@ -22,12 +22,13 @@ import { usePerfMount } from '@/features/decide/perf/perfMarks';
 import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
-import { fontSize, textRole } from '@/theme/typography';
+import { textRole } from '@/theme/typography';
 import { hapticLight, hapticWarning } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { NeedLine } from '@/features/decide/screens/ui/NeedLine';
+import { WhyLine } from '@/features/decide/screens/ui/WhyLine';
 
 /** The checklist a deep-linked item lands on when there is nothing to go back to. */
 export const SETUP_HOME = '/decide/setup' as Href;
@@ -54,7 +55,7 @@ export type ItemSaveResult = boolean | void;
 export interface SetupItemFrameProps {
   /** The item name, e.g. "Pay and payday". */
   title: string;
-  /** The reason after "Why we ask:". */
+  /** The reason, behind the Why? link (06.1-60). */
   why: string;
   primaryLabel: string;
   primaryDisabled?: boolean;
@@ -113,7 +114,6 @@ export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = fal
     saveThenLeave();
   };
 
-  const label = { ...textRole(pairing, 'label'), fontSize: fontSize.meta };
   return (
     <Screen scroll form>
       <View testID="setup-item-frame" style={styles.body}>
@@ -128,10 +128,8 @@ export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = fal
         <Text ref={titleRef} accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
           {title}
         </Text>
-        <Text style={{ ...label, color: colors.inkMuted }}>
-          <Text style={{ ...label, color: colors.inkDim }}>{t('decide.screens.common.whyWeAsk')} </Text>
-          {why}
-        </Text>
+        {/* 06.1-60 (X-5, G-10): the reason sits behind a Why? link under the title, one tap away. */}
+        <WhyLine testID="item-why">{why}</WhyLine>
         {children}
         <View style={styles.actions}>
           <Pill

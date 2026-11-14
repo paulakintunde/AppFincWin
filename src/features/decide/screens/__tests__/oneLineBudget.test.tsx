@@ -5,14 +5,18 @@
 import React from 'react';
 import { fireEvent, screen, within } from '@testing-library/react-native';
 import type { TestInstance as ReactTestInstance } from 'test-renderer';
-import { monthPicture, pastMonthBars, prepare, type MonthPicture, type ReadinessItem } from '@/engine/decide/v3';
-import { inputsOf, monthOf, v3Line, v3Series } from '@/engine/decide/v3/__tests__/helpers/fixtures';
+import { monthPicture, pastMonthBars, prepare, toStoredV2, type CheckV2, type MonthPicture, type ReadinessItem } from '@/engine/decide/v3';
+import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series } from '@/engine/decide/v3/__tests__/helpers/fixtures';
 import { minorUnits } from '@/engine/money';
 import { home } from '@/i18n/locales/decideScreens/home';
 import { setup } from '@/i18n/locales/decideScreens/setup';
 import { sheetsHome } from '@/i18n/locales/decideScreens/sheetsHome';
 import { answer } from '@/i18n/locales/decideScreens/answer';
+import { sheetsInput } from '@/i18n/locales/decideScreens/sheetsInput';
+import { stepper } from '@/i18n/locales/decideScreens/stepper';
 import { wrap } from '@/test/stepProps';
+import { CostsStep } from '../check/CostsStep';
+import { PriceStep } from '../check/PriceStep';
 import { DecideHome } from '../home/DecideHome';
 import { NotReadyCard } from '../answer/StatusCards';
 import { readinessFixRows } from '../logic/readinessFixes';
@@ -30,7 +34,17 @@ const mockPush = jest.fn();
 jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, setParams: jest.fn() }), useLocalSearchParams: () => ({}), useIsFocused: () => true }));
+jest.mock('expo-router', () => {
+  const { useEffect } = jest.requireActual<typeof import('react')>('react');
+  return {
+    useRouter: () => ({ push: mockPush, setParams: jest.fn() }),
+    useLocalSearchParams: () => ({}),
+    useIsFocused: () => true,
+    // 06.1-60: the stepper steps navigate through `router` and register Back while focused.
+    router: { replace: jest.fn(), push: jest.fn(), back: jest.fn(), canGoBack: () => true, dismissTo: jest.fn() },
+    useFocusEffect: (cb: () => void | (() => void)) => useEffect(cb, [cb]),
+  };
+});
 jest.mock('@/shell/fab/FabProvider', () => ({ useHideFab: () => undefined }));
 jest.mock('@/shell/screen/TabRootScreen', () => {
   const R = jest.requireActual('react');
@@ -62,6 +76,18 @@ jest.mock('../home/AddRuleSheet', () => ({ AddRuleSheet: () => null }));
 jest.mock('../home/OpenCheckSheet', () => ({ OpenCheckSheet: () => null }));
 jest.mock('../sheets/DatePickerSheet', () => ({ DatePickerSheet: () => null }));
 jest.mock('../sheets/InstallmentPlanSheet', () => ({ InstallmentPlanSheet: () => null }));
+// 06.1-60: the stepper steps read their stored check and the engine at the query/mutation edge.
+let mockStepRow: { id: string; name: string; inputs: unknown; furthest_step: number } | null = null;
+let mockEvaluation: unknown = null;
+jest.mock('@/data/queries/decide', () => ({
+  useDecideChecks: () => ({ data: mockStepRow === null ? [] : [mockStepRow], isLoading: false }),
+  useDebts: () => ({ data: [] }),
+}));
+jest.mock('@/data/mutations/decideChecks', () => ({
+  useSaveCheckDraft: () => ({ save: jest.fn() }),
+  useCreateCheck: () => ({ create: jest.fn(), pendingIds: [], pendingRows: [] }),
+}));
+jest.mock('../engine/useCheckEngine', () => ({ useCheckEngine: () => ({ evaluation: mockEvaluation, readyDate: () => null }) }));
 jest.mock('../sheets/QuickEstimateSheet', () => ({ QuickEstimateSheet: () => null }));
 
 const LEGAL = 'FincWin is a planning tool, not a lender.';
@@ -135,6 +161,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   resetSetupBannerSession();
   mockProgress = { items: [], doneCount: 0, next: 'pay', allDone: false, loading: false, currency: 'USD', today: '2026-10-03' };
+  mockStepRow = null;
+  mockEvaluation = null;
   const { inputs, prepared } = engineFixture();
   mockInputs = inputs;
   mockPicture = monthPicture(prepared);
@@ -254,5 +282,105 @@ describe('one short line per card on Decide home (06.1-59, G-10)', () => {
     const shown = sentences('answer-not-ready');
     expect(shown.filter((s) => !ROUTED_TO_67.includes(s)).length).toBeLessThanOrEqual(1);
     expect(shown[0]).toMatch(/^First: Netflix/);
+  });
+});
+
+// 06.1-60 (G-10 part 2, owner decision 4): the rest of section D. Same rule: at most one sentence before anything is opened, then
+// every moved sentence shows once its Why?/More is opened. NeedLines (plan 52) explain a disabled button and stay in view; they are
+// not card prose, so they are left out of the count.
+const STEP_ID = '11111111-1111-4111-8111-111111111111';
+const isNeedLine = (n: ReactTestInstance): boolean => typeof n.props?.testID === 'string' && /need/.test(n.props.testID as string);
+
+/** sentencesIn, leaving out NeedLines. */
+function proseIn(root: ReactTestInstance): string[] {
+  const found: ReactTestInstance[] = [];
+  const walk = (n: ReactTestInstance): void => {
+    if (isNeedLine(n)) found.push(n);
+    for (const c of n.children) if (typeof c !== 'string') walk(c);
+  };
+  walk(root);
+  const needs = found.flatMap((n) => textOf(n).split(/(?<=[.?!])\s+/).map((x) => x.trim()));
+  return sentencesIn(root).filter((x) => !needs.includes(x));
+}
+const prose = (testID: string): string[] => proseIn(screen.getByTestId(testID));
+
+function seedStep(name: string, check: CheckV2): void {
+  mockStepRow = { id: STEP_ID, name, inputs: toStoredV2(check), furthest_step: 3 };
+  mockInputs = { currency: 'USD', region: 'US', regionSubdivision: 'CA', series: [], debts: [] };
+}
+
+describe('one short line on the big-buy path (06.1-60, G-10 part 2)', () => {
+  it('PriceStep: "Price and how you pay" stays; the reason, the tax sub-lines and "The answer shows both…" open under Why?', async () => {
+    seedStep('Laptop', checkOnce(120_000));
+    await wrap(<PriceStep id={STEP_ID} />);
+    expect(await screen.findByText(stepper.price.title)).toBeTruthy();
+    // The pay card's own question is the one sentence left in view.
+    expect(prose('step-frame')).toEqual([stepper.price.howPay]);
+    for (const moved of [stepper.price.why, stepper.price.includesTaxSub, stepper.price.taxCheck, stepper.price.howPaySub]) expect(screen.queryByText(moved)).toBeNull();
+    await fireEvent.press(screen.getByTestId('step-why'));
+    expect(screen.getByText(stepper.price.why)).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('tax-why'));
+    expect(within(screen.getByTestId('price-card')).getByText(stepper.price.includesTaxSub)).toBeTruthy();
+    expect(within(screen.getByTestId('price-card')).getByText(stepper.price.taxCheck)).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('pay-why'));
+    expect(within(screen.getByTestId('pay-card')).getByText(stepper.price.howPaySub)).toBeTruthy();
+    expect(screen.getByText(LEGAL)).toBeTruthy();
+  });
+
+  it('PriceStep on a plan: the up-front note opens under Why?; a NeedLine stays in view and is not counted', async () => {
+    seedStep('Laptop', checkPlan(0));
+    await wrap(<PriceStep id={STEP_ID} />);
+    await fireEvent(await screen.findByLabelText(stepper.price.price), 'blur');
+    expect(screen.getByTestId('price-need')).toBeTruthy();
+    expect(prose('step-frame')).toEqual([stepper.price.howPay]);
+    expect(screen.queryByText(stepper.price.planUpFrontNote)).toBeNull();
+    await fireEvent.press(screen.getByTestId('up-front-why'));
+    expect(within(screen.getByTestId('up-front-card')).getByText(stepper.price.planUpFrontNote)).toBeTruthy();
+  });
+
+  it('CostsStep: "About … a month" with the usual-to-usual line in view; the three notes open under one More; the legend shows once', async () => {
+    seedStep('Used car', checkOnce(600_000));
+    mockEvaluation = { purchase: null, result: { afterBuy: { usualMonth: minorUnits(30_000) } } };
+    await wrap(<CostsStep id={STEP_ID} />);
+    const total = await screen.findByTestId('costs-total');
+    expect(within(total).getByText(/^About \$[\d,]+ a month$/)).toBeTruthy();
+    const after = textOf(within(total).getByTestId('costs-total-after'));
+    // The kept second line (06.1-55's usual-to-usual figures) is the only running text in view.
+    expect(prose('step-frame')).toEqual(after.split(/(?<=[.?!])\s+/));
+    for (const moved of [stepper.running.sub, stepper.running.totalQuick, stepper.running.yearlyNote, stepper.running.why]) expect(screen.queryByText(moved)).toBeNull();
+    await fireEvent.press(screen.getByTestId('costs-more'));
+    for (const moved of [stepper.running.sub, stepper.running.totalQuick, stepper.running.yearlyNote]) expect(within(total).getByText(moved)).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('step-why'));
+    expect(screen.getByText(stepper.running.why)).toBeTruthy();
+    expect(screen.getAllByText(/Insurance \d+%/, { includeHiddenElements: true })).toHaveLength(1);
+  });
+
+  it('InstallmentPlanSheet: the result line stays; each field helper opens under its Why?; interest and APR under More', async () => {
+    const { InstallmentPlanSheet: PlanSheet } = jest.requireActual<typeof import('../sheets/InstallmentPlanSheet')>('../sheets/InstallmentPlanSheet');
+    await wrap(
+      <PlanSheet visible check={checkOnce(100_000)} currency="USD" today="2026-11-11" itemKind="laptop" formatMoney={(n: number) => `$${n / 100}`} formatDate={(d: string) => d} onPickDate={jest.fn()} onUse={jest.fn()} onDismiss={jest.fn()} />,
+    );
+    await fireEvent.press(await screen.findByLabelText('12 months'));
+    const sheet = screen.getByTestId('sheet-container');
+    expect(within(sheet).getByText(/a month for 12 months$/)).toBeTruthy();
+    expect(proseIn(sheet)).toEqual([]);
+    const moved: [string, string][] = [
+      ['plan-why', sheetsInput.plan.sub],
+      ['plan-borrowed-why', sheetsInput.plan.borrowedSub],
+      ['plan-rate-why', 'Example rate only. It is not your rate and is not saved.'],
+      ['plan-fees-why', 'Fees vary by provider.'],
+      ['plan-quoted-why', sheetsInput.plan.quotedNote],
+    ];
+    for (const [, text] of moved) expect(screen.queryByText(text)).toBeNull();
+    for (const [id, text] of moved) {
+      await fireEvent.press(screen.getByTestId(id));
+      expect(screen.getByText(text)).toBeTruthy();
+    }
+    expect(screen.queryByText(/^This plan costs about /)).toBeNull();
+    await fireEvent.press(screen.getByTestId('plan-result-more'));
+    expect(screen.getByText(/^This plan costs about .* in interest/)).toBeTruthy();
+    expect(screen.getByText('This is FincWin’s estimate, not the APR on your agreement.')).toBeTruthy();
+    expect(screen.getByTestId('rate-example-tag')).toBeTruthy();
+    expect(within(sheet).getByText(LEGAL)).toBeTruthy();
   });
 });

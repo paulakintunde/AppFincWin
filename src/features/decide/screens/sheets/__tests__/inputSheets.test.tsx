@@ -50,7 +50,11 @@ describe('InstallmentPlanSheet', () => {
   it('never saves the example rate: an empty rate field leaves pay.apr null', async () => {
     const { onUse } = await renderPlan();
     await fireEvent.press(await screen.findByLabelText('12 months'));
+    // 06.1-60: the rate's helper opens under its Why?; the APR line under the result's More.
+    expect(screen.queryByText('Example rate only. It is not your rate and is not saved.')).toBeNull();
+    await fireEvent.press(screen.getByTestId('plan-rate-why'));
     expect(screen.getByText('Example rate only. It is not your rate and is not saved.')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('plan-result-more'));
     expect(screen.getByText('This is FincWin’s estimate, not the APR on your agreement.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Use this plan'));
     expect(onUse).toHaveBeenCalledTimes(1);
@@ -61,6 +65,7 @@ describe('InstallmentPlanSheet', () => {
     const { onUse } = await renderPlan();
     await fireEvent.press(await screen.findByLabelText('12 months'));
     await fireEvent.changeText(screen.getByLabelText('Rate, % a year'), '7.9');
+    expect(screen.queryByTestId('plan-rate-why')).toBeNull();
     expect(screen.queryByText('Example rate only. It is not your rate and is not saved.')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Use this plan'));
     expect(onUse.mock.calls[0][0].apr).toBe(percent('7.9'));
@@ -159,7 +164,8 @@ describe('InstallmentPlanSheet', () => {
 
   it('states the fee note and the footer, and has no home-loan option', async () => {
     await renderPlan();
-    expect(await screen.findByText('Fees vary by provider.')).toBeTruthy();
+    await fireEvent.press(await screen.findByTestId('plan-fees-why'));
+    expect(screen.getByText('Fees vary by provider.')).toBeTruthy();
     expect(screen.getByText('FincWin is a planning tool, not a lender.')).toBeTruthy();
   });
 
@@ -209,6 +215,7 @@ describe('InstallmentPlanSheet 06.1-57 (A-ST-7)', () => {
     await fireEvent.changeText(await screen.findByLabelText('Rate, % a year'), '');
     expect(screen.getByLabelText('Rate, % a year').props.value).toBe('');
     await fireEvent.press(screen.getByLabelText('12 months'));
+    await fireEvent.press(screen.getByTestId('plan-result-more'));
     expect(screen.getByText('This is FincWin’s estimate, not the APR on your agreement.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Use this plan'));
     expect(onUse.mock.calls[0][0].apr).toBeNull();
