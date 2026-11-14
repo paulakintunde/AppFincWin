@@ -20,7 +20,7 @@ jest.mock('@/ui/icons/Glyph', () => {
   const { View } = jest.requireActual<typeof import('react-native')>('react-native');
   return {
     Glyph: (p: { name: string; size?: number; color: string; testID?: string }) =>
-      R.createElement(View, { testID: p.testID ?? `glyph-${p.name}`, glyphName: p.name, glyphSize: p.size, glyphColor: p.color }),
+      R.createElement(View, { testID: p.testID ?? `glyph-${p.name}`, glyphName: p.name, glyphSize: p.size, glyphColor: p.color } as Record<string, unknown>),
   };
 });
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
