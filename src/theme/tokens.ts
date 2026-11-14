@@ -1,4 +1,5 @@
 import { Platform, type ViewStyle } from 'react-native';
+import type { AccentKey } from './accents';
 
 /**
  * The complete BUILD-PROMPT.md §2 colour palette, verbatim. This is the whole palette —
@@ -39,6 +40,27 @@ export const colors = {
   fill6: '#F6F4EE',
   tabBar: 'rgba(246,244,238,.94)',
 } as const;
+
+/**
+ * 06.2 D-22/D-27: the page background is a very pale, hand-picked tint of the chosen theme colour. Owner-approved
+ * exception to the 'complete palette' rule; the only colour family added since §2. Cards stay white (colors.surface).
+ * colors.canvas stays the static fallback used before the theme is ready. Contrast for every text token on each tint
+ * is tested in src/theme/__tests__/contrast.test.ts; inkFaint stays off the page (about 4.4:1 on every tint).
+ */
+export const pageTint: Readonly<Record<AccentKey, string>> = Object.freeze({
+  green: '#F1F5F2',
+  navy: '#F1F3F7',
+  rust: '#F7F2EE',
+  slate: '#F1F4F5',
+});
+
+/** 06.2 D-27: the tab bar's see-through (0.94) form of each page tint. */
+export const pageTintBar: Readonly<Record<AccentKey, string>> = Object.freeze({
+  green: 'rgba(241,245,242,.94)',
+  navy: 'rgba(241,243,247,.94)',
+  rust: 'rgba(247,242,238,.94)',
+  slate: 'rgba(241,244,245,.94)',
+});
 
 /**
  * Component.COL / Component.TINT, copied verbatim from FincWin United.dc.html lines 3217-3218.
@@ -128,10 +150,11 @@ export const memberColorNames = ['Green', 'Rust', 'Slate', 'Ochre', 'Plum', 'Tea
 export const shadowColor = '#14150F';
 
 /**
- * D-31 depth. Depth comes only from the page tone (canvas #F6F4EE), white surface cards and these three
+ * D-31 depth. Depth comes only from the page tone (06.2: the accent's pageTint; canvas #F6F4EE as fallback), white surface cards and these three
  * shadow tokens: `card` (containers), `edge` (grouped list rows, a 2 px edge so cells stay cheap) and `fab`.
  * `card` and `edge` use RN boxShadow (iOS and Android API 28+); below API 28 Android falls back to elevation.
  * boxShadow is never combined with elevation or shadow* props.
+ * 06.2 D-27: the 1 px ring is 0.07 (was 0.04), a slightly clearer card edge on the tinted page.
  */
 export function depthShadows() {
   const legacyAndroid = Platform.OS === 'android' && typeof Platform.Version === 'number' && Platform.Version < 28;
@@ -139,11 +162,11 @@ export function depthShadows() {
     ? { elevation: 3 }
     : {
         boxShadow:
-          '0 0 0 1px rgba(20,21,15,0.04), 0 1px 3px rgba(20,21,15,0.07), 0 8px 20px -8px rgba(20,21,15,0.16)',
+          '0 0 0 1px rgba(20,21,15,0.07), 0 1px 3px rgba(20,21,15,0.07), 0 8px 20px -8px rgba(20,21,15,0.16)',
       };
   const edge: ViewStyle = legacyAndroid
     ? {}
-    : { boxShadow: '0 0 0 1px rgba(20,21,15,0.04), 0 1px 2px rgba(20,21,15,0.06)' };
+    : { boxShadow: '0 0 0 1px rgba(20,21,15,0.07), 0 1px 2px rgba(20,21,15,0.06)' };
   return {
     card,
     edge,
