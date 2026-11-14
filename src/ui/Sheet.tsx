@@ -206,8 +206,8 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
     translateY.value = height;
     backdrop.value = 0;
     scrollY.value = 0;
-    translateY.value = withTiming(0, { duration: DURATION.sheetUp, easing: EASING });
-    backdrop.value = withTiming(BACKDROP_OPACITY, { duration: DURATION.backdrop, easing: Easing.ease });
+    translateY.value = withTiming(0, { duration: durationRef.current(DURATION.sheetUp), easing: EASING });
+    backdrop.value = withTiming(BACKDROP_OPACITY, { duration: durationRef.current(DURATION.backdrop), easing: Easing.ease });
     if (accessibilityLabel) AccessibilityInfo.announceForAccessibility(accessibilityLabel);
     // Re-run on open only; a rotation while open should not replay the slide.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -237,9 +237,9 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
     setLeaving(false);
     const neverShown = translateY.value >= sheetHeight.value;
     // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
-    translateY.value = withTiming(0, { duration: neverShown ? DURATION.sheetUp : DURATION.sheetDrag, easing: EASING });
+    translateY.value = withTiming(0, { duration: durationRef.current(neverShown ? DURATION.sheetUp : DURATION.sheetDrag), easing: EASING });
     // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
-    backdrop.value = withTiming(BACKDROP_OPACITY, { duration: DURATION.backdrop, easing: Easing.ease });
+    backdrop.value = withTiming(BACKDROP_OPACITY, { duration: durationRef.current(DURATION.backdrop), easing: Easing.ease });
   }, [translateY, sheetHeight, backdrop]);
 
   /**
@@ -251,9 +251,9 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
     setLaidOut(true);
     if (!visibleRef.current || dismissingRef.current) return;
     // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
-    translateY.value = withTiming(0, { duration: DURATION.sheetUp, easing: EASING });
+    translateY.value = withTiming(0, { duration: durationRef.current(DURATION.sheetUp), easing: EASING });
     // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutated by design
-    backdrop.value = withTiming(BACKDROP_OPACITY, { duration: DURATION.backdrop, easing: Easing.ease });
+    backdrop.value = withTiming(BACKDROP_OPACITY, { duration: durationRef.current(DURATION.backdrop), easing: Easing.ease });
   }, [translateY, backdrop]);
 
   const requestDismiss = useCallback(
