@@ -1,0 +1,2241 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Decide setup pay and bill form content (06.1 look, pinned) Add a bill it missed 1`] = `
+{
+  "c": [
+    {
+      "c": [
+        {
+          "c": [
+            {
+              "c": [
+                {
+                  "c": [],
+                  "p": {
+                    "testID": "sheet-backdrop-fill",
+                  },
+                  "t": "View",
+                },
+                {
+                  "c": [],
+                  "p": {
+                    "accessibilityLabel": "Close",
+                    "accessibilityRole": "button",
+                    "accessibilityState": {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    },
+                    "testID": "sheet-backdrop",
+                  },
+                  "t": "View",
+                },
+                {
+                  "c": [
+                    {
+                      "c": [
+                        {
+                          "c": [],
+                          "t": "View",
+                        },
+                      ],
+                      "p": {
+                        "testID": "sheet-handle",
+                      },
+                      "t": "View",
+                    },
+                    {
+                      "c": [
+                        {
+                          "c": [
+                            "Add a bill it missed",
+                          ],
+                          "t": "Text",
+                        },
+                        {
+                          "c": [
+                            {
+                              "c": [
+                                "Cancel",
+                              ],
+                              "t": "Text",
+                            },
+                          ],
+                          "p": {
+                            "accessibilityLabel": "Cancel",
+                            "accessibilityRole": "button",
+                            "accessibilityState": {
+                              "busy": undefined,
+                              "checked": undefined,
+                              "disabled": undefined,
+                              "expanded": undefined,
+                              "selected": undefined,
+                            },
+                          },
+                          "t": "View",
+                        },
+                      ],
+                      "t": "View",
+                    },
+                    {
+                      "c": [
+                        {
+                          "c": [
+                            {
+                              "c": [
+                                "It counts as a regular payment from now on.",
+                              ],
+                              "t": "Text",
+                            },
+                            {
+                              "c": [
+                                "Name",
+                              ],
+                              "t": "Text",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [],
+                                  "p": {
+                                    "accessibilityLabel": "Name",
+                                    "editable": true,
+                                    "maxLength": 40,
+                                    "value": "",
+                                  },
+                                  "t": "TextInput",
+                                },
+                              ],
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "Amount",
+                                  ],
+                                  "t": "Text",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        "$",
+                                      ],
+                                      "p": {
+                                        "testID": "money-symbol",
+                                      },
+                                      "t": "Text",
+                                    },
+                                    {
+                                      "c": [],
+                                      "p": {
+                                        "accessibilityLabel": "Amount",
+                                        "editable": true,
+                                        "inputMode": "decimal",
+                                        "value": "",
+                                      },
+                                      "t": "TextInput",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                              ],
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "Day of the month",
+                                  ],
+                                  "t": "Text",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [],
+                                      "p": {
+                                        "accessibilityLabel": "Day of the month",
+                                        "editable": true,
+                                        "inputMode": "numeric",
+                                        "maxLength": 2,
+                                        "value": "",
+                                      },
+                                      "t": "TextInput",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                              ],
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "How often",
+                                  ],
+                                  "t": "Text",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [],
+                                          "p": {
+                                            "testID": "accent-tint",
+                                          },
+                                          "t": "View",
+                                        },
+                                        {
+                                          "c": [
+                                            "Monthly",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Monthly",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": true,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Weekly",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Weekly",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Every 2 weeks",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Every 2 weeks",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Every 3 months",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Every 3 months",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Yearly",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Yearly",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "p": {
+                                    "accessibilityLabel": "How often",
+                                    "accessibilityRole": "radiogroup",
+                                  },
+                                  "t": "View",
+                                },
+                              ],
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "Add bill",
+                                  ],
+                                  "t": "Text",
+                                },
+                              ],
+                              "p": {
+                                "accessibilityLabel": "Add bill",
+                                "accessibilityRole": "button",
+                                "accessibilityState": {
+                                  "busy": undefined,
+                                  "checked": undefined,
+                                  "disabled": true,
+                                  "expanded": undefined,
+                                  "selected": false,
+                                },
+                              },
+                              "t": "View",
+                            },
+                          ],
+                          "t": "View",
+                        },
+                      ],
+                      "p": {
+                        "testID": "sheet-scroll",
+                      },
+                      "t": "RCTScrollView",
+                    },
+                  ],
+                  "p": {
+                    "accessibilityLabel": "Add a bill it missed",
+                    "testID": "sheet-container",
+                  },
+                  "t": "View",
+                },
+              ],
+              "t": "View",
+            },
+          ],
+          "p": {
+            "testID": "sheet-gesture-root",
+          },
+          "t": "View",
+        },
+      ],
+      "t": "Modal",
+    },
+  ],
+  "t": "RNCSafeAreaProvider",
+}
+`;
+
+exports[`Decide setup pay and bill form content (06.1 look, pinned) Add other income 1`] = `
+{
+  "c": [
+    {
+      "c": [
+        {
+          "c": [
+            {
+              "c": [
+                {
+                  "c": [],
+                  "p": {
+                    "testID": "sheet-backdrop-fill",
+                  },
+                  "t": "View",
+                },
+                {
+                  "c": [],
+                  "p": {
+                    "accessibilityLabel": "Close",
+                    "accessibilityRole": "button",
+                    "accessibilityState": {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    },
+                    "testID": "sheet-backdrop",
+                  },
+                  "t": "View",
+                },
+                {
+                  "c": [
+                    {
+                      "c": [
+                        {
+                          "c": [],
+                          "t": "View",
+                        },
+                      ],
+                      "p": {
+                        "testID": "sheet-handle",
+                      },
+                      "t": "View",
+                    },
+                    {
+                      "c": [
+                        {
+                          "c": [
+                            "Add other income",
+                          ],
+                          "t": "Text",
+                        },
+                        {
+                          "c": [
+                            {
+                              "c": [
+                                "Cancel",
+                              ],
+                              "t": "Text",
+                            },
+                          ],
+                          "p": {
+                            "accessibilityLabel": "Cancel",
+                            "accessibilityRole": "button",
+                            "accessibilityState": {
+                              "busy": undefined,
+                              "checked": undefined,
+                              "disabled": undefined,
+                              "expanded": undefined,
+                              "selected": undefined,
+                            },
+                          },
+                          "t": "View",
+                        },
+                      ],
+                      "t": "View",
+                    },
+                    {
+                      "c": [
+                        {
+                          "c": [
+                            {
+                              "c": [
+                                "For example, side work or rent from a room.",
+                              ],
+                              "t": "Text",
+                            },
+                            {
+                              "c": [
+                                "Name",
+                              ],
+                              "t": "Text",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [],
+                                  "p": {
+                                    "accessibilityLabel": "Name",
+                                    "editable": true,
+                                    "maxLength": 40,
+                                    "value": "",
+                                  },
+                                  "t": "TextInput",
+                                },
+                              ],
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "Amount",
+                                  ],
+                                  "t": "Text",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        "$",
+                                      ],
+                                      "p": {
+                                        "testID": "money-symbol",
+                                      },
+                                      "t": "Text",
+                                    },
+                                    {
+                                      "c": [],
+                                      "p": {
+                                        "accessibilityLabel": "Amount",
+                                        "editable": true,
+                                        "inputMode": "decimal",
+                                        "value": "",
+                                      },
+                                      "t": "TextInput",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                              ],
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "How often",
+                                  ],
+                                  "t": "Text",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Monthly",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Monthly",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Weekly",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Weekly",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Every 2 weeks",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Every 2 weeks",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Every 3 months",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Every 3 months",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Yearly",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Yearly",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "p": {
+                                    "accessibilityLabel": "How often",
+                                    "accessibilityRole": "radiogroup",
+                                  },
+                                  "t": "View",
+                                },
+                              ],
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                "What happens to it?",
+                              ],
+                              "t": "Text",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        "I spend it",
+                                      ],
+                                      "t": "Text",
+                                    },
+                                  ],
+                                  "p": {
+                                    "accessibilityLabel": "I spend it",
+                                    "accessibilityRole": "radio",
+                                    "accessibilityState": {
+                                      "busy": undefined,
+                                      "checked": false,
+                                      "disabled": undefined,
+                                      "expanded": undefined,
+                                      "selected": undefined,
+                                    },
+                                  },
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        "It’s kept",
+                                      ],
+                                      "t": "Text",
+                                    },
+                                  ],
+                                  "p": {
+                                    "accessibilityLabel": "It’s kept",
+                                    "accessibilityRole": "radio",
+                                    "accessibilityState": {
+                                      "busy": undefined,
+                                      "checked": false,
+                                      "disabled": undefined,
+                                      "expanded": undefined,
+                                      "selected": undefined,
+                                    },
+                                  },
+                                  "t": "View",
+                                },
+                              ],
+                              "p": {
+                                "accessibilityLabel": "What happens to it?",
+                                "accessibilityRole": "radiogroup",
+                              },
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "Add this income",
+                                  ],
+                                  "t": "Text",
+                                },
+                              ],
+                              "p": {
+                                "accessibilityLabel": "Add this income",
+                                "accessibilityRole": "button",
+                                "accessibilityState": {
+                                  "busy": undefined,
+                                  "checked": undefined,
+                                  "disabled": true,
+                                  "expanded": undefined,
+                                  "selected": false,
+                                },
+                              },
+                              "t": "View",
+                            },
+                          ],
+                          "t": "View",
+                        },
+                      ],
+                      "p": {
+                        "testID": "sheet-scroll",
+                      },
+                      "t": "RCTScrollView",
+                    },
+                  ],
+                  "p": {
+                    "accessibilityLabel": "Add other income",
+                    "testID": "sheet-container",
+                  },
+                  "t": "View",
+                },
+              ],
+              "t": "View",
+            },
+          ],
+          "p": {
+            "testID": "sheet-gesture-root",
+          },
+          "t": "View",
+        },
+      ],
+      "t": "Modal",
+    },
+  ],
+  "t": "RNCSafeAreaProvider",
+}
+`;
+
+exports[`Decide setup pay and bill form content (06.1 look, pinned) Add other income 2`] = `
+{
+  "c": [
+    {
+      "c": [
+        {
+          "c": [
+            {
+              "c": [
+                {
+                  "c": [],
+                  "p": {
+                    "testID": "sheet-backdrop-fill",
+                  },
+                  "t": "View",
+                },
+                {
+                  "c": [],
+                  "p": {
+                    "accessibilityLabel": "Close",
+                    "accessibilityRole": "button",
+                    "accessibilityState": {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    },
+                    "testID": "sheet-backdrop",
+                  },
+                  "t": "View",
+                },
+                {
+                  "c": [
+                    {
+                      "c": [
+                        {
+                          "c": [],
+                          "t": "View",
+                        },
+                      ],
+                      "p": {
+                        "testID": "sheet-handle",
+                      },
+                      "t": "View",
+                    },
+                    {
+                      "c": [
+                        {
+                          "c": [
+                            "Change your pay",
+                          ],
+                          "t": "Text",
+                        },
+                        {
+                          "c": [
+                            {
+                              "c": [
+                                "Cancel",
+                              ],
+                              "t": "Text",
+                            },
+                          ],
+                          "p": {
+                            "accessibilityLabel": "Cancel",
+                            "accessibilityRole": "button",
+                            "accessibilityState": {
+                              "busy": undefined,
+                              "checked": undefined,
+                              "disabled": undefined,
+                              "expanded": undefined,
+                              "selected": undefined,
+                            },
+                          },
+                          "t": "View",
+                        },
+                      ],
+                      "t": "View",
+                    },
+                    {
+                      "c": [
+                        {
+                          "c": [
+                            {
+                              "c": [
+                                "Decide uses this until Activity shows a different amount.",
+                              ],
+                              "t": "Text",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "Take-home pay",
+                                  ],
+                                  "t": "Text",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        "$",
+                                      ],
+                                      "p": {
+                                        "testID": "money-symbol",
+                                      },
+                                      "t": "Text",
+                                    },
+                                    {
+                                      "c": [],
+                                      "p": {
+                                        "accessibilityLabel": "Take-home pay",
+                                        "editable": true,
+                                        "inputMode": "decimal",
+                                        "value": "3,200",
+                                      },
+                                      "t": "TextInput",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                              ],
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                "Payday",
+                              ],
+                              "t": "Text",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "1",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "1st",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "2",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "2nd",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "3",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "3rd",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "4",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "4th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "5",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "5th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "6",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "6th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "7",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "7th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "8",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "8th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "9",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "9th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "10",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "10th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "11",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "11th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "12",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "12th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "13",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "13th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "14",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "14th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [],
+                                          "p": {
+                                            "testID": "accent-tint",
+                                          },
+                                          "t": "View",
+                                        },
+                                        {
+                                          "c": [
+                                            "15",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "15th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": true,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "16",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "16th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "17",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "17th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "18",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "18th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "19",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "19th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "20",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "20th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "21",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "21st",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "22",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "22nd",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "23",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "23rd",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "24",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "24th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "25",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "25th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "26",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "26th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "27",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "27th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "28",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "28th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "29",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "29th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "30",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "30th",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "31",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "31st",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                              ],
+                              "p": {
+                                "accessibilityLabel": "Payday",
+                                "accessibilityRole": "radiogroup",
+                              },
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "Paid into",
+                                  ],
+                                  "t": "Text",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [],
+                                          "p": {
+                                            "testID": "accent-tint",
+                                          },
+                                          "t": "View",
+                                        },
+                                        {
+                                          "c": [
+                                            "Everyday",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Everyday",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": true,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Savings",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Savings",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "p": {
+                                    "accessibilityLabel": "Paid into",
+                                    "accessibilityRole": "radiogroup",
+                                  },
+                                  "t": "View",
+                                },
+                              ],
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "Save pay",
+                                  ],
+                                  "t": "Text",
+                                },
+                              ],
+                              "p": {
+                                "accessibilityLabel": "Save pay",
+                                "accessibilityRole": "button",
+                                "accessibilityState": {
+                                  "busy": undefined,
+                                  "checked": undefined,
+                                  "disabled": false,
+                                  "expanded": undefined,
+                                  "selected": false,
+                                },
+                              },
+                              "t": "View",
+                            },
+                          ],
+                          "t": "View",
+                        },
+                      ],
+                      "p": {
+                        "testID": "sheet-scroll",
+                      },
+                      "t": "RCTScrollView",
+                    },
+                  ],
+                  "p": {
+                    "accessibilityLabel": "Change your pay",
+                    "testID": "sheet-container",
+                  },
+                  "t": "View",
+                },
+              ],
+              "t": "View",
+            },
+          ],
+          "p": {
+            "testID": "sheet-gesture-root",
+          },
+          "t": "View",
+        },
+      ],
+      "t": "Modal",
+    },
+  ],
+  "t": "RNCSafeAreaProvider",
+}
+`;
+
+exports[`Decide setup pay and bill form content (06.1 look, pinned) Change a bill 1`] = `
+{
+  "c": [
+    {
+      "c": [
+        {
+          "c": [
+            {
+              "c": [
+                {
+                  "c": [],
+                  "p": {
+                    "testID": "sheet-backdrop-fill",
+                  },
+                  "t": "View",
+                },
+                {
+                  "c": [],
+                  "p": {
+                    "accessibilityLabel": "Close",
+                    "accessibilityRole": "button",
+                    "accessibilityState": {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    },
+                    "testID": "sheet-backdrop",
+                  },
+                  "t": "View",
+                },
+                {
+                  "c": [
+                    {
+                      "c": [
+                        {
+                          "c": [],
+                          "t": "View",
+                        },
+                      ],
+                      "p": {
+                        "testID": "sheet-handle",
+                      },
+                      "t": "View",
+                    },
+                    {
+                      "c": [
+                        {
+                          "c": [
+                            "Change a bill",
+                          ],
+                          "t": "Text",
+                        },
+                        {
+                          "c": [
+                            {
+                              "c": [
+                                "Cancel",
+                              ],
+                              "t": "Text",
+                            },
+                          ],
+                          "p": {
+                            "accessibilityLabel": "Cancel",
+                            "accessibilityRole": "button",
+                            "accessibilityState": {
+                              "busy": undefined,
+                              "checked": undefined,
+                              "disabled": undefined,
+                              "expanded": undefined,
+                              "selected": undefined,
+                            },
+                          },
+                          "t": "View",
+                        },
+                      ],
+                      "t": "View",
+                    },
+                    {
+                      "c": [
+                        {
+                          "c": [
+                            {
+                              "c": [
+                                "Saved to the bill in Activity, so it changes there too.",
+                              ],
+                              "t": "Text",
+                            },
+                            {
+                              "c": [
+                                "Rent",
+                              ],
+                              "t": "Text",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "Amount",
+                                  ],
+                                  "t": "Text",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        "$",
+                                      ],
+                                      "p": {
+                                        "testID": "money-symbol",
+                                      },
+                                      "t": "Text",
+                                    },
+                                    {
+                                      "c": [],
+                                      "p": {
+                                        "accessibilityLabel": "Amount",
+                                        "editable": true,
+                                        "inputMode": "decimal",
+                                        "value": "1,200",
+                                      },
+                                      "t": "TextInput",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                              ],
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "Day of the month",
+                                  ],
+                                  "t": "Text",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [],
+                                      "p": {
+                                        "accessibilityLabel": "Day of the month",
+                                        "editable": true,
+                                        "inputMode": "numeric",
+                                        "maxLength": 2,
+                                        "value": "1",
+                                      },
+                                      "t": "TextInput",
+                                    },
+                                  ],
+                                  "t": "View",
+                                },
+                              ],
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "How often",
+                                  ],
+                                  "t": "Text",
+                                },
+                                {
+                                  "c": [
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [],
+                                          "p": {
+                                            "testID": "accent-tint",
+                                          },
+                                          "t": "View",
+                                        },
+                                        {
+                                          "c": [
+                                            "Monthly",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Monthly",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": true,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Weekly",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Weekly",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Every 2 weeks",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Every 2 weeks",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Every 3 months",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Every 3 months",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                    {
+                                      "c": [
+                                        {
+                                          "c": [
+                                            "Yearly",
+                                          ],
+                                          "t": "Text",
+                                        },
+                                      ],
+                                      "p": {
+                                        "accessibilityLabel": "Yearly",
+                                        "accessibilityRole": "button",
+                                        "accessibilityState": {
+                                          "busy": undefined,
+                                          "checked": undefined,
+                                          "disabled": false,
+                                          "expanded": undefined,
+                                          "selected": false,
+                                        },
+                                      },
+                                      "t": "View",
+                                    },
+                                  ],
+                                  "p": {
+                                    "accessibilityLabel": "How often",
+                                    "accessibilityRole": "radiogroup",
+                                  },
+                                  "t": "View",
+                                },
+                              ],
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "Save bill",
+                                  ],
+                                  "t": "Text",
+                                },
+                              ],
+                              "p": {
+                                "accessibilityLabel": "Save bill",
+                                "accessibilityRole": "button",
+                                "accessibilityState": {
+                                  "busy": undefined,
+                                  "checked": undefined,
+                                  "disabled": false,
+                                  "expanded": undefined,
+                                  "selected": false,
+                                },
+                              },
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                {
+                                  "c": [
+                                    "Stopped",
+                                  ],
+                                  "t": "Text",
+                                },
+                              ],
+                              "p": {
+                                "accessibilityHint": "Ends from today. Past entries stay in Activity.",
+                                "accessibilityLabel": "Stopped",
+                                "accessibilityRole": "button",
+                                "accessibilityState": {
+                                  "busy": undefined,
+                                  "checked": undefined,
+                                  "disabled": false,
+                                  "expanded": undefined,
+                                  "selected": false,
+                                },
+                              },
+                              "t": "View",
+                            },
+                            {
+                              "c": [
+                                "Ends from today. Past entries stay in Activity.",
+                              ],
+                              "t": "Text",
+                            },
+                          ],
+                          "t": "View",
+                        },
+                      ],
+                      "p": {
+                        "testID": "sheet-scroll",
+                      },
+                      "t": "RCTScrollView",
+                    },
+                  ],
+                  "p": {
+                    "accessibilityLabel": "Change a bill",
+                    "testID": "sheet-container",
+                  },
+                  "t": "View",
+                },
+              ],
+              "t": "View",
+            },
+          ],
+          "p": {
+            "testID": "sheet-gesture-root",
+          },
+          "t": "View",
+        },
+      ],
+      "t": "Modal",
+    },
+  ],
+  "t": "RNCSafeAreaProvider",
+}
+`;
