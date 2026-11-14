@@ -1,6 +1,6 @@
 /**
  * 06.2 L02 save moment: a row saved a moment ago fades in, and its card shows a short green wash (the fits tint
- * clearing to the card's white), once. Board L02: `.lf-wash` 1.4 s with a 0.35 s hold, ease-out, #E4F0E8 -> #FFFFFF.
+ * clearing to the card's white), once. Board L02: `.lf-wash` 1.4 s with a 0.35 s hold, ease-out, fits tint -> white surface.
  * Here: the row fades in over DURATION.appear; the tint holds 0.35 s then clears over 1.0 s (inside the 1.4 s budget).
  *
  * Two parts so the tint sits under the row's text, never over it:
