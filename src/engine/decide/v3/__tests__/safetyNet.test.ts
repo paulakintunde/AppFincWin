@@ -5,7 +5,7 @@
 import { minorUnits } from '../../../money/types';
 import { withNet, type CashCheck, type CashPathV3 } from '../cash/path';
 import { essentialCosts, essentialSpendingOf } from '../essentialCosts';
-import { buildMonthModel } from '../month/model';
+import { buildMonthModel } from '../../../month/model/model';
 import { FIT_VARIANT_ORDER, NO_NET, fitVariant, netDip, resolveSafetyNet, type ResolvedNet } from '../safetyNet';
 import type { MonthModel, V3Debt, V3Inputs } from '../types';
 import { inputsOf, monthOf, v3Line, v3Series } from './helpers/fixtures';

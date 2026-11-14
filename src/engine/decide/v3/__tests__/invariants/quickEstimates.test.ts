@@ -4,7 +4,7 @@
  */
 import * as fc from 'fast-check';
 import { minorUnits } from '../../../../money/types';
-import { buildMonthModel } from '../../month/model';
+import { buildMonthModel } from '../../../../month/model/model';
 import type { MonthModel, V3Inputs, V3Series } from '../../types';
 import { fcRuns } from '../helpers/fcRuns';
 import { inputsOf, monthOf, v3Line, v3Series } from '../helpers/fixtures';

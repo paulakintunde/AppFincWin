@@ -8,7 +8,7 @@
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { ceilDivide, minorFromBigInt } from '../../payoff/types';
 import { ESSENTIAL_ROUND_MINOR } from './constants';
-import { everydayByMonth, medianHalfUp } from './month/typical';
+import { everydayByMonth, medianHalfUp } from '../../month/model/typical';
 import type { MonthModel, V3Debt, V3Inputs } from './types';
 
 export interface EssentialCosts {

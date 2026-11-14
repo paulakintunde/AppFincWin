@@ -18,7 +18,7 @@ import * as fc from 'fast-check';
 import type { IncomeProfile } from '../../types';
 import { addYearMonths } from '../../dates';
 import { evaluate } from '../../evaluate';
-import { buildMonthModel } from '../../month/model';
+import { buildMonthModel } from '../../../../month/model/model';
 import { toCheckV2, toV3Inputs, type FixtureLine, type FixtureMonth, type FixturePerson, type FixturePurchase, type FixtureSeries } from '../golden/adapter';
 import { oldAnswer } from '../golden/toOld';
 

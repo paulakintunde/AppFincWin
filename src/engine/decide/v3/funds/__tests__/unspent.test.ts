@@ -1,7 +1,7 @@
 import { array, assert as fcAssert, constantFrom, integer, property } from 'fast-check';
 import { minorUnits as mu } from '../../../../money/types';
-import { erestOf } from '../../month/thisMonth';
-import { dueDrops } from '../../month/dueDrops';
+import { erestOf } from '../../../../month/model/thisMonth';
+import { dueDrops } from '../../../../month/model/dueDrops';
 import type { LineRole, ReadinessWaiver, SkippedOccurrence, V3Line, V3Month, V3Series } from '../../types';
 import { billsAndErest, rollForward, suggestedUnspent, unspentState } from '../unspent';
 

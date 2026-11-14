@@ -19,7 +19,7 @@ import { firstPaymentsToday, purchaseCashFlows } from '../../judge/purchase';
 import { planTotal } from '../../depletion';
 import { paymentsInRange } from '../../plan/schedule';
 import { myPart as myShareOf } from '../../../share';
-import { liveSeriesOf, seriesOccurrences } from '../../month/series';
+import { liveSeriesOf, seriesOccurrences } from '../../../../month/model/series';
 import { FACT_KEYS, NOTICE_KEYS } from '../../copy/verdictTable';
 import { evaluate } from '../../evaluate';
 import { judgeCheck, prepare, type Evaluation } from '../../prepare';
