@@ -4,7 +4,7 @@
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
-import type { CheckV2, Evaluation } from '@/engine/decide/v3';
+import { unspentSum, type CheckV2, type Evaluation } from '@/engine/decide/v3';
 import { wrap } from '@/test/stepProps';
 import { AnswerScreen } from '../AnswerScreen';
 import { ledgerRun, notReadyRun, type Run } from './fixtures';
@@ -46,7 +46,11 @@ jest.mock('@/data/mutations/decideChecks', () => ({
   useCreateCheck: () => ({ pendingRows: mockPending.rows }),
 }));
 jest.mock('@/data/mutations/decideHistory', () => ({ useRecordCheckHistory: () => ({ mutate: mockHistory }) }));
-jest.mock('@/data/mutations/decideSetup', () => ({ useSetDecideAnswered: () => ({ set: mockAnswered }) }));
+const mockSaveStep = jest.fn((..._a: unknown[]): { stepId: string } | null => ({ stepId: 'step-spare' }));
+jest.mock('@/data/mutations/decideSetup', () => ({
+  useSetDecideAnswered: () => ({ set: mockAnswered }),
+  useSaveSetupStep: () => ({ save: (...a: unknown[]) => mockSaveStep(...a) }),
+}));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [{ id: 'a1', name: 'Everyday', deleted_at: null }] }) }));
 // 06.1-44: the readiness answer writers and the cached transactions the skip reads.
 const mockSave = jest.fn((..._a: unknown[]): { id: string; stepId: string } | null => ({ id: 'ans-1', stepId: 'step-ans' }));
@@ -468,6 +472,59 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
       fireEvent.press(screen.getByTestId('answer-fix-no_income_figures'));
     });
     expect(mockPush).toHaveBeenCalledWith('/decide/setup/pay');
+  });
+
+  // 06.1-84 (G-61-2): Records has nothing that confirms spare money, so this Fix could never get an answer. It opens a sheet on the
+  // answer that names the app's figure; "That's right" or the person's own figure is saved (unspent_anchor, today) with Undo.
+  describe('Your spare money hasn’t been confirmed yet (G-61-2)', () => {
+    const spareRun = (): { run: Run; total: number; held: number } => {
+      const run = ledgerRun('N02');
+      const sum = unspentSum(run.inputs, run.evaluation.month);
+      return { run, total: sum.total, held: sum.heldBack };
+    };
+
+    it('Fix opens the spare money sheet with the app’s figure, not Records; That’s right saves it with Undo', async () => {
+      const { run, total, held } = spareRun();
+      load(run, { evaluation: asks(run, ['unspent_not_confirmed']) });
+      await open();
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('answer-fix-unspent_not_confirmed'));
+      });
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(screen.getByText('Your spare money')).toBeTruthy();
+      expect(screen.getByTestId('spare-figure')).toBeTruthy();
+      await act(async () => {
+        fireEvent.press(screen.getByText('That’s right'));
+      });
+      expect(mockSaveStep).toHaveBeenCalledWith({
+        labelKey: 'unspentConfirmed',
+        patch: { unspent_anchor: total + held, unspent_anchor_at: '2026-11-05' },
+      });
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ text: { key: 'decide.screens.answer.spare.saved' }, stepId: 'step-spare' }));
+      expect(screen.queryByText('Your spare money')).toBeNull();
+    });
+
+    it('the person’s own figure is saved instead', async () => {
+      const { run, held } = spareRun();
+      load(run, { evaluation: asks(run, ['unspent_not_confirmed']) });
+      await open();
+      await act(async () => {
+        fireEvent.press(screen.getByTestId('answer-fix-unspent_not_confirmed'));
+      });
+      await act(async () => {
+        fireEvent.press(screen.getByText('Use my own figure'));
+      });
+      await act(async () => {
+        fireEvent.changeText(screen.getByLabelText('Your spare money now'), '1200');
+      });
+      await act(async () => {
+        fireEvent.press(screen.getByText('Use this figure'));
+      });
+      expect(mockSaveStep).toHaveBeenCalledWith({
+        labelKey: 'unspentConfirmed',
+        patch: { unspent_anchor: 120000 + held, unspent_anchor_at: '2026-11-05' },
+      });
+    });
   });
 
   it('06.1-71 (DN-6): Fix next to What is <account> for? opens Setup > Records on that account, from=answer', async () => {

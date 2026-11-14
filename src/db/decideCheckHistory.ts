@@ -18,6 +18,8 @@ export interface DecideCheckHistoryRow {
 
 export type NewDecideCheckHistory = Pick<DecideCheckHistoryRow, 'id' | 'check_id' | 'said_on' | 'code' | 'variant' | 'result'>;
 
+const UNIQUE_VIOLATION = '23505';
+
 export const DECIDE_CHECK_HISTORY_COLUMNS = 'id, check_id, created_by, said_on, code, variant, result, created_at';
 /** Mirrors the SQL insert grant exactly. */
 export const DECIDE_CHECK_HISTORY_INSERT_KEYS = [
@@ -38,8 +40,20 @@ export async function insertCheckHistory(client: DbClient, row: NewDecideCheckHi
     .insert(payload)
     .select(DECIDE_CHECK_HISTORY_COLUMNS)
     .single();
+  if (!error) return data as unknown as DecideCheckHistoryRow;
+  // 06.1-84 (G-61-12, CR-A03): the client id is the table's only unique key, so a 23505 is this row having landed on an earlier
+  // try whose response was lost (a retry, or a paused write resumed). It is read back as success, never listed as failed.
+  if (error.code === UNIQUE_VIOLATION) {
+    const existing = await fetchCheckHistoryRow(client, row.id);
+    if (existing) return existing;
+  }
+  throw toDbError(error, status);
+}
+
+async function fetchCheckHistoryRow(client: DbClient, id: string): Promise<DecideCheckHistoryRow | null> {
+  const { data, error, status } = await client.from('decide_check_history').select(DECIDE_CHECK_HISTORY_COLUMNS).eq('id', id).maybeSingle();
   if (error) throw toDbError(error, status);
-  return data as unknown as DecideCheckHistoryRow;
+  return (data as unknown as DecideCheckHistoryRow | null) ?? null;
 }
 
 export async function listCheckHistory(client: DbClient, checkId: string): Promise<DecideCheckHistoryRow[]> {

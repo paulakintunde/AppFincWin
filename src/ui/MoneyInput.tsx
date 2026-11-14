@@ -219,7 +219,9 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
           returnKeyType="done"
           inputMode="decimal"
           accessibilityLabel={accessibilityLabel}
-          accessibilityValue={spoken === undefined ? undefined : { text: spoken }}
+          // 06.1-84 (G-61-6): never no value. On Android setAccessibilityValue(null) wipes the content description and does not
+          // rebuild it from the label, so a cleared field lost its name; an empty value text keeps the label.
+          accessibilityValue={{ text: spoken ?? '' }}
           placeholder={hint}
           editable={!readOnly}
           // 05.3-44/52: inkFaint fails 4.5:1 on fill1 and fill6; inkMuted passes on every light ground the field sits on.

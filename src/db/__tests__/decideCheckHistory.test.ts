@@ -22,6 +22,23 @@ describe('decide_check_history db module (06.1 CO-D-64 (6))', () => {
     expect(sent).not.toHaveProperty('created_by');
   });
 
+  // 06.1-84 (G-61-12): the device's failed-write list showed "An item with the same details already exists." for this insert
+  // during decide-bought. The table's only unique key is the client id, so a 23505 is a replay of a write that landed (a lost
+  // response retried, or a paused write resumed): it reads the row back as success, like every other Decide insert.
+  it('a replay of the same id (23505) reads the landed row back as success', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: { message: 'duplicate key value violates unique constraint', code: '23505' }, status: 409 });
+    client.respondWith({ data: ROW, error: null, status: 200 });
+    await expect(insertCheckHistory(client, NEW)).resolves.toEqual(ROW);
+  });
+
+  it('a 23505 with no row to read back is still a failure', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: { message: 'dup', code: '23505' }, status: 409 });
+    client.respondWith({ data: null, error: null, status: 200 });
+    await expect(insertCheckHistory(client, NEW)).rejects.toBeInstanceOf(DbError);
+  });
+
   it('refuses a key outside the grant', async () => {
     const client = createFakeSupabase();
     await expect(insertCheckHistory(client, { ...NEW, created_by: 'x' } as unknown as NewDecideCheckHistory)).rejects.toThrow(TypeError);
