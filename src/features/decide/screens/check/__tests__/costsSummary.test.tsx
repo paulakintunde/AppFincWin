@@ -4,7 +4,8 @@
 // judgeCheck exactly as the app does; only the data hooks at the query/mutation edge are mocked.
 import React from 'react';
 import { screen } from '@testing-library/react-native';
-import { judgeCheck, monthPicture, prepare, toStoredV2, type CheckV2, type Prepared, type V3Inputs } from '@/engine/decide/v3';
+import { judgeCheck, prepare, toStoredV2, type CheckV2, type Prepared, type V3Inputs } from '@/engine/decide/v3';
+import { monthPicture } from '@/engine/month';
 import { currencyCode, formatAmount, minorUnits } from '@/engine/money';
 import { loadCases } from '@/engine/decide/v3/__tests__/rightAnswers/loader';
 import { toEngineInputs } from '@/engine/decide/v3/__tests__/rightAnswers/fixture';

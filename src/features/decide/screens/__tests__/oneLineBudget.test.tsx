@@ -5,7 +5,8 @@
 import React from 'react';
 import { fireEvent, screen, within } from '@testing-library/react-native';
 import type { TestInstance as ReactTestInstance } from 'test-renderer';
-import { judgeCheck, monthPicture, pastMonthBars, prepare, toStoredV2, type CheckV2, type MonthPicture, type ReadinessItem } from '@/engine/decide/v3';
+import { judgeCheck, prepare, toStoredV2, type CheckV2, type ReadinessItem } from '@/engine/decide/v3';
+import { monthPicture, pastMonthBars, type MonthPicture } from '@/engine/month';
 import { checkOnce, checkPlan, inputsOf, monthOf, v3Line, v3Series } from '@/engine/decide/v3/__tests__/helpers/fixtures';
 import { minorUnits } from '@/engine/money';
 import { home } from '@/i18n/locales/decideScreens/home';
