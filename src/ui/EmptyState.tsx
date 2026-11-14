@@ -30,12 +30,12 @@ export interface EmptyStateProps {
 
 /** M4: an accent tint is the accent at ACCENT_TINT_OPACITY over fill1, flattened to one opaque colour for the tile. */
 export function accentTintOver(base: string, accent: string, alpha: number = ACCENT_TINT_OPACITY): string {
-  const rgb = (hex: string): [number, number, number] => {
+  const channels = (hex: string): [number, number, number] => {
     const h = hex.replace('#', '');
     return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)) as [number, number, number];
   };
-  const b = rgb(base);
-  const a = rgb(accent);
+  const b = channels(base);
+  const a = channels(accent);
   const mixed = b.map((v, i) => Math.round(v * (1 - alpha) + (a[i] ?? v) * alpha));
   return `#${mixed.map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase()}`;
 }
