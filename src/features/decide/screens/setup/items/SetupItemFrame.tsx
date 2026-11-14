@@ -13,6 +13,8 @@
 // has unsaved input (`dirty`); with nothing typed it just closes. Dirty input the item cannot save yet (primary disabled) keeps
 // the item open, where its NeedLine says what is missing. `onSave` returning false (or resolving false) keeps the item open too.
 // 06.1-65 (DN-12, DB-12): Back is the checklist's chevron with a 48 dp target, not the word Back at 32 x 44.
+// 06.1-81 (review item 5): a "Save and close" that cannot save yet is never silent: a warning haptic plays, and the item's NeedLine
+// (`need`, drawn under the primary) is read out and takes screen-reader focus. No new words: the line's own text is used.
 import React, { useCallback, useEffect, useRef } from 'react';
 import { AccessibilityInfo, findNodeHandle, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
@@ -21,10 +23,11 @@ import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticLight, hapticWarning } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
+import { NeedLine } from '@/features/decide/screens/ui/NeedLine';
 
 /** The checklist a deep-linked item lands on when there is nothing to go back to. */
 export const SETUP_HOME = '/decide/setup' as Href;
@@ -63,16 +66,19 @@ export interface SetupItemFrameProps {
   dirty?: boolean;
   /** "Save and close" with nothing unsaved; defaults to `onLeave`. */
   onSaveAndClose?: () => void;
-  /** Drawn under the primary button. */
+  /** 06.1-81: the NeedLine text (what the disabled primary still waits for), drawn under the primary; null draws nothing. */
+  need?: string | null;
+  /** Drawn under the primary button (and its NeedLine). */
   footer?: React.ReactNode;
   children: React.ReactNode;
 }
 
-export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = false, onSave, onLeave, dirty = false, onSaveAndClose, footer, children }: SetupItemFrameProps) {
+export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = false, onSave, onLeave, dirty = false, onSaveAndClose, need = null, footer, children }: SetupItemFrameProps) {
   usePerfMount('setupItem.mount'); // 06.1-72: perf builds only
   const t = useT();
   const { colors, pairing } = useTheme();
   const titleRef = useRef<React.ComponentRef<typeof Text>>(null);
+  const needRef = useRef<React.ComponentRef<typeof Text>>(null);
 
   useEffect(() => {
     const handle = titleRef.current === null ? null : findNodeHandle(titleRef.current);
@@ -94,8 +100,16 @@ export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = fal
       (onSaveAndClose ?? onLeave)();
       return;
     }
-    // Typed input that cannot be saved yet: stay, the item's NeedLine names what is missing.
-    if (primaryDisabled) return;
+    // Typed input that cannot be saved yet: stay, and say so (warning haptic; the NeedLine is read out and focused).
+    if (primaryDisabled) {
+      hapticWarning();
+      if (need !== null && need !== '') {
+        AccessibilityInfo.announceForAccessibility(need);
+        const handle = needRef.current === null ? null : findNodeHandle(needRef.current);
+        if (handle !== null) AccessibilityInfo.setAccessibilityFocus(handle);
+      }
+      return;
+    }
     saveThenLeave();
   };
 
@@ -129,6 +143,7 @@ export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = fal
               saveThenLeave();
             }}
           />
+          <NeedLine ref={needRef} text={need} />
           {footer}
         </View>
       </View>

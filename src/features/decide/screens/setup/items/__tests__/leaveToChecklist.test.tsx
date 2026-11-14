@@ -3,7 +3,7 @@
 // still exactly one checklist (06.1-50 C-6). (FQ4, CC-6): "Save and close" runs the same save as the primary when something is
 // unsaved. (DN-12, DB-12): Back is the checklist's chevron with a 48 dp target.
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { AccessibilityInfo, StyleSheet } from 'react-native';
 import { fireEvent, renderHook, screen } from '@testing-library/react-native';
 import { wrap } from '@/test/stepProps';
 import { ITEM_BACK_TARGET, SETUP_HOME, SetupItemFrame, useLeaveItem } from '../SetupItemFrame';
@@ -18,7 +18,8 @@ const STACKS_A_COPY = ['router.replace(', 'SETUP_HOME)'].join('');
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, push: mockPush, back: mockBack, canGoBack: () => mockCanGoBack }),
 }));
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+const mockWarning = jest.fn();
+jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn(), hapticWarning: () => mockWarning() }));
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -61,11 +62,11 @@ describe('leave to caller (useLeaveItem)', () => {
 });
 
 describe('SetupItemFrame (FQ4, DN-12)', () => {
-  const draw = async (p: { dirty?: boolean; disabled?: boolean; save?: jest.Mock; leave?: jest.Mock; close?: jest.Mock }) => {
+  const draw = async (p: { dirty?: boolean; disabled?: boolean; save?: jest.Mock; leave?: jest.Mock; close?: jest.Mock; need?: string | null }) => {
     const onSave = p.save ?? jest.fn(() => true);
     const onLeave = p.leave ?? jest.fn();
     await wrap(
-      <SetupItemFrame title="Item" why="A reason" primaryLabel="Save it" primaryDisabled={p.disabled} onSave={onSave} onLeave={onLeave} dirty={p.dirty} onSaveAndClose={p.close}>
+      <SetupItemFrame title="Item" why="A reason" primaryLabel="Save it" primaryDisabled={p.disabled} onSave={onSave} onLeave={onLeave} dirty={p.dirty} onSaveAndClose={p.close} need={p.need}>
         {null}
       </SetupItemFrame>,
     );
@@ -116,6 +117,38 @@ describe('SetupItemFrame (FQ4, DN-12)', () => {
     await fireEvent.press(screen.getByTestId('item-save-close'));
     expect(onSave).not.toHaveBeenCalled();
     expect(onLeave).not.toHaveBeenCalled();
+  });
+
+  it('06.1-81: Save and close that cannot save yet gives a warning haptic and reads out the line that says what is missing', async () => {
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
+    const focus = jest.spyOn(AccessibilityInfo, 'setAccessibilityFocus').mockImplementation(() => undefined);
+    await draw({ dirty: true, disabled: true, need: 'A pay day is still needed.' });
+    expect(screen.getByTestId('need-line')).toHaveTextContent('A pay day is still needed.');
+    focus.mockClear();
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    expect(mockWarning).toHaveBeenCalledTimes(1);
+    expect(announce).toHaveBeenCalledWith('A pay day is still needed.');
+    // The focus move needs a native node handle, which the test renderer does not have (device check).
+    announce.mockRestore();
+    focus.mockRestore();
+  });
+
+  it('06.1-81: with no missing-part line it still gives the warning haptic, and announces nothing', async () => {
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
+    await draw({ dirty: true, disabled: true });
+    expect(screen.queryByTestId('need-line')).toBeNull();
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    expect(mockWarning).toHaveBeenCalledTimes(1);
+    expect(announce).not.toHaveBeenCalled();
+    announce.mockRestore();
+  });
+
+  it('06.1-81: a Save and close that saves, or closes with nothing unsaved, gives no warning', async () => {
+    await draw({ dirty: true });
+    await fireEvent.press(screen.getByTestId('item-save-close'));
+    await draw({ dirty: false });
+    await fireEvent.press(screen.getAllByTestId('item-save-close')[0]!);
+    expect(mockWarning).not.toHaveBeenCalled();
   });
 
   it('a save that returns false keeps the item open', async () => {

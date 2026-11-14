@@ -14,7 +14,8 @@ import { PaySetup, firstNeed, sameTypes, toggledTypes, unmarkedPaySeries } from 
 const mockDismissTo = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: jest.fn(), dismissTo: mockDismissTo, back: jest.fn(), push: jest.fn(), canGoBack: () => false }) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+const mockWarning = jest.fn();
+jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn(), hapticWarning: () => mockWarning() }));
 // setupFactsFrom is pure; its module's read hooks are not used here.
 jest.mock('@/data/queries/decide', () => ({}));
 jest.mock('@/data/queries/decideV3', () => ({}));
@@ -313,6 +314,7 @@ describe('PaySetup fields (A-SU-4, C-21)', () => {
     expect(mockConfirm).not.toHaveBeenCalled();
     expect(mockDismissTo).not.toHaveBeenCalled();
     expect(screen.getByTestId('need-line')).toHaveTextContent('A pay day is still needed.');
+    expect(mockWarning).toHaveBeenCalledTimes(1); // 06.1-81: never silent
   });
 
   it('06.1-81: "No fixed income right now" saves with no amount or day, and the line never asks for them', async () => {

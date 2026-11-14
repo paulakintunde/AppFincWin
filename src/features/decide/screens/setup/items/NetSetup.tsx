@@ -26,7 +26,6 @@ import { MoneyInput } from '@/ui/MoneyInput';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { Text } from '@/ui/Text';
 import type { NetAnswerPort } from '../../safetyNet/ports';
-import { NeedLine } from '../../ui/NeedLine';
 import { RadioRow, useSetupFormat } from './itemFields';
 import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
@@ -115,7 +114,7 @@ export function NetSetup({ answer, setAccount }: { answer: NetAnswerPort; setAcc
       primaryLabel={t('decide.screens.setupOthers.net.save')}
       primaryDisabled={!ready}
       onSave={save}
-      footer={<NeedLine text={needAmount ? t('decide.screens.setupOthers.net.need.amount') : null} />}
+      need={needAmount ? t('decide.screens.setupOthers.net.need.amount') : null}
       onLeave={leave}
       dirty={dirty}
     >

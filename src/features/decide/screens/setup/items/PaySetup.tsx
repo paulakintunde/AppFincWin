@@ -42,7 +42,6 @@ import { Pill } from '@/ui/Pill';
 import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { Text } from '@/ui/Text';
 import { Field, FieldLabel, Note } from '@/features/decide/screens/sheets/sheetUi';
-import { NeedLine } from '@/features/decide/screens/ui/NeedLine';
 import { setAsideFromText, setAsidePatch, setAsideText, showsSetAside } from '@/features/decide/screens/logic/taxSetAside';
 import { DayPicker, RadioRow, useFreqWord, useSetupFormat } from './itemFields';
 import { OtherIncomeSheet, PayEditSheet, type OtherIncomeValues, type PayEditValues } from './PaySheets';
@@ -352,7 +351,7 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
       onSave={save}
       onLeave={leave}
       dirty={dirty}
-      footer={<NeedLine text={need === null ? null : t(`decide.screens.setupPayBills.pay.need.${need}`)} />}
+      need={need === null ? null : t(`decide.screens.setupPayBills.pay.need.${need}`)}
     >
       <Text style={heading}>{t('income.paid.title')}</Text>
       <View testID="pay-types" accessibilityLabel={t('income.paid.title')} style={styles.row}>
