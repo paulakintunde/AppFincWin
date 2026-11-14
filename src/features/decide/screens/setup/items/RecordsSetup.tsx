@@ -14,6 +14,9 @@
 // 06.1-68 (FQ7, CC-5, DC-11): "Answers you gave" lists every readiness answer and goal-to-account link, each with Remove (Undo);
 // a goal link also has Change (the Which account? sheet). (DS-14): an account-use pick shows at once, before the reads catch up,
 // and each choice is announced checked.
+// 06.1-60 (G-10, owner decision 4, D37): one line in view, "October not complete · this month up to date"; the reason ("Why we
+// ask") is behind the frame's Why?; each check row keeps its title and word badge, and its reason, the months count and the open
+// note sit under one More below the card. The accounts stay one row (06.1-58). Screen readers still hear each row's reason.
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
@@ -50,6 +53,7 @@ import { monthNameOf } from '../../home/YourMonthCard';
 import { readinessFixRows, type ReadinessFixRow, type WaiverChoice } from '../../logic/readinessFixes';
 import { EnvelopeAccountSheet, type SetEnvelopeAccount } from '../../sheets/EnvelopeAccountSheet';
 import { footerFactsOf } from '../../home/useHomeFacts';
+import { MoreRow } from '../../ui/MoreRow';
 import { NeedLine } from '../../ui/NeedLine';
 import { QUICK_SAVE_MODE } from '../QuickEstimatesScreen';
 import { DECIDE_HOME_PATH, safeReturnTo } from '../safeReturnTo';
@@ -100,13 +104,14 @@ function fallbackWaiver(item: ReadinessItem): ReadinessWaiver | null {
 }
 
 /** 06.1-58 (A-SU-5): a check's title over its reason, with the word badge at the right (glyph plus word, never colour alone). */
-function CheckRowBody({ title, why, ok, word, testID }: { title: string; why: string; ok: boolean; word: string; testID?: string }) {
+/** 06.1-60 (G-10): `showWhy` false keeps the reason out of view (it opens under the card's More); a screen reader still hears it. */
+function CheckRowBody({ title, why, ok, word, testID, showWhy = true }: { title: string; why: string; ok: boolean; word: string; testID?: string; showWhy?: boolean }) {
   const { colors, pairing } = useTheme();
   return (
     <View testID={testID} accessible={testID !== undefined} accessibilityLabel={`${title}, ${word}. ${why}`} style={styles.checkBody}>
       <View style={styles.checkText}>
         <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{title}</Text>
-        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{why}</Text>
+        {showWhy ? <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{why}</Text> : null}
       </View>
       <StateBadge tone={ok ? 'fits' : 'notYet'} shape={ok ? 'sCheck' : 'sClock'} label={word} testID={testID === undefined ? 'check-badge' : `${testID}-badge`} />
     </View>
@@ -377,6 +382,14 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
       onLeave={leave}
       onSaveAndClose={saveAndClose}
     >
+      {/* 06.1-60 (G-10, owner decision 4): the one line in view; each check's reason and the months count open under More. */}
+      <Text testID="records-summary" style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+        {t('decide.screens.setupOthers.records.keepLine', {
+          monthName,
+          status: t(checks.lastMonth ? 'decide.screens.setupOthers.records.keepStatus.complete' : 'decide.screens.setupOthers.records.keepStatus.notComplete'),
+          state: t(checks.thisMonth ? 'decide.screens.setupOthers.records.keepState.upToDate' : 'decide.screens.setupOthers.records.keepState.notUpToDate'),
+        })}
+      </Text>
       <View testID="records-checks" style={[styles.group, { backgroundColor: colors.surface, borderColor: colors.line2 }]}>
         <View style={styles.groupRow}>
           <CheckRowBody
@@ -385,6 +398,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
             why={lastWhy}
             ok={checks.lastMonth}
             word={word(checks.lastMonth)}
+            showWhy={false}
           />
           {!checks.lastMonth ? (
             <Pressable
@@ -400,7 +414,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
         </View>
 
         <View style={[styles.groupRow, styles.ruled, ruleColor]}>
-          <CheckRowBody testID="check-this" title={t('decide.screens.setupOthers.records.thisMonth')} why={thisWhy} ok={checks.thisMonth} word={word(checks.thisMonth)} />
+          <CheckRowBody testID="check-this" title={t('decide.screens.setupOthers.records.thisMonth')} why={thisWhy} ok={checks.thisMonth} word={word(checks.thisMonth)} showWhy={false} />
           {!checks.thisMonth ? (
             <Pressable
               testID="add-since"
@@ -425,6 +439,14 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
           <StateGlyph name="chev" color={colors.inkFaint} size={CHEV} />
         </Pressable>
       </View>
+      <MoreRow testID="records-more">
+        <Text testID="records-last-why" style={small}>{lastWhy}</Text>
+        <Text testID="records-this-why" style={small}>{thisWhy}</Text>
+        <Text testID="months-so-far" style={small}>
+          {footer.months >= 3 ? t('decide.screens.setupOthers.records.progressDone') : t('decide.screens.setupOthers.records.progress', { count: footer.months })}
+        </Text>
+        {!allDone ? <Text style={small}>{t('decide.screens.setupOthers.records.openNote')}</Text> : null}
+      </MoreRow>
 
       {!allDone ? (
         <Pill
@@ -464,10 +486,6 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
       <View style={styles.block}>
         <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('decide.screens.setupOthers.records.moreMonthsQ')}</Text>
         <Pill variant="secondary" label={t('decide.screens.setupOthers.records.importStatement')} onPress={() => router.push(IMPORT)} />
-        <Text testID="months-so-far" style={small}>
-          {footer.months >= 3 ? t('decide.screens.setupOthers.records.progressDone') : t('decide.screens.setupOthers.records.progress', { count: footer.months })}
-        </Text>
-        {!allDone ? <Text style={small}>{t('decide.screens.setupOthers.records.openNote')}</Text> : null}
       </View>
 
       {accountsOpen ? (

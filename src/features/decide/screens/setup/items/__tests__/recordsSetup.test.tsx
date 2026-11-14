@@ -256,8 +256,12 @@ describe('RecordsSetup rows, badges and the accounts sheet (06.1-58 A-SU-5, DS-1
   it('every check carries a word badge and a reason; with all done there is no Check again', async () => {
     await wrap(<RecordsSetup writes={writes} />);
     expect(screen.getByTestId('check-last-badge')).toHaveTextContent('Complete');
-    expect(screen.getByTestId('check-last')).toHaveTextContent(/In your records to the end of October\./);
-    expect(screen.getByTestId('check-this')).toHaveTextContent(/Up to date: entries to Nov 18, 2026/);
+    // 06.1-60 (G-10): the summary is in view; each reason opens under More (and is in each row's spoken label).
+    expect(screen.getByTestId('records-summary')).toHaveTextContent('October complete · this month up to date');
+    expect(screen.getByTestId('check-last').props.accessibilityLabel).toMatch(/In your records to the end of October\./);
+    await press(screen.getByTestId('records-more'));
+    expect(screen.getByTestId('records-last-why')).toHaveTextContent(/In your records to the end of October\./);
+    expect(screen.getByTestId('records-this-why')).toHaveTextContent(/Up to date: entries to Nov 18, 2026/);
     expect(screen.getByTestId('check-accounts')).toHaveTextContent(/0 accounts say what they are for/);
     expect(screen.queryByText('Check again')).toBeNull();
     expect(screen.queryByTestId('last-fix')).toBeNull();
@@ -267,8 +271,10 @@ describe('RecordsSetup rows, badges and the accounts sheet (06.1-58 A-SU-5, DS-1
     mockFacts = { ...DONE_FACTS, lastMonthComplete: false, newestEntryThisMonth: '2026-11-02' };
     await wrap(<RecordsSetup writes={writes} />);
     expect(screen.getByTestId('check-last-badge')).toHaveTextContent('Not complete');
-    expect(screen.getByTestId('check-last')).toHaveTextContent(/Not all of October is in your records yet\./);
-    expect(screen.getByTestId('check-this')).toHaveTextContent(/Newest entry Nov 2, 2026\. Decide needs one from the last 10 days\./);
+    expect(screen.getByTestId('records-summary')).toHaveTextContent('October not complete · this month not up to date');
+    await press(screen.getByTestId('records-more'));
+    expect(screen.getByTestId('records-last-why')).toHaveTextContent(/Not all of October is in your records yet\./);
+    expect(screen.getByTestId('records-this-why')).toHaveTextContent(/Newest entry Nov 2, 2026\. Decide needs one from the last 10 days\./);
     await press(screen.getByTestId('last-fix'));
     expect(mockPush).toHaveBeenCalledWith('/activity');
     await press(screen.getByText('Check again'));
@@ -278,7 +284,9 @@ describe('RecordsSetup rows, badges and the accounts sheet (06.1-58 A-SU-5, DS-1
   it('no entries this month says so', async () => {
     mockFacts = { ...DONE_FACTS, newestEntryThisMonth: null };
     await wrap(<RecordsSetup writes={writes} />);
-    expect(screen.getByTestId('check-this')).toHaveTextContent(/No entries yet this month\./);
+    expect(screen.getByTestId('check-this').props.accessibilityLabel).toMatch(/No entries yet this month\./);
+    await press(screen.getByTestId('records-more'));
+    expect(screen.getByTestId('records-this-why')).toHaveTextContent(/No entries yet this month\./);
   });
 
   it('Your accounts is one row that opens a sheet with the per-account choices', async () => {

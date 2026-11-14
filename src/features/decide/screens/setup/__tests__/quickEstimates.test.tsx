@@ -52,12 +52,15 @@ beforeEach(() => {
 afterEach(() => jest.useRealTimers());
 
 describe('QuickEstimatesScreen', () => {
-  it('shows the three questions, the footnote and the legal footer', async () => {
+  it('shows the three questions, the hint and the legal footer; the footnote opens under Why? (06.1-60)', async () => {
     await setup();
-    expect(screen.getByText('Before your records are ready. Round numbers are fine.')).toBeTruthy();
+    expect(screen.getByText('Round numbers are fine.')).toBeTruthy();
     expect(screen.getByLabelText(INCOME)).toBeTruthy();
     expect(screen.getByLabelText(BILLS)).toBeTruthy();
     expect(screen.getByLabelText(EVERYDAY)).toBeTruthy();
+    expect(screen.queryByText('Quick estimates count only until your records cover a full month.')).toBeNull();
+    await fireEvent.press(screen.getByTestId('quick-why'));
+    expect(screen.getByText('Before your records are ready.')).toBeTruthy();
     expect(screen.getByText('Quick estimates count only until your records cover a full month.')).toBeTruthy();
     expect(screen.getByTestId('quick-footer')).toBeTruthy();
   });

@@ -22,6 +22,8 @@ export const safetyNet = {
     beforeTitle: 'Before you unlock it',
     beforeBody: 'Answers will be allowed to use your safety net. Every answer that uses it says so at the top, with how much it uses.',
     beforeLockAgain: 'You can lock it again at any time.',
+    // 06.1-60 (G-10): the More row the two lock sentences and the unlock paragraph open under.
+    whatUnlocking: 'What unlocking does',
     unlock: 'Unlock for answers',
     lockAgain: 'Lock it again',
     changeSize: 'Change the size in Grow',

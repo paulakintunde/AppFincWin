@@ -137,5 +137,15 @@ export const setupOthers = {
       startFrom: 'Records begin in {{monthName}}',
       goalLink: '{{envelope}} (a Grow goal): kept in {{account}}',
     },
+    // 06.1-60 (G-10, D37): the one line in view on Records, e.g. "October not complete · this month up to date".
+    keepLine: '{{monthName}} {{status}} · this month {{state}}',
+    keepStatus: {
+      complete: 'complete',
+      notComplete: 'not complete',
+    },
+    keepState: {
+      upToDate: 'up to date',
+      notUpToDate: 'not up to date',
+    },
   },
 } as const;

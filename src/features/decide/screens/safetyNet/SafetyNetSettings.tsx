@@ -5,6 +5,9 @@
 // 06.1-58 (A-SN-1, DN-11): the padlock draws the state it names (closed when locked); the amount is said once, as a display figure
 // with a two-line legend (in it now / goal); the lock row's sub-line sits beside its switch; the screen has its own title, "Safety
 // net settings", so it is not a second "Safety net" next to Setup > Safety net.
+// 06.1-60 (G-10, owner decision 4, D51): in view stay the word (Locked / Unlocked), the amount with its legend ("In it now", the
+// goal) and the switch. "Money kept for emergencies. Set in Grow." opens under a Why?; the two lock sentences and the unlock
+// paragraph open under "What unlocking does" (in the Before you unlock it card while locked, under the switch once unlocked).
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
@@ -25,6 +28,8 @@ import { Text } from '@/ui/Text';
 import { ToggleRow } from '@/ui/ToggleRow';
 import { NetQuestionSheet } from '../firstAnswer/FirstAnswerGate';
 import { LockGlyphAnimated } from '../motion/LockGlyphAnimated';
+import { MoreRow } from '../ui/MoreRow';
+import { WhyLine } from '../ui/WhyLine';
 import type { NetAnswerPort, NetUsePort } from './ports';
 import { UnlockConfirm } from './UnlockConfirm';
 
@@ -83,11 +88,20 @@ export function SafetyNetSettings({ net, answer }: SafetyNetSettingsProps): Reac
 
   const word = locked ? t('decide.screens.safetyNet.settings.locked') : t('decide.screens.safetyNet.settings.unlocked');
   const tileA11y = locked ? t('decide.screens.safetyNet.settings.tileLockedA11y') : t('decide.screens.safetyNet.settings.tileUnlockedA11y');
+  // 06.1-60 (G-10, T-06.1-60-01): the two lock sentences and the unlock paragraph, one tap away in either state. The D52 confirm
+  // still says what unlocking does before anything changes.
+  const whatUnlocking = (
+    <MoreRow testID="net-what-unlocking" label={t('decide.screens.safetyNet.settings.whatUnlocking')}>
+      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('decide.screens.safetyNet.settings.lockSub')}</Text>
+      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('decide.screens.safetyNet.settings.beforeBody')}</Text>
+      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('decide.screens.safetyNet.settings.beforeLockAgain')}</Text>
+    </MoreRow>
+  );
 
   return (
     <DetailScreen title={title}>
       <View style={styles.stack}>
-        <Text style={{ ...textRole(pairing, 'body'), color: colors.inkMuted }}>{t('decide.screens.safetyNet.settings.sub')}</Text>
+        <WhyLine testID="net-why">{t('decide.screens.safetyNet.settings.sub')}</WhyLine>
         <View style={[...card, styles.figureCard]}>
           <View style={styles.tileRow}>
             <View
@@ -121,7 +135,8 @@ export function SafetyNetSettings({ net, answer }: SafetyNetSettingsProps): Reac
         </View>
 
         <View style={card}>
-          <ToggleRow label={t('decide.screens.safetyNet.settings.lockSwitch')} sub={t('decide.screens.safetyNet.settings.lockSub')} value={locked} onChange={onSwitch} />
+          <ToggleRow label={t('decide.screens.safetyNet.settings.lockSwitch')} value={locked} onChange={onSwitch} />
+          {locked ? null : whatUnlocking}
         </View>
 
         {locked ? (
@@ -129,8 +144,7 @@ export function SafetyNetSettings({ net, answer }: SafetyNetSettingsProps): Reac
             <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
               {t('decide.screens.safetyNet.settings.beforeTitle')}
             </Text>
-            <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('decide.screens.safetyNet.settings.beforeBody')}</Text>
-            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('decide.screens.safetyNet.settings.beforeLockAgain')}</Text>
+            {whatUnlocking}
             <OutlineButton label={t('decide.screens.safetyNet.settings.unlock')} onPress={() => setConfirmOpen(true)} />
           </View>
         ) : (

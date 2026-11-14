@@ -15,7 +15,12 @@ import { answer } from '@/i18n/locales/decideScreens/answer';
 import { sheetsInput } from '@/i18n/locales/decideScreens/sheetsInput';
 import { stepper } from '@/i18n/locales/decideScreens/stepper';
 import { wrap } from '@/test/stepProps';
+import { safetyNet } from '@/i18n/locales/decideScreens/safetyNet';
+import { setupOthers } from '@/i18n/locales/decideScreens/setupOthers';
 import { CostsStep } from '../check/CostsStep';
+import { SafetyNetSettings } from '../safetyNet/SafetyNetSettings';
+import { QuickEstimatesScreen } from '../setup/QuickEstimatesScreen';
+import { RecordsSetup } from '../setup/items/RecordsSetup';
 import { PriceStep } from '../check/PriceStep';
 import { DecideHome } from '../home/DecideHome';
 import { NotReadyCard } from '../answer/StatusCards';
@@ -67,9 +72,18 @@ jest.mock('../home/useHomeCards', () => ({
   useMoneyRules: () => ({ dsrLine: null, doc: { v: 1, rules: [] }, save: jest.fn() }),
   useRuleCrossings: () => () => [],
 }));
-jest.mock('../past/data/usePastDecisions', () => ({ usePastDecisions: () => ({ decisions: [], linesByCheck: new Map(), ctx: {} }), deltaFor: () => null }));
+jest.mock('../past/data/usePastDecisions', () => ({
+  usePastDecisions: () => ({ decisions: [], linesByCheck: new Map(), ctx: {} }),
+  deltaFor: () => null,
+  usePastContext: () => ({ userId: 'u1', householdId: 'h1' }), // 06.1-60: safety-net settings
+}));
 jest.mock('@/features/decide/hints/decideHints', () => ({ loadSetupDoneSeen: async () => true, markSetupDoneSeen: async () => undefined }));
-jest.mock('../setup/useSetupProgress', () => ({ useSetupProgress: () => mockProgress }));
+let mockSetupFacts: SetupFacts | null = null;
+jest.mock('../setup/useSetupProgress', () => ({
+  useSetupProgress: () => mockProgress,
+  // 06.1-60: Records reads the same facts.
+  useSetupFacts: () => ({ loading: mockSetupFacts === null, facts: mockSetupFacts, currency: 'USD', today: '2026-11-20', retry: jest.fn() }),
+}));
 jest.mock('../home/SomethingChanged', () => ({ SomethingChanged: () => null }));
 jest.mock('../home/RuleEditSheet', () => ({ RuleEditSheet: () => null }));
 jest.mock('../home/AddRuleSheet', () => ({ AddRuleSheet: () => null }));
@@ -82,7 +96,32 @@ let mockEvaluation: unknown = null;
 jest.mock('@/data/queries/decide', () => ({
   useDecideChecks: () => ({ data: mockStepRow === null ? [] : [mockStepRow], isLoading: false }),
   useDebts: () => ({ data: [] }),
+  useDecideSettings: () => ({ data: null }),
 }));
+// 06.1-60: Records, quick estimates and safety-net settings, mocked at the query/mutation edge as their own suites do.
+let mockGoalRows: unknown[] = [];
+jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockGoalRows }) }));
+jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
+jest.mock('@/data/queries/decideAnswers', () => ({ useDecideAnswers: () => ({ data: [] }) }));
+jest.mock('@/data/mutations/decideAnswers', () => ({ useSaveDecideAnswer: () => ({ save: jest.fn() }), useRemoveDecideAnswer: () => ({ remove: jest.fn() }) }));
+jest.mock('@/data/mutations/accountUse', () => ({ useSaveAccountUse: () => ({ save: jest.fn() }) }));
+jest.mock('@/data/mutations/decideSetup', () => ({ useSaveSetupStep: () => ({ save: jest.fn() }) }));
+jest.mock('@tanstack/react-query', () => ({ ...jest.requireActual('@tanstack/react-query'), useQueryClient: () => ({ getQueriesData: () => [] }) }));
+jest.mock('@/features/grow/goals/useGoalsRead', () => ({
+  useGoalsRead: () => ({ status: 'ready', model: { safetyNet: { size: 230000, saved: 130000 } }, refetch: jest.fn() }),
+}));
+jest.mock('@/features/grow/home/useGoalMoney', () => ({ useGoalMoney: () => ({ amount: (n: number) => `$${n / 100}` }) }));
+jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
+jest.mock('@/features/record/accounts/AccountUseSheet', () => ({ AccountUseSheet: () => null }));
+jest.mock('../sheets/EnvelopeAccountSheet', () => ({ EnvelopeAccountSheet: () => null }));
+jest.mock('@/shell/screen/DetailScreen', () => {
+  const R = jest.requireActual('react');
+  const { View, Text: RNText } = jest.requireActual('react-native');
+  return {
+    DetailScreen: (p: { title: string; children?: React.ReactNode }) =>
+      R.createElement(View, { testID: 'detail-screen' }, R.createElement(RNText, { accessibilityRole: 'header' }, p.title), p.children),
+  };
+});
 jest.mock('@/data/mutations/decideChecks', () => ({
   useSaveCheckDraft: () => ({ save: jest.fn() }),
   useCreateCheck: () => ({ create: jest.fn(), pendingIds: [], pendingRows: [] }),
@@ -163,6 +202,8 @@ beforeEach(() => {
   mockProgress = { items: [], doneCount: 0, next: 'pay', allDone: false, loading: false, currency: 'USD', today: '2026-10-03' };
   mockStepRow = null;
   mockEvaluation = null;
+  mockSetupFacts = null;
+  mockGoalRows = [];
   const { inputs, prepared } = engineFixture();
   mockInputs = inputs;
   mockPicture = monthPicture(prepared);
@@ -382,5 +423,56 @@ describe('one short line on the big-buy path (06.1-60, G-10 part 2)', () => {
     expect(screen.getByText('This is FincWin’s estimate, not the APR on your agreement.')).toBeTruthy();
     expect(screen.getByTestId('rate-example-tag')).toBeTruthy();
     expect(within(sheet).getByText(LEGAL)).toBeTruthy();
+  });
+});
+
+describe('one short line on quick estimates, safety net settings and Records (06.1-60, G-10 part 2)', () => {
+  it('QuickEstimatesScreen: the headline and the three questions stay; "Round numbers are fine." is the hint; the rest opens under Why?', async () => {
+    await wrap(<QuickEstimatesScreen currency="USD" today="2026-11-20" stored={null} onDone={jest.fn()} />);
+    expect(screen.getByTestId('quick-headline')).toHaveTextContent(setup.quick.title);
+    // The three questions are the fields' own labels: they stay by design and are not card prose.
+    const questions: string[] = [setup.quick.income, setup.quick.bills, setup.quick.everyday];
+    for (const q of questions) expect(screen.getByText(q)).toBeTruthy();
+    expect(prose('detail-screen').filter((x) => !questions.includes(x))).toEqual([setup.quick.hint]);
+    expect(screen.queryByText(setup.quick.sub)).toBeNull();
+    expect(screen.queryByText(setup.quick.foot)).toBeNull();
+    await fireEvent.press(screen.getByTestId('quick-why'));
+    expect(screen.getByText(setup.quick.sub)).toBeTruthy();
+    expect(screen.getByText(setup.quick.foot)).toBeTruthy();
+    expect(screen.getByTestId('quick-footer')).toHaveTextContent(LEGAL);
+  });
+
+  it('SafetyNetSettings: "$1300 in it now · Locked" in view; the lock sentences and the unlock paragraph open under "What unlocking does"', async () => {
+    mockGoalRows = [{ id: 'g-net', is_safety_net: true, deleted_at: null, decide_may_use: false }];
+    await wrap(<SafetyNetSettings net={{ mutate: jest.fn() } as never} answer={jest.fn() as never} />);
+    expect(screen.getByTestId('net-word')).toHaveTextContent(safetyNet.settings.locked);
+    expect(screen.getByTestId('net-figure').props.accessibilityLabel).toBe('$1300 in it now');
+    expect(screen.getByTestId('net-legend-goal')).toHaveTextContent('Goal $2300, set in Grow');
+    expect(prose('detail-screen')).toEqual([]);
+    const moved: string[] = [safetyNet.settings.lockSub, safetyNet.settings.beforeBody, safetyNet.settings.beforeLockAgain];
+    for (const m of [...moved, safetyNet.settings.sub]) expect(screen.queryByText(m)).toBeNull();
+    await fireEvent.press(screen.getByText(safetyNet.settings.whatUnlocking));
+    for (const m of moved) expect(screen.getByText(m)).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('net-why'));
+    expect(screen.getByText(safetyNet.settings.sub)).toBeTruthy();
+  });
+
+  it('RecordsSetup: "October not complete · this month up to date" in view; the reasons and the months count open under More', async () => {
+    mockSetupFacts = { ...NONE, lastMonthComplete: false, newestEntryThisMonth: '2026-11-18', accountsAllHaveUse: true, recordsUpTo: '2026-11-18' };
+    await wrap(<RecordsSetup writes={{ skipLine: jest.fn(), setEnvelopeAccount: jest.fn(), clearEnvelopeAccount: jest.fn() } as never} />);
+    expect(screen.getByTestId('records-summary')).toHaveTextContent('October not complete · this month up to date');
+    // The question that leads into "Import a statement" is the one sentence left in view.
+    expect(prose('setup-item-frame')).toEqual([setupOthers.records.moreMonthsQ]);
+    expect(screen.queryByText(setupOthers.records.why)).toBeNull();
+    expect(screen.queryByText(setupOthers.records.openNote)).toBeNull();
+    expect(screen.queryByText('Not all of October is in your records yet.')).toBeNull();
+    await fireEvent.press(screen.getByTestId('item-why'));
+    expect(screen.getByText(setupOthers.records.why)).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('records-more'));
+    expect(screen.getByText('Not all of October is in your records yet.')).toBeTruthy();
+    expect(screen.getByText('Up to date: entries to Nov 18, 2026')).toBeTruthy();
+    expect(screen.getByText(setupOthers.records.openNote)).toBeTruthy();
+    expect(screen.getByTestId('months-so-far')).toBeTruthy();
+    expect(screen.getByTestId('check-accounts')).toBeTruthy(); // the accounts stay one row (06.1-58)
   });
 });

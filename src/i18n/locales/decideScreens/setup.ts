@@ -79,7 +79,9 @@ export const setup = {
   },
   quick: {
     title: 'A first answer from three estimates',
-    sub: 'Before your records are ready. Round numbers are fine.',
+    // 06.1-60 (G-10): the old two-sentence sub is split; the first half opens under Why?, the second is the fields' hint.
+    sub: 'Before your records are ready.',
+    hint: 'Round numbers are fine.',
     income: 'About how much comes in each month?',
     bills: 'About how much goes on bills?',
     everyday: 'About how much on everyday spending?',

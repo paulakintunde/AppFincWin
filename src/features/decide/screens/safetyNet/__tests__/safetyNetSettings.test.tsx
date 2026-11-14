@@ -22,7 +22,7 @@ jest.mock('@/features/grow/goals/useGoalsRead', () => ({
 }));
 jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({ usePastContext: () => ({ userId: 'u1', householdId: 'h1' }) }));
 jest.mock('@/features/grow/home/useGoalMoney', () => ({ useGoalMoney: () => ({ amount: (n: number) => `$${n / 100}` }) }));
-jest.mock('@/ui/haptics', () => ({ hapticWarning: () => mockWarning(), hapticLight: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticWarning: () => mockWarning(), hapticLight: jest.fn(), hapticSelection: jest.fn() }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('@/shell/screen/DetailScreen', () => {
   const { Text, View } = require('react-native');
@@ -149,12 +149,22 @@ describe('SafetyNetSettings layout (06.1-58 A-SN-1, DN-11)', () => {
     expect(screen.queryByText(/in it ·/)).toBeNull();
   });
 
-  it('the lock row carries its sub-line beside the switch, spoken as its hint', async () => {
+  it('06.1-60 (G-10): the lock sentences and the unlock paragraph open under "What unlocking does", locked or unlocked', async () => {
+    const MOVED = [
+      'Answers never spend it. Answers that would need it say Not yet.',
+      'Answers will be allowed to use your safety net. Every answer that uses it says so at the top, with how much it uses.',
+      'You can lock it again at any time.',
+    ];
     await wrap(ui());
     const sw = screen.getByRole('switch');
     expect(sw).toHaveTextContent(/Safety net locked/);
-    expect(sw).toHaveTextContent(/Answers never spend it\./);
-    expect(sw.props.accessibilityHint).toBe('Answers never spend it. Answers that would need it say Not yet.');
+    for (const text of MOVED) expect(screen.queryByText(text)).toBeNull();
+    await fireEvent.press(screen.getByText('What unlocking does'));
+    for (const text of MOVED) expect(screen.getByText(text)).toBeTruthy();
+    // unlocked: the same More sits under the switch
+    mockRows = [net({ decide_may_use: true })];
+    await wrap(ui());
+    expect(screen.getAllByText('What unlocking does').length).toBeGreaterThan(0);
   });
 
   it('DN-11: the screen title is Safety net settings, not the setup item title', async () => {

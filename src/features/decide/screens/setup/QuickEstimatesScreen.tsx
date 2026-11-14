@@ -8,6 +8,8 @@
 // 06.1-58 (A-SU-6, UX-11): the fields start from the saved rough figures (rough_income; rough_spending in the bills field with
 // everyday at 0, since only the sum is stored), each has the currency prefix, the title is a display headline, the line under the
 // disabled button names the first figure still missing, and taps land with the keyboard open (keyboardShouldPersistTaps).
+// 06.1-60 (G-10, owner decision 4, D39): the headline and the three questions stay in view, with "Round numbers are fine." as the
+// fields' hint; "Before your records are ready." and "Quick estimates count only until…" open under a Why?.
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
@@ -29,6 +31,7 @@ import { MAX_INPUT_MINOR } from '../../snapshot/checkInputs';
 import { stampSettingsPatch } from '../../settingsPatch';
 import type { DecideSettingsPatch, DecideSettingsRow } from '@/db/decideSettings';
 import { NeedLine } from '../ui/NeedLine';
+import { WhyLine } from '../ui/WhyLine';
 import { useLeaveItem } from './items/SetupItemFrame';
 
 /** 06.1-65 (CN-5 a): Records opens this screen with `mode=save` when no check is in view. */
@@ -135,14 +138,19 @@ export function QuickEstimatesScreen({ currency, today, stored, onDone }: QuickE
     else onDone();
   };
 
-  const body = { ...textRole(pairing, 'body'), color: colors.inkDim };
+  const hint = { ...textRole(pairing, 'label'), color: colors.inkMuted };
   return (
     <DetailScreen title={t('decide.screens.setup.quick.stepName')} keyboardShouldPersistTaps="handled">
       <View style={styles.block}>
         <Text accessibilityRole="header" testID="quick-headline" style={{ ...textRole(pairing, 'display'), color: colors.ink }}>
           {t('decide.screens.setup.quick.title')}
         </Text>
-        <Text style={body}>{t('decide.screens.setup.quick.sub')}</Text>
+        {/* 06.1-60 (G-10): "Round numbers are fine." is the fields' hint; when the estimates count opens under Why?. */}
+        <Text testID="quick-hint" style={hint}>{t('decide.screens.setup.quick.hint')}</Text>
+        <WhyLine testID="quick-why">
+          <Text style={hint}>{t('decide.screens.setup.quick.sub')}</Text>
+          <Text style={hint}>{t('decide.screens.setup.quick.foot')}</Text>
+        </WhyLine>
         <MoneyInput value={income} currency={currency} onChange={typing(setIncome)} prefix="symbol" label={t('decide.screens.setup.quick.income')} accessibilityLabel={t('decide.screens.setup.quick.income')} />
         <MoneyInput value={bills} currency={currency} onChange={typing(setBills)} prefix="symbol" label={t('decide.screens.setup.quick.bills')} accessibilityLabel={t('decide.screens.setup.quick.bills')} />
         <MoneyInput value={everyday} currency={currency} onChange={typing(setEveryday)} prefix="symbol" label={t('decide.screens.setup.quick.everyday')} accessibilityLabel={t('decide.screens.setup.quick.everyday')} />
@@ -155,7 +163,6 @@ export function QuickEstimatesScreen({ currency, today, stored, onDone }: QuickE
         </View>
         <Pill variant="primary" label={saveMode ? t('decide.screens.setupOthers.records.quickSave') : t('decide.screens.setup.quick.see')} disabled={!ready} onPress={see} />
         <NeedLine testID="quick-need" text={need === null ? null : t(`decide.screens.setup.quick.need.${need}`)} />
-        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('decide.screens.setup.quick.foot')}</Text>
         <Text testID="quick-footer" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
           {t('legal.decideAnswer.footer')}
         </Text>
