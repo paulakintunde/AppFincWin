@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06.1 wave 23 closed (63/78): 64, 65, 78 done; next wave 24: 74 Pixel 6 recheck (needs a preview build, owner approval to install)"
+stopped_at: "Phase 06.1 wave 27 closed (74/79 incl. quick 81): 74 closed (code reviewed; Pixel 6 timing after 05.5), 57-60, 66-68, 75, 80, 81 done; next wave 28: 71, 79; then 61, 33, 34"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:
