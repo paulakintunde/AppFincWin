@@ -201,7 +201,7 @@ name: Decide Back paths (06.1-61)
       - repeat:
           times: 8
           while:
-            notVisible: "(?i)(used car|lamp) bp61, .*|See all .* open checks"
+            notVisible: "(?i)(used car|lamp) bp61, .*|See all.* open checks"
           commands:
             - swipe:
                 start: "50%,75%"

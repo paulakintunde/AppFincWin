@@ -75,6 +75,39 @@ describe('MoneyInput', () => {
     expect(onChange).toHaveBeenLastCalledWith(900050);
   });
 
+  it('06.1-83: a pre-filled amount shows grouped with no .00, before focus, while editing and after blur', async () => {
+    const onChange = jest.fn();
+    const { getByLabelText } = await wrap(
+      <MoneyInput value={300000} currency="USD" onChange={onChange} label="Price" accessibilityLabel="Price" />,
+    );
+    const input = getByLabelText('Price');
+    expect(input.props.value).toBe('3,000');
+    await fireEvent(input, 'focus');
+    expect(getByLabelText('Price').props.value).toBe('3,000');
+    await fireEvent(input, 'blur');
+    expect(getByLabelText('Price').props.value).toBe('3,000');
+    expect(onChange).toHaveBeenLastCalledWith(300000);
+  });
+
+  it('06.1-83: a fractional pre-fill keeps its decimals, grouped', async () => {
+    const { getByLabelText } = await wrap(
+      <MoneyInput value={123456} currency="USD" onChange={jest.fn()} label="Price" accessibilityLabel="Price" />,
+    );
+    expect(getByLabelText('Price').props.value).toBe('1,234.56');
+  });
+
+  it('06.1-83: a value set from outside shows grouped; typed text with or without commas still parses', async () => {
+    const onChange = jest.fn();
+    const ui = (value: number | null) => <MoneyInput value={value} currency="USD" onChange={onChange} label="Price" accessibilityLabel="Price" />;
+    const { getByLabelText, rerender } = await wrap(ui(null));
+    await rerender(<ThemeProvider>{ui(250000)}</ThemeProvider>);
+    expect(getByLabelText('Price').props.value).toBe('2,500');
+    await fireEvent.changeText(getByLabelText('Price'), '4,500');
+    expect(onChange).toHaveBeenLastCalledWith(450000);
+    await fireEvent.changeText(getByLabelText('Price'), '4500');
+    expect(onChange).toHaveBeenLastCalledWith(450000);
+  });
+
   it('06.1-52 (X-4): prefix shows the currency symbol and suffix the trailing word', async () => {
     const { getByTestId, queryByTestId, rerender } = await wrap(
       <MoneyInput value={null} currency="USD" onChange={jest.fn()} label="Rent" accessibilityLabel="Rent" prefix="symbol" suffix="a month" />,

@@ -136,7 +136,7 @@ export function OpenChecksCard(props: OpenChecksCardProps) {
         <Pressable
           testID="open-checks-see-all"
           accessibilityRole="button"
-          accessibilityLabel={t('decide.screens.sheetsHome.openChecks.seeAllA11y', { total: props.rows.length })}
+          accessibilityLabel={t('decide.screens.sheetsHome.openChecks.seeAllA11y')}
           onPress={() => {
             hapticSelection();
             setAll(true);

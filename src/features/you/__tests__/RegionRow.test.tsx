@@ -56,7 +56,7 @@ describe('RegionRow', () => {
     const screen = await renderRow();
     expect(screen.getByLabelText('Region, United States, from this phone')).toBeTruthy();
     expect(screen.getByLabelText('State or province, Not set')).toBeTruthy();
-    expect(screen.getByText('Decide uses it to estimate sales tax.')).toBeTruthy();
+    expect(screen.getByText('Decide uses it to estimate sales tax and to write amounts.')).toBeTruthy();
   });
 
   it('picking a state stores it', async () => {

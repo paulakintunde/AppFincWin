@@ -12,7 +12,7 @@ export const sheetsHome = {
     payNotChosen: 'how to pay not chosen',
     // 06.1-56 (A-HOME-7): the newest 5 show; this opens the rest in place.
     seeAll: 'See all {{total}}',
-    seeAllA11y: 'See all {{total}} open checks',
+    seeAllA11y: 'See all open checks', // 06.1-83: no count
     changedRow: 'Records changed since you looked',
     today: 'today',
   },

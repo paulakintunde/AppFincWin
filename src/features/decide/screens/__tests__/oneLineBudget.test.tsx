@@ -294,7 +294,7 @@ describe('one short line per card on Decide home (06.1-59, G-10)', () => {
     expect(screen.queryByText(/^Answers use /)).toBeNull();
     await fireEvent.press(screen.getByTestId('home-footer-worked'));
     const note = await screen.findByTestId('worked-note');
-    expect(note).toHaveTextContent(`Answers use 3 months of pay and 6 spending entries. ${home.footerUpdates}`);
+    expect(note).toHaveTextContent(`${home.footerRecords} ${home.footerUpdates}`);
     expect(screen.getAllByText(answer.worked.title).length).toBe(2); // the footer row and the sheet's title
     // the legal line is still on the home under the open sheet
     expect(within(screen.getByTestId('home-footer')).getByText(LEGAL)).toBeTruthy();

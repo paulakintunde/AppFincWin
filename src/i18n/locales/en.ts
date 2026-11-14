@@ -158,7 +158,7 @@ const en = {
       fromPhoneOption: 'From this phone',
       subdivision: 'State or province',
       notSet: 'Not set',
-      sub: 'Decide uses it to estimate sales tax.',
+      sub: 'Decide uses it to estimate sales tax and to write amounts.',
     },
     homeCurrency: {
       label: 'Home currency',
@@ -2048,7 +2048,7 @@ const en = {
         notYetNotCovered: {
           chip: 'Not yet',
           title: 'Not yet. Your spare money and extra savings don’t cover this.',
-          body: 'Based on your typical pace, it could be covered in about {{months}} months ({{readyMonth}}).',
+          body: 'Based on your typical pace, it could be covered by {{readyMonth}}.', // 06.1-83: no count (owner, 2026-11-14)
         },
         monthlyShort: {
           chip: 'Short each month',
@@ -2064,7 +2064,7 @@ const en = {
         fitsUsesOverdraft: {
           chip: 'Uses your overdraft',
           title: 'This goes into your overdraft until payday.',
-          body: 'Your {{account}} account would go {{below}} below {{zero}} for about {{days}} days. At {{rate}}%, that costs about {{cost}}. This is an estimate.',
+          body: 'Your {{account}} account would go {{below}} below {{zero}}. At {{rate}}%, that costs about {{cost}}. This is an estimate.', // 06.1-83: the days are on the fact line
         },
         fitsUsesOverdraftNotCleared: {
           chip: 'Uses your overdraft past payday',
@@ -2081,13 +2081,13 @@ const en = {
         fitsByBorrowingCostsMore: {
           chip: 'Fits, but borrowing costs more',
           title: 'Paying in cash fits. This plan costs more.',
-          body: 'Paying in cash fits, leaving {{left}}. The plan costs about {{interest}} in interest over {{months}} months.',
+          body: 'Paying in cash fits, leaving {{left}}. Over the whole plan, it costs about {{interest}} in interest.', // 06.1-83: no count
         },
         // 05.4 FIN-01 / FIN-02 (D-35, D-06, D-41): the condition first. Stored emergency_use answers read the fitsUsesNet copy.
         fitsUsesNet: {
           chip: 'Dips into your safety net',
           title: 'This dips into your safety net.',
-          body: 'Uses {{used}} of your safety net. {{left}} stays in it. Based on your records, it could be refilled in about {{months}} months from spare money.',
+          body: 'Uses {{used}} of your safety net. {{left}} stays in it. Based on your records, it could be refilled from spare money.', // 06.1-83: the months are on the fact line
         },
         fitsUsesNetProtectionOff: {
           chip: 'Uses your safety net · protection off',
@@ -2151,6 +2151,7 @@ const en = {
         month_heading_short: '{{month}} is heading about {{short}} short.',
         month_heading_short_category: '{{month}} is heading about {{short}} short, mostly {{category}} ({{largest}}).',
         unspent_stale: 'Your spare money was confirmed {{days}} days ago.',
+        unspent_stale_one: 'Your spare money was confirmed a day ago.',
         unspent_drifted: 'Your spare money figure may be out of date. The app’s sum is {{suggested}}.',
         emergency_not_set: 'No safety net size is set yet.',
         unsaved_changes: 'Some changes are not saved yet. This answer counts them once they save.', // 05.4 APP-02 (D-113)
@@ -2166,6 +2167,7 @@ const en = {
         same_season_compared: 'Everyday spending still to come this month is compared with {{lastYear}}, when it came to {{everyday}}.',
         history_window_12: 'Your figures use the last {{months}} months, so a whole year of seasons is seen.',
         income_volatile: 'This answer rests more on estimates, because your income changes from month to month. The plan is {{periods}} payments of {{payment}}. Your leanest months, {{leanFrom}} to {{leanTo}}, leave about {{leanLeft}}.',
+        income_volatile_one: 'This answer rests more on estimates, because your income changes from month to month. The plan is one payment of {{payment}}. Your leanest months, {{leanFrom}} to {{leanTo}}, leave about {{leanLeft}}.',
         envelope_location_assumed: '{{count}} envelopes aren’t linked to an account yet, so their money is kept out of spare money.',
         unexplained_money: 'Your everyday accounts hold about {{amount}} more than your records explain.',
         account_use_unknown: '{{count}} accounts don’t say what they’re for yet, so they aren’t counted.',
@@ -2176,6 +2178,7 @@ const en = {
         // 05.4 FIN-15 (05.4-23): the pay itself is never changed; the usual month counts the lower figure.
         pay_gap: 'Your last 3 pays were about {{middle}} each. That is {{gap}}% below the {{setup}} set up. The usual month here counts the lower figure.',
         pay_expected_from_history: 'No pay is scheduled, so about {{amount}} is expected around day {{day}} of each month, the lowest month in your last {{months}} months of records.',
+        pay_expected_from_history_one: 'No pay is scheduled, so about {{amount}} is expected around day {{day}} of each month, as in your last month of records.',
         // 05.4 FIN-27 (D-20): no region, or the US or Canada with no state or province, so no tax is added.
         tax_not_included: 'Tax not included. Set your region to add it.',
         account_no_rate: 'No exchange rate for {{account}}, so it is left out.', // 05.4 ENG-17 (D-114)
@@ -2188,6 +2191,7 @@ const en = {
         net_used: 'Uses {{used}} of your safety net.',
         net_left: '{{left}} stays in it.',
         net_refill: 'Refilled in about {{months}} months from spare money.',
+        net_refill_one: 'Refilled in about a month from spare money.',
         net_zero_is_off: 'Your safety net is set to {{zero}}, so it is treated as switched off.',
         net_protection_off: 'Protection is off, so this counts the money in your safety net.',
         net_none_start: 'Nothing is saved in your safety net yet. 1\u00A0month of essential costs, about {{starter}}, is a start; 3 to 6 months is common.',
@@ -2203,7 +2207,9 @@ const en = {
         plan_makes_short: 'This plan would make your usual month about {{short}} short.',
         price_over_net: 'The whole price, {{price}}, is more than your safety net, {{net}}.',
         net_lasts: 'Covering a {{shortfall}} shortfall each month, your safety net would last about {{months}} months.',
+        net_lasts_one: 'Covering a {{shortfall}} shortfall each month, your safety net would last about a month.',
         net_lasts_without: 'About {{months}} months without this.',
+        net_lasts_without_one: 'About a month without this.',
         // 05.4 D-48: on every plan with interest (05.4-22), and in the depletion lines.
         interest_is_a_cost: 'This plan costs about {{interest}} in interest, {{total}} in all. That is money that could stay with you.',
         balanced_month_room: 'A usual month that balances leaves money for a new payment. A usual month here is {{pay}} of pay against {{costs}} of bills, spending and debt minimums.',
@@ -2211,6 +2217,7 @@ const en = {
         // 05.4 D-65 tier lines
         month_short_fits: 'This {{price}} fits your {{money}} of spare money and extra savings. Your usual month is {{short}} short.',
         money_lasts_shorter: 'This shortens how long your money lasts at this shortfall, from {{months}} months to {{monthsAfter}}.',
+        money_lasts_shorter_one: 'This shortens how long your money lasts at this shortfall, from one month to {{monthsAfter}}.',
         // 05.4 D-68: a short plan paid from money on hand. Declarative only.
         short_plan_from_cash: 'This plan’s {{monthly}} a month is more than your usual month can cover, so it is paid from money on hand.',
         // 05.4 FIN-04 / FIN-10 / FIN-14 (D-08, D-39b, D-43). Facts only; declarative only.
@@ -2238,6 +2245,9 @@ const en = {
         income_or_costs_first: 'More income or lower costs makes repaying easier.',
         // 05.4 D-46 (05.4-23, QE-12): how long savings carry a Short each month gap, and with a further shortfall. Facts, never a push.
         covered_from_savings: 'The {{savings}} still there at the end of this month would cover the {{gap}} monthly gap. That lasts about {{covered}} of the {{of}} payments.',
+        // 06.1-83 (owner, 2026-11-14): an `_one` key is the line with a count of 1 (sayResult passes the count); the base key is the
+        // many form. The engine's copy contract needs the number in these lines, so they keep it rather than drop it.
+        covered_from_savings_one: 'The {{savings}} still there at the end of this month would cover the {{gap}} monthly gap. That lasts about {{covered}} of the one payment.',
         further_shortfall_runway: 'If each month were short by {{extra}} more, it would cover about {{covered}} of the {{of}}.',
         // 05.4 D-44 (05.4-24): money from earlier months the purchase uses, and where it is. where 'account' reads earlier_money_from,
         // 'savings' reads earlier_money_from_savings. Spent money is never counted.
@@ -2268,6 +2278,7 @@ const en = {
         unlocked_goals_counted: 'Unlocked goals {{amount}} counted as spare money.',
         // 06.1 D-21: quick estimates count for this one check only. Signed under D-08.
         quick_lines_counted: 'This answer counts {{count}} quick estimates you added for this check only.',
+        quick_lines_counted_one: 'This answer counts one quick estimate you added for this check only.',
         quick_savings_counted: 'It counts {{amount}} of savings you said answers can use, for this check only.',
         tax_set_aside: '{{amount}} a month is kept aside for tax, the {{percent}}% you set.',
         // 06.1 FIN-23 (owner D-26, 2026-11-12): a typed APR read the way it is quoted in the UK or the EU. The owner's words said "lenders"; DCU-09 keeps the word out of decide.* copy. Signed under D-08 (plan 33).
@@ -2285,8 +2296,10 @@ const en = {
         at_todays_rate: 'Converted from {{currency}} at today’s rate.',
         low_month: 'In {{month}}, a low month, about {{left}} remains against {{monthly}} a month.',
         // 05.4 FIN-08 (05.4-23, QE-04 / QE-14): savings are tried first; the safety net only ever by name.
-        lean_bridge: 'In a month like {{month}}, about {{shortfall}} would come from savings. Over {{payments}} payments, to {{until}}, that could happen about {{times}} times. That is about {{bridge}} of your {{savings}}.',
-        lean_bridge_net: 'In a month like {{month}}, about {{shortfall}} would come from your safety net. Over {{payments}} payments, to {{until}}, that could happen about {{times}} times. That is about {{bridge}} of the {{savings}} it holds.',
+        lean_bridge: 'In a month like {{month}}, about {{shortfall}} would come from savings. Over {{payments}} payments, to {{until}}, about {{times}} of those months could be like that. That is about {{bridge}} of your {{savings}}.',
+        lean_bridge_one: 'In a month like {{month}}, about {{shortfall}} would come from savings. Over one payment, to {{until}}, that month could be like that. That is about {{bridge}} of your {{savings}}.',
+        lean_bridge_net: 'In a month like {{month}}, about {{shortfall}} would come from your safety net. Over {{payments}} payments, to {{until}}, about {{times}} of those months could be like that. That is about {{bridge}} of the {{savings}} it holds.',
+        lean_bridge_net_one: 'In a month like {{month}}, about {{shortfall}} would come from your safety net. Over one payment, to {{until}}, that month could be like that. That is about {{bridge}} of the {{savings}} it holds.',
         // 06.1 FIN-22 (owner D-26, 2026-11-12): a plan over 12 payments; usual months between the low months refill the savings, so the
         // total is not compared with what is saved today. Signed under D-08 (plan 33).
         lean_bridge_long: 'In a month like {{month}}, about {{shortfall}} would come from savings. Over the whole plan, low months would take about {{bridge}} in total; usual months in between refill your savings.',
@@ -2294,14 +2307,18 @@ const en = {
         lean_months_judged: 'Judged against your leanest months, {{from}} to {{to}}, which leave about {{leanLeft}} each.',
         low_month_judged: 'Judged against a low month like {{month}}, which leaves about {{left}}.',
         rests_on_your_answer: 'This rests on what you said, that {{monthly}} a month for {{months}} months is covered, not on your records.',
+        rests_on_your_answer_one: 'This rests on what you said, that {{monthly}} for one month is covered, not on your records.',
         unspent_held_back: '{{amount}} of your spare money is held back for an earlier plan.',
         bills_held_back: '{{total}} is held back for yearly and every-3-month bills the months before they are due cannot cover.',
         yearly_bill_ahead: '{{bill}} of {{amount}} is due on {{dueDate}}.',
         no_full_month: 'No full month of records yet.',
         // 05.4 FIN-03 (D-26..D-28, D-36..D-38). {{zero}} is the currency's zero, e.g. "$0".
         overdraft_use: 'Your {{account}} account would go {{below}} below {{zero}} for about {{days}} days. At {{rate}}%, that costs about {{cost}}. This is an estimate.',
+        overdraft_use_one: 'Your {{account}} account would go {{below}} below {{zero}} for about a day. At {{rate}}%, that costs about {{cost}}. This is an estimate.',
         overdraft_use_no_rate: 'Your {{account}} account would go {{below}} below {{zero}} for about {{days}} days. No rate is set for it, so the cost is not counted.',
+        overdraft_use_no_rate_one: 'Your {{account}} account would go {{below}} below {{zero}} for about a day. No rate is set for it, so the cost is not counted.',
         overdraft_without_purchase: 'Without this purchase, the account would still go {{below}} below {{zero}} for about {{days}} days. That costs about {{cost}}.',
+        overdraft_without_purchase_one: 'Without this purchase, the account would still go {{below}} below {{zero}} for about a day. That costs about {{cost}}.',
         overdraft_without_purchase_above: 'Without this purchase, the account would stay at or above {{zero}}.',
         overdraft_purchase_adds: 'This purchase adds about {{cost}} to that cost.',
         overdraft_not_cleared: 'After your pay on {{date}}, {{account}} would still be {{below}} below {{zero}}.',
@@ -2324,8 +2341,9 @@ const en = {
         usualMonth: 'A usual month would leave about {{amount}} once payments start.',
         usualMonthOver: 'A usual month would be about {{amount}} short once payments start.',
         // 05.4 D-42 (05.4-26): when it is to be bought, on every answer (Result.purchaseDate); placement is 08.1.
-        boughtOn: 'Bought on {{date}}.',
-        boughtToday: 'Bought today.',
+        // 06.1-83 (owner, 2026-11-14): the answer's date line says when it would be bought, not that it was.
+        boughtOn: 'If you buy it on {{date}}.',
+        boughtToday: 'If you buy it today.',
       },
       // 05.4 FIN-27 (CMP-F24, D-21): tax is always an estimate; an example loan or mortgage rate is labelled and never stored.
       tax: {
@@ -2350,7 +2368,7 @@ const en = {
           user_said_cover: 'Based on {{months}} months of your records, up to {{date}}, and on what you said about covering it.',
           quick_estimates: 'Based on {{months}} months of your records, up to {{date}}, and your quick estimates.',
           pay_missed: 'Based on {{months}} months of your records, up to {{date}}, leaving out pay that hasn’t arrived.',
-          close_to_line: 'Based on {{months}} months of your records, up to {{date}}. This is close to the line.',
+          close_to_line: 'Based on {{months}} months of your records, up to {{date}}. This is close to your limit.',
         },
       },
       // 05.4 FIN-25: at most one next step, stated as a fact.
@@ -2378,6 +2396,7 @@ const en = {
         expected_income_needed: 'Your records don’t yet cover the months this depends on. What you expect to have coming in by then is needed.',
         first_payment_passed: 'The first payment date has already passed. A new date is needed.',
         volatile_cover_question: 'Can you cover {{monthly}} a month for {{months}} months, even in your low months?',
+        volatile_cover_question_one: 'Can you cover {{monthly}} for one month, even if it is a low month?',
         unexplained_money_question: 'What is the {{amount}} for: spare, an envelope or goal, set aside for a bill, or someone else’s money?',
         account_use_question: 'What is {{account}} for: everyday spending, spending plus money put aside, one purpose, or savings you don’t touch?',
         account_use_question_fund: 'Which account holds your safety net?',
@@ -2398,7 +2417,7 @@ const en = {
         no_debts_recorded: 'No debts are recorded. A card balance, loan or pay-later plan not added here isn’t counted.',
         few_months: 'This uses {{months}} of the {{lookedFor}} months of records Decide looks for. One unusual month moves it a lot.',
         irregular_income: 'Your income changes from month to month. This counts your lower months.',
-        close_to_line: 'This is close to the line. A small change in any figure can change the answer.',
+        close_to_line: 'This is close to your limit. A small change in any figure can change the answer.',
         expected_bills: 'Some bills this month are expected, not yet confirmed paid.',
         shared_money: 'Money in {{account}} may be planned by someone else too.', // UX-21 interim couples note; emitted from Phase 8
         rate_estimated: 'This rate is FincWin’s estimate from the payment, not the rate on your agreement.',

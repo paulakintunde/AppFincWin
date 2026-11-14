@@ -120,7 +120,9 @@ export const answerDetail = {
     noPlan: 'This check is paid once, so there is no installments side.',
     noRecords: 'The two answers are not ready yet.',
     tableA11y: 'Cash and installments side by side',
-    times: '{{amount}}, {{count}} times',
+    // 06.1-83: one / many forms (never 1 times).
+    times_one: '{{amount}}, once',
+    times_other: '{{amount}}, {{count}} times',
     spareStays: 'The month after leaves',
   },
 } as const;

@@ -10,7 +10,7 @@ import { verdictValues } from './verdictValues';
 
 export interface UseSaidOptions {
   readonly currency: string;
-  /** The check date (a purchase dated today reads "Bought today."). */
+  /** The check date (a purchase dated today reads "If you buy it today."). */
   readonly today: string;
   readonly showCents?: boolean;
   /** Name lookups from the category / series / account / debt / envelope reads. A missing one reads as the plain word. */

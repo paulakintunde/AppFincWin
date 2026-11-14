@@ -48,14 +48,17 @@ export interface SayNames {
 }
 
 export interface SayDeps {
-  /** The copy at `key`. Called with no values it returns the template as written; with values it fills each {{name}} once. */
-  t(key: string, values?: Readonly<Record<string, string>>): string;
+  /**
+   * The copy at `key`. Called with no values it returns the template as written; with values it fills each {{name}} once.
+   * 06.1-83: a numeric `count` picks the key's i18next `_one` form when the count is 1 (the base key is the many form).
+   */
+  t(key: string, values?: Readonly<Record<string, string | number>>): string;
   exists(key: string): boolean;
   money(minor: number, currency: string): string;
   /** A 'YYYY-MM-DD' date or a 'YYYY-MM' month, as the screen writes it. */
   date(localDate: string): string;
   readonly currency: string;
-  /** The check date: a purchase dated today reads "Bought today." (D-42). */
+  /** The check date: a purchase dated today reads "If you buy it today." (D-42, 06.1-83). */
   readonly today: LocalDate;
   readonly names: SayNames;
   /** Set: a line with a gap is dropped and reported here. Unset: the gap throws. */
@@ -153,15 +156,32 @@ function valueFor(p: string, code: string, v: Values, deps: SayDeps, plain: Read
   return ISO_DATE.test(val) ? deps.date(val) : val;
 }
 
+/**
+ * 06.1-83 (owner, 2026-11-14): a number blank followed by a counted word ("{{months}} months"). The engine's copy contract needs
+ * the number in these lines, so a line that can read "1 months" has an i18next `_one` form; the first such blank is its count.
+ */
+const COUNTED_BLANK = /\{\{(\w+)\}\}[ \u00a0](?:[a-z]+[ \u00a0])?(?:months|payments|days|entries|times|steps|changes|lines|weeks|years|goals|bills|rules|checks|items|answers|estimates)\b/;
+
+/** The count that picks the key's `_one` form, or undefined when the key has none. */
+function pluralCount(key: string, template: string, v: Values, deps: SayDeps): number | undefined {
+  if (!deps.exists(`${key}_one`)) return undefined;
+  const blank = COUNTED_BLANK.exec(template)?.[1];
+  const n = blank === undefined ? undefined : v[blank];
+  return typeof n === 'number' ? n : undefined;
+}
+
 /** The sentence at `key`, each placeholder filled once (T-06.1-06-03: a name holding {{...}} is never filled again). */
 function fill(code: string, key: string | null, v: Values, deps: SayDeps, plain: ReadonlySet<string> = PLAIN_NUMBER_KEYS): Line {
   if (key === null || !deps.exists(key)) throw new MissingCopyError(code, key, 'no copy key');
-  const filled: Record<string, string> = {};
-  for (const [, p] of deps.t(key).matchAll(/\{\{(\w+)\}\}/g)) {
+  const filled: Record<string, string | number> = {};
+  const template = deps.t(key);
+  for (const [, p] of template.matchAll(/\{\{(\w+)\}\}/g)) {
     const text = valueFor(p as string, code, v, deps, plain);
     if (text === undefined) throw new MissingCopyError(code, key, `{{${p as string}}} has no value`);
     filled[p as string] = text;
   }
+  const count = pluralCount(key, template, v, deps);
+  if (count !== undefined) filled['count'] = count;
   return { key, code, text: deps.t(key, filled) };
 }
 

@@ -101,7 +101,7 @@ describe('OpenChecksCard', () => {
     await wrap(<OpenChecksCard rows={rows} {...cardProps} />);
     expect(screen.getByText('Item 4')).toBeTruthy();
     expect(screen.queryByText('Item 5')).toBeNull();
-    expect(screen.getByLabelText('See all 7 open checks')).toBeTruthy();
+    expect(screen.getByLabelText('See all open checks')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('open-checks-see-all'));
     expect(screen.getByText('Item 6')).toBeTruthy();
     expect(screen.queryByTestId('open-checks-see-all')).toBeNull();
