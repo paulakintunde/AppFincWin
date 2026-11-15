@@ -24,8 +24,9 @@ export const step = {
 export const PRESSED_OPACITY = 0.72;
 
 /**
- * BUILD-PROMPT.md §2 / 00-UI-SPEC.md Spacing Scale, exact prototype pixel values —
- * not a generic 4-point/8-point scale. Do not round these.
+ * 06.2 D-08..D-11 (owner, 2026-11-14): spacing uses six named steps (hair 4, tight 8, row 12,
+ * card 16, edge 22, section 28); rows are 52 or 64; tiles 36 or 48. This replaces the prototype
+ * pixel rule. Shell geometry below (tab bar, FAB, headers, sheets) keeps its measured values.
  */
 export const space = {
   screenH: step.edge,
