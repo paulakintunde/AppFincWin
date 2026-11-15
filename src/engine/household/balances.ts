@@ -58,7 +58,7 @@ export function pairBalances(
     }
   }
   return [...map.entries()]
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .sort(([a], [b]) => (a < b ? -1 : 1))
     .map(([otherKey, acc]) => ({
       otherKey,
       net: minorUnits(acc.net),
