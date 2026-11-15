@@ -72,7 +72,7 @@ describe('withUnsaved: the waiting-write count laid over at judge time (B-2)', (
     expect(overlay).toEqual(rebuilt);
     expect(overlay.notices[0]).toEqual({ code: 'unsaved_changes', values: {} });
     // and through computeV3: the live count equals a source that carried it
-    expect(computeV3(source, v3, stored, undefined, null, 2).result).toEqual(computeV3({ ...source, unsavedWrites: 2 }, v3, stored).result);
+    expect(computeV3(source, v3, stored, null, 2).result).toEqual(computeV3({ ...source, unsavedWrites: 2 }, v3, stored).result);
   });
 
   it('the empty-check evaluation is held per count and carries the notice only while writes wait', () => {

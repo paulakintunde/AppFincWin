@@ -21,7 +21,7 @@ const CHECK = '22222222-2222-2222-2222-222222222222';
 const answer = (over: Record<string, unknown>) => ({ kind: 'volatile_cover' as const, key: CHECK, amount: null, bool_value: true, on_date: null, check_id: CHECK, ...over });
 const coverFor = (v3: ReturnType<typeof v3s> | null, checkId?: string | null): unknown => {
   seen.length = 0;
-  computeV3(demoSource('2026-10-03'), v3, sofaInputs, undefined, checkId);
+  computeV3(demoSource('2026-10-03'), v3, sofaInputs, checkId);
   return seen[0]!.volatileCover;
 };
 

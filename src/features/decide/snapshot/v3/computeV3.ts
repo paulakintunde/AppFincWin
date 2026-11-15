@@ -4,7 +4,6 @@
 // stay false and the switch is read only in decideEngine() (D-15). Barrel imports only (the v3 engine barrel).
 import {
   changeSinceLooked,
-  type AccountUse,
   judgeCheck,
   prepare,
   readStoredCheck,
@@ -19,11 +18,10 @@ import {
 } from '@/engine/decide/v3';
 import { currencyCode } from '@/engine/money';
 import { perfMark } from '@/features/decide/perf/perfMarks';
-import { buildDecideSnapshot, type SnapshotSource } from '../buildSnapshot';
+import type { SnapshotSource } from '../buildSnapshot';
 import { parseCheckInputs } from '../checkInputs';
-import { inHomeCurrency } from '../checkCurrency';
-import type { SnapshotResult } from '../buildSnapshot';
-import { buildV3Inputs } from './buildV3Inputs';
+import { inHomeCurrency, type CurrencyBasis } from '../checkCurrency';
+import { buildInputs } from './buildInputs';
 import type { V3SettingsSource } from './types';
 
 /**
@@ -31,10 +29,10 @@ import type { V3SettingsSource } from './types';
  * existing converter at the latest stored rate and marked foreign at today's rate (D-09); with no stored rate it carries no
  * price, so it reads as needing input rather than a guessed figure (D-37).
  */
-function checkOf(storedInputs: unknown, source: SnapshotSource, built: SnapshotResult): CheckV2 {
+function checkOf(storedInputs: unknown, source: SnapshotSource): CheckV2 {
   const stored = typeof storedInputs === 'object' && storedInputs !== null ? (storedInputs as { v?: unknown }) : {};
   if (stored.v === 2) return readStoredCheck(storedInputs).check;
-  const view = inHomeCurrency(parseCheckInputs(storedInputs, source.today), built, { isSample: false });
+  const view = inHomeCurrency(parseCheckInputs(storedInputs, source.today), currencyBasisOf(source), { isSample: false });
   if (view.kind === 'home') return readStoredCheck(storedInputs).check;
   if (view.kind === 'converted') {
     const check = readStoredCheck(view.inputs).check;
@@ -44,6 +42,11 @@ function checkOf(storedInputs: unknown, source: SnapshotSource, built: SnapshotR
   return { ...check, price: null, foreign: { currency: currencyCode(view.unconverted.currencies[0] as string), atTodaysRate: true } };
 }
 
+/** 05.5-16: what the check's currency view reads, straight from the rows (stored rates only, the same ones the old snapshot carried). */
+function currencyBasisOf(source: SnapshotSource): CurrencyBasis {
+  return { currency: source.homeCurrency, fx: { rates: source.rates, customs: source.customCurrencies, today: source.today }, unconverted: null };
+}
+
 /** D-48: the user's saved answer to "can you cover it in your low months" for this check, when there is one. */
 function volatileCoverOf(v3: V3SettingsSource | null, checkId: string | null | undefined): boolean | null {
   if (checkId === null || checkId === undefined) return null;
@@ -51,43 +54,35 @@ function volatileCoverOf(v3: V3SettingsSource | null, checkId: string | null | u
   return hit === undefined ? null : hit.bool_value;
 }
 
-/** One build of the v3 inputs: the old snapshot it parses through, the inputs and the check-independent engine work. */
+/** One build of the v3 inputs: the inputs (rows straight through buildInputs, 05.5-16) and the check-independent engine work. */
 export interface PreparedV3 {
-  readonly built: SnapshotResult;
   readonly inputs: V3Inputs;
   readonly prepared: Prepared;
 }
 
 interface PreparedEntry extends PreparedV3 {
   readonly v3: V3SettingsSource | null;
-  readonly uses: Readonly<Record<string, AccountUse>> | undefined;
   /** 06.1-46 (B-1): the empty-check evaluations by waiting-write count, judged once each on first ask and shared by every hook. */
   readonly empty: Map<number, Evaluation>;
 }
 
 // 05.4 ENG-13 / APP-03 (05.4-33): build and prepare once per data change. The read hooks memoise `source` and the settings
 // source on the query data references, so the same identities mean the same data. Keyed weakly on the source (a dropped
-// source frees its entries); a few settings / uses variants are kept per source.
+// source frees its entries); a few settings variants are kept per source.
 const PREPARED_PER_SOURCE = 4;
 const preparedBySource = new WeakMap<SnapshotSource, PreparedEntry[]>();
 
-export function preparedV3(source: SnapshotSource, v3: V3SettingsSource | null, uses?: Readonly<Record<string, AccountUse>>): PreparedV3 {
+export function preparedV3(source: SnapshotSource, v3: V3SettingsSource | null): PreparedV3 {
   const list = preparedBySource.get(source) ?? [];
-  const hit = list.find((e) => e.v3 === v3 && e.uses === uses);
+  const hit = list.find((e) => e.v3 === v3);
   if (hit !== undefined) return hit;
-  return preparedMiss(source, v3, uses, list);
+  return preparedMiss(source, v3, list);
 }
 
-function preparedMiss(
-  source: SnapshotSource,
-  v3: V3SettingsSource | null,
-  uses: Readonly<Record<string, AccountUse>> | undefined,
-  list: PreparedEntry[]
-): PreparedEntry {
+function preparedMiss(source: SnapshotSource, v3: V3SettingsSource | null, list: PreparedEntry[]): PreparedEntry {
   perfMark('decide.prepare:start'); // 06.1-46: a miss is the whole build; a hit costs nothing
-  const built = buildDecideSnapshot(source);
-  const inputs = buildV3Inputs(source, v3, built, uses);
-  const entry: PreparedEntry = { v3, uses, built, inputs, prepared: prepare(inputs), empty: new Map() };
+  const inputs = buildInputs(source, v3);
+  const entry: PreparedEntry = { v3, inputs, prepared: prepare(inputs), empty: new Map() };
   perfMark('decide.prepare:end');
   preparedBySource.set(source, [entry, ...list].slice(0, PREPARED_PER_SOURCE));
   return entry;
@@ -106,13 +101,13 @@ export function withUnsaved(prepared: Prepared, n: number): Prepared {
 /**
  * 06.1-46 (B-1): the evaluation of an empty check (the home and setup reading), judged once per prepared entry and waiting-write
  * count, and shared by every hook that asks with the same source and settings. Equal to
- * `computeV3(source, v3, {}, undefined, null, unsaved)`.
+ * `computeV3(source, v3, {}, null, unsaved)`.
  */
 export function emptyCheckEvaluation(source: SnapshotSource, v3: V3SettingsSource | null, unsaved = 0): Evaluation {
   const entry = preparedV3(source, v3) as PreparedEntry;
   const hit = entry.empty.get(unsaved);
   if (hit !== undefined) return hit;
-  const evaluation = computeV3(source, v3, {}, undefined, null, unsaved);
+  const evaluation = computeV3(source, v3, {}, null, unsaved);
   entry.empty.set(unsaved, evaluation);
   return evaluation;
 }
@@ -125,12 +120,11 @@ export function computeV3(
   source: SnapshotSource,
   v3: V3SettingsSource | null,
   storedInputs: unknown,
-  uses?: Readonly<Record<string, AccountUse>>,
   checkId?: string | null,
   unsaved?: number
 ): Evaluation {
-  const { built, prepared } = preparedV3(source, v3, uses);
-  const check = checkOf(storedInputs, source, built);
+  const { prepared } = preparedV3(source, v3);
+  const check = checkOf(storedInputs, source);
   const cover = volatileCoverOf(v3, checkId);
   const held = unsaved === undefined ? prepared : withUnsaved(prepared, unsaved);
   return judgeCheck(held, cover === null ? check : { ...check, volatileCover: cover });

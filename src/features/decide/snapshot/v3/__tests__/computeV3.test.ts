@@ -1,5 +1,5 @@
 import type { FxLatestRow } from '@/db/rows';
-import { readStoredCheck, seenOf, toStoredV2, type AccountUse } from '@/engine/decide/v3';
+import { readStoredCheck, seenOf, toStoredV2 } from '@/engine/decide/v3';
 import { carInputs, demoSource, sofaInputs } from '../../../__tests__/helpers/demoScenario';
 import { emptyCheckInputs } from '../../checkInputs';
 import type { SnapshotSource } from '../../buildSnapshot';
@@ -46,9 +46,9 @@ describe('computeV3 (S9: one Result)', () => {
   });
 
   it('D-54: once every account use is stated that question is gone', () => {
-    const uses: Record<string, AccountUse> = Object.fromEntries(source().accounts.map((a) => [a.id, { kind: 'everyday' } as AccountUse]));
+    const stated: SnapshotSource = { ...source(), accounts: source().accounts.map((a) => ({ ...a, use: 'everyday' as const })) };
     const settings = v3s({ income_types: ['salary'], unspent_anchor: 300000, unspent_anchor_at: '2026-10-01' });
-    const r = computeV3(source(), settings, sofaInputs, uses).result;
+    const r = computeV3(stated, settings, sofaInputs).result;
     expect(r.missing).not.toContain('account_use_question');
     expect(r.missing[0]).not.toBe('account_use_question');
     expect(typeof r.code).toBe('string');

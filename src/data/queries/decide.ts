@@ -22,9 +22,8 @@ import { fetchGoalLines, fetchSavingsGoals, type SavingsGoalRow } from '@/db/sav
 import { fetchStatementPeriods, type StatementPeriodRow } from '@/db/statementPeriods';
 import { fetchTransactionsInRange } from '@/db/transactions';
 import { monthOf, monthRange } from '@/engine/time';
-import { buildDecideSnapshot, type SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
+import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
 import { recordsAsOfOf, rollForward } from '@/features/decide/snapshot/offlineFallback';
-import type { SnapshotResult } from '@/features/decide/snapshot/buildSnapshot';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { getDeviceRegion } from '@/services/locale/deviceLocale';
 import { supabase } from '@/services/supabase';
@@ -219,8 +218,7 @@ function lastDayOf(month: string): string {
 
 export interface DecideSnapshotState {
   status: 'loading' | 'error' | 'ready';
-  result: SnapshotResult | null;
-  source: SnapshotSource | null; // the assembled builder input (memoised with result); 05-52 rebuilds a bought check's position from it without the check's own writes
+  source: SnapshotSource | null; // the assembled builder input (memoised); null while a read is missing; 05-52 rebuilds a bought check's position from it without the check's own writes
   retry: () => void;
   /** APP-10 (05.4-33): the kind of the first failed read with nothing cached; null unless status is 'error'. Optional for test stand-ins. */
   errorKind?: DbErrorKind | null;
@@ -253,8 +251,9 @@ const SNAPSHOT_READ_NAMES = [
 
 const countWrite = (): 1 => 1;
 
-// D-88 (R16.4 item 1): one snapshot per source key. Every consumer (quick check, open-checks chips, the flow) builds its own
-// `source` from the same cached reads; this memo hands them all the first one built, so the engine runs once per key.
+// D-88 (R16.4 item 1): one source per source key. Every consumer (quick check, open-checks chips, the flow) builds its own
+// `source` from the same cached reads; this memo hands them all the first one built, so preparedV3 (keyed on the source) runs once.
+// 05.5-16: the old snapshot is no longer built here; the engine inputs come from buildInputs in computeV3.
 // The key is household, today, home currency and region; the data version is the reads' data references, which TanStack
 // Query keeps stable across a refetch that returns equal data (T-05-105-01). A changed or replaced read can never be
 // served a stale snapshot, and a refetch that changed nothing does not rebuild.
@@ -262,7 +261,6 @@ interface SharedSnapshot {
   key: string;
   deps: readonly unknown[];
   source: SnapshotSource;
-  result: SnapshotResult;
 }
 const SHARED_SNAPSHOTS_MAX = 4;
 const sharedSnapshots = new Map<string, SharedSnapshot>();
@@ -270,7 +268,7 @@ const sharedSnapshots = new Map<string, SharedSnapshot>();
 function sharedSnapshot(key: string, deps: readonly unknown[], source: SnapshotSource): SharedSnapshot {
   const hit = sharedSnapshots.get(key);
   if (hit && hit.deps.length === deps.length && hit.deps.every((d, i) => d === deps[i])) return hit;
-  const entry: SharedSnapshot = { key, deps, source, result: buildDecideSnapshot(source) };
+  const entry: SharedSnapshot = { key, deps, source };
   sharedSnapshots.delete(key);
   sharedSnapshots.set(key, entry);
   if (sharedSnapshots.size > SHARED_SNAPSHOTS_MAX) {
@@ -448,6 +446,13 @@ export function useDecideSnapshot(): DecideSnapshotState {
     return out;
   }, [categoryRows]);
 
+  // 05.5-16 (D-11, OFO-4): a category's Activity cap is its money rule. Archived and system categories carry none.
+  const categoryCaps = useMemo(() => {
+    const out: Record<string, number | null> = {};
+    for (const c of categoryRows ?? []) if (!c.is_system && c.archived_at === null && c.monthly_cap !== null && c.monthly_cap !== undefined) out[c.id] = c.monthly_cap;
+    return out;
+  }, [categoryRows]);
+
   const region = getDeviceRegion(rc.region) ?? null;
   // 06.1-36: the old Judge-on device choice is gone; the snapshot always judges on the settings basis.
 
@@ -472,6 +477,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
       changes: changesQuery.data ?? [],
       paymentLinks,
       writtenRowLinks: writtenQuery.data ?? [],
+      categoryCaps,
       recordsAsOf,
       unsavedWrites: 0, // 06.1-46 (B-2): the live count is on the state, laid over at judge time
       regionSubdivision: subdivisionQuery.data ?? null,
@@ -497,6 +503,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
     changesQuery.data,
     paymentLinks,
     writtenQuery.data,
+    categoryCaps,
     recordsAsOf,
     subdivisionQuery.data,
   ]);
@@ -510,7 +517,6 @@ export function useDecideSnapshot(): DecideSnapshotState {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [source, sourceKey]
   );
-  const result = shared === null ? null : shared.result;
   const sharedSource = shared === null ? null : shared.source;
 
   const refetches = reads.map((q) => q.refetch);
@@ -524,8 +530,8 @@ export function useDecideSnapshot(): DecideSnapshotState {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [failedFlags]);
 
-  const status: DecideSnapshotState['status'] = failed ? 'error' : result === null ? 'loading' : 'ready';
-  return { status, result, source: sharedSource, retry, errorKind, missingReads, unsavedWrites };
+  const status: DecideSnapshotState['status'] = failed ? 'error' : shared === null ? 'loading' : 'ready';
+  return { status, source: sharedSource, retry, errorKind, missingReads, unsavedWrites };
 }
 
 /** 05-22 (D-12): the household's lines in a window, for the attach picker. Row-derived (05-12 key). */

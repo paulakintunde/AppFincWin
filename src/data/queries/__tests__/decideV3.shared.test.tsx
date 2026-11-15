@@ -8,7 +8,7 @@ import type { DecideCheckRow } from '@/db/decideChecks';
 import { EMPTY_DECIDE_SETTINGS } from '@/db/decideSettings';
 import { demoSource } from '@/features/decide/__tests__/helpers/demoScenario';
 import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
-import * as buildV3InputsModule from '@/features/decide/snapshot/v3/buildV3Inputs';
+import * as buildInputsModule from '@/features/decide/snapshot/v3/buildInputs';
 import { queryKeys } from '../../keys';
 import { useDecideV3, type DecideV3State } from '../decideV3';
 
@@ -70,7 +70,7 @@ beforeEach(() => {
   mockSnap.source = demoSource(TODAY);
   mockSnap.unsavedWrites = 0;
   client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
-  builds = jest.spyOn(buildV3InputsModule, 'buildV3Inputs');
+  builds = jest.spyOn(buildInputsModule, 'buildInputs');
 });
 afterEach(() => builds.mockRestore());
 

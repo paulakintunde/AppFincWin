@@ -80,8 +80,8 @@ describe('previewNetSize', () => {
       const changed = withNetSize(source, size);
       rows.forEach((r, i) => {
         const c = checks[i]!;
-        expect(r.before).toBe(netStateOf(computeV3(source, SETTINGS, c.inputs, undefined, c.id).result));
-        expect(r.after).toBe(netStateOf(computeV3(changed, SETTINGS, c.inputs, undefined, c.id).result));
+        expect(r.before).toBe(netStateOf(computeV3(source, SETTINGS, c.inputs, c.id).result));
+        expect(r.after).toBe(netStateOf(computeV3(changed, SETTINGS, c.inputs, c.id).result));
       });
     }
   });

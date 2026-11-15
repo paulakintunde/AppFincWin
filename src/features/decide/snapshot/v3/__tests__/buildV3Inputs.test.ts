@@ -687,6 +687,11 @@ describe('buildV3Inputs: 05.2-63 cards and loans are not V3 accounts (F-05)', ()
   const cards = (n: number): SnapshotSource['accounts'] =>
     Array.from({ length: n }, (_, i) => ({ ...template, id: `c${i}`, kind: 'credit' as const }));
   const everydayUses = (ids: string[]): Record<string, AccountUse> => Object.fromEntries(ids.map((id) => [id, { kind: 'everyday' } as AccountUse]));
+  // 05.5-16: computeV3 reads account use from the stored columns (no test override any more), so stated uses go on the rows.
+  const withUses = (src: SnapshotSource, uses: Record<string, AccountUse>): SnapshotSource => ({
+    ...src,
+    accounts: src.accounts.map((a) => (uses[a.id] === undefined ? a : { ...a, use: 'everyday' as const })),
+  });
   const srcOf = (accounts: SnapshotSource['accounts'], balances: Record<string, number>): SnapshotSource => ({ ...base, accounts, balances, rows: [] });
 
   it('5 money accounts with a use and 4 cards with none: 5 accounts, nothing unstated, no unknown-use notice', () => {
@@ -694,7 +699,8 @@ describe('buildV3Inputs: 05.2-63 cards and loans are not V3 accounts (F-05)', ()
     const balances = { ...Object.fromEntries(ms.map((a, i) => [a.id, 10000 * (i + 1)])), ...Object.fromEntries(cards(4).map((a) => [a.id, -5000])) };
     const inputs = buildV3Inputs(srcOf([...ms, ...cards(4)], balances), null, undefined, everydayUses(ms.map((a) => a.id)));
     expect(inputs.accounts!.map((a) => a.id)).toEqual(ms.map((a) => a.id));
-    const ev = computeV3(srcOf([...ms, ...cards(4)], balances), null, sofaInputs, everydayUses(ms.map((a) => a.id)));
+    const uses0 = everydayUses(ms.map((a) => a.id));
+    const ev = computeV3(withUses(srcOf([...ms, ...cards(4)], balances), uses0), null, sofaInputs);
     expect(ev.funds.unstatedAccounts).toEqual([]);
     expect(JSON.stringify(ev.result)).not.toContain('account_use_unknown');
   });
@@ -717,8 +723,8 @@ describe('buildV3Inputs: 05.2-63 cards and loans are not V3 accounts (F-05)', ()
         const cb = Object.fromEntries(cs.map((a, i) => [a.id, cardBalances[i]!]));
         const without = buildV3Inputs(srcOf(ms, mb), null, undefined, uses);
         const withCards = buildV3Inputs(srcOf([...ms, ...cs], { ...mb, ...cb }), null, undefined, uses);
-        const a = computeV3(srcOf(ms, mb), null, sofaInputs, uses);
-        const b = computeV3(srcOf([...ms, ...cs], { ...mb, ...cb }), null, sofaInputs, uses);
+        const a = computeV3(withUses(srcOf(ms, mb), uses), null, sofaInputs);
+        const b = computeV3(withUses(srcOf([...ms, ...cs], { ...mb, ...cb }), uses), null, sofaInputs);
         expect(withCards.accounts).toEqual(without.accounts);
         expect(b.funds.spending).toBe(a.funds.spending);
         expect(b.funds.ringFenced).toBe(a.funds.ringFenced);

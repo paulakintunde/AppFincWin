@@ -9,8 +9,15 @@
  * value, so nothing drifts by a rounding unit.
  */
 import { convertLatest } from '@/data/queries/fxConvert';
-import type { CheckInputs, UnconvertedNote } from './types';
-import type { SnapshotResult } from './buildSnapshot';
+import type { CheckInputs, SnapshotFx, UnconvertedNote } from './types';
+
+/** 05.5-16: the part of a snapshot the currency view reads. Today's SnapshotResult fits; so does the small view computeV3 builds from rows. */
+export interface CurrencyBasis {
+  currency: string;
+  fx?: SnapshotFx;
+  unconverted: UnconvertedNote | null;
+}
+type SnapshotResult = CurrencyBasis; // the old name, kept so the signatures below read as before
 
 /** IN-A01: seeded sample checks carry no currency; their amounts are USD minor units (the demo seed). */
 export const SAMPLE_CURRENCY = 'USD';
@@ -123,6 +130,6 @@ export function fromHomePatch(patch: Partial<CheckInputs>, stored: CheckInputs, 
 }
 
 /** The snapshot a check is judged against: its own missing rate makes every figure unconverted (D-37). */
-export function sourceFor(source: SnapshotResult, view: InHome): SnapshotResult {
+export function sourceFor<S extends CurrencyBasis>(source: S, view: InHome): S {
   return view.kind === 'missing' && source.unconverted === null ? { ...source, unconverted: view.unconverted } : source;
 }
