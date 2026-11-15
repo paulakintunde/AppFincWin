@@ -16,6 +16,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
+import { iconForCategory } from '@/ui/icons/iconFor';
 import { EmptyState } from '@/ui/EmptyState';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
@@ -58,6 +59,7 @@ export function RulesScreen() {
         leading={
           <CategoryGlyph
             colorKey={cat ? cat.color_key : 'slate'}
+            icon={iconForCategory(cat)}
             letter={(storedName.charAt(0) || '?').toUpperCase()}
           />
         }
@@ -103,7 +105,7 @@ export function RulesScreen() {
           </View>
         ) : null}
         {empty ? (
-          <EmptyState heading={t('categories.rules.emptyHeading')} body={t('categories.rules.emptyBody')} />
+          <EmptyState icon="categories" heading={t('categories.rules.emptyHeading')} body={t('categories.rules.emptyBody')} />
         ) : null}
         {section(t('categories.rules.sectionMine'), personal)}
         {section(t('categories.rules.sectionShared'), shared)}
