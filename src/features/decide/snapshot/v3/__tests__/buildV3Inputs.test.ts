@@ -46,6 +46,12 @@ describe('buildV3Inputs: the demo (S9)', () => {
     expect(inputs.provisionalRates).toBe(false);
   });
 
+  // 05.5-16: computeV3 no longer reaches the old builder, so its waiting-write count is held by a direct test until 05.5-19 deletes the file.
+  it('unsaved writes count only as a whole positive number', () => {
+    const n = (v: number | undefined) => buildV3Inputs({ ...demoSource(TODAY), unsavedWrites: v }, null).unsavedWrites;
+    expect([n(3), n(0), n(-1), n(1.5), n(undefined)]).toEqual([3, 0, 0, 0, 0]);
+  });
+
   it('has the confirmed salary pay series and no other series', () => {
     expect(inputs.series).toHaveLength(1);
     const s = inputs.series[0]!;
