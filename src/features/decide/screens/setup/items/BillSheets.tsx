@@ -4,19 +4,16 @@ import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { useT } from '@/i18n';
 import type { RecurringFreq } from '@/engine/recurring';
-import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { space } from '@/theme/layout';
 import { hapticLight } from '@/ui/haptics';
-import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
-import { Field, FieldLabel, Note } from '@/features/decide/screens/sheets/sheetUi';
-import { DayField, FreqChips, dayFromText } from './itemFields';
+import { Note, dayFromText } from '@/features/record/forms/formFields';
+import { BillForm, billFormDirty, type BillFormValues } from '@/features/record/forms/BillForm';
+import { BILL_NAME_MAX, validAmount } from '@/features/record/forms/limits';
 
-export const BILL_NAME_MAX = 40;
-
-const validAmount = (minor: number | null): minor is number => minor !== null && minor > 0 && minor <= MAX_INPUT_MINOR;
+export { BILL_NAME_MAX };
 
 export interface BillValues {
   name: string;
@@ -38,69 +35,59 @@ export interface BillSheetProps {
 }
 
 export function BillSheet(props: BillSheetProps) {
-  return props.visible ? <BillForm {...props} /> : null;
+  return props.visible ? <BillSheetForm {...props} /> : null;
 }
 
-function BillForm({ mode, currency, initial, onSave, onDismiss, onStop }: BillSheetProps) {
+function BillSheetForm({ mode, currency, initial, onSave, onDismiss, onStop }: BillSheetProps) {
   const t = useT();
-  const [name, setName] = useState(initial?.name ?? '');
-  const [amount, setAmount] = useState<number | null>(initial?.amount ?? null);
-  const [dayText, setDayText] = useState(initial === undefined ? '' : String(initial.day));
-  const [freq, setFreq] = useState<RecurringFreq | null>(initial?.freq ?? 'monthly');
-  const day = dayFromText(dayText);
+  const [values, setValues] = useState<BillFormValues>({
+    name: initial?.name ?? '',
+    amount: initial?.amount ?? null,
+    dayText: initial === undefined ? '' : String(initial.day),
+    freq: initial?.freq ?? 'monthly',
+  });
   const adding = mode === 'add';
   const title = t(adding ? 'decide.screens.setupPayBills.billAdd.title' : 'decide.screens.setupPayBills.billEdit.title');
-  const ready = name.trim() !== '' && validAmount(amount) && day !== null && freq !== null;
-  const dirty = adding
-    ? name !== '' || amount !== null || dayText !== ''
-    : amount !== initial?.amount || day !== initial?.day || freq !== initial?.freq;
+  const dirty = billFormDirty(adding, values, initial);
   return (
     <Sheet visible onDismiss={onDismiss} accessibilityLabel={title} dirty={dirty}>
       <SheetHeader title={title} cancelLabel={t('decide.screens.common.cancel')} onCancel={onDismiss} />
       <SheetScroll contentContainerStyle={styles.column}>
-        <Note>{t(adding ? 'decide.screens.setupPayBills.billAdd.sub' : 'decide.screens.setupPayBills.billEdit.sub')}</Note>
-        {adding ? (
-          <>
-            <FieldLabel>{t('decide.screens.common.name')}</FieldLabel>
-            <Field value={name} onChangeText={(v) => setName(v.slice(0, BILL_NAME_MAX))} accessibilityLabel={t('decide.screens.common.name')} maxLength={BILL_NAME_MAX} />
-          </>
-        ) : (
-          <Note>{name}</Note>
-        )}
-        <MoneyInput
-          value={amount}
+        <BillForm
+          adding={adding}
           currency={currency}
-          onChange={(minor) => setAmount(validAmount(minor) ? minor : null)}
-          label={t('decide.screens.common.amount')}
-          accessibilityLabel={t('decide.screens.common.amount')}
-          boxed
-        />
-        <DayField label={t('decide.screens.setupPayBills.billEdit.day')} text={dayText} onChange={setDayText} />
-        <FreqChips label={t('decide.screens.common.howOften')} value={freq} onChange={setFreq} />
-        <Pill
-          variant="primary"
-          label={t(adding ? 'decide.screens.setupPayBills.billAdd.add' : 'decide.screens.setupPayBills.billEdit.save')}
-          disabled={!ready}
-          onPress={() => {
-            if (!validAmount(amount) || day === null || freq === null || name.trim() === '') return;
-            hapticLight();
-            onSave({ name: name.trim(), amount, day, freq });
+          values={values}
+          onChange={setValues}
+          copy={{
+            note: t(adding ? 'decide.screens.setupPayBills.billAdd.sub' : 'decide.screens.setupPayBills.billEdit.sub'),
+            name: t('decide.screens.common.name'),
+            amount: t('decide.screens.common.amount'),
+            day: t('decide.screens.setupPayBills.billEdit.day'),
+            howOften: t('decide.screens.common.howOften'),
           }}
+          primaryLabel={t(adding ? 'decide.screens.setupPayBills.billAdd.add' : 'decide.screens.setupPayBills.billEdit.save')}
+          onPrimary={() => {
+            const day = dayFromText(values.dayText);
+            if (!validAmount(values.amount) || day === null || values.freq === null || values.name.trim() === '') return;
+            onSave({ name: values.name.trim(), amount: values.amount, day, freq: values.freq });
+          }}
+          footer={
+            !adding && onStop !== undefined ? (
+              <>
+                <Pill
+                  variant="secondary"
+                  label={t('decide.screens.setupPayBills.bills.stopped')}
+                  accessibilityHint={t('decide.screens.setupPayBills.bills.stoppedNote')}
+                  onPress={() => {
+                    hapticLight();
+                    onStop();
+                  }}
+                />
+                <Note>{t('decide.screens.setupPayBills.bills.stoppedNote')}</Note>
+              </>
+            ) : null
+          }
         />
-        {!adding && onStop !== undefined ? (
-          <>
-            <Pill
-              variant="secondary"
-              label={t('decide.screens.setupPayBills.bills.stopped')}
-              accessibilityHint={t('decide.screens.setupPayBills.bills.stoppedNote')}
-              onPress={() => {
-                hapticLight();
-                onStop();
-              }}
-            />
-            <Note>{t('decide.screens.setupPayBills.bills.stoppedNote')}</Note>
-          </>
-        ) : null}
       </SheetScroll>
     </Sheet>
   );
