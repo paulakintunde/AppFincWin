@@ -62,6 +62,23 @@ describe('tokenize: basic shape', () => {
     });
   });
 
+  // Pins tokenize.ts line 145's end-of-input side so the 100% branch bar no longer depends on fast-check luck.
+  it('accepts a closing quote that is the last character of the input (no trailing newline)', () => {
+    expect(tokenize('a,b\n1,"2"')).toEqual({
+      ok: true,
+      rows: [
+        ['a', 'b'],
+        ['1', '2'],
+      ],
+      delimiter: ',',
+    });
+    expect(tokenize('a\n"x, y"')).toEqual({
+      ok: true,
+      rows: [['a'], ['x, y']],
+      delimiter: ',',
+    });
+  });
+
   it('handles quoted fields with embedded commas, doubled quotes, and an embedded newline, CRLF row ending', () => {
     const input = '"x, y","say ""hi"""\r\n"line\nbreak",3';
     expect(tokenize(input)).toEqual({
