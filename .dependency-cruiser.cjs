@@ -52,9 +52,9 @@ module.exports = {
     },
     {
       name: 'decide-never-writes-accounts',
-      severity: 'warn',
+      severity: 'error',
       comment:
-        '05.5 D-10 (BO-07 point 7): Activity owns overdraft limits and account purpose; Decide opens AccountSheet and only reads. warn until 05.5-17 moves Decide setup onto AccountSheet, then error.',
+        '05.5 D-10 (BO-07 point 7): Activity owns overdraft limits and account purpose; Decide opens AccountSheet and only reads. error from 05.5-17 (Decide setup opens AccountSheet).',
       from: { path: '^src/features/decide/', pathNot: '__tests__' },
       to: { path: '^src/data/mutations/(accounts|accountUse)(\\.ts)?$' },
     },

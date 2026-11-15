@@ -61,9 +61,6 @@ jest.mock('../../../home/AddRuleSheet', () => ({ AddRuleSheet: () => null }));
 
 let mockFacts: SetupFacts | null = null;
 jest.mock('../../useSetupProgress', () => ({ useSetupFacts: () => ({ loading: mockFacts === null, facts: mockFacts, currency: 'USD', today: '2026-11-20' }) }));
-const mockSaveUse = jest.fn((..._a: unknown[]) => ({ stepId: 'step-use' }));
-jest.mock('@/data/mutations/accountUse', () => ({ useSaveAccountUse: () => ({ save: mockSaveUse }) }));
-jest.mock('@/features/record/accounts/AccountUseSheet', () => ({ AccountUseSheet: () => null }));
 // 06.1-45: Records now reads the answer writer and the query cache for the readiness list.
 jest.mock('@/data/mutations/decideAnswers', () => ({ useSaveDecideAnswer: () => ({ save: jest.fn(() => null) }), useRemoveDecideAnswer: () => ({ remove: jest.fn(() => ({ stepId: 'step' })) }) }));
 // 06.1-68: Records reads the live answers for "Answers you gave".
@@ -322,15 +319,14 @@ describe('RecordsSetup (D37, D37b)', () => {
     expect(screen.getByTestId('check-this')).toHaveTextContent(/Not complete/);
   });
 
-  it('open accounts show the plain four choices and write a plain choice through Accounts', async () => {
+  it('open accounts list a button each that opens the account in Activity with its sheet open (D-10)', async () => {
     mockFacts = facts({ accountsAllHaveUse: false });
     mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: null, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [] }] };
     await wrap(<RecordsSetup writes={RECORDS_WRITES} />);
-    // 06.1-58 (A-SU-5): the choices sit in the Your accounts sheet
+    // 06.1-58 (A-SU-5): the accounts sit in the Your accounts sheet
     await fireEvent.press(screen.getByTestId('check-accounts'));
-    for (const label of ['Everyday spending', 'Savings or goals', 'Safety net', 'Not used for spending']) expect(screen.getByLabelText(label)).toBeTruthy();
-    await fireEvent.press(screen.getByLabelText('Not used for spending'));
-    expect(mockSaveUse).toHaveBeenCalledWith({ account: expect.objectContaining({ id: 'a1' }), use: { kind: 'untouched' } });
+    await fireEvent.press(screen.getByText(/^What is .* for\?$/));
+    expect(mockPush).toHaveBeenCalledWith('/accounts/a1?edit=1');
   });
 
   it('a person with no records sees the empty variant and a way to quick estimates', async () => {
