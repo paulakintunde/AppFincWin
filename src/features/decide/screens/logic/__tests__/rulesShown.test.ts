@@ -9,7 +9,7 @@ const inputs = (s: readonly V3Series[], lines: readonly { on: boolean }[] = []):
 
 describe('rulesShown', () => {
   const keep = { id: 'own_keep', kind: 'keep' as const, on: true, value: 30_000, categoryId: null };
-  const cap = { id: 'own_cap', kind: 'category_cap' as const, on: false, value: 5_000, categoryId: 'c1' };
+  const cap = { id: 'own_cap', kind: 'category_share' as const, on: false, value: 5, categoryId: 'c1' };
 
   it('lists the debt share, Grow saving and investing, then the own rules in their stored order', () => {
     const shown = rulesShown({ debtPercent: 36, rules: [keep, cap], saving: 80_000, investing: 20_000 });

@@ -11,7 +11,7 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
-import { percent as parsePercent, type Percent } from '@/engine/decide';
+import { percent as parsePercent, type Percent } from '@/engine/payoff';
 import { maxCheckPrice, type LocalDate, type PayV2, type Sale } from '@/engine/decide/v3';
 import { currencyCode, minorUnits } from '@/engine/money';
 import { useCreateCheck } from '@/data/mutations/decideChecks';

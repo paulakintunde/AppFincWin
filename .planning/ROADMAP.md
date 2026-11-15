@@ -29,7 +29,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
 - [x] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies (completed 2026-11-11)
 - [x] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
-- [ ] **Phase 06.2: App life** (INSERTED) - Calm, confident life for the whole app: our own icon set on every row, colour + shape + word status cues, tidy spacing and row sizes, quiet motion and haptics by meaning at key moments, a pale theme-tinted background behind white cards; Overview keeps its structure
+- [x] **Phase 06.2: App life** (INSERTED) - Calm, confident life for the whole app: our own icon set on every row, colour + shape + word status cues, tidy spacing and row sizes, quiet motion and haptics by meaning at key moments, a pale theme-tinted background behind white cards; Overview keeps its structure
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
 - [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide, reading test round 2, public switch-on. Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
@@ -1158,7 +1158,7 @@ Plans:
   6. Core Maestro flows run green on the Android emulator.
   7. Compliance gate: retired screens deleted; the copy guard runs at sentence level and in lint.
 **Notes from Phase 8 (2026-11-11):** see `05.5-NOTES-FROM-08.md` (re-scope after 06.1 plans 36/37, share_pct owner, settlement exclusion, `countsForMe` needed before 08-25).
-**Plans:** 16/26 plans executed (wave 1 built 2026-11-14 on phase/05.5-wave1; wave 2 on phase/05.5-wave2; wave 3 on phase/05.5-wave3, 2026-11-14). 26 plans in 10 waves (planned 2026-11-14; revised 2026-11-14: 05.5-18 split, Grow and snapshot importers moved to 05.5-26). Wave 1 (plans 01-06) is the Phase 8 plugs PR and needs no gate; every later plan starts with the 06.1 gate (05.5-GATE.md). Migration push order: Band A 20261113000100 before Phase 8 08-27 (applied in production 2026-11-14); Band B 20261121000100..000300 after the 05.5 release. Owner 2026-11-14: add a "Stopped" label migration (record_decide_go via grow_end_series) in 05.5; ARC-24 extras (varying costs, sale/payoff, goal close) move to a later phase.
+**Plans:** 19/26 plans executed (waves 1-3 merged via PRs #116, #120, #121; wave 4 (plans 15, 18, 26) built 2026-11-15 on phase/05.5-wave4; owner 2026-11-15: cap gap accepted until 05.5-16, Setup cap row added to 05.5-16, Grow counts standing plans only). 26 plans in 10 waves (planned 2026-11-14; revised 2026-11-14: 05.5-18 split, Grow and snapshot importers moved to 05.5-26). Wave 1 (plans 01-06) is the Phase 8 plugs PR and needs no gate; every later plan starts with the 06.1 gate (05.5-GATE.md). Migration push order: Band A 20261113000100 before Phase 8 08-27 (applied in production 2026-11-14); Band B 20261121000100..000300 after the 05.5 release. Owner 2026-11-14: add a "Stopped" label migration (record_decide_go via grow_end_series) in 05.5; ARC-24 extras (varying costs, sale/payoff, goal close) move to a later phase.
 
 Plans:
 - [x] 05.5-01-PLAN.md — countsForMe engine rule and the month-picture contract in src/engine/month (wave 1)
@@ -1430,9 +1430,9 @@ Plans:
   5. A shared record created by one member appears on another member's device without a manual refresh. (The read-only summary link, HH-12, is deferred: 08-CONTEXT D-45.)
   6. A member can leave, be removed, or receive ownership; deleting an account follows the documented rule and leaves the remaining members' balances correct; and guessing invite codes is rate-limited to futility.
   7. (Decide fix plan, blocking) Every record is personal unless marked shared, enforced by database rules, and the two-user tests are green BEFORE the invite flow merges: member B cannot read, edit, receive live updates for, or export member A's personal rows (CMP-F18, ARC-22).
-  8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money. (Decide side moved to 08.1 with 08-28 on 2026-11-11.)
-  9. (Decide fix plan) Household split rules are the one source of "my share"; settlements count as neither spending nor income; money owed to you is not spendable until it arrives (ARC-17, ARC-18, ENG-25). (share_pct removal moved to 08.1 or 05.5 with 08-29.)
-**Plans:** 28 plans in 12 waves (08-25 gated on 05.5, D-41; it runs last, wave 12, after the owner-approved push in 08-27). 08-28 and 08-29 moved to Phase 08.1 on 2026-11-11 (owner decision); gates and the post-06.1 revision round are in `08-GATES.md`.
+  8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money. (Phase 8 delivers only the "off by default" part: 08-25 proves a partner's personal line counts nothing through 05.5's `countsForMe`. The opt-in itself and the two-partners rule moved to 08.1 with former 08-28 on 2026-11-11.)
+  9. (Decide fix plan) Household split rules are the one source of "my share"; settlements count as neither spending nor income; money owed to you is not spendable until it arrives (ARC-17, ARC-18, ENG-25). (Phase 8: 08-25 my-share adapter on 05.5's `countsForMe`, 08-30 settlement exclusion. Removing the old `decide_settings.share_pct` column is 05.5's work, 05.5 D-09; the Decide screen parts are 08.1's.)
+**Plans:** 28 plans in 12 waves (08-25 gated on 05.5, D-41; it runs last, wave 12, after the owner-approved push in 08-27). 08-28 and 08-29 moved to Phase 08.1 on 2026-11-11 (owner decision); gates and the post-06.1 revision round are in `08-GATES.md`. The revision round against main ran on 2026-11-15 (quick 261114-x0q); waves unchanged.
 
 Plans:
 **Wave 1**
@@ -1512,7 +1512,7 @@ Plans:
   9. Theme O: version 1 contains the scope listed in the fix plan, Theme O, including the decision record and its "did it cost what you expected?" follow-up; home-buying screens are hidden until their own phase.
 **Carried over from Phase 8 (2026-11-11, owner decision):** re-plan each on the new 06.1 screens (`src/features/decide/screens/**`).
 - Former 08-28: partner opt-in, shared safety net, shared-bills caveat, couples note (`08.1-CARRY-OVER-08-28.md`)
-- Former 08-29: household scope choice in the check, Household link in setup, share_pct removal (owner: 08.1 or 05.5, decided at 05.5 planning), household scope label (`08.1-CARRY-OVER-08-29.md`)
+- Former 08-29: household scope choice in the check, Household link in setup, household scope label (`08.1-CARRY-OVER-08-29.md`). The share_pct removal is not 08.1's: 05.5 removes it (05.5 D-09, 2026-11-12).
 - "Create from Decide" (Grow follow-up, 06 VERIFICATION override), built on the new 06.1 screens
 **Plans:** 0 plans
 
@@ -1633,9 +1633,9 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
 | 05.4 Decide safety patch | 55/55 | Ready to merge (43 and 45 follow up on main, D-182) |  |
-| 05.5 One shared money model | 16/26 | In Progress|  |
+| 05.5 One shared money model | 19/26 | In Progress|  |
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
-| 06.2 App life | 0/TBD | Not started (context gathered 2026-11-14) | - |
+| 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 0/TBD | Not started | - |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |

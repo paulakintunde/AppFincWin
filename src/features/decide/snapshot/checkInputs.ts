@@ -5,61 +5,46 @@
  * Nothing here supplies a rate, a fee, a promotion or a loss of value: every credit term reaches the engine only when the
  * user typed it (D-07, D-30, D-32, D-42, 04 D-63).
  */
-import {
-  DEFAULT_SETBACKS,
-  ITEM_TYPES,
-  MAX_PROJECTION_RATE,
-  ZERO_PERCENT,
-  lossOfValueMonthly,
-  netRunningCosts,
-  percent,
-  resolvePriceInputs,
-  salesTaxAmount,
-  suggestItemType,
-  withPrice,
-} from '@/engine/decide';
-import type {
-  BuyCheck,
-  BuyPayment,
-  CostLine,
-  CurrencyCode,
-  InvestCheck,
-  ItemType,
-  InstalmentFreq,
-  LossOfValueInput,
-  MinorUnits,
-  Percent,
-  PriceAdjustment,
-  PromoTerms,
-  PurchaseCheck,
-  ResolvedPrice,
-  RunningCostCategory,
-  RunningCosts,
-  SetbackCode,
-} from '@/engine/decide';
-import { divideHalfUp, minorUnits } from '@/engine/money';
-import { ONE_HUNDRED_PERCENT, PERCENT_SCALE, ceilDivide, percentFromScaled } from '@/engine/payoff';
+import { ITEM_TYPES, priceAfterLines, salesTaxOf, suggestItemType, type ItemType } from '@/engine/decide/v3';
+import { minorUnits, type MinorUnits } from '@/engine/money';
+import { ZERO_PERCENT, ceilDivide, percent, percentFromScaled, PERCENT_SCALE, type Percent } from '@/engine/payoff';
 import { isValidLocalDate } from '@/engine/time';
+import { MAX_INPUT_MINOR } from '@/features/record/forms/limits';
 import { cheaperBounds } from './customValues';
 import { PAY_METHODS } from './types';
 import type {
   AdjustmentLine,
-  CardChoice,
   CardNoteAnswer,
   CheckInputs,
   InputLine,
+  InstalmentFreq,
   LossOfValueEntry,
   MethodKey,
-  PayMethod,
   PromoInput,
   QuickInputs,
+  RunningCostCategory,
+  SetbackCode,
   SetbackLine,
 } from './types';
 
 /** The most a typed APR may be (999.99% a year), so a schedule over 600 months can never overflow a safe integer. */
 export const MAX_APR: Percent = percentFromScaled((PERCENT_SCALE * 99_999n) / 100n);
-/** Every typed money amount is at most this many minor units (10^12), so engine sums stay inside safe integers. */
-export const MAX_INPUT_MINOR = 1_000_000_000_000;
+// Kept as a re-export so the screens that import it from here need no edit; the one copy is features/record/forms/limits.ts (05.5-17, D-18).
+export { MAX_INPUT_MINOR };
+// Every typed money amount is at most MAX_INPUT_MINOR (10^12, features/record/forms/limits.ts), so engine sums stay inside safe integers.
+
+/** The engine's ceiling for a typed projection rate, 100% a year (ME-01, the old constants.ts MAX_PROJECTION_RATE). */
+const MAX_PROJECTION_RATE: Percent = percent('100');
+/**
+ * The step 2 setback defaults, never enabled (the old constants.ts DEFAULT_SETBACKS, prototype DSB setbacks): once, drop 20% x 2
+ * months, none x 8 months, late 30 days. A null amount means one month's costs.
+ */
+const DEFAULT_SETBACKS = [
+  { code: 'unexpected_expense' },
+  { code: 'income_drop', percentDrop: 20, months: 2 },
+  { code: 'job_loss', months: 8 },
+  { code: 'late_invoice', daysLate: 30 },
+] as const;
 
 const MAX_LINES = 30;
 const MAX_SETBACKS = 12;
@@ -188,15 +173,6 @@ export function emptyCheckInputs(kind: 'buy' | 'invest', _today: string): CheckI
 /** 04 DEC-11: a loan is secured exactly when the item is a vehicle, until the user touches the toggle. */
 export function securedDefault(itemType: ItemType): boolean {
   return itemType === 'vehicle';
-}
-
-/** Step 1 and the name pre-fill: change the item type; an untouched secured toggle follows it. */
-export function withItemType(inputs: CheckInputs, itemType: ItemType, touched: boolean): Partial<CheckInputs> {
-  return {
-    itemType,
-    itemTypeTouched: touched || inputs.itemTypeTouched,
-    loan: inputs.loan.securedTouched ? inputs.loan : { ...inputs.loan, secured: securedDefault(itemType) },
-  };
 }
 
 export function defaultQuickInputs(): QuickInputs {
@@ -423,7 +399,7 @@ export function quickToCheckInputs(q: QuickInputs, today: string, currency: stri
   const adjustments: AdjustmentLine[] = [];
   if (price !== null && isPercentTo100(q.taxText)) {
     adjustments.push({
-      id: 'adj-tax', name: '', amount: salesTaxAmount(price, percent(q.taxText)), note: '', counted: true,
+      id: 'adj-tax', name: '', amount: salesTaxOf(price, percent(q.taxText)), note: '', counted: true,
       effect: 'adds', onDay: true, taxPercentText: q.taxText,
     });
   }
@@ -452,264 +428,21 @@ export function quickToCheckInputs(q: QuickInputs, today: string, currency: stri
   };
 }
 
-// ── engine mapping ──
-export interface EngineCtx {
-  readonly currency: CurrencyCode;
-  readonly cards: readonly CardChoice[];
-  readonly dealerCap: MinorUnits | null;
-  /** D-91: the converted card check limit (null = no stored USD rate); absent = no limit (test fixtures). */
-  readonly cardMaxPurchase?: MinorUnits | null;
-  /** D-92: the RD-02 country code the card rules read; absent = unknown. */
-  readonly region?: string | null;
-}
-/** D-91 / D-92: the engine context from a built snapshot, carrying the converted card limit and the region. */
-export function engineCtxOf(source: {
-  readonly currency: CurrencyCode;
-  readonly cards: readonly CardChoice[];
-  readonly dealerCap: MinorUnits | null;
-  readonly cardMaxPurchase?: MinorUnits | null;
-  readonly region?: string | null;
-}): EngineCtx {
-  return { currency: source.currency, cards: source.cards, dealerCap: source.dealerCap, cardMaxPurchase: source.cardMaxPurchase, region: source.region };
-}
-export type EngineCheckResult =
-  | { readonly ok: true; readonly check: PurchaseCheck; readonly resolvedPrice: ResolvedPrice; readonly running: RunningCosts }
-  | { readonly ok: false; readonly missing: 'price' | 'method' };
-
-/** The payment method a check is judged by: a buy needs one of the four; an invest is a lump unless monthly. */
-export function effectiveMethod(inputs: CheckInputs): MethodKey | null {
-  if (inputs.kind === 'invest') return inputs.method === 'monthly' ? 'monthly' : 'lump';
-  return PAY_METHODS.find((m) => m === inputs.method) ?? null;
-}
-
+// ── final price ──
 function taxPercentOf(line: AdjustmentLine): Percent | null {
   return line.taxPercentText !== null && isPercentTo100(line.taxPercentText) ? percent(line.taxPercentText) : null;
-}
-
-/** Each line as the engine's PriceAdjustment; a tax-% line recomputes from the given advertised price at call time. */
-function priceAdjustments(lines: readonly AdjustmentLine[], advertised: MinorUnits): PriceAdjustment[] {
-  return lines.map((l) => {
-    const tax = taxPercentOf(l);
-    return { id: l.id, amount: tax === null ? minorUnits(l.amount) : salesTaxAmount(advertised, tax), effect: l.effect, onDay: l.onDay, counted: l.counted };
-  });
-}
-
-function costLine(l: InputLine): CostLine {
-  const counted = l.counted && !(l.category !== null && l.amount === 0);
-  return l.category === null
-    ? { id: l.id, amount: minorUnits(l.amount), counted }
-    : { id: l.id, amount: minorUnits(l.amount), counted, category: l.category };
 }
 
 /** WR-B07: the price after tax, fees and trade-ins, in the currency the check was typed in; null with no price. */
 export function finalPriceOf(inputs: Pick<CheckInputs, 'advertised' | 'adjustments'>): MinorUnits | null {
   if (inputs.advertised === null) return null;
   const adv = minorUnits(inputs.advertised);
-  return resolvePriceInputs({ advertised: adv, adjustments: priceAdjustments(inputs.adjustments, adv) }).price;
-}
-
-/**
- * D-83: the cheaper row's final price. The exact cheaper advertised price goes through the check's own tax, fee and trade-in
- * lines (tax follows the cheaper price; fixed fees and trade-ins stay), then is clamped to [1, planPrice]. Null = no cheaper
- * price typed (the engine default applies).
- */
-export function cheaperFinalPrice(inputs: CheckInputs, planPrice: MinorUnits): MinorUnits | null {
-  if (inputs.cheaperPrice === null) return null;
-  const adv = minorUnits(inputs.cheaperPrice);
-  const lines = inputs.kind === 'buy' ? priceAdjustments(inputs.adjustments, adv) : [];
-  const price = resolvePriceInputs({ advertised: adv, adjustments: lines }).price;
-  return minorUnits(Math.min(Math.max(price, 1), planPrice));
-}
-
-/**
- * CR-C02: one recurring bill is replaced at most once. A later counted line naming a series an earlier counted line already
- * replaces is dropped, so the saving is never subtracted twice. Lines with no series, and uncounted lines, are kept.
- */
-export function uniqueReplaces(lines: readonly InputLine[]): InputLine[] {
-  const taken = new Set<string>();
-  return lines.filter((l) => {
-    if (l.seriesId === null || !l.counted) return true;
-    if (taken.has(l.seriesId)) return false;
-    taken.add(l.seriesId);
-    return true;
-  });
-}
-
-function lossLine(entry: LossOfValueInput, inputs: { readonly advertised: MinorUnits }): CostLine {
-  return { id: 'loss_of_value', amount: lossOfValueMonthly(entry, inputs.advertised), counted: true, category: 'loss_of_value' };
-}
-
-function lossInput(entry: LossOfValueEntry): LossOfValueInput | null {
-  if (entry.kind === 'amount') return { kind: 'amount', monthly: minorUnits(entry.monthly) };
-  return isPercentTo100(entry.percentText) ? { kind: 'percent_per_year', percentPerYear: percent(entry.percentText) } : null;
-}
-
-function promoTerms(promo: PromoInput | null): PromoTerms | undefined {
-  if (promo === null || promo.months === null || !isValidAprText(promo.aprText)) return undefined;
-  const apr = percent(promo.aprText);
-  // D-42: the toggle is honoured only at a 0% promotion and never inferred
-  return { apr, months: promo.months, deferredInterest: promo.deferredInterest === true && apr === ZERO_PERCENT };
-}
-
-function payment(inputs: CheckInputs, method: PayMethod, ctx: EngineCtx, price: MinorUnits): BuyPayment {
-  switch (method) {
-    case 'cash':
-      return { method: 'cash' };
-    case 'loan': {
-      const promo = promoTerms(inputs.loan.promo);
-      return {
-        method: 'loan',
-        deposit: minorUnits(Math.min(inputs.loan.deposit, price)),
-        termMonths: inputs.loan.termMonths,
-        apr: isValidAprText(inputs.loan.aprText) ? percent(inputs.loan.aprText) : null,
-        ...(promo === undefined ? {} : { promo }),
-        ...(inputs.loan.variable ? { variable: true } : {}),
-      };
-    }
-    case 'instalment': {
-      const inst = inputs.instalment;
-      return {
-        method: 'instalment',
-        instalmentAmount: inst.amount === null ? null : minorUnits(inst.amount),
-        instalmentCount: inst.count,
-        // D-80: no rate = apr absent; a rate = the typed APR, or null (instalment_rate_missing) when blank or invalid
-        ...(inst.hasRate === true ? { apr: inst.aprText !== undefined && isValidAprText(inst.aprText) ? percent(inst.aprText) : null } : {}),
-        freq: inst.freq ?? 'monthly',
-        firstPayment: inst.firstPayment ?? 'today',
-        ...(inst.lateFee !== null && inst.lateFee > 0 ? { lateFee: minorUnits(inst.lateFee) } : {}),
-      };
-    }
-    case 'card': {
-      const c = inputs.card;
-      const promo = promoTerms(c.promo);
-      const choice = c.accountId === null ? undefined : ctx.cards.find((x) => x.accountId === c.accountId);
-      return {
-        method: 'card',
-        card: choice?.record ?? null,
-        payoff: c.payoff === 'months' ? { kind: 'months', months: c.months } : { kind: c.payoff },
-        dealerCap: ctx.dealerCap,
-        ...(ctx.cardMaxPurchase === undefined ? {} : { cardMaxPurchase: ctx.cardMaxPurchase }),
-        ...(ctx.region === undefined ? {} : { region: ctx.region }),
-        ...(promo === undefined ? {} : { promo }),
-        ...(c.variable ? { variable: true } : {}),
-        ...(c.fees !== null && c.fees > 0 ? { cardFees: minorUnits(c.fees) } : {}),
-      };
-    }
-  }
-}
-
-/** Stored inputs → the engine's check, the resolved price and the running costs. Pure; the caller supplies the context. */
-export function toEngineCheck(inputs: CheckInputs, ctx: EngineCtx): EngineCheckResult {
-  const advertised = inputs.advertised;
-  if (advertised === null || !Number.isSafeInteger(advertised) || advertised <= 0 || advertised > MAX_INPUT_MINOR) return { ok: false, missing: 'price' };
-  const method = effectiveMethod(inputs);
-  if (method === null) return { ok: false, missing: 'method' };
-  const adv = minorUnits(advertised);
-
-  if (inputs.kind === 'invest') {
-    const check: InvestCheck = {
-      kind: 'invest',
-      currency: ctx.currency,
-      amount: adv,
-      payment: method === 'monthly' ? { method: 'monthly', termMonths: inputs.investTermMonths } : { method: 'lump' },
-    };
-    return { ok: true, check, resolvedPrice: resolvePriceInputs({ advertised: adv, adjustments: [] }), running: netRunningCosts([], []) };
-  }
-
-  const resolvedPrice = resolvePriceInputs({ advertised: adv, adjustments: priceAdjustments(inputs.adjustments, adv) });
-  const costs = inputs.runningCosts.filter((l) => l.category !== 'loss_of_value').map(costLine);
-  const loss = inputs.lossOfValue === null ? null : lossInput(inputs.lossOfValue);
-  if (loss !== null) costs.push(lossLine(loss, { advertised: adv }));
-  const replaced = uniqueReplaces(inputs.replaces).filter((l) => l.category !== 'loss_of_value').map(costLine);
-  const running = netRunningCosts(costs, replaced);
-  const check: BuyCheck = {
-    kind: 'buy',
-    currency: ctx.currency,
-    price: resolvedPrice.price,
-    dayFees: resolvedPrice.dayFees,
-    itemType: inputs.itemType,
-    runningCostsNet: running.net,
-    payment: payment(inputs, method as PayMethod, ctx, resolvedPrice.price),
-    ...incomeChangeOf(inputs),
-  };
-  return { ok: true, check, resolvedPrice, running };
-}
-
-function incomeChangeOf(inputs: CheckInputs): Pick<BuyCheck, 'incomeChange'> | Record<string, never> {
-  const c = inputs.incomeChange;
-  if (c === null || c.amount === null || c.amount <= 0 || c.startDate === null) return {};
-  return { incomeChange: { monthlyAmount: minorUnits(c.direction === 'lowers' ? -c.amount : c.amount), startDate: c.startDate, likelihood: c.likelihood } };
-}
-
-// ── re-price (D-49) ──
-/**
- * The one place a re-price ("Use this price", "Use the cheaper price") is turned back into inputs. The advertised price is
- * solved so the resolved final price is the largest one at or under `finalPrice`, counting the tax-% lines that follow the
- * advertised price. Null when no positive advertised price fits.
- */
-export function repriceInputs(
-  inputs: CheckInputs,
-  check: BuyCheck,
-  _resolvedPrice: ResolvedPrice,
-  finalPrice: MinorUnits,
-  opts: { cheaperPrice?: number } = {}
-): Partial<CheckInputs> | null {
-  const exact = opts.cheaperPrice;
-  if (exact !== undefined) return repriceExact(inputs, check, exact);
-  let taxScaled = 0n;
-  let fixed = 0n;
-  for (const l of inputs.adjustments.filter((x) => x.counted)) {
-    const sign = l.effect === 'adds' ? 1n : -1n;
-    const tax = taxPercentOf(l);
-    if (tax === null) fixed += sign * BigInt(l.amount);
-    else taxScaled += sign * tax;
-  }
-  const denominator = ONE_HUNDRED_PERCENT + taxScaled;
-  if (denominator <= 0n) return null;
-  const numerator = (BigInt(finalPrice) - fixed) * ONE_HUNDRED_PERCENT;
-  const start = Number(numerator / denominator);
-  let advertised: MinorUnits | null = null;
-  let reached = 0;
-  for (let a = start + 2; a >= start - 2 && advertised === null; a -= 1) {
-    if (a < 1) continue;
-    const price = resolvePriceInputs({ advertised: minorUnits(a), adjustments: priceAdjustments(inputs.adjustments, minorUnits(a)) }).price;
-    if (price <= finalPrice) {
-      advertised = minorUnits(a);
-      reached = price;
-    }
-  }
-  if (advertised === null) return null;
-  return finishReprice(inputs, check, advertised, minorUnits(reached));
-}
-
-/** D-83: "Use the cheaper price" writes advertised = the cheaper price exactly (no search). */
-function repriceExact(inputs: CheckInputs, check: BuyCheck, cheaperPrice: number): Partial<CheckInputs> | null {
-  if (!Number.isSafeInteger(cheaperPrice) || cheaperPrice < 1 || cheaperPrice > MAX_INPUT_MINOR) return null;
-  const advertised = minorUnits(cheaperPrice);
-  const reached = resolvePriceInputs({ advertised, adjustments: priceAdjustments(inputs.adjustments, advertised) }).price;
-  const patch = finishReprice(inputs, check, advertised, reached);
-  const pay = check.payment;
-  // M4: the deposit scales half up by the cheaper final price over the price, like the engine's cheaper row
-  if (pay.method === 'loan' && check.price > 0) {
-    patch.loan = { ...inputs.loan, deposit: Number(divideHalfUp(BigInt(pay.deposit) * BigInt(reached), BigInt(check.price))) };
-  }
-  return patch;
-}
-
-/** The patch shared by both re-prices: the advertised price, tax lines rescaled to it, and a scaled instalment amount. */
-function finishReprice(inputs: CheckInputs, check: BuyCheck, advertised: MinorUnits, reached: MinorUnits): Partial<CheckInputs> {
-  const patch: Partial<CheckInputs> = { advertised };
-  if (inputs.adjustments.some((l) => taxPercentOf(l) !== null)) {
-    patch.adjustments = inputs.adjustments.map((l) => {
+  // a tax-% line recomputes from the advertised price at call time
+  return priceAfterLines(
+    adv,
+    inputs.adjustments.map((l) => {
       const tax = taxPercentOf(l);
-      return tax === null ? l : { ...l, amount: salesTaxAmount(advertised, tax) };
-    });
-  }
-  const pay = check.payment;
-  if (pay.method === 'instalment') {
-    // the engine's own scaling, so the re-priced check is exactly the one the engine judged
-    const scaled = withPrice(check, reached) as BuyCheck;
-    patch.instalment = { ...inputs.instalment, amount: (scaled.payment as { instalmentAmount: MinorUnits | null }).instalmentAmount };
-  }
-  return patch;
+      return { amount: tax === null ? minorUnits(l.amount) : salesTaxOf(adv, tax), effect: l.effect, counted: l.counted };
+    })
+  );
 }

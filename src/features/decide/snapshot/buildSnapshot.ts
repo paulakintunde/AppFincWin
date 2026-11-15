@@ -14,6 +14,9 @@ import {
   monthlyEquivalent,
   percent,
   type CardMinimumTerms,
+  type CardRecord,
+  type CurrencyCode,
+  type MinorUnits,
   type DebtRecord,
   type DecideLimits,
   type Basis,
@@ -38,7 +41,17 @@ import { homeAmountFor, isOwnCurrencyRow } from '@/data/queries/homeAmount';
 import type { AccountRow, CustomCurrencyRow, FxLatestRow, RecurringSeriesRow, TransactionRow } from '@/db/rows';
 import { convertCeiled, convertFloored, makeConverter, provisionalHomeAmount, type ProvisionalAmount } from './conversion';
 import { fullMonthFlags } from './fullMonths';
-import type { CardChoice, CardLimitRateNote, CardTermsView, MonthUnconvertedNote, SnapshotMeta, SnapshotResult } from './types';
+import type { CardLimitRateNote, CardTermsView, ConversionNote, MonthUnconvertedNote, ProvisionalNote, SnapshotFx, SnapshotMeta, UnconvertedNote } from './types';
+
+// 05.5-26: the old builder's result shapes, moved here from types.ts so types.ts no longer imports the old engine; deleted with this file in 05.5-19.
+export interface CardChoice { accountId: string; name: string; record: CardRecord; terms: CardTermsView } // record.minimumTerms is null when paidInFull or source 'none'
+// D-101 (R18.2): pots = the live, not-done pots in the home currency, on every source kind (05-134 reads them; the rough hero takes the same set-asides off); potChecks = pot id → check id for the pots a check made (its Wait pot), so a reopened Waiting check drops its own pot (withoutOwnPot). Absent (test fixtures) = none
+// D-91 / D-92: cardMaxPurchase = CARD_MAX_PURCHASE_USD in the home currency, floored (null = no stored USD rate; absent in test fixtures = no limit); region = the RD-02 country code the card rules read (absent in fixtures = unknown); basisNotes: see CardLimitRateNote (absent = none)
+interface SnapshotBase { currency: CurrencyCode; meta: SnapshotMeta; pots?: readonly PotInput[]; potChecks?: Readonly<Record<string, string>>; cards: readonly CardChoice[]; dealerCap: MinorUnits | null; cardMaxPurchase?: MinorUnits | null; region?: string | null; basisNotes?: readonly CardLimitRateNote[]; cash: MinorUnits; conversions: readonly ConversionNote[]; unconverted: UnconvertedNote | null; monthUnconverted?: MonthUnconvertedNote | null; judgeOn?: Basis | null; monthFallback?: { currencies: readonly string[] } | null; provisional?: ProvisionalNote | null; fx?: SnapshotFx; debtRecords?: readonly DebtRecord[] /* 05.4-35 (D-43): the builder's debts on every kind, for the v3 inputs only */ } // provisional: D-69, absent (test fixtures) = none
+export type SnapshotResult =
+  | (SnapshotBase & { kind: 'logged'; snapshot: DecideSnapshot })
+  | (SnapshotBase & { kind: 'rough'; figures: RoughFigures })
+  | (SnapshotBase & { kind: 'none' });
 
 // structurally identical to src/db/* (05-05); 05-12 passes 05-05 rows here, so its typecheck proves they agree
 export interface SettingsSource {

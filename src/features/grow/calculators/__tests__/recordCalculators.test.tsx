@@ -49,6 +49,7 @@ jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({ data: [{ id: 'a-chk', name: 'Everyday checking', kind: 'checking', currency: 'USD', archived_at: null }] }),
 }));
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: { saving_floor: 15000 } }) }));
+jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ prepared: null }) }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', showCents: false, today: '2026-10-20', userId: 'u1', householdId: 'h1', ready: true, timeZone: 'UTC' }),
 }));
