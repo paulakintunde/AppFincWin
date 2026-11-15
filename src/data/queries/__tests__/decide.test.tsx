@@ -4,7 +4,6 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { TransactionRow } from '@/db/rows';
-import * as buildModule from '@/features/decide/snapshot/buildSnapshot';
 import { clearServerFetchTimes, trackServerFetches } from '../../cache/persister';
 import { queryKeys } from '../../keys';
 import {
@@ -224,7 +223,6 @@ describe('useDecideSnapshot', () => {
     const hook = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(newClient()) });
     await waitFor(() => expect(mockFetch.checks).toHaveBeenCalled());
     expect(hook.result.current.status).toBe('loading');
-    expect(hook.result.current.result).toBeNull();
     expect(hook.result.current.source).toBeNull();
   });
 
@@ -239,7 +237,7 @@ describe('useDecideSnapshot', () => {
   it('reads 12 months of history and the pending window after this month, and caches rows only', async () => {
     const client = newClient();
     const { result } = await ready(client);
-    expect(result.current.result?.kind).toBe('logged');
+    expect(result.current.status).toBe('ready');
     expect(result.current.source?.homeCurrency).toBe('USD');
     const ranges = mockFetch.range.mock.calls.map((c) => c[2]);
     expect(ranges).toContainEqual({ from: '2025-10-01', toInclusive: '2026-10-31' });
@@ -247,34 +245,8 @@ describe('useDecideSnapshot', () => {
     expect(client.getQueryData(queryKeys.decideHistory('h1', '2025-10-01', '2026-10-31'))).toEqual(history());
     expect(client.getQueryData(queryKeys.decideUpcoming('h1', '2026-11-01'))).toEqual([]);
     for (const q of client.getQueryCache().getAll()) {
-      expect(q.state.data).not.toBe(result.current.result);
+      expect(q.state.data).not.toBe(result.current.source);
     }
-  });
-
-  it('shows a pending row dated ahead as a scheduled outflow without touching cash', async () => {
-    const base = await ready();
-    const cashBefore = base.result.current.result?.cash;
-    await base.unmount();
-    mockFetch.range.mockImplementation(async (_c: unknown, _h: string, r: { from: string }) =>
-      r.from > '2026-10-31'
-        ? [txRow({ id: 'future', local_date: '2026-12-20', status: 'pending', original_amount: -45_000, home_amount: -45_000 })]
-        : history()
-    );
-    const { result } = await ready();
-    const res = result.current.result;
-    if (res?.kind !== 'logged') throw new Error('expected logged');
-    expect(res.snapshot.scheduledOutflows).toEqual([expect.objectContaining({ amount: 45_000 })]);
-    expect(res.cash).toBe(cashBefore);
-  });
-
-  it('a live change appears in futureChanges', async () => {
-    mockFetch.changes.mockResolvedValue([
-      { id: 'ch1', kind: 'income', monthly_amount: 20_000, currency: 'USD', start_month: '2026-12', end_month: null, deleted_at: null },
-    ]);
-    const { result } = await ready();
-    const res = result.current.result;
-    if (res?.kind !== 'logged') throw new Error('expected logged');
-    expect(res.snapshot.futureChanges).toHaveLength(1);
   });
 
   it('joins payment links with their check kind, drops unknown checks and passes written row links', async () => {
@@ -300,12 +272,18 @@ describe('useDecideSnapshot', () => {
     expect(result.current.source?.goals).toEqual([pot, finished]);
     expect(result.current.source?.goals.map((g) => [g.kind, g.done_at])).toEqual([['pot', null], ['pot', '2026-10-01T00:00:00Z']]);
     expect(result.current.source?.debts.map((d) => d.is_housing)).toEqual([true]);
-    const res = result.current.result;
-    if (res?.kind !== 'logged') throw new Error('expected logged');
-    // the done pot is left out; the live one reaches the engine and the snapshot result
-    expect(res.snapshot.pots.map((p) => p.id)).toEqual(['g1']);
-    expect(res.pots?.map((p) => p.id)).toEqual(['g1']);
-    expect(res.snapshot.housingMonthly).toBe(100_000 + 150_000);
+  });
+
+  it('05.5-16 (D-11): the source carries each live user category cap, and only those', async () => {
+    mockCategories.data = [
+      { id: 'c1', is_system: false, archived_at: null, monthly_cap: 20_000 },
+      { id: 'c2', is_system: false, archived_at: null, monthly_cap: null },
+      { id: 'c3', is_system: false, archived_at: '2026-09-01T00:00:00Z', monthly_cap: 5_000 },
+      { id: 'c4', is_system: true, archived_at: null, monthly_cap: 9_000 },
+      { id: 'c5', is_system: false, archived_at: null, monthly_cap: 0 },
+    ];
+    const { result } = await ready();
+    expect(result.current.source?.categoryCaps).toEqual({ c1: 20_000, c5: 0 });
   });
 
   it('05.4-35 (D-19): the source carries the stored state or province, read for the signed-in user; none stored is null', async () => {
@@ -320,7 +298,7 @@ describe('useDecideSnapshot', () => {
     expect(result.current.source?.regionSubdivision).toBeNull();
   });
 
-  it('the market row follows the device region when no region is set', async () => {
+  it('the source follows the device region when no region is set', async () => {
     const card = { id: 'cc', name: 'Card', kind: 'credit', currency: 'USD', archived_at: null, deleted_at: null };
     mockAccounts.data = [...(mockAccounts.data as unknown[]), card];
     mockBalances.map = new Map([
@@ -329,33 +307,31 @@ describe('useDecideSnapshot', () => {
     ]);
     mockRegion = 'US';
     const us = await ready();
-    expect(us.result.current.result?.cards[0]?.terms.source).toBe('market');
     expect(us.result.current.source?.region).toBe('US');
     await us.unmount();
     mockRegion = undefined;
     const none = await ready();
-    expect(none.result.current.result?.cards[0]?.terms.source).toBe('none');
     expect(none.result.current.source?.region).toBeNull();
   });
 
   it('recomputes when the history read changes', async () => {
     const client = newClient();
     const { result } = await ready(client);
-    const before = result.current.result;
+    const before = result.current.source;
     await act(async () => {
       client.setQueryData(queryKeys.decideHistory('h1', '2025-10-01', '2026-10-31'), [
         ...history(),
         txRow({ id: 'extra', local_date: '2026-10-03' }),
       ]);
     });
-    await waitFor(() => expect(result.current.result).not.toBe(before));
+    await waitFor(() => expect(result.current.source).not.toBe(before));
   });
 
   it('is an error with nothing cached, and retry refetches the failed read', async () => {
     mockFetch.debts.mockRejectedValueOnce(new Error('offline'));
     const hook = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(newClient()) });
     await waitFor(() => expect(hook.result.current.status).toBe('error'));
-    expect(hook.result.current.result).toBeNull();
+    expect(hook.result.current.source).toBeNull();
     await act(async () => {
       hook.result.current.retry();
     });
@@ -371,13 +347,12 @@ describe('useDecideSnapshot', () => {
       await client.refetchQueries({ queryKey: queryKeys.debts('h1') });
     });
     expect(result.current.status).toBe('ready');
-    expect(result.current.result).not.toBeNull();
+    expect(result.current.source).not.toBeNull();
   });
 });
 
 describe('D-88 shared snapshot', () => {
-  it('D-88 snapshot built once per source', async () => {
-    const spy = jest.spyOn(buildModule, 'buildDecideSnapshot');
+  it('D-88 one source per data version, shared by every consumer', async () => {
     const client = newClient();
     const a = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(client) });
     const b = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(client) });
@@ -387,43 +362,34 @@ describe('D-88 shared snapshot', () => {
       expect(b.result.current.status).toBe('ready');
       expect(c.result.current.status).toBe('ready');
     });
-    expect(spy).toHaveBeenCalledTimes(1);
-    expect(b.result.current.result).toBe(a.result.current.result);
-    expect(c.result.current.result).toBe(a.result.current.result);
     expect(b.result.current.source).toBe(a.result.current.source);
-    spy.mockRestore();
+    expect(c.result.current.source).toBe(a.result.current.source);
   });
 
-  it('D-88 a data change rebuilds the shared snapshot for every consumer', async () => {
-    const spy = jest.spyOn(buildModule, 'buildDecideSnapshot');
+  it('D-88 a data change rebuilds the shared source for every consumer', async () => {
     const client = newClient();
     const a = await ready(client);
     const b = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(client) });
     await waitFor(() => expect(b.result.current.status).toBe('ready'));
-    const calls = spy.mock.calls.length;
-    const before = a.result.current.result;
+    const before = a.result.current.source;
     await act(async () => {
       client.setQueryData(queryKeys.decideHistory('h1', '2025-10-01', '2026-10-31'), [
         ...history(),
         txRow({ id: 'extra', local_date: '2026-10-03' }),
       ]);
     });
-    await waitFor(() => expect(a.result.current.result).not.toBe(before));
-    expect(spy.mock.calls.length).toBe(calls + 1);
-    expect(b.result.current.result).toBe(a.result.current.result);
-    spy.mockRestore();
+    await waitFor(() => expect(a.result.current.source).not.toBe(before));
+    expect(b.result.current.source).toBe(a.result.current.source);
   });
 
   it('D-88 a changed home currency or region is a different source', async () => {
-    const spy = jest.spyOn(buildModule, 'buildDecideSnapshot');
     const client = newClient();
     const us = await ready(client);
-    const calls = spy.mock.calls.length;
+    const before = us.result.current.source;
     mockRegion = 'US';
     await us.rerender({});
     await waitFor(() => expect(us.result.current.source?.region).toBe('US'));
-    expect(spy.mock.calls.length).toBe(calls + 1);
-    spy.mockRestore();
+    expect(us.result.current.source).not.toBe(before);
   });
 });
 
@@ -583,11 +549,9 @@ describe('read error kinds and waiting writes (05.4-33)', () => {
   });
 
   it('D-127 / 06.1-46 (B-2): a write still waiting to send is counted on the state, never on the source, and rebuilds nothing', async () => {
-    const spy = jest.spyOn(buildModule, 'buildDecideSnapshot');
     const client = newClient();
     const { result } = await ready(client);
     const source = result.current.source;
-    const calls = spy.mock.calls.length;
     expect(result.current.unsavedWrites).toBe(0);
     await act(async () => {
       void client.getMutationCache().build(client, { mutationFn: () => new Promise(() => undefined) }).execute(undefined);
@@ -595,8 +559,6 @@ describe('read error kinds and waiting writes (05.4-33)', () => {
     await waitFor(() => expect(result.current.unsavedWrites).toBe(1));
     expect(result.current.source).toBe(source);
     expect(result.current.source!.unsavedWrites).toBe(0);
-    expect(spy.mock.calls.length).toBe(calls);
-    spy.mockRestore();
   });
 });
 
@@ -604,24 +566,19 @@ describe('06.1-46: draft saves and fresh reads do not rebuild Decide (B-2, B-9)'
   it('a check save that changes only its stored inputs keeps the same source; a new kind or check rebuilds', async () => {
     mockFetch.checks.mockResolvedValue([{ id: 'k1', kind: 'cash', status: 'open', deleted_at: null, inputs: { v: 2, price: 1 } }]);
     mockFetch.payment.mockResolvedValue([{ check_id: 'k1', target_id: 't1' }]);
-    const spy = jest.spyOn(buildModule, 'buildDecideSnapshot');
     const client = newClient();
     const { result } = await ready(client);
     const source = result.current.source;
     expect(source!.paymentLinks).toEqual([{ check_id: 'k1', target_id: 't1', check_kind: 'cash' }]);
-    const calls = spy.mock.calls.length;
     await act(async () => {
       client.setQueryData(queryKeys.decideChecks('u1', 'h1'), [{ id: 'k1', kind: 'cash', status: 'open', deleted_at: null, inputs: { v: 2, price: 2 } }]);
     });
     expect(result.current.source).toBe(source);
-    expect(spy.mock.calls.length).toBe(calls);
     await act(async () => {
       client.setQueryData(queryKeys.decideChecks('u1', 'h1'), [{ id: 'k1', kind: 'plan', status: 'open', deleted_at: null, inputs: {} }]);
     });
     await waitFor(() => expect(result.current.source).not.toBe(source));
     expect(result.current.source!.paymentLinks).toEqual([{ check_id: 'k1', target_id: 't1', check_kind: 'plan' }]);
-    expect(spy.mock.calls.length).toBe(calls + 1);
-    spy.mockRestore();
   });
 
   it('B-9: history and upcoming stay fresh for DECIDE_READ_STALE_MS, so another Decide screen mounting does not refetch them', async () => {
