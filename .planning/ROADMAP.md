@@ -1446,9 +1446,9 @@ Plans:
 - [x] 08-05-PLAN.md — Privacy RPC rewrite (apply_patches v4, undo, definer functions, shared-line edit guard)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 08-06-PLAN.md — Existing pgTAP suite updated + household table coverage meta-test
-- [ ] 08-07-PLAN.md — SC7 two-user privacy suite + export guard (blocks invite flow)
-- [ ] 08-08-PLAN.md — Realtime spike: publication, reconciler, two-client test harness (blocks invite flow)
+- [x] 08-06-PLAN.md — Existing pgTAP suite updated + household table coverage meta-test
+- [x] 08-07-PLAN.md — SC7 two-user privacy suite + export guard (blocks invite flow)
+- [x] 08-08-PLAN.md — Realtime spike: publication, reconciler, two-client test harness (blocks invite flow)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 08-09-PLAN.md — Invites, per-user rate-limited redeem (global rate alert-only), D-01 move-in
@@ -1637,7 +1637,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
-| 8. Household | 6/28 | In progress | - |
+| 8. Household | 9/28 | In progress | - |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
