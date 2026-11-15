@@ -54,7 +54,7 @@ import { occurrenceDate, type RecurringFreq } from '@/engine/recurring';
 import { debtToV3Debt, envelopesOf, goalPointsOf, safetyNetInputsOf, safetyNetPointOf } from '@/features/grow/connect';
 import { buildDecideSnapshot, type SnapshotSource } from '../buildSnapshot';
 import { convertFloored, makeConverter } from '../conversion';
-import type { SnapshotResult } from '../types';
+import type { SnapshotResult } from '../buildSnapshot';
 import { engineIncomeTypes } from './settingsSource';
 import { waiverOfAnswer } from './waiverKeys';
 import type { V3SeriesExtra, V3SettingsSource } from './types';

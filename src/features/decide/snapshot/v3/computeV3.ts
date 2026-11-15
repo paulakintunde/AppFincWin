@@ -22,7 +22,7 @@ import { perfMark } from '@/features/decide/perf/perfMarks';
 import { buildDecideSnapshot, type SnapshotSource } from '../buildSnapshot';
 import { parseCheckInputs } from '../checkInputs';
 import { inHomeCurrency } from '../checkCurrency';
-import type { SnapshotResult } from '../types';
+import type { SnapshotResult } from '../buildSnapshot';
 import { buildV3Inputs } from './buildV3Inputs';
 import type { V3SettingsSource } from './types';
 

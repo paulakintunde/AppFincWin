@@ -2,7 +2,8 @@ import type { FxLatestRow } from '@/db/rows';
 import { convertLatest } from '@/data/queries/fxConvert';
 import { emptyCheckInputs } from '../checkInputs';
 import { fromHomePatch, inHomeCurrency, sourceFor, typedCurrency } from '../checkCurrency';
-import type { CheckInputs, SnapshotResult } from '../types';
+import type { CheckInputs } from '../types';
+import type { SnapshotResult } from '../buildSnapshot';
 import { TODAY, loggedSource } from './helpers/snapshotFixtures';
 
 const RATES: FxLatestRow[] = [

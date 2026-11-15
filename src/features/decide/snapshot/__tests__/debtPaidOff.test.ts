@@ -1,6 +1,6 @@
 // 05.2-48: a debt marked paid off stops counting from its date (owner addition 2026-10-28). Today is 2026-10-15.
 import { buildDecideSnapshot, type DebtSource, type SnapshotSource } from '../buildSnapshot';
-import type { SnapshotResult } from '../types';
+import type { SnapshotResult } from '../buildSnapshot';
 import { buildV3Inputs } from '../v3/buildV3Inputs';
 import { account, debt, household, row, series } from './helpers/sourceFixtures';
 
