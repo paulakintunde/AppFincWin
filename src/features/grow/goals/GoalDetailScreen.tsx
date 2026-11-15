@@ -23,7 +23,7 @@ import { shadows } from '@/theme/tokens';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { ProgressRing } from '@/ui/ProgressRing';
 import { StatusBadge } from '@/ui/status/StatusBadge';
@@ -162,7 +162,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const onLockChange = (next: boolean) => {
     if (userId === null || isNet) return;
     const stepId = edit(row, { locked: next }, userId, saved);
-    hapticLight();
+    hapticTap();
     toast({ key: 'undo.label.goalEdited', stepId, undoLabel: 'goalEdited', name: row.name, userId, householdId });
   };
 

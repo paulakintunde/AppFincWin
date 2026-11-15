@@ -17,7 +17,7 @@ import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
-import { hapticLight, hapticSelection, hapticWarning } from '@/ui/haptics';
+import { hapticTap, hapticTick, hapticWarn } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { RadioDot } from '@/ui/RadioDot';
@@ -148,7 +148,7 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
   useEffect(() => {
     if (over && !warned.current) {
       warned.current = true;
-      hapticWarning();
+      hapticWarn();
     }
     if (!over) warned.current = false;
   }, [over]);
@@ -178,7 +178,7 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
             account_id: value.accountId,
           },
         });
-        hapticLight();
+        hapticTap();
         showToast({ kind: 'ordinary', text: { key: 'grow.debts.add.addedToast' }, stepId });
         onClose();
         pushOnce(debtHref(id));
@@ -201,7 +201,7 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
         if (isCard && pays !== (debt.pays_in_full ?? null)) fields.pays_in_full = pays;
         if (Object.keys(fields).length > 0) {
           const { stepId } = save({ ownerId: rc.userId, existing: debt, fields });
-          hapticLight();
+          hapticTap();
           showToast({ kind: 'ordinary', text: { key: 'grow.debts.add.editedToast' }, stepId });
         }
         onClose();
@@ -227,7 +227,7 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
                 label={t(x.textKey)}
                 selected={value.type === x.value}
                 onPress={() => {
-                  hapticSelection();
+                  hapticTick();
                   set({ type: x.value, full: x.value === 'card' ? value.full : null });
                 }}
               />
@@ -248,7 +248,7 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
                   accessibilityState={{ selected }}
                   accessibilityLabel={t(a.textKey)}
                   onPress={() => {
-                    hapticSelection();
+                    hapticTick();
                     set({ full: a.value });
                   }}
                   style={({ pressed }) => [styles.radio, { borderColor: selected ? colors.ink : colors.line1, opacity: pressed ? PRESSED_OPACITY : 1 }]}
@@ -335,7 +335,7 @@ export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
                       label={a.name}
                       selected={value.accountId === a.id}
                       onPress={() => {
-                        hapticSelection();
+                        hapticTick();
                         set({ accountId: value.accountId === a.id ? null : a.id });
                       }}
                     />

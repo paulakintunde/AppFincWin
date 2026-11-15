@@ -4,7 +4,7 @@
 import { renderHook } from '@testing-library/react-native';
 import type { Result } from '@/engine/decide/v3';
 import type { DecideCheckRow } from '@/db/decideChecks';
-import { hapticFailed, hapticLight, hapticMilestone, hapticSuccess, hapticTap, hapticTick, hapticWarn, hapticWarning } from '@/ui/haptics';
+import { hapticFailed, hapticMilestone, hapticTap, hapticTick, hapticWarn } from '@/ui/haptics';
 import { useAnswerEffects, type AnswerEffectWrites } from '../useAnswerEffects';
 import { ledgerRun } from './fixtures';
 
@@ -15,9 +15,6 @@ jest.mock('@/ui/haptics', () => ({
   hapticMilestone: jest.fn(),
   hapticFailed: jest.fn(),
   hapticTick: jest.fn(),
-  hapticLight: jest.fn(),
-  hapticWarning: jest.fn(),
-  hapticSuccess: jest.fn(),
 }));
 
 const ROW = { id: 'c1' } as unknown as DecideCheckRow;
@@ -37,11 +34,8 @@ async function show(result: Result | null) {
 
 function expectNoOtherHaptics(): void {
   expect(hapticMilestone).not.toHaveBeenCalled();
-  expect(hapticSuccess).not.toHaveBeenCalled();
   expect(hapticFailed).not.toHaveBeenCalled();
   expect(hapticTick).not.toHaveBeenCalled();
-  expect(hapticLight).not.toHaveBeenCalled();
-  expect(hapticWarning).not.toHaveBeenCalled();
 }
 
 beforeEach(() => jest.clearAllMocks());

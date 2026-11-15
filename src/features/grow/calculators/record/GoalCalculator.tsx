@@ -28,7 +28,7 @@ import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { showToast } from '@/state/undoToast';
 import { Chip } from '@/ui/Chip';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { useAmountParser } from '@/ui/money/useAmountParser';
@@ -175,7 +175,7 @@ export function GoalCalculator({ id }: { id: string }) {
     try {
       const fields = byDate === null ? { monthly_amount: result.monthly } : { monthly_amount: result.monthly, ready_by: lastDayOfMonth(byDate) };
       const { stepId } = save({ ownerId: userId, existing: row, fields, series: series === null ? null : seriesPayload(series, result.monthly) });
-      hapticLight();
+      hapticTap();
       setConfirming(false);
       toast({
         key: 'grow.calc.goal.planSavedToast',

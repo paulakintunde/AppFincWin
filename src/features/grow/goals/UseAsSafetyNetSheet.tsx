@@ -6,7 +6,7 @@ import { useSetSafetyNet } from '@/data/mutations/growGoals';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { useT } from '@/i18n';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 
 export interface UseAsSafetyNetSheetProps {
   visible: boolean;
@@ -30,7 +30,7 @@ export function UseAsSafetyNetSheet({ visible, goal, currentNet, ownerId, savedT
   const confirm = () => {
     if (ownerId === null) return;
     const stepId = set(goal, currentNet, ownerId);
-    hapticLight();
+    hapticTap();
     onClose();
     onSet(stepId);
   };

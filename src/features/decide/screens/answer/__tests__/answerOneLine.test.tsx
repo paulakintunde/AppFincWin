@@ -17,7 +17,7 @@ import { ledgerRun, viewOf, type Run } from './fixtures';
 
 jest.setTimeout(60000);
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn() }));
 
 const noop = (): void => undefined;
 const LABEL_ROLES = new Set(['button', 'link', 'header', 'radio', 'tab']);

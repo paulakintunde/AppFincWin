@@ -22,7 +22,7 @@ import { showToast } from '@/state/undoToast';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticLight, hapticSelection } from '@/ui/haptics';
+import { hapticTap, hapticTick } from '@/ui/haptics';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
@@ -134,7 +134,7 @@ function ChangedForm({ bills, currency, today, usualLeft, usualPay, formatMoney,
               sub={o.sub}
               selected={kind === o.key}
               onPress={() => {
-                hapticSelection();
+                hapticTick();
                 setKind(o.key);
               }}
             />
@@ -248,7 +248,7 @@ export function ChangedChips({ changes, onReset, onChange }: { changes: readonly
               accessibilityRole="button"
               accessibilityLabel={t('decide.screens.sheetsHome.changed.changeA11y', { change: c.spoken })}
               onPress={() => {
-                hapticSelection();
+                hapticTick();
                 onChange(c.id);
               }}
               style={styles.link}
@@ -327,7 +327,7 @@ export function SomethingChanged() {
       close();
       if (Object.keys(patch).length === 0) return;
       const stepId = edit(editing.row, patch);
-      hapticLight();
+      hapticTap();
       showToast({ kind: 'ordinary', text: { key: 'decide.screens.sheetsHome.changed.toast', params: { ...params, undoLabel: 'changeEdited' } }, stepId });
       return;
     }
@@ -336,7 +336,7 @@ export function SomethingChanged() {
       ownerId: rc.userId,
       change: { kind: draft.kind, name: draft.name, monthly_amount: draft.monthly_amount, currency: rc.homeCurrency, start_month: draft.start_month, end_month: draft.end_month },
     });
-    hapticLight();
+    hapticTap();
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.sheetsHome.changed.toast', params: { ...params, undoLabel: 'changeAdded' } }, stepId });
     close();
   };
@@ -345,7 +345,7 @@ export function SomethingChanged() {
     const row = active.find((r) => r.id === id);
     if (row === undefined) return;
     const stepId = remove(row);
-    hapticLight();
+    hapticTap();
     showToast({
       kind: 'ordinary',
       text: { key: 'decide.screens.sheetsHome.changed.resetToast', params: { undoLabel: 'changeDeleted', ...(row.name === null ? {} : { name: row.name }) } },
@@ -376,7 +376,7 @@ export function SomethingChanged() {
         accessibilityRole="button"
         accessibilityLabel={`${t('decide.screens.sheetsHome.rulesCard.changedRow')}. ${t('decide.screens.sheetsHome.rulesCard.changedSub')}`}
         onPress={() => {
-          hapticSelection();
+          hapticTick();
           setOpen(true);
         }}
         style={({ pressed }) => [styles.homeRow, { backgroundColor: pressed ? colors.fill6 : colors.surface }]}

@@ -20,7 +20,7 @@ import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { RadioDot } from '@/ui/RadioDot';
 import { Text } from '@/ui/Text';
@@ -92,7 +92,7 @@ export function BoughtScreen(props: BoughtScreenProps) {
   const add = (): void => {
     if (busy.current || accountId === null || purchase === null) return;
     busy.current = true;
-    hapticLight();
+    hapticTap();
     const stepId = goAhead({
       checkId,
       ownerId,

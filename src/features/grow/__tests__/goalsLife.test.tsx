@@ -25,14 +25,9 @@ const mockMilestone = jest.fn();
 const mockOtherHaptic = jest.fn();
 jest.mock('@/ui/haptics', () => ({
   hapticMilestone: () => mockMilestone(),
-  hapticSuccess: () => mockOtherHaptic('success'),
   hapticTap: () => mockOtherHaptic('tap'),
-  hapticLight: () => mockOtherHaptic('tap'),
   hapticWarn: () => mockOtherHaptic('warn'),
-  hapticWarning: () => mockOtherHaptic('warn'),
   hapticTick: () => mockOtherHaptic('tick'),
-  hapticSelection: () => mockOtherHaptic('tick'),
-  hapticMedium: () => mockOtherHaptic('tick'),
   hapticFailed: () => mockOtherHaptic('failed'),
 }));
 

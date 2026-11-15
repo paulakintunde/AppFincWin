@@ -5,13 +5,13 @@ import { colors } from '@/theme/tokens';
 import { BACKDROP_OPACITY } from '../sheetDrag';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { Dropdown } from '../Dropdown';
-import { hapticSelection } from '../haptics';
+import { hapticTick } from '../haptics';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 47, bottom: 12, left: 0, right: 0 }),
 }));
-jest.mock('../haptics', () => ({ hapticSelection: jest.fn() }));
+jest.mock('../haptics', () => ({ hapticTick: jest.fn() }));
 
 jest.setTimeout(20000);
 
@@ -52,7 +52,7 @@ describe('Dropdown', () => {
     await fireEvent.press(getByLabelText('Beta'));
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect(onSelect).toHaveBeenCalledWith('b');
-    expect(hapticSelection).toHaveBeenCalled();
+    expect(hapticTick).toHaveBeenCalled();
     expect(queryByText('Pick')).toBeNull();
   });
 

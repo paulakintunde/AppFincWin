@@ -18,7 +18,7 @@ import type { RecurringSeriesPatch } from '@/db/recurringSeries';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import type { SetupStepBodyProps, SetupStepHandle } from '@/features/income/stepTypes';
 import { useIncomeContext } from '../useIncomeContext';
 import { liveSeriesOfKind, payableAccounts, pausedIncomeSeries } from '../seriesHelpers';
@@ -93,12 +93,12 @@ export const OtherStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functio
   const lineOf = (kind: Kind): Line => cur.lines[kind] ?? BLANK;
   const setLine = (kind: Kind, patch: Partial<Line>) => setDraft({ ...cur, lines: { ...cur.lines, [kind]: { ...lineOf(kind), ...patch } } });
   const toggleKind = (kind: Kind) => {
-    hapticSelection();
+    hapticTick();
     const has = cur.kinds.includes(kind);
     setDraft({ ...cur, none: false, kinds: has ? cur.kinds.filter((k) => k !== kind) : OTHER_KINDS.map((o) => o.kind).filter((k) => k === kind || cur.kinds.includes(k)) });
   };
   const chooseNone = () => {
-    hapticSelection();
+    hapticTick();
     setDraft({ ...cur, none: !cur.none, kinds: [] });
   };
 
@@ -208,7 +208,7 @@ export const OtherStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functio
                   label={t(f.labelKey)}
                   selected={l.freq === f.value}
                   onPress={() => {
-                    hapticSelection();
+                    hapticTick();
                     setLine(kind, { freq: f.value });
                   }}
                 />

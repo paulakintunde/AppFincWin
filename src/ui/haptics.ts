@@ -54,14 +54,3 @@ export function hapticFailed(): void {
 export function hapticTick(): void {
   gate(() => Haptics.selectionAsync());
 }
-
-/** @deprecated 06.2 D-20: use hapticTap */
-export const hapticLight = hapticTap;
-/** @deprecated 06.2 D-20: use hapticTick (the FAB long-press opens a menu of choices; no medium meaning) */
-export const hapticMedium = hapticTick;
-/** @deprecated 06.2 D-20: use hapticTick */
-export const hapticSelection = hapticTick;
-/** @deprecated 06.2 D-20: use hapticWarn */
-export const hapticWarning = hapticWarn;
-/** @deprecated 06.2 D-20: use hapticMilestone */
-export const hapticSuccess = hapticMilestone;

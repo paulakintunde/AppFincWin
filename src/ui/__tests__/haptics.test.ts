@@ -1,17 +1,6 @@
 import * as Haptics from 'expo-haptics';
 
-import {
-  hapticFailed,
-  hapticLight,
-  hapticMedium,
-  hapticMilestone,
-  hapticSelection,
-  hapticSuccess,
-  hapticTap,
-  hapticTick,
-  hapticWarn,
-  hapticWarning,
-} from '../haptics';
+import { hapticFailed, hapticMilestone, hapticTap, hapticTick, hapticWarn } from '../haptics';
 import { setHapticsEnabled } from '../hapticsSetting';
 
 const impact = Haptics.impactAsync as jest.Mock;
@@ -59,34 +48,6 @@ describe('haptics by meaning (D-20)', () => {
   });
 });
 
-describe('deprecated aliases route to the meaning functions', () => {
-  it('hapticLight is a light tap', () => {
-    hapticLight();
-    expect(impact).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
-  });
-
-  it('hapticMedium is a tick (no medium meaning in D-20)', () => {
-    hapticMedium();
-    expect(selection).toHaveBeenCalledTimes(1);
-    expect(impact).not.toHaveBeenCalled();
-  });
-
-  it('hapticSelection is a tick', () => {
-    hapticSelection();
-    expect(selection).toHaveBeenCalledTimes(1);
-  });
-
-  it('hapticWarning is a warning', () => {
-    hapticWarning();
-    expect(notification).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Warning);
-  });
-
-  it('hapticSuccess is a milestone', () => {
-    hapticSuccess();
-    expect(notification).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Success);
-  });
-});
-
 describe('the Haptics switch gates every haptic (D-21)', () => {
   const all: [string, () => void][] = [
     ['hapticTap', hapticTap],
@@ -94,11 +55,6 @@ describe('the Haptics switch gates every haptic (D-21)', () => {
     ['hapticMilestone', hapticMilestone],
     ['hapticFailed', hapticFailed],
     ['hapticTick', hapticTick],
-    ['hapticLight', hapticLight],
-    ['hapticMedium', hapticMedium],
-    ['hapticSelection', hapticSelection],
-    ['hapticWarning', hapticWarning],
-    ['hapticSuccess', hapticSuccess],
   ];
 
   it.each(all)('%s does nothing with the switch off', (_name, fn) => {

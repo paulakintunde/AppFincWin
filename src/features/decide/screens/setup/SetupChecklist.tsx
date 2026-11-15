@@ -10,7 +10,7 @@ import { useT } from '@/i18n';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { StateGlyph, type StateGlyphName } from '@/ui/glyphs/StateGlyph';
 import { Pill } from '@/ui/Pill';
 import { StateBadge } from '@/ui/StateBadge';
@@ -134,7 +134,7 @@ function ChecklistBody({ progress, currency, onOpen, onBack }: SetupChecklistPro
               accessibilityRole="button"
               accessibilityLabel={t('decide.screens.setup.checklist.rowA11y', { item: name, status })}
               onPress={() => {
-                hapticLight();
+                hapticTap();
                 onOpen(SETUP_ROUTES[item.id]);
               }}
               style={({ pressed }) => [styles.row, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
@@ -161,7 +161,7 @@ function ChecklistBody({ progress, currency, onOpen, onBack }: SetupChecklistPro
           variant="primary"
           label={t('decide.screens.setup.checklist.continue', { next: text.itemName(next) })}
           onPress={() => {
-            hapticLight();
+            hapticTap();
             onOpen(SETUP_ROUTES[next]);
           }}
         />

@@ -11,7 +11,7 @@ import { showToast } from '@/state/undoToast';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 
@@ -63,7 +63,7 @@ export function RunningCostOffers({ addBill, lines, itemName, categoryId, ownerI
   const cadence = t(`decide.screens.answerActions.runningCost.${CADENCE[line.everyMonths]}`);
 
   const add = (): void => {
-    hapticLight();
+    hapticTap();
     const stepId = addBill({ line, itemName, categoryId, ownerId, ctx: { householdId, accountId, currency, timeZone, label: costLabel, mint: () => Crypto.randomUUID() } });
     if (stepId !== null) showToast({ kind: 'ordinary', text: { key: 'decide.screens.answerActions.runningCost.addedToast', params: { name: billName } }, stepId });
     setIndex(index + 1);

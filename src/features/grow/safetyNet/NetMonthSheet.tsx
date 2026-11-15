@@ -23,7 +23,7 @@ import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
@@ -94,7 +94,7 @@ function MonthForm({ net, series, saved, onClose, onSaved }: NetMonthSheetProps)
       }
     }
     const { stepId } = save({ ownerId: userId, existing: net, fields: { monthly_amount: amount }, series: payload });
-    hapticLight();
+    hapticTap();
     onClose();
     onSaved(stepId);
   };

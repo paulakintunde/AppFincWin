@@ -67,7 +67,7 @@ import { RuleOfferCard } from './RuleOfferCard';
 import { guessCategory } from '@/engine/categorize';
 import { useGuessContext } from '@/features/record/useGuessContext';
 import { useAddRule } from '@/data/mutations/categoryRules';
-import { hapticLight, hapticTap } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { useBulkAdd } from '@/data/mutations/bulkAdd';
 import { saveCount, summarise, type ListItem } from '@/engine/entryList';
 import { EntryList } from './EntryList';
@@ -483,7 +483,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const addToList = () => {
     const item = addCurrentToList();
     if (!item) return;
-    hapticLight();
+    hapticTap();
     const name =
       item.type === 'transfer'
         ? t('record.sheet.list.transferName', { from: nameOf(item.accountId), to: nameOf(item.toAccountId ?? '') })
@@ -754,7 +754,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
       category: target,
     });
     showToast({ kind: 'ordinary', text: undoLabelText('ruleAdded', { name: offer.keyword }), stepId });
-    hapticLight();
+    hapticTap();
     setOffer(null);
   };
   const paymentOptions = (PAYMENT_TYPES[state.direction === 'in' ? 'in' : 'out'] as readonly PaymentType[]).map((value) => ({

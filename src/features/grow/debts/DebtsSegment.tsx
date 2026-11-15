@@ -23,7 +23,7 @@ import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { AddDebtSheet } from './AddDebtSheet';
@@ -202,7 +202,7 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
         seriesName: fitLineName(t, 'grow.debts.extraSeriesName', extraRow.name),
       });
       extraDone.current = extraKey;
-      hapticLight();
+      hapticTap();
       showToast({
         kind: 'ordinary',
         text: { key: 'grow.debts.planSavedToastFrom', params: { amount: fmt.money(extra, currency), date: fmt.dayMonth(extraFrom) } },
@@ -221,7 +221,7 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
       stopOtherCarriers(carrierRow.id);
       const { stepId } = planSave.save({ ownerId: userId, debt: carrierRow, extra: 0, order, paidFromAccountId: null });
       extraDone.current = stopKey;
-      hapticLight();
+      hapticTap();
       showToast({ kind: 'ordinary', text: { key: 'grow.debts.stopToast', params: { date: fmt.dayMonth(stopFrom) } }, stepId });
     } catch {
       showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
@@ -243,7 +243,7 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
       });
       onceDone.current = onceKey;
       setOnceKeyDone(onceKey);
-      hapticLight();
+      hapticTap();
       showToast({
         kind: 'ordinary',
         text: { key: 'grow.debts.onceToast', params: { amount: fmt.money(lump, currency), name: onceRow.name, date: fmt.dayMonth(onceOn) } },
@@ -263,7 +263,7 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
     if (userId === null) return;
     try {
       const stepId = removeDebt(debt, userId);
-      hapticLight();
+      hapticTap();
       showToast({ kind: 'destructive', text: { key: 'grow.debts.detail.removedToast', params: { name: debt.name } }, stepId });
     } catch {
       showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });

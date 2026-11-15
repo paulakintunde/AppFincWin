@@ -11,7 +11,7 @@ import { ACCENTS } from '@/theme/accents';
 import { ActivityRow, ProjectionRow, type CardPosition } from '../ActivityRow';
 
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 const mockSwipe: { props: Record<string, any> } = { props: {} };
 jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
   const R = require('react');

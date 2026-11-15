@@ -117,11 +117,10 @@ let mockRead: GoalsRead;
 jest.mock('@/features/grow/goals/useGoalsRead', () => ({ useGoalsRead: () => mockRead, toHomeOf: () => (a: number) => a }));
 jest.mock('@/features/grow/goals/useGoalToast', () => ({ useGoalToast: () => (...a: unknown[]) => mockToast(...a) }));
 jest.mock('@/ui/haptics', () => ({
-  hapticSelection: jest.fn(),
-  hapticLight: () => mockLight(),
-  hapticWarning: jest.fn(),
-  hapticSuccess: jest.fn(),
-  hapticMedium: jest.fn(),
+  hapticTick: jest.fn(),
+  hapticTap: () => mockLight(),
+  hapticWarn: jest.fn(),
+  hapticMilestone: jest.fn(),
 }));
 jest.mock('@/features/grow/goals/MoneyMoveSheet', () => {
   const R = require('react');

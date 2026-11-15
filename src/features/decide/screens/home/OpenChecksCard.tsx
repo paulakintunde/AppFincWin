@@ -9,7 +9,7 @@
  * 06.2-22 (D-23, board L08/L08b; D-13): each row is a plain 64 row led by the state icon as a 36 tile in that state's tint, then
  * the name, the badge word with the meta line, and the arrow. The state colour is only in the tile's shape and the badge; nothing
  * else on the row is tinted. A draft's tile is neutral with the pen in a square (the Draft icon, status map). The spoken label is
- * unchanged, and a press is still a tick (hapticSelection is hapticTick, D-20).
+ * unchanged, and a press is still a tick (hapticTick is hapticTick, D-20).
  */
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -19,7 +19,7 @@ import { iconSize, radii, space, tile } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { stateColors, type StateTone } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { Glyph } from '@/ui/icons/Glyph';
 import type { IconName } from '@/ui/icons/iconData';
 import { IconTile } from '@/ui/icons/IconTile';
@@ -107,7 +107,7 @@ function Row({ row, last, props }: { row: OpenCheckRowModel; last: boolean; prop
       accessibilityRole="button"
       accessibilityLabel={row.changed ? `${spoken}. ${t('decide.screens.sheetsHome.openChecks.changedRow')}` : spoken}
       onPress={() => {
-        hapticSelection();
+        hapticTick();
         props.onOpen(row.id);
       }}
       style={({ pressed }) => [
@@ -157,7 +157,7 @@ export function OpenChecksCard(props: OpenChecksCardProps) {
           accessibilityRole="link"
           accessibilityLabel={t('decide.screens.sheetsHome.openChecks.addPurchaseA11y')}
           onPress={() => {
-            hapticSelection();
+            hapticTick();
             props.onAddPurchase();
           }}
           style={styles.add}
@@ -174,7 +174,7 @@ export function OpenChecksCard(props: OpenChecksCardProps) {
           accessibilityRole="button"
           accessibilityLabel={t('decide.screens.sheetsHome.openChecks.seeAllA11y')}
           onPress={() => {
-            hapticSelection();
+            hapticTick();
             setAll(true);
           }}
           style={styles.add}

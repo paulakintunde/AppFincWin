@@ -12,7 +12,7 @@ import { SetupChecklist } from '../SetupChecklist';
 import { sameFacts, setupFactsFrom, useSetupProgress } from '../useSetupProgress';
 
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 // 06.1-75: the pure setupFactsFrom is read from the hook module; its live reads are not used here.
 let mockV3: { inputs: unknown; evaluation: unknown; status: string; refetch: () => void } = { inputs: null, evaluation: null, status: 'loading', refetch: () => undefined };
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: null, isError: false }), useDebts: () => ({ data: [] }) }));

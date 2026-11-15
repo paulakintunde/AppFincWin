@@ -23,7 +23,7 @@ import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { hapticLight, hapticWarning } from '@/ui/haptics';
+import { hapticTap, hapticWarn } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
@@ -103,7 +103,7 @@ export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = fal
     }
     // Typed input that cannot be saved yet: stay, and say so (warning haptic; the NeedLine is read out and focused).
     if (primaryDisabled) {
-      hapticWarning();
+      hapticWarn();
       if (need !== null && need !== '') {
         AccessibilityInfo.announceForAccessibility(need);
         const handle = needRef.current === null ? null : findNodeHandle(needRef.current);
@@ -137,7 +137,7 @@ export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = fal
             label={primaryLabel}
             disabled={primaryDisabled}
             onPress={() => {
-              hapticLight();
+              hapticTap();
               saveThenLeave();
             }}
           />

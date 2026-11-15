@@ -21,8 +21,8 @@ jest.mock("expo-router", () => ({
   router: { push: (...a: unknown[]) => mockPush(...a) },
 }));
 jest.mock("@/ui/haptics", () => ({
-  hapticLight: jest.fn(),
-  hapticSelection: jest.fn(),
+  hapticTap: jest.fn(),
+  hapticTick: jest.fn(),
 }));
 jest.mock("@/state/undoToast", () => ({ showToast: jest.fn() }));
 const mockPass = jest.fn();

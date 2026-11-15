@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import { CustomValueChips } from '../CustomValueChips';
 
 jest.setTimeout(30000);
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn() }));
 
 function wrap(ui: React.ReactElement) {
   return render(<ThemeProvider>{ui}</ThemeProvider>);

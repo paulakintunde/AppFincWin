@@ -52,7 +52,7 @@ jest.mock('expo-router', () => ({
   useIsFocused: () => true,
 }));
 jest.mock('@/shell/fab/FabProvider', () => ({ useHideFab: jest.fn() }));
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn(), hapticMedium: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }), getDeviceRegion: () => 'US', getDeviceTimeZone: () => 'UTC' }));
 // Reduce Motion on: every surface is checked in its final, settled state (D-17).

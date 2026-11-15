@@ -8,7 +8,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import { colors } from '@/theme/tokens';
 import { radii, size } from '@/theme/layout';
 import { DURATION } from '@/theme/motion';
-import { hapticSelection } from '../haptics';
+import { hapticTick } from '../haptics';
 import { Sheet, SheetScroll } from '../Sheet';
 import { BACKDROP_OPACITY, SHEET_DISMISS_DELAY } from '../sheetDrag';
 import { layOutSheets } from '@/test/sheetLayout';
@@ -58,7 +58,7 @@ function modalsOf(screen: { root: any }): any[] {
 beforeEach(() => {
   jest.useFakeTimers();
   mockReduced = false;
-  (hapticSelection as jest.Mock).mockClear();
+  (hapticTick as jest.Mock).mockClear();
 });
 afterEach(() => jest.useRealTimers());
 
@@ -104,7 +104,7 @@ describe('Sheet drag to dismiss', () => {
     drag(120);
     await advance(150);
     expect(translateOf(screen)).toBeGreaterThan(120);
-    expect(hapticSelection).toHaveBeenCalledTimes(1);
+    expect(hapticTick).toHaveBeenCalledTimes(1);
     expect(onDismiss).not.toHaveBeenCalled();
     await advance(SHEET_DISMISS_DELAY - 150 + 1);
     expect(onDismiss).toHaveBeenCalledTimes(1);

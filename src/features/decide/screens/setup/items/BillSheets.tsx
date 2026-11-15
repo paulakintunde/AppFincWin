@@ -6,7 +6,7 @@ import { useT } from '@/i18n';
 import type { RecurringFreq } from '@/engine/recurring';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { space } from '@/theme/layout';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
@@ -83,7 +83,7 @@ function BillForm({ mode, currency, initial, onSave, onDismiss, onStop }: BillSh
           disabled={!ready}
           onPress={() => {
             if (!validAmount(amount) || day === null || freq === null || name.trim() === '') return;
-            hapticLight();
+            hapticTap();
             onSave({ name: name.trim(), amount, day, freq });
           }}
         />
@@ -94,7 +94,7 @@ function BillForm({ mode, currency, initial, onSave, onDismiss, onStop }: BillSh
               label={t('decide.screens.setupPayBills.bills.stopped')}
               accessibilityHint={t('decide.screens.setupPayBills.bills.stoppedNote')}
               onPress={() => {
-                hapticLight();
+                hapticTap();
                 onStop();
               }}
             />

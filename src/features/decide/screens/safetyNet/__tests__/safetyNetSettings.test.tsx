@@ -22,7 +22,7 @@ jest.mock('@/features/grow/goals/useGoalsRead', () => ({
 }));
 jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({ usePastContext: () => ({ userId: 'u1', householdId: 'h1' }) }));
 jest.mock('@/features/grow/home/useGoalMoney', () => ({ useGoalMoney: () => ({ amount: (n: number) => `$${n / 100}` }) }));
-jest.mock('@/ui/haptics', () => ({ hapticWarning: () => mockWarning(), hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticWarn: () => mockWarning(), hapticTap: jest.fn(), hapticTick: jest.fn() }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('@/shell/screen/DetailScreen', () => {
   const { Text, View } = require('react-native');

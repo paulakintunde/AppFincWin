@@ -28,7 +28,7 @@ import { ACCENT_TINT_OPACITY } from '@/theme/tokens';
 import { textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { useAmountParser } from '@/ui/money/useAmountParser';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
@@ -205,7 +205,7 @@ function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
         showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
         return;
       }
-      hapticLight();
+      hapticTap();
       onClose();
       toast({ key: 'undo.label.goalPlanChanged', stepId, undoLabel: 'goalPlanChanged', name: trimmed, userId, householdId });
       return;
@@ -239,7 +239,7 @@ function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
       },
       series,
     });
-    hapticLight();
+    hapticTap();
     onClose();
     toast({ key: 'grow.goals.create.madeToast', stepId: result.stepId, undoLabel: 'goalMade', name: trimmed, userId, householdId });
     pushOnce(goalHref(result.id));

@@ -2,7 +2,7 @@
  * Swipe-to-act row wrapper (CONTEXT D-27, UI-SPEC 4, Confirmed Decision 10; REQ ACT-14).
  * Wraps any row in ReanimatedSwipeable with an 88px action zone on each side that
  * carries a word, and (06.2 L02) an optional 16 icon above it. A full swipe commits the action, fires the light
- * tap haptic (hapticLight is hapticTap, 06.2-03) and
+ * tap haptic (hapticTap is hapticTap, 06.2-03) and
  * closes the row. Disabled in bulk-select mode. Every swipe action is also exposed as
  * an accessibility action, so the gesture is never the only route. Phase 3 adopts this.
  *
@@ -20,7 +20,7 @@ import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Glyph } from '@/ui/icons/Glyph';
 import type { IconName } from '@/ui/icons/iconData';
 
@@ -101,7 +101,7 @@ export function SwipeRow({ children, left, right, disabled = false, onPress, acc
 
   const commit = useCallback((action: SwipeAction | undefined) => {
     if (!action) return;
-    hapticLight();
+    hapticTap();
     action.onCommit();
     ref.current?.close();
   }, []);

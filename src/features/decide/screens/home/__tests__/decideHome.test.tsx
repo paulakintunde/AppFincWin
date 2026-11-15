@@ -26,7 +26,7 @@ const mockHideFab = jest.fn();
 const mockScrollTo = jest.fn();
 let mockTabProps: Record<string, unknown> = {};
 
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, setParams: jest.fn() }), useLocalSearchParams: () => ({}), useIsFocused: () => mockFocused }));
 jest.mock('@/shell/fab/FabProvider', () => ({ useHideFab: (...a: unknown[]) => mockHideFab(...a) }));

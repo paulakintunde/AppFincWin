@@ -7,7 +7,7 @@ import { minorUnits } from '@/engine/money';
 import { wrap } from '@/test/stepProps';
 import { YourMonthCard } from '../YourMonthCard';
 
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn() }));
 
 const mu = minorUnits;
 // Like the app's no-cents formatter: cents only when the amount is not whole.

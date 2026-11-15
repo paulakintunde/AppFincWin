@@ -19,7 +19,7 @@ import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { addMonthsTo, daysBetweenDays } from '../sheets/dateMath';
@@ -103,7 +103,7 @@ export function SaveForItScreen({ check, v3, evaluation, readyDate, currency, to
     if (busy.current) return;
     busy.current = true;
     setPending(true);
-    hapticLight();
+    hapticTap();
     try {
       const r = await saver.save({ check, v3, evaluation, monthly: amount, currency, today });
       setMade({ goalId: r.goalId, stepId: r.stepId, reminder: r.reminder });

@@ -54,11 +54,10 @@ jest.mock('@/features/grow/goals/useGoalsRead', () => ({
 }));
 jest.mock('../useGoalToast', () => ({ useGoalToast: () => (...a: unknown[]) => mockToast(...a) }));
 jest.mock('@/ui/haptics', () => ({
-  hapticSelection: jest.fn(),
-  hapticLight: () => mockLight(),
-  hapticWarning: jest.fn(),
-  hapticSuccess: jest.fn(),
-  hapticMedium: jest.fn(),
+  hapticTick: jest.fn(),
+  hapticTap: () => mockLight(),
+  hapticWarn: jest.fn(),
+  hapticMilestone: jest.fn(),
 }));
 
 const mockRead: GoalsRead = {

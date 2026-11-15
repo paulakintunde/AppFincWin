@@ -16,7 +16,7 @@ import { ActivityRow } from '../ActivityRow';
 import { overCapRows } from '../overCapRows';
 
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticTap: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 47, bottom: 12, left: 0, right: 0 }),

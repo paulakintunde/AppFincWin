@@ -8,7 +8,7 @@ import type { AccountRow } from '@/db/rows';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { space } from '@/theme/layout';
 import { Chip } from '@/ui/Chip';
-import { hapticLight, hapticSelection } from '@/ui/haptics';
+import { hapticTap, hapticTick } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { SegmentedToggle } from '@/ui/SegmentedToggle';
@@ -76,7 +76,7 @@ function PayEditForm({ amount, day, accountId, accounts, currency, onSave, onDis
                   label={a.name}
                   selected={account === a.id}
                   onPress={() => {
-                    hapticSelection();
+                    hapticTick();
                     setAccount(a.id);
                   }}
                 />
@@ -90,7 +90,7 @@ function PayEditForm({ amount, day, accountId, accounts, currency, onSave, onDis
           disabled={!ready}
           onPress={() => {
             if (!validAmount(amountMinor) || parsedDay === null || account === null) return;
-            hapticLight();
+            hapticTap();
             onSave({ amount: amountMinor, day: parsedDay, accountId: account });
           }}
         />
@@ -157,7 +157,7 @@ function OtherIncomeForm({ currency, onAdd, onDismiss }: OtherIncomeSheetProps) 
           disabled={!ready}
           onPress={() => {
             if (!validAmount(amount) || freq === null || counts === null || name.trim() === '') return;
-            hapticLight();
+            hapticTap();
             onAdd({ name: name.trim(), amount, freq, counts });
           }}
         />

@@ -12,7 +12,7 @@ import { showToast } from '@/state/undoToast';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
@@ -60,7 +60,7 @@ function Body({ holding, lot, lots, onRemove, onClose }: Omit<UpdateValueSheetPr
       }
       try {
         const stepId = edit(editing, { amount: value }, holding, lots ?? [], rc.userId);
-        hapticLight();
+        hapticTap();
         showToast({ kind: 'ordinary', text: undoLabelText('holdingEntryEdited', { name: holding.name }), stepId });
         onClose();
       } catch {
@@ -71,7 +71,7 @@ function Body({ holding, lot, lots, onRemove, onClose }: Omit<UpdateValueSheetPr
     }
     try {
       const { stepId } = add({ ownerId: rc.userId, holding, lots: [], kind: 'value', amount: value, date: rc.today });
-      hapticLight();
+      hapticTap();
       showToast({ kind: 'ordinary', text: undoLabelText('holdingValueUpdated', { name: holding.name }), stepId });
       onClose();
     } catch {

@@ -19,7 +19,7 @@ import { notPayKey } from '../notPay';
 import type { RecurringSeriesPatch } from '@/db/recurringSeries';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { space } from '@/theme/layout';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import type { SetupStepBodyProps, SetupStepHandle } from '@/features/income/stepTypes';
 import { useIncomeContext } from '../useIncomeContext';
 import { liveSeriesOfKind, payableAccounts, pausedIncomeSeries } from '../seriesHelpers';
@@ -156,7 +156,7 @@ export const PayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function 
                 label={t(f.labelKey)}
                 selected={c.freq === f.value}
                 onPress={() => {
-                  hapticSelection();
+                  hapticTick();
                   update(c.key, { freq: f.value });
                 }}
               />

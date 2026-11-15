@@ -14,7 +14,7 @@ import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
 import { Chip } from '@/ui/Chip';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { parseWholeInRange } from '@/ui/wholeNumberField';
 import { Field, FieldLabel, Note } from '@/features/decide/screens/sheets/sheetUi';
@@ -75,7 +75,7 @@ export function DayGrid({ label, day, onPick }: { label: string; day: number | n
             accessibilityLabel={fmt.ordinal(d)}
             selected={day === d}
             onPress={() => {
-              hapticSelection();
+              hapticTick();
               onPick(d);
             }}
           />
@@ -103,7 +103,7 @@ export function DayPicker({ label, day, emptyText, onChange }: { label: string; 
         accessibilityRole="button"
         accessibilityLabel={`${label} ${shown}`}
         onPress={() => {
-          hapticSelection();
+          hapticTick();
           setOpen(true);
         }}
         style={[styles.box, { backgroundColor: colors.fill6 }]}
@@ -155,7 +155,7 @@ export function FreqChips({ label, value, onChange }: { label: string; value: Re
             label={word(f.value)}
             selected={value === f.value}
             onPress={() => {
-              hapticSelection();
+              hapticTick();
               onChange(f.value);
             }}
           />
@@ -183,7 +183,7 @@ export function RadioRow({ label, selected, onPress }: { label: string; selected
       accessibilityLabel={label}
       accessibilityState={{ selected, checked: selected }}
       onPress={() => {
-        hapticSelection();
+        hapticTick();
         onPress();
       }}
       style={styles.radio}

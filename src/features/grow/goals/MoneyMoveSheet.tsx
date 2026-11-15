@@ -19,7 +19,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
@@ -156,7 +156,7 @@ function MoveForm({ goal, kind, onClose, onMoved, onChooseAccount }: Omit<MoneyM
       showToast({ kind: 'refusal', text: { key: 'grow.goals.move.failed' } });
       return;
     }
-    hapticLight();
+    hapticTap();
     onClose();
     onMoved?.({ kind, stepId: result.stepId, reachedTarget: result.reachedTarget, amount });
   };

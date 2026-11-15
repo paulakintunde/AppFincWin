@@ -3,7 +3,7 @@
 import React from 'react';
 import { fireEvent, screen, within } from '@testing-library/react-native';
 import { colors, stateColors } from '@/theme/tokens';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { wrap } from '@/test/stepProps';
 import type { OpenCheckRowModel } from '../homeCardsModel';
 import { OPEN_CHECK_DRAFT_ICON, OPEN_CHECK_TILE_ICON, OpenChecksCard } from '../OpenChecksCard';
@@ -17,7 +17,7 @@ jest.mock('@/ui/icons/Glyph', () => {
       R.createElement(View, { testID: p.testID ?? `glyph-${p.name}`, glyphName: p.name, glyphSize: p.size, glyphColor: p.color } as Record<string, unknown>),
   };
 });
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticTick: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn() }));
 
 const money = (n: number) => `$${n / 100}`;
 const date = (d: string) => `on ${d}`;
@@ -124,7 +124,7 @@ describe('OpenChecksCard rows (06.2-22, D-23)', () => {
     const onOpen = jest.fn();
     await wrap(<OpenChecksCard rows={[row({ id: 'p' })]} {...props} onOpen={onOpen} />);
     await fireEvent.press(screen.getByTestId('open-check-row-p'));
-    expect(hapticSelection).toHaveBeenCalledTimes(1);
+    expect(hapticTick).toHaveBeenCalledTimes(1);
     expect(onOpen).toHaveBeenCalledWith('p');
   });
 });

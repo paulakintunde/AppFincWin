@@ -6,7 +6,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { Row } from '@/ui/Row';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
@@ -67,7 +67,7 @@ export function ActivityMoreMenu({ visible, onClose, calendar, prevMonthName, on
                 label={item.label}
                 sublabel={item.sublabel}
                 onPress={() => {
-                  hapticSelection();
+                  hapticTick();
                   onClose();
                   onSelect(item.key);
                 }}

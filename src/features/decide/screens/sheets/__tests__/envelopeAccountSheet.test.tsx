@@ -3,7 +3,7 @@
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import { showToast } from '@/state/undoToast';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { wrap } from '@/test/stepProps';
 import { EnvelopeAccountSheet } from '../EnvelopeAccountSheet';
 
@@ -16,7 +16,7 @@ let mockAccounts: unknown[] = [];
 let mockGoals: unknown[] = [];
 let mockUserId: string | null = 'user-1';
 
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
 jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: mockGoals }) }));
@@ -38,7 +38,7 @@ const GOAL = { id: 'g-env', household_id: 'hh-1', name: 'Holiday', account_id: n
 beforeEach(() => {
   mockEdit.mockClear();
   (showToast as jest.Mock).mockClear();
-  (hapticLight as jest.Mock).mockClear();
+  (hapticTap as jest.Mock).mockClear();
   mockUserId = 'user-1';
   mockGoals = [GOAL];
   mockAccounts = [
@@ -78,7 +78,7 @@ describe('EnvelopeAccountSheet', () => {
       text: { key: 'grow.goals.detail.accountSavedToast', params: { account: 'Savings' } },
       stepId: 'step-1',
     });
-    expect(hapticLight).toHaveBeenCalledTimes(1);
+    expect(hapticTap).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

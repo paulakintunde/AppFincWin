@@ -11,7 +11,7 @@ import type { NewTransaction } from '@/db/rows';
 import { mutationKeys, WRITE_SCOPE } from '@/data/keys';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
-import { hapticSuccess } from '@/ui/haptics';
+import { hapticMilestone } from '@/ui/haptics';
 import { registerBatchInsert, type BatchInsertVars } from './batchInsert';
 import { newStepId } from './undoCapture';
 
@@ -70,7 +70,7 @@ export function usePasteLines(): {
         stepId,
       });
       showToast({ kind: 'ordinary', text: undoLabelText('pasted', { n }), stepId });
-      hapticSuccess();
+      hapticMilestone();
       return stepId;
     },
   };

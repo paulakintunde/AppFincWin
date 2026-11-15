@@ -34,7 +34,7 @@ import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
 import { Text } from '@/ui/Text';
@@ -116,7 +116,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
     setRemoveOpen(false);
     try {
       const stepId = removeDebt(row, read.userId);
-      hapticLight();
+      hapticTap();
       showToast({ kind: 'destructive', text: { key: 'grow.debts.detail.removedToast', params: { name: row.name } }, stepId });
     } catch {
       // P3-IN-03: refused, so the debt is still here; stay on it.

@@ -25,11 +25,9 @@ const mockMilestone = jest.fn();
 const mockLight = jest.fn();
 jest.mock('@/ui/haptics', () => ({
   hapticMilestone: () => mockMilestone(),
-  hapticSuccess: () => mockMilestone(),
-  hapticLight: () => mockLight(),
   hapticTap: () => mockLight(),
-  hapticWarning: jest.fn(),
-  hapticSelection: jest.fn(),
+  hapticWarn: jest.fn(),
+  hapticTick: jest.fn(),
 }));
 
 let mockRows: DebtRow[] | undefined = [];

@@ -42,7 +42,7 @@ jest.mock('@/data/mutations/growHoldings', () => {
 });
 const mockToast = jest.fn();
 jest.mock('@/state/undoToast', () => ({ showToast: (a: unknown) => mockToast(a) }));
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 
 let mockRead: InvestingRead;
 jest.mock('../useInvestingRead', () => {

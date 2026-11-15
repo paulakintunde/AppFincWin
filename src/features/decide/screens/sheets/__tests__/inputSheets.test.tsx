@@ -14,7 +14,7 @@ import { QuickEstimateSheet } from '../QuickEstimateSheet';
 import * as kinds from '../quickLineKinds';
 
 jest.setTimeout(30000);
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn() }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'uuid-1' }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('../../engine/useCheckEngine', () => ({

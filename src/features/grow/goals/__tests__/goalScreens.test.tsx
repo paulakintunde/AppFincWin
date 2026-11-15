@@ -120,13 +120,11 @@ jest.mock('@/features/grow/goals/useGoalsRead', () => ({
 }));
 jest.mock('../useGoalToast', () => ({ useGoalToast: () => (...a: unknown[]) => mockToast(...a) }));
 jest.mock('@/ui/haptics', () => ({
-  hapticSelection: jest.fn(),
-  hapticLight: () => mockHapticLight(),
-  hapticWarning: jest.fn(),
-  hapticSuccess: () => mockHapticSuccess(),
+  hapticTick: jest.fn(),
+  hapticTap: () => mockHapticLight(),
+  hapticWarn: jest.fn(),
   // 06.2-20: the reached moment's Success haptic, by meaning (D-20)
   hapticMilestone: () => mockHapticSuccess(),
-  hapticMedium: jest.fn(),
 }));
 
 function lisbon(over: Partial<SavingsGoalRow> = {}): SavingsGoalRow {
