@@ -15,8 +15,8 @@ Plans 08-28 and 08-29 (the household parts on Decide) moved to Phase 08.1 on 202
 - (e) Re-run `npm run supabase:preflight` after 08-22 touches `supabase/config.toml`. Every push uses `npm run supabase:db:push`.
 - (f) Cache version. `scripts/check-cache-version.mjs` fails CI when a cached shape changes without a bump. On main cf53894b `CACHE_SCHEMA_VERSION` is '11', and 05.5's remaining plans may raise it. 08-13 (wave 5) and 08-15 (wave 7) each add one to the value on the branch when they run (never assume a number) and refresh `scripts/cache-shape.lock.json`. 08-17 (wave 7) does not bump; if it finishes after 08-15, the orchestrator runs `npm run check:cache-version -- --update` once at the end of wave 7.
 - (g) Migration dates and push order (second pass, 2026-11-15). `supabase db push` refuses a local file dated before the newest applied one. Phase 8's dates must sort after every migration on main AND every planned 05.5 migration. Newest on main: `20261115000100`. Newest planned in 05.5: Band B `20261121000100`, `20261121000200`, `20261121000300` (plan 05.5-24). So Phase 8 is re-dated to **`20261122000100..20261122000900`** (same order; was `20261120*`). Push order: 05.5 Band A, then 05.5 Band B, then Phase 8. Re-check at build time with `ls supabase/migrations | tail` and the 05.5 plan list (08-01 Task 1); if anything newer has appeared, shift Phase 8 to the next free day. pgTAP: main tops out at the two 98 files (`98_decide_rule_caps_copy`, `98_category_icon_key`); 05.5 adds no new number; Phase 8's 100-110 are free.
-  - Band B waits for the 05.5 native 0.2.0 build (05.5-24 Task 1). If Band B is still waiting when 08-27 is ready, 08-27 stops and asks the owner (Owner question 3).
-  - 05.5-24's own stop rule still says "wait for Phase 8's `20261120*`". Those files no longer exist, so the owner writes `BAND_B_<date>: phase 8 confirmed absent by owner` in `05.5-PRECONDITIONS.md` to let Band B go first. 05.5-24 also stops if a Phase 8 `apply_patches` re-issue is not on main; under this order Phase 8 builds later and copies Band B's body instead (08-05).
+  - Band B waits for the 05.5 native 0.2.0 build (05.5-24 Task 1). If Band B is still waiting when 08-27 is ready, 08-27 waits (owner answer 3: no re-dating).
+  - 05.5-24's own stop rule still says "wait for Phase 8's `20261120*`". Those files no longer exist, so 05.5-24's text must change to let Band B go first (owner answer 4: the 05.5 session fixes it). 05.5-24 also stops if a Phase 8 `apply_patches` re-issue is not on main; under this order Phase 8 builds later and copies Band B's body instead (08-05).
 
 ## Revision record
 
@@ -49,8 +49,10 @@ Answered 2026-11-15 (kept in the plans):
 1. **Home Mine / Household switch moves both figures** (the big "left after everything" figure and the small "left after the month's plans" line). 08-25.
 2. **Debt payment and goal contribution lines stay personal.** 08-10's `share_transaction` refuses them (`linked_line_personal`); 08-12 and 08-19 carry the words.
 
-Open (second pass), asked when the step comes:
-3. **If 05.5 Band B is still waiting for the 0.2.0 build when Phase 8 is ready to push** (08-27): (a) wait for Band B, then push Phase 8; or (b) push Phase 8 now, and 05.5-24 re-dates its three files to the day after Phase 8's last migration before writing them.
+Second pass answers (owner, 2026-11-15):
+3. **Push order: wait for Band B.** If 05.5 Band B is still waiting for the 0.2.0 build when 08-27 is ready, Phase 8's push waits. Phase 8 builds and tests can go ahead meanwhile; nothing is re-dated.
+4. **05.5-24's stop rule** (it still waits for Phase 8's old `20261120*` files) is fixed by the 05.5 session, not here. They were sent a note on 2026-11-15.
+5. **Home small line fallback:** if a shared-lines-only month picture needs a second rule, Household view moves only the big figure and the small line stays "mine". 08-25 follows this without stopping to re-plan.
 
 ## Moved out of Phase 8
 
