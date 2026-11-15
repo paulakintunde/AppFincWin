@@ -49,7 +49,7 @@ const hidden = { includeHiddenElements: true };
 
 /** The one Glyph inside a tile: its name and colour. */
 function tileGlyph(testID: string): { name: string; color: string } {
-  const [glyph] = within(screen.getByTestId(testID, hidden)).getAllByTestId(/^glyph-/, hidden);
+  const glyph = within(screen.getByTestId(testID, hidden)).getAllByTestId(/^glyph-/, hidden)[0]!;
   return { name: glyph.props.glyphName as string, color: glyph.props.glyphColor as string };
 }
 
