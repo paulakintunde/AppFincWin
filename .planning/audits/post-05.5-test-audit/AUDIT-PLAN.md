@@ -32,7 +32,7 @@ with a reason), and the one fix round and the one build are done.
 3. **Production has migration `20261115000100_category_icon_key.sql`** (06.2-17). Without it every category read fails on a
    build that has 06.2. Claude checks read-only (`supabase migration list` with the FincWin token from `C:\dev\fincwin\.env.local`,
    exported per command, never printed). If it is missing, the push is owner-gated (popup P-14, `npm run supabase:db:push`).
-4. **G-PD-1 and G-PD-3 are defined.** The 06.1 close-out routes them to the audit-fix round, but no file on main says what they
+4. **G-PD-1 and G-PD-3 are defined** (filled in 2026-11-15 from the 06.1 pre-device check report; see PA-44 and PA-45).
    are. The orchestrator or owner supplies the two one-line descriptions (see "Needs the owner before start").
 5. **Owner go-aheads answered** (popups P-07 to P-14 below).
 6. The Pixel 6 is charged, USB debugging on, and the owner has about 45 minutes.
@@ -124,8 +124,8 @@ Rows that need a write to money records go to the emulator. Rows that judge feel
 | PA-41 | CO G-61-15 | `decide-check-lands` loses the example chip to scroll; `record-as-bought` undo leaves its harness check as a Draft | emulator | No |
 | PA-42 | CO | `record-as-bought` Maestro flow red | emulator | No |
 | PA-43 | CO; 85 | `decide-bought -e PRICE=9000` stepper subflow ("Next" not visible) | emulator | No |
-| PA-44 | CO | G-PD-1: **no description on main** | owner decision (needs definition) | Unknown |
-| PA-45 | CO | G-PD-3: **no description on main** | owner decision (needs definition) | Unknown |
+| PA-44 | CO | G-PD-1: during the decide-stepper-loan flow a failed write "Decide check · The item was changed elsewhere before this change saved" appeared and Home showed "1 edit couldn’t save — changed elsewhere"; the rerun did not repeat it (same family as G-61-12/G-74-1). Check: rerun the flow 3× and watch the failed-writes list | emulator | Does not block (trust) |
+| PA-45 | CO | G-PD-3: after tapping the safety-net lock switch the "Safety net locked." toast was missed in 2 of 3 runs, though the lock always took effect (flow timing or a toast that leaves too fast). Check: decide-safety-net flow 3× on the emulator, and once on the Pixel 6 | emulator + Pixel 6 | Does not block |
 | PA-46 | CO | History/Undo label "Unspent money confirmed" (`unspentConfirmed`) contains "unspent"; reword needs a new sign-off | owner decision (P-06) | No |
 | PA-47 | 62D #6 | Debt-cleared moment never plays for a debt paid off through "Use once" or recurring payments (only the sale flow marks it) | jest (fix) | No |
 
