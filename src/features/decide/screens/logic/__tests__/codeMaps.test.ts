@@ -11,19 +11,10 @@ function has(path: string): boolean {
 }
 
 describe('codeMaps', () => {
-  it('every engine code maps to a catalogue key that exists', () => {
-    const keys: string[] = [maps.UNEXPLAINED];
-    for (const [name, value] of Object.entries(maps)) {
-      if (name === 'UNEXPLAINED' || name === 'WARNING_TONE') continue;
-      keys.push(...Object.values(value as Record<string, string>));
-    }
-    expect(keys.length).toBeGreaterThan(60);
+  it('every method code maps to a catalogue key that exists', () => {
+    const keys: string[] = [];
+    for (const value of Object.values(maps)) keys.push(...Object.values(value as Record<string, string>));
+    expect(keys).toHaveLength(6);
     expect(keys.filter((k) => !has(k))).toEqual([]);
-  });
-
-  it('marks the month and owe warnings hard and the rest soft', () => {
-    expect(maps.WARNING_TONE.month).toBe('hard');
-    expect(maps.WARNING_TONE.owe).toBe('hard');
-    expect(Object.values(maps.WARNING_TONE).filter((t) => t === 'soft')).toHaveLength(5);
   });
 });

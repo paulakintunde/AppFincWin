@@ -3,7 +3,7 @@
  * front card and step 3's "✓ Price: $10,020" crumb both read it, so the two never disagree. The region's tax is an estimate and is
  * never stored; a typed rate wins; "Price already includes tax" adds none.
  */
-import type { Percent } from '@/engine/decide';
+import type { Percent } from '@/engine/payoff';
 import { INCLUDED_COUNTRIES, lookupTaxDefault, salesTaxOf, type CheckV2 } from '@/engine/decide/v3';
 
 export interface UpFront {
