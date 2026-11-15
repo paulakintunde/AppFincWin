@@ -70,6 +70,8 @@ module.exports = {
   // pick up tests from nested worktrees under .claude/worktrees/ (gitignored).
   roots: ['<rootDir>/src', '<rootDir>/supabase/functions'],
   testMatch: ['**/src/**/*.test.ts?(x)', '**/supabase/functions/**/*.test.ts'],
+  // 08-08: the two-client Realtime spike needs a running local Supabase; run it with `npm run test:realtime`.
+  testPathIgnorePatterns: ['/node_modules/', '/__spike__/'],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/__tests__/**', '!src/**/*.d.ts', '!src/**/*.typecheck.ts'],
   coverageThreshold,
 };
