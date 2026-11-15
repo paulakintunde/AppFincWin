@@ -1436,11 +1436,11 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 08-01-PLAN.md — Preconditions + wave-1 privacy migration (personal unless shared, backfill, RLS, views)
-- [ ] 08-02-PLAN.md — Members v2 (owner flag, role label, colours, hidden names, 0% weights), household name, notices table
-- [ ] 08-03-PLAN.md — Engine: line split, weights rebalance, colours, member-name resolver; feature switches (D-44)
-- [ ] 08-04-PLAN.md — Engine: per-pair balances, isSettlement rule, settle-up total
-- [ ] 08-12-PLAN.md — Household copy catalogue (one file per area) + compliance-voice test
+- [x] 08-01-PLAN.md — Preconditions + wave-1 privacy migration (personal unless shared, backfill, RLS, views)
+- [x] 08-02-PLAN.md — Members v2 (owner flag, role label, colours, hidden names, 0% weights), household name, notices table
+- [x] 08-03-PLAN.md — Engine: line split, weights rebalance, colours, member-name resolver; feature switches (D-44)
+- [x] 08-04-PLAN.md — Engine: per-pair balances, isSettlement rule, settle-up total
+- [x] 08-12-PLAN.md — Household copy catalogue (one file per area) + compliance-voice test
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 08-05-PLAN.md — Privacy RPC rewrite (apply_patches v4, undo, definer functions, shared-line edit guard)
@@ -1637,7 +1637,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
-| 8. Household | 0/TBD | Not started | - |
+| 8. Household | 5/28 | In progress | - |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
