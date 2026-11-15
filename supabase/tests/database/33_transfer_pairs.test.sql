@@ -141,6 +141,9 @@ reset role;
 -- 5. A leg on A's account and a leg in B's household sharing a
 -- transfer_id, inserted as postgres -> 23514 (v_households <> 1). The
 -- trigger's own household count catches this regardless of RLS.
+-- Phase 8 (08-05): clear the impersonated claims so the fixture account is B's own (created_by null, no auth.uid()),
+-- not stamped with A, and the guard_transaction_account client-write check does not pre-empt the pair trigger.
+select set_config('request.jwt.claims', '', true);
 insert into public.accounts (id, household_id, name, kind, currency, opening_balance)
   values ('bbbbbbb1-2222-2222-2222-222222222222', (select id from hh where owner_id = '22222222-2222-2222-2222-222222222222'), 'B GBP', 'checking', 'GBP', 0);
 

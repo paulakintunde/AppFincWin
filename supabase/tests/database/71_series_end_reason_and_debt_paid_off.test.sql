@@ -217,12 +217,13 @@ select extensions.throws_ok(
 
 -- (d) a member of another household is refused
 select set_config('request.jwt.claims', '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
-select extensions.throws_ok(
-  $$select public.t71_ap('recurring_series', '5e710000-0000-0000-0000-000000000001', '{"end_reason":"paused"}'::jsonb)$$,
-  '42501', null, 'another household cannot write end_reason');
-select extensions.throws_ok(
-  $$select public.t71_ap('debts', 'd7100000-0000-0000-0000-000000000001', '{"paid_off_on":"2026-10-01"}'::jsonb)$$,
-  '42501', null, 'another household cannot write paid_off_on');
+-- Phase 8 (D-14, 08-05): an invisible row is refused exactly like a missing id (status conflict), no longer 42501.
+select extensions.is(
+  public.t71_ap('recurring_series', '5e710000-0000-0000-0000-000000000001', '{"end_reason":"paused"}'::jsonb),
+  'conflict', 'another household cannot write end_reason (refused as not-found)');
+select extensions.is(
+  public.t71_ap('debts', 'd7100000-0000-0000-0000-000000000001', '{"paid_off_on":"2026-10-01"}'::jsonb),
+  'conflict', 'another household cannot write paid_off_on (refused as not-found)');
 update public.debts set paid_off_on = '2026-10-02' where id = 'd7100000-0000-0000-0000-000000000001';
 
 -- (g) erasure

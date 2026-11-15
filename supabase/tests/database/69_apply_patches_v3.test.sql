@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(47);
+select extensions.plan(48);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -32,9 +32,10 @@ $$;
 -- ---------------------------------------------------------------------
 -- Fixtures, written as the table owner.
 -- ---------------------------------------------------------------------
-insert into public.accounts (id, household_id, name, kind, currency, opening_balance) values
-  ('a6900000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Checking', 'checking', 'USD', 0),
-  ('a6900000-0000-0000-0000-000000000002', (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'), 'Other checking', 'checking', 'USD', 0);
+-- Phase 8 (D-12, 08-01): an account is its creator's unless shared, so the fixture accounts carry created_by.
+insert into public.accounts (id, household_id, name, kind, currency, opening_balance, created_by) values
+  ('a6900000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Checking', 'checking', 'USD', 0, '11111111-1111-1111-1111-111111111111'),
+  ('a6900000-0000-0000-0000-000000000002', (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'), 'Other checking', 'checking', 'USD', 0, '33333333-3333-3333-3333-333333333333');
 
 insert into public.recurring_series (id, household_id, created_by, account_id, category_id, name, amount, currency, freq, anchor_date, time_zone) values
   ('5e690000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
@@ -182,8 +183,10 @@ select extensions.is((select account_id::text || '/' || monthly_amount::text || 
 select extensions.is(public.t69_ap('recurring_dismissals', 'f6900000-0000-0000-0000-000000000001', '{"deleted_at":"$now"}'),
   'applied', 'recurring_dismissals accepts deleted_at');
 select extensions.ok((select deleted_at is not null from public.recurring_dismissals where id = 'f6900000-0000-0000-0000-000000000001'), 'the dismissal is soft-deleted');
-select extensions.throws_ok($$select public.t69_ap('recurring_dismissals', 'f6900000-0000-0000-0000-000000000002', '{"deleted_at":"$now"}')$$,
-  '42501', null, 'another household''s dismissal is refused');
+-- Phase 8 (D-14, 08-05): an invisible row is treated exactly like a missing id, no longer 42501. A soft delete of a
+-- missing id is satisfied as already gone (status applied, nothing written); the final assertion proves the row is untouched.
+select extensions.is(public.t69_ap('recurring_dismissals', 'f6900000-0000-0000-0000-000000000002', '{"deleted_at":"$now"}'),
+  'applied', 'another household''s dismissal is a no-op, like a missing id (status applied, nothing written)');
 
 select extensions.is(public.t69_ap('income_payer_prompts', 'a7900000-0000-0000-0000-000000000001',
   '{"income_kind":"freelance","counts_as":"kept","apply_to_future":false,"deleted_at":"$now"}'),
@@ -232,6 +235,11 @@ select extensions.is(
        'ops', jsonb_build_array(jsonb_build_object('entity', 'decide_settings', 'id', (select id from sid), 'expectedVersion', 1, 'patch', '{"rough_spending":null}'::jsonb)))
    ) ->> 'status'),
   'already-applied', 'a replay of the same step id is reported as already-applied for decide_settings');
+
+reset role;
+select extensions.ok(
+  (select deleted_at is null from public.recurring_dismissals where id = 'f6900000-0000-0000-0000-000000000002'),
+  'another household''s dismissal was not deleted by the refused soft delete');
 
 select * from extensions.finish();
 rollback;

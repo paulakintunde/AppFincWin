@@ -21,16 +21,17 @@ create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
 -- Fixtures as postgres: A's accounts, a category, a series and a horizon.
-insert into public.accounts (id, household_id, name, kind, currency, opening_balance) values
-  ('a1111111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Wallet', 'cash', 'USD', 0),
-  ('a2222222-2222-2222-2222-222222222222', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Spare', 'cash', 'USD', 0);
+-- Phase 8 (D-12, 08-01): rows are personal unless shared, so a fixture account and series need created_by = A to be A's.
+insert into public.accounts (id, household_id, name, kind, currency, opening_balance, created_by) values
+  ('a1111111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Wallet', 'cash', 'USD', 0, '11111111-1111-1111-1111-111111111111'),
+  ('a2222222-2222-2222-2222-222222222222', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Spare', 'cash', 'USD', 0, '11111111-1111-1111-1111-111111111111');
 insert into public.categories (id, owner_id, name, color_key)
 values ('ca000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Groceries2', 'green');
 insert into public.transactions (id, created_by, household_id, account_id, original_amount, original_currency, local_date, time_zone, name) values
   ('d1000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1111111-1111-1111-1111-111111111111', 500, 'USD', '2026-10-02', 'UTC', 'Money back');
-insert into public.recurring_series (id, household_id, account_id, name, amount, currency, freq, anchor_date, time_zone, materialised_through)
+insert into public.recurring_series (id, household_id, account_id, name, amount, currency, freq, anchor_date, time_zone, materialised_through, created_by)
 values ('c1000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
-  'a1111111-1111-1111-1111-111111111111', 'Rent', -1000, 'USD', 'monthly', '2026-10-01', 'UTC', '2026-12-31');
+  'a1111111-1111-1111-1111-111111111111', 'Rent', -1000, 'USD', 'monthly', '2026-10-01', 'UTC', '2026-12-31', '11111111-1111-1111-1111-111111111111');
 update public.households set horizon_month = '2026-12' where id = (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111');
 
 set local role authenticated;
