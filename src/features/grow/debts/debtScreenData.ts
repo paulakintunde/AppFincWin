@@ -3,7 +3,8 @@
 // Nothing is worked out here beyond formatting.
 import { useCallback, useMemo } from 'react';
 import type { Href } from 'expo-router';
-import { useDebts, useDecideSettings, useDecideSnapshot } from '@/data/queries/decide';
+import { useDebts, useDecideSettings } from '@/data/queries/decide';
+import { useDecideV3 } from '@/data/queries/decideV3';
 import type { DebtRow } from '@/db/debts';
 import { currencyCode, minorUnits } from '@/engine/money';
 import { monthBreakdown } from '@/features/grow/lines/monthBreakdown';
@@ -24,17 +25,16 @@ export interface DebtMonth {
 
 export function useDebtMonth(): DebtMonth {
   const rc = useRecordContext();
-  const snapshot = useDecideSnapshot();
+  const { prepared } = useDecideV3();
   const settings = useDecideSettings(rc.userId ?? undefined).data ?? null;
-  const result = snapshot.result;
-  const breakdown = useMemo(() => (result === null ? null : monthBreakdown(result, rc.today)), [result, rc.today]);
+  const breakdown = useMemo(() => monthBreakdown(prepared), [prepared]);
   const stored = settings?.dsr_line ?? null;
   const rule = stored === null || Number.isNaN(Number(stored)) ? null : String(Number(stored));
   return {
     usualPay: breakdown === null ? null : breakdown.income,
     left: breakdown === null ? null : breakdown.result,
     rule,
-    currency: result?.currency ?? rc.homeCurrency,
+    currency: prepared?.inputs.currency ?? rc.homeCurrency,
   };
 }
 

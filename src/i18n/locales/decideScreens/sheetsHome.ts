@@ -130,6 +130,9 @@ export const sheetsHome = {
     // 06.1-80 (DB-13, OQ-80-1): why "Add rule" is off, under it. Kinds already on the list are not offered, so "Already added" went.
     need: 'A kind and a value are needed.',
     needCategory: 'A category is needed.',
+    // 05.5-15 (D-11, OFO-5): a category has one monthly cap, set in Activity.
+    capExists: '{{category}} already has a monthly cap. Change it to set a new amount.',
+    capExistsLink: 'Change {{category}} cap',
   },
   changed: {
     title: 'Something changed?',

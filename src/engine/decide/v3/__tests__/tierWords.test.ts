@@ -25,10 +25,8 @@ export const LEGACY_ALLOWLIST = {
     // Old engine: the old level type and its rule.
     'src/engine/decide/confidence.ts',
     'src/engine/decide/types.ts',
-    // The old snapshot's 'rough' kind, which the Grow lines breakdown still reads.
-    'src/features/grow/lines/monthBreakdown.ts',
+    // The old snapshot's 'rough' kind (the Grow lines breakdown moved to the v3 Prepared in 05.5-26).
     'src/features/decide/snapshot/buildSnapshot.ts',
-    'src/features/decide/snapshot/types.ts',
     // The v3 input builder reads the old snapshot's 'rough' kind (buildSnapshot.ts); it goes when the old snapshot does.
     'src/features/decide/snapshot/v3/buildV3Inputs.ts',
   ],

@@ -12,6 +12,8 @@ export type ShownRule =
   | { readonly key: 'debt'; readonly kind: 'debt'; readonly on: boolean; /** Whole percent; null when off. */ readonly percent: number | null }
   | { readonly key: 'saving'; readonly kind: 'saving'; readonly on: true; /** A month, minor units. */ readonly amount: number }
   | { readonly key: 'investing'; readonly kind: 'investing'; readonly on: true; /** A month, minor units. */ readonly amount: number }
+  /** 05.5-15 (D-11): a category's Activity cap (categories.monthly_cap). Always checked, so always on; it has no switch. */
+  | { readonly key: string; readonly kind: 'cap'; readonly on: true; readonly categoryId: string; /** A month, minor units. */ readonly amount: number }
   | { readonly key: string; readonly kind: 'stored'; readonly on: boolean; readonly rule: StoredRule };
 
 export interface RulesSource {
@@ -22,14 +24,17 @@ export interface RulesSource {
   /** Regular saving and investing a month from Grow, minor units; null = none. */
   readonly saving: number | null;
   readonly investing: number | null;
+  /** 05.5-15: the capped categories, in the order to show them. Absent = none. */
+  readonly caps?: readonly { readonly categoryId: string; readonly amount: number }[];
 }
 
-/** The rules in the order both lists show them: the debt share, Grow's saving and investing, then the person's own rules. */
+/** The rules in the order both lists show them: the debt share, Grow's saving and investing, then the person's own rules, then the category caps. */
 export function rulesShown(src: RulesSource): ShownRule[] {
   const out: ShownRule[] = [{ key: 'debt', kind: 'debt', on: src.debtPercent !== null, percent: src.debtPercent }];
   if (src.saving !== null) out.push({ key: 'saving', kind: 'saving', on: true, amount: src.saving });
   if (src.investing !== null) out.push({ key: 'investing', kind: 'investing', on: true, amount: src.investing });
   for (const rule of src.rules) out.push({ key: rule.id, kind: 'stored', on: rule.on, rule });
+  for (const c of src.caps ?? []) out.push({ key: `cap_${c.categoryId}`, kind: 'cap', on: true, categoryId: c.categoryId, amount: c.amount });
   return out;
 }
 

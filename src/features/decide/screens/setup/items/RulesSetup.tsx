@@ -91,9 +91,7 @@ export function RulesSetup() {
         ? t('decide.screens.setupOthers.rules.keepAtLeast')
         : r.kind === 'largest'
           ? t('decide.screens.setupOthers.rules.largest')
-          : r.kind === 'category_cap'
-            ? t('decide.screens.sheetsHome.rulesCard.categoryAtMost', { category: categoryName(r.categoryId ?? ''), amount: money(r.value) })
-            : t('decide.screens.sheetsHome.rulesCard.categoryShare', { category: categoryName(r.categoryId ?? ''), percent: String(r.value) });
+          : t('decide.screens.sheetsHome.rulesCard.categoryShare', { category: categoryName(r.categoryId ?? ''), percent: String(r.value) });
     const value =
       r.kind === 'keep'
         ? t('decide.screens.setupOthers.rules.keepValue', { amount: money(r.value) })
@@ -126,7 +124,7 @@ export function RulesSetup() {
       });
     } else if (r.kind === 'saving' || r.kind === 'investing') {
       growRows.push({ key: r.key, label: t(r.kind === 'saving' ? 'decide.screens.sheetsHome.rule.saving.title' : 'decide.screens.sheetsHome.rule.investing.title'), value: money(r.amount) });
-    } else {
+    } else if (r.kind === 'stored') {
       rows.push(ownRow(r.rule));
     }
   }

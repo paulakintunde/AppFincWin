@@ -32,6 +32,10 @@ export interface MoneyRulesCardProps {
   netLocked: boolean | null;
   dsrLine: string | null;
   rules: readonly StoredRule[];
+  /** 05.5-15 (D-11, D-17): the capped categories (categories.monthly_cap); a row each, opening Activity's category sheet. */
+  caps: readonly { categoryId: string; amount: number }[];
+  /** A cap row was pressed: the host opens Activity's CategorySheet for this category. */
+  onOpenCategory: (categoryId: string) => void;
   /** Regular saving and investing a month from Grow; null = none. */
   saving: number | null;
   investing: number | null;
@@ -49,7 +53,7 @@ interface RuleRowModel {
   /** The rule's own figure ("36%", "$200"); null when the rule has none (the debt share switched off). */
   value: string | null;
   on: boolean;
-  target: RuleTarget;
+  target: RuleTarget | { kind: 'cap'; categoryId: string };
 }
 
 function RuleRow({ row, last, onPress }: { row: RuleRowModel; last: boolean; onPress: () => void }) {
@@ -90,7 +94,7 @@ export function MoneyRulesCard(props: MoneyRulesCardProps) {
   const pct = (n: number): string => t('decide.screens.sheetsHome.rulesCard.percentValue', { percent: String(n) });
   // 06.1-79 (DS-8, OQ-79-1 A): the same rules, in the same order, as Setup > Your money rules (rulesShown). Grow's regular saving
   // and investing are rules set in Grow: their sub-line says so and their sheet links to Grow.
-  const shown = rulesShown({ debtPercent: debtPercentOf(props.dsrLine), rules: props.rules, saving: props.saving, investing: props.investing });
+  const shown = rulesShown({ debtPercent: debtPercentOf(props.dsrLine), rules: props.rules, saving: props.saving, investing: props.investing, caps: props.caps });
   const rows: RuleRowModel[] = shown.map((r): RuleRowModel => {
     if (r.kind === 'debt') {
       return {
@@ -112,6 +116,16 @@ export function MoneyRulesCard(props: MoneyRulesCardProps) {
         target: { kind: r.kind, amount: r.amount },
       };
     }
+    if (r.kind === 'cap') {
+      return {
+        key: r.key,
+        title: t('decide.screens.sheetsHome.rulesCard.categoryTitle', { category: props.categoryName(r.categoryId) }),
+        sub: t('decide.screens.sheetsHome.addRule.categorySub'),
+        value: props.formatMoney(r.amount),
+        on: true,
+        target: { kind: 'cap', categoryId: r.categoryId },
+      };
+    }
     const rule = r.rule;
     const category = props.categoryName(rule.categoryId ?? '');
     const [title, sub, value] =
@@ -119,9 +133,7 @@ export function MoneyRulesCard(props: MoneyRulesCardProps) {
         ? [t('decide.screens.sheetsHome.addRule.keep'), t('decide.screens.sheetsHome.addRule.keepSub'), props.formatMoney(rule.value)]
         : rule.kind === 'largest'
           ? [t('decide.screens.sheetsHome.rule.largest.title'), t('decide.screens.sheetsHome.rule.largest.sub'), props.formatMoney(rule.value)]
-          : rule.kind === 'category_cap'
-            ? [t('decide.screens.sheetsHome.rulesCard.categoryTitle', { category }), t('decide.screens.sheetsHome.addRule.categorySub'), props.formatMoney(rule.value)]
-            : [t('decide.screens.sheetsHome.rulesCard.categoryTitle', { category }), t('decide.screens.sheetsHome.addRule.categoryShareSub'), pct(rule.value)];
+          : [t('decide.screens.sheetsHome.rulesCard.categoryTitle', { category }), t('decide.screens.sheetsHome.addRule.categoryShareSub'), pct(rule.value)];
     return { key: rule.id, title, sub, value, on: rule.on, target: { kind: 'stored', rule } };
   });
 
@@ -150,7 +162,7 @@ export function MoneyRulesCard(props: MoneyRulesCardProps) {
         </View>
       </Pressable>
       {rows.map((r) => (
-        <RuleRow key={r.key} row={r} last={false} onPress={() => props.onEdit(r.target)} />
+        <RuleRow key={r.key} row={r} last={false} onPress={() => (r.target.kind === 'cap' ? props.onOpenCategory(r.target.categoryId) : props.onEdit(r.target))} />
       ))}
       <Pressable
         accessibilityRole="button"

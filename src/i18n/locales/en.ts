@@ -1206,6 +1206,8 @@ const en = {
       label: 'Monthly cap',
       helper: 'Optional. Leave blank for no cap.',
       overToast: '{{category}} is over its cap by {{amount}}',
+      // 05.5-15 (D-17): a capped category is also a Decide money rule.
+      alsoRule: 'Also a money rule in Decide',
     },
     swatch: {
       green: 'Green',

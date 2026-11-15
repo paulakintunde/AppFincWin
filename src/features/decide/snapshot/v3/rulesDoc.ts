@@ -7,15 +7,19 @@
 export const MAX_OWN_RULES = 5;
 export const MAX_RULE_PERCENT = 100;
 
-export type OwnRuleKind = 'keep' | 'largest' | 'category_cap' | 'category_share';
+/**
+ * 05.5-15 (D-11, OFO-4): a category money rule is the Activity cap (categories.monthly_cap), never an entry here. Old documents may
+ * still hold `category_cap` entries; they are ignored on read (Band A copied them to the categories) and dropped on the next write.
+ */
+export type OwnRuleKind = 'keep' | 'largest' | 'category_share';
 
 export interface StoredRule {
   readonly id: string;
   readonly kind: OwnRuleKind;
   readonly on: boolean;
-  /** Minor units for keep, largest and category_cap; whole percent of pay for category_share. */
+  /** Minor units for keep and largest; whole percent of pay for category_share. */
   readonly value: number;
-  /** category_cap and category_share only. */
+  /** category_share only. */
   readonly categoryId: string | null;
 }
 
@@ -26,7 +30,7 @@ export interface RulesDoc {
 
 export const EMPTY_RULES: RulesDoc = { v: 1, rules: [] };
 
-const KINDS: readonly OwnRuleKind[] = ['keep', 'largest', 'category_cap', 'category_share'];
+const KINDS: readonly OwnRuleKind[] = ['keep', 'largest', 'category_share'];
 const isRec = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 
 function storedRuleOf(x: unknown): StoredRule | null {
@@ -37,7 +41,7 @@ function storedRuleOf(x: unknown): StoredRule | null {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) return null;
   if (kind === 'category_share' && value > MAX_RULE_PERCENT) return null;
   const categoryId = typeof x.categoryId === 'string' && x.categoryId !== '' ? x.categoryId : null;
-  if ((kind === 'category_cap' || kind === 'category_share') && categoryId === null) return null;
+  if (kind === 'category_share' && categoryId === null) return null;
   return { id: x.id, kind, on: x.on === true, value, categoryId };
 }
 
@@ -62,6 +66,7 @@ export function withRulesDoc(customOptions: unknown, doc: RulesDoc): Record<stri
 }
 
 export function upsertRule(doc: RulesDoc, rule: StoredRule): RulesDoc {
+  if (!(KINDS as readonly string[]).includes(rule.kind)) return doc; // a cap is never stored here (D-11)
   const has = doc.rules.some((r) => r.id === rule.id);
   if (!has && doc.rules.length >= MAX_OWN_RULES) return doc;
   return { v: 1, rules: has ? doc.rules.map((r) => (r.id === rule.id ? rule : r)) : [...doc.rules, rule] };
@@ -101,7 +106,6 @@ export function ownLinesOf(doc: RulesDoc): unknown[] {
   const out: unknown[] = [];
   for (const r of doc.rules) {
     if (r.kind === 'largest') out.push({ id: r.id, on: r.on, spec: { kind: 'single_purchase_cap', cap: r.value } });
-    else if (r.kind === 'category_cap') out.push({ id: r.id, on: r.on, spec: { kind: 'category_monthly_cap', categoryId: r.categoryId, cap: r.value } });
     else if (r.kind === 'category_share') out.push({ id: r.id, on: r.on, spec: { kind: 'category_income_share', categoryId: r.categoryId, pct: String(r.value) } });
   }
   return out;
