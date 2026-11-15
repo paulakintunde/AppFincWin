@@ -21,7 +21,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
-import { hapticWarning } from '@/ui/haptics';
+import { hapticWarn } from '@/ui/haptics';
 import { iconForCategory } from '@/ui/icons/iconFor';
 import type { IconName } from '@/ui/icons/iconData';
 import { Row } from '@/ui/Row';
@@ -123,7 +123,7 @@ function SheetBody({ mode, onClose, capCrossings }: { mode: CategorySheetMode; o
     const crossed = patch.monthlyCap !== undefined && capCrossings !== undefined ? capCrossings(editing.id, patch.monthlyCap) : [];
     const stepId = edit(editing, patch);
     if (crossed.length > 0) {
-      hapticWarning();
+      hapticWarn();
       showToast({
         kind: 'ordinary',
         tone: 'warning',

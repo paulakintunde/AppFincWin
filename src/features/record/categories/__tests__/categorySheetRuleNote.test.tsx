@@ -4,7 +4,7 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { CategoryRow } from '@/db/rows';
-import { hapticWarning } from '@/ui/haptics';
+import { hapticWarn } from '@/ui/haptics';
 import { showToast } from '@/state/undoToast';
 import { CategorySheet } from '../CategorySheet';
 
@@ -13,7 +13,7 @@ jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn(), hapticWarn: jest.fn(), hapticMilestone: jest.fn(), hapticFailed: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 const mockEdit = jest.fn(() => 'edit-step');
 jest.mock('@/data/mutations/categories', () => ({
@@ -75,7 +75,7 @@ describe('CategorySheet opened from Decide: the crossing check on a cap change',
     await fireEvent.press(u.getByText('Save changes'));
     expect(capCrossings).toHaveBeenCalledWith('c1', 10_000);
     expect(mockEdit).toHaveBeenCalledWith(row, { monthlyCap: 10_000 });
-    expect(hapticWarning).toHaveBeenCalled();
+    expect(hapticWarn).toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ tone: 'warning', stepId: 'edit-step', text: expect.objectContaining({ key: 'decide.screens.sheetsHome.rule.crosses' }) }));
   });
 
@@ -84,7 +84,7 @@ describe('CategorySheet opened from Decide: the crossing check on a cap change',
     const u = await open(cat({ monthly_cap: 30_000 }), { capCrossings });
     await fireEvent.changeText(u.getByLabelText('Monthly cap'), '100');
     await fireEvent.press(u.getByText('Save changes'));
-    expect(hapticWarning).not.toHaveBeenCalled();
+    expect(hapticWarn).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'edit-step' }));
   });
 
@@ -94,6 +94,6 @@ describe('CategorySheet opened from Decide: the crossing check on a cap change',
     await fireEvent.changeText(u.getByLabelText('Name'), 'Food');
     await fireEvent.press(u.getByText('Save changes'));
     expect(capCrossings).not.toHaveBeenCalled();
-    expect(hapticWarning).not.toHaveBeenCalled();
+    expect(hapticWarn).not.toHaveBeenCalled();
   });
 });

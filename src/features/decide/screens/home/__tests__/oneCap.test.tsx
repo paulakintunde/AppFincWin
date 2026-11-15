@@ -3,7 +3,7 @@
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import type { CategoryRow } from '@/db/rows';
-import { hapticWarning } from '@/ui/haptics';
+import { hapticWarn } from '@/ui/haptics';
 import { showToast } from '@/state/undoToast';
 import type { Limits } from '@/engine/decide/v3';
 import { wrap } from '@/test/stepProps';
@@ -13,7 +13,7 @@ import { MoneyRulesCard } from '../MoneyRulesCard';
 import { limitsWith } from '../ruleLimits';
 
 jest.setTimeout(30000);
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn(), hapticWarn: jest.fn(), hapticMilestone: jest.fn(), hapticFailed: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 const mockEdit = jest.fn((_row: CategoryRow, _patch: { monthlyCap?: number | null }) => 'step-cap');
 jest.mock('@/data/mutations/categories', () => ({ useEditCategory: () => ({ edit: mockEdit }) }));
@@ -99,7 +99,7 @@ describe('one cap: Add rule with Category (UI-SPEC test 5)', () => {
     await addCap([{ id: 'food', name: 'Food', row: catRow('food', null) }], { crossings: () => [{ checkId: 'k1', name: 'Headphones' }] });
     await fill('Food', '200');
     await fireEvent.press(screen.getByLabelText('Add rule'));
-    expect(hapticWarning).toHaveBeenCalled();
+    expect(hapticWarn).toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ tone: 'warning', stepId: 'step-cap', text: expect.objectContaining({ key: 'decide.screens.sheetsHome.rule.crosses' }) }));
   });
 
