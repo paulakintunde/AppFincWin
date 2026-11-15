@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { myShareOf } from '@/engine/decide/v3';
 import type { Cadence, Purchase, Result, StoppedCost } from '@/engine/decide/v3';
-import { addDays } from '@/engine/decide/v3/dates';
+import { addDays } from '@/engine/time/calendar';
 import type { MinorUnits } from '@/engine/money/types';
 import { occurrenceDate } from '@/engine/recurring/schedule';
 import type { RecurringFreq } from '@/engine/recurring/schedule';
