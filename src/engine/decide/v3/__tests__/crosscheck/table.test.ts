@@ -4,7 +4,7 @@ import { loadCases } from '../rightAnswers/loader';
 import { PENDING_RULES, pendingFixIds } from './pendingRules';
 import { evaluate } from '../../evaluate';
 import { TIER_CASES, rileyTier, rileyTierFixture } from '../helpers/tierFixtures';
-import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront, saleNow, replacesDates, plainFreed, withTaxSetAside, plainSetAsideMonthly, plainSetAsideBp, plainPeriodRate, plainPlanPayment, plainMonthOf, plainReadsEffective, basisPoints, PLAIN_RATE_SCALE, plainCashReady, plainShortWait } from './plain';
+import { carriesCostlyDebt, debtDates, debtMinimums, debtToPay, freeMoney, leftThisMonth, longDueInWindow, paidAsBill, pathLow, monthEndBalance, monthPay, plainHeld, plainHoldBack, wholeMonths, notCleared, overdraftRoom, payDates, plainAnswer, plainMoveBy, plainNet, plainOverdraftCost, plainPath, plainPathFlows, plainPlanMonthly, plainPlanTotal, plainShortPlan, plainTier, plainFloor, plainMonthlyShort, plainTightPlan, planDates, planPathLow, planPayments, plainClosing, plainUsualAfter, runningShare, runningDates, buyDay, laterMoney, recordsFresh, recordsLookBehind, everydayToCome, usualEveryday, quickMoneyOut, usualShortfall, plainLowMonths, lowerPay, payGapNamed, PLAIN_TAX_RATES, PLAIN_VAT_INCLUDED, plainTax, plainTaxNotIncluded, upFront, saleNow, replacesDates, plainFreed, withTaxSetAside, plainSetAsideMonthly, plainSetAsideBp, plainPeriodRate, plainPlanPayment, plainMonthOf, plainReadsEffective, basisPoints, PLAIN_RATE_SCALE, plainCashReady, plainShortWait, plainExpensive, plainBorrowed } from './plain';
 import { EXPENSIVE_INTEREST_BP } from './rules';
 import { SHORT_PLAN_CASES, shortPlan, shortPlanFixture, type ShortPlanCase } from '../helpers/shortPlanFixtures';
 import { toEngineInputs, undatedDueDate } from '../rightAnswers/fixture';
@@ -1172,5 +1172,28 @@ describe('06.1-30: long loans (FIN-22, LL-01..LL-06) and the UK/EU rate reading 
     }
     // Read as before 06.1-30 (no region), AP-01's loan is the old £196.14 a month: BR-01 and every region-less plan are unchanged.
     expect(engine('AP-06').afterBuy.usualMonth).toBe(100_000 - 19_614);
+  });
+});
+
+describe('regression: a UK plan APR is read as effective, so 9.9% over 23 months is not "expensive" (FIN-23, D-26; crosscheck seed 745051798, path 282)', () => {
+  const f = JSON.parse('{"asOf":"2026-10-15","currency":"USD","region":{"country":"GB","subdivision":null},"pay":{"amount":997528,"cadence":"monthly","nextDate":"2026-11-01","setupAmount":null,"lastThree":null},"usualMonth":{"bills":293273,"everyday":305243,"essentialEveryday":152621,"saving":{"amount":99752,"day":13,"movedThisMonth":true}},"thisMonth":{"received":997528,"billsPaid":0,"billsDue":293273,"everydaySoFar":302190},"historyMonths":5,"quickEstimates":null,"recordsAsOf":null,"accounts":[{"id":"a1","kind":"checking","name":"Main","balance":1846407,"overdraftLimit":839156,"overdraftRate":"0","use":"everyday"},{"id":"k1","kind":"savings","name":"Goal savings","balance":798022,"overdraftLimit":null,"overdraftRate":null,"use":null}],"safetyNet":null,"bills":[],"debts":[{"id":"debt-0","kind":"card","balance":12,"minimum":29925,"apr":"7.5","dueDay":28,"joint":false,"paidThisMonth":23341}],"userLine":null,"factLines":false,"check":{"price":364097,"taxPercent":"14.975","taxIncluded":false,"oneOffFees":0,"pay":{"mode":"plan","months":23,"apr":"9.9","fees":4365,"deposit":18204,"firstPaymentDate":"2026-11-15"}},"goals":[{"id":"goal1","name":"Goal","saved":798022,"target":1596044,"monthly":null,"locked":false,"accountId":"k1"}]}') as RightAnswerFixture;
+  const us: RightAnswerFixture = { ...f, region: { country: 'US', subdivision: null } };
+  it('plain and engine both say the plan does not need borrowing and does not cost more', () => {
+    const { inputs, check } = toEngineInputs(f);
+    const got = pick(evaluate(inputs, check));
+    const plain = plainAnswer(f);
+    expect(got.code).not.toBe('fits_by_borrowing');
+    expect(plain.code).toBe(got.code);
+    expect(plain.code).not.toBe('fits_by_borrowing');
+  });
+  it('plain: GB reads 9.9% as effective (under the 10% line); the same plan in the US reads APR / 12 (over it)', () => {
+    const gb = plainBorrowed(f);
+    const nominal = plainBorrowed(us);
+    expect(gb.amount).toBe(nominal.amount);
+    expect(gb.interest).toBeLessThan(nominal.interest);
+    expect(gb.interest * 100n).toBeLessThan(gb.amount * 10n);
+    expect(nominal.interest * 100n).toBeGreaterThanOrEqual(nominal.amount * 10n);
+    expect(plainExpensive(f)).toBe(false);
+    expect(plainExpensive(us)).toBe(true);
   });
 });
