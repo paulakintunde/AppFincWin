@@ -22,7 +22,6 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useT } from '@/i18n';
-import { useSaveAccountUse } from '@/data/mutations/accountUse';
 import { useRemoveDecideAnswer, useSaveDecideAnswer } from '@/data/mutations/decideAnswers';
 import { useSaveSetupStep } from '@/data/mutations/decideSetup';
 import { queryKeys } from '@/data/keys';
@@ -35,7 +34,6 @@ import { useSavingsGoalRows } from '@/data/queries/growGoals';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import type { AccountRow, TransactionRow } from '@/db/rows';
 import type { LocalDate, ReadinessItem, ReadinessWaiver } from '@/engine/decide/v3';
-import { AccountUseSheet } from '@/features/record/accounts/AccountUseSheet';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
@@ -59,9 +57,9 @@ import { NeedLine } from '../../ui/NeedLine';
 import { QUICK_SAVE_MODE } from '../QuickEstimatesScreen';
 import { DECIDE_HOME_PATH, safeReturnTo } from '../safeReturnTo';
 import { useSetupFacts } from '../useSetupProgress';
-import { RadioRow, useSetupFormat } from './itemFields';
+import { useSetupFormat } from './itemFields';
 import { givenLines, type GivenLine } from './answersGiven';
-import { askedAccounts, choiceOfUse, previousMonthOf, recordChecks, accountUseOfChoice, USE_CHOICES, type UseChoice } from './othersLogic';
+import { askedAccounts, choiceOfUse, previousMonthOf, recordChecks, type UseChoice } from './othersLogic';
 import { SetupItemFrame, useLeaveItem } from './SetupItemFrame';
 
 const ACTIVITY = '/activity' as Href;
@@ -80,12 +78,6 @@ export interface RecordsWrites {
   skipLine: (row: TransactionRow, ownerId: string) => string | null;
   /** 06.1-68 (DC-11): takes a goal's account link off (Grow's goal writer, account_id null only); returns the undo step id. */
   clearEnvelopeAccount: (goal: SavingsGoalRow, ownerId: string) => string;
-}
-
-/** 06.1-68 (DS-14): a pick made here, shown until the stored use moves off the value it had when tapped. */
-interface UsePick {
-  readonly choice: UseChoice;
-  readonly from: UseChoice | null;
 }
 
 /** The pending line a "It didn't happen" answer skips, from any cached transactions list of the household; null when not cached. */
@@ -134,8 +126,6 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const setupSaver = useSaveSetupStep(rc.userId ?? '');
   const v3 = useDecideV3();
   const accountsQ = useAccounts(rc.householdId ?? undefined);
-  const saver = useSaveAccountUse(rc.userId ?? '');
-  const [sheetFor, setSheetFor] = useState<AccountRow | null>(null);
   const [accountsOpen, setAccountsOpen] = useState(false);
   const qc = useQueryClient();
   const answers = useSaveDecideAnswer(rc.userId ?? '', rc.householdId ?? '');
@@ -145,19 +135,8 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const envelopesOpen = fixRows.filter((r) => r.item.kind === 'envelopes').length;
 
   const asked = useMemo(() => (v3.inputs === null ? [] : askedAccounts(v3.inputs.accounts ?? [])), [v3.inputs]);
-  // DS-14: a pick is drawn at once. It is dropped once the stored use moves off the value it had at the tap (the write landed, or
-  // something else changed it), so a later Undo shows the stored value again. Kept in step during render, no effect.
-  const [picks, setPicks] = useState<ReadonlyMap<string, UsePick>>(() => new Map());
-  let livePicks: Map<string, UsePick> | null = null;
-  for (const [id, p] of picks) {
-    const stored = asked.find((a) => a.id === id);
-    if (stored !== undefined && choiceOfUse(stored.use) === p.from) continue;
-    livePicks ??= new Map(picks);
-    livePicks.delete(id);
-  }
-  if (livePicks !== null) setPicks(livePicks);
   // 06.1-71 (DN-6): opened from the answer's "What is <account> for?" Fix (?account=<id>), the accounts sheet opens once on arrival
-  // with that account first. Kept in step during render, like the picks above.
+  // with that account first. Kept in step during render.
   const focusAccount = typeof params.account === 'string' ? params.account : null;
   const [autoOpened, setAutoOpened] = useState<string | null>(null);
   if (focusAccount !== null && autoOpened !== focusAccount && asked.some((a) => a.id === focusAccount)) {
@@ -165,7 +144,6 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
     setAccountsOpen(true);
   }
   const sheetAccounts = focusAccount === null ? asked : [...asked.filter((a) => a.id === focusAccount), ...asked.filter((a) => a.id !== focusAccount)];
-  const pickOf = (id: string): UseChoice | undefined => (livePicks ?? picks).get(id)?.choice;
 
   // FQ7 (CC-5), DC-11: the answers given, from the live answers and the goals linked to an account.
   const answersQ = useDecideAnswers(rc.userId ?? undefined, rc.householdId ?? undefined);
@@ -280,21 +258,12 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const monthName = monthNameOf(previousMonthOf(today), fmt.locale);
   const sayCount = asked.filter((a) => a.use !== null).length;
 
-  const chooseUse = (accountId: string, choice: UseChoice): void => {
+  // 05.5-17 (D-10): Activity's account sheet is the only place an account's purpose is set; Decide opens it and writes nothing.
+  const openAccount = (accountId: string): void => {
     const row = rowOf(accountId);
     if (row === undefined) return;
-    const use = accountUseOfChoice(choice);
-    // "Savings or goals" also says which goal the money is kept for, so the account's own sheet picks it.
-    if (use === null) {
-      setAccountsOpen(false);
-      setSheetFor(row);
-      return;
-    }
-    const result = saver.save({ account: row, use });
-    if (result === null) return;
-    const from = choiceOfUse(asked.find((a) => a.id === accountId)?.use ?? null);
-    if (from !== choice) setPicks((prev) => new Map(prev).set(accountId, { choice, from }));
-    showToast({ kind: 'ordinary', text: { key: 'decide.accountUse.toastSaved' }, stepId: result.stepId });
+    setAccountsOpen(false);
+    router.push(`/accounts/${row.id}?edit=1` as Href);
   };
 
   const seriesNames = new Map((v3.inputs?.series ?? []).map((x) => [x.id, x.name ?? '']));
@@ -507,24 +476,18 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
           <SheetHeader title={t('decide.screens.setupOthers.records.accounts')} cancelLabel={t('decide.screens.common.close')} onCancel={() => setAccountsOpen(false)} />
           <SheetScroll contentContainerStyle={styles.sheetBody}>
             {sheetAccounts.map((a) => {
-              const row = rowOf(a.id);
-              const current = pickOf(a.id) ?? choiceOfUse(a.use);
-              const name = row?.name ?? '';
+              const current = choiceOfUse(a.use);
+              const name = rowOf(a.id)?.name ?? '';
               return (
                 <View key={a.id} testID={`account-${a.id}`} style={styles.block}>
-                  <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.setupOthers.records.accountFor', { name })}</Text>
-                  <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.setupOthers.records.accountFor', { name })}>
-                    {USE_CHOICES.map((c) => (
-                      <RadioRow key={c} label={choiceLabel(c)} selected={current === c} onPress={() => chooseUse(a.id, c)} />
-                    ))}
-                  </View>
+                  {current === null ? null : <Text style={{ ...textRole(pairing, 'body'), color: colors.inkMuted }}>{choiceLabel(current)}</Text>}
+                  <Pill variant="secondary" label={t('decide.screens.setupOthers.records.accountFor', { name })} onPress={() => openAccount(a.id)} />
                 </View>
               );
             })}
           </SheetScroll>
         </Sheet>
       ) : null}
-      {sheetFor === null ? null : <AccountUseSheet visible account={sheetFor} balance={null} onClose={() => setSheetFor(null)} />}
       {envelopeId === null ? null : (
         <EnvelopeAccountSheet goalId={envelopeId} visible onClose={() => setEnvelopeId(null)} setAccount={writes.setEnvelopeAccount} />
       )}

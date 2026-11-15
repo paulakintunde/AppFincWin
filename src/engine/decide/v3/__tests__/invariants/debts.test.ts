@@ -9,7 +9,7 @@ import { applyPurchaseFlows } from '../../cash/path';
 import { addDays } from '../../dates';
 import { evaluate } from '../../evaluate';
 import { prepare } from '../../prepare';
-import { liveSeriesOf } from '../../month/series';
+import { liveSeriesOf } from '../../../../month/model/series';
 import { monthlyEquivalentOf } from '../../plan/cadence';
 import type { FactCode, V3Debt, V3Inputs } from '../../types';
 import { loadCases } from '../rightAnswers/loader';

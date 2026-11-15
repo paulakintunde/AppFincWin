@@ -7,7 +7,7 @@
  */
 import { minorUnits, type MinorUnits } from '../../../money/types';
 import { heldBackForBills } from '../heldBack';
-import { dueDrops } from '../month/dueDrops';
+import { dueDrops } from '../../../month/model/dueDrops';
 import type { Funds, MonthModel, UnspentSum, V3Inputs } from '../types';
 import { emergencyOf, withLiveEmergency } from './emergency';
 import { envelopesOf, ownEnvelope } from './envelopes';

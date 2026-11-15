@@ -23,9 +23,9 @@
 import { daysBetween, yearMonthOf } from '../dates';
 import { MISSING_PRIORITY, NEEDS_INPUT_ENTRY_AGE_DAYS, NEEDS_INPUT_MIN_BAND, UNDER_LOGGED_PACE_PERCENT } from '../constants';
 import { minorUnits } from '../../../money/types';
-import { recordsSynced } from '../month/freshness';
-import { dependsOnMonths, expectedFor } from '../month/incomePattern';
-import { classifyLine, seriesIndex, usualPayOf } from '../month/series';
+import { recordsSynced } from '../../../month/model/freshness';
+import { dependsOnMonths, expectedFor } from '../../../month/model/incomePattern';
+import { classifyLine, seriesIndex, usualPayOf } from '../../../month/model/series';
 import type { Funds, MissingCode, MonthModel, Purchase, V3Inputs, YearMonth } from '../types';
 
 export interface NeedsInputContext {

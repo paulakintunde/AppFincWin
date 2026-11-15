@@ -40,12 +40,6 @@ let mockSettings: Record<string, unknown> | null = null;
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: mockSettings }) }));
 const mockSetupSave = jest.fn((..._a: unknown[]) => ({ stepId: 'step-clear' }) as { stepId: string } | null);
 jest.mock('@/data/mutations/decideSetup', () => ({ useSaveSetupStep: () => ({ save: mockSetupSave }) }));
-const mockSaveUse = jest.fn((..._a: unknown[]) => ({ stepId: 'step-use' }));
-jest.mock('@/data/mutations/accountUse', () => ({ useSaveAccountUse: () => ({ save: mockSaveUse }) }));
-jest.mock('@/features/record/accounts/AccountUseSheet', () => {
-  const { Text } = jest.requireActual('react-native');
-  return { AccountUseSheet: ({ account }: { account: { id: string } }) => <Text testID="account-use-sheet">{account.id}</Text> };
-});
 const mockSaveAnswer = jest.fn((..._a: unknown[]) => ({ stepId: 'step-answer' }) as { stepId: string } | null);
 const mockRemoveAnswer = jest.fn((..._a: unknown[]) => ({ stepId: 'step-removed' }));
 jest.mock('@/data/mutations/decideAnswers', () => ({ useSaveDecideAnswer: () => ({ save: mockSaveAnswer }), useRemoveDecideAnswer: () => ({ remove: mockRemoveAnswer }) }));
@@ -304,14 +298,12 @@ describe('RecordsSetup rows, badges and the accounts sheet (06.1-58 A-SU-5, DS-1
     await press(screen.getByTestId('check-accounts'));
     expect(screen.getByText('What is Everyday for?')).toBeTruthy();
     expect(screen.getByText('What is Wallet for?')).toBeTruthy();
-    expect(screen.getAllByRole('radio')).toHaveLength(12);
-    await press(screen.getAllByLabelText('Not used for spending')[0]!);
-    expect(mockSaveUse).toHaveBeenCalledWith({ account: expect.objectContaining({ id: 'a1' }), use: { kind: 'untouched' } });
-    expect(mockShowToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.accountUse.toastSaved' }, stepId: 'step-use' });
-    // Savings or goals needs the goal, so the account's own sheet takes over
-    await press(screen.getAllByLabelText('Savings or goals')[2]!);
-    expect(screen.getByTestId('account-use-sheet')).toHaveTextContent('a3');
+    expect(screen.queryAllByRole('radio')).toHaveLength(0);
+    // 05.5-17: tapping an account opens Activity's account screen with its sheet open and writes nothing here
+    await press(screen.getByText('What is Wallet for?'));
+    expect(mockPush).toHaveBeenCalledWith('/accounts/a3?edit=1');
     expect(screen.queryByText('What is Everyday for?')).toBeNull();
+    expect(mockShowToast).not.toHaveBeenCalled();
   });
 
   it('one open account reads in the singular, and Close shuts the sheet', async () => {
@@ -425,55 +417,6 @@ describe('06.1-68 (FQ7, CC-5, DC-11): Answers you gave', () => {
     await press(screen.getByTestId('given-remove-g-trip'));
     expect(writes.clearEnvelopeAccount).toHaveBeenCalledWith(expect.objectContaining({ id: 'g-trip' }), 'u1');
     expect(mockShowToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.records.answerRemoved' }, stepId: 'step-unlink' });
-  });
-});
-
-describe('06.1-68 (DS-14): account-use radios show the pick at once', () => {
-  const ROWS = [{ id: 'a1', name: 'Everyday', kind: 'checking' }];
-  const open = async () => {
-    mockFacts = { ...DONE_FACTS, accountsAllHaveUse: false };
-    mockAccountRows = ROWS;
-    const view = await wrap(<RecordsSetup writes={writes} />);
-    await press(screen.getByTestId('check-accounts'));
-    return view;
-  };
-  const again = async (view: Awaited<ReturnType<typeof open>>) => {
-    await act(async () => {
-      view.rerender(<RecordsSetup writes={writes} />);
-    });
-  };
-  const radio = (label: string) => screen.getByRole('radio', { name: label });
-
-  it('the tapped choice is checked right after the tap, before the stored use catches up', async () => {
-    mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: null, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [{}] }] };
-    await open();
-    expect(radio('Not used for spending').props.accessibilityState).toEqual({ selected: false, checked: false });
-    await press(radio('Not used for spending'));
-    expect(radio('Not used for spending').props.accessibilityState).toEqual({ selected: true, checked: true });
-    expect(screen.getAllByRole('radio').filter((n) => n.props.accessibilityState.checked)).toHaveLength(1);
-  });
-
-  it('a save that writes nothing draws no pick', async () => {
-    mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: null, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [{}] }] };
-    await open();
-    mockSaveUse.mockReturnValueOnce(null as never);
-    await press(radio('Not used for spending'));
-    expect(screen.getAllByRole('radio').filter((n) => n.props.accessibilityState.checked)).toHaveLength(0);
-    expect(mockShowToast).not.toHaveBeenCalled();
-  });
-
-  it('once the stored use moves, the stored value shows (so a later Undo shows the old one)', async () => {
-    mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: null, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [{}] }] };
-    const view = await open();
-    await press(radio('Not used for spending'));
-    // the write lands
-    mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: { kind: 'untouched' }, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [{}] }] };
-    await again(view);
-    expect(radio('Not used for spending').props.accessibilityState.checked).toBe(true);
-    // Undo puts the old (no use) back: nothing is checked
-    mockInputs = { accounts: [{ id: 'a1', kind: 'checking', use: null, balance: 0 }], months: [{ month: '2026-10', full: true, lines: [{}] }] };
-    await again(view);
-    expect(screen.getAllByRole('radio').filter((n) => n.props.accessibilityState.checked)).toHaveLength(0);
   });
 });
 

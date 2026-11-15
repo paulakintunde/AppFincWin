@@ -19,7 +19,7 @@ import { minorFromBigInt, PERCENT_SCALE } from '../../payoff/types';
 import { percentText } from './adapters/inputsV2';
 import { COSTLY_SAVING_MIN, DEBT_FACT_LINES, EXPENSIVE_APR_BP } from './constants';
 import { addDays, addYearMonths, daysInYearMonth, dayOfMonth, yearMonthOf } from './dates';
-import { liveSeriesOf } from './month/series';
+import { liveSeriesOf } from '../../month/model/series';
 import { monthlyEquivalentOf } from './plan/cadence';
 import type { Fact, V3Debt, V3Inputs, V3Line, V3Series } from './types';
 

@@ -2,7 +2,8 @@
 import React from 'react';
 import { Linking } from 'react-native';
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { monthPicture, prepare, type MonthPicture } from '@/engine/decide/v3';
+import { prepare } from '@/engine/decide/v3';
+import { monthPicture, type MonthPicture } from '@/engine/month';
 import { inputsOf } from '@/engine/decide/v3/__tests__/helpers/fixtures';
 import { wrap } from '@/test/stepProps';
 import { AboutSheet } from '../AboutSheet';
@@ -86,7 +87,7 @@ describe('FreeHelpSheet', () => {
 describe('HowWorkedOutSheet', () => {
   const sources = { activityFrom: '2026-08-01', activityTo: '2026-10-31', netSize: 150000, netLocked: false, rulesCount: 2 };
   it('shows the picture figures and the overdraft on its own line', async () => {
-    const picture = ({ ...monthPicture(prepare(inputsOf({ asOf: '2026-11-05' }))), balanceOn: 123456, afterBillsBeforePayday: 100000, monthEnd: 98765, unusedOverdraft: 40000 }) as unknown as MonthPicture;
+    const picture = ({ ...monthPicture(prepare(inputsOf({ asOf: '2026-11-05' }))), balanceOn: 123456, afterBillsBeforePayday: 100000, leftAfterPlans: 98765, unusedOverdraft: 40000 }) as unknown as MonthPicture;
     await wrap(<HowWorkedOutSheet picture={picture} currency="USD" sources={sources} onClose={noop} />);
     expect(screen.getByText('$987.65')).toBeTruthy();
     expect(screen.getByText('Unused overdraft')).toBeTruthy();

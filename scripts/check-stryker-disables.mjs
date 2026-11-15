@@ -8,6 +8,7 @@ import { join, relative } from 'node:path';
 const ROOT = process.cwd();
 const TARGETS = [
   'src/engine/decide/v3',
+  'src/engine/month',
   'src/engine/decide/bisectCore.ts',
   'src/engine/decide/cardRule.ts',
   'src/engine/decide/lineDefaults.ts',

@@ -1,7 +1,7 @@
 import { minorUnits as mu } from '../../../../money/types';
 import { checkOnce, inputsOf, monthOf, v3Line } from '../../__tests__/helpers/fixtures';
 import { evaluate } from '../../evaluate';
-import { redateRefunds, withRedatedRefunds } from '../../month/refunds';
+import { redateRefunds, withRedatedRefunds } from '../../../../month/model/refunds';
 import { rollForward } from '../unspent';
 
 // Owner golden (2026-10-28): confirmed unspent 30000 at 2026-05-31, a 10000 purchase in May, a 10000 linked refund

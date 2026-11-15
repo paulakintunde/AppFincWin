@@ -18,9 +18,9 @@
  */
 import { MATCH_DAYS, NEEDS_INPUT_ENTRY_AGE_DAYS, PAY_MATCH_DAYS, UNDER_LOGGED_PACE_PERCENT } from './constants';
 import { addDays, addYearMonths, daysBetween, yearMonthOf } from './dates';
-import { recordsSynced } from './month/freshness';
-import { classifyLine, seriesIndex, seriesOccurrences } from './month/series';
-import { dueKey, matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './month/settle';
+import { recordsSynced } from '../../month/model/freshness';
+import { classifyLine, seriesIndex, seriesOccurrences } from '../../month/model/series';
+import { dueKey, matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from '../../month/model/settle';
 import type {
   LocalDate,
   MonthModel,

@@ -16,8 +16,8 @@ import { minorFromBigInt } from '../../../payoff/types';
 import { myPart, type ResolvedShare } from '../../share';
 import { CASH_PATH_DAYS_V3 } from '../constants';
 import { addDays, daysBetween, daysInYearMonth, dayOfMonth, yearMonthOf } from '../dates';
-import type { DueDrops } from '../month/dueDrops';
-import { liveSeriesOf, seriesOccurrences } from '../month/series';
+import type { DueDrops } from '../../../month/model/dueDrops';
+import { liveSeriesOf, seriesOccurrences } from '../../../month/model/series';
 import { paymentsInRange } from '../plan/schedule';
 import type { Schedule, V3Series } from '../types';
 

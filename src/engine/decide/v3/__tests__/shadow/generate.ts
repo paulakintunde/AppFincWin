@@ -35,7 +35,7 @@
 import * as fc from 'fast-check';
 import { buildFunds } from '../../funds/build';
 import { priceOfShare, pricePctBpArb, termMonthsArb } from '../crosscheck/fixtureArb';
-import { buildMonthModel } from '../../month/model';
+import { buildMonthModel } from '../../../../month/model/model';
 import type { Cadence, Envelope } from '../../types';
 import { toV3Inputs } from '../golden/adapter';
 import type {

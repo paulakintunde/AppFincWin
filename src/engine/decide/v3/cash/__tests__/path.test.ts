@@ -5,7 +5,7 @@ import { addDays, daysInYearMonth, dayOfMonth, yearMonthOf } from '../../dates';
 import { buildCashPathV3, cashCheck, nextPayDate, purchaseFlows, spreadThrough } from '../path';
 import type { ReadinessWaiver, Schedule, SkippedOccurrence, V3Series } from '../../types';
 import { v3Series } from '../../__tests__/helpers/fixtures';
-import { dueDrops } from '../../month/dueDrops';
+import { dueDrops } from '../../../../month/model/dueDrops';
 
 const mu = (n: number) => minorUnits(n);
 const MONTH = { unit: 'month', every: 1 } as const;

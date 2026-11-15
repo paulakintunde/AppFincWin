@@ -101,8 +101,8 @@ describe('helpers', () => {
     expect(changedSettingsKeys({ reserve: 3 }, row({ reserve: 4 }))).toEqual(['reserve']);
   });
 
-  it('RESET_COLUMNS are the 23 setup answers and exclude use, refine and rough figures', () => {
-    expect(RESET_COLUMNS).toHaveLength(23);
+  it('RESET_COLUMNS are the 22 setup answers and exclude use, refine and rough figures', () => {
+    expect(RESET_COLUMNS).toHaveLength(22);
     for (const c of ['refine_last_at', 'refine_snooze_until', 'rough_income', 'rough_saving', 'currency']) {
       expect(RESET_COLUMNS).not.toContain(c);
     }

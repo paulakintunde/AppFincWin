@@ -8,8 +8,7 @@ import { View } from 'react-native';
 import * as Crypto from 'expo-crypto';
 import { Chip } from '@/ui/Chip';
 import { DateField } from '@/features/record/entry/pickers/DateField';
-import { MoneyInput } from '@/ui/MoneyInput';
-import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
+import { PayForm } from '@/features/record/forms/PayForm';
 import { useConfirmRegularCandidate } from '@/data/mutations/seriesAttributes';
 import { useEditSeriesFrom } from '@/data/mutations/recurringSeries';
 import { useAddDismissal, useRemoveDismissal } from '@/data/mutations/dismissals';
@@ -139,31 +138,29 @@ export const PayStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(function 
       {found && canWrite ? <TextButton label={t('income.pay.notMine')} a11y={t('income.pay.notMineA11y', { payer: found.payer })} onPress={() => markNotMine(found.key, found.payer)} /> : null}
       {cards.map((c, i) => (
         <Stack key={c.key}>
-          <MoneyInput
-            value={c.amount}
+          <PayForm
             currency={account?.currency ?? ctx.homeCurrency}
-            onChange={(minor) => update(c.key, { amount: minor !== null && minor > 0 && minor <= MAX_INPUT_MINOR ? minor : null })}
-            label={t('income.pay.amountCaption')}
-            accessibilityLabel={t('income.pay.amountCaption')}
-            boxed
-            large
-          />
-          <Caption text={t('income.pay.frequencyCaption')} />
-          <ChipRow label={t('income.pay.frequencyCaption')}>
-            {FREQS.map((f) => (
-              <Chip
-                key={f.value}
-                label={t(f.labelKey)}
-                selected={c.freq === f.value}
-                onPress={() => {
-                  hapticTick();
-                  update(c.key, { freq: f.value });
-                }}
-              />
-            ))}
-          </ChipRow>
-          <Meta text={t('income.pay.frequencyHint')} />
-          <DateField label={t('income.pay.nextDate')} value={c.date} display={money.formatDate(c.date)} onChange={(date) => update(c.key, { date })} />
+            amount={c.amount}
+            onAmount={(minor) => update(c.key, { amount: minor })}
+            amountLabel={t('income.pay.amountCaption')}
+          >
+            <Caption text={t('income.pay.frequencyCaption')} />
+            <ChipRow label={t('income.pay.frequencyCaption')}>
+              {FREQS.map((f) => (
+                <Chip
+                  key={f.value}
+                  label={t(f.labelKey)}
+                  selected={c.freq === f.value}
+                  onPress={() => {
+                    hapticTick();
+                    update(c.key, { freq: f.value });
+                  }}
+                />
+              ))}
+            </ChipRow>
+            <Meta text={t('income.pay.frequencyHint')} />
+            <DateField label={t('income.pay.nextDate')} value={c.date} display={money.formatDate(c.date)} onChange={(date) => update(c.key, { date })} />
+          </PayForm>
           {existing.filter((e) => e.id === c.seriesId).map((e) => (
             <SeriesStatusLink key={e.id} series={e} />
           ))}

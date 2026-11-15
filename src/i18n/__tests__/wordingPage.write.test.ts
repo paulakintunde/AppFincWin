@@ -31,6 +31,7 @@ import {
   lockedLeaves,
   OTHER_KEYS,
   OTHER_KEYS_061,
+  OTHER_KEYS_0555,
   placeholdersOf,
   readSigned,
   readSignoff,
@@ -352,7 +353,7 @@ function buildPage(): Page {
   const isLocked = (k: string): boolean => LOCKED_ROOTS.some((r) => k.startsWith(`${r}.`));
   const isUndoHistory = (k: string): boolean => UNDO_HISTORY_PREFIXES.some((p) => k.startsWith(p));
   // Undo and History lines: plan 05.4-06's 48 (D-151), 06.1's own, and any other one that is new or changed since the baseline.
-  const otherKeys: string[] = [...OTHER_KEYS, ...OTHER_KEYS_061];
+  const otherKeys: string[] = [...OTHER_KEYS, ...OTHER_KEYS_061, ...OTHER_KEYS_0555];
   for (const k of Object.keys(enLeaves).sort()) if (isUndoHistory(k) && !otherKeys.includes(k) && oldAll[k] !== enLeaves[k]) otherKeys.push(k);
   const otherRows: Row[] = otherKeys.map((key) => rowOf(key, enLeaves[key] as string, oldAll[key]));
   // Every other line outside the locked groups that is new or changed since the baseline (e.g. You > Region, Activity's banner).

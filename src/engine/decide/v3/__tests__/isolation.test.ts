@@ -40,7 +40,7 @@ function resolveFile(fromFile: string, spec: string): string | null {
   return null;
 }
 
-const ALLOWED_PREFIXES = ['money/', 'payoff/', 'time/', 'split/', 'guards/'];
+const ALLOWED_PREFIXES = ['money/', 'payoff/', 'time/', 'split/', 'guards/', 'month/']; // 05.5-08: the shared month folder
 const ALLOWED_EXACT = [
   'recurring/schedule',
   'decide/share',
@@ -50,8 +50,8 @@ const ALLOWED_EXACT = [
   'decide/lineDefaults',
   'decide/bisectCore',
 ];
-const RECURRING_ONLY = ['recurring/detect', 'recurring/offer', 'categorize/guessCategory'];
-const RECURRING_FILE = 'decide/v3/month/recurring';
+const RECURRING_ONLY = ['recurring/detect', 'recurring/offer', 'recurring/twoDate', 'categorize/guessCategory'];
+const RECURRING_FILE = 'month/model/recurring';
 
 function isAllowed(fileRel: string, resolvedRel: string): boolean {
   if (resolvedRel.startsWith('decide/v3/') || resolvedRel === 'decide/v3') return true;
@@ -63,7 +63,9 @@ function isAllowed(fileRel: string, resolvedRel: string): boolean {
 /** Files under decide/ outside v3/ that a v3 file may reach. */
 const isOldEngineFile = (rel: string): boolean => rel.startsWith('decide/') && !rel.startsWith('decide/v3/') && !ALLOWED_EXACT.includes(rel);
 
-const files = sourceFiles(V3_ROOT);
+// 05.5-08 (ARC-04): the month model moved to engine/month; it stays under the same isolation rules.
+const MONTH_ROOT = path.join(ENGINE_ROOT, 'month');
+const files = [...sourceFiles(V3_ROOT), ...sourceFiles(path.join(MONTH_ROOT, 'model')), path.join(MONTH_ROOT, 'picture.ts')];
 const cases = files.map((f) => [norm(path.relative(V3_ROOT, f)), f] as const);
 
 describe('v3 isolation (D-16)', () => {
@@ -108,8 +110,8 @@ describe('v3 isolation (D-16)', () => {
   const verdictPath = files.filter((f) => {
     const rel = norm(path.relative(V3_ROOT, f));
     if (rel === 'evaluate.ts') return true;
-    if (rel === 'month/recurring.ts') return false;
-    return ['judge/', 'funds/', 'plan/', 'cash/', 'month/'].some((d) => rel.startsWith(d));
+    if (rel === '../../month/model/recurring.ts') return false;
+    return ['judge/', 'funds/', 'plan/', 'cash/', '../../month/'].some((d) => rel.startsWith(d));
   });
 
   it('I34 verdict path never reaches Record detection', () => {

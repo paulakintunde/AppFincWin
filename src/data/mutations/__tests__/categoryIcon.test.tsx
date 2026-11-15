@@ -85,12 +85,12 @@ beforeEach(() => {
 });
 
 describe('categories.icon_key shape', () => {
-  it('is selected, insertable, patchable and exported; the cache version moved to 10', () => {
+  it('is selected, insertable, patchable and exported; the cache version moved to 10 (then 11 at the 05.5 merge)', () => {
     expect(CATEGORY_COLUMNS.split(', ')).toContain('icon_key');
     expect(CATEGORY_INSERT_KEYS).toContain('icon_key');
     expect(CATEGORY_PATCH_KEYS).toContain('icon_key');
     expect(EXPORT_MANIFEST.categories).toContain('icon_key');
-    expect(CACHE_SCHEMA_VERSION).toBe('10');
+    expect(CACHE_SCHEMA_VERSION).toBe('11');
   });
 
   it('assertIconKey allows null and names in our set, and refuses emoji, free text and unknown names', () => {

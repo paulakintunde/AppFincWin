@@ -12,7 +12,6 @@ import {
   MISSING_PRIORITY,
   PAY_MATCH_DAYS,
   RECONFIRM_MIN_MONTHS,
-  RECURRING_WINDOWS,
   SEASON_CYCLE_MONTHS,
   TWO_DATE_TOLERANCE_DAYS,
   V3_HISTORY_MONTHS,
@@ -69,20 +68,6 @@ describe('v3 constants.ts citations', () => {
       'fits_unspent',
       'fits_month',
     ]);
-  });
-
-  it('D-02 windows ascending and disjoint', () => {
-    const windows = [
-      RECURRING_WINDOWS.weekly,
-      RECURRING_WINDOWS.fortnightly,
-      RECURRING_WINDOWS.monthly,
-      RECURRING_WINDOWS.quarterly,
-      RECURRING_WINDOWS.yearly,
-    ];
-    for (const [lo, hi] of windows) expect(lo).toBeLessThanOrEqual(hi);
-    for (let i = 1; i < windows.length; i += 1) {
-      expect(windows[i]![0]).toBeGreaterThan(windows[i - 1]![1]);
-    }
   });
 
   it('O11 14 strictly increasing band edges', () => {

@@ -19,7 +19,7 @@ import { ceilDivide, minorFromBigInt, ZERO_PERCENT, type Percent } from '../../.
 import { minorUnits, type MinorUnits } from '../../../money/types';
 import { myPart } from '../../share';
 import { addYearMonths } from '../dates';
-import { seasonalReadyMonth } from '../month/seasonWalk';
+import { seasonalReadyMonth } from '../../../month/model/seasonWalk';
 import { divideHalfUp } from '../../../money/rounding';
 import { isNeedPurpose } from '../judge/options';
 import type { CheckValue, Funds, IncomePicture, MonthModel, Purchase, Purpose, Result, Schedule } from '../types';

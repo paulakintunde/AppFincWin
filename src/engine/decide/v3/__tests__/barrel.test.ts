@@ -19,7 +19,6 @@ import type {
 export const V3_RUNTIME_EXPORTS = [
   'ABOUT_KEYS', // 05.4-37 D-64 (3)
   'AFTER_BUY_KEYS', // 05.4-24 FIN-09
-  'AMOUNT_TOLERANCE_DIVISOR',
   'BAND_EDGES_USD',
   'BASIS_KEYS',
   'BASIS_REASON_KEYS',
@@ -95,8 +94,6 @@ export const V3_RUNTIME_EXPORTS = [
   'RECONFIRM_MIN_MONTHS',
   'RECORDS_FRESH_FIRST_DAYS',
   'RECORDS_FRESH_SYNC_DAYS',
-  'RECURRING_MIN_REPEATS',
-  'RECURRING_WINDOWS',
   'REFINE_CARD_UNPAID_STATEMENTS',
   'REFINE_MIN_GAP_DAYS',
   'REFINE_NOISE_MIN_MINOR',
@@ -163,12 +160,10 @@ export const V3_RUNTIME_EXPORTS = [
   'lookupTaxDefault', // 05.4-25 FIN-27 (D-19, ARC-25): the one owner of region tax defaults
   'maxCheckPrice', // 05.4-28 ENG-15 (D-109): the price limit in a currency
   'monthAfterPlans', // 05.4-24 FIN-09 (D-22)
-  'monthPicture', // 06.1 CO-D-57: built to the 05.5 month-picture contract
   'monthlyEquivalentOf',
   'myShareOf',
   'orderOptions', // 05.4-28 D-110
   'parseCheckV2',
-  'pastMonthBars', // 06.1 UX-43
   'planCard',
   'prepare',
   'questionSpec',

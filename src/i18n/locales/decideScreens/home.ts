@@ -76,7 +76,7 @@ export const home = {
     leftIn: 'left in {{month}}',
     shortIn: 'short in {{month}}',
     expected: 'Expected',
-    leadLabel: 'after this month’s plans',
+    leadLabel: 'left after the month’s plans',
     tilesUsual: 'A usual month',
     tilesLow: 'Your low month',
     comesIn: 'COMES IN',

@@ -21,6 +21,7 @@ import {
 import type { DbErrorKind } from '@/db/errors';
 import { useDecideV3, type DecideV3State } from '@/data/queries/decideV3';
 import { perfMark, usePerfMount } from '@/features/decide/perf/perfMarks';
+import { decideBreadcrumb } from '@/services/errors/decideBreadcrumbs';
 
 export interface CheckEngine {
   status: DecideV3State['status'];
@@ -106,10 +107,31 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
   const evaluation = useMemo<Evaluation | null>(() => {
     if (prepared === null || deferredJudged === null) return null;
     perfMark('answer.judge:start');
-    const judgedNow = (deferredJudged.quickLines ?? []).length > 0 ? judgeWithQuickLines(prepared, deferredJudged) : judgeCheck(prepared, deferredJudged);
-    perfMark('answer.judge:end');
-    return judgedNow;
+    try {
+      const judgedNow = (deferredJudged.quickLines ?? []).length > 0 ? judgeWithQuickLines(prepared, deferredJudged) : judgeCheck(prepared, deferredJudged);
+      perfMark('answer.judge:end');
+      return judgedNow;
+    } catch (e) {
+      // 05.5-09 (APP-12): the event name only, never the error text, the check or an amount. The error still propagates.
+      decideBreadcrumb('engine_error');
+      throw e;
+    }
   }, [prepared, deferredJudged]);
+
+  // 05.5-09 (APP-12): a check starts computing once per check id (not per keystroke); a failed read is an engine error too.
+  const startedFor = useRef<string | null>(null);
+  const computing = prepared !== null && deferredJudged !== null;
+  useEffect(() => {
+    if (!computing) return;
+    const key = checkId ?? '';
+    if (startedFor.current === key) return;
+    startedFor.current = key;
+    decideBreadcrumb('check_started');
+  }, [computing, checkId]);
+  const failedStatus = state.status === 'error';
+  useEffect(() => {
+    if (failedStatus) decideBreadcrumb('engine_error');
+  }, [failedStatus]);
 
   // 06.1-47: the end of the Check it -> answer timing, once per check id (the start is marked by Decide home's Check it).
   const markedFor = useRef<string | null>(null);
@@ -120,6 +142,7 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
     if (markedFor.current === null) perfMark('answer.firstJudge:end');
     markedFor.current = key;
     perfMark('decide.answer:end');
+    decideBreadcrumb('answer_shown');
   }, [evaluation, checkId]);
 
   // Quick-estimate audit fix (problem 3): both ways to pay, the ready date, the cash path and the pay days read the same

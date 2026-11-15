@@ -109,6 +109,7 @@ export function HomeScreen() {
           homeCurrency={rc.homeCurrency}
           currentMonth={monthOf(rc.today)}
           state={vm.dataState}
+          afterPlans={vm.afterPlans}
         />
       </FadeIn>
       <FadeIn once="home.card.comingUp" testID="home-card-comingUp">

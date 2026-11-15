@@ -397,7 +397,7 @@
   "decide.screens.home.month.explainUsual": "A usual month from your records: what comes in, less what goes out.",
   "decide.screens.home.month.goesOut": "GOES OUT",
   "decide.screens.home.month.laterA11y": "Later month",
-  "decide.screens.home.month.leadLabel": "after this month’s plans",
+  "decide.screens.home.month.leadLabel": "left after the month’s plans",
   "decide.screens.home.month.left": "LEFT",
   "decide.screens.home.month.leftIn": "left in {{month}}",
   "decide.screens.home.month.leftSub": "{{amount}} left",
