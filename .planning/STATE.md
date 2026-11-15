@@ -214,6 +214,7 @@ Recent decisions affecting current work:
 | 261106-bf2 | Switch Decide on for testers: DECIDE_OPEN and DECIDE_V3 true, v3 for every account (owner 2026-11-06) | 2026-11-06 | 8096e25a | [261106-bf2-switch-decide-on-for-testers-decide-open](./quick/261106-bf2-switch-decide-on-for-testers-decide-open/) |
 | 261111-o0p | Phase 8 integration conflicts written into plans (08-28/29 to 08.1, 08-GATES.md, 05.5 notes) | 2026-11-11 | 3df07119 | [261111-o0p-write-phase-8-integration-conflict-decis](./quick/261111-o0p-write-phase-8-integration-conflict-decis/) |
 | 261114-e9v | Decide audit fixes: one-off/future quick income left out of the usual month; answer parts read quick lines; Undo of answered choices (migration 20261114000100) | 2026-11-14 | f4a040c5 | [261114-e9v-decide-audit-fixes](./quick/261114-e9v-decide-audit-fixes/) |
+| 261114-x0q | Phase 8 revision round against main 318d6799 (Grow/06.1/05.5 functions + tables, cache bump, gates, open-PR overlaps; owner answers on Home switch and personal debt/goal lines) | 2026-11-15 | 103fea0d | [261114-x0q-phase-8-household-plan-revision-round](./quick/261114-x0q-phase-8-household-plan-revision-round/) |
 
 ## Deferred Items
 
