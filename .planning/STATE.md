@@ -151,6 +151,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
+- **Decide crosscheck mismatch** — seed 730688518: engine says "no", calculator says fits by borrowing (23-month plan). Fails on main too; random seed makes CI flaky. See `.planning/todos/pending/2026-11-15-fix-decide-crosscheck-borrowing-mismatch.md`.
 - **Decide test flag in production** — count the accounts with `profiles.decide_v3` on (not yet checked; the auto-mode classifier blocked a read-only production query on 2026-11-02). First step of BO-06 in 05.4.
 - **Decide owner decisions** — fix plan section 11, question 10 is open (3, 4 and 5 were answered in 05.4-CONTEXT); question 12 (legal launch countries) is open; the Free vs Pro list is needed by APP-18 (05.5) as well as Phase 9; decide whether to insert the home-buying phase (FIN-30) and 06.1 into ROADMAP.
 - **Phase 0 verification** — run the gsd-verifier for Phase 00 once 00-07 and 00-20 have SUMMARY files (triggered by the D-U-N-S number, ETA 2026-10-13, then Apple enrolment).
