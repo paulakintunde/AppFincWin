@@ -29,6 +29,11 @@ describe('readRulesDoc', () => {
     expect(doc.rules).toEqual([{ id: 'a', kind: 'largest', on: false, value: 100, categoryId: null }]);
   });
 
+  it('reads a category share rule with its category', () => {
+    const doc = readRulesDoc(wrap([{ id: 'own_category_share_1', kind: 'category_share', value: 15, categoryId: 'c2', on: true }]));
+    expect(doc.rules).toEqual([{ id: 'own_category_share_1', kind: 'category_share', on: true, value: 15, categoryId: 'c2' }]);
+  });
+
   it('05.5-15 (D-11): legacy category_cap entries do not use up the 5 own rules', () => {
     const caps = [1, 2, 3].map((n) => ({ id: `own_category_cap_${n}`, kind: 'category_cap', value: n, categoryId: 'c', on: true }));
     const own = [1, 2, 3, 4, 5].map((n) => ({ id: `k${n}`, kind: 'keep', value: n }));
