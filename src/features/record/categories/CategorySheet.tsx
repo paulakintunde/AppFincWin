@@ -19,6 +19,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
+import { hapticWarning } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { useIsDirty } from '@/ui/useIsDirty';
@@ -32,17 +33,22 @@ export interface CategorySheetProps {
   visible: boolean;
   mode: CategorySheetMode;
   onClose: () => void;
+  /**
+   * 05.5-15 (D-17): set when Decide opens this sheet over its money rules. Names the open checks a changed cap newly pushes over it
+   * (empty = none). A crossing cap save gives the warning haptic and "This changes 1 open check", like any rule change.
+   */
+  capCrossings?: (categoryId: string, cap: number | null) => readonly { name: string }[];
 }
 
 const NAME_MAX = 60;
 const CAP_MAX = 10_000_000_000_000;
 
-export function CategorySheet({ visible, mode, onClose }: CategorySheetProps) {
+export function CategorySheet({ visible, mode, onClose, capCrossings }: CategorySheetProps) {
   if (!visible) return null;
-  return <SheetBody mode={mode} onClose={onClose} />;
+  return <SheetBody mode={mode} onClose={onClose} capCrossings={capCrossings} />;
 }
 
-function SheetBody({ mode, onClose }: { mode: CategorySheetMode; onClose: () => void }) {
+function SheetBody({ mode, onClose, capCrossings }: { mode: CategorySheetMode; onClose: () => void; capCrossings?: CategorySheetProps['capCrossings'] }) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
@@ -93,8 +99,19 @@ function SheetBody({ mode, onClose }: { mode: CategorySheetMode; onClose: () => 
       onClose();
       return;
     }
+    const crossed = patch.monthlyCap !== undefined && capCrossings !== undefined ? capCrossings(editing.id, patch.monthlyCap) : [];
     const stepId = edit(editing, patch);
-    showToast({ kind: 'ordinary', text: undoLabelText('categoryEdited', { name: trimmed }), stepId });
+    if (crossed.length > 0) {
+      hapticWarning();
+      showToast({
+        kind: 'ordinary',
+        tone: 'warning',
+        text: { key: 'decide.screens.sheetsHome.rule.crosses', params: { count: crossed.length, item: crossed[0]?.name ?? '', undoLabel: 'categoryEdited', name: trimmed } },
+        stepId,
+      });
+    } else {
+      showToast({ kind: 'ordinary', text: undoLabelText('categoryEdited', { name: trimmed }), stepId });
+    }
     onClose();
   };
 
@@ -145,6 +162,11 @@ function SheetBody({ mode, onClose }: { mode: CategorySheetMode; onClose: () => 
             ) : (
               <Text style={labelStyle}>{t('categories.cap.helper')}</Text>
             )}
+            {capMinor !== null ? (
+              <Text testID="cap-also-rule" style={[labelStyle, { marginTop: space.gapSm }]}>
+                {t('categories.cap.alsoRule')}
+              </Text>
+            ) : null}
           </>
         ) : null}
         <Pill label={editing ? t('categories.sheet.saveChanges') : t('categories.sheet.save')} variant="primary" onPress={save} />
