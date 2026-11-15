@@ -77,6 +77,10 @@ export const OTHER_KEYS_0555: readonly string[] = [
   'home.month.afterPlansShort',
   'home.month.headlineWithPlansA11y',
   'home.month.headlineWithPlansShortA11y',
+  // 05.5-15 (D-11, D-17, OFO-5): one cap per category.
+  'categories.cap.alsoRule',
+  'decide.screens.sheetsHome.addRule.capExists',
+  'decide.screens.sheetsHome.addRule.capExistsLink',
 ];
 
 /** Prefixes of the outside-the-lock lines shown in the page's undo and History section. */

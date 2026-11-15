@@ -1,6 +1,6 @@
 import { minorUnits } from '@/engine/money';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
-import type { CurrencyCode } from '@/engine/decide';
+import type { CurrencyCode } from '@/engine/money';
 
 /** A minor-unit formatter bound to one currency. */
 export type Money = (minor: number) => string;

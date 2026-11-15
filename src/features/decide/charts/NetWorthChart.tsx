@@ -4,7 +4,8 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Line, Path } from 'react-native-svg';
-import type { MinorUnits, NetWorthPath } from '@/engine/decide';
+import type { MinorUnits } from '@/engine/money';
+import type { NetWorthPath } from './chartGeometry';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';

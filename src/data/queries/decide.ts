@@ -24,8 +24,7 @@ import { fetchTransactionsInRange } from '@/db/transactions';
 import { monthOf, monthRange } from '@/engine/time';
 import { buildDecideSnapshot, type SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
 import { recordsAsOfOf, rollForward } from '@/features/decide/snapshot/offlineFallback';
-import { selectOtherChecks } from '@/features/decide/snapshot/stacking';
-import { EMPTY_STACK, type SnapshotResult, type StackSelection } from '@/features/decide/snapshot/types';
+import type { SnapshotResult } from '@/features/decide/snapshot/buildSnapshot';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { getDeviceRegion } from '@/services/locale/deviceLocale';
 import { supabase } from '@/services/supabase';
@@ -527,20 +526,6 @@ export function useDecideSnapshot(): DecideSnapshotState {
 
   const status: DecideSnapshotState['status'] = failed ? 'error' : result === null ? 'loading' : 'ready';
   return { status, result, source: sharedSource, retry, errorKind, missingReads, unsavedWrites };
-}
-
-/** D-24 (part 2): the other open checks a check is judged with, counted and memoised. */
-export function useOtherChecks(excludeId: string | null): StackSelection {
-  const rc = useRecordContext();
-  const { result } = useDecideSnapshot();
-  const checks = useDecideChecks(rc.userId ?? undefined, rc.householdId ?? undefined).data;
-  return useMemo(
-    () =>
-      result === null || checks === undefined
-        ? EMPTY_STACK
-        : selectOtherChecks({ checks, excludeId, source: result, today: rc.today }),
-    [result, checks, excludeId, rc.today]
-  );
 }
 
 /** 05-22 (D-12): the household's lines in a window, for the attach picker. Row-derived (05-12 key). */

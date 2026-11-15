@@ -1,12 +1,12 @@
 // 06.1-80 (DC-7, OQ-80-1 A): "Add your own rule" offers only kinds not already on the list.
 import { ADD_RULE_KINDS, changeFormOf, changePatchOf, isOneOffRow, isWrittenLabel, kindsOffered, ownChangeName, EMPTY_RULES, type ChangeRowShape, type RulesDoc } from '../homeCardsModel';
 
-const rule = (id: string, kind: 'keep' | 'largest' | 'category_cap' | 'category_share', on = true) => ({
+const rule = (id: string, kind: 'keep' | 'largest' | 'category_share', on = true) => ({
   id,
   kind,
   on,
   value: 100,
-  categoryId: kind === 'category_cap' || kind === 'category_share' ? 'c' : null,
+  categoryId: kind === 'category_share' ? 'c' : null,
 });
 
 describe('kindsOffered (OQ-80-1 A)', () => {
@@ -20,8 +20,8 @@ describe('kindsOffered (OQ-80-1 A)', () => {
     expect(kindsOffered(doc)).toEqual(['category_cap', 'category_share']);
   });
 
-  it('keeps offering category rules, which can repeat', () => {
-    const doc: RulesDoc = { v: 1, rules: [rule('own_category_cap_1', 'category_cap'), rule('own_category_share_2', 'category_share')] };
+  it('keeps offering Category (the cap, never in the document) and category share rules, which can repeat', () => {
+    const doc: RulesDoc = { v: 1, rules: [rule('own_category_share_1', 'category_share'), rule('own_category_share_2', 'category_share')] };
     expect(kindsOffered(doc)).toEqual(['category_cap', 'category_share', 'largest', 'keep']);
   });
 });

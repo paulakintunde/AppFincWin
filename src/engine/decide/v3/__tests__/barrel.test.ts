@@ -56,6 +56,7 @@ export const V3_RUNTIME_EXPORTS = [
   'INCOME_SWING_MIN_MONTHS',
   'INCOME_VOLATILE_CV_PERCENT',
   'INTRO_KEYS', // 05.4-37 D-120
+  'ITEM_TYPES', // 05.5-26: the kept card-rule leaf, so the stored-check reader never imports the old barrel
   'LEGACY_STATE_OF_CODE',
   'LONG_PLAN_MONTHS', // 05.4-37 D-64 (4)
   'LOW_MONTH_RANK',
@@ -166,6 +167,7 @@ export const V3_RUNTIME_EXPORTS = [
   'parseCheckV2',
   'planCard',
   'prepare',
+  'priceAfterLines', // 05.5-26: the price after tax, fees and trade-ins
   'questionSpec',
   'readStoredCheck',
   'refine',
@@ -181,6 +183,7 @@ export const V3_RUNTIME_EXPORTS = [
   'shadowSamples', // 05.4-36 BO-08 (D-147)
   'stagedRequired',
   'stoppedCostFlows', // 05.4-27 BO-05
+  'suggestItemType', // 05.5-26: the kept card-rule leaf
   'toStoredV2',
   'unspentSum',
   'upgradeInputs',

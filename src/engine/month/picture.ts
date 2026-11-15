@@ -30,7 +30,7 @@ const FN = 'month/picture';
 type PictureInput = Pick<Prepared, 'inputs' | 'readings'>;
 
 /** The reading homeFigure reads (the lower month figure; the first on a tie), so every figure on the card comes from one reading. */
-function homeReading(p: PictureInput): Reading {
+export function homeReading(p: PictureInput): Reading {
   let pick = p.readings[0] as Reading;
   for (const r of p.readings) if (r.month.monthLeft < pick.month.monthLeft) pick = r;
   return pick;

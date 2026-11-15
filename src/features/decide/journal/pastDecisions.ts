@@ -1,8 +1,7 @@
 // 05-39 (D-36, A17): past decisions for the engine's estimate bias, and the attached-line role default.
 // PURE. Integer minor units; the monthly average is rounded half-up with divideHalfUp. A figure with no linked
 // line of its role is null, never zero (04 D-56); a line with no stored rate makes its figure null (D-39).
-import type { PastDecision } from '@/engine/decide';
-import { currencyCode, divideHalfUp, minorUnits } from '@/engine/money';
+import { currencyCode, divideHalfUp, minorUnits, type CurrencyCode, type MinorUnits } from '@/engine/money';
 import { localDateIn } from '@/engine/time';
 import { convertLatest } from '@/data/queries/fxConvert';
 import { homeAmountFor } from '@/data/queries/homeAmount';
@@ -10,6 +9,14 @@ import type { DecideCheckRow } from '@/db/decideChecks';
 import type { DecideLinkRoleValue, DecideLinkRow } from '@/db/decideLinks';
 import type { CustomCurrencyRow, FxLatestRow, TransactionRow } from '@/db/rows';
 import { compareEstimate } from './estimateActual';
+
+// 05.5-18: owned here (moved from the old engine; types only). Estimates and actuals are in the check's home currency.
+export interface PastDecision {
+  readonly id: string;
+  readonly currency: CurrencyCode;
+  readonly estimate: { readonly dayOne: MinorUnits; readonly monthlyPayment: MinorUnits; readonly runningCosts: MinorUnits };
+  readonly actual: { readonly dayOne: MinorUnits | null; readonly monthlyPayment: MinorUnits | null; readonly runningCosts: MinorUnits | null };
+}
 
 const ATTACH_DAY_ONE_WINDOW_DAYS = 7;
 
